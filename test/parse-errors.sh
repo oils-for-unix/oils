@@ -18,7 +18,7 @@ banner() {
   echo
 }
 
-is-oil-native() {
+is-oils-cpp() {
   case $SH in
     _bin/*/*)
       return 0
@@ -78,7 +78,7 @@ _should-parse-here() { _should-parse "$(cat)"; }
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping _runtime-parse-error'
     return
   fi
@@ -108,7 +108,7 @@ _oil-should-parse() {
 _oil-parse-error() {
   ### Assert that a parse error happens with Oil options on
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping _oil-parse-error'
     return
   fi
@@ -460,7 +460,7 @@ cmd-parse() {
   _should-parse 'break >out'
   _oil-parse-error 'break >out'
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'Skipping some cmd-parse cases on oil-native'
     return
   fi
@@ -593,7 +593,7 @@ invalid-brace-ranges() {
 oil-language() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'Skipping oil-language'
     return
   fi
@@ -646,7 +646,7 @@ proc_sig() {
 proc_arg_list() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'Skipping proc_arg_list cases on oil-native'
     return
   fi
@@ -696,7 +696,7 @@ json write (x) {
 regex_literals() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     return
   fi
 
@@ -753,7 +753,7 @@ oil_expr_more() {
 oil_hay_assign() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     return
   fi
 
@@ -880,7 +880,7 @@ EOF
   _oil-parse-error 'const bad = "`echo hi`"'
 
   # We want these to be tested under OSH, but they won't work under Oil native!
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'Skipping some oil_string_literals cases on oil-native'
     return
   fi
@@ -973,7 +973,7 @@ parse_dparen() {
   _should-parse "$bad"
   _oil-parse-error "$bad"
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'Skipping parse_dparen cases'
     return
   fi
@@ -1014,7 +1014,7 @@ parse_at() {
 invalid_parens() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping invalid_parens on oil-native'
     return
   fi
@@ -1057,7 +1057,7 @@ oil_nested_proc() {
 
   _oil-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping oil_nested_proc'  # TODO: re-enable with pgen2
     return
   fi
@@ -1118,7 +1118,7 @@ oil_var_decl() {
     '
   fi
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping oil_var_decl'  # TODO: re-enable with pgen2
     return
   fi
@@ -1153,7 +1153,7 @@ oil_place_mutation() {
   }
   '
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping oil_place_mutation'  # TODO: re-enable with pgen2
     return
   fi
@@ -1220,7 +1220,7 @@ oil_case() {
 oil_for() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping oil_for'
     return
   fi
@@ -1278,7 +1278,7 @@ oil_for() {
 oil_for_parse_bare_word() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping oil_for'
     return
   fi
@@ -1311,7 +1311,7 @@ oil_for_parse_bare_word() {
 oil_issue_1118() {
   set +o errexit
 
-  if is-oil-native; then
+  if is-oils-cpp; then
     echo 'skipping oil_issue_1118'
     return
   fi
@@ -1443,7 +1443,7 @@ cases-in-files() {
   for t in test/parse-errors/*.sh; do
     banner $t
 
-    if is-oil-native; then
+    if is-oils-cpp; then
       case $t in
         */01-bad-func.sh)
           echo "Skipping file $t oil-native"
