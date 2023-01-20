@@ -1482,7 +1482,6 @@ soil-run-py() {
 soil-run-cpp() {
   ### Run with oils_cpp
 
-  # Done in _oil-native-tarball-build on the benchmark-data version
   ninja _bin/cxx-asan/osh
 
   ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh all
@@ -1497,8 +1496,8 @@ release-oil-native() {
   _build/oils.sh '' '' SKIP_REBUILD
   popd
 
-  local out=_tmp/other/parse-errors-oil-native.txt
-  SH=$dir/_bin/cxx-opt-sh/oils_cpp.stripped \
+  local out=_tmp/other/parse-errors-osh-cpp.txt
+  SH=$dir/_bin/cxx-opt-sh/osh \
     run-other-suite-for-release parse-errors all $out
 }
 
