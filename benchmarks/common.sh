@@ -16,7 +16,7 @@ readonly MACHINE2=lenny
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Used by devtools/release.sh
-readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oils-for-unix-$OIL_VERSION
 
 readonly OSH_CPP_NINJA_BUILD=_bin/cxx-opt/osh
 readonly OSH_CPP_SH_BUILD=_bin/cxx-opt-sh/osh

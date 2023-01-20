@@ -217,10 +217,10 @@ cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
-native-code      metrics/native-code.sh oil-native     _tmp/metrics/oil-native/index.html
+native-code      metrics/native-code.sh oils-for-unix     _tmp/metrics/oils-for-unix/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
-make-tar         devtools/release-native.sh make-tar   _release/oil-native.tar
+make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
 test-tar         devtools/release-native.sh test-tar   -
 EOF
 }

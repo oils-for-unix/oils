@@ -85,8 +85,8 @@ extract-oil() {
 
   # To run on multiple machines, use the one in the benchmarks-data repo.
   cp --recursive --no-target-directory \
-    ../benchmark-data/src/oil-native-$OIL_VERSION/ \
-    $TAR_DIR/oil-native-$OIL_VERSION/
+    ../benchmark-data/src/oils-for-unix-$OIL_VERSION/ \
+    $TAR_DIR/oils-for-unix-$OIL_VERSION/
 }
 
 #
@@ -280,7 +280,7 @@ oil-tasks() {
   # NOTE: it MUST be a tarball and not the git repo, because we don't build
   # bytecode-*.zip!  We care about the "packager's experience".
   local oil_dir="$TAR_DIR/oil-$OIL_VERSION"
-  local ofu_dir="$TAR_DIR/oil-native-$OIL_VERSION"
+  local ofu_dir="$TAR_DIR/oils-for-unix-$OIL_VERSION"
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read line; do

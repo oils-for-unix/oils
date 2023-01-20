@@ -1487,9 +1487,9 @@ soil-run-cpp() {
   ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh all
 }
 
-release-oil-native() {
+release-oils-for-unix() {
   readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-  local dir="../benchmark-data/src/oil-native-$OIL_VERSION"
+  local dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
 
   # Maybe rebuild it
   pushd $dir
@@ -1506,7 +1506,7 @@ run-for-release() {
 
   run-other-suite-for-release parse-errors all
 
-  release-oil-native
+  release-oils-for-unix
 }
 
 "$@"

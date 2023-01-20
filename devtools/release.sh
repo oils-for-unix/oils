@@ -313,7 +313,7 @@ build-and-test() {
 
   test/coverage.sh run-for-release  # C++ unit tests
 
-  # oil-native
+  # oils-for-unix
   devtools/release-native.sh make-tar
   devtools/release-native.sh extract-for-benchmarks
   # This builds the tarball from _tmp/native-tar-test
@@ -611,7 +611,7 @@ sync-old-tar() {
 deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
-  # Also copy oil-native
+  # Also copy oils-for-unix
   cp -v _release/oil-*$OIL_VERSION.tar.* $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
@@ -657,13 +657,13 @@ _tarball-links-row-html() {
 </tr>
 EOF
 
-  # only release .xz for oil-native
-  for name in oil-$version.tar.{xz,gz} oil-native-$version.tar.xz; do
+  # only release .xz for oils-for-unix
+  for name in oil-$version.tar.{xz,gz} oils-for-unix-$version.tar.xz; do
     local url="/download/$name"  # The server URL
     local path="../oilshell.org__deploy/download/$name"
 
     # The native version might not exist
-    if [[ $name == oil-native-* && ! -f $path ]]; then
+    if [[ $name == oils-for-unix-* && ! -f $path ]]; then
       continue
     fi
 
