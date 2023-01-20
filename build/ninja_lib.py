@@ -364,7 +364,7 @@ class Rules(object):
       first_name = None
 
       if c.top_level:
-        # e.g. _bin/cxx-dbg/osh_eval
+        # e.g. _bin/cxx-dbg/oils_cpp
         basename = os.path.basename(c.main_cc)
         first_name = basename.split('.')[0]
         bin_ = '%s/%s' % (bin_dir, first_name)

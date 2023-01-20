@@ -23,18 +23,8 @@ def MakeShellPairs(shells):
   saw_osh = False
   saw_oil = False
   for path in shells:
-    if 'osh_eval' in path or 'oils_cpp' in path:
-      name = path
-      if '_bin' in path:
-        label = 'osh_.cc'
-      elif 'bin' in path:
-        label = 'osh_.py'
-      else:
-        raise AssertionError(path)
-    else:
-      name, _ = os.path.splitext(path)
-      label = os.path.basename(name)
-    #log('path = %s, label = %s', path, label)
+    name, _ = os.path.splitext(path)
+    label = os.path.basename(name)
 
     if label == 'osh':
       # change the second 'osh' to 'osh_ALT' so it's distinct

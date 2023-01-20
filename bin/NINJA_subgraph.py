@@ -38,7 +38,7 @@ def NinjaGraph(ru):
         symlinks = symlinks,
         preprocessed = True,
         matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
-        top_level = True,  # _bin/cxx-dbg/osh_eval
+        top_level = True,  # _bin/cxx-dbg/oils_cpp
         deps = [
           '//cpp/core',
           '//cpp/libc',
