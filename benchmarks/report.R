@@ -64,9 +64,6 @@ GetOshLabel = function(shell_hash, prov_dir) {
   return(label)
 }
 
-#opt_suffix1 = '_bin/cxx-opt/osh_eval.stripped'
-#opt_suffix2 = '_bin/cxx-opt-sh/osh_eval.stripped'
-
 opt_suffix1 = '_bin/cxx-opt/osh'
 opt_suffix2 = '_bin/cxx-opt-sh/osh'
 
@@ -92,15 +89,11 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     if (sh == 'osh') {
       label = GetOshLabel(shell_hash[i], prov_dir)
 
-    } else if (sh == 'osh_eval.stripped') {
-      # e.g. used by osh-parser
-      label = 'osh-native'
-
     } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
-      label = 'opt/osh_eval'
+      label = 'opt/osh'
 
-    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh_eval')) {
-      label = 'bumpleak/osh_eval'
+    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh')) {
+      label = 'bumpleak/osh'
 
     } else {
       label = sh
@@ -123,8 +116,8 @@ ShellLabelFromPath = function(sh_path) {
       # the opt binary is osh-native
       label = 'osh-native'
 
-    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh_eval')) {
-      label = 'bumpleak/osh_eval'
+    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh')) {
+      label = 'bumpleak/osh'
 
     } else if (endsWith(sh, '_bin/osh')) {  # the app bundle
       label = 'osh-ovm'
@@ -683,7 +676,7 @@ OvmBuildReport = function(in_dir, out_dir) {
     mutate(native_code_size = num_bytes - bytecode_size) ->
     sizes
 
-  # paths look like _tmp/ovm-build/bin/clang/osh_eval.stripped
+  # paths look like _tmp/ovm-build/bin/clang/oils_cpp.stripped
   native_sizes %>%
     select(c(host_label, path, num_bytes)) %>%
     mutate(host_label = paste("host ", host_label),
@@ -737,7 +730,7 @@ ComputeReport = function(in_dir, out_dir) {
   times %>% filter(task_name == 'bubble_sort') %>% unique_stdout_md5sum(2)
 
   # TODO: 
-  # - osh_eval doesn't implement unicode LANG=C
+  # - oils_cpp doesn't implement unicode LANG=C
   # - bash behaves differently on your desktop vs. in the container
   #   - might need layer-locales in the image?
 
