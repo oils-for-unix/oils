@@ -27,7 +27,7 @@ make-tar() {
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
-  gen-oil-native-sh
+  gen-oils-sh
   # Build default target to generate code
   ninja
 
