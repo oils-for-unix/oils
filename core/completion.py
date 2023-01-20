@@ -60,7 +60,7 @@ import posix_ as posix
 from posix_ import X_OK  # translated directly to C macro
 
 from typing import (
-    Dict, Tuple, List, Iterator, Optional, Callable, Any, TYPE_CHECKING
+    Dict, Tuple, List, Iterator, Optional, Callable, Any, cast, TYPE_CHECKING
 )
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token, compound_word
@@ -749,10 +749,12 @@ def IsDummy(t):
 def WordEndsWithCompDummy(w):
   # type: (compound_word) -> bool
   last_part = w.parts[-1]
-  return (
-      last_part.tag_() == word_part_e.Literal and
-      last_part.id == Id.Lit_CompDummy
-  )
+  UP_part = last_part
+  if last_part.tag_() == word_part_e.Literal:
+    last_part = cast(Token, UP_part)
+    return last_part.id == Id.Lit_CompDummy
+  else:
+    return False
 
 
 class RootCompleter(object):
