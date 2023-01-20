@@ -1494,7 +1494,7 @@ release-oil-native() {
 
   # Maybe rebuild it
   pushd $dir
-  _build/oil-native.sh '' '' SKIP_REBUILD
+  _build/oils.sh '' '' SKIP_REBUILD
   popd
 
   local out=_tmp/other/parse-errors-oil-native.txt

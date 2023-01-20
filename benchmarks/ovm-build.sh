@@ -245,7 +245,7 @@ build-task() {
         (*clang)
           # Note on slight mess: benchmarks/id.sh takes the provenanec of
           # $CLANG.  We translate that to 'clang' here, and
-          # _build/oil-native.sh uses $CLANGXX.
+          # _build/oils.sh uses $CLANGXX.
           compiler='clang'
           ;;
         *)
@@ -253,7 +253,7 @@ build-task() {
           ;;
       esac
 
-      "${TIME_PREFIX[@]}" -- _build/oil-native.sh $compiler $variant
+      "${TIME_PREFIX[@]}" -- _build/oils.sh $compiler $variant
 
       # e.g. cp _bin/clang-opt-sh/oils_cpp.stripped _tmp/ovm-build/bin/clang/
       local filename=$action

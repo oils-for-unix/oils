@@ -14,9 +14,9 @@ set -o errexit
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
-gen-oil-native-sh() {
+gen-oils-sh() {
   PYTHONPATH=. build/ninja_main.py shell
-  chmod +x _build/oil-native.sh
+  chmod +x _build/oils.sh
 }
 
 make-tar() {
@@ -65,8 +65,8 @@ extract-for-benchmarks() {
   # For benchmarks
   pushd oil-native-$OIL_VERSION
   ./configure
-  _build/oil-native.sh '' dbg SKIP_REBUILD
-  _build/oil-native.sh '' opt SKIP_REBUILD
+  _build/oils.sh '' dbg SKIP_REBUILD
+  _build/oils.sh '' opt SKIP_REBUILD
   popd
 
   git add oil-native-$OIL_VERSION

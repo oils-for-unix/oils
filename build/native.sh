@@ -20,7 +20,7 @@ tarball-demo() {
 
   ./configure
 
-  time _build/oil-native.sh '' '' SKIP_REBUILD
+  time _build/oils.sh '' '' SKIP_REBUILD
 
   local bin=_bin/cxx-opt-sh/oils_cpp.stripped
 

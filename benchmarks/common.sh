@@ -16,12 +16,12 @@ readonly MACHINE2=lenny
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Used by devtools/release.sh
-readonly BENCHMARK_DATA_OIL_NATIVE=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
 
 readonly OSH_CPP_NINJA_BUILD=_bin/cxx-opt/osh
 readonly OSH_CPP_SH_BUILD=_bin/cxx-opt-sh/osh
 
-readonly OSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OIL_NATIVE/$OSH_CPP_SH_BUILD
+readonly OSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$OSH_CPP_SH_BUILD
 
 #
 # Binaries we want to test, which can be overridden

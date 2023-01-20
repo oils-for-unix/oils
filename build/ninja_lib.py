@@ -400,7 +400,7 @@ class Rules(object):
 
   def SourcesForBinary(self, main_cc):
     """
-    Used for preprocessed metrics, release tarball, _build/oil-native.sh, etc.
+    Used for preprocessed metrics, release tarball, _build/oils.sh, etc.
     """
     deps = self.cc_binary_deps[main_cc]
     sources = [main_cc]

@@ -333,8 +333,8 @@ _install() {
 
 _build-oil-native-benchmark-data() {
   pushd $BENCHMARK_DATA_OIL_NATIVE
-  _build/oil-native.sh '' opt SKIP_REBUILD
-  _build/oil-native.sh '' dbg SKIP_REBUILD  # for metrics/native-code.sh
+  _build/oils.sh '' opt SKIP_REBUILD
+  _build/oils.sh '' dbg SKIP_REBUILD  # for metrics/native-code.sh
   popd
 }
 

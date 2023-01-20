@@ -92,7 +92,6 @@ all() {
 
   # Notes:
   # - During release, this happens on machine1, but not machine2
-  # - Depends on oil-native being built
   if test -n "$do_machine1"; then
     # Only run on one machine
     benchmarks/mycpp.sh soil-run
