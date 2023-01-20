@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build oil-native.
+# Build oils-for-unix.
 #
 # Usage:
 #   build/native.sh <function name>
@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# Demo for the oil-native tarball.
+# Demo for the oils-for-unix tarball.
 # Notes:
 # - Does not rely on Ninja, which is for the dev build
 # - It shouldn't require 'objcopy'

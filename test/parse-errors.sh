@@ -461,7 +461,7 @@ cmd-parse() {
   _oil-parse-error 'break >out'
 
   if is-oils-cpp; then
-    echo 'Skipping some cmd-parse cases on oil-native'
+    echo 'Skipping some cmd-parse cases on oils_cpp'
     return
   fi
 
@@ -647,7 +647,7 @@ proc_arg_list() {
   set +o errexit
 
   if is-oils-cpp; then
-    echo 'Skipping proc_arg_list cases on oil-native'
+    echo 'Skipping proc_arg_list cases on oils_cpp'
     return
   fi
 
@@ -881,7 +881,7 @@ EOF
 
   # We want these to be tested under OSH, but they won't work under Oil native!
   if is-oils-cpp; then
-    echo 'Skipping some oil_string_literals cases on oil-native'
+    echo 'Skipping some oil_string_literals cases on oils_cpp'
     return
   fi
 
@@ -1015,7 +1015,7 @@ invalid_parens() {
   set +o errexit
 
   if is-oils-cpp; then
-    echo 'skipping invalid_parens on oil-native'
+    echo 'skipping invalid_parens on oils_cpp'
     return
   fi
 
@@ -1446,7 +1446,7 @@ cases-in-files() {
     if is-oils-cpp; then
       case $t in
         */01-bad-func.sh)
-          echo "Skipping file $t oil-native"
+          echo "Skipping file $t for oils_cpp"
           continue
           ;;
       esac
@@ -1480,25 +1480,24 @@ soil-run-py() {
 }
 
 soil-run-cpp() {
-  ### run with C++.  output: _tmp/other/oil-parse-errors-oil-native.txt
+  ### Run with oils_cpp
 
-  # Done in _oil-native-tarball-build on the benchmark-data version
   ninja _bin/cxx-asan/osh
 
   ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh all
 }
 
-release-oil-native() {
+release-oils-for-unix() {
   readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-  local dir="../benchmark-data/src/oil-native-$OIL_VERSION"
+  local dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
 
   # Maybe rebuild it
   pushd $dir
   _build/oils.sh '' '' SKIP_REBUILD
   popd
 
-  local out=_tmp/other/parse-errors-oil-native.txt
-  SH=$dir/_bin/cxx-opt-sh/oils_cpp.stripped \
+  local out=_tmp/other/parse-errors-osh-cpp.txt
+  SH=$dir/_bin/cxx-opt-sh/osh \
     run-other-suite-for-release parse-errors all $out
 }
 
@@ -1507,7 +1506,7 @@ run-for-release() {
 
   run-other-suite-for-release parse-errors all
 
-  release-oil-native
+  release-oils-for-unix
 }
 
 "$@"

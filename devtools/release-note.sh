@@ -191,7 +191,7 @@ Physical lines:
 
 ### Benchmarks
 
-The [oil-native](\$xref) Parser performance hasn't changed:
+The [oils-for-unix](\$xref) Parser performance hasn't changed:
 
 - [Parser Performance for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/osh-parser/): **8.7**
   thousand irefs per line

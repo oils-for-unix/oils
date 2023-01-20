@@ -20,14 +20,14 @@ gen-oils-sh() {
 }
 
 make-tar() {
-  local app_name='oil-native'
+  local app_name='oils-for-unix'
 
   local tar=_release/${app_name}.tar
 
   # NOTE: Could move this to the Makefile, which will make it
   mkdir -p _release 
 
-  gen-oil-native-sh
+  gen-oils-sh
   # Build default target to generate code
   ninja
 
@@ -46,15 +46,15 @@ test-tar() {
   rm -r -f $tmp
   mkdir -p $tmp
   cd $tmp
-  tar -x < ../../_release/oil-native.tar
+  tar -x < ../../_release/oils-for-unix.tar
 
-  pushd oil-native-$OIL_VERSION
+  pushd oils-for-unix-$OIL_VERSION
   build/native.sh tarball-demo
   popd
 }
 
 extract-for-benchmarks() {
-  local tar=$PWD/_release/oil-native.tar
+  local tar=$PWD/_release/oils-for-unix.tar
   local dest='../benchmark-data/src'
   mkdir -p $dest
 
@@ -63,13 +63,13 @@ extract-for-benchmarks() {
   tar -x < $tar
 
   # For benchmarks
-  pushd oil-native-$OIL_VERSION
+  pushd oils-for-unix-$OIL_VERSION
   ./configure
   _build/oils.sh '' dbg SKIP_REBUILD
   _build/oils.sh '' opt SKIP_REBUILD
   popd
 
-  git add oil-native-$OIL_VERSION
+  git add oils-for-unix-$OIL_VERSION
 
   git status
   echo "Now run git commit"

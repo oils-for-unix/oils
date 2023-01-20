@@ -21,7 +21,7 @@
 #   $0 auto-machine2
 #
 # In between:
-#   [switch benchmarks-data repo] commit src/oil-native-* and push to flanders.
+#   [switch benchmarks-data repo] commit src/oil-for-unix-* and push to flanders.
 #   TODO: Make sure benchmark-data directory is clean!
 #
 # Resume manual work
@@ -101,8 +101,8 @@ auto-machine1() {
 auto-machine2() {
   sudo -k; sudo true  # clear and re-cache credentials
 
-  # Note: this can't be done until we sync the oil-native source from machine
-  # 1.
+  # Note: this can't be done until we sync the oils-for-unix source from
+  # machine 1.
   $0 benchmark-build
   $0 benchmark-run
 }
@@ -249,7 +249,7 @@ _spec-release() {
   test/spec.sh osh-all
   test/spec.sh oil-all
 
-  # Eventually we should run spec tests against the oil-native tarball here
+  # Eventually we should run spec tests against the oils-for-unix tarball here
 }
 
 _test-release-build() {
@@ -283,7 +283,7 @@ spec-all() {
   test/spec.sh all-and-smoosh
 
   # Build $OSH_CPP_BENCHMARK_DATA
-  _build-oil-native-benchmark-data
+  _build-oils-benchmark-data
 
   # Collect and publish stats about the C++ translation.
   OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
@@ -313,7 +313,7 @@ build-and-test() {
 
   test/coverage.sh run-for-release  # C++ unit tests
 
-  # oil-native
+  # oils-for-unix
   devtools/release-native.sh make-tar
   devtools/release-native.sh extract-for-benchmarks
   # This builds the tarball from _tmp/native-tar-test
@@ -331,7 +331,7 @@ _install() {
   sudo apt install python-dev
 }
 
-_build-oil-native-benchmark-data() {
+_build-oils-benchmark-data() {
   pushd $BENCHMARK_DATA_OIL_NATIVE
   _build/oils.sh '' opt SKIP_REBUILD
   _build/oils.sh '' dbg SKIP_REBUILD  # for metrics/native-code.sh
@@ -353,7 +353,7 @@ benchmark-build() {
 benchmark-run() {
   local do_machine1=${1:-}
 
-  _build-oil-native-benchmark-data
+  _build-oils-benchmark-data
   OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all "$do_machine1"
 }
 
@@ -611,7 +611,7 @@ sync-old-tar() {
 deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
-  # Also copy oil-native
+  # Also copy oils-for-unix
   cp -v _release/oil-*$OIL_VERSION.tar.* $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
@@ -657,13 +657,13 @@ _tarball-links-row-html() {
 </tr>
 EOF
 
-  # only release .xz for oil-native
-  for name in oil-$version.tar.{xz,gz} oil-native-$version.tar.xz; do
+  # only release .xz for oils-for-unix
+  for name in oil-$version.tar.{xz,gz} oils-for-unix-$version.tar.xz; do
     local url="/download/$name"  # The server URL
     local path="../oilshell.org__deploy/download/$name"
 
     # The native version might not exist
-    if [[ $name == oil-native-* && ! -f $path ]]; then
+    if [[ $name == oils-for-unix-* && ! -f $path ]]; then
       continue
     fi
 

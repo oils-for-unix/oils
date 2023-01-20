@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./native-code.sh <function name>
+#   metrics/native-code.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -11,7 +11,7 @@ source test/common.sh  # for $R_PATH
 source build/dev-shell.sh  # put bloaty in $PATH
 
 readonly OVM_BASE_DIR=_tmp/metrics/ovm
-readonly OIL_BASE_DIR=_tmp/metrics/oil-native
+readonly OIL_BASE_DIR=_tmp/metrics/oils-for-unix
 
 pylibc-symbols() {
   symbols _devbuild/py-ext/x86_64/libc.so
@@ -117,7 +117,7 @@ collect-and-report() {
 EOF
 }
 
-oil-native() {
+oils-for-unix() {
   ### Report on the ones we just built
 
   # TODO: could compare GCC and Clang once we have R on the CI images
@@ -151,7 +151,7 @@ run-for-release() {
 
   # TODO: consolidate with benchmarks/common.sh, OSH_CPP_BENCHMARK_DATA
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes
-  local bin_dir="../benchmark-data/src/oil-native-$OIL_VERSION"
+  local bin_dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
   collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/oils_cpp
 }
 
