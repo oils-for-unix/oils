@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Build the dev version of Oil on CPython.
-# This is in contrast to the oil.ovm build and oil-native.
+# This is in contrast to oils_cpp and the oil.ovm build.
 #
 # Usage:
 #   build/py.sh <function name>

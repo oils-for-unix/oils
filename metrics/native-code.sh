@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./native-code.sh <function name>
+#   metrics/native-code.sh <function name>
 
 set -o nounset
 set -o pipefail

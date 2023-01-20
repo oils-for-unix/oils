@@ -21,7 +21,7 @@
 #   $0 auto-machine2
 #
 # In between:
-#   [switch benchmarks-data repo] commit src/oil-native-* and push to flanders.
+#   [switch benchmarks-data repo] commit src/oil-for-unix-* and push to flanders.
 #   TODO: Make sure benchmark-data directory is clean!
 #
 # Resume manual work
@@ -101,8 +101,8 @@ auto-machine1() {
 auto-machine2() {
   sudo -k; sudo true  # clear and re-cache credentials
 
-  # Note: this can't be done until we sync the oil-native source from machine
-  # 1.
+  # Note: this can't be done until we sync the oils-for-unix source from
+  # machine 1.
   $0 benchmark-build
   $0 benchmark-run
 }
@@ -249,7 +249,7 @@ _spec-release() {
   test/spec.sh osh-all
   test/spec.sh oil-all
 
-  # Eventually we should run spec tests against the oil-native tarball here
+  # Eventually we should run spec tests against the oils-for-unix tarball here
 }
 
 _test-release-build() {

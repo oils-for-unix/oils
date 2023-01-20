@@ -243,7 +243,7 @@ compile_one() {
 }
 
 link() {
-  ### Link oil-native.  Invoked by build.ninja
+  ### Link a binary.  Invoked by build.ninja
 
   local compiler=$1
   local variant=$2

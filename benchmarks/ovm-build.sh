@@ -280,7 +280,7 @@ oil-tasks() {
   # NOTE: it MUST be a tarball and not the git repo, because we don't build
   # bytecode-*.zip!  We care about the "packager's experience".
   local oil_dir="$TAR_DIR/oil-$OIL_VERSION"
-  local oil_native_dir="$TAR_DIR/oil-native-$OIL_VERSION"
+  local ofu_dir="$TAR_DIR/oil-native-$OIL_VERSION"
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read line; do
@@ -289,8 +289,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $oil_native_dir oils_cpp
-    echo "$line" $oil_native_dir oils_cpp.stripped
+    echo "$line" $ofu_dir oils_cpp
+    echo "$line" $ofu_dir oils_cpp.stripped
   done
 }
 

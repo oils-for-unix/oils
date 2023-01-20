@@ -212,7 +212,7 @@ measure() {
   local provenance=$1
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
-  local oil_native=${4:-$OSH_CPP_BENCHMARK_DATA}
+  local osh_cpp=${4:-$OSH_CPP_BENCHMARK_DATA}
 
   local times_out="$out_dir/$host_job_id.times.csv"
   local lines_out="$out_dir/$host_job_id.lines.csv"
@@ -231,7 +231,7 @@ measure() {
     > $times_out
 
   local tasks=$BASE_DIR/tasks.txt
-  print-tasks $provenance "${SHELLS[@]}" $oil_native > $tasks
+  print-tasks $provenance "${SHELLS[@]}" $osh_cpp > $tasks
 
   # Run them all
   cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $out_dir
@@ -241,7 +241,7 @@ measure-cachegrind() {
   local provenance=$1
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
-  local oil_native=${4:-$OSH_CPP_BENCHMARK_DATA}
+  local osh_cpp=${4:-$OSH_CPP_BENCHMARK_DATA}
 
   local cachegrind_tsv="$out_dir/$host_job_id.cachegrind.tsv"
   local lines_out="$out_dir/$host_job_id.lines.tsv"
@@ -266,7 +266,7 @@ measure-cachegrind() {
   # zsh weirdly forks during zsh -n, which complicates our cachegrind
   # measurement.  So just ignore it.  (This can be seen with
   # strace -e fork -f -- zsh -n $file)
-  print-tasks $provenance bash dash mksh $oil_native > $ctasks
+  print-tasks $provenance bash dash mksh $osh_cpp > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $out_dir
 }
