@@ -283,7 +283,7 @@ spec-all() {
   test/spec.sh all-and-smoosh
 
   # Build $OSH_CPP_BENCHMARK_DATA
-  _build-oil-native-benchmark-data
+  _build-oils-benchmark-data
 
   # Collect and publish stats about the C++ translation.
   OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
@@ -331,7 +331,7 @@ _install() {
   sudo apt install python-dev
 }
 
-_build-oil-native-benchmark-data() {
+_build-oils-benchmark-data() {
   pushd $BENCHMARK_DATA_OIL_NATIVE
   _build/oils.sh '' opt SKIP_REBUILD
   _build/oils.sh '' dbg SKIP_REBUILD  # for metrics/native-code.sh
@@ -353,7 +353,7 @@ benchmark-build() {
 benchmark-run() {
   local do_machine1=${1:-}
 
-  _build-oil-native-benchmark-data
+  _build-oils-benchmark-data
   OSH_OVM=$OSH_RELEASE_BINARY benchmarks/auto.sh all "$do_machine1"
 }
 
