@@ -37,7 +37,7 @@ import pwd
 import time
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e
+from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e, Token
 from _devbuild.gen.runtime_asdl import value_e, value__Str, scope_e, Proc
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
