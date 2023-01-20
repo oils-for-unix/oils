@@ -855,7 +855,7 @@ printf $(strftime-format 32) | wc --bytes
 
 case $SH in
   (*/_bin/cxx-dbg/*)    
-    # Ensure that oil-native detects the truncation of a fixed buffer.
+    # Ensure that oils_cpp detects the truncation of a fixed buffer.
     # bash has a buffer of 128.
 
     set +o errexit
