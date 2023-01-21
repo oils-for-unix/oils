@@ -34,7 +34,7 @@ inline Str* StrFromC(const char* s) {
 const int kStdout = 1;
 const int kStderr = 2;
 
-void writeln(Str* s, int fd);
+void writeln(Str* s, int fd = kStdout);
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
@@ -77,11 +77,8 @@ class LineReader {
   LineReader() : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen) {
   }
   virtual Str* readline() = 0;
-  virtual bool isatty() {
-    return false;
-  }
-  virtual void close() {
-  }
+  virtual bool isatty() = 0;
+  virtual void close() = 0;
 
   GC_OBJ(header_);
 };
@@ -92,6 +89,11 @@ class BufLineReader : public LineReader {
     FIELD_MASK(header_) |= BufLineReader::field_mask();
   }
   virtual Str* readline();
+  virtual bool isatty() {
+    return false;
+  }
+  virtual void close() {
+  }
 
   Str* s_;
   int pos_;
@@ -110,6 +112,7 @@ class CFileLineReader : public LineReader {
     // not mutating field_mask because FILE* isn't a GC object
   }
   virtual Str* readline();
+  virtual bool isatty();
   void close() {
     fclose(f_);
   }

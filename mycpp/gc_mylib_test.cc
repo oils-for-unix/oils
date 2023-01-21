@@ -59,7 +59,7 @@ TEST int_to_str_test() {
   PASS();
 }
 
-TEST test_mylib_funcs() {
+TEST funcs_test() {
   Str* int_str = nullptr;
 
   StackRoots _roots({&int_str});
@@ -101,6 +101,13 @@ TEST test_mylib_funcs() {
   Tuple2<Str*, Str*> w = mylib::split_once(emptyStr, Z);
   ASSERT(str_equals(w.at0(), emptyStr));
   ASSERT(w.at1() == nullptr);
+
+  PASS();
+}
+
+TEST writeln_test() {
+  mylib::writeln(StrFromC("stdout"));
+  mylib::writeln(StrFromC("stderr"), mylib::kStderr);
 
   PASS();
 }
@@ -149,6 +156,8 @@ TEST BufLineReader_test() {
   s = StrFromC("foo\nbar\nleftover");
   reader = Alloc<BufLineReader>(s);
 
+  ASSERT_EQ(false, reader->isatty());
+
   log("BufLineReader");
 
   line = reader->readline();
@@ -166,6 +175,8 @@ TEST BufLineReader_test() {
   line = reader->readline();
   log("4 [%s]", line->data_);
   ASSERT(str_equals0("", line));
+
+  reader->close();
 
   PASS();
 }
@@ -201,6 +212,7 @@ TEST files_test() {
     }
     ++i;
   }
+  r->close();
   log("files_test DONE");
 
   auto f2 = mylib::open(filename);
@@ -230,6 +242,9 @@ TEST for_test_coverage() {
   ASSERT_EQ(false, w->isatty());
   w->flush();
 
+  // Turns off buffering
+  mylib::ProcessInit();
+
   PASS();
 }
 
@@ -242,8 +257,9 @@ int main(int argc, char** argv) {
 
   RUN_TEST(split_once_test);
   RUN_TEST(int_to_str_test);
-  RUN_TEST(test_mylib_funcs);
+  RUN_TEST(funcs_test);
 
+  RUN_TEST(writeln_test);
   RUN_TEST(BufWriter_test);
   RUN_TEST(BufLineReader_test);
   RUN_TEST(files_test);

@@ -16,7 +16,7 @@ void ProcessInit() {
   // setvbuf(stdout, 0, _IOLBF, 0);
 }
 
-void writeln(Str* s, int fd = kStdout) {
+void writeln(Str* s, int fd) {
   // TODO: handle errors and write in a loop, like posix::write().  If possible,
   // use posix::write directly, but that introduces some dependency problems.
 
@@ -101,6 +101,10 @@ Str* CFileLineReader::readline() {
   Str* result = ::StrFromC(line, len);
   free(line);
   return result;
+}
+
+bool CFileLineReader::isatty() {
+  return ::isatty(fileno(f_));
 }
 
 // Problem: most Str methods like index() and slice() COPY so they have a

@@ -86,11 +86,13 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
   return result;
 }
 
+  #if 0
 void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
   FAIL(kNotImplemented);
   // This causes a double-free in the GC!
   // return realloc(p, num_bytes);
 }
+  #endif
 
 // "Leaf" for marking / TraceChildren
 //

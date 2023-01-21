@@ -45,11 +45,6 @@ class MarkSet {
     return bits_[byte_index] & (1 << bit_index);
   }
 
-  // Allocate() will call this when we implement recycling of object IDs
-  int NextObjectId() {
-    FAIL(kNotImplemented);
-  }
-
   void Debug() {
     int n = bits_.size();
     dprintf(2, "[ ");
@@ -100,7 +95,9 @@ class MarkSweepHeap {
     return obj_id_after_allocate_;
   }
 
+#if 0
   void* Reallocate(void* p, size_t num_bytes);
+#endif
   int MaybeCollect();
   int Collect();
 
