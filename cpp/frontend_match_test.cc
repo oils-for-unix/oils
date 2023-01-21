@@ -5,7 +5,7 @@
 
 namespace Id = id_kind_asdl::Id;
 
-TEST match_test() {
+TEST lexer_test() {
   // Need lex_mode_e
   // auto tup = match::OneToken(lex_mode__ShCommand, StrFromC("cd /tmp"), 0);
 
@@ -27,12 +27,18 @@ TEST match_test() {
   int id = t.at0();
   ASSERT_EQ(Id::Eol_Tok, id);
 
+  PASS();
+}
+
+TEST func_test() {
   ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(StrFromC("-G")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("-Gz")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("")));
 
   ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(StrFromC("!=")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketBinary(StrFromC("")));
+
+  ASSERT_EQ(Id::Op_LParen, match::BracketOther(StrFromC("(")));
 
   // This still works, but can't it overflow a buffer?
   Str* s = StrFromC("!= ");
@@ -70,7 +76,8 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(match_test);
+  RUN_TEST(lexer_test);
+  RUN_TEST(func_test);
   RUN_TEST(for_test_coverage);
 
   gHeap.CleanProcessExit();

@@ -16,7 +16,24 @@ TEST hostname_test() {
   PASS();
 }
 
+TEST realpath_test() {
+  Str* result = libc::realpath(StrFromC("/"));
+  ASSERT(str_equals(StrFromC("/"), result));
+
+  bool caught = false;
+  try {
+    libc::realpath(StrFromC("/nonexistent_ZZZ"));
+  } catch (IOError_OSError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 TEST libc_test() {
+  libc::print_time(0.1, 0.2, 0.3);
+
   Str* s1 = (StrFromC("foo.py "))->strip();
   ASSERT(libc::fnmatch(StrFromC("*.py"), s1));
   ASSERT(!libc::fnmatch(StrFromC("*.py"), StrFromC("foo.p")));
@@ -76,9 +93,10 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(hostname_test);
+  RUN_TEST(realpath_test);
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);
-  RUN_TEST(hostname_test);
 
   gHeap.CleanProcessExit();
 

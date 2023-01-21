@@ -23,6 +23,9 @@ TEST os_path_test() {
   s = os_path::rstrip_slashes(StrFromC("///"));
   ASSERT(str_equals(s, StrFromC("///")));
 
+  ASSERT(path_stat::exists(StrFromC("/")));
+  ASSERT(!path_stat::exists(StrFromC("/nonexistent_ZZZ")));
+
   PASS();
 }
 

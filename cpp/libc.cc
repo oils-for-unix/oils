@@ -24,6 +24,16 @@ Str* gethostname() {
   return result;
 }
 
+Str* realpath(Str* path) {
+  Str* result = OverAllocatedStr(PATH_MAX);
+  char* p = ::realpath(path->data_, result->data_);
+  if (p == nullptr) {
+    throw Alloc<OSError>(errno);
+  }
+  result->MaybeShrink(strlen(result->data_));
+  return result;
+}
+
 int fnmatch(Str* pat, Str* str) {
   int flags = FNM_EXTMATCH;
   int result = ::fnmatch(pat->data_, str->data_, flags);

@@ -132,13 +132,13 @@ List<Str*>* listdir(Str* path) {
     errno = 0;
     struct dirent* ep = readdir(dirp);
     if (ep == NULL) {
-      if (errno == 0) {
-        break;
-      } else {
+      if (errno != 0) {
         closedir(dirp);
         throw Alloc<OSError>(errno);
       }
+      break;  // no more files
     }
+    // Skip . and ..
     int name_len = strlen(ep->d_name);
     if (ep->d_name[0] == '.' &&
         (name_len == 1 || (ep->d_name[1] == '.' && name_len == 2))) {

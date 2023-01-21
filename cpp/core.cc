@@ -280,6 +280,7 @@ Tuple2<Str*, int> MakeDirCacheKey(Str* path) {
 
 namespace pyutil {
 
+// TODO: SHARE with pyext
 bool IsValidCharEscape(Str* c) {
   DCHECK(len(c) == 1);
 

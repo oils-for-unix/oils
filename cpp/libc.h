@@ -9,15 +9,14 @@
 
 namespace libc {
 
-inline void print_time(double real_time, double user_time, double system_time) {
-  fprintf(stderr, "%1.2fs user\n%1.2fs system\n%1.3fs total\n", user_time,
-          system_time, real_time);  // 0.05s user 0.03s system 3.186s total
+// TODO: SHARE with pyext
+inline void print_time(double real, double user, double sys) {
+  fprintf(stderr, "real\t%.3f\n", real);
+  fprintf(stderr, "user\t%.3f\n", user);
+  fprintf(stderr, "sys\t%.3f\n", sys);
 }
 
-inline Str* realpath(Str* path) {
-  char* rp = ::realpath(path->data_, 0);
-  return StrFromC(rp);
-}
+Str* realpath(Str* path);
 
 Str* gethostname();
 

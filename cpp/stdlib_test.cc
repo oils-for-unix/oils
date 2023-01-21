@@ -112,6 +112,15 @@ TEST listdir_test() {
   PASS();
 }
 
+TEST for_code_coverage() {
+  time_::sleep(0);
+
+  // I guess this has side effects
+  time_::tzset();
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -125,6 +134,8 @@ int main(int argc, char** argv) {
   RUN_TEST(time_test);
   RUN_TEST(mtime_demo);
   RUN_TEST(listdir_test);
+
+  RUN_TEST(for_code_coverage);
 
   gHeap.CleanProcessExit();
 
