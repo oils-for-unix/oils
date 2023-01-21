@@ -106,16 +106,6 @@ void println_stderr(Str* s);
 
 Str* repr(Str* s);
 
-// For hnode::External in asdl/format.py.  TODO: Remove this when that is
-// removed.
-inline Str* repr(void* obj) {
-  FAIL(kNotImplemented);
-}
-
-inline Str* str(double f) {
-  FAIL(kNotImplemented);
-}
-
 Str* str(int i);
 
 // Helper function: returns whether the string is a valid integer, and

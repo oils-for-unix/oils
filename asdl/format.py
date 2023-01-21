@@ -388,7 +388,10 @@ class _PrettyPrinter(object):
     elif tag == hnode_e.External:
       node = cast(hnode__External, UP_node)
       f.PushColor(color_e.External)
-      f.write(repr(node.obj))
+      if mylib.PYTHON:
+        f.write(repr(node.obj))
+      else:
+        f.write('UNTYPED any')
       f.PopColor()
 
     elif tag == hnode_e.Record:
@@ -455,7 +458,10 @@ def _TrySingleLine(node, f, max_chars):
     node = cast(hnode__External, UP_node)
 
     f.PushColor(color_e.External)
-    f.write(repr(node.obj))
+    if mylib.PYTHON:
+      f.write(repr(node.obj))
+    else:
+      f.write('UNTYPED any')
     f.PopColor()
 
   elif tag == hnode_e.Array:

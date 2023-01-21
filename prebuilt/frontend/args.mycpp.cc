@@ -36,119 +36,120 @@ GLOBAL_STR(str27, "%s%s: ");
 GLOBAL_STR(str28, "\n");
 GLOBAL_STR(str29, "\n");
 GLOBAL_STR(str30, " ");
-GLOBAL_STR(str31, " ");
+GLOBAL_STR(str31, "UNTYPED any");
 GLOBAL_STR(str32, " ");
-GLOBAL_STR(str33, " %s:");
-GLOBAL_STR(str34, "[");
-GLOBAL_STR(str35, " ");
-GLOBAL_STR(str36, "]");
-GLOBAL_STR(str37, "\u001b[0;0m");
-GLOBAL_STR(str38, "\u001b[1m");
-GLOBAL_STR(str39, "\u001b[4m");
-GLOBAL_STR(str40, "\u001b[7m");
-GLOBAL_STR(str41, "\u001b[31m");
-GLOBAL_STR(str42, "\u001b[32m");
-GLOBAL_STR(str43, "\u001b[33m");
-GLOBAL_STR(str44, "\u001b[34m");
-GLOBAL_STR(str45, "&");
-GLOBAL_STR(str46, "&amp;");
-GLOBAL_STR(str47, "<");
-GLOBAL_STR(str48, "&lt;");
-GLOBAL_STR(str49, ">");
-GLOBAL_STR(str50, "&gt;");
-GLOBAL_STR(str51, "\\'\r\n\t\u0000");
-GLOBAL_STR(str52, "$'");
-GLOBAL_STR(str53, "'");
+GLOBAL_STR(str33, " ");
+GLOBAL_STR(str34, " %s:");
+GLOBAL_STR(str35, "[");
+GLOBAL_STR(str36, " ");
+GLOBAL_STR(str37, "]");
+GLOBAL_STR(str38, "\u001b[0;0m");
+GLOBAL_STR(str39, "\u001b[1m");
+GLOBAL_STR(str40, "\u001b[4m");
+GLOBAL_STR(str41, "\u001b[7m");
+GLOBAL_STR(str42, "\u001b[31m");
+GLOBAL_STR(str43, "\u001b[32m");
+GLOBAL_STR(str44, "\u001b[33m");
+GLOBAL_STR(str45, "\u001b[34m");
+GLOBAL_STR(str46, "&");
+GLOBAL_STR(str47, "&amp;");
+GLOBAL_STR(str48, "<");
+GLOBAL_STR(str49, "&lt;");
+GLOBAL_STR(str50, ">");
+GLOBAL_STR(str51, "&gt;");
+GLOBAL_STR(str52, "\\'\r\n\t\u0000");
+GLOBAL_STR(str53, "$'");
 GLOBAL_STR(str54, "'");
-GLOBAL_STR(str55, "");
-GLOBAL_STR(str56, "'");
+GLOBAL_STR(str55, "'");
+GLOBAL_STR(str56, "");
 GLOBAL_STR(str57, "'");
-GLOBAL_STR(str58, "");
-GLOBAL_STR(str59, "'");
+GLOBAL_STR(str58, "'");
+GLOBAL_STR(str59, "");
 GLOBAL_STR(str60, "'");
-GLOBAL_STR(str61, "");
-GLOBAL_STR(str62, "\\");
-GLOBAL_STR(str63, "\\\\");
-GLOBAL_STR(str64, "'");
-GLOBAL_STR(str65, "\\'");
-GLOBAL_STR(str66, "\n");
-GLOBAL_STR(str67, "\\n");
-GLOBAL_STR(str68, "\r");
-GLOBAL_STR(str69, "\\r");
-GLOBAL_STR(str70, "\t");
-GLOBAL_STR(str71, "\\t");
-GLOBAL_STR(str72, "\u0000");
-GLOBAL_STR(str73, "\\x00");
-GLOBAL_STR(str74, "\\0");
-GLOBAL_STR(str75, "");
+GLOBAL_STR(str61, "'");
+GLOBAL_STR(str62, "");
+GLOBAL_STR(str63, "\\");
+GLOBAL_STR(str64, "\\\\");
+GLOBAL_STR(str65, "'");
+GLOBAL_STR(str66, "\\'");
+GLOBAL_STR(str67, "\n");
+GLOBAL_STR(str68, "\\n");
+GLOBAL_STR(str69, "\r");
+GLOBAL_STR(str70, "\\r");
+GLOBAL_STR(str71, "\t");
+GLOBAL_STR(str72, "\\t");
+GLOBAL_STR(str73, "\u0000");
+GLOBAL_STR(str74, "\\x00");
+GLOBAL_STR(str75, "\\0");
 GLOBAL_STR(str76, "");
 GLOBAL_STR(str77, "");
-GLOBAL_STR(str78, "\\");
-GLOBAL_STR(str79, "\\\\");
-GLOBAL_STR(str80, "'");
-GLOBAL_STR(str81, "\\'");
-GLOBAL_STR(str82, "\n");
-GLOBAL_STR(str83, "\\n");
-GLOBAL_STR(str84, "\r");
-GLOBAL_STR(str85, "\\r");
-GLOBAL_STR(str86, "\t");
-GLOBAL_STR(str87, "\\t");
-GLOBAL_STR(str88, "\u0000");
-GLOBAL_STR(str89, "\\x00");
-GLOBAL_STR(str90, "\\0");
-GLOBAL_STR(str91, "-");
-GLOBAL_STR(str92, "_");
-GLOBAL_STR(str93, "<_Attributes %s>");
-GLOBAL_STR(str94, "<args.Reader %r %d>");
-GLOBAL_STR(str95, "expected argument to %r");
-GLOBAL_STR(str96, "-");
-GLOBAL_STR(str97, "expected integer after %s, got %r");
-GLOBAL_STR(str98, "-");
-GLOBAL_STR(str99, "got invalid integer for %s: %s");
-GLOBAL_STR(str100, "-");
-GLOBAL_STR(str101, "expected number after %r, got %r");
-GLOBAL_STR(str102, "-");
-GLOBAL_STR(str103, "got invalid float for %s: %s");
-GLOBAL_STR(str104, "-");
-GLOBAL_STR(str105, "got invalid argument %r to %r, expected one of: %s");
-GLOBAL_STR(str106, "-");
-GLOBAL_STR(str107, "|");
-GLOBAL_STR(str108, "0");
-GLOBAL_STR(str109, "F");
-GLOBAL_STR(str110, "false");
-GLOBAL_STR(str111, "False");
-GLOBAL_STR(str112, "1");
-GLOBAL_STR(str113, "T");
-GLOBAL_STR(str114, "true");
-GLOBAL_STR(str115, "Talse");
-GLOBAL_STR(str116, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(str117, "-");
+GLOBAL_STR(str78, "");
+GLOBAL_STR(str79, "\\");
+GLOBAL_STR(str80, "\\\\");
+GLOBAL_STR(str81, "'");
+GLOBAL_STR(str82, "\\'");
+GLOBAL_STR(str83, "\n");
+GLOBAL_STR(str84, "\\n");
+GLOBAL_STR(str85, "\r");
+GLOBAL_STR(str86, "\\r");
+GLOBAL_STR(str87, "\t");
+GLOBAL_STR(str88, "\\t");
+GLOBAL_STR(str89, "\u0000");
+GLOBAL_STR(str90, "\\x00");
+GLOBAL_STR(str91, "\\0");
+GLOBAL_STR(str92, "-");
+GLOBAL_STR(str93, "_");
+GLOBAL_STR(str94, "<_Attributes %s>");
+GLOBAL_STR(str95, "<args.Reader %r %d>");
+GLOBAL_STR(str96, "expected argument to %r");
+GLOBAL_STR(str97, "-");
+GLOBAL_STR(str98, "expected integer after %s, got %r");
+GLOBAL_STR(str99, "-");
+GLOBAL_STR(str100, "got invalid integer for %s: %s");
+GLOBAL_STR(str101, "-");
+GLOBAL_STR(str102, "expected number after %r, got %r");
+GLOBAL_STR(str103, "-");
+GLOBAL_STR(str104, "got invalid float for %s: %s");
+GLOBAL_STR(str105, "-");
+GLOBAL_STR(str106, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str107, "-");
+GLOBAL_STR(str108, "|");
+GLOBAL_STR(str109, "0");
+GLOBAL_STR(str110, "F");
+GLOBAL_STR(str111, "false");
+GLOBAL_STR(str112, "False");
+GLOBAL_STR(str113, "1");
+GLOBAL_STR(str114, "T");
+GLOBAL_STR(str115, "true");
+GLOBAL_STR(str116, "Talse");
+GLOBAL_STR(str117, "got invalid argument to boolean flag: %r");
 GLOBAL_STR(str118, "-");
-GLOBAL_STR(str119, "Invalid option %r");
-GLOBAL_STR(str120, "Expected argument for action");
-GLOBAL_STR(str121, "Invalid action name %r");
-GLOBAL_STR(str122, "--");
+GLOBAL_STR(str119, "-");
+GLOBAL_STR(str120, "Invalid option %r");
+GLOBAL_STR(str121, "Expected argument for action");
+GLOBAL_STR(str122, "Invalid action name %r");
 GLOBAL_STR(str123, "--");
-GLOBAL_STR(str124, "=");
-GLOBAL_STR(str125, "got invalid flag %r");
-GLOBAL_STR(str126, "-");
-GLOBAL_STR(str127, "0");
-GLOBAL_STR(str128, "Z");
-GLOBAL_STR(str129, "-");
-GLOBAL_STR(str130, "doesn't accept flag %s");
-GLOBAL_STR(str131, "-");
-GLOBAL_STR(str132, "+");
+GLOBAL_STR(str124, "--");
+GLOBAL_STR(str125, "=");
+GLOBAL_STR(str126, "got invalid flag %r");
+GLOBAL_STR(str127, "-");
+GLOBAL_STR(str128, "0");
+GLOBAL_STR(str129, "Z");
+GLOBAL_STR(str130, "-");
+GLOBAL_STR(str131, "doesn't accept flag %s");
+GLOBAL_STR(str132, "-");
 GLOBAL_STR(str133, "+");
-GLOBAL_STR(str134, "doesn't accept option %s");
-GLOBAL_STR(str135, "+");
-GLOBAL_STR(str136, "-");
-GLOBAL_STR(str137, "--");
+GLOBAL_STR(str134, "+");
+GLOBAL_STR(str135, "doesn't accept option %s");
+GLOBAL_STR(str136, "+");
+GLOBAL_STR(str137, "-");
 GLOBAL_STR(str138, "--");
-GLOBAL_STR(str139, "got invalid flag %r");
-GLOBAL_STR(str140, "-");
-GLOBAL_STR(str141, "+");
-GLOBAL_STR(str142, "got invalid flag %r");
-GLOBAL_STR(str143, "-");
+GLOBAL_STR(str139, "--");
+GLOBAL_STR(str140, "got invalid flag %r");
+GLOBAL_STR(str141, "-");
+GLOBAL_STR(str142, "+");
+GLOBAL_STR(str143, "got invalid flag %r");
+GLOBAL_STR(str144, "-");
 
 namespace ansi {  // forward declare
 
@@ -270,7 +271,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
 }
 
 ColorOutput::ColorOutput(mylib::Writer* f) 
-    : GC_CLASS(header_, HeapTag::FixedSize, field_mask(), kNoObjLen) {
+    : GC_CLASS_FIXED(header_, field_mask(), sizeof(ColorOutput)) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -439,7 +440,7 @@ void AnsiOutput::PopColor() {
 int INDENT = 2;
 
 _PrettyPrinter::_PrettyPrinter(int max_col) 
-    : GC_CLASS(header_, HeapTag::Opaque, kZeroMask, kNoObjLen) {
+    : GC_CLASS_SCANNED(header_, 0, sizeof(_PrettyPrinter)) {
   this->max_col = max_col;
 }
 
@@ -640,7 +641,11 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
     if (tag == hnode_e::External) {
       hnode__External* node = static_cast<hnode__External*>(UP_node);
       f->PushColor(color_e::External);
-      f->write(repr(node->obj));
+      // if not PYTHON
+      {
+        f->write(str31);
+      }
+      // endif MYCPP
       f->PopColor();
     }
     else {
@@ -665,14 +670,14 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
       f->PopColor();
-      f->write(str31);
+      f->write(str32);
     }
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
       StackRoots _for({&val    });
       if (i != 0) {
-        f->write(str32);
+        f->write(str33);
       }
       if (!_TrySingleLine(val, f, max_chars)) {
         return false;
@@ -721,19 +726,19 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
     else {
       if (tag == hnode_e::Array) {
         hnode__Array* node = static_cast<hnode__Array*>(UP_node);
-        f->write(str34);
+        f->write(str35);
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
           StackRoots _for({&item        });
           if (i != 0) {
-            f->write(str35);
+            f->write(str36);
           }
           if (!_TrySingleLine(item, f, max_chars)) {
             return false;
           }
         }
-        f->write(str36);
+        f->write(str37);
       }
       else {
         if (tag == hnode_e::Record) {
@@ -765,14 +770,14 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-Str* RESET = str37;
-Str* BOLD = str38;
-Str* UNDERLINE = str39;
-Str* REVERSE = str40;
-Str* RED = str41;
-Str* GREEN = str42;
-Str* YELLOW = str43;
-Str* BLUE = str44;
+Str* RESET = str38;
+Str* BOLD = str39;
+Str* UNDERLINE = str40;
+Str* REVERSE = str41;
+Str* RED = str42;
+Str* GREEN = str43;
+Str* YELLOW = str44;
+Str* BLUE = str45;
 
 }  // define namespace ansi
 
@@ -782,9 +787,9 @@ namespace cgi {  // define
 Str* escape(Str* s) {
   StackRoots _roots({&s});
 
-  s = s->replace(str45, str46);
-  s = s->replace(str47, str48);
-  s = s->replace(str49, str50);
+  s = s->replace(str46, str47);
+  s = s->replace(str48, str49);
+  s = s->replace(str50, str51);
   return s;
 }
 
@@ -836,7 +841,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
         continue;
       }
       quote = 1;
-      if ((str_contains(str51, ch) or IsUnprintableLow(ch))) {
+      if ((str_contains(str52, ch) or IsUnprintableLow(ch))) {
         quote = 2;
         break;
       }
@@ -848,13 +853,13 @@ Str* maybe_shell_encode(Str* s, int flags) {
   parts = Alloc<List<Str*>>();
   valid_utf8 = _encode(s, bit8_display, true, parts);
   if ((!valid_utf8 or quote == 2)) {
-    prefix = str52;
-  }
-  else {
     prefix = str53;
   }
-  parts->append(str54);
-  return str_concat(prefix, str55->join(parts));
+  else {
+    prefix = str54;
+  }
+  parts->append(str55);
+  return str_concat(prefix, str56->join(parts));
 }
 
 Str* maybe_encode(Str* s) {
@@ -884,10 +889,10 @@ Str* maybe_encode(Str* s, int bit8_display) {
     return s;
   }
   parts = Alloc<List<Str*>>();
-  parts->append(str56);
-  _encode(s, bit8_display, false, parts);
   parts->append(str57);
-  return str58->join(parts);
+  _encode(s, bit8_display, false, parts);
+  parts->append(str58);
+  return str59->join(parts);
 }
 
 Str* encode(Str* s, int bit8_display) {
@@ -895,10 +900,10 @@ Str* encode(Str* s, int bit8_display) {
   StackRoots _roots({&s, &parts});
 
   parts = Alloc<List<Str*>>();
-  parts->append(str59);
-  _encode(s, bit8_display, false, parts);
   parts->append(str60);
-  return str61->join(parts);
+  _encode(s, bit8_display, false, parts);
+  parts->append(str61);
+  return str62->join(parts);
 }
 
 void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
@@ -908,28 +913,28 @@ void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
     StackRoots _for({&byte  });
-    if (str_equals(byte, str62)) {
-      part = str63;
+    if (str_equals(byte, str63)) {
+      part = str64;
     }
     else {
-      if (str_equals(byte, str64)) {
-        part = str65;
+      if (str_equals(byte, str65)) {
+        part = str66;
       }
       else {
-        if (str_equals(byte, str66)) {
-          part = str67;
+        if (str_equals(byte, str67)) {
+          part = str68;
         }
         else {
-          if (str_equals(byte, str68)) {
-            part = str69;
+          if (str_equals(byte, str69)) {
+            part = str70;
           }
           else {
-            if (str_equals(byte, str70)) {
-              part = str71;
+            if (str_equals(byte, str71)) {
+              part = str72;
             }
             else {
-              if (str_equals(byte, str72)) {
-                part = shell_compat ? str73 : str74;
+              if (str_equals(byte, str73)) {
+                part = shell_compat ? str74 : str75;
               }
               else {
                 if (IsUnprintableLow(byte)) {
@@ -980,9 +985,9 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
 
   valid_utf8 = true;
   state = Start;
-  r1 = str75;
-  r2 = str76;
-  r3 = str77;
+  r1 = str76;
+  r2 = str77;
+  r3 = str78;
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
     StackRoots _for({&byte  });
@@ -1027,28 +1032,28 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
     }
     if (typ == Ascii) {
       state = Start;
-      if (str_equals(byte, str78)) {
-        out = str79;
+      if (str_equals(byte, str79)) {
+        out = str80;
       }
       else {
-        if (str_equals(byte, str80)) {
-          out = str81;
+        if (str_equals(byte, str81)) {
+          out = str82;
         }
         else {
-          if (str_equals(byte, str82)) {
-            out = str83;
+          if (str_equals(byte, str83)) {
+            out = str84;
           }
           else {
-            if (str_equals(byte, str84)) {
-              out = str85;
+            if (str_equals(byte, str85)) {
+              out = str86;
             }
             else {
-              if (str_equals(byte, str86)) {
-                out = str87;
+              if (str_equals(byte, str87)) {
+                out = str88;
               }
               else {
-                if (str_equals(byte, str88)) {
-                  out = shell_compat ? str89 : str90;
+                if (str_equals(byte, str89)) {
+                  out = shell_compat ? str90 : str91;
                 }
                 else {
                   if (IsUnprintableLow(byte)) {
@@ -1209,7 +1214,7 @@ int Float = 3;
 int Bool = 4;
 
 _Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) 
-    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 4) {
+    : GC_CLASS_SCANNED(header_, 4, sizeof(_Attributes)) {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1232,12 +1237,12 @@ void _Attributes::SetTrue(Str* name) {
 void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   StackRoots _roots({&name, &val});
 
-  name = name->replace(str91, str92);
+  name = name->replace(str92, str93);
   this->attrs->set(name, val);
 }
 
 Reader::Reader(List<Str*>* argv, List<int>* spids) 
-    : GC_CLASS(header_, HeapTag::Scanned, kZeroMask, 2) {
+    : GC_CLASS_SCANNED(header_, 2, sizeof(Reader)) {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
@@ -1334,7 +1339,7 @@ int Reader::SpanId() {
 }
 
 _Action::_Action() 
-    : GC_CLASS(header_, HeapTag::FixedSize, kZeroMask, kNoObjLen) {
+    : GC_CLASS_FIXED(header_, kZeroMask, sizeof(_Action)) {
   ;  // pass
 }
 
@@ -1369,7 +1374,7 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str96, this->name)), arg_r->SpanId());
+      e_usage(StrFormat("expected argument to %r", str_concat(str97, this->name)), arg_r->SpanId());
     }
   }
   val = this->_Value(arg, arg_r->SpanId());
@@ -1388,10 +1393,10 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, int span_id) {
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str98, this->name), arg), span_id);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str99, this->name), arg), span_id);
   }
   if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str100, this->name), arg), span_id);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str101, this->name), arg), span_id);
   }
   return Alloc<value::Int>(i);
 }
@@ -1407,10 +1412,10 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, int span_id) {
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str102, this->name), arg), span_id);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str103, this->name), arg), span_id);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str104, this->name), arg), span_id);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str105, this->name), arg), span_id);
   }
   return Alloc<value::Float>(f);
 }
@@ -1422,7 +1427,7 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
   StackRoots _roots({&arg});
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str106, this->name), str107->join(this->valid)), span_id);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str107, this->name), str108->join(this->valid)), span_id);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1437,11 +1442,11 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
   StackRoots _roots({&attached_arg, &arg_r, &out});
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str108) || str_equals(attached_arg, str109) || str_equals(attached_arg, str110) || str_equals(attached_arg, str111))) {
+    if ((str_equals(attached_arg, str109) || str_equals(attached_arg, str110) || str_equals(attached_arg, str111) || str_equals(attached_arg, str112))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str112) || str_equals(attached_arg, str113) || str_equals(attached_arg, str114) || str_equals(attached_arg, str115))) {
+      if ((str_equals(attached_arg, str113) || str_equals(attached_arg, str114) || str_equals(attached_arg, str115) || str_equals(attached_arg, str116))) {
         b = true;
       }
       else {
@@ -1477,7 +1482,7 @@ bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   bool b;
   StackRoots _roots({&attached_arg, &arg_r, &out});
 
-  b = maybe_str_equals(attached_arg, str117);
+  b = maybe_str_equals(attached_arg, str118);
   out->opt_changes->append((Alloc<Tuple2<Str*, bool>>(this->name, b)));
   return false;
 }
@@ -1501,7 +1506,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   List<Tuple2<Str*, bool>*>* changes = nullptr;
   StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &attr_name, &changes});
 
-  b = maybe_str_equals(attached_arg, str118);
+  b = maybe_str_equals(attached_arg, str119);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1548,7 +1553,7 @@ bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str120);
+    e_usage(str121);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -1573,13 +1578,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str122)) {
+    if (maybe_str_equals(arg, str123)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str123))) {
-      pos = arg->find(str124, 2);
+    if ((len(spec->actions_long) and arg->startswith(str124))) {
+      pos = arg->find(str125, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -1597,15 +1602,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str126) and len(arg) > 1)) {
+      if ((arg->startswith(str127) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->index_(i);
-          if (str_equals(ch, str127)) {
-            ch = str128;
+          if (str_equals(ch, str128)) {
+            ch = str129;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str129));
+            out->Set(ch, Alloc<value::Str>(str130));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -1618,20 +1623,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str131, ch)), arg_r->SpanId());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str132, ch)), arg_r->SpanId());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str132) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str133) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->index_(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str133));
+              out->Set(ch, Alloc<value::Str>(str134));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str135, ch)), arg_r->SpanId());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str136, ch)), arg_r->SpanId());
           }
           arg_r->Next();
         }
@@ -1655,7 +1660,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str136) and len(chars))) {
+    if ((arg->startswith(str137) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         Str* c = it.Value();
@@ -1695,12 +1700,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str137)) {
+    if (maybe_str_equals(arg, str138)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str138)) {
+    if (arg->startswith(str139)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->SpanId());
@@ -1709,14 +1714,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str140) or arg->startswith(str141)) and len(arg) > 1)) {
+    if (((arg->startswith(str141) or arg->startswith(str142)) and len(arg) > 1)) {
       char0 = arg->index_(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         Str* ch = it.Value();
         StackRoots _for({&ch      });
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str143, ch)), arg_r->SpanId());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str144, ch)), arg_r->SpanId());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);
