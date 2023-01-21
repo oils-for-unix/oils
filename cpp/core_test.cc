@@ -12,6 +12,14 @@
 #include "mycpp/gc_builtins.h"  // IOError_OSError
 #include "vendor/greatest.h"
 
+TEST for_test_coverage() {
+  pyos::FlushStdout();
+  auto r = pyutil::GetResourceLoader();
+  (void)r;
+
+  PASS();
+}
+
 TEST exceptions_test() {
   bool caught = false;
   try {
@@ -131,6 +139,14 @@ TEST pyos_read_test() {
 }
 
 TEST pyos_test() {
+  Tuple3<double, double, double> t = pyos::Time();
+  ASSERT(t.at0() > 0.0);
+  ASSERT(t.at1() >= 0.0);
+  ASSERT(t.at2() >= 0.0);
+
+  Tuple2<int, int> result = pyos::WaitPid();
+  ASSERT_EQ(-1, result.at0());  // no children to wait on
+
   // This test isn't hermetic but it should work in most places, including in a
   // container
 
@@ -149,6 +165,9 @@ TEST pyos_test() {
 }
 
 TEST pyutil_test() {
+  ASSERT_EQ(true, pyutil::IsValidCharEscape(StrFromC("#")));
+  ASSERT_EQ(false, pyutil::IsValidCharEscape(StrFromC("a")));
+
   // OK this seems to work
   Str* escaped = pyutil::BackslashEscape(StrFromC("'foo bar'"), StrFromC(" '"));
   ASSERT(str_equals(escaped, StrFromC("\\'foo\\ bar\\'")));
@@ -289,6 +308,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(for_test_coverage);
   RUN_TEST(exceptions_test);
   RUN_TEST(environ_test);
   RUN_TEST(user_home_dir_test);

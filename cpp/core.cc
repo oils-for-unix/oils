@@ -165,8 +165,7 @@ Str* OsType() {
 }
 
 Tuple3<double, double, double> Time() {
-  rusage ru;  // NOTE(Jesse): Doesn't have to be cleared to 0.  The kernel
-              // clears unused fields.
+  struct rusage ru;
   if (::getrusage(RUSAGE_SELF, &ru) == -1) {
     throw Alloc<IOError>(errno);
   }
@@ -281,14 +280,18 @@ Tuple2<Str*, int> MakeDirCacheKey(Str* path) {
 
 namespace pyutil {
 
-bool IsValidCharEscape(int c) {
-  if (c == '/' || c == '.' || c == '-') {
+bool IsValidCharEscape(Str* c) {
+  DCHECK(len(c) == 1);
+
+  int ch = c->data_[0];
+
+  if (ch == '/' || ch == '.' || ch == '-') {
     return false;
   }
-  if (c == ' ') {  // foo\ bar is idiomatic
+  if (ch == ' ') {  // foo\ bar is idiomatic
     return true;
   }
-  return ispunct(c);
+  return ispunct(ch);
 }
 
 Str* ChArrayToString(List<int>* ch_array) {

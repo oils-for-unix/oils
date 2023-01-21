@@ -1398,7 +1398,7 @@ class WordParser(WordEmitter):
         tok_val = self.cur_token.val
         assert len(tok_val) == 2  # because of the regex
         ch = tok_val[1]
-        if not pyutil.IsValidCharEscape(ord(ch)):
+        if not pyutil.IsValidCharEscape(ch):
           p_die('Invalid char escape (parse_backslash)', token=self.cur_token)
 
       part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t

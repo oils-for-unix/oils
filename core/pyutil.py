@@ -21,14 +21,9 @@ if TYPE_CHECKING:
 _PUNCT = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 
 
-def IsValidCharEscape(c):
-  # type: (int) -> bool
-  """Is this a valid character escape when unquoted?
-
-  Takes an integer because we want the C++ function to do so.
-  """
-  ch = chr(c)
-
+def IsValidCharEscape(ch):
+  # type: (str) -> bool
+  """Is this a valid character escape when unquoted?"""
   # These punctuation chars never needs to be escaped.  (Note that _ is a
   # keyword sometimes.)
   if ch == '/' or ch == '.' or ch == '-':
