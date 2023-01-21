@@ -1,4 +1,7 @@
-#include "mycpp/runtime.h"
+#include "mycpp/gc_mylib.h"
+
+#include "mycpp/gc_alloc.h"  // gHeap
+#include "mycpp/gc_str.h"
 #include "vendor/greatest.h"
 
 TEST split_once_test() {

@@ -1,4 +1,7 @@
-#include "mycpp/runtime.h"
+#include "mycpp/mark_sweep_heap.h"
+
+#include "mycpp/gc_alloc.h"  // gHeap
+#include "mycpp/gc_list.h"
 #include "vendor/greatest.h"
 
 TEST for_code_coverage() {

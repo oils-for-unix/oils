@@ -1,5 +1,10 @@
-#include "mycpp/runtime.h"
+#include "mycpp/gc_dict.h"
+
+#include "mycpp/gc_mylib.h"
 #include "vendor/greatest.h"
+
+GLOBAL_STR(kStrFoo, "foo");
+GLOBAL_STR(kStrBar, "bar");
 
 TEST test_dict_init() {
   Str* s = StrFromC("foo");
@@ -243,6 +248,157 @@ TEST test_empty_dict() {
   PASS();
 }
 
+TEST dict_methods_test() {
+  Dict<int, Str*>* d = nullptr;
+  Dict<Str*, int>* d2 = nullptr;
+  Str* key = nullptr;
+  StackRoots _roots({&d, &d2, &key});
+
+  d = Alloc<Dict<int, Str*>>();
+  d->set(1, kStrFoo);
+  ASSERT(str_equals0("foo", d->index_(1)));
+
+  d2 = Alloc<Dict<Str*, int>>();
+  key = StrFromC("key");
+  d2->set(key, 42);
+  ASSERT_EQ(42, d2->index_(key));
+
+  PASS();
+
+  d2->set(StrFromC("key2"), 2);
+  d2->set(StrFromC("key3"), 3);
+
+  ASSERT_EQ_FMT(3, len(d2), "%d");
+
+  auto keys = d2->keys();
+  ASSERT_EQ_FMT(3, len(keys), "%d");
+
+  // Retain insertion order
+  ASSERT(str_equals0("key", keys->index_(0)));
+  ASSERT(str_equals0("key2", keys->index_(1)));
+  ASSERT(str_equals0("key3", keys->index_(2)));
+
+  mylib::dict_erase(d2, StrFromC("key"));
+  ASSERT_EQ_FMT(2, len(d2), "%d");
+
+  auto keys2 = d2->keys();
+  ASSERT_EQ_FMT(2, len(keys2), "%d");
+  ASSERT(str_equals0("key2", keys2->index_(0)));
+  ASSERT(str_equals0("key3", keys2->index_(1)));
+
+  auto values = d2->values();
+  ASSERT_EQ_FMT(2, len(values), "%d");
+  ASSERT_EQ(2, values->index_(0));
+  ASSERT_EQ(3, values->index_(1));
+
+  int j = 0;
+  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    auto value = it.Value();
+    log("d2 key = %s, value = %d", key->data_, value);
+    ++j;
+  }
+  ASSERT_EQ_FMT(len(d2), j, "%d");
+
+  d2->clear();
+  ASSERT_EQ(0, len(d2));
+  // Ensure it was zero'd
+  ASSERT_EQ(nullptr, d2->keys_->items_[0]);
+  ASSERT_EQ(0, d2->values_->items_[0]);
+
+  // get()
+  ASSERT(str_equals0("foo", d->get(1)));
+
+  // dict_contains()
+  ASSERT(dict_contains(d, 1));
+  ASSERT(!dict_contains(d, 2));
+
+  ASSERT_EQ(nullptr, d->get(423));  // nonexistent
+
+  // get(k, default)
+  ASSERT_EQ(kEmptyString, d->get(423, kEmptyString));
+  ASSERT_EQ(-99, d2->get(kEmptyString, -99));
+
+  // sorted()
+  auto d3 = Alloc<Dict<Str*, int>>();
+  auto a = StrFromC("a");
+
+  d3->set(StrFromC("b"), 11);
+  d3->set(StrFromC("c"), 12);
+  d3->set(StrFromC("a"), 10);
+  ASSERT_EQ(10, d3->index_(StrFromC("a")));
+  ASSERT_EQ(11, d3->index_(StrFromC("b")));
+  ASSERT_EQ(12, d3->index_(StrFromC("c")));
+  ASSERT_EQ(3, len(d3));
+
+  auto keys3 = sorted(d3);
+  ASSERT_EQ(3, len(keys3));
+  ASSERT(str_equals0("a", keys3->index_(0)));
+  ASSERT(str_equals0("b", keys3->index_(1)));
+  ASSERT(str_equals0("c", keys3->index_(2)));
+
+  auto keys4 = d3->keys();
+  ASSERT(list_contains(keys4, a));
+  ASSERT(!list_contains(keys4, StrFromC("zzz")));
+
+  ASSERT(dict_contains(d3, a));
+  mylib::dict_erase(d3, a);
+  ASSERT(!dict_contains(d3, a));
+  ASSERT_EQ(2, len(d3));
+
+  // Test a different type of dict, to make sure partial template
+  // specialization works
+  auto ss = Alloc<Dict<Str*, Str*>>();
+  ss->set(a, a);
+  ASSERT_EQ(1, len(ss));
+  ASSERT_EQ(1, len(ss->keys()));
+  ASSERT_EQ(1, len(ss->values()));
+
+  int k = 0;
+  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    log("ss key = %s", key->data_);
+    ++k;
+  }
+  ASSERT_EQ_FMT(len(ss), k, "%d");
+
+  mylib::dict_erase(ss, a);
+  ASSERT_EQ(0, len(ss));
+
+  int m = 0;
+  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    log("ss key = %s", key->data_);
+    ++m;
+  }
+  ASSERT_EQ_FMT(0, m, "%d");
+  ASSERT_EQ_FMT(len(ss), m, "%d");
+
+  PASS();
+}
+
+TEST dict_iters_test() {
+  Dict<Str*, int>* d2 = nullptr;
+  List<Str*>* keys = nullptr;
+  StackRoots _roots({&d2, &keys});
+
+  d2 = Alloc<Dict<Str*, int>>();
+  d2->set(kStrFoo, 2);
+  d2->set(kStrBar, 3);
+
+  keys = d2->keys();
+  for (int i = 0; i < len(keys); ++i) {
+    printf("k %s\n", keys->index_(i)->data_);
+  }
+
+  log("  iterating over Dict");
+  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+    log("k = %s, v = %d", it.Key()->data_, it.Value());
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -254,6 +410,9 @@ int main(int argc, char** argv) {
   RUN_TEST(test_dict);
   RUN_TEST(test_dict_internals);
   RUN_TEST(test_empty_dict);
+
+  RUN_TEST(dict_methods_test);
+  RUN_TEST(dict_iters_test);
 
   gHeap.CleanProcessExit();
 

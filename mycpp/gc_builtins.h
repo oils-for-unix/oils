@@ -7,6 +7,9 @@
 #ifndef GC_BUILTINS_H
 #define GC_BUILTINS_H
 
+#include "mycpp/common.h"
+#include "mycpp/gc_obj.h"
+
 class Str;
 
 class _ExceptionOpaque {

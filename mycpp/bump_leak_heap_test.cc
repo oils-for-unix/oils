@@ -1,6 +1,8 @@
+#include "mycpp/bump_leak_heap.h"
+
 #include <unistd.h>  // STDERR_FILENO
 
-#include "mycpp/runtime.h"
+#include "mycpp/gc_alloc.h"  // gHeap
 #include "vendor/greatest.h"
 
 TEST Reallocate_test() {

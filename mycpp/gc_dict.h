@@ -2,6 +2,7 @@
 #define MYCPP_GC_DICT_H
 
 #include "mycpp/comparators.h"
+#include "mycpp/gc_list.h"
 
 // Non-negative entries in entry_ are array indices into keys_ and values_.
 // There are two special negative entries.

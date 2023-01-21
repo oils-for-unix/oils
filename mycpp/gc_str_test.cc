@@ -1,7 +1,16 @@
-#include "mycpp/runtime.h"
+#include "mycpp/gc_str.h"
+
+#include <limits.h>  // INT_MAX
+
+#include "mycpp/comparators.h"  // str_equals
+#include "mycpp/gc_alloc.h"     // gHeap
+#include "mycpp/gc_builtins.h"  // print()
+#include "mycpp/gc_list.h"
 #include "vendor/greatest.h"
 
 GLOBAL_STR(kSpace, " ");
+GLOBAL_STR(kStrFood, "food");
+GLOBAL_STR(kWithNull, "foo\0bar");
 
 static void ShowString(Str* s) {
   int n = len(s);
@@ -1104,6 +1113,291 @@ TEST test_str_format() {
   PASS();
 }
 
+GLOBAL_STR(kStrFoo, "foo");
+GLOBAL_STR(a, "a");
+GLOBAL_STR(XX, "XX");
+
+TEST str_replace_test() {
+  Str* o = nullptr;
+  Str* _12 = nullptr;
+  Str* _123 = nullptr;
+  Str* s = nullptr;
+  Str* foxo = nullptr;
+  Str* expected = nullptr;
+  StackRoots _roots({&o, &_12, &_123, &s, &foxo, &expected});
+
+  o = StrFromC("o");
+  _12 = StrFromC("12");
+  _123 = StrFromC("123");
+
+  s = kStrFood->replace(o, _12);
+  ASSERT(str_equals0("f1212d", s));
+  print(s);
+
+  s = kStrFoo->replace(o, _123);
+  ASSERT(str_equals0("f123123", s));
+  print(s);
+
+  foxo = StrFromC("foxo");
+  s = foxo->replace(o, _123);
+  ASSERT(str_equals0("f123x123", s));
+  print(s);
+
+  s = kWithNull->replace(a, XX);
+  print(s);
+
+  // Explicit length because of \0
+  expected = StrFromC("foo\0bXXr", 8);
+  ASSERT(str_equals(expected, s));
+
+  PASS();
+}
+
+void Print(List<Str*>* parts) {
+  log("---");
+  log("len = %d", len(parts));
+  for (int i = 0; i < len(parts); ++i) {
+    printf("%d [", i);
+    Str* s = parts->index_(i);
+    int n = len(s);
+    fwrite(s->data_, sizeof(char), n, stdout);
+    fputs("]\n", stdout);
+  }
+}
+
+TEST str_split_test() {
+  Str* s = nullptr;
+  Str* sep = nullptr;
+  List<Str*>* parts = nullptr;
+
+  StackRoots _roots({&s, &sep, &parts});
+  sep = StrFromC(":");
+
+  parts = kEmptyString->split(sep);
+  ASSERT_EQ(1, len(parts));
+  Print(parts);
+
+  s = StrFromC(":");
+  parts = s->split(sep);
+  ASSERT_EQ_FMT(2, len(parts), "%d");
+  ASSERT(str_equals(kEmptyString, parts->index_(0)));
+  ASSERT(str_equals(kEmptyString, parts->index_(1)));
+  Print(parts);
+
+  s = StrFromC("::");
+  parts = s->split(sep);
+  ASSERT_EQ(3, len(parts));
+  ASSERT(str_equals(kEmptyString, parts->index_(0)));
+  ASSERT(str_equals(kEmptyString, parts->index_(1)));
+  ASSERT(str_equals(kEmptyString, parts->index_(2)));
+  Print(parts);
+
+  s = StrFromC("a:b");
+  parts = s->split(sep);
+  ASSERT_EQ(2, len(parts));
+  Print(parts);
+  ASSERT(str_equals0("a", parts->index_(0)));
+  ASSERT(str_equals0("b", parts->index_(1)));
+
+  s = StrFromC("abc:def:");
+  parts = s->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+  ASSERT(str_equals0("abc", parts->index_(0)));
+  ASSERT(str_equals0("def", parts->index_(1)));
+  ASSERT(str_equals(kEmptyString, parts->index_(2)));
+
+  s = StrFromC(":abc:def:");
+  parts = s->split(sep);
+  ASSERT_EQ(4, len(parts));
+  Print(parts);
+
+  s = StrFromC("abc:def:ghi");
+  parts = s->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  PASS();
+}
+
+TEST str_methods_test() {
+  log("char funcs");
+  ASSERT(!(StrFromC(""))->isupper());
+  ASSERT(!(StrFromC("a"))->isupper());
+  ASSERT((StrFromC("A"))->isupper());
+  ASSERT((StrFromC("AB"))->isupper());
+
+  ASSERT((StrFromC("abc"))->isalpha());
+  ASSERT((StrFromC("3"))->isdigit());
+  ASSERT(!(StrFromC(""))->isdigit());
+
+  log("slice()");
+  ASSERT(str_equals0("f", kStrFood->index_(0)));
+
+  ASSERT(str_equals0("d", kStrFood->index_(-1)));
+
+  ASSERT(str_equals0("ood", kStrFood->slice(1)));
+  ASSERT(str_equals0("oo", kStrFood->slice(1, 3)));
+  ASSERT(str_equals0("oo", kStrFood->slice(1, -1)));
+  ASSERT(str_equals0("o", kStrFood->slice(-3, -2)));
+  ASSERT(str_equals0("fo", kStrFood->slice(-4, -2)));
+
+  log("strip()");
+  ASSERT(str_equals0(" abc", StrFromC(" abc ")->rstrip()));
+  ASSERT(str_equals0(" def", StrFromC(" def")->rstrip()));
+
+  ASSERT(str_equals0("", kEmptyString->rstrip()));
+  ASSERT(str_equals0("", kEmptyString->strip()));
+
+  ASSERT(str_equals0("123", StrFromC(" 123 ")->strip()));
+  ASSERT(str_equals0("123", StrFromC(" 123")->strip()));
+  ASSERT(str_equals0("123", StrFromC("123 ")->strip()));
+
+  Str* input = nullptr;
+  Str* arg = nullptr;
+  Str* expected = nullptr;
+  Str* result = nullptr;
+  StackRoots _roots({&input, &arg, &expected, &result});
+
+  log("startswith endswith");
+
+  // arg needs to be separate here because order of evaluation isn't defined!!!
+  // CRASHES:
+  //   ASSERT(input->startswith(StrFromC("ab")));
+  // Will this because a problem for mycpp?  I think you have to detect this
+  // case:
+  //   f(Alloc<Foo>(), new Alloc<Bar>())
+  // Allocation can't happen INSIDE an arg list.
+
+  input = StrFromC("abc");
+  ASSERT(input->startswith(kEmptyString));
+  ASSERT(input->endswith(kEmptyString));
+
+  ASSERT(input->startswith(input));
+  ASSERT(input->endswith(input));
+
+  arg = StrFromC("ab");
+  ASSERT(input->startswith(arg));
+  ASSERT(!input->endswith(arg));
+
+  arg = StrFromC("bc");
+  ASSERT(!input->startswith(arg));
+  ASSERT(input->endswith(arg));
+
+  log("rjust() and ljust()");
+  input = StrFromC("13");
+  ASSERT(str_equals0("  13", input->rjust(4, kSpace)));
+  ASSERT(str_equals0(" 13", input->rjust(3, kSpace)));
+  ASSERT(str_equals0("13", input->rjust(2, kSpace)));
+  ASSERT(str_equals0("13", input->rjust(1, kSpace)));
+
+  ASSERT(str_equals0("13  ", input->ljust(4, kSpace)));
+  ASSERT(str_equals0("13 ", input->ljust(3, kSpace)));
+  ASSERT(str_equals0("13", input->ljust(2, kSpace)));
+  ASSERT(str_equals0("13", input->ljust(1, kSpace)));
+
+  log("join()");
+
+  List<Str*>* L1 = nullptr;
+  List<Str*>* L2 = nullptr;
+  List<Str*>* empty_list = nullptr;
+  StackRoots _roots2({&L1, &L2, &empty_list});
+
+  L1 = NewList<Str*>(std::initializer_list<Str*>{kStrFood, kStrFoo});
+
+  // Join by empty string
+  ASSERT(str_equals0("foodfoo", kEmptyString->join(L1)));
+
+  // Join by NUL
+  expected = StrFromC("food\0foo", 8);
+  arg = StrFromC("\0", 1);
+  result = arg->join(L1);
+  ASSERT(str_equals(expected, result));
+
+  // Singleton list
+  L2 = NewList<Str*>(std::initializer_list<Str*>{kStrFoo});
+  ASSERT(str_equals0("foo", kEmptyString->join(L2)));
+
+  // Empty list
+  empty_list = NewList<Str*>(std::initializer_list<Str*>{});
+
+  result = kEmptyString->join(empty_list);
+  ASSERT(str_equals(kEmptyString, result));
+  ASSERT_EQ(0, len(result));
+
+  result = kSpace->join(empty_list);
+  ASSERT(str_equals(kEmptyString, result));
+  ASSERT_EQ(0, len(result));
+
+  PASS();
+}
+
+TEST str_funcs_test() {
+  Str* s = nullptr;
+
+  log("ord()");
+  s = StrFromC("A");
+  print(repr(s));
+  ASSERT_EQ(65, ord(s));
+
+  log("chr()");
+  ASSERT(str_equals(s, chr(65)));
+
+  log("str_concat()");
+  ASSERT(str_equals0("foodfood", str_concat(kStrFood, kStrFood)));
+  ASSERT(str_equals(kEmptyString, str_concat(kEmptyString, kEmptyString)));
+
+  log("str_repeat()");
+
+  // -1 is allowed by Python and used by Oil!
+  s = StrFromC("abc");
+  ASSERT(str_equals(kEmptyString, str_repeat(s, -1)));
+  ASSERT(str_equals(kEmptyString, str_repeat(s, 0)));
+
+  ASSERT(str_equals(s, str_repeat(s, 1)));
+
+  ASSERT(str_equals0("abcabcabc", str_repeat(s, 3)));
+
+  log("repr()");
+
+  s = kEmptyString;
+  print(repr(s));
+  ASSERT(str_equals0("''", repr(s)));
+
+  s = StrFromC("'");
+  print(repr(s));
+  ASSERT(str_equals0("\"'\"", repr(s)));
+
+  s = StrFromC("'single'");
+  ASSERT(str_equals0("\"'single'\"", repr(s)));
+
+  s = StrFromC("\"double\"");
+  ASSERT(str_equals0("'\"double\"'", repr(s)));
+
+  // this one is truncated
+  s = StrFromC("NUL \x00 NUL", 9);
+  print(repr(s));
+  ASSERT(str_equals0("'NUL \\x00 NUL'", repr(s)));
+
+  s = StrFromC("tab\tline\nline\r\n");
+  print(repr(s));
+  ASSERT(str_equals0("'tab\\tline\\nline\\r\\n'", repr(s)));
+
+  s = StrFromC("high \xFF \xFE high");
+  print(repr(s));
+  ASSERT(str_equals0("'high \\xff \\xfe high'", repr(s)));
+
+  PASS();
+}
+
+TEST str_iters_test() {
+  for (StrIter it(kStrFood); !it.Done(); it.Next()) {
+    print(it.Value());
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -1133,6 +1427,14 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_join);
 
   RUN_TEST(test_str_format);
+
+  // Duplicate
+  RUN_TEST(str_replace_test);
+  RUN_TEST(str_split_test);
+
+  RUN_TEST(str_methods_test);
+  RUN_TEST(str_funcs_test);
+  RUN_TEST(str_iters_test);
 
   gHeap.CleanProcessExit();
 
