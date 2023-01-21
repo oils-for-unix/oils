@@ -1,10 +1,15 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
-TEST test_dict() {
-  // TODO: How to initialize constants?
+TEST test_dict_init() {
+  Str* s = StrFromC("foo");
+  Dict<int, Str*>* d = NewDict<int, Str*>({42}, {s});
+  ASSERT_EQ(s, d->index_(42));
 
-  // Dict d {{"key", 1}, {"val", 2}};
+  PASS();
+}
+
+TEST test_dict() {
   Dict<int, Str*>* d = NewDict<int, Str*>();
   d->set(1, StrFromC("foo"));
   log("d[1] = %s", d->index_(1)->data_);
@@ -232,6 +237,9 @@ TEST test_empty_dict() {
   log("val %p", val);
   ASSERT_EQ(nullptr, val);
 
+  Str* val2 = d->get(StrFromC("nonexistent"), kEmptyString);
+  ASSERT_EQ(kEmptyString, val2);
+
   PASS();
 }
 
@@ -242,6 +250,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(test_dict_init);
   RUN_TEST(test_dict);
   RUN_TEST(test_dict_internals);
   RUN_TEST(test_empty_dict);
