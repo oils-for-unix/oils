@@ -4,7 +4,6 @@ static PyMethodDef file_methods[] = {
   {"readline", (PyCFunction)file_readline, METH_VARARGS},
   {"read", (PyCFunction)file_read, METH_VARARGS},
   {"write", (PyCFunction)file_write, METH_VARARGS},
-  {"fileno", (PyCFunction)file_fileno, METH_NOARGS},
   {"flush", (PyCFunction)file_flush, METH_NOARGS},
   {"close", (PyCFunction)file_close, METH_NOARGS},
   {"isatty", (PyCFunction)file_isatty, METH_NOARGS},
