@@ -1130,8 +1130,6 @@ class CommandEvaluator(object):
               else:  # return needs to pop up more
                 raise
 
-            mylib.MaybeCollect()  # manual GC point
-
       elif case(command_e.ForEach):
         node = cast(command__ForEach, UP_node)
         self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
@@ -1292,8 +1290,6 @@ class CommandEvaluator(object):
                   raise
               index += 1
 
-              mylib.MaybeCollect()  # manual GC point
-
       elif case(command_e.ForExpr):
         node = cast(command__ForExpr, UP_node)
         status = 0
@@ -1327,8 +1323,6 @@ class CommandEvaluator(object):
 
             if update:
               self.arith_ev.Eval(update)
-
-            mylib.MaybeCollect()  # manual GC point
 
       elif case(command_e.ShFunction):
         node = cast(command__ShFunction, UP_node)
@@ -1453,6 +1447,9 @@ class CommandEvaluator(object):
     # call self.DoTick()?  That will RunPendingTraps and check the Ctrl-C flag,
     # and maybe throw an exception.
     self.RunPendingTraps()
+
+    # Manual GC point before every statement
+    mylib.MaybeCollect()
 
     # This has to go around redirect handling because the process sub could be
     # in the redirect word:

@@ -530,7 +530,7 @@ gc-run-big() {
 
 run-verbose() {
   _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
-    /usr/bin/time --format '%M' -- \
+    /usr/bin/time --format '*** MAX RSS KiB = %M' -- \
     "$@"
 }
 
@@ -564,11 +564,28 @@ for-loop() {
   done
 }
 
+recurse() {
+  local n=${1:-3000}
+
+  if ((n % 100 == 0)) ; then
+    echo $n
+  fi
+
+  if test $n = 0; then
+    return
+  fi
+
+  recurse $((n - 1))
+}
+
 test-loops() {
   ### Regression for leak
 
-  local bin=_bin/cxx-dbg/osh
+  local bin=_bin/cxx-opt/osh
   ninja $bin
+
+  run-verbose $bin $0 recurse
+  echo
 
   run-verbose $bin $0 while-loop
   echo
