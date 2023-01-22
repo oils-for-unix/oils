@@ -115,7 +115,6 @@ TEST for_test_coverage() {
   PASS();
 }
 
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {

@@ -22,6 +22,10 @@ TEST posix_test() {
   ASSERT(fds.at0() > 0);
   ASSERT(fds.at1() > 0);
 
+  ASSERT_EQ(false, posix::isatty(fds.at0()));
+
+  posix::close(fds.at0());
+
   Str* message = posix::strerror(EBADF);
   log("strerror");
   print(message);
