@@ -135,6 +135,7 @@ class _FlagSpecAndMore {
 
 // for testing only
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name);
+flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name);
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 

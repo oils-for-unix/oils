@@ -32,6 +32,25 @@ TEST realpath_test() {
 }
 
 TEST libc_test() {
+  log("sizeof(wchar_t) = %d", sizeof(wchar_t));
+
+  int width = 0;
+
+  // TODO: enable this test.  Is it not picking LC_CTYPE?
+  // Do we have to do some initialization like libc.cpython_reset_locale() ?
+#if 0
+  try {
+    // mu character \u{03bc} in utf-8
+    width = libc::wcswidth(StrFromC("\xce\xbc"));
+  } catch (UnicodeError* e) {
+    log("UnicodeError %s", e->message->data_);
+  }
+  ASSERT_EQ_FMT(2, width, "%d");
+#endif
+
+  width = libc::wcswidth(StrFromC("foo"));
+  ASSERT_EQ(3, width);
+
   libc::print_time(0.1, 0.2, 0.3);
 
   Str* s1 = (StrFromC("foo.py "))->strip();
@@ -86,6 +105,17 @@ TEST libc_glob_test() {
   PASS();
 }
 
+TEST for_test_coverage() {
+  // Sometimes we're not connected to a terminal
+  try {
+    libc::get_terminal_width();
+  } catch (IOError_OSError* e) {
+  }
+
+  PASS();
+}
+
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -97,6 +127,7 @@ int main(int argc, char** argv) {
   RUN_TEST(realpath_test);
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);
+  RUN_TEST(for_test_coverage);
 
   gHeap.CleanProcessExit();
 

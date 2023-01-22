@@ -175,17 +175,34 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   return tup;
 }
 
-int wcswidth(Str* str) {
-  int len = mbstowcs(NULL, str->data(), 0);
-  if (len == -1) {
-    throw Alloc<UnicodeError>(StrFromC("mbstowcs error: Invalid UTF-8 string"));
+// TODO: SHARE with pyext
+int wcswidth(Str* s) {
+  // Behavior of mbstowcs() depends on LC_CTYPE
+
+  // Calculate length first
+  int num_wide_chars = mbstowcs(NULL, s->data_, 0);
+  if (num_wide_chars == -1) {
+    throw Alloc<UnicodeError>(StrFromC("mbstowcs() 1"));
   }
 
-  auto* unicode = static_cast<wchar_t*>(malloc(len + 1));
-  assert(unicode != nullptr);
-  mbstowcs(unicode, str->data(), len + 1);
-  int width = ::wcswidth(unicode, len + 1);
-  free(unicode);
+  // Allocate buffer
+  int buf_size = (num_wide_chars + 1) * sizeof(wchar_t);
+  wchar_t* wide_chars = static_cast<wchar_t*>(malloc(buf_size));
+  assert(wide_chars != nullptr);
+
+  // Convert to wide chars
+  num_wide_chars = mbstowcs(wide_chars, s->data_, num_wide_chars);
+  if (num_wide_chars == -1) {
+    throw Alloc<UnicodeError>(StrFromC("mbstowcs() 2"));
+  }
+
+  // Find number of columns
+  int width = ::wcswidth(wide_chars, num_wide_chars);
+  if (width == -1) {
+    // unprintable chars
+    throw Alloc<UnicodeError>(StrFromC("wcswidth()"));
+  }
+  free(wide_chars);
 
   return width;
 }

@@ -324,14 +324,26 @@ func_wcswidth(PyObject *self, PyObject *args){
         return NULL;
     }
 
-    int len = mbstowcs(NULL, string, 0);
-    if (len == -1) {
-        PyErr_SetString(PyExc_UnicodeError, "mbstowcs error: Invalid UTF-8 string");
+    int num_wide_chars = mbstowcs(NULL, string, 0);
+    if (num_wide_chars == -1) {
+        PyErr_SetString(PyExc_UnicodeError, "mbstowcs() 1");
         return NULL;
     }
-    wchar_t unicode[len + 1];
-    mbstowcs(unicode, string, len + 1);
-    int width = wcswidth(unicode, len + 1);
+    int buf_size = (num_wide_chars + 1) * sizeof(wchar_t);
+    wchar_t* wide_chars = (wchar_t*)malloc(buf_size);
+    assert(wide_chars != NULL);
+
+    num_wide_chars = mbstowcs(wide_chars, string, num_wide_chars);
+    if (num_wide_chars == -1) {
+        PyErr_SetString(PyExc_UnicodeError, "mbstowcs() 2");
+        return NULL;
+    }
+
+    int width = wcswidth(wide_chars, num_wide_chars);
+    if (width == -1) {
+        PyErr_SetString(PyExc_UnicodeError, "wcswidth()");
+        return NULL;
+    }
 
     return PyInt_FromLong(width);
 }

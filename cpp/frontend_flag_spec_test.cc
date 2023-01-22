@@ -68,9 +68,24 @@ TEST flag_spec_test() {
   log("sizeof %d", sizeof(spec1.arity0));  // 8
   log("sizeof %d", sizeof(arity0_1) / sizeof(arity0_1[0]));
 
-  flag_spec::LookupFlagSpec(StrFromC("new_var"));
-  flag_spec::LookupFlagSpec(StrFromC("readonly"));
-  flag_spec::LookupFlagSpec(StrFromC("zzz"));
+  flag_spec::_FlagSpec* spec;
+
+  spec = flag_spec::LookupFlagSpec(StrFromC("new_var"));
+  ASSERT(spec != nullptr);
+
+  spec = flag_spec::LookupFlagSpec(StrFromC("readonly"));
+  ASSERT(spec != nullptr);
+
+  spec = flag_spec::LookupFlagSpec(StrFromC("zzz"));
+  ASSERT(spec == nullptr);
+
+  flag_spec::_FlagSpecAndMore* spec2;
+
+  spec2 = flag_spec::LookupFlagSpec2(StrFromC("main"));
+  ASSERT(spec2 != nullptr);
+
+  spec2 = flag_spec::LookupFlagSpec2(StrFromC("zzz"));
+  ASSERT(spec2 == nullptr);
 
   int i = 0;
   while (true) {

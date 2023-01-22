@@ -112,7 +112,7 @@ TEST listdir_test() {
   PASS();
 }
 
-TEST for_code_coverage() {
+TEST for_test_coverage() {
   time_::sleep(0);
 
   // I guess this has side effects
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
   RUN_TEST(mtime_demo);
   RUN_TEST(listdir_test);
 
-  RUN_TEST(for_code_coverage);
+  RUN_TEST(for_test_coverage);
 
   gHeap.CleanProcessExit();
 

@@ -185,7 +185,8 @@ class LibcTest(unittest.TestCase):
     # Syntax errors
     self.assertRaises(RuntimeError, libc.regex_parse, r'*')
     self.assertRaises(RuntimeError, libc.regex_parse, '\\')
-    IS_DARWIN or self.assertRaises(RuntimeError, libc.regex_parse, '{')
+    if not IS_DARWIN:
+      self.assertRaises(RuntimeError, libc.regex_parse, '{')
 
     cases = [
         ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
@@ -293,10 +294,37 @@ class LibcTest(unittest.TestCase):
       print('width % d' % width)
 
   def testWcsWidth(self):
-    IS_DARWIN or self.assertEqual(1, libc.wcswidth("▶️"))
-    IS_DARWIN or self.assertEqual(28, libc.wcswidth("(osh) ~/.../unchanged/oil ▶️ "))
+    if not IS_DARWIN:
+      self.assertEqual(1, libc.wcswidth("▶️"))
+      self.assertEqual(28, libc.wcswidth("(osh) ~/.../unchanged/oil ▶️ "))
+
+    mu = u"\u03bc".encode('utf-8')
+    print(repr(mu))
+    print(mu)
+    print(len(mu))
+    self.assertEqual(1, libc.wcswidth(mu))
+
     self.assertEqual(2, libc.wcswidth("→ "))
+
+    # mbstowcs fails on invalid utf-8
+    try:
+      # first byte of mu
+      libc.wcswidth("\xce")
+    except UnicodeError as e:
+      self.assertEqual('mbstowcs() 1', e.message)
+    else:
+      self.fail('Expected failure')
+
+    # wcswidth fails on unprintable character
+    try:
+      libc.wcswidth("\x01")
+    except UnicodeError as e:
+      self.assertEqual('wcswidth()', e.message)
+    else:
+      self.fail('Expected failure')
+
     self.assertRaises(UnicodeError, libc.wcswidth, "\xfe")
+
 
 if __name__ == '__main__':
   # To simulate the OVM_MAIN patch in pythonrun.c
