@@ -528,20 +528,52 @@ gc-run-big() {
   popd
 }
 
+run-verbose() {
+  _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
+    /usr/bin/time --format '%M' -- \
+    "$@"
+}
+
 # This hit the 24-bit object ID limitation in 2.5 seconds
 # Should be able to run indefinitely.
 run-for-a-long-time() {
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/osh benchmarks/compute/fib.sh 10000
+  local bin=_bin/cxx-opt/osh
+  ninja $bin
+  run-verbose $bin benchmarks/compute/fib.sh 10000
+
+  # time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/osh benchmarks/compute/fib.sh 10000
 }
 
-run-loop() {
-  ninja _bin/cxx-dbg/osh
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-dbg/osh -c '
-for x in $(seq 1000); do
-  echo $x
-  continue  # make sure it does GC
-done
-'
+while-loop() {
+  local i=0
+  while test $i -lt 10000; do
+    if ((i % 1000 == 0)) ; then
+      echo $i
+    fi
+    i=$((i + 1))
+    continue  # BUG: skipped GC point
+  done
+}
+
+for-loop() {
+  for i in $(seq 10000); do
+    if ((i % 1000 == 0)) ; then
+      echo $i
+    fi
+    continue
+  done
+}
+
+test-loops() {
+  ### Regression for leak
+
+  local bin=_bin/cxx-dbg/osh
+  ninja $bin
+
+  run-verbose $bin $0 while-loop
+  echo
+
+  run-verbose $bin $0 for-loop
 }
 
 "$@"

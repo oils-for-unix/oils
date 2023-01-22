@@ -81,10 +81,12 @@ class CrashDumper(object):
     self.debug_stack = None
     self.error = None  # type: Dict[str, Any]
 
-  def MaybeCollect(self, cmd_ev, err):
+  def MaybeRecord(self, cmd_ev, err):
     # type: (Any, _ErrorWithLocation) -> None
     # TODO: Any -> CommandEvaluator
     """
+    Collect data for a crash dump.
+
     Args:
       cmd_ev: CommandEvaluator instance
       error: _ErrorWithLocation (ParseError or FatalRuntimeError)

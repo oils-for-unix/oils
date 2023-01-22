@@ -1664,7 +1664,7 @@ class CommandEvaluator(object):
           # strict_control_flow if the incompatibility causes problems.
           status = 1
     except error.Parse as e:
-      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
+      self.dumper.MaybeRecord(self, e)  # Do this before unwinding stack
       raise
     except error.ErrExit as e:
       err = e
@@ -1676,7 +1676,7 @@ class CommandEvaluator(object):
       status = err.ExitStatus()
 
       is_fatal = True
-      self.dumper.MaybeCollect(self, err)  # Do this before unwinding stack
+      self.dumper.MaybeRecord(self, err)  # Do this before unwinding stack
 
       if not err.HasLocation():  # Last resort!
         err.span_id = self.mem.CurrentSpanId()
@@ -1798,7 +1798,7 @@ class CommandEvaluator(object):
           e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
       except error.FatalRuntime as e:
         # Dump the stack before unwinding it
-        self.dumper.MaybeCollect(self, e)
+        self.dumper.MaybeRecord(self, e)
         raise
 
     return status
