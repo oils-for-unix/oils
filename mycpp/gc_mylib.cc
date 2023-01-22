@@ -7,13 +7,8 @@
 namespace mylib {
 
 void ProcessInit() {
-  // Turn off buffering of stdout for now.
-  // Note: ctx_FlushStdout() doesn't seem to be enough?
-  setvbuf(stdout, 0, _IONBF, 0);
-
-  // Line buffering isn't sufficient -- osh-runtime task fails with CPython
-  // configure
-  // setvbuf(stdout, 0, _IOLBF, 0);
+  // We don't seem need this now that we have ctx_FlushStdout().
+  // setvbuf(stdout, 0, _IONBF, 0);
 }
 
 void writeln(Str* s, int fd) {
