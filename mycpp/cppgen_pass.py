@@ -1906,12 +1906,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.write_ind('')
           self.accept(expr.callee)
-          self.write(' ctx(')
+
+          # FIX: Use braced initialization to avoid most-vexing parse when
+          # there are 0 args!
+          self.write(' ctx{')
           for i, arg in enumerate(expr.args):
             if i != 0:
               self.write(', ')
             self.accept(arg)
-          self.write(');\n\n')
+          self.write('};\n\n')
 
           #self.write_ind('')
           self._write_body(o.body.body)

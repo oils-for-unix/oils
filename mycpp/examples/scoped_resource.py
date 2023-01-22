@@ -23,6 +23,23 @@ def Error(error):
     raise MyError()
 
 
+class ctx_NoArgs(object):
+  """Regression for most vexing parse."""
+
+  def __init__(self):
+    # type: () -> None
+    print('> NoArgs')
+
+  def __enter__(self):
+    # type: () -> None
+    """no-op, but it has to exist to be used as context manager."""
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    print('< NoArgs')
+
+
 class ctx_DirStack(object):
 
   def __init__(self, state, entry):
@@ -154,6 +171,9 @@ def run_tests():
   #   log("  errexit %d", e.errexit)
   # }
   # log("<- errexit %d", e.errexit)
+
+  with ctx_NoArgs():
+    print('hi')
 
 
 def run_benchmarks():
