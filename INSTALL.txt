@@ -11,8 +11,8 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --xz < oil-0.13.1.tar.xz
-    cd oil-0.13.1
+    tar -x --xz < oil-0.14.0.tar.xz
+    cd oil-0.14.0
 
 Either install as /usr/local/bin/osh:
 
@@ -33,7 +33,7 @@ The latter doesn't require root access, but it requires:
   (See manpath or $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oil-0.13.1 directory.
+oil-0.14.0 directory.
 
 Smoke Test
 ----------
@@ -52,7 +52,7 @@ More Documentation
 
 Every release has a home page with links, e.g.
 
-    https://oilshell.org/release/0.13.1/
+    https://oilshell.org/release/0.14.0/
 
 System Requirements
 -------------------
