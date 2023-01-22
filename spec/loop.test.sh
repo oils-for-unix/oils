@@ -435,3 +435,39 @@ echo "$counterB"
 99
 50
 ## END
+
+
+#### multi-level continue
+
+for i in 1 2; do
+  for j in a b c; do
+    if test $j = b; then
+      continue
+    fi
+    echo $i $j
+  done
+done
+
+echo ---
+
+for i in 1 2; do
+  for j in a b c; do
+    if test $j = b; then
+      continue 2   # MULTI-LEVEL
+    fi
+    echo $i $j
+  done
+done
+
+
+## STDOUT:
+1 a
+1 c
+2 a
+2 c
+---
+1 a
+2 a
+## END
+
+ 

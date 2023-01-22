@@ -531,7 +531,17 @@ gc-run-big() {
 # This hit the 24-bit object ID limitation in 2.5 seconds
 # Should be able to run indefinitely.
 run-for-a-long-time() {
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/oils_cpp benchmarks/compute/fib.sh 10000
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/osh benchmarks/compute/fib.sh 10000
+}
+
+run-loop() {
+  ninja _bin/cxx-dbg/osh
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-dbg/osh -c '
+for x in $(seq 1000); do
+  echo $x
+  continue  # make sure it does GC
+done
+'
 }
 
 "$@"
