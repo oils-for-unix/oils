@@ -57,7 +57,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
 source devtools/common.sh  # banner
-source benchmarks/common.sh  # BENCHMARK_DATA_OIL_NATIVE, OSH_CPP_BENCHMARK_DATA
+source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
@@ -332,7 +332,7 @@ _install() {
 }
 
 _build-oils-benchmark-data() {
-  pushd $BENCHMARK_DATA_OIL_NATIVE
+  pushd $BENCHMARK_DATA_OILS
   _build/oils.sh '' opt SKIP_REBUILD
   _build/oils.sh '' dbg SKIP_REBUILD  # for metrics/native-code.sh
   popd
