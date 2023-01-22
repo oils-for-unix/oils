@@ -20,7 +20,7 @@ banner() {
 
 is-oils-cpp() {
   case $SH in
-    _bin/*/*)
+    *_bin/*/osh)
       return 0
       ;;
   esac
