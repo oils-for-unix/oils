@@ -216,7 +216,7 @@ ParserReport = function(in_dir, out_dir) {
 
   # Like 'times', but do shell_label as one step
   # Hack: we know benchmarks/auto.sh runs this on one machine
-  distinct_shells_2 = DistinctShells(cachegrind, num_hosts = 1)
+  distinct_shells_2 = DistinctShells(cachegrind, num_hosts = nrow(distinct_hosts))
   cachegrind %>%
     left_join(lines, by = c('path')) %>%
     select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>% 

@@ -611,8 +611,9 @@ sync-old-tar() {
 deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
-  # Also copy oils-for-unix
-  cp -v _release/oil-*$OIL_VERSION.tar.* $DOWNLOAD_DIR
+  cp -v \
+    _release/oil-$OIL_VERSION.tar.* _release/oils-for-unix-$OIL_VERSION.tar.* \
+    $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
 }
