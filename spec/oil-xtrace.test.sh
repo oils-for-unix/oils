@@ -454,14 +454,48 @@ for i in 1 2 3 {
     break
   }
 }
+
+for j in a b {
+  for k in y z {
+    echo $j $k
+    if (k === 'y') {
+      continue
+    }
+  }
+}
+
+proc zero {
+  return 0
+}
+
+proc one {
+  return 1
+}
+
+zero
+# one
+
 ## STDOUT:
 1
 2
+a y
+a z
+b y
+b z
 ## END
 ## STDERR:
 . builtin echo 1
 . builtin echo 2
-+ break
++ break 1
+. builtin echo a y
++ continue 1
+. builtin echo a z
+. builtin echo b y
++ continue 1
+. builtin echo b z
+> proc zero
+  + return 0
+< proc zero
 ## END
 
 #### QSN encoded argv

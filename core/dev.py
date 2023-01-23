@@ -565,9 +565,8 @@ class Tracer(object):
     buf.write(prefix)
 
     buf.write(keyword)
-    if arg != 0:
-      buf.write(' ')
-      buf.write(str(arg))
+    buf.write(' ')
+    buf.write(str(arg))  # Note: 'return' is equivalent to 'return 0'
     buf.write('\n')
 
     self.f.write(buf.getvalue())
