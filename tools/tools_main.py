@@ -15,11 +15,11 @@ from core import error
 from core import main_loop
 from core import optview
 from core import pyutil
-from core.pyutil import stderr_line
 from core import state
 from core import ui
 from frontend import reader
 from frontend import parse_lib
+from mycpp.mylib import print_stderr
 from tools import deps
 from tools import osh2oil
 
@@ -88,8 +88,8 @@ def OshCommandMain(argv):
     try:
       f = open(script_name)
     except IOError as e:
-      stderr_line("oshc: Couldn't open %r: %s", script_name,
-                  posix.strerror(e.errno))
+      print_stderr("oshc: Couldn't open %r: %s" %
+                   (script_name, posix.strerror(e.errno)))
       return 2
 
   aliases = {}  # Dummy value; not respecting aliases!

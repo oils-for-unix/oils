@@ -11,9 +11,9 @@ from _devbuild.gen.syntax_asdl import (
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
 from core import pyutil
-from core.pyutil import stderr_line
 from core.pyerror import log
 from frontend import match
+from mycpp.mylib import print_stderr
 
 from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -408,7 +408,7 @@ class Globber(object):
       # native/libc.c.)
       # note: MyPy doesn't know RuntimeError has e.message (and e.args)
       msg = e.message  # type: str
-      stderr_line("Error expanding glob %r: %s", arg, msg)
+      print_stderr("Error expanding glob %r: %s" % (arg, msg))
       raise
     #log('glob %r -> %r', arg, g)
 

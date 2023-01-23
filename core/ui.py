@@ -19,10 +19,9 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
-from core.pyutil import stderr_line
 from osh import word_
 from mycpp import mylib
-from mycpp.mylib import tagswitch, StrFromC
+from mycpp.mylib import print_stderr, tagswitch, StrFromC
 from qsn_ import qsn
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
@@ -318,7 +317,7 @@ class ErrorFormatter(object):
   def StderrLine(self, msg):
     # type: (str) -> None
     """Just print to stderr."""
-    stderr_line(msg)
+    print_stderr(msg)
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
@@ -360,7 +359,7 @@ def PrintAst(node, flag):
   # type: (command_t, arg_types.main) -> None
 
   if flag.ast_format == 'none':
-    stderr_line('AST not printed.')
+    print_stderr('AST not printed.')
     if 0:
       from _devbuild.gen.id_kind_asdl import Id_str
       from frontend.lexer import ID_HIST

@@ -23,7 +23,6 @@ from core import pyos
 from core import process
 from core import shell_native
 from core import pyutil
-from core.pyutil import stderr_line
 from core import state
 from core import ui
 from core import util
@@ -147,8 +146,8 @@ class ShellOptHook(state.OptHook):
       if self.readline:
         self.readline.parse_and_bind("set editing-mode " + opt_name);
       else:
-        stderr_line(
-            "Warning: Can't set option %r because Oil wasn't built with line editing (e.g. GNU readline)", opt_name)
+        print_stderr(
+            "Warning: Can't set option %r because shell wasn't compiled with GNU readline" % opt_name)
         return False
 
       # Invert: they are mutually exclusive!
@@ -219,7 +218,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   try:
     attrs = flag_spec.ParseMore('main', arg_r)
   except error.Usage as e:
-    stderr_line('osh usage error: %s', e.msg)
+    print_stderr('osh usage error: %s' % e.msg)
     return 2
   flag = arg_types.main(attrs.attrs)
 
@@ -337,8 +336,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     try:
       debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))  # type: util._DebugFile
     except OSError as e:
-      stderr_line("osh: Couldn't open %r: %s", debug_path,
-                  posix.strerror(e.errno))
+      print_stderr("osh: Couldn't open %r: %s" %
+                   (debug_path, posix.strerror(e.errno)))
       return 2
   else:
     debug_f = util.NullDebugFile()
@@ -672,7 +671,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     return status
 
   if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-    stderr_line('osh warning: --rcfile ignored in non-interactive shell')
+    print_stderr('osh warning: --rcfile ignored in non-interactive shell')
 
   if exec_opts.noexec():
     status = 0

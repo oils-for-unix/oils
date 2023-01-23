@@ -18,13 +18,12 @@ from core import dev
 from core import error
 from core import main_loop
 from core import pyos
-from core.pyutil import stderr_line
 from core import vm
 from frontend import flag_spec
 from frontend import signal_def
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import iteritems
+from mycpp.mylib import iteritems, print_stderr
 
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -268,7 +267,7 @@ class Trap(vm._Builtin):
     # Register a hook.
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
-        stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
+        print_stderr("osh warning: The %r hook isn't implemented" % sig_spec)
       self.trap_state.AddUserHook(sig_key, node)
       return 0
 

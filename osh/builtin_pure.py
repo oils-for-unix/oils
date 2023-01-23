@@ -28,7 +28,6 @@ from asdl import format as fmt
 from asdl import runtime
 from core import error
 from core.pyerror import e_usage, e_die
-from core.pyutil import stderr_line
 from core import optview
 from core import state
 from core.pyerror import log
@@ -41,7 +40,7 @@ from frontend import match
 from frontend import typed_args
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import iteritems, tagswitch, NewDict
+from mycpp.mylib import iteritems, tagswitch, NewDict, print_stderr
 from osh import word_compile
 
 from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
@@ -293,7 +292,7 @@ class Hash(vm._Builtin):
       for cmd in rest:  # enter in cache
         full_path = self.search_path.CachedLookup(cmd)
         if full_path is None:
-          stderr_line('hash: %r not found', cmd)
+          print_stderr('hash: %r not found' % cmd)
           status = 1
     else:  # print cache
       commands = self.search_path.CachedCommands()
@@ -416,7 +415,7 @@ def _GetOpts(spec, argv, my_state, errfmt):
         # TODO: Add location info
         errfmt.Print_('getopts: option %r requires an argument.' % current)
         tmp = [qsn.maybe_shell_encode(a) for a in argv]
-        stderr_line('(getopts argv: %s)', ' '.join(tmp))
+        print_stderr('(getopts argv: %s)' % ' '.join(tmp))
 
         # Hm doesn't cause status 1?
         return 0, '?'

@@ -25,12 +25,12 @@ from core import error
 from core import shell
 from core import pyos
 from core import pyutil
-from core.pyutil import stderr_line
 from core import shell_native
 from core.pyerror import log
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib
+from mycpp.mylib import print_stderr
 from osh import builtin_misc
 from pylib import os_path
 from tools import tools_main
@@ -150,10 +150,10 @@ def AppBundleMain(argv):
       if mylib.PYTHON:
         return tools_main.OshCommandMain(main_argv)
       else:
-        stderr_line('oshc not translated')
+        print_stderr('oshc not translated')
         return 2
     except error.Usage as e:
-      stderr_line('oshc usage error: %s', e.msg)
+      print_stderr('oshc usage error: %s' % e.msg)
       return 2
 
   elif applet == 'tea':
@@ -161,7 +161,7 @@ def AppBundleMain(argv):
     if mylib.PYTHON:
       return tea_main.Main(arg_r)
     else:
-      stderr_line('tea not translated')
+      print_stderr('tea not translated')
       return 2
 
   # For testing latency
@@ -175,7 +175,7 @@ def AppBundleMain(argv):
       main_argv = arg_r.Rest()
       return readlink.main(main_argv)
     else:
-      stderr_line('readlink not translated')
+      print_stderr('readlink not translated')
       return 2
 
   else:
@@ -207,7 +207,7 @@ def main(argv):
       traceback.print_exc()
 
     # test this with prlimit --nproc=1 --pid=$$
-    stderr_line('osh I/O error: %s', posix.strerror(e.errno))
+    print_stderr('osh I/O error: %s' % posix.strerror(e.errno))
     return 2  # dash gives status 2
 
 

@@ -65,12 +65,7 @@ def BackslashEscape(s, meta_chars):
 
 def stderr_line(msg, *args):
   # type: (str, *Any) -> None
-  """Print a message to stderr for the user.
-
-  This should be used sparingly, since it doesn't have any location info.
-  Right now we use it to print fatal I/O errors that were only caught at the
-  top level.
-  """
+  """ TODO: remove in favor of mylib.print_stderr """
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)

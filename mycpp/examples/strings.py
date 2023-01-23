@@ -64,7 +64,8 @@ def run_tests():
     print("len(s) = %d" % len(s))
     print(s)
 
-  print("foo%s" % "\0bar")
+  s = "foo%s" % "\0bar"
+  print("len(s) = %d" % len(s))
 
   print("%o" % 12345)
   print("%17o" % 12345)

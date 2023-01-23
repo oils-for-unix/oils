@@ -45,6 +45,12 @@ def NewDict():
 
 def print_stderr(s):
   # type: (str) -> None
+  """Print a message to stderr for the user.
+
+  This should be used sparingly, since it doesn't have location info, like
+  ui.ErrorFormatter does.  We use it to print fatal I/O errors that were only
+  caught at the top level.
+  """
   print(s, file=sys.stderr)
 
 

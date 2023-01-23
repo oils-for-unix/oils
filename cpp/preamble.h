@@ -30,5 +30,3 @@
 #include "cpp/stdlib.h"
 #include "cpp/translation_stubs.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
-
-using mylib::print_stderr;

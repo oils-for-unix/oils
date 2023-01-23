@@ -17,10 +17,10 @@ from core import error
 from core import optview
 from core.pyerror import e_usage
 from core import pyutil
-from core.pyutil import stderr_line
 from core import state
 from core import ui
 from mycpp import mylib
+from mycpp.mylib import print_stderr
 
 import posix_ as posix
 
@@ -45,7 +45,7 @@ def Main(arg_r):
   try:
     attrs = flag_spec.Parse('tea_main', arg_r)
   except error.Usage as e:
-    stderr_line('tea usage error: %s', e.msg)
+    print_stderr('tea usage error: %s' % e.msg)
     return 2
   arg = arg_types.tea_main(attrs.attrs)
 
@@ -66,8 +66,8 @@ def Main(arg_r):
         # Hack for type checking.  core/shell.py uses fd_state.Open().
         f = cast('mylib.LineReader', open(script_name))
       except IOError as e:
-        stderr_line("tea: Couldn't open %r: %s", script_name,
-                    posix.strerror(e.errno))
+        print_stderr("tea: Couldn't open %r: %s" %
+                     (script_name, posix.strerror(e.errno)))
         return 2
     line_reader = reader.FileLineReader(f, arena)
 

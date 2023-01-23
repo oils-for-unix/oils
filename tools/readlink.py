@@ -6,7 +6,7 @@ readlink.py - Minimal implementation of readlink -f, e.g. for OS X.
 import libc
 from frontend import args
 from frontend import flag_spec
-from core.pyutil import stderr_line
+from mycpp.mylib import print_stderr
 
 from typing import List
 
@@ -21,7 +21,7 @@ def main(argv):
   arg = args.Parse(SPEC, arg_r)
 
   if not arg.f:
-    stderr_line("readlink: -f must be passed")
+    print_stderr("readlink: -f must be passed")
     return 1
   for path in arg_r.Rest():
     res = libc.realpath(path)

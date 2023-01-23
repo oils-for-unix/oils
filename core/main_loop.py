@@ -20,11 +20,10 @@ from core import process
 from core import ui
 from core import util
 from core.pyerror import log
-from core.pyutil import stderr_line
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import print_stderr, tagswitch
 
 import fanos
 import posix_ as posix
@@ -83,7 +82,8 @@ class ctx_Descriptors(object):
 
 def fanos_log(msg):
   # type: (str) -> None
-  stderr_line('[FANOS] %s' % msg)
+  print_stderr('[FANOS] %s' % msg)
+
 
 def ShowDescriptorState(label):
   # type: (str) -> None
@@ -93,7 +93,7 @@ def ShowDescriptorState(label):
     time.sleep(0.01)  # prevent interleaving
 
     pid = posix.getpid()
-    stderr_line(label + ' (PID %d)' % pid)
+    print_stderr(label + ' (PID %d)' % pid)
 
     os.system('ls -l /proc/%d/fd >&2' % pid)
 

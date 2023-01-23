@@ -8,7 +8,7 @@ import os
 import sys
 
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, print_stderr
 
 from typing import Any
 
@@ -41,7 +41,7 @@ def run_tests():
 
   log('constant string')
 
-  stderr_line('stderr_line')
+  print_stderr('stderr_line')
 
   # Positional args
   log("log %d %s", 42, "LL")

@@ -27,7 +27,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import dev
 from core import pyutil
-from core.pyutil import stderr_line
 from core import pyos
 from core import state
 from core import ui
@@ -37,7 +36,7 @@ from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, StrFromC
+from mycpp.mylib import print_stderr, tagswitch, iteritems, StrFromC
 
 import posix_ as posix
 from posix_ import (
@@ -718,7 +717,7 @@ class SubProgramThunk(Thunk):
       print('')
       status = 130  # 128 + 2
     except (IOError, OSError) as e:
-      stderr_line('osh I/O error: %s', pyutil.strerror(e))
+      print_stderr('osh I/O error: %s' % pyutil.strerror(e))
       status = 2
 
     # If ProcessInit() doesn't turn off buffering, this is needed before
@@ -1484,7 +1483,7 @@ class Waiter(object):
     # notification of its exit, even though we didn't start it.  We can't have
     # any knowledge of such processes, so print a warning.
     if pid not in self.job_state.child_procs:
-      stderr_line("osh: PID %d stopped, but osh didn't start it", pid)
+      print_stderr("osh: PID %d stopped, but osh didn't start it" % pid)
       return W1_OK
 
     proc = self.job_state.child_procs[pid]

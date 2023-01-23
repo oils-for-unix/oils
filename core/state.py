@@ -22,17 +22,15 @@ from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
+from core.pyerror import e_usage, e_die, log
 from core import pyos
 from core import pyutil
-from core.pyerror import e_usage
-from core.pyutil import stderr_line
-from core import ui
-from core.pyerror import log, e_die
 from core import optview
+from core import ui
 from frontend import consts
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, NewDict
+from mycpp.mylib import print_stderr, tagswitch, iteritems, NewDict
 from osh import split
 from pylib import os_path
 from pylib import path_stat
@@ -716,7 +714,7 @@ class MutableOpts(object):
       self.SetDeferredErrExit(b)
     else:
       if opt_num == option_i.verbose and b:
-        stderr_line('Warning: set -o verbose not implemented')
+        print_stderr('Warning: set -o verbose not implemented')
       self._SetArrayByNum(opt_num, b)
 
     # note: may FAIL before we get here.
