@@ -39,34 +39,14 @@ oils-cpp-main() {
 
   cat <<EOF
 int main(int argc, char **argv) {
-
-  // complain_loudly_on_segfault();
-
-  // Arbitrary threshold of 100K objects based on CPython's configure
-  gHeap.Init(100000);
-
-  // Hook to test out buffering
-  mylib::ProcessInit();
+  mylib::InitCppOnly();  // Initializes gHeap
 
   auto* args = Alloc<List<Str*>>();
   for (int i = 0; i < argc; ++i) {
     args->append(StrFromC(argv[i]));
   }
-  int status = 0;
 
-  // For benchmarking
-  const char* repeat = getenv("REPEAT");
-  if (repeat) {
-    Str* r = StrFromC(repeat);
-    int n = to_int(r);
-    log("Running %d times", n);
-    for (int i = 0; i < n; ++i) { 
-      status = $main_namespace::main(args);
-    }
-    // TODO: clear memory?
-  } else {
-    status = $main_namespace::main(args);
-  }
+  int status = $main_namespace::main(args);
 
   gHeap.FastProcessExit();
 

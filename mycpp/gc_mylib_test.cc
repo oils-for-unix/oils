@@ -245,8 +245,8 @@ TEST for_test_coverage() {
   ASSERT_EQ(false, w->isatty());
   w->flush();
 
-  // Turns off buffering
-  mylib::ProcessInit();
+  // Initializes the heap
+  mylib::InitCppOnly();
 
   PASS();
 }

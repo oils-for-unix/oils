@@ -1,14 +1,18 @@
+#include "mycpp/gc_mylib.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
-#include "mycpp/runtime.h"
-
 namespace mylib {
 
-void ProcessInit() {
+void InitCppOnly() {
   // We don't seem need this now that we have ctx_FlushStdout().
   // setvbuf(stdout, 0, _IONBF, 0);
+
+  // Arbitrary threshold of 50K objects based on eyeballing benchmarks/osh-runtime
+  // 10K or 100K aren't too bad either.
+  gHeap.Init(50000);
 }
 
 void writeln(Str* s, int fd) {

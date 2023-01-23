@@ -22,7 +22,7 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
-void ProcessInit();
+void InitCppOnly();
 
 // Wrappers around our C++ APIs
 
