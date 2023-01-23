@@ -15,12 +15,12 @@ void InitCppOnly() {
   gHeap.Init(50000);
 }
 
-// Like print(..., file=sys.stderr), but Python code explicitly calls it.
 void print_stderr(Str* s) {
   fputs(s->data_, stderr);  // prints until first NUL
   fputc('\n', stderr);
 }
 
+#if 0
 void writeln(Str* s, int fd) {
   // TODO: handle errors and write in a loop, like posix::write().  If possible,
   // use posix::write directly, but that introduces some dependency problems.
@@ -32,6 +32,7 @@ void writeln(Str* s, int fd) {
     assert(0);
   }
 }
+#endif
 
 class MutableStr : public Str {};
 

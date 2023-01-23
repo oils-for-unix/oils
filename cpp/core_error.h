@@ -1,4 +1,4 @@
-// Replacement for core/error
+// core_error.h: Corresponds to for core/error.py
 
 #ifndef CORE_ERROR_H
 #define CORE_ERROR_H
@@ -16,6 +16,7 @@ using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
+// TODO: Should take a required location, and be translated from Python
 class Usage {
  public:
   Usage(Str* msg, int span_id)

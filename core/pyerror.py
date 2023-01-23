@@ -25,6 +25,16 @@ def e_usage(msg, *pos_args, **kwargs):
 
   Usually causes a builtin to fail with status 2, but the script can continue
   if 'set +o errexit'.  Main programs like bin/oil also use this.
+
+  Caught by
+
+  - RunAssignBuiltin and RunBuiltin, with optional LOCATION INFO
+  - various main() programs, without location info
+
+  Probably should separate these two cases?
+
+  - builtins pass Token() or loc::Missing()
+  - tool interfaces don't pass any location info
   """
   raise error.Usage(msg, *pos_args, **kwargs)
 

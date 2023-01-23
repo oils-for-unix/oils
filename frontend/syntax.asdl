@@ -86,6 +86,15 @@ module syntax
   -- TODO: new representation that points to a line?
   Token = (id id, int span_id, string val)
 
+  -- Source location for errors
+  -- It's possible for word_part and word to have a beginning and end location
+  loc = 
+    Missing  -- equivalent of runtime.NO_SPID
+  | Token %Token
+  | WordPart(word_part p)
+    -- Note: is it possible to only have compound_word?
+  | Word(word w)
+
   -- After parsing, we often don't need the token 'string val', so use a
   -- 'speck'.  Notes:
   -- * It's 12 bytes with the GC header
