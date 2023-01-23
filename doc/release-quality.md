@@ -48,7 +48,7 @@ This is a supplement to the [main release page](index.html).
   - [smoosh](test/spec.wwz/survey/smoosh.html)
     | [smoosh-hang](test/spec.wwz/survey/smoosh-hang.html)
 - [parse-errors](test/other.wwz/parse-errors.txt).  A list of all parse errors.
-  - [parse-errors-oil-native](test/other.wwz/parse-errors-oil-native.txt).
+  - [parse-errors-osh-cpp](test/other.wwz/parse-errors-osh-cpp.txt).
     With the native binary.
 - [runtime-errors](test/other.wwz/runtime-errors.txt).  A list of shell runtime
   errors.
@@ -96,17 +96,17 @@ This is a supplement to the [main release page](index.html).
     An overview of the "compiler engineer" project.
   - [osh-cloc](pub/metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
     libraries, as measured by the [cloc][] tool.
-- `oil-native`.
+- Generated C++ code
   - [oil-cpp](pub/metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
-    `oil-native` tarball.
+    `oils-for-unix` tarball.
   - [preprocessed](pub/metrics.wwz/preprocessed/index.html).  How much code is
     passed to the compiler?
     - [cxx-dbg](pub/metrics.wwz/preprocessed/cxx-dbg.txt),
       [cxx-opt](pub/metrics.wwz/preprocessed/cxx-opt.txt)
-  - [Binary code size](pub/metrics.wwz/oil-native/index.html) reported by
+  - [Binary code size](pub/metrics.wwz/oils-for-unix/index.html) reported by
     [Bloaty][].  How much code is output by the compiler?
-    - [overview](pub/metrics.wwz/oil-native/overview.txt),
-      [symbols](pub/metrics.wwz/oil-native/symbols.txt)
+    - [overview](pub/metrics.wwz/oils-for-unix/overview.txt),
+      [symbols](pub/metrics.wwz/oils-for-unix/symbols.txt)
 
 
 [cloc]: https://github.com/AlDanial/cloc
