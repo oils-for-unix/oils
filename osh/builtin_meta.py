@@ -121,7 +121,7 @@ class Source(vm._Builtin):
             try:
               status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
                                        cmd_flags=cmd_eval.RaiseControlFlow)
-            except error._ControlFlow as e:
+            except vm.ControlFlow as e:
               if e.IsReturn():
                 status = e.StatusCode()
               else:

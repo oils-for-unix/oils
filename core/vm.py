@@ -3,7 +3,9 @@ vm.py: Library for executing shell.
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import CommandStatus, StatusArray
+from _devbuild.gen.syntax_asdl import Token
 from core.pyerror import log
 from core import pyos
 
@@ -26,6 +28,60 @@ if TYPE_CHECKING:
   from core import state
 
 _ = log
+
+
+class ControlFlow(Exception):
+  """Internal exception for control flow.
+
+  Used by CommandEvaluator and 'source' builtin
+
+  break and continue are caught by loops, return is caught by functions.
+
+  NOTE: I tried representing this in ASDL, but in Python the base class has to
+  be BaseException.  Also, 'Token' is in syntax.asdl but not runtime.asdl.
+
+  cflow =
+    -- break, continue, return, exit
+    Shell(Token keyword, int arg)
+    -- break, continue
+  | OilLoop(Token keyword)
+    -- return
+  | OilReturn(Token keyword, value val)
+  """
+
+  def __init__(self, token, arg):
+    # type: (Token, int) -> None
+    """
+    Args:
+      token: the keyword token
+      arg: exit code fo 'return', or number of levels to break/continue
+    """
+    self.token = token
+    self.arg = arg  
+
+  def IsReturn(self):
+    # type: () -> bool
+    return self.token.id == Id.ControlFlow_Return
+
+  def IsBreak(self):
+    # type: () -> bool
+
+    return self.token.id == Id.ControlFlow_Break
+
+  def IsContinue(self):
+    # type: () -> bool
+    return self.token.id == Id.ControlFlow_Continue
+
+  def StatusCode(self):
+    # type: () -> int
+    assert self.IsReturn()
+    # All shells except dash do this truncation.
+    # turn 257 into 1, and -1 into 255.
+    return self.arg & 0xff
+
+  def __repr__(self):
+    # type: () -> str
+    return '<ControlFlow %s>' % self.token
 
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):

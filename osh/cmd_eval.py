@@ -51,7 +51,6 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from asdl import runtime
 from core import dev
 from core import error
-from core.error import _ControlFlow
 from core.pyerror import log, e_die, e_die_status
 from core import pyos  # Time().  TODO: rename
 from core import state
@@ -1036,7 +1035,7 @@ class CommandEvaluator(object):
           if tok.id == Id.ControlFlow_Exit:
             raise util.UserExit(arg)  # handled differently than other control flow
           else:
-            raise _ControlFlow(tok, arg)
+            raise vm.ControlFlow(tok, arg)
         else:
           msg = 'Invalid control flow at top level'
           if self.exec_opts.strict_control_flow():
@@ -1119,7 +1118,7 @@ class CommandEvaluator(object):
                 break
               status = self._Execute(node.body)  # last one wins
 
-            except _ControlFlow as e:
+            except vm.ControlFlow as e:
               # Important: 'break' can occur in the CONDITION or body
               if e.IsBreak():
                 status = 0
@@ -1192,7 +1191,7 @@ class CommandEvaluator(object):
 
                   try:
                     status = self._Execute(node.body)  # last one wins
-                  except _ControlFlow as e:
+                  except vm.ControlFlow as e:
                     if e.IsBreak():
                       status = 0
                       break
@@ -1236,7 +1235,7 @@ class CommandEvaluator(object):
 
                   try:
                     status = self._Execute(node.body)  # last one wins
-                  except _ControlFlow as e:
+                  except vm.ControlFlow as e:
                     if e.IsBreak():
                       status = 0
                       break
@@ -1280,7 +1279,7 @@ class CommandEvaluator(object):
 
               try:
                 status = self._Execute(node.body)  # last one wins
-              except _ControlFlow as e:
+              except vm.ControlFlow as e:
                 if e.IsBreak():
                   status = 0
                   break
@@ -1312,7 +1311,7 @@ class CommandEvaluator(object):
 
             try:
               status = self._Execute(body)
-            except _ControlFlow as e:
+            except vm.ControlFlow as e:
               if e.IsBreak():
                 status = 0
                 break
@@ -1606,7 +1605,7 @@ class CommandEvaluator(object):
 
   def ExecuteAndCatch(self, node, cmd_flags=0):
     # type: (command_t, int) -> Tuple[bool, bool]
-    """Execute a subprogram, handling _ControlFlow and fatal exceptions.
+    """Execute a subprogram, handling vm.ControlFlow and fatal exceptions.
 
     Args:
       node: LST subtree
@@ -1640,7 +1639,7 @@ class CommandEvaluator(object):
 
     try:
       status = self._Execute(node)
-    except _ControlFlow as e:
+    except vm.ControlFlow as e:
       if cmd_flags & RaiseControlFlow:
         raise  # 'eval break' and 'source return.sh', etc.
       else:
@@ -1787,7 +1786,7 @@ class CommandEvaluator(object):
       # Here doc causes a pipe and Process(SubProgramThunk).
       try:
         status = self._Execute(proc.body)
-      except _ControlFlow as e:
+      except vm.ControlFlow as e:
         if e.IsReturn():
           status = e.StatusCode()
         else:
@@ -1816,7 +1815,7 @@ class CommandEvaluator(object):
     namespace_ = None  # type: Dict[str, cell]
     try:
       self._Execute(block)  # can raise FatalRuntimeError, etc.
-    except _ControlFlow as e:  # A block is more like a function.
+    except vm.ControlFlow as e:  # A block is more like a function.
       # return in a block
       if e.IsReturn():
         status = e.StatusCode()
@@ -1846,7 +1845,7 @@ class CommandEvaluator(object):
     except error.FatalRuntime as e:
       self.errfmt.PrettyPrintError(e)
       status = e.ExitStatus()
-    except _ControlFlow as e:
+    except vm.ControlFlow as e:
       # shouldn't be able to exit the shell from a completion hook!
       # TODO: Avoid overwriting the prompt!
       self.errfmt.Print_('Attempted to exit from completion hook.',
