@@ -54,13 +54,8 @@ typecheck-files-2() {
   fi
 }
 
-soil-run() {
-  set -x
-  mypy_ --version
-  set +x
-
-  # Generate oils_cpp dependencies.  Though this is overly aggressive
-  ./NINJA-config.sh
+check-all() {
+  ### Run this locally
 
   banner 'typecheck oils_cpp'
   typecheck-files-2 _build/NINJA/oils_cpp/typecheck.txt
@@ -70,5 +65,15 @@ soil-run() {
   typecheck-more
 }
 
+soil-run() {
+  set -x
+  mypy_ --version
+  set +x
+
+  # Generate oils_cpp dependencies.  Though this is overly aggressive
+  ./NINJA-config.sh
+
+  check-all
+}
 
 "$@"

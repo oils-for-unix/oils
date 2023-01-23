@@ -56,9 +56,15 @@ def _GetCTypeForCast(type_expr):
   return subtype_name
 
 
-def _GetCastKind(module_path, subtype_name):
+def _GetCastKind(module_path, cast_to_type):
+  """Translate MyPy cast to C++ cast.
+  
+  Prefer static_cast, but sometimes we need reinterpret_cast.
+  """
+
   cast_kind = 'static_cast'
-  # Hack for the CastDummy in expr_to_ast.py
+
+  # Hack for Id.Expr_CastedDummy in expr_to_ast.py
   if 'expr_to_ast.py' in module_path:
     for name in (
         'sh_array_literal', 'command_sub', 'braced_var_sub',
@@ -66,12 +72,19 @@ def _GetCastKind(module_path, subtype_name):
         # Another kind of hack, not because of CastDummy
         'place_expr_t',
         ):
-      if name in subtype_name:
+      if name in cast_to_type:
         cast_kind = 'reinterpret_cast'
         break
 
-  if 'process.py' in module_path and 'mylib::Writer' in subtype_name:
-      cast_kind = 'reinterpret_cast'
+  # The other side of Id.Expr_CastedDummy
+  if 'expr_parse.py' in module_path:
+    for name in ('Token',):
+      if name in cast_to_type:
+        cast_kind = 'reinterpret_cast'
+        break
+
+  if 'process.py' in module_path and 'mylib::Writer' in cast_to_type:
+    cast_kind = 'reinterpret_cast'
 
   return cast_kind
 

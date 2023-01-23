@@ -592,7 +592,7 @@ class WordParser(WordEmitter):
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
 
-    node = single_quoted(left_token, tokens, False)
+    node = single_quoted(left_token, tokens)
     node.spids.append(left_token.span_id)  # left '
     node.spids.append(self.cur_token.span_id)  # right '
     return node
@@ -906,7 +906,7 @@ class WordParser(WordEmitter):
     parts = []  # type: List[word_part_t]
     self._ReadLikeDQ(left_token, False, parts)
 
-    dq_part = double_quoted(left_token, parts, False)
+    dq_part = double_quoted(left_token, parts)
     dq_part.spids.append(left_token.span_id)  # Left ", sort of redundant
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
@@ -1322,18 +1322,23 @@ class WordParser(WordEmitter):
     words = []  # type: List[compound_word]
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
-      if w.tag_() == word_e.Token:
-        tok = cast(Token, w)
-        if tok.id == Id.Right_ShArrayLiteral:
-          break
-        # Unlike command parsing, array parsing allows embedded \n.
-        elif tok.id == Id.Op_Newline:
-          continue
-        else:
-          # Token
-          p_die('Unexpected token in array literal', word=w)
+      with tagswitch(w) as case:
+        if case(word_e.Token):
+          tok = cast(Token, w)
+          if tok.id == Id.Right_ShArrayLiteral:
+            break
+          # Unlike command parsing, array parsing allows embedded \n.
+          elif tok.id == Id.Op_Newline:
+            continue
+          else:
+            # Token
+            p_die('Unexpected token in array literal', word=w)
 
-      words.append(cast(compound_word, w))
+        elif case(word_e.Compound):
+          words.append(cast(compound_word, w))
+
+        else:
+          raise AssertionError()
 
     if len(words) == 0:  # a=() is empty indexed array
       # Needed for type safety, doh

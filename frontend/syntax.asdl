@@ -118,9 +118,9 @@ module syntax
   -- Variants:
   -- * Look at left token for $'' c'' vs r'' ''
   -- * """ and ''' strings have a boolean set
-  double_quoted = (Token left, word_part* parts, bool multiline)
+  double_quoted = (Token left, word_part* parts)
                   attributes (int* spids)
-  single_quoted = (Token left, Token* tokens, bool multiline)
+  single_quoted = (Token left, Token* tokens)
                   attributes (int* spids)
 
   -- Note: simple_var_sub could be split up into speck for $?, (speck, int) for

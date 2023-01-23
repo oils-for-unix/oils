@@ -15,6 +15,7 @@ from core.pyerror import log, p_die
 from frontend import consts
 from frontend import reader
 from mycpp import mylib
+from mycpp.mylib import tagswitch
 from osh import braces
 from osh import word_
 from pgen2 import parse
@@ -166,22 +167,19 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
     # Mututally recursive calls into the command/word parsers.
     #
 
-    if mylib.PYTHON:
-      if tok.id == Id.Left_PercentParen:  # %(
-        left_tok = tok
-        lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+    if tok.id == Id.Left_PercentParen:  # %(
+      left_tok = tok
+      lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
 
-        # Blame the opening token
-        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
-        words = []
-        close_tok = None  # type: Optional[Token]
-        while True:
-          w = w_parser.ReadWord(lex_mode_e.ShCommand)
-          if 0:
-            log('w = %s', w)
-
-          if w.tag_() == word_e.Token:
+      # Blame the opening token
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      words = []  # type: List[compound_word]
+      close_tok = None  # type: Optional[Token]
+      while True:
+        w = w_parser.ReadWord(lex_mode_e.ShCommand)
+        with tagswitch(w) as case:
+          if case(word_e.Token):
             tok = cast(Token, w)
             if tok.id == Id.Right_ShArrayLiteral:
               close_tok = tok
@@ -192,112 +190,116 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
               # Token
               p_die('Unexpected token in array literal: %r', tok.val, word=w)
 
-          assert isinstance(w, compound_word)  # for MyPy
-          words.append(w)
+          elif case(word_e.Compound):
+            words.append(cast(compound_word, w))
 
-        words2 = braces.BraceDetectAll(words)
-        words3 = word_.TildeDetectAll(words2)
+          else:
+            raise AssertionError()
 
-        typ = Id.Expr_CastedDummy
+      words2 = braces.BraceDetectAll(words)
+      words3 = word_.TildeDetectAll(words2)
 
-        lit_part = sh_array_literal(left_tok, words3)
-        opaque = cast(Token, lit_part)  # HACK for expr_to_ast
-        done = p.addtoken(typ, opaque, gr.tokens[typ])
-        assert not done  # can't end the expression
+      typ = Id.Expr_CastedDummy
 
-        # Now push the closing )
-        ilabel = _Classify(gr, close_tok, tea_keywords)
-        done = p.addtoken(tok.id, close_tok, ilabel)
-        assert not done  # can't end the expression
+      lit_part = sh_array_literal(left_tok, words3)
+      opaque = cast(Token, lit_part)  # HACK for expr_to_ast
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
+      assert not done  # can't end the expression
 
-        continue
+      # Now push the closing )
+      ilabel = _Classify(gr, close_tok, tea_keywords)
+      done = p.addtoken(tok.id, close_tok, ilabel)
+      assert not done  # can't end the expression
 
-      # $(  @(  &(
-      if tok.id in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_CaretParen):
+      continue
 
-        left_token = tok
+    # $(  @(  ^(
+    if tok.id in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_CaretParen):
 
-        lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
-        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-        c_parser = parse_ctx.MakeParserForCommandSub(line_reader, lex,
-                                                     Id.Eof_RParen)
-        node = c_parser.ParseCommandSub()
-        # A little gross: Copied from osh/word_parse.py
-        right_token = c_parser.w_parser.cur_token
+      left_token = tok
 
-        cs_part = command_sub(left_token, node)
-        cs_part.spids.append(left_token.span_id)
-        cs_part.spids.append(right_token.span_id)
+      lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      c_parser = parse_ctx.MakeParserForCommandSub(line_reader, lex,
+                                                   Id.Eof_RParen)
+      node = c_parser.ParseCommandSub()
+      # A little gross: Copied from osh/word_parse.py
+      right_token = c_parser.w_parser.cur_token
 
-        typ = Id.Expr_CastedDummy
-        opaque = cast(Token, cs_part)  # HACK for expr_to_ast
-        done = p.addtoken(typ, opaque, gr.tokens[typ])
-        assert not done  # can't end the expression
+      cs_part = command_sub(left_token, node)
+      cs_part.spids.append(left_token.span_id)
+      cs_part.spids.append(right_token.span_id)
 
-        # Now push the closing )
-        ilabel = _Classify(gr, right_token, tea_keywords)
-        done = p.addtoken(right_token.id, right_token, ilabel)
-        assert not done  # can't end the expression
+      typ = Id.Expr_CastedDummy
+      opaque = cast(Token, cs_part)  # HACK for expr_to_ast
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
+      assert not done  # can't end the expression
 
-        continue
+      # Now push the closing )
+      ilabel = _Classify(gr, right_token, tea_keywords)
+      done = p.addtoken(right_token.id, right_token, ilabel)
+      assert not done  # can't end the expression
 
-      # " and """
-      if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote):
-        left_token = tok
-        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      continue
 
-        parts = []  # type: List[word_part_t]
-        last_token = w_parser.ReadDoubleQuoted(left_token, parts)
-        expr_dq_part = double_quoted(left_token, parts)
+    # " and """
+    if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote):
+      left_token = tok
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-        typ = Id.Expr_CastedDummy
-        opaque = cast(Token, expr_dq_part)  # HACK for expr_to_ast
-        done = p.addtoken(typ, opaque, gr.tokens[typ])
-        assert not done  # can't end the expression
+      parts = []  # type: List[word_part_t]
+      last_token = w_parser.ReadDoubleQuoted(left_token, parts)
+      expr_dq_part = double_quoted(left_token, parts)
 
-        continue
+      typ = Id.Expr_CastedDummy
+      opaque = cast(Token, expr_dq_part)  # HACK for expr_to_ast
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
+      assert not done  # can't end the expression
 
-      if tok.id == Id.Left_DollarBrace:
-        left_token = tok
-        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      continue
 
-        part, last_token = w_parser.ReadBracedVarSub(left_token)
+    # ${
+    if tok.id == Id.Left_DollarBrace:
+      left_token = tok
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-        # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
-        typ = Id.Expr_CastedDummy
-        opaque = cast(Token, part)  # HACK for expr_to_ast
-        done = p.addtoken(typ, opaque, gr.tokens[typ])
-        assert not done  # can't end the expression
+      part, last_token = w_parser.ReadBracedVarSub(left_token)
 
-        continue
+      # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
+      typ = Id.Expr_CastedDummy
+      opaque = cast(Token, part)  # HACK for expr_to_ast
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
+      assert not done  # can't end the expression
 
-      # 'x'  r'x'  $'x' and '''x'''  r'''x'''  $'''x'''
-      if tok.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
-                    Id.Left_DollarSingleQuote,
-                    Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
-                    Id.Left_DollarTSingleQuote):
-        if tok.id in (Id.Left_DollarSingleQuote, Id.Left_DollarTSingleQuote):
-          sq_mode = lex_mode_e.SQ_C
-        else:
-          sq_mode = lex_mode_e.SQ_Raw
+      continue
 
-        left_token = tok
-        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+    # 'x'  r'x'  $'x' and '''x'''  r'''x'''  $'''x'''
+    if tok.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
+                  Id.Left_DollarSingleQuote,
+                  Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
+                  Id.Left_DollarTSingleQuote):
+      if tok.id in (Id.Left_DollarSingleQuote, Id.Left_DollarTSingleQuote):
+        sq_mode = lex_mode_e.SQ_C
+      else:
+        sq_mode = lex_mode_e.SQ_Raw
 
-        tokens = []  # type: List[Token]
-        last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
-                                               True)
+      left_token = tok
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-        sq_part = single_quoted(left_token, tokens)
+      tokens = []  # type: List[Token]
+      last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
+                                             True)
 
-        typ = Id.Expr_CastedDummy
-        opaque = cast(Token, sq_part)  # HACK for expr_to_ast
-        done = p.addtoken(typ, opaque, gr.tokens[typ])
-        assert not done  # can't end the expression
-        continue
+      sq_part = single_quoted(left_token, tokens)
+
+      typ = Id.Expr_CastedDummy
+      opaque = cast(Token, sq_part)  # HACK for expr_to_ast
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
+      assert not done  # can't end the expression
+      continue
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)
