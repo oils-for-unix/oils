@@ -32,12 +32,6 @@ regtest-compile() {
   popd
 }
 
-regtest-verify-golden() {
-  pushd opy
-  ./regtest.sh verify-golden
-  popd
-}
-
 count-lines() {
   pushd opy
   ./count.sh all

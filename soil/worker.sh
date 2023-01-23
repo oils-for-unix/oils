@@ -300,7 +300,6 @@ opy-count-lines        opy/soil.sh count-lines                    -
 test-gold              opy/soil.sh test-gold                      -
 build-oil-repo         opy/soil.sh build-oil-repo                 -
 regtest-compile        opy/soil.sh regtest-compile                -
-regtest-verify-golden  opy/soil.sh regtest-verify-golden          -
 EOF
 }
 
