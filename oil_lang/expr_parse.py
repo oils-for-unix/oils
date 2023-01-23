@@ -176,19 +176,19 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
       words = []  # type: List[compound_word]
       close_tok = None  # type: Optional[Token]
-      while True:
+      done = False
+      while not done:
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         with tagswitch(w) as case:
           if case(word_e.Token):
             tok = cast(Token, w)
             if tok.id == Id.Right_ShArrayLiteral:
               close_tok = tok
-              break
+              done = True  # can't use break here
             elif tok.id == Id.Op_Newline:  # internal newlines allowed
               continue
             else:
-              # Token
-              p_die('Unexpected token in array literal: %r', tok.val, word=w)
+              p_die('Unexpected token in array literal', word=w)
 
           elif case(word_e.Compound):
             words.append(cast(compound_word, w))

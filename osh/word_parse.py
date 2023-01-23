@@ -1320,18 +1320,18 @@ class WordParser(WordEmitter):
     # MUST use a new word parser (with same lexer).
     w_parser = self.parse_ctx.MakeWordParser(self.lexer, self.line_reader)
     words = []  # type: List[compound_word]
-    while True:
+    done = False
+    while not done:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
       with tagswitch(w) as case:
         if case(word_e.Token):
           tok = cast(Token, w)
           if tok.id == Id.Right_ShArrayLiteral:
-            break
+            done = True  # can't use break here
           # Unlike command parsing, array parsing allows embedded \n.
           elif tok.id == Id.Op_Newline:
             continue
           else:
-            # Token
             p_die('Unexpected token in array literal', word=w)
 
         elif case(word_e.Compound):
