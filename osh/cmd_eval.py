@@ -44,7 +44,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
-    CommandStatus, StatusArray, Proc
+    CommandStatus, StatusArray, Proc, flow_e
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -1002,10 +1002,10 @@ class CommandEvaluator(object):
         if node.arg_word:  # Evaluate the argument
           str_val = self.word_ev.EvalWordToString(node.arg_word)
 
-          # This is an OVERLOADING of strict_control_flow, which also has to do
-          # with break/continue at top level.  # We need 'return $empty' to be valid
-          # for libtool.  It also has the side effect of making 'return ""'
-          # valid, which shells other than zsh fail on.  That seems OK.
+          # Quirk: We need 'return $empty' to be valid for libtool.  This is
+          # another meaning of strict_control_flow, which also has to do with
+          # break/continue at top level.  It has the side effect of making
+          # 'return ""' valid, which shells other than zsh fail on.
           if len(str_val.s) == 0 and not self.exec_opts.strict_control_flow():
             arg = 0
           else:
@@ -1020,7 +1020,7 @@ class CommandEvaluator(object):
           if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()
           else:
-            arg = 0  # break 0 levels, nothing for continue
+            arg = 1  # break or continue 1 level by default
 
         self.tracer.OnControlFlow(tok.val, arg)
 
@@ -1119,14 +1119,11 @@ class CommandEvaluator(object):
               status = self._Execute(node.body)  # last one wins
 
             except vm.ControlFlow as e:
-              # Important: 'break' can occur in the CONDITION or body
-              if e.IsBreak():
-                status = 0
+              status = 0
+              action = e.HandleLoop()
+              if action == flow_e.Break:
                 break
-              elif e.IsContinue():
-                status = 0
-                continue
-              else:  # return needs to pop up more
+              elif action == flow_e.Raise:
                 raise
 
       elif case(command_e.ForEach):
@@ -1192,12 +1189,11 @@ class CommandEvaluator(object):
                   try:
                     status = self._Execute(node.body)  # last one wins
                   except vm.ControlFlow as e:
-                    if e.IsBreak():
-                      status = 0
+                    status = 0
+                    action = e.HandleLoop()
+                    if action == flow_e.Break:
                       break
-                    elif e.IsContinue():
-                      status = 0
-                    else:  # return needs to pop up more
+                    elif action == flow_e.Raise:
                       raise
                   index += 1
 
@@ -1236,12 +1232,11 @@ class CommandEvaluator(object):
                   try:
                     status = self._Execute(node.body)  # last one wins
                   except vm.ControlFlow as e:
-                    if e.IsBreak():
-                      status = 0
+                    status = 0
+                    action = e.HandleLoop()
+                    if action == flow_e.Break:
                       break
-                    elif e.IsContinue():
-                      status = 0
-                    else:  # return needs to pop up more
+                    elif action == flow_e.Raise:
                       raise
 
                   index += 1
@@ -1280,12 +1275,11 @@ class CommandEvaluator(object):
               try:
                 status = self._Execute(node.body)  # last one wins
               except vm.ControlFlow as e:
-                if e.IsBreak():
-                  status = 0
+                status = 0
+                action = e.HandleLoop()
+                if action == flow_e.Break:
                   break
-                elif e.IsContinue():
-                  status = 0
-                else:  # return needs to pop up more
+                elif action == flow_e.Raise:
                   raise
               index += 1
 
@@ -1312,12 +1306,11 @@ class CommandEvaluator(object):
             try:
               status = self._Execute(body)
             except vm.ControlFlow as e:
-              if e.IsBreak():
-                status = 0
+              status = 0
+              action = e.HandleLoop()
+              if action == flow_e.Break:
                 break
-              elif e.IsContinue():
-                status = 0
-              else:  # return needs to pop up more
+              elif action == flow_e.Raise:
                 raise
 
             if update:

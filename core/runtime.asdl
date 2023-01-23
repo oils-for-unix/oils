@@ -155,6 +155,8 @@ module runtime
     -- because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
 
+  flow = Nothing | Break | Raise
+
   -- For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
   emit = Part | Delim | Empty | Escape | Nothing

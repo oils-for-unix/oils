@@ -4,7 +4,8 @@ vm.py: Library for executing shell.
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import CommandStatus, StatusArray
+from _devbuild.gen.runtime_asdl import (
+    CommandStatus, StatusArray, flow_e, flow_t)
 from _devbuild.gen.syntax_asdl import Token
 from core.pyerror import log
 from core import pyos
@@ -79,9 +80,26 @@ class ControlFlow(Exception):
     # turn 257 into 1, and -1 into 255.
     return self.arg & 0xff
 
+  def HandleLoop(self):
+    # type: () -> flow_t
+    """Mutates this exception and returns what the caller should do."""
+
+    if self.IsBreak():
+      self.arg -= 1
+      if self.arg == 0:
+        return flow_e.Break # caller should break out of loop
+
+    elif self.IsContinue():
+      self.arg -= 1
+      if self.arg == 0:
+        return flow_e.Nothing  # do nothing to continue
+
+    # return / break 2 / continue 2 need to pop up more
+    return flow_e.Raise
+
   def __repr__(self):
     # type: () -> str
-    return '<ControlFlow %s>' % self.token
+    return '<ControlFlow %s %s>' % (self.token, self.arg)
 
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):
