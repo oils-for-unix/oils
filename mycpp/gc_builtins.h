@@ -102,8 +102,6 @@ class OSError : public IOError_OSError {
 
 void print(Str* s);
 
-void println_stderr(Str* s);
-
 Str* repr(Str* s);
 
 Str* str(int i);

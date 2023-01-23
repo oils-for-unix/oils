@@ -16,10 +16,7 @@ GLOBAL_STR(kSpace, " ");
 
 TEST print_test() {
   print(kStrFood);
-  println_stderr(kStrFood);
-
-  print(kWithNull);
-  println_stderr(kWithNull);
+  print(kWithNull);  // truncates
 
   PASS();
 }

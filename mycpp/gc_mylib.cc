@@ -10,9 +10,15 @@ void InitCppOnly() {
   // We don't seem need this now that we have ctx_FlushStdout().
   // setvbuf(stdout, 0, _IONBF, 0);
 
-  // Arbitrary threshold of 50K objects based on eyeballing benchmarks/osh-runtime
-  // 10K or 100K aren't too bad either.
+  // Arbitrary threshold of 50K objects based on eyeballing
+  // benchmarks/osh-runtime 10K or 100K aren't too bad either.
   gHeap.Init(50000);
+}
+
+// Like print(..., file=sys.stderr), but Python code explicitly calls it.
+void print_stderr(Str* s) {
+  fputs(s->data_, stderr);  // prints until first NUL
+  fputc('\n', stderr);
 }
 
 void writeln(Str* s, int fd) {

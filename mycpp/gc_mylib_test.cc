@@ -108,12 +108,14 @@ TEST funcs_test() {
   PASS();
 }
 
+#if 0
 TEST writeln_test() {
   mylib::writeln(StrFromC("stdout"));
   mylib::writeln(StrFromC("stderr"), mylib::kStderr);
 
   PASS();
 }
+#endif
 
 TEST BufWriter_test() {
   mylib::BufWriter* writer = nullptr;
@@ -211,7 +213,7 @@ TEST files_test() {
       break;
     }
     if (i < 5) {
-      println_stderr(s);
+      mylib::print_stderr(s);
     }
     ++i;
   }
@@ -262,7 +264,7 @@ int main(int argc, char** argv) {
   RUN_TEST(int_to_str_test);
   RUN_TEST(funcs_test);
 
-  RUN_TEST(writeln_test);
+  // RUN_TEST(writeln_test);
   RUN_TEST(BufWriter_test);
   RUN_TEST(BufLineReader_test);
   RUN_TEST(files_test);

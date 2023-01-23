@@ -5,10 +5,10 @@ PYTHON: bool
 
 STDIN_FILENO: int
 
-kStdout: int
-kStderr: int
+# kStdout: int
+# kStderr: int
 
-def writeln(s: str, fd: int = 0) -> None: ...
+# def writeln(s: str, fd: int = 0) -> None: ...
 
 def MaybeCollect() -> None: ...
 
@@ -42,6 +42,9 @@ class BufWriter(Writer):
 def Stdout() -> Writer: ...
 
 def Stderr() -> Writer: ...
+
+
+def print_stderr(s: str) -> None: ...
 
 def log(msg: str, *args: Any) -> None: ...
 

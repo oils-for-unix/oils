@@ -35,10 +35,12 @@ inline Str* StrFromC(const char* s) {
   return ::StrFromC(s);
 }
 
-const int kStdout = 1;
-const int kStderr = 2;
+void print_stderr(Str* s);
 
-void writeln(Str* s, int fd = kStdout);
+// const int kStdout = 1;
+// const int kStderr = 2;
+
+// void writeln(Str* s, int fd = kStdout);
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
