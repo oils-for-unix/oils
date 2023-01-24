@@ -105,7 +105,7 @@ def Stringify(py_val, word_part=None):
   if not isinstance(py_val, (int, float, str)):
     raise error.Expr(
         'Expected string-like value (Bool, Int, Str), but got %s' % type(py_val),
-        part=word_part)
+        loc.WordPart(word_part))
 
   return str(py_val)
 
@@ -302,9 +302,9 @@ class OilEvaluator(object):
     except TypeError as e:
       # TODO: Add location info.  Right now we blame the variable name for
       # 'var' and 'setvar', etc.
-      raise error.Expr('Type error in expression: %s' % str(e))
+      raise error.Expr('Type error in expression: %s' % str(e), loc.Missing())
     except (AttributeError, ValueError) as e:
-      raise error.Expr('Expression eval error: %s' % str(e))
+      raise error.Expr('Expression eval error: %s' % str(e), loc.Missing())
 
     return part_val
 
@@ -313,7 +313,8 @@ class OilEvaluator(object):
     try:
       items = [Stringify(item, word_part=part) for item in val.obj]
     except TypeError as e:  # TypeError if it isn't iterable
-      raise error.Expr('Type error in expression: %s' % str(e), part=part)
+      raise error.Expr('Type error in expression: %s' % str(e),
+                       loc.WordPart(part))
 
     return items
 
@@ -324,9 +325,9 @@ class OilEvaluator(object):
       with state.ctx_OilExpr(self.mutable_opts):
         return self._EvalExpr(node)
     except TypeError as e:
-      raise error.Expr('Type error in expression: %s' % str(e), span_id=blame_spid)
+      raise error.Expr('Type error in expression: %s' % str(e), loc.Span(blame_spid))
     except (AttributeError, ValueError) as e:
-      raise error.Expr('Expression eval error: %s' % str(e), span_id=blame_spid)
+      raise error.Expr('Expression eval error: %s' % str(e), loc.Span(blame_spid))
 
     # Note: IndexError and KeyError are handled in more specific places
 
@@ -526,7 +527,7 @@ class OilEvaluator(object):
           try:
             result = float(self._ToNumber(left)) / self._ToNumber(right)  # floating point division
           except ZeroDivisionError:
-            raise error.Expr('divide by zero', token=node.op)
+            raise error.Expr('divide by zero', node.op)
 
           return result
 
@@ -775,10 +776,10 @@ class OilEvaluator(object):
           result = obj[index]
         except KeyError:
           # TODO: expr.Subscript has no error location
-          raise error.Expr('dict entry not found', span_id=runtime.NO_SPID)
+          raise error.Expr('dict entry not found', loc.Missing())
         except IndexError:
           # TODO: expr.Subscript has no error location
-          raise error.Expr('index out of range', span_id=runtime.NO_SPID)
+          raise error.Expr('index out of range', loc.Missing())
 
         return result
 
@@ -799,7 +800,7 @@ class OilEvaluator(object):
           try:
             result = o[name]
           except KeyError:
-            raise error.Expr('dict entry not found', token=node.op)
+            raise error.Expr('dict entry not found', node.op)
 
           return result
 

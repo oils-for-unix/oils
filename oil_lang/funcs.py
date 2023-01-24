@@ -5,7 +5,7 @@ funcs.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value__Block
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, loc
 from asdl import runtime
 from core import alloc
 from core import error
@@ -13,7 +13,6 @@ from core import main_loop
 from core import state
 from core import ui
 from frontend import reader
-
 from mycpp import mylib
 
 import posix_ as posix
@@ -46,7 +45,7 @@ class ParseHay(object):
       f = self.fd_state.Open(path)
     except (IOError, OSError) as e:
       msg = posix.strerror(e.errno)
-      raise error.Expr("Couldn't open %r: %s" % (path, msg), span_id=call_spid)
+      raise error.Expr("Couldn't open %r: %s" % (path, msg), loc.Span(call_spid))
 
     arena = self.parse_ctx.arena
     line_reader = reader.FileLineReader(f, arena)
@@ -88,7 +87,7 @@ class EvalHay(object):
 
       call_spid = runtime.NO_SPID
       if block.tag_() != value_e.Block:
-        raise error.Expr('Expected a block, got %s' % block, span_id=call_spid)
+        raise error.Expr('Expected a block, got %s' % block, loc.Span(call_spid))
 
       UP_block = block
       block = cast(value__Block, UP_block)

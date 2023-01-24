@@ -103,6 +103,15 @@ if mylib.PYTHON:
       # type: () -> int
       return self.exit_status
 
+    def UserErrorString(self):
+      # type: () -> str
+
+      if self.args:
+        # TODO: this case is obsolete
+        return self.msg % self.args
+      else:
+        return self.msg
+
     def __repr__(self):
       # type: () -> str
       return '<%s %s %r %r %s>' % (
@@ -113,20 +122,27 @@ if mylib.PYTHON:
       # The default doesn't work very well?
       return repr(self)
 
-    def UserErrorString(self):
-      # type: () -> str
-
-      if self.args:
-        # TODO: this case is obsolete
-        return self.msg % self.args
-      else:
-        return self.msg
-
 
 # Need a better constructor
 if mylib.PYTHON:
+  class Runtime(Exception):
+    """An error that's meant to be caught, i.e. it's non-fatal.
+    
+    Thrown by core/state.py and caught by builtins
+    """
+
+    def __init__(self, msg):
+      # type: (str) -> None
+      self.msg = msg
+
+    def UserErrorString(self):
+      # type: () -> str
+      return self.msg
+
+
   class Parse(_ErrorWithLocation):
     """Used in the parsers."""
+
 
   class RedirectEval(_ErrorWithLocation):
     """Used in the CommandEvaluator.
@@ -134,9 +150,10 @@ if mylib.PYTHON:
     A bad redirect causes the SimpleCommand to return with status 1.  To make it
     fatal, use set -o errexit.
     """
-
-  class Runtime(_ErrorWithLocation):
-    """A non-fatal runtime error, e.g. for builtins."""
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
+      kwargs = LocationShim(location)
+      FatalRuntime.__init__(self, msg, **kwargs)
 
 
   class FatalRuntime(_ErrorWithLocation):
@@ -148,6 +165,11 @@ if mylib.PYTHON:
 
   class FailGlob(FatalRuntime):
     """Raised when a glob matches nothing when failglob is set."""
+
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
+      kwargs = LocationShim(location)
+      FatalRuntime.__init__(self, msg, **kwargs)
 
 
   class Strict(FatalRuntime):
@@ -177,9 +199,15 @@ if mylib.PYTHON:
 
     Travels between WordEvaluator and CommandEvaluator.
     """
+    # NOTE: This has show_code and status
 
   class Expr(FatalRuntime):
     """ e.g. KeyError, IndexError, ZeroDivisionError """
+
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
+      kwargs = LocationShim(location)
+      FatalRuntime.__init__(self, msg, **kwargs)
 
     def ExitStatus(self):
       # type: () -> int

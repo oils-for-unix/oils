@@ -1683,7 +1683,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             if n < 0:
               span_id = word_.LeftMostSpanForWord(w)
               raise error.FailGlob(
-                  'Extended glob %r matched no files' % fnmatch_pat, span_id=span_id)
+                  'Extended glob %r matched no files' % fnmatch_pat,
+                  loc.Span(span_id))
 
             part_vals.append(part_value.Array(results))
           elif bool(eval_flags & EXTGLOB_NESTED):
@@ -1923,7 +1924,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if n < 0:
           # TODO: location info, with span IDs carried through the frame
           raise error.FailGlob('Pattern %r matched no files' % a,
-                               span_id=runtime.NO_SPID)
+                               loc.Missing())
       else:
         argv.append(glob_.GlobUnescape(a))
 
@@ -2066,7 +2067,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         num_appended = self.globber.Expand(val.s, strs)
         if num_appended < 0:
           raise error.FailGlob('Pattern %r matched no files' % val.s,
-                               span_id=word_spid)
+                               loc.Span(word_spid))
         for _ in xrange(num_appended):
           spids.append(word_spid)
         continue

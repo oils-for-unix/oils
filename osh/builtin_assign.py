@@ -457,8 +457,8 @@ class Unset(vm._Builtin):
     except error.Runtime as e:
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
-      e.span_id = spid
-      self.errfmt.PrettyPrintError(e)
+      msg = e.UserErrorString()
+      self.errfmt.Print_(msg, span_id=spid)
       return False
 
     if proc_fallback and not found:

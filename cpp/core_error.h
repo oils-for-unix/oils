@@ -134,15 +134,16 @@ class Parse : public _ErrorWithLocation {
 class RedirectEval : public _ErrorWithLocation {
  public:
   // code only uses this variant
-  RedirectEval(Str* user_str, word_t* word)
-      : _ErrorWithLocation(user_str, word) {
+  RedirectEval(Str* user_str, syntax_asdl::loc_t* location)
+      : _ErrorWithLocation(user_str, -1) {
   }
 };
 
 class FailGlob : public _ErrorWithLocation {
  public:
   // code only uses this variant
-  FailGlob(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
+  FailGlob(Str* user_str, syntax_asdl::loc_t* location)
+      : _ErrorWithLocation(user_str, -1) {
   }
 };
 
@@ -175,7 +176,8 @@ class ErrExit : public _ErrorWithLocation {
 // Stub: the parts that raise aren't translated
 class Expr : public _ErrorWithLocation {
  public:
-  Expr(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
+  Expr(Str* user_str, syntax_asdl::loc_t* location)
+      : _ErrorWithLocation(user_str, -1) {
   }
 #if 0
   Expr(Str* user_str, Token* token)
