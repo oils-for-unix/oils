@@ -13,15 +13,6 @@ from mycpp.mylib import log, print_stderr
 from typing import Any
 
 
-if mylib.PYTHON:
-  def log(msg, *args):
-    # type: (str, *Any) -> None
-    """Only for test code"""
-    if args:
-      msg = msg % args
-    print(msg, file=sys.stderr)
-
-
 CONST = "myconst"
 
 def run_tests():

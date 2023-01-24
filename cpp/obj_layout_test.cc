@@ -10,10 +10,6 @@ TEST sizeof_syntax() {
   log("alignof(Token) = %d", alignof(syntax_asdl::Token));
   log("alignof(Token*) = %d", alignof(syntax_asdl::Token*));
 
-  // Without sed hack, it's 12 bytes for tag (2) id (4) and span_id (4).
-  // Now 8 bytes.
-  log("sizeof(speck) = %d", sizeof(syntax_asdl::speck));
-
   // 16 bytes: 2 byte tag + 3 integer fields
   log("sizeof(line_span) = %d", sizeof(syntax_asdl::line_span));
 

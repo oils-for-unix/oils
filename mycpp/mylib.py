@@ -170,6 +170,14 @@ def str_cmp(s1, s2):
     return 1
 
 
+def log(msg, *args):
+  # type: (str, *Any) -> None
+  """Only for mycpp/examples"""
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 if 0:
   # Prototype of Unix file descriptor I/O, compared with FILE* libc I/O.
   # Doesn't seem like we need this now.
