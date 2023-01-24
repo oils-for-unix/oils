@@ -8,6 +8,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     cmd_value, cmd_value__Argv, wait_status__Cancelled, wait_status__Pipeline,
     wait_status__Proc, wait_status_e)
+from _devbuild.gen.syntax_asdl import loc
 from core import dev, error, process, vm
 from core.pyerror import e_usage, e_die_status
 from frontend import flag_spec
@@ -47,7 +48,7 @@ class Exec(vm._Builtin):
     argv0_path = self.search_path.CachedLookup(cmd)
     if argv0_path is None:
       e_die_status(127, 'exec: %r not found' % cmd,
-                   span_id=cmd_val.arg_spids[1])
+                   loc.Span(cmd_val.arg_spids[1]))
 
     # shift off 'exec'
     c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:],

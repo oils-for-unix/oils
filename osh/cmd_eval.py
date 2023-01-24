@@ -20,6 +20,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
+    assign_op_e,
     compound_word,
     command_e, command_t,
     command__AndOr, command__Case, command__CommandList, command__ControlFlow,
@@ -32,12 +33,12 @@ from _devbuild.gen.syntax_asdl import (
     command__WhileUntil,
     condition_e, condition_t, condition__Shell, condition__Oil,
     BraceGroup, expr__BlockArg, ArgList,
-    assign_op_e,
+    expr_t,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
-    Token, expr_t
+    Token, loc,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
@@ -1176,7 +1177,7 @@ class CommandEvaluator(object):
                 else:
                   # This is similar to a parse error
                   e_die_status(2, 'List iteration expects at most 2 loop variables',
-                               span_id=node.spids[0])
+                               loc.Span(node.spids[0]))
 
                 index =0
                 for item in obj:
@@ -1258,7 +1259,7 @@ class CommandEvaluator(object):
             else:
               # This is similar to a parse error
               e_die_status(2, 'List iteration expects at most 2 loop variables',
-                           span_id=node.spids[0])
+                           loc.Span(node.spids[0]))
 
             index = 0
             for x in iter_list:

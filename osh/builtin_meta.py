@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, loc
 from asdl import runtime
 from core import alloc
 from core import dev
@@ -343,7 +343,7 @@ class BoolStatus(vm._Builtin):
     if status not in (0, 1):
       e_die_status(
           status, 'boolstatus expected status 0 or 1, got %d' % status,
-          span_id=spids[0])
+          loc.Span(spids[0]))
 
     return status
 

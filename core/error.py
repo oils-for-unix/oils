@@ -3,11 +3,12 @@ error.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc__Span
+from _devbuild.gen.syntax_asdl import (
+    loc_e, loc_t, loc__Span, loc__WordPart, loc__Word)
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
-from typing import Any, cast, TYPE_CHECKING
+from typing import Dict, Any, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
   from _devbuild.gen.syntax_asdl import Token, word_part_t, word_t
 
@@ -17,6 +18,38 @@ NO_SPID = -1
 
 
 if mylib.PYTHON:
+
+  def LocationShim(location):
+    # type: (Optional[loc_t]) -> Dict[str, Any]
+    """ TODO: Remove this and cleanup _ErrorWithLocation constructor. """
+
+    kwargs = {}  # type: Dict[str, Any]
+
+    if location is None:
+      kwargs['span_id'] = NO_SPID
+    else:
+      UP_location = location
+      with tagswitch(location) as case:
+        if case(loc_e.Missing):
+          kwargs['span_id'] = NO_SPID
+
+        elif case(loc_e.Span):
+          location = cast(loc__Span, UP_location)
+          kwargs['span_id'] = location.span_id
+
+        elif case(loc_e.WordPart):
+          location = cast(loc__WordPart, UP_location)
+          kwargs['word_part'] = location.p
+
+        elif case(loc_e.Word):
+          location = cast(loc__Word, UP_location)
+          kwargs['word'] = location.w
+
+        else:
+          # TODO: fill in other cases
+          raise AssertionError()
+
+    return kwargs
 
   class Usage(Exception):
     """Raised by builtins upon flag parsing error."""
@@ -127,19 +160,7 @@ if mylib.PYTHON:
     """
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
-
-      kwargs = {}
-      UP_location = location
-      with tagswitch(location) as case:
-        if case(loc_e.Missing):
-          kwargs['span_id'] = NO_SPID
-        elif case(loc_e.Span):
-          location = cast(loc__Span, UP_location)
-          kwargs['span_id'] = location.span_id
-        else:
-          # TODO: fill in other cases
-          raise AssertionError()
-
+      kwargs = LocationShim(location)
       FatalRuntime.__init__(self, msg, **kwargs)
 
   class ErrExit(FatalRuntime):

@@ -47,19 +47,17 @@
 }
 
 [[noreturn]] inline void e_die_status(int status, Str* s) {
+  // TODO: pass location info
   throw Alloc<error::FatalRuntime>(status, s);
 }
 
-[[noreturn]] inline void e_die_status(int status, Str* s, int span_id) {
-  throw Alloc<error::FatalRuntime>(status, s);
-}
-
-[[noreturn]] inline void e_die_status(int status, Str* s,
-                                      syntax_asdl::word_t* w) {
+[[noreturn]] inline void e_die_status(int status, Str* s, syntax_asdl::loc_t* location) {
+  // TODO: pass location info
   throw Alloc<error::FatalRuntime>(status, s);
 }
 
 [[noreturn]] inline void e_strict(Str* s, syntax_asdl::loc_t* location) {
+  // TODO: pass location info
   throw Alloc<error::Strict>(s);
 }
 

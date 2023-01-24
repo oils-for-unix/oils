@@ -78,13 +78,14 @@ def e_die(msg, *args, **kwargs):
   raise error.FatalRuntime(msg, *args, **kwargs)
 
 
-def e_die_status(status, msg, **kwargs):
-  # type: (int, str, **Any) -> NoReturn
+def e_die_status(status, msg, location=None):
+  # type: (int, str, loc_t) -> NoReturn
   """Wrapper for C++ semantics
   
   To avoid confusing e_die(int span_id) and e_die(int status)!
 
   Note that it doesn't take positional args, so you should use % formatting.
   """
+  kwargs = error.LocationShim(location)
   kwargs['status'] = status
   raise error.FatalRuntime(msg, **kwargs)

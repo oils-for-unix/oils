@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     place_expr_e, place_expr_t, place_expr__Var, attribute, subscript,
 
-    speck, Token, 
+    speck, Token, loc,
     single_quoted, double_quoted, braced_var_sub, simple_var_sub,
 
     expr_e, expr_t, expr__Var, expr__Const, sh_array_literal, command_sub,
@@ -664,7 +664,7 @@ class OilEvaluator(object):
             except RuntimeError as e:
               # Status 2 indicates a regex parse error.  This is fatal in OSH but
               # not in bash, which treats [[ like a command with an exit code.
-              e_die_status(2, 'Invalid regex %r' % right, span_id=op.span_id)
+              e_die_status(2, 'Invalid regex %r' % right, loc.Span(op.span_id))
 
           if not result:
             return result

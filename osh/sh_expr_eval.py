@@ -850,7 +850,7 @@ class ArithEvaluator(object):
       return lval
 
     # e.g. unset 'x-y'.  status 2 for runtime parse error
-    e_die_status(2, 'Invalid place to modify', span_id=span_id)
+    e_die_status(2, 'Invalid place to modify', loc.Span(span_id))
 
 
 class BoolEvaluator(ArithEvaluator):
@@ -1030,7 +1030,7 @@ class BoolEvaluator(ArithEvaluator):
               # Status 2 indicates a regex parse error.  This is fatal in OSH but
               # not in bash, which treats [[ like a command with an exit code.
               msg = e.message  # type: str
-              e_die_status(2, 'Invalid regex %r: %s' % (s2, msg), word=node.right)
+              e_die_status(2, 'Invalid regex %r: %s' % (s2, msg), loc.Word(node.right))
 
             if matches is None:
               return False
