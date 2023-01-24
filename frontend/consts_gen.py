@@ -425,7 +425,7 @@ Kind GetKind(id_kind_asdl::Id_t id) {
 
       from frontend import lexer_def  # break circular dep
       GenStringMembership('IsControlFlow', lexer_def.CONTROL_FLOW_NAMES, f)
-      GenStringMembership('IsKeyword', lexer_def.OSH_KEYWORD_NAMES, f)
+      GenStringMembership('IsKeyword', consts.OSH_KEYWORD_NAMES, f)
 
       GenCharLookup('LookupCharC', consts._ONE_CHAR_C, f, required=True)
       GenCharLookup('LookupCharPrompt', consts._ONE_CHAR_PROMPT, f)

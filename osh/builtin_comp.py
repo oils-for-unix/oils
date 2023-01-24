@@ -11,7 +11,6 @@ from core import vm
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
-from frontend import lexer_def
 from frontend import option_def
 from core import state
 
@@ -189,7 +188,7 @@ class SpecBuilder(object):
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
         actions.append(_DynamicDictAction(self.parse_ctx.aliases))
         actions.append(_DynamicDictAction(cmd_ev.procs))
-        actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
+        actions.append(_FixedWordsAction(consts.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
         # Look on the file system.

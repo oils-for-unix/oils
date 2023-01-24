@@ -36,6 +36,10 @@ VISIBLE_SHOPT_NUMS = option_def.VISIBLE_SHOPT_NUMS  # used to print
 
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 
+# The 'compen' and 'type' builtins introspect on keywords and builtins.
+OSH_KEYWORD_NAMES = [name for _, name, _ in lexer_def._KEYWORDS]
+OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
+
 
 def GetKind(id_):
   # type: (Id_t) -> Kind_t
@@ -183,7 +187,7 @@ def IsControlFlow(name):
 
 def IsKeyword(name):
   # type: (str) -> bool
-  return name in lexer_def.OSH_KEYWORD_NAMES
+  return name in OSH_KEYWORD_NAMES
 
 
 #
