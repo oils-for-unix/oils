@@ -174,6 +174,9 @@ class Dict;  // forward decl
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d);
 
+template <typename T>
+List<T>* sorted(List<T>* l);
+
 // L[begin:]
 // TODO: Implement this in terms of slice(begin, end)
 template <typename T>
@@ -396,6 +399,13 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
   return keys;
 }
 
+template <typename T>
+List<T>* sorted(List<T>* l) {
+  auto ret = list(l);
+  ret->sort();
+  return ret;
+}
+
 // list(L) copies the list
 template <typename T>
 List<T>* list(List<T>* other) {
@@ -421,6 +431,7 @@ class ListIter {
     // Cheney only: L_ could be moved during iteration.
     // gHeap.PushRoot(reinterpret_cast<RawObject**>(&L_));
   }
+
   ~ListIter() {
     // gHeap.PopRoot();
   }

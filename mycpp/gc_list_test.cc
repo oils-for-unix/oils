@@ -408,6 +408,20 @@ TEST contains_test() {
   PASS();
 }
 
+TEST test_list_sort() {
+  auto s1 = StrFromC("fooA");
+  auto s2 = StrFromC("fooB");
+  auto s3 = StrFromC("fooC");
+  auto l = NewList<Str*>(std::initializer_list<Str*>{s3, s1, s2});
+
+  auto s = sorted(l);
+  ASSERT(str_equals(s->index_(0), s1));
+  ASSERT(str_equals(s->index_(1), s2));
+  ASSERT(str_equals(s->index_(2), s3));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -426,6 +440,7 @@ int main(int argc, char** argv) {
   RUN_TEST(contains_test);
 
   RUN_TEST(test_list_copy);
+  RUN_TEST(test_list_sort);
 
   gHeap.CleanProcessExit();
 
