@@ -11,11 +11,7 @@ import optparse
 import re
 import sys
 
-
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+from doctools.util import log
 
 
 def SplitWords(contents):

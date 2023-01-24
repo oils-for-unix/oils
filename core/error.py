@@ -3,9 +3,11 @@ error.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc__Span
 from mycpp import mylib
+from mycpp.mylib import tagswitch
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
   from _devbuild.gen.syntax_asdl import Token, word_part_t, word_t
 
@@ -75,6 +77,7 @@ if mylib.PYTHON:
 
     def UserErrorString(self):
       # type: () -> str
+      #print('%r %r' % (self.msg, self.args))
       return self.msg % self.args
 
 
@@ -122,6 +125,22 @@ if mylib.PYTHON:
     OIL_STRICT_PRINT=2   # print warnings at level 2 and above
     OIL_STRICT_DIE=1  # abort the program at level 1 and above
     """
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
+
+      kwargs = {}
+      UP_location = location
+      with tagswitch(location) as case:
+        if case(loc_e.Missing):
+          kwargs['span_id'] = NO_SPID
+        elif case(loc_e.Span):
+          location = cast(loc__Span, UP_location)
+          kwargs['span_id'] = location.span_id
+        else:
+          # TODO: fill in other cases
+          raise AssertionError()
+
+      FatalRuntime.__init__(self, msg, **kwargs)
 
   class ErrExit(FatalRuntime):
     """For set -e.

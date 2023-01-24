@@ -690,7 +690,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # TODO: probably remove this case -- they can all use the binary %
         # operator.  This may simplify cpp/core_error.h
 
-        if o.callee.name in ('p_die', 'e_die', 'e_strict'):
+        if o.callee.name in ('p_die', 'e_die'):
           args = o.args
           if len(args) == 1:  # log(CONST)
             self.write('%s(' % o.callee.name)
@@ -709,7 +709,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #
             # 65 e_die
             # 56 p_die
-            # 12 e_strict
 
           has_keyword_arg = o.arg_names[-1] is not None
           if has_keyword_arg:  # e.g. span_id=42
@@ -2471,7 +2470,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
 
           # These functions are defined in cpp/core_pyerror.h.
-          if name in ('log', 'p_die', 'e_die', 'e_strict'):  # varargs translation
+          if name == 'e_strict':
+            continue
+          if name in ('log', 'p_die', 'e_die'):  # varargs translation
             continue
 
           if name in ('e_usage', 'e_die_status', 'stderr_line'):  # not special
@@ -2529,6 +2530,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # syntax_asdl
                 'bracket_op', 'bracket_op_e',
                 'source', 'source_e',
+                'loc', 'loc_e',
                 'suffix_op', 'suffix_op_e',
 
                 'sh_lhs_expr', 'parse_result',

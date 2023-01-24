@@ -9,6 +9,7 @@ Instead of:
 """
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import loc
 from core import pyutil
 from core import ui
 from core.pyerror import e_die, e_strict, log
@@ -68,7 +69,7 @@ INVALID_START = 'Invalid start of UTF-8 character'
 def _CheckContinuationByte(byte):
   # type: (str) -> None
   if (ord(byte) >> 6) != 0b10:
-    e_strict(INVALID_CONT)
+    e_strict(INVALID_CONT, loc.Missing())
 
 
 def _Utf8CharLen(starting_byte):
@@ -82,7 +83,7 @@ def _Utf8CharLen(starting_byte):
   elif (starting_byte >> 3) == 0b11110:
     return 4
   else:
-    e_strict(INVALID_START)
+    e_strict(INVALID_START, loc.Missing())
 
 
 def _NextUtf8Char(s, i):
@@ -101,7 +102,7 @@ def _NextUtf8Char(s, i):
   length = _Utf8CharLen(byte_as_int)
   for j in xrange(i + 1, i + length):
     if j >= n:
-      e_strict(INCOMPLETE_CHAR)
+      e_strict(INCOMPLETE_CHAR, loc.Missing())
     _CheckContinuationByte(s[j])
 
   return i + length
@@ -150,10 +151,10 @@ def PreviousUtf8Char(s, i):
         # Leaving a generic error for now, but if we want to, it's not
         # hard to calculate the position where things go wrong.  Note
         # that offset might be more than 4, for an invalid utf-8 string.
-        e_strict(INVALID_START)
+        e_strict(INVALID_START, loc.Missing())
       return i
 
-  e_strict(INVALID_START)
+  e_strict(INVALID_START, loc.Missing())
 
 
 def CountUtf8Chars(s):

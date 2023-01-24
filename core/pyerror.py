@@ -8,8 +8,17 @@ from __future__ import print_function
 
 import sys
 
-from core import error
-from typing import NoReturn, Any
+try:
+  from core import error
+except ImportError:
+  # HACK because many files 'from core.pyerror import log', but this module
+  # depends on _devbuild.gen.syntax_asdl, which may not be ready
+  error = None
+
+from typing import NoReturn, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import loc_t
 
 
 def log(msg, *args):
@@ -39,15 +48,15 @@ def e_usage(msg, *pos_args, **kwargs):
   raise error.Usage(msg, *pos_args, **kwargs)
 
 
-def e_strict(msg, *args, **kwargs):
-  # type: (str, *Any, **Any) -> NoReturn
+def e_strict(msg, location):
+  # type: (str, loc_t) -> NoReturn
   """Convenience wrapper for strictness errors.
 
   Like e_die(), except the script MAY continue executing after these errors.
 
   TODO: This could have a level too?
   """
-  raise error.Strict(msg, *args, **kwargs)
+  raise error.Strict(msg, location)
 
 
 def p_die(msg, *args, **kwargs):

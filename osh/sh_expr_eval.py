@@ -26,7 +26,8 @@ from _devbuild.gen.syntax_asdl import (
     compound_word, Token,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
-    braced_var_sub
+    braced_var_sub,
+    loc
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
@@ -299,14 +300,14 @@ class ArithEvaluator(object):
       try:
         integer = int(s, 16)
       except ValueError:
-        e_strict('Invalid hex constant %r', s, span_id=span_id)
+        e_strict('Invalid hex constant %r' % s, loc.Span(span_id))
       return integer
 
     if s.startswith('0'):
       try:
         integer = int(s, 8)
       except ValueError:
-        e_strict('Invalid octal constant %r', s, span_id=span_id)
+        e_strict('Invalid octal constant %r' % s, loc.Span(span_id))
       return integer
 
     if '#' in s:
@@ -314,7 +315,7 @@ class ArithEvaluator(object):
       try:
         base = int(b)
       except ValueError:
-        e_strict('Invalid base for numeric constant %r',  b, span_id=span_id)
+        e_strict('Invalid base for numeric constant %r' % b, loc.Span(span_id))
 
       integer = 0
       for ch in digits:
@@ -329,10 +330,10 @@ class ArithEvaluator(object):
         elif ch.isdigit():
           digit = int(ch)
         else:
-          e_strict('Invalid digits for numeric constant %r', digits, span_id=span_id)
+          e_strict('Invalid digits for numeric constant %r' % digits, loc.Span(span_id))
 
         if digit >= base:
-          e_strict('Digits %r out of range for base %d', digits, base, span_id=span_id)
+          e_strict('Digits %r out of range for base %d' % (digits, base), loc.Span(span_id))
 
         integer = integer * base + digit
       return integer
@@ -370,7 +371,7 @@ class ArithEvaluator(object):
       else:
         if len(s.strip()) == 0 or match.IsValidVarName(s):
           # x42 could evaluate to 0
-          e_strict("Invalid integer constant %r", s, span_id=span_id)
+          e_strict("Invalid integer constant %r" % s, loc.Span(span_id))
         else:
           # 42x is always fatal!
           e_die("Invalid integer constant %r", s, span_id=span_id)
@@ -384,7 +385,7 @@ class ArithEvaluator(object):
       with tagswitch(val) as case:
         if case(value_e.Undef):  # 'nounset' already handled before got here
           # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-          e_strict('Undefined value in arithmetic context', span_id=span_id)
+          e_strict('Undefined value in arithmetic context', loc.Span(span_id))
 
         elif case(value_e.Int):
           val = cast(value__Int, UP_val)

@@ -3,6 +3,8 @@
 #ifndef CORE_PYERROR_H
 #define CORE_PYERROR_H
 
+#include "_gen/frontend/syntax.asdl.h"
+
 // STUBS for varargs functions like p_die()
 // [[noreturn]] avoids warnings
 
@@ -57,24 +59,7 @@
   throw Alloc<error::FatalRuntime>(status, s);
 }
 
-[[noreturn]] inline void e_strict(Str* s, int span_id) {
-  throw Alloc<error::Strict>(s);
-}
-
-[[noreturn]] inline void e_strict(Str* s, syntax_asdl::Token* token) {
-  throw Alloc<error::Strict>(s);
-}
-
-[[noreturn]] inline void e_strict(Str* s, syntax_asdl::word_part_t* part) {
-  throw Alloc<error::Strict>(s);
-}
-
-[[noreturn]] inline void e_strict(Str* s, syntax_asdl::word_t* w) {
-  throw Alloc<error::Strict>(s);
-}
-
-// Used without args in osh/string_ops.py
-[[noreturn]] inline void e_strict(Str* s) {
+[[noreturn]] inline void e_strict(Str* s, syntax_asdl::loc_t* location) {
   throw Alloc<error::Strict>(s);
 }
 

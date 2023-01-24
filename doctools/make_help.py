@@ -48,6 +48,7 @@ import sys
 
 from core import ansi
 from doctools import html_lib
+from doctools.util import log
 from lazylex import html
 
 
@@ -70,12 +71,6 @@ TOPIC_RE = re.compile(r'''
   )?      
   ([ ][ ][ ])?        # three spaces means we should keep highlighting
 ''', re.VERBOSE)
-
-
-def log(msg, *args):
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
 
 
 def _StringToHref(s):
