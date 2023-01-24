@@ -79,6 +79,8 @@ class Dict {
   // Implements d[k] = v.  May resize the dictionary.
   void set(K key, V val);
 
+  void update(List<Tuple2<K, V>*>* kvs);
+
   List<K>* keys();
 
   // For AssocArray transformations
@@ -289,6 +291,13 @@ void Dict<K, V>::set(K key, V val) {
   }
 }
 
+template <class K, class V>
+void Dict<K, V>::update(List<Tuple2<K, V>*>* kvs) {
+  for (ListIter<Tuple2<K, V>*> it(kvs); !it.Done(); it.Next()) {
+    set(it.Value()->at0(), it.Value()->at1());
+  }
+}
+
 template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {
   return d->len_;
@@ -336,5 +345,16 @@ class DictIter {
   Dict<K, V>* D_;
   int pos_;
 };
+
+// dict(l) converts a list of (k, v) tuples into a dict
+template <typename K, typename V>
+Dict<K, V>* dict(List<Tuple2<K, V>*>* l) {
+  auto ret = NewDict<K, V>();
+  ret->reserve(len(l));
+  for (ListIter<Tuple2<K, V>*> it(l); !it.Done(); it.Next()) {
+    ret->set(it.Value()->at0(), it.Value()->at1());
+  }
+  return ret;
+}
 
 #endif  // MYCPP_GC_DICT_H

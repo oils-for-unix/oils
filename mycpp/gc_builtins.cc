@@ -291,6 +291,18 @@ bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
   return result;
 }
 
+bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
+  return t1->at0() == t2->at0() && t1->at1() == t2->at1();
+}
+
+bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
+  return are_equal(t1, t2);
+}
+
+bool keys_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
+  return are_equal(t1, t2);
+}
+
 bool str_equals0(const char* c_string, Str* s) {
   int n = strlen(c_string);
   if (len(s) == n) {

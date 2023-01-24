@@ -65,8 +65,10 @@ class List {
   T pop();
 
   // Used in osh/word_parse.py to remove from front
-  // TODO: Don't accept an arbitrary index?
   T pop(int i);
+
+  // Remove the first occourence of x from the list.
+  void remove(T x);
 
   void clear();
 
@@ -173,6 +175,9 @@ class Dict;  // forward decl
 
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d);
+
+template <typename T>
+List<T>* sorted(List<T>* l);
 
 // L[begin:]
 // TODO: Implement this in terms of slice(begin, end)
@@ -292,17 +297,15 @@ T List<T>::pop() {
 }
 
 // Used in osh/word_parse.py to remove from front
-// TODO: Don't accept an arbitrary index?
 template <typename T>
 T List<T>::pop(int i) {
   DCHECK(len_ > 0);
-  DCHECK(i == 0);  // only support popping the first item
 
-  T result = index_(0);
+  T result = index_(i);
   len_--;
 
   // Shift everything by one
-  memmove(slab_->items_, slab_->items_ + 1, len_ * sizeof(T));
+  memmove(slab_->items_ + i, slab_->items_ + (i + 1), len_ * sizeof(T));
 
   /*
   for (int j = 0; j < len_; j++) {
@@ -312,6 +315,12 @@ T List<T>::pop(int i) {
 
   slab_->items_[len_] = 0;  // zero for GC scan
   return result;
+}
+
+template <typename T>
+void List<T>::remove(T x) {
+  int idx = this->index(x);
+  this->pop(idx);  // unused
 }
 
 template <typename T>
@@ -396,6 +405,13 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
   return keys;
 }
 
+template <typename T>
+List<T>* sorted(List<T>* l) {
+  auto ret = list(l);
+  ret->sort();
+  return ret;
+}
+
 // list(L) copies the list
 template <typename T>
 List<T>* list(List<T>* other) {
@@ -421,6 +437,7 @@ class ListIter {
     // Cheney only: L_ could be moved during iteration.
     // gHeap.PushRoot(reinterpret_cast<RawObject**>(&L_));
   }
+
   ~ListIter() {
     // gHeap.PopRoot();
   }
