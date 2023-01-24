@@ -125,7 +125,7 @@ void SetSigwinchCode(int code);
 
 void InitShell();
 
-Tuple2<Str*, int> MakeDirCacheKey(Str* path);
+Tuple2<Str*, int>* MakeDirCacheKey(Str* path);
 
 }  // namespace pyos
 
