@@ -1290,7 +1290,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             val = self._EmptyStrOrError(val, part.token)
 
       else:
-        raise AssertionError()
+        raise AssertionError(part.prefix_op)
 
     else:
       if not suffix_is_test:  # undef -> '' if no prefix op

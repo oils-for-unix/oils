@@ -51,7 +51,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    Token, speck, loc,
+    Token, loc,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
 
@@ -528,6 +528,7 @@ class WordParser(WordEmitter):
     self._Peek()
 
     ty = self.token_type
+    first_tok = self.cur_token
 
     if ty == Id.VSub_Pound:
       # Disambiguate
@@ -541,7 +542,7 @@ class WordParser(WordEmitter):
         if self.token_type != Id.Right_DollarBrace:
           p_die('Expected } after length expression', self.cur_token)
 
-        part.prefix_op = speck(ty, self.cur_token.span_id)
+        part.prefix_op = first_tok
 
       else:  # not a prefix, '#' is the variable
         part = self._ParseVarExpr(arg_lex_mode)
@@ -558,7 +559,7 @@ class WordParser(WordEmitter):
         self._Next(lex_mode_e.VSub_1)
         part = self._ParseVarExpr(arg_lex_mode, allow_query=True)
 
-        part.prefix_op = speck(ty, self.cur_token.span_id)
+        part.prefix_op = first_tok
 
       else:  # not a prefix, '!' is the variable
         part = self._ParseVarExpr(arg_lex_mode)

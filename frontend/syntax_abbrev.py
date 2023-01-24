@@ -42,17 +42,6 @@ def _compound_word(obj):
   return p_node
 
 
-def _speck(obj):
-  # type: (speck) -> hnode_t
-  """Always abbreviate a speck as the Id."""
-  p_node = runtime.NewRecord('')  # don't show node type
-  p_node.abbrev = True
-
-  n1 = runtime.NewLeaf(Id_str(obj.id), color_e.OtherConst)
-  p_node.unnamed_fields.append(n1)
-  return p_node
-
-
 def _double_quoted(obj):
   # type: (double_quoted) -> hnode_t
   if obj.left.id != Id.Left_DoubleQuote:

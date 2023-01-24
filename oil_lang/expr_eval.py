@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     place_expr_e, place_expr_t, place_expr__Var, attribute, subscript,
 
-    speck, Token, loc,
+    Token, loc,
     single_quoted, double_quoted, braced_var_sub, simple_var_sub,
 
     expr_e, expr_t, expr__Var, expr__Const, sh_array_literal, command_sub,
@@ -660,7 +660,7 @@ class OilEvaluator(object):
                 result = not self._EvalMatch(left, right, False)
 
               else:
-                raise AssertionError(op.id)
+                raise AssertionError(op)
             except RuntimeError as e:
               # Status 2 indicates a regex parse error.  This is fatal in OSH but
               # not in bash, which treats [[ like a command with an exit code.
@@ -940,44 +940,38 @@ class OilEvaluator(object):
           self._EvalClassLiteralTerm(t, new_terms)
         return re.CharClass(node.negated, new_terms)
 
-      elif case(re_e.Speck):
-        node = cast(speck, UP_node)
-
-        id_ = node.id
-        if id_ == Id.Expr_Dot:
-          return re.Primitive(Id.Re_Dot)
-        elif id_ == Id.Arith_Caret:  # ^
-          return re.Primitive(Id.Re_Start)
-        elif id_ == Id.Expr_Dollar:  # $
-          return re.Primitive(Id.Re_End)
-        else:
-          raise NotImplementedError(id_)
-
       elif case(re_e.Token):
         node = cast(Token, UP_node)
 
         id_ = node.id
         val = node.val
 
+        if id_ == Id.Expr_Dot:
+          return re.Primitive(Id.Re_Dot)
+
+        if id_ == Id.Arith_Caret:  # ^
+          return re.Primitive(Id.Re_Start)
+
+        if id_ == Id.Expr_Dollar:  # $
+          return re.Primitive(Id.Re_End)
+
         if id_ == Id.Expr_Name:
           if val == 'dot':
             return re.Primitive(Id.Re_Dot)
-          else:
-            raise NotImplementedError(val)
+          raise NotImplementedError(val)
 
-        elif id_ == Id.Expr_Symbol:
+        if id_ == Id.Expr_Symbol:
           if val == '%start':
             return re.Primitive(Id.Re_Start)
-          elif val == '%end':
+          if val == '%end':
             return re.Primitive(Id.Re_End)
-          else:
-            raise NotImplementedError(val)
+          raise NotImplementedError(val)
 
-        else:  # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
-          kind = consts.GetKind(id_)
-          assert kind == Kind.Char, id_
-          s = word_compile.EvalCStringToken(node)
-          return re.LiteralChars(s, node.span_id)
+        # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
+        kind = consts.GetKind(id_)
+        assert kind == Kind.Char, id_
+        s = word_compile.EvalCStringToken(node)
+        return re.LiteralChars(s, node.span_id)
 
       elif case(re_e.SingleQuoted):
         node = cast(single_quoted, UP_node)

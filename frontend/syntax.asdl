@@ -96,17 +96,6 @@ module syntax
     -- Note: is it possible to only have compound_word?
   | Word(word w)
 
-  -- After parsing, we often don't need the token 'string val', so use a
-  -- 'speck'.  Notes:
-  -- * It's 12 bytes with the GC header
-  -- * It's a "slab" to the GC (no pointers to follow)
-  speck = (id id, int span_id)
-
-  -- Note: like token -> speck, token -> strand is for when we don't need the id.
-  -- We're not using it since it's probably 4 + 4 + 8 = 16 bytes, which doesn't
-  -- save any space over the token!
-  -- strand = (int span_id, string val)
-
   --
   -- Shell language
   --
@@ -133,14 +122,12 @@ module syntax
   single_quoted = (Token left, Token* tokens)
                   attributes (int* spids)
 
-  -- Note: simple_var_sub could be split up into speck for $?, (speck, int) for
-  -- $0 $1, token for $foo.
   simple_var_sub = (Token token)
 
   -- TODO: Add    ${x %.3f}   ${x|html}
   braced_var_sub = (
       Token token,  -- the name
-      speck? prefix_op,  -- prefix # or ! operators
+      Token? prefix_op,  -- prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op
   ) attributes (int* spids)
@@ -327,10 +314,10 @@ module syntax
   | BareDecl(Token lhs, expr rhs)
     -- var, const
   | VarDecl(Token? keyword, name_type* lhs, expr rhs)
-    -- setvar/set, auto.  Note: op can be a speck
+    -- setvar/set, auto.
   | PlaceMutation(Token? keyword, place_expr* lhs, Token op, expr rhs)
     -- = keyword
-  | Expr(speck keyword, expr e)
+  | Expr(Token keyword, expr e)
   | Proc(Token name, proc_sig sig, command body)
 
   -- Tea
@@ -424,7 +411,6 @@ module syntax
   subscript = (expr obj, expr* indices)
 
   -- Attributes are obj.attr, d->key, name::scope,
-  -- TODO: op should be 'speck'
   attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
   -- Places that can be mutated.
@@ -454,11 +440,10 @@ module syntax
 
   | Lambda(name_type* params, expr body)
 
-    -- TODO: speck op
   | Unary(Token op, expr child)
   | Binary(Token op, expr left, expr right)
     -- x < 4 < 3 and (x < 4) < 3
-  | Compare(expr left, speck* ops, expr* comparators)
+  | Compare(expr left, Token* ops, expr* comparators)
   | FuncCall(expr func, ArgList args)
 
     -- TODO: Need a representation for method call.  We don't just want
@@ -504,9 +489,9 @@ module syntax
   --
 
   -- e.g. alnum digit
-  posix_class = (speck? negated, string name)
+  posix_class = (Token? negated, string name)
   -- e.g. d w s
-  perl_class = (speck? negated, string name)
+  perl_class = (Token? negated, string name)
 
   -- Note: .NET has && in character classes, making it a recursive language
 
@@ -541,7 +526,6 @@ module syntax
 
   -- NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    -- TODO: could use speck.  And add back Op(Token op, id modifier)
     Op(Token op)
   | Num(Token times)
     -- dot{1,2}
@@ -551,10 +535,8 @@ module syntax
   -- | Range(Token? lower, Token? upper, id modifier)
 
   re = 
-    -- . ^ $
-    Speck %speck
-    -- %begin or \u123
-  | Token %Token
+    -- e.g.  .  ^  $  %begin  \u123
+    Token %Token
   | PosixClass %posix_class
   | PerlClass %perl_class
     -- syntax [ $x \n ]

@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, loc, loc_t, speck,
+    Token, loc, loc_t,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
     command, command_t,
@@ -363,7 +363,7 @@ class Transformer(object):
     """
     comparison: expr (comp_op expr)*
     """
-    cmp_ops = []  # type: List[speck]
+    cmp_ops = []  # type: List[Token]
     comparators = []  # type: List[expr_t]
     left = self.Expr(children[0])
 
@@ -371,18 +371,18 @@ class Transformer(object):
     n = len(children)
     while i < n:
       op_children = children[i].children
-      tok1 = op_children[0].tok
+      op = op_children[0].tok
       if len(op_children) == 2:
-        # Blame the first token
-        if tok1.id == Id.Expr_Not:  # not in
-          op = speck(Id.Node_NotIn, tok1.span_id)
-        elif tok1.id == Id.Expr_Is:  # is not
-          op = speck(Id.Node_IsNot, tok1.span_id)
+        # Blame the first token, and change its type
+        if op.id == Id.Expr_Not:  # not in
+          op.id = Id.Node_NotIn
+        elif op.id == Id.Expr_Is:  # is not
+          op.id = Id.Node_IsNot
         else:
           raise AssertionError()
       else:
         # is, <, ==, etc.
-        op = speck(tok1.id, tok1.span_id)
+        pass
 
       cmp_ops.append(op)
       i += 1
@@ -1304,12 +1304,6 @@ class Transformer(object):
 
   def _NameInRegex(self, negated_tok, tok):
     # type: (Token, Token) -> re_t
-
-    if negated_tok:  # For error messages
-      negated_speck = speck(negated_tok.id, negated_tok.span_id)
-    else:
-      negated_speck = None
-
     val = tok.val
     if val == 'dot':
       if negated_tok:
@@ -1317,11 +1311,11 @@ class Transformer(object):
       return tok
 
     if val in POSIX_CLASSES:
-      return posix_class(negated_speck, val)
+      return posix_class(negated_tok, val)
 
     perl = PERL_CLASSES.get(val)
     if perl is not None:
-      return perl_class(negated_speck, perl)
+      return perl_class(negated_tok, perl)
 
     if val[0].isupper():  # e.g. HexDigit
       return re.Splice(tok)
@@ -1334,11 +1328,6 @@ class Transformer(object):
     Like the above, but 'dot' doesn't mean anything.  And `d` is a literal 'd',
     not `digit`.
     """
-    if negated_tok:  # For error messages
-      negated_speck = speck(negated_tok.id, negated_tok.span_id)
-    else:
-      negated_speck = None
-
     val = tok.val
 
     # A bare, unquoted character literal.  In the grammar, this is expressed as
@@ -1355,11 +1344,11 @@ class Transformer(object):
 
     # digit, word, but not d, w, etc.
     if val in POSIX_CLASSES:
-      return posix_class(negated_speck, val)
+      return posix_class(negated_tok, val)
 
     perl = PERL_CLASSES.get(val)
     if perl is not None:
-      return perl_class(negated_speck, perl)
+      return perl_class(negated_tok, perl)
     p_die("%r isn't a character class" % val, tok)
 
   def _ReAtom(self, p_atom):
@@ -1400,7 +1389,7 @@ class Transformer(object):
 
       # Special punctuation
       if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
-        return speck(tok.id, tok.span_id)
+        return tok
 
       # TODO: d digit can turn into PosixClass and PerlClass right here!
       # It's parsing.

@@ -30,10 +30,9 @@ from _devbuild.gen.syntax_asdl import (
     word, word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
 
-    assign_pair, env_pair, assign_op_e,
+    assign_pair, env_pair, assign_op_e, name_type,
 
     source, parse_result, parse_result_t,
-    speck, name_type,
 
     proc_sig_e, proc_sig__Closed,
 )
@@ -1976,7 +1975,7 @@ class CommandParser(object):
       keyword = _KeywordToken(self.cur_word)
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
-      return command.Expr(speck(keyword.id, keyword.span_id), enode)
+      return command.Expr(keyword, enode)
 
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
