@@ -28,8 +28,10 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-def e_usage(msg, *pos_args, **kwargs):
-  # type: (str, *Any, **Any) -> NoReturn
+NO_SPID = -1
+
+def e_usage(msg, span_id=NO_SPID):
+  # type: (str, int) -> NoReturn
   """Convenience wrapper for arg parsing / validation errors.
 
   Usually causes a builtin to fail with status 2, but the script can continue
@@ -45,7 +47,7 @@ def e_usage(msg, *pos_args, **kwargs):
   - builtins pass Token() or loc::Missing()
   - tool interfaces don't pass any location info
   """
-  raise error.Usage(msg, *pos_args, **kwargs)
+  raise error.Usage(msg, span_id)
 
 
 def e_strict(msg, location):

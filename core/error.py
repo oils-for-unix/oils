@@ -52,10 +52,11 @@ if mylib.PYTHON:
     return kwargs
 
   class Usage(Exception):
-    """Raised by builtins upon flag parsing error."""
-
-    # TODO: Should this be _ErrorWithLocation?  Probably, even though we only use
-    # 'span_id'.
+    """For flag parsing errors in builtins and main()
+    
+    Called by e_usage().  TODO: Should settle on a single interface that can be
+    translated.  Sometimes we use 'raise error.Usage()'
+    """
     def __init__(self, msg, span_id=NO_SPID):
       # type: (str, int) -> None
       self.msg = msg
