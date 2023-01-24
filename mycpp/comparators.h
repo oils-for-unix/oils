@@ -14,9 +14,12 @@ bool are_equal(Str* left, Str* right);
 bool are_equal(Str* left, Str* right);
 bool are_equal(int left, int right);
 bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
+bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
 
 bool keys_equal(int left, int right);
 bool keys_equal(Str* left, Str* right);
+bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
+bool keys_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
 
 namespace id_kind_asdl {
 enum class Kind;

@@ -433,6 +433,26 @@ TEST test_update_dict() {
   PASS();
 }
 
+TEST test_tuple_key() {
+  auto d1 = Alloc<Dict<Tuple2<int, int>*, int>>();
+  auto t1 = Alloc<Tuple2<int, int>>(0xdead, 0xbeef);
+  auto t2 = Alloc<Tuple2<int, int>>(0xbeee, 0xeeef);
+  d1->set(t1, -42);
+  d1->set(t2, 17);
+  ASSERT_EQ(d1->index_(t1), -42);
+  ASSERT_EQ(d1->index_(t2), 17);
+
+  auto d2 = Alloc<Dict<Tuple2<Str*, int>*, int>>();
+  auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("foo"), 0xbeef);
+  auto t4 = Alloc<Tuple2<Str*, int>>(StrFromC("bar"), 0xeeef);
+  d2->set(t3, 12345);
+  d2->set(t4, 67890);
+  ASSERT_EQ(d2->index_(t3), 12345);
+  ASSERT_EQ(d2->index_(t4), 67890);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -446,6 +466,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_empty_dict);
   RUN_TEST(test_tuple_construct);
   RUN_TEST(test_update_dict);
+  RUN_TEST(test_tuple_key);
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);
