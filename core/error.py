@@ -153,7 +153,7 @@ if mylib.PYTHON:
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
       kwargs = LocationShim(location)
-      FatalRuntime.__init__(self, msg, **kwargs)
+      _ErrorWithLocation.__init__(self, msg, **kwargs)
 
 
   class FatalRuntime(_ErrorWithLocation):

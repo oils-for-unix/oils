@@ -26,7 +26,6 @@ from _devbuild.gen.runtime_asdl import (
     a_index, a_index_e, a_index__Int, a_index__Str,
     VTestPlace, VarSubState,
 )
-from asdl import runtime
 from core import error
 from core import pyos
 from core import pyutil
