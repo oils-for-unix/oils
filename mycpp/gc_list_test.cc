@@ -422,6 +422,27 @@ TEST test_list_sort() {
   PASS();
 }
 
+TEST test_list_remove() {
+  auto l = NewList<int>(std::initializer_list<int>{1, 3, 3, 3, 2});
+
+  for (int i = 0; i < 3; ++i) {
+    l->remove(3);
+  }
+
+  bool caught = false;
+  try {
+    l->index(3);
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  ASSERT_EQ(l->index_(0), 1);
+  ASSERT_EQ(l->index_(1), 2);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -441,6 +462,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_list_copy);
   RUN_TEST(test_list_sort);
+  RUN_TEST(test_list_remove);
 
   gHeap.CleanProcessExit();
 
