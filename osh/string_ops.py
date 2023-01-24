@@ -260,7 +260,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
     # These operators take glob arguments, we don't implement that obscure case.
     elif tok.id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
+        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
       if len(s):
         return s[0].lower() + s[1:]
       else:
@@ -268,12 +268,12 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
 
     elif tok.id == Id.VOp1_DComma:
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
+        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
       return s.lower()
 
     elif tok.id == Id.VOp1_Caret:  # Only uppercase the first letter
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
+        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
       if len(s):
         return s[0].upper() + s[1:]
       else:
@@ -281,7 +281,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
 
     elif tok.id == Id.VOp1_DCaret:
       if arg != '':
-        e_die("%s can't have an argument", ui.PrettyId(tok.id), token=tok)
+        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
       return s.upper()
 
     else:  # e.g. ^ ^^ , ,,
@@ -416,8 +416,8 @@ class GlobReplacer(object):
         # libc.regex_first_group_match raises RuntimeError.
         # note: MyPy doesn't know RuntimeError has e.message (and e.args)
         msg = e.message  # type: str
-        e_die('Error matching regex %r: %s', regex, msg,
-              span_id=self.slash_spid)
+        e_die('Error matching regex %r: %s' % (regex, msg),
+              loc.Span(self.slash_spid))
 
     if op.replace_mode == Id.Lit_Pound:
       regex = '^' + regex

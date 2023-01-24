@@ -10,7 +10,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import redirect, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    command_sub, compound_word, Token,
+    command_sub, compound_word, Token, loc
 )
 from asdl import runtime
 from core import dev
@@ -22,7 +22,6 @@ from core import ui
 from core import vm
 from frontend import consts
 from frontend import location
-from osh import word_
 
 import posix_ as posix
 
@@ -103,8 +102,9 @@ class ShellExecutor(vm._Executor):
       # - ( return )
       # NOTE: This could be done at parse time too.
       if node.token.id != Id.ControlFlow_Exit:
-        e_die('Invalid control flow %r in pipeline / subshell / background',
-              node.token.val, token=node.token)
+        e_die('Invalid control flow %r in pipeline / subshell / background' %
+              node.token.val, 
+              node.token)
 
     # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
     # only really matters when executing 'exit 42', because the child shell
@@ -162,7 +162,7 @@ class ShellExecutor(vm._Executor):
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:
       if self.exec_opts.strict_argv():
-        e_die("Command evaluated to an empty argv array", span_id=arg0_spid)
+        e_die("Command evaluated to an empty argv array", loc.Span(arg0_spid))
       else:
         return 0  # status 0, or skip it?
 
@@ -198,7 +198,7 @@ class ShellExecutor(vm._Executor):
             self.errfmt.StderrLine('')
             e_die("Can't run a proc while errexit is disabled. "
                   "Use 'try' or wrap it in a process with $0 myproc",
-                  span_id=arg0_spid)
+                  loc.Span(arg0_spid))
 
         with dev.ctx_Tracer(self.tracer, 'proc', argv):
           # NOTE: Functions could call 'exit 42' directly, etc.
@@ -234,8 +234,8 @@ class ShellExecutor(vm._Executor):
     environ = self.mem.GetExported()  # Include temporary variables
 
     if cmd_val.typed_args:
-      e_die('Unexpected typed args passed to external command %r', arg0,
-            span_id=cmd_val.typed_args.spids[0])
+      e_die('Unexpected typed args passed to external command %r' % arg0,
+            loc.Span(cmd_val.typed_args.spids[0]))
 
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)
@@ -339,7 +339,7 @@ class ShellExecutor(vm._Executor):
 
     if not self.exec_opts.allow_csub_psub():
       e_die("Command subs not allowed here because status wouldn't be checked (strict_errexit).",
-            span_id=word_.LeftMostSpanForPart(cs_part))
+            loc.WordPart(cs_part))
 
     node = cs_part.child
 
@@ -457,7 +457,7 @@ class ShellExecutor(vm._Executor):
     """
     if not self.exec_opts.allow_csub_psub():
       e_die("Process subs not allowed here because status wouldn't be checked (strict_errexit).",
-            span_id=word_.LeftMostSpanForPart(cs_part))
+            loc.WordPart(cs_part))
 
     p = self._MakeProcess(cs_part.child)
 

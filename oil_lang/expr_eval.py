@@ -73,7 +73,7 @@ def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
   val = mem.GetValue(var_name, which_scopes=which_scopes)
   if val.tag == value_e.Undef:
     # TODO: Location info
-    e_die('Undefined variable %r', var_name, span_id=span_id)
+    e_die('Undefined variable %r' % var_name, loc.Span(span_id))
 
   UP_val = val
   if val.tag == value_e.Str:
@@ -151,7 +151,7 @@ class OilEvaluator(object):
 
     if not isinstance(lhs_py, (int, float)):
       # TODO: Could point at the variable name
-      e_die("Object of type %r doesn't support +=", lhs_py.__class__.__name__)
+      e_die("Object of type %r doesn't support +=" % lhs_py.__class__.__name__)
 
     return lhs_py + rhs_py
 
@@ -273,7 +273,7 @@ class OilEvaluator(object):
 
     fn_val = self.mem.GetValue(func_name)  # type: value_t
     if fn_val.tag != value_e.Obj:
-      e_die("Expected function named %r, got %r ", func_name, fn_val)
+      e_die("Expected function named %r, got %r " % (func_name, fn_val))
     assert isinstance(fn_val, value__Obj)
 
     func = fn_val.obj
@@ -625,7 +625,7 @@ class OilEvaluator(object):
           elif op.id == Id.Expr_TildeDEqual:
             # Approximate equality
             if not isinstance(left, str):
-              e_die('~== expects a string on the left', span_id=op.span_id)
+              e_die('~== expects a string on the left', loc.Span(op.span_id))
 
             left = left.strip()
             if isinstance(right, str):
@@ -649,7 +649,7 @@ class OilEvaluator(object):
               return int(left) == right
 
             e_die('~== expects Str, Int, or Bool on the right',
-                  span_id=op.span_id)
+                  loc.Span(op.span_id))
 
           else:
             try:
@@ -888,8 +888,8 @@ class OilEvaluator(object):
       if char_int >= 128:
         # / [ '\x7f\xff' ] / is better written as / [ \x7f \xff ] /
         e_die("Use unquoted char literal for byte %d, which is >= 128"
-              " (avoid confusing a set of bytes with a sequence)", char_int,
-              span_id=spid)
+              " (avoid confusing a set of bytes with a sequence)" % char_int,
+              loc.Span(spid))
       out.append(CharCode(char_int, False, spid))
 
   def _EvalRegex(self, node):
@@ -1008,8 +1008,8 @@ class OilEvaluator(object):
 
         obj = self.LookupVar(node.name.val, span_id=node.name.span_id)
         if not isinstance(obj, objects.Regex):
-          e_die("Can't splice object of type %r into regex", obj.__class__,
-                token=node.name)
+          e_die("Can't splice object of type %r into regex" % obj.__class__,
+                node.name)
         # Note: we only splice the regex, and ignore flags.
         # Should we warn about this?
         return obj.regex

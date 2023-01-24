@@ -12,6 +12,7 @@ from _devbuild.gen.syntax_asdl import (
     re_e, re__CharClass, re__Primitive, re__LiteralChars, re__Seq, re__Alt,
     re__Repeat, re__Group, re_repeat_e, re_repeat__Op, re_repeat__Num,
     re_repeat__Range,
+    loc,
 )
 from _devbuild.gen.id_kind_asdl import Id
 
@@ -78,7 +79,7 @@ def _CharCodeToEre(term, parts, special_char_flags):
   if char_int >= 128 and term.u_braced:
     # \u{ff} can't be represented in ERE because we don't know the encoding
     # \xff can be represented
-    e_die("ERE can't express char code %d", char_int, span_id=term.spid)
+    e_die("ERE can't express char code %d" % char_int, loc.Span(term.spid))
 
   # note: mycpp doesn't handle
   # special_char_flags[0] |= FLAG_HYPHEN
@@ -116,15 +117,15 @@ def _CharClassTermToEre(term, parts, special_char_flags):
 
       _CharCodeToEre(term.start, parts, range_no_special)
       if range_no_special[0] !=0:
-        e_die("Can't use char %d as start of range in ERE syntax", term.start.i,
-              span_id=term.start.spid)
+        e_die("Can't use char %d as start of range in ERE syntax" % term.start.i,
+              loc.Span(term.start.spid))
 
       parts.append('-')  # a-b
 
       _CharCodeToEre(term.end, parts, range_no_special)
       if range_no_special[0] != 0:
-        e_die("Can't use char %d as end of range in ERE syntax", term.end.i,
-              span_id=term.end.spid)
+        e_die("Can't use char %d as end of range in ERE syntax" % term.end.i,
+              loc.Span(term.end.spid))
 
     elif case(char_class_term_e.CharCode):
       term = cast(CharCode, UP_term)
@@ -137,7 +138,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
       if term.negated:
         e_die("Perl classes can't be negated in ERE",
-              span_id=term.negated.span_id)
+              loc.Span(term.negated.span_id))
       else:
         pat = '%s' % chars
       parts.append(pat)
@@ -147,7 +148,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       n = term.name  # looks like 'digit'
       if term.negated:
         e_die("POSIX classes can't be negated in ERE",
-              span_id=term.negated.span_id)
+              loc.Span(term.negated.span_id))
       else:
         pat = '[:%s:]' % n
       parts.append(pat)
@@ -213,7 +214,7 @@ def AsPosixEre(node, parts):
         # Note: Other regex dialects have non-capturing groups since we don't
         # need this.
         e_die("POSIX EREs don't have groups without capture, so this node "
-              "needs () around it.", span_id=child.spid)
+              "needs () around it.", loc.Span(child.spid))
 
     AsPosixEre(node.child, parts)
     op = node.op

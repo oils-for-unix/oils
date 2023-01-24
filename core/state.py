@@ -18,6 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, hay_node
 )
+from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
@@ -966,7 +967,7 @@ def _GetWorkingDir():
   try:
     return posix.getcwd()
   except OSError as e:
-    e_die("Can't determine working directory: %s", pyutil.strerror(e))
+    e_die("Can't determine working directory: %s" % pyutil.strerror(e))
 
 
 class DebugFrame(object):
@@ -1600,7 +1601,7 @@ class Mem(object):
         # more common idiom is 'local -n ref=$1'.  Note that you can mutate
         # references themselves with local -n ref=new.
         if self.exec_opts.strict_nameref():
-          e_die('nameref %r is undefined', name)
+          e_die('nameref %r is undefined' % name)
         else:
           return cell, name_map, name  # fallback
 
@@ -1617,7 +1618,7 @@ class Mem(object):
     if not match.IsValidVarName(new_name):
       # e.g. '#' or '1' or ''
       if self.exec_opts.strict_nameref():
-        e_die('nameref %r contains invalid variable name %r', name, new_name)
+        e_die('nameref %r contains invalid variable name %r' % (name, new_name))
       else:
         # Bash has this odd behavior of clearing the nameref bit when
         # ref=#invalid#.  strict_nameref avoids it.
@@ -1629,7 +1630,7 @@ class Mem(object):
       ref_trail = [name]
     else:
       if new_name in ref_trail:
-        e_die('Circular nameref %s', ' -> '.join(ref_trail))
+        e_die('Circular nameref %s' % ' -> '.join(ref_trail))
     ref_trail.append(new_name)
 
     # 'declare -n' uses dynamic scope.  'setref' uses parent scope to avoid the
@@ -1726,7 +1727,7 @@ class Mem(object):
             # sense anyway.
             if cell.readonly:
               # TODO: error context
-              e_die("Can't assign to readonly value %r", lval.name)
+              e_die("Can't assign to readonly value %r" % lval.name)
             cell.val = val  # CHANGE VAL
 
           # NOTE: Could be cell.flags |= flag_set_mask 
@@ -1787,7 +1788,7 @@ class Mem(object):
           return
 
         if cell.readonly:
-          e_die("Can't assign to readonly array", span_id=left_spid)
+          e_die("Can't assign to readonly array", loc.Span(left_spid))
 
         UP_cell_val = cell.val
         # undef[0]=y is allowed
@@ -1799,7 +1800,7 @@ class Mem(object):
           elif case2(value_e.Str):
             # s=x
             # s[1]=y  # invalid
-            e_die("Can't assign to items in a string", span_id=left_spid)
+            e_die("Can't assign to items in a string", loc.Span(left_spid))
 
           elif case2(value_e.MaybeStrArray):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
@@ -1827,8 +1828,9 @@ class Mem(object):
         # This could be an object, eggex object, etc.  It won't be
         # AssocArray shouldn because we query IsAssocArray before evaluating
         # sh_lhs_expr.  Could conslidate with s[i] case above
-        e_die("Value of type %s can't be indexed",
-              ui.ValType(cell.val), span_id=left_spid)
+        e_die("Value of type %s can't be indexed" % ui.ValType(cell.val),
+              loc.Span(left_spid))
+
 
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)
@@ -1842,7 +1844,7 @@ class Mem(object):
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
                                                    is_setref)
         if cell.readonly:
-          e_die("Can't assign to readonly associative array", span_id=left_spid)
+          e_die("Can't assign to readonly associative array", loc.Span(left_spid))
 
         # We already looked it up before making the lvalue
         assert cell.val.tag == value_e.AssocArray, cell

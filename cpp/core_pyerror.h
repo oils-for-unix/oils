@@ -24,40 +24,26 @@
   throw Alloc<error::Parse>(s, w);
 }
 
+// TODO: pass location info everywhere
+
 [[noreturn]] inline void e_die(Str* s) {
   throw Alloc<error::FatalRuntime>(s);
 }
 
-// TODO: respect more arguments
-
-[[noreturn]] inline void e_die(Str* s, int span_id) {
-  throw Alloc<error::FatalRuntime>(s);
-}
-
-[[noreturn]] inline void e_die(Str* s, syntax_asdl::Token* token) {
-  throw Alloc<error::FatalRuntime>(s);
-}
-
-[[noreturn]] inline void e_die(Str* s, syntax_asdl::word_part_t* part) {
-  throw Alloc<error::FatalRuntime>(s);
-}
-
-[[noreturn]] inline void e_die(Str* s, syntax_asdl::word_t* w) {
+[[noreturn]] inline void e_die(Str* s, syntax_asdl::loc_t* location) {
   throw Alloc<error::FatalRuntime>(s);
 }
 
 [[noreturn]] inline void e_die_status(int status, Str* s) {
-  // TODO: pass location info
   throw Alloc<error::FatalRuntime>(status, s);
 }
 
-[[noreturn]] inline void e_die_status(int status, Str* s, syntax_asdl::loc_t* location) {
-  // TODO: pass location info
+[[noreturn]] inline void e_die_status(int status, Str* s,
+                                      syntax_asdl::loc_t* location) {
   throw Alloc<error::FatalRuntime>(status, s);
 }
 
 [[noreturn]] inline void e_strict(Str* s, syntax_asdl::loc_t* location) {
-  // TODO: pass location info
   throw Alloc<error::Strict>(s);
 }
 

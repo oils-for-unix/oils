@@ -113,7 +113,7 @@ def OldValue(lval, mem, exec_opts):
 
   val = mem.GetValue(var_name)
   if exec_opts and exec_opts.nounset() and val.tag_() == value_e.Undef:
-    e_die('Undefined variable %r', var_name)  # TODO: location info
+    e_die('Undefined variable %r' % var_name)  # TODO: location info
 
   UP_val = val
   with tagswitch(lval) as case:
@@ -132,7 +132,7 @@ def OldValue(lval, mem, exec_opts):
           # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
           array_val = tmp
         else:
-          e_die("Can't use [] on value of type %s", ui.ValType(val))
+          e_die("Can't use [] on value of type %s" % ui.ValType(val))
 
       s = word_eval.GetArrayItem(array_val.strs, lval.index)
 
@@ -155,7 +155,7 @@ def OldValue(lval, mem, exec_opts):
           # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
           assoc_val = tmp2
         else:
-          e_die("Can't use [] on value of type %s", ui.ValType(val))
+          e_die("Can't use [] on value of type %s" % ui.ValType(val))
 
       s = assoc_val.d.get(lval.key)
       if s is None:
@@ -253,7 +253,7 @@ class UnsafeArith(object):
 
         # this affects builtins 'unset' and 'printf'
         # TODO: Don't print outer location?
-        e_die('Invalid var ref', span_id=static_ref_spid)
+        e_die('Invalid var ref', loc.Span(static_ref_spid))
 
     # Hack: There is no ${ on the "virtual" braced_var_sub, but we can add one
     # for error messages
@@ -360,12 +360,12 @@ class ArithEvaluator(object):
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:
             self.errfmt.PrettyPrintError(e)
-            e_die('Parse error in recursive arithmetic', span_id=e.span_id)
+            e_die('Parse error in recursive arithmetic', loc.Span(e.span_id))
 
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.
         if node2.tag_() == arith_expr_e.Word:
-          e_die("Invalid integer constant %r", s, span_id=span_id)
+          e_die("Invalid integer constant %r" % s, loc.Span(span_id))
         else:
           integer = self.EvalToInt(node2)
       else:
@@ -374,7 +374,7 @@ class ArithEvaluator(object):
           e_strict("Invalid integer constant %r" % s, loc.Span(span_id))
         else:
           # 42x is always fatal!
-          e_die("Invalid integer constant %r", s, span_id=span_id)
+          e_die("Invalid integer constant %r" % s, loc.Span(span_id))
 
     return integer
 
@@ -413,8 +413,8 @@ class ArithEvaluator(object):
     # strict_arith.
     # In bash, (( a )) is like (( a[0] )), but I don't want that.
     # And returning '0' gives different results.
-    e_die("Expected a value convertible to integer, got %s",
-          ui.ValType(val), span_id=span_id)
+    e_die("Expected a value convertible to integer, got %s" %
+          ui.ValType(val), loc.Span(span_id))
 
   def _EvalLhsAndLookupArith(self, node):
     # type: (arith_expr_t) -> Tuple[int, lvalue_t]
@@ -492,7 +492,7 @@ class ArithEvaluator(object):
         var_name = tok.val
         val = self.mem.GetValue(var_name)
         if val.tag_() == value_e.Undef and self.exec_opts.nounset():
-          e_die('Undefined variable %r', var_name, token=tok)
+          e_die('Undefined variable %r' % var_name, tok)
         return val
 
       elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
@@ -638,7 +638,7 @@ class ArithEvaluator(object):
 
             else:
               # TODO: Add error context
-              e_die('Expected array or assoc in index expression, got %s',
+              e_die('Expected array or assoc in index expression, got %s' %
                     ui.ValType(left))
 
           if s is None:
@@ -667,7 +667,7 @@ class ArithEvaluator(object):
           if rhs == 0:
             # TODO: Could also blame /
             e_die('Divide by zero',
-                  span_id=location.SpanForArithExpr(node.right))
+                  loc.Span(location.SpanForArithExpr(node.right)))
 
           ret = lhs / rhs
 
@@ -675,7 +675,7 @@ class ArithEvaluator(object):
           if rhs == 0:
             # TODO: Could also blame /
             e_die('Divide by zero',
-                  span_id=location.SpanForArithExpr(node.right))
+                  loc.Span(location.SpanForArithExpr(node.right)))
 
           ret = lhs % rhs
 
@@ -959,7 +959,7 @@ class BoolEvaluator(ArithEvaluator):
             val = self.mem.GetValue(s)
             return val.tag_() != value_e.Undef
 
-          e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location
+          e_die("%s isn't implemented" % ui.PrettyId(op_id))  # implicit location
 
         raise AssertionError(arg_type)
 

@@ -39,7 +39,7 @@ if mylib.PYTHON:
 
         elif case(loc_e.WordPart):
           location = cast(loc__WordPart, UP_location)
-          kwargs['word_part'] = location.p
+          kwargs['part'] = location.p
 
         elif case(loc_e.Word):
           location = cast(loc__Word, UP_location)

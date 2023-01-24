@@ -305,8 +305,8 @@ class CommandEvaluator(object):
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
       # This only happens with alternative Oil interpreters.
-      e_die("Assignment builtin %r not configured",
-            cmd_val.argv[0], span_id=cmd_val.arg_spids[0])
+      e_die("Assignment builtin %r not configured" % cmd_val.argv[0],
+            loc.Span(cmd_val.arg_spids[0]))
 
     with vm.ctx_FlushStdout():
       with ui.ctx_Location(self.errfmt, cmd_val.arg_spids[0]):
@@ -579,8 +579,8 @@ class CommandEvaluator(object):
 
     if _HasManyStatuses(node):
       node_str = ui.CommandType(node)
-      e_die("strict_errexit only allows simple commands in conditionals (got %s). ",
-            node_str, span_id=location.SpanForCommand(node))
+      e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
+            node_str, loc.Span(location.SpanForCommand(node)))
 
   def _StrictErrExitList(self, node_list):
     # type: (List[command_t]) -> None
@@ -596,14 +596,14 @@ class CommandEvaluator(object):
 
     if len(node_list) > 1:
       e_die("strict_errexit only allows a single command.  Hint: use 'try'.",
-            span_id=location.SpanForCommand(node_list[0]))
+            loc.Span(location.SpanForCommand(node_list[0])))
 
     assert len(node_list) > 0
     node = node_list[0]
     if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
-      e_die("strict_errexit only allows simple commands in conditionals (got %s). ",
-            node_str, span_id=location.SpanForCommand(node))
+      e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
+            node_str, loc.Span(location.SpanForCommand(node)))
 
   def _EvalCondition(self, cond, spid):
     # type: (condition_t, int) -> bool
@@ -703,7 +703,7 @@ class CommandEvaluator(object):
         else:
           if node.block:
             e_die("ShAssignment builtins don't accept blocks",
-                  span_id=node.block.spids[0])
+                  loc.Span(node.block.spids[0]))
           cmd_val = cast(cmd_value__Assign, UP_cmd_val)
 
         # NOTE: RunSimpleCommand never returns when do_fork=False!
@@ -747,7 +747,7 @@ class CommandEvaluator(object):
         node = cast(command__Pipeline, UP_node)
         cmd_st.check_errexit = True
         if len(node.stderr_indices):
-          e_die("|& isn't supported", span_id=node.spids[0])
+          e_die("|& isn't supported", loc.Span(node.spids[0]))
 
         # TODO: how to get errexit_spid into _Execute?
         # It can be the span_id of !, or of the pipeline component that failed,
@@ -1015,8 +1015,8 @@ class CommandEvaluator(object):
               # disallows -1!  Others wrap to 255.
               arg = int(str_val.s)
             except ValueError:
-              e_die('%r expected a number, got %r',
-                    node.token.val, str_val.s, word=node.arg_word)
+              e_die('%r expected a number, got %r' %
+                    (node.token.val, str_val.s), loc.Word(node.arg_word))
         else:
           if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()
@@ -1040,7 +1040,7 @@ class CommandEvaluator(object):
         else:
           msg = 'Invalid control flow at top level'
           if self.exec_opts.strict_control_flow():
-            e_die(msg, token=tok)
+            e_die(msg, tok)
           else:
             # Only print warnings, never fatal.
             # Bash oddly only exits 1 for 'return', but no other shell does.
@@ -1321,8 +1321,8 @@ class CommandEvaluator(object):
         node = cast(command__ShFunction, UP_node)
         # name_spid is node.spids[1].  Dynamic scope.
         if node.name in self.procs and not self.exec_opts.redefine_proc():
-          e_die("Function %s was already defined (redefine_proc)", node.name,
-              span_id=node.spids[1])
+          e_die("Function %s was already defined (redefine_proc)" % node.name,
+              loc.Span(node.spids[1]))
         self.procs[node.name] = Proc(
             node.name, node.spids[1], proc_sig.Open(), node.body, [], True)
 
@@ -1332,8 +1332,8 @@ class CommandEvaluator(object):
         node = cast(command__Proc, UP_node)
 
         if node.name.val in self.procs and not self.exec_opts.redefine_proc():
-          e_die("Proc %s was already defined (redefine_proc)", node.name.val,
-              span_id=node.name.span_id)
+          e_die("Proc %s was already defined (redefine_proc)" % node.name.val,
+                node.name)
 
         defaults = None  # type: List[value_t]
         if mylib.PYTHON:
@@ -1745,15 +1745,14 @@ class CommandEvaluator(object):
 
               if not arg_str.startswith(':'):
                 # TODO: Point to the exact argument
-                e_die('Invalid argument %r.  Expected a name starting with :',
-                      arg_str)
+                e_die('Invalid argument %r.  Expected a name starting with :' % arg_str)
               arg_str = arg_str[1:]
 
             val = value.Str(arg_str)  # type: value_t
           else:
             val = proc.defaults[i]
             if val is None:
-              e_die("No value provided for param %r", p.name.val)
+              e_die("No value provided for param %r" % p.name.val)
 
           if is_out_param:
             flags = state.SetNameref 
@@ -1785,7 +1784,7 @@ class CommandEvaluator(object):
           status = e.StatusCode()
         else:
           # break/continue used in the wrong place.
-          e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
+          e_die('Unexpected %r (in function call)' % e.token.val, e.token)
       except error.FatalRuntime as e:
         # Dump the stack before unwinding it
         self.dumper.MaybeRecord(self, e)
@@ -1814,7 +1813,7 @@ class CommandEvaluator(object):
       if e.IsReturn():
         status = e.StatusCode()
       else:
-        e_die('Unexpected control flow in block', token=e.token)
+        e_die('Unexpected control flow in block', e.token)
 
     namespace_ = self.mem.TopNamespace()
 

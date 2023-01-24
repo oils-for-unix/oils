@@ -13,7 +13,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_e, printf_part_t, printf_part__Literal,
-    printf_part__Percent, source, Token,
+    printf_part__Percent, source, Token, loc
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
@@ -355,8 +355,8 @@ class Printf(vm._Builtin):
             else:  # typ in 'diouxX'
               # Disallowed because it depends on 32- or 64- bit
               if d < 0 and typ in 'ouxX':
-                e_die("Can't format negative number %d with %%%s",
-                      d, typ, span_id=part.type.span_id)
+                e_die("Can't format negative number %d with %%%s" % (d, typ), 
+                      loc.Span(part.type.span_id))
 
               if typ == 'o':
                 s = mylib.octal(d)

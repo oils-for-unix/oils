@@ -866,7 +866,7 @@ if mylib.PYTHON:
                 val = cast(value__Obj, UP_val)
                 obj = val.obj
               else:
-                e_die("Can't serialize value of type %d", val.tag_())
+                e_die("Can't serialize value of type %d" % val.tag_())
             attrs[name] = obj
 
           result['attrs'] = attrs

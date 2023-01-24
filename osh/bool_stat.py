@@ -10,7 +10,7 @@ import stat
 import posix_ as posix
 from posix_ import X_OK, R_OK, W_OK  # refers directly to C macro
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import word_t
+from _devbuild.gen.syntax_asdl import word_t, loc
 from core.pyerror import e_die
 from core import ui
 
@@ -20,13 +20,13 @@ def isatty(fd_str, blame_word):
   try:
     fd = int(fd_str)
   except ValueError:
-    e_die('Invalid file descriptor %r', fd_str, word=blame_word)
+    e_die('Invalid file descriptor %r' % fd_str, loc.Word(blame_word))
 
   try:
     return posix.isatty(fd)
   # fd is user input, and causes this exception in the binding.
   except OverflowError:
-    e_die('File descriptor %r is too big', fd_str, word=blame_word)
+    e_die('File descriptor %r is too big' % fd_str, loc.Word(blame_word))
 
 
 def DoUnaryOp(op_id, s):
@@ -103,7 +103,8 @@ def DoUnaryOp(op_id, s):
   if op_id == Id.BoolUnary_G:
     return st.st_gid == posix.getegid()
 
-  e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location
+  # implicit location
+  e_die("%s isn't implemented" % ui.PrettyId(op_id), loc.Missing())
 
 
 def DoBinaryOp(op_id, s1, s2):

@@ -70,14 +70,15 @@ def p_die(msg, *args, **kwargs):
   raise error.Parse(msg, *args, **kwargs)
 
 
-def e_die(msg, *args, **kwargs):
-  # type: (str, *Any, **Any) -> NoReturn
+def e_die(msg, location=None):
+  # type: (str, loc_t) -> NoReturn
   """Convenience wrapper for fatal runtime errors.
 
   Usually exits with status 1.  See osh/cmd_eval.py.
   """
-  assert 'status' not in kwargs, 'Use e_die_status'
-  raise error.FatalRuntime(msg, *args, **kwargs)
+  # assert 'status' not in kwargs, 'Use e_die_status'
+  kwargs = error.LocationShim(location)
+  raise error.FatalRuntime(msg, **kwargs)
 
 
 def e_die_status(status, msg, location=None):
