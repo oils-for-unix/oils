@@ -277,10 +277,6 @@ EXPR_WORDS = [
   C('return',   Id.Expr_Return),
 ]
 
-# The 'compen' and 'type' builtins introspect on keywords and builtins.
-OSH_KEYWORD_NAMES = [name for _, name, _ in _KEYWORDS]
-OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
-
 
 CONTROL_FLOW_NAMES = [name for _, name, _ in _CONTROL_FLOW]
 

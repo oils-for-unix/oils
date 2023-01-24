@@ -364,6 +364,7 @@ namespace arg_types {
 
 """)
 
+  n = len(var_names)
   var_names = []
   for i, spec_name in enumerate(sorted(flag_spec.FLAG_SPEC_AND_MORE)):
     spec = specs[spec_name]
@@ -373,12 +374,12 @@ namespace arg_types {
     defaults_name = None
 
     if spec.actions_short:
-      actions_short_name = 'short_%d' % i
+      actions_short_name = 'short_%d' % (n+i)
       _WriteActions(cc_f, actions_short_name, spec.actions_short, counter)
 
     #if spec.actions_long:
     if spec.actions_long:
-      actions_long_name = 'long_%d' % i
+      actions_long_name = 'long_%d' % (n+i)
       _WriteActions(cc_f, actions_long_name, spec.actions_long, counter)
 
     if spec.plus_flags:
@@ -386,7 +387,7 @@ namespace arg_types {
       _WriteStrArray(cc_f, plus_name, spec.plus_flags)
 
     if spec.defaults:
-      defaults_name = 'defaults_%d' % i
+      defaults_name = 'defaults_%d' % (n+i)
       _WriteDefaults(cc_f, defaults_name, spec.defaults)
 
     var_names.append((actions_short_name, actions_long_name, plus_name, defaults_name))
