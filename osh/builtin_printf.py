@@ -83,7 +83,7 @@ class _FormatStringParser(object):
       # space and + could be implemented
       flag = self.cur_token.val
       if flag in '# +':
-        p_die("osh printf doesn't support the %r flag", flag, token=self.cur_token)
+        p_die("osh printf doesn't support the %r flag" % flag, self.cur_token)
 
       part.flags.append(self.cur_token)
       self._Next(lex_mode_e.PrintfPercent)
@@ -104,16 +104,16 @@ class _FormatStringParser(object):
 
       # ADDITIONAL VALIDATION outside the "grammar".
       if part.type.val in 'eEfFgG':
-        p_die("osh printf doesn't support floating point", token=part.type)
+        p_die("osh printf doesn't support floating point", part.type)
       # These two could be implemented.  %c needs utf-8 decoding.
       if part.type.val == 'c':
-        p_die("osh printf doesn't support single characters (bytes)", token=part.type)
+        p_die("osh printf doesn't support single characters (bytes)", part.type)
 
     elif self.token_type == Id.Unknown_Tok:
-      p_die('Invalid printf format character', token=self.cur_token)
+      p_die('Invalid printf format character', self.cur_token)
 
     else:
-      p_die('Expected a printf format character', token=self.cur_token)
+      p_die('Expected a printf format character', self.cur_token)
 
     return part
 

@@ -68,7 +68,7 @@ class DisallowedLineReader(_Reader):
 
   def _GetLine(self):
     # type: () -> Optional[str]
-    p_die("Here docs aren't allowed in expressions", token=self.blame_token)
+    p_die("Here docs aren't allowed in expressions", self.blame_token)
 
 
 class FileLineReader(_Reader):

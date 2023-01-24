@@ -61,13 +61,14 @@ def e_strict(msg, location):
   raise error.Strict(msg, location)
 
 
-def p_die(msg, *args, **kwargs):
-  # type: (str, *Any, **Any) -> NoReturn
+def p_die(msg, location):
+  # type: (str, loc_t) -> NoReturn
   """Convenience wrapper for parse errors.
 
   Exits with status 2.  See core/main_loop.py.
   """
-  raise error.Parse(msg, *args, **kwargs)
+  kwargs = error.LocationShim(location)
+  raise error.Parse(msg, **kwargs)
 
 
 def e_die(msg, location=None):
@@ -76,7 +77,6 @@ def e_die(msg, location=None):
 
   Usually exits with status 1.  See osh/cmd_eval.py.
   """
-  # assert 'status' not in kwargs, 'Use e_die_status'
   kwargs = error.LocationShim(location)
   raise error.FatalRuntime(msg, **kwargs)
 

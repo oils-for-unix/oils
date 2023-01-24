@@ -6,25 +6,17 @@
 #include "_gen/frontend/syntax.asdl.h"
 
 // STUBS for varargs functions like p_die()
-// [[noreturn]] avoids warnings
-
-[[noreturn]] inline void p_die(Str* s, int span_id) {
-  throw Alloc<error::Parse>(s, span_id);
-}
-
-[[noreturn]] inline void p_die(Str* s, syntax_asdl::Token* token) {
-  throw Alloc<error::Parse>(s, token);
-}
-
-[[noreturn]] inline void p_die(Str* s, syntax_asdl::word_part_t* part) {
-  throw Alloc<error::Parse>(s, part);
-}
-
-[[noreturn]] inline void p_die(Str* s, syntax_asdl::word_t* w) {
-  throw Alloc<error::Parse>(s, w);
-}
+// [[noreturn]] avoids warnings.  TODO: Could just use 'raise' in Python
 
 // TODO: pass location info everywhere
+
+[[noreturn]] inline void p_die(Str* s) {
+  throw Alloc<error::Parse>(s, -1);
+}
+
+[[noreturn]] inline void p_die(Str* s, syntax_asdl::loc_t* location) {
+  throw Alloc<error::Parse>(s, -1);
+}
 
 [[noreturn]] inline void e_die(Str* s) {
   throw Alloc<error::FatalRuntime>(s);

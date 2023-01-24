@@ -4,7 +4,7 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    arith_expr, arith_expr_e, arith_expr_t, arith_expr__Binary, word_t,
+    loc, arith_expr, arith_expr_e, arith_expr_t, arith_expr__Binary, word_t,
     compound_word,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -73,7 +73,7 @@ def CheckLhsExpr(node, dynamic_arith, blame_word):
   if _VarRefOrWord(node, dynamic_arith):
     return
 
-  p_die("Left-hand side of this assignment is invalid", word=blame_word)
+  p_die("Left-hand side of this assignment is invalid", loc.Word(blame_word))
 
 
 #
@@ -84,7 +84,7 @@ def CheckLhsExpr(node, dynamic_arith, blame_word):
 def NullError(p, t, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   # TODO: I need position information
-  p_die("Token can't be used in prefix position", word=t)
+  p_die("Token can't be used in prefix position", loc.Word(t))
   return None  # never reached
 
 
@@ -127,7 +127,7 @@ def NullPrefixOp(p, w, bp):
 def LeftError(p, t, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   # Hm is this not called because of binding power?
-  p_die("Token can't be used in infix position", word=t)
+  p_die("Token can't be used in infix position", loc.Word(t))
   return None  # never reached
 
 
@@ -284,9 +284,9 @@ class TdopParser(object):
     # type: (Id_t) -> None
     """Assert that we're at the current token and advance."""
     if not self.AtToken(token_type):
-      p_die('Parser expected %s, got %s',
-            ui.PrettyId(token_type), ui.PrettyId(self.op_id),
-            word=self.cur_word)
+      p_die('Parser expected %s, got %s' %
+            (ui.PrettyId(token_type), ui.PrettyId(self.op_id)),
+            loc.Word(self.cur_word))
     self.Next()
 
   def Next(self):
@@ -303,7 +303,7 @@ class TdopParser(object):
     """
     # TODO: use Kind.Eof
     if self.op_id in (Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick):
-      p_die('Unexpected end of input', word=self.cur_word)
+      p_die('Unexpected end of input', loc.Word(self.cur_word))
 
     t = self.cur_word
     null_info = self.spec.LookupNud(self.op_id)

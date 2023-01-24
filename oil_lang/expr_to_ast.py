@@ -5,8 +5,9 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
-    command_sub, sh_array_literal,
+    Token, loc, loc_t, speck,
+    double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
+    sh_array_literal,
     command, command_t,
     expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
@@ -228,7 +229,7 @@ class Transformer(object):
     # x, and (x,) aren't allowed
     if n == 2:
       p_die('Write singleton tuples with tup(), not a trailing comma',
-            token=children[1].tok)
+            children[1].tok)
 
     elts = []  # type: List[expr_t]
     for i in xrange(0, n, 2):  # skip commas
@@ -567,7 +568,7 @@ class Transformer(object):
           attr_node = cast(attribute, node)
           if attr_node.op.id == Id.Expr_Dot:
             p_die("obj.field isn't valid, but obj.method() is",
-                  token=attr_node.op)
+                  attr_node.op)
 
         if i != n:  # ['**' factor]
           op_tok = children[i].tok
@@ -604,8 +605,8 @@ class Transformer(object):
 
         if tok.id == Id.VSub_DollarName:  # $foo is disallowed
           bare = tok.val[1:]
-          p_die('In expressions, remove $ and use `%s`, or sometimes "$%s"',
-                bare, bare, token=tok)
+          p_die('In expressions, remove $ and use `%s`, or sometimes "$%s"' %
+                (bare, bare), tok)
 
         # $? is allowed
         return simple_var_sub(tok)
@@ -667,7 +668,8 @@ class Transformer(object):
       else:
         # This blame mechanism seems to work.  Otherwise we don't have a method
         # to blame an arbitrary expr_t.
-        p_die("Can't assign to this expression", token=p.tok if p.tok else None)
+        blame = cast(loc_t, p.tok) if p.tok else loc.Missing()  # type: loc_t
+        p_die("Can't assign to this expression", blame)
     return places
 
   def MakeVarDecl(self, p_node):
@@ -867,7 +869,7 @@ class Transformer(object):
         untyped.append(UntypedParam(prefix, name, default_val))
       else:
         if typ.val not in ('Expr', 'Block'):
-          p_die('proc param types should be Expr or Block', token=typ)
+          p_die('proc param types should be Expr or Block', typ)
         typed.append(TypedParam(name, typ, default_val))
 
       i += 2
@@ -1191,9 +1193,9 @@ class Transformer(object):
         sq_part = cast(single_quoted, children[0].children[1].tok)
         tokens = sq_part.tokens
         if len(tokens) > 1:  # Can happen with multiline single-quoted strings
-          p_die(RANGE_POINT_TOO_LONG, part=sq_part)
+          p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
         if len(tokens[0].val) > 1:
-          p_die(RANGE_POINT_TOO_LONG, part=sq_part)
+          p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
         return tokens[0]
 
       if typ == grammar_nt.char_literal:
@@ -1207,7 +1209,7 @@ class Transformer(object):
       if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
         # For the a in a-z, 0 in 0-9
         if len(tok.val) != 1:
-          p_die(RANGE_POINT_TOO_LONG, token=tok)
+          p_die(RANGE_POINT_TOO_LONG, tok)
         return tok
 
       raise NotImplementedError()
@@ -1311,7 +1313,7 @@ class Transformer(object):
     val = tok.val
     if val == 'dot':
       if negated_tok:
-        p_die("Can't negate this symbol", token=tok)
+        p_die("Can't negate this symbol", tok)
       return tok
 
     if val in POSIX_CLASSES:
@@ -1324,7 +1326,7 @@ class Transformer(object):
     if val[0].isupper():  # e.g. HexDigit
       return re.Splice(tok)
 
-    p_die("%r isn't a character class", val, token=tok)
+    p_die("%r isn't a character class" % val, tok)
 
   def _NameInClass(self, negated_tok, tok):
     # type: (Token, Token) -> class_literal_term_t
@@ -1348,7 +1350,7 @@ class Transformer(object):
       assert tok.id in (Id.Expr_Name, Id.Expr_DecInt)
 
       if negated_tok:  # [~d] is not allowed, only [~digit]
-        p_die("Can't negate this symbol", token=tok)
+        p_die("Can't negate this symbol", tok)
       return class_literal_term.CharLiteral(tok)
 
     # digit, word, but not d, w, etc.
@@ -1358,7 +1360,7 @@ class Transformer(object):
     perl = PERL_CLASSES.get(val)
     if perl is not None:
       return perl_class(negated_speck, perl)
-    p_die("%r isn't a character class", val, token=tok)
+    p_die("%r isn't a character class" % val, tok)
 
   def _ReAtom(self, p_atom):
     # type: (PNode) -> re_t
@@ -1409,7 +1411,7 @@ class Transformer(object):
         # Validate symbols here, like we validate PerlClass, etc.
         if tok.val in ('%start', '%end', 'dot'):
           return tok
-        p_die("Unexpected token %r in regex", tok.val, token=tok)
+        p_die("Unexpected token %r in regex" % tok.val, tok)
 
       if tok.id == Id.Expr_At:
         # | '@' Expr_Name
@@ -1428,7 +1430,7 @@ class Transformer(object):
         else:
           # Note: !! conflicts with shell history
           p_die("Backtracking with !! isn't implemented (requires Python/PCRE)",
-                token=children[1].tok)
+                children[1].tok)
 
       if tok.id == Id.Op_LParen:
         # | '(' regex ')'

@@ -17,7 +17,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, compound_word, 
+    Token, loc, compound_word, 
     word, word_e, word_t, word__BracedTree,
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
@@ -81,7 +81,7 @@ class _RangeParser(object):
     self._Next()  # past Dots
     step = int(self._Eat(Id.Range_Int))
     if step == 0:
-      p_die("Step can't be 0", span_id=self.span_id)
+      p_die("Step can't be 0", loc.Span(self.span_id))
     return step
 
   def _ParseRange(self, range_kind):
@@ -113,14 +113,14 @@ class _RangeParser(object):
         if part.step == NO_STEP:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
-          p_die('Invalid step %d for ascending integer range', part.step,
-                span_id=self.span_id)
+          p_die('Invalid step %d for ascending integer range' % part.step,
+                loc.Span(self.span_id))
       elif start > end:
         if part.step == NO_STEP:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed
-          p_die('Invalid step %d for descending integer range', part.step,
-                span_id=self.span_id)
+          p_die('Invalid step %d for descending integer range' % part.step,
+                loc.Span(self.span_id))
       else:
         # {1..1}  singleton range is dumb but I suppose consistent
         part.step = 1
@@ -137,14 +137,14 @@ class _RangeParser(object):
         if part.step == NO_STEP:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
-          p_die('Invalid step %d for ascending character range', part.step,
-                span_id=self.span_id)
+          p_die('Invalid step %d for ascending character range' % part.step,
+                loc.Span(self.span_id))
       elif start_num > end_num:
         if part.step == NO_STEP:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed
-          p_die('Invalid step %d for descending character range', part.step,
-                span_id=self.span_id)
+          p_die('Invalid step %d for descending character range' % part.step,
+                loc.Span(self.span_id))
       else:
         # {a..a}  singleton range is dumb but I suppose consistent
         part.step = 1
@@ -153,7 +153,7 @@ class _RangeParser(object):
       upper1 = part.start.isupper()
       upper2 = part.end.isupper()
       if upper1 != upper2:
-        p_die('Mismatched cases in character range', span_id=self.span_id)
+        p_die('Mismatched cases in character range', loc.Span(self.span_id))
 
     else:
       raise _NotARange('')

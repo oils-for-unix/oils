@@ -13,6 +13,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
+    loc,
     condition, condition_t,
     for_iter,
     command, command_t,
@@ -29,8 +30,7 @@ from _devbuild.gen.syntax_asdl import (
     word, word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
 
-    assign_pair, env_pair,
-    assign_op_e,
+    assign_pair, env_pair, assign_op_e,
 
     source, parse_result, parse_result_t,
     speck, name_type,
@@ -114,8 +114,7 @@ def _ReadHereLines(line_reader,  # type: _Reader
       # fatal because we want to be strict, and because it causes problems
       # reporting other errors.
       # Attribute it to the << in <<EOF for now.
-      p_die("Couldn't find terminator for here doc that starts here",
-            token=h.op)
+      p_die("Couldn't find terminator for here doc that starts here", h.op)
 
     assert len(line) != 0  # None should be the empty line
 
@@ -164,7 +163,7 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
   # NOTE: \EOF counts, or even E\OF
   ok, delimiter, delim_quoted = word_.StaticEval(h.here_begin)
   if not ok:
-    p_die('Invalid here doc delimiter', word=h.here_begin)
+    p_die('Invalid here doc delimiter', loc.Word(h.here_begin))
 
   here_lines, last_line = _ReadHereLines(line_reader, r, delimiter)
 
@@ -279,10 +278,10 @@ def _AppendMoreEnv(preparsed_list, more_env):
   for left_token, _, part_offset, w in preparsed_list:
     if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
       p_die("Environment binding shouldn't look like an array assignment",
-            token=left_token)
+            left_token)
 
     if left_token.val[-2] == '+':
-      p_die('Expected = in environment binding, got +=', token=left_token)
+      p_die('Expected = in environment binding, got +=', left_token)
 
     var_name = left_token.val[:-1]
     n = len(w.parts)
@@ -328,7 +327,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, typed_args, bloc
   # FOO=(1 2 3) ls is not allowed.
   for _, _, _, w in preparsed_list:
     if word_.HasArrayPart(w):
-      p_die("Environment bindings can't contain array literals", word=w)
+      p_die("Environment bindings can't contain array literals", loc.Word(w))
 
   # NOTE: It would be possible to add this check back.  But it already happens
   # at runtime in EvalWordSequence2.
@@ -336,7 +335,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, typed_args, bloc
   if 0:
     for w in suffix_words:
       if word_.HasArrayPart(w):
-        p_die("Commands can't contain array literals", word=w)
+        p_die("Commands can't contain array literals", loc.Word(w))
 
   # NOTE: We only do brace DETECTION here, not brace EXPANSION.  Therefore we
   # can't implement bash's behavior of having say {~bob,~jane}/src work,
@@ -382,7 +381,7 @@ class VarChecker(object):
     """
     if len(self.tokens) != 0:
       if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
-        p_die("procs and shell functions can't be nested", token=blame_tok)
+        p_die("procs and shell functions can't be nested", blame_tok)
 
     self.tokens.append(blame_tok)
     entry = {}  # type: Dict[str, Id_t]
@@ -422,16 +421,16 @@ class VarChecker(object):
     name = name_tok.val
     if keyword_id in (Id.KW_Const, Id.KW_Var):
       if name in top:
-        p_die('%r was already declared', name, token=name_tok)
+        p_die('%r was already declared' % name, name_tok)
       else:
         top[name] = keyword_id
 
     if keyword_id == Id.KW_SetVar:
       if name not in top:
-        p_die("%r hasn't been declared", name, token=name_tok)
+        p_die("%r hasn't been declared" % name, name_tok)
 
       if name in top and top[name] == Id.KW_Const:
-        p_die("Can't modify constant %r", name, token=name_tok)
+        p_die("Can't modify constant %r" % name, name_tok)
 
     # TODO: setref should only mutate out params.
 
@@ -578,7 +577,7 @@ class CommandParser(object):
     # TODO: Printing something like KW_Do is not friendly.  We can map
     # backwards using the _KEYWORDS list in frontend/lexer_def.py.
     if self.c_id != c_id:
-      p_die(msg, word=self.cur_word)
+      p_die(msg, loc.Word(self.cur_word))
     self._Next()
 
   def _NewlineOk(self):
@@ -604,17 +603,17 @@ class CommandParser(object):
     op_val = op_tok.val
     if op_val[0] == '{':
       pos = op_val.find('}')
-      assert pos != -1  # lexer ensures thsi
-      loc = redir_loc.VarName(op_val[1:pos])  # type: redir_loc_t
+      assert pos != -1  # lexer ensures this
+      where = redir_loc.VarName(op_val[1:pos])  # type: redir_loc_t
 
     elif op_val[0].isdigit():
       pos = 1
       if op_val[1].isdigit():
         pos = 2
-      loc = redir_loc.Fd(int(op_val[:pos]))
+      where = redir_loc.Fd(int(op_val[:pos]))
 
     else:
-      loc = redir_loc.Fd(consts.RedirDefaultFd(op_tok.id))
+      where = redir_loc.Fd(consts.RedirDefaultFd(op_tok.id))
 
     self._Next()
     self._Peek()
@@ -623,7 +622,7 @@ class CommandParser(object):
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
       arg = redir_param.HereDoc()
       arg.here_begin = self.cur_word
-      r = redir(op_tok, loc, arg)
+      r = redir(op_tok, where, arg)
 
       self.pending_here_docs.append(r)  # will be filled on next newline.
 
@@ -632,7 +631,7 @@ class CommandParser(object):
 
     # Other redirect
     if self.c_kind != Kind.Word:
-      p_die('Invalid token after redirect operator', word=self.cur_word)
+      p_die('Invalid token after redirect operator', loc.Word(self.cur_word))
 
     arg_word = self.cur_word
     tilde = word_.TildeDetect(arg_word)
@@ -642,7 +641,7 @@ class CommandParser(object):
 
     # We should never get Empty, Token, etc.
     assert arg_word.tag_() == word_e.Compound, arg_word
-    return redir(op_tok, loc, cast(compound_word, arg_word))
+    return redir(op_tok, where, cast(compound_word, arg_word))
 
   def _ParseRedirectList(self):
     # type: () -> List[redir]
@@ -719,12 +718,12 @@ class CommandParser(object):
         prev_byte = self.lexer.ByteLookBack()
         if prev_byte not in (SPACE_CH, TAB_CH):
           if self.parse_opts.parse_at():
-            p_die('Space required before (', word=self.cur_word)
+            p_die('Space required before (', loc.Word(self.cur_word))
           else:
             # inline func call like @sorted(x) is invalid in OSH, but the
             # solution isn't a space
             p_die('Unexpected left paren (might need a space before it)',
-                  word=self.cur_word)
+                  loc.Word(self.cur_word))
 
         # 2. Check that it's not ().  We disallow this because it's a no-op and
         #    there could be confusion with shell func defs.
@@ -734,7 +733,7 @@ class CommandParser(object):
         # of a word, and we don't know if it will end.
         next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
         if next_id == Id.Op_RParen:
-          p_die('Empty arg list not allowed', word=self.cur_word)
+          p_die('Empty arg list not allowed', loc.Word(self.cur_word))
 
         typed_args = self.w_parser.ParseProcCallArgs()
 
@@ -987,7 +986,7 @@ class CommandParser(object):
 
     if len(words) == 0:  # e.g.  >out.txt  # redirect without words
       if typed_spid != runtime.NO_SPID:
-        p_die("Unexpected typed args", span_id=typed_spid)
+        p_die("Unexpected typed args", loc.Span(typed_spid))
       simple = command.Simple()  # no words, more_env, or block,
       simple.redirects = redirects
       return simple
@@ -998,7 +997,7 @@ class CommandParser(object):
       tok = cast(Token, part0)
       if tok.id == Id.Lit_Equals:
         p_die("=word isn't allowed.  Hint: either quote it or add a space after =\n"
-              "to pretty print an expression", token=tok)
+              "to pretty print an expression", tok)
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
     if len(preparsed_list):
@@ -1007,7 +1006,7 @@ class CommandParser(object):
       # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
       if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
         p_die('Use const or var/setvar to assign in Oil (parse_sh_assign)',
-              token=left_token)
+              left_token)
 
     # Set a reference to words and redirects for completion.  We want to
     # inspect this state after a failed parse.
@@ -1015,7 +1014,7 @@ class CommandParser(object):
 
     if len(suffix_words) == 0:
       if typed_spid != runtime.NO_SPID:
-        p_die("Unexpected typed args", span_id=typed_spid)
+        p_die("Unexpected typed args", loc.Span(typed_spid))
 
       # ShAssignment: No suffix words like ONE=1 a[x]=1 TWO=2
       pairs = []  # type: List[assign_pair]
@@ -1031,15 +1030,15 @@ class CommandParser(object):
 
     if kind == Kind.ControlFlow:
       if typed_spid != runtime.NO_SPID:
-        p_die("Unexpected typed args", span_id=typed_spid)
+        p_die("Unexpected typed args", loc.Span(typed_spid))
       if not self.parse_opts.parse_ignored() and len(redirects):
-        p_die("Control flow shouldn't have redirects", token=kw_token)
+        p_die("Control flow shouldn't have redirects", kw_token)
 
       if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
         # TODO: Change location as above
         left_token, _, _, _ = preparsed_list[0]
         p_die("Control flow shouldn't have environment bindings",
-              token=left_token)
+              left_token)
 
       # Attach the token for errors.  (ShAssignment may not need it.)
       if len(suffix_words) == 1:
@@ -1047,7 +1046,8 @@ class CommandParser(object):
       elif len(suffix_words) == 2:
         arg_word = suffix_words[1]
       else:
-        p_die('Unexpected argument to %r', kw_token.val, word=suffix_words[2])
+        p_die('Unexpected argument to %r' % kw_token.val,
+              loc.Word(suffix_words[2]))
 
       return command.ControlFlow(kw_token, arg_word)
 
@@ -1156,7 +1156,7 @@ class CommandParser(object):
 
       if self.cur_word.tag_() != word_e.Compound:
         # TODO: Can we also show a pointer to the 'for' keyword?
-        p_die('Invalid word in for loop', word=self.cur_word)
+        p_die('Invalid word in for loop', loc.Word(self.cur_word))
 
       w2 = cast(compound_word, self.cur_word)
       words.append(w2)
@@ -1182,7 +1182,7 @@ class CommandParser(object):
     elif self.c_id == Id.Lit_LBrace:  # does NOT require parse_brace
       pass
     else:
-      p_die('Invalid word after for expression', word=self.cur_word)
+      p_die('Invalid word after for expression', loc.Word(self.cur_word))
 
     if self.c_id == Id.Lit_LBrace:
       node.body = self.ParseBraceGroup()
@@ -1210,13 +1210,13 @@ class CommandParser(object):
 
       ok, iter_name, quoted = word_.StaticEval(w)
       if not ok or quoted:  # error: for $x
-        p_die('Expected loop variable (a constant word)', word=w)
+        p_die('Expected loop variable (a constant word)', loc.Word(w))
 
       if not match.IsValidVarName(iter_name):  # error: for -
         # TODO: consider commas?
         if ',' in iter_name:
-          p_die('Loop variables look like x, y (fix spaces)', word=w)
-        p_die('Invalid loop variable name %r', iter_name, word=w)
+          p_die('Loop variables look like x, y (fix spaces)', loc.Word(w))
+        p_die('Invalid loop variable name %r' % iter_name, loc.Word(w))
 
       node.iter_names.append(iter_name)
       num_iter_names += 1
@@ -1229,7 +1229,8 @@ class CommandParser(object):
         break
 
       if num_iter_names == 3:
-        p_die('Unexpected word after 3 loop variables', word=self.cur_word)
+        p_die('Unexpected word after 3 loop variables',
+              loc.Word(self.cur_word))
 
     self._NewlineOk()
 
@@ -1248,14 +1249,15 @@ class CommandParser(object):
         # For simplicity, we don't accept for x in (obj); do ...
         self._Peek()
         if self.c_id != Id.Lit_LBrace:
-          p_die('Expected { after iterable expression', word=self.cur_word)
+          p_die('Expected { after iterable expression',
+                loc.Word(self.cur_word))
       else:
         iter_words, semi_spid = self.ParseForWords()
         if not self.parse_opts.parse_bare_word() and len(iter_words) == 1:
           ok, s, quoted = word_.StaticEval(iter_words[0])
           if ok and match.IsValidVarName(s) and not quoted:
             p_die('Surround this word with either parens or quotes (parse_bare_word)',
-                  word=iter_words[0])
+                  loc.Word(iter_words[0]))
 
         words2 = braces.BraceDetectAll(iter_words)
         words3 = word_.TildeDetectAll(words2)
@@ -1263,7 +1265,7 @@ class CommandParser(object):
 
         # Now that we know there are words, do an extra check
         if num_iter_names > 2:
-          p_die('Expected at most 2 loop variables', span_id=for_spid)
+          p_die('Expected at most 2 loop variables', loc.Span(for_spid))
 
     elif self.c_id == Id.KW_Do:
       node.iterable = for_iter.Args()  # implicitly loop over "$@"
@@ -1274,7 +1276,7 @@ class CommandParser(object):
       self._Next()
 
     else:  # for foo BAD
-      p_die('Unexpected word after for loop variable', word=self.cur_word)
+      p_die('Unexpected word after for loop variable', loc.Word(self.cur_word))
 
     self._Peek()
     if self.c_id == Id.Lit_LBrace:  # parse_opts.parse_brace() must be on
@@ -1299,7 +1301,7 @@ class CommandParser(object):
     if self.c_id == Id.Op_DLeftParen:
       if not self.parse_opts.parse_dparen():
         p_die("Bash for loops aren't allowed (parse_dparen)",
-              word=self.cur_word)
+              loc.Word(self.cur_word))
 
       # for (( i = 0; i < 10; i++)
       n1 = self._ParseForExprLoop()
@@ -1355,7 +1357,8 @@ class CommandParser(object):
       self._Next()
     else:
       if not self.parse_opts.parse_sloppy_case():
-        p_die("Expected left paren (parse_sloppy_case)", word=self.cur_word)
+        p_die("Expected left paren (parse_sloppy_case)",
+              loc.Word(self.cur_word))
 
     pat_words = []  # type: List[word_t]
     while True:
@@ -1375,7 +1378,7 @@ class CommandParser(object):
       ok, s, quoted = word_.StaticEval(pat_words[0])
       if ok and match.IsValidVarName(s) and not quoted:
         p_die('Constant pattern should be quoted (parse_bare_word)',
-               word=pat_words[0])
+               loc.Word(pat_words[0]))
 
     rparen_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_CasePat)
@@ -1397,7 +1400,7 @@ class CommandParser(object):
       self._Next()
     else:
       # Happens on EOF
-      p_die('Expected ;; or esac', word=self.cur_word)
+      p_die('Expected ;; or esac', loc.Word(self.cur_word))
 
     self._NewlineOk()
 
@@ -1442,7 +1445,7 @@ class CommandParser(object):
       ok, s, quoted = word_.StaticEval(to_match)
       if ok and not quoted:
         p_die("This is a constant string.  You may want a variable like $x (parse_bare_word)",
-              word=to_match)
+              loc.Word(to_match))
 
     case_node.to_match = to_match
     self._Next()
@@ -1700,7 +1703,7 @@ class CommandParser(object):
     if self.c_id == Id.Op_DLeftParen:
       if not self.parse_opts.parse_dparen():
         p_die('You may want a space between parens (parse_dparen)',
-              word=self.cur_word)
+              loc.Word(self.cur_word))
       n7 = self.ParseDParen()
       n7.redirects = self._ParseRedirectList()
       return n7
@@ -1710,7 +1713,8 @@ class CommandParser(object):
       return self.ParseTime()
 
     # Happens in function body, e.g. myfunc() oops
-    p_die('Unexpected word while parsing compound command', word=self.cur_word)
+    p_die('Unexpected word while parsing compound command',
+          loc.Word(self.cur_word))
     assert False  # for MyPy
 
   def ParseFunctionDef(self):
@@ -1733,7 +1737,7 @@ class CommandParser(object):
     word0 = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(word0)
     if len(name) == 0:  # example: foo$x is invalid
-      p_die('Invalid function name', word=word0)
+      p_die('Invalid function name', loc.Word(word0))
 
     part0 = word0.parts[0]
     # If we got a non-empty string from ShFunctionName, this should be true.
@@ -1770,7 +1774,7 @@ class CommandParser(object):
       func.spids.append(after_name_spid)
       return func
     else:
-      p_die('Expected ) in function definition', word=self.cur_word)
+      p_die('Expected ) in function definition', loc.Word(self.cur_word))
       return None
 
   def ParseKshFunctionDef(self):
@@ -1787,7 +1791,7 @@ class CommandParser(object):
     cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
     if len(name) == 0:  # example: foo$x is invalid
-      p_die('Invalid KSH-style function name', word=cur_word)
+      p_die('Invalid KSH-style function name', loc.Word(cur_word))
 
     name_spid = word_.LeftMostSpanForWord(self.cur_word)
     after_name_spid = name_spid + 1
@@ -1940,7 +1944,7 @@ class CommandParser(object):
     self._Peek()
 
     if self._AtSecondaryKeyword():
-      p_die('Unexpected word when parsing command', word=self.cur_word)
+      p_die('Unexpected word when parsing command', loc.Word(self.cur_word))
 
     # Oil Extensions
 
@@ -1951,7 +1955,7 @@ class CommandParser(object):
       if self.parse_opts.parse_proc():
         return self.ParseOilProc()
       else:
-        p_die('Enable Oil to use procs (parse_proc)', word=self.cur_word)
+        p_die('Enable Oil to use procs (parse_proc)', loc.Word(self.cur_word))
 
     if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
       keyword_id = self.c_id
@@ -2014,7 +2018,7 @@ class CommandParser(object):
 
     # Sytnax error for '}' starting a line, which all shells disallow.
     if self.c_id == Id.Lit_RBrace:
-      p_die('Unexpected right brace', word=self.cur_word)
+      p_die('Unexpected right brace', loc.Word(self.cur_word))
 
     if self.c_kind == Kind.Redir:  # Leading redirect
       return self.ParseSimpleCommand()
@@ -2056,7 +2060,8 @@ class CommandParser(object):
             else:
               self._Next()
               self._Peek()
-              p_die('Unexpected = (Hint: use const/var/setvar, or quote it)', word=self.cur_word)
+              p_die('Unexpected = (Hint: use const/var/setvar, or quote it)',
+                    loc.Word(self.cur_word))
 
       # echo foo
       # f=(a b c)  # array
@@ -2064,11 +2069,12 @@ class CommandParser(object):
       return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Eof:
-      p_die("Unexpected EOF while parsing command", word=self.cur_word)
+      p_die("Unexpected EOF while parsing command", loc.Word(self.cur_word))
 
     # NOTE: This only happens in batch mode in the second turn of the loop!
     # e.g. )
-    p_die("Invalid word while parsing command", word=self.cur_word)
+    p_die("Invalid word while parsing command", loc.Word(self.cur_word))
+
     assert False  # for MyPy
 
   def ParsePipeline(self):
@@ -2243,7 +2249,7 @@ class CommandParser(object):
       else:
         # e.g. echo a(b)
         p_die('Invalid word while parsing command line',
-              word=self.cur_word)
+              loc.Word(self.cur_word))
 
       children.append(child)
 
@@ -2328,7 +2334,8 @@ class CommandParser(object):
         # but can't fail on 'fi fi', see osh/cmd_parse_test.py
 
         #log("Invalid %s", self.cur_word)
-        p_die("Invalid word while parsing command list", word=self.cur_word)
+        p_die("Invalid word while parsing command list",
+              loc.Word(self.cur_word))
 
       children.append(child)
 
@@ -2415,4 +2422,5 @@ class CommandParser(object):
     if len(self.pending_here_docs):
       node = self.pending_here_docs[0]  # Just show the first one?
       h = cast(redir_param__HereDoc, node.arg)
-      p_die('Unterminated here doc began here', word=h.here_begin)
+      p_die('Unterminated here doc began here', loc.Word(h.here_begin))
+

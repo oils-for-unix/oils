@@ -4,7 +4,7 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (arith_expr, arith_expr_t, word_t)
+from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_t, word_t)
 from core.pyerror import p_die
 from osh import tdop
 from osh import word_
@@ -74,7 +74,7 @@ def LeftIndex(p, w, left, unused_bp):
   3. strings don't have mutable characters.
   """
   if not tdop.IsIndexable(left, p.parse_opts.parse_dynamic_arith()):
-    p_die("The [ operator doesn't apply to this expression", word=w)
+    p_die("The [ operator doesn't apply to this expression", loc.Word(w))
   index = p.ParseUntil(0)  # ] has bp = -1
   p.Eat(Id.Arith_RBracket)
 

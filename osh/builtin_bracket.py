@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import (
-    word, word_e, word_t, word__String, bool_expr,
+    loc, word, word_e, word_t, word__String, bool_expr,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -138,7 +138,7 @@ def _TwoArgs(w_parser):
     unary_id = match.BracketUnary(w0.s)
 
   if unary_id == Id.Undefined_Tok:
-    p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
+    p_die('Expected unary operator, got %r (2 args)' % w0.s, loc.Word(w0))
 
   return bool_expr.Unary(unary_id, w1)
 
@@ -170,7 +170,7 @@ def _ThreeArgs(w_parser):
   if w0.s == '(' and w2.s == ')':
     return bool_expr.WordTest(w1)
 
-  p_die('Expected binary operator, got %r (3 args)', w1.s, word=w1)
+  p_die('Expected binary operator, got %r (3 args)' % w1.s, loc.Word(w1))
 
 
 class Test(vm._Builtin):

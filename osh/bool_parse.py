@@ -32,7 +32,8 @@ BINARY_OP: -gt, -ot, ==, etc.
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
-from _devbuild.gen.syntax_asdl import word_t, word_e, bool_expr, bool_expr_t
+from _devbuild.gen.syntax_asdl import (
+    loc, word_t, word_e, bool_expr, bool_expr_t)
 from core import ui
 from core.pyerror import p_die, log
 from frontend import consts
@@ -114,7 +115,7 @@ class BoolParser(object):
       #p_die("Expected ]], got %r", self.cur_word, word=self.cur_word)
       # NOTE: This might be better as unexpected token, since ]] doesn't always
       # make sense.
-      p_die('Expected ]]', word=self.cur_word)
+      p_die('Expected ]]', loc.Word(self.cur_word))
     return node
 
   def _TestAtEnd(self):
@@ -129,8 +130,8 @@ class BoolParser(object):
 
     node = self.ParseExpr()
     if self.bool_id != Id.Eof_Real:
-      p_die('Unexpected trailing word %s', word_.Pretty(self.cur_word),
-          word=self.cur_word)
+      p_die('Unexpected trailing word %s' % word_.Pretty(self.cur_word),
+            loc.Word(self.cur_word))
 
     return node
 
@@ -198,7 +199,7 @@ class BoolParser(object):
 
       tag = w.tag_()
       if tag != word_e.Compound and tag != word_e.String:
-        p_die('Invalid argument to unary operator', word=w)
+        p_die('Invalid argument to unary operator', loc.Word(w))
       self._Next()
 
       tilde = word_.TildeDetect(w)
@@ -260,10 +261,11 @@ class BoolParser(object):
       self._Next()
       node = self.ParseExpr()
       if self.bool_id != Id.Op_RParen:
-        p_die('Expected ), got %s', word_.Pretty(self.cur_word),
-              word=self.cur_word)
+        p_die('Expected ), got %s' % word_.Pretty(self.cur_word),
+              loc.Word(self.cur_word))
       self._Next()
       return node
 
     # It's not WORD, UNARY_OP, or '('
-    p_die('Unexpected token in boolean expression (%s)', ui.PrettyId(self.bool_id), word=self.cur_word)
+    p_die('Unexpected token in boolean expression (%s)' % ui.PrettyId(self.bool_id), 
+          loc.Word(self.cur_word))

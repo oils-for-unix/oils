@@ -48,7 +48,7 @@ def Parse(lexer):
     #log('tok = %s', tok)
 
     if tok.id == Id.Unknown_Tok:  # extra error
-      p_die('Unexpected token in QSN string', token=tok)
+      p_die('Unexpected token in QSN string', tok)
 
     kind = consts.GetKind(tok.id)
     if kind != Kind.Char:
@@ -57,7 +57,7 @@ def Parse(lexer):
     result.append(tok)
 
   if tok.id != Id.Right_SingleQuote:
-    p_die('Expected closing single quote in QSN string', token=tok)
+    p_die('Expected closing single quote in QSN string', tok)
 
   # HACK: read in shell's SQ_C mode to get whitespace, which is disallowe
   # INSIDE QSN.  This gets Eof_Real too.
@@ -66,10 +66,10 @@ def Parse(lexer):
   # Doesn't work because we want to allow literal newlines / tabs
   if tok.id == Id.Char_Literals:
     if not IsWhitespace(tok.val):
-      p_die("Unexpected data after closing quote", token=tok)
+      p_die("Unexpected data after closing quote", tok)
     tok = lexer.Read(lex_mode_e.QSN)
 
   if tok.id != Id.Eof_Real:
-    p_die('Unexpected token after QSN string', token=tok)
+    p_die('Unexpected token after QSN string', tok)
 
   return result

@@ -4,7 +4,7 @@ expr_parse.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    Token, double_quoted, single_quoted, command_sub, sh_array_literal,
+    loc, Token, double_quoted, single_quoted, command_sub, sh_array_literal,
     compound_word, word_part_t, word_e
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
@@ -82,13 +82,13 @@ def _Classify(gr, tok, tea_keywords):
     return gr.tokens[tok.id]
 
   if tok.id == Id.Unknown_DEqual:
-    p_die('Use === to be exact, or ~== to convert types', token=tok)
+    p_die('Use === to be exact, or ~== to convert types', tok)
 
   if tok.id == Id.Unknown_Tok:
     type_str = ''
   else:
     type_str = ' (%s)' % ui.PrettyId(tok.id)
-  p_die('Unexpected token in expression mode%s', type_str, token=tok)
+  p_die('Unexpected token in expression mode%s' % type_str, tok)
 
 
 # Newlines are ignored between these pairs.
@@ -188,7 +188,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
             elif tok.id == Id.Op_Newline:  # internal newlines allowed
               continue
             else:
-              p_die('Unexpected token in array literal', word=w)
+              p_die('Unexpected token in array literal', loc.Word(w))
 
           elif case(word_e.Compound):
             words.append(cast(compound_word, w))
@@ -335,7 +335,7 @@ class ExprParser(object):
       # ParseError has a "too much input" case but I haven't been able to
       # tickle it.  Mabye it's because of the Eof tokens?
 
-      p_die('Syntax error in expression (near %s)', ui.PrettyId(e.tok.id),
-            token=e.tok)
+      p_die('Syntax error in expression (near %s)' % ui.PrettyId(e.tok.id),
+            e.tok)
 
     return self.push_parser.rootnode, last_token

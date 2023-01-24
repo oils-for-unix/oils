@@ -51,7 +51,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    Token, speck,
+    Token, speck, loc,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
 
@@ -243,7 +243,7 @@ class WordParser(WordEmitter):
       length = self._ReadArithExpr(Id.Arith_RBrace)
       return suffix_op.Slice(begin, length)
 
-    p_die("Expected : or } in slice", token=self.cur_token)
+    p_die("Expected : or } in slice", self.cur_token)
     raise AssertionError()  # for MyPy
 
   def _ReadPatSubVarOp(self):
@@ -265,7 +265,7 @@ class WordParser(WordEmitter):
 
     if len(pat.parts) == 0:
       p_die('Pattern in ${x/pat/replace} must not be empty',
-            token=self.cur_token)
+            self.cur_token)
 
     replace_mode = Id.Undefined_Tok
     # Check for / # % modifier on pattern.
@@ -295,13 +295,13 @@ class WordParser(WordEmitter):
         # NOTE: I think this never happens.
         # We're either in the VS_ARG_UNQ or VS_ARG_DQ lex state, and everything
         # there is Lit_ or Left_, except for }.
-        p_die("Expected } after replacement string, got %s",
-              ui.PrettyId(self.token_type), token=self.cur_token)
+        p_die("Expected } after replacement string, got %s" %
+              ui.PrettyId(self.token_type), self.cur_token)
 
       return suffix_op.PatSub(pat, replace, replace_mode)
 
     # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
-    p_die('Expected } or / to close pattern', token=self.cur_token)
+    p_die('Expected } or / to close pattern', self.cur_token)
 
   def _ReadSubscript(self):
     # type: () -> bracket_op_t
@@ -323,7 +323,7 @@ class WordParser(WordEmitter):
       op = bracket_op.ArrayIndex(anode)
 
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
-      p_die('Expected ] to close subscript', token=self.cur_token)
+      p_die('Expected ] to close subscript', self.cur_token)
 
     self._Next(lex_mode_e.VSub_2)  # skip past ]
     self._Peek()  # Needed to be in the same spot as no subscript
@@ -370,7 +370,7 @@ class WordParser(WordEmitter):
       tok = self.cur_token
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Expected } to close ${', token=self.cur_token)
+        p_die('Expected } to close ${', self.cur_token)
 
       part.suffix_op = suffix_op.Unary(tok, arg_word)
 
@@ -378,14 +378,14 @@ class WordParser(WordEmitter):
       tok = self.cur_token
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Expected } to close ${', token=self.cur_token)
+        p_die('Expected } to close ${', self.cur_token)
 
       # This handles ${x|html} and ${x %.3f} now
       # However I think ${x %.3f} should be statically parsed?  It can enter
       # the printf lexer modes.
       ok, arg, quoted = word_.StaticEval(arg_word)
       if not ok or quoted:
-        p_die('Expected a constant argument', word=arg_word)
+        p_die('Expected a constant argument', loc.Word(arg_word))
       part.suffix_op = suffix_op.Static(tok, arg)
 
     elif op_kind == Kind.VOp0:
@@ -399,7 +399,7 @@ class WordParser(WordEmitter):
       # pattern, so they're lexed as VSub_ArgUnquoted, not VSub_ArgDQ
       arg_word = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Expected } to close ${', token=self.cur_token)
+        p_die('Expected } to close ${', self.cur_token)
 
       part.suffix_op = suffix_op.Unary(tok, arg_word)
 
@@ -421,11 +421,11 @@ class WordParser(WordEmitter):
         # NOTE: } in arithmetic mode.
         if self.token_type != Id.Arith_RBrace:
           # Token seems off; doesn't point to X in # ${a:1:2 X
-          p_die('Expected } to close ${', token=self.cur_token)
+          p_die('Expected } to close ${', self.cur_token)
 
       else:
         # TODO: Does this ever happen?
-        p_die('Unexpected token in ${} (%s)', 'VOp2', token=self.cur_token)
+        p_die('Unexpected token in ${} (%s)' % 'VOp2', self.cur_token)
 
     elif op_kind == Kind.VOp3:  # ${prefix@} etc.
       if allow_query:
@@ -433,13 +433,13 @@ class WordParser(WordEmitter):
         self._Next(lex_mode_e.VSub_2)  # Expecting }
         self._Peek()
       else:
-        p_die("Unexpected token in ${} (%s)", 'VOp3', token=self.cur_token)
+        p_die("Unexpected token in ${} (%s)" % 'VOp3', self.cur_token)
 
     # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
     # mode.  It's redundantly checked above.
     if self.token_type not in (Id.Right_DollarBrace, Id.Arith_RBrace):
       # ${a.} or ${!a.}
-      p_die('Expected } to close ${', token=self.cur_token)
+      p_die('Expected } to close ${', self.cur_token)
 
     # Now look for ops
     return part
@@ -539,7 +539,7 @@ class WordParser(WordEmitter):
 
         self._Peek()
         if self.token_type != Id.Right_DollarBrace:
-          p_die('Expected } after length expression', token=self.cur_token)
+          p_die('Expected } after length expression', self.cur_token)
 
         part.prefix_op = speck(ty, self.cur_token.span_id)
 
@@ -567,7 +567,7 @@ class WordParser(WordEmitter):
       # Note: this will become a new builtin_sub type, so this method must
       # return word_part_t rather than braced_var_sub.  I don't think that
       # should cause problems.
-      p_die('TODO: ${.myproc builtin sub}', token=self.cur_token)
+      p_die('TODO: ${.myproc builtin sub}', self.cur_token)
 
     # VS_NAME, VS_NUMBER, symbol that isn't # or !
     elif self.token_kind == Kind.VSub:
@@ -575,7 +575,7 @@ class WordParser(WordEmitter):
 
     else:
       # e.g. ${^}
-      p_die('Unexpected token in ${}', token=self.cur_token)
+      p_die('Unexpected token in ${}', self.cur_token)
 
     part.spids.append(left_token.span_id)
 
@@ -626,16 +626,16 @@ class WordParser(WordEmitter):
         # r'one\two' or c'one\\two'
         if no_backslashes and '\\' in tok.val:
           p_die(r"Strings with backslashes should look like r'\n' or $'\n'",
-                token=tok)
+                tok)
 
         if is_oil_expr:
           if self.token_type == Id.Char_Octal3:
             p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
-                  token=tok)
+                  tok)
+
           if self.token_type == Id.Char_Hex and len(self.cur_token.val) != 4:
             # disallow \xH
-            p_die(r'Invalid hex escape in Oil string (must be \xHH)',
-                  token=tok)
+            p_die(r'Invalid hex escape in Oil string (must be \xHH)', tok)
 
         tokens.append(tok)
 
@@ -643,13 +643,13 @@ class WordParser(WordEmitter):
         tok = self.cur_token
         # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
         if is_oil_expr or not self.parse_opts.parse_backslash():
-          p_die("Invalid char escape in C-style string literal", token=tok)
+          p_die("Invalid char escape in C-style string literal", tok)
 
         tokens.append(tok)
 
       elif self.token_kind == Kind.Eof:
         p_die('Unexpected EOF in single-quoted string that began here',
-              token=left_token)
+              left_token)
 
       elif self.token_kind == Kind.Right:
         # assume Id.Right_SingleQuote
@@ -797,7 +797,7 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Eof:
         p_die('Unexpected EOF reading extended glob that began here',
-              token=left_token)
+              left_token)
 
       else:
         raise AssertionError(self.cur_token)
@@ -836,11 +836,11 @@ class WordParser(WordEmitter):
             # recursion (unless parse_backslash)
             if is_oil_expr or not self.parse_opts.parse_backslash():
               p_die("Invalid char escape in double quoted string",
-                    token=self.cur_token)
+                    self.cur_token)
           elif self.token_type == Id.Lit_Dollar:
             if is_oil_expr or not self.parse_opts.parse_dollar():
               p_die("Literal $ should be quoted like \$",
-                    token=self.cur_token)
+                    self.cur_token)
 
           part = self.cur_token
         out_parts.append(part)
@@ -848,7 +848,7 @@ class WordParser(WordEmitter):
       elif self.token_kind == Kind.Left:
         if self.token_type == Id.Left_Backtick and is_oil_expr:
           p_die("Invalid backtick: use $(cmd) or \\` in Oil strings",
-                token=self.cur_token)
+                self.cur_token)
 
         part = self._ReadDoubleQuotedLeftParts()
         out_parts.append(part)
@@ -870,7 +870,7 @@ class WordParser(WordEmitter):
       elif self.token_kind == Kind.Eof:
         if left_token:
           p_die('Unexpected EOF reading double-quoted string that began here',
-                token=left_token)
+                left_token)
         else:  # here docs will have an EOF in their token stream
           break
 
@@ -964,7 +964,7 @@ class WordParser(WordEmitter):
     elif left_id == Id.Left_Backtick:
       if not self.parse_opts.parse_backticks():
         p_die('Use $(cmd) instead of backticks (parse_backticks)',
-              token=left_token)
+              left_token)
 
       self._Next(lex_mode_e.Backtick)  # advance past `
 
@@ -995,7 +995,7 @@ class WordParser(WordEmitter):
         elif self.token_type == Id.Eof_Real:
           # Note: this parse error is in the ORIGINAL context.  No code_str yet.
           p_die('Unexpected EOF while looking for closing backtick',
-                token=left_token)
+                left_token)
 
         else:
           raise AssertionError(self.cur_token)
@@ -1121,8 +1121,8 @@ class WordParser(WordEmitter):
     self._Peek()
     # example: 'proc f[' gets you Lit_ArrayLhsOpen
     if self.token_type != Id.Lit_Chars:
-      p_die('Invalid proc name %s', ui.PrettyToken(self.cur_token, self.arena),
-            token=self.cur_token)
+      p_die('Invalid proc name %s' % ui.PrettyToken(self.cur_token, self.arena),
+            self.cur_token)
 
     # TODO: validate this more.  Disallow proc 123 { }, which isn't disallowed
     # for shell functions.  Similar to IsValidVarName().
@@ -1160,9 +1160,9 @@ class WordParser(WordEmitter):
     anode = self.a_parser.Parse()
     cur_id = self.a_parser.CurrentId()
     if end_id != Id.Undefined_Tok and cur_id != end_id:
-      p_die('Unexpected token after arithmetic expression (%s != %s)',
-            ui.PrettyId(cur_id), ui.PrettyId(end_id),
-            word=self.a_parser.cur_word)
+      p_die('Unexpected token after arithmetic expression (%s != %s)' %
+            (ui.PrettyId(cur_id), ui.PrettyId(end_id)),
+            loc.Word(self.a_parser.cur_word))
     return anode
 
   def _ReadArithSub(self):
@@ -1193,7 +1193,7 @@ class WordParser(WordEmitter):
     # Two right parens break the Id.Eof_RParen scheme
     self._Peek()
     if self.token_type != Id.Right_DollarDParen:
-      p_die('Expected second ) to end arith sub', token=self.cur_token)
+      p_die('Expected second ) to end arith sub', self.cur_token)
 
     right_span_id = self.cur_token.span_id
 
@@ -1222,7 +1222,7 @@ class WordParser(WordEmitter):
     # PROBLEM: $(echo $(( 1 + 2 )) )
     self._Peek()
     if self.token_type != Id.Op_DRightParen:
-      p_die('Expected second ) to end arith statement', token=self.cur_token)
+      p_die('Expected second ) to end arith statement', self.cur_token)
 
     self._Next(lex_mode_e.ShCommand)
 
@@ -1256,7 +1256,7 @@ class WordParser(WordEmitter):
     # function, but it works, and is tested in 'test/parse_error.sh
     # arith-integration'
     if cur_id != Id.Arith_Semi:  # for (( x=0 b; ... ))
-      p_die("Expected ; here", word=self.a_parser.cur_word)
+      p_die("Expected ; here", loc.Word(self.a_parser.cur_word))
 
     self._Peek()
     cur_id = self.token_type
@@ -1269,7 +1269,7 @@ class WordParser(WordEmitter):
     self._NextNonSpace()
 
     if cur_id != Id.Arith_Semi:  # for (( x=0; x<5 b ))
-      p_die("Expected ; here", word=self.a_parser.cur_word)
+      p_die("Expected ; here", loc.Word(self.a_parser.cur_word))
 
     self._Peek()
     cur_id = self.token_type
@@ -1282,7 +1282,7 @@ class WordParser(WordEmitter):
 
     self._Peek()
     if self.token_type != Id.Arith_RParen:
-      p_die('Expected ) to end for loop expression', token=self.cur_token)
+      p_die('Expected ) to end for loop expression', self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
     node = command.ForExpr()  # no redirects yet
@@ -1313,7 +1313,7 @@ class WordParser(WordEmitter):
     self._Next(lex_mode_e.ShCommand)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:
-      p_die('Expected ( after =', token=self.cur_token)
+      p_die('Expected ( after =', self.cur_token)
     left_token = self.cur_token
     paren_spid = self.cur_token.span_id
 
@@ -1332,7 +1332,7 @@ class WordParser(WordEmitter):
           elif tok.id == Id.Op_Newline:
             continue
           else:
-            p_die('Unexpected token in array literal', word=w)
+            p_die('Unexpected token in array literal', loc.Word(w))
 
         elif case(word_e.Compound):
           words.append(cast(compound_word, w))
@@ -1358,7 +1358,7 @@ class WordParser(WordEmitter):
         w2 = words[i]
         pair = word_.DetectAssocPair(w2)
         if not pair:
-          p_die("Expected associative array pair", word=w2)
+          p_die("Expected associative array pair", loc.Word(w2))
 
         k, v = pair
         pairs.append(k)  # flat representation
@@ -1404,7 +1404,7 @@ class WordParser(WordEmitter):
         assert len(tok_val) == 2  # because of the regex
         ch = tok_val[1]
         if not pyutil.IsValidCharEscape(ch):
-          p_die('Invalid char escape (parse_backslash)', token=self.cur_token)
+          p_die('Invalid char escape (parse_backslash)', self.cur_token)
 
       part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
     else:
@@ -1425,8 +1425,7 @@ class WordParser(WordEmitter):
         self._Peek()
         # EOF, whitespace, newline, Right_Subshell
         if self.token_kind not in KINDS_THAT_END_WORDS:
-          p_die('Unexpected token after array literal',
-                token=self.cur_token)
+          p_die('Unexpected token after array literal', self.cur_token)
         done = True
 
     elif (is_first and self.parse_opts.parse_at() and
@@ -1449,12 +1448,12 @@ class WordParser(WordEmitter):
       self._Peek()
       # EOF, whitespace, newline, Right_Subshell
       if self.token_kind not in KINDS_THAT_END_WORDS:
-        p_die('Unexpected token after array splice', token=self.cur_token)
+        p_die('Unexpected token after array splice', self.cur_token)
       done = True
 
     elif (is_first and self.parse_opts.parse_at() and
           self.token_type == Id.Lit_AtLBraceDot):
-      p_die('TODO: @{.myproc builtin sub}', token=self.cur_token)
+      p_die('TODO: @{.myproc builtin sub}', self.cur_token)
 
     elif (is_first and self.parse_opts.parse_at_all() and
           self.token_type == Id.Lit_At):
@@ -1464,7 +1463,7 @@ class WordParser(WordEmitter):
       # Although should we relax 'echo @' ?  I'm tempted to have a shortcut for
       # @_argv and
       p_die('Literal @ starting a word must be quoted (parse_at_all)',
-            token=self.cur_token)
+            self.cur_token)
 
     else:
       # not a literal with lookahead; append it
@@ -1517,7 +1516,7 @@ class WordParser(WordEmitter):
               if next_byte == '/':
                 log('next_byte %r', next_byte)
 
-            p_die('Literal $ should be quoted like \$', token=self.cur_token)
+            p_die('Literal $ should be quoted like \$', self.cur_token)
 
         done = self._MaybeReadWholeWord(num_parts == 0, lex_mode, w.parts)
 
@@ -1557,7 +1556,7 @@ class WordParser(WordEmitter):
           # a=(one two)x and @arrayfunc(3)x.
           self._Peek()
           if self.token_kind not in KINDS_THAT_END_WORDS:
-            p_die('Unexpected token after @()', token=self.cur_token)
+            p_die('Unexpected token after @()', self.cur_token)
           done = True
 
         else:
@@ -1619,10 +1618,10 @@ class WordParser(WordEmitter):
       # accept { and }, but not foo{
       p_die(
           'Word has unbalanced { }.  Maybe add a space or quote it like \{',
-          word=w)
+          loc.Word(w))
 
     if triple_out[0] and num_parts > 1:
-      p_die('Unexpected parts after triple quoted string', part=w.parts[-1])
+      p_die('Unexpected parts after triple quoted string', loc.WordPart(w.parts[-1]))
 
     return w
 
@@ -1633,8 +1632,8 @@ class WordParser(WordEmitter):
 
     if self.token_kind == Kind.Unknown:
       # e.g. happened during dynamic parsing of unset 'a[$foo]' in gherkin
-      p_die('Unexpected token while parsing arithmetic: %r',
-            self.cur_token.val, token=self.cur_token)
+      p_die('Unexpected token while parsing arithmetic: %r' %
+            self.cur_token.val, self.cur_token)
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
@@ -1685,7 +1684,7 @@ class WordParser(WordEmitter):
         if self.multiline:
           if self.newline_state > 1:
             # This points at a blank line, but at least it gives the line number
-            p_die('Invalid blank line in multiline mode', token=self.cur_token)
+            p_die('Invalid blank line in multiline mode', self.cur_token)
           return no_word, True
 
         if self.returned_newline:  # skip
@@ -1759,13 +1758,13 @@ class WordParser(WordEmitter):
 
     self._Peek()
     if self.token_kind != Kind.VSub:
-      p_die('Invalid var ref', token=self.cur_token)
+      p_die('Invalid var ref', self.cur_token)
 
     part = self._ParseVarOf()
 
     self._Peek()
     if self.token_type != Id.Eof_Real:
-      p_die('Expected end of var ref', token=self.cur_token)
+      p_die('Expected end of var ref', self.cur_token)
     return part
 
   def LookPastSpace(self):
