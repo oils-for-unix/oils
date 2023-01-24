@@ -158,7 +158,7 @@ argv.py a @maybe(n) b
 setvar marray = %()
 argv.py a @maybe(marray) b
 echo done
-## status: 1
+## status: 3
 ## STDOUT:
 ## END
 
@@ -166,7 +166,7 @@ echo done
 var myarray = %( --all --long )
 write -- @myarray
 write -- @split(myarray)
-## status: 1
+## status: 3
 ## STDOUT:
 --all
 --long

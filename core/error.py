@@ -4,13 +4,13 @@ error.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc_e, loc_t, loc__Span, loc__WordPart, loc__Word)
+    Token, loc_e, loc_t, loc__Span, loc__WordPart, loc__Word)
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
 from typing import Dict, Any, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
-  from _devbuild.gen.syntax_asdl import Token, word_part_t, word_t
+  from _devbuild.gen.syntax_asdl import word_part_t, word_t
 
 # Break circular dependency.
 #from asdl import runtime
@@ -32,6 +32,10 @@ if mylib.PYTHON:
       with tagswitch(location) as case:
         if case(loc_e.Missing):
           kwargs['span_id'] = NO_SPID
+
+        elif case(loc_e.Token):
+          tok = cast(Token, UP_location)
+          kwargs['token'] = tok
 
         elif case(loc_e.Span):
           location = cast(loc__Span, UP_location)
@@ -111,8 +115,12 @@ if mylib.PYTHON:
 
     def UserErrorString(self):
       # type: () -> str
-      #print('%r %r' % (self.msg, self.args))
-      return self.msg % self.args
+
+      if self.args:
+        # TODO: this case is obsolete
+        return self.msg % self.args
+      else:
+        return self.msg
 
 
 # Need a better constructor

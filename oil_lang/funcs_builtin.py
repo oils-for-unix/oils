@@ -6,7 +6,8 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
-from core.pyerror import e_die, log
+from core import error
+from core.pyerror import log
 from oil_lang import expr_eval
 
 from typing import Callable, Union, TYPE_CHECKING
@@ -43,8 +44,7 @@ def _Maybe(obj):
 
   # TODO: Need proper span IDs
   if not isinstance(obj, str):
-    e_die('maybe() passed arg of invalid type %r',
-          obj.__class__.__name__)
+    raise error.Expr('maybe() passed arg of invalid type %r' % obj.__class__.__name__)
 
   s = obj
   if len(s):
