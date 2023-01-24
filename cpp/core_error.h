@@ -163,13 +163,13 @@ class Strict : public FatalRuntime {
 };
 
 // Stub
-class ErrExit : public _ErrorWithLocation {
+class ErrExit : public FatalRuntime {
  public:
-  ErrExit(Str* user_str, int span_id, int status)
-      : _ErrorWithLocation(status, user_str, span_id, false) {
+  ErrExit(int status, Str* user_str, syntax_asdl::loc_t* location)
+      : FatalRuntime(status, user_str) {
   }
-  ErrExit(Str* user_str, int span_id, int status, bool show_code)
-      : _ErrorWithLocation(status, user_str, span_id, show_code) {
+  ErrExit(int status, Str* user_str, syntax_asdl::loc_t* location, bool show_code)
+      : FatalRuntime(status, user_str) {
   }
 };
 

@@ -87,10 +87,6 @@ if mylib.PYTHON:
       self.part = kwargs.pop('part', None)  # type: word_part_t
       self.word = kwargs.pop('word', None)  # type: word_t
 
-      # Runtime errors have a default status of 1.  Parse errors return 2
-      # explicitly.
-      self.exit_status = kwargs.pop('status', 1)  # type: int
-      self.show_code = kwargs.pop('show_code', False)  # type: bool
       if kwargs:
         raise AssertionError('Invalid keyword args %s' % kwargs)
 
@@ -98,10 +94,6 @@ if mylib.PYTHON:
       # type: () -> bool
       return bool(self.span_id != NO_SPID or
                   self.token or self.part or self.word)
-
-    def ExitStatus(self):
-      # type: () -> int
-      return self.exit_status
 
     def UserErrorString(self):
       # type: () -> str
@@ -114,8 +106,7 @@ if mylib.PYTHON:
 
     def __repr__(self):
       # type: () -> str
-      return '<%s %s %r %r %s>' % (
-          self.msg, self.args, self.token, self.word, self.exit_status)
+      return '<%s %r %r>' % (self.msg, self.token, self.word)
 
     def __str__(self):
       # type: () -> str
@@ -178,7 +169,14 @@ if mylib.PYTHON:
     Used in the evaluators, and also also used in test builtin for invalid
     argument.
     """
-    # TODO: Add status, show_code
+    def __init__(self, exit_status, msg, **kwargs):
+      # type: (int, str, Dict[str, Any]) -> None
+      _ErrorWithLocation.__init__(self, msg, **kwargs)
+      self.exit_status = exit_status
+
+    def ExitStatus(self):
+      # type: () -> int
+      return self.exit_status
 
 
   class Strict(FatalRuntime):
@@ -201,14 +199,20 @@ if mylib.PYTHON:
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
       kwargs = LocationShim(location)
-      FatalRuntime.__init__(self, msg, **kwargs)
+      FatalRuntime.__init__(self, 1, msg, **kwargs)
+
 
   class ErrExit(FatalRuntime):
     """For set -e.
 
     Travels between WordEvaluator and CommandEvaluator.
     """
-    # TODO: Add show_code
+    def __init__(self, exit_status, msg, location, show_code=False):
+      # type: (int, str, loc_t, bool) -> None
+      kwargs = LocationShim(location)
+      FatalRuntime.__init__(self, exit_status, msg, **kwargs)
+      self.show_code = show_code
+
 
   class Expr(FatalRuntime):
     """ e.g. KeyError, IndexError, ZeroDivisionError """
@@ -216,13 +220,10 @@ if mylib.PYTHON:
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
       kwargs = LocationShim(location)
-      FatalRuntime.__init__(self, msg, **kwargs)
 
-    def ExitStatus(self):
-      # type: () -> int
-      """For both the caught and uncaught case.
-      
-      Caught: try sets _status register to 3
-      Uncaught: shell exits with status 3
-      """
-      return 3
+      # New status 3 for expression errors -- for both the caught and uncaught
+      # case.
+      #
+      # Caught: try sets _status register to 3
+      # Uncaught: shell exits with status 3
+      FatalRuntime.__init__(self, 3, msg, **kwargs)

@@ -28,7 +28,7 @@ from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen import arg_types
   from core.alloc import Arena
-  #from core import error
+  from core import error
   from core.error import _ErrorWithLocation
   from mycpp.mylib import Writer
 
@@ -341,7 +341,7 @@ class ErrorFormatter(object):
     _PrintWithSpanId(prefix, msg, span_id, self.arena, True)
 
   def PrintErrExit(self, err, pid):
-    # type: (_ErrorWithLocation, int) -> None
+    # type: (error.ErrExit, int) -> None
 
     # TODO:
     # - Don't quote code if you already quoted something on the same line?

@@ -389,10 +389,9 @@ class CommandEvaluator(object):
       #   { ls; false; } | wc -l; echo hi  # Point to | or first { ?
       if blame_spid != runtime.NO_SPID:
         span_id = blame_spid
-        #pass
 
       msg = '%s failed with status %d' % (desc, status)
-      raise error.ErrExit(msg, span_id=span_id, status=status,
+      raise error.ErrExit(status, msg, loc.Span(span_id),
                           show_code=cmd_st.show_code)
 
   def _EvalRedirect(self, r):
@@ -1629,7 +1628,7 @@ class CommandEvaluator(object):
     is_fatal = False
     is_errexit = False
 
-    err = None  # type: error._ErrorWithLocation
+    err = None  # type: error.FatalRuntime
 
     try:
       status = self._Execute(node)
@@ -1673,7 +1672,7 @@ class CommandEvaluator(object):
 
       if is_errexit:
         if self.exec_opts.verbose_errexit():
-          self.errfmt.PrintErrExit(err, posix.getpid())
+          self.errfmt.PrintErrExit(cast(error.ErrExit, err), posix.getpid())
       else:
         self.errfmt.PrettyPrintError(err, prefix='fatal: ')
 

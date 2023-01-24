@@ -391,8 +391,7 @@ class ShellExecutor(vm._Executor):
     if self.exec_opts.command_sub_errexit():
       if status != 0:
         msg = 'Command Sub exited with status %d' % status
-        raise error.ErrExit(
-            msg, span_id=cs_part.left_token.span_id, status=status)
+        raise error.ErrExit(status, msg, loc.Span(cs_part.left_token.span_id))
 
     else:
       # Set a flag so we check errexit at the same time as bash.  Example:
