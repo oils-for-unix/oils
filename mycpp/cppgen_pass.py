@@ -649,20 +649,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(')')
           return
 
-        # Translate printf-style vargs for some functions, e.g.
+        # Translate printf-style varargs:
         #
-        # p_die('foo %s', x, token=t)
+        # log('foo %s', x)
         #   =>
-        # p_die(fmt1(x), t)
-        #
-        # And then we need 3 or 4 version of p_die()?  For the rest of the
-        # tokens.
-
-        # Others:
-        # - debug_f.log()?
-        # Maybe I should rename them all printf()
-        # or fprintf()?  Except p_die() has extra args
-
+        # log(StrFormat('foo %s', x))
         if o.callee.name == 'log' or o.callee.name == 'stderr_line':
           args = o.args
           if len(args) == 1:  # log(CONST)
@@ -681,58 +672,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write(', ')
             self.accept(arg)
           self.write('))')
-          return
-
-        # Translate
-        # e_die("hi %d", x, span_id=42) => e_die(StrFormat("hi %d", x), 42)
-        # These functions are like log(), but they can have location info.
-        #
-        # TODO: probably remove this case -- they can all use the binary %
-        # operator.  This may simplify cpp/core_error.h
-
-        if o.callee.name in ('p_die', 'e_die'):
-          args = o.args
-          if len(args) == 1:  # log(CONST)
-            self.write('%s(' % o.callee.name)
-            self.accept(args[0])
-            self.write(')')
-            return
-
-          if len(args) > 2:
-            #raise AssertionError('%s got %d args' % (o.callee.name, len(args)))
-            pass
-
-            #self.log('%s got %d args', o.callee.name, len(args))
-            # STATS:
-            # - 119 calls with 3 args
-            # - 14 calls with 4 args
-            #
-            # 65 e_die
-            # 56 p_die
-
-          has_keyword_arg = o.arg_names[-1] is not None
-          if has_keyword_arg:  # e.g. span_id=42
-            rest = args[1:-1]
-          else:
-            rest = args[1:]
-
-          self.write('%s(StrFormat(' % o.callee.name)
-          if isinstance(args[0], StrExpr):
-            self.write(PythonStringLiteral(args[0].value))
-          else:
-            self.accept(args[0])
-
-          for i, arg in enumerate(rest):
-            self.write(', ')
-            self.accept(arg)
-
-          if has_keyword_arg:
-            self.write('), ')
-            self.accept(args[-1])
-          else:
-            self.write(')')
-
-          self.write(')')
           return
 
         callee_name = o.callee.name
@@ -2469,10 +2408,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         for name, alias in o.names:
           #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
 
-          # These functions are defined in cpp/core_pyerror.h.
-          if name == 'e_strict':
+          if name == 'log':  # varargs translation
             continue
-          if name in ('log', 'p_die', 'e_die'):  # varargs translation
+
+          # TODO: Remove special cases by translating these functions
+          if name in ('e_strict', 'e_die', 'p_die'):
             continue
 
           if name in ('e_usage', 'e_die_status', 'stderr_line'):  # not special
