@@ -100,6 +100,13 @@ class OSError : public IOError_OSError {
   }
 };
 
+class SystemExit : public _ExceptionOpaque {
+ public:
+  explicit SystemExit(int code) : _ExceptionOpaque(), code(code) {
+  }
+  int code;
+};
+
 void print(Str* s);
 
 Str* repr(Str* s);
