@@ -286,9 +286,9 @@ TEST dir_cache_key_test() {
   struct stat st;
   ASSERT(::stat("/", &st) == 0);
 
-  Tuple2<Str*, int> key = pyos::MakeDirCacheKey(StrFromC("/"));
-  ASSERT(str_equals(key.at0(), StrFromC("/")));
-  ASSERT(key.at1() == st.st_mtime);
+  Tuple2<Str*, int>* key = pyos::MakeDirCacheKey(StrFromC("/"));
+  ASSERT(str_equals(key->at0(), StrFromC("/")));
+  ASSERT(key->at1() == st.st_mtime);
 
   int ec = -1;
   try {

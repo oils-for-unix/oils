@@ -267,13 +267,13 @@ void InitShell() {
   gSignalHandler->signal_queue_ = AllocSignalQueue();
 }
 
-Tuple2<Str*, int> MakeDirCacheKey(Str* path) {
+Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {
   struct stat st;
   if (::stat(path->data(), &st) == -1) {
     throw Alloc<OSError>(errno);
   }
 
-  return Tuple2<Str*, int>(path, st.st_mtime);
+  return Alloc<Tuple2<Str*, int>>(path, st.st_mtime);
 }
 
 }  // namespace pyos
