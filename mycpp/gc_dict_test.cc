@@ -399,6 +399,40 @@ TEST dict_iters_test() {
   PASS();
 }
 
+TEST test_tuple_construct() {
+  auto kvs = Alloc<List<Tuple2<int, int>*>>();
+  auto t1 = Alloc<Tuple2<int, int>>(0xdead, 0xbeef);
+  auto t2 = Alloc<Tuple2<int, int>>(0xbeee, 0xeeef);
+  kvs->append(t1);
+  kvs->append(t2);
+
+  auto d = dict(kvs);
+  ASSERT_EQ(d->index_(0xdead), 0xbeef);
+  ASSERT_EQ(d->index_(0xbeee), 0xeeef);
+
+  PASS();
+}
+
+TEST test_update_dict() {
+  auto d = Alloc<Dict<int, int>>();
+  d->set(1, 0xdead);
+  d->set(2, 0xbeef);
+  ASSERT_EQ(d->index_(1), 0xdead);
+  ASSERT_EQ(d->index_(2), 0xbeef);
+
+  auto kvs = Alloc<List<Tuple2<int, int>*>>();
+  auto t1 = Alloc<Tuple2<int, int>>(2, 0xfeeb);
+  auto t2 = Alloc<Tuple2<int, int>>(3, 0x3333);
+  kvs->append(t1);
+  kvs->append(t2);
+  d->update(kvs);
+  ASSERT_EQ(d->index_(1), 0xdead);
+  ASSERT_EQ(d->index_(2), 0xfeeb);
+  ASSERT_EQ(d->index_(3), 0x3333);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -410,6 +444,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_dict);
   RUN_TEST(test_dict_internals);
   RUN_TEST(test_empty_dict);
+  RUN_TEST(test_tuple_construct);
+  RUN_TEST(test_update_dict);
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);
