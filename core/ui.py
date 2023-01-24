@@ -28,9 +28,9 @@ from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen import arg_types
   from core.alloc import Arena
+  #from core import error
   from core.error import _ErrorWithLocation
   from mycpp.mylib import Writer
-  #from frontend.args import UsageError
 
 
 def ValType(val):

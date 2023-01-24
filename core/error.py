@@ -142,6 +142,22 @@ if mylib.PYTHON:
 
   class Parse(_ErrorWithLocation):
     """Used in the parsers."""
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
+      kwargs = LocationShim(location)
+      _ErrorWithLocation.__init__(self, msg, **kwargs)
+
+
+  class FailGlob(_ErrorWithLocation):
+    """Raised when a glob matches nothing when failglob is set.
+
+    Meant to be caught.
+    """
+
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
+      kwargs = LocationShim(location)
+      _ErrorWithLocation.__init__(self, msg, **kwargs)
 
 
   class RedirectEval(_ErrorWithLocation):
@@ -162,14 +178,7 @@ if mylib.PYTHON:
     Used in the evaluators, and also also used in test builtin for invalid
     argument.
     """
-
-  class FailGlob(FatalRuntime):
-    """Raised when a glob matches nothing when failglob is set."""
-
-    def __init__(self, msg, location):
-      # type: (str, loc_t) -> None
-      kwargs = LocationShim(location)
-      FatalRuntime.__init__(self, msg, **kwargs)
+    # TODO: Add status, show_code
 
 
   class Strict(FatalRuntime):
@@ -199,7 +208,7 @@ if mylib.PYTHON:
 
     Travels between WordEvaluator and CommandEvaluator.
     """
-    # NOTE: This has show_code and status
+    # TODO: Add show_code
 
   class Expr(FatalRuntime):
     """ e.g. KeyError, IndexError, ZeroDivisionError """

@@ -67,8 +67,7 @@ def p_die(msg, location):
 
   Exits with status 2.  See core/main_loop.py.
   """
-  kwargs = error.LocationShim(location)
-  raise error.Parse(msg, **kwargs)
+  raise error.Parse(msg, location)
 
 
 def e_die(msg, location=None):
