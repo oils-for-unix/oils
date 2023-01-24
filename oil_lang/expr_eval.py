@@ -626,7 +626,7 @@ class OilEvaluator(object):
           elif op.id == Id.Expr_TildeDEqual:
             # Approximate equality
             if not isinstance(left, str):
-              e_die('~== expects a string on the left', loc.Span(op.span_id))
+              e_die('~== expects a string on the left', op)
 
             left = left.strip()
             if isinstance(right, str):
@@ -649,8 +649,7 @@ class OilEvaluator(object):
                 return False
               return int(left) == right
 
-            e_die('~== expects Str, Int, or Bool on the right',
-                  loc.Span(op.span_id))
+            e_die('~== expects Str, Int, or Bool on the right', op)
 
           else:
             try:
@@ -665,7 +664,7 @@ class OilEvaluator(object):
             except RuntimeError as e:
               # Status 2 indicates a regex parse error.  This is fatal in OSH but
               # not in bash, which treats [[ like a command with an exit code.
-              e_die_status(2, 'Invalid regex %r' % right, loc.Span(op.span_id))
+              e_die_status(2, 'Invalid regex %r' % right, op)
 
           if not result:
             return result
