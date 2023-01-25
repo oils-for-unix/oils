@@ -10,7 +10,7 @@ from typing import overload, Union, Optional, Any, Dict
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (
-    Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
+    Type, AnyType, NoneTyp, TupleType, Instance, NoneType, Overloaded, CallableType,
     UnionType, UninhabitedType, PartialType, TypeAliasType)
 from mypy.nodes import (
     Expression, Statement, Block, NameExpr, IndexExpr, MemberExpr, TupleExpr,
@@ -1089,8 +1089,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         cond_type = self.types[o.cond]
 
         if not _CheckConditionType(cond_type):
-          raise AssertionError(
-              "Can't use str, list, or dict in boolean context")
+          self.report_error(o,
+              "Use len(mystr), len(mylist) or len(mydict) in conditional expr")
+          return
 
         # 0 if b else 1 -> b ? 0 : 1
         self.accept(o.cond)
@@ -2011,25 +2012,36 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.virtual.OnMethod(self.current_class_name, o.name)
           return
 
-        # Hacky MANUAL LIST of functions and methods with OPTIONAL ARGUMENTS.
-        #
-        # For example, we have a method like this:
-        #   MakeOshParser(_Reader* line_reader, bool emit_comp_dummy)
-        #
-        # And we want to write an EXTRA C++ method like this:
-        #   MakeOshParser(_Reader* line_reader) {
-        #     return MakeOshParser(line_reader, true);
-        #   }
-
         class_name = self.current_class_name
         func_name = o.name
         ret_type = o.type.ret_type
 
-        self.log('o.arguments %s', o.arguments)
+        # self.log('o.arguments %s', o.arguments)
+
         num_defaults = 0
         for arg in o.arguments:
           if arg.initializer:
+            t = self.types[arg.initializer]
+
+            valid = False
+            if isinstance(t, NoneType):
+              valid = True
+            if isinstance(t, Instance):
+              # Allowing strings since they're immutable, e.g. prefix='' seems
+              # OK
+              if t.type.fullname in ('builtins.bool', 'builtins.int', 'builtins.str'):
+                valid = True
+              if t.type.fullname.endswith('_t'):  # ASDL lex_mode_t, scope_t, ...
+                valid = True
+
+            if not valid:
+              self.report_error(o,
+                  'Invalid default arg %r of type %s (not None, bool, int)' %
+                  (arg.initializer, t))
+              return
+
             num_defaults += 1
+
         if num_defaults > 1:
           if class_name:
             name = '%s::%s' % (class_name, func_name)
@@ -2039,6 +2051,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               '%s has %d default arguments.  Only 1 is allowed' %
               (name, num_defaults))
           return
+
+        # Hacky MANUAL LIST of functions and methods with OPTIONAL ARGUMENTS.
+        #
+        # For example, we have a method like this:
+        #   MakeOshParser(_Reader* line_reader, bool emit_comp_dummy)
+        #
+        # And we want to write an EXTRA C++ method like this:
+        #   MakeOshParser(_Reader* line_reader) {
+        #     return MakeOshParser(line_reader, true);
+        #   }
 
         if (class_name in ('BoolParser', 'CommandParser') and
               func_name == '_Next' or
@@ -2085,10 +2107,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             func_name == 'Batch'
           ):
           self._WithOneLessArg(o, class_name, ret_type)
-
-          self.log('o.arguments %s', o.arguments)
-          for arg in o.arguments:
-            self.log('    arg initializer %s', arg.initializer)
 
         virtual = ''
         if self.decl:
@@ -2700,8 +2718,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         cond_type = self.types[cond_expr]
 
         if not _CheckConditionType(cond_type):
-          raise AssertionError(
-              "Can't use str, list, or dict in boolean context")
+          self.report_error(o,
+              "Use len(mystr), len(mylist) or len(mydict) in conditional")
+          return
 
         if (isinstance(cond, ComparisonExpr) and
             isinstance(cond.operands[0], NameExpr) and 

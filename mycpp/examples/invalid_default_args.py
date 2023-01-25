@@ -7,6 +7,16 @@ from __future__ import print_function
 from typing import List
 
 
+def ok_None(x=None):
+  # type: (str) -> None
+  pass
+
+
+def ok_bool(x=False):
+  # type: (bool) -> None
+  pass
+
+
 def too_many_defaults(x, y=4, z=5):
   # type: (int, int, int) -> None
   pass

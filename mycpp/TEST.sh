@@ -217,8 +217,11 @@ test-invalid-examples() {
     local expected_status=1
 
     case $ex in 
-      */invalid_too_many_defaults.py)
-        expected_status=1
+      */invalid_condition.py)
+        expected_status=6
+        ;;
+      */invalid_default_args.py)
+        expected_status=2
         ;;
       */invalid_try_else.py)
         expected_status=3
