@@ -3,8 +3,12 @@ error.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_e, loc_t
 from mycpp import mylib
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import loc_t
+
 
 # Break circular dependency.
 #from asdl import runtime
@@ -39,6 +43,10 @@ if mylib.PYTHON:
     def HasLocation(self):
       # type: () -> bool
       #print('*** %r', self.location)
+
+      # TODO: move log() to mycpp/mylib.py, and put this at the top
+      from _devbuild.gen.syntax_asdl import loc_e
+
       if self.location:
         return self.location.tag_() != loc_e.Missing
       else:

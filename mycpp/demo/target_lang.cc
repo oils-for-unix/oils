@@ -191,10 +191,34 @@ void f(int a, int b = -1, const char* s = nullptr) {
   log("s = %p", s);
 }
 
+class Foo {
+ public:
+  // Is there any downside to these default args?
+  // Only for virtual functions.  Note that they are re-evaluated at each call
+  // site, which is fine.
+  //
+  // https://google.github.io/styleguide/cppguide.html#Default_Arguments
+  Foo(int i, bool always_strict = false) : i(i), always_strict(always_strict) {
+  }
+
+  void Print() {
+    log("i = %d", i);
+    log("always_strict = %d", always_strict);
+  }
+
+  int i;
+  bool always_strict;
+};
+
 TEST default_args_demo() {
   f(42, 43, "foo");
   f(42, 43);
   f(42);
+
+  Foo a(98);
+  a.Print();
+  Foo b(99, true);
+  b.Print();
 
   PASS();
 }

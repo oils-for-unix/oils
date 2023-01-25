@@ -2082,7 +2082,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # accumulator for the results.
           self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
 
-        self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
+        # Avoid ++ warnings by prepending [[noreturn]]
+        noreturn = ''
+        if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage', 'p_die'):
+          noreturn = '[[noreturn]] '
+
+        self.decl_write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
 
 
         self.current_func_node = o
@@ -2410,13 +2415,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           if name == 'log':  # varargs translation
             continue
+          if name == 'stderr_line':  # TODO: remove this
+            continue
 
           # TODO: Remove special cases by translating these functions
-          if name in ('e_strict', 'e_die', 'p_die'):
+          if name in ('e_die',):
+            continue
+          if name in ('e_usage', 'e_die_status'):
             continue
 
-          if name in ('e_usage', 'e_die_status', 'stderr_line'):  # not special
-            continue
+          # TODO: This should be
+          # if o.id == 'mylib' -- ANYTHING there is available, and doesn't need
+          # to be imported
 
           # defined in mylib
           if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp',
@@ -2425,7 +2435,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # A heuristic that works for the Oil import style.
           if '.' in o.id:
-            # from core.pyerror import log => using core::util::log
+            # from core.pyerror import log => using core::pyerror::log
             translate_import = True
           else:
             # from core import util => NOT translated
@@ -2444,7 +2454,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if last_dotted == 'gen':
               return
 
-            # ASDL:
+            # Does the thing we're importing correspond to a C++ namespace
+            # (namespace alias) or type (using)?  In ASDL:
             #
             # namespaces:
             #   expr_e::Const   # Compound sum
@@ -2454,12 +2465,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # types:
             #   expr__Const
             #   expr_t   # sum type
-            #   expr_context_e   # simple sum.   This one is hard
             #   double_quoted
-            #   Id_str
-
-            # Tag numbers/namespaces end with _n.  enum types end with _e.
-            # TODO: rename special cases
 
             is_namespace = False
 
@@ -2523,12 +2529,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # using runtime_asdl::emit_e = EMIT;
                 self.write_ind('using %s = %s::%s;\n', alias, last_dotted, name)
               else:
-                if 0:
-                  self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
-                else:
-                  #   from _devbuild.gen.id_kind_asdl import Id
-                  # -> using id_kind_asdl::Id.
-                  self.write_ind('using %s::%s;\n', last_dotted, name)
+                # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
+
+                #   from _devbuild.gen.id_kind_asdl import Id
+                # -> using id_kind_asdl::Id.
+                self.write_ind('using %s::%s;\n', last_dotted, name)
           else:
             # If we're importing a module without an alias, we don't need to do
             # anything.  'namespace cmd_eval' is already defined.

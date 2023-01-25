@@ -8,12 +8,8 @@ from __future__ import print_function
 
 import sys
 
-try:
-  from core import error
-except ImportError:
-  # HACK because many files 'from core.pyerror import log', but this module
-  # depends on _devbuild.gen.syntax_asdl, which may not be ready
-  error = None
+from core import error
+from mycpp import mylib
 
 from typing import NoReturn, Any, TYPE_CHECKING
 
@@ -21,11 +17,12 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import loc_t
 
 
-def log(msg, *args):
-  # type: (str, *Any) -> None
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+if mylib.PYTHON:
+  def log(msg, *args):
+    # type: (str, *Any) -> None
+    if args:
+      msg = msg % args
+    print(msg, file=sys.stderr)
 
 
 NO_SPID = -1

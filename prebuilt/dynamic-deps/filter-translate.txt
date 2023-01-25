@@ -3,7 +3,8 @@ _gen/
 .*_def\.py
 .*_spec\.py
 asdl/py.*
-core/py.*
+core/pyos.py
+core/pyutil.py
 core/optview.py
 frontend/py.*.py
 frontend/consts.py

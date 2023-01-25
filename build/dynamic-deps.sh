@@ -57,13 +57,16 @@ EOF
   # Note: renaming files to pyoptview, pyconsts.py, pymatch.py, py_path_stat.py
   # etc. would make this filter cleaner.
 
+  # TODO: Remove pyerror.py and change pattern back to core/py.*
+
   cat >$FILTER_DIR/filter-translate.txt <<'EOF'
 _devbuild/
 _gen/
 .*_def\.py
 .*_spec\.py
 asdl/py.*
-core/py.*
+core/pyos.py
+core/pyutil.py
 core/optview.py
 frontend/py.*.py
 frontend/consts.py
