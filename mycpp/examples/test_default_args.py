@@ -17,12 +17,6 @@ def f(x, y=42):
   log("y = %d", y)
 
 
-# TODO: move to invalid_* test
-def too_many_defaults(x, y=4, z=5):
-  # type: (int, int, int) -> None
-  pass
-
-
 # I think we should allow None, bool, and int
 def mutable_default(x, y=[]):
   # type: (int, List[int]) -> None

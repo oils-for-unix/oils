@@ -184,7 +184,10 @@ TEST template_demo() {
   PASS();
 }
 
-void f(int a, int b = -1, const char* s = nullptr) {
+// prototype
+void f(int a, int b = -1, const char* s = nullptr);
+
+void f(int a, int b, const char* s) {
   log("");
   log("a = %d", a);
   log("b = %d", b);
@@ -198,8 +201,7 @@ class Foo {
   // site, which is fine.
   //
   // https://google.github.io/styleguide/cppguide.html#Default_Arguments
-  Foo(int i, bool always_strict = false) : i(i), always_strict(always_strict) {
-  }
+  Foo(int i, bool always_strict = false);
 
   void Print() {
     log("i = %d", i);
@@ -209,6 +211,9 @@ class Foo {
   int i;
   bool always_strict;
 };
+
+Foo::Foo(int i, bool always_strict) : i(i), always_strict(always_strict) {
+}
 
 TEST default_args_demo() {
   f(42, 43, "foo");

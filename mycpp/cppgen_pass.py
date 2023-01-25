@@ -357,12 +357,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # self.foo = 1.  Then we write C++ class member declarations at the end
       # of the class.
       # This is all in the 'decl' phase.
-      self.member_vars = {}  # type: Dict[str, Type]
+      self.member_vars: Dict[str, Type] = {}
 
       self.current_class_name = None  # for prototypes
       self.current_method_name = None
 
       self.imported_names = set()  # For module::Foo() vs. self.foo
+
+      # So we can report multiple at once
+      # module path, line number, message
+      self.errors_keep_going: List[Tuple[str, int, str]] = []
 
     def log(self, msg, *args):
       ind_str = self.indent * '  '
@@ -432,6 +436,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     pass
                 return None
 
+    def report_error(self, node: Union[Statement, Expression], msg: str):
+      err = (self.module_path, node.line, msg)
+      self.errors_keep_going.append(err)
+
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
@@ -485,6 +493,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.decl_write_ind(
             '}  // %s namespace %s\n', comment, mod_parts[-1])
         self.decl_write('\n')
+
+        for path, line_num, msg in self.errors_keep_going:
+          self.log('%s:%s %s', path, line_num, msg)
 
 
     # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
@@ -2010,10 +2021,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #     return MakeOshParser(line_reader, true);
         #   }
 
-        # TODO: restrict this
         class_name = self.current_class_name
         func_name = o.name
         ret_type = o.type.ret_type
+
+        self.log('o.arguments %s', o.arguments)
+        num_defaults = 0
+        for arg in o.arguments:
+          if arg.initializer:
+            num_defaults += 1
+        if num_defaults > 1:
+          if class_name:
+            name = '%s::%s' % (class_name, func_name)
+          else:
+            name = func_name
+          self.report_error(o,
+              '%s has %d default arguments.  Only 1 is allowed' %
+              (name, num_defaults))
+          return
 
         if (class_name in ('BoolParser', 'CommandParser') and
               func_name == '_Next' or
@@ -2785,7 +2810,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write_ind('catch (std::exception const&) { }\n')
 
         if o.else_body:
-          raise AssertionError('try/else not supported')
+          self.report_error(o, 'try/else not supported')
 
         # TODO: remove finally from core/process.py and other places, then turn
         # this on

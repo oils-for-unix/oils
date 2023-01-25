@@ -278,6 +278,8 @@ def main(argv):
 
     p2.visit_mypy_file(module)
 
+  MaybeExitWithErrors(p2)
+
   # After seeing class and method names in the first pass, figure out which
   # ones are virtual.  We use this info in the second pass.
   virtual.Calculate()
@@ -309,6 +311,8 @@ def main(argv):
 
     p3.visit_mypy_file(module)
 
+  MaybeExitWithErrors(p3)
+
   log('\tmycpp pass: IMPL')
 
   # Now the definitions / implementations.
@@ -320,7 +324,17 @@ def main(argv):
                               field_gc=field_gc)
     p4.visit_mypy_file(module)
 
+  MaybeExitWithErrors(p4)
+
   return 0  # success
+
+
+def MaybeExitWithErrors(p):
+  # Check for errors we collected
+  num_errors = len(p.errors_keep_going)
+  if num_errors != 0:
+    # A little hack to tell the test-invalid-examples harness how many errors we had
+    sys.exit(min(num_errors, 255))
 
 
 if __name__ == '__main__':
