@@ -17,12 +17,6 @@ def f(x, y=42):
   log("y = %d", y)
 
 
-# I think we should allow None, bool, and int
-def mutable_default(x, y=[]):
-  # type: (int, List[int]) -> None
-  pass
-
-
 class Foo(object):
 
   def __init__(self, x, y=42):

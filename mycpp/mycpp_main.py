@@ -333,6 +333,9 @@ def MaybeExitWithErrors(p):
   # Check for errors we collected
   num_errors = len(p.errors_keep_going)
   if num_errors != 0:
+    log('')
+    log('%s: %d translation errors (after type checking)', sys.argv[0], num_errors)
+
     # A little hack to tell the test-invalid-examples harness how many errors we had
     sys.exit(min(num_errors, 255))
 

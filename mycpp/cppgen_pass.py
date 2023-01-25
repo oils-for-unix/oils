@@ -1910,8 +1910,52 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.write(';\n')
 
-    def _WriteFuncParams(self, arg_types, arguments, update_locals=False):
-        """Write params and optionally mutate self.local_vars."""
+    def _WriteFuncParams(self, arg_types, arguments,
+        update_locals=False, write_defaults=False):
+        """Write params for function/method signatures.
+
+        Optionally mutate self.local_vars, and optionally write default arguments.
+        """
+        if write_defaults:
+          # Check if default args are valid first
+
+          num_defaults = 0
+          for arg in arguments:
+            if arg.initializer:
+              t = self.types[arg.initializer]
+
+              valid = False
+              if isinstance(t, NoneType):
+                valid = True
+              if isinstance(t, Instance):
+                # Allowing strings since they're immutable, e.g. prefix='' seems
+                # OK
+                if t.type.fullname in ('builtins.bool', 'builtins.int', 'builtins.str'):
+                  valid = True
+                if t.type.fullname.endswith('_t'):  # ASDL lex_mode_t, scope_t, ...
+                  valid = True
+
+              if not valid:
+                self.report_error(arg,
+                    'Invalid default arg %r of type %s (not None, bool, int)' %
+                    (arg.initializer, t))
+                return
+
+              num_defaults += 1
+
+          if num_defaults > 1:
+            name = '[TODO]'
+            #if class_name:
+            #  name = '%s::%s' % (class_name, func_name)
+            #else:
+            #  name = func_name
+
+            # Report on first arg
+            self.report_error(arg,
+                '%s has %d default arguments.  Only 1 is allowed' %
+                (name, num_defaults))
+            return
+
         first = True  # first NOT including self
         for arg_type, arg in zip(arg_types, arguments):
           if not first:
@@ -2018,40 +2062,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # self.log('o.arguments %s', o.arguments)
 
-        num_defaults = 0
-        for arg in o.arguments:
-          if arg.initializer:
-            t = self.types[arg.initializer]
-
-            valid = False
-            if isinstance(t, NoneType):
-              valid = True
-            if isinstance(t, Instance):
-              # Allowing strings since they're immutable, e.g. prefix='' seems
-              # OK
-              if t.type.fullname in ('builtins.bool', 'builtins.int', 'builtins.str'):
-                valid = True
-              if t.type.fullname.endswith('_t'):  # ASDL lex_mode_t, scope_t, ...
-                valid = True
-
-            if not valid:
-              self.report_error(o,
-                  'Invalid default arg %r of type %s (not None, bool, int)' %
-                  (arg.initializer, t))
-              return
-
-            num_defaults += 1
-
-        if num_defaults > 1:
-          if class_name:
-            name = '%s::%s' % (class_name, func_name)
-          else:
-            name = func_name
-          self.report_error(o,
-              '%s has %d default arguments.  Only 1 is allowed' %
-              (name, num_defaults))
-          return
-
         # Hacky MANUAL LIST of functions and methods with OPTIONAL ARGUMENTS.
         #
         # For example, we have a method like this:
@@ -2140,9 +2150,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.decl_write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
 
-
         self.current_func_node = o
-        self._WriteFuncParams(o.type.arg_types, o.arguments, update_locals=True)
+        self._WriteFuncParams(
+            o.type.arg_types, o.arguments, update_locals=True,
+            write_defaults=True)
 
         if self.decl:
           self.decl_write(');\n')
@@ -2221,7 +2232,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               method_name = stmt.name
               if method_name == '__init__':
                 self.decl_write_ind('%s(', o.name)
-                self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
+                self._WriteFuncParams(
+                    stmt.type.arg_types, stmt.arguments, write_defaults=True)
                 self.decl_write(');\n')
 
                 # Visit for member vars
