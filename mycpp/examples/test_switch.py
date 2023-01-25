@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-typeswitch.py
+test_switch.py
 """
 from __future__ import print_function
 

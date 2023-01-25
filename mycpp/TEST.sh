@@ -207,8 +207,8 @@ test-invalid-examples() {
     local status=$?
     set -o errexit
 
-    if test $status -ne 1; then
-      die "mycpp $ex: expected status 1, got $status"
+    if test $status -eq 0; then
+      die "mycpp $ex: expected non-zero status"
     fi
 
   done

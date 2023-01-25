@@ -37,6 +37,8 @@ def _SkipAssignment(var_name):
 
 
 def _GetCTypeForCast(type_expr):
+  """ MyPy cast() """
+
   if isinstance(type_expr, MemberExpr):
     subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
   elif isinstance(type_expr, IndexExpr):
@@ -90,6 +92,7 @@ def _GetCastKind(module_path, cast_to_type):
 
 
 def _GetContainsFunc(t):
+  """ x in y """
   contains_func = None
 
   if isinstance(t, Instance):
@@ -155,7 +158,8 @@ def CTypeIsManaged(c_type):
   return c_type.endswith('*')
 
 
-def get_c_type(t, param=False, local=False):
+def GetCType(t, param=False, local=False):
+  """Recursively translate MyPy type to C++ type."""
   is_pointer = False
 
   if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
@@ -194,14 +198,14 @@ def get_c_type(t, param=False, local=False):
     elif type_name == 'builtins.list':
       assert len(t.args) == 1, t.args
       type_param = t.args[0]
-      inner_c_type = get_c_type(type_param)
+      inner_c_type = GetCType(type_param)
       c_type = 'List<%s>' % inner_c_type
       is_pointer = True
 
     elif type_name == 'builtins.dict':
       params = []
       for type_param in t.args:
-        params.append(get_c_type(type_param))
+        params.append(GetCType(type_param))
       c_type = 'Dict<%s>' % ', '.join(params)
       is_pointer = True
 
@@ -212,7 +216,7 @@ def get_c_type(t, param=False, local=False):
     elif type_name == 'typing.Iterator':
       assert len(t.args) == 1, t.args
       type_param = t.args[0]
-      inner_c_type = get_c_type(type_param)
+      inner_c_type = GetCType(type_param)
       c_type = 'ListIter<%s>' % inner_c_type
 
     else:
@@ -240,7 +244,7 @@ def get_c_type(t, param=False, local=False):
   elif isinstance(t, TupleType):
     inner_c_types = []
     for inner_type in t.items:
-      inner_c_types.append(get_c_type(inner_type))
+      inner_c_types.append(GetCType(inner_type))
 
     c_type = 'Tuple%d<%s>' % (len(t.items), ', '.join(inner_c_types))
     is_pointer = True
@@ -253,15 +257,15 @@ def get_c_type(t, param=False, local=False):
     if not isinstance(t.items[1], NoneTyp):
       raise NotImplementedError('Expected Optional, got %s' % t)
 
-    c_type = get_c_type(t.items[0])
+    c_type = GetCType(t.items[0])
 
   elif isinstance(t, CallableType):
     # Function types are expanded
     # Callable[[Parser, Token, int], arith_expr_t] =>
     # arith_expr_t* (*f)(Parser*, Token*, int) nud;
 
-    ret_type = get_c_type(t.ret_type)
-    arg_types = [get_c_type(typ) for typ in t.arg_types]
+    ret_type = GetCType(t.ret_type)
+    arg_types = [GetCType(typ) for typ in t.arg_types]
     c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
 
   elif isinstance(t, TypeAliasType):
@@ -273,7 +277,7 @@ def get_c_type(t, param=False, local=False):
       log('%s', dir(t.alias))
       log('%s', t.alias.target)
       log('***')
-    return get_c_type(t.alias.target)
+    return GetCType(t.alias.target)
 
   else:
     raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
@@ -287,13 +291,13 @@ def get_c_type(t, param=False, local=False):
   return c_type
 
 
-def get_c_return_type(t) -> Tuple[str, bool, Optional[str]]:
+def GetCReturnType(t) -> Tuple[str, bool, Optional[str]]:
   """
   Returns a C string, whether the tuple-by-value optimization was applied, and
   the C type of an extra output param if the function is a generator.
   """
 
-  c_ret_type = get_c_type(t)
+  c_ret_type = GetCType(t)
 
   # Optimization: Return tupels BY VALUE
   if isinstance(t, TupleType):
@@ -301,7 +305,7 @@ def get_c_return_type(t) -> Tuple[str, bool, Optional[str]]:
     return c_ret_type[:-1], True, None
   elif c_ret_type.startswith('ListIter<'):
     assert len(t.args) == 1, t.args
-    inner_c_type = get_c_type(t.args[0])
+    inner_c_type = GetCType(t.args[0])
     return 'void', False, 'List<%s>*' % inner_c_type
   else:
     return c_ret_type, False, None
@@ -711,10 +715,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         left_type = self.types[o.left]
         right_type = self.types[o.right]
 
-        # NOTE: Need get_c_type to handle Optional[Str*] in ASDL schemas.
+        # NOTE: Need GetCType to handle Optional[Str*] in ASDL schemas.
         # Could tighten it up later.
-        left_ctype = get_c_type(left_type)
-        right_ctype = get_c_type(right_type)
+        left_ctype = GetCType(left_type)
+        right_ctype = GetCType(right_type)
 
         c_op = o.op
         if left_ctype == right_ctype == 'int' and c_op == '//':
@@ -965,10 +969,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
         list_type = self.types[o]
         #self.log('**** list_type = %s', list_type)
-        c_type = get_c_type(list_type)
+        c_type = GetCType(list_type)
 
         item_type = list_type.args[0]  # int for List[int]
-        item_c_type = get_c_type(item_type)
+        item_c_type = GetCType(item_type)
 
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
@@ -984,12 +988,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def _WriteDictElements(self, o, key_type, val_type):
         # Ran into a limit of C++ type inference.  Somehow you need
         # std::initializer_list{} here, not just {}
-        self.write('std::initializer_list<%s>{' % get_c_type(key_type))
+        self.write('std::initializer_list<%s>{' % GetCType(key_type))
         for i, item in enumerate(o.items):
           pass
         self.write('}, ')
 
-        self.write('std::initializer_list<%s>{' % get_c_type(val_type))
+        self.write('std::initializer_list<%s>{' % GetCType(val_type))
         # TODO: values
         self.write('}')
 
@@ -998,7 +1002,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         key_type = dict_type.args[0]
         val_type = dict_type.args[1]
 
-        c_type = get_c_type(dict_type)
+        c_type = GetCType(dict_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
@@ -1009,7 +1013,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
         tuple_type = self.types[o]
-        c_type = get_c_type(tuple_type)
+        c_type = GetCType(tuple_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
@@ -1123,7 +1127,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if _SkipAssignment(lval_item.name):
             continue
 
-          item_c_type = get_c_type(item_type)
+          item_c_type = GetCType(item_type)
           # declare it at the top of the function
           if self.decl:
             self.local_var_list.append((lval_item.name, item_c_type))
@@ -1141,7 +1145,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Declare constant strings.  They have to be at the top level.
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
           lval = o.lvalues[0]
-          c_type = get_c_type(self.types[lval])
+          c_type = GetCType(self.types[lval])
           if not _SkipAssignment(lval.name):
             self.decl_write('extern %s %s;\n', c_type, lval.name)
 
@@ -1172,7 +1176,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           if isinstance(o.rvalue, ListExpr):
             item_type = lval_type.args[0]
-            item_c_type = get_c_type(item_type)
+            item_c_type = GetCType(item_type)
 
             # Then a pointer to it
             self.write('GLOBAL_LIST(%s, %d, %s, ',
@@ -1193,8 +1197,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if isinstance(o.rvalue, DictExpr):
             key_type, val_type = lval_type.args
 
-            key_c_type = get_c_type(key_type)
-            val_c_type = get_c_type(val_type)
+            key_c_type = GetCType(key_type)
+            val_c_type = GetCType(val_type)
 
             temp_name = 'gdict%d' % self.unique_id
             self.unique_id += 1
@@ -1226,7 +1230,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               if call_expr.args:
                 self._WriteArgList(call_expr)
               self.write(';\n')
-              self.write('%s %s = &%s;', get_c_type(lval_type), lval.name,
+              self.write('%s %s = &%s;', GetCType(lval_type), lval.name,
                   temp_name)
               self.write('\n')
               return
@@ -1244,8 +1248,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             key_type, val_type = lval_type.args
 
-            key_c_type = get_c_type(key_type)
-            val_c_type = get_c_type(val_type)
+            key_c_type = GetCType(key_type)
+            val_c_type = GetCType(val_type)
 
             self.write_ind('auto* %s = NewDict<%s, %s>();\n',
                            lval.name, key_c_type, val_c_type)
@@ -1287,9 +1291,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # to accumulate the results in one big batch, then wrap it in
             # ListIter<T>.
             assert len(rval_type.args) == 1, rval_type.args
-            c_type = get_c_type(rval_type)
+            c_type = GetCType(rval_type)
             type_param = rval_type.args[0]
-            inner_c_type = get_c_type(type_param)
+            inner_c_type = GetCType(type_param)
             iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
             self.write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
             self.current_stmt_node = o
@@ -1306,8 +1310,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
           lval_type = self.types[lval]
-          #c_type = get_c_type(lval_type, local=self.indent != 0)
-          c_type = get_c_type(lval_type)
+          #c_type = GetCType(lval_type, local=self.indent != 0)
+          c_type = GetCType(lval_type)
 
           # for "hoisting" to the top of the function
           if self.current_func_node:
@@ -1351,7 +1355,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('  iterating over type %s', over_type)
 
             if over_type.type.fullname == 'builtins.list':
-              c_type = get_c_type(over_type)
+              c_type = GetCType(over_type)
               assert c_type.endswith('*'), c_type
               c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]  # remove *
             else:
@@ -1366,13 +1370,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             item_type = seq_type.args[0]  # get 'int' from 'List<int>'
 
             if isinstance(item_type, Instance):
-              self.write_ind('  %s ', get_c_type(item_type))
+              self.write_ind('  %s ', GetCType(item_type))
               # TODO(StackRoots): for ch in 'abc'
               self.accept(index_expr)
               self.write(' = it.Value();\n')
             
             elif isinstance(item_type, TupleType):  # for x, y in pairs
-              c_item_type = get_c_type(item_type)
+              c_item_type = GetCType(item_type)
 
               if isinstance(index_expr, TupleExpr):
                 temp_name = 'tup%d' % self.unique_id
@@ -1457,7 +1461,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if isinstance(rvalue_type, TypeAliasType):
             rvalue_type = rvalue_type.alias.target
 
-          c_type = get_c_type(rvalue_type)
+          c_type = GetCType(rvalue_type)
 
           is_return = isinstance(o.rvalue, CallExpr) and o.rvalue.callee.name != "next"
           if is_return:
@@ -1597,7 +1601,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         yield_acc = None
 
         if over_type.type.fullname == 'builtins.list':
-          c_type = get_c_type(over_type)
+          c_type = GetCType(over_type)
           assert c_type.endswith('*'), c_type
           c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]  # remove *
 
@@ -1607,7 +1611,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         elif over_type.type.fullname == 'builtins.dict':
           # Iterator
-          c_type = get_c_type(over_type)
+          c_type = GetCType(over_type)
           assert c_type.endswith('*'), c_type
           c_iter_type = c_type.replace('Dict', 'DictIter', 1)[:-1]  # remove *
 
@@ -1622,9 +1626,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         elif over_type.type.fullname == 'typing.Iterator':
           # We're iterating over a generator. Create a temporary List<T> on the stack
           # to accumulate the results in one big batch.
-          c_iter_type = get_c_type(over_type)
+          c_iter_type = GetCType(over_type)
           assert len(over_type.args) == 1, over_type.args
-          inner_c_type = get_c_type(over_type.args[0])
+          inner_c_type = GetCType(over_type.args[0])
           yield_acc = ('_for_yield_acc%d' % self.unique_id, 'List<%s>*' % inner_c_type)
           self.unique_id += 1
           self.write_ind('List<%s> %s;\n', inner_c_type, yield_acc[0])
@@ -1658,7 +1662,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # for i, x in enumerate(pairs): ...
 
         if isinstance(item_type, Instance) or index0_name:
-          c_item_type = get_c_type(item_type)
+          c_item_type = GetCType(item_type)
           self.write_ind('  %s ', c_item_type)
           self.accept(index_expr)
           if over_dict:
@@ -1679,8 +1683,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             assert len(index_items) == 2, index_items
             assert len(item_type.items) == 2, item_type.items
 
-            key_type = get_c_type(item_type.items[0])
-            val_type = get_c_type(item_type.items[1])
+            key_type = GetCType(item_type.items[0])
+            val_type = GetCType(item_type.items[1])
 
             # TODO(StackRoots): k, v
             self.write_ind('  %s %s = it.Key();\n', key_type, index_items[0].name)
@@ -1695,7 +1699,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #   log("%d %s", i, s);
             # }
 
-            c_item_type = get_c_type(item_type)
+            c_item_type = GetCType(item_type)
 
             if isinstance(o.index, TupleExpr):
               # TODO(StackRoots)
@@ -1903,8 +1907,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # TODO: Turn this on.  Having stdlib problems, e.g.
           # examples/cartesian.
-          c_type = get_c_type(arg_type, param=False)
-          #c_type = get_c_type(arg_type, param=True)
+          c_type = GetCType(arg_type, param=False)
+          #c_type = GetCType(arg_type, param=True)
 
           arg_name = arg.variable.name
 
@@ -1952,7 +1956,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Write _Next() with no args
         virtual = ''  # Note: the extra method can NEVER be virtual?
-        c_ret_type = get_c_type(ret_type)
+        c_ret_type = GetCType(ret_type)
         if isinstance(ret_type, TupleType):
           assert c_ret_type.endswith('*')
           c_ret_type = c_ret_type[:-1]
@@ -2057,6 +2061,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           ):
           self._WithOneLessArg(o, class_name, ret_type)
 
+          self.log('o.arguments %s', o.arguments)
+          for arg in o.arguments:
+            self.log('    arg initializer %s', arg.initializer)
+
         virtual = ''
         if self.decl:
           self.local_var_list = []  # Make a new instance to collect from
@@ -2076,7 +2084,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('\n')
 
-        c_ret_type, _, c_iter_list_type = get_c_return_type(ret_type)
+        c_ret_type, _, c_iter_list_type = GetCReturnType(ret_type)
         if c_iter_list_type is not None:
           # The function is a generator. Add an output param that references an
           # accumulator for the results.
@@ -2215,7 +2223,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             non_pointer_members = []
 
             for name in self.member_vars:
-              c_type = get_c_type(self.member_vars[name])
+              c_type = GetCType(self.member_vars[name])
               if CTypeIsManaged(c_type):
                 pointer_members.append(name)
               else:
@@ -2229,7 +2237,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Has inheritance
 
             for name in sorted(self.member_vars):
-              c_type = get_c_type(self.member_vars[name])
+              c_type = GetCType(self.member_vars[name])
               if CTypeIsManaged(c_type):
                 mask_bits.append('%s(offsetof(%s, %s))' % (mask_func_name, o.name, name))
 
@@ -2254,7 +2262,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.decl_write('\n')  # separate from functions
 
             for name in sorted_member_names:
-              c_type = get_c_type(self.member_vars[name])
+              c_type = GetCType(self.member_vars[name])
               self.decl_write_ind('%s %s;\n', c_type, name)
 
           self.current_class_name = None
@@ -2424,14 +2432,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if name in ('e_usage', 'e_die_status'):
             continue
 
-          # TODO: This should be
-          # if o.id == 'mylib' -- ANYTHING there is available, and doesn't need
-          # to be imported
-
-          # defined in mylib
-          if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp',
-                      'NewDict', 'STDIN_FILENO'):
-            continue
+          if o.id == 'mycpp.mylib':
+            # These mylib functions are transalted in a special way
+            if name in ('switch', 'tagswitch', 'iteritems'):
+              continue
+            # STDIN_FILENO is #included
+            if name in ('str_cmp', 'NewDict', 'STDIN_FILENO'):
+              continue
 
           # A heuristic that works for the Oil import style.
           if '.' in o.id:
@@ -2628,7 +2635,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # latter.
             ret_type = self.current_func_node.type.ret_type
 
-            c_ret_type, returning_tuple, _ = get_c_return_type(ret_type)
+            c_ret_type, returning_tuple, _ = GetCReturnType(ret_type)
 
             # return '', None  # tuple literal
             #   but NOT
@@ -2777,8 +2784,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if not caught:
           self.write_ind('catch (std::exception const&) { }\n')
 
-        #if o.else_body:
-        #  raise AssertionError('try/else not supported')
+        if o.else_body:
+          raise AssertionError('try/else not supported')
+
+        # TODO: remove finally from core/process.py and other places, then turn
+        # this on
         #if o.finally_body:
         #  raise AssertionError('try/finally not supported')
 
@@ -2787,4 +2797,3 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> T:
         pass
-
