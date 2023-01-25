@@ -38,7 +38,11 @@ if mylib.PYTHON:
 
     def HasLocation(self):
       # type: () -> bool
-      return self.location.tag_() != loc_e.Missing
+      #print('*** %r', self.location)
+      if self.location:
+        return self.location.tag_() != loc_e.Missing
+      else:
+        return False
 
     def UserErrorString(self):
       # type: () -> str

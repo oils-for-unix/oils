@@ -36,7 +36,10 @@ def GetSpanId(loc_):
 
     elif case(loc_e.Token):
       tok = cast(Token, UP_location)
-      return tok.span_id
+      if tok:
+        return tok.span_id
+      else:
+        return runtime.NO_SPID
 
     elif case(loc_e.Span):
       loc_ = cast(loc__Span, UP_location)
@@ -44,11 +47,17 @@ def GetSpanId(loc_):
 
     elif case(loc_e.WordPart):
       loc_ = cast(loc__WordPart, UP_location)
-      return word_.LeftMostSpanForPart(loc_.p)
+      if loc_.p:
+        return word_.LeftMostSpanForPart(loc_.p)
+      else:
+        return runtime.NO_SPID
 
     elif case(loc_e.Word):
       loc_ = cast(loc__Word, UP_location)
-      return word_.LeftMostSpanForWord(loc_.w)
+      if loc_.w:
+        return word_.LeftMostSpanForWord(loc_.w)
+      else:
+        return runtime.NO_SPID
 
     else:
       raise AssertionError()

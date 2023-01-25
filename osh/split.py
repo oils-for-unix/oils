@@ -29,8 +29,9 @@ with SPLIT_REGEX = / digit+ / {
 from _devbuild.gen.runtime_asdl import (
     value_e, scope_e, span_e, value__Str, emit_i, char_kind_i, state_i
 )
+from core import error
+from core.pyerror import log
 from core import pyutil
-from core.pyerror import log, e_die
 from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch
@@ -197,7 +198,7 @@ class SplitContext(object):
     """split() function exposed to users"""
     if mylib.PYTHON:  # TODO: translate s.__class__.__name__
       if not isinstance(s, str):
-        e_die('split() passed arg of invalid type %r', s.__class__.__name__)
+        raise error.Expr('split() passed arg of invalid type %r' % s.__class__.__name__)
     return self.SplitForWordEval(s, ifs=ifs)
 
 
