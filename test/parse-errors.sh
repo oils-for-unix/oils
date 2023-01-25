@@ -353,6 +353,9 @@ bool-expr() {
 
   _error-case '[[ ;;; ]]'
   _error-case '[['
+
+  # Expected right )
+  _error-case '[[ ( a == b foo${var} ]]'
 }
 
 # These don't have any location information.

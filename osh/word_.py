@@ -14,13 +14,13 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
-    word_e, word_t, word__BracedTree, word__String,
+    word_e, word_t, word_str, word__BracedTree, word__String,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
 )
 from asdl import runtime
 from core.pyerror import log
 from frontend import consts
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, StrFromC
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -768,8 +768,7 @@ def Pretty(w):
     else:
       return repr(w.s)
   else:
-    # internal representation
-    return str(w)
+    return StrFromC(word_str(w.tag_()))  # tag name
 
 
 class ctx_EmitDocToken(object):

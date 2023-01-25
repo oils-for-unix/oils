@@ -62,6 +62,8 @@ def GetSpanId(loc_):
     else:
       raise AssertionError()
 
+  raise AssertionError()
+
 
 def SpanForCommand(node):
   # type: (command_t) -> int

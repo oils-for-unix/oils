@@ -4,20 +4,9 @@
 #define CPP_TRANSLATION_STUBS_H
 
 // Hm is this overload really necessary?
+// Declared in mycpp/comparators.h
 inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
   return left == right;
-}
-
-// Hack for now.  Every sum type should have repr()?
-inline Str* repr(syntax_asdl::source_t* obj) {
-  /* FAIL(kNotImplemented); */
-  return StrFromC("TODO");
-}
-
-// STUB for osh/word_.py
-inline Str* str(syntax_asdl::word_t* w) {
-  /* FAIL(kNotImplemented); */
-  return StrFromC("TODO");
 }
 
 namespace vm {
