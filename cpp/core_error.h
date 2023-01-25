@@ -59,13 +59,8 @@ class _ErrorWithLocation {
     assert(0);
   }
 
-  int ExitStatus() {
-    return status;
-  }
-
   GC_OBJ(header_);
 
-  int status;
   Str* user_str_;
   syntax_asdl::loc_t* location;
 
@@ -100,9 +95,14 @@ class FailGlob : public _ErrorWithLocation {
 
 class FatalRuntime : public _ErrorWithLocation {
  public:
-  FatalRuntime(int status, Str* user_str, syntax_asdl::loc_t* location)
-      : _ErrorWithLocation(user_str, location) {
+  FatalRuntime(int exit_status, Str* user_str, syntax_asdl::loc_t* location)
+      : _ErrorWithLocation(user_str, location), exit_status(exit_status) {
   }
+  int ExitStatus() {
+    return exit_status;
+  }
+
+  int exit_status;
 };
 
 class Strict : public FatalRuntime {
@@ -126,10 +126,10 @@ class ErrExit : public FatalRuntime {
 };
 
 // Stub: the parts that raise aren't translated
-class Expr : public _ErrorWithLocation {
+class Expr : public FatalRuntime {
  public:
   Expr(Str* user_str, syntax_asdl::loc_t* location)
-      : _ErrorWithLocation(user_str, location) {
+      : FatalRuntime(3, user_str, location) {
   }
 #if 0
   Expr(Str* user_str, Token* token)
