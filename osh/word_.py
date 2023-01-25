@@ -24,7 +24,6 @@ from mycpp.mylib import tagswitch
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.error import _ErrorWithLocation
   from osh.word_parse import WordParser
 
 _ = log
@@ -749,20 +748,6 @@ def SpanForLhsExpr(node):
     return spids[0]
   else:
     return runtime.NO_SPID  
-
-
-def SpanIdFromError(error):
-  # type: (_ErrorWithLocation) -> int
-  if error.span_id != runtime.NO_SPID:
-    return error.span_id
-  if error.token:
-    return error.token.span_id
-  if error.part:
-    return LeftMostSpanForPart(error.part)
-  if error.word:
-    return LeftMostSpanForWord(error.word)
-
-  return runtime.NO_SPID
 
 
 # Doesn't translate with mycpp because of dynamic %

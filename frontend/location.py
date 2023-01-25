@@ -9,6 +9,7 @@ TODO: Move some of osh/word_ here.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
+    loc_t, loc_e, loc__Span, loc__WordPart, loc__Word,
     command_e, command_t, command__Simple, command__ShAssignment,
     command__Pipeline, command__AndOr, command__DoGroup, command__Sentence,
     command__Subshell, command__WhileUntil, command__If, command__Case,
@@ -22,7 +23,35 @@ from core.pyerror import log
 from mycpp.mylib import tagswitch
 from osh import word_
 
-from typing import cast
+from typing import cast, TYPE_CHECKING
+
+
+def GetSpanId(loc_):
+  # type: (loc_t) -> int
+
+  UP_location = loc_
+  with tagswitch(loc_) as case:
+    if case(loc_e.Missing):
+      return runtime.NO_SPID
+
+    elif case(loc_e.Token):
+      tok = cast(Token, UP_location)
+      return tok.span_id
+
+    elif case(loc_e.Span):
+      loc_ = cast(loc__Span, UP_location)
+      return loc_.span_id
+
+    elif case(loc_e.WordPart):
+      loc_ = cast(loc__WordPart, UP_location)
+      return word_.LeftMostSpanForPart(loc_.p)
+
+    elif case(loc_e.Word):
+      loc_ = cast(loc__Word, UP_location)
+      return word_.LeftMostSpanForWord(loc_.w)
+
+    else:
+      raise AssertionError()
 
 
 def SpanForCommand(node):

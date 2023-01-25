@@ -16,9 +16,10 @@ from core import error
 from core import optview
 from core import state
 from core import ui
-from qsn_ import qsn
 from core.pyerror import log
+from frontend import location
 from osh import word_
+from qsn_ import qsn
 from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from core.state import MutableOpts, Mem
   from osh.word_eval import NormalWordEvaluator
-  #from osh.cmd_eval import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
 
 
 class CrashDumper(object):
@@ -82,8 +83,7 @@ class CrashDumper(object):
     self.error = None  # type: Dict[str, Any]
 
   def MaybeRecord(self, cmd_ev, err):
-    # type: (Any, _ErrorWithLocation) -> None
-    # TODO: Any -> CommandEvaluator
+    # type: (CommandEvaluator, _ErrorWithLocation) -> None
     """
     Collect data for a crash dump.
 
@@ -96,7 +96,7 @@ class CrashDumper(object):
 
     if mylib.PYTHON:  # can't translate yet due to dynamic typing
       self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump()
-      span_id = word_.SpanIdFromError(err)
+      span_id = location.GetSpanId(err.location)
 
       self.error = {
          'msg': err.UserErrorString(),

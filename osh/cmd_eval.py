@@ -1473,7 +1473,7 @@ class CommandEvaluator(object):
               check_errexit = cmd_st.check_errexit
             except error.FailGlob as e:
               if not e.HasLocation():  # Last resort!
-                e.span_id = self.mem.CurrentSpanId()
+                e.location = loc.Span(self.mem.CurrentSpanId())
               self.errfmt.PrettyPrintError(e, prefix='failglob: ')
               status = 1
               check_errexit = True
@@ -1668,7 +1668,7 @@ class CommandEvaluator(object):
       self.dumper.MaybeRecord(self, err)  # Do this before unwinding stack
 
       if not err.HasLocation():  # Last resort!
-        err.span_id = self.mem.CurrentSpanId()
+        err.location = loc.Span(self.mem.CurrentSpanId())
 
       if is_errexit:
         if self.exec_opts.verbose_errexit():

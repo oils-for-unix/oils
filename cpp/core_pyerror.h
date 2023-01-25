@@ -8,35 +8,35 @@
 // STUBS for varargs functions like p_die()
 // [[noreturn]] avoids warnings.  TODO: Could just use 'raise' in Python
 
-// TODO: pass location info everywhere
+namespace loc = syntax_asdl::loc;
 
 [[noreturn]] inline void p_die(Str* s) {
-  throw Alloc<error::Parse>(s, -1);
+  throw Alloc<error::Parse>(s, Alloc<loc::Missing>());
 }
 
 [[noreturn]] inline void p_die(Str* s, syntax_asdl::loc_t* location) {
-  throw Alloc<error::Parse>(s, -1);
+  throw Alloc<error::Parse>(s, location);
 }
 
 [[noreturn]] inline void e_die(Str* s) {
-  throw Alloc<error::FatalRuntime>(s);
+  throw Alloc<error::FatalRuntime>(1, s, Alloc<loc::Missing>());
 }
 
 [[noreturn]] inline void e_die(Str* s, syntax_asdl::loc_t* location) {
-  throw Alloc<error::FatalRuntime>(s);
+  throw Alloc<error::FatalRuntime>(1, s, location);
 }
 
 [[noreturn]] inline void e_die_status(int status, Str* s) {
-  throw Alloc<error::FatalRuntime>(status, s);
+  throw Alloc<error::FatalRuntime>(status, s, Alloc<loc::Missing>());
 }
 
 [[noreturn]] inline void e_die_status(int status, Str* s,
                                       syntax_asdl::loc_t* location) {
-  throw Alloc<error::FatalRuntime>(status, s);
+  throw Alloc<error::FatalRuntime>(status, s, location);
 }
 
 [[noreturn]] inline void e_strict(Str* s, syntax_asdl::loc_t* location) {
-  throw Alloc<error::Strict>(s);
+  throw Alloc<error::Strict>(s, location);
 }
 
 // e.g. used in core/state.py

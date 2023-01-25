@@ -1,8 +1,8 @@
 """
-alloc.py - Sketch of memory management.
+alloc.py - FAILED attempt at memory management.
 
-This is roughly what you might do in C++, but it's probably overly complicated
-for Python.
+TODO: Just use a straightforward graph and rely on the garbage collector.
+There's NO ARENA.
 
 The idea is to save the LST for functions, but discard it for commands that
 have already executed.  Each statement/function can be parsed into a separate
@@ -11,9 +11,10 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import line_span, source_t
+from _devbuild.gen.syntax_asdl import line_span, source_t, loc_t
 from asdl import runtime
 from core.pyerror import log
+from frontend import location
 
 from typing import List, Dict, Any
 
@@ -159,6 +160,11 @@ class Arena(object):
     assert span_id < len(self.spans), \
       'Span ID out of range: %d is greater than %d' % (span_id, len(self.spans))
     return self.spans[span_id]
+
+  def LineSpanFromLocation(self, loc_):
+    # type: (loc_t) -> line_span
+    span_id = location.GetSpanId(loc_)
+    return self.GetLineSpan(span_id)
 
   def LastSpanId(self):
     # type: () -> int

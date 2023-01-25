@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
-from osh import word_
+from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, StrFromC
 from qsn_ import qsn
@@ -328,7 +328,7 @@ class ErrorFormatter(object):
     level, in CommandEvaluator.
     """
     msg = err.UserErrorString()
-    span_id = word_.SpanIdFromError(err)
+    span_id = location.GetSpanId(err.location)
 
     # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
     # means there is no location info, but 0 could mean that the location is EOF.
@@ -351,7 +351,7 @@ class ErrorFormatter(object):
     #self.PrettyPrintError(err, prefix=prefix)
 
     msg = err.UserErrorString()
-    span_id = word_.SpanIdFromError(err)
+    span_id = location.GetSpanId(err.location)
     _PrintWithSpanId(prefix, msg, span_id, self.arena, err.show_code)
 
 

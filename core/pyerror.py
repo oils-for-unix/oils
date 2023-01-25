@@ -76,8 +76,7 @@ def e_die(msg, location=None):
 
   Usually exits with status 1.  See osh/cmd_eval.py.
   """
-  kwargs = error.LocationShim(location)
-  raise error.FatalRuntime(1, msg, **kwargs)
+  raise error.FatalRuntime(1, msg, location)
 
 
 def e_die_status(status, msg, location=None):
@@ -88,5 +87,4 @@ def e_die_status(status, msg, location=None):
 
   Note that it doesn't take positional args, so you should use % formatting.
   """
-  kwargs = error.LocationShim(location)
-  raise error.FatalRuntime(status, msg, **kwargs)
+  raise error.FatalRuntime(status, msg, location)

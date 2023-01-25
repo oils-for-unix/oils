@@ -685,7 +685,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # Add this here so we don't have to add it so far down the stack.
           # TODO: It's better to show BOTH this CODE an the actual DATA
           # somehow.
-          e.span_id = token.span_id
+          e.location = token
 
           if self.exec_opts.strict_word_eval():
             raise

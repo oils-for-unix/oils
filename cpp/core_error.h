@@ -15,6 +15,7 @@ namespace error {
 using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
+namespace loc = syntax_asdl::loc;
 
 // TODO: Should take a required location, and be translated from Python
 class Usage {
@@ -43,51 +44,10 @@ class Usage {
 // This definition is different in Python than C++.  Not worth auto-translating.
 class _ErrorWithLocation {
  public:
-  _ErrorWithLocation(Str* user_str, int span_id)
+  _ErrorWithLocation(Str* user_str, syntax_asdl::loc_t* location)
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
-        status(1),
         user_str_(user_str),
-        span_id(span_id),
-        token(nullptr),
-        part(nullptr),
-        word(nullptr) {
-  }
-  _ErrorWithLocation(Str* user_str, Token* token)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
-        status(1),
-        user_str_(user_str),
-        span_id(runtime::NO_SPID),
-        token(token),
-        part(nullptr),
-        word(nullptr) {
-  }
-  _ErrorWithLocation(Str* user_str, word_part_t* part)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
-        status(1),
-        user_str_(user_str),
-        span_id(runtime::NO_SPID),
-        token(nullptr),
-        part(part),
-        word(nullptr) {
-  }
-  _ErrorWithLocation(Str* user_str, word_t* word)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
-        status(1),
-        user_str_(user_str),
-        span_id(runtime::NO_SPID),
-        token(nullptr),
-        part(nullptr),
-        word(word) {
-  }
-  _ErrorWithLocation(int status, Str* user_str, int span_id, bool show_code)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_ErrorWithLocation)),
-        status(status),
-        user_str_(user_str),
-        span_id(span_id),
-        token(nullptr),
-        part(nullptr),
-        word(nullptr),
-        show_code(show_code) {
+        location(location) {
   }
 
   Str* UserErrorString() {
@@ -107,27 +67,18 @@ class _ErrorWithLocation {
 
   int status;
   Str* user_str_;
-  int span_id;
-  syntax_asdl::Token* token;
-  syntax_asdl::word_part_t* part;
-  syntax_asdl::word_t* word;
-
-  bool show_code;
+  syntax_asdl::loc_t* location;
 
   static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(_ErrorWithLocation, user_str_));
+    return maskbit(offsetof(_ErrorWithLocation, user_str_)) |
+           maskbit(offsetof(_ErrorWithLocation, location));
   }
 };
 
 class Parse : public _ErrorWithLocation {
  public:
-  Parse(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
-  }
-  Parse(Str* user_str, Token* token) : _ErrorWithLocation(user_str, token) {
-  }
-  Parse(Str* user_str, word_part_t* part) : _ErrorWithLocation(user_str, part) {
-  }
-  Parse(Str* user_str, word_t* word) : _ErrorWithLocation(user_str, word) {
+  Parse(Str* user_str, syntax_asdl::loc_t* location)
+      : _ErrorWithLocation(user_str, location) {
   }
 };
 
@@ -135,7 +86,7 @@ class RedirectEval : public _ErrorWithLocation {
  public:
   // code only uses this variant
   RedirectEval(Str* user_str, syntax_asdl::loc_t* location)
-      : _ErrorWithLocation(user_str, -1) {
+      : _ErrorWithLocation(user_str, location) {
   }
 };
 
@@ -143,22 +94,21 @@ class FailGlob : public _ErrorWithLocation {
  public:
   // code only uses this variant
   FailGlob(Str* user_str, syntax_asdl::loc_t* location)
-      : _ErrorWithLocation(user_str, -1) {
+      : _ErrorWithLocation(user_str, location) {
   }
 };
 
 class FatalRuntime : public _ErrorWithLocation {
  public:
-  explicit FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
-  }
-  FatalRuntime(int status, Str* user_str)
-      : _ErrorWithLocation(status, user_str, -1, false) {
+  FatalRuntime(int status, Str* user_str, syntax_asdl::loc_t* location)
+      : _ErrorWithLocation(user_str, location) {
   }
 };
 
 class Strict : public FatalRuntime {
  public:
-  explicit Strict(Str* user_str) : FatalRuntime(user_str) {
+  explicit Strict(Str* user_str, syntax_asdl::loc_t* location)
+      : FatalRuntime(1, user_str, location) {
   }
 };
 
@@ -166,18 +116,20 @@ class Strict : public FatalRuntime {
 class ErrExit : public FatalRuntime {
  public:
   ErrExit(int status, Str* user_str, syntax_asdl::loc_t* location)
-      : FatalRuntime(status, user_str) {
+      : FatalRuntime(status, user_str, location) {
   }
-  ErrExit(int status, Str* user_str, syntax_asdl::loc_t* location, bool show_code)
-      : FatalRuntime(status, user_str) {
+  ErrExit(int status, Str* user_str, syntax_asdl::loc_t* location,
+          bool show_code)
+      : FatalRuntime(status, user_str, location) {
   }
+  bool show_code;
 };
 
 // Stub: the parts that raise aren't translated
 class Expr : public _ErrorWithLocation {
  public:
   Expr(Str* user_str, syntax_asdl::loc_t* location)
-      : _ErrorWithLocation(user_str, -1) {
+      : _ErrorWithLocation(user_str, location) {
   }
 #if 0
   Expr(Str* user_str, Token* token)
@@ -189,7 +141,8 @@ class Expr : public _ErrorWithLocation {
 // Stub
 class Runtime : public _ErrorWithLocation {
  public:
-  explicit Runtime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
+  explicit Runtime(Str* user_str)
+      : _ErrorWithLocation(user_str, Alloc<loc::Span>(-1)) {
   }
 };
 

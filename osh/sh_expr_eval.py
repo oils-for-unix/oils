@@ -360,7 +360,7 @@ class ArithEvaluator(object):
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:
             self.errfmt.PrettyPrintError(e)
-            e_die('Parse error in recursive arithmetic', loc.Span(e.span_id))
+            e_die('Parse error in recursive arithmetic', e.location)
 
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.

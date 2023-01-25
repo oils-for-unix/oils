@@ -3,14 +3,8 @@ error.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import (
-    Token, loc_e, loc_t, loc__Span, loc__WordPart, loc__Word)
+from _devbuild.gen.syntax_asdl import loc_e, loc_t
 from mycpp import mylib
-from mycpp.mylib import tagswitch
-
-from typing import Dict, Any, Optional, cast, TYPE_CHECKING
-if TYPE_CHECKING:  # avoid circular build deps
-  from _devbuild.gen.syntax_asdl import word_part_t, word_t
 
 # Break circular dependency.
 #from asdl import runtime
@@ -18,42 +12,6 @@ NO_SPID = -1
 
 
 if mylib.PYTHON:
-
-  def LocationShim(location):
-    # type: (Optional[loc_t]) -> Dict[str, Any]
-    """ TODO: Remove this and cleanup _ErrorWithLocation constructor. """
-
-    kwargs = {}  # type: Dict[str, Any]
-
-    if location is None:
-      kwargs['span_id'] = NO_SPID
-    else:
-      UP_location = location
-      with tagswitch(location) as case:
-        if case(loc_e.Missing):
-          kwargs['span_id'] = NO_SPID
-
-        elif case(loc_e.Token):
-          tok = cast(Token, UP_location)
-          kwargs['token'] = tok
-
-        elif case(loc_e.Span):
-          location = cast(loc__Span, UP_location)
-          kwargs['span_id'] = location.span_id
-
-        elif case(loc_e.WordPart):
-          location = cast(loc__WordPart, UP_location)
-          kwargs['part'] = location.p
-
-        elif case(loc_e.Word):
-          location = cast(loc__Word, UP_location)
-          kwargs['word'] = location.w
-
-        else:
-          # TODO: fill in other cases
-          raise AssertionError()
-
-    return kwargs
 
   class Usage(Exception):
     """For flag parsing errors in builtins and main()
@@ -72,41 +30,23 @@ if mylib.PYTHON:
 
     Formatting is in ui.PrintError.
     """
-    def __init__(self, msg, *args, **kwargs):
-      # type: (str, *Any, **Any) -> None
+    def __init__(self, msg, location):
+      # type: (str, loc_t) -> None
       Exception.__init__(self)
       self.msg = msg
-      self.args = args
-      # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
-      # args.
-      # TODO: Remove these and create a location type.  I think
-      # word_.SpanIdFromError() or LocationFromeError can be called when
-      # CREATING this exception, not in core/ui.py.
-      self.span_id = kwargs.pop('span_id', NO_SPID)  # type: int
-      self.token = kwargs.pop('token', None)  # type: Token
-      self.part = kwargs.pop('part', None)  # type: word_part_t
-      self.word = kwargs.pop('word', None)  # type: word_t
-
-      if kwargs:
-        raise AssertionError('Invalid keyword args %s' % kwargs)
+      self.location = location
 
     def HasLocation(self):
       # type: () -> bool
-      return bool(self.span_id != NO_SPID or
-                  self.token or self.part or self.word)
+      return self.location.tag_() != loc_e.Missing
 
     def UserErrorString(self):
       # type: () -> str
-
-      if self.args:
-        # TODO: this case is obsolete
-        return self.msg % self.args
-      else:
-        return self.msg
+      return self.msg
 
     def __repr__(self):
       # type: () -> str
-      return '<%s %r %r>' % (self.msg, self.token, self.word)
+      return '<%s %r>' % (self.msg, self.location)
 
     def __str__(self):
       # type: () -> str
@@ -135,8 +75,7 @@ if mylib.PYTHON:
     """Used in the parsers."""
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
-      kwargs = LocationShim(location)
-      _ErrorWithLocation.__init__(self, msg, **kwargs)
+      _ErrorWithLocation.__init__(self, msg, location)
 
 
   class FailGlob(_ErrorWithLocation):
@@ -147,8 +86,7 @@ if mylib.PYTHON:
 
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
-      kwargs = LocationShim(location)
-      _ErrorWithLocation.__init__(self, msg, **kwargs)
+      _ErrorWithLocation.__init__(self, msg, location)
 
 
   class RedirectEval(_ErrorWithLocation):
@@ -159,8 +97,7 @@ if mylib.PYTHON:
     """
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
-      kwargs = LocationShim(location)
-      _ErrorWithLocation.__init__(self, msg, **kwargs)
+      _ErrorWithLocation.__init__(self, msg, location)
 
 
   class FatalRuntime(_ErrorWithLocation):
@@ -169,9 +106,9 @@ if mylib.PYTHON:
     Used in the evaluators, and also also used in test builtin for invalid
     argument.
     """
-    def __init__(self, exit_status, msg, **kwargs):
-      # type: (int, str, Dict[str, Any]) -> None
-      _ErrorWithLocation.__init__(self, msg, **kwargs)
+    def __init__(self, exit_status, msg, location):
+      # type: (int, str, loc_t) -> None
+      _ErrorWithLocation.__init__(self, msg, location)
       self.exit_status = exit_status
 
     def ExitStatus(self):
@@ -198,8 +135,7 @@ if mylib.PYTHON:
     """
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
-      kwargs = LocationShim(location)
-      FatalRuntime.__init__(self, 1, msg, **kwargs)
+      FatalRuntime.__init__(self, 1, msg, location)
 
 
   class ErrExit(FatalRuntime):
@@ -209,8 +145,7 @@ if mylib.PYTHON:
     """
     def __init__(self, exit_status, msg, location, show_code=False):
       # type: (int, str, loc_t, bool) -> None
-      kwargs = LocationShim(location)
-      FatalRuntime.__init__(self, exit_status, msg, **kwargs)
+      FatalRuntime.__init__(self, exit_status, msg, location)
       self.show_code = show_code
 
 
@@ -219,11 +154,10 @@ if mylib.PYTHON:
 
     def __init__(self, msg, location):
       # type: (str, loc_t) -> None
-      kwargs = LocationShim(location)
 
-      # New status 3 for expression errors -- for both the caught and uncaught
-      # case.
+      # Unique status of 3 for expression errors -- for both the caught and
+      # uncaught case.
       #
       # Caught: try sets _status register to 3
       # Uncaught: shell exits with status 3
-      FatalRuntime.__init__(self, 3, msg, **kwargs)
+      FatalRuntime.__init__(self, 3, msg, location)
