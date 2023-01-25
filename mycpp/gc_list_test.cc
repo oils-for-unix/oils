@@ -9,6 +9,8 @@
 #include "mycpp/gc_obj.h"
 #include "vendor/greatest.h"
 
+using mylib::str_cmp;
+
 GLOBAL_STR(kStrFoo, "foo");
 GLOBAL_STR(kSpace, " ");
 

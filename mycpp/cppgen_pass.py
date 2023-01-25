@@ -2403,15 +2403,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # TODO: Remove special cases by translating these functions
           if name in ('e_die',):
             continue
-          if name in ('e_usage', 'e_die_status'):
-            continue
 
           if o.id == 'mycpp.mylib':
-            # These mylib functions are transalted in a special way
-            if name in ('switch', 'tagswitch', 'iteritems'):
+            # These mylib functions are translated in a special way
+            if name in ('switch', 'tagswitch', 'iteritems', 'NewDict'):
               continue
             # STDIN_FILENO is #included
-            if name in ('str_cmp', 'NewDict', 'STDIN_FILENO'):
+            if name == 'STDIN_FILENO':
               continue
 
           # A heuristic that works for the Oil import style.

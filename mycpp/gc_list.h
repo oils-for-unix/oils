@@ -160,16 +160,6 @@ List<T>* list_repeat(T item, int times);
 template <typename T>
 inline bool list_contains(List<T>* haystack, T needle);
 
-inline int int_cmp(int a, int b) {
-  if (a == b) {
-    return 0;
-  }
-  return a < b ? -1 : 1;
-}
-
-inline int str_cmp(Str* a, Str* b);
-inline bool _cmp(Str* a, Str* b);
-
 template <typename K, typename V>
 class Dict;  // forward decl
 
@@ -354,24 +344,8 @@ void List<T>::extend(List<T>* other) {
   len_ = new_len;
 }
 
-// Used by [[ a > b ]] and so forth
-inline int str_cmp(Str* a, Str* b) {
-  int len_a = len(a);
-  int len_b = len(b);
-
-  int min = std::min(len_a, len_b);
-  if (min == 0) {
-    return int_cmp(len_a, len_b);
-  }
-  int comp = memcmp(a->data_, b->data_, min);
-  if (comp == 0) {
-    return int_cmp(len_a, len_b);  // tiebreaker
-  }
-  return comp;
-}
-
 inline bool _cmp(Str* a, Str* b) {
-  return str_cmp(a, b) < 0;
+  return mylib::str_cmp(a, b) < 0;
 }
 
 template <typename T>

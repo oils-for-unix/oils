@@ -1,7 +1,11 @@
 #ifndef MYCPP_COMPARATORS_H
 #define MYCPP_COMPARATORS_H
 
-class Str;
+#include <string.h>  // memcmp
+
+#include <algorithm>  // std::min()
+
+#include "mycpp/gc_str.h"  // len()
 
 template <typename L, typename R>
 class Tuple2;
@@ -26,5 +30,36 @@ enum class Kind;
 };
 
 bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
+
+inline int int_cmp(int a, int b) {
+  if (a == b) {
+    return 0;
+  }
+  return a < b ? -1 : 1;
+}
+
+// mylib::str_cmp is in this common header to avoid gc_list.h -> gc_mylib.h
+// dependency
+//
+// It's also used for _cmp(Str*) in gc_list.
+namespace mylib {
+
+// Used by [[ a > b ]] and so forth
+inline int str_cmp(Str* a, Str* b) {
+  int len_a = len(a);
+  int len_b = len(b);
+
+  int min = std::min(len_a, len_b);
+  if (min == 0) {
+    return int_cmp(len_a, len_b);
+  }
+  int comp = memcmp(a->data_, b->data_, min);
+  if (comp == 0) {
+    return int_cmp(len_a, len_b);  // tiebreaker
+  }
+  return comp;
+}
+
+}  // namespace mylib
 
 #endif  // MYCPP_COMPARATORS_H
