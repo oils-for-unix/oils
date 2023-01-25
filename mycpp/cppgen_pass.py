@@ -261,8 +261,8 @@ def GetCType(t, param=False, local=False):
 
   elif isinstance(t, CallableType):
     # Function types are expanded
-    # Callable[[Parser, Token, int], arith_expr_t] =>
-    # arith_expr_t* (*f)(Parser*, Token*, int) nud;
+    #    Callable[[Parser, Token, int], arith_expr_t]
+    # -> arith_expr_t* (*f)(Parser*, Token*, int) nud;
 
     ret_type = GetCType(t.ret_type)
     arg_types = [GetCType(typ) for typ in t.arg_types]
@@ -362,25 +362,35 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.current_class_name = None  # for prototypes
       self.current_method_name = None
 
-      self.imported_names = set()  # For module::Foo() vs. self.foo
+      self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
 
       # So we can report multiple at once
       # module path, line number, message
       self.errors_keep_going: List[Tuple[str, int, str]] = []
+
+      self.writing_default_arg = False
 
     def log(self, msg, *args):
       ind_str = self.indent * '  '
       log(ind_str + msg, *args)
 
     def write(self, msg, *args):
-      if self.decl or self.forward_decl:
+      """Write only in definitions."""
+
+      if self.forward_decl:
         return
+
+      if self.decl and not self.writing_default_arg:
+        return
+
       if args:
         msg = msg % args
       self.f.write(msg)
 
     # Write respecting indent
     def write_ind(self, msg, *args):
+      """Write indented string, only in definitions."""
+
       if self.decl or self.forward_decl:
         return
       ind_str = self.indent * '  '
@@ -388,17 +398,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         msg = msg % args
       self.f.write(ind_str + msg)
 
-    # A little hack to reuse this pass for declarations too
     def decl_write(self, msg, *args):
-      # TODO:
-      # self.header_f ?
-      # Just one file for all exported?
+      """Write unconditionally, e.g. in decl mode
 
+      A little hack to reuse this pass for declarations too
+      """
       if args:
         msg = msg % args
       self.f.write(msg)
 
     def decl_write_ind(self, msg, *args):
+      """Write indented string, unconditionally."""
       ind_str = self.indent * '  '
       if args:
         msg = msg % args
@@ -548,7 +558,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         t = self.types[o]
         if o.expr:  
-          #log('member o = %s', o)
+          if self.writing_default_arg:
+            # debug deps in the decl phase
+            # self.log('member o = %s, o.expr = %s', o, o.expr)
+            pass
 
           # This is an approximate hack that assumes that locals don't shadow
           # imported names.  Might be a problem with names like 'word'?
@@ -566,8 +579,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(op)
 
         if o.name == 'errno':
-          # Avoid conflict with errno macro
-          # e->errno turns into e->errno_
+          # e->errno -> e->errno_ to avoid conflict with C macro
           self.write('errno_')
         else:
           self.write('%s', o.name)
@@ -1964,7 +1976,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # TODO: Turn this on.  Having stdlib problems, e.g.
           # examples/cartesian.
           c_type = GetCType(arg_type, param=False)
-          #c_type = GetCType(arg_type, param=True)
 
           arg_name = arg.variable.name
 
@@ -1973,6 +1984,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             continue
 
           self.decl_write('%s %s', c_type, arg_name)
+          if write_defaults and arg.initializer:
+            self.decl_write(' = ')
+
+            # Silly mechanism to activate self.write()
+            self.writing_default_arg = True
+            self.accept(arg.initializer)
+            self.writing_default_arg = False
+
           first = False
 
           # Params are locals.  There are 4 callers to _WriteFuncParams and we
@@ -2001,52 +2020,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           arg_name, c_type = self.yield_accumulators[self.current_func_node]
           self.decl_write('%s %s', c_type, arg_name)
 
-    def _WithOneLessArg(self, o, class_name, ret_type):
-      default_val = o.arguments[-1].initializer
-      if default_val:  # e.g. osh/bool_parse.py has default val
-        if self.decl or class_name is None:
-          func_name = o.name
-        else:
-          func_name = '%s::%s' % (self.current_class_name, o.name)
-        self.write('\n')
-
-        # Write _Next() with no args
-        virtual = ''  # Note: the extra method can NEVER be virtual?
-        c_ret_type = GetCType(ret_type)
-        if isinstance(ret_type, TupleType):
-          assert c_ret_type.endswith('*')
-          c_ret_type = c_ret_type[:-1]
-
-        self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
-
-        # Write all params except last optional one
-        self._WriteFuncParams(o.type.arg_types[:-1], o.arguments[:-1])
-
-        self.decl_write(')')
-        if self.decl:
-          self.decl_write(';\n')
-        else:
-          self.write(' {\n')
-          # return MakeOshParser()
-          kw = '' if isinstance(ret_type, NoneTyp) else 'return '
-          self.write('  %s%s(' % (kw, o.name))
-
-          # Don't write self or last optional argument
-          first_arg_index = 0 if class_name is None else 1
-          pass_through = o.arguments[first_arg_index:-1]
-
-          if pass_through:
-            for i, arg in enumerate(pass_through):
-              if i != 0:
-                self.write(', ')
-              self.write(arg.variable.name)
-            self.write(', ')
-
-          # Now write default value, e.g. lex_mode_e::DBracket
-          self.accept(default_val)  
-          self.write(');\n')
-          self.write('}\n')
-
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
         if o.name == '__repr__':  # Don't translate
           return
@@ -2058,78 +2031,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         class_name = self.current_class_name
         func_name = o.name
-        ret_type = o.type.ret_type
-
-        # self.log('o.arguments %s', o.arguments)
-
-        # Hacky MANUAL LIST of functions and methods with OPTIONAL ARGUMENTS.
-        #
-        # For example, we have a method like this:
-        #   MakeOshParser(_Reader* line_reader, bool emit_comp_dummy)
-        #
-        # And we want to write an EXTRA C++ method like this:
-        #   MakeOshParser(_Reader* line_reader) {
-        #     return MakeOshParser(line_reader, true);
-        #   }
-
-        if (class_name in ('BoolParser', 'CommandParser') and
-              func_name == '_Next' or
-            class_name == 'ParseContext' and func_name == 'MakeOshParser' or
-            class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError' or
-            class_name is None and func_name == 'PrettyPrintError' or
-            class_name == 'WordParser' and
-              func_name in ('_ParseVarExpr', '_ReadVarOpArg2') or
-            class_name == 'AbstractWordEvaluator' and 
-              func_name in ('EvalWordSequence2', '_EmptyStrOrError') or
-            # virtual method in several classes
-            func_name == 'EvalWordToString' or
-            class_name == 'ArithEvaluator' and func_name == '_ValToIntOrError' or
-            class_name == 'BoolEvaluator' and
-              func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
-            class_name == 'CommandEvaluator' and
-              func_name in ('_Execute', 'ExecuteAndCatch') or
-            # core/executor.py
-            class_name == 'ShellExecutor' and func_name == '_MakeProcess' or
-            # osh/word_eval.py
-            class_name is None and func_name == 'ShouldArrayDecay' or
-            # core/state.py
-            class_name is None and func_name in ('_PackFlags', 'OshLanguageSetValue') or
-            class_name == 'Mem' and
-              func_name in ('GetValue', 'SetValue', 'GetCell',
-                            '_ResolveNameOrRef') or
-            class_name == 'SearchPath' and func_name == 'Lookup' or
-            # core/ui.py
-            class_name == 'ErrorFormatter' and
-              func_name in ('Print_', 'PrintMessage') or
-            func_name == 'GetLineSourceString' or
-            # osh/sh_expr_eval.py
-            class_name is None and func_name == 'EvalLhsAndLookup' or
-            class_name == 'SplitContext' and
-              func_name in ('SplitForWordEval', '_GetSplitter') or
-            # qsn_/qsn.py
-            class_name is None and 
-              func_name in ('maybe_encode', 'maybe_shell_encode') or
-            # osh/builtin_assign.py
-            class_name is None and func_name == '_PrintVariables' or
-            # virtual function
-            func_name == 'RunSimpleCommand' or
-            # core/main_loop.py
-            func_name == 'Batch'
-          ):
-          self._WithOneLessArg(o, class_name, ret_type)
 
         virtual = ''
         if self.decl:
           self.local_var_list = []  # Make a new instance to collect from
           self.local_vars[o] = self.local_var_list
 
-          #log('Is Virtual? %s %s', self.current_class_name, o.name)
           if self.virtual.IsVirtual(self.current_class_name, o.name):
             virtual = 'virtual '
 
         if not self.decl and self.current_class_name:
           # definition looks like
-          # void Type::foo(...);
+          # void Class::method(...);
           func_name = '%s::%s' % (self.current_class_name, o.name)
         else:
           # declaration inside class { }
@@ -2137,7 +2050,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('\n')
 
-        c_ret_type, _, c_iter_list_type = GetCReturnType(ret_type)
+        c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
         if c_iter_list_type is not None:
           # The function is a generator. Add an output param that references an
           # accumulator for the results.
@@ -2153,7 +2066,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_func_node = o
         self._WriteFuncParams(
             o.type.arg_types, o.arguments, update_locals=True,
-            write_defaults=True)
+            # write default values in the declaration only
+            write_defaults=self.decl)
 
         if self.decl:
           self.decl_write(');\n')
@@ -2459,19 +2373,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
-        if self.decl:  # No duplicate 'using'
-          return
+        """
+        Write C++ namespace aliases and 'using' for imports.
+        We need them in the 'decl' phase for default arguments like
+        runtime_asdl::scope_e -> scope_e
+        """
 
-        if o.id in ('__future__', 'typing'):
-          return  # do nothing
-
-        # Later we need to turn module.func() into module::func(), without
-        # disturbing self.foo.
+        # For MemberExpr . -> module::func() or this->field.  Also needed in
+        # the decl phase for default arg values.
         for name, alias in o.names:
           if alias:
             self.imported_names.add(alias)
           else:
             self.imported_names.add(name)
+
+        if o.id in ('__future__', 'typing'):
+          return  # do nothing
+
+        #self.log('    %s ImportFrom id: %s', self.decl, o.id)
 
         for name, alias in o.names:
           #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
@@ -2583,7 +2502,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if is_namespace:
               # No aliases yet?
-              #lhs = alias if alias else name
+
+              # Note: this could also be decl_write_ind, but 
               self.write_ind(
                   'namespace %s = %s::%s;\n', name, last_dotted, name)
             else:
@@ -2591,11 +2511,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # using runtime_asdl::emit_e = EMIT;
                 self.write_ind('using %s = %s::%s;\n', alias, last_dotted, name)
               else:
-                # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
-
                 #   from _devbuild.gen.id_kind_asdl import Id
                 # -> using id_kind_asdl::Id.
-                self.write_ind('using %s::%s;\n', last_dotted, name)
+
+                using_str = 'using %s::%s;\n' % (last_dotted, name)
+                self.write_ind(using_str)
+
+                # Hack for default args.  Without this limitation, we write
+                # 'using' of names that aren't declared yet.
+                if self.decl and name in ('scope_e', 'lex_mode_e'):
+                  self.f.write(using_str)
+
+                # Fully qualified:
+                # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
           else:
             # If we're importing a module without an alias, we don't need to do
             # anything.  'namespace cmd_eval' is already defined.
@@ -2605,12 +2533,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #    from asdl import format as fmt
             # -> namespace fmt = format;
             self.write_ind('namespace %s = %s;\n', alias, name)
-
-        # Old scheme
-        # from testpkg import module1 =>
-        # namespace module1 = testpkg.module1;
-        # Unfortunately the MyPy AST doesn't have enough info to distinguish
-        # imported packages and functions/classes?
 
     def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> T:
         pass

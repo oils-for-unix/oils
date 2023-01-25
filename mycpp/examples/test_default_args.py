@@ -11,10 +11,16 @@ from mycpp.mylib import log
 from typing import List
 
 
-def f(x, y=42):
-  # type: (int, int) -> None
+def f(x, b=False):
+  # type: (int, bool) -> None
   log("x = %d", x)
-  log("y = %d", y)
+  log("b = %d", b)
+
+
+def g(x, s=''):
+  # type: (int, str) -> None
+  log("x = %d", x)
+  log("s = %r", s)
 
 
 class Foo(object):
@@ -34,9 +40,10 @@ def run_tests():
   # type: () -> None
 
   #f(1)
-  f(1, 43)
-  f(1, y = 44)
+  f(1, True)
+  f(2, b = True)
 
+  g(99, s = 'foo')
 
   #f1 = Foo(1)
   f2 = Foo(1, 43)
