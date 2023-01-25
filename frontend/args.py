@@ -275,7 +275,7 @@ class _Action(object):
 
 class _ArgAction(_Action):
 
-  def __init__(self, name, quit_parsing_flags=False, valid=None):
+  def __init__(self, name, quit_parsing_flags, valid=None):
     # type: (str, bool, Optional[List[str]]) -> None
     """
     Args:
@@ -311,7 +311,7 @@ class SetToInt(_ArgAction):
   def __init__(self, name):
     # type: (str) -> None
     # repeat defaults for C++ translation
-    _ArgAction.__init__(self, name, quit_parsing_flags=False, valid=None)
+    _ArgAction.__init__(self, name, False, valid=None)
 
   def _Value(self, arg, span_id):
     # type: (str, int) -> value_t
@@ -333,7 +333,7 @@ class SetToFloat(_ArgAction):
   def __init__(self, name):
     # type: (str) -> None
     # repeat defaults for C++ translation
-    _ArgAction.__init__(self, name, quit_parsing_flags=False, valid=None)
+    _ArgAction.__init__(self, name, False, valid=None)
 
   def _Value(self, arg, span_id):
     # type: (str, int) -> value_t
@@ -351,10 +351,9 @@ class SetToFloat(_ArgAction):
 
 
 class SetToString(_ArgAction):
-  def __init__(self, name, quit_parsing_flags=False, valid=None):
+  def __init__(self, name, quit_parsing_flags, valid=None):
     # type: (str, bool, Optional[List[str]]) -> None
-    _ArgAction.__init__(self, name, quit_parsing_flags=quit_parsing_flags,
-                        valid=valid)
+    _ArgAction.__init__(self, name, quit_parsing_flags, valid=valid)
 
   def _Value(self, arg, span_id):
     # type: (str, int) -> value_t

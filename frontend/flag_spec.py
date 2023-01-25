@@ -126,11 +126,10 @@ def _MakeAction(arg_type, name, quit_parsing_flags=False):
     action = args.SetToFloat(name)
 
   elif arg_type == args.String:
-    action = args.SetToString(name, quit_parsing_flags=quit_parsing_flags)
+    action = args.SetToString(name, quit_parsing_flags)
 
   elif isinstance(arg_type, list):
-    action = args.SetToString(name, quit_parsing_flags=quit_parsing_flags,
-                              valid=arg_type)
+    action = args.SetToString(name, quit_parsing_flags, valid=arg_type)
 
   else:
     raise AssertionError(arg_type)

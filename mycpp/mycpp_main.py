@@ -277,8 +277,7 @@ def main(argv):
                               virtual=virtual, forward_decl=True)
 
     p2.visit_mypy_file(module)
-
-  MaybeExitWithErrors(p2)
+    MaybeExitWithErrors(p2)
 
   # After seeing class and method names in the first pass, figure out which
   # ones are virtual.  We use this info in the second pass.
@@ -310,8 +309,7 @@ def main(argv):
                               virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
-
-  MaybeExitWithErrors(p3)
+    MaybeExitWithErrors(p3)
 
   log('\tmycpp pass: IMPL')
 
@@ -323,8 +321,7 @@ def main(argv):
                               local_vars=local_vars, fmt_ids=fmt_ids,
                               field_gc=field_gc)
     p4.visit_mypy_file(module)
-
-  MaybeExitWithErrors(p4)
+    MaybeExitWithErrors(p4)
 
   return 0  # success
 
