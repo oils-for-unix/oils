@@ -62,8 +62,8 @@ class LineLexer(object):
       self.arena_skip = True  # don't add the next token to the arena
       return True
 
-  def GetSpanIdForEof(self):
-    # type: () -> int
+  def GetEofToken(self, id_):
+    # type: (int) -> Token
     """Create a new span ID for syntax errors involving the EOF token."""
     if self.line_id == -1:
       # When line_id == -1, this means there are ZERO lines.  Add a dummy line
@@ -71,7 +71,8 @@ class LineLexer(object):
       line_id = self.arena.AddLine('', 0)
     else:
       line_id = self.line_id
-    return self.arena.AddLineSpan(line_id, self.line_pos, 0)
+
+    return self.arena.NewToken(id_, self.line_pos, 0, line_id, '')
 
   def LookAheadOne(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
@@ -200,11 +201,11 @@ class LineLexer(object):
       self.arena_skip = False
     else:
       tok_len = end_pos - line_pos
-      span_id = self.arena.AddLineSpan(self.line_id, line_pos, tok_len)
+      span_id = self.arena.NewTokenId(tok_type, self.line_id, line_pos, tok_len, tok_val)
       self.last_span_id = span_id
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
-    t = Token(tok_type, span_id, tok_val)
+    t = self.arena.GetLineSpan(span_id)  # maybe the thing you just created
     self.line_pos = end_pos
     return t
 
@@ -289,13 +290,12 @@ class Lexer(object):
       line_id, line, line_pos = self.line_reader.GetLine()
 
       if line is None:  # no more lines
-        span_id = self.line_lexer.GetSpanIdForEof()
         if self.emit_comp_dummy:
           id_ = Id.Lit_CompDummy
           self.emit_comp_dummy = False  # emit EOF the next time
         else:
           id_ = Id.Eof_Real
-        t = Token(id_, span_id, '')
+        t = self.line_lexer.GetEofToken(id_)
         return t
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
