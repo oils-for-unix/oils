@@ -153,8 +153,7 @@ unified-report() {
     clang-coverage/mycpp/examples \
     clang-coverage/mycpp \
     clang-coverage/mycpp clang-coverage-D_BUMP_LEAK/mycpp \
-    clang-coverage/cpp \
-    clang-coverage-D_CPP_UNIT_TEST/cpp
+    clang-coverage/cpp
 }
 
 log-files-index() {

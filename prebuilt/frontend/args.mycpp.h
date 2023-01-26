@@ -6,7 +6,10 @@
 #include "_gen/asdl/hnode.asdl.h"
 #include "cpp/qsn.h"
 #include "mycpp/runtime.h"
+
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
+#include "cpp/frontend_flag_spec.h"
 namespace runtime {  // forward declare
 
 
@@ -21,6 +24,11 @@ namespace format {  // forward declare
   class _PrettyPrinter;
 
 }  // forward declare namespace format
+
+namespace pyerror {  // forward declare
+
+
+}  // forward declare namespace pyerror
 
 namespace args {  // forward declare
 
@@ -132,6 +140,18 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
 
 }  // declare namespace format
+
+namespace pyerror {  // declare
+
+extern int NO_SPID;
+[[noreturn]] void e_usage(Str* msg, int span_id = NO_SPID);
+[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);
+[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location = nullptr);
+
+
+}  // declare namespace pyerror
 
 namespace args {  // declare
 

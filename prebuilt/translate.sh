@@ -91,12 +91,17 @@ frontend-args() {
     prebuilt/frontend/args.mycpp \
     $TEMP_DIR/frontend/args_raw.mycpp.h \
     FRONTEND_ARGS_MYCPP_H \
-    '#include "_gen/core/runtime.asdl.h"' \
+    '
+#include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/syntax.asdl.h"
+#include "cpp/frontend_flag_spec.h"' \
     --to-header asdl.runtime \
     --to-header asdl.format \
     --to-header frontend.args \
+    --to-header core.pyerror \
     "${ASDL_FILES[@]}" \
-    frontend/args.py 
+    core/error.py core/pyerror.py \
+    frontend/args.py
 }
 
 core-error() {

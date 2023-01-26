@@ -13,20 +13,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source test/common.sh  # run-test
 
-run-special-test() {
-  ### For tests with -D CPP_UNIT_TEST
-
-  local rel_path=$1
-  local compiler=${2:-cxx}
-  local variant=${3:-dbg}
-
-  # -D CPP_UNIT_TEST
-  local bin=_bin/$compiler-$variant-D_CPP_UNIT_TEST/$rel_path
-  ninja $bin
-
-  run-test-bin $bin
-}
-
 run-test-in-dir() {
   ### Test hand-written code
 
@@ -77,8 +63,7 @@ unit() {
 
   # Other tests
   for variant in ubsan asan; do
-    # Need -D CPP_UNIT_TEST
-    run-special-test cpp/frontend_flag_spec_test '' $variant
+    run-one-test cpp/frontend_flag_spec_test '' $variant
 
     run-one-test     cpp/frontend_match_test '' $variant
 
@@ -112,8 +97,7 @@ coverage() {
 
   run-one-test     cpp/qsn_test $compiler $variant
 
-  # Need -D CPP_UNIT_TEST
-  run-special-test cpp/frontend_flag_spec_test $compiler $variant
+  run-one-test cpp/frontend_flag_spec_test $compiler $variant
 
   run-one-test     cpp/frontend_match_test $compiler $variant
 
@@ -126,8 +110,7 @@ coverage() {
   run-one-test     cpp/stdlib_test $compiler $variant
 
   local out_dir=_test/clang-coverage/cpp
-  test/coverage.sh html-report $out_dir \
-    clang-coverage/cpp clang-coverage-D_CPP_UNIT_TEST/cpp
+  test/coverage.sh html-report $out_dir clang-coverage/cpp 
 }
 
 "$@"

@@ -94,17 +94,18 @@ def NinjaGraph(ru):
         '//core/runtime.asdl',
         '//frontend/arg_types',  # generated code
         '//mycpp/runtime',
-        # prebuilt, generated code.  Doesn't compile because of
-        # core/runtime_asdl dependency.
-        # '//prebuilt/frontend/args.mycpp',
       ],
   )
 
   ru.cc_binary(
       'cpp/frontend_flag_spec_test.cc',
-      deps = ['//cpp/frontend_flag_spec'],
+      deps = [
+        '//cpp/frontend_flag_spec',
+        '//prebuilt/frontend/args.mycpp',  # prebuilt args::Reader, etc.
+        ],
       # special -D CPP_UNIT_TEST
-      matrix = CPP_UNIT_MATRIX)
+      #matrix = CPP_UNIT_MATRIX)
+      matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
       '//cpp/fanos_shared', 

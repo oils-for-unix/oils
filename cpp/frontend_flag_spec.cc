@@ -65,7 +65,6 @@ void _CreateDefaults(DefaultPair_c* in,
   }
 }
 
-#ifndef CPP_UNIT_TEST
 void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
   int i = 0;
   while (true) {
@@ -135,7 +134,6 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
     ++i;
   }
 }
-#endif
 
 // "Inflate" the static C data into a heap-allocated ASDL data structure.
 //
@@ -151,14 +149,12 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   if (in->arity0) {
     _CreateStrList(in->arity0, out->arity0);
   }
-#ifndef CPP_UNIT_TEST
   if (in->arity1) {
     _CreateActions(in->arity1, out->arity1);
   }
   if (in->actions_long) {
     _CreateActions(in->actions_long, out->actions_long);
   }
-#endif
   if (in->plus_flags) {
     _CreateStrList(in->plus_flags, out->plus_flags);
   }
@@ -175,15 +171,12 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   out->plus_flags = NewList<Str*>();
   out->defaults = NewDict<Str*, runtime_asdl::value_t*>();
 
-#ifndef CPP_UNIT_TEST
   if (in->actions_short) {
     _CreateActions(in->actions_short, out->actions_short);
   }
-
   if (in->actions_long) {
     _CreateActions(in->actions_long, out->actions_long);
   }
-#endif
   if (in->plus_flags) {
     _CreateStrList(in->plus_flags, out->plus_flags);
   }
@@ -233,19 +226,11 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
 
-#ifdef CPP_UNIT_TEST
-  // hack because we don't want to depend on a translation of args.py
-  return nullptr;
-#else
   return args::Parse(spec, arg_r);
-#endif
 }
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
-#ifdef CPP_UNIT_TEST
-  return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
-#else
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
@@ -253,7 +238,6 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
   assert(spec);  // should always be found
   return Tuple2<args::_Attributes*, args::Reader*>(args::Parse(spec, arg_r),
                                                    arg_r);
-#endif
 }
 
 // With optional arg
@@ -266,9 +250,6 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
-#ifdef CPP_UNIT_TEST
-  return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
-#else
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
@@ -276,18 +257,12 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
   assert(spec);  // should always be found
   return Tuple2<args::_Attributes*, args::Reader*>(
       args::ParseLikeEcho(spec, arg_r), arg_r);
-#endif
 }
 
 args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
-#ifdef CPP_UNIT_TEST
-  return nullptr;
-#else
-  // TODO: Fill this in from constant data!
   flag_spec::_FlagSpecAndMore* spec = LookupFlagSpec2(spec_name);
   assert(spec);
   return args::ParseMore(spec, arg_r);
-#endif
 }
 
 }  // namespace flag_spec
