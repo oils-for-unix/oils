@@ -288,8 +288,14 @@ class Lexer(object):
       - precedence in [[,   e.g.  [[ (1 == 2) && (2 == 3) ]]
       - arrays: a=(1 2 3), a+=(4 5)
     """
-    #log('   PushHint %s ==> %s', Id_str(old_id), Id_str(new_id))
     self.translation_stack.append((old_id, new_id))
+
+    if 0:
+      log('    PushHint %s ==> %s', Id_str(old_id), Id_str(new_id))
+      for o, n in self.translation_stack:
+        print('    [%s %s]' % (Id_str(o), Id_str(n)))
+      import traceback
+      #traceback.print_stack()
 
   def _Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
@@ -310,11 +316,13 @@ class Lexer(object):
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
       t = self.line_lexer.Read(lex_mode)
 
+    #log('t %r', t)
+
     # e.g. translate ) or ` into EOF
     if len(self.translation_stack):
       old_id, new_id = self.translation_stack[-1]  # top
       if t.id == old_id:
-        #log('==> TRANSLATING %s ==> %s', Id_str(old_id), Id_str(t.id))
+        #log('==> TRANSLATING %s ==> %s', Id_str(t.id), Id_str(new_id))
         self.translation_stack.pop()
         t.id = new_id
 
