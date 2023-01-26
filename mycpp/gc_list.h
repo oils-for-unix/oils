@@ -434,10 +434,19 @@ class ListIter {
     return ret;
   }
 
+  // only for use with generators
+  List<T>* GetList() { return L_; }
+
  private:
   List<T>* L_;
   int i_;
 };
+
+// list(it) returns the iterator's backing list
+template <typename T>
+List<T>* list(ListIter<T> it) {
+  return list(it.GetList());
+}
 
 // TODO: Does using pointers rather than indices make this more efficient?
 template <class T>

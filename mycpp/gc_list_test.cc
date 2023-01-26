@@ -247,6 +247,14 @@ TEST test_list_iters() {
     log("x = %d", x);
   }
 
+  {
+    ListIter<int> it(ints);
+    auto ints2 = list(it);
+    ASSERT_EQ(ints->index_(0), ints2->index_(0));
+    ASSERT_EQ(ints->index_(1), ints2->index_(1));
+    ASSERT_EQ(ints->index_(2), ints2->index_(2));
+  }
+
   log("  backward iteration over list");
   for (ReverseListIter<int> it(ints); !it.Done(); it.Next()) {
     int x = it.Value();
