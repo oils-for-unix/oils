@@ -25,6 +25,7 @@ from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import consts
+from frontend import lexer
 from frontend import match
 from frontend import reader
 from mycpp import mylib
@@ -39,7 +40,6 @@ from typing import Dict, List, TYPE_CHECKING, cast
 if TYPE_CHECKING:
   from core import ui
   from core.state import Mem
-  from frontend.lexer import Lexer
   from frontend import parse_lib
 
 _ = log
@@ -58,7 +58,7 @@ class _FormatStringParser(object):
   Maybe: bash also supports %(strftime)T
   """
   def __init__(self, lexer):
-    # type: (Lexer) -> None
+    # type: (lexer.Lexer) -> None
     self.lexer = lexer
 
     # uninitialized values
@@ -276,8 +276,9 @@ class Printf(vm._Builtin):
               if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                 break
 
-              # TODO: add span_id from argv
-              tok = Token(id_, runtime.NO_SPID, tok_val)
+              # TODO: preserve location from argv.  You need a source_t for the
+              # line that the tokens point to.
+              tok = lexer.DummyToken(id_, tok_val)
               p = word_compile.EvalCStringToken(tok)
 
               # Unusual behavior: '\c' aborts processing!
