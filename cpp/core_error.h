@@ -6,40 +6,9 @@
 #include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
-namespace runtime {
-extern int NO_SPID;
-}
-
 namespace error {
 
-using syntax_asdl::Token;
-using syntax_asdl::word_part_t;
-using syntax_asdl::word_t;
 namespace loc = syntax_asdl::loc;
-
-// TODO: Should take a required location, and be translated from Python
-class Usage {
- public:
-  Usage(Str* msg, int span_id)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Usage)),
-        msg(msg),
-        span_id(span_id) {
-  }
-
-  Usage(Str* msg)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Usage)),
-        msg(msg),
-        span_id(runtime::NO_SPID) {
-  }
-
-  GC_OBJ(header_);
-  Str* msg;
-  int span_id;
-
-  static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(Usage, msg));
-  }
-};
 
 // This definition is different in Python than C++.  Not worth auto-translating.
 class _ErrorWithLocation {
@@ -131,11 +100,6 @@ class Expr : public FatalRuntime {
   Expr(Str* user_str, syntax_asdl::loc_t* location)
       : FatalRuntime(3, user_str, location) {
   }
-#if 0
-  Expr(Str* user_str, Token* token)
-      : _ErrorWithLocation(user_str, token) {
-  }
-#endif
 };
 
 // Stub

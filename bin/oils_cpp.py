@@ -187,20 +187,27 @@ def main(argv):
 
   try:
     return AppBundleMain(argv)
+
   except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
     log('oil: %s', e.msg)
     return 2
+
   except RuntimeError as e:
     if 0:
       import traceback
       traceback.print_exc()
-    # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
-    log('FATAL: %r', e)
+
+    # Oil code shouldn't throw RuntimeError, but the Python interpreter can,
+    # e.g. on stack overflow (or MemoryError).
+    log('FATAL RuntimeError: %s', e.message)
+
     return 1
+
   except KeyboardInterrupt:
     print('')
     return 130  # 128 + 2
+
   except (IOError, OSError) as e:
     if 0:
       import traceback

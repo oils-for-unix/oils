@@ -196,7 +196,10 @@ Str* strftime(Str* s, time_t ts) {
     // bash silently truncates on large format string like
     //   printf '%(%Y)T'
     // Oil doesn't mask errors
-    // No error location info, but leaving it out points reliably to 'printf'
+    // Leaving out location info points to 'printf' builtin
+
+    // throw Alloc<RuntimeError>(StrFromC("strftime() result exceeds 1024 bytes"));
+
     e_die(StrFromC("strftime() result exceeds 1024 bytes"));
   }
   result->MaybeShrink(n);

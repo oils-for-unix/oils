@@ -14,21 +14,19 @@ if TYPE_CHECKING:
 #from asdl import runtime
 NO_SPID = -1
 
+class Usage(Exception):
+  """For flag parsing errors in builtins and main()
+  
+  Called by e_usage().  TODO: Should settle on a single interface that can be
+  translated.  Sometimes we use 'raise error.Usage()'
+  """
+  def __init__(self, msg, span_id=NO_SPID):
+    # type: (str, int) -> None
+    self.msg = msg
+    self.span_id = span_id
+
 
 if mylib.PYTHON:
-
-  class Usage(Exception):
-    """For flag parsing errors in builtins and main()
-    
-    Called by e_usage().  TODO: Should settle on a single interface that can be
-    translated.  Sometimes we use 'raise error.Usage()'
-    """
-    def __init__(self, msg, span_id=NO_SPID):
-      # type: (str, int) -> None
-      self.msg = msg
-      self.span_id = span_id
-
-
   class _ErrorWithLocation(Exception):
     """A parse error that can be formatted.
 
@@ -66,8 +64,6 @@ if mylib.PYTHON:
       return repr(self)
 
 
-# Need a better constructor
-if mylib.PYTHON:
   class Runtime(Exception):
     """An error that's meant to be caught, i.e. it's non-fatal.
     

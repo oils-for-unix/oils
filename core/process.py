@@ -31,7 +31,7 @@ from core import pyos
 from core import state
 from core import ui
 from core import util
-from core.pyerror import log
+from core.pyerror import log, e_die
 from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
@@ -888,7 +888,7 @@ class Process(Job):
     pid = posix.fork()
     if pid < 0:
       # When does this happen?
-      raise RuntimeError('Fatal error in posix.fork()')
+      e_die('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
       # Note: this happens in BOTH interactive and non-interactive shells.

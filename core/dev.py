@@ -89,7 +89,7 @@ class CrashDumper(object):
 
     Args:
       cmd_ev: CommandEvaluator instance
-      error: _ErrorWithLocation (ParseError or FatalRuntimeError)
+      error: _ErrorWithLocation (ParseError or error.FatalRuntime)
     """
     if not self.do_collect:  # Either we already did it, or there is no file
       return
