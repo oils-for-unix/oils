@@ -51,6 +51,7 @@ def MakeBuiltinArgv(argv):
 
 
 def Tok(id_, val):
+  """like lexer.DummyToken"""
   return Token(id_, -1, -1, -1, runtime.NO_SPID, val)
 
 

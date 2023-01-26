@@ -23,15 +23,15 @@ if TYPE_CHECKING:
   from frontend.reader import _Reader
 
 
-# Special immutable tokens
+# Special immutable token
 _EOL_TOK = Token(Id.Eol_Tok, -1, -1, -1, runtime.NO_SPID, None)
 
 
 def DummyToken(id_, val):
   # type: (int, str) -> Token
-  line_id = -1
   col = -1
   length = -1
+  line_id = -1
   return Token(id_, col, length, line_id, runtime.NO_SPID, val)
 
 
