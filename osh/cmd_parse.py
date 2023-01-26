@@ -146,7 +146,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
   tokens = []  # type: List[Token]
   for line_id, line, start_offset in here_lines:
     t = arena.NewToken(
-        Id.Lit_Chars, line_id, start_offset, len(line), line[start_offset:])
+        Id.Lit_Chars, start_offset, len(line), line_id, line[start_offset:])
     tokens.append(t)
   parts = [cast(word_part_t, t) for t in tokens]
   return parts
@@ -179,7 +179,7 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
   # Create a span with the end terminator.  Maintains the invariant that
   # the spans "add up".
   h.here_end_span_id = arena.NewTokenId(
-      Id.Undefined_Tok, end_line_id, end_pos, len(end_line), '')
+      Id.Undefined_Tok, end_pos, len(end_line), end_line_id, '')
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):

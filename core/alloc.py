@@ -146,7 +146,7 @@ class Arena(object):
     # type: (int) -> source_t
     return self.line_srcs[line_id]
 
-  def NewTokenId(self, id_, line_id, col, length, tok_val):
+  def NewTokenId(self, id_, col, length, line_id, tok_val):
     # type: (int, int, int, int, str) -> int
     """Save a line_span and return a new span ID for later retrieval."""
     span_id = len(self.tokens)  # spids are just array indices
@@ -154,9 +154,9 @@ class Arena(object):
     self.tokens.append(tok)
     return span_id
 
-  def NewToken(self, id_, line_id, col, length, tok_val):
+  def NewToken(self, id_, col, length, line_id, tok_val):
     # type: (int, int, int, int, str) -> Token
-    span_id = self.NewTokenId(id_, line_id, col, length, tok_val)
+    span_id = self.NewTokenId(id_, col, length, line_id, tok_val)
     return self.tokens[span_id]
 
   def GetLineSpan(self, span_id):

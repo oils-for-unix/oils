@@ -80,7 +80,7 @@ class LineLexer(object):
     else:
       line_id = self.line_id
 
-    return self.arena.NewToken(id_, line_id, self.line_pos, 0, '')
+    return self.arena.NewToken(id_, self.line_pos, 0, line_id, '')
 
   def LookAheadOne(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
@@ -209,7 +209,8 @@ class LineLexer(object):
       self.arena_skip = False
     else:
       tok_len = end_pos - line_pos
-      span_id = self.arena.NewTokenId(tok_type, self.line_id, line_pos, tok_len, tok_val)
+      span_id = self.arena.NewTokenId(
+          tok_type, line_pos, tok_len, self.line_id, tok_val)
       self.last_span_id = span_id
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
