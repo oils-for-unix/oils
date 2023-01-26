@@ -32,7 +32,7 @@ def DummyToken(id_, val):
   line_id = -1
   col = -1
   length = -1
-  return Token(id_, line_id, col, length, runtime.NO_SPID, val)
+  return Token(id_, col, length, line_id, runtime.NO_SPID, val)
 
 
 class LineLexer(object):
@@ -80,7 +80,7 @@ class LineLexer(object):
     else:
       line_id = self.line_id
 
-    return self.arena.NewToken(id_, self.line_pos, 0, line_id, '')
+    return self.arena.NewToken(id_, line_id, self.line_pos, 0, '')
 
   def LookAheadOne(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
