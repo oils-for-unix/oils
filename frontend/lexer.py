@@ -24,7 +24,15 @@ if TYPE_CHECKING:
 
 
 # Special immutable tokens
-_EOL_TOK = Token(Id.Eol_Tok, runtime.NO_SPID, None)
+_EOL_TOK = Token(Id.Eol_Tok, -1, -1, -1, runtime.NO_SPID, None)
+
+
+def DummyToken(id_, val):
+  # type: (int, str) -> Token
+  line_id = -1
+  col = -1
+  length = -1
+  return Token(id_, line_id, col, length, runtime.NO_SPID, val)
 
 
 class LineLexer(object):

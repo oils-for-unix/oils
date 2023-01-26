@@ -21,6 +21,7 @@ from core import pyos
 from core import ui
 from core import vm
 from frontend import consts
+from frontend import lexer
 from frontend import location
 
 import posix_ as posix
@@ -353,7 +354,7 @@ class ShellExecutor(vm._Executor):
         # change it to __cat < file
         # note: cmd_eval.py _Dispatch works around lack of spid
         # TODO: change to 'internal cat' (issue 1013)
-        tok = Token(Id.Lit_Chars, runtime.NO_SPID, '__cat')
+        tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
         cat_word = compound_word([tok])
         # MUTATE the command.Simple node.  This will only be done the first
         # time in the parent process.
