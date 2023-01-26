@@ -13,6 +13,7 @@ from __future__ import print_function
 import collections
 import sys
 
+from asdl import gen_cpp
 from core.pyerror import log
 from frontend import id_kind_def
 from frontend import builtin_def
@@ -206,8 +207,6 @@ def main(argv):
       print('#define id__%s %s' % (name, id_int))
 
   elif action == 'cpp':
-    from asdl import gen_cpp
-
     schema_ast = _CreateModule(ID_SPEC, ids)
 
     out_prefix = argv[2]
@@ -218,6 +217,8 @@ def main(argv):
 #define ID_KIND_ASDL_H
 
 namespace id_kind_asdl {
+
+#define ASDL_NAMES struct
 """)
 
       v = gen_cpp.ClassDefVisitor(f, e_suffix=False,
@@ -335,7 +336,7 @@ Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_
       out("""\
 #include "_gen/frontend/consts.h"
 
-namespace Id = id_kind_asdl::Id;
+using id_kind_asdl::Id;
 using id_kind_asdl::Kind;
 using types_asdl::redir_arg_type_e;
 using types_asdl::bool_arg_type_e;

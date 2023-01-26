@@ -3,7 +3,7 @@
 #include "_gen/frontend/id_kind.asdl_c.h"
 #include "vendor/greatest.h"
 
-namespace Id = id_kind_asdl::Id;
+using id_kind_asdl::Id;
 
 TEST lexer_test() {
   // Need lex_mode_e

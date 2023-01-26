@@ -2429,95 +2429,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if last_dotted == 'gen':
               return
 
-            # Does the thing we're importing correspond to a C++ namespace
-            # (namespace alias) or type (using)?  In ASDL:
-            #
-            # namespaces:
-            #   expr_e::Const   # Compound sum
-            #   expr::Const
-            #   Id
-            #
-            # types:
-            #   expr__Const
-            #   expr_t   # sum type
-            #   double_quoted
-
-            is_namespace = False
-
-            if last_dotted.endswith('_asdl'):
-              if name.endswith('_n') or name.endswith('_i') or name in (
-                'Id', 'hnode_e', 'source_e', 'place_e',
-
-                # syntax_asdl
-                'bracket_op', 'bracket_op_e',
-                'source', 'source_e',
-                'loc', 'loc_e',
-                'suffix_op', 'suffix_op_e',
-
-                'sh_lhs_expr', 'parse_result',
-
-                'command_e', 'command', 
-                'condition_e', 'condition', 
-                'for_iter_e', 'for_iter', 
-                'arith_expr_e', 'arith_expr',
-                'bool_expr_e', 'bool_expr',
-                'expr_e', 'expr',
-                'place_expr_e', 'place_expr', 
-                'word_part_e', 'word_part', 
-                'word_e', 'word',
-                'redir_loc_e', 'redir_loc',
-                'redir_param_e', 'redir_param',
-                'proc_sig_e', 'proc_sig',
-
-                'glob_part_e', 'glob_part',
-
-                're_e', 're',
-                're_repeat_e', 're_repeat',
-                'class_literal_term_e', 'class_literal_term',
-                'char_class_term_e', 'char_class_term',
-
-                'sh_lhs_expr_e', 'sh_lhs_expr',
-                'variant_type',
-
-                # runtime_asdl
-                'flag_type_e', 'flag_type',
-                'lvalue_e', 'lvalue',
-                'value_e', 'value',
-                'part_value_e', 'part_value',
-                'cmd_value_e', 'cmd_value',
-                'redirect_arg_e', 'redirect_arg',
-                'a_index_e', 'a_index',
-                'parse_result_e',
-                'printf_part_e', 'printf_part',
-                'wait_status', 'wait_status_e',
-                'trace', 'trace_e',
-                ):
-                is_namespace = True
-
-            if is_namespace:
-              # No aliases yet?
-
-              # Note: this could also be decl_write_ind, but 
-              self.write_ind(
-                  'namespace %s = %s::%s;\n', name, last_dotted, name)
+            if alias:
+              # using runtime_asdl::emit_e = EMIT;
+              self.write_ind('using %s = %s::%s;\n', alias, last_dotted, name)
             else:
-              if alias:
-                # using runtime_asdl::emit_e = EMIT;
-                self.write_ind('using %s = %s::%s;\n', alias, last_dotted, name)
-              else:
-                #   from _devbuild.gen.id_kind_asdl import Id
-                # -> using id_kind_asdl::Id.
+              #    from _devbuild.gen.id_kind_asdl import Id
+              # -> using id_kind_asdl::Id.
 
-                using_str = 'using %s::%s;\n' % (last_dotted, name)
-                self.write_ind(using_str)
+              using_str = 'using %s::%s;\n' % (last_dotted, name)
+              self.write_ind(using_str)
 
-                # Hack for default args.  Without this limitation, we write
-                # 'using' of names that aren't declared yet.
-                if self.decl and name in ('scope_e', 'lex_mode_e'):
-                  self.f.write(using_str)
+              # Fully qualified:
+              # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
 
-                # Fully qualified:
-                # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
+              # Hack for default args.  Without this limitation, we write
+              # 'using' of names that aren't declared yet.
+              if self.decl and name in ('scope_e', 'lex_mode_e'):
+                self.f.write(using_str)
+
           else:
             # If we're importing a module without an alias, we don't need to do
             # anything.  'namespace cmd_eval' is already defined.

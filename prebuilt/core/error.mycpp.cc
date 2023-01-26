@@ -74,7 +74,7 @@ _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location)
 }
 
 bool _ErrorWithLocation::HasLocation() {
-  namespace loc_e = syntax_asdl::loc_e;
+  using syntax_asdl::loc_e;
   if (this->location) {
     return this->location->tag_() != loc_e::Missing;
   }

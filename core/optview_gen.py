@@ -28,7 +28,7 @@ def main(argv):
 
 namespace optview {
 
-namespace option_i = option_asdl::option_i;
+using option_asdl::option_i;
 
 class _View {
  public:

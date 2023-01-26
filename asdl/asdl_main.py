@@ -131,6 +131,9 @@ using id_kind_asdl::Id_t;
       f.write("""\
 namespace %s {
 
+// use struct instead of namespace so 'using' works consistently
+#define ASDL_NAMES struct
+
 """ % ns)
 
       v = gen_cpp.ForwardDeclareVisitor(f)

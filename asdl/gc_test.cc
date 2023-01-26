@@ -10,8 +10,8 @@ using hnode_asdl::color_e;
 using hnode_asdl::hnode__Array;
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode__Record;
+using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
-namespace hnode_e = hnode_asdl::hnode_e;
 
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::word;

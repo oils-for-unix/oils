@@ -63,6 +63,8 @@ def main(argv):
 #define OPTION_ASDL_H
 
 namespace option_asdl {
+
+#define ASDL_NAMES struct
 """)
 
       # Don't need option_str()

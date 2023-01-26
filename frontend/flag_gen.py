@@ -179,7 +179,7 @@ def Cpp(specs, header_f, cc_f):
 #include "cpp/frontend_flag_spec.h"  // for FlagSpec_c
 #include "mycpp/gc_mylib.h"
 
-namespace value_e = runtime_asdl::value_e;
+using runtime_asdl::value_e;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Int;
 using runtime_asdl::value__Float;

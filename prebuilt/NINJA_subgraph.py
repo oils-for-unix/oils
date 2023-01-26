@@ -29,6 +29,7 @@ def NinjaGraph(ru):
       srcs = ['prebuilt/core/error.mycpp.cc'],
       deps = [
         '//asdl/hnode.asdl',
+        '//frontend/syntax.asdl',
         # Should //cpp/qsn exist?
         ])
 
@@ -37,5 +38,8 @@ def NinjaGraph(ru):
       srcs = ['prebuilt/frontend/args.mycpp.cc'],
       deps = [
         '//asdl/hnode.asdl',
+        '//core/runtime.asdl',
+        '//frontend/syntax.asdl',
+        '//cpp/frontend_flag_spec',
         # Should //cpp/qsn exist?
         ])

@@ -10,17 +10,15 @@
 // To avoid circular dependency with e_die()
 #include "prebuilt/core/error.mycpp.h"
 
+using id_kind_asdl::Id;  // used below
 using pyerror::e_die;
-
-namespace loc = syntax_asdl::loc;
+using syntax_asdl::loc;
 
 namespace arith_parse {
 
 tdop::ParserSpec kArithSpec;
 
 }  // namespace arith_parse
-
-namespace Id = id_kind_asdl::Id;  // used below
 
 namespace bool_stat {
 

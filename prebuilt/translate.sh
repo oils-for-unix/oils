@@ -83,6 +83,20 @@ asdl-runtime() {
     "${ASDL_FILES[@]}"
 }
 
+core-error() {
+  # Depends on frontend/syntax_asdl
+
+  mkdir -p prebuilt/core $TEMP_DIR/core
+  oil-part \
+    prebuilt/core/error.mycpp \
+    $TEMP_DIR/core/error.mycpp.h \
+    CORE_ERROR_MYCPP_H \
+    '#include "_gen/frontend/syntax.asdl.h"' \
+    --to-header core.error \
+    --to-header core.pyerror \
+    core/error.py core/pyerror.py 
+}
+
 frontend-args() {
   # Depends on core/runtime_asdl
 
@@ -102,20 +116,6 @@ frontend-args() {
     "${ASDL_FILES[@]}" \
     core/error.py core/pyerror.py \
     frontend/args.py
-}
-
-core-error() {
-  # Depends on frontend/syntax_asdl
-
-  mkdir -p prebuilt/core $TEMP_DIR/core
-  oil-part \
-    prebuilt/core/error.mycpp \
-    $TEMP_DIR/core/error.mycpp.h \
-    CORE_ERROR_MYCPP_H \
-    '#include "_gen/frontend/syntax.asdl.h"' \
-    --to-header core.error \
-    --to-header core.pyerror \
-    core/error.py core/pyerror.py 
 }
 
 "$@"

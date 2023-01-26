@@ -11,6 +11,8 @@
 
 namespace match {
 
+using id_kind_asdl::Id;
+
 Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   int id;
   int end_pos;
@@ -36,8 +38,6 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
   pos_ = end_pos;
   return Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);
 }
-
-namespace Id = id_kind_asdl::Id;
 
 List<Tuple2<Id_t, Str*>*>* SimpleLexer::Tokens() {
   auto tokens = NewList<Tuple2<Id_t, Str*>*>();

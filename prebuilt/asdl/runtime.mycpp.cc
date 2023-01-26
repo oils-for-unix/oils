@@ -196,7 +196,7 @@ Str* FALSE_STR = str4;
 
 namespace format {  // define
 
-namespace hnode_e = hnode_asdl::hnode_e;
+using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Array;

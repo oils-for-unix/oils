@@ -39,17 +39,17 @@ class Foo(object):
 def run_tests():
   # type: () -> None
 
-  #f(1)
-  f(1, True)
-  f(2, b = True)
+  f(5)
+  f(6, True)
+  f(7, b = True)
 
   g(99, s = 'foo')
 
-  #f1 = Foo(1)
-  f2 = Foo(1, 43)
-  f3 = Foo(1, y = 44)
+  f1 = Foo(8)
+  f2 = Foo(9, 43)
+  f3 = Foo(0, y = 44)
 
-  #f1.Print()
+  f1.Print()
   f2.Print()
   f3.Print()
 

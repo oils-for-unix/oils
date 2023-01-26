@@ -9,7 +9,7 @@
 
 using typed_arith_asdl::pipeline;
 
-namespace arith_expr_e = typed_arith_asdl::arith_expr_e;
+using typed_arith_asdl::arith_expr_e;
 using typed_arith_asdl::arith_expr_t;
 
 using typed_arith_asdl::arith_expr__Const;
@@ -22,7 +22,7 @@ using typed_demo_asdl::bool_expr__LogicalBinary;
 using typed_demo_asdl::op_id_e;
 
 using hnode_asdl::hnode__Leaf;
-namespace hnode_e = hnode_asdl::hnode_e;
+using hnode_asdl::hnode_e;
 
 void PrintTag(arith_expr_t* a) {
   switch (a->tag_()) {
@@ -144,8 +144,8 @@ TEST maps_test() {
   PASS();
 }
 
+using typed_demo_asdl::flag_type;
 using typed_demo_asdl::SetToArg_;
-namespace flag_type = typed_demo_asdl::flag_type;
 
 // TODO: We should always use these, rather than 'new flag_type::Bool()'
 flag_type::Bool g_ft = {};

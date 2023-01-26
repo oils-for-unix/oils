@@ -366,7 +366,7 @@ Str* FALSE_STR = str4;
 
 namespace format {  // define
 
-namespace hnode_e = hnode_asdl::hnode_e;
+using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Array;
@@ -1328,7 +1328,7 @@ _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location)
 }
 
 bool _ErrorWithLocation::HasLocation() {
-  namespace loc_e = syntax_asdl::loc_e;
+  using syntax_asdl::loc_e;
   if (this->location) {
     return this->location->tag_() != loc_e::Missing;
   }
@@ -1417,8 +1417,8 @@ int NO_SPID = -1;
 
 namespace args {  // define
 
-namespace value = runtime_asdl::value;
-namespace value_e = runtime_asdl::value_e;
+using runtime_asdl::value;
+using runtime_asdl::value_e;
 using runtime_asdl::value_t;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Int;
