@@ -16,7 +16,7 @@ def _InitMem():
   # empty environment, no arena.
   arena = test_lib.MakeArena('<state_test.py>')
   line_id = arena.AddLine(1, 'foo')
-  unused = arena.AddLineSpan(line_id, 0, 1)  # dummy
+  arena.NewToken(-1, line_id, 0, 1, '')  # dummy
   mem = state.Mem('', [], arena, [])
 
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)

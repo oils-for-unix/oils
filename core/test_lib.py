@@ -51,7 +51,7 @@ def MakeBuiltinArgv(argv):
 
 
 def Tok(id_, val):
-  return Token(id_, runtime.NO_SPID, val)
+  return Token(id_, -1, -1, -1, runtime.NO_SPID, val)
 
 
 def PrintableString(s):
