@@ -276,8 +276,8 @@ class Printf(vm._Builtin):
               if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                 break
 
-              # TODO: preserve location from argv.  You need a source_t for the
-              # line that the tokens point to.
+              # Note: DummyToken is OK because EvalCStringToken() doesn't have
+              # any syntax errors.
               tok = lexer.DummyToken(id_, tok_val)
               p = word_compile.EvalCStringToken(tok)
 

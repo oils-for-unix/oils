@@ -36,6 +36,7 @@ from core import vm
 from frontend import args
 from frontend import consts
 from frontend import flag_spec
+from frontend import lexer
 from frontend import match
 from frontend import typed_args
 from qsn_ import qsn
@@ -507,7 +508,7 @@ class Echo(vm._Builtin):
     argv = arg_r.Rest()
 
     backslash_c = False  # \c terminates input
-    arg0_spid = cmd_val.arg_spids[0]
+    #arg0_spid = cmd_val.arg_spids[0]
 
     if arg.e:
       new_argv = []  # type: List[str]
@@ -519,7 +520,9 @@ class Echo(vm._Builtin):
           if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
             break
 
-          tok = Token(id_, arg0_spid, value)
+          # Note: DummyToken is OK because EvalCStringToken() doesn't have any
+          # syntax errors.
+          tok = lexer.DummyToken(id_, value)
           p = word_compile.EvalCStringToken(tok)
 
           # Unusual behavior: '\c' prints what is there and aborts processing!
