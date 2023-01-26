@@ -2400,10 +2400,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if name == 'stderr_line':  # TODO: remove this
             continue
 
-          # TODO: Remove special cases by translating these functions
-          if name in ('e_die',):
-            continue
-
           if o.id == 'mycpp.mylib':
             # These mylib functions are translated in a special way
             if name in ('switch', 'tagswitch', 'iteritems', 'NewDict'):
@@ -2414,7 +2410,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # A heuristic that works for the Oil import style.
           if '.' in o.id:
-            # from core.pyerror import log => using core::pyerror::log
+            # from core.pyerror import log => using pyerror::log
             translate_import = True
           else:
             # from core import util => NOT translated

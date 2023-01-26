@@ -1,7 +1,8 @@
 #include "cpp/osh.h"
 
-#include "cpp/core_error.h"
 #include "mycpp/runtime.h"
+// To avoid circular dependency with error.FatalRuntime
+#include "prebuilt/core/error.mycpp.h"
 #include "vendor/greatest.h"
 
 TEST bool_stat_test() {

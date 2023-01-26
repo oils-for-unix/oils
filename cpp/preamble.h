@@ -15,8 +15,6 @@
 #include "_gen/frontend/types.asdl.h"
 #include "_gen/oil_lang/grammar_nt.h"
 #include "cpp/core.h"
-#include "cpp/core_error.h"
-#include "cpp/core_pyerror.h"
 #include "cpp/fanos.h"
 #include "cpp/frontend_flag_spec.h"
 #include "cpp/frontend_match.h"

@@ -94,6 +94,9 @@ def NinjaGraph(ru):
         '//core/runtime.asdl',
         '//frontend/arg_types',  # generated code
         '//mycpp/runtime',
+        # prebuilt, generated code.  Doesn't compile because of
+        # core/runtime_asdl dependency.
+        # '//prebuilt/frontend/args.mycpp',
       ],
   )
 
@@ -137,7 +140,10 @@ def NinjaGraph(ru):
 
   ru.cc_binary(
       'cpp/osh_test.cc', 
-      deps = ['//cpp/osh'],
+      deps = [
+        '//cpp/osh',
+        '//prebuilt/core/error.mycpp',  # prebuilt e_die()
+        ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
@@ -162,14 +168,14 @@ def NinjaGraph(ru):
       '//cpp/stdlib', 
       srcs = ['cpp/stdlib.cc'],
       deps = [
-        '//cpp/core',  # e_die()
-        '//mycpp/runtime'
+        '//mycpp/runtime',
         ])
 
   ru.cc_binary(
       'cpp/stdlib_test.cc',
       deps = [
         '//cpp/stdlib',
+        '//prebuilt/core/error.mycpp',  # prebuilt e_die()
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
 

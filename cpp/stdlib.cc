@@ -13,9 +13,11 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "cpp/core_error.h"
-#include "cpp/core_pyerror.h"  // e_die for strftime
 #include "mycpp/runtime.h"
+// To avoid circular dependency with e_die()
+#include "prebuilt/core/error.mycpp.h"
+
+using pyerror::e_die;
 
 namespace fcntl_ {
 
@@ -197,8 +199,6 @@ Str* strftime(Str* s, time_t ts) {
     //   printf '%(%Y)T'
     // Oil doesn't mask errors
     // Leaving out location info points to 'printf' builtin
-
-    // throw Alloc<RuntimeError>(StrFromC("strftime() result exceeds 1024 bytes"));
 
     e_die(StrFromC("strftime() result exceeds 1024 bytes"));
   }

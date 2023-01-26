@@ -7,7 +7,6 @@
 #include <sys/utsname.h>  // uname
 #include <unistd.h>       // getpid(), getuid(), environ
 
-#include "cpp/core_error.h"
 #include "cpp/stdlib.h"         // posix::getcwd
 #include "mycpp/gc_builtins.h"  // IOError_OSError
 #include "vendor/greatest.h"

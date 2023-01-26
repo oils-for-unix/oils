@@ -6,6 +6,7 @@
 #include "_gen/asdl/hnode.asdl.h"
 #include "cpp/qsn.h"
 #include "mycpp/runtime.h"
+#include "_gen/core/runtime.asdl.h"
 namespace runtime {  // forward declare
 
 
