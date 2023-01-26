@@ -23,16 +23,13 @@ TEST for_test_coverage() {
 TEST exceptions_test() {
   bool caught = false;
   try {
-    throw Alloc<error::Usage>(StrFromC("msg"), 42);
-  } catch (error::Usage* e) {
+    throw Alloc<pyos::ReadError>(0);
+  } catch (pyos::ReadError* e) {
     log("e %p", e);
     caught = true;
   }
 
   ASSERT(caught);
-
-  auto read_error = Alloc<pyos::ReadError>(0);
-  (void)read_error;
 
   PASS();
 }

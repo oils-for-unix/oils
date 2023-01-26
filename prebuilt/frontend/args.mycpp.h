@@ -157,7 +157,7 @@ class _Attributes {
 
 class Reader {
  public:
-  Reader(List<Str*>* argv, List<int>* spids);
+  Reader(List<Str*>* argv, List<int>* spids = nullptr);
   void Next();
   Str* Peek();
   Tuple2<Str*, int> Peek2();
@@ -190,7 +190,7 @@ class _Action {
 
 class _ArgAction : public _Action {
  public:
-  _ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid);
+  _ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
@@ -224,7 +224,7 @@ class SetToFloat : public _ArgAction {
 
 class SetToString : public _ArgAction {
  public:
-  SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid);
+  SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
 
   DISALLOW_COPY_AND_ASSIGN(SetToString)
@@ -274,7 +274,7 @@ class SetOption : public _Action {
 
 class SetNamedOption : public _Action {
  public:
-  SetNamedOption(bool shopt);
+  SetNamedOption(bool shopt = false);
   void ArgName(Str* name);
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 

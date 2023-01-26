@@ -195,11 +195,9 @@ extern int BIT8_U_ESCAPE;
 extern int BIT8_X_ESCAPE;
 extern int MUST_QUOTE;
 bool _encode(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts);
-Str* maybe_shell_encode(Str* s);
-Str* maybe_shell_encode(Str* s, int flags);
-Str* maybe_encode(Str* s);
-Str* maybe_encode(Str* s, int bit8_display);
-Str* encode(Str* s, int bit8_display);
+Str* maybe_shell_encode(Str* s, int flags = 0);
+Str* maybe_encode(Str* s, int bit8_display = BIT8_UTF8);
+Str* encode(Str* s, int bit8_display = BIT8_UTF8);
 void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts);
 extern int Ascii;
 extern int Begin2;
@@ -819,10 +817,6 @@ bool _encode(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts) {
   }
 }
 
-Str* maybe_shell_encode(Str* s) {
-  return maybe_shell_encode(s, 0);
-}
-
 Str* maybe_shell_encode(Str* s, int flags) {
   int quote;
   int must_quote;
@@ -865,10 +859,6 @@ Str* maybe_shell_encode(Str* s, int flags) {
   }
   parts->append(str56);
   return str_concat(prefix, str57->join(parts));
-}
-
-Str* maybe_encode(Str* s) {
-  return maybe_encode(s, BIT8_UTF8);
 }
 
 Str* maybe_encode(Str* s, int bit8_display) {
@@ -1213,6 +1203,7 @@ using runtime_asdl::value__Bool;
 using runtime_asdl::value__Int;
 using runtime_asdl::value__Float;
 using runtime_asdl::value__Str;
+using pyerror::e_usage;
 int String = 1;
 int Int = 2;
 int Float = 3;
