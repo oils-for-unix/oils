@@ -20,6 +20,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core.pyerror import log
 from frontend import consts
+from frontend import lexer
 from mycpp.mylib import tagswitch, StrFromC
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
@@ -753,7 +754,7 @@ def SpanForLhsExpr(node):
 # Doesn't translate with mycpp because of dynamic %
 def ErrorWord(error_str):
   # type: (str) -> compound_word
-  t = Token(Id.Lit_Chars, runtime.NO_SPID, error_str)
+  t = lexer.DummyToken(Id.Lit_Chars, error_str)
   return compound_word([t])
 
 
