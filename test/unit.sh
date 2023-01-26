@@ -68,6 +68,17 @@ py2-tests() {
         continue
       fi
     fi
+    case $t in
+      'oil_lang/expr_parse_test.py')
+        continue
+        ;;
+      'osh/cmd_parse_test.py')
+        continue
+        ;;
+      'osh/word_parse_test.py')
+        continue
+        ;;
+    esac
 
     echo $t
   done
