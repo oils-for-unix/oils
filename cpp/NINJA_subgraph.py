@@ -91,7 +91,10 @@ def NinjaGraph(ru):
         'cpp/frontend_flag_spec.cc',
       ],
       deps = [
+        # Dependencies of //prebuilt/frontend/args.mycpp
         '//core/runtime.asdl',
+        '//frontend/syntax.asdl',
+
         '//frontend/arg_types',  # generated code
         '//mycpp/runtime',
       ],
@@ -170,6 +173,10 @@ def NinjaGraph(ru):
       srcs = ['cpp/stdlib.cc'],
       deps = [
         '//mycpp/runtime',
+        # Annoying: because of the circular dep issue, we need to repeat
+        # dependencies of //prebuilt/core/error.mycpp.  We don't want to depend
+        # on it directly because we'd get duplicate symbols during linking.
+        '//frontend/syntax.asdl',
         ])
 
   ru.cc_binary(
