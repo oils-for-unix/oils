@@ -24,18 +24,16 @@ if TYPE_CHECKING:
 
 
 # Special immutable token
-_EOL_TOK = Token(Id.Eol_Tok, runtime.NO_SPID, None)
+_EOL_TOK = Token(Id.Eol_Tok, -1, -1, -1, runtime.NO_SPID, None)
 
 
 def DummyToken(id_, val):
   # type: (int, str) -> Token
 
-  # col = -1
-  # length = -1
-  # line_id = -1
-  # return Token(id_, col, length, line_id, runtime.NO_SPID, val)
-
-  return Token(id_, runtime.NO_SPID, val)
+  col = -1
+  length = -1
+  line_id = -1
+  return Token(id_, col, length, line_id, runtime.NO_SPID, val)
 
 
 class LineLexer(object):
@@ -208,12 +206,11 @@ class LineLexer(object):
       self.arena.spans.pop()
       self.replace_last_token = False
 
-    tok_len = end_pos - line_pos
-    span_id = self.arena.AddLineSpan(self.line_id, line_pos, tok_len)
-
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
-    t = Token(tok_type, span_id, tok_val)
+    tok_len = end_pos - line_pos
+    t = self.arena.NewToken(tok_type, line_pos, tok_len, self.line_id, tok_val)
+
     self.line_pos = end_pos
     return t
 
@@ -303,8 +300,7 @@ class Lexer(object):
           self.emit_comp_dummy = False  # emit EOF the next time
         else:
           id_ = Id.Eof_Real
-        t = self.line_lexer.GetEofToken(id_)
-        return t
+        return self.line_lexer.GetEofToken(id_)
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
       t = self.line_lexer.Read(lex_mode)

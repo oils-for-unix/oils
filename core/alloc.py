@@ -11,7 +11,7 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import line_span, source_t, loc_t, Token
+from _devbuild.gen.syntax_asdl import source_t, loc_t, Token
 from asdl import runtime
 from core.pyerror import log
 from frontend import location
@@ -54,7 +54,7 @@ class Arena(object):
     self.line_num_strs = {}  # type: Dict[int, str]  # an INTERN table
 
     # indexed by span_id
-    self.spans = []  # type: List[line_span]
+    self.spans = []  # type: List[Token]
 
     # reuse these instances in many line_span instances
     self.source_instances = []  # type: List[source_t]
@@ -146,34 +146,27 @@ class Arena(object):
     # type: (int) -> source_t
     return self.line_srcs[line_id]
 
-  def AddLineSpan(self, line_id, col, length):
-    # type: (int, int, int) -> int
-    """Save a line_span and return a new span ID for later retrieval."""
-    span_id = len(self.spans)  # spids are just array indices
-    span = line_span(line_id, col, length)
-    self.spans.append(span)
-    return span_id
-
   def NewTokenId(self, id_, col, length, line_id, val):
     # type: (int, int, int, int, str) -> int
-    span_id = self.AddLineSpan(line_id, col, length)
-    unused = Token(id_, span_id, val)
+    span_id = len(self.spans)  # spids are just array indices
+    tok = Token(id_, col, length, line_id, span_id, val)
+    self.spans.append(tok)
     return span_id
 
   def NewToken(self, id_, col, length, line_id, val):
     # type: (int, int, int, int, str) -> Token
-    span_id = self.AddLineSpan(line_id, col, length)
-    return Token(id_, span_id, val)
+    span_id = self.NewTokenId(id_, col, length, line_id, val)
+    return self.spans[span_id]
 
   def GetLineSpan(self, span_id):
-    # type: (int) -> line_span
+    # type: (int) -> Token
     assert span_id != runtime.NO_SPID, span_id
     assert span_id < len(self.spans), \
       'Span ID out of range: %d is greater than %d' % (span_id, len(self.spans))
     return self.spans[span_id]
 
   def LineSpanFromLocation(self, loc_):
-    # type: (loc_t) -> line_span
+    # type: (loc_t) -> Token
     span_id = location.GetSpanId(loc_)
     return self.GetLineSpan(span_id)
 

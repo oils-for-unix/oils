@@ -75,16 +75,13 @@ module syntax
 
   -- Logically, here's our record for a physical line.  For compactness, we
   -- TRANSPOSE it into 3 parallel arrays, so this record is UNUSED.
-  -- line_record = (int line_num, string val, source src)
+  -- SourceLine = (int line_num, string val, source src)
 
-  -- A line_span represents the source location of a token, which never crosses
-  -- lines.  Encoded into LST with 'int spid'.
-  line_span = (int line_id, int col, int length)
-
-  -- NOTE: 'val' and 'span_id' fields redundant but useful.  'val' is for
-  -- execution, and 'span_id' is for error messages and translation.
-  -- TODO: new representation that points to a line?
-  Token = (id id, int span_id, string val)
+  -- Token TODO:
+  -- * get rid of redundant span_id
+  -- * function to compute string val on demand
+  -- * maybe re-compute length on demand too
+  Token = (id id, int col, int length, int line_id, int span_id, string val)
 
   -- Source location for errors
   -- It's possible for word_part and word to have a beginning and end location
