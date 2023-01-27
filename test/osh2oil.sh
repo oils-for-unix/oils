@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 #
+# TODO:
+# - Audit all transformations we care about.
+# - Move them to test/ysh-prettify.sh
+#
 # Usage:
-#   test/osh-to-oil-test.sh <function name>
+#   test/osh2oil.sh <function name>
 
 set -o nounset
 set -o pipefail

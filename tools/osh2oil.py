@@ -1,18 +1,54 @@
 from __future__ import print_function
 """
 osh2oil.py: Translate OSH to Oil.
+
+TODO: Turn this into 2 tools.
+
+ysh-prettify: May change the meaning of the code.  Should have a list of
+selectable rules.
+
+Files should already have shopt --set ysh:upgrade at the top
+
+- then/fi, do/done -> braces
+- "$@" -> @ARGV
+- f() { } -> proc f { }  (changes scope)
+- Approximate: var declaration:
+  local a=b -> var a = 'b', I think
+
+Legacy shell that I don't use:
+
+- [ -> test if possible
+- backticks -> $() (I don't use this) 
+- quote removal "$foo" -> $foo
+- brace removal ${foo} and "${foo}" -> $foo
+
+ysh-format:
+
+- fix indentation and spacing, like clang-format
+
 """
 
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import word_style_e
+from _devbuild.gen.runtime_asdl import word_style_e, word_style_t
 from _devbuild.gen.syntax_asdl import (
-    command_e, word_e, word_part_e, sh_lhs_expr_e, condition_e
+    command_e, command__ShAssignment,
+    word_e, word_t, word_part_e, word_part_t,
+    compound_word,
+    bool_expr_t,
+    sh_lhs_expr_e, condition_e,
 )
 from asdl import runtime
 from core.pyerror import log, p_die
 from osh import word_
+from mycpp import mylib
+from mycpp.mylib import print_stderr, tagswitch
+
+from typing import Dict, Any, cast, TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import command_t
+  from core import alloc
 
 
 class Cursor(object):
@@ -21,11 +57,14 @@ class Cursor(object):
   arena.
   """
   def __init__(self, arena, f):
+    # type: (alloc.Arena, mylib.Writer) -> None
     self.arena = arena
     self.f = f
     self.next_span_id = 0
 
   def PrintUntil(self, until_span_id):
+    # type: (int) -> None
+
     # Sometimes we add +1
     if until_span_id == runtime.NO_SPID:
       assert 0, 'Missing span ID, got %d' % until_span_id
@@ -45,6 +84,7 @@ class Cursor(object):
     self.next_span_id = until_span_id
 
   def SkipUntil(self, next_span_id):
+    # type: (int) -> None
     """Skip everything before next_span_id.
     Printing will start at next_span_id
     """
@@ -55,28 +95,31 @@ class Cursor(object):
 
 
 def PrintArena(arena):
+  # type: (alloc.Arena) -> None
   """For testing the invariant that the spans "add up" to the original doc."""
-  cursor = Cursor(arena, sys.stdout)
+  cursor = Cursor(arena, mylib.Stdout())
   cursor.PrintUntil(arena.LastSpanId())
 
 
 def PrintSpans(arena):
+  # type: (alloc.Arena) -> None
   """Just to see spans."""
-  if len(arena.spans) == 1:  # Special case for line_id == -1
+  if len(arena.tokens) == 1:  # Special case for line_id == -1
     print('Empty file with EOF span on invalid line:')
-    print('%s' % arena.spans[0])
+    print('%s' % arena.tokens[0])
     return
 
-  for i, span in enumerate(arena.spans):
+  for i, span in enumerate(arena.tokens):
     line = arena.GetLine(span.line_id)
     piece = line[span.col : span.col + span.length]
     print('%5d %r' % (i, piece))
-  print('(%d spans)' % len(arena.spans), file=sys.stderr)
+  print('(%d tokens)' % len(arena.tokens), file=sys.stderr)
 
 
 def PrintAsOil(arena, node):
-  cursor = Cursor(arena, sys.stdout)
-  fixer = OilPrinter(cursor, arena, sys.stdout)
+  # type: (alloc.Arena, command_t) -> None
+  cursor = Cursor(arena, mylib.Stdout())
+  fixer = OilPrinter(cursor, arena, mylib.Stdout())
   fixer.DoCommand(node, None, at_top_level=True)  # no local symbols yet
   fixer.End()
 
@@ -120,6 +163,7 @@ def PrintAsOil(arena, node):
 # ${x:-default}  ->  @-(x or 'default')
 
 def _GetRhsStyle(w):
+  # type: (word_t) -> word_style_t
   """
   Determine what style an assignment should use. '' or "", or an expression.
 
@@ -162,42 +206,52 @@ def _GetRhsStyle(w):
 
   # Actually splitting NEVER HAPPENS ON ASSIGNMENT.  LEAVE IT OFF.
 
-  if w.tag == word_e.Empty:
-    return word_style_e.SQ
+  UP_w = w
+  with tagswitch(w) as case:
+    if case(word_e.Empty):
+      return word_style_e.SQ
 
-  if len(w.parts) == 0:
-    raise AssertionError(w)
+    elif case(word_e.Compound):
+      w = cast(compound_word, UP_w)
+      if len(w.parts) == 0:
+        raise AssertionError(w)
 
-  elif len(w.parts) == 1:
-    part0 = w.parts[0]
-    if part0.tag in VAR_SUBS:
-      # $x -> x  and  ${x} -> x  and ${x:-default} -> x or 'default'
-      # ~ -> homedir()
-      # ~andy -> homedir('andy')
-      # tilde()
-      # tilde('andy') ?
-      return word_style_e.Expr
-    elif part0.tag in OTHER_SUBS:
-      return word_style_e.Unquoted
+      elif len(w.parts) == 1:
+        part0 = w.parts[0]
+        UP_part0 = part0
+        with tagswitch(part0) as case:
+          # VAR_SUBS
+          if case(word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
+                  word_part_e.TildeSub):
+            # $x -> x  and  ${x} -> x  and ${x:-default} -> x or 'default'
+            # ~ -> homedir()
+            # ~andy -> homedir('andy')
+            # tilde()
+            # tilde('andy') ?
+            return word_style_e.Expr
 
-    elif part0.tag == word_part_e.DoubleQuoted:
-      if len(part0.parts) == 1:
-        dq_part0 = part0.parts[0]
-        # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
-        if dq_part0.tag in VAR_SUBS:
-          return word_style_e.Expr
-        elif dq_part0.tag in OTHER_SUBS:
-          return word_style_e.Unquoted
+          elif case(word_part_e.CommandSub, word_part_e.ArithSub):  # OTHER_SUBS
+            return word_style_e.Unquoted
 
-  # Tilde subs also cause double quoted style.
-  for part in w.parts:
-    if part.tag == word_part_e.DoubleQuoted:
-      for dq_part in part.parts:
-        if dq_part.tag in ALL_SUBS:
+          elif case(word_part_e.DoubleQuoted):
+            if len(part0.parts) == 1:
+              dq_part0 = part0.parts[0]
+              # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
+              if dq_part0.tag in VAR_SUBS:
+                return word_style_e.Expr
+              elif dq_part0.tag in OTHER_SUBS:
+                return word_style_e.Unquoted
+
+      # Tilde subs also cause double quoted style.
+      for part in w.parts:
+        if part.tag == word_part_e.DoubleQuoted:
+          for dq_part in part.parts:
+            if dq_part.tag in ALL_SUBS:
+              return word_style_e.DQ
+        elif part.tag in ALL_SUBS:
           return word_style_e.DQ
-    elif part.tag in ALL_SUBS:
-      return word_style_e.DQ
 
+  # Default
   return word_style_e.SQ
 
 
@@ -247,6 +301,7 @@ class OilPrinter(object):
     - xargs
   """
   def __init__(self, cursor, arena, f, mode=NICE):
+    # type: (Cursor, alloc.Arena, mylib.Writer, int) -> None
     self.cursor = cursor
     self.arena = arena
     self.f = f
@@ -255,54 +310,31 @@ class OilPrinter(object):
     self.mode = mode
 
   def _DebugSpid(self, spid):
+    # type: (int) -> None
     span = self.arena.GetToken(spid)
     line = self.arena.GetLine(span.line_id)
     # TODO: This should be factored out
     s = line[span.col : span.col + span.length]
-    print('SPID %d = %r' % (spid, s), file=sys.stderr)
+    print_stderr('SPID %d = %r' % (spid, s))
 
   def End(self):
+    # type: () -> None
     """Make sure we print until the end of the file."""
     self.cursor.PrintUntil(self.arena.LastSpanId())
 
   def DoRedirect(self, node, local_symbols):
+    # type: (Any, Any) -> None
     """Unused."""
 
-    # TODO: Here docs could change to <<< '''
+    # TODO: It would be nice to change here docs to <<< '''
 
     #print(node, file=sys.stderr)
     op_spid = node.op.span_id
     op_id = node.op.id
     self.cursor.PrintUntil(op_spid)
 
-    #if node.tag == redir_e.Redir:
-    if False:
-      if node.fd == runtime.NO_SPID:
-        if op_id == Id.Redir_Great:
-          self.f.write('>')  # Allow us to replace the operator
-          self.cursor.SkipUntil(op_spid + 1)
-        elif op_id == Id.Redir_GreatAnd:
-          self.f.write('> !')  # Replace >& 2 with > !2
-          spid = word_.LeftMostSpanForWord(node.arg_word)
-          self.cursor.SkipUntil(spid)
-          #self.DoWordInCommand(node.arg_word)
-
-      else:
-        # NOTE: Spacing like !2>err.txt vs !2 > err.txt can be done in the
-        # formatter.
-        self.f.write('!%d ' % node.fd)
-        if op_id == Id.Redir_Great:
-          self.f.write('>')
-          self.cursor.SkipUntil(op_spid + 1)
-        elif op_id == Id.Redir_GreatAnd:
-          self.f.write('> !')  # Replace 1>& 2 with !1 > !2
-          spid = word_.LeftMostSpanForWord(node.arg_word)
-          self.cursor.SkipUntil(spid)
-
-      self.DoWordInCommand(node.arg_word, local_symbols)
-
     #elif node.tag == redir_e.HereDoc:
-    elif False:
+    if False:
       ok, delimiter, delim_quoted = word_.StaticEval(node.here_begin)
       if not ok:
         p_die('Invalid here doc delimiter', word=node.here_begin)
@@ -379,6 +411,7 @@ class OilPrinter(object):
     pass
 
   def DoShAssignment(self, node, at_top_level, local_symbols):
+    # type: (command__ShAssignment, bool, Dict[str, bool]) -> None
     """
     local_symbols:
       - Add every 'local' declaration to it
@@ -564,6 +597,7 @@ class OilPrinter(object):
         self.f.write(',')
 
   def DoCommand(self, node, local_symbols, at_top_level=False):
+    # type: (command_t, Dict[str, Any], bool) -> None
     if node.tag == command_e.CommandList:
       # TODO: How to distinguish between echo hi; echo bye; and on separate
       # lines
@@ -629,7 +663,7 @@ class OilPrinter(object):
       for w in node.words:
         self.DoWordInCommand(w, local_symbols)
 
-      # Leave redirects alone
+      # It would be nice to convert here docs to multi-line strings
       if 0:
         for r in node.redirects:
           self.DoRedirect(r, local_symbols)
@@ -724,7 +758,7 @@ class OilPrinter(object):
       #self.f.write('proc %s' % node.name)
 
       # New symbol table for every function.
-      new_local_symbols = {}
+      new_local_symbols = {}  # type: Dict[str, bool]
 
       # Should be the left most span, including 'function'
       self.cursor.PrintUntil(node.spids[0])
@@ -928,6 +962,8 @@ class OilPrinter(object):
       raise AssertionError(node.__class__.__name__)
 
   def DoWordAsExpr(self, node, local_symbols):
+    # type: (word_t, Dict[str, Any]) -> None
+
     # TODO: This is wrong!
     style = _GetRhsStyle(node)
     if style == word_style_e.SQ:
@@ -958,6 +994,7 @@ class OilPrinter(object):
       self.DoWordInCommand(node, local_symbols)
 
   def DoWordInCommand(self, node, local_symbols):
+    # type: (word_t, Dict[str, Any]) -> None
     """
     New reserved symbols:
       echo == must be changed to echo '==' because = is a reserved symbol.
@@ -1026,306 +1063,313 @@ class OilPrinter(object):
 
     # What about here docs words?  It's a double quoted part, but with
     # different formatting!
-    if node.tag == word_e.Compound:
+    UP_node = node
 
-      # UNQUOTE simple var subs
+    with tagswitch(node) as case:
+      if case(word_e.Compound):
 
-      # TODO: I think we have to print the beginning and the end?
+        # UNQUOTE simple var subs
 
-      #left_spid = word_.LeftMostSpanForWord(node)
-      #right_spid = word_.RightMostSpanForWord(node)
-      #right_spid = -1
-      #print('DoWordInCommand %s %s' % (left_spid, right_spid), file=sys.stderr)
+        # TODO: I think we have to print the beginning and the end?
 
-      # Special case for "$@".  Wow this needs pattern matching!
-      # TODO:
-      # "$foo" -> $foo
-      # "${foo}" -> $foo
+        #left_spid = word_.LeftMostSpanForWord(node)
+        #right_spid = word_.RightMostSpanForWord(node)
+        #right_spid = -1
+        #print('DoWordInCommand %s %s' % (left_spid, right_spid), file=sys.stderr)
 
-      if (len(node.parts) == 1 and
-          node.parts[0].tag == word_part_e.DoubleQuoted):
-        dq_part = node.parts[0]
+        # Special case for "$@".  Wow this needs pattern matching!
+        # TODO:
+        # "$foo" -> $foo
+        # "${foo}" -> $foo
 
-        # NOTE: In double quoted case, this is the begin and end quote.
-        # Do we need a HereDoc part?
+        if (len(node.parts) == 1 and
+            node.parts[0].tag == word_part_e.DoubleQuoted):
+          dq_part = node.parts[0]
 
-        left_spid, right_spid = dq_part.spids
-        # This is not set in the case of here docs?  Why not?
-        #assert left_spid != runtime.NO_SPID, left_spid
-        assert right_spid != runtime.NO_SPID, right_spid
+          # NOTE: In double quoted case, this is the begin and end quote.
+          # Do we need a HereDoc part?
 
-        if len(dq_part.parts) == 1:
-          part0 = dq_part.parts[0]
-          if part0.tag == word_part_e.SimpleVarSub:
-            vsub_part = dq_part.parts[0]
-            if vsub_part.token.id == Id.VSub_At:
-              # NOTE: This is off for double quoted part.  Hack to subtract 1.
+          left_spid, right_spid = dq_part.spids
+          # This is not set in the case of here docs?  Why not?
+          #assert left_spid != runtime.NO_SPID, left_spid
+          assert right_spid != runtime.NO_SPID, right_spid
+
+          if len(dq_part.parts) == 1:
+            part0 = dq_part.parts[0]
+            if part0.tag == word_part_e.SimpleVarSub:
+              vsub_part = dq_part.parts[0]
+              if vsub_part.token.id == Id.VSub_At:
+                # NOTE: This is off for double quoted part.  Hack to subtract 1.
+                self.cursor.PrintUntil(left_spid)
+                self.cursor.SkipUntil(right_spid + 1)  # " then $@ then "
+                self.f.write('@ARGV')
+                return  # Done replacing
+
+              # "$1" -> $1, "$foo" -> $foo
+              if vsub_part.token.id in (Id.VSub_Number, Id.VSub_DollarName):
+                self.cursor.PrintUntil(left_spid)
+                self.cursor.SkipUntil(right_spid + 1)
+                self.f.write(vsub_part.token.val)
+                return
+
+            # Single arith sub, command sub, etc.
+            # On the other hand, an unquoted one needs to turn into
+            #
+            # $(echo one two) -> @[echo one two]
+            # `echo one two` -> @[echo one two]
+            #
+            # ${var:-'the default'} -> @$(var or 'the default')
+            #
+            # $((1 + 2)) -> $(1 + 2) -- this is OK unquoted
+
+            elif part0.tag == word_part_e.BracedVarSub:
+              # Skip over quote
               self.cursor.PrintUntil(left_spid)
-              self.cursor.SkipUntil(right_spid + 1)  # " then $@ then "
-              self.f.write('@ARGV')
-              return  # Done replacing
-
-            # "$1" -> $1, "$foo" -> $foo
-            if vsub_part.token.id in (Id.VSub_Number, Id.VSub_DollarName):
-              self.cursor.PrintUntil(left_spid)
+              self.cursor.SkipUntil(left_spid + 1)
+              self.DoWordPart(part0, local_symbols)
               self.cursor.SkipUntil(right_spid + 1)
-              self.f.write(vsub_part.token.val)
               return
 
-          # Single arith sub, command sub, etc.
-          # On the other hand, an unquoted one needs to turn into
-          #
-          # $(echo one two) -> @[echo one two]
-          # `echo one two` -> @[echo one two]
-          #
-          # ${var:-'the default'} -> @$(var or 'the default')
-          #
-          # $((1 + 2)) -> $(1 + 2) -- this is OK unquoted
+            elif part0.tag == word_part_e.CommandSub:
+              self.cursor.PrintUntil(left_spid)
+              self.cursor.SkipUntil(left_spid + 1)
+              self.DoWordPart(part0, local_symbols)
+              self.cursor.SkipUntil(right_spid + 1)
+              return
 
-          elif part0.tag == word_part_e.BracedVarSub:
-            # Skip over quote
-            self.cursor.PrintUntil(left_spid)
-            self.cursor.SkipUntil(left_spid + 1)
-            self.DoWordPart(part0, local_symbols)
-            self.cursor.SkipUntil(right_spid + 1)
-            return
+        # It's None for here docs I think.
+        #log("NODE %s", node)
+        #if left_spid is not None and left_spid >= 0:
+          #span = self.arena.GetToken(span_id)
+          #print(span)
 
-          elif part0.tag == word_part_e.CommandSub:
-            self.cursor.PrintUntil(left_spid)
-            self.cursor.SkipUntil(left_spid + 1)
-            self.DoWordPart(part0, local_symbols)
-            self.cursor.SkipUntil(right_spid + 1)
-            return
+          #self.cursor.PrintUntil(left_spid)
+          #pass
 
-      # It's None for here docs I think.
-      #log("NODE %s", node)
-      #if left_spid is not None and left_spid >= 0:
-        #span = self.arena.GetToken(span_id)
-        #print(span)
+        # TODO: 'foo'"bar" should be "foobar", etc.
+        # If any part is double quoted, you can always double quote the whole
+        # thing?
+        for part in node.parts:
+          self.DoWordPart(part, local_symbols)
 
-        #self.cursor.PrintUntil(left_spid)
-        #pass
+        #if right_spid >= 0:
+          #self.cursor.PrintUntil(right_spid)
+          #pass
 
-      # TODO: 'foo'"bar" should be "foobar", etc.
-      # If any part is double quoted, you can always double quote the whole
-      # thing?
-      for part in node.parts:
-        self.DoWordPart(part, local_symbols)
+      elif case(word_e.BracedTree):
+        # Not doing anything now
+        pass
 
-      #if right_spid >= 0:
-        #self.cursor.PrintUntil(right_spid)
-        #pass
+      elif case(word_e.Empty):
+        # Hm should we make it ''?
+        # This only happens for:
+        # s=
+        # a[x]=
+        # ${x:-}
+        pass
 
-    elif node.tag == word_e.BracedTree:
-      # Not doing anything now
-      pass
-
-    elif node.tag == word_e.Empty:
-      # Hm do I need to make it ''?
-      # This only happens for:
-      # s=
-      # a[x]=
-      # ${x:-}
-      pass
-
-    else:
-      raise AssertionError(node.__class__.__name__)
+      else:
+        raise AssertionError(node.__class__.__name__)
 
   def DoWordPart(self, node, local_symbols, quoted=False):
+    # type: (word_part_t, Dict[str, bool], bool) -> None
+
     span_id = word_.LeftMostSpanForPart(node)
     if span_id is not None and span_id != runtime.NO_SPID:
       span = self.arena.GetToken(span_id)
 
       self.cursor.PrintUntil(span_id)
 
-    if node.tag == word_part_e.ShArrayLiteral:
-      pass
+    UP_node = node
 
-    elif node.tag == word_part_e.AssocArrayLiteral:
-      pass
-
-    elif node.tag == word_part_e.EscapedLiteral:
-      if quoted:
-        pass
-      else:
-        # If unquoted \e, it should quoted instead.  ' ' vs. \<invisible space>
-        # Hm is this necessary though?  I think the only motivation is changing
-        # \{ and \( for macros.  And ' ' to be readable/visible.
-        t = node.token
-        val = t.val[1:]
-        assert len(val) == 1, val
-        if val != '\n':
-          self.cursor.PrintUntil(t.span_id)
-          self.cursor.SkipUntil(t.span_id + 1)
-          self.f.write("'%s'" % val)
-
-    elif node.tag == word_part_e.Literal:
-      # Print it literally.
-      # TODO: We might want to do it all on the word level though.  For
-      # example, foo"bar" becomes "foobar" in oil.
-      spid = node.span_id
-      if spid == runtime.NO_SPID:
-        #raise RuntimeError('%s has no span_id' % node.token)
-        # TODO: Fix word_.TildeDetect to construct proper tokens.
-        log('WARNING: %s has no span_id' % node)
-      else:
-        self.cursor.PrintUntil(spid + 1)
-
-    elif node.tag == word_part_e.TildeSub:  # No change
-      pass
-
-    elif node.tag == word_part_e.SingleQuoted:
-      # TODO:
-      # '\n' is '\\n'
-      # $'\n' is '\n'
-      # TODO: Should print until right_spid
-      # left_spid, right_spid = node.spids
-      if node.tokens:  # Empty string has no tokens
-        last_spid = node.tokens[-1].span_id
-        self.cursor.PrintUntil(last_spid + 1)
-
-    elif node.tag == word_part_e.DoubleQuoted:
-      for part in node.parts:
-        self.DoWordPart(part, local_symbols, quoted=True)
-
-    elif node.tag == word_part_e.SimpleVarSub:
-      spid = node.token.span_id
-      op_id = node.token.id
-
-      if op_id == Id.VSub_DollarName:
-        self.cursor.PrintUntil(spid + 1)
-
-      elif op_id == Id.VSub_Number:
-        self.cursor.PrintUntil(spid + 1)
-
-      elif op_id == Id.VSub_Bang:  # $!
-        self.f.write('$BgPid')  # Job most recently placed in backgroudn
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_At:  # $@
-        self.f.write('$ifsjoin(ARGV)')
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_Pound:  # $#
-        self.f.write('$Argc')
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_Dollar:  # $$
-        self.f.write('$Pid')
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_Star:  # $*
-        # PEDANTIC: Depends if quoted or unquoted
-        self.f.write('$ifsjoin(ARGV)')
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_Hyphen:  # $*
-        self.f.write('$Flags')
-        self.cursor.SkipUntil(spid + 1)
-
-      elif op_id == Id.VSub_QMark:  # $?
-        self.f.write('$Status')
-        self.cursor.SkipUntil(spid + 1)
-
-      else:
-        raise AssertionError(op_id)
-
-    elif node.tag == word_part_e.BracedVarSub:
-      left_spid, right_spid = node.spids
-
-      # NOTE: Why do we need this but we don't need it in command sub?
-      self.cursor.PrintUntil(left_spid)
-
-      name_spid = node.token.span_id
-      op_id = node.token.id
-
-      parens_needed = True
-      if node.bracket_op:
-        # a[1]
-        # These two change the sigil!  ${a[@]} is now @a!
-        # a[@]
-        # a[*]
+    with tagswitch(node) as case:
+      if case(
+          word_part_e.ShArrayLiteral, word_part_e.AssocArrayLiteral,
+          word_part_e.TildeSub,
+          ):
         pass
 
-      if node.prefix_op:
-        # len()
-        pass
-      if node.suffix_op:
-        # foo.trimLeft()
-        # foo.trimGlobLeft()
-        # foo.trimGlobLeft(longest=True)
-        #
-        # python lstrip() does something different
-
-        # a[1:1]
-
-        # .replace()
-        # .replaceGlob()
-
+      elif case(word_part_e.ExtGlob):
+        # Change this into a function?  It depends whether it is used as
+        # a glob or fnmatch.
+        # 
+        # Example of glob:
+        # cloud/sandstorm/make-bundle.sh
         pass
 
-      if op_id == Id.VSub_QMark:
-        self.cursor.PrintUntil(name_spid + 1)
+      elif case(word_part_e.EscapedLiteral):
+        if quoted:
+          pass
+        else:
+          # If unquoted \e, it should quoted instead.  ' ' vs. \<invisible space>
+          # Hm is this necessary though?  I think the only motivation is changing
+          # \{ and \( for macros.  And ' ' to be readable/visible.
+          t = node.token
+          val = t.val[1:]
+          assert len(val) == 1, val
+          if val != '\n':
+            self.cursor.PrintUntil(t.span_id)
+            self.cursor.SkipUntil(t.span_id + 1)
+            self.f.write("'%s'" % val)
 
-      if parens_needed:
-        # Skip over left bracket and write our own.
-        self.f.write('$(')
+      elif case(word_part_e.Literal):
+        # Print it literally.
+        # TODO: We might want to do it all on the word level though.  For
+        # example, foo"bar" becomes "foobar" in oil.
+        spid = node.span_id
+        if spid == runtime.NO_SPID:
+          #raise RuntimeError('%s has no span_id' % node.token)
+          # TODO: Fix word_.TildeDetect to construct proper tokens.
+          log('WARNING: %s has no span_id' % node)
+        else:
+          self.cursor.PrintUntil(spid + 1)
+
+      elif case(word_part_e.SingleQuoted):
+        # TODO:
+        # '\n' is '\\n'
+        # $'\n' is '\n'
+        # TODO: Should print until right_spid
+        # left_spid, right_spid = node.spids
+        if node.tokens:  # Empty string has no tokens
+          last_spid = node.tokens[-1].span_id
+          self.cursor.PrintUntil(last_spid + 1)
+
+      elif case(word_part_e.DoubleQuoted):
+        for part in node.parts:
+          self.DoWordPart(part, local_symbols, quoted=True)
+
+      elif case(word_part_e.SimpleVarSub):
+        spid = node.token.span_id
+        op_id = node.token.id
+
+        if op_id == Id.VSub_DollarName:
+          self.cursor.PrintUntil(spid + 1)
+
+        elif op_id == Id.VSub_Number:
+          self.cursor.PrintUntil(spid + 1)
+
+        elif op_id == Id.VSub_Bang:  # $!
+          self.f.write('$BgPid')  # Job most recently placed in backgroudn
+          self.cursor.SkipUntil(spid + 1)
+
+        elif op_id == Id.VSub_At:  # $@
+          self.f.write('$ifsjoin(ARGV)')
+          self.cursor.SkipUntil(spid + 1)
+
+        elif op_id == Id.VSub_Pound:  # $#
+          self.f.write('$Argc')
+          self.cursor.SkipUntil(spid + 1)
+
+        elif op_id == Id.VSub_Dollar:  # $$
+          self.f.write('$Pid')
+          self.cursor.SkipUntil(spid + 1)
+
+        elif op_id == Id.VSub_Star:  # $*
+          # PEDANTIC: Depends if quoted or unquoted
+          self.f.write('$ifsjoin(ARGV)')
+          self.cursor.SkipUntil(spid + 1)
+
+        elif op_id == Id.VSub_Hyphen:  # $*
+          self.f.write('$Flags')
+          self.cursor.SkipUntil(spid + 1)
+
+        elif op_id == Id.VSub_QMark:  # $?
+          self.f.write('$Status')
+          self.cursor.SkipUntil(spid + 1)
+
+        else:
+          raise AssertionError(op_id)
+
+      elif case(word_part_e.BracedVarSub):
+        left_spid, right_spid = node.spids
+
+        # NOTE: Why do we need this but we don't need it in command sub?
+        self.cursor.PrintUntil(left_spid)
+
+        name_spid = node.token.span_id
+        op_id = node.token.id
+
+        parens_needed = True
+        if node.bracket_op:
+          # a[1]
+          # These two change the sigil!  ${a[@]} is now @a!
+          # a[@]
+          # a[*]
+          pass
+
+        if node.prefix_op:
+          # len()
+          pass
+        if node.suffix_op:
+          # foo.trimLeft()
+          # foo.trimGlobLeft()
+          # foo.trimGlobLeft(longest=True)
+          #
+          # python lstrip() does something different
+
+          # a[1:1]
+
+          # .replace()
+          # .replaceGlob()
+
+          pass
+
+        if op_id == Id.VSub_QMark:
+          self.cursor.PrintUntil(name_spid + 1)
+
+        if parens_needed:
+          # Skip over left bracket and write our own.
+          self.f.write('$(')
+          self.cursor.SkipUntil(left_spid + 1)
+
+          # Placeholder for now
+          self.cursor.PrintUntil(right_spid)
+
+          # Skip over right bracket and write our own.
+          self.f.write(')')
+        else:
+          pass
+
+        self.cursor.SkipUntil(right_spid + 1)
+
+      elif case(word_part_e.CommandSub):
+        left_spid, right_spid = node.spids
+
+        #self.cursor.PrintUntil(left_spid)
+        self.f.write('$[')
         self.cursor.SkipUntil(left_spid + 1)
 
+        self.DoCommand(node.child, local_symbols)
+
+        self.f.write(']')
+        self.cursor.SkipUntil(right_spid + 1)
+        # change to $[echo hi]
+
+      elif case(word_part_e.ArithSub):
+        # We're not bothering to translate the arithmetic language.
+        # Just turn $(( x ? 0 : 1 )) into $shExpr('x ? 0 : 1').
+
+        left_spid, right_spid = node.spids
+
+        # Skip over left bracket and write our own.
+        self.f.write("$shExpr('")
+        self.cursor.SkipUntil(left_spid + 1)
+
+        # NOTE: This doesn't do anything yet.
+        #self.DoArithExpr(node.anode, local_symbols)
         # Placeholder for now
-        self.cursor.PrintUntil(right_spid)
+        self.cursor.PrintUntil(right_spid - 1)
 
         # Skip over right bracket and write our own.
-        self.f.write(')')
+        self.f.write("')")
+        self.cursor.SkipUntil(right_spid + 1)
+
       else:
-        pass
-
-      self.cursor.SkipUntil(right_spid + 1)
-
-    elif node.tag == word_part_e.CommandSub:
-      left_spid, right_spid = node.spids
-
-      #self.cursor.PrintUntil(left_spid)
-      self.f.write('$[')
-      self.cursor.SkipUntil(left_spid + 1)
-
-      self.DoCommand(node.child, local_symbols)
-
-      self.f.write(']')
-      self.cursor.SkipUntil(right_spid + 1)
-      # change to $[echo hi]
-
-    elif node.tag == word_part_e.ArithSub:
-      # We're not bothering to translate the arithmetic language.
-      # Just turn $(( x ? 0 : 1 )) into $shExpr('x ? 0 : 1').
-
-      left_spid, right_spid = node.spids
-
-      # Skip over left bracket and write our own.
-      self.f.write("$shExpr('")
-      self.cursor.SkipUntil(left_spid + 1)
-
-      # NOTE: This doesn't do anything yet.
-      #self.DoArithExpr(node.anode, local_symbols)
-      # Placeholder for now
-      self.cursor.PrintUntil(right_spid - 1)
-
-      # Skip over right bracket and write our own.
-      self.f.write("')")
-      self.cursor.SkipUntil(right_spid + 1)
-
-    elif node.tag == word_part_e.ExtGlob:
-      # Change this into a function?  It depends whether it is used as
-      # a glob or fnmatch.
-      # 
-      # Example of glob:
-      # cloud/sandstorm/make-bundle.sh
-      pass
-
-    else:
-      raise AssertionError(node.__class__.__name__)
+        raise AssertionError(node.__class__.__name__)
 
   def DoBoolExpr(self, node):
+    # type: (bool_expr_t) -> None
+
     # TODO:
     # - Some are turned into '( x ~ *.py )'
     # - Some are turned into 'test x -lt y'
