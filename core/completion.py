@@ -50,6 +50,7 @@ from core import ui
 from core import util
 from frontend import consts
 from frontend import reader
+from mycpp import mylib
 from pylib import os_path
 from pylib import path_stat
 from osh import word_
@@ -1194,7 +1195,11 @@ class ReadlineCallback(object):
     self.root_comp = root_comp
     self.debug_f = debug_f
 
-    self.comp_iter = None  # current completion being processed
+    # current completion being processed
+    if mylib.PYTHON:
+      self.comp_iter = None # type: Iterator[str]
+    else:
+      self.comp_iter = None # type: List[str]
 
   def _GetNextCompletion(self, state):
     # type: (int) -> Optional[str]
@@ -1212,14 +1217,24 @@ class ReadlineCallback(object):
 
       comp = Api(line=buf, begin=begin, end=end)
 
-      self.comp_iter = self.root_comp.Matches(comp)
+      if mylib.PYTHON:
+        self.comp_iter = self.root_comp.Matches(comp)
+      else:
+        self.comp_iter = list(self.root_comp.Matches(comp))
+        self.comp_iter.reverse()
 
     assert self.comp_iter is not None, self.comp_iter
 
-    try:
-      next_completion = self.comp_iter.next()
-    except StopIteration:
-      next_completion = None  # signals the end
+    if mylib.PYTHON:
+      try:
+        next_completion = self.comp_iter.next()
+      except StopIteration:
+        next_completion = None  # signals the end
+    else:
+      try:
+        next_completion = self.comp_iter.pop()
+      except IndexError:
+        next_completion = None  # signals the end
 
     return next_completion
 

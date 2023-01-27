@@ -82,6 +82,11 @@ def run_tests():
     except StopIteration:
       break
 
+  it = f(5)
+  l = list(it)
+  for i, x in enumerate(l):
+    log("l[%d] = %d", i, x)
+
 
 def run_benchmarks():
   # type: () -> None
