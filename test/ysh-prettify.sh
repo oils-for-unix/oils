@@ -19,7 +19,24 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
-source test/osh2oil.sh  # common functions
+
+readonly TEMP_DIR=_tmp
+
+check-osh2ysh() {
+  local osh_str=$1
+  local ysh_str=$2  # expected
+
+  # Make sure they are valid
+
+  bin/osh -n -c "$osh_str"
+  bin/ysh -n -c "$ysh_str"
+
+  local tmp=$TEMP_DIR/actual.ysh
+  echo "$osh_str" | bin/oshc translate | tee $tmp
+
+  echo "$ysh_str" | diff -u $tmp -
+  echo 'OK'
+}
 
 #
 # UNCHANGED
@@ -28,34 +45,28 @@ source test/osh2oil.sh  # common functions
 test-simple-command() {
   ### Unchanged
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo hi
-OSH
-echo hi
-OIL
+  check-osh2ysh 'echo hi' 'echo hi'
 }
 
 
 test-line-breaks() {
   ### Unchanged
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 echo one \
   two three \
   four
-OSH
+' '
 echo one \
   two three \
   four
-OIL
+'
 }
 
 test-and-or() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-ls && echo "$@" || die "foo"
-OSH
-ls && echo @ARGV || die "foo"
-OIL
+  check-osh2ysh \
+    'ls && echo "$@" || die "foo"' \
+    'ls && echo @ARGV || die "foo"'
 }
 
 #
@@ -63,79 +74,59 @@ OIL
 #
 
 test-dollar-at() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo one "$@" two
-OSH
-echo one @ARGV two
-OIL
+  check-osh2ysh \
+    'echo one "$@" two' \
+    'echo one @ARGV two'
 }
 
 test-bracket-builtin() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-[ ! -z "$foo" ] || die
-OSH
-test ! -z $foo || die
-OIL
+  check-osh2ysh \
+    '[ ! -z "$foo" ] || die' \
+    'test ! -z $foo || die'
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 if [ "$foo" -eq 3 ]; then
   echo yes
-fi
-OSH
+fi' \
+  '
 if test $foo -eq 3 {
   echo yes
-}
-OIL
+}'
 }
 
 test-while-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 while read line; do
   echo $line
-done
-OSH
+done' \
+  '
 while read line {
   echo $line
-}
-OIL
+}'
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 while read \
   line; do
   echo $line
-done
-OSH
+done' \
+  '
 while read \
   line {
   echo $line
-}
-OIL
+}'
 }
 
 test-if() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 if true; then
   echo yes
-fi
-OSH
+fi' \
+  '
 if true {
   echo yes
-}
-OIL
+}'
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-if true
-then
-  echo yes
-fi
-OSH
-if true
-{
-  echo yes
-}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 if true; then
   echo yes
 elif false; then
@@ -144,8 +135,8 @@ elif spam; then
   echo elif
 else
   echo no
-fi
-OSH
+fi' \
+  '
 if true {
   echo yes
 } elif false {
@@ -154,11 +145,22 @@ if true {
   echo elif
 } else {
   echo no
-}
-OIL
+}'
 }
 
+# TODO: Fix this
 
+TODO-test-then-next-line() {
+  check-osh2ysh '
+if true
+then
+  echo yes
+fi' \
+  '
+if true {
+  echo yes
+}'
+}
 
 soil-run() {
   run-test-funcs
