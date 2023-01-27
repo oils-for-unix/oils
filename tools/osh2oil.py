@@ -1291,7 +1291,6 @@ class OilPrinter(object):
         name_spid = node.token.span_id
         op_id = node.token.id
 
-        parens_needed = True
         if node.bracket_op:
           # a[1]
           # These two change the sigil!  ${a[@]} is now @a!
@@ -1319,33 +1318,25 @@ class OilPrinter(object):
         if op_id == Id.VSub_QMark:
           self.cursor.PrintUntil(name_spid + 1)
 
-        if parens_needed:
-          # Skip over left bracket and write our own.
-          self.f.write('$(')
-          self.cursor.SkipUntil(left_spid + 1)
-
-          # Placeholder for now
-          self.cursor.PrintUntil(right_spid)
-
-          # Skip over right bracket and write our own.
-          self.f.write(')')
-        else:
-          pass
-
-        self.cursor.SkipUntil(right_spid + 1)
+        self.cursor.PrintUntil(right_spid + 1)
 
       elif case(word_part_e.CommandSub):
         left_spid, right_spid = node.spids
 
-        #self.cursor.PrintUntil(left_spid)
-        self.f.write('$[')
-        self.cursor.SkipUntil(left_spid + 1)
+        if node.left_token.id == Id.Left_Backtick:
+          self.cursor.PrintUntil(left_spid)
 
-        self.DoCommand(node.child, local_symbols)
+          self.f.write('$(')
+          self.cursor.SkipUntil(left_spid + 1)
 
-        self.f.write(']')
-        self.cursor.SkipUntil(right_spid + 1)
-        # change to $[echo hi]
+          self.DoCommand(node.child, local_symbols)
+
+          # Skip over right `
+          self.cursor.SkipUntil(right_spid + 1)
+          self.f.write(')')
+
+        else:
+          self.cursor.PrintUntil(right_spid + 1)
 
       elif case(word_part_e.ArithSub):
         # We're not bothering to translate the arithmetic language.

@@ -85,16 +85,14 @@ test-unquote-subs-TODO() {
     'echo "$1" "$foo"' \
     'echo $1 $foo'
 
-  # TODO: $foo and $(echo hi)
-
+  # TODO: echo $foo unquoted
   check-osh2ysh \
     'echo "${foo}"' \
-    'echo $(foo)' \
+    'echo ${foo}' \
 
   check-osh2ysh \
     'echo "$(echo hi)"' \
-    'echo $[echo hi]' \
-    INVALID
+    'echo $(echo hi)' 
 }
 
 # TODO: translate to YSTR?
@@ -111,26 +109,27 @@ EOF
   check-osh2ysh "$osh" "$ysh"
 }
 
-test-command-sub-TODO() {
+# Unchanged
+test-command-sub() {
   check-osh2ysh \
     'echo $(echo hi)' \
-    'echo $[echo hi]' \
-    INVALID
+    'echo $(echo hi)' 
 
   check-osh2ysh \
     'echo "__$(echo hi)__"' \
-    'echo "__$[echo hi]__"' \
-    INVALID
+    'echo "__$(echo hi)__"' 
 }
 
 test-var-sub-TODO() {
+  # Unchanged
   check-osh2ysh \
     'echo $foo' \
     'echo $foo'
 
+  # Could just be $bar
   check-osh2ysh \
     'echo $foo ${bar} "__${bar}__"' \
-    'echo $foo $(bar) "__$(bar)__"'
+    'echo $foo ${bar} "__${bar}__"'
 
   return
 
@@ -150,22 +149,18 @@ test-var-sub-TODO() {
 # But that might be overly pedantic.  This will work most of the time.
 
 test-backticks-TODO() {
-
-  # Make this pass
   check-osh2ysh \
    'echo `echo hi ${var}`' \
-   'echo $[echo hi $(var)]' \
-   INVALID
-
-  # These also have problems
-  check-osh2ysh \
-    'echo `{ echo hi; }`' \
-    'echo $[do { echo hi]' \
-    INVALID
+   'echo $(echo hi ${var})' 
 
   check-osh2ysh \
     'echo $({ echo hi; })' \
-    'echo $[do { echo hi]' \
+    'echo $({ echo hi; })' 
+
+  # TODO: Fix this
+  check-osh2ysh \
+    'echo `{ echo hi; }`' \
+    'echo $(do { echo hi)' \
     INVALID
 }
 
