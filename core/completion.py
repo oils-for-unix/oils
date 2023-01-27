@@ -135,7 +135,7 @@ class NullCompleter(object):
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
-    pass
+    raise StopIteration  # zero iterations
 
 
 # NOTE: How to create temporary options?  With copy.deepcopy()?
