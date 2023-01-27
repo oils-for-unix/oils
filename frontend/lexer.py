@@ -192,9 +192,12 @@ class LineLexer(object):
     # - Kind.KW is sometimes a literal in a word
     # - Kind.Right is for " in here docs.  Lexer isn't involved.
     # - Got an error with Kind.Left too that I don't understand
+    # - Kind.ControlFlow doesn't work because we word_.StaticEval()
     # if kind in (Kind.Lit, Kind.VSub, Kind.Redir, Kind.Char, Kind.Backtick, Kind.KW, Kind.Right):
 
-    if kind in (Kind.Arith, Kind.Op, Kind.WS, Kind.Ignored, Kind.Eof):
+    if kind in (Kind.Arith, Kind.Op,
+        Kind.VTest, Kind.VOp0, Kind.VOp2, Kind.VOp3,
+        Kind.WS, Kind.Ignored, Kind.Eof):
       tok_val = None  # type: Optional[str]
     else:
       tok_val = line[line_pos:end_pos]
