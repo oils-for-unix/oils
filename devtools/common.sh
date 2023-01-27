@@ -29,6 +29,8 @@ mypy_() {
 typecheck() {
   # we 'import libc' but the source is pyext/libc.{c,pyi}
 
+  echo "MYPY $@"
+
   MYPYPATH='.:pyext' PYTHONPATH='.' mypy_ --py2 "$@"
 }
 

@@ -1,22 +1,4 @@
-osh/history.py
-core/comp_ui.py
-frontend/py_reader.py
-oil_lang/objects.py
-
-# expr_t typing
-oil_lang/expr_eval.py
-
-core/process.py
-core/executor.py
-core/shell.py
-osh/builtin_process.py
-
+tools/osh2oil.py
 
 # flag problems
 # ./oil_lang/builtin_oil.py
-
-# Flag problems
-#./osh/builtin_comp.py
-# Iterator problems
-#./core/completion.py
-tea/tea_main.py
