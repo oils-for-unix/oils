@@ -2,6 +2,7 @@
 builtin_comp.py - Completion builtins
 """
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import value_e, value__MaybeStrArray
 from core import completion
 from core import error
@@ -26,15 +27,20 @@ if TYPE_CHECKING:
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
 
+
+HELP_TOPICS = [] # type: List[str]
+
 from mycpp import mylib
 if mylib.PYTHON:
-  # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
+  # - Catch ImportEror because we don't want libcmark.so dependency for
+  #   build/py.sh minimal
+  # - For now, ignore a type error in minimal build.
+  # - TODO: Rewrite help builtin and remove dep on CommonMark 
   try:
-    from _devbuild.gen import help_
+    from _devbuild.gen import help_  # type: ignore
+    HELP_TOPICS = help_.TOPICS
   except ImportError:
-    class _DummyModule(object): pass
-    help_ = _DummyModule()
-    help_.TOPICS = []
+    pass
 
 
 class _FixedWordsAction(completion.CompletionAction):
@@ -89,11 +95,14 @@ class SpecBuilder(object):
     self.comp_lookup = comp_lookup
     self.errfmt = errfmt
 
-  def Build(self, argv, arg, base_opts):
+  def Build(self, argv, attrs, base_opts):
     # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
     """Given flags to complete/compgen, return a UserSpec."""
     cmd_ev = self.cmd_ev
 
+    # arg_types.compgen is a subset of arg_types.complete (the two users of this
+    # function), so we use the generate type for compgen here.
+    arg = arg_types.compgen(attrs.attrs)
     actions = []  # type: List[completion.CompletionAction]
 
     # NOTE: bash doesn't actually check the name until completion time, but
@@ -106,7 +115,7 @@ class SpecBuilder(object):
       actions.append(completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
 
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
-    for name in arg.actions:
+    for name in attrs.actions:
       if name == 'alias':
         a = _DynamicDictAction(self.parse_ctx.aliases)  # type: completion.CompletionAction
 
@@ -148,7 +157,7 @@ class SpecBuilder(object):
 
       elif name == 'helptopic':
         # Note: it would be nice to have 'helpgroup' for help -i too
-        a = _FixedWordsAction(help_.TOPICS)
+        a = _FixedWordsAction(HELP_TOPICS)
 
       elif name == 'setopt':
         names = [opt.name for opt in option_def.All() if opt.builtin == 'set']
@@ -227,7 +236,8 @@ class Complete(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = flag_spec.ParseMore('complete', arg_r)
+    attrs = flag_spec.ParseMore('complete', arg_r)
+    arg = arg_types.complete(attrs.attrs)
     # TODO: process arg.opt_changes
     #log('arg %s', arg)
 
@@ -242,9 +252,9 @@ class Complete(vm._Builtin):
       self.comp_lookup.PrintSpecs()
       return 0
 
-    base_opts = dict(arg.opt_changes)
+    base_opts = dict(attrs.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, arg, base_opts)
+      user_spec = self.spec_builder.Build(argv, attrs, base_opts)
     except error.Parse as e:
       # error printed above
       return 2
@@ -355,7 +365,8 @@ class CompAdjust(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = flag_spec.ParseMore('compadjust', arg_r)
+    attrs = flag_spec.ParseMore('compadjust', arg_r)
+    arg = arg_types.compadjust(attrs.attrs)
     var_names = arg_r.Rest()  # Output variables to set
     for name in var_names:
       # Ironically we could complete these

@@ -43,9 +43,7 @@ EOF
   cat >$FILTER_DIR/filter-typecheck.txt <<'EOF'
 __init__.py
 typing.py
-core/completion.py
 mycpp/mylib.py
-osh/builtin_comp.py
 oil_lang/builtin_oil.py
 oil_lang/funcs_builtin.py
 pylib/collections_.py
@@ -65,6 +63,7 @@ _gen/
 .*_def\.py
 .*_spec\.py
 asdl/py.*
+core/completion.py
 core/pyos.py
 core/pyutil.py
 core/optview.py
@@ -77,6 +76,7 @@ oil_lang/builtin_oil.py
 oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
+osh/builtin_comp.py
 tools/.*
 tea/.*
 EOF

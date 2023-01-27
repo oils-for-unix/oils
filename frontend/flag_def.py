@@ -317,7 +317,7 @@ def _DefineCompletionActions(spec):
   spec.Action(None, 'stopped')
 
 
-COMPLETE_SPEC = FlagSpecAndMore('complete')
+COMPLETE_SPEC = FlagSpecAndMore('complete', typed=True)
 
 _DefineCompletionFlags(COMPLETE_SPEC)
 _DefineCompletionOptions(COMPLETE_SPEC)
@@ -328,8 +328,7 @@ COMPLETE_SPEC.ShortFlag('-E',
 COMPLETE_SPEC.ShortFlag('-D',
     help='Define the compspec that applies when nothing else matches')
 
-
-COMPGEN_SPEC = FlagSpecAndMore('compgen')  # for -o and -A
+COMPGEN_SPEC = FlagSpecAndMore('compgen', typed=True)  # for -o and -A
 
 # TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
 _DefineCompletionFlags(COMPGEN_SPEC)
@@ -337,11 +336,11 @@ _DefineCompletionOptions(COMPGEN_SPEC)
 _DefineCompletionActions(COMPGEN_SPEC)
 
 
-COMPOPT_SPEC = FlagSpecAndMore('compopt')  # for -o
+COMPOPT_SPEC = FlagSpecAndMore('compopt', typed=True)  # for -o
 _DefineCompletionOptions(COMPOPT_SPEC)
 
 
-COMPADJUST_SPEC = FlagSpecAndMore('compadjust')
+COMPADJUST_SPEC = FlagSpecAndMore('compadjust', typed=True)
 
 COMPADJUST_SPEC.ShortFlag('-n', args.String,
     help='Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')

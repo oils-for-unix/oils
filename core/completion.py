@@ -37,8 +37,12 @@ import pwd
 import time
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e, Token
-from _devbuild.gen.runtime_asdl import value_e, value__Str, scope_e, Proc
+from _devbuild.gen.syntax_asdl import (
+    compound_word, word_part_e, word_t, redir_param_e, Token
+)
+from _devbuild.gen.runtime_asdl import (
+    value_e, value__MaybeStrArray, value__Str, scope_e, Proc
+)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.pyerror import log
@@ -130,8 +134,8 @@ def AdjustArg(arg, break_chars, argv_out):
 class NullCompleter(object):
 
   def Matches(self, comp):
-    # type: (Api) -> List[str]
-    return []
+    # type: (Api) -> Iterator[str]
+    raise StopIteration  # zero iterations
 
 
 # NOTE: How to create temporary options?  With copy.deepcopy()?
@@ -490,7 +494,7 @@ class ShellFuncAction(CompletionAction):
         self.log(
             "Function %r returned 124, but the completion spec for %r wasn't "
             "changed", self.func.name, cmd)
-        return []
+        return
 
     # Read the response.  # Note: the name 'COMP_REPLY' would be more
     # consistent!
@@ -503,16 +507,17 @@ class ShellFuncAction(CompletionAction):
       # error object.
       stderr_line('osh: Ran function %r but COMPREPLY was unset',
                   self.func.name)
-      return []
+      return
 
     if val.tag_() != value_e.MaybeStrArray:
       log('ERROR: COMPREPLY should be an array, got %s', val)
-      return []
+      return
     self.log('COMPREPLY %s', val)
 
     # Return this all at once so we don't have a generator.  COMPREPLY happens
     # all at once anyway.
-    return val.strs
+    for s in cast(value__MaybeStrArray, val).strs:
+      yield s
 
 
 class VariablesAction(CompletionAction):
@@ -548,14 +553,14 @@ class ExternalCommandAction(CompletionAction):
     # (dir, timestamp) -> list of entries perhaps?  And then every time you hit
     # tab, do you have to check the timestamp?  It should be cached by the
     # kernel, so yes.
-    self.ext = []
+    # XXX(unused?) self.ext = []
 
     # (dir, timestamp) -> list
     # NOTE: This cache assumes that listing a directory is slower than statting
     # it to get the mtime.  That may not be true on all systems?  Either way
     # you are reading blocks of metadata.  But I guess /bin on many systems is
     # huge, and will require lots of sys calls.
-    self.cache = {}
+    self.cache = {} # type: Dict[Tuple[str, int], List[str]]
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
@@ -607,14 +612,14 @@ class ExternalCommandAction(CompletionAction):
 
 class _Predicate(object):
   def __call__(self, candidate):
-    # type: (str) -> int
+    # type: (str) -> bool
     raise NotImplementedError()
 
 
 class DefaultPredicate(_Predicate):
 
   def __call__(self, candidate):
-    # type: (str) -> int
+    # type: (str) -> bool
     return True
 
 
@@ -633,7 +638,7 @@ class GlobPredicate(_Predicate):
     self.glob_pat = glob_pat  # extended glob syntax supported
 
   def __call__(self, candidate):
-    # type: (str) -> int
+    # type: (str) -> bool
     """Should we INCLUDE the candidate or not?"""
     matched = libc.fnmatch(self.glob_pat, candidate)
     # This is confusing because of bash's double-negative syntax
@@ -657,7 +662,7 @@ class UserSpec(object):
                actions,  # type: List[CompletionAction]
                extra_actions,  # type: List[CompletionAction]
                else_actions,  # type: List[CompletionAction]
-               predicate,  # type: Callable
+               predicate,  # type: Callable[[str], bool]
                prefix='',  # type: str
                suffix='',  # type: str
                ):
@@ -721,7 +726,7 @@ class UserSpec(object):
       parts.append('extra=%s' % self.extra_actions)
     if self.else_actions:
       parts.append('else=%s' % self.else_actions)
-    if self.predicate is not DefaultPredicate:
+    if not isinstance(self.predicate, DefaultPredicate):
       parts.append('pred = %s' % self.predicate)
     if self.prefix:
       parts.append('prefix=%r' % self.prefix)
@@ -913,12 +918,12 @@ class RootCompleter(object):
       if (len(parts) == 2 and
           parts[0].tag_() == word_part_e.Literal and
           parts[1].tag_() == word_part_e.Literal and
-          parts[0].id == Id.Lit_TildeLike and
-          parts[1].id == Id.Lit_CompDummy):
-        t2 = parts[0]
+          cast(Token, parts[0]).id == Id.Lit_TildeLike and
+          cast(Token, parts[1]).id == Id.Lit_CompDummy):
+        t2 = cast(Token, parts[0])
 
         # +1 for ~
-        self.comp_ui_state.display_pos = _TokenStart(parts[0]) + 1
+        self.comp_ui_state.display_pos = _TokenStart(t2) + 1
 
         to_complete = t2.val[1:]
         n = len(to_complete)
@@ -936,11 +941,13 @@ class RootCompleter(object):
       if (r.arg.tag_() == redir_param_e.Word and
           consts.RedirArgType(r.op.id) == redir_arg_type_e.Path):
         arg_word = r.arg
+        UP_word = arg_word
+        arg_word = cast(compound_word, UP_word)
         if WordEndsWithCompDummy(arg_word):
           debug_f.log('Completing redirect arg')
 
           try:
-            val = self.word_ev.EvalWordToString(r.arg)
+            val = self.word_ev.EvalWordToString(arg_word)
           except error.FatalRuntime as e:
             debug_f.log('Error evaluating redirect word: %s', e)
             return
@@ -966,13 +973,13 @@ class RootCompleter(object):
     #
 
     # Set below, and set on retries.
-    base_opts = None
-    user_spec = None
+    base_opts = None # type: Dict[str, bool]
+    user_spec = None # type: Optional[UserSpec]
 
     # Used on retries.
-    partial_argv = []
+    partial_argv = [] # type: List[str]
     num_partial = -1
-    first = None
+    first = None # type: str
 
     if trail.words:
       # Now check if we're completing a word!
@@ -983,7 +990,8 @@ class RootCompleter(object):
         # etc.  Now try partial_argv, which may involve invoking PLUGINS.
 
         # needed to complete paths with ~
-        words2 = word_.TildeDetectAll(trail.words)
+        trail_words = [cast(word_t, w) for w in trail.words] # mycpp: workaround list cast
+        words2 = word_.TildeDetectAll(trail_words)
         if 0:
           debug_f.log('After tilde detection')
           for w in words2:
@@ -1199,7 +1207,7 @@ class ReadlineCallback(object):
     if mylib.PYTHON:
       self.comp_iter = None # type: Iterator[str]
     else:
-      self.comp_iter = None # type: List[str]
+      self.comp_matches = None # type: List[str]
 
   def _GetNextCompletion(self, state):
     # type: (int) -> Optional[str]
@@ -1220,19 +1228,19 @@ class ReadlineCallback(object):
       if mylib.PYTHON:
         self.comp_iter = self.root_comp.Matches(comp)
       else:
-        self.comp_iter = list(self.root_comp.Matches(comp))
-        self.comp_iter.reverse()
-
-    assert self.comp_iter is not None, self.comp_iter
+        self.comp_matches = list(self.root_comp.Matches(comp))
+        self.comp_matches.reverse()
 
     if mylib.PYTHON:
+      assert self.comp_iter is not None, self.comp_iter
       try:
         next_completion = self.comp_iter.next()
       except StopIteration:
         next_completion = None  # signals the end
     else:
+      assert self.comp_matches is not None, self.comp_matches
       try:
-        next_completion = self.comp_iter.pop()
+        next_completion = self.comp_matches.pop()
       except IndexError:
         next_completion = None  # signals the end
 
@@ -1271,6 +1279,8 @@ class ReadlineCallback(object):
       # sys.exit()?
       # But put it here in case Because readline ignores SystemExit!
       posix._exit(e.code)
+
+    return None
 
 
 if __name__ == '__main__':
