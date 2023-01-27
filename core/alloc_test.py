@@ -5,6 +5,7 @@ alloc_test.py: Tests for alloc.py
 
 import unittest
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import source
 from core import alloc  # module under test
 
@@ -23,7 +24,7 @@ class AllocTest(unittest.TestCase):
     line_id = arena.AddLine('line 2', 2)
     self.assertEqual(1, line_id)
 
-    span_id = arena.AddLineSpan(0, 1, 2)
+    span_id = arena.NewTokenId(Id.Undefined_Tok, -1, -1, -1, '')
     self.assertEqual(0, span_id)
 
     arena.PopSource()

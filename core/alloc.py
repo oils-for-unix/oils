@@ -11,7 +11,7 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import line_span, source_t, loc_t
+from _devbuild.gen.syntax_asdl import line_span, source_t, loc_t, Token
 from asdl import runtime
 from core.pyerror import log
 from frontend import location
@@ -153,6 +153,17 @@ class Arena(object):
     span = line_span(line_id, col, length)
     self.spans.append(span)
     return span_id
+
+  def NewTokenId(self, id_, col, length, line_id, val):
+    # type: (int, int, int, int, str) -> int
+    span_id = self.AddLineSpan(line_id, col, length)
+    unused = Token(id_, span_id, val)
+    return span_id
+
+  def NewToken(self, id_, col, length, line_id, val):
+    # type: (int, int, int, int, str) -> Token
+    span_id = self.AddLineSpan(line_id, col, length)
+    return Token(id_, span_id, val)
 
   def GetLineSpan(self, span_id):
     # type: (int) -> line_span

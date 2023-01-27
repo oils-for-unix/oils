@@ -14,9 +14,8 @@ import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, lvalue, value, scope_e
-from _devbuild.gen.syntax_asdl import source, Token
+from _devbuild.gen.syntax_asdl import source
 from asdl import pybase
-from asdl import runtime
 from core import alloc
 from core import completion
 from core import dev

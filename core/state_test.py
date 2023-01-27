@@ -15,8 +15,10 @@ from core import state  # module under test
 def _InitMem():
   # empty environment, no arena.
   arena = test_lib.MakeArena('<state_test.py>')
+  col = 0
+  length = 1
   line_id = arena.AddLine(1, 'foo')
-  unused = arena.AddLineSpan(line_id, 0, 1)  # dummy
+  arena.NewTokenId(-1, col, length, line_id, '')  # unused, could be NewToken()
   mem = state.Mem('', [], arena, [])
 
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)

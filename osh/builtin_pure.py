@@ -21,7 +21,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     value__Obj
 )
-from _devbuild.gen.syntax_asdl import Token, command_e, BraceGroup
+from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from _devbuild.gen.types_asdl import opt_group_i
 
 from asdl import format as fmt

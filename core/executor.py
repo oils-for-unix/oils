@@ -10,7 +10,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import redirect, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    command_sub, compound_word, Token, loc
+    command_sub, compound_word, loc
 )
 from asdl import runtime
 from core import dev

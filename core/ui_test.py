@@ -15,8 +15,8 @@ class UiTest(unittest.TestCase):
   def testErrorFormatter(self):
     arena = test_lib.MakeArena('')
     line_id = arena.AddLine('[line one]', 1)
-    span_id = arena.AddLineSpan(line_id, 0, 2)
-    spid1 = arena.AddLineSpan(line_id, 2, 2)
+    span_id = arena.NewTokenId(-1, 0, 2, line_id, '')
+    spid1 = arena.NewTokenId(-1, 2, 2, line_id, '')
 
     errfmt = ui.ErrorFormatter(arena)
 
