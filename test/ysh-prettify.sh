@@ -17,11 +17,14 @@ readonly TEMP_DIR=_tmp
 check-osh2ysh() {
   local osh_str=$1
   local ysh_str=$2  # expected
+  local allow_invalid=${3:-}
 
   # Make sure they are valid
 
   bin/osh -n -c "$osh_str"
-  bin/ysh -n -c "$ysh_str"
+  if test -z "$allow_invalid"; then
+    bin/ysh -n -c "$ysh_str"
+  fi
 
   local tmp=$TEMP_DIR/actual.ysh
   echo "$osh_str" | bin/oshc translate | tee $tmp
@@ -62,7 +65,7 @@ test-and-or() {
 }
 
 #
-# CHANGED
+# CHANGED WORD LANGUAGE
 #
 
 test-dollar-at() {
@@ -70,6 +73,105 @@ test-dollar-at() {
     'echo one "$@" two' \
     'echo one @ARGV two'
 }
+
+TODO-test-prefix-ops() {
+  check-osh2ysh \
+    'echo ${#s} ${#a[@]}' \
+    'echo $[len(s)] $[len(a)]'
+}
+
+test-unquote-subs-TODO() {
+  check-osh2ysh \
+    'echo "$1" "$foo"' \
+    'echo $1 $foo'
+
+  # TODO: $foo and $(echo hi)
+
+  check-osh2ysh \
+    'echo "${foo}"' \
+    'echo $(foo)' \
+
+  check-osh2ysh \
+    'echo "$(echo hi)"' \
+    'echo $[echo hi]' \
+    INVALID
+}
+
+# TODO: translate to YSTR?
+
+TODO-test-word-joining() {
+  local osh=$(cat <<EOF
+echo 'foo " bar '"'" 
+EOF
+)
+  local ysh=$(cat <<EOF
+echo y"foo \" bar '"
+EOF
+)
+  check-osh2ysh "$osh" "$ysh"
+}
+
+test-command-sub-TODO() {
+  check-osh2ysh \
+    'echo $(echo hi)' \
+    'echo $[echo hi]' \
+    INVALID
+
+  check-osh2ysh \
+    'echo "__$(echo hi)__"' \
+    'echo "__$[echo hi]__"' \
+    INVALID
+}
+
+test-var-sub-TODO() {
+  check-osh2ysh \
+    'echo $foo' \
+    'echo $foo'
+
+  check-osh2ysh \
+    'echo $foo ${bar} "__${bar}__"' \
+    'echo $foo $(bar) "__$(bar)__"'
+
+  return
+
+  # We could make this $[foo ? 'default'], but meh, let's not introduce more
+  # operators
+
+  check-osh2ysh \
+    'echo ${foo:-default}' \
+    "echo \$(foo or 'default')"
+}
+
+# Downgraded to one_pass_parse.  This means \" will be wrong, but meh.
+# Here the WordParser makes another pass with CommandParser.
+#
+# We could also translate it to:
+#   echo $[compat backticks 'echo hi']
+# But that might be overly pedantic.  This will work most of the time.
+
+test-backticks-TODO() {
+
+  # Make this pass
+  check-osh2ysh \
+   'echo `echo hi ${var}`' \
+   'echo $[echo hi $(var)]' \
+   INVALID
+
+  # These also have problems
+  check-osh2ysh \
+    'echo `{ echo hi; }`' \
+    'echo $[do { echo hi]' \
+    INVALID
+
+  check-osh2ysh \
+    'echo $({ echo hi; })' \
+    'echo $[do { echo hi]' \
+    INVALID
+}
+
+#
+# CHANGED BUILTIN LANGUAGE
+#
 
 test-bracket-builtin() {
   check-osh2ysh \
@@ -85,6 +187,28 @@ if test $foo -eq 3 {
   echo yes
 }'
 }
+
+test-source-builtin() {
+  check-osh2ysh \
+    '. lib.sh' \
+    'source lib.sh'
+
+  check-osh2ysh \
+    '[ -f lib.sh ] && . lib.sh' \
+    'test -f lib.sh && source lib.sh'
+}
+
+TODO-test-set-builtin() {
+  # Not needed now that we have 'setvar' ?
+
+  check-osh2ysh \
+    'set -o errexit' \
+    'shopt --set errexit'
+}
+
+# 
+# CHANGED COMMAND LANGUAGE
+#
 
 test-while-loop() {
   check-osh2ysh '
@@ -155,75 +279,6 @@ if true {
 
 }
 
-source test/osh2oil.sh
-
-TODO-test-prefix-ops() {
-  check-osh2ysh \
-    'echo ${#s} ${#a[@]}' \
-    'echo $[len(s)] $[len(a)]'
-}
-
-TODO-test-unquote-subs() {
-  check-osh2ysh \
-    'echo "$1" "$foo"' \
-    'echo $1 $foo'
-
-  # TODO: $foo and $(echo hi)
-
-  check-osh2ysh \
-    'echo "${foo}"' \
-    'echo $(foo)' \
-
-  check-osh2ysh \
-    'echo "$(echo hi)"' \
-    'echo $[echo hi]'
-}
-
-# Downgraded to one_pass_parse.  This means \" will be wrong, but meh.
-# Here the WordParser makes another pass with CommandParser.
-#
-# We could also translate it to:
-#   echo $[compat backticks 'echo hi']
-# But that might be overly pedantic.  This will work most of the time.
-
-TODO-test-backticks() {
-
-  # Make this pass
-  check-osh2ysh \
-   'echo `echo hi ${var}`' \
-   'echo $[echo hi $(var)]'
-
-  # These also have problems
-  check-osh2ysh \
-    'echo `{ echo hi; }`' \
-    'echo $[do { echo hi }]'
-
-  check-osh2ysh \
-    'echo $({ echo hi; })' \
-    'echo $[do { echo hi }]'
-}
-
-
-test-source-builtin() {
-  check-osh2ysh \
-    '. lib.sh' \
-    'source lib.sh'
-
-  check-osh2ysh \
-    '[ -f lib.sh ] && . lib.sh' \
-    'test -f lib.sh && source lib.sh'
-}
-
-TODO-test-set-builtin() {
-  # Not needed now that we have 'setvar' ?
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-set -o errexit
-OSH
-shopt --set errexit
-OIL
-}
-
 test-posix-func() {
   check-osh2ysh '
   f() {
@@ -278,206 +333,148 @@ proc func1 {  # no parens
 }
 
 test-for-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 for x in a b c \
   d e f; do
   echo $x
 done
-OSH
+' '
 for x in [a b c \
   d e f] {
   echo $x
 }
-OIL
+'
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 for x in a b c \
   d e f
 do
   echo $x
 done
-OSH
+' '
 for x in [a b c \
   d e f]
 {
   echo $x
 }
-OIL
+'
 }
 
 test-empty-for-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 for x in 
 do
   echo $x
 done
-OSH
+' '
 for x in []
 {
   echo $x
 }
-OIL
+'
 }
 
 test-args-for-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  # Why are we missing a newline here?
+  check-osh2ysh '
 for x; do
   echo $x
 done
-OSH
-for x in @ARGV {
+' 'for x in @ARGV {
   echo $x
 }
-OIL
+'
+  # Change brace style
 
-  # NOTE: we don't have the detailed spid info to preserve the brace style.
-  # Leave it to the reformatter?
-  return
-
-#set -- 1 2 3
-#setargv -- 1 2 3
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 for x
 do
   echo $x
 done
-OSH
-for x in @ARGV
-{
+' 'for x in @ARGV {
   echo $x
 }
-OIL
-}
-
-# TODO: translate to YSTR?
-
-TODO-test-word-joining() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo 'foo'"'" 
-OSH
-echo c'foo\''
-OIL
-}
-
-test-command-sub() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $(echo hi)
-OSH
-echo $[echo hi]
-OIL
-
-  # In double quotes
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo "__$(echo hi)__"
-OSH
-echo "__$[echo hi]__"
-OIL
-}
-
-TODO-test-var-sub() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $foo
-OSH
-echo $foo
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $foo ${bar} "__${bar}__"
-OSH
-echo $foo $(bar) "__$(bar)__"
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo ${foo:-default}
-OSH
-echo $(foo or 'default')
-OIL
+'
 }
 
 # TODO: Fix this!
 
 test-subshell() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-(echo hi;)
-OSH
-shell {echo hi;}
-OIL
+  check-osh2ysh \
+    '(echo hi;)' \
+    'shell {echo hi;}' \
+    INVALID
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-(echo hi)
-OSH
-shell {echo hi}
-OIL
+  check-osh2ysh \
+    '(echo hi)' \
+    'shell {echo hi}' \
+    INVALID
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-(echo hi; echo bye)
-OSH
-shell {echo hi; echo bye}
-OIL
+  check-osh2ysh \
+    '(echo hi; echo bye)' \
+    'shell {echo hi; echo bye}' \
+    INVALID
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-( (echo hi; echo bye ) )
-OSH
-shell { shell {echo hi; echo bye } }
-OIL
+  check-osh2ysh \
+    '( (echo hi; echo bye ) )' \
+    'shell { shell {echo hi; echo bye } }' \
+    INVALID
 }
 
 test-brace-group() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-{ echo hi; }
-OSH
-do { echo hi; }
-OIL
+  check-osh2ysh \
+    '{ echo hi; }' \
+    'do { echo hi; }' \
+    INVALID
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-{ echo hi; echo bye; }
-OSH
-do { echo hi; echo bye; }
-OIL
+  check-osh2ysh \
+    '{ echo hi; echo bye; }' \
+    'do { echo hi; echo bye; }' \
+    INVALID
 }
 
 # TODO: Change case syntax
 
 test-case() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 case $var in
   foo|bar)
     [ -f foo ] && echo file
     ;;
-  '')
+  "")
     echo empty
     ;;
   *)
     echo default
     ;;
 esac
-OSH
+' '
 match $var {
   with foo|bar
     test -f foo && echo file
     
-  with ''
+  with ""
     echo empty
     
   with *
     echo default
     
 }
-OIL
+'
 
-  osh0-oil3 << 'OSH' 3<< 'OIL'
+  check-osh2ysh '
 case "$var" in
   *)
     echo foo
     echo bar  # no dsemi
 esac
-OSH
+' '
 match $var {
   with *
     echo foo
     echo bar  # no dsemi
 }
-OIL
+'
 }
 
 soil-run() {
