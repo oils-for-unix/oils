@@ -42,9 +42,7 @@ class LineLexer(object):
   def __init__(self, line, arena):
     # type: (str, Arena) -> None
     self.arena = arena
-
-    self.arena_skip = False  # For MaybeUnreadOne
-    self.last_span_id = runtime.NO_SPID  # For MaybeUnreadOne
+    self.replace_last_token = False  # For MaybeUnreadOne
 
     self.Reset(line, -1, 0)  # Invalid line_id to start
 
@@ -70,7 +68,7 @@ class LineLexer(object):
       return False
     else:
       self.line_pos -= 1
-      self.arena_skip = True  # don't add the next token to the arena
+      self.replace_last_token = True  # don't add the next token to the arena
       return True
 
   def GetEofToken(self, id_):
@@ -206,14 +204,13 @@ class LineLexer(object):
     # want it to be "low level".  The only thing fabricated here is a newline
     # added at the last line, so we don't end with \0.
 
-    if self.arena_skip:  # make another token from the last span
-      assert self.last_span_id != runtime.NO_SPID
-      span_id = self.last_span_id
-      self.arena_skip = False
-    else:
-      tok_len = end_pos - line_pos
-      span_id = self.arena.AddLineSpan(self.line_id, line_pos, tok_len)
-      self.last_span_id = span_id
+    if self.replace_last_token:  # make another token from the last span
+      self.arena.spans.pop()
+      self.replace_last_token = False
+
+    tok_len = end_pos - line_pos
+    span_id = self.arena.AddLineSpan(self.line_id, line_pos, tok_len)
+
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
     t = Token(tok_type, span_id, tok_val)

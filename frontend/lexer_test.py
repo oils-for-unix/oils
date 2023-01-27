@@ -15,6 +15,22 @@ from frontend import parse_lib
 from frontend import reader
 
 
+def _PrintfOuterTokens(fmt):
+  log('PrintfOuter lexing %r', fmt)
+
+  parse_ctx = test_lib.InitParseContext()
+  arena = test_lib.MakeArena('<lexer_test.py>')
+  line_reader = reader.StringLineReader(fmt, arena)
+  lexer = parse_ctx.MakeLexer(line_reader)
+
+  while True:
+    t = lexer.Read(lex_mode_e.PrintfOuter)
+    print(t)
+    if t.id in (Id.Eof_Real, Id.Eol_Tok):
+      break
+
+  log('')
+
 
 class TokenTest(unittest.TestCase):
 
@@ -41,31 +57,40 @@ class TokenTest(unittest.TestCase):
     print("Number of lex states: %d" % len(LEXER_DEF))
     print("Number of token dispatches: %d" % total)
 
-  def _PrintTokens(self, fmt):
-    log('-- %r', fmt)
-
-    parse_ctx = test_lib.InitParseContext()
+  def testMaybeUnreadOne(self):
     arena = test_lib.MakeArena('<lexer_test.py>')
-    line_reader = reader.StringLineReader(fmt, arena)
-    lexer = parse_ctx.MakeLexer(line_reader)
+    _, lx = test_lib.InitLexer('()', arena)
 
-    while True:
-      t = lexer.Read(lex_mode_e.PrintfOuter)
-      print(t)
-      if t.id in (Id.Eof_Real, Id.Eol_Tok):
-        break
+    t = lx.Read(lex_mode_e.ShCommand)
+    print(t)
+    self.assertEqual(Id.Op_LParen, t.id)
 
-  def testLexer(self):
+    t = lx.Read(lex_mode_e.ShCommand)
+    print(t)
+    self.assertEqual(Id.Op_RParen, t.id)
+
+    # Go back
+    lx.MaybeUnreadOne()
+
+    # Push Hint
+    lx.PushHint(Id.Op_RParen, Id.Right_CasePat)
+
+    # Now we see it again another a Id
+    t = lx.Read(lex_mode_e.ShCommand)
+    print(t)
+    self.assertEqual(Id.Right_CasePat, t.id)
+
+  def testPrintf(self):
     # Demonstrate input handling quirk
 
     # Get Id.Eof_Real because len('') == 0
-    self._PrintTokens('')
+    _PrintfOuterTokens('')
 
     # Get Id.Eol_Tok because len('\0') == 1
-    self._PrintTokens('\0')
+    _PrintfOuterTokens('\0')
 
     # Get x, then Id.Eof_Real because there are no more lines
-    self._PrintTokens('x\0')
+    _PrintfOuterTokens('x\0')
 
   def testLineId(self):
     # TODO: Test that the lexer gives line_ids when passed an arena.
