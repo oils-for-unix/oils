@@ -9,25 +9,41 @@ selectable rules.
 
 Files should already have shopt --set ysh:upgrade at the top
 
-- then/fi, do/done -> braces
-- subshell -> forkwait, because () is taken
-  - { } to fopen { }?
-- "$@" -> @ARGV
-- f() { } -> proc f { }  (changes scope)
-- Approximate: var declaration:
-  local a=b -> var a = 'b', I think
+ESSENTIAL
 
-Legacy shell that I don't use:
+Command:
+  
+  then/fi, do/done -> { }
 
-- [ -> test if possible
-- backticks -> $() (I don't use this) 
-- quote removal "$foo" -> $foo
-- brace removal ${foo} and "${foo}" -> $foo
+  new case statement
 
+  f() { } -> proc f { }  (changes scope)
 
-ysh-format:
+  subshell -> forkwait, because () is taken
+    { } to fopen { }?
 
-- fix indentation and spacing, like clang-format
+  Approximate: var declaration:
+    local a=b -> var a = 'b', I think
+
+  <<EOF here docs to '''
+
+Word:
+  "$@" -> @ARGV
+
+LEGACY that I don't personally use
+
+Builtins:
+  [ -> test
+  . -> source
+
+Word:
+  backticks -> $() (I don't use this) 
+  quote removal "$foo" -> $foo
+  brace removal ${foo} and "${foo}" -> $foo
+
+TOOL ysh-format:
+
+  fix indentation and spacing, like clang-format
 """
 
 import sys
@@ -505,14 +521,14 @@ class OilPrinter(object):
       if has_array:
         self.f.write('compat ')  # 'compat array-assign' syntax
       elif at_top_level:
-        self.f.write('setglobal ')
+        self.f.write('setvar ')
       elif defined_locally:
         self.f.write('set ')
         #self.f.write('[local mutated]')
       else:
         # We're in a function, but it's not defined locally, so we must be
-        # mutatting a global.
-        self.f.write('setglobal ')
+        # mutating a global.
+        self.f.write('setvar ')
 
     elif 0:
       # Explicit const.  Assume it can't be redefined.

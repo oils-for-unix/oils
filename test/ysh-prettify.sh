@@ -31,6 +31,11 @@ check-osh2ysh() {
 
   echo "$ysh_str" | diff -u $tmp -
   echo 'OK'
+
+  # TODO: Also create a variant that tests equal STDOUT and STATUS!
+  # probably assert no stderr
+  #
+  # For backticks, etc.
 }
 
 #
@@ -85,23 +90,24 @@ test-unquote-subs-TODO() {
     'echo "$1" "$foo"' \
     'echo $1 $foo'
 
-  # TODO: echo $foo unquoted
-  check-osh2ysh \
-    'echo "${foo}"' \
-    'echo ${foo}' \
-
   check-osh2ysh \
     'echo "$(echo hi)"' \
     'echo $(echo hi)' 
-}
 
-# TODO: translate to YSTR?
+  return
+  # TODO: echo $foo
+  check-osh2ysh \
+    'echo "${foo}"' \
+    'echo $foo'
+}
 
 TODO-test-word-joining() {
   local osh=$(cat <<EOF
 echo 'foo " bar '"'" 
 EOF
 )
+
+  # TODO: Use new YSTR syntax!
   local ysh=$(cat <<EOF
 echo y"foo \" bar '"
 EOF
@@ -120,7 +126,7 @@ test-command-sub() {
     'echo "__$(echo hi)__"' 
 }
 
-test-var-sub-TODO() {
+test-var-sub() {
   # Unchanged
   check-osh2ysh \
     'echo $foo' \
@@ -135,10 +141,12 @@ test-var-sub-TODO() {
 
   # We could make this $[foo ? 'default'], but meh, let's not introduce more
   # operators
+  #
+  # Better is getvar('foo', 'default')
 
   check-osh2ysh \
     'echo ${foo:-default}' \
-    "echo \$(foo or 'default')"
+    "echo $[getvar('foo', 'default')]"
 }
 
 # Downgraded to one_pass_parse.  This means \" will be wrong, but meh.
@@ -194,8 +202,7 @@ test-source-builtin() {
 }
 
 TODO-test-set-builtin() {
-  # Not needed now that we have 'setvar' ?
-
+  # Not as important now that we have 'setvar'
   check-osh2ysh \
     'set -o errexit' \
     'shopt --set errexit'
@@ -204,6 +211,60 @@ TODO-test-set-builtin() {
 # 
 # CHANGED COMMAND LANGUAGE
 #
+
+TODO-test-bare-assign() {
+  check-osh2ysh "
+a=b
+" "
+setvar a = 'b'
+"
+
+  # TODO: Make it quoted
+  if false; then
+  check-osh2ysh '
+a="$x"
+' '
+setvar a = "$x"
+'
+  fi
+
+  check-osh2ysh '
+a=$(hostname)
+' '
+setvar a = $(hostname)
+'
+
+  check-osh2ysh '
+a=${PATH:-}
+' '
+setvar a = ${PATH:-}
+'
+
+  return
+  check-osh2ysh '
+a=$x
+' '
+setvar a = "$x"
+'
+
+}
+
+TODO-test-assign-builtins() {
+  check-osh2ysh "
+local a=b
+" "
+var a = 'b'
+"
+
+  # TODO: more test cases
+
+  check-osh2ysh "
+readonly a=b
+" "
+const a = 'b'
+"
+
+}
 
 test-while-loop() {
   check-osh2ysh '
@@ -259,9 +320,8 @@ if true {
 }'
 }
 
-# TODO: Fix this
-
 TODO-test-then-next-line() {
+  # TODO: Brace must be on same line
   check-osh2ysh '
 if true
 then
@@ -392,7 +452,7 @@ done
 '
 }
 
-# TODO: Fix this!
+# TODO: translate to forkwait { proper spaces }
 
 test-subshell() {
   check-osh2ysh \
@@ -428,7 +488,17 @@ test-brace-group() {
     INVALID
 }
 
-# TODO: Change case syntax
+# TODO: New case syntax, probably 
+# 
+# case $var {
+#   | *.cc | *.h > echo 'C++'
+# }
+
+# case $var {
+#   | *.cc >
+#   | *.h >
+#     echo 'C++'
+# }
 
 test-case() {
   check-osh2ysh '
