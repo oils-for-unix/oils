@@ -27,15 +27,17 @@ if TYPE_CHECKING:
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
 
+
+HELP_TOPICS = [] # type: List[str]
+
 from mycpp import mylib
 if mylib.PYTHON:
   # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
   try:
     from _devbuild.gen import help_
+    HELP_TOPICS = help_.TOPICS
   except ImportError:
-    class _DummyModule(object): pass
-    help_ = _DummyModule()
-    help_.TOPICS = []
+    pass
 
 
 class _FixedWordsAction(completion.CompletionAction):
@@ -152,7 +154,7 @@ class SpecBuilder(object):
 
       elif name == 'helptopic':
         # Note: it would be nice to have 'helpgroup' for help -i too
-        a = _FixedWordsAction(help_.TOPICS)
+        a = _FixedWordsAction(HELP_TOPICS)
 
       elif name == 'setopt':
         names = [opt.name for opt in option_def.All() if opt.builtin == 'set']
