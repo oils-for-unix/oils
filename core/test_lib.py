@@ -51,7 +51,8 @@ def MakeBuiltinArgv(argv):
 
 
 def Tok(id_, val):
-  return Token(id_, runtime.NO_SPID, val)
+  # TODO: Tests could use this directly
+  return lexer.DummyToken(id_, val)
 
 
 def PrintableString(s):

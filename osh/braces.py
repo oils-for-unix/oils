@@ -23,6 +23,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__BracedTuple, word_part__BracedRange,
 )
 from core.pyerror import log, p_die
+from frontend import lexer
 from frontend import match
 from mycpp.mylib import tagswitch
 
@@ -434,8 +435,11 @@ def _ExpandPart(parts,  # type: List[word_part_t]
         for suffix in suffixes:
           out_parts_ = []  # type: List[word_part_t]
           out_parts_.extend(prefix)
-          # Preserve span_id from the original
-          t = Token(Id.Lit_Chars, expand_part.spids[0], s)
+
+          # TODO: Does it help to preserve location info?
+          # t = Token(Id.Lit_Chars, expand_part.spids[0], s)
+          t = lexer.DummyToken(Id.Lit_Chars, s)
+
           out_parts_.append(t)
           out_parts_.extend(suffix)
           out.append(out_parts_)

@@ -183,7 +183,7 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
       s = '-- %s' % src.s  # use -- to say it came from a flag
 
     else:
-      raise AssertionError()
+      raise AssertionError(src)
 
   return s
 

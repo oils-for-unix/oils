@@ -23,8 +23,19 @@ if TYPE_CHECKING:
   from frontend.reader import _Reader
 
 
-# Special immutable tokens
+# Special immutable token
 _EOL_TOK = Token(Id.Eol_Tok, runtime.NO_SPID, None)
+
+
+def DummyToken(id_, val):
+  # type: (int, str) -> Token
+
+  # col = -1
+  # length = -1
+  # line_id = -1
+  # return Token(id_, col, length, line_id, runtime.NO_SPID, val)
+
+  return Token(id_, runtime.NO_SPID, val)
 
 
 class LineLexer(object):
@@ -305,7 +316,7 @@ class Lexer(object):
     if len(self.translation_stack):
       old_id, new_id = self.translation_stack[-1]  # top
       if t.id == old_id:
-        #log('==> TRANSLATING %s ==> %s', Id_str(old_id), Id_str(t.id))
+        #log('==> TRANSLATING %s ==> %s', Id_str(t.id), Id_str(new_id))
         self.translation_stack.pop()
         t.id = new_id
 
