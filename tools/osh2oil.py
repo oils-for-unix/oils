@@ -10,6 +10,8 @@ selectable rules.
 Files should already have shopt --set ysh:upgrade at the top
 
 - then/fi, do/done -> braces
+- subshell -> forkwait, because () is taken
+  - { } to fopen { }?
 - "$@" -> @ARGV
 - f() { } -> proc f { }  (changes scope)
 - Approximate: var declaration:
@@ -22,10 +24,10 @@ Legacy shell that I don't use:
 - quote removal "$foo" -> $foo
 - brace removal ${foo} and "${foo}" -> $foo
 
+
 ysh-format:
 
 - fix indentation and spacing, like clang-format
-
 """
 
 import sys

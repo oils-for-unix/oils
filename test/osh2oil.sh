@@ -46,26 +46,6 @@ echo $Status $Argc
 OIL
 }
 
-unquote-subs() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo "$1" "$foo"
-OSH
-echo $1 $foo
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo "${foo}"
-OSH
-echo $(foo)
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo "$(echo hi)"
-OSH
-echo $[echo hi]
-OIL
-}
-
 special-vars() {
   # TODO: Some ops don't require $(), like $foo[1] and $foo[1:1+3]
   # We don't want $(foo[1]).
@@ -114,15 +94,6 @@ echo $a[1] @a $PipeStatus @Match
 OIL
 }
 
-# I think ! can raise an exception.  No named references or keys yet.
-prefix-ops() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo ${#s} ${#a[@]}
-OSH
-echo $len(s) $len(a)
-OIL
-}
-
 suffix-ops() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo ${s:-3}
@@ -158,27 +129,6 @@ OIL
 }
 
 builtins() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-. lib.sh
-OSH
-source lib.sh
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-[ -f lib.sh ] && . lib.sh
-OSH
-test -f lib.sh && source lib.sh
-OIL
-
-  # Runtime option is setoption. Compile time is at top of file, with :option
-  # +errexit.  This aids compilation.
-  # could also be "bashoption" for deprecated stuff.
-  # Hm but this is the DEFAULT.
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-set -o errexit
-OSH
-setoption +errexit
-OIL
 
   osh0-oil3 << 'OSH' 3<< 'OIL'
 echo '\n'
@@ -637,26 +587,6 @@ setargv a b c
 OIL
 }
 
-posix-func() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-func1() {
-  echo func1
-  func2()
-  {
-    echo func2
-  }
-}
-OSH
-proc func1 {
-  echo func1
-  proc func2
-  {
-    echo func2
-  }
-}
-OIL
-}
-
 subshell-func() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 subshell-func() (
@@ -667,98 +597,6 @@ proc subshell-func {
   shell { 
     echo subshell
   }
-}
-OIL
-}
-
-ksh-func() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-function func1 {  # no parens
-  echo func1
-  function func2()
-  {
-    echo func2
-  }
-}
-OSH
-proc func1 {  # no parens
-  echo func1
-  proc func2
-  {
-    echo func2
-  }
-}
-OIL
-}
-
-for-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-for x in a b c \
-  d e f; do
-  echo $x
-done
-OSH
-for x in [a b c \
-  d e f] {
-  echo $x
-}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-for x in a b c \
-  d e f
-do
-  echo $x
-done
-OSH
-for x in [a b c \
-  d e f]
-{
-  echo $x
-}
-OIL
-}
-
-empty-for-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-for x in 
-do
-  echo $x
-done
-OSH
-for x in []
-{
-  echo $x
-}
-OIL
-}
-
-args-for-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-for x; do
-  echo $x
-done
-OSH
-for x in @ARGV {
-  echo $x
-}
-OIL
-
-  # NOTE: we don't have the detailed spid info to preserve the brace style.
-  # Leave it to the reformatter?
-  return
-
-#set -- 1 2 3
-#setargv -- 1 2 3
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-for x
-do
-  echo $x
-done
-OSH
-for x in @ARGV
-{
-  echo $x
 }
 OIL
 }
@@ -795,128 +633,12 @@ while not  sh-expr ' x == 3 ' {
 OIL
 }
 
-# TODO: This should match $foo with ...
-
-case_() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-case $var in
-  foo|bar)
-    [ -f foo ] && echo file
-    ;;
-  '')
-    echo empty
-    ;;
-  *)
-    echo default
-    ;;
-esac
-OSH
-match $var {
-  with foo|bar
-    test -f foo && echo file
-    
-  with ''
-    echo empty
-    
-  with *
-    echo default
-    
-}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-case "$var" in
-  *)
-    echo foo
-    echo bar  # no dsemi
-esac
-OSH
-match $var {
-  with *
-    echo foo
-    echo bar  # no dsemi
-}
-OIL
-}
-
-subshell() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-(echo hi;)
-OSH
-shell {echo hi;}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-(echo hi)
-OSH
-shell {echo hi}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-(echo hi; echo bye)
-OSH
-shell {echo hi; echo bye}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-( (echo hi; echo bye ) )
-OSH
-shell { shell {echo hi; echo bye } }
-OIL
-}
-
-brace-group() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-{ echo hi; }
-OSH
-do { echo hi; }
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-{ echo hi; echo bye; }
-OSH
-do { echo hi; echo bye; }
-OIL
-}
-
 # FAILING
 fork() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 sleep 1&
 OSH
 fork sleep 1
-OIL
-}
-
-# Downgraded to one_pass_parse.  This means \" will be wrong, but meh.
-# Here the WordParser makes another pass with CommandParser.
-#
-# We could also translate it to:
-#   echo $[compat backticks 'echo hi']
-# But that might be overly pedantic.  This will work most of the time.
-
-backticks() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo `echo hi ${var}`
-OSH
-echo $[echo hi $(var)]
-OIL
-
-  return
-  # TODO: Not sure why this one is failing
-  if false; then
-    osh0-oil3 << 'OSH' 3<< 'OIL'
-echo `{ echo hi; }`
-OSH
-echo $[do { echo hi }]
-OIL
-  fi
-
-  # This also has problems
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-  echo $({ echo hi; })
-OSH
-echo $[do { echo hi }]
 OIL
 }
 
@@ -928,41 +650,6 @@ a[x+1]=bar
 OSH
 setglobal foo = 'bar'
 compat array-assign a 'x+1' 'bar'
-OIL
-}
-
-var-sub() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $foo
-OSH
-echo $foo
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $foo ${bar} "__${bar}__"
-OSH
-echo $foo $(bar) "__$(bar)__"
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo ${foo:-default}
-OSH
-echo $(foo or 'default')
-OIL
-}
-
-command-sub() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo $(echo hi)
-OSH
-echo $[echo hi]
-OIL
-
-  # In double quotes
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo "__$(echo hi)__"
-OSH
-echo "__$[echo hi]__"
 OIL
 }
 
@@ -1136,14 +823,6 @@ echo "$HOME/name with spaces"
 OIL
 }
 
-word-joining() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo 'foo'"'" 
-OSH
-echo c'foo\''
-OIL
-}
-
 time-block() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 time ls
@@ -1192,29 +871,16 @@ readonly -a PASSING=(
   # Word stuff
   escaped-literal
   args-vars
-  unquote-subs
 
   # Substitutions
-  command-sub
   arith-sub
-  unquote-subs
-
-  posix-func
-  ksh-func
 
   # Require --one-pass-parse
-  backticks
   lhs-assignment
 
   # Compound commands
-  brace-group
-  subshell
   while-expr-loop
   until-loop
-  case_
-  for-loop
-  empty-for-loop
-  args-for-loop
   time-block
 )
 

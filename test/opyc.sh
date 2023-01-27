@@ -110,8 +110,6 @@ run-for-release() {
 }
 
 soil-run() {
-  build/py.sh minimal
-
   make _build/opy/py27.grammar.marshal
 
   run-test-funcs

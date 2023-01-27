@@ -128,7 +128,6 @@ auto-machine2() {
 #         wild.wwz/
 #         unit.wwz/
 #         other.wwz/
-#           osh2oil.txt
 #           gold.txt
 #           parse-errors.txt
 #           runtime-errors.txt
@@ -206,7 +205,7 @@ readonly HAVE_ROOT=1
 
 readonly -a OTHER_TESTS=(
   gold 
-  osh2oil 
+  ysh-prettify
   parse-errors runtime-errors
   oil-runtime-errors
   arena
