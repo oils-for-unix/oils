@@ -32,9 +32,12 @@ HELP_TOPICS = [] # type: List[str]
 
 from mycpp import mylib
 if mylib.PYTHON:
-  # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
+  # - Catch ImportEror because we don't want libcmark.so dependency for
+  #   build/py.sh minimal
+  # - For now, ignore a type error in minimal build.
+  # - TODO: Rewrite help builtin and remove dep on CommonMark 
   try:
-    from _devbuild.gen import help_
+    from _devbuild.gen import help_  # type: ignore
     HELP_TOPICS = help_.TOPICS
   except ImportError:
     pass
