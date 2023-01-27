@@ -203,7 +203,7 @@ class LineLexer(object):
     # added at the last line, so we don't end with \0.
 
     if self.replace_last_token:  # make another token from the last span
-      self.arena.spans.pop()
+      self.arena.tokens.pop()
       self.replace_last_token = False
 
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)

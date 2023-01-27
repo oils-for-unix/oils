@@ -137,8 +137,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       n = term.name
       chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
       if term.negated:
-        e_die("Perl classes can't be negated in ERE",
-              loc.Span(term.negated.span_id))
+        e_die("Perl classes can't be negated in ERE", term.negated)
       else:
         pat = '%s' % chars
       parts.append(pat)
@@ -147,8 +146,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       term = cast(posix_class, UP_term)
       n = term.name  # looks like 'digit'
       if term.negated:
-        e_die("POSIX classes can't be negated in ERE",
-              loc.Span(term.negated.span_id))
+        e_die("POSIX classes can't be negated in ERE", term.negated)
       else:
         pat = '[:%s:]' % n
       parts.append(pat)
@@ -161,7 +159,7 @@ def AsPosixEre(node, parts):
   # type: (re_t, List[str]) -> None
   """Translate an Oil regex to a POSIX ERE.
 
-  Appends to a list of parts that you hvae to join.
+  Appends to a list of parts that you have to join.
   """
   UP_node = node
   tag = node.tag_()

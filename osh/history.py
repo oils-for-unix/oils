@@ -132,8 +132,8 @@ class Evaluator(object):
             raise AssertionError(ch)
 
           arena = self.parse_ctx.arena
-          span1 = arena.GetLineSpan(spid1)
-          span2 = arena.GetLineSpan(spid2)
+          span1 = arena.GetToken(spid1)
+          span2 = arena.GetToken(spid2)
 
           begin = span1.col
           end = span2.col + span2.length

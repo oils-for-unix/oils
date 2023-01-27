@@ -114,7 +114,7 @@ class Pp(_Builtin):
           bgroup = cast(BraceGroup, body)
           if bgroup.doc_token:
             span_id = bgroup.doc_token.span_id
-            span = self.arena.GetLineSpan(span_id)
+            span = self.arena.GetToken(span_id)
             line = self.arena.GetLine(span.line_id)
             # 1 to remove leading space
             doc = line[span.col+1 : span.col + span.length]

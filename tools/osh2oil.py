@@ -31,7 +31,7 @@ class Cursor(object):
       assert 0, 'Missing span ID, got %d' % until_span_id
 
     for span_id in xrange(self.next_span_id, until_span_id):
-      span = self.arena.GetLineSpan(span_id)
+      span = self.arena.GetToken(span_id)
 
       # A span for Eof may have a line_id of -1 when the file is completely
       # empty.
@@ -255,7 +255,7 @@ class OilPrinter(object):
     self.mode = mode
 
   def _DebugSpid(self, spid):
-    span = self.arena.GetLineSpan(spid)
+    span = self.arena.GetToken(spid)
     line = self.arena.GetLine(span.line_id)
     # TODO: This should be factored out
     s = line[span.col : span.col + span.length]
@@ -1100,7 +1100,7 @@ class OilPrinter(object):
       # It's None for here docs I think.
       #log("NODE %s", node)
       #if left_spid is not None and left_spid >= 0:
-        #span = self.arena.GetLineSpan(span_id)
+        #span = self.arena.GetToken(span_id)
         #print(span)
 
         #self.cursor.PrintUntil(left_spid)
@@ -1134,7 +1134,7 @@ class OilPrinter(object):
   def DoWordPart(self, node, local_symbols, quoted=False):
     span_id = word_.LeftMostSpanForPart(node)
     if span_id is not None and span_id != runtime.NO_SPID:
-      span = self.arena.GetLineSpan(span_id)
+      span = self.arena.GetToken(span_id)
 
       self.cursor.PrintUntil(span_id)
 

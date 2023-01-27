@@ -65,7 +65,7 @@ def _assertSpanForWord(test, word_str):
   print(span_id)
 
   if span_id != runtime.NO_SPID:
-    span = arena.GetLineSpan(span_id)
+    span = arena.GetToken(span_id)
     print(span)
 
 

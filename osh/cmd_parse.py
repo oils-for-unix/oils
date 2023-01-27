@@ -211,8 +211,8 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     left_spid = left_token.span_id + 1
     right_spid = close_token.span_id
 
-    left_span = parse_ctx.arena.GetLineSpan(left_spid)
-    right_span = parse_ctx.arena.GetLineSpan(right_spid)
+    left_span = parse_ctx.arena.GetToken(left_spid)
+    right_span = parse_ctx.arena.GetToken(right_spid)
     assert left_span.line_id == right_span.line_id, \
         '%s and %s not on same line' % (left_span, right_span)
 
@@ -229,8 +229,8 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
     spid1 = left_token.span_id
     spid2 = close_token.span_id
-    span1 = arena.GetLineSpan(spid1)
-    span2 = arena.GetLineSpan(spid2)
+    span1 = arena.GetToken(spid1)
+    span2 = arena.GetToken(spid2)
     if span1.line_id == span2.line_id:
       line = arena.GetLine(span1.line_id)
       # extract what's between brackets
@@ -848,8 +848,8 @@ class CommandParser(object):
       spid1 = word_.LeftMostSpanForWord(w)
       spid2 = word_.RightMostSpanForWord(w)
 
-      span1 = self.arena.GetLineSpan(spid1)
-      span2 = self.arena.GetLineSpan(spid2)
+      span1 = self.arena.GetToken(spid1)
+      span2 = self.arena.GetToken(spid2)
 
       if 0:
         log('spid1 = %d, spid2 = %d', spid1, spid2)

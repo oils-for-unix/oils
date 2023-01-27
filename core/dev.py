@@ -104,7 +104,7 @@ class CrashDumper(object):
       }
 
       if span_id != runtime.NO_SPID:
-        span = cmd_ev.arena.GetLineSpan(span_id)
+        span = cmd_ev.arena.GetToken(span_id)
         line_id = span.line_id
 
         # Could also do msg % args separately, but JavaScript won't be able to
@@ -580,8 +580,8 @@ class Tracer(object):
     if not buf:
       return
 
-    left_span = arena.GetLineSpan(left_spid)
-    right_span = arena.GetLineSpan(right_spid)
+    left_span = arena.GetToken(left_spid)
+    right_span = arena.GetToken(right_spid)
     line = arena.GetLine(left_span.line_id)
     start = left_span.col
 

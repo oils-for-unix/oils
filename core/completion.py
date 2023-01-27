@@ -850,7 +850,7 @@ class RootCompleter(object):
 
     def _TokenStart(tok):
       # type: (Token) -> int
-      span = arena.GetLineSpan(tok.span_id)
+      span = arena.GetToken(tok.span_id)
       return span.col
 
     if t2:  # We always have t1?
@@ -948,7 +948,7 @@ class RootCompleter(object):
             return
 
           span_id = word_.LeftMostSpanForWord(arg_word)
-          span = arena.GetLineSpan(span_id)
+          span = arena.GetToken(span_id)
 
           self.comp_ui_state.display_pos = span.col
 
@@ -1035,7 +1035,7 @@ class RootCompleter(object):
           # echo `gr
 
           span_id = word_.LeftMostSpanForWord(trail.words[0])
-          span = arena.GetLineSpan(span_id)
+          span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
           self.debug_f.log('** DISPLAY_POS = %d', self.comp_ui_state.display_pos)
 
@@ -1052,7 +1052,7 @@ class RootCompleter(object):
 
           # Display since the beginning
           span_id = word_.LeftMostSpanForWord(trail.words[-1])
-          span = arena.GetLineSpan(span_id)
+          span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
           self.debug_f.log('words[-1]: %r', trail.words[-1])
           self.debug_f.log('display_pos %d', self.comp_ui_state.display_pos)

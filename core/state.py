@@ -1323,7 +1323,7 @@ class Mem(object):
 
         d['call_spid'] = frame.call_spid
         if frame.call_spid != runtime.NO_SPID:  # first frame has this issue
-          span = self.arena.GetLineSpan(frame.call_spid)
+          span = self.arena.GetToken(frame.call_spid)
           line_id = span.line_id
           d['call_source'] = ui.GetLineSourceString(self.arena, line_id)
           d['call_line_num'] = self.arena.GetLineNumber(line_id)
@@ -1401,7 +1401,7 @@ class Mem(object):
     frame = NewDict()  # type: Dict[str, cell]
     self.var_stack.append(frame)
 
-    span = self.arena.GetLineSpan(def_spid)
+    span = self.arena.GetToken(def_spid)
     source_str = ui.GetLineSourceString(self.arena, span.line_id)
 
     # bash uses this order: top of stack first.
@@ -1972,7 +1972,7 @@ class Mem(object):
           if frame.call_spid == -2:
             strs.append('-')  # Bash does this to line up with main?
             continue
-          span = self.arena.GetLineSpan(frame.call_spid)
+          span = self.arena.GetToken(frame.call_spid)
           source_str = ui.GetLineSourceString(self.arena, span.line_id)
           strs.append(source_str)
         return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
@@ -1986,14 +1986,14 @@ class Mem(object):
         if frame.call_spid == LINE_ZERO:
           strs.append('0')  # Bash does this to line up with main?
           continue
-        span = self.arena.GetLineSpan(frame.call_spid)
+        span = self.arena.GetToken(frame.call_spid)
         line_num = self.arena.GetLineNumber(span.line_id)
         strs.append(str(line_num))
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
       assert self.current_spid != -1, self.current_spid
-      span = self.arena.GetLineSpan(self.current_spid)
+      span = self.arena.GetToken(self.current_spid)
       # TODO: maybe use interned GetLineNumStr?
       self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
       return self.line_num

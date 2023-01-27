@@ -63,7 +63,7 @@ def PrettyToken(tok, arena):
   if tok.id == Id.Eof_Real:
     return 'EOF'
 
-  span = arena.GetLineSpan(tok.span_id)
+  span = arena.GetToken(tok.span_id)
   line = arena.GetLine(span.line_id)
   val = line[span.col: span.col + span.length]
   # TODO: Print length 0 as 'EOF'?
@@ -141,7 +141,7 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
       if src.span_id == runtime.NO_SPID:
         s = '[ %s word at ? ]' % src.what
       else:
-        span = arena.GetLineSpan(src.span_id)
+        span = arena.GetToken(src.span_id)
         line_num = arena.GetLineNumber(span.line_id)
         outer_source = GetLineSourceString(arena, span.line_id,
                                            quote_filename=quote_filename)
@@ -159,7 +159,7 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
       if src.span_id == runtime.NO_SPID:
         where = '?'
       else:
-        span = arena.GetLineSpan(src.span_id)
+        span = arena.GetToken(src.span_id)
         line_num = arena.GetLineNumber(span.line_id)
         outer_source = GetLineSourceString(arena, span.line_id,
                                            quote_filename=quote_filename)
@@ -173,7 +173,7 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
 
     elif case(source_e.Reparsed):
       src = cast(source__Reparsed, UP_src)
-      span2 = arena.GetLineSpan(src.left_spid)
+      span2 = arena.GetToken(src.left_spid)
       outer_source = GetLineSourceString(arena, span2.line_id,
                                          quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
@@ -200,7 +200,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
     f.write('[??? no location ???] %s%s\n' % (prefix, msg))
     return
 
-  line_span = arena.GetLineSpan(span_id)
+  line_span = arena.GetToken(span_id)
   orig_col = line_span.col
   line_id = line_span.line_id
 
@@ -213,7 +213,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
     # LValue/backticks is the only case where we don't print this
     if src.tag_() == source_e.Reparsed:
       src = cast(source__Reparsed, UP_src)
-      span2 = arena.GetLineSpan(src.left_spid)
+      span2 = arena.GetToken(src.left_spid)
       line_num = arena.GetLineNumber(span2.line_id)
 
       # We want the excerpt to look like this:

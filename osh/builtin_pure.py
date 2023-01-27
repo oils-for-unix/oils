@@ -811,7 +811,7 @@ if mylib.PYTHON:
 
           if brace_group:
             # BraceGroup has spid for {
-            line_span = self.arena.GetLineSpan(brace_group.spids[0])
+            line_span = self.arena.GetToken(brace_group.spids[0])
             src = self.arena.GetLineSource(line_span.line_id)
             line_num = self.arena.GetLineNumber(line_span.line_id)
 

@@ -54,7 +54,7 @@ class Arena(object):
     self.line_num_strs = {}  # type: Dict[int, str]  # an INTERN table
 
     # indexed by span_id
-    self.spans = []  # type: List[Token]
+    self.tokens = []  # type: List[Token]
 
     # reuse these instances in many line_span instances
     self.source_instances = []  # type: List[source_t]
@@ -111,8 +111,8 @@ class Arena(object):
 
   def GetCodeString(self, lbrace_spid, rbrace_spid):
     # type: (int, int) -> str
-    left_span = self.GetLineSpan(lbrace_spid)
-    right_span = self.GetLineSpan(rbrace_spid)
+    left_span = self.GetToken(lbrace_spid)
+    right_span = self.GetToken(rbrace_spid)
 
     assert self.line_srcs[left_span.line_id] == self.line_srcs[right_span.line_id]
 
@@ -148,29 +148,24 @@ class Arena(object):
 
   def NewTokenId(self, id_, col, length, line_id, val):
     # type: (int, int, int, int, str) -> int
-    span_id = len(self.spans)  # spids are just array indices
+    span_id = len(self.tokens)  # spids are just array indices
     tok = Token(id_, col, length, line_id, span_id, val)
-    self.spans.append(tok)
+    self.tokens.append(tok)
     return span_id
 
   def NewToken(self, id_, col, length, line_id, val):
     # type: (int, int, int, int, str) -> Token
     span_id = self.NewTokenId(id_, col, length, line_id, val)
-    return self.spans[span_id]
+    return self.tokens[span_id]
 
-  def GetLineSpan(self, span_id):
+  def GetToken(self, span_id):
     # type: (int) -> Token
     assert span_id != runtime.NO_SPID, span_id
-    assert span_id < len(self.spans), \
-      'Span ID out of range: %d is greater than %d' % (span_id, len(self.spans))
-    return self.spans[span_id]
-
-  def LineSpanFromLocation(self, loc_):
-    # type: (loc_t) -> Token
-    span_id = location.GetSpanId(loc_)
-    return self.GetLineSpan(span_id)
+    assert span_id < len(self.tokens), \
+      'Span ID out of range: %d is greater than %d' % (span_id, len(self.tokens))
+    return self.tokens[span_id]
 
   def LastSpanId(self):
     # type: () -> int
     """Return one past the last span ID."""
-    return len(self.spans)
+    return len(self.tokens)
