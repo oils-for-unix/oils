@@ -291,6 +291,7 @@ configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -
 tsv-lib-test           test/tsv-lib-test.sh soil-run              -
 osh2oil                test/osh2oil.sh soil-run                   -
+ysh-prettify           test/ysh-prettify.sh soil-run              -
 R-test                 devtools/R-test.sh soil-run                -
 xargs-test             test/other.sh xargs-test                   -
 csv2html-test          test/other.sh csv2html-test                -

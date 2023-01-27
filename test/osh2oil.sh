@@ -31,11 +31,6 @@ osh0-oil3() {
 }
 
 args-vars() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo one "$@" two
-OSH
-echo one @ARGV two
-OIL
 
   # These are all the same.  Join by first char of IFS.
   osh0-oil3 << 'OSH' 3<< 'OIL'
@@ -159,44 +154,6 @@ patsub() {
 echo ${s/foo/bar} ${s//foo/bar}
 OSH
 echo $s.replace('foo', 'bar') $s.replace('foo', 'bar', :ALL)
-OIL
-}
-
-simple-command() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo hi
-OSH
-echo hi
-OIL
-}
-
-line-breaks() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-echo one \
-  two three \
-  four
-OSH
-echo one \
-  two three \
-  four
-OIL
-}
-
-bracket-builtin() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-[ ! -z "$foo" ] || die
-OSH
-test ! -z $foo || die
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-if [ "$foo" -eq 3 ]; then
-  echo yes
-fi
-OSH
-if test $foo -eq 3 {
-  echo yes
-}
 OIL
 }
 
@@ -680,14 +637,6 @@ setargv a b c
 OIL
 }
 
-and-or() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-ls && echo "$@" || die "foo"
-OSH
-ls && echo @ARGV || die "foo"
-OIL
-}
-
 posix-func() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 func1() {
@@ -814,30 +763,6 @@ for x in @ARGV
 OIL
 }
 
-while-loop() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-while read line; do
-  echo $line
-done
-OSH
-while read line {
-  echo $line
-}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-while read \
-  line; do
-  echo $line
-done
-OSH
-while read \
-  line {
-  echo $line
-}
-OIL
-}
-
 while-expr-loop() {
   osh0-oil3 << 'OSH' 3<< 'OIL'
 x=0
@@ -866,52 +791,6 @@ setglobal x = '0'
 while not  sh-expr ' x == 3 ' {
   sh-expr ' x++ '
   echo $x
-}
-OIL
-}
-
-if_() {
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-if true; then
-  echo yes
-fi
-OSH
-if true {
-  echo yes
-}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-if true
-then
-  echo yes
-fi
-OSH
-if true
-{
-  echo yes
-}
-OIL
-
-  osh0-oil3 << 'OSH' 3<< 'OIL'
-if true; then
-  echo yes
-elif false; then
-  echo elif
-elif spam; then
-  echo elif
-else
-  echo no
-fi
-OSH
-if true {
-  echo yes
-} elif false {
-  echo elif
-} elif spam {
-  echo elif
-} else {
-  echo no
 }
 OIL
 }
@@ -1298,18 +1177,15 @@ OIL
 }
 
 readonly -a PASSING=(
-  simple-command
   #assign
   #assign2
   more-env
-  line-breaks
 
   # These two were broken by redirect refactoring
   #redirect
   #here-doc
 
   pipeline
-  and-or
   dparen
   #fork
 
@@ -1333,18 +1209,13 @@ readonly -a PASSING=(
   # Compound commands
   brace-group
   subshell
-  while-loop
   while-expr-loop
   until-loop
-  if_
   case_
   for-loop
   empty-for-loop
   args-for-loop
   time-block
-
-  # Builtins
-  bracket-builtin
 )
 
 list-all-tests() {
@@ -1371,4 +1242,6 @@ soil-run() {
   all-passing
 }
 
-"$@"
+if test $(basename $0) = 'osh2oil.sh'; then
+  "$@"
+fi
