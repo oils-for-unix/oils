@@ -30,7 +30,7 @@ if TYPE_CHECKING:
       command__Data, command__Enum, command__Class, command__Import
   )
   from core.alloc import Arena
-  from core.util import DebugFile
+  from core.util import _DebugFile
   from core import optview
   from frontend.lexer import Lexer
   from frontend.reader import _Reader
@@ -88,7 +88,7 @@ class _BaseTrail(object):
 
   if mylib.PYTHON:
     def PrintDebugString(self, debug_f):
-      # type: (DebugFile) -> None
+      # type: (_DebugFile) -> None
 
       # note: could cast DebugFile to IO[str] instead of ignoring?
       debug_f.log('  words:')
