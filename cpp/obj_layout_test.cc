@@ -3,15 +3,13 @@
 #include "vendor/greatest.h"
 
 TEST sizeof_syntax() {
-  // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
-  // span_id.
-  // Now 16 bytes.
+  // 40 bytes (after merging with line_span January 2023)
+  // - Get rid of 'string val' 
+  // - Replace 'int line_id' with SourceLine
+  // - Maybe recompute length on demand
   log("sizeof(Token) = %d", sizeof(syntax_asdl::Token));
   log("alignof(Token) = %d", alignof(syntax_asdl::Token));
   log("alignof(Token*) = %d", alignof(syntax_asdl::Token*));
-
-  // 16 bytes: 2 byte tag + 3 integer fields
-  log("sizeof(line_span) = %d", sizeof(syntax_asdl::line_span));
 
   // Reordered to be 16 bytes
   log("sizeof(cell) = %d", sizeof(runtime_asdl::cell));
