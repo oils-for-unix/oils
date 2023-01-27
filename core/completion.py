@@ -47,14 +47,13 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.pyerror import log
 from core import pyos
-from core.pyutil import stderr_line
-from core import pyos
 from core import state
 from core import ui
 from core import util
 from frontend import consts
 from frontend import reader
 from mycpp import mylib
+from mycpp.mylib import print_stderr
 from pylib import os_path
 from pylib import path_stat
 from osh import word_
@@ -505,8 +504,8 @@ class ShellFuncAction(CompletionAction):
       # Not changing it means there were no completions.
       # TODO: This writes over the command line; it would be better to use an
       # error object.
-      stderr_line('osh: Ran function %r but COMPREPLY was unset',
-                  self.func.name)
+      print_stderr('osh: Ran function %r but COMPREPLY was unset' %
+                   self.func.name)
       return
 
     if val.tag_() != value_e.MaybeStrArray:
@@ -1253,26 +1252,26 @@ class ReadlineCallback(object):
       return self._GetNextCompletion(state)
     except util.UserExit as e:
       # TODO: Could use errfmt to show this
-      stderr_line("osh: Ignoring 'exit' in completion plugin")
+      print_stderr("osh: Ignoring 'exit' in completion plugin")
     except error.FatalRuntime as e:
       # From -W.  TODO: -F is swallowed now.
       # We should have a nicer UI for displaying errors.  Maybe they shouldn't
       # print it to stderr.  That messes up the completion display.  We could
       # print what WOULD have been COMPREPLY here.
-      stderr_line('osh: Runtime error while completing: %s', e)
-      self.debug_f.log('Runtime error while completing: %s', e)
+      print_stderr('osh: Runtime error while completing: %s' % e.UserErrorString())
+      self.debug_f.log('Runtime error while completing: %s', e.UserErrorString())
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
-      stderr_line('osh: I/O error in completion: %s', posix.strerror(e.errno))
+      print_stderr('osh: I/O error in completion: %s' % posix.strerror(e.errno))
     except KeyboardInterrupt:
       # It appears GNU readline handles Ctrl-C to cancel a long completion.
       # So this may never happen?
-      stderr_line('Ctrl-C in completion')
+      print_stderr('Ctrl-C in completion')
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
       if 1:
         import traceback
         traceback.print_exc()
-      stderr_line('osh: Unhandled exception while completing: %s', e)
+      print_stderr('osh: Unhandled exception while completing: %s' % e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # I think this should no longer be called, because we don't use

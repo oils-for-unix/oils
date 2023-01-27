@@ -681,7 +681,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # log('foo %s', x)
         #   =>
         # log(StrFormat('foo %s', x))
-        if o.callee.name == 'log' or o.callee.name == 'stderr_line':
+        if o.callee.name == 'log':
           args = o.args
           if len(args) == 1:  # log(CONST)
             self.write('mylib::print_stderr(')
@@ -689,12 +689,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
-          rest = args[1:]
           quoted_fmt = PythonStringLiteral(args[0].value)
 
-          # DEFINITION PASS: Write the call
+          # DEFINITION PASS
           self.write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
-          for i, arg in enumerate(rest):
+          for i, arg in enumerate(args[1:]):
             if i != 0:
               self.write(', ')
             self.accept(arg)

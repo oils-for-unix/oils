@@ -12,7 +12,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import List, Any, Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
 
@@ -61,14 +61,6 @@ def BackslashEscape(s, meta_chars):
       escaped.append('\\')
     escaped.append(c)
   return ''.join(escaped)
-
-
-def stderr_line(msg, *args):
-  # type: (str, *Any) -> None
-  """ TODO: remove in favor of mylib.print_stderr """
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
 
 
 def strerror(e):
