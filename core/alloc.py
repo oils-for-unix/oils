@@ -11,10 +11,9 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import source_t, loc_t, Token
+from _devbuild.gen.syntax_asdl import source_t, Token
 from asdl import runtime
 from core.pyerror import log
-from frontend import location
 
 from typing import List, Dict, Any
 
