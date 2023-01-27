@@ -24,32 +24,25 @@ typecheck-more() {
   egrep -v "$COMMENT_RE" $MORE_MANIFEST | xargs -- $0 typecheck-files
 }
 
-typecheck-files-2() {
+typecheck-and-log() {
   local manifest=$1
-  local strict_none=${2:-}
+  local more_flags=${2:-}
 
-  # 150 errors left without those flags.  But it doesn't impede translating to
-  # C++ since you have nullptr.  Although List[Optional[int]] may be an issue.
-  #local flags=''
-  local flags
-  if test -n "$strict_none"; then
-    flags='--strict'
-  else
-    flags=$MYPY_FLAGS
-  fi
+  # For manual inspection
+  local log_path=_tmp/mypy-errors.txt
 
-  local log_path=_tmp/err.txt
   set +o errexit
-  cat $manifest | xargs -- $0 typecheck --follow-imports=silent $flags >$log_path
+  cat $manifest | xargs -- $0 typecheck --follow-imports=silent $MYPY_FLAGS $more_flags >$log_path
   local status=$?
   set -o errexit
+
   if test $status -eq 0; then
     echo 'OK'
   else
     echo
     cat $log_path
     echo
-    echo 'FAIL'
+    echo "FAIL (copied to $log_path)"
     return 1
   fi
 }
@@ -58,7 +51,10 @@ check-all() {
   ### Run this locally
 
   banner 'typecheck oils_cpp'
-  typecheck-files-2 _build/NINJA/oils_cpp/typecheck.txt
+
+  # TODO: remove --no-warn-unused-ignores and type: ignore in
+  # osh/builtin_comp.py after help_.py import isn't conditional
+  typecheck-and-log _build/NINJA/oils_cpp/typecheck.txt --no-warn-unused-ignores
 
   # Ad hoc list of additional files
   banner 'typecheck More'
