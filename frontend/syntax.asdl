@@ -198,7 +198,7 @@ module syntax
   triple_quoted = (int min_dedent, string_line* lines)
 
   -- TODO: remove word.Empty 
-  rhs_word_ =
+  rhs_word =
     Empty
   | Compound %compound_word
 
@@ -264,7 +264,7 @@ module syntax
   redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  assign_pair = (sh_lhs_expr lhs, assign_op op, word? rhs, int* spids)
+  assign_pair = (sh_lhs_expr lhs, assign_op op, word rhs, int* spids)
   env_pair = (string name, word val, int* spids)
 
   condition = 

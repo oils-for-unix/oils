@@ -26,10 +26,10 @@ def _CreateModule(id_spec, ids):
   """
   from asdl import ast
 
-  id_sum = ast.Sum([ast.Constructor(name) for name, _ in ids])
+  id_sum = ast.SimpleSum([ast.Constructor(name) for name, _ in ids])
 
   variants2 = [ast.Constructor(name) for name in id_spec.kind_name_list]
-  kind_sum = ast.Sum(variants2)
+  kind_sum = ast.SimpleSum(variants2)
 
   id_ = ast.TypeDecl('Id', id_sum)
   kind_ = ast.TypeDecl('Kind', kind_sum)

@@ -200,10 +200,10 @@ class ASDLParser(object):
                 self._advance()
             attributes = self._parse_optional_attributes()
 
-            if any(cons.fields for cons in sumlist):
-              return Sum(sumlist, attributes)
-            else:
+            if ast.is_simple(sumlist):
               return SimpleSum(sumlist, attributes)
+            else:
+              return Sum(sumlist, attributes)
 
     def _parse_type_expr(self):
         """

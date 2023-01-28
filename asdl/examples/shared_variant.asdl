@@ -20,6 +20,9 @@ module shared_variant {
     Eof
   | Token %Token
 
+  tok_struct = (tok token, int x)
+  tok_array = (tok* tokens)
+
   word_part =
     Literal(string s)
   | DoubleQuoted %double_quoted

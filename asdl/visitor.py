@@ -38,25 +38,25 @@ class AsdlVisitor:
     self.EmitFooter()
 
   def VisitType(self, typ, depth=0):
-    if isinstance(typ.value, ast.Sum):
-      self.VisitSum(typ.value, typ.name, depth)
+
+    if isinstance(typ.value, ast.SimpleSum):
+      self.VisitSimpleSum(typ.value, typ.name, depth)
+
+    elif isinstance(typ.value, ast.Sum):
+      self.VisitCompoundSum(typ.value, typ.name, depth)
+
     elif isinstance(typ.value, ast.Product):
       self.VisitProduct(typ.value, typ.name, depth)
+
     else:
       raise AssertionError(typ)
 
-  def VisitSum(self, sum, name, depth):
-    if ast.is_simple(sum):
-      self.VisitSimpleSum(sum, name, depth)
-    else:
-      self.VisitCompoundSum(sum, name, depth)
-
   # Optionally overridden.
-  def VisitProduct(self, value, name, depth):
-    pass
   def VisitSimpleSum(self, value, name, depth):
     pass
   def VisitCompoundSum(self, value, name, depth):
+    pass
+  def VisitProduct(self, value, name, depth):
     pass
   def EmitFooter(self):
     pass

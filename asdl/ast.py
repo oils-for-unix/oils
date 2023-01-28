@@ -31,13 +31,13 @@ from typing import List
 # should move to front_end.py.
 
 # PATCH: Moved this function from asdl_c.py.
-def is_simple(sum):
+def is_simple(variant_list):
   """Return True if a sum is a simple.
 
     A sum is simple if its types have no fields, e.g.
     unaryop = Invert | Not | UAdd | USub
     """
-  for t in sum.types:
+  for t in variant_list:
     if t.fields or t.shared_type:
       return False
   return True
