@@ -5,7 +5,6 @@ tools_main.py
 from __future__ import print_function
 
 import posix_ as posix
-import sys
 
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import source
