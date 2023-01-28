@@ -1352,6 +1352,8 @@ class WordParser(WordEmitter):
     # If the first one is a key/value pair, then the rest are assumed to be.
     pair = word_.DetectAssocPair(words[0])
     if pair:
+      pairs.append(pair)
+
       n = len(words)
       for i in xrange(1, n):
         w2 = words[i]
