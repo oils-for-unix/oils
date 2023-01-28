@@ -71,23 +71,30 @@ def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
 
   # Lookup WITHOUT dynamic scope.
   val = mem.GetValue(var_name, which_scopes=which_scopes)
-  if val.tag == value_e.Undef:
+  if val.tag_() == value_e.Undef:
     # TODO: Location info
     e_die('Undefined variable %r' % var_name, loc.Span(span_id))
 
   UP_val = val
-  if val.tag == value_e.Str:
-    val = cast(value__Str, UP_val)
-    return val.s
-  if val.tag == value_e.MaybeStrArray:
-    val = cast(value__MaybeStrArray, UP_val)
-    return val.strs  # node: has None
-  if val.tag == value_e.AssocArray:
-    val = cast(value__AssocArray, UP_val)
-    return val.d
-  if val.tag == value_e.Obj:
-    val = cast(value__Obj, UP_val)
-    return val.obj
+  with tagswitch(val) as case:
+    if case(value_e.Str):
+      val = cast(value__Str, UP_val)
+      return val.s
+
+    elif case(value_e.MaybeStrArray):
+      val = cast(value__MaybeStrArray, UP_val)
+      return val.strs  # node: has None
+
+    elif case(value_e.AssocArray):
+      val = cast(value__AssocArray, UP_val)
+      return val.d
+
+    elif case(value_e.Obj):
+      val = cast(value__Obj, UP_val)
+      return val.obj
+
+    else:
+      raise NotImplementedError()
 
 
 def Stringify(py_val, word_part=None):
@@ -272,7 +279,7 @@ class OilEvaluator(object):
     func_name = part.name.val[1:]
 
     fn_val = self.mem.GetValue(func_name)  # type: value_t
-    if fn_val.tag != value_e.Obj:
+    if fn_val.tag_() != value_e.Obj:
       e_die("Expected function named %r, got %r " % (func_name, fn_val))
     assert isinstance(fn_val, value__Obj)
 
@@ -697,7 +704,7 @@ class OilEvaluator(object):
 
         values = []
         for i, value_expr in enumerate(node.values):
-          if value_expr.tag == expr_e.Implicit:
+          if value_expr.tag_() == expr_e.Implicit:
             v = self.LookupVar(keys[i])  # {name}
           else:
             v = self._EvalExpr(value_expr)

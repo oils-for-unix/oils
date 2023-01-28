@@ -144,7 +144,7 @@ class MemTest(unittest.TestCase):
     mem.SetValue(
         lvalue.Named('g2'), None, scope_e.Dynamic,
         flags=state.SetExport)
-    self.assertEqual(value_e.Undef, mem.var_stack[0]['g2'].val.tag)
+    self.assertEqual(value_e.Undef, mem.var_stack[0]['g2'].val.tag_())
     self.assertEqual(True, mem.var_stack[0]['g2'].exported)
 
     # readonly myglobal
@@ -199,7 +199,7 @@ class MemTest(unittest.TestCase):
     mem.SetValue(
         lvalue.Named('r2'), None, scope_e.Dynamic,
         flags=state.SetReadOnly)
-    self.assertEqual(value_e.Undef, mem.var_stack[0]['r2'].val.tag)
+    self.assertEqual(value_e.Undef, mem.var_stack[0]['r2'].val.tag_())
     self.assertEqual(True, mem.var_stack[0]['r2'].readonly)
 
     # export -n PYTHONPATH

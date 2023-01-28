@@ -100,7 +100,7 @@ class tagswitch(object):
 
   def __init__(self, node):
     # type: (int) -> None
-    self.tag = node.tag
+    self.tag = node.tag_()
 
   def __enter__(self):
     # type: () -> tagswitch

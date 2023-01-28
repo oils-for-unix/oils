@@ -274,7 +274,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 tag_num):
     """Used for Constructor and Product."""
     self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
-    self.Emit('  tag = %d' % tag_num)
+    self.Emit('  _type_tag = %d' % tag_num)
 
     # Add on attributes
     all_fields = ast_node.fields + attributes
@@ -447,7 +447,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # To imitate C++ API
     self.Emit('def tag_(self):')
     self.Emit('  # type: () -> int')
-    self.Emit('  return self.tag')
+    self.Emit('  return self._type_tag')
 
     # This is what we would do in C++, but we don't need it in Python because
     # every function is virtual.

@@ -102,14 +102,14 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
-    self.assertEqual(word_part_e.BracedTuple, middle_part.tag)
+    self.assertEqual(word_part_e.BracedTuple, middle_part.tag_())
     self.assertEqual(4, len(middle_part.words))  # a b c ={d,e}
 
     last_alternative = middle_part.words[3]
     self.assertEqual(2, len(last_alternative.parts)) # = {d,e}
 
     second_part = last_alternative.parts[1]
-    self.assertEqual(word_part_e.BracedTuple, second_part.tag)
+    self.assertEqual(word_part_e.BracedTuple, second_part.tag_())
     self.assertEqual(2, len(second_part.words)) # {d,e}
 
     # Another nested expansion
@@ -119,7 +119,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(tree.parts))  # B- {} -E
 
     middle_part = tree.parts[1]
-    self.assertEqual(word_part_e.BracedTuple, middle_part.tag)
+    self.assertEqual(word_part_e.BracedTuple, middle_part.tag_())
     self.assertEqual(3, len(middle_part.words))  # a ={b,c}= d
 
     first_alternative = middle_part.words[0]
@@ -131,7 +131,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(3, len(middle_alternative.parts))  # = {b,c} =
 
     middle_part2 = middle_alternative.parts[1]
-    self.assertEqual(word_part_e.BracedTuple, middle_part2.tag)
+    self.assertEqual(word_part_e.BracedTuple, middle_part2.tag_())
     self.assertEqual(2, len(middle_part2.words))  # b c
 
     # Third alternative is a Compound with zero parts

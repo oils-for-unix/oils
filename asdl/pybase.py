@@ -24,10 +24,9 @@ class SimpleObj(int):
 
 
 class CompoundObj(Obj):
-  # TODO: Remove tag?
-  # The tag is always set for constructor types, which are subclasses of sum
+  # The tag is set for variant types, which are subclasses of sum
   # types.  Never set for product types.
-  tag = 0  # TYPED: Changed from None.  0 is invalid!
+  _type_tag = 0  # Starts at 1.  Zero is invalid
 
   def PrettyTree(self):
     # type: () -> hnode_t

@@ -729,7 +729,7 @@ class MutableOpts(object):
     self._SetOldOption(opt_name, b)
 
     UP_val = self.mem.GetValue('SHELLOPTS')
-    assert UP_val.tag == value_e.Str, UP_val
+    assert UP_val.tag_() == value_e.Str, UP_val
     val = cast(value__Str, UP_val)
     shellopts = val.s
 
@@ -1847,7 +1847,7 @@ class Mem(object):
           e_die("Can't assign to readonly associative array", loc.Span(left_spid))
 
         # We already looked it up before making the lvalue
-        assert cell.val.tag == value_e.AssocArray, cell
+        assert cell.val.tag_() == value_e.AssocArray, cell
         cell_val2 = cast(value__AssocArray, cell.val)
 
         cell_val2.d[lval.key] = rval.s

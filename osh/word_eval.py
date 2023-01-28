@@ -764,7 +764,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _ApplyUnarySuffixOp(self, val, op):
     # type: (value_t, suffix_op__Unary) -> value_t
-    assert val.tag != value_e.Undef
+    assert val.tag_() != value_e.Undef
 
     op_kind = consts.GetKind(op.tok.id)
 
@@ -773,7 +773,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # Detect has_extglob so that DoUnarySuffixOp doesn't use the fast
       # shortcut for constant strings.
       arg_val, has_extglob = self.EvalWordToPattern(op.arg_word)
-      assert arg_val.tag == value_e.Str
+      assert arg_val.tag_() == value_e.Str
 
       UP_val = val
       with tagswitch(val) as case:
@@ -819,7 +819,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     if op.replace:
       replace_val = self.EvalWordToString(op.replace)
-      assert replace_val.tag == value_e.Str, replace_val
+      assert replace_val.tag_() == value_e.Str, replace_val
       replace_str = replace_val.s
     else:
       replace_str = ''
@@ -1076,7 +1076,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _DecayArray(self, val):
     # type: (value__MaybeStrArray) -> value__Str
     """Decay $* to a string."""
-    assert val.tag == value_e.MaybeStrArray, val
+    assert val.tag_() == value_e.MaybeStrArray, val
     sep = self.splitter.GetJoinChar()
     tmp = [s for s in val.strs if s is not None]
     return value.Str(sep.join(tmp))
