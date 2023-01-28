@@ -122,7 +122,12 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
 ### Major Features
 
-- Instantiating objects &rarr; `Alloc<T>(...)`
+- `callable(arg)` to either &rarr;
+  - function call `f(arg)`
+  - instantiation `Alloc<T>(arg)`
+- `name.attr` to either &rarr;
+  - `obj->member`
+  - `module::Func`
 - Python `int` and `bool` &rarr; C++ `int` and `bool`
   - `None` &rarr; `nullptr`
 - Statically Typed Python Collections
@@ -148,6 +153,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
     used.
   - Detect `virtual` methods
   - TODO: could we detect `abstract` methods? (`NotImplementedError`)
+- Python generators `Iterator[T]` &rarr; eager `List<T>` accumulators
 - Python Exceptions &rarr; C++ exceptions
 - Python Modules &rarr; C++ namespace (we assume a 2-level hierarchy)
 

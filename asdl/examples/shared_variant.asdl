@@ -14,6 +14,12 @@ module shared_variant {
   | DoubleQuoted %double_quoted
   attributes (int left_spid, int right_spid)
 
+  Token = (int id, string val)
+
+  tok =
+    Eof
+  | Token %Token
+
   word_part =
     Literal(string s)
   | DoubleQuoted %double_quoted

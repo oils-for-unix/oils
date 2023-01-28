@@ -30,6 +30,8 @@ def NinjaGraph(ru):
 
   ru.asdl_library('asdl/examples/demo_lib.asdl')
 
+  ru.asdl_library('asdl/examples/shared_variant.asdl')
+
   ru.asdl_library(
       'asdl/examples/typed_demo.asdl',
       deps = ['//asdl/examples/demo_lib.asdl'])
@@ -39,6 +41,7 @@ def NinjaGraph(ru):
       deps = [
         '//asdl/examples/typed_arith.asdl',
         '//asdl/examples/typed_demo.asdl',
+        '//asdl/examples/shared_variant.asdl',
         '//mycpp/runtime',
         '//prebuilt/asdl/runtime.mycpp',
       ],

@@ -3,14 +3,16 @@
 
 #include "_gen/asdl/examples/typed_arith.asdl.h"
 #include "_gen/asdl/examples/typed_demo.asdl.h"  // has simple Sum, etc
+#include "_gen/asdl/examples/shared_variant.asdl.h"
 #include "mycpp/runtime.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"
 
 using typed_arith_asdl::pipeline;
 
-using typed_arith_asdl::arith_expr_e;
-using typed_arith_asdl::arith_expr_t;
+using typed_arith_asdl::arith_expr_e;  // variant tag type
+using typed_arith_asdl::arith_expr_t;  // sum type
+using typed_arith_asdl::arith_expr;  // variant type namespace
 
 using typed_arith_asdl::arith_expr__Const;
 using typed_arith_asdl::arith_expr__FuncCall;
@@ -38,9 +40,8 @@ void PrintTag(arith_expr_t* a) {
   log("");
 }
 
-#if 1
 TEST misc_test() {
-  auto c = Alloc<arith_expr__Const>(42);
+  auto c = Alloc<arith_expr::Const>(42);
   log("sizeof *c = %d", sizeof *c);  // 16 bytes
 
   ASSERT_EQ_FMT(42, c->i, "%d");
@@ -88,7 +89,38 @@ TEST misc_test() {
 
   PASS();
 }
-#endif
+
+
+using shared_variant_asdl::word_part_e;
+using shared_variant_asdl::word_part_t;
+using shared_variant_asdl::double_quoted;
+
+using shared_variant_asdl::tok;
+using shared_variant_asdl::tok_e;
+using shared_variant_asdl::tok_t;
+using shared_variant_asdl::Token;
+
+
+TEST shared_variant_test() {
+  auto* dq = Alloc<double_quoted>(0, Alloc<List<Str*>>());
+
+  word_part_t* wp = nullptr;
+  wp = dq;  // assign to base type
+
+  log("wp->tag_() %d", wp->tag_());
+
+  auto* token = Alloc<Token>(0, StrFromC("hi"));
+  tok_t* tok = nullptr;
+  tok = token;
+
+  log("tok->tag_() for Token = %d", tok->tag_());
+
+  auto* eof = Alloc<tok::Eof>();
+  tok = eof;
+  log("tok->tag_() for Eof = %d", tok->tag_());
+
+  PASS();
+}
 
 TEST pretty_print_test() {
   // typed_demo.asdl
@@ -196,6 +228,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(misc_test);
+  RUN_TEST(shared_variant_test);
   RUN_TEST(pretty_print_test);
   RUN_TEST(maps_test);
   RUN_TEST(literal_test);

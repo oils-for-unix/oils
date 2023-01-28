@@ -74,13 +74,19 @@ module syntax
   | Synthetic(string s)
 
   -- Start offset used with here docs (VirtualLineReader)
-  Line = (int line_num, int start_offset, string val, source src)
+  SourceLine_ = (int line_num, int start_offset, string val, source src)
 
   -- Token TODO:
   -- * get rid of redundant span_id
   -- * function to compute string val on demand
   -- * maybe re-compute length on demand too
   Token = (id id, int col, int length, int line_id, int span_id, string val)
+
+  -- TODO: sentinels.  But make sure ASDL gen_cpp.py optimizes these
+  token_ =
+    Eof
+  | Eol
+  | Source %Token
 
   -- Source location for errors
   -- It's possible for word_part and word to have a beginning and end location
@@ -112,6 +118,7 @@ module syntax
   | PatSub(word pat, word? replace, id replace_mode)
     -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
+    -- TODO: PatSub needs slash_tok
   attributes (int* spids)
 
   -- Variants:
@@ -139,6 +146,9 @@ module syntax
 
   -- Used in both expr and a word_part
   ArgList = (expr* positional, named_arg* named) attributes (int* spids)
+
+  -- TODO: every word_part has Token left, Token right, and remove int* spids
+  -- these are used in the main program for alias expansion
 
   word_part = 
     ShArrayLiteral %sh_array_literal
@@ -176,6 +186,9 @@ module syntax
   | ExprSub(Token left, expr child)
   attributes (int* spids)
 
+  -- TODO: I think Token left should be copied into every compound_word
+  -- either that, or CommandParser needs to reliably have GetToken(word_t)
+  -- Invariant: compound_word always has at least one part (word.Empty is the other case)
   compound_word = (word_part* parts)
 
   -- dedent is calculated from the first part
@@ -185,6 +198,16 @@ module syntax
   -- min_dedent is calculated from each line using Julia's rules
   triple_quoted = (int min_dedent, string_line* lines)
 
+  -- TODO: remove word.Empty 
+  rhs_word_ =
+    Empty
+  | Compound %compound_word
+
+  -- TODO: remove word.String
+  test_word_ = 
+    String(string s)  -- TODO: support Str %Str!  Boxless optimization
+  | Compound %compound_word
+
   word = 
     -- Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
     -- The latter is semantically necessary.  (See osh/word_parse.py). 
@@ -192,7 +215,7 @@ module syntax
     -- We don't always use it, e.g. the RHS of 'A=([k]=)' is a compound_word 
     -- with zero parts.
     Empty
-    -- Returns from WordParser, but not generally stored in LST (TODO: cmd_token)
+    -- Returns from WordParser, but not generally stored in LST
   | Token %Token
     -- A Compound word can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
@@ -262,6 +285,11 @@ module syntax
   -- TODO: Make field names consistent: child vs expr, etc.
   BraceGroup = (Token? doc_token, command* children, redir* redirects)
                attributes (int* spids)
+
+  -- TODO: every command needs Token left
+  -- also add Token right_lok (a lok is a token used for the pretty printer ONLY)
+  -- then Case, ForEach, and ShFunction also have Token in_lok, esac_lok, etc.
+  -- REMOVE int* spids
 
   command = 
     NoOp

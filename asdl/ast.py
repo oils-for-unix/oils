@@ -38,7 +38,7 @@ def is_simple(sum):
     unaryop = Invert | Not | UAdd | USub
     """
   for t in sum.types:
-    if t.fields:
+    if t.fields or t.shared_type:
       return False
   return True
 

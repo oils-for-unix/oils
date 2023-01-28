@@ -37,13 +37,19 @@ unit() {
 
 readonly PY_PATH='.:vendor/'  # note: could consolidate with other scripts
 
+asdl-check() {
+  # Unlike Python code, we use --strict mode
+  typecheck --strict --follow-imports=silent "$@"
+}
+
+
 # NOTE: We're testing ASDL code generation with --strict because we might want
 # Oil to pass under --strict someday.
 typed-demo-asdl() {
   # We want to exclude ONLY pylib.collections_, but somehow --exclude
   # '.*collections_\.py' does not do it.  So --follow-imports=silent.  Tried
   # --verbose too
-  typecheck --strict --follow-imports=silent \
+  asdl-check \
     _devbuild/gen/typed_demo_asdl.py asdl/examples/typed_demo.py
 
   PYTHONPATH=$PY_PATH asdl/examples/typed_demo.py "$@"
@@ -53,7 +59,7 @@ check-arith() {
   # NOTE: There are still some Any types here!  We don't want them for
   # translation.
 
-  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck --strict --follow-imports=silent \
+  MYPYPATH=. PYTHONPATH=$PY_PATH asdl-check \
     asdl/examples/typed_arith_parse.py \
     asdl/examples/typed_arith_parse_test.py \
     asdl/examples/tdop.py
@@ -76,6 +82,8 @@ typed-arith-asdl() {
 
 check-types() {
   build/py.sh py-asdl-examples
+
+  asdl-check _devbuild/gen/shared_variant_asdl.py
 
   banner 'typed-arith-asdl'
   typed-arith-asdl
