@@ -29,17 +29,17 @@ class FixTest(unittest.TestCase):
     w = assertStyle(self, word_style_e.SQ, 'foo')
     w = assertStyle(self, word_style_e.SQ, "'hi'")
 
-    w = assertStyle(self, word_style_e.Expr, '$var')
-    w = assertStyle(self, word_style_e.Expr, '${var}')
+    w = assertStyle(self, word_style_e.DQ, '$var')
+    w = assertStyle(self, word_style_e.Unquoted, '${var}')
 
-    w = assertStyle(self, word_style_e.Expr, ' "$var" ')
-    w = assertStyle(self, word_style_e.Expr, ' "${var}" ')
+    w = assertStyle(self, word_style_e.DQ, ' "$var" ')
+    w = assertStyle(self, word_style_e.DQ, ' "${var}" ')
 
     w = assertStyle(self, word_style_e.Unquoted, ' $((1+2)) ')
     w = assertStyle(self, word_style_e.Unquoted, ' $(echo hi) ')
 
-    w = assertStyle(self, word_style_e.Unquoted, ' "$((1+2))" ')
-    w = assertStyle(self, word_style_e.Unquoted, ' "$(echo hi)" ')
+    w = assertStyle(self, word_style_e.DQ, ' "$((1+2))" ')
+    w = assertStyle(self, word_style_e.DQ, ' "$(echo hi)" ')
 
     w = assertStyle(self, word_style_e.DQ, ' $src/file ')
     w = assertStyle(self, word_style_e.DQ, ' ${src}/file ')
@@ -68,11 +68,13 @@ class FixTest(unittest.TestCase):
 
     w = assertStyle(self, word_style_e.DQ, ' ~/src ')
     w = assertStyle(self, word_style_e.DQ, ' ~bob/foo ')
-    w = assertStyle(self, word_style_e.SQ, 'notleading~')
+
+    # Could be single quoted
+    w = assertStyle(self, word_style_e.DQ, 'notleading~')
 
     # These tildes are quoted
-    w = assertStyle(self, word_style_e.SQ, ' "~/src" ')
-    w = assertStyle(self, word_style_e.SQ, ' "~bob/foo" ')
+    w = assertStyle(self, word_style_e.DQ, ' "~/src" ')
+    w = assertStyle(self, word_style_e.DQ, ' "~bob/foo" ')
 
 
 if __name__ == '__main__':

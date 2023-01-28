@@ -212,6 +212,28 @@ TODO-test-set-builtin() {
 # CHANGED COMMAND LANGUAGE
 #
 
+test-here-doc() {
+  check-osh2ysh '
+cat <<EOF
+hi
+EOF
+' '
+cat <<< """
+hi
+"""
+'
+
+  check-osh2ysh "
+cat <<'EOF'
+hi
+EOF
+" "
+cat <<< '''
+hi
+'''
+"
+}
+
 test-bare-assign-TODO() {
   check-osh2ysh "
 a=

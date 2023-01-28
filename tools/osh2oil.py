@@ -53,7 +53,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e, word_style_t
 from _devbuild.gen.syntax_asdl import (
-    Token,
+    Token, loc,
     command_e, command__ShAssignment, command__Simple, command__Sentence, 
     command__Pipeline, command__AndOr, command__DoGroup,
     command__Subshell, command__DBracket, command__DParen,
@@ -69,6 +69,7 @@ from _devbuild.gen.syntax_asdl import (
     simple_var_sub, braced_var_sub, command_sub, double_quoted, single_quoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
     condition_e, condition__Shell,
+    redir, redir_param_e, redir_param__HereDoc,
 )
 from asdl import runtime
 from core.pyerror import log, p_die
@@ -77,7 +78,7 @@ from osh import word_
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch
 
-from typing import Dict, Any, cast, TYPE_CHECKING
+from typing import Dict, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core import alloc
@@ -145,7 +146,7 @@ def PrintSpans(arena):
     line = arena.GetLine(span.line_id)
     piece = line[span.col : span.col + span.length]
     print('%5d %r' % (i, piece))
-  print('(%d tokens)' % len(arena.tokens), file=sys.stderr)
+  print_stderr('(%d tokens)' % len(arena.tokens))
 
 
 def PrintAsOil(arena, node):
@@ -193,12 +194,6 @@ def _GetRhsStyle(w):
 
   What's the difference between Expr and Unquoted?  I think they're the same/
   """
-  VAR_SUBS = (word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
-              word_part_e.TildeSub)
-  OTHER_SUBS = (word_part_e.CommandSub, word_part_e.ArithSub)
-
-  ALL_SUBS = VAR_SUBS + OTHER_SUBS
-
   # Actually splitting NEVER HAPPENS ON ASSIGNMENT.  LEAVE IT OFF.
 
   UP_w = w
@@ -242,22 +237,13 @@ def _GetRhsStyle(w):
           elif case(word_part_e.DoubleQuoted):
             part0 = cast(double_quoted, UP_part0)
 
-            if len(part0.parts) == 1:
-              dq_part0 = part0.parts[0]
-              # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
-              if dq_part0.tag_() in VAR_SUBS:
-                return word_style_e.Expr
-              elif dq_part0.tag_() in OTHER_SUBS:
-                return word_style_e.Unquoted
+            # TODO: remove quotes in single part like "$(hostname)" -> $(hostname)
+            return word_style_e.DQ
 
-      # Tilde subs also cause double quoted style.
-      for part in w.parts:
-        if part.tag_() == word_part_e.DoubleQuoted:
-          for dq_part in cast(double_quoted, part).parts:
-            if dq_part.tag_() in ALL_SUBS:
-              return word_style_e.DQ
-        elif part.tag_() in ALL_SUBS:
-          return word_style_e.DQ
+      else:
+        # multiple parts use YSTR in general?
+        # Depends if there are subs
+        return word_style_e.DQ
 
   # Default
   return word_style_e.SQ
@@ -287,7 +273,7 @@ class OilPrinter(object):
     self.cursor.PrintUntil(self.arena.LastSpanId())
 
   def DoRedirect(self, node, local_symbols):
-    # type: (Any, Any) -> None
+    # type: (redir, Dict[str, bool]) -> None
     """
     Currently Unused
     TODO: It would be nice to change here docs to <<< '''
@@ -297,14 +283,16 @@ class OilPrinter(object):
     op_id = node.op.id
     self.cursor.PrintUntil(op_spid)
 
-    #elif node.tag_() == redir_e.HereDoc:
-    if False:
-      ok, delimiter, delim_quoted = word_.StaticEval(node.here_begin)
-      if not ok:
-        p_die('Invalid here doc delimiter', word=node.here_begin)
+    if node.arg.tag_() == redir_param_e.HereDoc:
+      here_doc = cast(redir_param__HereDoc, node.arg)
 
-      # Turn everything into <<.  We just change the quotes
-      self.f.write('<<')
+      here_begin = here_doc.here_begin
+      ok, delimiter, delim_quoted = word_.StaticEval(here_begin)
+      if not ok:
+        p_die('Invalid here doc delimiter', loc.Word(here_begin))
+
+      # Turn everything into <<<.  We just change the quotes
+      self.f.write('<<<')
 
       #here_begin_spid2 = word_.RightMostSpanForWord(node.here_begin)
       if delim_quoted:
@@ -312,7 +300,7 @@ class OilPrinter(object):
       else:
         self.f.write(' """')
 
-      delim_end_spid = word_.RightMostSpanForWord(node.here_begin)
+      delim_end_spid = word_.RightMostSpanForWord(here_begin)
       self.cursor.SkipUntil(delim_end_spid + 1)
 
       #self.cursor.SkipUntil(here_begin_spid + 1)
@@ -323,10 +311,10 @@ class OilPrinter(object):
       # EOF
       # Or since most here docs are the top level, you could just have a hack
       # for a fixed indent?  TODO: Look at real use cases.
-      for part in node.stdin_parts:
+      for part in here_doc.stdin_parts:
         self.DoWordPart(part, local_symbols)
 
-      self.cursor.SkipUntil(node.here_end_span_id + 1)
+      self.cursor.SkipUntil(here_doc.here_end_span_id + 1)
       if delim_quoted:
         self.f.write("'''\n")
       else:
@@ -390,14 +378,12 @@ class OilPrinter(object):
 
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
-      has_array = any(
-          pair.lhs.tag_() == sh_lhs_expr_e.UnparsedIndex for pair in node.pairs)
+      # TODO: Avoid translating these
+      has_array_index = [pair.lhs.tag_() == sh_lhs_expr_e.UnparsedIndex for pair in node.pairs]
 
       # need semantic analysis.
       # Would be nice to assume that it's a local though.
-      if has_array:
-        self.f.write('compat ')  # 'compat array-assign' syntax
-      elif at_top_level:
+      if at_top_level:
         self.f.write('setvar ')
       elif defined_locally:
         self.f.write('set ')
@@ -438,7 +424,7 @@ class OilPrinter(object):
         self.f.write(',')
 
   def DoCommand(self, node, local_symbols, at_top_level=False):
-    # type: (command_t, Dict[str, Any], bool) -> None
+    # type: (command_t, Dict[str, bool], bool) -> None
 
     UP_node = node
 
@@ -460,16 +446,12 @@ class OilPrinter(object):
         # echo foo \
         #   bar
 
-        if node.more_env:
-          (left_spid,) = node.more_env[0].spids
-          self.cursor.PrintUntil(left_spid)
-          self.f.write('env ')
-
+        if len(node.more_env):
           # We only need to transform the right side, not left side.
           for pair in node.more_env:
             self.DoWordInCommand(pair.val, local_symbols)
 
-        if node.words:
+        if len(node.words):
           first_word = node.words[0]
           ok, val, quoted = word_.StaticEval(first_word)
           word0_spid = word_.LeftMostSpanForWord(first_word)
@@ -505,9 +487,8 @@ class OilPrinter(object):
           self.DoWordInCommand(w, local_symbols)
 
         # It would be nice to convert here docs to multi-line strings
-        if 0:
-          for r in node.redirects:
-            self.DoRedirect(r, local_symbols)
+        for r in node.redirects:
+          self.DoRedirect(r, local_symbols)
 
         # TODO: Print the terminator.  Could be \n or ;
         # Need to print env like PYTHONPATH = 'foo' && ls
@@ -549,8 +530,7 @@ class OilPrinter(object):
 
         # { echo hi; } -> do { echo hi }
         # For now it might be OK to keep 'do { echo hi; }
-        #left_spid, right_spid = node.spids
-        left_spid, _ = node.spids
+        left_spid = node.spids[0]
 
         self.cursor.PrintUntil(left_spid)
         self.cursor.SkipUntil(left_spid + 1)
@@ -565,7 +545,8 @@ class OilPrinter(object):
         # (echo hi) -> shell echo hi
         # (echo hi; echo bye) -> shell {echo hi; echo bye}
 
-        (left_spid, right_spid) = node.spids
+        left_spid = node.spids[0]
+        right_spid = node.spids[1]
 
         self.cursor.PrintUntil(left_spid)
         self.cursor.SkipUntil(left_spid + 1)
@@ -612,7 +593,9 @@ class OilPrinter(object):
       elif case(command_e.DoGroup):
         node = cast(command__DoGroup, UP_node)
 
-        do_spid, done_spid = node.spids
+        do_spid = node.spids[0]
+        done_spid = node.spids[1]
+
         self.cursor.PrintUntil(do_spid)
         self.cursor.SkipUntil(do_spid + 1)
         self.f.write('{')
@@ -632,7 +615,8 @@ class OilPrinter(object):
         # for x in a b c \
         #    d e f; do
 
-        _, in_spid, semi_spid = node.spids
+        in_spid = node.spids[1]
+        semi_spid = node.spids[2]
 
         UP_iterable = node.iterable
         with tagswitch(node.iterable) as case:
@@ -686,12 +670,15 @@ class OilPrinter(object):
       elif case(command_e.If):
         node = cast(command__If, UP_node)
 
-        else_spid, fi_spid = node.spids
+        else_spid = node.spids[0]
+        fi_spid = node.spids[1]
 
         # if foo; then -> if foo {
         # elif foo; then -> } elif foo {
         for i, arm in enumerate(node.arms):
-          elif_spid, then_spid = arm.spids
+          elif_spid = arm.spids[0]
+          then_spid = arm.spids[1]
+
           if i != 0:  # 'if' not 'elif' on the first arm
             self.cursor.PrintUntil(elif_spid)
             self.f.write('} ')
@@ -719,7 +706,7 @@ class OilPrinter(object):
             self.DoCommand(child, local_symbols)
 
         # else -> } else {
-        if node.else_action:
+        if len(node.else_action):
           self.cursor.PrintUntil(else_spid)
           self.f.write('} ')
           self.cursor.PrintUntil(else_spid + 1)
@@ -736,7 +723,10 @@ class OilPrinter(object):
       elif case(command_e.Case):
         node = cast(command__Case, UP_node)
 
-        case_spid, in_spid, esac_spid = node.spids
+        case_spid = node.spids[0]
+        in_spid = node.spids[1]
+        esac_spid = node.spids[2]
+
         self.cursor.PrintUntil(case_spid)
         self.cursor.SkipUntil(case_spid + 1)
         self.f.write('match')
@@ -750,7 +740,11 @@ class OilPrinter(object):
 
         # each arm needs the ) and the ;; node to skip over?
         for case_arm in node.arms:
-          left_spid, rparen_spid, dsemi_spid, last_spid = case_arm.spids
+          left_spid = case_arm.spids[0]
+          rparen_spid = case_arm.spids[1]
+          dsemi_spid = case_arm.spids[2]
+          last_spid = case_arm.spids[3]
+
           #print(left_spid, rparen_spid, dsemi_spid)
 
           self.cursor.PrintUntil(left_spid)
@@ -812,7 +806,7 @@ class OilPrinter(object):
         #raise AssertionError(node.__class__.__name__)
 
   def DoWordAsExpr(self, node, local_symbols):
-    # type: (word_t, Dict[str, Any]) -> None
+    # type: (word_t, Dict[str, bool]) -> None
     """
     For the RHS of assignments.
 
@@ -856,7 +850,7 @@ class OilPrinter(object):
       self.DoWordInCommand(node, local_symbols)
 
   def DoWordInCommand(self, node, local_symbols):
-    # type: (word_t, Dict[str, Any]) -> None
+    # type: (word_t, Dict[str, bool]) -> None
     """
     e.g. remove unquoted
 
@@ -883,7 +877,9 @@ class OilPrinter(object):
           # NOTE: In double quoted case, this is the begin and end quote.
           # Do we need a HereDoc part?
 
-          left_spid, right_spid = dq_part.spids
+          left_spid = dq_part.spids[0]
+          right_spid = dq_part.spids[1]
+
           # This is not set in the case of here docs?  Why not?
           #assert left_spid != runtime.NO_SPID, left_spid
           assert right_spid != runtime.NO_SPID, right_spid
@@ -955,15 +951,14 @@ class OilPrinter(object):
     # type: (word_part_t, Dict[str, bool], bool) -> None
 
     span_id = word_.LeftMostSpanForPart(node)
-    if span_id is not None and span_id != runtime.NO_SPID:
+    if span_id != runtime.NO_SPID:
       span = self.arena.GetToken(span_id)
       self.cursor.PrintUntil(span_id)
 
     UP_node = node
 
     with tagswitch(node) as case:
-      if case(
-          word_part_e.ShArrayLiteral, word_part_e.AssocArrayLiteral,
+      if case(word_part_e.ShArrayLiteral, word_part_e.AssocArrayLiteral,
           word_part_e.TildeSub, word_part_e.ExtGlob):
         pass
 
@@ -1005,7 +1000,7 @@ class OilPrinter(object):
         # $'\n' is '\n'
         # TODO: Should print until right_spid
         # left_spid, right_spid = node.spids
-        if node.tokens:  # Empty string has no tokens
+        if len(node.tokens):  # Empty string has no tokens
           last_spid = node.tokens[-1].span_id
           self.cursor.PrintUntil(last_spid + 1)
 
@@ -1061,7 +1056,8 @@ class OilPrinter(object):
       elif case(word_part_e.BracedVarSub):
         node = cast(braced_var_sub, UP_node)
 
-        left_spid, right_spid = node.spids
+        left_spid = node.spids[0]
+        right_spid = node.spids[1]
 
         # NOTE: Why do we need this but we don't need it in command sub?
         self.cursor.PrintUntil(left_spid)
@@ -1090,7 +1086,8 @@ class OilPrinter(object):
       elif case(word_part_e.CommandSub):
         node = cast(command_sub, UP_node)
 
-        left_spid, right_spid = node.spids
+        left_spid = node.spids[0]
+        right_spid = node.spids[1]
 
         if node.left_token.id == Id.Left_Backtick:
           self.cursor.PrintUntil(left_spid)
