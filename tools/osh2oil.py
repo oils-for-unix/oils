@@ -30,6 +30,8 @@ Command:
 Word:
   "$@" -> @ARGV
 
+  Not common: unquoted $x -> @[split(x)]
+
 LEGACY that I don't personally use
 
 Builtins:
@@ -54,7 +56,6 @@ from _devbuild.gen.syntax_asdl import (
     command_e, command__ShAssignment,
     word_e, word_t, word_part_e, word_part_t,
     compound_word,
-    bool_expr_t,
     sh_lhs_expr_e, condition_e,
 )
 from asdl import runtime
@@ -142,43 +143,11 @@ def PrintAsOil(arena, node):
   fixer.End()
 
 
-    # Cases:
-    #
-    # - Does it look like $foo?
-    #   - Pedantic mode, then:
-    #     x = @split(foo)          No globbing here!
-    #                              @split($1) or @1 ?
-    #     @-foo @-1 in expression mode
-    #     And then for command mode, you will have *@1 and *@foo.  Split first
-    #     then glob.
-    #
-    #   - Nice mode, then foo
-    #     --assume no-word-splitting
-    # - Does it look like $(( 1 + 2 )) ?  or $(echo hi)
-    #   pedantic mode:  $(1 + 2) or @[echo hi]   ?
-    #   nice mode: $(1 + 2) or $[echo hi]
-    #
-    # - Does it look like "$foo" or "${foo:-}"?  Then it's just x = foo
-    #   x = foo or 'default'
-    # - Does it contain any substitutions?  Then whole thing is double quoted
-    # - Otherwise single quoted
-    #
-    # PROBLEM: ~ substitution.  That is disabled by "".
-    # You can turn it into $HOME I guess
-    # const foo = $HOME/hello
-    # const foo = $~/bar  # hm I kind of don't like this but OK
-    # const foo = "$~/bar"
-    # const foo = [ ~/bar ][0]  # does this make sense?
-    # const foo = `~/bar`
+# PROBLEM: ~ substitution.  That is disabled by "".
+# You can turn it into $HOME I guess
+# const foo = "$HOME/src"
+# const foo = %( ~/src )[0]  # does this make sense?
 
-    # I think ~ should be like $ -- special.  Maybe even inside double quotes?
-    # Or only at the front?
-
-
-# QEFS is wrong?  Because RHS never gets split!  It can always be foo=$1/foo.
-# Not used because RHS not split:
-# $x -> @-x  and  ${x} -> @-x
-# ${x:-default}  ->  @-(x or 'default')
 
 def _GetRhsStyle(w):
   # type: (word_t) -> word_style_t
@@ -211,11 +180,6 @@ def _GetRhsStyle(w):
 
   What's the difference between Expr and Unquoted?  I think they're the same/
   """
-
-  # NOTE: Pattern matching style would be a lot nicer for this...
-
-  # Arith and command sub both retain $() and $[], so they are not pure
-  # "expressions".
   VAR_SUBS = (word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
               word_part_e.TildeSub)
   OTHER_SUBS = (word_part_e.CommandSub, word_part_e.ArithSub)
@@ -273,59 +237,15 @@ def _GetRhsStyle(w):
   return word_style_e.SQ
 
 
-# TODO: Change to --assume, and have a default for each one?
-#
-# NICE mode: Assume that the user isn't relying on word splitting.  A lot of
-# users want this!
-#
-# Problem cases:
-#
-# for name in $(find ...); do echo $name; done
-#
-# This doesn't split.  Heuristic:
-#
-# This should be a bunch of flags:
-#
-# --assume 'no-word-splitting no-undefined' etc.
-#   globals-defined-first-outside-func (then we can generated := vs. ::=)
-# --split-output-from-commands 'find ls'  # tokenize these
-
-# Special case: "find" is assumed to produce multiple things that you will want
-# to split?  But that doesn't go within function calls.  Hm.
-#
-# $(find -type f) -> @[find -type f]
-
-NICE = 0
-
-# Try to convert with pedantic correctness.  Not sure if users will want this
-# though.  Most people are not super principled about their shell programs.
-# But experts might want it.  Experts might want to run ShellCheck first and
-# quote everything, and then everything will be unquoted.
-#
-# "$foo" "${foo}" -> $foo $foo
-# $foo -> @-foo   -> split then glob?
-#         *@foo    maybe
-# $(find -type f) -> @[find -type f]
-
-PEDANTIC = 1
-
-
 class OilPrinter(object):
   """
-  Convert osh code to oil.
-
-  - command invocations
-    - find invocations
-    - xargs
+  Prettify OSH to YSH.
   """
-  def __init__(self, cursor, arena, f, mode=NICE):
-    # type: (Cursor, alloc.Arena, mylib.Writer, int) -> None
+  def __init__(self, cursor, arena, f):
+    # type: (Cursor, alloc.Arena, mylib.Writer) -> None
     self.cursor = cursor
     self.arena = arena
     self.f = f
-    # In PEDANTIC mode, we translate unquoted $foo to @-foo, which means it will
-    # be split and globbed?
-    self.mode = mode
 
   def _DebugSpid(self, spid):
     # type: (int) -> None
@@ -342,10 +262,10 @@ class OilPrinter(object):
 
   def DoRedirect(self, node, local_symbols):
     # type: (Any, Any) -> None
-    """Unused."""
-
-    # TODO: It would be nice to change here docs to <<< '''
-
+    """
+    Currently Unused
+    TODO: It would be nice to change here docs to <<< '''
+    """
     #print(node, file=sys.stderr)
     op_spid = node.op.span_id
     op_id = node.op.id
@@ -392,41 +312,20 @@ class OilPrinter(object):
     else:
       raise AssertionError(node.__class__.__name__)
 
-    # <<< 'here word'
-    # << 'here word'
-    #
-    # 2> out.txt
-    # !2 > out.txt
-
-    # cat 1<< EOF
+    # cat << EOF
     # hello $name
     # EOF
-    # cat !1 << """
+    # cat <<< """
     # hello $name
     # """
-    #
+
     # cat << 'EOF'
     # no expansion
     # EOF
-    #   cat <<- 'EOF'
-    #   no expansion and indented
-    #
-    # cat << '''
+
+    # cat <<< '''
     # no expansion
     # '''
-    #   cat << '''
-    #   no expansion and indented
-    #   '''
-
-    # Warn about multiple here docs on a line.
-    # As an obscure feature, allow
-    # cat << \'ONE' << \"TWO"
-    # 123
-    # ONE
-    # 234
-    # TWO
-    # The _ is an indicator that it's not a string to be piped in.
-    pass
 
   def DoShAssignment(self, node, at_top_level, local_symbols):
     # type: (command__ShAssignment, bool, Dict[str, bool]) -> None
@@ -447,61 +346,12 @@ class OilPrinter(object):
     """
     # Change RHS to expression language.  Bare words not allowed.  foo -> 'foo'
 
-    has_rhs = False  # TODO: This is on a per-variable basis.
-                     # local foo -> var foo = ''
-                     # readonly foo -> setconst foo
-                     # export foo -> export foo
-
-    # TODO:
-    # - This depends on self.mode.
-    # - And we also need the enclosing ShFunction node to analyze.
-    #   - or we need a symbol table for the current function.  Forget about
-    #
-    # Oil keywords:
-    # - global : scope qualifier
-    # - var, const : mutability
-    # - export : state mutation
-    # - setconst -- make a variable mutable.  or maybe freeze var?
-    #
-    # NOTE: Bash also has "unset".  Does anyone use it?
-    # You can use "delete" like Python I guess.  It's not the opposite of
-    # set.
-
-    # NOTE:
-    # - We CAN tell if a variable has been defined locally.
-    # - We CANNOT tell if it's been defined globally, because different files
-    # share the same global namespace, and we can't statically figure out what
-    # files are in the program.
+    has_rhs = False  # TODO: Should be on a per-variable basis.
+                     # local a=b c=d, or just punt on those
     defined_locally = False  # is it a local variable in this function?
                              # can't tell if global
 
-    # DISABLED after doing dynamic assignments.  We could reconstruct these
-    # from SimpleCommand?  Look at argv[0] and then do static parsing to
-    # assign_pair?
-
-    if 0:
-      # Assume that 'local' it's a declaration.  In osh, it's an error if
-      # locals are redefined.  In bash, it's OK to do 'local f=1; local f=2'.
-      # Could have a flag if enough people do this.
-      if at_top_level:
-        raise RuntimeError('local at top level is invalid')
-
-      if defined_locally:
-        raise RuntimeError("Can't redefine local")
-
-      keyword_spid = node.spids[0]
-      self.cursor.PrintUntil(keyword_spid)
-      self.cursor.SkipUntil(keyword_spid + 1)
-      self.f.write('var')
-
-      if local_symbols is not None:
-        for pair in node.pairs:
-          # NOTE: Not handling local a[b]=c
-          if pair.lhs.tag == sh_lhs_expr_e.Name:
-            #print("REGISTERED %s" % pair.lhs.name)
-            local_symbols[pair.lhs.name] = True
-
-    elif 1:
+    if True:
       self.cursor.PrintUntil(node.spids[0])
 
       # For now, just detect whether the FIRST assignment on the line has been
@@ -529,42 +379,6 @@ class OilPrinter(object):
         # We're in a function, but it's not defined locally, so we must be
         # mutating a global.
         self.f.write('setvar ')
-
-    elif 0:
-      # Explicit const.  Assume it can't be redefined.
-      # Verb.
-      #
-      # Top level;
-      #   readonly FOO=bar  -> const FOO = 'bar'
-      #   readonly FOO -> freeze FOO
-      # function level:
-      #   readonly FOO=bar  -> const global FOO ::= 'bar'
-      #   readonly FOO  -> freeze FOO
-      keyword_spid = node.spids[0]
-      if at_top_level:
-        self.cursor.PrintUntil(keyword_spid)
-        self.cursor.SkipUntil(keyword_spid + 1)
-        self.f.write('const')
-      elif defined_locally:
-        # TODO: Actually we might want 'freeze here.  In bash, you can make a
-        # variable readonly after its defined.
-        raise RuntimeError("Constant redefined locally")
-      else:
-        # Same as global level
-        self.cursor.PrintUntil(keyword_spid)
-        self.cursor.SkipUntil(keyword_spid + 1)
-        self.f.write('const')
-
-    elif 0:
-      # declare -rx foo spam=eggs
-      # export foo
-      # setconst foo
-      #
-      # spam = eggs
-      # export spam
-
-      # Have to parse the flags
-      self.f.write('TODO ')
 
     # foo=bar spam=eggs -> foo = 'bar', spam = 'eggs'
     n = len(node.pairs)
@@ -629,10 +443,6 @@ class OilPrinter(object):
       # echo foo \
       #   bar
 
-      # TODO: Need to print until the left most part of the phrase?  the phrase
-      # is a word, binding, redirect.
-      #self.cursor.PrintUntil()
-
       if node.more_env:
         (left_spid,) = node.more_env[0].spids
         self.cursor.PrintUntil(left_spid)
@@ -641,10 +451,6 @@ class OilPrinter(object):
         # We only need to transform the right side, not left side.
         for pair in node.more_env:
           self.DoWordInCommand(pair.val, local_symbols)
-
-      # More translations:
-      # - . to source
-      # - eval to sh-eval
 
       if node.words:
         first_word = node.words[0]
@@ -700,14 +506,6 @@ class OilPrinter(object):
       self.DoShAssignment(node, at_top_level, local_symbols)
 
     elif node.tag == command_e.Pipeline:
-      # Obscure: |& turns into |- or |+ for stderr.
-      # TODO:
-      # if ! true; then -> if not true {
-
-      # if ! echo | grep; then -> if not { echo | grep } {
-      # }
-      # not is like do {}, but it negates the return value I guess.
-
       for child in node.children:
         self.DoCommand(child, local_symbols)
 
@@ -753,23 +551,6 @@ class OilPrinter(object):
       self.cursor.PrintUntil(right_spid)
       self.cursor.SkipUntil(right_spid + 1)
       self.f.write('}')
-
-    elif node.tag == command_e.DParen:
-      # (( a == 0 )) is sh-expr ' a == 0 '
-      #
-      # NOTE: (( n++ )) is auto-translated to sh-expr 'n++', but could be set
-      # n++.
-      left_spid, right_spid = node.spids
-      self.cursor.PrintUntil(left_spid)
-      self.cursor.SkipUntil(left_spid + 1)
-      self.f.write("sh-expr '")
-      self.cursor.PrintUntil(right_spid - 2)  # before ))
-      self.cursor.SkipUntil(right_spid)  # skip ))
-      self.f.write("'")
-
-    elif node.tag == command_e.DBracket:
-      # [[ 1 -eq 2 ]] to (1 == 2)
-      self.DoBoolExpr(node.expr)
 
     elif node.tag == command_e.ShFunction:
       # TODO: skip name
@@ -839,10 +620,6 @@ class OilPrinter(object):
         self.cursor.SkipUntil(semi_spid + 1)
 
       self.DoCommand(node.body, local_symbols)
-
-    elif node.tag == command_e.ForExpr:
-      # Change (( )) to ( ), and then _FixDoGroup
-      pass
 
     elif node.tag == command_e.WhileUntil:
 
@@ -965,22 +742,28 @@ class OilPrinter(object):
       self.cursor.SkipUntil(esac_spid + 1)
       self.f.write('}')  # strmatch $var {
 
-    elif node.tag == command_e.NoOp:
-      pass
-
-    elif node.tag == command_e.ControlFlow:
-      # No change for break / return / continue
-      pass
-
     elif node.tag == command_e.TimeBlock:
       self.DoCommand(node.pipeline, local_symbols)
 
     else:
+      pass
       #log('Command not handled: %s', node)
-      raise AssertionError(node.__class__.__name__)
+      #raise AssertionError(node.__class__.__name__)
 
   def DoWordAsExpr(self, node, local_symbols):
     # type: (word_t, Dict[str, Any]) -> None
+    """
+    For the RHS of assignments.
+
+    TODO: for complex cases of word joining:
+        local a=unquoted'single'"double"'"'
+
+    We can try to handle it:
+        var a = y"unquotedsingledouble\""
+
+    Or simply abort and LEAVE IT ALONE.  We should only translate things we
+    recognize.
+    """
 
     # TODO: This is wrong!
     style = _GetRhsStyle(node)
@@ -1014,88 +797,18 @@ class OilPrinter(object):
   def DoWordInCommand(self, node, local_symbols):
     # type: (word_t, Dict[str, Any]) -> None
     """
-    New reserved symbols:
-      echo == must be changed to echo '==' because = is a reserved symbol.
-      echo @$foo -> echo "@$foo" because @ is reserved
+    e.g. remove unquoted
 
-    Problems:
-    rm --verbose=true
-    rm '--verbose=true'  -- is this bad?
+    echo "$x" -> echo $x
 
-    Same with comma
-    foo, bar = 1
-
-    # I guess we can allow this
-    ls --long foo,bar
-
-    or force:
-    (foo, bar) = 1
-
-    Maybe we need a clever 'pre-lex'
-    overwhelmingly the second char will be ' '
-
-    foo/bar/foo.py
-    foo.py
-    ./hello
-    foo_bar
-    [a-zA-Z0-9]  / - . _  -- filename chars
-
-
-    first word:
-      var, const, export, setconst, global
-      func, proc, do, not, shell,
-      maybe: time, coproc, etc.
-
-      =    -- generic expression, = 1+2
-
-    non-filename char AFTER first word
-      cmd:
-          ' '     foo bar baz
-          '\n'    foo
-          '<'     foo < bar
-          '>'     foo > bar
-          !       ls !2 > !1
-          |       who | wc -l
-          |-       who |- wc -l
-
-      expr:
-          =   foo = bar
-          ,   a, b = x
-          [   a[x] = 1
-          (   f(x)  for(  while(  if(
-
-    1+2  -- I think this tries to run the command
     """
-    # Are we getting rid of word joining?  Or maybe keep it but discourage and
-    # provide alternatives.
-    #
-    # You don't really have a problem with byte strings, those are b'foo', but
-    # that's in expression mode, not command mode.
-
-    # Problems:
-    # - Tilde sub can't be quoted.  ls ~/foo/"foo" are incompatible with the
-    # rule.
-    # - Globs can't be quoted. ls 'foo'*.py can't be ls "foo*.py" -- it means
-    # something different.
-    # Might need to finish more of the globber to figure this out.
-
-    # What about here docs words?  It's a double quoted part, but with
-    # different formatting!
     UP_node = node
 
     with tagswitch(node) as case:
       if case(word_e.Compound):
-
         # UNQUOTE simple var subs
 
-        # TODO: I think we have to print the beginning and the end?
-
-        #left_spid = word_.LeftMostSpanForWord(node)
-        #right_spid = word_.RightMostSpanForWord(node)
-        #right_spid = -1
-        #print('DoWordInCommand %s %s' % (left_spid, right_spid), file=sys.stderr)
-
-        # Special case for "$@".  Wow this needs pattern matching!
+        # Special case for "$@".
         # TODO:
         # "$foo" -> $foo
         # "${foo}" -> $foo
@@ -1155,31 +868,17 @@ class OilPrinter(object):
               self.cursor.SkipUntil(right_spid + 1)
               return
 
-        # It's None for here docs I think.
-        #log("NODE %s", node)
-        #if left_spid is not None and left_spid >= 0:
-          #span = self.arena.GetToken(span_id)
-          #print(span)
-
-          #self.cursor.PrintUntil(left_spid)
-          #pass
-
         # TODO: 'foo'"bar" should be "foobar", etc.
         # If any part is double quoted, you can always double quote the whole
         # thing?
         for part in node.parts:
           self.DoWordPart(part, local_symbols)
 
-        #if right_spid >= 0:
-          #self.cursor.PrintUntil(right_spid)
-          #pass
-
       elif case(word_e.BracedTree):
         # Not doing anything now
         pass
 
       elif case(word_e.Empty):
-        # Hm should we make it ''?
         # This only happens for:
         # s=
         # a[x]=
@@ -1195,7 +894,6 @@ class OilPrinter(object):
     span_id = word_.LeftMostSpanForPart(node)
     if span_id is not None and span_id != runtime.NO_SPID:
       span = self.arena.GetToken(span_id)
-
       self.cursor.PrintUntil(span_id)
 
     UP_node = node
@@ -1203,16 +901,7 @@ class OilPrinter(object):
     with tagswitch(node) as case:
       if case(
           word_part_e.ShArrayLiteral, word_part_e.AssocArrayLiteral,
-          word_part_e.TildeSub,
-          ):
-        pass
-
-      elif case(word_part_e.ExtGlob):
-        # Change this into a function?  It depends whether it is used as
-        # a glob or fnmatch.
-        # 
-        # Example of glob:
-        # cloud/sandstorm/make-bundle.sh
+          word_part_e.TildeSub, word_part_e.ExtGlob):
         pass
 
       elif case(word_part_e.EscapedLiteral):
@@ -1296,7 +985,7 @@ class OilPrinter(object):
           self.cursor.SkipUntil(spid + 1)
 
         else:
-          raise AssertionError(op_id)
+          pass
 
       elif case(word_part_e.BracedVarSub):
         left_spid, right_spid = node.spids
@@ -1318,17 +1007,6 @@ class OilPrinter(object):
           # len()
           pass
         if node.suffix_op:
-          # foo.trimLeft()
-          # foo.trimGlobLeft()
-          # foo.trimGlobLeft(longest=True)
-          #
-          # python lstrip() does something different
-
-          # a[1:1]
-
-          # .replace()
-          # .replaceGlob()
-
           pass
 
         if op_id == Id.VSub_QMark:
@@ -1354,43 +1032,5 @@ class OilPrinter(object):
         else:
           self.cursor.PrintUntil(right_spid + 1)
 
-      elif case(word_part_e.ArithSub):
-        # We're not bothering to translate the arithmetic language.
-        # Just turn $(( x ? 0 : 1 )) into $shExpr('x ? 0 : 1').
-
-        left_spid, right_spid = node.spids
-
-        # Skip over left bracket and write our own.
-        self.f.write("$shExpr('")
-        self.cursor.SkipUntil(left_spid + 1)
-
-        # NOTE: This doesn't do anything yet.
-        #self.DoArithExpr(node.anode, local_symbols)
-        # Placeholder for now
-        self.cursor.PrintUntil(right_spid - 1)
-
-        # Skip over right bracket and write our own.
-        self.f.write("')")
-        self.cursor.SkipUntil(right_spid + 1)
-
       else:
-        raise AssertionError(node.__class__.__name__)
-
-  def DoBoolExpr(self, node):
-    # type: (bool_expr_t) -> None
-
-    # TODO:
-    # - Some are turned into '( x ~ *.py )'
-    # - Some are turned into 'test x -lt y'
-    pass
-
-
-# WordPart?
-
-# array_item
-#
-# These get turned into expressions
-#
-# bracket_op
-# suffix_op
-# prefix_op
+        pass

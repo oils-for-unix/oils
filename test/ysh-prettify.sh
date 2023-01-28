@@ -212,7 +212,13 @@ TODO-test-set-builtin() {
 # CHANGED COMMAND LANGUAGE
 #
 
-TODO-test-bare-assign() {
+test-bare-assign-TODO() {
+  check-osh2ysh "
+a=
+" "
+setvar a = ''
+"
+
   check-osh2ysh "
 a=b
 " "
@@ -251,6 +257,12 @@ setvar a = "$x"
 
 TODO-test-assign-builtins() {
   check-osh2ysh "
+local a=
+" "
+var a = ''
+"
+
+  check-osh2ysh "
 local a=b
 " "
 var a = 'b'
@@ -263,7 +275,6 @@ readonly a=b
 " "
 const a = 'b'
 "
-
 }
 
 test-while-loop() {
@@ -540,6 +551,17 @@ match $var {
     echo bar  # no dsemi
 }
 '
+}
+
+prettify-one() {
+  local file=$1
+  bin/oshc translate "$file"
+  echo "    (DONE $file)"
+}
+
+smoke-test() {
+  # Lots of real files
+  find test benchmarks -name '*.sh' | xargs -n 1 -- $0 prettify-one
 }
 
 soil-run() {
