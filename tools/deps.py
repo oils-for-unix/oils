@@ -5,7 +5,7 @@ deps.py
 
 import sys
 
-from _devbuild.gen.syntax_asdl import command
+from _devbuild.gen.syntax_asdl import command, command_t
 from asdl import pybase
 from core.pyerror import log
 from frontend import consts
@@ -147,6 +147,7 @@ class DepsVisitor(Visitor):
 
 
 def Deps(node):
+  # type: (command_t) -> None
   v = DepsVisitor(sys.stdout)
   v.Visit(node)
   v.Done()

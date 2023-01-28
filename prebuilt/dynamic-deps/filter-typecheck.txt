@@ -4,4 +4,6 @@ mycpp/mylib.py
 oil_lang/builtin_oil.py
 oil_lang/funcs_builtin.py
 pylib/collections_.py
-tools/.*
+tools/deps.py
+tools/tools_main.py
+tools/readlink.py

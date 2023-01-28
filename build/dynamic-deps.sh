@@ -40,6 +40,9 @@ EOF
   # they are inputs to the tool
 
   # mylib.py causes a bunch of errors
+
+  # tools_main.py and readlink.py have just 1 error
+
   cat >$FILTER_DIR/filter-typecheck.txt <<'EOF'
 __init__.py
 typing.py
@@ -47,7 +50,9 @@ mycpp/mylib.py
 oil_lang/builtin_oil.py
 oil_lang/funcs_builtin.py
 pylib/collections_.py
-tools/.*
+tools/deps.py
+tools/tools_main.py
+tools/readlink.py
 EOF
 
   # On top of the typecheck filter, exclude these from translation
@@ -77,7 +82,6 @@ oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
 osh/builtin_comp.py
-tools/.*
 tea/.*
 EOF
 
