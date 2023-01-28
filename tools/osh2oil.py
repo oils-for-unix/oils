@@ -770,9 +770,13 @@ class OilPrinter(object):
         self.DoCommand(node.pipeline, local_symbols)
 
       elif case(command_e.DParen):
+        node = cast(command__DParen, UP_node)
         # TODO: arith expressions can words with command subs
         pass
+
       elif case(command_e.DBracket):
+        node = cast(command__DBracket, UP_node)
+
         # TODO: bool_expr_t can have words with command subs
         pass
 
