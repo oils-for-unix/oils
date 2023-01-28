@@ -48,8 +48,6 @@ TOOL ysh-format:
   fix indentation and spacing, like clang-format
 """
 
-import sys
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e, word_style_t
 from _devbuild.gen.syntax_asdl import (
