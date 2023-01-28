@@ -16,6 +16,7 @@ from _devbuild.gen.syntax_asdl import (
 
     word_e, word_t, word_str, word__BracedTree, word__String,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
+    assoc_pair,
 )
 from asdl import runtime
 from core.pyerror import log
@@ -551,7 +552,7 @@ def DetectShAssignment(w):
 
 
 def DetectAssocPair(w):
-  # type: (compound_word) -> Optional[Tuple[compound_word, compound_word]]
+  # type: (compound_word) -> Optional[assoc_pair]
   """
   Like DetectShAssignment, but for A=(['k']=v ['k2']=v)
 
@@ -572,8 +573,7 @@ def DetectAssocPair(w):
       value = compound_word(parts[i+1:])  # $a$b from
 
       # Type-annotated intermediate value for mycpp translation
-      ret = key, value  # type: Optional[Tuple[compound_word, compound_word]]
-      return ret
+      return assoc_pair(key, value)
 
   return None
 

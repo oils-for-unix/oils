@@ -1845,12 +1845,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part0 = cast(word_part__AssocArrayLiteral, UP_part0)
         d = NewDict()  # type: Dict[str, str]
         n = len(part0.pairs)
-        i = 0
-        while i < n:
-          k = self.EvalWordToString(part0.pairs[i])
-          v = self.EvalWordToString(part0.pairs[i+1])
+        for pair in part0.pairs:
+          k = self.EvalWordToString(pair.key)
+          v = self.EvalWordToString(pair.value)
           d[k.s] = v.s
-          i += 2
         return value.AssocArray(d)
 
     # If RHS doesn't look like a=( ... ), then it must be a string.

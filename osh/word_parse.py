@@ -53,7 +53,7 @@ from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     Token, loc,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
-    sh_array_literal,
+    sh_array_literal, assoc_pair,
 
     arith_expr_t, bracket_op, bracket_op_t,
 
@@ -1348,12 +1348,10 @@ class WordParser(WordEmitter):
       node.spids.append(left_token.span_id)
       return node
  
+    pairs = []  # type: List[assoc_pair]
     # If the first one is a key/value pair, then the rest are assumed to be.
     pair = word_.DetectAssocPair(words[0])
     if pair:
-      k, v = pair
-      pairs = [k, v]
-
       n = len(words)
       for i in xrange(1, n):
         w2 = words[i]
@@ -1361,9 +1359,7 @@ class WordParser(WordEmitter):
         if not pair:
           p_die("Expected associative array pair", loc.Word(w2))
 
-        k, v = pair
-        pairs.append(k)  # flat representation
-        pairs.append(v)
+        pairs.append(pair)
 
       # invariant List?
       node2 = word_part.AssocArrayLiteral(left_token, pairs)

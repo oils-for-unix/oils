@@ -24,9 +24,6 @@
 
 -- Refactorings:
 --
---   # word.{Empty,BracedTree} not allowed here
---   cmd_token = Word %compound_word | Token %Token
---
 --   # Makes sense for DoubleQuoted and TripleQuoted
 --   string_part = ...  # subset of word_part
 --
@@ -150,11 +147,13 @@ module syntax
   -- TODO: every word_part has Token left, Token right, and remove int* spids
   -- these are used in the main program for alias expansion
 
+  assoc_pair = (compound_word key, compound_word value)
+
   word_part = 
     ShArrayLiteral %sh_array_literal
     -- alternating key and value (saving some space)
     -- Note that word.Empty isn't needed here
-  | AssocArrayLiteral(Token left, compound_word* pairs)
+  | AssocArrayLiteral(Token left, assoc_pair* pairs)
   | Literal %Token
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token)
@@ -212,8 +211,8 @@ module syntax
     -- Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
     -- The latter is semantically necessary.  (See osh/word_parse.py). 
     -- At runtime: RHS of 'declare x='.
-    -- We don't always use it, e.g. the RHS of 'A=([k]=)' is a compound_word 
-    -- with zero parts.
+    -- TODO: should use it consistently with the RHS of 'A=([k]=)', not
+    -- compound_word with zero parts.
     Empty
     -- Returns from WordParser, but not generally stored in LST
   | Token %Token
