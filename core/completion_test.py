@@ -32,12 +32,12 @@ from testdata.completion import bash_oracle
 IS_DARWIN = sys.platform == 'darwin'
 
 A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
-U1 = completion.UserSpec([A1], [], [], lambda candidate: True)
+U1 = completion.UserSpec([A1], [], [], completion.DefaultPredicate(), '', '')
 
 BASE_OPTS = {}
 
 FIRST = completion.TestAction(['grep', 'sed', 'test'])
-U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
+U2 = completion.UserSpec([FIRST], [], [], completion.DefaultPredicate(), '', '')
 
 OPT_ARRAY = [False] * option_i.ARRAY_SIZE
 
@@ -99,9 +99,8 @@ class FunctionsTest(unittest.TestCase):
 class CompletionTest(unittest.TestCase):
 
   def _CompApi(self, partial_argv, index, to_complete):
-    comp = completion.Api()
-    comp.Update(partial_argv=partial_argv, index=index,
-                to_complete=to_complete)
+    comp = completion.Api('', 0, 0)
+    comp.Update('', to_complete, '', index, partial_argv)
     return comp
 
   def testLookup(self):
@@ -142,7 +141,7 @@ class CompletionTest(unittest.TestCase):
         ('opy/doc', ['opy/doc']),
     ]
 
-    a = completion.FileSystemAction()
+    a = completion.FileSystemAction(False, False, False)
     for prefix, expected in CASES:
       log('')
       log('-- PREFIX %r', prefix)
@@ -173,7 +172,7 @@ class CompletionTest(unittest.TestCase):
         ('./o', ['./oil-version.txt', './oil_lang/', './opy/', './osh/']),
     ]
 
-    a = completion.FileSystemAction(add_slash=True)
+    a = completion.FileSystemAction(False, False, True)
     for prefix, expected in ADD_SLASH_CASES:
       log('')
       log('-- PREFIX %s', prefix)
@@ -181,15 +180,15 @@ class CompletionTest(unittest.TestCase):
       self.assertEqual(expected, sorted(a.Matches(comp)))
 
     # A bunch of repos in oilshell
-    comp = completion.Api()
-    comp.Update(partial_argv=[], index=0, to_complete='../o')
+    comp = completion.Api('', 0, 0)
+    comp.Update('', '../o', '', 0, None)
     print(list(a.Matches(comp)))
 
     EXEC_ONLY_CASES = [
         ('i', ['install'])
     ]
 
-    a = completion.FileSystemAction(exec_only=True)
+    a = completion.FileSystemAction(False, True, False)
     for prefix, expected in EXEC_ONLY_CASES:
       log('')
       log('-- PREFIX %s', prefix)
@@ -220,7 +219,7 @@ class CompletionTest(unittest.TestCase):
     self.assertEqual([('foo.py', False), ('foo', False)], matches)
 
     predicate = completion.GlobPredicate(False, '*.py')
-    c2 = completion.UserSpec([A1], [], [], predicate)
+    c2 = completion.UserSpec([A1], [], [], predicate, '', '')
     comp = self._CompApi(['f'], 0, 'f')
     matches = list(c2.Matches(comp))
     self.assertEqual([('foo.py', False)], matches)

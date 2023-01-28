@@ -344,7 +344,7 @@ class UsersAction(CompletionAction):
 
 
 class TestAction(CompletionAction):
-  def __init__(self, words, delay):
+  def __init__(self, words, delay=None):
     # type: (List[str], Optional[float]) -> None
     self.words = words
     self.delay = delay
