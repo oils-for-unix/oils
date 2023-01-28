@@ -53,10 +53,21 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e, word_style_t
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__ShAssignment,
-    word_e, word_t, word_part_e, word_part_t,
+    Token,
+    command_e, command__ShAssignment, command__Simple, command__Sentence, 
+    command__Pipeline, command__AndOr, command__DoGroup,
+    command__Subshell, command__DBracket, command__DParen,
+    command__ForEach, command__WhileUntil, command__If, command__Case,
+    command__ShFunction, command__TimeBlock,
+    command__CommandList,
+    BraceGroup,
+
+    word_e, word_t,
+    word_part_e, word_part_t, word_part__EscapedLiteral,
     compound_word,
-    sh_lhs_expr_e, condition_e,
+    simple_var_sub, braced_var_sub, command_sub, double_quoted, single_quoted,
+    sh_lhs_expr_e, sh_lhs_expr__Name,
+    condition_e,
 )
 from asdl import runtime
 from core.pyerror import log, p_die
@@ -216,6 +227,8 @@ def _GetRhsStyle(w):
             return word_style_e.Unquoted
 
           elif case(word_part_e.DoubleQuoted):
+            part0 = cast(double_quoted, UP_part0)
+
             if len(part0.parts) == 1:
               dq_part0 = part0.parts[0]
               # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
@@ -227,7 +240,7 @@ def _GetRhsStyle(w):
       # Tilde subs also cause double quoted style.
       for part in w.parts:
         if part.tag == word_part_e.DoubleQuoted:
-          for dq_part in part.parts:
+          for dq_part in cast(double_quoted, part).parts:
             if dq_part.tag in ALL_SUBS:
               return word_style_e.DQ
         elif part.tag in ALL_SUBS:
@@ -359,7 +372,7 @@ class OilPrinter(object):
       # statements.
       if local_symbols is not None:
         lhs0 = node.pairs[0].lhs
-        if lhs0.tag == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
+        if lhs0.tag_() == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
           defined_locally = True
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
@@ -383,372 +396,390 @@ class OilPrinter(object):
     # foo=bar spam=eggs -> foo = 'bar', spam = 'eggs'
     n = len(node.pairs)
     for i, pair in enumerate(node.pairs):
-      if pair.lhs.tag == sh_lhs_expr_e.Name:
-        left_spid = pair.spids[0]
-        self.cursor.PrintUntil(left_spid)
-        # Assume skipping over one Lit_VarLike token
-        self.cursor.SkipUntil(left_spid + 1)
+      lhs = pair.lhs
+      UP_lhs = lhs
+      with tagswitch(lhs) as case:
+        if case(sh_lhs_expr_e.Name):
+          lhs = cast(sh_lhs_expr__Name, UP_lhs)
 
-        # Replace name.  I guess it's Lit_Chars.
-        self.f.write(pair.lhs.name)
-        self.f.write(' = ')
+          left_spid = pair.spids[0]
+          self.cursor.PrintUntil(left_spid)
+          # Assume skipping over one Lit_VarLike token
+          self.cursor.SkipUntil(left_spid + 1)
 
-        # TODO: This should be translated from Empty.
-        if pair.rhs.tag == word_e.Empty:
-          self.f.write("''")  # local i -> var i = ''
-        else:
-          self.DoWordAsExpr(pair.rhs, local_symbols)
+          # Replace name.  I guess it's Lit_Chars.
+          self.f.write(lhs.name)
+          self.f.write(' = ')
 
-      elif pair.lhs.tag == sh_lhs_expr_e.UnparsedIndex:
-        # NOTES:
-        # - parse_ctx.one_pass_parse should be on, so the span invariant
-        #   is accurate
-        # - Then do the following translation:
-        #   a[x+1]="foo $bar" ->
-        #   compat array-assign a 'x+1' "$foo $bar"
-        # This avoids dealing with nested arenas.
-        #
-        # TODO: This isn't great when there are multiple assignments.
-        #   a[x++]=1 b[y++]=2
-        #
-        # 'compat' could apply to the WHOLE statement, with multiple
-        # assignments.
-        self.f.write("array-assign %s '%s' " % (pair.lhs.name, pair.lhs.index))
+          # TODO: This should be translated from Empty.
+          if pair.rhs.tag == word_e.Empty:
+            self.f.write("''")  # local i -> var i = ''
+          else:
+            self.DoWordAsExpr(pair.rhs, local_symbols)
 
-        if pair.rhs.tag == word_e.Empty:
-          self.f.write("''")  # local i -> var i = ''
-        else:
-          rhs_spid = word_.LeftMostSpanForWord(pair.rhs)
-          self.cursor.SkipUntil(rhs_spid)
-          self.DoWordAsExpr(pair.rhs, local_symbols)
-
-      else: 
-        raise AssertionError(pair.lhs.__class__.__name__)
+        else: 
+          raise AssertionError(pair.lhs.__class__.__name__)
 
       if i != n - 1:
         self.f.write(',')
 
   def DoCommand(self, node, local_symbols, at_top_level=False):
     # type: (command_t, Dict[str, Any], bool) -> None
-    if node.tag == command_e.CommandList:
-      # TODO: How to distinguish between echo hi; echo bye; and on separate
-      # lines
-      for child in node.children:
-        self.DoCommand(child, local_symbols, at_top_level=at_top_level)
 
-    elif node.tag == command_e.Simple:
-      # How to preserve spaces between words?  Do you want to do it?
-      # Well you need to test this:
-      #
-      # echo foo \
-      #   bar
+    UP_node = node
 
-      if node.more_env:
-        (left_spid,) = node.more_env[0].spids
-        self.cursor.PrintUntil(left_spid)
-        self.f.write('env ')
+    with tagswitch(node) as case:
+      if case(command_e.CommandList):
+        node = cast(command__CommandList, UP_node)
 
-        # We only need to transform the right side, not left side.
-        for pair in node.more_env:
-          self.DoWordInCommand(pair.val, local_symbols)
+        # TODO: How to distinguish between echo hi; echo bye; and on separate
+        # lines
+        for child in node.children:
+          self.DoCommand(child, local_symbols, at_top_level=at_top_level)
 
-      if node.words:
-        first_word = node.words[0]
-        ok, val, quoted = word_.StaticEval(first_word)
-        word0_spid = word_.LeftMostSpanForWord(first_word)
-        if ok and not quoted:
-          if val == '[':
-            last_word = node.words[-1]
-            # Check if last word is ]
-            ok, val, quoted = word_.StaticEval(last_word)
-            if ok and not quoted and val == ']':
-              # Replace [ with 'test'
+      elif case(command_e.Simple):
+        node = cast(command__Simple, UP_node)
+
+        # How to preserve spaces between words?  Do you want to do it?
+        # Well you need to test this:
+        #
+        # echo foo \
+        #   bar
+
+        if node.more_env:
+          (left_spid,) = node.more_env[0].spids
+          self.cursor.PrintUntil(left_spid)
+          self.f.write('env ')
+
+          # We only need to transform the right side, not left side.
+          for pair in node.more_env:
+            self.DoWordInCommand(pair.val, local_symbols)
+
+        if node.words:
+          first_word = node.words[0]
+          ok, val, quoted = word_.StaticEval(first_word)
+          word0_spid = word_.LeftMostSpanForWord(first_word)
+          if ok and not quoted:
+            if val == '[':
+              last_word = node.words[-1]
+              # Check if last word is ]
+              ok, val, quoted = word_.StaticEval(last_word)
+              if ok and not quoted and val == ']':
+                # Replace [ with 'test'
+                self.cursor.PrintUntil(word0_spid)
+                self.cursor.SkipUntil(word0_spid + 1)
+                self.f.write('test')
+
+                for w in node.words[1:-1]:
+                  self.DoWordInCommand(w, local_symbols)
+
+                # Now omit ]
+                last_spid = word_.LeftMostSpanForWord(last_word)
+                self.cursor.PrintUntil(last_spid - 1)  # Get the space before
+                self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
+                return
+              else:
+                raise RuntimeError('Got [ without ]')
+
+            elif val == '.':
               self.cursor.PrintUntil(word0_spid)
               self.cursor.SkipUntil(word0_spid + 1)
-              self.f.write('test')
-
-              for w in node.words[1:-1]:
-                self.DoWordInCommand(w, local_symbols)
-
-              # Now omit ]
-              last_spid = word_.LeftMostSpanForWord(last_word)
-              self.cursor.PrintUntil(last_spid - 1)  # Get the space before
-              self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
+              self.f.write('source')
               return
-            else:
-              raise RuntimeError('Got [ without ]')
 
-          elif val == '.':
-            self.cursor.PrintUntil(word0_spid)
-            self.cursor.SkipUntil(word0_spid + 1)
-            self.f.write('source')
-            return
-
-      for w in node.words:
-        self.DoWordInCommand(w, local_symbols)
-
-      # It would be nice to convert here docs to multi-line strings
-      if 0:
-        for r in node.redirects:
-          self.DoRedirect(r, local_symbols)
-
-      # TODO: Print the terminator.  Could be \n or ;
-      # Need to print env like PYTHONPATH = 'foo' && ls
-      # Need to print redirects:
-      # < > are the same.  << is here string, and >> is assignment.
-      # append is >+
-
-      # TODO: static_eval of simple command
-      # - [ -> "test".  Eliminate trailing ].
-      # - . -> source, etc.
-
-    elif node.tag == command_e.ShAssignment:
-      self.DoShAssignment(node, at_top_level, local_symbols)
-
-    elif node.tag == command_e.Pipeline:
-      for child in node.children:
-        self.DoCommand(child, local_symbols)
-
-    elif node.tag == command_e.AndOr:
-      for child in node.children:
-        self.DoCommand(child, local_symbols)
-
-    elif node.tag == command_e.Sentence:
-      # 'ls &' to 'fork ls'
-      # Keep ; the same.
-      self.DoCommand(node.child, local_symbols)
-
-    # This has to be different in the function case.
-    elif node.tag == command_e.BraceGroup:
-      # { echo hi; } -> do { echo hi }
-      # For now it might be OK to keep 'do { echo hi; }
-      #left_spid, right_spid = node.spids
-      left_spid, _ = node.spids
-
-      self.cursor.PrintUntil(left_spid)
-      self.cursor.SkipUntil(left_spid + 1)
-      self.f.write('do {')
-
-      for child in node.children:
-        self.DoCommand(child, local_symbols)
-
-    elif node.tag == command_e.Subshell:
-      # (echo hi) -> shell echo hi
-      # (echo hi; echo bye) -> shell {echo hi; echo bye}
-
-      (left_spid, right_spid) = node.spids
-
-      self.cursor.PrintUntil(left_spid)
-      self.cursor.SkipUntil(left_spid + 1)
-      self.f.write('shell {')
-
-      self.DoCommand(node.child, local_symbols)
-
-      #self._DebugSpid(right_spid)
-      #self._DebugSpid(right_spid + 1)
-
-      #print('RIGHT SPID', right_spid)
-      self.cursor.PrintUntil(right_spid)
-      self.cursor.SkipUntil(right_spid + 1)
-      self.f.write('}')
-
-    elif node.tag == command_e.ShFunction:
-      # TODO: skip name
-      #self.f.write('proc %s' % node.name)
-
-      # New symbol table for every function.
-      new_local_symbols = {}  # type: Dict[str, bool]
-
-      # Should be the left most span, including 'function'
-      self.cursor.PrintUntil(node.spids[0])
-
-      self.f.write('proc ')
-      self.f.write(node.name)
-      self.cursor.SkipUntil(node.spids[2])
-
-      if node.body.tag == command_e.BraceGroup:
-        # Don't add "do" like a standalone brace group.  Just use {}.
-        for child in node.body.children:
-          self.DoCommand(child, new_local_symbols)
-      else:
-        pass
-        # Add {}.
-        # proc foo {
-        #   shell {echo hi; echo bye}
-        # }
-        #self.DoCommand(node.body)
-
-    elif node.tag == command_e.BraceGroup:
-      for child in node.children:
-        self.DoCommand(child, local_symbols)
-
-    elif node.tag == command_e.DoGroup:
-      do_spid, done_spid = node.spids
-      self.cursor.PrintUntil(do_spid)
-      self.cursor.SkipUntil(do_spid + 1)
-      self.f.write('{')
-
-      for child in node.children:
-        self.DoCommand(child, local_symbols)
-
-      self.cursor.PrintUntil(done_spid)
-      self.cursor.SkipUntil(done_spid + 1)
-      self.f.write('}')
-
-    elif node.tag == command_e.ForEach:
-      # Need to preserve spaces between words, because there can be line
-      # wrapping.
-      # for x in a b c \
-      #    d e f; do
-
-      _, in_spid, semi_spid = node.spids
-
-      if in_spid == runtime.NO_SPID:
-        #self.cursor.PrintUntil()  # 'for x' and then space
-        self.f.write('for %s in @ARGV ' % node.iter_names[0])
-        self.cursor.SkipUntil(node.body.spids[0])
-      else:
-        self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
-        self.f.write('[')
-        for w in node.iterable.words:
+        for w in node.words:
           self.DoWordInCommand(w, local_symbols)
-        self.f.write(']')
-        #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
 
-      if semi_spid != runtime.NO_SPID:
-        self.cursor.PrintUntil(semi_spid)
-        self.cursor.SkipUntil(semi_spid + 1)
+        # It would be nice to convert here docs to multi-line strings
+        if 0:
+          for r in node.redirects:
+            self.DoRedirect(r, local_symbols)
 
-      self.DoCommand(node.body, local_symbols)
+        # TODO: Print the terminator.  Could be \n or ;
+        # Need to print env like PYTHONPATH = 'foo' && ls
+        # Need to print redirects:
+        # < > are the same.  << is here string, and >> is assignment.
+        # append is >+
 
-    elif node.tag == command_e.WhileUntil:
+        # TODO: static_eval of simple command
+        # - [ -> "test".  Eliminate trailing ].
+        # - . -> source, etc.
 
-      # Skip 'until', and replace it with 'while not'
-      if node.keyword.id == Id.KW_Until:
-        kw_spid = node.keyword.span_id
-        self.cursor.PrintUntil(kw_spid)
-        self.f.write('while not')
-        self.cursor.SkipUntil(kw_spid + 1)
+      elif case(command_e.ShAssignment):
+        node = cast(command__ShAssignment, UP_node)
 
-      if node.cond.tag_() == condition_e.Shell:
-        commands = node.cond.commands
-        # Skip the semi-colon in the condition, which is ususally a Sentence
-        if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
-          self.DoCommand(commands[0].child, local_symbols)
-          semi_spid = commands[0].terminator.span_id
-          self.cursor.SkipUntil(semi_spid + 1)
+        self.DoShAssignment(node, at_top_level, local_symbols)
 
-      self.DoCommand(node.body, local_symbols)
+      elif case(command_e.Pipeline):
+        node = cast(command__Pipeline, UP_node)
 
-    elif node.tag == command_e.If:
-      else_spid, fi_spid = node.spids
-
-      # if foo; then -> if foo {
-      # elif foo; then -> } elif foo {
-      for i, arm in enumerate(node.arms):
-        elif_spid, then_spid = arm.spids
-        if i != 0:  # 'if' not 'elif' on the first arm
-          self.cursor.PrintUntil(elif_spid)
-          self.f.write('} ')
-
-        cond = arm.cond
-        if cond.tag_() == condition_e.Shell:
-          if len(cond.commands) == 1 and cond.commands[0].tag == command_e.Sentence:
-            sentence = cond.commands[0]
-            self.DoCommand(sentence, local_symbols)
-
-            # Remove semi-colon
-            semi_spid = sentence.terminator.span_id
-            self.cursor.PrintUntil(semi_spid)
-            self.cursor.SkipUntil(semi_spid + 1)
-          else:
-            for child in cond.commands:
-              self.DoCommand(child, local_symbols)
-
-        self.cursor.PrintUntil(then_spid)
-        self.cursor.SkipUntil(then_spid + 1)
-        self.f.write('{')
-
-        for child in arm.action:
+        for child in node.children:
           self.DoCommand(child, local_symbols)
 
-      # else -> } else {
-      if node.else_action:
-        self.cursor.PrintUntil(else_spid)
-        self.f.write('} ')
-        self.cursor.PrintUntil(else_spid + 1)
-        self.f.write(' {')
+      elif case(command_e.AndOr):
+        node = cast(command__AndOr, UP_node)
 
-        for child in node.else_action:
+        for child in node.children:
           self.DoCommand(child, local_symbols)
 
-      # fi -> }
-      self.cursor.PrintUntil(fi_spid)
-      self.cursor.SkipUntil(fi_spid + 1)
-      self.f.write('}')
+      elif case(command_e.Sentence):
+        node = cast(command__Sentence, UP_node)
 
-    elif node.tag == command_e.Case:
-      case_spid, in_spid, esac_spid = node.spids
-      self.cursor.PrintUntil(case_spid)
-      self.cursor.SkipUntil(case_spid + 1)
-      self.f.write('match')
+        # 'ls &' to 'fork ls'
+        # Keep ; the same.
+        self.DoCommand(node.child, local_symbols)
 
-      # Reformat "$1" to $1
-      self.DoWordInCommand(node.to_match, local_symbols)
+      # This has to be different in the function case.
+      elif case(command_e.BraceGroup):
+        node = cast(BraceGroup, UP_node)
 
-      self.cursor.PrintUntil(in_spid)
-      self.cursor.SkipUntil(in_spid + 1)
-      self.f.write('{')  # matchstr $var {
-
-      # each arm needs the ) and the ;; node to skip over?
-      for arm in node.arms:
-        left_spid, rparen_spid, dsemi_spid, last_spid = arm.spids
-        #print(left_spid, rparen_spid, dsemi_spid)
+        # { echo hi; } -> do { echo hi }
+        # For now it might be OK to keep 'do { echo hi; }
+        #left_spid, right_spid = node.spids
+        left_spid, _ = node.spids
 
         self.cursor.PrintUntil(left_spid)
-        # Hm maybe keep | because it's semi-deprecated?  You acn use
-        # reload|force-relaod {
-        # }
-        # e/reload|force-reload/ {
-        # }
-        # / 'reload' or 'force-reload' / {
-        # }
-        #
-        # Yeah it's the more abbreviated syntax.
+        self.cursor.SkipUntil(left_spid + 1)
+        self.f.write('do {')
 
-        # change | to 'or'
-        for pat in arm.pat_list:
-          pass
-
-        self.f.write('with ')
-        # Remove the )
-        self.cursor.PrintUntil(rparen_spid)
-        self.cursor.SkipUntil(rparen_spid + 1)
-
-        for child in arm.action:
+        for child in node.children:
           self.DoCommand(child, local_symbols)
 
-        if dsemi_spid != runtime.NO_SPID:
-          # Remove ;;
-          self.cursor.PrintUntil(dsemi_spid)
-          self.cursor.SkipUntil(dsemi_spid + 1)
-        elif last_spid != runtime.NO_SPID:
-          self.cursor.PrintUntil(last_spid)
+      elif case(command_e.Subshell):
+        node = cast(command__Subshell, UP_node)
+
+        # (echo hi) -> shell echo hi
+        # (echo hi; echo bye) -> shell {echo hi; echo bye}
+
+        (left_spid, right_spid) = node.spids
+
+        self.cursor.PrintUntil(left_spid)
+        self.cursor.SkipUntil(left_spid + 1)
+        self.f.write('shell {')
+
+        self.DoCommand(node.child, local_symbols)
+
+        #self._DebugSpid(right_spid)
+        #self._DebugSpid(right_spid + 1)
+
+        #print('RIGHT SPID', right_spid)
+        self.cursor.PrintUntil(right_spid)
+        self.cursor.SkipUntil(right_spid + 1)
+        self.f.write('}')
+
+      elif case(command_e.ShFunction):
+        node = cast(command__ShFunction, UP_node)
+
+        # TODO: skip name
+        #self.f.write('proc %s' % node.name)
+
+        # New symbol table for every function.
+        new_local_symbols = {}  # type: Dict[str, bool]
+
+        # Should be the left most span, including 'function'
+        self.cursor.PrintUntil(node.spids[0])
+
+        self.f.write('proc ')
+        self.f.write(node.name)
+        self.cursor.SkipUntil(node.spids[2])
+
+        if node.body.tag == command_e.BraceGroup:
+          # Don't add "do" like a standalone brace group.  Just use {}.
+          for child in node.body.children:
+            self.DoCommand(child, new_local_symbols)
         else:
-          raise AssertionError(
-              "Expected with dsemi_spid or last_spid in case arm")
+          pass
+          # Add {}.
+          # proc foo {
+          #   shell {echo hi; echo bye}
+          # }
+          #self.DoCommand(node.body)
 
-      self.cursor.PrintUntil(esac_spid)
-      self.cursor.SkipUntil(esac_spid + 1)
-      self.f.write('}')  # strmatch $var {
+      elif case(command_e.DoGroup):
+        node = cast(command__DoGroup, UP_node)
 
-    elif node.tag == command_e.TimeBlock:
-      self.DoCommand(node.pipeline, local_symbols)
+        do_spid, done_spid = node.spids
+        self.cursor.PrintUntil(do_spid)
+        self.cursor.SkipUntil(do_spid + 1)
+        self.f.write('{')
 
-    else:
-      pass
-      #log('Command not handled: %s', node)
-      #raise AssertionError(node.__class__.__name__)
+        for child in node.children:
+          self.DoCommand(child, local_symbols)
+
+        self.cursor.PrintUntil(done_spid)
+        self.cursor.SkipUntil(done_spid + 1)
+        self.f.write('}')
+
+      elif case(command_e.ForEach):
+        node = cast(command__ForEach, UP_node)
+
+        # Need to preserve spaces between words, because there can be line
+        # wrapping.
+        # for x in a b c \
+        #    d e f; do
+
+        _, in_spid, semi_spid = node.spids
+
+        if in_spid == runtime.NO_SPID:
+          #self.cursor.PrintUntil()  # 'for x' and then space
+          self.f.write('for %s in @ARGV ' % node.iter_names[0])
+          self.cursor.SkipUntil(node.body.spids[0])
+        else:
+          self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
+          self.f.write('[')
+          for w in node.iterable.words:
+            self.DoWordInCommand(w, local_symbols)
+          self.f.write(']')
+          #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+
+        if semi_spid != runtime.NO_SPID:
+          self.cursor.PrintUntil(semi_spid)
+          self.cursor.SkipUntil(semi_spid + 1)
+
+        self.DoCommand(node.body, local_symbols)
+
+      elif case(command_e.WhileUntil):
+        node = cast(command__WhileUntil, UP_node)
+
+        # Skip 'until', and replace it with 'while not'
+        if node.keyword.id == Id.KW_Until:
+          kw_spid = node.keyword.span_id
+          self.cursor.PrintUntil(kw_spid)
+          self.f.write('while not')
+          self.cursor.SkipUntil(kw_spid + 1)
+
+        if node.cond.tag_() == condition_e.Shell:
+          commands = node.cond.commands
+          # Skip the semi-colon in the condition, which is ususally a Sentence
+          if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
+            self.DoCommand(commands[0].child, local_symbols)
+            semi_spid = commands[0].terminator.span_id
+            self.cursor.SkipUntil(semi_spid + 1)
+
+        self.DoCommand(node.body, local_symbols)
+
+      elif case(command_e.If):
+        node = cast(command__If, UP_node)
+
+        else_spid, fi_spid = node.spids
+
+        # if foo; then -> if foo {
+        # elif foo; then -> } elif foo {
+        for i, arm in enumerate(node.arms):
+          elif_spid, then_spid = arm.spids
+          if i != 0:  # 'if' not 'elif' on the first arm
+            self.cursor.PrintUntil(elif_spid)
+            self.f.write('} ')
+
+          cond = arm.cond
+          if cond.tag_() == condition_e.Shell:
+            if len(cond.commands) == 1 and cond.commands[0].tag == command_e.Sentence:
+              sentence = cond.commands[0]
+              self.DoCommand(sentence, local_symbols)
+
+              # Remove semi-colon
+              semi_spid = sentence.terminator.span_id
+              self.cursor.PrintUntil(semi_spid)
+              self.cursor.SkipUntil(semi_spid + 1)
+            else:
+              for child in cond.commands:
+                self.DoCommand(child, local_symbols)
+
+          self.cursor.PrintUntil(then_spid)
+          self.cursor.SkipUntil(then_spid + 1)
+          self.f.write('{')
+
+          for child in arm.action:
+            self.DoCommand(child, local_symbols)
+
+        # else -> } else {
+        if node.else_action:
+          self.cursor.PrintUntil(else_spid)
+          self.f.write('} ')
+          self.cursor.PrintUntil(else_spid + 1)
+          self.f.write(' {')
+
+          for child in node.else_action:
+            self.DoCommand(child, local_symbols)
+
+        # fi -> }
+        self.cursor.PrintUntil(fi_spid)
+        self.cursor.SkipUntil(fi_spid + 1)
+        self.f.write('}')
+
+      elif case(command_e.Case):
+        node = cast(command__Case, UP_node)
+
+        case_spid, in_spid, esac_spid = node.spids
+        self.cursor.PrintUntil(case_spid)
+        self.cursor.SkipUntil(case_spid + 1)
+        self.f.write('match')
+
+        # Reformat "$1" to $1
+        self.DoWordInCommand(node.to_match, local_symbols)
+
+        self.cursor.PrintUntil(in_spid)
+        self.cursor.SkipUntil(in_spid + 1)
+        self.f.write('{')  # matchstr $var {
+
+        # each arm needs the ) and the ;; node to skip over?
+        for arm in node.arms:
+          left_spid, rparen_spid, dsemi_spid, last_spid = arm.spids
+          #print(left_spid, rparen_spid, dsemi_spid)
+
+          self.cursor.PrintUntil(left_spid)
+          # Hm maybe keep | because it's semi-deprecated?  You acn use
+          # reload|force-relaod {
+          # }
+          # e/reload|force-reload/ {
+          # }
+          # / 'reload' or 'force-reload' / {
+          # }
+          #
+          # Yeah it's the more abbreviated syntax.
+
+          # change | to 'or'
+          for pat in arm.pat_list:
+            pass
+
+          self.f.write('with ')
+          # Remove the )
+          self.cursor.PrintUntil(rparen_spid)
+          self.cursor.SkipUntil(rparen_spid + 1)
+
+          for child in arm.action:
+            self.DoCommand(child, local_symbols)
+
+          if dsemi_spid != runtime.NO_SPID:
+            # Remove ;;
+            self.cursor.PrintUntil(dsemi_spid)
+            self.cursor.SkipUntil(dsemi_spid + 1)
+          elif last_spid != runtime.NO_SPID:
+            self.cursor.PrintUntil(last_spid)
+          else:
+            raise AssertionError(
+                "Expected with dsemi_spid or last_spid in case arm")
+
+        self.cursor.PrintUntil(esac_spid)
+        self.cursor.SkipUntil(esac_spid + 1)
+        self.f.write('}')  # strmatch $var {
+
+      elif case(command_e.TimeBlock):
+        node = cast(command__TimeBlock, UP_node)
+
+        self.DoCommand(node.pipeline, local_symbols)
+
+      elif case(command_e.DParen):
+        # TODO: arith expressions can words with command subs
+        pass
+      elif case(command_e.DBracket):
+        # TODO: bool_expr_t can have words with command subs
+        pass
+
+      else:
+        pass
+        #log('Command not handled: %s', node)
+        #raise AssertionError(node.__class__.__name__)
 
   def DoWordAsExpr(self, node, local_symbols):
     # type: (word_t, Dict[str, Any]) -> None
@@ -806,6 +837,8 @@ class OilPrinter(object):
 
     with tagswitch(node) as case:
       if case(word_e.Compound):
+        node = cast(compound_word, UP_node)
+
         # UNQUOTE simple var subs
 
         # Special case for "$@".
@@ -815,7 +848,7 @@ class OilPrinter(object):
 
         if (len(node.parts) == 1 and
             node.parts[0].tag == word_part_e.DoubleQuoted):
-          dq_part = node.parts[0]
+          dq_part = cast(double_quoted, node.parts[0])
 
           # NOTE: In double quoted case, this is the begin and end quote.
           # Do we need a HereDoc part?
@@ -828,7 +861,7 @@ class OilPrinter(object):
           if len(dq_part.parts) == 1:
             part0 = dq_part.parts[0]
             if part0.tag == word_part_e.SimpleVarSub:
-              vsub_part = dq_part.parts[0]
+              vsub_part = cast(simple_var_sub, dq_part.parts[0])
               if vsub_part.token.id == Id.VSub_At:
                 # NOTE: This is off for double quoted part.  Hack to subtract 1.
                 self.cursor.PrintUntil(left_spid)
@@ -905,6 +938,7 @@ class OilPrinter(object):
         pass
 
       elif case(word_part_e.EscapedLiteral):
+        node = cast(word_part__EscapedLiteral, UP_node)
         if quoted:
           pass
         else:
@@ -920,6 +954,8 @@ class OilPrinter(object):
             self.f.write("'%s'" % val)
 
       elif case(word_part_e.Literal):
+        node = cast(Token, UP_node)
+
         # Print it literally.
         # TODO: We might want to do it all on the word level though.  For
         # example, foo"bar" becomes "foobar" in oil.
@@ -932,6 +968,8 @@ class OilPrinter(object):
           self.cursor.PrintUntil(spid + 1)
 
       elif case(word_part_e.SingleQuoted):
+        node = cast(single_quoted, UP_node)
+
         # TODO:
         # '\n' is '\\n'
         # $'\n' is '\n'
@@ -942,10 +980,13 @@ class OilPrinter(object):
           self.cursor.PrintUntil(last_spid + 1)
 
       elif case(word_part_e.DoubleQuoted):
+        node = cast(double_quoted, UP_node)
         for part in node.parts:
           self.DoWordPart(part, local_symbols, quoted=True)
 
       elif case(word_part_e.SimpleVarSub):
+        node = cast(simple_var_sub, UP_node)
+
         spid = node.token.span_id
         op_id = node.token.id
 
@@ -988,6 +1029,8 @@ class OilPrinter(object):
           pass
 
       elif case(word_part_e.BracedVarSub):
+        node = cast(braced_var_sub, UP_node)
+
         left_spid, right_spid = node.spids
 
         # NOTE: Why do we need this but we don't need it in command sub?
@@ -1015,6 +1058,8 @@ class OilPrinter(object):
         self.cursor.PrintUntil(right_spid + 1)
 
       elif case(word_part_e.CommandSub):
+        node = cast(command_sub, UP_node)
+
         left_spid, right_spid = node.spids
 
         if node.left_token.id == Id.Left_Backtick:
