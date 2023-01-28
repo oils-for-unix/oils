@@ -44,8 +44,8 @@ def main(argv):
   #reveal_type(nodes)
 
   for n in nodes:
-    print(n.tag)
-    if n.tag == cflow_e.Return:
+    print(n.tag_())
+    if n.tag_() == cflow_e.Return:
       print('Return = %s' % n)
 
       # Hm mypy doesn't like this one, but I think it should be equivalent.
