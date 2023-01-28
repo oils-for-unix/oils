@@ -178,6 +178,20 @@ Str* %s(Str* c) {
 """)
 
 
+def GenStrList(l, name, out):
+  element_globals = []
+  for i, elem in enumerate(l):
+    global_name = "k%s_%d" % (name, i)
+    out('GLOBAL_STR(%s, "%s");', global_name, elem)
+    element_globals.append(global_name)
+
+  lit = ' COMMA '.join(element_globals)
+  out(
+    'GLOBAL_LIST(Str*, %d, %s, {%s});\n',
+    len(l), name, lit
+  )
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -300,6 +314,8 @@ namespace consts {
 
       out('extern List<Str*>* BUILTIN_NAMES;')
       out('extern List<Str*>* OSH_KEYWORD_NAMES;')
+      out('extern List<Str*>* SET_OPTION_NAMES;')
+      out('extern List<Str*>* SHOPT_OPTION_NAMES;')
 
       out("""\
 
@@ -501,29 +517,10 @@ Tuple2<state_t, emit_t> IfsEdge(state_t state, runtime_asdl::char_kind_t ch) {
 }
 """)
 
-      builtin_globals = []
-      for i, name in enumerate(consts.BUILTIN_NAMES):
-          global_name = "kBuiltin%d" % i
-          out('GLOBAL_STR(%s, "%s");', global_name, name)
-          builtin_globals.append(global_name)
-      builtins_lit = ' COMMA '.join(builtin_globals)
-      out(
-        'GLOBAL_LIST(Str*, %d, BUILTIN_NAMES, {%s});\n',
-        len(consts.BUILTIN_NAMES),
-        builtins_lit
-      )
-
-      keyword_globals = []
-      for i, name in enumerate(consts.OSH_KEYWORD_NAMES):
-          global_name = "kOshKeyword%d" % i
-          out('GLOBAL_STR(%s, "%s");', global_name, name)
-          keyword_globals.append(global_name)
-      keywords_lit = ' COMMA '.join(keyword_globals)
-      out(
-        'GLOBAL_LIST(Str*, %d, OSH_KEYWORD_NAMES, {%s});\n',
-        len(consts.OSH_KEYWORD_NAMES),
-        keywords_lit
-      )
+      GenStrList(consts.BUILTIN_NAMES, 'BUILTIN_NAMES', out)
+      GenStrList(consts.OSH_KEYWORD_NAMES, 'OSH_KEYWORD_NAMES', out)
+      GenStrList(consts.SET_OPTION_NAMES, 'SET_OPTION_NAMES', out)
+      GenStrList(consts.SHOPT_OPTION_NAMES, 'SHOPT_OPTION_NAMES', out)
 
       out("""\
 }  // namespace consts
