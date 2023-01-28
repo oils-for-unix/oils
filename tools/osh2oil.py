@@ -62,15 +62,17 @@ from _devbuild.gen.syntax_asdl import (
     command__CommandList,
     BraceGroup,
 
+    for_iter_e, for_iter__Words,
     word_e, word_t,
     word_part_e, word_part_t, word_part__EscapedLiteral,
     compound_word,
     simple_var_sub, braced_var_sub, command_sub, double_quoted, single_quoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
-    condition_e,
+    condition_e, condition__Shell,
 )
 from asdl import runtime
 from core.pyerror import log, p_die
+from frontend import location
 from osh import word_
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch
@@ -214,16 +216,27 @@ def _GetRhsStyle(w):
         UP_part0 = part0
         with tagswitch(part0) as case:
           # VAR_SUBS
-          if case(word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
-                  word_part_e.TildeSub):
-            # $x -> x  and  ${x} -> x  and ${x:-default} -> x or 'default'
-            # ~ -> homedir()
-            # ~andy -> homedir('andy')
-            # tilde()
-            # tilde('andy') ?
+          if case(word_part_e.TildeSub):
+            #    x=~andy/src
+            # -> setvar x = homedir('andy') + '/src'
             return word_style_e.Expr
 
-          elif case(word_part_e.CommandSub, word_part_e.ArithSub):  # OTHER_SUBS
+          elif case(word_part_e.Literal):
+            #    local x=y
+            # -> var x = 'y'
+            return word_style_e.SQ
+
+          elif case(word_part_e.SimpleVarSub):
+            #    local x=$myvar
+            # -> var x = "$myvar"
+            # or var x = ${myvar}
+            # or var x = myvar
+            return word_style_e.DQ
+
+          elif case(word_part_e.BracedVarSub, word_part_e.CommandSub,
+              word_part_e.ArithSub):  
+            #    x=$(hostname)
+            # -> setvar x = $(hostname)
             return word_style_e.Unquoted
 
           elif case(word_part_e.DoubleQuoted):
@@ -372,8 +385,9 @@ class OilPrinter(object):
       # statements.
       if local_symbols is not None:
         lhs0 = node.pairs[0].lhs
-        if lhs0.tag_() == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
-          defined_locally = True
+        #if lhs0.tag_() == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
+        #  defined_locally = True
+
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
       has_array = any(
@@ -585,7 +599,7 @@ class OilPrinter(object):
 
         if node.body.tag_() == command_e.BraceGroup:
           # Don't add "do" like a standalone brace group.  Just use {}.
-          for child in node.body.children:
+          for child in cast(BraceGroup, node.body).children:
             self.DoCommand(child, new_local_symbols)
         else:
           pass
@@ -620,17 +634,27 @@ class OilPrinter(object):
 
         _, in_spid, semi_spid = node.spids
 
-        if in_spid == runtime.NO_SPID:
-          #self.cursor.PrintUntil()  # 'for x' and then space
-          self.f.write('for %s in @ARGV ' % node.iter_names[0])
-          self.cursor.SkipUntil(node.body.spids[0])
-        else:
-          self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
-          self.f.write('[')
-          for w in node.iterable.words:
-            self.DoWordInCommand(w, local_symbols)
-          self.f.write(']')
-          #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+        UP_iterable = node.iterable
+        with tagswitch(node.iterable) as case:
+          if case(for_iter_e.Args):
+            #self.cursor.PrintUntil()  # 'for x' and then space
+            self.f.write('for %s in @ARGV ' % node.iter_names[0])
+
+            # note: command_t doesn't have .spids
+            self.cursor.SkipUntil(location.SpanForCommand(node.body))
+
+          elif case(for_iter_e.Words):
+            iterable = cast(for_iter__Words, UP_iterable)
+
+            self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
+            self.f.write('[')
+            for w in iterable.words:
+              self.DoWordInCommand(w, local_symbols)
+            self.f.write(']')
+            #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+
+          elif case(for_iter_e.Oil):
+            pass
 
         if semi_spid != runtime.NO_SPID:
           self.cursor.PrintUntil(semi_spid)
@@ -649,11 +673,12 @@ class OilPrinter(object):
           self.cursor.SkipUntil(kw_spid + 1)
 
         if node.cond.tag_() == condition_e.Shell:
-          commands = node.cond.commands
+          commands = cast(condition__Shell, node.cond).commands
           # Skip the semi-colon in the condition, which is ususally a Sentence
           if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
-            self.DoCommand(commands[0].child, local_symbols)
-            semi_spid = commands[0].terminator.span_id
+            sentence = cast(command__Sentence, commands[0])
+            self.DoCommand(sentence.child, local_symbols)
+            semi_spid = sentence.terminator.span_id
             self.cursor.SkipUntil(semi_spid + 1)
 
         self.DoCommand(node.body, local_symbols)
@@ -673,8 +698,9 @@ class OilPrinter(object):
 
           cond = arm.cond
           if cond.tag_() == condition_e.Shell:
-            if len(cond.commands) == 1 and cond.commands[0].tag_() == command_e.Sentence:
-              sentence = cond.commands[0]
+            commands = cast(condition__Shell, cond).commands
+            if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
+              sentence = cast(command__Sentence, commands[0])
               self.DoCommand(sentence, local_symbols)
 
               # Remove semi-colon
@@ -682,7 +708,7 @@ class OilPrinter(object):
               self.cursor.PrintUntil(semi_spid)
               self.cursor.SkipUntil(semi_spid + 1)
             else:
-              for child in cond.commands:
+              for child in commands:
                 self.DoCommand(child, local_symbols)
 
           self.cursor.PrintUntil(then_spid)
@@ -723,8 +749,8 @@ class OilPrinter(object):
         self.f.write('{')  # matchstr $var {
 
         # each arm needs the ) and the ;; node to skip over?
-        for arm in node.arms:
-          left_spid, rparen_spid, dsemi_spid, last_spid = arm.spids
+        for case_arm in node.arms:
+          left_spid, rparen_spid, dsemi_spid, last_spid = case_arm.spids
           #print(left_spid, rparen_spid, dsemi_spid)
 
           self.cursor.PrintUntil(left_spid)
@@ -739,7 +765,7 @@ class OilPrinter(object):
           # Yeah it's the more abbreviated syntax.
 
           # change | to 'or'
-          for pat in arm.pat_list:
+          for pat in case_arm.pat_list:
             pass
 
           self.f.write('with ')
@@ -747,7 +773,7 @@ class OilPrinter(object):
           self.cursor.PrintUntil(rparen_spid)
           self.cursor.SkipUntil(rparen_spid + 1)
 
-          for child in arm.action:
+          for child in case_arm.action:
             self.DoCommand(child, local_symbols)
 
           if dsemi_spid != runtime.NO_SPID:
