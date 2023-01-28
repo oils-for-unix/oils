@@ -344,7 +344,7 @@ class UsersAction(CompletionAction):
 
 
 class TestAction(CompletionAction):
-  def __init__(self, words, delay=None):
+  def __init__(self, words, delay=0.0):
     # type: (List[str], Optional[float]) -> None
     self.words = words
     self.delay = delay
@@ -353,7 +353,7 @@ class TestAction(CompletionAction):
     # type: (Api) -> Iterator[str]
     for w in self.words:
       if w.startswith(comp.to_complete):
-        if self.delay:
+        if self.delay != 0.0:
           time_.sleep(self.delay)
         yield w
 

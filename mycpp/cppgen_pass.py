@@ -1941,14 +1941,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               if isinstance(t, Instance):
                 # Allowing strings since they're immutable, e.g. prefix='' seems
                 # OK
-                if t.type.fullname in ('builtins.bool', 'builtins.int', 'builtins.str'):
+                if t.type.fullname in ('builtins.bool', 'builtins.int', 'builtins.float', 'builtins.str'):
                   valid = True
                 if t.type.fullname.endswith('_t'):  # ASDL lex_mode_t, scope_t, ...
                   valid = True
 
               if not valid:
                 self.report_error(arg,
-                    'Invalid default arg %r of type %s (not None, bool, int)' %
+                    'Invalid default arg %r of type %s (not None, bool, int, float)' %
                     (arg.initializer, t))
                 return
 

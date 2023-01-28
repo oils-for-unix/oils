@@ -75,6 +75,10 @@ def get_mypy_config(paths: List[str],
     # 10/2019: FIX for MyPy 0.730.  Not sure why I need this but I do.
     options.preserve_asts = True
 
+    # 1/2023: Workaround for conditional import in osh/builtin_comp.py
+    # Same as devtools/types.sh
+    options.warn_unused_ignores = False
+
     for source in sources:
         options.per_module_options.setdefault(source.module, {})['mypyc'] = True
 
