@@ -12,12 +12,11 @@ from core import vm
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
-from frontend import option_def
 from core import state
 
-from typing import Dict, List, Iterator, Any, cast, TYPE_CHECKING
+from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
   from core.completion import Lookup, OptionState, Api, UserSpec
   from core.ui import ErrorFormatter
   from core.state import Mem
@@ -55,14 +54,29 @@ class _FixedWordsAction(completion.CompletionAction):
         yield name
 
 
-class _DynamicDictAction(completion.CompletionAction):
+class _DynamicProcDictAction(completion.CompletionAction):
   """For completing from proc and aliases dicts, which are mutable.
-
   Note: this is the same as _FixedWordsAction now, but won't be when the code
   is statically typed!
   """
   def __init__(self, d):
-    # type: (Dict[str, Any]) -> None
+    # type: (Dict[str, Proc]) -> None
+    self.d = d
+
+  def Matches(self, comp):
+    # type: (Api) -> Iterator[str]
+    for name in sorted(self.d):
+      if name.startswith(comp.to_complete):
+        yield name
+
+
+class _DynamicStrDictAction(completion.CompletionAction):
+  """For completing from proc and aliases dicts, which are mutable.
+  Note: this is the same as _FixedWordsAction now, but won't be when the code
+  is statically typed!
+  """
+  def __init__(self, d):
+    # type: (Dict[str, str]) -> None
     self.d = d
 
   def Matches(self, comp):
@@ -107,7 +121,7 @@ class SpecBuilder(object):
 
     # NOTE: bash doesn't actually check the name until completion time, but
     # obviously it's better to check here.
-    if arg.F:
+    if arg.F is not None:
       func_name = arg.F
       func = cmd_ev.procs.get(func_name)
       if func is None:
@@ -117,7 +131,7 @@ class SpecBuilder(object):
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in attrs.actions:
       if name == 'alias':
-        a = _DynamicDictAction(self.parse_ctx.aliases)  # type: completion.CompletionAction
+        a = _DynamicStrDictAction(self.parse_ctx.aliases)  # type: completion.CompletionAction
 
       elif name == 'binding':
         # TODO: Where do we get this from?
@@ -129,22 +143,22 @@ class SpecBuilder(object):
         # directory, and external commands in $PATH.
 
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
-        actions.append(_DynamicDictAction(self.parse_ctx.aliases))
-        actions.append(_DynamicDictAction(cmd_ev.procs))
+        actions.append(_DynamicStrDictAction(self.parse_ctx.aliases))
+        actions.append(_DynamicProcDictAction(cmd_ev.procs))
         actions.append(_FixedWordsAction(consts.OSH_KEYWORD_NAMES))
-        actions.append(completion.FileSystemAction(exec_only=True))
+        actions.append(completion.FileSystemAction(False, True, False))
 
         # Look on the file system.
         a = completion.ExternalCommandAction(cmd_ev.mem)
 
       elif name == 'directory':
-        a = completion.FileSystemAction(dirs_only=True)
+        a = completion.FileSystemAction(True, False, False)
 
       elif name == 'file':
-        a = completion.FileSystemAction()
+        a = completion.FileSystemAction(False, False, False)
 
       elif name == 'function':
-        a = _DynamicDictAction(cmd_ev.procs)
+        a = _DynamicProcDictAction(cmd_ev.procs)
 
       elif name == 'job':
         a = _FixedWordsAction(['jobs-not-implemented'])
@@ -160,12 +174,10 @@ class SpecBuilder(object):
         a = _FixedWordsAction(HELP_TOPICS)
 
       elif name == 'setopt':
-        names = [opt.name for opt in option_def.All() if opt.builtin == 'set']
-        a = _FixedWordsAction(names)
+        a = _FixedWordsAction(consts.SET_OPTION_NAMES)
 
       elif name == 'shopt':
-        names = [opt.name for opt in option_def.All() if opt.builtin == 'shopt']
-        a = _FixedWordsAction(names)
+        a = _FixedWordsAction(consts.SHOPT_OPTION_NAMES)
 
       elif name == 'signal':
         a = _FixedWordsAction(['TODO:signals'])
@@ -197,28 +209,39 @@ class SpecBuilder(object):
       actions.append(a)
 
     extra_actions = []  # type: List[completion.CompletionAction]
-    if base_opts.get('plusdirs'):
-      extra_actions.append(completion.FileSystemAction(dirs_only=True))
+    if base_opts.get('plusdirs', False):
+      extra_actions.append(completion.FileSystemAction(True, False, False))
 
     # These only happen if there were zero shown.
     else_actions = []  # type: List[completion.CompletionAction]
-    if base_opts.get('default'):
-      else_actions.append(completion.FileSystemAction())
-    if base_opts.get('dirnames'):
-      else_actions.append(completion.FileSystemAction(dirs_only=True))
+    if base_opts.get('default', False):
+      else_actions.append(completion.FileSystemAction(False, False, False))
+    if base_opts.get('dirnames', False):
+      else_actions.append(completion.FileSystemAction(True, False, False))
 
     if not actions and not else_actions:
       raise error.Usage('No actions defined in completion: %s' % argv)
 
     p = completion.DefaultPredicate()  # type: completion._Predicate
-    if arg.X:
+    if arg.X is not None:
       filter_pat = arg.X
       if filter_pat.startswith('!'):
         p = completion.GlobPredicate(False, filter_pat[1:])
       else:
         p = completion.GlobPredicate(True, filter_pat)
+
+    # mycpp: rewrite of or
+    prefix = arg.P
+    if prefix is None:
+      prefix = ''
+
+    # mycpp: rewrite of or
+    suffix = arg.S
+    if suffix is None:
+      suffix = ''
+
     return completion.UserSpec(actions, extra_actions, else_actions, p,
-                               prefix=arg.P or '', suffix=arg.S or '')
+                               prefix, suffix)
 
 
 class Complete(vm._Builtin):
@@ -234,8 +257,9 @@ class Complete(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     attrs = flag_spec.ParseMore('complete', arg_r)
     arg = arg_types.complete(attrs.attrs)
     # TODO: process arg.opt_changes
@@ -248,13 +272,13 @@ class Complete(vm._Builtin):
     if arg.E:
       commands.append('__first')  # empty line
 
-    if not commands:
+    if len(commands) == 0:
       self.comp_lookup.PrintSpecs()
       return 0
 
     base_opts = dict(attrs.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, attrs, base_opts)
+      user_spec = self.spec_builder.Build(cmd_val.argv, attrs, base_opts)
     except error.Parse as e:
       # error printed above
       return 2
@@ -278,8 +302,9 @@ class CompGen(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     arg = flag_spec.ParseMore('compgen', arg_r)
 
     if arg_r.AtEnd():
@@ -295,7 +320,7 @@ class CompGen(vm._Builtin):
 
     base_opts = dict(arg.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, arg, base_opts)
+      user_spec = self.spec_builder.Build(cmd_val.argv, arg, base_opts)
     except error.Parse as e:
       # error printed above
       return 2
@@ -304,8 +329,8 @@ class CompGen(vm._Builtin):
     # and also showing ALL COMPREPLY reuslts, not just the ones that start with
     # the word to complete.
     matched = False 
-    comp = completion.Api()
-    comp.Update(first='compgen', to_complete=to_complete, prev='', index=-1)
+    comp = completion.Api('', 0, 0)
+    comp.Update('compgen', to_complete, '', -1, None)
     try:
       for m, _ in user_spec.Matches(comp):
         matched = True
@@ -334,8 +359,9 @@ class CompOpt(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     arg = flag_spec.ParseMore('compopt', arg_r)
 
     if not self.comp_state.currently_completing:  # bash also checks this.
@@ -363,8 +389,9 @@ class CompAdjust(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     attrs = flag_spec.ParseMore('compadjust', arg_r)
     arg = arg_types.compadjust(attrs.attrs)
     var_names = arg_r.Rest()  # Output variables to set
@@ -387,7 +414,11 @@ class CompAdjust(vm._Builtin):
     if arg.s:  # implied
       break_chars.remove('=')
     # NOTE: The syntax is -n := and not -n : -n =.
-    omit_chars = arg.n or ''
+    # mycpp: rewrite of or
+    omit_chars = arg.n
+    if omit_chars is None:
+      omit_chars = ''
+
     for c in omit_chars:
       if c in break_chars:
         break_chars.remove(c)
@@ -406,7 +437,8 @@ class CompAdjust(vm._Builtin):
 
     if arg.s:
       if cur.startswith('--') and '=' in cur:  # Split into flag name and value
-        prev, cur = cur.split('=', 1)
+        # mycpp: rewrite of multiple-assignment
+        prev, cur = mylib.split_once(cur, '=')
         split = 'true'
       else:
         split = 'false'

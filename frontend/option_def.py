@@ -352,15 +352,6 @@ _Init(_OPTION_DEF)
 # first?
 _SORTED = sorted(_OPTION_DEF.opts, key=lambda opt: opt.name)
 
-# Used by core/state.py.
-
-# Used only for Python assertions
-SET_OPTION_NAMES = [opt.name for opt in _SORTED if opt.builtin == 'set']
-SET_OPTION_NUMS = [opt.index for opt in _SORTED if opt.builtin == 'set']
-
-# Include the unimplemented ones
-SHOPT_OPTION_NUMS = [opt.index for opt in _SORTED if opt.builtin == 'shopt']
-
 PARSE_OPTION_NUMS = [opt.index for opt in _SORTED if opt.is_parse]
 
 # Sorted because 'shopt -o -p' should be sorted, etc.

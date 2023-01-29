@@ -33,8 +33,7 @@ Uses ITEMLIST with a bunch of flags.
 """
 from __future__ import print_function
 
-import pwd
-import time
+import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
@@ -45,6 +44,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
+from core.alloc import Arena
 from core.pyerror import log
 from core import pyos
 from core import state
@@ -58,16 +58,16 @@ from pylib import os_path
 from pylib import path_stat
 from osh import word_
 from osh.string_ops import ShellQuoteB
+from mycpp import mylib
 
 import libc
 import posix_ as posix
 from posix_ import X_OK  # translated directly to C macro
 
 from typing import (
-    Dict, Tuple, List, Iterator, Optional, Callable, Any, cast, TYPE_CHECKING
+    Dict, Tuple, List, Iterator, Optional, cast, TYPE_CHECKING
 )
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import Token, compound_word
   from core.comp_ui import State
   from core.state import Mem
   from frontend.py_readline import Readline
@@ -92,11 +92,22 @@ SHELL_META_CHARS = r' ~`!$&|;()\"*?[]{}<>' + "'"
 
 class _RetryCompletion(Exception):
   """For the 'exit 124' protocol."""
-  pass
+
+  def __init__(self):
+    # type: () -> None
+    pass
 
 
-CH_Break, CH_Other = xrange(2)  # Character types
-ST_Begin, ST_Break, ST_Other = xrange(3)  # States
+# mycpp: rewrite of multiple-assignment
+# Character types
+CH_Break = 0
+CH_Other = 1
+
+# mycpp: rewrite of multiple-assignment
+# States
+ST_Begin = 0
+ST_Break = 1
+ST_Other = 2
 
 # State machine definition.
 _TRANSITIONS = {
@@ -113,7 +124,8 @@ _TRANSITIONS = {
 
 def AdjustArg(arg, break_chars, argv_out):
   # type: (str, List[str], List[str]) -> None
-  end_indices = []  # stores the end of each span
+  # stores the end of each span
+  end_indices = []  # type: List[int]
   state = ST_Begin
   for i, c in enumerate(arg):
     ch = CH_Break if c in break_chars else CH_Other
@@ -130,13 +142,6 @@ def AdjustArg(arg, break_chars, argv_out):
     begin = end
 
 
-class NullCompleter(object):
-
-  def Matches(self, comp):
-    # type: (Api) -> Iterator[str]
-    raise StopIteration  # zero iterations
-
-
 # NOTE: How to create temporary options?  With copy.deepcopy()?
 # We might want that as a test for OVM.  Copying is similar to garbage
 # collection in that you walk a graph.
@@ -144,7 +149,6 @@ class NullCompleter(object):
 
 # These values should never be mutated.
 _DEFAULT_OPTS = {}  # type: Dict[str, bool]
-_DO_NOTHING = (_DEFAULT_OPTS, NullCompleter())
 
 
 class OptionState(object):
@@ -165,10 +169,11 @@ class Lookup(object):
     # type: () -> None
     # command name -> UserSpec
     # Pseudo-commands __first and __fallback are for -E and -D.
+    do_nothing = (_DEFAULT_OPTS, UserSpec([], [], [], DefaultPredicate(), '', ''))  # type: Tuple[Optional[Dict[str, bool]], UserSpec]
     self.lookup = {
-        '__fallback': _DO_NOTHING,
-        '__first': _DO_NOTHING,
-    }  # type: Dict[str, Tuple[Dict[str, bool], Any]]
+        '__fallback': do_nothing,
+        '__first': do_nothing,
+    }  # type: Dict[str, Tuple[Optional[Dict[str, bool]], UserSpec]]
 
     # for the 124 protocol
     self.commands_with_spec_changes = []  # type: List[str]
@@ -221,12 +226,16 @@ class Lookup(object):
     """
     pair = self.lookup.get(argv0)  # NOTE: Could be ''
     if pair:
-      return pair
+      # mycpp: rewrite of tuple return
+      a, b = pair
+      return (a, b)
 
     key = os_path.basename(argv0)
     pair = self.lookup.get(key)
     if pair:
-      return pair
+      # mycpp: rewrite of tuple return
+      a, b = pair
+      return (a, b)
 
     for glob_pat, base_opts, user_spec in self.patterns:
       #log('Matching %r %r', key, glob_pat)
@@ -237,16 +246,21 @@ class Lookup(object):
 
   def GetFirstSpec(self):
     # type: () -> Tuple[Dict[str, bool], UserSpec]
-    return self.lookup['__first']
+    # mycpp: rewrite of tuple return
+    a, b = self.lookup['__first']
+    return (a, b)
 
   def GetFallback(self):
     # type: () -> Tuple[Dict[str, bool], UserSpec]
-    return self.lookup['__fallback']
+    # mycpp: rewrite of tuple return
+    a, b = self.lookup['__fallback']
+    return (a, b)
+
 
 
 class Api(object):
 
-  def __init__(self, line='', begin=0, end=0):
+  def __init__(self, line, begin, end):
     # type: (str, int, int) -> None
     """
     Args:
@@ -255,11 +269,15 @@ class Api(object):
     self.line = line
     self.begin = begin
     self.end = end
+    self.first = None # type: str
+    self.to_complete = None # type: str
+    self.prev = None # type: str
+    self.index = -1 # type: int
+    self.partial_argv = [] # type: List[str]
     # NOTE: COMP_WORDBREAKS is initialized in Mem().
 
   # NOTE: to_complete could be 'cur'
-  def Update(self, first='', to_complete='', prev='', index=0,
-             partial_argv=None):
+  def Update(self, first, to_complete, prev, index, partial_argv):
     # type: (str, str, str, int, List[str]) -> None
     """Added after we've done parsing."""
     self.first = first
@@ -267,7 +285,9 @@ class Api(object):
     self.prev = prev
     self.index = index  # COMP_CWORD
     # COMP_ARGV and COMP_WORDS can be derived from this
-    self.partial_argv = partial_argv or []
+    self.partial_argv = partial_argv
+    if self.partial_argv is None:
+      self.partial_argv = []
 
   def __repr__(self):
     # type: () -> str
@@ -293,6 +313,16 @@ class CompletionAction(object):
     # type: (Api) -> Iterator[str]
     pass
 
+  # mycpp: for rewrites of isinstance()
+  def IsFileSystemAction(self):
+    # type: () -> bool
+    return False
+
+  # mycpp: for rewrites of isinstance()
+  def IsShellFuncAction(self):
+    # type: () -> bool
+    return False
+
   def __repr__(self):
     # type: () -> str
     return self.__class__.__name__
@@ -300,6 +330,10 @@ class CompletionAction(object):
 
 class UsersAction(CompletionAction):
   """complete -A user"""
+
+  def __init__(self):
+    # type: () -> None
+    pass
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
@@ -310,7 +344,7 @@ class UsersAction(CompletionAction):
 
 
 class TestAction(CompletionAction):
-  def __init__(self, words, delay=None):
+  def __init__(self, words, delay=0.0):
     # type: (List[str], Optional[float]) -> None
     self.words = words
     self.delay = delay
@@ -319,8 +353,8 @@ class TestAction(CompletionAction):
     # type: (Api) -> Iterator[str]
     for w in self.words:
       if w.startswith(comp.to_complete):
-        if self.delay:
-          time.sleep(self.delay)
+        if self.delay != 0.0:
+          time_.sleep(self.delay)
         yield w
 
 
@@ -359,7 +393,7 @@ class FileSystemAction(CompletionAction):
 
   Directories will have a / suffix.
   """
-  def __init__(self, dirs_only=False, exec_only=False, add_slash=False):
+  def __init__(self, dirs_only, exec_only, add_slash):
     # type: (bool, bool, bool) -> None
     self.dirs_only = dirs_only
     self.exec_only = exec_only
@@ -367,6 +401,11 @@ class FileSystemAction(CompletionAction):
     # This is for redirects, not for UserSpec, which should respect compopt -o
     # filenames.
     self.add_slash = add_slash  # for directories
+
+  # mycpp: rewrite of isinstance()
+  def IsFileSystemAciton(self):
+    # type: () -> bool
+    return True
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
@@ -385,9 +424,9 @@ class FileSystemAction(CompletionAction):
       to_list = dirname
 
     if 0:
-      log('basename %r', basename)
-      log('to_list %r', to_list)
-      log('dirname %r', dirname)
+      log('basename %r' % basename)
+      log('to_list %r' % to_list)
+      log('dirname %r' % dirname)
 
     try:
       names = posix.listdir(to_list)
@@ -415,7 +454,8 @@ class FileSystemAction(CompletionAction):
             continue
 
         if self.add_slash and path_stat.isdir(path):
-          yield path + '/'
+          path = path + '/'
+          yield path
         else:
           yield path
 
@@ -434,15 +474,20 @@ class ShellFuncAction(CompletionAction):
     self.func = func
     self.comp_lookup = comp_lookup
 
+  # mycpp: rewrite of isinstance()
+  def IsShellFuncAction(self):
+    # type: () -> bool
+    return True
+
   def __repr__(self):
     # type: () -> str
 
     # TODO: Add file and line number here!
     return '<ShellFuncAction %s>' % (self.func.name,)
 
-  def log(self, *args):
-    # type: (*Any) -> None
-    self.cmd_ev.debug_f.log(*args)
+  def log(self, msg):
+    # type: (str) -> None
+    self.cmd_ev.debug_f.log(msg)
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
@@ -471,28 +516,25 @@ class ShellFuncAction(CompletionAction):
     state.SetGlobalString(self.cmd_ev.mem, 'COMP_POINT', str(comp.end))
 
     argv = [comp.first, comp.to_complete, comp.prev]
-    self.log('Running completion function %r with arguments %s',
-             self.func.name, argv)
+    self.log('Running completion function %r with arguments %s' % (self.func.name, argv))
 
     self.comp_lookup.ClearCommandsChanged()
     status = self.cmd_ev.RunFuncForCompletion(self.func, argv)
     commands_changed = self.comp_lookup.GetCommandsChanged()
 
-    self.log('comp.first %s, commands_changed: %s', comp.first,
-             commands_changed)
+    self.log('comp.first %s, commands_changed: %s' % (comp.first, commands_changed))
 
     if status == 124:
       cmd = os_path.basename(comp.first) 
       if cmd in commands_changed:
-        self.log('Got status 124 from %r and %s commands changed',
-                 self.func.name, commands_changed)
+        self.log('Got status 124 from %r and %s commands changed' % (self.func.name, commands_changed))
         raise _RetryCompletion()
       else:
         # This happens with my own completion scripts.  bash doesn't show an
         # error.
         self.log(
             "Function %r returned 124, but the completion spec for %r wasn't "
-            "changed", self.func.name, cmd)
+            "changed" % (self.func.name, cmd))
         return
 
     # Read the response.  # Note: the name 'COMP_REPLY' would be more
@@ -509,12 +551,10 @@ class ShellFuncAction(CompletionAction):
       return
 
     if val.tag_() != value_e.MaybeStrArray:
-      log('ERROR: COMPREPLY should be an array, got %s', val)
+      log('ERROR: COMPREPLY should be an array, got %s' % val)
       return
-    self.log('COMPREPLY %s', val)
+    self.log('COMPREPLY %s' % val)
 
-    # Return this all at once so we don't have a generator.  COMPREPLY happens
-    # all at once anyway.
     for s in cast(value__MaybeStrArray, val).strs:
       yield s
 
@@ -573,9 +613,9 @@ class ExternalCommandAction(CompletionAction):
     if val.tag_() != value_e.Str:
       # No matches if not a string
       return
-    assert isinstance(val, value__Str)  # for MyPy
 
-    path_dirs = val.s.split(':')
+    val_s = cast(value__Str, val)
+    path_dirs = val_s.s.split(':')
     #log('path: %s', path_dirs)
 
     executables = []  # type: List[str]
@@ -610,14 +650,23 @@ class ExternalCommandAction(CompletionAction):
 
 
 class _Predicate(object):
-  def __call__(self, candidate):
+
+  def __init__(self):
+    # type: () -> None
+    pass
+
+  def Evaluate(self, candidate):
     # type: (str) -> bool
     raise NotImplementedError()
 
 
 class DefaultPredicate(_Predicate):
 
-  def __call__(self, candidate):
+  def __init__(self):
+    # type: () -> None
+    pass
+
+  def Evaluate(self, candidate):
     # type: (str) -> bool
     return True
 
@@ -636,7 +685,7 @@ class GlobPredicate(_Predicate):
     self.include = include  # True for inclusion, False for exclusion
     self.glob_pat = glob_pat  # extended glob syntax supported
 
-  def __call__(self, candidate):
+  def Evaluate(self, candidate):
     # type: (str) -> bool
     """Should we INCLUDE the candidate or not?"""
     matched = libc.fnmatch(self.glob_pat, candidate)
@@ -661,9 +710,9 @@ class UserSpec(object):
                actions,  # type: List[CompletionAction]
                extra_actions,  # type: List[CompletionAction]
                else_actions,  # type: List[CompletionAction]
-               predicate,  # type: Callable[[str], bool]
-               prefix='',  # type: str
-               suffix='',  # type: str
+               predicate,  # type: _Predicate
+               prefix,  # type: str
+               suffix,  # type: str
                ):
     # type: (...) -> None
     self.actions = actions
@@ -679,15 +728,14 @@ class UserSpec(object):
     num_matches = 0
 
     for a in self.actions:
-      is_fs_action = isinstance(a, FileSystemAction)
+      is_fs_action = a.IsFileSystemAction()
       for match in a.Matches(comp):
         # Special case hack to match bash for compgen -F.  It doesn't filter by
         # to_complete!
         show = (
-            self.predicate(match) and
+            self.predicate.Evaluate(match) and
             # ShellFuncAction results are NOT filtered by prefix!
-            (match.startswith(comp.to_complete) or
-             isinstance(a, ShellFuncAction))
+            (match.startswith(comp.to_complete) or a.IsShellFuncAction())
         )
 
         # There are two kinds of filters: changing the string, and filtering
@@ -719,18 +767,20 @@ class UserSpec(object):
   def __str__(self):
     # type: () -> str
     parts = ['(UserSpec']
-    if self.actions:
-      parts.append(str(self.actions))
-    if self.extra_actions:
-      parts.append('extra=%s' % self.extra_actions)
-    if self.else_actions:
-      parts.append('else=%s' % self.else_actions)
-    if not isinstance(self.predicate, DefaultPredicate):
-      parts.append('pred = %s' % self.predicate)
-    if self.prefix:
-      parts.append('prefix=%r' % self.prefix)
-    if self.suffix:
-      parts.append('suffix=%r' % self.suffix)
+    if mylib.PYTHON:
+      if self.actions:
+        parts.append(str(self.actions))
+      if self.extra_actions:
+        parts.append('extra=%s' % self.extra_actions)
+      if self.else_actions:
+        parts.append('else=%s' % self.else_actions)
+      if not isinstance(self.predicate, DefaultPredicate):
+        parts.append('pred = %s' % self.predicate)
+      if self.prefix:
+        parts.append('prefix=%r' % self.prefix)
+      if self.suffix:
+        parts.append('suffix=%r' % self.suffix)
+
     return ' '.join(parts) + ')'
 
 
@@ -762,7 +812,13 @@ def WordEndsWithCompDummy(w):
     return False
 
 
-class RootCompleter(object):
+def _TokenStart(arena, tok):
+  # type: (Arena, Token) -> int
+  span = arena.GetToken(tok.span_id)
+  return span.col
+
+
+class RootCompleter(CompletionAction):
   """Dispatch to various completers.
 
   - Complete the OSH language (variables, etc.), or
@@ -816,7 +872,7 @@ class RootCompleter(object):
 
     debug_f = self.debug_f
     trail = self.parse_ctx.trail
-    if 1:
+    if mylib.PYTHON:
       trail.PrintDebugString(debug_f)
 
     #
@@ -840,12 +896,12 @@ class RootCompleter(object):
     except IndexError:
       t2 = None
 
-    debug_f.log('line: %r', comp.line)
-    debug_f.log('rl_slice from byte %d to %d: %r', comp.begin, comp.end,
-        comp.line[comp.begin:comp.end])
+    debug_f.log('line: %r' % comp.line)
+    debug_f.log('rl_slice from byte %d to %d: %r' % (comp.begin, comp.end,
+        comp.line[comp.begin:comp.end]))
 
-    debug_f.log('t1 %s', t1)
-    debug_f.log('t2 %s', t2)
+    debug_f.log('t1 %s' % t1)
+    debug_f.log('t2 %s' % t2)
     #debug_f.log('tokens %s', tokens)
 
     # Each of the 'yield' statements below returns a fully-completed line, to
@@ -853,22 +909,18 @@ class RootCompleter(object):
     # one candidate, readline is responsible for redrawing the input line.  OSH
     # only displays candidates and never redraws the input line.
 
-    def _TokenStart(tok):
-      # type: (Token) -> int
-      span = arena.GetToken(tok.span_id)
-      return span.col
 
     if t2:  # We always have t1?
       # echo $
       if IsDollar(t2) and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(t2) + 1  # 1 for $
+        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1  # 1 for $
         for name in self.mem.VarNames():
           yield line_until_tab + name  # no need to quote var names
         return
 
       # echo ${
       if t2.id == Id.Left_DollarBrace and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(t2) + 2  # 2 for ${
+        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 2  # 2 for ${
         for name in self.mem.VarNames():
           yield line_until_tab + name  # no need to quote var names
         return
@@ -878,7 +930,7 @@ class RootCompleter(object):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.
-        self.comp_ui_state.display_pos = _TokenStart(t2) + 1  # 1 for $
+        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1  # 1 for $
         to_complete = t2.val[1:]
         n = len(to_complete)
         for name in self.mem.VarNames():
@@ -888,7 +940,7 @@ class RootCompleter(object):
 
       # echo ${P
       if t2.id == Id.VSub_Name and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(t2)  # no offset
+        self.comp_ui_state.display_pos = _TokenStart(arena, t2)  # no offset
         to_complete = t2.val
         n = len(to_complete)
         for name in self.mem.VarNames():
@@ -898,7 +950,7 @@ class RootCompleter(object):
 
       # echo $(( VAR
       if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(t2)  # no offset
+        self.comp_ui_state.display_pos = _TokenStart(arena, t2)  # no offset
         to_complete = t2.val
         n = len(to_complete)
         for name in self.mem.VarNames():
@@ -906,7 +958,7 @@ class RootCompleter(object):
             yield line_until_tab + name[n:]  # no need to quote var names
         return
 
-    if trail.words:
+    if len(trail.words) > 0:
       # echo ~<TAB>
       # echo ~a<TAB> $(home dirs)
       # This must be done at a word level, and TildeDetectAll() does NOT help
@@ -922,18 +974,19 @@ class RootCompleter(object):
         t2 = cast(Token, parts[0])
 
         # +1 for ~
-        self.comp_ui_state.display_pos = _TokenStart(t2) + 1
+        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1
 
         to_complete = t2.val[1:]
         n = len(to_complete)
-        for u in pwd.getpwall():  # catch errors?
+        for u in pyos.GetAllUsers():  # catch errors?
           name = u.pw_name
           if name.startswith(to_complete):
-            yield line_until_tab + ShellQuoteB(name[n:]) + '/'
+            s = line_until_tab + ShellQuoteB(name[n:]) + '/'
+            yield s
         return
 
     # echo hi > f<TAB>   (complete redirect arg)
-    if trail.redirects:
+    if len(trail.redirects) > 0:
       r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       # TODO: Don't complete <<< 'h'
@@ -948,7 +1001,7 @@ class RootCompleter(object):
           try:
             val = self.word_ev.EvalWordToString(arg_word)
           except error.FatalRuntime as e:
-            debug_f.log('Error evaluating redirect word: %s', e)
+            debug_f.log('Error evaluating redirect word: %s' % e)
             return
           if val.tag_() != value_e.Str:
             debug_f.log("Didn't get a string from redir arg")
@@ -959,9 +1012,9 @@ class RootCompleter(object):
 
           self.comp_ui_state.display_pos = span.col
 
-          comp.Update(to_complete=val.s)  # FileSystemAction uses only this
+          comp.Update('', val.s, '', 0, [])
           n = len(val.s)
-          action = FileSystemAction(add_slash=True)
+          action = FileSystemAction(False, False, True)
           for name in action.Matches(comp):
             yield line_until_tab + ShellQuoteB(name[n:])
           return
@@ -980,7 +1033,7 @@ class RootCompleter(object):
     num_partial = -1
     first = None # type: str
 
-    if trail.words:
+    if len(trail.words) > 0:
       # Now check if we're completing a word!
       if WordEndsWithCompDummy(trail.words[-1]):
         debug_f.log('Completing words')
@@ -999,7 +1052,7 @@ class RootCompleter(object):
         if 0:
           debug_f.log('words2:')
           for w2 in words2:
-            debug_f.log(' %s', w2)
+            debug_f.log(' %s' % w2)
 
         for w in words2:
           try:
@@ -1016,21 +1069,22 @@ class RootCompleter(object):
           else:
             pass
 
-        debug_f.log('partial_argv: %s', partial_argv)
+        debug_f.log('partial_argv: [%s]' % ','.join(partial_argv))
         num_partial = len(partial_argv)
 
         first = partial_argv[0]
-        alias_first = None
-        debug_f.log('alias_words: %s', trail.alias_words)
+        alias_first = None # type: str
+        if mylib.PYTHON:
+          debug_f.log('alias_words: [%s]' % trail.alias_words)
 
-        if trail.alias_words:
+        if len(trail.alias_words) > 0:
           w = trail.alias_words[0]
           try:
             val = self.word_ev.EvalWordToString(w)
           except error.FatalRuntime:
             pass
           alias_first = val.s
-          debug_f.log('alias_first: %s', alias_first)
+          debug_f.log('alias_first: %s' % alias_first)
 
         if num_partial == 0:  # should never happen because of Lit_CompDummy
           raise AssertionError()
@@ -1045,7 +1099,7 @@ class RootCompleter(object):
           span_id = word_.LeftMostSpanForWord(trail.words[0])
           span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
-          self.debug_f.log('** DISPLAY_POS = %d', self.comp_ui_state.display_pos)
+          self.debug_f.log('** DISPLAY_POS = %d' % self.comp_ui_state.display_pos)
 
         else:
           base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
@@ -1062,14 +1116,15 @@ class RootCompleter(object):
           span_id = word_.LeftMostSpanForWord(trail.words[-1])
           span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
-          self.debug_f.log('words[-1]: %r', trail.words[-1])
-          self.debug_f.log('display_pos %d', self.comp_ui_state.display_pos)
+          if mylib.PYTHON:
+            self.debug_f.log('words[-1]: [%s]' % trail.words[-1])
+
+          self.debug_f.log('display_pos %d' % self.comp_ui_state.display_pos)
 
         # Update the API for user-defined functions.
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
         prev = '' if index == 0 else partial_argv[index-1]
-        comp.Update(first=first, to_complete=partial_argv[-1],
-                    prev=prev, index=index, partial_argv=partial_argv) 
+        comp.Update(first, partial_argv[-1], prev, index, partial_argv) 
 
     # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
     if not user_spec:
@@ -1084,12 +1139,14 @@ class RootCompleter(object):
     try:
       done = False
       while not done:
+        done = True  # exhausted candidates without getting a retry
         try:
           for candidate in self._PostProcess(
               base_opts, dynamic_opts, user_spec, comp):
             yield candidate
         except _RetryCompletion as e:
           debug_f.log('Got 124, trying again ...')
+          done = False
 
           # Get another user_spec.  The ShellFuncAction may have 'sourced' code
           # and run 'complete' to mutate comp_lookup, and we want to get that
@@ -1103,8 +1160,6 @@ class RootCompleter(object):
             base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
             if not user_spec:
               base_opts, user_spec = self.comp_lookup.GetFallback()
-        else:
-          done = True  # exhausted candidates without getting a retry
     finally:
       self.compopt_state.currently_completing = False
 
@@ -1121,8 +1176,8 @@ class RootCompleter(object):
     NOTE: This post-processing MUST go here, and not in UserSpec, because it's
     in READLINE in bash.  compgen doesn't see it.
     """
-    self.debug_f.log('Completing %r ... (Ctrl-C to cancel)', comp.line)
-    start_time = time.time()
+    self.debug_f.log('Completing %r ... (Ctrl-C to cancel)' % comp.line)
+    start_time = time_.time()
 
     # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
 
@@ -1165,7 +1220,8 @@ class RootCompleter(object):
       # FileSystemAction needs it.
       if is_fs_action or opt_filenames:
         if path_stat.isdir(candidate):  # TODO: test coverage
-          yield line_until_word + ShellQuoteB(candidate) + '/'
+          s = line_until_word + ShellQuoteB(candidate) + '/'
+          yield s
           continue
 
       opt_nospace = base_opts.get('nospace', False)
@@ -1177,20 +1233,20 @@ class RootCompleter(object):
 
       # NOTE: Can't use %.2f in production build!
       i += 1
-      elapsed_ms = (time.time() - start_time) * 1000.0
+      elapsed_ms = (time_.time() - start_time) * 1000.0
       plural = '' if i == 1 else 'es'
 
       # TODO: Show this in the UI if it takes too long!
       if 0:
         self.debug_f.log(
-            '... %d match%s for %r in %d ms (Ctrl-C to cancel)', i,
-            plural, comp.line, elapsed_ms)
+            '... %d match%s for %r in %d ms (Ctrl-C to cancel)' % (i,
+            plural, comp.line, elapsed_ms))
 
-    elapsed_ms = (time.time() - start_time) * 1000.0
+    elapsed_ms = (time_.time() - start_time) * 1000.0
     plural = '' if i == 1 else 'es'
     self.debug_f.log(
-        'Found %d match%s for %r in %d ms', i,
-        plural, comp.line, elapsed_ms)
+        'Found %d match%s for %r in %d ms' % (i,
+        plural, comp.line, elapsed_ms))
 
    
 class ReadlineCallback(object):
@@ -1227,7 +1283,8 @@ class ReadlineCallback(object):
       if mylib.PYTHON:
         self.comp_iter = self.root_comp.Matches(comp)
       else:
-        self.comp_matches = list(self.root_comp.Matches(comp))
+        it = self.root_comp.Matches(comp)
+        self.comp_matches = list(it)
         self.comp_matches.reverse()
 
     if mylib.PYTHON:
@@ -1259,7 +1316,7 @@ class ReadlineCallback(object):
       # print it to stderr.  That messes up the completion display.  We could
       # print what WOULD have been COMPREPLY here.
       print_stderr('osh: Runtime error while completing: %s' % e.UserErrorString())
-      self.debug_f.log('Runtime error while completing: %s', e.UserErrorString())
+      self.debug_f.log('Runtime error while completing: %s' % e.UserErrorString())
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
       print_stderr('osh: I/O error in completion: %s' % posix.strerror(e.errno))
@@ -1268,11 +1325,11 @@ class ReadlineCallback(object):
       # So this may never happen?
       print_stderr('Ctrl-C in completion')
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
-      if 1:
+      if mylib.PYTHON:
         import traceback
         traceback.print_exc()
       print_stderr('osh: Unhandled exception while completing: %s' % e)
-      self.debug_f.log('Unhandled exception while completing: %s', e)
+      self.debug_f.log('Unhandled exception while completing: %s' % e)
     except SystemExit as e:
       # I think this should no longer be called, because we don't use
       # sys.exit()?
