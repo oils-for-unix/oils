@@ -65,7 +65,7 @@ module syntax
   | Alias(string argv0, int argv0_spid)
 
     -- 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
-  | Reparsed(string what, int left_spid, int right_spid)
+  | Reparsed(string what, Token left_token, Token right_token)
 
     -- For --location-str
   | Synthetic(string s)
@@ -110,21 +110,12 @@ module syntax
   suffix_op = 
     Nullary %Token  -- ${x@Q} or ${!prefix@} (which also has prefix_op)
   | Unary(Token tok, rhs_word arg_word)  -- e.g. ${v:-default}
-    -- Oil's ${x|html} and ${x %.3f} have static arguments
+    -- TODO: Implement Oil's ${x|html} and ${x %.3f}
   | Static(Token tok, string arg)
   | PatSub(compound_word pat, rhs_word replace, id replace_mode, Token slash_tok)
     -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 
-  -- Variants:
-  -- * Look at left token for $'' c'' vs r'' ''
-  -- * """ and ''' strings have a boolean set
-  double_quoted = (Token left, word_part* parts, Token right)
-  single_quoted = (Token left, Token* tokens, Token right)
-
-  simple_var_sub = (Token token)
-
-  -- TODO: Add    ${x %.3f}   ${x|html}
   braced_var_sub = (
       Token left,  -- same as name dynamic ParseVarRef
       Token token,  -- the name
@@ -134,9 +125,17 @@ module syntax
       Token right  -- same as name for dynamic ParseVarRef
   )
 
-  command_sub = (Token left_token, command child) attributes (int* spids)
+  -- Variants:
+  -- * Look at left token for $'' c'' vs r'' ''
+  -- * """ and ''' strings have a boolean set
+  double_quoted = (Token left, word_part* parts, Token right)
+  single_quoted = (Token left, Token* tokens, Token right)
 
-  -- Note: can be word.BracedTree
+  simple_var_sub = (Token token)
+
+  command_sub = (Token left_token, command child, Token right)
+
+  -- Note: can contain word.BracedTree
   sh_array_literal = (Token left, word* words) attributes (int* spids)
 
   -- Used in both expr and a word_part
@@ -498,7 +497,6 @@ module syntax
     -- In Oil, "spreading" will be @[1 ...array2] [b, ...list2] and
     -- {k: v, ...dict2}.  We don't need two different symbols.
   | Spread(expr child, expr_context ctx)
-  attributes (int* spids)
 
   --
   -- Regex Language (Eggex)

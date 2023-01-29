@@ -933,7 +933,6 @@ class WordParser(WordEmitter):
                 | ` command_list `
     """
     left_token = self.cur_token
-    left_spid = left_token.span_id
 
     # Set the lexer in a state so ) becomes the EOF token.
     if left_id in (
@@ -949,7 +948,7 @@ class WordParser(WordEmitter):
       # to interleave parsing and execution!  Unlike 'source' and 'eval'.
       node = c_parser.ParseCommandSub()
 
-      right_spid = c_parser.w_parser.cur_token.span_id
+      right_token = c_parser.w_parser.cur_token
 
     elif left_id == Id.Left_Backtick and self.parse_ctx.one_pass_parse:
       # NOTE: This is an APPROXIMATE solution for translation ONLY.  See
@@ -960,7 +959,7 @@ class WordParser(WordEmitter):
       c_parser = self.parse_ctx.MakeParserForCommandSub(self.line_reader,
                                                         self.lexer, right_id)
       node = c_parser.ParseCommandSub()
-      right_spid = c_parser.w_parser.cur_token.span_id
+      right_token = c_parser.w_parser.cur_token
 
     elif left_id == Id.Left_Backtick:
       if not self.parse_opts.parse_backticks():
@@ -1004,7 +1003,7 @@ class WordParser(WordEmitter):
         self._Next(lex_mode_e.Backtick)
 
       # Calculate right SPID on CommandSub BEFORE re-parsing.
-      right_spid = self.cur_token.span_id
+      right_token = self.cur_token
 
       code_str = ''.join(parts)
       #log('code %r', code_str)
@@ -1015,17 +1014,14 @@ class WordParser(WordEmitter):
       arena = self.parse_ctx.arena
       line_reader = reader.StringLineReader(code_str, arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
-      src = source.Reparsed('backticks', left_spid, right_spid)
+      src = source.Reparsed('backticks', left_token, right_token)
       with alloc.ctx_Location(arena, src):
         node = c_parser.ParseCommandSub()
 
     else:
       raise AssertionError(left_id)
 
-    cs_part = command_sub(left_token, node)
-    cs_part.spids.append(left_spid)
-    cs_part.spids.append(right_spid)
-    return cs_part
+    return command_sub(left_token, node, right_token)
 
   def _ReadExprSub(self, lex_mode):
     # type: (lex_mode_t) -> word_part__ExprSub

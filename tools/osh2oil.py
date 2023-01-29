@@ -1085,8 +1085,8 @@ class OilPrinter(object):
       elif case(word_part_e.CommandSub):
         node = cast(command_sub, UP_node)
 
-        left_spid = node.spids[0]
-        right_spid = node.spids[1]
+        left_spid = node.left_token.span_id
+        right_spid = node.right.span_id
 
         if node.left_token.id == Id.Left_Backtick:
           self.cursor.PrintUntil(left_spid)

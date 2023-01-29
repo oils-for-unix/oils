@@ -173,7 +173,7 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
 
     elif case(source_e.Reparsed):
       src = cast(source__Reparsed, UP_src)
-      span2 = arena.GetToken(src.left_spid)
+      span2 = src.left_token
       outer_source = GetLineSourceString(arena, span2.line_id,
                                          quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
@@ -213,7 +213,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
     # LValue/backticks is the only case where we don't print this
     if src.tag_() == source_e.Reparsed:
       src = cast(source__Reparsed, UP_src)
-      span2 = arena.GetToken(src.left_spid)
+      span2 = src.left_token
       line_num = arena.GetLineNumber(span2.line_id)
 
       # We want the excerpt to look like this:

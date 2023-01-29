@@ -226,9 +226,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
       # A little gross: Copied from osh/word_parse.py
       right_token = c_parser.w_parser.cur_token
 
-      cs_part = command_sub(left_token, node)
-      cs_part.spids.append(left_token.span_id)
-      cs_part.spids.append(right_token.span_id)
+      cs_part = command_sub(left_token, node, right_token)
 
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, cs_part)  # HACK for expr_to_ast
