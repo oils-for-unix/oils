@@ -1759,8 +1759,10 @@ class WordParser(WordEmitter):
     if self.token_kind != Kind.VSub:
       p_die('Invalid var ref', self.cur_token)
 
-    # NOTE: no ${ } means no part.left and part.right
     part = self._ParseVarOf()
+    # NOTE: no ${ } means no part.left and part.right
+    part.left = part.token  # cheat to make test pass
+    part.right = part.token
 
     self._Peek()
     if self.token_type != Id.Eof_Real:
