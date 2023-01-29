@@ -158,7 +158,7 @@ class SpecBuilder(object):
         a = completion.FileSystemAction(False, False, False)
 
       elif name == 'function':
-        a = _FixedWordsAction(cmd_ev.procs.keys())
+        a = _DynamicProcDictAction(cmd_ev.procs)
 
       elif name == 'job':
         a = _FixedWordsAction(['jobs-not-implemented'])
@@ -258,7 +258,7 @@ class Complete(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv, [])
+    arg_r = args.Reader(argv, cmd_val.arg_spids[1:])
     attrs = flag_spec.ParseMore('complete', arg_r)
     arg = arg_types.complete(attrs.attrs)
     # TODO: process arg.opt_changes
@@ -302,7 +302,7 @@ class CompGen(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv, [])
+    arg_r = args.Reader(argv, cmd_val.arg_spids[1:])
     arg = flag_spec.ParseMore('compgen', arg_r)
 
     if arg_r.AtEnd():
@@ -413,7 +413,7 @@ class CompAdjust(vm._Builtin):
     # mycpp: rewrite of or
     omit_chars = arg.n
     if omit_chars is None:
-        omit_chars = ''
+      omit_chars = ''
 
     for c in omit_chars:
       if c in break_chars:
@@ -434,9 +434,7 @@ class CompAdjust(vm._Builtin):
     if arg.s:
       if cur.startswith('--') and '=' in cur:  # Split into flag name and value
         # mycpp: rewrite of multiple-assignment
-        scur = cur.split('=', 1)
-        prev = scur[0]
-        cur = scur[1]
+        prev, cur = mylib.split_once(cur, '=')
         split = 'true'
       else:
         split = 'false'
