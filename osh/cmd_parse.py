@@ -197,8 +197,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
       var_name = left_token.val[:-1]
       op = assign_op_e.Equal
 
-    tmp = sh_lhs_expr.Name(var_name)
-    tmp.spids.append(left_token.span_id)
+    tmp = sh_lhs_expr.Name(left_token, var_name)
 
     lhs = cast(sh_lhs_expr_t, tmp)
 
@@ -219,7 +218,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
     line = parse_ctx.arena.GetLine(left_span.line_id)
     index_str = line[left_span.col : right_span.col]
-    lhs = sh_lhs_expr.UnparsedIndex(var_name, index_str)
+    lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
     var_name = left_token.val[:-1]
@@ -245,8 +244,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     with alloc.ctx_Location(arena, src):
       index_node = a_parser.Parse()  # may raise error.Parse
 
-    tmp3 = sh_lhs_expr.IndexedName(var_name, index_node)
-    tmp3.spids.append(left_token.span_id)
+    tmp3 = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
 
     lhs = cast(sh_lhs_expr_t, tmp3)
 

@@ -358,7 +358,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParseOilArgList(self, lx, out):
-    # type: (Lexer, ArgList) -> Token
+    # type: (Lexer, ArgList) -> None
     """ $f(x, y) """
 
     pnode, last_token = self._ParseOil(lx, grammar_nt.oil_arglist)
@@ -367,7 +367,7 @@ class ParseContext(object):
       self.p_printer.Print(pnode)
 
     self.tr.ToArgList(pnode, out)
-    return last_token
+    out.right = last_token
 
   def ParseOilExpr(self, lx, start_symbol):
     # type: (Lexer, int) -> Tuple[expr_t, Token]

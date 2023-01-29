@@ -216,11 +216,11 @@ module syntax
     -- TODO: try using Token with source info
   | String(id id, string s, int span_id)
 
+  -- Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs_expr =
-    Name(string name)
-  | IndexedName(string name, arith_expr index)
-  | UnparsedIndex(string name, string index)  -- for translation
-  attributes (int* spids)
+    Name(Token left, string name)
+  | IndexedName(Token left, string name, arith_expr index)
+  | UnparsedIndex(Token left, string name, string index)  -- for translation
 
   arith_expr =
     VarRef %Token  -- variable without $

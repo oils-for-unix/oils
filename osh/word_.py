@@ -723,7 +723,9 @@ def IsVarSub(w):
 
 def SpanForLhsExpr(node):
   # type: (sh_lhs_expr_t) -> int
-
+  """
+  Currently unused?  Will be useful for translating Oil assignment
+  """
   # This switch is annoying but we don't have inheritance from the sum type
   # (because of diamond issue).  We might change the schema later, which maeks
   # it moot.  See the comment in frontend/syntax.asdl.
@@ -731,18 +733,15 @@ def SpanForLhsExpr(node):
   with tagswitch(node) as case:
     if case(sh_lhs_expr_e.Name):
       node = cast(sh_lhs_expr__Name, UP_node)
-      spids = node.spids
+      return node.left.span_id
     elif case(sh_lhs_expr_e.IndexedName):
       node = cast(sh_lhs_expr__IndexedName, UP_node)
-      spids = node.spids
+      return node.left.span_id
     else:
       # Should not see UnparsedIndex
       raise AssertionError()
 
-  if len(spids):
-    return spids[0]
-  else:
-    return runtime.NO_SPID  
+  raise AssertionError()
 
 
 # Doesn't translate with mycpp because of dynamic %

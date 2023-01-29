@@ -782,12 +782,12 @@ class ArithEvaluator(object):
         if self.mem.IsAssocArray(node.name):
           key = self.EvalWordToString(node.index)
           lval2 = lvalue.Keyed(node.name, key)
-          lval2.spids.append(node.spids[0])
+          lval2.spids.append(node.left.span_id)
           lval = lval2
         else:
           index = self.EvalToInt(node.index)
           lval3 = lvalue.Indexed(node.name, index)
-          lval3.spids.append(node.spids[0])
+          lval3.spids.append(node.left.span_id)
           lval = lval3
 
       else:

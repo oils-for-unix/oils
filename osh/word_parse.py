@@ -1369,21 +1369,23 @@ class WordParser(WordEmitter):
     node = sh_array_literal(left_token, words3)
     return node
 
-  def _ParseInlineCallArgs(self, arglist):
+  def _ParseInlineCallArgs(self, arg_list):
     # type: (ArgList) -> None
     """For $f(x) and @arrayfunc(x)."""
     #log('t: %s', self.cur_token)
 
     # Call into expression language.
-    self.parse_ctx.ParseOilArgList(self.lexer, arglist)
+    arg_list.left = self.cur_token
+    self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
 
   def ParseProcCallArgs(self):
     # type: () -> ArgList
+    """ For json write (x) """
     self.lexer.MaybeUnreadOne()
 
     arg_list = ArgList()
     arg_list.left = self.cur_token
-    arg_list.right = self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
+    self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
     return arg_list
 
   def _MaybeReadWholeWord(self, is_first, lex_mode, parts):
