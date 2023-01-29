@@ -109,10 +109,10 @@ module syntax
 
   suffix_op = 
     Nullary %Token  -- ${x@Q} or ${!prefix@} (which also has prefix_op)
-  | Unary(Token tok, word arg_word)  -- e.g. ${v:-default}
+  | Unary(Token tok, rhs_word arg_word)  -- e.g. ${v:-default}
     -- Oil's ${x|html} and ${x %.3f} have static arguments
   | Static(Token tok, string arg)
-  | PatSub(word pat, word? replace, id replace_mode)
+  | PatSub(compound_word pat, rhs_word replace, id replace_mode)
     -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
     -- TODO: PatSub needs slash_tok
@@ -151,8 +151,6 @@ module syntax
 
   word_part = 
     ShArrayLiteral %sh_array_literal
-    -- alternating key and value (saving some space)
-    -- Note that word.Empty isn't needed here
   | AssocArrayLiteral(Token left, assoc_pair* pairs)
   | Literal %Token
     -- escaped case is separate so the evaluator doesn't have to check token ID
@@ -197,7 +195,9 @@ module syntax
   -- min_dedent is calculated from each line using Julia's rules
   triple_quoted = (int min_dedent, string_line* lines)
 
-  -- TODO: remove word.Empty 
+  -- Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
+  -- The latter is semantically necessary.  (See osh/word_parse.py). 
+  -- At runtime: RHS of 'declare x='.
   rhs_word =
     Empty
   | Compound %compound_word
@@ -208,14 +208,8 @@ module syntax
   | Compound %compound_word
 
   word = 
-    -- Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
-    -- The latter is semantically necessary.  (See osh/word_parse.py). 
-    -- At runtime: RHS of 'declare x='.
-    -- TODO: should use it consistently with the RHS of 'A=([k]=)', not
-    -- compound_word with zero parts.
-    Empty
     -- Returns from WordParser, but not generally stored in LST
-  | Token %Token
+    Token %Token
     -- A Compound word can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
     -- overhead and seems like overkill.  Note that DoubleQuoted can't
@@ -264,8 +258,8 @@ module syntax
   redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  assign_pair = (sh_lhs_expr lhs, assign_op op, word rhs, int* spids)
-  env_pair = (string name, word val, int* spids)
+  assign_pair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, int* spids)
+  env_pair = (string name, rhs_word val, int* spids)
 
   condition = 
     Shell(command* commands)  -- if false; true; then echo hi; fi

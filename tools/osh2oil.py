@@ -61,6 +61,7 @@ from _devbuild.gen.syntax_asdl import (
     BraceGroup,
 
     for_iter_e, for_iter__Words,
+    rhs_word_e, rhs_word_t,
     word_e, word_t,
     word_part_e, word_part_t, word_part__EscapedLiteral,
     compound_word,
@@ -162,7 +163,7 @@ def PrintAsOil(arena, node):
 
 
 def _GetRhsStyle(w):
-  # type: (word_t) -> word_style_t
+  # type: (rhs_word_t) -> word_style_t
   """
   Determine what style an assignment should use. '' or "", or an expression.
 
@@ -196,10 +197,10 @@ def _GetRhsStyle(w):
 
   UP_w = w
   with tagswitch(w) as case:
-    if case(word_e.Empty):
+    if case(rhs_word_e.Empty):
       return word_style_e.SQ
 
-    elif case(word_e.Compound):
+    elif case(rhs_word_e.Compound):
       w = cast(compound_word, UP_w)
       if len(w.parts) == 0:
         raise AssertionError(w)
@@ -410,10 +411,10 @@ class OilPrinter(object):
           self.f.write(' = ')
 
           # TODO: This should be translated from Empty.
-          if pair.rhs.tag_() == word_e.Empty:
+          if pair.rhs.tag_() == rhs_word_e.Empty:
             self.f.write("''")  # local i -> var i = ''
           else:
-            self.DoWordAsExpr(pair.rhs, local_symbols)
+            self.DoRhsWord(pair.rhs, local_symbols)
 
         else: 
           raise AssertionError(pair.lhs.__class__.__name__)
@@ -447,7 +448,7 @@ class OilPrinter(object):
         if len(node.more_env):
           # We only need to transform the right side, not left side.
           for pair in node.more_env:
-            self.DoWordInCommand(pair.val, local_symbols)
+            self.DoRhsWord(pair.val, local_symbols)
 
         if len(node.words):
           first_word = node.words[0]
@@ -803,8 +804,8 @@ class OilPrinter(object):
         #log('Command not handled: %s', node)
         #raise AssertionError(node.__class__.__name__)
 
-  def DoWordAsExpr(self, node, local_symbols):
-    # type: (word_t, Dict[str, bool]) -> None
+  def DoRhsWord(self, node, local_symbols):
+    # type: (rhs_word_t, Dict[str, bool]) -> None
     """
     For the RHS of assignments.
 
@@ -817,35 +818,42 @@ class OilPrinter(object):
     Or simply abort and LEAVE IT ALONE.  We should only translate things we
     recognize.
     """
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(rhs_word_e.Empty):
+        self.f.write("''")
 
-    # TODO: This is wrong!
-    style = _GetRhsStyle(node)
-    if style == word_style_e.SQ:
-      self.f.write("'")
-      self.DoWordInCommand(node, local_symbols)
-      self.f.write("'")
-    elif style == word_style_e.DQ:
-      self.f.write('"')
-      self.DoWordInCommand(node, local_symbols)
-      self.f.write('"')
-    # TODO: Put these back
-    #elif style == word_style_e.Expr:
-    #  pass
-    #elif style == word_style_e.Unquoted:
-    #  pass
-    else:
-      # "${foo:-default}" -> foo or 'default'
-      # ${foo:-default} -> @split(foo or 'default')
-      #                    @(foo or 'default')  -- implicit split.
+      elif case(rhs_word_e.Compound):
+        node = cast(compound_word, UP_node)
 
-      if word_.IsVarSub(node):  # ${1} or "$1"
-        # Do it in expression mode
-        pass
-      # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
-      # conversion to string.
+        # TODO: This is wrong!
+        style = _GetRhsStyle(node)
+        if style == word_style_e.SQ:
+          self.f.write("'")
+          self.DoWordInCommand(node, local_symbols)
+          self.f.write("'")
+        elif style == word_style_e.DQ:
+          self.f.write('"')
+          self.DoWordInCommand(node, local_symbols)
+          self.f.write('"')
+        # TODO: Put these back
+        #elif style == word_style_e.Expr:
+        #  pass
+        #elif style == word_style_e.Unquoted:
+        #  pass
+        else:
+          # "${foo:-default}" -> foo or 'default'
+          # ${foo:-default} -> @split(foo or 'default')
+          #                    @(foo or 'default')  -- implicit split.
 
-      # For now, jsut stub it out
-      self.DoWordInCommand(node, local_symbols)
+          if word_.IsVarSub(node):  # ${1} or "$1"
+            # Do it in expression mode
+            pass
+          # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
+          # conversion to string.
+
+          # For now, jsut stub it out
+          self.DoWordInCommand(node, local_symbols)
 
   def DoWordInCommand(self, node, local_symbols):
     # type: (word_t, Dict[str, bool]) -> None
@@ -933,13 +941,6 @@ class OilPrinter(object):
 
       elif case(word_e.BracedTree):
         # Not doing anything now
-        pass
-
-      elif case(word_e.Empty):
-        # This only happens for:
-        # s=
-        # a[x]=
-        # ${x:-}
         pass
 
       else:

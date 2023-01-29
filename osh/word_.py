@@ -284,9 +284,6 @@ def LeftMostSpanForWord(w):
       tok = cast(Token, UP_w)
       return tok.span_id
 
-    elif case(word_e.Empty):
-      return runtime.NO_SPID
-
     elif case(word_e.BracedTree):
       w = cast(word__BracedTree, UP_w)
       # This should always have one part?
@@ -315,9 +312,6 @@ def RightMostSpanForWord(w):
       else:
         end = w.parts[-1]
         return _RightMostSpanForPart(end)
-
-    elif case(word_e.Empty):
-      return runtime.NO_SPID
 
     elif case(word_e.Token):
       tok = cast(Token, UP_w)

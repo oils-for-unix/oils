@@ -59,7 +59,8 @@ from _devbuild.gen.syntax_asdl import (
 
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
-    word, word_e, word_t, compound_word,
+    rhs_word, rhs_word_e, rhs_word_t,
+    word_e, word_t, compound_word,
     word_part, word_part_e, word_part_t,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
@@ -181,7 +182,7 @@ class WordParser(WordEmitter):
     self.next_lex_mode = lex_mode
 
   def _ReadVarOpArg(self, arg_lex_mode):
-    # type: (lex_mode_t) -> word_t
+    # type: (lex_mode_t) -> rhs_word_t
     w = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok, empty_ok=True)
 
     # If the Compound has no parts, and we're in a double-quoted VarSub
@@ -197,7 +198,7 @@ class WordParser(WordEmitter):
     # return a Compound with no parts, which is explicitly checked with a
     # custom error message.
     if len(w.parts) == 0 and arg_lex_mode == lex_mode_e.VSub_ArgDQ:
-      return word.Empty()
+      return rhs_word.Empty()
 
     return w
 
@@ -285,7 +286,7 @@ class WordParser(WordEmitter):
 
     if self.token_type == Id.Right_DollarBrace:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
-      return suffix_op.PatSub(pat, None, replace_mode)
+      return suffix_op.PatSub(pat, rhs_word.Empty(), replace_mode)
 
     if self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)  # do not stop at /
@@ -380,12 +381,19 @@ class WordParser(WordEmitter):
       if self.token_type != Id.Right_DollarBrace:
         p_die('Expected } to close ${', self.cur_token)
 
-      # This handles ${x|html} and ${x %.3f} now
-      # However I think ${x %.3f} should be statically parsed?  It can enter
-      # the printf lexer modes.
-      ok, arg, quoted = word_.StaticEval(arg_word)
-      if not ok or quoted:
-        p_die('Expected a constant argument', loc.Word(arg_word))
+      UP_arg_word = arg_word
+      with tagswitch(arg_word) as case:
+        if case(rhs_word_e.Empty):
+          pass
+        elif case(rhs_word_e.Compound):
+          arg_word = cast(compound_word, UP_arg_word)
+          # This handles ${x|html} and ${x %.3f} now
+          # However I think ${x %.3f} should be statically parsed?  It can enter
+          # the printf lexer modes.
+          ok, arg, quoted = word_.StaticEval(arg_word)
+          if not ok or quoted:
+            p_die('Expected a constant argument', loc.Word(arg_word))
+
       part.suffix_op = suffix_op.Static(tok, arg)
 
     elif op_kind == Kind.VOp0:

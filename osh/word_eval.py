@@ -10,7 +10,8 @@ from _devbuild.gen.syntax_asdl import (
     suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
     suffix_op__Unary, suffix_op__Static,
     sh_array_literal, single_quoted, double_quoted, simple_var_sub,
-    word, word_e, word_t, compound_word,
+    word_e, word_t, compound_word,
+    rhs_word, rhs_word_e, rhs_word_t,
     word_part_e, word_part__ArithSub, word_part__EscapedLiteral,
     word_part__AssocArrayLiteral, word_part__ExprSub, word_part__ExtGlob,
     word_part__FuncCall, word_part__Splice, word_part__TildeSub,
@@ -598,7 +599,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     if tok.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
-        self._EvalWordToParts(op.arg_word, part_vals, eval_flags)
+        self._EvalRhsWordToParts(op.arg_word, part_vals, eval_flags)
         return True
       else:
         return False
@@ -608,7 +609,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if is_falsey:
         return False
       else:
-        self._EvalWordToParts(op.arg_word, part_vals, eval_flags)
+        self._EvalRhsWordToParts(op.arg_word, part_vals, eval_flags)
         return True
 
     # Splice and assign
@@ -616,7 +617,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if is_falsey:
         # Collect new part vals.
         assign_part_vals = []  # type: List[part_value_t]
-        self._EvalWordToParts(op.arg_word, assign_part_vals, eval_flags)
+        self._EvalRhsWordToParts(op.arg_word, assign_part_vals, eval_flags)
         # Append them to out param AND return them.
         part_vals.extend(assign_part_vals)
 
@@ -655,7 +656,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if is_falsey:
         # The arg is the error mesage
         error_part_vals = []  # type: List[part_value_t]
-        self._EvalWordToParts(op.arg_word, error_part_vals, eval_flags)
+        self._EvalRhsWordToParts(op.arg_word, error_part_vals, eval_flags)
         error_str = _DecayPartValuesToString(error_part_vals,
                                              self.splitter.GetJoinChar())
         e_die("unset variable %r" % error_str, blame_token)
@@ -818,9 +819,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
       e_die('extended globs not supported in ${x//GLOB/}', loc.Word(op.pat))
 
     if op.replace:
-      replace_val = self.EvalWordToString(op.replace)
+      replace_val = self.EvalRhsWord(op.replace)
+      # Can't have an array, so must be a string
       assert replace_val.tag_() == value_e.Str, replace_val
-      replace_str = replace_val.s
+      replace_str = cast(value__Str, replace_val).s
     else:
       replace_str = ''
 
@@ -1628,16 +1630,32 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(part.tag_())
 
+  def _EvalRhsWordToParts(self, w, part_vals, eval_flags=0):
+    # type: (rhs_word_t, List[part_value_t], int) -> None
+    quoted = bool(eval_flags & QUOTED)
+
+    UP_w = w
+    with tagswitch(w) as case:
+      if case(rhs_word_e.Empty):
+        part_vals.append(part_value.String('', quoted, not quoted))
+
+      elif case(rhs_word_e.Compound):
+        w = cast(compound_word, UP_w)
+        self._EvalWordToParts(w, part_vals, eval_flags=eval_flags)
+
+      else:
+        raise AssertionError()
+
   def _EvalWordToParts(self, w, part_vals, eval_flags=0):
     # type: (word_t, List[part_value_t], int) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
+
+    TODO: should accept compound_word
 
     Returns:
       List of part_value.
       But note that this is a TREE.
     """
-    quoted = bool(eval_flags & QUOTED)
-    is_subst = bool(eval_flags & IS_SUBST)
 
     UP_w = w
     with tagswitch(w) as case:
@@ -1694,9 +1712,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
             e_die('Extended glob not allowed in this word', loc.Word())
         else:
           part_vals.extend(word_part_vals)
-
-      elif case(word_e.Empty):
-        part_vals.append(part_value.String('', quoted, not quoted))
 
       else:
         raise AssertionError(w.tag_())
@@ -1761,9 +1776,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     Flags can contain a quoting algorithm.
     """
-    if UP_w.tag_() == word_e.Empty:
-      return value.Str('')
-
     assert UP_w.tag_() == word_e.Compound, UP_w
     w = cast(compound_word, UP_w)
 
@@ -1777,12 +1789,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return value.Str(''.join(strs))
 
   def EvalWordToPattern(self, UP_w):
-    # type: (word_t) -> Tuple[value__Str, bool]
+    # type: (rhs_word_t) -> Tuple[value__Str, bool]
     """Like EvalWordToString, but returns whether we got ExtGlob."""
-    if UP_w.tag_() == word_e.Empty:
+    if UP_w.tag_() == rhs_word_e.Empty:
       return value.Str(''), False
 
-    assert UP_w.tag_() == word_e.Compound, UP_w
+    assert UP_w.tag_() == rhs_word_e.Compound, UP_w
     w = cast(compound_word, UP_w)
 
     has_extglob = False
@@ -1819,10 +1831,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def EvalRhsWord(self, UP_w):
-    # type: (word_t) -> value_t
+    # type: (rhs_word_t) -> value_t
     """Used for RHS of assignment.  There is no splitting.
     """
-    if UP_w.tag_() == word_e.Empty:
+    if UP_w.tag_() == rhs_word_e.Empty:
       return value.Str('')
 
     assert UP_w.tag_() == word_e.Compound, UP_w
@@ -1992,15 +2004,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
             append = False
 
           if part_offset == len(w.parts):
-            rhs_word = word.Empty()  # type: word_t
+            rhs = rhs_word.Empty()  # type: rhs_word_t
           else:
             # tmp is for intersection of C++/MyPy type systems
             tmp = compound_word(w.parts[part_offset:])
             word_.TildeDetectAssign(tmp)
-            rhs_word = tmp
+            rhs = tmp
 
           with state.ctx_AssignBuiltin(self.mutable_opts):
-            right = self.EvalRhsWord(rhs_word)
+            right = self.EvalRhsWord(rhs)
 
           arg2 = assign_arg(var_name, right, append, word_spid)
 

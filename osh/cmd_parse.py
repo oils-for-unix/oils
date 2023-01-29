@@ -27,8 +27,9 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr, sh_lhs_expr_t,
     redir, redir_param, redir_param__HereDoc,
     redir_loc, redir_loc_t,
-    word, word_e, word_t, compound_word, Token,
+    word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
+    rhs_word, rhs_word_t,
 
     assign_pair, env_pair, assign_op_e, name_type,
 
@@ -256,7 +257,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
   # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
-    rhs = word.Empty()  # type: word_t
+    rhs = rhs_word.Empty()  # type: rhs_word_t
   else:
     # tmp2 is for intersection of C++/MyPy type systems
     tmp2 = compound_word(w.parts[part_offset:])
@@ -286,7 +287,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     var_name = left_token.val[:-1]
     n = len(w.parts)
     if part_offset == n:
-      val = word.Empty()  # type: word_t
+      val = rhs_word.Empty()  # type: rhs_word_t
     else:
       val = compound_word(w.parts[part_offset:])
 

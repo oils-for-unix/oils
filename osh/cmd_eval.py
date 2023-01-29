@@ -565,7 +565,7 @@ class CommandEvaluator(object):
     # type: (List[env_pair], int) -> None
     """For FOO=1 cmd."""
     for e_pair in more_env:
-      val = self.word_ev.EvalWordToString(e_pair.val)
+      val = self.word_ev.EvalRhsWord(e_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
       self.mem.SetValue(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,

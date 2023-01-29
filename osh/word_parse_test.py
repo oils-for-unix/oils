@@ -12,7 +12,7 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import arith_expr_e, word_e
+from _devbuild.gen.syntax_asdl import arith_expr_e, word_e, rhs_word_e
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
@@ -209,7 +209,7 @@ class WordParserTest(unittest.TestCase):
     w = _assertReadWord(self, '${var//pat}')  # no replacement
     op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
-    self.assertEqual(None, op.replace)
+    self.assertEqual(rhs_word_e.Empty, op.replace.tag_())
     self.assertEqual(Id.Lit_Slash, op.replace_mode)
 
     # replace with slash
