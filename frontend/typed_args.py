@@ -16,8 +16,7 @@ from typing import Optional, cast, TYPE_CHECKING
 def DoesNotAccept(arg_list):
   # type: (Optional[ArgList]) -> None
   if arg_list is not None:
-    span_id = arg_list.spids[0]
-    e_usage('got unexpected typed args', span_id=span_id)
+    e_usage('got unexpected typed args', arg_list.left.span_id)
 
 
 def RequiredExpr(arg_list):
@@ -25,17 +24,15 @@ def RequiredExpr(arg_list):
   if arg_list is None:
     e_usage('Expected an expression')
 
-  span_id = arg_list.spids[0]
-
   n = len(arg_list.positional)
   if n == 0:
-    e_usage('Expected an expression', span_id=span_id)
+    e_usage('Expected an expression', arg_list.left.span_id)
 
   elif n == 1:
     return arg_list.positional[0]
 
   else:
-    e_usage('Too many typed args (expected one expression)', span_id=span_id)
+    e_usage('Too many typed args (expected one expression)', arg_list.left.span_id)
 
 
 def GetOneBlock(arg_list):
@@ -64,7 +61,7 @@ def GetOneBlock(arg_list):
         return arg.child
 
       else:
-        e_usage('Expected block argument', span_id=arg_list.spids[0])
+        e_usage('Expected block argument', arg_list.left.span_id)
 
   else:
-    e_usage('Too many typed args (expected one block)', span_id=arg_list.spids[0])
+    e_usage('Too many typed args (expected one block)', arg_list.left.span_id)

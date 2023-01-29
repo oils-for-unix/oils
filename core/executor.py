@@ -236,7 +236,7 @@ class ShellExecutor(vm._Executor):
 
     if cmd_val.typed_args:
       e_die('Unexpected typed args passed to external command %r' % arg0,
-            loc.Span(cmd_val.typed_args.spids[0]))
+            cmd_val.typed_args.left)
 
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)

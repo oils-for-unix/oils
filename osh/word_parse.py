@@ -1382,8 +1382,8 @@ class WordParser(WordEmitter):
     self.lexer.MaybeUnreadOne()
 
     arg_list = ArgList()
-    arg_list.spids.append(self.cur_token.span_id)
-    self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
+    arg_list.left = self.cur_token
+    arg_list.right = self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
     return arg_list
 
   def _MaybeReadWholeWord(self, is_first, lex_mode, parts):

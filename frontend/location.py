@@ -101,7 +101,7 @@ def SpanForCommand(node):
     return node.spids[0]  # do spid
   if tag == command_e.BraceGroup:
     node = cast(BraceGroup, UP_node)
-    return node.spids[0]  # { spid
+    return node.left.span_id  # { spid
   if tag == command_e.Subshell:
     node = cast(command__Subshell, UP_node)
     return node.spids[0]  # ( spid

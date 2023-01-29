@@ -811,18 +811,17 @@ if mylib.PYTHON:
 
           if brace_group:
             # BraceGroup has spid for {
-            line_span = self.arena.GetToken(brace_group.spids[0])
-            src = self.arena.GetLineSource(line_span.line_id)
-            line_num = self.arena.GetLineNumber(line_span.line_id)
+            line_id =brace_group.left.line_id
+            src = self.arena.GetLineSource(line_id)
+            line_num = self.arena.GetLineNumber(line_id)
 
             # for the user to pass back to --location-str
-            result['location_str'] = ui.GetLineSourceString(self.arena,
-                                                            line_span.line_id)
+            result['location_str'] = ui.GetLineSourceString(self.arena, line_id)
             result['location_start_line'] = line_num
 
             # Between { and }
-            code_str = self.arena.GetCodeString(brace_group.spids[0],
-                                                brace_group.spids[1])
+            code_str = self.arena.GetCodeString(brace_group.left.span_id,
+                                                brace_group.right.span_id)
             result['code_str'] = code_str
           else:
             result['error'] = "Can't find code if block arg isn't literal like { }"

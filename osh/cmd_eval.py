@@ -681,9 +681,10 @@ class CommandEvaluator(object):
 
           typed_args = None  # type: ArgList
           if node.typed_args:
-            # Copy positional args because we may append an arg
-            typed_args = ArgList(list(node.typed_args.positional), node.typed_args.named)
-            typed_args.spids = node.typed_args.spids
+            orig = node.typed_args
+            # COPY positional args because we may append an arg
+            typed_args = ArgList(
+                orig.left, list(orig.positional), orig.named, orig.right)
 
             # the block is the last argument
             if node.block:
@@ -696,13 +697,17 @@ class CommandEvaluator(object):
               typed_args = ArgList()
               block_expr = expr__BlockArg(node.block)
               typed_args.positional.append(block_expr)
-              typed_args.spids.append(node.block.spids[0])
+
+              # TODO: Since we only have { } and not (), copy them from
+              # BraceGroup
+              typed_args.left = node.block.left
+              typed_args.right = node.block.right
+
           cmd_val.typed_args = typed_args
        
         else:
           if node.block:
-            e_die("ShAssignment builtins don't accept blocks",
-                  loc.Span(node.block.spids[0]))
+            e_die("ShAssignment builtins don't accept blocks", node.block.left)
           cmd_val = cast(cmd_value__Assign, UP_cmd_val)
 
         # NOTE: RunSimpleCommand never returns when do_fork=False!

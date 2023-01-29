@@ -140,7 +140,7 @@ module syntax
   sh_array_literal = (Token left, word* words)
 
   -- Used in both expr and a word_part
-  ArgList = (expr* positional, named_arg* named) attributes (int* spids)
+  ArgList = (Token left, expr* positional, named_arg* named, Token right)
 
   -- TODO: every word_part has Token left, Token right, and remove int* spids
   -- these are used in the main program for alias expansion
@@ -271,8 +271,7 @@ module syntax
   | Oil(expr e, Token blame)  -- for x in (mylist) { echo $x }
 
   -- TODO: Make field names consistent: child vs expr, etc.
-  BraceGroup = (Token? doc_token, command* children, redir* redirects)
-               attributes (int* spids)
+  BraceGroup = (Token left, Token? doc_token, command* children, redir* redirects, Token right)
 
   -- TODO: every command needs Token left
   -- also add Token right_lok (a lok is a token used for the pretty printer ONLY)
