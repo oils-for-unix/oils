@@ -1055,8 +1055,8 @@ class OilPrinter(object):
       elif case(word_part_e.BracedVarSub):
         node = cast(braced_var_sub, UP_node)
 
-        left_spid = node.spids[0]
-        right_spid = node.spids[1]
+        left_spid = node.left.span_id
+        right_spid = node.right.span_id
 
         # NOTE: Why do we need this but we don't need it in command sub?
         self.cursor.PrintUntil(left_spid)

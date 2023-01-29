@@ -171,7 +171,7 @@ def LeftMostSpanForPart(part):
 
     elif case(word_part_e.BracedVarSub):
       part = cast(braced_var_sub, UP_part)
-      return part.spids[0]
+      return part.left.span_id
 
     elif case(word_part_e.CommandSub):
       part = cast(command_sub, UP_part)
@@ -244,7 +244,7 @@ def _RightMostSpanForPart(part):
 
     elif case(word_part_e.BracedVarSub):
       part = cast(braced_var_sub, UP_part)
-      spid = part.spids[1]  # right }
+      spid = part.right.span_id
       assert spid != runtime.NO_SPID
       return spid
 

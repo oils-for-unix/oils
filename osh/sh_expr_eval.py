@@ -255,9 +255,6 @@ class UnsafeArith(object):
         # TODO: Don't print outer location?
         e_die('Invalid var ref', loc.Span(static_ref_spid))
 
-    # Hack: There is no ${ on the "virtual" braced_var_sub, but we can add one
-    # for error messages
-    bvs_part.spids.append(static_ref_spid)
     return bvs_part
 
 

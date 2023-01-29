@@ -126,11 +126,13 @@ module syntax
 
   -- TODO: Add    ${x %.3f}   ${x|html}
   braced_var_sub = (
+      Token? left,  -- None for dynamic ParseVarRef
       Token token,  -- the name
       Token? prefix_op,  -- prefix # or ! operators
       bracket_op? bracket_op,
-      suffix_op? suffix_op
-  ) attributes (int* spids)
+      suffix_op? suffix_op,
+      Token? right  -- None for dynamic ParseVarRef
+  )
 
   command_sub = (Token left_token, command child) attributes (int* spids)
 

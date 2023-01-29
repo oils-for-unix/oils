@@ -881,7 +881,7 @@ class OilEvaluator(object):
         term = cast(braced_var_sub, UP_term)
 
         s = self.word_ev.EvalBracedVarSubToString(term)
-        spid = term.spids[0]
+        spid = term.left.span_id
 
       elif case(class_literal_term_e.SimpleVarSub):
         term = cast(simple_var_sub, UP_term)
@@ -996,7 +996,7 @@ class OilEvaluator(object):
         node = cast(braced_var_sub, UP_node)
 
         s = self.word_ev.EvalBracedVarSubToString(node)
-        return re.LiteralChars(s, node.spids[0])
+        return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.SimpleVarSub):
         node = cast(simple_var_sub, UP_node)

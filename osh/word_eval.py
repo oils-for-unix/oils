@@ -1386,7 +1386,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_vals = [] # type: List[part_value_t]
     self._EvalBracedVarSub(part, part_vals, False)
     # blame ${ location
-    return self._ConcatPartVals(part_vals, part.spids[0])
+    return self._ConcatPartVals(part_vals, part.left.span_id)
 
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     # type: (Token, List[part_value_t], bool) -> None

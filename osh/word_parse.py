@@ -586,12 +586,8 @@ class WordParser(WordEmitter):
       # e.g. ${^}
       p_die('Unexpected token in ${}', self.cur_token)
 
-    part.spids.append(left_token.span_id)
-
-    # Does this work?
-    right_spid = self.cur_token.span_id
-    part.spids.append(right_spid)
-
+    part.left = left_token  # attach the argument
+    part.right = self.cur_token
     return part
 
   def _ReadSingleQuoted(self, left_token, lex_mode):
@@ -1763,6 +1759,7 @@ class WordParser(WordEmitter):
     if self.token_kind != Kind.VSub:
       p_die('Invalid var ref', self.cur_token)
 
+    # NOTE: no ${ } means no part.left and part.right
     part = self._ParseVarOf()
 
     self._Peek()
