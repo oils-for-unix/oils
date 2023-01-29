@@ -346,6 +346,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       self.indent = 0
       self.local_var_list = []  # Collected at assignment
+      self.current_globals = []  # A list of names for the CURRENT function/method
+
       self.prepend_to_block = None  # For writing vars after {
       self.current_func_node = None
       self.current_stmt_node = None
@@ -1177,17 +1179,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert len(o.lvalues) == 1, o.lvalues
         lval = o.lvalues[0]
 
-        # Special case for global constants.  L = [1, 2] or D = {}
+        # Special cases for GLOBAL constants:
+        #
+        #   L = [1, 2]   # List
+        #   D = {}  # Dict
+        #
+        # Strings are done by the const_pass.
         #
         # We avoid Alloc<T>, since that can't be done until main().
+        # TODO: Enforce that they are IMMUTABLE.
         #
-        # It would be nice to make these completely constexpr, e.g.
-        # initializing Slab<T> with the right layout from initializer_list, but
-        # it isn't easy.  Would we need a constexpr hash?
+        # We don't handle:
         #
-        # Limitation: This doesn't handle a = f([1, 2]), but we don't use that
-        # in Oil.
+        #   myglobal = MyObj()
+        #   myglobal = myfunc()
 
+        # Special cases for GLOBAL constants
         if self.indent == 0:
           assert isinstance(lval, NameExpr), lval
           if _SkipAssignment(lval.name):
@@ -1197,6 +1204,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           lval_type = self.types[lval]
 
+          # L = [1, 2, 3]
           if isinstance(o.rvalue, ListExpr):
             item_type = lval_type.args[0]
             item_c_type = GetCType(item_type)
@@ -1206,17 +1214,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 item_c_type, len(o.rvalue.items), lval.name)
 
             # TODO: Assert that every item is a constant?
-            # COMMA for macro
             self._WriteListElements(o.rvalue, sep=' COMMA ')
 
             self.write(');\n')
             return
 
-          # d = {} at the TOP LEVEL
-          # TODO: Change this to
-          # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
-          # So it has HeapTag::Global
-
+          # D = {}  # at the GLOBAL level
+          # TODO: Change this to GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
           if isinstance(o.rvalue, DictExpr):
             key_type, val_type = lval_type.args
 
@@ -1264,6 +1268,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #
 
         if isinstance(o.rvalue, CallExpr):
+          # Special translation For ORDERED dicts in Python:
+          #
           #    d = NewDict()  # type: Dict[int, int]
           # -> auto* d = NewDict<int, int>();
           if o.rvalue.callee.name == 'NewDict':
@@ -1275,6 +1281,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             key_c_type = GetCType(key_type)
             val_c_type = GetCType(val_type)
 
+            # TODO: Remove NewDict; could be Alloc<Dict<K, V>>
             self.write_ind('auto* %s = NewDict<%s, %s>();\n',
                            lval.name, key_c_type, val_c_type)
             # Doesn't take elememnts
@@ -1334,16 +1341,31 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
           lval_type = self.types[lval]
-          #c_type = GetCType(lval_type, local=self.indent != 0)
           c_type = GetCType(lval_type)
 
-          # for "hoisting" to the top of the function
-          if self.current_func_node:
+          is_global = lval.name in self.current_globals
+
+          # self.log('[decl=%s] %s is in GLOBALS? %s' % (self.decl, lval.name, is_global))
+          # if is_global:
+          #   self.log('current func %s' % self.current_func_node)
+          #   self.log('current method %s' % self.current_method_name)
+
+          if is_global:
+            # Globals like _EOL_TOK shouldn't be redeclared
             self.write_ind('%s = ', lval.name)
+
+          elif self.current_func_node:
+            # In functions, we already made a ass to HOIST variables to the
+            # top.  So just mutate them now.
+            self.write_ind('%s = ', lval.name)
+
+            # TODO: if it was makred global, do NOT make it a local variable
             if self.decl:
               self.local_var_list.append((lval.name, c_type))
+
           else:
-            # globals always get a type -- they're not mutated
+            # TODO: limit global computation (i.e. things before main)
+            # For now, globals always get a type -- they're not mutated
             self.write_ind('%s %s = ', c_type, lval.name)
 
           # Special case for list comprehensions.  Note that a variable has to
@@ -2035,6 +2057,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         virtual = ''
         if self.decl:
           self.local_var_list = []  # Make a new instance to collect from
+          self.current_globals = []
           self.local_vars[o] = self.local_var_list
 
           if self.virtual.IsVirtual(self.current_class_name, o.name):
@@ -2356,7 +2379,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_class_name = None   # Stop prefixing functions with class
 
     def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
-        pass
+        #assert self.current_func_node is not None
+        if not self.decl and not self.forward_decl:
+          # self.log('GLOBALS %s' % o.names)
+          self.current_globals.extend(o.names)
 
     def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> T:
         pass

@@ -144,9 +144,6 @@ def f(obj):
   return obj.TypeString()
 
 
-# Note: this happsns to work, but globals should probably be disallowed
-GLOBAL = DerivedI(None, 37)
-
 def TestInheritance():
   # type: () -> None
 
@@ -163,7 +160,6 @@ def TestInheritance():
   log("f(b)           %s", f(b))
   log("f(di)          %s", f(di))
   log("f(dss)         %s", f(dss))
-  log("f(GLOBAL)      %s", f(GLOBAL))
 
 
 def run_tests():

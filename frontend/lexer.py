@@ -23,6 +23,9 @@ if TYPE_CHECKING:
   from frontend.reader import _Reader
 
 
+_EOL_TOK = None  # type: Token
+
+
 def DummyToken(id_, val):
   # type: (int, str) -> Token
 
@@ -39,6 +42,11 @@ class LineLexer(object):
     self.replace_last_token = False  # For MaybeUnreadOne
 
     self.Reset(line, -1, 0)  # Invalid line_id to start
+
+    # Initialize global singleton
+    global _EOL_TOK
+    if _EOL_TOK is None:
+      _EOL_TOK = DummyToken(Id.Eol_Tok, '')
 
   def __repr__(self):
     # type: () -> str
@@ -178,7 +186,7 @@ class LineLexer(object):
 
     tok_type, end_pos = match.OneToken(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # SENTINEL: no location for it
-      return None
+      return _EOL_TOK
 
     # Save on allocations!  We often don't look at the token value.
     # TODO: can inline this function with formula on 16-bit Id.
@@ -290,7 +298,7 @@ class Lexer(object):
     # type: (lex_mode_t) -> Token
     """Read from the normal line buffer, not an alias."""
     t = self.line_lexer.Read(lex_mode)
-    if t is None:  # EOL: hit \0, read a new line
+    if t.id == Id.Eol_Tok:  # EOL: hit \0, read a new line
       line_id, line, line_pos = self.line_reader.GetLine()
 
       if line is None:  # no more lines
