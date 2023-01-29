@@ -68,7 +68,6 @@ _gen/
 .*_def\.py
 .*_spec\.py
 asdl/py.*
-core/completion.py
 core/pyos.py
 core/pyutil.py
 core/optview.py
@@ -81,7 +80,6 @@ oil_lang/builtin_oil.py
 oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
-osh/builtin_comp.py
 tea/.*
 EOF
 
