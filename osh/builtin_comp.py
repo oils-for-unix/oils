@@ -257,8 +257,9 @@ class Complete(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv, cmd_val.arg_spids[1:])
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     attrs = flag_spec.ParseMore('complete', arg_r)
     arg = arg_types.complete(attrs.attrs)
     # TODO: process arg.opt_changes
@@ -277,7 +278,7 @@ class Complete(vm._Builtin):
 
     base_opts = dict(attrs.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, attrs, base_opts)
+      user_spec = self.spec_builder.Build(cmd_val.argv, attrs, base_opts)
     except error.Parse as e:
       # error printed above
       return 2
@@ -301,8 +302,9 @@ class CompGen(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv, cmd_val.arg_spids[1:])
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     arg = flag_spec.ParseMore('compgen', arg_r)
 
     if arg_r.AtEnd():
@@ -318,7 +320,7 @@ class CompGen(vm._Builtin):
 
     base_opts = dict(arg.opt_changes)
     try:
-      user_spec = self.spec_builder.Build(argv, arg, base_opts)
+      user_spec = self.spec_builder.Build(cmd_val.argv, arg, base_opts)
     except error.Parse as e:
       # error printed above
       return 2
@@ -357,8 +359,9 @@ class CompOpt(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv, [])
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     arg = flag_spec.ParseMore('compopt', arg_r)
 
     if not self.comp_state.currently_completing:  # bash also checks this.
@@ -386,8 +389,9 @@ class CompAdjust(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv[1:]
-    arg_r = args.Reader(argv, [])
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r.Next()
+
     attrs = flag_spec.ParseMore('compadjust', arg_r)
     arg = arg_types.compadjust(attrs.attrs)
     var_names = arg_r.Rest()  # Output variables to set
