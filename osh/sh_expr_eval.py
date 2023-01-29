@@ -770,6 +770,7 @@ class ArithEvaluator(object):
     with tagswitch(node) as case:
       if case(sh_lhs_expr_e.Name):  # a=x
         node = cast(sh_lhs_expr__Name, UP_node)
+        assert node.name is not None
 
         # Note: C++ constructor doesn't take spids directly.  Should we add that?
         lval1 = lvalue.Named(node.name)
@@ -778,6 +779,7 @@ class ArithEvaluator(object):
 
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
         node = cast(sh_lhs_expr__IndexedName, UP_node)
+        assert node.name is not None
 
         if self.mem.IsAssocArray(node.name):
           key = self.EvalWordToString(node.index)

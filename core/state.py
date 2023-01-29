@@ -1688,6 +1688,7 @@ class Mem(object):
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):
         lval = cast(lvalue__Named, UP_lval)
+        assert lval.name is not None
 
         if keyword_id == Id.KW_SetRef:
           # Hidden interpreter var with __ prefix.  Matches proc call in

@@ -301,8 +301,10 @@ class Json(vm._Builtin):
         self.errfmt.Print_('json read: %s' % e, span_id=action_spid)
         return 1
 
+      # TODO: use token directly
+      left = self.errfmt.arena.GetToken(name_spid)
       self.mem.SetValue(
-          sh_lhs_expr.Name(var_name), value.Obj(obj), scope_e.LocalOnly)
+          sh_lhs_expr.Name(left, var_name), value.Obj(obj), scope_e.LocalOnly)
 
     else:
       raise error.Usage(_JSON_ACTION_ERROR, span_id=action_spid)

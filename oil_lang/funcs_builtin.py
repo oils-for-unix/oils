@@ -4,10 +4,12 @@ builtin_funcs.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core import error
 from core.pyerror import log
+from frontend import lexer
 from oil_lang import expr_eval
 
 from typing import Callable, Union, TYPE_CHECKING
@@ -24,7 +26,10 @@ def SetGlobalFunc(mem, name, func):
   # type: (state.Mem, str, Union[Callable, type]) -> None
   """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
-  mem.SetValue(sh_lhs_expr.Name(name), value.Obj(func), scope_e.GlobalOnly)
+
+  # TODO: Fix this location info
+  left = lexer.DummyToken(Id.Undefined_Tok, '')
+  mem.SetValue(sh_lhs_expr.Name(left, name), value.Obj(func), scope_e.GlobalOnly)
 
 
 def _Join(array, delim=''):
