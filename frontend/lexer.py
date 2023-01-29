@@ -23,10 +23,6 @@ if TYPE_CHECKING:
   from frontend.reader import _Reader
 
 
-# Special immutable token
-_EOL_TOK = Token(Id.Eol_Tok, -1, -1, -1, runtime.NO_SPID, None)
-
-
 def DummyToken(id_, val):
   # type: (int, str) -> Token
 
@@ -175,14 +171,14 @@ class LineLexer(object):
       return ord(self.line[pos])
 
   def Read(self, lex_mode):
-    # type: (lex_mode_t) -> Token
+    # type: (lex_mode_t) -> Optional[Token]
     # Inner loop optimization
     line = self.line
     line_pos = self.line_pos
 
     tok_type, end_pos = match.OneToken(lex_mode, line, line_pos)
-    if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-      return _EOL_TOK
+    if tok_type == Id.Eol_Tok:  # SENTINEL: no location for it
+      return None
 
     # Save on allocations!  We often don't look at the token value.
     # TODO: can inline this function with formula on 16-bit Id.
@@ -294,7 +290,7 @@ class Lexer(object):
     # type: (lex_mode_t) -> Token
     """Read from the normal line buffer, not an alias."""
     t = self.line_lexer.Read(lex_mode)
-    if t.id == Id.Eol_Tok:  # hit \0, read a new line
+    if t is None:  # EOL: hit \0, read a new line
       line_id, line, line_pos = self.line_reader.GetLine()
 
       if line is None:  # no more lines

@@ -1236,12 +1236,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 lval.name, temp_name)
             return
 
-          # TODO: Change this to
-          # - GLOBAL_INSTANCE(name, Token, ...)
-          # for HeapTag::Global
           if isinstance(o.rvalue, CallExpr):
             call_expr = o.rvalue
             if self._IsInstantiation(call_expr):
+              self.report_error(o, 'Invalid global instance %r' % lval.name)
+              return
+
+              # OLD CODE that handled this for lexer.py _EOL_TOK
               temp_name = 'gobj%d' % self.unique_id
               self.unique_id += 1
 
@@ -1256,7 +1257,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write('%s %s = &%s;', GetCType(lval_type), lval.name,
                   temp_name)
               self.write('\n')
-              return
+
 
         #
         # Non-top-level

@@ -205,7 +205,8 @@ def AddKinds(spec):
   #  (x == y) should used === or ~==
   spec.AddKind('Unknown', ['Tok', 'Backslash', 'DEqual'])
 
-  spec.AddKind('Eol',       ['Tok'])  # no more tokens on line (\0)
+  # sentinel for no more tokens on line (\0)
+  spec.AddKind('Eol',       ['Tok'])
 
   spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
 
