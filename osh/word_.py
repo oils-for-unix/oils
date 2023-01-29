@@ -232,11 +232,11 @@ def _RightMostSpanForPart(part):
 
     elif case(word_part_e.SingleQuoted):
       part = cast(single_quoted, UP_part)
-      return part.spids[1]  # right '
+      return part.right.span_id  # right '
 
     elif case(word_part_e.DoubleQuoted):
       part = cast(double_quoted, UP_part)
-      return part.spids[1]  # right "
+      return part.right.span_id  # right "
 
     elif case(word_part_e.SimpleVarSub):
       part = cast(simple_var_sub, UP_part)
@@ -352,7 +352,7 @@ def TildeDetect(UP_w):
   - It's possible to write this in a mutating style, since only the first token
     is changed.  But note that we CANNOT know this during lexing.
   """
-  # NOTE: BracedTree, Empty, etc. can't be tilde expanded
+  # BracedTree can't be tilde expanded
   if UP_w.tag_() != word_e.Compound:
     return None
 

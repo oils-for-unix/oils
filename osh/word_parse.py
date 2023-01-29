@@ -600,10 +600,8 @@ class WordParser(WordEmitter):
     tokens = []  # type: List[Token]
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
-
-    node = single_quoted(left_token, tokens)
-    node.spids.append(left_token.span_id)  # left '
-    node.spids.append(self.cur_token.span_id)  # right '
+    right_quote = self.cur_token
+    node = single_quoted(left_token, tokens, right_quote)
     return node
 
   def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_oil_expr):
@@ -915,10 +913,8 @@ class WordParser(WordEmitter):
     parts = []  # type: List[word_part_t]
     self._ReadLikeDQ(left_token, False, parts)
 
-    dq_part = double_quoted(left_token, parts)
-    dq_part.spids.append(left_token.span_id)  # Left ", sort of redundant
-    dq_part.spids.append(self.cur_token.span_id)  # Right "
-    return dq_part
+    right_quote = self.cur_token
+    return double_quoted(left_token, parts, right_quote)
 
   def ReadDoubleQuoted(self, left_token, parts):
     # type: (Token, List[word_part_t]) -> Token

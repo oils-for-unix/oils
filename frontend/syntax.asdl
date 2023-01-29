@@ -119,10 +119,8 @@ module syntax
   -- Variants:
   -- * Look at left token for $'' c'' vs r'' ''
   -- * """ and ''' strings have a boolean set
-  double_quoted = (Token left, word_part* parts)
-                  attributes (int* spids)
-  single_quoted = (Token left, Token* tokens)
-                  attributes (int* spids)
+  double_quoted = (Token left, word_part* parts, Token right)
+  single_quoted = (Token left, Token* tokens, Token right)
 
   simple_var_sub = (Token token)
 
@@ -183,7 +181,8 @@ module syntax
 
   -- TODO: I think Token left should be copied into every compound_word
   -- either that, or CommandParser needs to reliably have GetToken(word_t)
-  -- Invariant: compound_word always has at least one part (word.Empty is the other case)
+  -- Invariant: compound_word always has at least one part (as opposed to
+  -- rhs_word.Empty)
   compound_word = (word_part* parts)
 
   -- dedent is calculated from the first part
@@ -200,11 +199,6 @@ module syntax
     Empty
   | Compound %compound_word
 
-  -- TODO: remove word.String
-  test_word_ = 
-    String(string s)  -- TODO: support Str %Str!  Boxless optimization
-  | Compound %compound_word
-
   word = 
     -- Returns from WordParser, but not generally stored in LST
     Token %Token
@@ -213,10 +207,11 @@ module syntax
     -- overhead and seems like overkill.  Note that DoubleQuoted can't
     -- contain a SingleQuoted, etc. either.
   | Compound %compound_word
-    -- Similar to CompoundWord, but leading space is stripped
+    -- For word sequences command.Simple, ShArrayLiteral, for_iter.Words
+    -- Could be its own type
   | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
-    -- note: this could also be Token
+    -- TODO: try using Token with source info
   | String(id id, string s, int span_id)
 
   sh_lhs_expr =

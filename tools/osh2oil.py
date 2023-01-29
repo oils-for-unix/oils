@@ -883,8 +883,8 @@ class OilPrinter(object):
           # NOTE: In double quoted case, this is the begin and end quote.
           # Do we need a HereDoc part?
 
-          left_spid = dq_part.spids[0]
-          right_spid = dq_part.spids[1]
+          left_spid = dq_part.left.span_id
+          right_spid = dq_part.right.span_id
 
           # This is not set in the case of here docs?  Why not?
           #assert left_spid != runtime.NO_SPID, left_spid
