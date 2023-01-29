@@ -250,7 +250,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
       parts = []  # type: List[word_part_t]
       last_token = w_parser.ReadDoubleQuoted(left_token, parts)
-      expr_dq_part = double_quoted(left_token, parts)
+      expr_dq_part = double_quoted(left_token, parts, last_token)
 
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, expr_dq_part)  # HACK for expr_to_ast
@@ -293,7 +293,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
       last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
                                              True)
 
-      sq_part = single_quoted(left_token, tokens)
+      sq_part = single_quoted(left_token, tokens, last_token)
 
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, sq_part)  # HACK for expr_to_ast
