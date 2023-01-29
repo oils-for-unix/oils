@@ -135,8 +135,9 @@ module syntax
 
   command_sub = (Token left_token, command child, Token right)
 
-  -- Note: can contain word.BracedTree
-  sh_array_literal = (Token left, word* words) attributes (int* spids)
+  -- * can contain word.BracedTree
+  -- * no 'Token right' for now, doesn't appear to be used
+  sh_array_literal = (Token left, word* words)
 
   -- Used in both expr and a word_part
   ArgList = (expr* positional, named_arg* named) attributes (int* spids)

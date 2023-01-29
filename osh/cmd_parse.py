@@ -1051,8 +1051,8 @@ class CommandParser(object):
 
       return command.ControlFlow(kw_token, arg_word)
 
-    # Only expand aliases if we didn't get a block.
-    if not block and self.parse_opts.expand_aliases():
+    # Alias expansion only understands words, not typed args ( ) or block { }
+    if not typed_args and not block and self.parse_opts.expand_aliases():
       # If any expansions were detected, then parse again.
       expanded_node = self._MaybeExpandAliases(suffix_words)
       if expanded_node:

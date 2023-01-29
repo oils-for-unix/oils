@@ -1341,7 +1341,6 @@ class WordParser(WordEmitter):
       # Needed for type safety, doh
       no_words = []  # type: List[word_t]
       node = sh_array_literal(left_token, no_words)
-      node.spids.append(left_token.span_id)
       return node
  
     pairs = []  # type: List[assoc_pair]
@@ -1368,7 +1367,6 @@ class WordParser(WordEmitter):
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
     node = sh_array_literal(left_token, words3)
-    node.spids.append(paren_spid)
     return node
 
   def _ParseInlineCallArgs(self, arglist):
