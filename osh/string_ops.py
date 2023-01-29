@@ -9,7 +9,7 @@ Instead of:
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, Token
 from core import pyutil
 from core import ui
 from core.pyerror import e_die, e_strict, log
@@ -390,15 +390,15 @@ def _PatSubAll(s, regex, replace_str):
 
 class GlobReplacer(object):
 
-  def __init__(self, regex, replace_str, slash_spid):
-    # type: (str, str, int) -> None
+  def __init__(self, regex, replace_str, slash_tok):
+    # type: (str, str, Token) -> None
 
     # TODO: It would be nice to cache the compilation of the regex here,
     # instead of just the string.  That would require more sophisticated use of
     # the Python/C API in libc.c, which we might want to avoid.
     self.regex = regex
     self.replace_str = replace_str
-    self.slash_spid = slash_spid
+    self.slash_tok = slash_tok
 
   def __repr__(self):
     # type: () -> str
@@ -413,11 +413,11 @@ class GlobReplacer(object):
       try:
         return _PatSubAll(s, regex, self.replace_str)  # loop over matches
       except RuntimeError as e:
-        # libc.regex_first_group_match raises RuntimeError.
-        # note: MyPy doesn't know RuntimeError has e.message (and e.args)
+        # Not sure if this is possible since we convert from glob:
+        # libc.regex_first_group_match raises RuntimeError on regex syntax
+        # error.
         msg = e.message  # type: str
-        e_die('Error matching regex %r: %s' % (regex, msg),
-              loc.Span(self.slash_spid))
+        e_die('Error matching regex %r: %s' % (regex, msg), self.slash_tok)
 
     if op.replace_mode == Id.Lit_Pound:
       regex = '^' + regex

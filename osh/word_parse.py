@@ -254,6 +254,8 @@ class WordParser(WordEmitter):
     VarSub    = ...
               | VarOf '/' Match '/' WORD
     """
+    slash_tok = self.cur_token  # Save for location info
+
     # Exception: VSub_ArgUnquoted even if it's quoted
     # stop at eof_type=Lit_Slash, empty_ok=False
     pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash)
@@ -286,7 +288,7 @@ class WordParser(WordEmitter):
 
     if self.token_type == Id.Right_DollarBrace:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
-      return suffix_op.PatSub(pat, rhs_word.Empty(), replace_mode)
+      return suffix_op.PatSub(pat, rhs_word.Empty(), replace_mode, slash_tok)
 
     if self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)  # do not stop at /
@@ -299,7 +301,7 @@ class WordParser(WordEmitter):
         p_die("Expected } after replacement string, got %s" %
               ui.PrettyId(self.token_type), self.cur_token)
 
-      return suffix_op.PatSub(pat, replace, replace_mode)
+      return suffix_op.PatSub(pat, replace, replace_mode, slash_tok)
 
     # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
     p_die('Expected } or / to close pattern', self.cur_token)
@@ -413,9 +415,7 @@ class WordParser(WordEmitter):
 
     elif op_kind == Kind.VOp2:  # / : [ ]
       if self.token_type == Id.VOp2_Slash:
-        op_spid = self.cur_token.span_id  # for attributing error to /
         patsub_op = self._ReadPatSubVarOp()
-        patsub_op.spids.append(op_spid)
 
         # awkwardness for mycpp; could fix
         temp = cast(suffix_op_t, patsub_op)

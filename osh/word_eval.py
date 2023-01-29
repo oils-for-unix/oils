@@ -834,7 +834,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       #   "Glob is not in CANONICAL FORM".
       # - Propagate location info back to the 'op.pat' word.
       pass
-    replacer = string_ops.GlobReplacer(regex, replace_str, op.spids[0])
+    replacer = string_ops.GlobReplacer(regex, replace_str, op.slash_tok)
 
     with tagswitch(val) as case2:
       if case2(value_e.Str):
@@ -1647,74 +1647,62 @@ class AbstractWordEvaluator(StringWordEvaluator):
         raise AssertionError()
 
   def _EvalWordToParts(self, w, part_vals, eval_flags=0):
-    # type: (word_t, List[part_value_t], int) -> None
+    # type: (compound_word, List[part_value_t], int) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
-    TODO: should accept compound_word
-
     Returns:
-      List of part_value.
-      But note that this is a TREE.
+      Appends to part_vals.  Note that this is a TREE.
     """
+    # Does the word have an extended glob?  This is a special case because
+    # of the way we use glob() and then fnmatch(..., FNM_EXTMATCH) to
+    # implement extended globs.  It's hard to carry that extra information
+    # all the way past the word splitting stage.
 
-    UP_w = w
-    with tagswitch(w) as case:
-      if case(word_e.Compound):
-        w = cast(compound_word, UP_w)
+    # OSH semantic limitations: If a word has an extended glob part, then
+    # 1. It can't have an array
+    # 2. Word splitting of unquoted words isn't respected
 
-        # Does the word have an extended glob?  This is a special case because
-        # of the way we use glob() and then fnmatch(..., FNM_EXTMATCH) to
-        # implement extended globs.  It's hard to carry that extra information
-        # all the way past the word splitting stage.
+    word_part_vals = []  # type: List[part_value_t]
+    has_extglob = False
+    for p in w.parts:
+      if p.tag_() == word_part_e.ExtGlob:
+        has_extglob = True
+      self._EvalWordPart(p, word_part_vals, eval_flags)
 
-        # OSH semantic limitations: If a word has an extended glob part, then
-        # 1. It can't have an array
-        # 2. Word splitting of unquoted words isn't respected
+    # Caller REQUESTED extglob evaluation, AND we parsed word_part.ExtGlob()
+    if has_extglob:
+      if bool(eval_flags & EXTGLOB_FILES):
+        # Treat the WHOLE word as a pattern.  We need to TWO VARIANTS of the
+        # word because of the way we use libc:
+        # 1. With '*' for extglob parts
+        # 2. With _EvalExtGlob() for extglob parts
 
-        word_part_vals = []  # type: List[part_value_t]
-        has_extglob = False
-        for p in w.parts:
-          if p.tag_() == word_part_e.ExtGlob:
-            has_extglob = True
-          self._EvalWordPart(p, word_part_vals, eval_flags)
+        glob_parts = []  # type: List[str]
+        fnmatch_parts = []  # type: List[str]
+        self._TranslateExtGlob(word_part_vals, w, glob_parts, fnmatch_parts)
 
-        # Caller REQUESTED extglob evaluation, AND we parsed word_part.ExtGlob()
-        if has_extglob:
-          if bool(eval_flags & EXTGLOB_FILES):
-            # Treat the WHOLE word as a pattern.  We need to TWO VARIANTS of the
-            # word because of the way we use libc:
-            # 1. With '*' for extglob parts
-            # 2. With _EvalExtGlob() for extglob parts
+        #log('word_part_vals %s', word_part_vals)
+        glob_pat = ''.join(glob_parts)
+        fnmatch_pat = ''.join(fnmatch_parts)
+        #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
 
-            glob_parts = []  # type: List[str]
-            fnmatch_parts = []  # type: List[str]
-            self._TranslateExtGlob(word_part_vals, w, glob_parts, fnmatch_parts)
+        results = []  # type: List[str]
+        n = self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
+        if n < 0:
+          span_id = word_.LeftMostSpanForWord(w)
+          raise error.FailGlob(
+              'Extended glob %r matched no files' % fnmatch_pat,
+              loc.Span(span_id))
 
-            #log('word_part_vals %s', word_part_vals)
-            glob_pat = ''.join(glob_parts)
-            fnmatch_pat = ''.join(fnmatch_parts)
-            #log("glob %s fnmatch %s", glob_pat, fnmatch_pat)
-
-            results = []  # type: List[str]
-            n = self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
-            if n < 0:
-              span_id = word_.LeftMostSpanForWord(w)
-              raise error.FailGlob(
-                  'Extended glob %r matched no files' % fnmatch_pat,
-                  loc.Span(span_id))
-
-            part_vals.append(part_value.Array(results))
-          elif bool(eval_flags & EXTGLOB_NESTED):
-            # We only glob at the TOP level of @(nested|@(pattern))
-            part_vals.extend(word_part_vals)
-          else:
-            # e.g. simple_word_eval, assignment builtin
-            e_die('Extended glob not allowed in this word', loc.Word())
-        else:
-          part_vals.extend(word_part_vals)
-
+        part_vals.append(part_value.Array(results))
+      elif bool(eval_flags & EXTGLOB_NESTED):
+        # We only glob at the TOP level of @(nested|@(pattern))
+        part_vals.extend(word_part_vals)
       else:
-        raise AssertionError(w.tag_())
+        # e.g. simple_word_eval, assignment builtin
+        e_die('Extended glob not allowed in this word', loc.Word())
+    else:
+      part_vals.extend(word_part_vals)
 
   def _PartValsToString(self, part_vals, w, eval_flags, strs):
     # type: (List[part_value_t], compound_word, int, List[str]) -> None

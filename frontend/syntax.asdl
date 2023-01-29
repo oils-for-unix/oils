@@ -112,11 +112,9 @@ module syntax
   | Unary(Token tok, rhs_word arg_word)  -- e.g. ${v:-default}
     -- Oil's ${x|html} and ${x %.3f} have static arguments
   | Static(Token tok, string arg)
-  | PatSub(compound_word pat, rhs_word replace, id replace_mode)
+  | PatSub(compound_word pat, rhs_word replace, id replace_mode, Token slash_tok)
     -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
-    -- TODO: PatSub needs slash_tok
-  attributes (int* spids)
 
   -- Variants:
   -- * Look at left token for $'' c'' vs r'' ''
