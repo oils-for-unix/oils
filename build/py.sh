@@ -25,7 +25,6 @@ export PYTHONPATH='.:vendor/'
 
 ubuntu-deps() {
   # python-dev: for all the extension modules
-  #   TODO: upgrade Ubuntu and change to python2-dev
   # gawk: used by spec-runner.sh for the special match() function.
   # time: used to collect the exit code and timing of a test
   # libreadline-dev: needed for the build/prepare.sh Python build.
@@ -33,8 +32,17 @@ ubuntu-deps() {
   set -x  # show what needs sudo
 
   # pass -y for say gitpod
+
+  ubuntu_release_year=$(lsb_release -rs | cut -d. -f1)
+
+  if $(expr $ubuntu_release_year > 20); then
+    python2_package='python2-dev'
+  else 
+    python2_package='python-dev'
+  fi
+
   sudo apt "$@" install \
-    python-dev gawk libreadline-dev ninja-build cmake \
+    $python2_package gawk libreadline-dev ninja-build cmake \
     "${PY3_DEPS[@]}"
   set +x
 
