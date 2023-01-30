@@ -25,6 +25,7 @@ from _devbuild.gen.syntax_asdl import (
 from core.pyerror import log, p_die
 from frontend import lexer
 from frontend import match
+from mycpp import mylib
 from mycpp.mylib import tagswitch
 
 from typing import List, Optional, cast, TYPE_CHECKING
@@ -431,6 +432,11 @@ def _ExpandPart(parts,  # type: List[word_part_t]
       expand_part = cast(word_part__BracedRange, UP_part)
       # Not mutually recursive with _BraceExpand
       strs = _RangeStrings(expand_part)
+
+      # Often prefix and suffixes are empty, but there's not that much to
+      # optimize
+      # log('prefix %s, suffixes %s, strs %s', prefix, suffixes, strs)
+
       for s in strs:
         for suffix in suffixes:
           out_parts_ = []  # type: List[word_part_t]
@@ -453,6 +459,11 @@ def _ExpandPart(parts,  # type: List[word_part_t]
 def _BraceExpand(parts):
   # type: (List[word_part_t]) -> List[List[word_part_t]]
   """Mutually recursive with _ExpandPart."""
+
+  # manual GC point, because brace expansion is a separate stage that does a
+  # bunch of computation outside the interpreter
+  mylib.MaybeCollect()
+
   num_alts = 0
   first_alt_index = -1
   for i, part in enumerate(parts):
@@ -488,9 +499,12 @@ def BraceExpandWords(words):
     with tagswitch(w) as case:
       if case(word_e.BracedTree):
         w = cast(word__BracedTree, UP_w)
+        # Note: for the case of {1..100000}, this is a flat list of Token.
+        # Would be nice to optimize, but we don't really know the structure
+        # ahead of time
         parts_list = _BraceExpand(w.parts)
-        tmp = [compound_word(p) for p in parts_list]
-        out.extend(tmp)
+        for p in parts_list:
+          out.append(compound_word(p))
 
       elif case(word_e.Compound):
         w = cast(compound_word, UP_w)
