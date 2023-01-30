@@ -593,4 +593,21 @@ test-loops() {
   run-verbose $bin $0 for-loop
 }
 
+expand-loop() {
+  local n=$1
+
+  local bin=_bin/cxx-opt/osh
+  ninja $bin
+
+  set -x
+  time $bin -c "for i in {1..$n}; do echo \$i; done > /dev/null"
+  set +x
+}
+
+test-brace-exp() {
+
+  expand-loop 330000
+  expand-loop 340000
+}
+
 "$@"

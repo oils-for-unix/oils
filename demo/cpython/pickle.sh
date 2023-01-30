@@ -11,7 +11,29 @@ set -o errexit
 # Protocol TWO
 #
 
-# PROTO 2
+# Opcodes for pure data.  BIN is for"binary"
+
+# PROTO 2  # Say what protocol we're using
+
+# EMPTY_DICT
+# EMPTY_LIST
+# NEWTRUE
+# BIN FLOAT
+# BIN INT1
+# BIN UNICODE -- don't like this, but OK
+
+# SET ITEMS   # Dict
+# APPENDS     # List
+
+# MARK
+# BIN PUT index
+# BIN GET index
+
+# STOP
+
+
+# Other:
+
 # GLOBAL     -- push self.find_class(mod_name, class_name)
 # NEWOBJ     # build object by applying cls.__new__ to argtuple
 #            # OK this still relies on __new__ fundamentally, not sure I want
@@ -21,27 +43,40 @@ set -o errexit
 # BININT2  -- 10043
 # SETITEM  -- calls __dict__.update() or __setstate__()
 # BUILD
-#
-# EMPTY_TUPLE
-# EMPTY_DICT
-#
-# Hm there is no MARK!
 
 
 # NOTE: There is no INST bytecode.
 run() {
-  local p=_tmp/instance.pickle
+  local kind=$1
 
-  demo/pickle_instance.py $p
+  local p=_tmp/$kind.pickle
 
-  python3 -m pickletools $p
+  for version in 0 1 2 3 4; do
+    demo/cpython/pickle_instance.py $kind $version $p
 
-  # Protocol 0 is viewable as plain text, but protocol 2 isn't
-  echo
-  echo "--- $p ---"
-  echo
+    python3 -m pickletools $p
 
-  od -c $p
+    # Protocol 0 is viewable as plain text, but protocol 2 isn't
+    echo
+    echo "--- $p with PICKLE version $version ---"
+    echo
+
+    od -c $p
+    ls -l $p
+
+    echo
+    echo ---
+    echo
+
+  done
+}
+
+instance() {
+  run instance
+}
+
+pure-data() {
+  run pure-data
 }
 
 #

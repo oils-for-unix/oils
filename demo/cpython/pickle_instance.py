@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import pickle
@@ -25,17 +25,53 @@ class Foo(Base):
   def __repr__(self):
     return '<Foo %d>' % self.n
 
-f = Foo(10000)
-print(f)
 
-i = pickle.dumps(f, protocol=pickle.HIGHEST_PROTOCOL)
-c = pickle.dumps(Foo, protocol=pickle.HIGHEST_PROTOCOL)
-print(len(i))  # 101 in protocol 0, 36 in protocol 2
-print(len(c))  # 18 bytes in portocl 0, 19 in protocol 2
+def PickleInstance(protocol, out_f):
+  f = Foo(10000)
+  print(f)
 
-print(repr(i))
-print(repr(c))
+  i = pickle.dumps(f, protocol=protocol)
+  c = pickle.dumps(Foo, protocol=protocol)
+
+  print(len(i))  # 101 in protocol 0, 36 in protocol 2
+  print(len(c))  # 18 bytes in portocl 0, 19 in protocol 2
+
+  print(repr(i))
+  print(repr(c))
 
 
-with open(sys.argv[1], 'w') as f:
-  f.write(i)
+  out_f.write(i)
+
+
+def PickleData(protocol, out_f):
+  d = {'key': 'str', 'k2': ['value1', 42, False], 'bool': True, 'float': 0.1}
+
+  # Test out GRAPH
+  d['self'] = d
+
+  i = pickle.dumps(d, protocol=protocol)
+
+  out_f.write(i)
+
+
+
+def main(argv):
+
+  action = argv[1]
+  protocol = int(argv[2])
+  out_path = argv[3]
+
+  if action == 'instance':
+    with open(out_path, 'wb') as f:
+      PickleInstance(protocol, f)
+
+  elif action == 'pure-data':
+    with open(out_path, 'wb') as f:
+      PickleData(protocol, f)
+
+  else:
+    raise RuntimeError(action)
+
+
+main(sys.argv)
+
