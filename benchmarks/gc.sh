@@ -600,7 +600,8 @@ expand-loop() {
   ninja $bin
 
   set -x
-  time $bin -c "for i in {1..$n}; do echo \$i; done > /dev/null"
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
+    $bin -c "for i in {1..$n}; do echo \$i; done > /dev/null"
   set +x
 }
 

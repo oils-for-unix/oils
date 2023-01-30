@@ -64,6 +64,10 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     // Use higher object IDs
     obj_id_after_allocate_ = greatest_obj_id_;
     greatest_obj_id_++;
+
+    // This check is ON in release mode
+    CHECK(greatest_obj_id_ <= kMaxObjId);
+
   } else {
     RawObject* dead = to_free_.back();
     to_free_.pop_back();

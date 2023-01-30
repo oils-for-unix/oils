@@ -14,11 +14,6 @@ class MarkSet {
   // ReInit() must be called at the start of MarkObjects().  Allocate() should
   // keep track of the maximum object ID.
   void ReInit(int max_obj_id) {
-    // TODO: exit with a good error message, and TEST it!  Another thing we
-    // could is disable collection if there are too many objects?  The process
-    // MIGHT finish, and the OS will clean up.
-    CHECK(max_obj_id <= kMaxObjId);
-
     // https://stackoverflow.com/questions/8848575/fastest-way-to-reset-every-value-of-stdvectorint-to-0
     std::fill(bits_.begin(), bits_.end(), 0);
     int max_byte_index = (max_obj_id >> 3) + 1;  // round up
