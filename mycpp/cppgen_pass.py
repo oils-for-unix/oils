@@ -1177,26 +1177,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert len(o.lvalues) == 1, o.lvalues
         lval = o.lvalues[0]
 
-        # Special case for global constants.  L = [1, 2] or D = {}
-        #
-        # We avoid Alloc<T>, since that can't be done until main().
-        #
-        # It would be nice to make these completely constexpr, e.g.
-        # initializing Slab<T> with the right layout from initializer_list, but
-        # it isn't easy.  Would we need a constexpr hash?
-        #
-        # Limitation: This doesn't handle a = f([1, 2]), but we don't use that
-        # in Oil.
+        # GLOBAL CONSTANTS
+        # Avoid Alloc<T>, since that can't be done until main().
 
         if self.indent == 0:
           assert isinstance(lval, NameExpr), lval
           if _SkipAssignment(lval.name):
             return
 
-          #self.log('    GLOBAL List/Dict: %s', lval.name)
+          #self.log('    GLOBAL: %s', lval.name)
 
           lval_type = self.types[lval]
 
+          # Global
+          #   L = [1, 2]  # type: List
           if isinstance(o.rvalue, ListExpr):
             item_type = lval_type.args[0]
             item_c_type = GetCType(item_type)
@@ -1212,11 +1206,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(');\n')
             return
 
-          # d = {} at the TOP LEVEL
-          # TODO: Change this to
-          # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
-          # So it has HeapTag::Global
-
+          # Global
+          #   D = {}  # type: Dict
+          # TODO: Use GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
+          # to get HeapTag::Global
           if isinstance(o.rvalue, DictExpr):
             key_type, val_type = lval_type.args
 
@@ -1236,9 +1229,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 lval.name, temp_name)
             return
 
-          # TODO: Change this to
-          # - GLOBAL_INSTANCE(name, Token, ...)
-          # for HeapTag::Global
+          # TODO: Change to GLOBAL_ASDL_INSTANCE(name, Token, ...) to get HeapTag::Global
+          # Problem: sometimes the constructor calls NewList() or NewDict, which is illegal.
           if isinstance(o.rvalue, CallExpr):
             call_expr = o.rvalue
             if self._IsInstantiation(call_expr):

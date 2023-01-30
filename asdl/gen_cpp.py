@@ -118,6 +118,7 @@ def _IsManagedType(typ):
 def _DefaultValue(typ):
   type_name = typ.name
 
+  # Note: NewDict and NewList makes constructors INVALID at the top level.
   if type_name == 'map':
     k_type = _GetCppType(typ.children[0])
     v_type = _GetCppType(typ.children[1])
@@ -141,7 +142,7 @@ def _DefaultValue(typ):
     default = '0.0'  # or should it be NaN?
 
   elif type_name == 'string':
-    default = 'StrFromC("")'
+    default = 'kEmptyString'
 
   elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
     sum_type = typ.resolved
