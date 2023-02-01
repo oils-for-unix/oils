@@ -166,22 +166,33 @@ class Arena(object):
         2
         3'
     """
+    if left.line_id == right.line_id:
+      for li in self.lines_list:
+        if li.line_id == left.line_id:
+          piece = li.val[left.col : right.col + right.length]
+          return piece
+
     pieces = []  # type: List[str]
     saving = False
+    found_left = False
+    found_right = False
     for li in self.lines_list:
       if li.line_id == left.line_id:
+        found_left = True
         saving = True
 
         # Save everything after the left token
         piece = li.val[left.col:]
         pieces.append(piece)
-        log('   %r', piece)
+        #log('   %r', piece)
         continue
 
       if li.line_id == right.line_id:
+        found_right = True
+
         piece = li.val[ : right.col + right.length]
         pieces.append(piece)
-        log('   %r', piece)
+        #log('   %r', piece)
 
         saving = False
         break
@@ -189,9 +200,10 @@ class Arena(object):
       # TODO: We should mutate li.line_id here so it's the index into saved_lines?
       if saving:
         pieces.append(li.val)
-        log('   %r', li.val)
+        #log('   %r', li.val)
 
-    assert len(pieces), "Couldn't find tokens in lines list"
+    assert found_left, "Couldn't find left token"
+    assert found_right, "Couldn't find right token"
     return ''.join(pieces)
 
   def GetLine(self, line_id):
@@ -226,9 +238,16 @@ class Arena(object):
 
   def GetCodeString(self, lbrace_spid, rbrace_spid):
     # type: (int, int) -> str
+    """Used for hay evaluation.
+
+    TASK build {
+      echo hi
+    }
+    """
     left_span = self.GetToken(lbrace_spid)
     right_span = self.GetToken(rbrace_spid)
 
+    # Make sure they're from the same file
     assert self.line_srcs[left_span.line_id] == self.line_srcs[right_span.line_id]
 
     left_id = left_span.line_id
@@ -248,6 +267,9 @@ class Arena(object):
       # first incomplete line
       parts.append(self.line_vals[left_id][left_col+1:])
 
+      # TODO: There's a BUG here -- a Hay block can have dynamic parsing like
+      # alias, backticks, a[x]=1
+
       # all the complete lines
       for line_id in xrange(left_id + 1, right_id):
         parts.append(self.line_vals[line_id])
@@ -255,6 +277,7 @@ class Arena(object):
       # last incomplete line
       parts.append(self.line_vals[right_id][:right_col])
 
+    #log('CODE STR %r', ''.join(parts))
     return ''.join(parts)
 
   def GetLineSource(self, line_id):

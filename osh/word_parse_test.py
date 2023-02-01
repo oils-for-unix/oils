@@ -119,6 +119,21 @@ quoted
 "\
 """, s)
 
+
+    s = arena.SnipCodeString(w.parts[1].left, w.parts[1].right)
+
+    print('s = %r' % s)
+    self.assertEqual("""\
+'
+single quoted'\
+""", s)
+
+    # Just snip one token
+    s = arena.SnipCodeString(w.parts[0], w.parts[0])
+
+    print('s = %r' % s)
+    self.assertEqual('hi', s)
+
   def testSaveLinesAndDiscard(self):
     # Also takes a left, right, token
     pass

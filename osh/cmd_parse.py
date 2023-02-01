@@ -838,46 +838,63 @@ class CommandParser(object):
 
     # We got some expansion.  Now copy the rest of the words.
 
-    # We need each NON-REDIRECT word separately!  For example:
-    # $ echo one >out two
-    # dash/mksh/zsh go beyond the first redirect!
-    while i < n:
-      w = words[i]
-      spid1 = word_.LeftMostSpanForWord(w)
-      spid2 = word_.RightMostSpanForWord(w)
+    if 0:
+      # We need each NON-REDIRECT word separately!  For example:
+      # $ echo one >out two
+      # dash/mksh/zsh go beyond the first redirect!
+      while i < n:
+        w = words[i]
+        spid1 = word_.LeftMostSpanForWord(w)
+        spid2 = word_.RightMostSpanForWord(w)
 
-      span1 = self.arena.GetToken(spid1)
-      span2 = self.arena.GetToken(spid2)
+        span1 = self.arena.GetToken(spid1)
+        span2 = self.arena.GetToken(spid2)
 
-      if 0:
-        log('spid1 = %d, spid2 = %d', spid1, spid2)
-        n1 = self.arena.GetLineNumber(span1.line_id)
-        n2 = self.arena.GetLineNumber(span2.line_id)
-        log('span1 %s line %d %r', span1, n1, self.arena.GetLine(span1.line_id))
-        log('span2 %s line %d %r', span2, n2, self.arena.GetLine(span2.line_id))
+        if 0:
+          log('spid1 = %d, spid2 = %d', spid1, spid2)
+          n1 = self.arena.GetLineNumber(span1.line_id)
+          n2 = self.arena.GetLineNumber(span2.line_id)
+          log('span1 %s line %d %r', span1, n1, self.arena.GetLine(span1.line_id))
+          log('span2 %s line %d %r', span2, n2, self.arena.GetLine(span2.line_id))
 
-      if span1.line_id == span2.line_id:
-        line = self.arena.GetLine(span1.line_id)
-        piece = line[span1.col : span2.col + span2.length]
-        expanded.append(piece)
-      else:
-        # NOTE: The xrange(left_spid, right_spid) algorithm won't work for
-        # commands like this:
-        #
-        # myalias foo`echo hi`bar
-        #
-        # That is why we only support words over 1 or 2 lines.
+        if span1.line_id == span2.line_id:
+          line = self.arena.GetLine(span1.line_id)
+          piece = line[span1.col : span2.col + span2.length]
+          expanded.append(piece)
+        else:
+          # NOTE: The xrange(left_spid, right_spid) algorithm won't work for
+          # commands like this:
+          #
+          # myalias foo`echo hi`bar
+          #
+          # That is why we only support words over 1 or 2 lines.
 
-        raise NotImplementedError(
-            'line IDs %d != %d' % (span1.line_id, span2.line_id))
+          raise NotImplementedError(
+              'line IDs %d != %d' % (span1.line_id, span2.line_id))
 
-      expanded.append(' ')  # Put space back between words.
-      i += 1
+        expanded.append(' ')  # Put space back between words.
+        i += 1
+
+    if i < n:
+      left_spid = word_.LeftMostSpanForWord(words[i])
+      right_spid = word_.RightMostSpanForWord(words[-1])
+
+      left_tok = self.arena.GetToken(left_spid)
+      right_tok = self.arena.GetToken(right_spid)
+
+      # OLD CONSTRAINT
+      #assert left_tok.line_id == right_tok.line_id
+
+      words_str = self.arena.SnipCodeString(left_tok, right_tok)
+      expanded.append(words_str)
 
     code_str = ''.join(expanded)
 
+    #arena = alloc.Arena()
+    arena = self.arena
+
     # NOTE: self.arena isn't correct here.  Breaks line invariant.
-    line_reader = reader.StringLineReader(code_str, self.arena)
+    line_reader = reader.StringLineReader(code_str, arena)
     cp = self.parse_ctx.MakeOshParser(line_reader)
     cp.Init_AliasesInFlight(aliases_in_flight)
 
@@ -887,7 +904,7 @@ class CommandParser(object):
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.
     src = source.Alias(first_word_str, argv0_spid)
-    with alloc.ctx_Location(self.arena, src):
+    with alloc.ctx_Location(arena, src):
       with parse_lib.ctx_Alias(self.parse_ctx.trail):
         try:
           # _ParseCommandTerm() handles multiline commands, compound commands, etc.

@@ -534,3 +534,17 @@ echo done
 ## stdout: done
 ## OK osh status: 2
 ## OK osh stdout-json: ""
+
+
+#### alias with word of multiple lines
+shopt -s expand_aliases
+
+alias ll='ls -l'
+ll '1
+  2
+  3'
+echo status=$?
+
+## STDOUT:
+status=2
+## END
