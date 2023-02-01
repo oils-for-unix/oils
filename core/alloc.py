@@ -11,7 +11,7 @@ Arena, and the entire Arena can be discarded at once.
 Also, we don't want to save comment lines.
 """
 
-from _devbuild.gen.syntax_asdl import source_t, Token
+from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
 from asdl import runtime
 from core.pyerror import log
 
@@ -46,6 +46,12 @@ class Arena(object):
   def __init__(self):
     # type: () -> None
 
+    # All lines that haven't been discarded.  For LST formatting.
+    self.lines_list = []  # type: List[SourceLine]
+
+    # Lines explicitly saved from lines_list.
+    self.saved_lines = []  # type: List[SourceLine]
+
     # Three parallel arrays indexed by line_id.
     self.line_vals = []  # type: List[str]
     self.line_nums = []  # type: List[int]
@@ -76,7 +82,117 @@ class Arena(object):
     self.line_vals.append(line)
     self.line_nums.append(line_num)
     self.line_srcs.append(self.source_instances[-1])
+
+    # New scheme
+    src_line = SourceLine(line_num, line_id, line, self.source_instances[-1])
+    self.lines_list.append(src_line)
+
     return line_id
+
+  def DiscardLines(self):
+    # type: () -> None
+    """Remove references ot lines we've accumulated.
+
+    - This makes the linear search in SnipCodeString() shorter.
+    - It removes the ARENA's references to all lines.  The TOKENS still
+      reference some lines.
+    """
+    log("discarding %d lines", len(self.lines_list))
+    del self.lines_list[:]
+
+  def SaveLinesAndDiscard(self, left, right):
+    # type: (Token, Token) -> None
+    """
+    Save the lines between two tokens, e.g. for { and }
+
+    Why?
+    - In between { }, we want to preserve lines not pointed to by a token, e.g.
+      comment lines.
+    - But we don't want to save all lines in an interactive shell:
+      echo 1
+      echo 2
+      ...
+      echo 500000
+      echo 500001
+
+    The lines should be freed after execution takes place.
+    """
+    #log('*** Saving lines between %r and %r', left, right)
+
+    num_saved = 0
+    saving = False
+    for li in self.lines_list:
+      if li.line_id == left.line_id:
+        saving = True
+
+      # These lines are PERMANENT, and never deleted.  What if you overwrite a
+      # function name?  You might want to save those in a the function record
+      # ITSELF.
+      #
+      # This is for INLINE hay blocks that can be evaluated at any point.  In
+      # contrast, parse_hay(other_file) uses ParseWholeFile, and we could save
+      # all lines.
+
+      # TODO: consider creating a new Arena for each CommandParser?  Or rename itj
+      # to 'BackingLines' or something.
+
+      # TODO: We should mutate li.line_id here so it's the index into
+      # saved_lines?
+      if saving:
+        self.saved_lines.append(li)
+        log('   %r', li.val)
+        num_saved += 1
+
+      if li.line_id == right.line_id:
+        saving = False
+        break
+
+    log('*** SAVED %d lines', num_saved)
+
+    self.DiscardLines()
+
+    #log('SAVED = %s', [line.val for line in self.saved_lines])
+
+  def SnipCodeString(self, left, right):
+    # type: (Token, Token) -> str
+    """Return the code string between left and right tokens, INCLUSIVE.  
+
+    Used for ALIAS expansion, which happens in the PARSER.  So we use
+    self.lines_list, not self.saved_lines.
+
+    The argument to aliases can span multiple lines, like htis:
+
+    $ myalias '1
+        2
+        3'
+    """
+    pieces = []  # type: List[str]
+    saving = False
+    for li in self.lines_list:
+      if li.line_id == left.line_id:
+        saving = True
+
+        # Save everything after the left token
+        piece = li.val[left.col:]
+        pieces.append(piece)
+        log('   %r', piece)
+        continue
+
+      if li.line_id == right.line_id:
+        piece = li.val[ : right.col + right.length]
+        pieces.append(piece)
+        log('   %r', piece)
+
+        saving = False
+        break
+
+      # TODO: We should mutate li.line_id here so it's the index into saved_lines?
+      if saving:
+        pieces.append(li.val)
+        log('   %r', li.val)
+
+    assert len(pieces), "Couldn't find tokens in lines list"
+    return ''.join(pieces)
 
   def GetLine(self, line_id):
     # type: (int) -> str

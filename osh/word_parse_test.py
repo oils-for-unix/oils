@@ -87,6 +87,43 @@ def _GetVarSub(test, w):
   return w.parts[0]
 
 
+class ArenaTest(unittest.TestCase):
+  """
+  It's more convenient to test the arena here, because we have a proper lexer
+  and so forth.
+  """
+
+  def testSnipCodeString(self):
+    expr = """\
+hi'
+single quoted'"double
+quoted
+"there
+    """
+
+    arena = test_lib.MakeArena('hi')
+    w_parser = test_lib.InitWordParser(expr, arena=arena)
+    w = w_parser.ReadWord(lex_mode_e.ShCommand)
+    print(w)
+
+    left = w.parts[1].left   # left single quote
+    right = w.parts[2].right  # right double quote
+
+    s = arena.SnipCodeString(left, right)
+
+    print('s = %r' % s)
+    self.assertEqual("""\
+'
+single quoted'"double
+quoted
+"\
+""", s)
+
+  def testSaveLinesAndDiscard(self):
+    # Also takes a left, right, token
+    pass
+
+
 class WordParserTest(unittest.TestCase):
 
   def testStaticEvalWord(self):

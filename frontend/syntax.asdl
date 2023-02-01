@@ -70,8 +70,9 @@ module syntax
     -- For --location-str
   | Synthetic(string s)
 
-  -- Start offset used with here docs (VirtualLineReader)
-  SourceLine_ = (int line_num, int start_offset, string val, source src)
+  -- Note: get rid of line_id; maybe replace with start_offset used with here
+  -- docs (VirtualLineReader)
+  SourceLine = (int line_num, int line_id, string val, source src)
 
   -- Token TODO:
   -- * get rid of redundant span_id

@@ -270,6 +270,11 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
 
       break  # QUIT LOOP after one iteration.
 
+    # After every "logical line", no lines will be referenced by the Arena.
+    # Tokens in the LST still point to many lines, but lines with only comment
+    # or whitespace won't be reachable, so the GC will free them.
+    c_parser.arena.DiscardLines()
+
     cmd_ev.RunPendingTraps()  # Run trap handlers even if we get just ENTER
 
     # Cleanup after every command (or failed command).
@@ -325,6 +330,11 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
       status = 2
       break
 
+    # After every "logical line", no lines will be referenced by the Arena.
+    # Tokens in the LST still point to many lines, but lines with only comment
+    # or whitespace won't be reachable, so the GC will free them.
+    c_parser.arena.DiscardLines()
+
     # Only optimize if we're on the last line like -c "echo hi" etc.
     if (cmd_flags & cmd_eval.IsMainProgram and
         c_parser.line_reader.LastLineHint()):
@@ -350,6 +360,8 @@ def ParseWholeFile(c_parser):
   - osh -n
   - oshc translate
   - Used by 'trap' to store code.  But 'source' and 'eval' use Batch().
+
+  Note: it does NOT call DiscardLines
   """
   children = []  # type: List[command_t]
   while True:
