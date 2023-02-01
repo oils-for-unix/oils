@@ -290,8 +290,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   if flag.one_pass_parse and not exec_opts.noexec():
     raise error.Usage('--one-pass-parse requires noexec (-n)')
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
-  parse_ctx.Init_OnePassParse(flag.one_pass_parse)
+  parse_ctx = parse_lib.ParseContext(
+      arena, parse_opts, aliases, oil_grammar,
+      one_pass_parse=flag.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
   comp_arena = alloc.Arena()
@@ -301,9 +302,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # fix the issue where ` gets erased because it's not part of
   # set_completer_delims().
   comp_ctx = parse_lib.ParseContext(comp_arena, parse_opts, aliases,
-                                    oil_grammar)
+                                    oil_grammar, one_pass_parse=True)
   comp_ctx.Init_Trail(trail1)
-  comp_ctx.Init_OnePassParse(True)
 
   hist_arena = alloc.Arena()
   hist_arena.PushSource(source.Unused('history'))

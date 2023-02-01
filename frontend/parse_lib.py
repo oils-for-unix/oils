@@ -223,12 +223,13 @@ class ParseContext(object):
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, parse_opts, aliases, oil_grammar):
-    # type: (Arena, optview.Parse, Dict[str, str], Grammar) -> None
+  def __init__(self, arena, parse_opts, aliases, oil_grammar, one_pass_parse=False):
+    # type: (Arena, optview.Parse, Dict[str, str], Grammar, bool) -> None
     self.arena = arena
     self.parse_opts = parse_opts
     self.aliases = aliases
     self.oil_grammar = oil_grammar
+    self.one_pass_parse = one_pass_parse
 
     # NOTE: The transformer is really a pure function.
     if oil_grammar:
@@ -245,15 +246,10 @@ class ParseContext(object):
 
     # Completion state lives here since it may span multiple parsers.
     self.trail = _BaseTrail()  # no-op by default
-    self.one_pass_parse = False
 
   def Init_Trail(self, trail):
     # type: (_BaseTrail) -> None
     self.trail = trail
-
-  def Init_OnePassParse(self, b):
-    # type: (bool) -> None
-    self.one_pass_parse = b
 
   def MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer
@@ -311,8 +307,7 @@ class ParseContext(object):
     """To parse command sub, we want a fresh word parser state."""
     w_parser = word_parse.WordParser(self, lexer, line_reader)
     c_parser = cmd_parse.CommandParser(self, self.parse_opts, w_parser, lexer,
-                                       line_reader)
-    c_parser.Init_EofId(eof_id)
+                                       line_reader, eof_id=eof_id)
     return c_parser
 
   def MakeWordParserForPlugin(self, code_str):

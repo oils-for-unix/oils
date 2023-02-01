@@ -28,8 +28,8 @@ class ExprParseTest(unittest.TestCase):
     oil_grammar = pyutil.LoadOilGrammar(loader)
 
     self.parse_ctx = test_lib.InitParseContext(arena=self.arena,
-                                               oil_grammar=oil_grammar)
-    self.parse_ctx.Init_OnePassParse(True)
+                                               oil_grammar=oil_grammar,
+                                               one_pass_parse=True)
 
   def _ParseOsh(self, code_str):
     """Parse a line of OSH, which can include Oil assignments."""

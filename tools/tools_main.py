@@ -105,8 +105,8 @@ def OshCommandMain(argv):
 
   parse_opts = optview.Parse(opt0_array, opt_stacks)
   # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
-  parse_ctx.Init_OnePassParse(True)
+  parse_ctx = parse_lib.ParseContext(
+      arena, parse_opts, aliases, oil_grammar, one_pass_parse=True)
 
   line_reader = reader.FileLineReader(f, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)

@@ -2435,7 +2435,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Hack for default args.  Without this limitation, we write
               # 'using' of names that aren't declared yet.
-              if self.decl and name in ('scope_e', 'lex_mode_e'):
+              if self.decl and name in ('Id', 'scope_e', 'lex_mode_e'):
                 self.f.write(using_str)
 
           else:

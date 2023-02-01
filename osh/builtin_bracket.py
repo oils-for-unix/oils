@@ -252,14 +252,13 @@ class Test(vm._Builtin):
       self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2
 
-    # We technically don't need mem because we don't support BASH_REMATCH here.
     word_ev = _WordEvaluator()
-    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None,
-                                         self.errfmt)
 
-    # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is a
-    # weird case of [[ being less strict.
-    bool_ev.Init_AlwaysStrict()
+    # We technically don't need mem because we don't support BASH_REMATCH here.
+    # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is
+    # a weird case of [[ being less strict.
+    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None,
+                                         self.errfmt, always_strict=True)
     bool_ev.word_ev = word_ev
     bool_ev.CheckCircularDeps()
     try:

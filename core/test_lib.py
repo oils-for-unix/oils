@@ -280,7 +280,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
 
 
 def InitParseContext(arena=None, oil_grammar=None, aliases=None,
-                     parse_opts=None):
+                     parse_opts=None, one_pass_parse=False):
   arena = arena or MakeArena('<test_lib>')
 
   if aliases is None:
@@ -290,7 +290,9 @@ def InitParseContext(arena=None, oil_grammar=None, aliases=None,
   if parse_opts is None:
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
 
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+  parse_ctx = parse_lib.ParseContext(
+      arena, parse_opts, aliases, oil_grammar, one_pass_parse=one_pass_parse)
+
   return parse_ctx
 
 

@@ -460,8 +460,9 @@ class CommandParser(object):
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
   """
-  def __init__(self, parse_ctx, parse_opts, w_parser, lexer, line_reader):
-    # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader) -> None
+  def __init__(self, parse_ctx, parse_opts, w_parser, lexer, line_reader,
+      eof_id=Id.Eof_Real):
+    # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader, Id_t) -> None
     self.parse_ctx = parse_ctx
     self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
@@ -469,9 +470,9 @@ class CommandParser(object):
     self.w_parser = w_parser  # type: WordParser  # for normal parsing
     self.lexer = lexer  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
+    self.eof_id = eof_id
 
     self.arena = parse_ctx.arena  # for adding here doc and alias spans
-    self.eof_id = Id.Eof_Real
     self.aliases_in_flight = []  # type: AliasesInFlight
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
@@ -489,11 +490,7 @@ class CommandParser(object):
 
     self.Reset()
 
-  # These two Init_() functions simulate "keywords args" in C++.
-  def Init_EofId(self, eof_id):
-    # type: (Id_t) -> None
-    self.eof_id = eof_id
-
+  # Init_() function for "keyword arg"
   def Init_AliasesInFlight(self, aliases_in_flight):
     # type: (AliasesInFlight) -> None
     self.aliases_in_flight = aliases_in_flight

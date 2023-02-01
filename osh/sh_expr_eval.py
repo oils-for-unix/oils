@@ -861,15 +861,10 @@ class BoolEvaluator(ArithEvaluator):
   where x='1+2'
   """
 
-  def __init__(self, mem, exec_opts, parse_ctx, errfmt):
-    # type: (Mem, optview.Exec, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, parse_ctx, errfmt, always_strict=False):
+    # type: (Mem, optview.Exec, Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
     ArithEvaluator.__init__(self, mem, exec_opts, parse_ctx, errfmt)
-    self.always_strict = False
-
-  def Init_AlwaysStrict(self):
-    # type: () -> None
-    """For builtin_bracket.py."""
-    self.always_strict = True
+    self.always_strict = always_strict
 
   def _StringToIntegerOrError(self, s, blame_word=None):
     # type: (str, Optional[word_t]) -> int

@@ -60,9 +60,9 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   mutable_opts.Init()
 
   if not parse_ctx:
-    parse_ctx = test_lib.InitParseContext(parse_opts=parse_opts)
+    parse_ctx = test_lib.InitParseContext(
+        parse_opts=parse_opts, one_pass_parse=True)
     parse_ctx.Init_Trail(parse_lib.Trail())
-    parse_ctx.Init_OnePassParse(True)
 
   if 1:  # enable for details
     debug_f = util.DebugFile(sys.stdout)
