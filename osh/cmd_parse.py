@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
     command__WhileUntil, command__Case, command__If, command__ShFunction,
     command__Subshell, command__DBracket, command__DParen,
     command__CommandList, command__Proc,
-    ArgList, BraceGroup,
+    ArgList, BraceGroup, BlockArg,
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
@@ -318,8 +318,14 @@ def _SplitSimpleCommandPrefix(words):
   return preparsed_list, suffix_words
 
 
-def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, typed_args, block):
-  # type: (PreParsedList, List[compound_word], List[redir], Optional[ArgList], Optional[BraceGroup]) -> command__Simple
+def _MakeSimpleCommand(
+    preparsed_list,  # type: PreParsedList
+    suffix_words,    # type: List[compound_word]
+    redirects,       # type: List[redir]
+    typed_args,      # type: Optional[ArgList]
+    block,           # type: Optional[BlockArg]
+    ):
+  # type: (...) -> command__Simple
   """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -661,12 +667,12 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir], List[compound_word], Optional[ArgList], Optional[BraceGroup]]
+    # type: () -> Tuple[List[redir], List[compound_word], Optional[ArgList], Optional[BlockArg]]
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[redir]
     words = []  # type: List[compound_word]
     typed_args = None  # type: Optional[ArgList]
-    block = None  # type: Optional[BraceGroup]
+    block = None  # type: Optional[BlockArg]
 
     first_word_caps = False  # does first word look like Caps, but not CAPS
 
@@ -685,7 +691,8 @@ class CommandParser(object):
 
               # allow x = 42
               self.allow_block_attrs.append(first_word_caps)
-              block = self.ParseBraceGroup()
+              brace_group = self.ParseBraceGroup()
+              block = BlockArg(brace_group, [] )  # TODO: save lines
               self.allow_block_attrs.pop()
 
             if 0:
@@ -954,7 +961,7 @@ class CommandParser(object):
 
     typed_spid = runtime.NO_SPID  # location of block or typed data
     if block:
-      typed_spid = block.left.span_id
+      typed_spid = block.brace_group.left.span_id
     if typed_args:
       typed_spid = typed_args.left.span_id  # preferred over block location
 

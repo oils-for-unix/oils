@@ -32,7 +32,7 @@ from _devbuild.gen.syntax_asdl import (
     command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
     command__WhileUntil,
     condition_e, condition_t, condition__Shell, condition__Oil,
-    BraceGroup, expr__BlockArg, ArgList,
+    BraceGroup, ArgList,
     expr_t,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
@@ -688,26 +688,24 @@ class CommandEvaluator(object):
 
             # the block is the last argument
             if node.block:
-              block_expr = expr__BlockArg(node.block)
-              typed_args.positional.append(block_expr)
+              typed_args.positional.append(node.block)
               # ArgList already has a spid in this case
           else:
             if node.block:
               # create ArgList for the block
               typed_args = ArgList()
-              block_expr = expr__BlockArg(node.block)
-              typed_args.positional.append(block_expr)
+              typed_args.positional.append(node.block)
 
               # TODO: Since we only have { } and not (), copy them from
               # BraceGroup
-              typed_args.left = node.block.left
-              typed_args.right = node.block.right
+              typed_args.left = node.block.brace_group.left
+              typed_args.right = node.block.brace_group.right
 
           cmd_val.typed_args = typed_args
        
         else:
           if node.block:
-            e_die("ShAssignment builtins don't accept blocks", node.block.left)
+            e_die("ShAssignment builtins don't accept blocks", node.block.brace_group.left)
           cmd_val = cast(cmd_value__Assign, UP_cmd_val)
 
         # NOTE: RunSimpleCommand never returns when do_fork=False!

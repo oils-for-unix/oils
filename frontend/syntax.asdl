@@ -279,11 +279,14 @@ module syntax
   -- then Case, ForEach, and ShFunction also have Token in_lok, esac_lok, etc.
   -- REMOVE int* spids
 
+  -- Retain references to lines
+  BlockArg = (BraceGroup brace_group, SourceLine* lines)
+
   command = 
     NoOp
     -- Note: do_fork is semantic, not syntactic
   | Simple(word* words, redir* redirects, env_pair* more_env,
-           ArgList? typed_args, BraceGroup? block, bool do_fork)
+           ArgList? typed_args, BlockArg? block, bool do_fork)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
@@ -452,7 +455,7 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
-  | BlockArg(BraceGroup block)
+  | BlockArg %BlockArg
 
   | Lambda(name_type* params, expr body)
 

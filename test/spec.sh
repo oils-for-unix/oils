@@ -907,7 +907,7 @@ oil-blocks() {
 }
 
 hay() {
-  sh-spec spec/hay.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/hay.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 

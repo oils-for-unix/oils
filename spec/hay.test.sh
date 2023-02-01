@@ -643,3 +643,19 @@ when NAME (x > 0) {
 ## STDOUT:
 ## END
 
+
+#### OSH and hay (dynamic parsing)
+
+source $REPO_ROOT/spec/testdata/config/osh-hay.osh
+
+
+## STDOUT:
+TYPE TASK
+CODE
+  echo `echo zz`
+  eval 'echo YY'
+
+  echo bye
+
+## END
+
