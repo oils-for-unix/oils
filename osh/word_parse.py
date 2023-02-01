@@ -116,9 +116,9 @@ class WordParser(WordEmitter):
   def __init__(self, parse_ctx, lexer, line_reader):
     # type: (ParseContext, Lexer, _Reader) -> None
     self.parse_ctx = parse_ctx
-    self.arena = parse_ctx.arena
     self.lexer = lexer
     self.line_reader = line_reader
+    self.arena = line_reader.arena
 
     self.parse_opts = parse_ctx.parse_opts
     self.a_parser = tdop.TdopParser(arith_parse.Spec(), self, self.parse_opts)

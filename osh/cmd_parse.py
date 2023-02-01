@@ -478,7 +478,7 @@ class CommandParser(object):
     self.line_reader = line_reader  # for here docs
     self.eof_id = eof_id
 
-    self.arena = parse_ctx.arena  # for adding here doc and alias spans
+    self.arena = line_reader.arena  # for adding here doc and alias spans
     self.aliases_in_flight = []  # type: AliasesInFlight
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
