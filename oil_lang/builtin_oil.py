@@ -113,11 +113,9 @@ class Pp(_Builtin):
         if body.tag_() == command_e.BraceGroup:
           bgroup = cast(BraceGroup, body)
           if bgroup.doc_token:
-            span_id = bgroup.doc_token.span_id
-            span = self.arena.GetToken(span_id)
-            line = self.arena.GetLine(span.line_id)
+            token = bgroup.doc_token
             # 1 to remove leading space
-            doc = line[span.col+1 : span.col + span.length]
+            doc = token.line.val[token.col+1 : token.col + token.length]
 
         # No limits on proc names
         print('%s\t%s' % (qsn.maybe_encode(name), qsn.maybe_encode(doc)))

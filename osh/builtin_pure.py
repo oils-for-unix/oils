@@ -807,13 +807,11 @@ if mylib.PYTHON:
 
           brace_group = lit_block.brace_group
           # BraceGroup has spid for {
-          line_id = brace_group.left.line_id
-          src = self.arena.GetLineSource(line_id)
-          line_num = self.arena.GetLineNumber(line_id)
+          line = brace_group.left.line
 
           # for the user to pass back to --location-str
-          result['location_str'] = ui.GetLineSourceString(self.arena, line_id)
-          result['location_start_line'] = line_num
+          result['location_str'] = ui.GetLineSourceString(self.arena, line)
+          result['location_start_line'] = line.line_num
 
           # Between { and }
           code_str = alloc.SnipCodeBlock(

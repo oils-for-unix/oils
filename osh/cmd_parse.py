@@ -33,6 +33,7 @@ from _devbuild.gen.syntax_asdl import (
 
     assign_pair, env_pair, assign_op_e, name_type,
 
+    SourceLine,
     source, parse_result, parse_result_t,
 
     proc_sig_e, proc_sig__Closed,
@@ -95,28 +96,30 @@ def _ReadHereLines(line_reader,  # type: _Reader
                    h,  # type: redir
                    delimiter,  # type: str
                    ):
-  # type: (...) -> Tuple[List[Tuple[int, str, int]], Tuple[int, str, int]]
+  # type: (...) -> Tuple[List[Tuple[SourceLine, int]], Tuple[SourceLine, int]]
   # NOTE: We read all lines at once, instead of parsing line-by-line,
   # because of cases like this:
   # cat <<EOF
   # 1 $(echo 2
   # echo 3) 4
   # EOF
-  here_lines = []  # type: List[Tuple[int, str, int]]
-  last_line = None  # type: Tuple[int, str, int]
+  here_lines = []  # type: List[Tuple[SourceLine, int]]
+  last_line = None  # type: Tuple[SourceLine, int]
   strip_leading_tabs = (h.op.id == Id.Redir_DLessDash)
 
   while True:
-    line_id, line, unused_offset = line_reader.GetLine()
+    src_line, unused_offset = line_reader.GetLine()
 
-    if line is None:  # EOF
+    if src_line is None:  # EOF
       # An unterminated here doc is just a warning in bash.  We make it
       # fatal because we want to be strict, and because it causes problems
       # reporting other errors.
       # Attribute it to the << in <<EOF for now.
       p_die("Couldn't find terminator for here doc that starts here", h.op)
 
-    assert len(line) != 0  # None should be the empty line
+    assert len(src_line.val) != 0  # None should be the empty line
+
+    line = src_line.val
 
     # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
     # the first tab.
@@ -131,23 +134,23 @@ def _ReadHereLines(line_reader,  # type: _Reader
       start_offset = i
 
     if line[start_offset:].rstrip() == delimiter:
-      last_line = (line_id, line, start_offset)
+      last_line = (src_line, start_offset)
       break
 
-    here_lines.append((line_id, line, start_offset))
+    here_lines.append((src_line, start_offset))
 
   return here_lines, last_line
 
 
-def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
+def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[SourceLine, int]]
                           arena,  # type: Arena
                           ):
   # type: (...) -> List[word_part_t]  # less precise because List is invariant type
   """Create a line_span and a token for each line."""
   tokens = []  # type: List[Token]
-  for line_id, line, start_offset in here_lines:
+  for src_line, start_offset in here_lines:
     t = arena.NewToken(
-        Id.Lit_Chars, start_offset, len(line), line_id, line[start_offset:])
+        Id.Lit_Chars, start_offset, len(src_line.val), src_line, src_line.val[start_offset:])
     tokens.append(t)
   parts = [cast(word_part_t, t) for t in tokens]
   return parts
@@ -175,12 +178,12 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
     w_parser = parse_ctx.MakeWordParserForHereDoc(line_reader)
     w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
 
-  end_line_id, end_line, end_pos = last_line
+  end_line, end_pos = last_line
 
   # Create a span with the end terminator.  Maintains the invariant that
   # the spans "add up".
   h.here_end_span_id = arena.NewTokenId(
-      Id.Undefined_Tok, end_pos, len(end_line), end_line_id, '')
+      Id.Undefined_Tok, end_pos, len(end_line.val), end_line, '')
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
@@ -209,15 +212,13 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
       op = assign_op_e.Equal
 
     left_spid = left_token.span_id + 1
-    right_spid = close_token.span_id
+    left_token = parse_ctx.arena.GetToken(left_spid)
+    right_token = close_token
 
-    left_span = parse_ctx.arena.GetToken(left_spid)
-    right_span = parse_ctx.arena.GetToken(right_spid)
-    assert left_span.line_id == right_span.line_id, \
-        '%s and %s not on same line' % (left_span, right_span)
+    assert left_token.line == right_token.line, \
+        '%s and %s not on same line' % (left_token, right_token)
 
-    line = parse_ctx.arena.GetLine(left_span.line_id)
-    index_str = line[left_span.col : right_span.col]
+    index_str = left_token.line.val[left_token.col : right_token.col]
     lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
@@ -227,16 +228,14 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     else:
       op = assign_op_e.Equal
 
-    spid1 = left_token.span_id
-    spid2 = close_token.span_id
-    span1 = arena.GetToken(spid1)
-    span2 = arena.GetToken(spid2)
-    if span1.line_id == span2.line_id:
-      line = arena.GetLine(span1.line_id)
+    span1 = left_token
+    span2 = close_token
+    # Similar to SnipCodeString / SnipCodeBlock
+    if span1.line == span2.line:
       # extract what's between brackets
-      code_str = line[span1.col + span1.length : span2.col]
+      code_str = span1.line.val[span1.col + span1.length : span2.col]
     else:
-      raise NotImplementedError('%d != %d' % (span1.line_id, span2.line_id))
+      raise NotImplementedError('%s != %s' % (span1.line, span2.line))
     a_parser = parse_ctx.MakeArithParser(code_str)
 
     # a[i+1]= is a place
@@ -860,8 +859,10 @@ class CommandParser(object):
 
     code_str = ''.join(expanded)
 
-    # TODO: Use our own arena.
-    #arena = alloc.Arena()
+    # TODO:
+    # Aliases break static parsing (like backticks), so use our own Arena.
+    # This matters for Hay, which calls SaveLinesAndDiscard().
+    # arena = alloc.Arena()
     arena = self.arena
 
     line_reader = reader.StringLineReader(code_str, arena)

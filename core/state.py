@@ -1323,11 +1323,10 @@ class Mem(object):
 
         d['call_spid'] = frame.call_spid
         if frame.call_spid != runtime.NO_SPID:  # first frame has this issue
-          span = self.arena.GetToken(frame.call_spid)
-          line_id = span.line_id
-          d['call_source'] = ui.GetLineSourceString(self.arena, line_id)
-          d['call_line_num'] = self.arena.GetLineNumber(line_id)
-          d['call_line'] = self.arena.GetLine(line_id)
+          token = self.arena.GetToken(frame.call_spid)
+          d['call_source'] = ui.GetLineSourceString(self.arena, token.line)
+          d['call_line_num'] = token.line.line_num
+          d['call_line'] = token.line.val
 
         d['argv_frame'] = frame.argv_i
         d['var_frame'] = frame.var_i
@@ -1401,8 +1400,8 @@ class Mem(object):
     frame = NewDict()  # type: Dict[str, cell]
     self.var_stack.append(frame)
 
-    span = self.arena.GetToken(def_spid)
-    source_str = ui.GetLineSourceString(self.arena, span.line_id)
+    token = self.arena.GetToken(def_spid)
+    source_str = ui.GetLineSourceString(self.arena, token.line)
 
     # bash uses this order: top of stack first.
     self._PushDebugStack(source_str, func_name, None)
@@ -1987,16 +1986,17 @@ class Mem(object):
         if frame.call_spid == LINE_ZERO:
           strs.append('0')  # Bash does this to line up with main?
           continue
-        span = self.arena.GetToken(frame.call_spid)
-        line_num = self.arena.GetLineNumber(span.line_id)
+        token = self.arena.GetToken(frame.call_spid)
+        line_num = token.line.line_num
         strs.append(str(line_num))
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
       assert self.current_spid != -1, self.current_spid
       span = self.arena.GetToken(self.current_spid)
+      # Reuse object with mutation
       # TODO: maybe use interned GetLineNumStr?
-      self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
+      self.line_num.s = str(span.line.line_num)
       return self.line_num
 
     if name == 'BASHPID':  # TODO: Oil name for it

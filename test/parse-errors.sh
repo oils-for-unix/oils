@@ -325,6 +325,8 @@ command-sub() {
   _error-case '
     echo line 2
     echo ` echo \`unclosed ` '
+
+  _error-case 'echo `for x in`'
 }
 
 bool-expr() {

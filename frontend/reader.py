@@ -14,7 +14,7 @@ from core.pyerror import p_die
 
 from typing import Optional, Tuple, List, Union, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import Token
+  from _devbuild.gen.syntax_asdl import Token, SourceLine
   from core.alloc import Arena
 
 
@@ -34,15 +34,15 @@ class _Reader(object):
     raise NotImplementedError()
 
   def GetLine(self):
-    # type: () -> Tuple[int, Optional[str], int]
-    line = self._GetLine()
-    if line is None:
-      eof_line = None  # type: Optional[str]
-      return -1, eof_line, 0
+    # type: () -> Tuple[SourceLine, int]
+    line_str = self._GetLine()
+    if line_str is None:
+      eof_line = None  # type: Optional[SourceLine]
+      return eof_line, 0
 
-    line_id = self.arena.AddLine(line, self.line_num)
+    src_line = self.arena.AddLine(line_str, self.line_num)
     self.line_num += 1
-    return line_id, line, 0
+    return src_line, 0
 
   def Reset(self):
     # type: () -> None
@@ -117,7 +117,7 @@ class VirtualLineReader(_Reader):
   """
 
   def __init__(self, lines, arena):
-    # type: (List[Tuple[int, str, int]], Arena) -> None
+    # type: (List[Tuple[SourceLine, int]], Arena) -> None
     """
     Args:
       lines: List of (line_id, line) pairs
@@ -128,16 +128,16 @@ class VirtualLineReader(_Reader):
     self.pos = 0
 
   def GetLine(self):
-    # type: () -> Tuple[int, Optional[str], int]
+    # type: () -> Tuple[SourceLine, int]
     if self.pos == self.num_lines:
-      eof_line = None  # type: Optional[str]
-      return -1, eof_line, 0
+      eof_line = None  # type: Optional[SourceLine]
+      return eof_line, 0
 
-    line_id, line, start_offset = self.lines[self.pos]
+    src_line, start_offset = self.lines[self.pos]
 
     self.pos += 1
 
     # NOTE: we return a partial line, but we also want the lexer to create
     # tokens with the correct line_spans.  So we have to tell it 'start_offset'
     # as well.
-    return line_id, line, start_offset
+    return src_line, start_offset

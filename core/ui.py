@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, command_t, command_str,
+    Token, SourceLine, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__Alias, source__Reparsed, source__Variable, source__ArgvWord,
     source__Synthetic
@@ -63,9 +63,7 @@ def PrettyToken(tok, arena):
   if tok.id == Id.Eof_Real:
     return 'EOF'
 
-  span = arena.GetToken(tok.span_id)
-  line = arena.GetLine(span.line_id)
-  val = line[span.col: span.col + span.length]
+  val = tok.line.val[tok.col: tok.col + tok.length]
   # TODO: Print length 0 as 'EOF'?
   return repr(val)
 
@@ -102,13 +100,13 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write(buf.getvalue())
 
 
-def GetLineSourceString(arena, line_id, quote_filename=False):
-  # type: (Arena, int, bool) -> str
+def GetLineSourceString(arena, line, quote_filename=False):
+  # type: (Arena, SourceLine, bool) -> str
   """Returns a human-readable string for dev tools.
 
   This function is RECURSIVE because there may be dynamic parsing.
   """
-  src = arena.GetLineSource(line_id)
+  src = line.src
   UP_src = src
 
   with tagswitch(src) as case:
@@ -141,9 +139,9 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
       if src.span_id == runtime.NO_SPID:
         s = '[ %s word at ? ]' % src.what
       else:
-        span = arena.GetToken(src.span_id)
-        line_num = arena.GetLineNumber(span.line_id)
-        outer_source = GetLineSourceString(arena, span.line_id,
+        token = arena.GetToken(src.span_id)
+        line_num = token.line.line_num
+        outer_source = GetLineSourceString(arena, token.line,
                                            quote_filename=quote_filename)
         s = '[ %s word at line %d of %s ]' % (src.what, line_num, outer_source)
       # Note: _PrintCodeExcerpt called above
@@ -159,9 +157,9 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
       if src.span_id == runtime.NO_SPID:
         where = '?'
       else:
-        span = arena.GetToken(src.span_id)
-        line_num = arena.GetLineNumber(span.line_id)
-        outer_source = GetLineSourceString(arena, span.line_id,
+        token = arena.GetToken(src.span_id)
+        line_num = token.line.line_num
+        outer_source = GetLineSourceString(arena, token.line,
                                            quote_filename=quote_filename)
         where = 'line %d of %s' % (line_num, outer_source)
 
@@ -174,7 +172,7 @@ def GetLineSourceString(arena, line_id, quote_filename=False):
     elif case(source_e.Reparsed):
       src = cast(source__Reparsed, UP_src)
       span2 = src.left_token
-      outer_source = GetLineSourceString(arena, span2.line_id,
+      outer_source = GetLineSourceString(arena, span2.line,
                                          quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
 
@@ -200,13 +198,11 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
     f.write('[??? no location ???] %s%s\n' % (prefix, msg))
     return
 
-  line_span = arena.GetToken(span_id)
-  orig_col = line_span.col
-  line_id = line_span.line_id
-
-  src = arena.GetLineSource(line_id)
-  line = arena.GetLine(line_id)
-  line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
+  token = arena.GetToken(span_id)
+  orig_col = token.col
+  src = token.line.src
+  line = token.line.val
+  line_num = token.line.line_num  # overwritten by source__LValue case
 
   if show_code:
     UP_src = src
@@ -214,7 +210,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
     if src.tag_() == source_e.Reparsed:
       src = cast(source__Reparsed, UP_src)
       span2 = src.left_token
-      line_num = arena.GetLineNumber(span2.line_id)
+      line_num = span2.line.line_num
 
       # We want the excerpt to look like this:
       #   a[x+]=1
@@ -222,16 +218,16 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
       # Rather than quoting the internal buffer:
       #   x+
       #     ^
-      line2 = arena.GetLine(span2.line_id)
+      line2 = span2.line.val
       lbracket_col = span2.col + span2.length
       # NOTE: The inner line number is always 1 because of reparsing.  We
       # overwrite it with the original span.
       _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
     else:
-      _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
+      _PrintCodeExcerpt(line, token.col, token.length, f)
 
-  source_str = GetLineSourceString(arena, line_id, quote_filename=True)
+  source_str = GetLineSourceString(arena, token.line, quote_filename=True)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?

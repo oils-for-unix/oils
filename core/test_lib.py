@@ -14,7 +14,7 @@ import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, lvalue, value, scope_e
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, SourceLine
 from asdl import pybase
 from core import alloc
 from core import completion
@@ -121,9 +121,16 @@ def MakeArena(source_name):
   return arena
 
 
+def InitLineLexer(s, arena):
+  line_lexer = lexer.LineLexer(arena)
+  src = source.Interactive()
+  line_lexer.Reset(SourceLine(1, 0, s, src), 0)
+  return line_lexer
+
+
 def InitLexer(s, arena):
   """For tests only."""
-  line_lexer = lexer.LineLexer('', arena)
+  line_lexer = lexer.LineLexer(arena)
   line_reader = reader.StringLineReader(s, arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx

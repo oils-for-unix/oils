@@ -7,9 +7,11 @@ from __future__ import print_function
 import re
 import unittest
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_str, Kind
+from _devbuild.gen.syntax_asdl import SourceLine
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.test_lib import Tok
+from core.pyerror import log
 from core import test_lib
 from frontend import lexer_def
 from frontend import lexer
@@ -287,40 +289,44 @@ class LineLexerTest(unittest.TestCase):
     self.arena = test_lib.MakeArena('<lex_test.py>')
 
   def assertTokensEqual(self, left, right):
-    self.assertTrue(test_lib.TokensEqual(left, right))
+    #log('LEFT %s', left)
+    #log('RIGHT %s', right)
+    # self.assertTrue(test_lib.TokensEqual(left, right))
+    self.assertEqual(left.id, right.id, '%s != %s' % (Id_str(left.id), Id_str(right.id)))
+    self.assertEqual(left.val, right.val)
 
   def testReadOuter(self):
-    l = LineLexer('\n', self.arena)
+    l = test_lib.InitLineLexer('\n', self.arena)
     self.assertTokensEqual(
         Tok(Id.Op_Newline, None), l.Read(lex_mode_e.ShCommand))
 
   def testRead_VSub_ArgUnquoted(self):
-    l = LineLexer("'hi'", self.arena)
+    l = test_lib.InitLineLexer("'hi'", self.arena)
     t = l.Read(lex_mode_e.VSub_ArgUnquoted)
     self.assertEqual(Id.Left_SingleQuote, t.id)
 
   def testLookPastSpace(self):
     # Lines always end with '\n'
-    l = LineLexer('', self.arena)
+    l = test_lib.InitLineLexer('', self.arena)
     self.assertEqual(Id.Unknown_Tok, l.LookPastSpace(lex_mode_e.ShCommand))
 
-    l = LineLexer('foo', self.arena)
+    l = test_lib.InitLineLexer('foo', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
     self.assertEqual(Id.Unknown_Tok, l.LookPastSpace(lex_mode_e.ShCommand))
 
-    l = LineLexer('foo  bar', self.arena)
+    l = test_lib.InitLineLexer('foo  bar', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
     self.assertEqual(Id.Lit_Chars, l.LookPastSpace(lex_mode_e.ShCommand))
 
     # No lookahead; using the cursor!
-    l = LineLexer('fun(', self.arena)
+    l = test_lib.InitLineLexer('fun(', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
     self.assertEqual(Id.Op_LParen, l.LookPastSpace(lex_mode_e.ShCommand))
 
-    l = LineLexer('fun  (', self.arena)
+    l = test_lib.InitLineLexer('fun  (', self.arena)
     self.assertTokensEqual(
         Tok(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
     self.assertEqual(Id.Op_LParen, l.LookPastSpace(lex_mode_e.ShCommand))

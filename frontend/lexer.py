@@ -8,7 +8,7 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import Token
+from _devbuild.gen.syntax_asdl import Token, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
 from asdl import runtime
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 # Special immutable token
-_EOL_TOK = Token(Id.Eol_Tok, -1, -1, -1, runtime.NO_SPID, None)
+_EOL_TOK = Token(Id.Eol_Tok, -1, -1, runtime.NO_SPID, None, None)
 
 
 def DummyToken(id_, val):
@@ -33,27 +33,25 @@ def DummyToken(id_, val):
   col = -1
   length = -1
   line_id = -1
-  return Token(id_, col, length, line_id, runtime.NO_SPID, val)
+  return Token(id_, col, length, runtime.NO_SPID, None, val)
 
 
 class LineLexer(object):
-  def __init__(self, line, arena):
-    # type: (str, Arena) -> None
+  def __init__(self, arena):
+    # type: (Arena) -> None
     self.arena = arena
     self.replace_last_token = False  # For MaybeUnreadOne
 
-    self.Reset(line, -1, 0)  # Invalid line_id to start
+    self.Reset(None, 0)  # Invalid src_line to start
 
   def __repr__(self):
     # type: () -> str
-    return '<LineLexer at pos %d of line %r (id = %d)>' % (
-        self.line_pos, self.line, self.line_id)
+    return '<LineLexer at pos %d of line %r>' % (self.line_pos, self.src_line)
 
-  def Reset(self, line, line_id, line_pos):
-    # type: (str, int, int) -> None
+  def Reset(self, src_line, line_pos):
+    # type: (SourceLine, int) -> None
     #assert line, repr(line)  # can't be empty or None
-    self.line = line
-    self.line_id = line_id
+    self.src_line = src_line
     self.line_pos = line_pos
 
   def MaybeUnreadOne(self):
@@ -72,24 +70,25 @@ class LineLexer(object):
   def GetEofToken(self, id_):
     # type: (int) -> Token
     """Create a new span ID for syntax errors involving the EOF token."""
-    if self.line_id == -1:
-      # When line_id == -1, this means there are ZERO lines.  Add a dummy line
-      # 0 so the span_id has a source to display errors.
-      line_id = self.arena.AddLine('', 0)
+    if self.src_line is None:
+      # There are ZERO lines now.  Add a dummy line 0 so the span_id has a
+      # source to display errors.
+      src_line = self.arena.AddLine('', 0)
     else:
-      line_id = self.line_id
+      src_line = self.src_line
 
-    return self.arena.NewToken(id_, self.line_pos, 0, line_id, '')
+    return self.arena.NewToken(id_, self.line_pos, 0, src_line, '')
 
   def LookAheadOne(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
     """Look ahead exactly one token in the given lexer mode."""
     pos = self.line_pos
-    n = len(self.line)
+    line_str= self.src_line.val
+    n = len(line_str)
     if pos == n:
       return Id.Unknown_Tok
     else:
-      tok_type, _ = match.OneToken(lex_mode, self.line, pos)
+      tok_type, _ = match.OneToken(lex_mode, line_str, pos)
       return tok_type
 
   def LookPastSpace(self, lex_mode):
@@ -106,7 +105,8 @@ class LineLexer(object):
     Note: Only ShCommand emits Id.WS_Space, but other lexer modes don't.
     """
     pos = self.line_pos
-    n = len(self.line)
+    line_str = self.src_line.val
+    n = len(line_str)
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
     while True:
       if pos == n:
@@ -116,7 +116,7 @@ class LineLexer(object):
         # lex_mode_e.Arith doesn't have it.
         return Id.Unknown_Tok
 
-      tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
+      tok_type, end_pos = match.OneToken(lex_mode, line_str, pos)
 
       # NOTE: Instead of hard-coding this token, we could pass it in.
       # LookPastSpace(lex_mode, past_token_type)
@@ -147,17 +147,17 @@ class LineLexer(object):
     """
     pos = self.line_pos - unread
     assert pos > 0
-    tok_type, end_pos = match.OneToken(lex_mode_e.FuncParens, self.line, pos)
+    tok_type, end_pos = match.OneToken(lex_mode_e.FuncParens, self.src_line.val, pos)
     return tok_type == Id.LookAhead_FuncParens
 
   def ByteLookAhead(self):
     # type: () -> str
     """Lookahead a single byte.  Useful when you know the token is one char."""
     pos = self.line_pos
-    if pos == len(self.line):
+    if pos == len(self.src_line.val):
       return ''
     else:
-      return self.line[pos]
+      return self.src_line.val[pos]
 
   def ByteLookBack(self):
     # type: () -> int
@@ -172,15 +172,18 @@ class LineLexer(object):
     if pos < 0:
       return -1
     else:
-      return ord(self.line[pos])
+      return ord(self.src_line.val[pos])
 
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
     # Inner loop optimization
-    line = self.line
+    if self.src_line:
+      line_str = self.src_line.val
+    else:
+      line_str = ''
     line_pos = self.line_pos
 
-    tok_type, end_pos = match.OneToken(lex_mode, line, line_pos)
+    tok_type, end_pos = match.OneToken(lex_mode, line_str, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
       return _EOL_TOK
 
@@ -200,7 +203,7 @@ class LineLexer(object):
         Kind.WS, Kind.Ignored, Kind.Eof):
       tok_val = None  # type: Optional[str]
     else:
-      tok_val = line[line_pos:end_pos]
+      tok_val = line_str[line_pos:end_pos]
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
     # want it to be "low level".  The only thing fabricated here is a newline
     # added at the last line, so we don't end with \0.
@@ -212,7 +215,7 @@ class LineLexer(object):
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
     tok_len = end_pos - line_pos
-    t = self.arena.NewToken(tok_type, line_pos, tok_len, self.line_id, tok_val)
+    t = self.arena.NewToken(tok_type, line_pos, tok_len, self.src_line, tok_val)
 
     self.line_pos = end_pos
     return t
@@ -239,7 +242,7 @@ class Lexer(object):
 
   def ResetInputObjects(self):
     # type: () -> None
-    self.line_lexer.Reset('', -1, 0)
+    self.line_lexer.Reset(None, 0)
 
   def MaybeUnreadOne(self):
     # type: () -> bool
@@ -295,9 +298,9 @@ class Lexer(object):
     """Read from the normal line buffer, not an alias."""
     t = self.line_lexer.Read(lex_mode)
     if t.id == Id.Eol_Tok:  # hit \0, read a new line
-      line_id, line, line_pos = self.line_reader.GetLine()
+      src_line, line_pos = self.line_reader.GetLine()
 
-      if line is None:  # no more lines
+      if src_line is None:  # no more lines
         if self.emit_comp_dummy:
           id_ = Id.Lit_CompDummy
           self.emit_comp_dummy = False  # emit EOF the next time
@@ -305,7 +308,7 @@ class Lexer(object):
           id_ = Id.Eof_Real
         return self.line_lexer.GetEofToken(id_)
 
-      self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
+      self.line_lexer.Reset(src_line, line_pos)  # fill with a new line
       t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF

@@ -104,14 +104,13 @@ class CrashDumper(object):
       }
 
       if span_id != runtime.NO_SPID:
-        span = cmd_ev.arena.GetToken(span_id)
-        line_id = span.line_id
+        token = cmd_ev.arena.GetToken(span_id)
 
         # Could also do msg % args separately, but JavaScript won't be able to
         # render that.
-        self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, line_id)
-        self.error['line_num'] = cmd_ev.arena.GetLineNumber(line_id)
-        self.error['line'] = cmd_ev.arena.GetLine(line_id)
+        self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, token.line)
+        self.error['line_num'] = token.line.line_num
+        self.error['line'] = token.line.val
 
       # TODO: Collect functions, aliases, etc.
 
@@ -582,15 +581,14 @@ class Tracer(object):
 
     left_span = arena.GetToken(left_spid)
     right_span = arena.GetToken(right_spid)
-    line = arena.GetLine(left_span.line_id)
+    line = left_span.line.val
     start = left_span.col
 
-    if left_span.line_id == right_span.line_id:
+    if left_span.line == right_span.line:
       end = right_span.col  # This is one spid PAST the end.
       buf.write(line[start:end])
     else:
       # Print first line only
-      line = arena.GetLine(left_span.line_id)
       end = -1 if line.endswith('\n') else len(line)
       buf.write(line[start:end])
       buf.write(' ...')

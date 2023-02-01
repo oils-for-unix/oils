@@ -259,7 +259,7 @@ class ParseContext(object):
     better.
     """
     # Take Arena from LineReader
-    line_lexer = lexer.LineLexer('', line_reader.arena)
+    line_lexer = lexer.LineLexer(line_reader.arena)
     return lexer.Lexer(line_lexer, line_reader)
 
   def MakeOshParser(self, line_reader, emit_comp_dummy=False):
@@ -457,7 +457,7 @@ class ParseContext(object):
     def ParseTeaModule(self, line_reader):
       # type: (_Reader) -> None
       """ An entire .tea file """
-      line_lexer = lexer.LineLexer('', self.arena)
+      line_lexer = lexer.LineLexer(self.arena)
       lx = lexer.Lexer(line_lexer, line_reader)
 
       pnode, last_token = self._ParseTea(lx, grammar_nt.tea_module)

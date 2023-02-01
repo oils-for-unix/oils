@@ -15,10 +15,9 @@ from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
 from asdl import runtime
 from core.pyerror import log
 
-from typing import List, Dict, Any
+from typing import List, Any
 
 _ = log
-
 
 
 def SnipCodeBlock(left, right, lines):
@@ -37,9 +36,9 @@ def SnipCodeBlock(left, right, lines):
   # Pad with spaces so column numbers aren't off
   pieces.append(' ' * (left.col + 1))
 
-  if left.line_id == right.line_id:
+  if left.line == right.line:
     for li in lines:
-      if li.line_id == left.line_id:
+      if li == left.line:
         piece = li.val[left.col + left.length : right.col]
         pieces.append(piece)
     return ''.join(pieces)
@@ -48,7 +47,7 @@ def SnipCodeBlock(left, right, lines):
   found_left = False
   found_right = False
   for li in lines:
-    if li.line_id == left.line_id:
+    if li == left.line:
       found_left = True
       saving = True
 
@@ -58,7 +57,7 @@ def SnipCodeBlock(left, right, lines):
       #log('   %r', piece)
       continue
 
-    if li.line_id == right.line_id:
+    if li == right.line:
       found_right = True
 
       piece = li.val[ : right.col]
@@ -68,7 +67,6 @@ def SnipCodeBlock(left, right, lines):
       saving = False
       break
 
-    # TODO: We should mutate li.line_id here so it's the index into saved_lines?
     if saving:
       pieces.append(li.val)
       #log('   %r', li.val)
@@ -107,15 +105,6 @@ class Arena(object):
     # All lines that haven't been discarded.  For LST formatting.
     self.lines_list = []  # type: List[SourceLine]
 
-    # Lines explicitly saved from lines_list.
-    self.saved_lines = []  # type: List[SourceLine]
-
-    # Three parallel arrays indexed by line_id.
-    self.line_vals = []  # type: List[str]
-    self.line_nums = []  # type: List[int]
-    self.line_srcs = []  # type: List[source_t]
-    self.line_num_strs = {}  # type: Dict[int, str]  # an INTERN table
-
     # indexed by span_id
     self.tokens = []  # type: List[Token]
 
@@ -131,21 +120,14 @@ class Arena(object):
     self.source_instances.pop()
 
   def AddLine(self, line, line_num):
-    # type: (str, int) -> int
+    # type: (str, int) -> SourceLine
     """Save a physical line and return a line_id for later retrieval.
 
     The line number is 1-based.
     """
-    line_id = len(self.line_vals)
-    self.line_vals.append(line)
-    self.line_nums.append(line_num)
-    self.line_srcs.append(self.source_instances[-1])
-
-    # New scheme
-    src_line = SourceLine(line_num, line_id, line, self.source_instances[-1])
+    src_line = SourceLine(line_num, -1, line, self.source_instances[-1])
     self.lines_list.append(src_line)
-
-    return line_id
+    return src_line
 
   def DiscardLines(self):
     # type: () -> None
@@ -180,7 +162,7 @@ class Arena(object):
     saved = []  # type: List[SourceLine]
     saving = False
     for li in self.lines_list:
-      if li.line_id == left.line_id:
+      if li == left.line:
         saving = True
 
       # These lines are PERMANENT, and never deleted.  What if you overwrite a
@@ -200,7 +182,7 @@ class Arena(object):
         saved.append(li)
         #log('   %r', li.val)
 
-      if li.line_id == right.line_id:
+      if li == right.line:
         saving = False
         break
 
@@ -215,8 +197,7 @@ class Arena(object):
     # type: (Token, Token) -> str
     """Return the code string between left and right tokens, INCLUSIVE.  
 
-    Used for ALIAS expansion, which happens in the PARSER.  So we use
-    self.lines_list, not self.saved_lines.
+    Used for ALIAS expansion, which happens in the PARSER.
 
     The argument to aliases can span multiple lines, like htis:
 
@@ -224,9 +205,9 @@ class Arena(object):
         2
         3'
     """
-    if left.line_id == right.line_id:
+    if left.line == right.line:
       for li in self.lines_list:
-        if li.line_id == left.line_id:
+        if li == left.line:
           piece = li.val[left.col : right.col + right.length]
           return piece
 
@@ -235,7 +216,7 @@ class Arena(object):
     found_left = False
     found_right = False
     for li in self.lines_list:
-      if li.line_id == left.line_id:
+      if li == left.line:
         found_left = True
         saving = True
 
@@ -245,7 +226,7 @@ class Arena(object):
         #log('   %r', piece)
         continue
 
-      if li.line_id == right.line_id:
+      if li == right.line:
         found_right = True
 
         piece = li.val[ : right.col + right.length]
@@ -255,7 +236,6 @@ class Arena(object):
         saving = False
         break
 
-      # TODO: We should mutate li.line_id here so it's the index into saved_lines?
       if saving:
         pieces.append(li.val)
         #log('   %r', li.val)
@@ -264,50 +244,16 @@ class Arena(object):
     assert found_right, "Couldn't find right token"
     return ''.join(pieces)
 
-  def GetLine(self, line_id):
-    # type: (int) -> str
-    """Return the text of a line.
-
-    TODO: This should be hidden behind an interface like Python's line cache?
-    It should store offsets (and maybe checkums).  It will have two
-    implementions: in-memory for interactive, and on-disk for batch and
-    'sourced' files.
-    """
-    assert line_id >= 0, line_id
-    return self.line_vals[line_id]
-
-  def GetLineNumber(self, line_id):
-    # type: (int) -> int
-    return self.line_nums[line_id]
-
-  # NOTE: Not used yet.  Using an intern table seems like a good idea, but I
-  # haven't measured the performance benefit of it.  The case I'm thinking of
-  # is where you have a tight loop and every line uses $LINENO.  It's better to
-  # create 3 objects rather than 3*N objects, where N is the number of loop
-  # iterations.
-  def GetLineNumStr(self, line_id):
-    # type: (int) -> str
-    line_num = self.line_nums[line_id]
-    s = self.line_num_strs.get(line_num)
-    if s is None:
-      s = str(line_num)
-      self.line_num_strs[line_num] = s
-    return s
-
-  def GetLineSource(self, line_id):
-    # type: (int) -> source_t
-    return self.line_srcs[line_id]
-
-  def NewTokenId(self, id_, col, length, line_id, val):
-    # type: (int, int, int, int, str) -> int
+  def NewTokenId(self, id_, col, length, src_line, val):
+    # type: (int, int, int, SourceLine, str) -> int
     span_id = len(self.tokens)  # spids are just array indices
-    tok = Token(id_, col, length, line_id, span_id, val)
+    tok = Token(id_, col, length, span_id, src_line, val)
     self.tokens.append(tok)
     return span_id
 
-  def NewToken(self, id_, col, length, line_id, val):
-    # type: (int, int, int, int, str) -> Token
-    span_id = self.NewTokenId(id_, col, length, line_id, val)
+  def NewToken(self, id_, col, length, src_line, val):
+    # type: (int, int, int, SourceLine, str) -> Token
+    span_id = self.NewTokenId(id_, col, length, src_line, val)
     return self.tokens[span_id]
 
   def GetToken(self, span_id):

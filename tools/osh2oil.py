@@ -104,13 +104,11 @@ class Cursor(object):
     for span_id in xrange(self.next_span_id, until_span_id):
       span = self.arena.GetToken(span_id)
 
-      # A span for Eof may have a line_id of -1 when the file is completely
-      # empty.
-      if span.line_id == -1:
+      # A span for Eof may not have a line when the file is completely empty.
+      if span.line is None:
         continue
 
-      line = self.arena.GetLine(span.line_id)
-      piece = line[span.col : span.col + span.length]
+      piece = span.line.val[span.col : span.col + span.length]
       self.f.write(piece)
 
     self.next_span_id = until_span_id
@@ -142,8 +140,7 @@ def PrintSpans(arena):
     return
 
   for i, span in enumerate(arena.tokens):
-    line = arena.GetLine(span.line_id)
-    piece = line[span.col : span.col + span.length]
+    piece = span.line.val[span.col : span.col + span.length]
     print('%5d %r' % (i, piece))
   print_stderr('(%d tokens)' % len(arena.tokens))
 
@@ -261,9 +258,7 @@ class OilPrinter(object):
   def _DebugSpid(self, spid):
     # type: (int) -> None
     span = self.arena.GetToken(spid)
-    line = self.arena.GetLine(span.line_id)
-    # TODO: This should be factored out
-    s = line[span.col : span.col + span.length]
+    s = span.line.val[span.col : span.col + span.length]
     print_stderr('SPID %d = %r' % (spid, s))
 
   def End(self):
