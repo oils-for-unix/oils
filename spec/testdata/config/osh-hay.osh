@@ -13,16 +13,14 @@ Foo {
   # Dynamic parsing allowed in OSH, not Oil
   b[1]=1
 
-  echo `echo hi`
+  echo `echo backticks`
   eval 'echo eval'
 
   # At parse time, all the lines must be contigous
 
   TASK {
-    echo `echo zz`
-    eval 'echo YY'
-
-    echo bye
+    echo `echo task backticks`
+    eval 'echo task eval'
   }
 }
 
@@ -31,6 +29,6 @@ const children = _hay()->children[0]->children
 for child in (children) {
   echo "TYPE $[child->type]"
   if (child->type === 'TASK') {
-    echo "CODE $[child->code_str]"
+    echo "CODE $[child->code_str]___"
   }
 }

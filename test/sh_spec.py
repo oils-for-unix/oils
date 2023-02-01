@@ -443,8 +443,15 @@ class EqualAssertion(object):
   def Check(self, shell, record):
     actual = record[self.key]
     if actual != self.expected:
-      msg = '[%s %s] Expected %r, got %r' % (shell, self.key, self.expected,
-          actual)
+      if len(str(self.expected)) < 40:
+        msg = '[%s %s] Expected %r, got %r' % (shell, self.key, self.expected,
+            actual)
+      else:
+        msg = '''
+[%s %s]
+Expected %r
+Got      %r
+''' % (shell, self.key, self.expected, actual)
 
       # TODO: Make this better and add a flag for it.
       if 0:

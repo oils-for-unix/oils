@@ -26,6 +26,7 @@ from _devbuild.gen.types_asdl import opt_group_i
 
 from asdl import format as fmt
 from asdl import runtime
+from core import alloc
 from core import error
 from core.pyerror import e_usage, e_die
 from core import optview
@@ -786,45 +787,40 @@ if mylib.PYTHON:
       arg_r.Next()
       arguments = arg_r.Rest()
 
-      block = typed_args.GetOneBlock(cmd_val.typed_args)
+      lit_block = typed_args.GetLiteralBlock(cmd_val.typed_args)
+      # block = typed_args.GetOneBlock(cmd_val.typed_args)
 
       # package { ... } is not valid
-      if len(arguments) == 0 and block is None:
-        e_usage('expected at least 1 arg, or a block', span_id=arg0_spid)
+      if len(arguments) == 0 and lit_block is None:
+        e_usage('expected at least 1 arg, or a literal block { }', span_id=arg0_spid)
 
       result['args'] = arguments
 
       if node_type.isupper():  # TASK build { ... }
-        if block is None:
-          e_usage('command node requires a block argument')
+        if lit_block is None:
+          e_usage('command node requires a literal block argument')
 
         if 0:  # self.hay_state.to_expr ?
-          result['expr'] = block  # UNEVALUATED block
+          result['expr'] = lit_block  # UNEVALUATED block
         else:
           # We can only extract code if the block arg is literal like package
           # foo { ... }, not if it's like package foo (myblock)
 
-          brace_group = None  # type: BraceGroup
-          with tagswitch(block) as case:
-            if case(command_e.BraceGroup):
-              brace_group = cast(BraceGroup, block)
+          brace_group = lit_block.brace_group
+          # BraceGroup has spid for {
+          line_id = brace_group.left.line_id
+          src = self.arena.GetLineSource(line_id)
+          line_num = self.arena.GetLineNumber(line_id)
 
-          if brace_group:
-            # BraceGroup has spid for {
-            line_id =brace_group.left.line_id
-            src = self.arena.GetLineSource(line_id)
-            line_num = self.arena.GetLineNumber(line_id)
+          # for the user to pass back to --location-str
+          result['location_str'] = ui.GetLineSourceString(self.arena, line_id)
+          result['location_start_line'] = line_num
 
-            # for the user to pass back to --location-str
-            result['location_str'] = ui.GetLineSourceString(self.arena, line_id)
-            result['location_start_line'] = line_num
+          # Between { and }
+          code_str = alloc.SnipCodeBlock(
+              brace_group.left, brace_group.right, lit_block.lines)
 
-            # Between { and }
-            code_str = self.arena.GetCodeString(brace_group.left.span_id,
-                                                brace_group.right.span_id)
-            result['code_str'] = code_str
-          else:
-            result['error'] = "Can't find code if block arg isn't literal like { }"
+          result['code_str'] = code_str
 
         # Append after validation
         self.hay_state.AppendResult(result)
@@ -833,7 +829,7 @@ if mylib.PYTHON:
         # Must be done before EvalBlock
         self.hay_state.AppendResult(result)
 
-        if block:  # 'package foo' is OK
+        if lit_block:  # 'package foo' is OK
           result['children'] = []
 
           # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
@@ -841,7 +837,7 @@ if mylib.PYTHON:
             with state.ctx_HayNode(self.hay_state, hay_name):
               # Note: we want all haynode invocations in the block to appear as
               # our 'children', recursively
-              block_attrs = self.cmd_ev.EvalBlock(block)
+              block_attrs = self.cmd_ev.EvalBlock(lit_block.brace_group)
 
           attrs = NewDict()  # type: Dict[str, Any]
           for name, cell in iteritems(block_attrs):

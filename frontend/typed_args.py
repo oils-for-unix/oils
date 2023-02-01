@@ -37,6 +37,14 @@ def RequiredExpr(arg_list):
 
 def GetOneBlock(arg_list):
   # type: (Optional[ArgList]) -> Optional[command_t]
+  """Returns the first block arg, if any.
+
+  For cd { }, shopt { }, etc.
+
+  Errors:
+    - the first arg isn't a block
+    - more than 1 arg
+  """
 
   if arg_list is None:
     return None
@@ -62,6 +70,34 @@ def GetOneBlock(arg_list):
 
       else:
         e_usage('Expected block argument', arg_list.left.span_id)
+
+  else:
+    e_usage('Too many typed args (expected one block)', arg_list.left.span_id)
+
+
+def GetLiteralBlock(arg_list):
+  # type: (Optional[ArgList]) -> Optional[BlockArg]
+  """Returns the first block literal arg, if any.
+
+  For Hay evaluation.
+
+  Errors:
+    - more than 1 arg
+  """
+
+  if arg_list is None:
+    return None
+
+  n = len(arg_list.positional)
+  if n == 0:
+    return None
+
+  elif n == 1:
+    arg = arg_list.positional[0]
+    if arg.tag_() == expr_e.BlockArg:
+      return cast(BlockArg, arg)
+    else:
+      return None
 
   else:
     e_usage('Too many typed args (expected one block)', arg_list.left.span_id)

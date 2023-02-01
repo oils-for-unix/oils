@@ -20,6 +20,64 @@ from typing import List, Dict, Any
 _ = log
 
 
+
+def SnipCodeBlock(left, right, lines):
+  # type: (Token, Token, List[SourceLine]) -> str
+  """Return the code string between left and right tokens, EXCLUSIVE.
+
+  Meaning { } are not included.
+
+  Used for Hay evaluation. Similar to SnipCodeString().
+  """
+  pieces = []  # type: List[str]
+
+  assert left.length == 1, "{ expected"
+  assert right.length == 1, "} expected"
+
+  # Pad with spaces so column numbers aren't off
+  pieces.append(' ' * (left.col + 1))
+
+  if left.line_id == right.line_id:
+    for li in lines:
+      if li.line_id == left.line_id:
+        piece = li.val[left.col + left.length : right.col]
+        pieces.append(piece)
+    return ''.join(pieces)
+
+  saving = False
+  found_left = False
+  found_right = False
+  for li in lines:
+    if li.line_id == left.line_id:
+      found_left = True
+      saving = True
+
+      # Save everything after the left token
+      piece = li.val[left.col + left.length : ]
+      pieces.append(piece)
+      #log('   %r', piece)
+      continue
+
+    if li.line_id == right.line_id:
+      found_right = True
+
+      piece = li.val[ : right.col]
+      pieces.append(piece)
+      #log('   %r', piece)
+
+      saving = False
+      break
+
+    # TODO: We should mutate li.line_id here so it's the index into saved_lines?
+    if saving:
+      pieces.append(li.val)
+      #log('   %r', li.val)
+
+  assert found_left, "Couldn't find left token"
+  assert found_right, "Couldn't find right token"
+  return ''.join(pieces)
+
+
 class ctx_Location(object):
 
   def __init__(self, arena, src):
@@ -101,7 +159,7 @@ class Arena(object):
     del self.lines_list[:]
 
   def SaveLinesAndDiscard(self, left, right):
-    # type: (Token, Token) -> None
+    # type: (Token, Token) -> List[SourceLine]
     """
     Save the lines between two tokens, e.g. for { and }
 
@@ -119,7 +177,7 @@ class Arena(object):
     """
     #log('*** Saving lines between %r and %r', left, right)
 
-    num_saved = 0
+    saved = []  # type: List[SourceLine]
     saving = False
     for li in self.lines_list:
       if li.line_id == left.line_id:
@@ -139,17 +197,17 @@ class Arena(object):
       # TODO: We should mutate li.line_id here so it's the index into
       # saved_lines?
       if saving:
-        self.saved_lines.append(li)
-        log('   %r', li.val)
-        num_saved += 1
+        saved.append(li)
+        #log('   %r', li.val)
 
       if li.line_id == right.line_id:
         saving = False
         break
 
-    log('*** SAVED %d lines', num_saved)
+    #log('*** SAVED %d lines', len(saved))
 
     self.DiscardLines()
+    return saved
 
     #log('SAVED = %s', [line.val for line in self.saved_lines])
 
@@ -235,50 +293,6 @@ class Arena(object):
       s = str(line_num)
       self.line_num_strs[line_num] = s
     return s
-
-  def GetCodeString(self, lbrace_spid, rbrace_spid):
-    # type: (int, int) -> str
-    """Used for hay evaluation.
-
-    TASK build {
-      echo hi
-    }
-    """
-    left_span = self.GetToken(lbrace_spid)
-    right_span = self.GetToken(rbrace_spid)
-
-    # Make sure they're from the same file
-    assert self.line_srcs[left_span.line_id] == self.line_srcs[right_span.line_id]
-
-    left_id = left_span.line_id
-    right_id = right_span.line_id
-    assert left_id <= right_id
-
-    left_col = left_span.col  # 0-based indices
-    right_col = right_span.col
-
-    parts = []  # type: List[str]
-    parts.append(' ' * (left_col+1))  # pad with spaces so column numbers are the same
-
-    if left_id == right_id:
-      # the single line
-      parts.append(self.line_vals[left_id][left_col+1:right_col])
-    else:
-      # first incomplete line
-      parts.append(self.line_vals[left_id][left_col+1:])
-
-      # TODO: There's a BUG here -- a Hay block can have dynamic parsing like
-      # alias, backticks, a[x]=1
-
-      # all the complete lines
-      for line_id in xrange(left_id + 1, right_id):
-        parts.append(self.line_vals[line_id])
-
-      # last incomplete line
-      parts.append(self.line_vals[right_id][:right_col])
-
-    #log('CODE STR %r', ''.join(parts))
-    return ''.join(parts)
 
   def GetLineSource(self, line_id):
     # type: (int) -> source_t

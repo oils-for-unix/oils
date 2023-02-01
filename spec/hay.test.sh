@@ -650,12 +650,12 @@ source $REPO_ROOT/spec/testdata/config/osh-hay.osh
 
 
 ## STDOUT:
+backticks
+eval
 TYPE TASK
-CODE
-  echo `echo zz`
-  eval 'echo YY'
-
-  echo bye
-
+CODE         
+    echo `echo task backticks`
+    eval 'echo task eval'
+  ___
 ## END
 

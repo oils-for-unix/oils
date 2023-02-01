@@ -692,7 +692,11 @@ class CommandParser(object):
               # allow x = 42
               self.allow_block_attrs.append(first_word_caps)
               brace_group = self.ParseBraceGroup()
-              block = BlockArg(brace_group, [] )  # TODO: save lines
+
+              # So we can get the source code back later
+              lines = self.arena.SaveLinesAndDiscard(brace_group.left, brace_group.right)
+              block = BlockArg(brace_group, lines)
+
               self.allow_block_attrs.pop()
 
             if 0:
