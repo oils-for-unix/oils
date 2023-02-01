@@ -97,7 +97,7 @@ class Arena(object):
     - It removes the ARENA's references to all lines.  The TOKENS still
       reference some lines.
     """
-    log("discarding %d lines", len(self.lines_list))
+    #log("discarding %d lines", len(self.lines_list))
     del self.lines_list[:]
 
   def SaveLinesAndDiscard(self, left, right):
