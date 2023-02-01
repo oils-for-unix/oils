@@ -833,45 +833,7 @@ class CommandParser(object):
     if len(expanded) == 0:  # No expansions; caller does parsing.
       return None
 
-    # We got some expansion.  Now copy the rest of the words.
-
-    if 0:
-      # We need each NON-REDIRECT word separately!  For example:
-      # $ echo one >out two
-      # dash/mksh/zsh go beyond the first redirect!
-      while i < n:
-        w = words[i]
-        spid1 = word_.LeftMostSpanForWord(w)
-        spid2 = word_.RightMostSpanForWord(w)
-
-        span1 = self.arena.GetToken(spid1)
-        span2 = self.arena.GetToken(spid2)
-
-        if 0:
-          log('spid1 = %d, spid2 = %d', spid1, spid2)
-          n1 = self.arena.GetLineNumber(span1.line_id)
-          n2 = self.arena.GetLineNumber(span2.line_id)
-          log('span1 %s line %d %r', span1, n1, self.arena.GetLine(span1.line_id))
-          log('span2 %s line %d %r', span2, n2, self.arena.GetLine(span2.line_id))
-
-        if span1.line_id == span2.line_id:
-          line = self.arena.GetLine(span1.line_id)
-          piece = line[span1.col : span2.col + span2.length]
-          expanded.append(piece)
-        else:
-          # NOTE: The xrange(left_spid, right_spid) algorithm won't work for
-          # commands like this:
-          #
-          # myalias foo`echo hi`bar
-          #
-          # That is why we only support words over 1 or 2 lines.
-
-          raise NotImplementedError(
-              'line IDs %d != %d' % (span1.line_id, span2.line_id))
-
-        expanded.append(' ')  # Put space back between words.
-        i += 1
-
+    # We are expanding an alias, so copy the rest of the words and re-parse.
     if i < n:
       left_spid = word_.LeftMostSpanForWord(words[i])
       right_spid = word_.RightMostSpanForWord(words[-1])
@@ -887,10 +849,10 @@ class CommandParser(object):
 
     code_str = ''.join(expanded)
 
+    # TODO: Use our own arena.
     #arena = alloc.Arena()
     arena = self.arena
 
-    # NOTE: self.arena isn't correct here.  Breaks line invariant.
     line_reader = reader.StringLineReader(code_str, arena)
     cp = self.parse_ctx.MakeOshParser(line_reader)
     cp.Init_AliasesInFlight(aliases_in_flight)
