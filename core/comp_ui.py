@@ -3,8 +3,6 @@ comp_ui.py
 """
 from __future__ import print_function
 
-import atexit
-
 from core import ansi
 from core import completion
 import libc
@@ -541,50 +539,45 @@ class NiceDisplay(_IDisplay):
     #self.readline.resize_terminal()
 
 
+def ExecutePrintCandidates(display, sub, matches, max_len):
+  # type: (_IDisplay, str, List[str], int) -> None
+  display.PrintCandidates(sub, matches, max_len)
+
+
 def InitReadline(readline, history_filename, root_comp, display, debug_f):
   # type: (Optional[Readline], str, completion.RootCompleter, _IDisplay, _DebugFile) -> None
   assert readline
 
-  if mylib.PYTHON:
-    try:
-      readline.read_history_file(history_filename)
-    except IOError:
-      pass
+  try:
+    readline.read_history_file(history_filename)
+  except IOError:
+    pass
 
-    def _MaybeWriteHistoryFile(history_filename):
-      # type: (str) -> None
-      try:
-        readline.write_history_file(history_filename)
-      except IOError:
-        pass
+  readline.parse_and_bind('tab: complete')
 
-    # The 'atexit' module is a small wrapper around sys.exitfunc.
-    atexit.register(_MaybeWriteHistoryFile, history_filename)
-    readline.parse_and_bind('tab: complete')
+  readline.parse_and_bind('set horizontal-scroll-mode on')
 
-    readline.parse_and_bind('set horizontal-scroll-mode on')
+  # How does this map to C?
+  # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
 
-    # How does this map to C?
-    # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
+  complete_cb = completion.ReadlineCallback(readline, root_comp, debug_f)
+  readline.set_completer(complete_cb)
 
-    complete_cb = completion.ReadlineCallback(readline, root_comp, debug_f)
-    readline.set_completer(complete_cb)
+  # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
+  # "The basic list of characters that signal a break between words for the
+  # completer routine. The default value of this variable is the characters
+  # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
 
-    # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
-    # "The basic list of characters that signal a break between words for the
-    # completer routine. The default value of this variable is the characters
-    # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
+  # This determines the boundaries you get back from get_begidx() and
+  # get_endidx() at completion time!
+  # We could be more conservative and set it to ' ', but then cases like
+  # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
+  #
+  # Note that this should not affect the OSH completion algorithm.  It only
+  # affects what we pass back to readline and what readline displays to the
+  # user!
 
-    # This determines the boundaries you get back from get_begidx() and
-    # get_endidx() at completion time!
-    # We could be more conservative and set it to ' ', but then cases like
-    # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
-    #
-    # Note that this should not affect the OSH completion algorithm.  It only
-    # affects what we pass back to readline and what readline displays to the
-    # user!
+  # No delimiters because readline isn't smart enough to tokenize shell!
+  readline.set_completer_delims('')
 
-    # No delimiters because readline isn't smart enough to tokenize shell!
-    readline.set_completer_delims('')
-
-    readline.set_completion_display_matches_hook(display)
+  readline.set_completion_display_matches_hook(display)
