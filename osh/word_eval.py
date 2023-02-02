@@ -433,8 +433,8 @@ class TildeEvaluator(object):
     # type: (word_part__TildeSub) -> str
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
 
-    # Note: ASDL constructor doesn't let us make part.user_name = None
-    if len(part.user_name) == 0:
+    # TODO: Fix bug where ASDL constructor doesn't let us make part.user_name = None
+    if part.user_name is None or len(part.user_name) == 0:
       # First look up the HOME var, then ask the OS.  This is what bash does.
       val = self.mem.GetValue('HOME')
       UP_val = val
