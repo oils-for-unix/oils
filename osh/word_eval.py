@@ -2237,6 +2237,11 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
   inner command as the last one, and knows that it is not at the end of the
   line.
   """
+
+  def __init__(self, mem, exec_opts, mutable_opts, splitter, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, SplitContext, ErrorFormatter) -> None
+    AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts, splitter, errfmt)
+
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.prompt_ev is not None
