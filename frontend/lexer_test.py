@@ -92,11 +92,6 @@ class TokenTest(unittest.TestCase):
     # Get x, then Id.Eof_Real because there are no more lines
     _PrintfOuterTokens('x\0')
 
-  def testLineId(self):
-    # TODO: Test that the lexer gives line_ids when passed an arena.
-    # This might be more relevant if we start deallocating memroy.
-    pass
-
 
 if __name__ == '__main__':
   unittest.main()

@@ -35,6 +35,7 @@ from core import ui
 from qsn_ import qsn
 from core.pyerror import log, e_die
 from frontend import consts
+from frontend import lexer
 from mycpp.mylib import tagswitch, NewDict
 from mycpp import mylib
 from osh import braces
@@ -1984,11 +1985,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
             e_die('LHS array not allowed in assignment builtin', loc.Word(w))
 
           tok_val = left_token.val
-          if tok_val[-2] == '+':
-            var_name = tok_val[:-2]
+          if lexer.IsPlusEquals(left_token):
+            var_name = lexer.TokenSliceRight(left_token, -2)
             append = True
           else:
-            var_name = tok_val[:-1]
+            var_name = lexer.TokenSliceRight(left_token, -1)
             append = False
 
           if part_offset == len(w.parts):

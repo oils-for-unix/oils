@@ -115,7 +115,7 @@ class Pp(_Builtin):
           if bgroup.doc_token:
             token = bgroup.doc_token
             # 1 to remove leading space
-            doc = token.line.val[token.col+1 : token.col + token.length]
+            doc = token.line.content[token.col+1 : token.col + token.length]
 
         # No limits on proc names
         print('%s\t%s' % (qsn.maybe_encode(name), qsn.maybe_encode(doc)))
@@ -145,7 +145,7 @@ class Append(_Builtin):
 
     if not match.IsValidVarName(var_name):
       raise error.Usage('got invalid variable name %r' % var_name,
-                            span_id=var_spid)
+                        span_id=var_spid)
 
     val = self.mem.GetValue(var_name)
 

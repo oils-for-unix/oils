@@ -20,12 +20,12 @@ class ReaderTest(unittest.TestCase):
     r = reader.StringLineReader('one\ntwo', arena)
 
     src_line, offset = r.GetLine()
-    self.assertEqual('one\n', src_line.val), 
+    self.assertEqual('one\n', src_line.content), 
     self.assertEqual(1, src_line.line_num)
     self.assertEqual(0, offset)
 
     src_line, offset = r.GetLine()
-    self.assertEqual('two', src_line.val), 
+    self.assertEqual('two', src_line.content), 
     self.assertEqual(2, src_line.line_num)
     self.assertEqual(0, offset)
 
@@ -56,12 +56,12 @@ class ReaderTest(unittest.TestCase):
       print(r)
 
       src_line, offset = r.GetLine()
-      self.assertEqual('one\n', src_line.val), 
+      self.assertEqual('one\n', src_line.content), 
       self.assertEqual(1, src_line.line_num)
       self.assertEqual(0, offset)
 
       src_line, offset = r.GetLine()
-      self.assertEqual('two', src_line.val), 
+      self.assertEqual('two', src_line.content), 
       self.assertEqual(2, src_line.line_num)
       self.assertEqual(0, offset)
 

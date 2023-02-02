@@ -72,6 +72,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import runtime
 from core.pyerror import log, p_die
+from frontend import lexer
 from frontend import location
 from osh import word_
 from mycpp import mylib
@@ -900,7 +901,7 @@ class OilPrinter(object):
               if vsub_part.token.id in (Id.VSub_Number, Id.VSub_DollarName):
                 self.cursor.PrintUntil(left_spid)
                 self.cursor.SkipUntil(right_spid + 1)
-                self.f.write(vsub_part.token.val)
+                self.f.write(lexer.LazyVal(vsub_part.token))
                 return
 
             # Single arith sub, command sub, etc.

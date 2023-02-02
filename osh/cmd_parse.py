@@ -46,6 +46,7 @@ from core import error
 from core import ui
 from core.pyerror import log, p_die
 from frontend import consts
+from frontend import lexer
 from frontend import match
 from frontend import reader
 from osh import braces
@@ -194,11 +195,11 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
   left_token, close_token, part_offset, w = preparsed
 
   if left_token.id == Id.Lit_VarLike:  # s=1
-    if left_token.val[-2] == '+':
-      var_name = left_token.val[:-2]
+    if lexer.IsPlusEquals(left_token):
+      var_name = lexer.TokenSliceRight(left_token, -2)
       op = assign_op_e.PlusEqual
     else:
-      var_name = left_token.val[:-1]
+      var_name = lexer.TokenSliceRight(left_token, -1)
       op = assign_op_e.Equal
 
     tmp = sh_lhs_expr.Name(left_token, var_name)
@@ -206,8 +207,8 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     lhs = cast(sh_lhs_expr_t, tmp)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
-    var_name = left_token.val[:-1]
-    if close_token.val[-2] == '+':
+    var_name = lexer.TokenSliceRight(left_token, -1)
+    if lexer.IsPlusEquals(close_token):
       op = assign_op_e.PlusEqual
     else:
       op = assign_op_e.Equal
@@ -223,8 +224,8 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
-    var_name = left_token.val[:-1]
-    if close_token.val[-2] == '+':
+    var_name = lexer.TokenSliceRight(left_token, -1)
+    if lexer.IsPlusEquals(close_token):
       op = assign_op_e.PlusEqual
     else:
       op = assign_op_e.Equal
@@ -278,10 +279,10 @@ def _AppendMoreEnv(preparsed_list, more_env):
       p_die("Environment binding shouldn't look like an array assignment",
             left_token)
 
-    if left_token.val[-2] == '+':
+    if lexer.IsPlusEquals(left_token):
       p_die('Expected = in environment binding, got +=', left_token)
 
-    var_name = left_token.val[:-1]
+    var_name = lexer.TokenSliceRight(left_token, -1)
     n = len(w.parts)
     if part_offset == n:
       val = rhs_word.Empty()  # type: rhs_word_t

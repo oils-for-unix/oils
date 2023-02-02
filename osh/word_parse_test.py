@@ -19,6 +19,7 @@ from asdl import runtime
 from core import error
 from core import test_lib
 from core.test_lib import Tok
+from frontend import lexer
 from osh import word_
 
 
@@ -137,6 +138,40 @@ single quoted'\
   def testSaveLinesAndDiscard(self):
     # Also takes a left, right, token
     pass
+
+
+class LexerTest(unittest.TestCase):
+  """
+  It's more convenient to test the lexer here, because we have a proper lexer
+  and so forth.
+  """
+
+  def testAssignFunctions(self):
+    arena = test_lib.MakeArena('')
+
+    expr = 'ls; foo=42'
+    w_parser = test_lib.InitWordParser(expr, arena=arena)
+
+    # Skip first two words
+    w_parser.ReadWord(lex_mode_e.ShCommand)
+    w_parser.ReadWord(lex_mode_e.ShCommand)
+    w3 = w_parser.ReadWord(lex_mode_e.ShCommand)
+    print(w3)
+
+    self.assertEqual(False, lexer.IsPlusEquals(w3.parts[0]))
+    self.assertEqual('foo', lexer.TokenSliceRight(w3.parts[0], -1))
+
+    expr = 'ls; foo+=X'
+    w_parser = test_lib.InitWordParser(expr, arena=arena)
+
+    # Skip first two words
+    w_parser.ReadWord(lex_mode_e.ShCommand)
+    w_parser.ReadWord(lex_mode_e.ShCommand)
+    w3 = w_parser.ReadWord(lex_mode_e.ShCommand)
+    print(w3)
+
+    self.assertEqual(True, lexer.IsPlusEquals(w3.parts[0]))
+    self.assertEqual('foo', lexer.TokenSliceRight(w3.parts[0], -2))
 
 
 class WordParserTest(unittest.TestCase):

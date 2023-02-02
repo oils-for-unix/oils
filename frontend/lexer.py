@@ -35,12 +35,26 @@ def LazyVal(tok):
   return tok.val
 
 
+def IsPlusEquals(tok):
+  # type: (Token) -> bool
+  """ Common pattern to test if we got foo= or foo+= """
+  index = tok.col + tok.length - 2
+  return tok.line.content[index] == '+'
+
+
+def TokenSliceRight(tok, right_index):
+  # type: (Token, int) -> str
+  """ Slice token directly, without creating intermediate string """
+  assert right_index < 0
+  right = tok.col + tok.length + right_index
+  return tok.line.content[ tok.col : right]
+
+
 def DummyToken(id_, val):
   # type: (int, str) -> Token
 
   col = -1
   length = -1
-  line_id = -1
   return Token(id_, col, length, runtime.NO_SPID, None, val)
 
 
