@@ -79,7 +79,7 @@ def _simple_var_sub(obj):
     n1 = runtime.NewLeaf(Id_str(obj.left.id), color_e.OtherConst)
     p_node.unnamed_fields.append(n1)
 
-  n2 = runtime.NewLeaf(obj.name, color_e.StringConst)
+  n2 = runtime.NewLeaf(obj.var_name, color_e.StringConst)
   p_node.unnamed_fields.append(n2)
 
   return p_node

@@ -129,7 +129,7 @@ module syntax
   double_quoted = (Token left, word_part* parts, Token right)
   single_quoted = (Token left, Token* tokens, Token right)
 
-  simple_var_sub = (Token left, string name)
+  simple_var_sub = (Token left, string var_name)
 
   command_sub = (Token left_token, command child, Token right)
 

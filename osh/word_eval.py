@@ -1394,13 +1394,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # TODO: use name
     token = part.left
+    var_name = part.var_name
 
     vsub_state = VarSubState()
 
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
-      var_name = token.tval[1:]
-
       # TODO: Special case for LINENO
       val = self.mem.GetValue(var_name)
       if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
@@ -1412,8 +1411,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 var_name, token)
 
     elif token.id == Id.VSub_Number:
-      var_num = int(token.tval[1:])
+      var_num = int(var_name)
       val = self._EvalVarNum(var_num)
+
     else:
       val = self._EvalSpecialVar(token.id, quoted, vsub_state)
 
