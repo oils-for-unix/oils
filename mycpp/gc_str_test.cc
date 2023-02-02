@@ -1133,6 +1133,10 @@ TEST test_str_format() {
   ASSERT(str_equals0("'high \\xff \\xfe high'",
                      StrFormat("%r", StrFromC("high \xFF \xFE high"))));
 
+  // check that justification can be set with -
+  ASSERT(str_equals0("foo  ", StrFormat("%-5s", StrFromC("foo"))));
+  ASSERT(str_equals0("  bar", StrFormat("%5s", StrFromC("bar"))));
+
   PASS();
 }
 

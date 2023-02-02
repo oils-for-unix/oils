@@ -12,7 +12,7 @@
 
 GLOBAL_STR(kEmptyString, "");
 
-static const std::regex gStrFmtRegex("([^%]*)(?:%([0-9]*)(.))?");
+static const std::regex gStrFmtRegex("([^%]*)(?:%(-?[0-9]*)(.))?");
 static const int kMaxFmtWidth = 256;  // arbitrary...
 
 int Str::find(Str* needle, int pos) {
@@ -488,6 +488,7 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
 
     int width = 0;
     bool zero_pad = false;
+    bool pad_back = false;
     const std::csub_match& width_m = match[2];
     const std::string& width_s = width_m.str();
     if (width_m.matched && !width_s.empty()) {
@@ -498,6 +499,10 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
                                &width));
       } else {
         assert(StringToInteger(width_s.c_str(), width_s.size(), 10, &width));
+      }
+      if (width < 0) {
+        pad_back = true;
+        width *= -1;
       }
       assert(width >= 0 && width < kMaxFmtWidth);
     }
@@ -547,12 +552,17 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     }
     assert(str_to_add != nullptr);
 
+    if (pad_back) {
+      buf.append(str_to_add, add_len);
+    }
     if (add_len < width) {
       for (int i = 0; i < width - add_len; ++i) {
         buf.push_back(zero_pad ? '0' : ' ');
       }
     }
-    buf.append(str_to_add, add_len);
+    if (!pad_back) {
+      buf.append(str_to_add, add_len);
+    }
   }
 
   return StrFromC(buf.c_str(), buf.size());
