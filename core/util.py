@@ -49,6 +49,10 @@ class _DebugFile(object):
     # type: (str) -> None
     pass
 
+  def writeln(self, s):
+    # type: (str) -> None
+    self.write(s + '\n')
+
   def isatty(self):
     # type: () -> bool
     return False
