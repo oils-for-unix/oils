@@ -1758,7 +1758,7 @@ class WordParser(WordEmitter):
 
     self._Peek()
     if self.token_kind != Kind.VSub:
-      p_die('Invalid var ref', self.cur_token)
+      p_die('Expected var name', self.cur_token)
 
     part = self._ParseVarOf()
     # NOTE: no ${ } means no part.left and part.right
@@ -1767,7 +1767,7 @@ class WordParser(WordEmitter):
 
     self._Peek()
     if self.token_type != Id.Eof_Real:
-      p_die('Expected end of var ref', self.cur_token)
+      p_die('Expected end of var ref expression', self.cur_token)
     return part
 
   def LookPastSpace(self):

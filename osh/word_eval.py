@@ -742,9 +742,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError()
 
-  def _EvalVarRef(self, val, token, quoted, vsub_state, vtest_place):
+  def _EvalVarRef(self, val, blame_tok, quoted, vsub_state, vtest_place):
     # type: (value_t, Token, bool, VarSubState, VTestPlace) -> value_t
-    """Handles indirect expansion like ${!var} and ${!a[0]}."""
+    """Handles indirect expansion like ${!var} and ${!a[0]}.
+
+    Args:
+      blame_tok: 'foo' for ${!foo}
+    """
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Undef):
@@ -752,9 +756,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
-        bvs_part = self.unsafe_arith.ParseVarRef(val.s, token)
+        bvs_part = self.unsafe_arith.ParseVarRef(val.s, blame_tok)
         if not self.exec_opts.eval_unsafe_arith() and bvs_part.bracket_op:
-          e_die('a[i] not allowed without shopt -s eval_unsafe_arith', token)
+          e_die('a[i] not allowed without shopt -s eval_unsafe_arith', blame_tok)
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
       elif case(value_e.MaybeStrArray):  # caught earlier but OK

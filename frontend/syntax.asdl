@@ -66,13 +66,17 @@ module syntax
   | ArgvWord(string what, int span_id)
 
     -- code parsed from the value of a variable
-    -- used for $PS1 $PROMPT_COMMAND eval_unsafe_arith
+    -- used for $PS1 $PROMPT_COMMAND
   | Variable(string var_name, int span_id)
+
+    -- Point to the original variable reference
+  | VarRef(Token orig_tok)
 
     -- alias expansion (location of first word)
   | Alias(string argv0, int argv0_spid)
 
     -- 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
+    -- TODO: use this for eval_unsafe_arith instead of Variable
   | Reparsed(string what, Token left_token, Token right_token)
 
     -- For --location-str

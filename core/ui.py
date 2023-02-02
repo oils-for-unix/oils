@@ -13,12 +13,13 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, SourceLine, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__Alias, source__Reparsed, source__Variable, source__ArgvWord,
-    source__Synthetic
+    source__Alias, source__Reparsed, source__Variable, source__VarRef,
+    source__ArgvWord, source__Synthetic
 )
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
+from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, StrFromC
@@ -164,6 +165,18 @@ def GetLineSourceString(arena, line, quote_filename=False):
         where = 'line %d of %s' % (line_num, outer_source)
 
       s = '[ var %s at %s ]' % (var_name, where)
+
+    elif case(source_e.VarRef):
+      src = cast(source__VarRef, UP_src)
+
+      orig_tok = src.orig_tok
+      line_num = orig_tok.line.line_num
+      outer_source = GetLineSourceString(arena, orig_tok.line,
+                                         quote_filename=quote_filename)
+      where = 'line %d of %s' % (line_num, outer_source)
+
+      var_name = lexer.TokenVal(orig_tok)
+      s = '[ contents of var %r at %s ]' % (var_name, where)
 
     elif case(source_e.Alias):
       src = cast(source__Alias, UP_src)

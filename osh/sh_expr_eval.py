@@ -220,7 +220,7 @@ class UnsafeArith(object):
 
     return lval
 
-  def ParseVarRef(self, ref_str, token):
+  def ParseVarRef(self, ref_str, blame_tok):
     # type: (str, Token) -> braced_var_sub
     """Parse and evaluate value for ${!ref}
 
@@ -239,12 +239,12 @@ class UnsafeArith(object):
     _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
     lvalue.Indexed?
     """
-    static_ref_spid = token.span_id
-
     line_reader = reader.StringLineReader(ref_str, self.arena)
     lexer = self.parse_ctx.MakeLexer(line_reader)
     w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
-    with alloc.ctx_Location(self.arena, source.Variable(token.tval, static_ref_spid)):
+
+    src = source.VarRef(blame_tok)
+    with alloc.ctx_Location(self.arena, src):
       try:
         bvs_part = w_parser.ParseVarRef()
       except error.Parse as e:
@@ -252,8 +252,7 @@ class UnsafeArith(object):
         self.errfmt.PrettyPrintError(e)
 
         # this affects builtins 'unset' and 'printf'
-        # TODO: Don't print outer location?
-        e_die('Invalid var ref', loc.Span(static_ref_spid))
+        e_die("Invalid var ref expression", blame_tok)
 
     return bvs_part
 

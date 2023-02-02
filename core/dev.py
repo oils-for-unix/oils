@@ -299,6 +299,7 @@ class Tracer(object):
       # We have to parse this at runtime.  PS4 should usually remain constant.
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4)
 
+      # NOTE: could use source.Variable, like $PS1 prompt does
       try:
         ps4_word = w_parser.ReadForPlugin()
       except error.Parse as e:

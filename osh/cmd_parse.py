@@ -602,7 +602,15 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
-    op_val = op_tok.tval
+    # Note: the lexer could take distinguish between
+    #  >out 
+    #  3>out 
+    #  {fd}>out
+    #
+    # which would make the code below faster.  But small string optimization
+    # would also speed it up, since redirects are small.
+
+    op_val = lexer.TokenVal(op_tok)
     if op_val[0] == '{':
       pos = op_val.find('}')
       assert pos != -1  # lexer ensures this
@@ -1034,7 +1042,7 @@ class CommandParser(object):
       elif len(suffix_words) == 2:
         arg_word = suffix_words[1]
       else:
-        p_die('Unexpected argument to %r' % kw_token.tval,
+        p_die('Unexpected argument to %r' % lexer.TokenVal(kw_token),
               loc.Word(suffix_words[2]))
 
       return command.ControlFlow(kw_token, arg_word)
