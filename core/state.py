@@ -18,7 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, hay_node
 )
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, loc_t
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
@@ -1353,9 +1353,9 @@ class Mem(object):
       return
     self.current_spid = span_id
 
-  def CurrentSpanId(self):
-    # type: () -> int
-    return self.current_spid
+  def CurrentLocation(self):
+    # type: () -> loc_t
+    return loc.Span(self.current_spid)
 
   #
   # Status Variable Stack (for isolating $PS1 and $PS4)
