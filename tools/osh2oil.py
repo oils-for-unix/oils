@@ -890,7 +890,7 @@ class OilPrinter(object):
             part0 = dq_part.parts[0]
             if part0.tag_() == word_part_e.SimpleVarSub:
               vsub_part = cast(simple_var_sub, dq_part.parts[0])
-              if vsub_part.token.id == Id.VSub_At:
+              if vsub_part.left.id == Id.VSub_At:
                 # NOTE: This is off for double quoted part.  Hack to subtract 1.
                 self.cursor.PrintUntil(left_spid)
                 self.cursor.SkipUntil(right_spid + 1)  # " then $@ then "
@@ -898,10 +898,10 @@ class OilPrinter(object):
                 return  # Done replacing
 
               # "$1" -> $1, "$foo" -> $foo
-              if vsub_part.token.id in (Id.VSub_Number, Id.VSub_DollarName):
+              if vsub_part.left.id in (Id.VSub_Number, Id.VSub_DollarName):
                 self.cursor.PrintUntil(left_spid)
                 self.cursor.SkipUntil(right_spid + 1)
-                self.f.write(lexer.LazyVal(vsub_part.token))
+                self.f.write(lexer.LazyVal(vsub_part.left))
                 return
 
             # Single arith sub, command sub, etc.
@@ -1007,8 +1007,8 @@ class OilPrinter(object):
       elif case(word_part_e.SimpleVarSub):
         node = cast(simple_var_sub, UP_node)
 
-        spid = node.token.span_id
-        op_id = node.token.id
+        spid = node.left.span_id
+        op_id = node.left.id
 
         if op_id == Id.VSub_DollarName:
           self.cursor.PrintUntil(spid + 1)

@@ -1389,8 +1389,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # blame ${ location
     return self._ConcatPartVals(part_vals, part.left.span_id)
 
-  def _EvalSimpleVarSub(self, token, part_vals, quoted):
-    # type: (Token, List[part_value_t], bool) -> None
+  def _EvalSimpleVarSub(self, part, part_vals, quoted):
+    # type: (simple_var_sub, List[part_value_t], bool) -> None
+
+    # TODO: use name
+    token = part.left
 
     vsub_state = VarSubState()
 
@@ -1427,15 +1430,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
     v = _ValueToPartValue(val, quoted)
     part_vals.append(v)
 
-  def EvalSimpleVarSubToString(self, tok):
-    # type: (Token) -> str
+  def EvalSimpleVarSubToString(self, node):
+    # type: (simple_var_sub) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"
     """
     part_vals = []  # type: List[part_value_t]
-    self._EvalSimpleVarSub(tok, part_vals, False)
-    return self._ConcatPartVals(part_vals, tok.span_id)
+    self._EvalSimpleVarSub(node, part_vals, False)
+    return self._ConcatPartVals(part_vals, node.left.span_id)
 
   def _EvalExtGlob(self, part, part_vals):
     # type: (word_part__ExtGlob, List[part_value_t]) -> None
@@ -1557,7 +1560,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.SimpleVarSub):
         part = cast(simple_var_sub, UP_part)
-        self._EvalSimpleVarSub(part.token, part_vals, quoted)
+        self._EvalSimpleVarSub(part, part_vals, quoted)
 
       elif case(word_part_e.BracedVarSub):
         part = cast(braced_var_sub, UP_part)

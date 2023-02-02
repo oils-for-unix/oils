@@ -74,7 +74,10 @@ def _simple_var_sub(obj):
   # type: (simple_var_sub) -> hnode_t
   p_node = runtime.NewRecord('$')
   p_node.abbrev = True
-  _AbbreviateToken(obj.token, p_node.unnamed_fields)
+
+  n1 = runtime.NewLeaf(obj.name, color_e.StringConst)
+  p_node.unnamed_fields.append(n1)
+
   return p_node
 
 

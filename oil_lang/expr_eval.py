@@ -501,7 +501,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.SimpleVarSub):
         node = cast(simple_var_sub, UP_node)
-        return self.word_ev.EvalSimpleVarSubToString(node.token)
+        return self.word_ev.EvalSimpleVarSubToString(node)
 
       elif case(expr_e.Unary):
         node = cast(expr__Unary, UP_node)
@@ -886,8 +886,8 @@ class OilEvaluator(object):
       elif case(class_literal_term_e.SimpleVarSub):
         term = cast(simple_var_sub, UP_term)
 
-        s = self.word_ev.EvalSimpleVarSubToString(term.token)
-        spid = term.token.span_id
+        s = self.word_ev.EvalSimpleVarSubToString(term)
+        spid = term.left.span_id
 
     assert s is not None, term
     for ch in s:
@@ -1001,8 +1001,8 @@ class OilEvaluator(object):
       elif case(re_e.SimpleVarSub):
         node = cast(simple_var_sub, UP_node)
 
-        s = self.word_ev.EvalSimpleVarSubToString(node.token)
-        return re.LiteralChars(s, node.token.span_id)
+        s = self.word_ev.EvalSimpleVarSubToString(node)
+        return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.Splice):
         node = cast(re__Splice, UP_node)

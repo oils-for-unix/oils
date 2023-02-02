@@ -34,6 +34,11 @@
 --   # Simplify compound_word reference
 --   bool_expr = WordTest %compound_word | ...
 
+-- Conventions:
+--
+--   'Token left' and 'Token right' are generally for location info, but their
+--   Id_t can also be used for execution
+
 module syntax
 {
   -- core/main_loop.py
@@ -124,7 +129,7 @@ module syntax
   double_quoted = (Token left, word_part* parts, Token right)
   single_quoted = (Token left, Token* tokens, Token right)
 
-  simple_var_sub = (Token token)
+  simple_var_sub = (Token left, string name)
 
   command_sub = (Token left_token, command child, Token right)
 

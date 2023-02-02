@@ -1,11 +1,15 @@
 """
 string_ops.py - String library functions that can be exposed with a saner syntax.
 
-Instead of:
+OSH
 
     local y=${x//a*/b}
-    var y = x -> sub('a*', 'b', :ALL)
-    var y = x -> sub( Glob/a*/, 'b', :ALL)  # maybe a glob literal
+
+Oil:
+
+    var y = x => sub('a*', 'b', :ALL)
+
+    Pass x => sub('a*', 'b', :ALL) => var y
 """
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -19,7 +23,7 @@ import libc
 
 from typing import List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import suffix_op__Unary, suffix_op__PatSub
+  from _devbuild.gen.syntax_asdl import suffix_op__PatSub
 
 _ = log
 

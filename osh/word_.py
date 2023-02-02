@@ -167,7 +167,7 @@ def LeftMostSpanForPart(part):
 
     elif case(word_part_e.SimpleVarSub):
       part = cast(simple_var_sub, UP_part)
-      return part.token.span_id
+      return part.left.span_id
 
     elif case(word_part_e.BracedVarSub):
       part = cast(braced_var_sub, UP_part)
@@ -240,7 +240,8 @@ def _RightMostSpanForPart(part):
 
     elif case(word_part_e.SimpleVarSub):
       part = cast(simple_var_sub, UP_part)
-      return part.token.span_id
+      # left and right are the same for $myvar
+      return part.left.span_id
 
     elif case(word_part_e.BracedVarSub):
       part = cast(braced_var_sub, UP_part)
