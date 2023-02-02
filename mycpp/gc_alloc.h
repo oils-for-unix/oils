@@ -111,6 +111,10 @@ T* Alloc(Args&&... args) {
 //
 
 inline Str* NewStr(int len) {
+  if (len == 0) {  // e.g. BufLineReader::readline() can use this optimization
+    return kEmptyString;
+  }
+
   int obj_len = kStrHeaderSize + len + 1;
 
   // only allocation is unconditionally returned
