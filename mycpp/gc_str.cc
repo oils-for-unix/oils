@@ -378,25 +378,34 @@ Str* Str::join(List<Str*>* items) {
   int length = 0;
 
   int num_parts = len(items);
-  if (num_parts == 0) {  // " ".join([]) == ""
+
+  // " ".join([]) == ""
+  if (num_parts == 0) {
     return kEmptyString;
   }
+
+  // Common case
+  // 'anything'.join(["foo"]) == "foo"
+  if (num_parts == 1) {
+    return items->index_(0);
+  }
+
   for (int i = 0; i < num_parts; ++i) {
     length += len(items->index_(i));
   }
   // add length of all the separators
-  int len_ = len(this);
-  length += len_ * (num_parts - 1);
+  int this_len = len(this);
+  length += this_len * (num_parts - 1);
 
   Str* result = NewStr(length);
   char* p_result = result->data_;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
     // log("i %d", i);
-    if (i != 0 && len_) {             // optimize common case of ''.join()
-      memcpy(p_result, data_, len_);  // copy the separator
-      p_result += len_;
-      // log("len_ %d", len_);
+    if (i != 0 && this_len) {             // optimize common case of ''.join()
+      memcpy(p_result, data_, this_len);  // copy the separator
+      p_result += this_len;
+      // log("this_len %d", this_len);
     }
 
     int n = len(items->index_(i));

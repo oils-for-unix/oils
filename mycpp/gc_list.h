@@ -435,7 +435,9 @@ class ListIter {
   }
 
   // only for use with generators
-  List<T>* GetList() { return L_; }
+  List<T>* GetList() {
+    return L_;
+  }
 
  private:
   List<T>* L_;

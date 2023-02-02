@@ -1040,8 +1040,31 @@ TEST test_str_join() {
   printf("-------- Str::join -------\n");
 
   {
+    Str* result = kEmptyString->join(Alloc<List<Str*>>());
+    ShowString(result);
+    ASSERT(are_equal(kEmptyString, result));
+    ASSERT_EQ(kEmptyString, result);  // pointers equal
+  }
+
+  {
+    Str* result = StrFromC("anything")->join(Alloc<List<Str*>>());
+    ShowString(result);
+    ASSERT(are_equal(kEmptyString, result));
+    ASSERT_EQ(kEmptyString, result);  // pointers equal
+  }
+
+  {
+    Str* one_string = StrFromC("one string");
+    // NewList avoids std::initializer_list()
+    Str* result = StrFromC("anything")->join(NewList<Str*>({one_string}));
+    ShowString(result);
+    ASSERT(are_equal(one_string, result));
+    ASSERT_EQ(one_string, result);  // pointers equal
+  }
+
+  {
     Str* result =
-        (StrFromC(""))->join(NewList<Str*>({StrFromC("abc"), StrFromC("def")}));
+        kEmptyString->join(NewList<Str*>({StrFromC("abc"), StrFromC("def")}));
     ShowString(result);
     ASSERT(are_equal(result, StrFromC("abcdef")));
   }

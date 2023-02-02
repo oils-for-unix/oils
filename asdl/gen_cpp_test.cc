@@ -1,18 +1,18 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
+#include "_gen/asdl/examples/shared_variant.asdl.h"
 #include "_gen/asdl/examples/typed_arith.asdl.h"
 #include "_gen/asdl/examples/typed_demo.asdl.h"  // has simple Sum, etc
-#include "_gen/asdl/examples/shared_variant.asdl.h"
 #include "mycpp/runtime.h"
 #include "prebuilt/asdl/runtime.mycpp.h"
 #include "vendor/greatest.h"
 
 using typed_arith_asdl::pipeline;
 
+using typed_arith_asdl::arith_expr;    // variant type namespace
 using typed_arith_asdl::arith_expr_e;  // variant tag type
 using typed_arith_asdl::arith_expr_t;  // sum type
-using typed_arith_asdl::arith_expr;  // variant type namespace
 
 using typed_arith_asdl::arith_expr__Const;
 using typed_arith_asdl::arith_expr__FuncCall;
@@ -68,14 +68,14 @@ TEST misc_test() {
   auto p = Alloc<pipeline>(true);
   log("p->negated = %d", p->negated);
 
-  #if 0
+#if 0
   if (t->tag_() == hnode_e::Leaf) {
     hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);
     log("%s", hnode_str(t2->tag_()));
     log("%s", color_str(t2->color));
     log("%s", t2->s->data_);
   }
-  #endif
+#endif
 
   // NOTE: This is self-initialization!!!
   /*
@@ -90,16 +90,14 @@ TEST misc_test() {
   PASS();
 }
 
-
+using shared_variant_asdl::double_quoted;
 using shared_variant_asdl::word_part_e;
 using shared_variant_asdl::word_part_t;
-using shared_variant_asdl::double_quoted;
 
 using shared_variant_asdl::tok;
 using shared_variant_asdl::tok_e;
 using shared_variant_asdl::tok_t;
 using shared_variant_asdl::Token;
-
 
 TEST shared_variant_test() {
   auto* dq = Alloc<double_quoted>(0, Alloc<List<Str*>>());
