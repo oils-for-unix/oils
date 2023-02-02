@@ -574,7 +574,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if quoted:
       eval_flags |= QUOTED
 
-    tok = op.tok
+    tok = op.op
     # NOTE: Splicing part_values is necessary because of code like
     # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
     # do_glob/do_elide setting.
@@ -768,7 +768,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (value_t, suffix_op__Unary) -> value_t
     assert val.tag_() != value_e.Undef
 
-    op_kind = consts.GetKind(op.tok.id)
+    op_kind = consts.GetKind(op.op.id)
 
     if op_kind == Kind.VOp1:
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
@@ -781,7 +781,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       with tagswitch(val) as case:
         if case(value_e.Str):
           val = cast(value__Str, UP_val)
-          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s, has_extglob)
+          s = string_ops.DoUnarySuffixOp(val.s, op.op, arg_val.s, has_extglob)
           #log('%r %r -> %r', val.s, arg_val.s, s)
           new_val = value.Str(s) # type: value_t
 
@@ -791,14 +791,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
-              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, has_extglob))
+              strs.append(string_ops.DoUnarySuffixOp(s, op.op, arg_val.s, has_extglob))
           new_val = value.MaybeStrArray(strs)
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           strs = []
           for s in val.d.values():
-            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, has_extglob))
+            strs.append(string_ops.DoUnarySuffixOp(s, op.op, arg_val.s, has_extglob))
           new_val = value.MaybeStrArray(strs)
 
         else:
@@ -1253,7 +1253,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_op = suffix_op
     if suffix_op is not None and suffix_op.tag_() == suffix_op_e.Unary:
       suffix_op = cast(suffix_op__Unary, UP_op)
-      if consts.GetKind(suffix_op.tok.id) == Kind.VTest:
+      if consts.GetKind(suffix_op.op.id) == Kind.VTest:
         suffix_is_test = True
 
     if part.prefix_op:
@@ -1271,8 +1271,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if suffix_is_test:
             # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
             # it's fatal.
-            tok = cast(suffix_op__Unary, UP_op).tok
-            e_die('Test operation not allowed with ${!array[@]}', tok)
+            op_tok = cast(suffix_op__Unary, UP_op).op
+            e_die('Test operation not allowed with ${!array[@]}', op_tok)
 
           # ${!array[@]} to get indices/keys
           val = self._Keys(val, part.token)
@@ -1309,7 +1309,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
-          if consts.GetKind(op.tok.id) == Kind.VTest:
+          if consts.GetKind(op.op.id) == Kind.VTest:
             if self._ApplyTestOp(val, op, quoted, part_vals, vtest_place,
                                  part.token):
               # e.g. to evaluate ${undef:-'default'}, we already appended

@@ -102,7 +102,7 @@ module syntax
 
   suffix_op = 
     Nullary %Token  -- ${x@Q} or ${!prefix@} (which also has prefix_op)
-  | Unary(Token tok, rhs_word arg_word)  -- e.g. ${v:-default}
+  | Unary(Token op, rhs_word arg_word)  -- e.g. ${v:-default}
     -- TODO: Implement Oil's ${x|html} and ${x %.3f}
   | Static(Token tok, string arg)
   | PatSub(compound_word pat, rhs_word replace, id replace_mode, Token slash_tok)
@@ -110,12 +110,12 @@ module syntax
   | Slice(arith_expr? begin, arith_expr? length)
 
   braced_var_sub = (
-      Token left,  -- same as name dynamic ParseVarRef
+      Token left,  -- in dynamic ParseVarRef, same as name_tok
       Token token,  -- the name
       Token? prefix_op,  -- prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op,
-      Token right  -- same as name for dynamic ParseVarRef
+      Token right  -- in dynamic ParseVarRef, same as name_tok
   )
 
   -- Variants:

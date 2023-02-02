@@ -228,11 +228,11 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
 #   then the result back at the end.
 # - Compile time errors for [[:space:]] ?
 
-def DoUnarySuffixOp(s, op, arg, is_extglob):
-  # type: (str, suffix_op__Unary, str, bool) -> str
+def DoUnarySuffixOp(s, op_tok, arg, is_extglob):
+  # type: (str, Token, str, bool) -> str
   """Helper for ${x#prefix} and family."""
 
-  tok = op.tok
+  id_ = op_tok.id
 
   # Fast path for constant strings.
   # TODO: Should be LooksLikeExtendedGlob!
@@ -243,14 +243,14 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
     # escaping/unescaping.
     arg = glob_.GlobUnescape(arg)
 
-    if tok.id in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
+    if id_ in (Id.VOp1_Pound, Id.VOp1_DPound):  # const prefix
       # explicit check for non-empty arg (len for mycpp)
       if len(arg) and s.startswith(arg):
         return s[len(arg):]
       else:
         return s
 
-    elif tok.id in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
+    elif id_ in (Id.VOp1_Percent, Id.VOp1_DPercent):  # const suffix
       # need explicit check for non-empty arg (len for mycpp)
       if len(arg) and s.endswith(arg):
         return s[:-len(arg)]
@@ -258,34 +258,34 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
         return s
 
     # These operators take glob arguments, we don't implement that obscure case.
-    elif tok.id == Id.VOp1_Comma:  # Only lowercase the first letter
+    elif id_ == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
-        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
+        e_die("%s can't have an argument" % ui.PrettyId(id_), op_tok)
       if len(s):
         return s[0].lower() + s[1:]
       else:
         return s
 
-    elif tok.id == Id.VOp1_DComma:
+    elif id_ == Id.VOp1_DComma:
       if arg != '':
-        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
+        e_die("%s can't have an argument" % ui.PrettyId(id_), op_tok)
       return s.lower()
 
-    elif tok.id == Id.VOp1_Caret:  # Only uppercase the first letter
+    elif id_ == Id.VOp1_Caret:  # Only uppercase the first letter
       if arg != '':
-        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
+        e_die("%s can't have an argument" % ui.PrettyId(id_), op_tok)
       if len(s):
         return s[0].upper() + s[1:]
       else:
         return s
 
-    elif tok.id == Id.VOp1_DCaret:
+    elif id_ == Id.VOp1_DCaret:
       if arg != '':
-        e_die("%s can't have an argument" % ui.PrettyId(tok.id), tok)
+        e_die("%s can't have an argument" % ui.PrettyId(id_), op_tok)
       return s.upper()
 
     else:  # e.g. ^ ^^ , ,,
-      raise AssertionError(tok.id)
+      raise AssertionError(id_)
 
   # For patterns, do fnmatch() in a loop.
   #
@@ -301,7 +301,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
 
   n = len(s)
 
-  if tok.id == Id.VOp1_Pound:  # shortest prefix
+  if id_ == Id.VOp1_Pound:  # shortest prefix
     # 'abcd': match '', 'a', 'ab', 'abc', ...
     i = 0
     while True:
@@ -314,7 +314,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
       i = _NextUtf8Char(s, i)
     return s
 
-  elif tok.id == Id.VOp1_DPound:  # longest prefix
+  elif id_ == Id.VOp1_DPound:  # longest prefix
     # 'abcd': match 'abc', 'ab', 'a'
     i = n
     while True:
@@ -327,7 +327,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
       i = PreviousUtf8Char(s, i)
     return s
 
-  elif tok.id == Id.VOp1_Percent:  # shortest suffix
+  elif id_ == Id.VOp1_Percent:  # shortest suffix
     # 'abcd': match 'abcd', 'abc', 'ab', 'a'
     i = n
     while True:
@@ -340,7 +340,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
       i = PreviousUtf8Char(s, i)
     return s
 
-  elif tok.id == Id.VOp1_DPercent:  # longest suffix
+  elif id_ == Id.VOp1_DPercent:  # longest suffix
     # 'abcd': match 'abc', 'bc', 'c', ...
     i = 0
     while True:
@@ -354,7 +354,7 @@ def DoUnarySuffixOp(s, op, arg, is_extglob):
     return s
 
   else:
-    raise NotImplementedError(ui.PrettyId(tok.id))
+    raise NotImplementedError(ui.PrettyId(id_))
 
 
 def _AllMatchPositions(s, regex):
