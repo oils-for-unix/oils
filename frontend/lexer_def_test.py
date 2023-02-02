@@ -293,7 +293,7 @@ class LineLexerTest(unittest.TestCase):
     #log('RIGHT %s', right)
     # self.assertTrue(test_lib.TokensEqual(left, right))
     self.assertEqual(left.id, right.id, '%s != %s' % (Id_str(left.id), Id_str(right.id)))
-    self.assertEqual(left.val, right.val)
+    self.assertEqual(left.tval, right.tval)
 
   def testReadOuter(self):
     l = test_lib.InitLineLexer('\n', self.arena)

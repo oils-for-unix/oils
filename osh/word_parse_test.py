@@ -187,11 +187,11 @@ class WordParserTest(unittest.TestCase):
 
   def testDisambiguatePrefix(self):
     w = _assertReadWord(self, '${#}')
-    self.assertEqual('#', _GetVarSub(self, w).token.val)
+    self.assertEqual('#', _GetVarSub(self, w).token.tval)
     w = _assertReadWord(self, '${!}')
-    self.assertEqual('!', _GetVarSub(self, w).token.val)
+    self.assertEqual('!', _GetVarSub(self, w).token.tval)
     w = _assertReadWord(self, '${?}')
-    self.assertEqual('?', _GetVarSub(self, w).token.val)
+    self.assertEqual('?', _GetVarSub(self, w).token.tval)
 
     w = _assertReadWord(self, '${var}')
 
@@ -204,7 +204,7 @@ class WordParserTest(unittest.TestCase):
 
     # Length of length
     w = _assertReadWord(self, '${##}')
-    self.assertEqual('#', _GetVarSub(self, w).token.val)
+    self.assertEqual('#', _GetVarSub(self, w).token.tval)
     self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w))
 
     w = _assertReadWord(self, '${array[0]}')
@@ -477,7 +477,7 @@ class WordParserTest(unittest.TestCase):
     w_parser = test_lib.InitWordParser(code)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual('foo', w.parts[0].val)
+    self.assertEqual('foo', w.parts[0].tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
@@ -485,7 +485,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual('bar', w.parts[0].val)
+    self.assertEqual('bar', w.parts[0].tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
@@ -503,11 +503,11 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.BashRegex)
     assert w
-    self.assertEqual('(', w.parts[0].val)
-    self.assertEqual('foo', w.parts[1].val)
-    self.assertEqual('|', w.parts[2].val)
-    self.assertEqual('bar', w.parts[3].val)
-    self.assertEqual(')', w.parts[4].val)
+    self.assertEqual('(', w.parts[0].tval)
+    self.assertEqual('foo', w.parts[1].tval)
+    self.assertEqual('|', w.parts[2].tval)
+    self.assertEqual('bar', w.parts[3].tval)
+    self.assertEqual(')', w.parts[4].tval)
     self.assertEqual(5, len(w.parts))
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -579,7 +579,7 @@ ls bar
       self.assertEqual(1, len(w.parts))
       part = w.parts[0]
       self.assertEqual(id_, part.id)
-      self.assertEqual(val, part.val)
+      self.assertEqual(val, part.tval)
 
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -591,7 +591,7 @@ ls bar
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     self.assertEqual(word_e.Token, w.tag_())
     self.assertEqual(Id.Op_Newline, w.id)
-    self.assertEqual(None, w.val)
+    self.assertEqual(None, w.tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assertWord(w, Id.Lit_Chars, 'ls')
@@ -602,28 +602,28 @@ ls bar
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     self.assertEqual(word_e.Token, w.tag_())
     self.assertEqual(Id.Op_Newline, w.id)
-    self.assertEqual(None, w.val)
+    self.assertEqual(None, w.tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     self.assertEqual(word_e.Token, w.tag_())
     self.assertEqual(Id.Eof_Real, w.id)
-    self.assertEqual('', w.val)
+    self.assertEqual('', w.tval)
 
   def testUnicode(self):
     words = 'z \xce\xbb \xe4\xb8\x89 \xf0\x9f\x98\x98'
 
     w_parser = test_lib.InitWordParser(words)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual('z', w.parts[0].val)
+    self.assertEqual('z', w.parts[0].tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual('\xce\xbb', w.parts[0].val)
+    self.assertEqual('\xce\xbb', w.parts[0].tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual('\xe4\xb8\x89', w.parts[0].val)
+    self.assertEqual('\xe4\xb8\x89', w.parts[0].tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual('\xf0\x9f\x98\x98', w.parts[0].val)
+    self.assertEqual('\xf0\x9f\x98\x98', w.parts[0].tval)
 
   def testParseErrorLocation(self):
     w = _assertSpanForWord(self, 'a=(1 2 3)')
