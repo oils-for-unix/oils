@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
     command__TimeBlock,
     BraceGroup,
 
-    arith_expr_e, arith_expr_t, compound_word, Token,
+    arith_expr_e, arith_expr_t, compound_word, simple_var_sub, Token,
 )
 from asdl import runtime
 from core.pyerror import log
@@ -129,9 +129,9 @@ def SpanForArithExpr(node):
   # type: (arith_expr_t) -> int
   UP_node = node
   with tagswitch(node) as case:
-    if case(arith_expr_e.VarRef):
-      token = cast(Token, UP_node)
-      return token.span_id
+    if case(arith_expr_e.VarSub):
+      vsub = cast(simple_var_sub, UP_node)
+      return vsub.left.span_id
     elif case(arith_expr_e.Word):
       w = cast(compound_word, UP_node)
       return word_.LeftMostSpanForWord(w)

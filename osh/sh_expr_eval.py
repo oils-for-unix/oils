@@ -26,7 +26,7 @@ from _devbuild.gen.syntax_asdl import (
     compound_word, Token,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
-    braced_var_sub,
+    braced_var_sub, simple_var_sub,
     loc
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
@@ -452,9 +452,9 @@ class ArithEvaluator(object):
     val = self.Eval(node)
 
     # BASH_LINENO, arr (array name with shopt -s compat_array), etc.
-    if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarRef:
-      tok = cast(Token, node)
-      if word_eval.ShouldArrayDecay(tok.tval, self.exec_opts):
+    if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarSub:
+      vsub = cast(simple_var_sub, node)
+      if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
         val = word_eval.DecayArray(val)
 
     # TODO: Can we avoid the runtime cost of adding location info?
@@ -484,12 +484,11 @@ class ArithEvaluator(object):
 
     UP_node = node
     with tagswitch(node) as case:
-      if case(arith_expr_e.VarRef):  # $(( x ))  (can be array)
-        tok = cast(Token, UP_node)
-        var_name = tok.tval
-        val = self.mem.GetValue(var_name)
+      if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
+        vsub = cast(simple_var_sub, UP_node)
+        val = self.mem.GetValue(vsub.var_name)
         if val.tag_() == value_e.Undef and self.exec_opts.nounset():
-          e_die('Undefined variable %r' % var_name, tok)
+          e_die('Undefined variable %r' % vsub.var_name, vsub.left)
         return val
 
       elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
@@ -797,16 +796,16 @@ class ArithEvaluator(object):
 
     return lval
 
-  def _VarRefOrWord(self, anode):
+  def _VarNameOrWord(self, anode):
     # type: (arith_expr_t) -> Tuple[Optional[str], int]
     """
     Returns (var_name, span_id) if the arith node can be interpreted that way
     """
     UP_anode = anode
     with tagswitch(anode) as case:
-      if case(arith_expr_e.VarRef):
-        tok = cast(Token, UP_anode)
-        return (tok.tval, tok.span_id)
+      if case(arith_expr_e.VarSub):
+        tok = cast(simple_var_sub, UP_anode)
+        return (tok.var_name, tok.left.span_id)
 
       elif case(arith_expr_e.Word):
         w = cast(compound_word, UP_anode)
@@ -826,7 +825,7 @@ class ArithEvaluator(object):
     if anode.tag_() == arith_expr_e.Binary:
       anode = cast(arith_expr__Binary, UP_anode)
       if anode.op_id == Id.Arith_LBracket:
-        var_name, span_id = self._VarRefOrWord(anode.left)
+        var_name, span_id = self._VarNameOrWord(anode.left)
         if var_name is not None:
           if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)
@@ -841,7 +840,7 @@ class ArithEvaluator(object):
             lval = lval3
             return lval
 
-    var_name, span_id = self._VarRefOrWord(anode)
+    var_name, span_id = self._VarNameOrWord(anode)
     if var_name is not None:
       lval1 = lvalue.Named(var_name)
       lval1.spids.append(span_id)

@@ -221,8 +221,8 @@ module syntax
   | UnparsedIndex(Token left, string name, string index)  -- for translation
 
   arith_expr =
-    VarRef %Token  -- variable without $
-  | Word %compound_word  -- a string that looks like an integer
+    VarSub %simple_var_sub  -- e.g. $(( x ))
+  | Word %compound_word     -- e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
   | BinaryAssign(id op_id, arith_expr left, arith_expr right)

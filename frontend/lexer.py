@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 _EOL_TOK = Token(Id.Eol_Tok, -1, -1, runtime.NO_SPID, None, None)
 
 
+# TODO: Remove this
 def LazyVal(tok):
   # type: (Token) -> str
   """Compute string value on demand."""
@@ -40,6 +41,12 @@ def IsPlusEquals(tok):
   """ Common pattern to test if we got foo= or foo+= """
   index = tok.col + tok.length - 2
   return tok.line.content[index] == '+'
+
+
+def TokenVal(tok):
+  # type: (Token) -> str
+  """Compute string value on demand."""
+  return tok.line.content[tok.col : tok.col + tok.length]
 
 
 def TokenSliceLeft(tok, left_index):
