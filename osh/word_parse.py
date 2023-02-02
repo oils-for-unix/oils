@@ -354,6 +354,7 @@ class WordParser(WordEmitter):
 
     part = braced_var_sub()
     part.token = name_token
+    part.var_name = lexer.TokenVal(name_token)
     part.bracket_op = bracket_op
     return part
 

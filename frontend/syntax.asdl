@@ -115,12 +115,13 @@ module syntax
   | Slice(arith_expr? begin, arith_expr? length)
 
   braced_var_sub = (
-      Token left,  -- in dynamic ParseVarRef, same as name_tok
-      Token token,  -- the name
+      Token left,        -- in dynamic ParseVarRef, same as name_tok
+      Token token,       -- location for the name
+      string var_name,   -- the name
       Token? prefix_op,  -- prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op,
-      Token right  -- in dynamic ParseVarRef, same as name_tok
+      Token right        -- in dynamic ParseVarRef, same as name_tok
   )
 
   -- Variants:

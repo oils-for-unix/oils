@@ -951,7 +951,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       result = value.Str(''.join(chars))
 
     else:
-      e_die('Var op %r not implemented' % op.tval, op)
+      e_die('Var op %r not implemented' % lexer.TokenVal(op), op)
 
     return result, quoted2
 
@@ -1008,7 +1008,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case2(value_e.Str):
         # Bash treats any string as an array, so we can't add our own
         # behavior here without making valid OSH invalid bash.
-        e_die("Can't index string %r with integer" % part.token.tval,
+        e_die("Can't index string %r with integer" % part.var_name,
               part.token)
 
       elif case2(value_e.MaybeStrArray):
@@ -1092,14 +1092,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if not self.exec_opts.nounset():
       return value.Str('')
 
-    name = token.tval[1:] if token.tval.startswith('$') else token.tval
+    tval = lexer.TokenVal(token)
+    name = tval[1:] if tval.startswith('$') else tval
     e_die('Undefined variable %r' % name, token)
 
   def _EmptyMaybeStrArrayOrError(self, token):
     # type: (Token) -> value_t
     assert token is not None
     if self.exec_opts.nounset():
-      e_die('Undefined array %r' % token.tval, token)
+      e_die('Undefined array %r' % lexer.TokenVal(token), token)
     else:
       return value.MaybeStrArray([])
 
@@ -1140,12 +1141,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
-      var_name = part.token.tval
-      vtest_place.name = var_name
-      val = self.mem.GetValue(var_name)
+      vtest_place.name = part.var_name
+      val = self.mem.GetValue(part.var_name)
 
     elif part.token.id == Id.VSub_Number:
-      var_num = int(part.token.tval)
+      var_num = int(part.var_name)
       val = self._EvalVarNum(var_num)
 
     else:
@@ -1212,7 +1212,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         suffix_op_ = cast(Token, part.suffix_op)
         # ${!x@} but not ${!x@P}
         if consts.GetKind(suffix_op_.id) == Kind.VOp3:
-          names = self.mem.VarNamesStartingWith(part.token.tval)
+          names = self.mem.VarNamesStartingWith(part.var_name)
           names.sort()
 
           suffix_op_ = cast(Token, part.suffix_op)
@@ -1223,14 +1223,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part_vals.append(part_value.String(sep.join(names), quoted, True))
           return  # EARLY RETURN
 
-      var_name = part.token.tval
+      var_name = part.var_name
       vtest_place.name = var_name
 
       # TODO: LINENO can use its own span_id!
       val = self.mem.GetValue(var_name)
 
     elif part.token.id == Id.VSub_Number:
-      var_num = int(part.token.tval)
+      var_num = int(part.var_name)
       val = self._EvalVarNum(var_num)
     else:
       # $* decays
@@ -1987,7 +1987,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # (not guaranteed since started_pairs is set twice)
             e_die('LHS array not allowed in assignment builtin', loc.Word(w))
 
-          tok_val = left_token.tval
           if lexer.IsPlusEquals(left_token):
             var_name = lexer.TokenSliceRight(left_token, -2)
             append = True
