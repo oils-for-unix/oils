@@ -33,6 +33,9 @@
 --
 --   # Simplify compound_word reference
 --   bool_expr = WordTest %compound_word | ...
+--
+--   # There can't be any raw Token here
+--   seq_word = Compound %compound_word | BracedTree(...)
 
 -- Conventions:
 --
@@ -151,7 +154,7 @@ module syntax
   | AssocArrayLiteral(Token left, assoc_pair* pairs)
   | Literal %Token
     -- escaped case is separate so the evaluator doesn't have to check token ID
-  | EscapedLiteral(Token token)
+  | EscapedLiteral(Token token, string ch)
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
   | SimpleVarSub %simple_var_sub

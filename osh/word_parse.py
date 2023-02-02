@@ -832,7 +832,9 @@ class WordParser(WordEmitter):
 
       if self.token_kind == Kind.Lit:
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
+          tok = self.cur_token
+          ch = lexer.TokenSliceLeft(tok, 1)
+          part = word_part.EscapedLiteral(tok, ch)  # type: word_part_t
         else:
           if self.token_type == Id.Lit_BadBackslash:
             # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
@@ -844,8 +846,7 @@ class WordParser(WordEmitter):
                     self.cur_token)
           elif self.token_type == Id.Lit_Dollar:
             if is_oil_expr or not self.parse_opts.parse_dollar():
-              p_die("Literal $ should be quoted like \$",
-                    self.cur_token)
+              p_die("Literal $ should be quoted like \$", self.cur_token)
 
           part = self.cur_token
         out_parts.append(part)
@@ -1398,14 +1399,14 @@ class WordParser(WordEmitter):
     done = False
 
     if self.token_type == Id.Lit_EscapedChar:
+      tok = self.cur_token
+      assert tok.length == 2
+      ch = lexer.TokenSliceLeft(tok, 1)
       if not self.parse_opts.parse_backslash():
-        tok_val = self.cur_token.tval
-        assert len(tok_val) == 2  # because of the regex
-        ch = tok_val[1]
         if not pyutil.IsValidCharEscape(ch):
           p_die('Invalid char escape (parse_backslash)', self.cur_token)
 
-      part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
+      part = word_part.EscapedLiteral(self.cur_token, ch)  # type: word_part_t
     else:
       part = self.cur_token
 
@@ -1632,7 +1633,7 @@ class WordParser(WordEmitter):
     if self.token_kind == Kind.Unknown:
       # e.g. happened during dynamic parsing of unset 'a[$foo]' in gherkin
       p_die('Unexpected token while parsing arithmetic: %r' %
-            self.cur_token.tval, self.cur_token)
+            lexer.TokenVal(self.cur_token), self.cur_token)
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token

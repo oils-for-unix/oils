@@ -1529,11 +1529,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.EscapedLiteral):
         part = cast(word_part__EscapedLiteral, UP_part)
-        tval = part.token.tval
-        assert len(tval) == 2, tval  # e.g. \*
-        assert tval[0] == '\\'
-        s = tval[1]
-        v = part_value.String(s, True, False)
+        v = part_value.String(part.ch, True, False)
         part_vals.append(v)
 
       elif case(word_part_e.SingleQuoted):
