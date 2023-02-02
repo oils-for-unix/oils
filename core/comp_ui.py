@@ -587,6 +587,4 @@ def InitReadline(readline, history_filename, root_comp, display, debug_f):
     # No delimiters because readline isn't smart enough to tokenize shell!
     readline.set_completer_delims('')
 
-    readline.set_completion_display_matches_hook(
-        lambda *args: display.PrintCandidates(*args)
-    )
+    readline.set_completion_display_matches_hook(display)

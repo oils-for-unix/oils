@@ -22,7 +22,7 @@ void Readline::write_history_file(Str* path) {
   assert(0);  // not implemented
 }
 
-void Readline::set_completer(ReadlineCompleterFunc completer) {
+void Readline::set_completer(completion::ReadlineCallback *completer) {
   assert(0);  // not implemented
 }
 
@@ -31,7 +31,7 @@ void Readline::set_completer_delims(Str* delims) {
 }
 
 void Readline::set_completion_display_matches_hook(
-    ReadlineDisplayMatchesHookFunc hook) {
+      comp_ui::_IDisplay* display) {
   assert(0);  // not implemented
 }
 

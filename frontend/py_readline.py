@@ -9,8 +9,8 @@ except ImportError:
 
 from typing import Callable, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-  ReadlineCompleterFunc = Callable[[str, int], str]
-  ReadlineDisplayMatchesHookFunc = Callable[[str, List[str], int], None]
+  from core.completion import ReadlineCallback
+  from core.comp_ui import _IDisplay
 
 class Readline(object):
     """
@@ -38,15 +38,19 @@ class Readline(object):
         line_input.write_history_file(path)
 
     def set_completer(self, completer=None):
-        # type: (Optional[ReadlineCompleterFunc]) -> None
+        # type: (Optional[ReadlineCallback]) -> None
         line_input.set_completer(completer)
 
     def set_completer_delims(self, delims):
         # type: (str) -> None
         line_input.set_completer_delims(delims)
 
-    def set_completion_display_matches_hook(self, hook=None):
-        # type: (Optional[ReadlineDisplayMatchesHookFunc]) -> None
+    def set_completion_display_matches_hook(self, display=None):
+        # type: (Optional[_IDisplay]) -> None
+        hook = None
+        if display is not None:
+            hook = lambda *args: display.PrintCandidates(*args)
+
         line_input.set_completion_display_matches_hook(hook)
 
     def get_line_buffer(self):

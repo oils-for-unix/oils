@@ -5,10 +5,19 @@
 
 #include "mycpp/runtime.h"
 
-namespace py_readline {
+// hacky foward decl
+namespace completion {
+class ReadlineCallback;
+Str* ExecuteReadlineCallback(ReadlineCallback*, Str*, int);
+}
 
-typedef Str* (*ReadlineCompleterFunc)(Str*, int);
-typedef void (*ReadlineDisplayMatchesHookFunc)(Str*, List<Str*>*, int);
+// hacky foward decl
+namespace comp_ui {
+class _IDisplay;
+void ExecutePrintCandidates(_IDisplay*, Str*, List<Str*>*, int);
+}
+
+namespace py_readline {
 
 class Readline {
  public:
@@ -18,10 +27,10 @@ class Readline {
   void add_history(Str* line);
   void read_history_file(Str* path);
   void write_history_file(Str* path);
-  void set_completer(ReadlineCompleterFunc completer);
+  void set_completer(completion::ReadlineCallback *completer);
   void set_completer_delims(Str* delims);
   void set_completion_display_matches_hook(
-      ReadlineDisplayMatchesHookFunc hook = nullptr);
+      comp_ui::_IDisplay* display = nullptr);
   Str* get_line_buffer();
   int get_begidx();
   int get_endidx();
