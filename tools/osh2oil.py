@@ -108,7 +108,7 @@ class Cursor(object):
       if span.line is None:
         continue
 
-      piece = span.line.val[span.col : span.col + span.length]
+      piece = span.line.content[span.col : span.col + span.length]
       self.f.write(piece)
 
     self.next_span_id = until_span_id
@@ -140,7 +140,7 @@ def PrintSpans(arena):
     return
 
   for i, span in enumerate(arena.tokens):
-    piece = span.line.val[span.col : span.col + span.length]
+    piece = span.line.content[span.col : span.col + span.length]
     print('%5d %r' % (i, piece))
   print_stderr('(%d tokens)' % len(arena.tokens))
 
@@ -258,7 +258,7 @@ class OilPrinter(object):
   def _DebugSpid(self, spid):
     # type: (int) -> None
     span = self.arena.GetToken(spid)
-    s = span.line.val[span.col : span.col + span.length]
+    s = span.line.content[span.col : span.col + span.length]
     print_stderr('SPID %d = %r' % (spid, s))
 
   def End(self):

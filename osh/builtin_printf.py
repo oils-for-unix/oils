@@ -81,7 +81,7 @@ class _FormatStringParser(object):
     part = printf_part.Percent()
     while self.token_type in (Id.Format_Flag, Id.Format_Zero):
       # space and + could be implemented
-      flag = self.cur_token.val
+      flag = lexer.LazyVal(self.cur_token)
       if flag in '# +':
         p_die("osh printf doesn't support the %r flag" % flag, self.cur_token)
 
@@ -103,10 +103,11 @@ class _FormatStringParser(object):
       part.type = self.cur_token
 
       # ADDITIONAL VALIDATION outside the "grammar".
-      if part.type.val in 'eEfFgG':
+      type_val = lexer.LazyVal(part.type)
+      if type_val in 'eEfFgG':
         p_die("osh printf doesn't support floating point", part.type)
       # These two could be implemented.  %c needs utf-8 decoding.
-      if part.type.val == 'c':
+      if type_val == 'c':
         p_die("osh printf doesn't support single characters (bytes)", part.type)
 
     elif self.token_type == Id.Unknown_Tok:
@@ -190,12 +191,12 @@ class Printf(vm._Builtin):
           flags = []  # type: List[str]
           if len(part.flags) > 0:
             for flag_token in part.flags:
-              flags.append(flag_token.val)
+              flags.append(lexer.LazyVal(flag_token))
 
           width = -1  # nonexistent
           if part.width:
             if part.width.id in (Id.Format_Num, Id.Format_Zero):
-              width_str = part.width.val
+              width_str = lexer.LazyVal(part.width)
               width_spid = part.width.span_id
             elif part.width.id == Id.Format_Star:
               if arg_index < num_args:
@@ -223,7 +224,7 @@ class Printf(vm._Builtin):
               precision_str = '0'
               precision_spid = part.precision.span_id
             elif part.precision.id in (Id.Format_Num, Id.Format_Zero):
-              precision_str = part.precision.val
+              precision_str = lexer.LazyVal(part.precision)
               precision_spid = part.precision.span_id
             elif part.precision.id == Id.Format_Star:
               if arg_index < num_args:
@@ -256,7 +257,7 @@ class Printf(vm._Builtin):
             word_spid = runtime.NO_SPID
             has_arg = False
 
-          typ = part.type.val
+          typ = lexer.LazyVal(part.type)
           if typ == 's':
             if precision >= 0:
               s = s[:precision]  # truncate

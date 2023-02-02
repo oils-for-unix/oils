@@ -117,9 +117,9 @@ def _ReadHereLines(line_reader,  # type: _Reader
       # Attribute it to the << in <<EOF for now.
       p_die("Couldn't find terminator for here doc that starts here", h.op)
 
-    assert len(src_line.val) != 0  # None should be the empty line
+    assert len(src_line.content) != 0  # None should be the empty line
 
-    line = src_line.val
+    line = src_line.content
 
     # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
     # the first tab.
@@ -150,7 +150,8 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[SourceLine, int]]
   tokens = []  # type: List[Token]
   for src_line, start_offset in here_lines:
     t = arena.NewToken(
-        Id.Lit_Chars, start_offset, len(src_line.val), src_line, src_line.val[start_offset:])
+        Id.Lit_Chars, start_offset, len(src_line.content), src_line,
+        src_line.content[start_offset:])
     tokens.append(t)
   parts = [cast(word_part_t, t) for t in tokens]
   return parts
@@ -183,7 +184,7 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
   # Create a span with the end terminator.  Maintains the invariant that
   # the spans "add up".
   h.here_end_span_id = arena.NewTokenId(
-      Id.Undefined_Tok, end_pos, len(end_line.val), end_line, '')
+      Id.Undefined_Tok, end_pos, len(end_line.content), end_line, '')
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
@@ -218,7 +219,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     assert left_token.line == right_token.line, \
         '%s and %s not on same line' % (left_token, right_token)
 
-    index_str = left_token.line.val[left_token.col : right_token.col]
+    index_str = left_token.line.content[left_token.col : right_token.col]
     lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
@@ -233,7 +234,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     # Similar to SnipCodeString / SnipCodeBlock
     if span1.line == span2.line:
       # extract what's between brackets
-      code_str = span1.line.val[span1.col + span1.length : span2.col]
+      code_str = span1.line.content[span1.col + span1.length : span2.col]
     else:
       raise NotImplementedError('%s != %s' % (span1.line, span2.line))
     a_parser = parse_ctx.MakeArithParser(code_str)

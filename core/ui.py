@@ -63,7 +63,7 @@ def PrettyToken(tok, arena):
   if tok.id == Id.Eof_Real:
     return 'EOF'
 
-  val = tok.line.val[tok.col: tok.col + tok.length]
+  val = tok.line.content[tok.col: tok.col + tok.length]
   # TODO: Print length 0 as 'EOF'?
   return repr(val)
 
@@ -201,7 +201,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
   token = arena.GetToken(span_id)
   orig_col = token.col
   src = token.line.src
-  line = token.line.val
+  line = token.line.content
   line_num = token.line.line_num  # overwritten by source__LValue case
 
   if show_code:
@@ -218,7 +218,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
       # Rather than quoting the internal buffer:
       #   x+
       #     ^
-      line2 = span2.line.val
+      line2 = span2.line.content
       lbracket_col = span2.col + span2.length
       # NOTE: The inner line number is always 1 because of reparsing.  We
       # overwrite it with the original span.

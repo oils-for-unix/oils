@@ -39,7 +39,7 @@ def SnipCodeBlock(left, right, lines):
   if left.line == right.line:
     for li in lines:
       if li == left.line:
-        piece = li.val[left.col + left.length : right.col]
+        piece = li.content[left.col + left.length : right.col]
         pieces.append(piece)
     return ''.join(pieces)
 
@@ -52,7 +52,7 @@ def SnipCodeBlock(left, right, lines):
       saving = True
 
       # Save everything after the left token
-      piece = li.val[left.col + left.length : ]
+      piece = li.content[left.col + left.length : ]
       pieces.append(piece)
       #log('   %r', piece)
       continue
@@ -60,7 +60,7 @@ def SnipCodeBlock(left, right, lines):
     if li == right.line:
       found_right = True
 
-      piece = li.val[ : right.col]
+      piece = li.content[ : right.col]
       pieces.append(piece)
       #log('   %r', piece)
 
@@ -68,8 +68,8 @@ def SnipCodeBlock(left, right, lines):
       break
 
     if saving:
-      pieces.append(li.val)
-      #log('   %r', li.val)
+      pieces.append(li.content)
+      #log('   %r', li.content)
 
   assert found_left, "Couldn't find left token"
   assert found_right, "Couldn't find right token"
@@ -208,7 +208,7 @@ class Arena(object):
     if left.line == right.line:
       for li in self.lines_list:
         if li == left.line:
-          piece = li.val[left.col : right.col + right.length]
+          piece = li.content[left.col : right.col + right.length]
           return piece
 
     pieces = []  # type: List[str]
@@ -221,7 +221,7 @@ class Arena(object):
         saving = True
 
         # Save everything after the left token
-        piece = li.val[left.col:]
+        piece = li.content[left.col:]
         pieces.append(piece)
         #log('   %r', piece)
         continue
@@ -229,7 +229,7 @@ class Arena(object):
       if li == right.line:
         found_right = True
 
-        piece = li.val[ : right.col + right.length]
+        piece = li.content[ : right.col + right.length]
         pieces.append(piece)
         #log('   %r', piece)
 
@@ -237,8 +237,8 @@ class Arena(object):
         break
 
       if saving:
-        pieces.append(li.val)
-        #log('   %r', li.val)
+        pieces.append(li.content)
+        #log('   %r', li.content)
 
     assert found_left, "Couldn't find left token"
     assert found_right, "Couldn't find right token"

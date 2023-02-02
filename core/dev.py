@@ -110,7 +110,7 @@ class CrashDumper(object):
         # render that.
         self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, token.line)
         self.error['line_num'] = token.line.line_num
-        self.error['line'] = token.line.val
+        self.error['line'] = token.line.content
 
       # TODO: Collect functions, aliases, etc.
 
@@ -581,7 +581,7 @@ class Tracer(object):
 
     left_span = arena.GetToken(left_spid)
     right_span = arena.GetToken(right_spid)
-    line = left_span.line.val
+    line = left_span.line.content
     start = left_span.col
 
     if left_span.line == right_span.line:

@@ -1326,7 +1326,7 @@ class Mem(object):
           token = self.arena.GetToken(frame.call_spid)
           d['call_source'] = ui.GetLineSourceString(self.arena, token.line)
           d['call_line_num'] = token.line.line_num
-          d['call_line'] = token.line.val
+          d['call_line'] = token.line.content
 
         d['argv_frame'] = frame.argv_i
         d['var_frame'] = frame.var_i

@@ -27,6 +27,14 @@ if TYPE_CHECKING:
 _EOL_TOK = Token(Id.Eol_Tok, -1, -1, runtime.NO_SPID, None, None)
 
 
+def LazyVal(tok):
+  # type: (Token) -> str
+  """Compute string value on demand."""
+  if tok.val is None:
+    tok.val = tok.line.content[tok.col : tok.col + tok.length]
+  return tok.val
+
+
 def DummyToken(id_, val):
   # type: (int, str) -> Token
 
@@ -83,7 +91,7 @@ class LineLexer(object):
     # type: (lex_mode_t) -> Id_t
     """Look ahead exactly one token in the given lexer mode."""
     pos = self.line_pos
-    line_str= self.src_line.val
+    line_str = self.src_line.content
     n = len(line_str)
     if pos == n:
       return Id.Unknown_Tok
@@ -105,7 +113,7 @@ class LineLexer(object):
     Note: Only ShCommand emits Id.WS_Space, but other lexer modes don't.
     """
     pos = self.line_pos
-    line_str = self.src_line.val
+    line_str = self.src_line.content
     n = len(line_str)
     #print('Look ahead from pos %d, line %r' % (pos,self.line))
     while True:
@@ -147,17 +155,18 @@ class LineLexer(object):
     """
     pos = self.line_pos - unread
     assert pos > 0
-    tok_type, end_pos = match.OneToken(lex_mode_e.FuncParens, self.src_line.val, pos)
+    tok_type, _ = match.OneToken(
+        lex_mode_e.FuncParens, self.src_line.content, pos)
     return tok_type == Id.LookAhead_FuncParens
 
   def ByteLookAhead(self):
     # type: () -> str
     """Lookahead a single byte.  Useful when you know the token is one char."""
     pos = self.line_pos
-    if pos == len(self.src_line.val):
+    if pos == len(self.src_line.content):
       return ''
     else:
-      return self.src_line.val[pos]
+      return self.src_line.content[pos]
 
   def ByteLookBack(self):
     # type: () -> int
@@ -172,13 +181,13 @@ class LineLexer(object):
     if pos < 0:
       return -1
     else:
-      return ord(self.src_line.val[pos])
+      return ord(self.src_line.content[pos])
 
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
     # Inner loop optimization
     if self.src_line:
-      line_str = self.src_line.val
+      line_str = self.src_line.content
     else:
       line_str = ''
     line_pos = self.line_pos
