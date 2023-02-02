@@ -21,8 +21,7 @@ namespace py_readline {
 
 class Readline {
  public:
-  Readline() : GC_CLASS_FIXED(header_, kZeroMask, sizeof(Readline)) {
-  }
+  Readline();
   void parse_and_bind(Str* s);
   void add_history(Str* line);
   void read_history_file(Str* path);
@@ -41,6 +40,15 @@ class Readline {
   void resize_terminal();
 
   GC_OBJ(header_);
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(Readline, completer_delims_));
+  }
+
+  int begidx_;
+  int endidx_;
+  Str* completer_delims_;
+  completion::ReadlineCallback* completer_;
+  comp_ui::_IDisplay* display_;
 };
 
 Readline* MaybeGetReadline();
