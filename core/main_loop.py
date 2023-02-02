@@ -204,49 +204,50 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
     # - display.EraseLines() needs to be called BEFORE displaying anything, so
     # it appears in all branches.
 
-    while True:  # ONLY EXECUTES ONCE
-      prompt_plugin.Run()
-      try:
-        # may raise HistoryError or ParseError
-        result = c_parser.ParseInteractiveLine()
-        UP_result = result
-        with tagswitch(result) as case:
-          if case(parse_result_e.EmptyLine):
-            display.EraseLines()
-            break  # quit shell
-          elif case(parse_result_e.Eof):
-            display.EraseLines()
-            done = True
-            break  # quit shell
-          elif case(parse_result_e.Node):
-            result = cast(parse_result__Node, UP_result)
-            node = result.cmd
-          else:
-            raise AssertionError()
+    quit = False
+    prompt_plugin.Run()
+    try:
+      # may raise HistoryError or ParseError
+      result = c_parser.ParseInteractiveLine()
+      UP_result = result
+      with tagswitch(result) as case:
+        if case(parse_result_e.EmptyLine):
+          display.EraseLines()
+          quit = True
+        elif case(parse_result_e.Eof):
+          display.EraseLines()
+          done = True
+          quit = True
+        elif case(parse_result_e.Node):
+          result = cast(parse_result__Node, UP_result)
+          node = result.cmd
+        else:
+          raise AssertionError()
 
-      except util.HistoryError as e:  # e.g. expansion failed
-        # Where this happens:
-        # for i in 1 2 3; do
-        #   !invalid
-        # done
-        display.EraseLines()
-        print(e.UserErrorString())
-        break
-      except error.Parse as e:
-        display.EraseLines()
-        errfmt.PrettyPrintError(e)
-        status = 2
-        cmd_ev.mem.SetLastStatus(status)
-        break
-      except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
-        # Here we must print a newline BEFORE EraseLines()
-        print('^C')
-        display.EraseLines()
-        # http://www.tldp.org/LDP/abs/html/exitcodes.html
-        # bash gives 130, dash gives 0, zsh gives 1.
-        # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
-        break
+    except util.HistoryError as e:  # e.g. expansion failed
+      # Where this happens:
+      # for i in 1 2 3; do
+      #   !invalid
+      # done
+      display.EraseLines()
+      print(e.UserErrorString())
+      quit = True
+    except error.Parse as e:
+      display.EraseLines()
+      errfmt.PrettyPrintError(e)
+      status = 2
+      cmd_ev.mem.SetLastStatus(status)
+      quit = True
+    except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+      # Here we must print a newline BEFORE EraseLines()
+      print('^C')
+      display.EraseLines()
+      # http://www.tldp.org/LDP/abs/html/exitcodes.html
+      # bash gives 130, dash gives 0, zsh gives 1.
+      # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
+      quit = True
 
+    if not quit:
       display.EraseLines()  # Clear candidates right before executing
 
       # to debug the slightly different interactive prasing
@@ -266,9 +267,6 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
       status = cmd_ev.LastStatus()
       if is_return:
         done = True
-        break
-
-      break  # QUIT LOOP after one iteration.
 
     # After every "logical line", no lines will be referenced by the Arena.
     # Tokens in the LST still point to many lines, but lines with only comment
