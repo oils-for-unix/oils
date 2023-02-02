@@ -35,7 +35,6 @@ from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from frontend import flag_spec
 from frontend import reader
-from frontend import py_reader
 from frontend import parse_lib
 
 from oil_lang import expr_eval
@@ -511,7 +510,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   elif flag.i:  # force interactive
     src = source.Stdin(' -i')
     if mylib.PYTHON:
-      line_reader = py_reader.InteractiveLineReader(
+      line_reader = reader.InteractiveLineReader(
           arena, prompt_ev, hist_ev, readline, prompt_state)
     else:
       line_reader = None
@@ -528,7 +527,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         if stdin.isatty():
           src = source.Interactive()
           if mylib.PYTHON:
-            line_reader = py_reader.InteractiveLineReader(
+            line_reader = reader.InteractiveLineReader(
                 arena, prompt_ev, hist_ev, readline, prompt_state)
           else:
             line_reader = None
