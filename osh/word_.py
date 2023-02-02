@@ -324,6 +324,16 @@ def RightMostSpanForWord(w):
   raise AssertionError('for -Wreturn-type in C++')
 
 
+
+def _MakeTildeSub(tok):
+  # type: (Token) -> word_part__TildeSub
+  if tok.length == 1:
+    user_name = None  # type: Optional[str]
+  else:
+    user_name = lexer.TokenSliceLeft(tok, 1)
+  return word_part.TildeSub(tok, user_name)
+
+
 # From bash, general.c, unquoted_tilde_word():
 # POSIX.2, 3.6.1:  A tilde-prefix consists of an unquoted tilde character at
 # the beginning of the word, followed by all of the characters preceding the
@@ -366,7 +376,8 @@ def TildeDetect(UP_w):
     return None
 
   tok0 = cast(Token, part0)
-  new_parts = [word_part.TildeSub(tok0)]  # type: List[word_part_t]
+  tilde_sub = _MakeTildeSub(tok0)
+  new_parts = [tilde_sub]  # type: List[word_part_t]
 
   if len(w.parts) == 1:  # can't be zero
     return compound_word(new_parts)
@@ -412,7 +423,8 @@ def TildeDetectAssign(w):
         is_tilde = True  # you can expand :~
 
       if is_tilde:
-        parts[i] = word_part.TildeSub(cast(Token, cur))
+        tok = cast(Token, cur)
+        parts[i] = _MakeTildeSub(tok)
 
     # For next iteration
     do_expand = LiteralId(cur) == Id.Lit_Colon

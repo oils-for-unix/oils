@@ -1320,7 +1320,7 @@ class Transformer(object):
       return perl_class(negated_tok, perl)
 
     if tok_str[0].isupper():  # e.g. HexDigit
-      return re.Splice(tok)
+      return re.Splice(tok, lexer.TokenSliceLeft(tok, 1))
 
     p_die("%r isn't a character class" % tok_str, tok)
 
@@ -1407,7 +1407,8 @@ class Transformer(object):
 
       if tok.id == Id.Expr_At:
         # | '@' Expr_Name
-        return re.Splice(children[1].tok)
+        tok = children[1].tok
+        return re.Splice(tok, lexer.TokenSliceLeft(tok, 1))
 
       if tok.id == Id.Expr_Bang:
         # | '!' (Expr_Name | class_literal)

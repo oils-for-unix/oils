@@ -429,10 +429,12 @@ class TildeEvaluator(object):
     self.mem = mem
     self.exec_opts = exec_opts
 
-  def Eval(self, token):
-    # type: (Token) -> str
+  def Eval(self, part):
+    # type: (word_part__TildeSub) -> str
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
-    if token.tval == '~':
+
+    # Note: ASDL constructor doesn't let us make part.user_name = None
+    if len(part.user_name) == 0:
       # First look up the HOME var, then ask the OS.  This is what bash does.
       val = self.mem.GetValue('HOME')
       UP_val = val
@@ -441,13 +443,13 @@ class TildeEvaluator(object):
         return val.s
       result = pyos.GetMyHomeDir()
     else:
-      result = pyos.GetHomeDir(token.tval[1:])
+      result = pyos.GetHomeDir(part.user_name)
 
     if result is None:
       if self.exec_opts.strict_tilde():
-        e_die("Error expanding tilde (e.g. invalid user)", token)
+        e_die("Error expanding tilde (e.g. invalid user)", part.token)
       else:
-        return token.tval  # Return ~ or ~user literally
+        return lexer.TokenVal(part.token)  # Return ~ or ~user literally
 
     return result
 
@@ -1570,7 +1572,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part = cast(word_part__TildeSub, UP_part)
         # We never parse a quoted string into a TildeSub.
         assert not quoted
-        s = self.tilde_ev.Eval(part.token)
+        s = self.tilde_ev.Eval(part)
         v = part_value.String(s, True, False)  # NOT split even when unquoted!
         part_vals.append(v)
 
@@ -1593,8 +1595,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.Splice):
         part = cast(word_part__Splice, UP_part)
-        var_name = part.name.tval[1:]
-        val = self.mem.GetValue(var_name)
+        val = self.mem.GetValue(part.var_name)
 
         UP_val = val
         with tagswitch(val) as case2:
@@ -1615,7 +1616,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
               raise AssertionError()
 
           else:
-            e_die("Can't splice %r" % var_name, loc.WordPart(part))
+            e_die("Can't splice %r" % part.var_name, loc.WordPart(part))
 
         part_vals.append(part_value.Array(items))
 

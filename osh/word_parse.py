@@ -1430,15 +1430,15 @@ class WordParser(WordEmitter):
     elif (is_first and self.parse_opts.parse_at() and
           self.token_type == Id.Lit_Splice):
 
-      splice_token = self.cur_token
+      splice_tok = self.cur_token
 
       next_id = self.lexer.LookAheadOne(lex_mode)
       if next_id == Id.Op_LParen:  # @arrayfunc(x)
         arglist = ArgList()
         self._ParseInlineCallArgs(arglist)
-        part2 = word_part.FuncCall(splice_token, arglist)
+        part2 = word_part.FuncCall(splice_tok, arglist)
       else:
-        part2 = word_part.Splice(splice_token)
+        part2 = word_part.Splice(splice_tok, lexer.TokenSliceLeft(splice_tok, 1))
 
       parts.append(part2)
 

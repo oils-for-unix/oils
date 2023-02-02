@@ -158,8 +158,8 @@ module syntax
   | BracedVarSub %braced_var_sub
     -- For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %command_sub
-    -- This should be token tilde, token rest
-  | TildeSub(Token token)
+    -- ~ or ~bob
+  | TildeSub(Token token, string? user_name)
   | ArithSub(arith_expr anode)
     -- {a,b,c}
   | BracedTuple(compound_word* words)
@@ -173,7 +173,7 @@ module syntax
     -- Oil word_part extensions
 
     -- @myarray
-  | Splice(Token name)
+  | Splice(Token name, string var_name)
     -- $strfunc(x) and @arrayfunc(x)
   | FuncCall(Token name, ArgList args)
     -- $[d->key], etc.
@@ -561,7 +561,7 @@ module syntax
   | CharClass(bool negated, char_class_term* terms)
 
     -- @D
-  | Splice(Token name)
+  | Splice(Token name, string var_name)
 
     -- $literal ${literal} 'no-backslashes' "other$foo"
   | SimpleVarSub %simple_var_sub
