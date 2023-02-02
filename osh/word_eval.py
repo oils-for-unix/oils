@@ -1447,7 +1447,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if op.id == Id.ExtGlob_Comma:
       op_str = '@('
     else:
-      op_str = op.tval
+      op_str = lexer.TokenVal(op)
     # Do NOT split these.
     part_vals.append(part_value.String(op_str, False, False))
 

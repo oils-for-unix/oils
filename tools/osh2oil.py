@@ -901,7 +901,7 @@ class OilPrinter(object):
               if vsub_part.left.id in (Id.VSub_Number, Id.VSub_DollarName):
                 self.cursor.PrintUntil(left_spid)
                 self.cursor.SkipUntil(right_spid + 1)
-                self.f.write(lexer.LazyVal(vsub_part.left))
+                self.f.write(lexer.TokenVal(vsub_part.left))
                 return
 
             # Single arith sub, command sub, etc.

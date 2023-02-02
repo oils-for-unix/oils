@@ -27,15 +27,6 @@ if TYPE_CHECKING:
 _EOL_TOK = Token(Id.Eol_Tok, -1, -1, runtime.NO_SPID, None, None)
 
 
-# TODO: Remove this
-def LazyVal(tok):
-  # type: (Token) -> str
-  """Compute string value on demand."""
-  if tok.tval is None:
-    tok.tval = tok.line.content[tok.col : tok.col + tok.length]
-  return tok.tval
-
-
 def IsPlusEquals(tok):
   # type: (Token) -> bool
   """ Common pattern to test if we got foo= or foo+= """
