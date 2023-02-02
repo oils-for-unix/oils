@@ -42,12 +42,20 @@ def IsPlusEquals(tok):
   return tok.line.content[index] == '+'
 
 
+def TokenSliceLeft(tok, left_index):
+  # type: (Token, int) -> str
+  """ Slice token directly, without creating intermediate string """
+  assert left_index > 0
+  left = tok.col + left_index
+  return tok.line.content[left : tok.col + tok.length]
+
+
 def TokenSliceRight(tok, right_index):
   # type: (Token, int) -> str
   """ Slice token directly, without creating intermediate string """
   assert right_index < 0
   right = tok.col + tok.length + right_index
-  return tok.line.content[ tok.col : right]
+  return tok.line.content[tok.col : right]
 
 
 def DummyToken(id_, val):

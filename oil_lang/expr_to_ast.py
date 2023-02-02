@@ -18,8 +18,8 @@ from _devbuild.gen.syntax_asdl import (
     variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
-
 from core.pyerror import log, p_die
+from frontend import lexer
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -609,7 +609,7 @@ class Transformer(object):
                 (bare, bare), tok)
 
         # $? is allowed
-        return simple_var_sub(tok)
+        return simple_var_sub(tok, lexer.TokenSliceLeft(tok, 1))
 
       else:
         nt_name = self.number2symbol[typ]
@@ -1234,7 +1234,8 @@ class Transformer(object):
         return cast(single_quoted, p_child.children[1].tok)
 
       if typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(children[0].tok)
+        tok = children[0].tok
+        return simple_var_sub(tok, lexer.TokenSliceLeft(tok, 1))
 
       if typ == grammar_nt.char_literal:
         return class_literal_term.CharLiteral(children[0].tok)
@@ -1264,7 +1265,8 @@ class Transformer(object):
     if ISNONTERMINAL(typ):
       p_child = children[0]
       if typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(p_child.children[0].tok)
+        tok = p_child.children[0].tok
+        return simple_var_sub(tok, lexer.TokenSliceLeft(tok, 1))
 
       if typ == grammar_nt.braced_var_sub:
         return cast(braced_var_sub, p_child.children[1].tok)
@@ -1377,7 +1379,8 @@ class Transformer(object):
         return cast(single_quoted, p_child.children[1].tok)
 
       if typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(children[0].tok)
+        tok = children[0].tok
+        return simple_var_sub(tok, lexer.TokenSliceLeft(tok, 1))
 
       if typ == grammar_nt.char_literal:
         return children[0].tok

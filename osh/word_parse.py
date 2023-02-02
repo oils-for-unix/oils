@@ -77,6 +77,7 @@ from core.pyerror import log
 from core import pyutil
 from core import ui
 from frontend import consts
+from frontend import lexer
 from frontend import reader
 from osh import tdop
 from osh import arith_parse
@@ -857,7 +858,8 @@ class WordParser(WordEmitter):
         out_parts.append(part)
 
       elif self.token_kind == Kind.VSub:
-        part = simple_var_sub(self.cur_token)
+        tok = self.cur_token
+        part = simple_var_sub(tok, lexer.TokenSliceLeft(tok, 1))
         out_parts.append(part)
         # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
         # later.
@@ -1519,7 +1521,7 @@ class WordParser(WordEmitter):
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
 
-        part = simple_var_sub(vsub_token)  # type: word_part_t
+        part = simple_var_sub(vsub_token, lexer.TokenSliceLeft(vsub_token, 1))  # type: word_part_t
         if self.token_type == Id.VSub_DollarName:
           # Look ahead for $strfunc(x)
           #   $f(x) or --name=$f(x) is allowed
