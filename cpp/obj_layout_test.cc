@@ -4,7 +4,7 @@
 
 TEST sizeof_syntax() {
   // 40 bytes (after merging with line_span January 2023)
-  // - Get rid of 'string val' 
+  // - Get rid of 'string val'
   // - Replace 'int line_id' with SourceLine
   // - Maybe recompute length on demand
   log("sizeof(Token) = %d", sizeof(syntax_asdl::Token));

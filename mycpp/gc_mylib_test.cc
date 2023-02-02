@@ -152,19 +152,14 @@ TEST BufWriter_test() {
 using mylib::BufLineReader;
 
 TEST BufLineReader_test() {
-  Str* s = nullptr;
-  BufLineReader* reader = nullptr;
-  Str* line = nullptr;
-
-  StackRoots _roots({&s, &reader, &line});
-
-  s = StrFromC("foo\nbar\nleftover");
-  reader = Alloc<BufLineReader>(s);
+  Str* s = StrFromC("foo\nbar\nleftover");
+  auto reader = Alloc<BufLineReader>(s);
 
   ASSERT_EQ(false, reader->isatty());
 
   log("BufLineReader");
 
+  Str* line = nullptr;
   line = reader->readline();
   log("1 [%s]", line->data_);
   ASSERT(str_equals0("foo\n", line));
@@ -181,7 +176,32 @@ TEST BufLineReader_test() {
   log("4 [%s]", line->data_);
   ASSERT(str_equals0("", line));
 
+  // Optimization we want
+  ASSERT_EQ(kEmptyString, line);
+
+  // Read again
+  line = reader->readline();
+  log("5 [%s]", line->data_);
+  // Optimization we want
+  ASSERT_EQ(kEmptyString, line);
+
   reader->close();
+
+  //
+  // Empty
+  //
+
+  reader = Alloc<BufLineReader>(kEmptyString);
+  line = reader->readline();
+  ASSERT_EQ(kEmptyString, line);
+
+  Str* one_line = StrFromC("one line");
+  reader = Alloc<BufLineReader>(one_line);
+  line = reader->readline();
+  ASSERT(str_equals(one_line, line));
+
+  // Optimization: pointers should be equal too!
+  ASSERT_EQ(one_line, line);
 
   PASS();
 }

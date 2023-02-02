@@ -134,8 +134,13 @@ Str* BufLineReader::readline() {
     line_len = new_pos - pos_ + 1;  // past newline char
     pos_ = new_pos + 1;
   } else {  // leftover line
-    line_len = buf_len - pos_;
-    pos_ = buf_len;
+    if (pos_ == 0) {
+      // The string has no newlines at all -- just return it
+      return s_;
+    } else {
+      line_len = buf_len - pos_;
+      pos_ = buf_len;
+    }
   }
 
   line = NewStr(line_len);
