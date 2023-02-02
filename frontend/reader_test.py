@@ -43,8 +43,8 @@ class ReaderTest(unittest.TestCase):
 
     a3 = alloc.Arena()
 
-    line1 = SourceLine(1, 0, 'one\n', None)
-    line2 = SourceLine(2, 0, 'two', None)
+    line1 = SourceLine(1, 'one\n', None)
+    line2 = SourceLine(2, 'two', None)
 
     lines = [(line1, 0), (line2, 0)]
     r3 = reader.VirtualLineReader(lines, a3)

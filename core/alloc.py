@@ -125,7 +125,7 @@ class Arena(object):
 
     The line number is 1-based.
     """
-    src_line = SourceLine(line_num, -1, line, self.source_instances[-1])
+    src_line = SourceLine(line_num, line, self.source_instances[-1])
     self.lines_list.append(src_line)
     return src_line
 
