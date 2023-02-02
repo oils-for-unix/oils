@@ -30,9 +30,9 @@ _EOL_TOK = Token(Id.Eol_Tok, -1, -1, runtime.NO_SPID, None, None)
 def LazyVal(tok):
   # type: (Token) -> str
   """Compute string value on demand."""
-  if tok.val is None:
-    tok.val = tok.line.content[tok.col : tok.col + tok.length]
-  return tok.val
+  if tok.tval is None:
+    tok.tval = tok.line.content[tok.col : tok.col + tok.length]
+  return tok.tval
 
 
 def IsPlusEquals(tok):

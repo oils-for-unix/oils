@@ -76,11 +76,11 @@ def _EvalWordPart(part):
 
     elif case(word_part_e.Literal):
       tok = cast(Token, UP_part)
-      return True, tok.val, False
+      return True, tok.tval, False
 
     elif case(word_part_e.EscapedLiteral):
       part = cast(word_part__EscapedLiteral, UP_part)
-      val = part.token.val
+      val = part.token.tval
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
@@ -88,7 +88,7 @@ def _EvalWordPart(part):
 
     elif case(word_part_e.SingleQuoted):
       part = cast(single_quoted, UP_part)
-      tmp = [t.val for t in part.tokens]  # on its own line for mycpp
+      tmp = [t.tval for t in part.tokens]  # on its own line for mycpp
       s = ''.join(tmp)
       return True, s, True
 
@@ -379,7 +379,7 @@ def TildeDetect(UP_w):
     return compound_word(new_parts)
 
   # Lit_Chars is for ~/foo, 
-  if id_ == Id.Lit_Chars and cast(Token, part1).val.startswith('/'):
+  if id_ == Id.Lit_Chars and cast(Token, part1).tval.startswith('/'):
     new_parts.extend(w.parts[1:])
     return compound_word(new_parts)
 
@@ -405,7 +405,7 @@ def TildeDetectAssign(w):
         is_tilde = (
             LiteralId(next_part) == Id.Lit_Colon or
             (LiteralId(next_part) == Id.Lit_Chars and 
-             cast(Token, next_part).val.startswith('/'))
+             cast(Token, next_part).tval.startswith('/'))
         )
       else:
         is_tilde = True  # you can expand :~

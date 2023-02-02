@@ -15,7 +15,7 @@ def _AbbreviateToken(tok, out):
     n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
     out.append(n1)
 
-  n2 = runtime.NewLeaf(tok.val, color_e.StringConst)
+  n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
   out.append(n2)
 
 
@@ -112,7 +112,7 @@ def _expr__Var(obj):
   p_node.abbrev = True
 
   assert obj.name.id == Id.Expr_Name, obj.name
-  n1 = runtime.NewLeaf(obj.name.val, color_e.StringConst)
+  n1 = runtime.NewLeaf(obj.name.tval, color_e.StringConst)
   p_node.unnamed_fields.append(n1)
   return p_node
 
@@ -128,6 +128,6 @@ def _expr__Const(obj):
   n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
   out.append(n1)
 
-  n2 = runtime.NewLeaf(tok.val, color_e.StringConst)
+  n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
   out.append(n2)
   return p_node

@@ -432,7 +432,7 @@ class TildeEvaluator(object):
   def Eval(self, token):
     # type: (Token) -> str
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
-    if token.val == '~':
+    if token.tval == '~':
       # First look up the HOME var, then ask the OS.  This is what bash does.
       val = self.mem.GetValue('HOME')
       UP_val = val
@@ -441,13 +441,13 @@ class TildeEvaluator(object):
         return val.s
       result = pyos.GetMyHomeDir()
     else:
-      result = pyos.GetHomeDir(token.val[1:])
+      result = pyos.GetHomeDir(token.tval[1:])
 
     if result is None:
       if self.exec_opts.strict_tilde():
         e_die("Error expanding tilde (e.g. invalid user)", token)
       else:
-        return token.val  # Return ~ or ~user literally
+        return token.tval  # Return ~ or ~user literally
 
     return result
 
@@ -951,7 +951,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       result = value.Str(''.join(chars))
 
     else:
-      e_die('Var op %r not implemented' % op.val, op)
+      e_die('Var op %r not implemented' % op.tval, op)
 
     return result, quoted2
 
@@ -1008,7 +1008,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case2(value_e.Str):
         # Bash treats any string as an array, so we can't add our own
         # behavior here without making valid OSH invalid bash.
-        e_die("Can't index string %r with integer" % part.token.val,
+        e_die("Can't index string %r with integer" % part.token.tval,
               part.token)
 
       elif case2(value_e.MaybeStrArray):
@@ -1092,14 +1092,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if not self.exec_opts.nounset():
       return value.Str('')
 
-    name = token.val[1:] if token.val.startswith('$') else token.val
+    name = token.tval[1:] if token.tval.startswith('$') else token.tval
     e_die('Undefined variable %r' % name, token)
 
   def _EmptyMaybeStrArrayOrError(self, token):
     # type: (Token) -> value_t
     assert token is not None
     if self.exec_opts.nounset():
-      e_die('Undefined array %r' % token.val, token)
+      e_die('Undefined array %r' % token.tval, token)
     else:
       return value.MaybeStrArray([])
 
@@ -1140,12 +1140,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
-      var_name = part.token.val
+      var_name = part.token.tval
       vtest_place.name = var_name
       val = self.mem.GetValue(var_name)
 
     elif part.token.id == Id.VSub_Number:
-      var_num = int(part.token.val)
+      var_num = int(part.token.tval)
       val = self._EvalVarNum(var_num)
 
     else:
@@ -1212,7 +1212,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         suffix_op_ = cast(Token, part.suffix_op)
         # ${!x@} but not ${!x@P}
         if consts.GetKind(suffix_op_.id) == Kind.VOp3:
-          names = self.mem.VarNamesStartingWith(part.token.val)
+          names = self.mem.VarNamesStartingWith(part.token.tval)
           names.sort()
 
           suffix_op_ = cast(Token, part.suffix_op)
@@ -1223,14 +1223,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part_vals.append(part_value.String(sep.join(names), quoted, True))
           return  # EARLY RETURN
 
-      var_name = part.token.val
+      var_name = part.token.tval
       vtest_place.name = var_name
 
       # TODO: LINENO can use its own span_id!
       val = self.mem.GetValue(var_name)
 
     elif part.token.id == Id.VSub_Number:
-      var_num = int(part.token.val)
+      var_num = int(part.token.tval)
       val = self._EvalVarNum(var_num)
     else:
       # $* decays
@@ -1396,7 +1396,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
-      var_name = token.val[1:]
+      var_name = token.tval[1:]
 
       # TODO: Special case for LINENO
       val = self.mem.GetValue(var_name)
@@ -1409,7 +1409,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 var_name, token)
 
     elif token.id == Id.VSub_Number:
-      var_num = int(token.val[1:])
+      var_num = int(token.tval[1:])
       val = self._EvalVarNum(var_num)
     else:
       val = self._EvalSpecialVar(token.id, quoted, vsub_state)
@@ -1444,7 +1444,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if op.id == Id.ExtGlob_Comma:
       op_str = '@('
     else:
-      op_str = op.val
+      op_str = op.tval
     # Do NOT split these.
     part_vals.append(part_value.String(op_str, False, False))
 
@@ -1519,12 +1519,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part = cast(Token, UP_part)
         # Split if it's in a substitution.
         # That is: echo is not split, but ${foo:-echo} is split
-        v = part_value.String(part.val, quoted, is_subst)
+        v = part_value.String(part.tval, quoted, is_subst)
         part_vals.append(v)
 
       elif case(word_part_e.EscapedLiteral):
         part = cast(word_part__EscapedLiteral, UP_part)
-        tval = part.token.val
+        tval = part.token.tval
         assert len(tval) == 2, tval  # e.g. \*
         assert tval[0] == '\\'
         s = tval[1]
@@ -1590,7 +1590,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       elif case(word_part_e.Splice):
         part = cast(word_part__Splice, UP_part)
-        var_name = part.name.val[1:]
+        var_name = part.name.tval[1:]
         val = self.mem.GetValue(var_name)
 
         UP_val = val
@@ -1984,7 +1984,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # (not guaranteed since started_pairs is set twice)
             e_die('LHS array not allowed in assignment builtin', loc.Word(w))
 
-          tok_val = left_token.val
+          tok_val = left_token.tval
           if lexer.IsPlusEquals(left_token):
             var_name = lexer.TokenSliceRight(left_token, -2)
             append = True

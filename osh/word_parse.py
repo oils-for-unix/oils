@@ -627,7 +627,7 @@ class WordParser(WordEmitter):
         tok = self.cur_token
         # Happens in lex_mode_e.SQ: 'one\two' is ambiguous, should be
         # r'one\two' or c'one\\two'
-        if no_backslashes and '\\' in tok.val:
+        if no_backslashes and '\\' in tok.tval:
           p_die(r"Strings with backslashes should look like r'\n' or $'\n'",
                 tok)
 
@@ -636,7 +636,7 @@ class WordParser(WordEmitter):
             p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
                   tok)
 
-          if self.token_type == Id.Char_Hex and len(self.cur_token.val) != 4:
+          if self.token_type == Id.Char_Hex and len(self.cur_token.tval) != 4:
             # disallow \xH
             p_die(r'Invalid hex escape in Oil string (must be \xHH)', tok)
 
@@ -974,7 +974,7 @@ class WordParser(WordEmitter):
         #log("TOK %s", self.cur_token)
 
         if self.token_type == Id.Backtick_Quoted:
-          parts.append(self.cur_token.val[1:])  # Remove leading \
+          parts.append(self.cur_token.tval[1:])  # Remove leading \
 
         elif self.token_type == Id.Backtick_DoubleQuote:
           # Compatibility: If backticks are double quoted, then double quotes
@@ -982,12 +982,12 @@ class WordParser(WordEmitter):
           # Shells aren't smart enough to match nested " and ` quotes (but OSH
           # is)
           if d_quoted:
-            parts.append(self.cur_token.val[1:])  # Remove leading \
+            parts.append(self.cur_token.tval[1:])  # Remove leading \
           else:
-            parts.append(self.cur_token.val)
+            parts.append(self.cur_token.tval)
 
         elif self.token_type == Id.Backtick_Other:
-          parts.append(self.cur_token.val)
+          parts.append(self.cur_token.tval)
 
         elif self.token_type == Id.Backtick_Right:
           break
@@ -1396,7 +1396,7 @@ class WordParser(WordEmitter):
 
     if self.token_type == Id.Lit_EscapedChar:
       if not self.parse_opts.parse_backslash():
-        tok_val = self.cur_token.val
+        tok_val = self.cur_token.tval
         assert len(tok_val) == 2  # because of the regex
         ch = tok_val[1]
         if not pyutil.IsValidCharEscape(ch):
@@ -1629,7 +1629,7 @@ class WordParser(WordEmitter):
     if self.token_kind == Kind.Unknown:
       # e.g. happened during dynamic parsing of unset 'a[$foo]' in gherkin
       p_die('Unexpected token while parsing arithmetic: %r' %
-            self.cur_token.val, self.cur_token)
+            self.cur_token.tval, self.cur_token)
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
@@ -1732,7 +1732,7 @@ class WordParser(WordEmitter):
         # parse_raw_string: Is there an r'' at the beginning of a word?
         if (self.parse_opts.parse_raw_string() and
             self.token_type == Id.Lit_Chars and
-            self.cur_token.val == 'r'):
+            self.cur_token.tval == 'r'):
           if self.lexer.LookAheadOne(lex_mode_e.ShCommand) == Id.Left_SingleQuote:
             self._Next(lex_mode_e.ShCommand)
 

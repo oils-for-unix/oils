@@ -806,7 +806,7 @@ class CommandEvaluator(object):
             self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
             # Note: there's only one LHS
-            vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
+            vd_lval = lvalue.Named(node.lhs[0].name.tval)  # type: lvalue_t
             py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)  # type: value_t
 
@@ -820,7 +820,7 @@ class CommandEvaluator(object):
             vd_lvals = []  # type: List[lvalue_t]
             vals = []  # type: List[value_t]
             if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
-              vd_lval = lvalue.Named(node.lhs[0].name.val)
+              vd_lval = lvalue.Named(node.lhs[0].name.tval)
               val = _PyObjectToVal(py_val)
 
               vd_lvals.append(vd_lval)
@@ -828,7 +828,7 @@ class CommandEvaluator(object):
             else:
               it = py_val.__iter__()
               for vd_lhs in node.lhs:
-                vd_lval = lvalue.Named(vd_lhs.name.val)
+                vd_lval = lvalue.Named(vd_lhs.name.tval)
                 val = _PyObjectToVal(it.next())
 
                 vd_lvals.append(vd_lval)
@@ -903,7 +903,7 @@ class CommandEvaluator(object):
             # transformer and not the grammar.  We should do that too.
 
             place_expr = cast(place_expr__Var, node.lhs[0])
-            pe_lval = lvalue.Named(place_expr.name.val)
+            pe_lval = lvalue.Named(place_expr.name.tval)
             py_val = self.expr_ev.EvalExpr(node.rhs)
 
             new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
@@ -1018,14 +1018,14 @@ class CommandEvaluator(object):
               arg = int(str_val.s)
             except ValueError:
               e_die('%r expected a number, got %r' %
-                    (node.token.val, str_val.s), loc.Word(node.arg_word))
+                    (node.token.tval, str_val.s), loc.Word(node.arg_word))
         else:
           if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()
           else:
             arg = 1  # break or continue 1 level by default
 
-        self.tracer.OnControlFlow(tok.val, arg)
+        self.tracer.OnControlFlow(tok.tval, arg)
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
@@ -1333,8 +1333,8 @@ class CommandEvaluator(object):
       elif case(command_e.Proc):
         node = cast(command__Proc, UP_node)
 
-        if node.name.val in self.procs and not self.exec_opts.redefine_proc():
-          e_die("Proc %s was already defined (redefine_proc)" % node.name.val,
+        if node.name.tval in self.procs and not self.exec_opts.redefine_proc():
+          e_die("Proc %s was already defined (redefine_proc)" % node.name.tval,
                 node.name)
 
         defaults = None  # type: List[value_t]
@@ -1348,8 +1348,8 @@ class CommandEvaluator(object):
                 py_val = self.expr_ev.EvalExpr(p.default_val)
                 defaults[i] = _PyObjectToVal(py_val)
      
-        self.procs[node.name.val] = Proc(
-            node.name.val, node.name.span_id, node.sig, node.body, defaults,
+        self.procs[node.name.tval] = Proc(
+            node.name.tval, node.name.span_id, node.sig, node.body, defaults,
             False)  # no dynamic scope
 
         status = 0
@@ -1733,7 +1733,7 @@ class CommandEvaluator(object):
         for i, p in enumerate(sig.untyped):
           is_out_param = p.ref is not None
 
-          param_name = p.name.val
+          param_name = p.name.tval
           if i < n_args:
             arg_str = argv[i]
 
@@ -1754,7 +1754,7 @@ class CommandEvaluator(object):
           else:
             val = proc.defaults[i]
             if val is None:
-              e_die("No value provided for param %r" % p.name.val)
+              e_die("No value provided for param %r" % p.name.tval)
 
           if is_out_param:
             flags = state.SetNameref 
@@ -1768,7 +1768,7 @@ class CommandEvaluator(object):
         if sig.rest:
           leftover = value.MaybeStrArray(argv[n_params:])
           self.mem.SetValue(
-              lvalue.Named(sig.rest.val), leftover, scope_e.LocalOnly)
+              lvalue.Named(sig.rest.tval), leftover, scope_e.LocalOnly)
         else:
           if n_args > n_params:
             self.errfmt.Print_(
@@ -1786,7 +1786,7 @@ class CommandEvaluator(object):
           status = e.StatusCode()
         else:
           # break/continue used in the wrong place.
-          e_die('Unexpected %r (in function call)' % e.token.val, e.token)
+          e_die('Unexpected %r (in function call)' % e.token.tval, e.token)
       except error.FatalRuntime as e:
         # Dump the stack before unwinding it
         self.dumper.MaybeRecord(self, e)

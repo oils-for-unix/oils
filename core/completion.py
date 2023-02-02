@@ -789,7 +789,7 @@ def IsDollar(t):
   # type: (Token) -> bool
 
   # First condition is for lex_mode_e.{ShCommand,DQ}.
-  #return t.id == Id.Lit_Dollar or (t.id == Id.Lit_Other and t.val == '$')
+  #return t.id == Id.Lit_Dollar or (t.id == Id.Lit_Other and t.tval == '$')
 
   # We have rules for Lit_Dollar in
   # lex_mode_e.{ShCommand,DQ,VSub_ArgUnquoted,VSub_ArgDQ}
@@ -931,7 +931,7 @@ class RootCompleter(CompletionAction):
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.
         self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1  # 1 for $
-        to_complete = t2.val[1:]
+        to_complete = t2.tval[1:]
         n = len(to_complete)
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
@@ -941,7 +941,7 @@ class RootCompleter(CompletionAction):
       # echo ${P
       if t2.id == Id.VSub_Name and IsDummy(t1):
         self.comp_ui_state.display_pos = _TokenStart(arena, t2)  # no offset
-        to_complete = t2.val
+        to_complete = t2.tval
         n = len(to_complete)
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
@@ -951,7 +951,7 @@ class RootCompleter(CompletionAction):
       # echo $(( VAR
       if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
         self.comp_ui_state.display_pos = _TokenStart(arena, t2)  # no offset
-        to_complete = t2.val
+        to_complete = t2.tval
         n = len(to_complete)
         for name in self.mem.VarNames():
           if name.startswith(to_complete):
@@ -976,7 +976,7 @@ class RootCompleter(CompletionAction):
         # +1 for ~
         self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1
 
-        to_complete = t2.val[1:]
+        to_complete = t2.tval[1:]
         n = len(to_complete)
         for u in pyos.GetAllUsers():  # catch errors?
           name = u.pw_name

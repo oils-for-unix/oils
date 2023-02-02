@@ -47,7 +47,7 @@ if mylib.PYTHON:
       #   rid of.
       if pnode.tok:
         if isinstance(pnode.tok, Token):
-          v = pnode.tok.val
+          v = pnode.tok.tval
         else:
           # e.g. command_sub for x = $(echo hi)
           v = repr(pnode.tok)
@@ -73,9 +73,9 @@ def _Classify(gr, tok, tea_keywords):
   # Special case for top-level Tea keywords like data/enum/class, etc.
   # TODO: Do this more elegantly at grammar build time.
   if tea_keywords and tok.id == Id.Expr_Name:
-    if tok.val in gr.keywords:
+    if tok.tval in gr.keywords:
       #log('NEW %r', gr.keywords[tok.val])
-      return gr.keywords[tok.val]
+      return gr.keywords[tok.tval]
 
   # This handles 'x'.
   if tok.id in gr.tokens:

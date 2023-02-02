@@ -26,7 +26,7 @@ def EvalCharLiteralForRegex(tok):
   Similar logic as below.
   """
   id_ = tok.id
-  value = tok.val
+  value = tok.tval
 
   with switch(id_) as case:
     if case(Id.Char_UBraced):
@@ -48,8 +48,8 @@ def EvalCharLiteralForRegex(tok):
       # Id.Expr_Name: [a-z] is ['a'-'Z'], and [a z] is ['a' 'Z']
       # Id.Expr_DecInt: [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
 
-      assert len(tok.val) == 1, tok
-      return CharCode(ord(tok.val[0]), False, tok.span_id)
+      assert len(tok.tval) == 1, tok
+      return CharCode(ord(tok.tval[0]), False, tok.span_id)
 
     else:
       raise AssertionError(tok)
@@ -63,7 +63,7 @@ def EvalCStringToken(tok):
   $'' could use it at compile time, much like brace expansion in braces.py.
   """
   id_ = tok.id
-  value = tok.val
+  value = tok.tval
 
   if 0:
     log('tok %s', tok)
@@ -126,7 +126,7 @@ def EvalSingleQuoted(part):
       for t in part.tokens:
         log('sq tok %s', t)
 
-    tmp = [t.val for t in part.tokens]
+    tmp = [t.tval for t in part.tokens]
     s = ''.join(tmp)
 
   elif part.left.id in (Id.Left_DollarSingleQuote, Id.Left_DollarTSingleQuote):
@@ -159,12 +159,12 @@ def IsLeadingSpace(s):
 # - First token should be WHITESPACE* NEWLINE.  Omit it
 # - Last token should be WHITESPACE*
 #   - Then go through all the other tokens that are AFTER token that ends with \n
-#   - if tok.val[:n] is the same as the last token, then STRIP THAT PREFIX
+#   - if tok.tval[:n] is the same as the last token, then STRIP THAT PREFIX
 # - Do you need to set a flag on the SingleQuoted part?
 #
 # TODO: do this all at compile time?
 
-# These functions may mutate tok.val.  The LOSSLESS Syntax tree can be
+# These functions may mutate tok.tval.  The LOSSLESS Syntax tree can be
 # recovered with span_id.  (Is that the case with the new representation too?)
 
 def RemoveLeadingSpaceDQ(parts):
@@ -179,19 +179,19 @@ def RemoveLeadingSpaceDQ(parts):
   if UP_first.tag_() == word_part_e.Literal:
     first = cast(Token, UP_first)
     #log('T %s', first_part)
-    if qsn_native.IsWhitespace(first.val):
+    if qsn_native.IsWhitespace(first.tval):
       # Remove the first part.  TODO: This could be expensive if there are many
       # lines.
       parts.pop(0)
-    if first.val.endswith('\n'):
+    if first.tval.endswith('\n'):
       line_ended = True
 
   UP_last = parts[-1]
   to_strip = None  # type: Optional[str]
   if UP_last.tag_() == word_part_e.Literal:
     last = cast(Token, UP_last)
-    if IsLeadingSpace(last.val):
-      to_strip = last.val
+    if IsLeadingSpace(last.tval):
+      to_strip = last.tval
       parts.pop()  # Remove the last part
 
   if to_strip is not None:
@@ -204,12 +204,12 @@ def RemoveLeadingSpaceDQ(parts):
       p = cast(Token, UP_p)
 
       if line_ended:
-        if p.val.startswith(to_strip):
+        if p.tval.startswith(to_strip):
           # MUTATING the part here
-          p.val = p.val[n:]
+          p.tval = p.tval[n:]
 
       line_ended = False
-      if p.val.endswith('\n'):
+      if p.tval.endswith('\n'):
         line_ended = True
         #log('%s', p)
 
@@ -233,16 +233,16 @@ def RemoveLeadingSpaceSQ(tokens):
 
   first = tokens[0]
   if first.id in (Id.Lit_Chars, Id.Char_Literals):
-    if qsn_native.IsWhitespace(first.val):
+    if qsn_native.IsWhitespace(first.tval):
       tokens.pop(0)  # Remove the first part
-    if first.val.endswith('\n'):
+    if first.tval.endswith('\n'):
       line_ended = True
 
   last = tokens[-1]
   to_strip = None  # type: Optional[str]
   if last.id in (Id.Lit_Chars, Id.Char_Literals):
-    if IsLeadingSpace(last.val):
-      to_strip = last.val
+    if IsLeadingSpace(last.tval):
+      to_strip = last.tval
       tokens.pop()  # Remove the last part
 
   if to_strip is not None:
@@ -253,11 +253,11 @@ def RemoveLeadingSpaceSQ(tokens):
         continue
 
       if line_ended:
-        if tok.val.startswith(to_strip):
+        if tok.tval.startswith(to_strip):
           # MUTATING the token here
-          tok.val = tok.val[n:]
+          tok.tval = tok.tval[n:]
 
       line_ended = False
-      if tok.val.endswith('\n'):
+      if tok.tval.endswith('\n'):
         line_ended = True
-        #log('yes %r', tok.val)
+        #log('yes %r', tok.tval)

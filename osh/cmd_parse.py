@@ -423,7 +423,7 @@ class VarChecker(object):
       return
 
     top = self.names[-1] 
-    name = name_tok.val
+    name = name_tok.tval
     if keyword_id in (Id.KW_Const, Id.KW_Var):
       if name in top:
         p_die('%r was already declared' % name, name_tok)
@@ -602,7 +602,7 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
-    op_val = op_tok.val
+    op_val = op_tok.tval
     if op_val[0] == '{':
       pos = op_val.find('}')
       assert pos != -1  # lexer ensures this
@@ -1034,7 +1034,7 @@ class CommandParser(object):
       elif len(suffix_words) == 2:
         arg_word = suffix_words[1]
       else:
-        p_die('Unexpected argument to %r' % kw_token.val,
+        p_die('Unexpected argument to %r' % kw_token.tval,
               loc.Word(suffix_words[2]))
 
       return command.ControlFlow(kw_token, arg_word)
@@ -2035,7 +2035,7 @@ class CommandParser(object):
         if part0.tag_() == word_part_e.Literal:
           tok = cast(Token, part0)
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
-          if (match.IsValidVarName(tok.val) and
+          if (match.IsValidVarName(tok.tval) and
               self.w_parser.LookPastSpace() == Id.Lit_Equals):
 
             if len(self.allow_block_attrs) and self.allow_block_attrs[-1]:

@@ -76,7 +76,7 @@ module syntax
   -- * get rid of redundant span_id
   -- * function to compute string val on demand
   -- * maybe re-compute length on demand too
-  Token = (id id, int col, int length, int span_id, SourceLine? line, string val)
+  Token = (id id, int col, int length, int span_id, SourceLine? line, string tval)
 
   -- Source location for errors
   -- It's possible for word_part and word to have a beginning and end location

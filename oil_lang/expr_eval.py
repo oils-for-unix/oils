@@ -173,7 +173,7 @@ class OilEvaluator(object):
     with tagswitch(node) as case:
       if case(expr_e.Var):
         node = cast(expr__Var, UP_node)
-        return lvalue.Named(node.name.val)
+        return lvalue.Named(node.name.tval)
       else:
         # TODO:
         # subscripts, tuple unpacking, starred expressions, etc.
@@ -225,7 +225,7 @@ class OilEvaluator(object):
     kwargs = {}
     for named in args.named:
       if named.name:
-        kwargs[named.name.val] = self.EvalExpr(named.value)
+        kwargs[named.name.tval] = self.EvalExpr(named.value)
       else:
         # ...named
         kwargs.update(self.EvalExpr(named.value))
@@ -247,7 +247,7 @@ class OilEvaluator(object):
       if case(place_expr_e.Var):
         place = cast(place_expr__Var, UP_place)
 
-        return lvalue.Named(place.name.val)
+        return lvalue.Named(place.name.tval)
 
       elif case(place_expr_e.Subscript):
         place = cast(subscript, UP_place)
@@ -261,10 +261,10 @@ class OilEvaluator(object):
 
         obj = self.EvalExpr(place.obj)
         if place.op.id == Id.Expr_RArrow:
-          index = place.attr.val
+          index = place.attr.tval
           return lvalue.ObjIndex(obj, index)
         else:
-          return lvalue.ObjAttr(obj, place.attr.val)
+          return lvalue.ObjAttr(obj, place.attr.tval)
 
       else:
         raise NotImplementedError(place)
@@ -276,7 +276,7 @@ class OilEvaluator(object):
 
   def EvalInlineFunc(self, part):
     # type: (word_part__FuncCall) -> part_value_t
-    func_name = part.name.val[1:]
+    func_name = part.name.tval[1:]
 
     fn_val = self.mem.GetValue(func_name)  # type: value_t
     if fn_val.tag_() != value_e.Obj:
@@ -407,7 +407,7 @@ class OilEvaluator(object):
 
         # Remove underscores from 1_000_000.  The lexer is responsible for
         # validation.
-        c = node.c.val.replace('_', '')
+        c = node.c.tval.replace('_', '')
 
         id_ = node.c.id
         if id_ == Id.Expr_DecInt:
@@ -432,17 +432,17 @@ class OilEvaluator(object):
         if id_ == Id.Expr_Name:
           # for {name: 'bob'}
           # Maybe also :Symbol?
-          return node.c.val
+          return node.c.tval
 
         # These two could be done at COMPILE TIME
         if id_ == Id.Char_OneChar:
-          return consts.LookupCharInt(node.c.val[1])  # It's an integer
+          return consts.LookupCharInt(node.c.tval[1])  # It's an integer
         if id_ == Id.Char_UBraced:
-          s = node.c.val[3:-1]  # \u{123}
+          s = node.c.tval[3:-1]  # \u{123}
           return int(s, 16)
         if id_ == Id.Char_Pound:
           # TODO: accept UTF-8 code point instead of single byte
-          byte = node.c.val[2]  # the a in #'a'
+          byte = node.c.tval[2]  # the a in #'a'
           return ord(byte)  # It's an integer
 
         # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using
@@ -452,7 +452,7 @@ class OilEvaluator(object):
       elif case(expr_e.Var):
         node = cast(expr__Var, UP_node)
 
-        return self.LookupVar(node.name.val, span_id=node.name.span_id)
+        return self.LookupVar(node.name.tval, span_id=node.name.span_id)
 
       elif case(expr_e.CommandSub):
         node = cast(command_sub, UP_node)
@@ -731,7 +731,7 @@ class OilEvaluator(object):
         obj = self._EvalExpr(comp.iter)
 
         # TODO: Handle x,y etc.
-        iter_name = comp.lhs[0].name.val
+        iter_name = comp.lhs[0].name.tval
 
         if isinstance(obj, str):
           e_die("Strings aren't iterable")
@@ -798,11 +798,11 @@ class OilEvaluator(object):
         id_ = node.op.id
         if id_ == Id.Expr_Dot:
           # Used for .startswith()
-          name = node.attr.val
+          name = node.attr.tval
           return getattr(o, name)
 
         if id_ == Id.Expr_RArrow:  # d->key is like d['key']
-          name = node.attr.val
+          name = node.attr.tval
           try:
             result = o[name]
           except KeyError:
@@ -951,7 +951,7 @@ class OilEvaluator(object):
         node = cast(Token, UP_node)
 
         id_ = node.id
-        val = node.val
+        val = node.tval
 
         if id_ == Id.Expr_Dot:
           return re.Primitive(Id.Re_Dot)
@@ -1007,7 +1007,7 @@ class OilEvaluator(object):
       elif case(re_e.Splice):
         node = cast(re__Splice, UP_node)
 
-        obj = self.LookupVar(node.name.val, span_id=node.name.span_id)
+        obj = self.LookupVar(node.name.tval, span_id=node.name.span_id)
         if not isinstance(obj, objects.Regex):
           e_die("Can't splice object of type %r into regex" % obj.__class__,
                 node.name)

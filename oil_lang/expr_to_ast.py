@@ -604,7 +604,7 @@ class Transformer(object):
         tok = children[0].tok
 
         if tok.id == Id.VSub_DollarName:  # $foo is disallowed
-          bare = tok.val[1:]
+          bare = tok.tval[1:]
           p_die('In expressions, remove $ and use `%s`, or sometimes "$%s"' %
                 (bare, bare), tok)
 
@@ -868,7 +868,7 @@ class Transformer(object):
       elif typ is None:
         untyped.append(UntypedParam(prefix, name, default_val))
       else:
-        if typ.val not in ('Expr', 'Block'):
+        if typ.tval not in ('Expr', 'Block'):
           p_die('proc param types should be Expr or Block', typ)
         typed.append(TypedParam(name, typ, default_val))
 
@@ -1194,7 +1194,7 @@ class Transformer(object):
         tokens = sq_part.tokens
         if len(tokens) > 1:  # Can happen with multiline single-quoted strings
           p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-        if len(tokens[0].val) > 1:
+        if len(tokens[0].tval) > 1:
           p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
         return tokens[0]
 
@@ -1208,7 +1208,7 @@ class Transformer(object):
       tok = p_node.tok
       if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
         # For the a in a-z, 0 in 0-9
-        if len(tok.val) != 1:
+        if len(tok.tval) != 1:
           p_die(RANGE_POINT_TOO_LONG, tok)
         return tok
 
@@ -1304,23 +1304,23 @@ class Transformer(object):
 
   def _NameInRegex(self, negated_tok, tok):
     # type: (Token, Token) -> re_t
-    val = tok.val
-    if val == 'dot':
+    tok_str = tok.tval
+    if tok_str == 'dot':
       if negated_tok:
         p_die("Can't negate this symbol", tok)
       return tok
 
-    if val in POSIX_CLASSES:
-      return posix_class(negated_tok, val)
+    if tok_str in POSIX_CLASSES:
+      return posix_class(negated_tok, tok_str)
 
-    perl = PERL_CLASSES.get(val)
+    perl = PERL_CLASSES.get(tok_str)
     if perl is not None:
       return perl_class(negated_tok, perl)
 
-    if val[0].isupper():  # e.g. HexDigit
+    if tok_str[0].isupper():  # e.g. HexDigit
       return re.Splice(tok)
 
-    p_die("%r isn't a character class" % val, tok)
+    p_die("%r isn't a character class" % tok_str, tok)
 
   def _NameInClass(self, negated_tok, tok):
     # type: (Token, Token) -> class_literal_term_t
@@ -1328,13 +1328,13 @@ class Transformer(object):
     Like the above, but 'dot' doesn't mean anything.  And `d` is a literal 'd',
     not `digit`.
     """
-    val = tok.val
+    tok_str = tok.tval
 
     # A bare, unquoted character literal.  In the grammar, this is expressed as
     # range_char without an ending.
 
     # d is NOT 'digit', it's a literal 'd'!
-    if len(val) == 1:
+    if len(tok_str) == 1:
       # Expr_Name matches VAR_NAME_RE, which starts with [a-zA-Z_]
       assert tok.id in (Id.Expr_Name, Id.Expr_DecInt)
 
@@ -1343,13 +1343,13 @@ class Transformer(object):
       return class_literal_term.CharLiteral(tok)
 
     # digit, word, but not d, w, etc.
-    if val in POSIX_CLASSES:
-      return posix_class(negated_tok, val)
+    if tok_str in POSIX_CLASSES:
+      return posix_class(negated_tok, tok_str)
 
-    perl = PERL_CLASSES.get(val)
+    perl = PERL_CLASSES.get(tok_str)
     if perl is not None:
       return perl_class(negated_tok, perl)
-    p_die("%r isn't a character class" % val, tok)
+    p_die("%r isn't a character class" % tok_str, tok)
 
   def _ReAtom(self, p_atom):
     # type: (PNode) -> re_t
@@ -1398,9 +1398,9 @@ class Transformer(object):
 
       if tok.id == Id.Expr_Symbol:
         # Validate symbols here, like we validate PerlClass, etc.
-        if tok.val in ('%start', '%end', 'dot'):
+        if tok.tval in ('%start', '%end', 'dot'):
           return tok
-        p_die("Unexpected token %r in regex" % tok.val, tok)
+        p_die("Unexpected token %r in regex" % tok.tval, tok)
 
       if tok.id == Id.Expr_At:
         # | '@' Expr_Name

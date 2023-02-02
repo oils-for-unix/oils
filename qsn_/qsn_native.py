@@ -65,7 +65,7 @@ def Parse(lexer):
 
   # Doesn't work because we want to allow literal newlines / tabs
   if tok.id == Id.Char_Literals:
-    if not IsWhitespace(tok.val):
+    if not IsWhitespace(tok.tval):
       p_die("Unexpected data after closing quote", tok)
     tok = lexer.Read(lex_mode_e.QSN)
 

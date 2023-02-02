@@ -168,7 +168,7 @@ class _RangeParser(object):
 def _RangePartDetect(tok):
   # type: (Token) -> Optional[word_part_t]
   """Parse the token and return a new word_part if it looks like a range."""
-  lexer = match.BraceRangeLexer(tok.val)
+  lexer = match.BraceRangeLexer(tok.tval)
   p = _RangeParser(lexer, tok)
   try:
     part = p.Parse()

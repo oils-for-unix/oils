@@ -244,7 +244,7 @@ class UnsafeArith(object):
     line_reader = reader.StringLineReader(ref_str, self.arena)
     lexer = self.parse_ctx.MakeLexer(line_reader)
     w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
-    with alloc.ctx_Location(self.arena, source.Variable(token.val, static_ref_spid)):
+    with alloc.ctx_Location(self.arena, source.Variable(token.tval, static_ref_spid)):
       try:
         bvs_part = w_parser.ParseVarRef()
       except error.Parse as e:
@@ -454,7 +454,7 @@ class ArithEvaluator(object):
     # BASH_LINENO, arr (array name with shopt -s compat_array), etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarRef:
       tok = cast(Token, node)
-      if word_eval.ShouldArrayDecay(tok.val, self.exec_opts):
+      if word_eval.ShouldArrayDecay(tok.tval, self.exec_opts):
         val = word_eval.DecayArray(val)
 
     # TODO: Can we avoid the runtime cost of adding location info?
@@ -486,7 +486,7 @@ class ArithEvaluator(object):
     with tagswitch(node) as case:
       if case(arith_expr_e.VarRef):  # $(( x ))  (can be array)
         tok = cast(Token, UP_node)
-        var_name = tok.val
+        var_name = tok.tval
         val = self.mem.GetValue(var_name)
         if val.tag_() == value_e.Undef and self.exec_opts.nounset():
           e_die('Undefined variable %r' % var_name, tok)
@@ -806,7 +806,7 @@ class ArithEvaluator(object):
     with tagswitch(anode) as case:
       if case(arith_expr_e.VarRef):
         tok = cast(Token, UP_anode)
-        return (tok.val, tok.span_id)
+        return (tok.tval, tok.span_id)
 
       elif case(arith_expr_e.Word):
         w = cast(compound_word, UP_anode)

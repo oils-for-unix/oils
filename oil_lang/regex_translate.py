@@ -234,13 +234,13 @@ def AsPosixEre(node, parts):
 
     if op_tag == re_repeat_e.Num:
       op = cast(re_repeat__Num, UP_op)
-      parts.append('{%s}' % op.times.val)
+      parts.append('{%s}' % op.times.tval)
       return
 
     if op_tag == re_repeat_e.Range:
       op = cast(re_repeat__Range, UP_op)
-      lower = op.lower.val if op.lower else ''
-      upper = op.upper.val if op.upper else ''
+      lower = op.lower.tval if op.lower else ''
+      upper = op.upper.tval if op.upper else ''
       parts.append('{%s,%s}' % (lower, upper))
       return
 
