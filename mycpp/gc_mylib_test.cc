@@ -203,6 +203,9 @@ TEST BufLineReader_test() {
   // Optimization: pointers should be equal too!
   ASSERT_EQ(one_line, line);
 
+  line = reader->readline();
+  ASSERT_EQ(kEmptyString, line);
+
   PASS();
 }
 

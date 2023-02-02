@@ -120,8 +120,8 @@ bool CFileLineReader::isatty() {
 Str* BufLineReader::readline() {
   Str* line = nullptr;
 
-  int buf_len = len(s_);
-  if (pos_ == buf_len) {
+  int str_len = len(s_);
+  if (pos_ == str_len) {
     return kEmptyString;
   }
 
@@ -134,12 +134,12 @@ Str* BufLineReader::readline() {
     line_len = new_pos - pos_ + 1;  // past newline char
     pos_ = new_pos + 1;
   } else {  // leftover line
-    if (pos_ == 0) {
-      // The string has no newlines at all -- just return it
+    if (pos_ == 0) {  // The string has no newlines at all -- just return it
+      pos_ = str_len;  // advance to the end
       return s_;
     } else {
-      line_len = buf_len - pos_;
-      pos_ = buf_len;
+      line_len = str_len - pos_;
+      pos_ = str_len;  // advance to the end
     }
   }
 
