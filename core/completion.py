@@ -1353,6 +1353,11 @@ class ReadlineCallback(object):
     return None
 
 
+def ExecuteReadlineCallback(cb, word, state):
+  # type: (ReadlineCallback, str, int) -> Optional[str]
+  return cb.__call__(word, state)
+
+
 if __name__ == '__main__':
   # This does basic filename copmletion
   import readline
