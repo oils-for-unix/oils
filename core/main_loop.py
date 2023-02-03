@@ -205,6 +205,7 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
     # it appears in all branches.
 
     while True:  # ONLY EXECUTES ONCE
+      quit = False
       prompt_plugin.Run()
       try:
         # may raise HistoryError or ParseError
@@ -213,11 +214,11 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
         with tagswitch(result) as case:
           if case(parse_result_e.EmptyLine):
             display.EraseLines()
-            break  # quit shell
+            quit = True
           elif case(parse_result_e.Eof):
             display.EraseLines()
             done = True
-            break  # quit shell
+            quit = True
           elif case(parse_result_e.Node):
             result = cast(parse_result__Node, UP_result)
             node = result.cmd
@@ -231,13 +232,13 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
         # done
         display.EraseLines()
         print(e.UserErrorString())
-        break
+        quit = True
       except error.Parse as e:
         display.EraseLines()
         errfmt.PrettyPrintError(e)
         status = 2
         cmd_ev.mem.SetLastStatus(status)
-        break
+        quit = True
       except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
         # Here we must print a newline BEFORE EraseLines()
         print('^C')
@@ -245,7 +246,10 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
         # http://www.tldp.org/LDP/abs/html/exitcodes.html
         # bash gives 130, dash gives 0, zsh gives 1.
         # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
-        break
+        quit = True
+
+      if quit:
+          break
 
       display.EraseLines()  # Clear candidates right before executing
 
