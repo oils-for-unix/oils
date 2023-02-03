@@ -146,7 +146,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
   def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
-               pretty_print_methods=True, py_init_required=True,
+               pretty_print_methods=True, py_init_required=False,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)

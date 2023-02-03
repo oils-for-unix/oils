@@ -1774,6 +1774,10 @@ class Mem(object):
         #if keyword_id == Id.KW_SetRef:
         #  lval.name = '__' + lval.name
 
+        # TODO: All paths should have this?  We can get here by a[x]=1 or
+        # (( a[ x ] = 1 )).  Maybe we should make them different?
+        left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
+
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
@@ -1784,7 +1788,7 @@ class Mem(object):
           return
 
         if cell.readonly:
-          e_die("Can't assign to readonly array", lval.blame_tok)
+          e_die("Can't assign to readonly array", loc.Span(left_spid))
 
         UP_cell_val = cell.val
         # undef[0]=y is allowed
@@ -1796,7 +1800,7 @@ class Mem(object):
           elif case2(value_e.Str):
             # s=x
             # s[1]=y  # invalid
-            e_die("Can't assign to items in a string", lval.blame_tok)
+            e_die("Can't assign to items in a string", loc.Span(left_spid))
 
           elif case2(value_e.MaybeStrArray):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
@@ -1825,7 +1829,8 @@ class Mem(object):
         # AssocArray shouldn because we query IsAssocArray before evaluating
         # sh_lhs_expr.  Could conslidate with s[i] case above
         e_die("Value of type %s can't be indexed" % ui.ValType(cell.val),
-              lval.blame_tok)
+              loc.Span(left_spid))
+
 
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)
@@ -1834,10 +1839,12 @@ class Mem(object):
         assert val.tag_() == value_e.Str, val
         rval = cast(value__Str, val)
 
+        left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
+
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
                                                    is_setref)
         if cell.readonly:
-          e_die("Can't assign to readonly associative array", lval.blame_tok)
+          e_die("Can't assign to readonly associative array", loc.Span(left_spid))
 
         # We already looked it up before making the lvalue
         assert cell.val.tag_() == value_e.AssocArray, cell
