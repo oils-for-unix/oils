@@ -13,6 +13,7 @@ bin/oils_cpp.py
 core/alloc.py
 core/ansi.py
 core/comp_ui.py
+core/completion.py
 core/dev.py
 core/error.py
 core/executor.py
@@ -40,7 +41,6 @@ frontend/location.py
 frontend/match.py
 frontend/option_def.py
 frontend/parse_lib.py
-frontend/py_reader.py
 frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
@@ -57,6 +57,7 @@ osh/bool_stat.py
 osh/braces.py
 osh/builtin_assign.py
 osh/builtin_bracket.py
+osh/builtin_comp.py
 osh/builtin_lib.py
 osh/builtin_meta.py
 osh/builtin_misc.py
@@ -87,3 +88,4 @@ pylib/path_stat.py
 qsn_/qsn.py
 qsn_/qsn_native.py
 tea/tea_main.py
+tools/osh2oil.py
