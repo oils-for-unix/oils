@@ -1,6 +1,12 @@
 #include <ctype.h>  // isspace()
 #include <errno.h>  // errno
 
+#include "_build/detected-cpp-config.h"
+
+#ifdef HAVE_READLINE
+  #include <readline/readline.h>
+#endif
+
 #include "mycpp/runtime.h"
 
 // Translation of Python's print().
@@ -243,6 +249,10 @@ bool str_equals(Str* left, Str* right) {
     return true;
   }
 
+  if (left == nullptr || right == nullptr) {
+    return false;
+  }
+
   // obj_len equal implies string lengths are equal
 
   if (STR_LEN(left->header_) == STR_LEN(right->header_)) {
@@ -342,4 +352,16 @@ int max(List<int>* elems) {
   }
 
   return ret;
+}
+
+Str* raw_input(Str* prompt) {
+#ifdef HAVE_READLINE
+  char* ret = readline(prompt->data());
+  if (ret == nullptr) {
+    throw Alloc<EOFError>();
+  }
+  return StrFromC(ret, strlen(ret));
+#else
+  assert(0);  // not implemented
+#endif
 }

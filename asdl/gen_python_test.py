@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-demo_asdl_test.py: Tests for demo_asdl.py
+gen_python_test.py
 """
 from __future__ import print_function
 
@@ -9,18 +9,38 @@ import unittest
 from asdl import runtime
 from asdl import pybase
 
-from _devbuild.gen import typed_demo_asdl as demo_asdl  # module under test
+from _devbuild.gen import typed_demo_asdl
 from _devbuild.gen import typed_arith_asdl
 
 arith_expr = typed_arith_asdl.arith_expr
-source_location = demo_asdl.source_location
-op_id_e = demo_asdl.op_id_e
+source_location = typed_demo_asdl.source_location
+op_id_e = typed_demo_asdl.op_id_e
 
-cflow = demo_asdl.cflow
-cflow_e = demo_asdl.cflow_e
+cflow = typed_demo_asdl.cflow
+cflow_e = typed_demo_asdl.cflow_e
 
 
 class ArithAstTest(unittest.TestCase):
+
+  def testStrings(self):
+    st = typed_demo_asdl.Strings('', '')
+    self.assertEqual('', st.required)
+    self.assertEqual('', st.optional)
+
+
+    # ZERO ARG "constructor" (static method)
+    st = typed_demo_asdl.Strings.InitEmpty()
+    self.assertEqual('', st.required)
+
+    # This fails because we try to set defaults.
+    # The N-arg constructor should not have ANY defaults, and it would solve
+    # this problem.
+    return
+    self.assertEqual(None, st.optional)
+    st = typed_demo_asdl.Strings('', None)
+    self.assertEqual('', st.required)
+    self.assertEqual(None, st.optional)
+
 
   def testFieldDefaults(self):
     s = arith_expr.Slice()
@@ -36,7 +56,7 @@ class ArithAstTest(unittest.TestCase):
     print(func)
 
     return
-    t = demo_asdl.token(5, 'x')
+    t = typed_demo_asdl.token(5, 'x')
     self.assertEqual(5, t.id)
     self.assertEqual('x', t.value)
     self.assertEqual(runtime.NO_SPID, t.span_id)
@@ -119,7 +139,7 @@ class ArithAstTest(unittest.TestCase):
     # TODO: Should be cflow_t.Break() and cflow_i.Break
     c = cflow.Break()
     assert isinstance(c, cflow.Break)
-    assert isinstance(c, demo_asdl.cflow_t)
+    assert isinstance(c, typed_demo_asdl.cflow_t)
     assert isinstance(c, pybase.CompoundObj)
 
   def testOtherTypes(self):

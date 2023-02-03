@@ -106,6 +106,50 @@ def _DefaultValue(typ):
   return default
 
 
+def _DefaultValue2(typ):
+  """
+  TODO: Delete _DefaultValue and replace it with this
+  """
+  type_name = typ.name
+
+  default = 'None'
+
+  if type_name == 'map':
+    # need this cast for MyPy
+    default = "cast('%s', OrderedDict())" % _MyPyType(typ)
+
+  elif type_name == 'array':
+    default = '[]'
+
+  elif type_name == 'maybe':
+    child_typ = typ.children[0]
+    default = 'None'
+
+  elif type_name == 'int':
+    default = '-1'
+
+  elif type_name == 'id':  # hard-coded HACK
+    default = '-1'
+
+  elif type_name == 'bool':
+    default = 'False'
+
+  elif type_name == 'float':
+    default = '0.0'  # or should it be NaN?
+
+  elif type_name == 'string':
+    default = "''"
+    pass
+
+  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+    sum_type = typ.resolved
+    # Just make it the first variant.  We could define "Undef" for
+    # each enum, but it doesn't seem worth it.
+    default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+
+  return default
+
+
 def _HNodeExpr(abbrev, typ, var_name):
   # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
@@ -146,7 +190,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
   def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
-               pretty_print_methods=True, py_init_required=False,
+               pretty_print_methods=True, py_init_required=True,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
@@ -319,9 +363,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       if d_str:
         expr_str = ' if %s is not None else %s' % (f.name, d_str)
-        if 'OrderedDict' in d_str:
-          # OrderedDict() is not typed
-          expr_str += '  # type: ignore'
       else:
         expr_str = ''
 
@@ -329,10 +370,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    self.%s = %s%s' % (f.name, f.name, expr_str), reflow=False)
 
     self.Emit('')
-    if not self.pretty_print_methods:
-      return
 
     pretty_cls_name = class_name.replace('__', '.')  # used below
+
+    self.Emit('  @staticmethod')
+    self.Emit('  def InitEmpty():')
+    self.Emit('    # type: () -> %s' % class_name)
+    default_vals = []
+    for f in all_fields:
+      d_str = _DefaultValue2(f.typ)
+      default_vals.append(d_str)
+
+    self.Emit('    return %s(%s)' % (class_name, ', '.join(default_vals)))
+
+    self.Emit('')
+    if not self.pretty_print_methods:
+      return
 
     #
     # PrettyTree

@@ -6,6 +6,9 @@ To avoid other dependencies.  Copied OrderedDict from collections.py, and
 MutableMapping from _abcoll.
 """
 
+from typing import Any
+
+
 class OrderedDict(dict):
     'Dictionary that remembers insertion order'
     # An inherited dict maps keys to values.
@@ -19,11 +22,13 @@ class OrderedDict(dict):
     # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
 
     def __init__(*args, **kwds):
+        # type: (Any, Any) -> None
         '''Initialize an ordered dictionary.  The signature is the same as
         regular dictionaries, but keyword arguments are not recommended because
         their insertion order is arbitrary.
 
         '''
+
         if not args:
             raise TypeError("descriptor '__init__' of 'OrderedDict' object "
                             "needs an argument")

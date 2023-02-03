@@ -188,8 +188,10 @@ py-codegen() {
 }
 
 py-asdl-examples() {
-  gen-asdl-py 'asdl/examples/demo_lib.asdl'  # dependency of typed_demo
-  gen-asdl-py 'asdl/examples/typed_demo.asdl'
+  # dependency of typed_demo
+  # TODO: turn on --py-init-required
+  gen-asdl-py 'asdl/examples/demo_lib.asdl' # --py-init-required
+  gen-asdl-py 'asdl/examples/typed_demo.asdl' # --py-init-required
 
   gen-asdl-py 'asdl/examples/shared_variant.asdl'
   gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
