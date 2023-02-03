@@ -141,7 +141,7 @@ if mylib.PYTHON:
     elif isinstance(py_val, int):
       val = value.Int(py_val)
     elif isinstance(py_val, float):
-      val = value.Float()  # TODO: ASDL needs float primitive
+      val = value.Float(py_val)  # TODO: ASDL needs float primitive
     elif isinstance(py_val, str):
       val = value.Str(py_val)
     else:

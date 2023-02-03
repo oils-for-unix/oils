@@ -38,9 +38,9 @@ def Options():
       help='Generate Python __init__ that requires every field')
 
   p.add_option(
-      '--py-init-zero-N', dest='py_init_zero_n',
+      '--init-zero-N', dest='init_zero_n',
       action='store_true', default=False,
-      help='Generate 0 arg and N arg constructors, like C++')
+      help='Generate 0 arg and N arg constructors, in Python and C++')
 
   return p
 
@@ -148,6 +148,7 @@ namespace %s {
 
       debug_info = {}
       v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=opts.pretty_print_methods,
+                                   init_zero_n=opts.init_zero_n,
                                    simple_int_sums=_SIMPLE,
                                    debug_info=debug_info)
       v2.VisitModule(schema_ast)
@@ -269,7 +270,7 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
     v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
                                   pretty_print_methods=opts.pretty_print_methods,
                                   py_init_n=opts.py_init_n,
-                                  py_init_zero_n=opts.py_init_zero_n,
+                                  py_init_zero_n=opts.init_zero_n,
                                   simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 

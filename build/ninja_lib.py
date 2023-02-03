@@ -408,7 +408,10 @@ class Rules(object):
       sources.extend(self.cc_libs[label].srcs)
     return sources
 
-  def asdl_library(self, asdl_path, deps = None, pretty_print_methods=True):
+  def asdl_library(self, asdl_path, deps = None,
+      pretty_print_methods=True,
+      init_zero_n=False):
+
     deps = deps or []
 
     # SYSTEM header, _gen/asdl/hnode.asdl.h
@@ -420,12 +423,16 @@ class Rules(object):
     out_cc = prefix + '.cc'
     out_header = prefix + '.h'
 
+    asdl_flags = '' 
+
     if pretty_print_methods:
       outputs = [out_cc, out_header]
-      asdl_flags = '' 
     else:
       outputs = [out_header]
-      asdl_flags = '--no-pretty-print-methods'
+      asdl_flags += '--no-pretty-print-methods'
+
+    if init_zero_n:
+      asdl_flags += ' --init-zero-N'
 
     debug_mod = prefix + '_debug.py'
     outputs.append(debug_mod)

@@ -28,13 +28,16 @@ def NinjaGraph(ru):
   # ASDL schemas
   ru.asdl_library('asdl/examples/typed_arith.asdl')
 
-  ru.asdl_library('asdl/examples/demo_lib.asdl')
-
   ru.asdl_library('asdl/examples/shared_variant.asdl')
 
   ru.asdl_library(
+      'asdl/examples/demo_lib.asdl',
+      init_zero_n = True)
+
+  ru.asdl_library(
       'asdl/examples/typed_demo.asdl',
-      deps = ['//asdl/examples/demo_lib.asdl'])
+      deps = ['//asdl/examples/demo_lib.asdl'],
+      init_zero_n = True)
 
   ru.cc_binary(
       'asdl/gen_cpp_test.cc',

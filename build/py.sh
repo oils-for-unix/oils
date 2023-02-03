@@ -174,8 +174,9 @@ py-codegen() {
   # hnode.asdl has REQUIRED fields so it's --py-init-N
   gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-N
 
-  gen-asdl-py 'frontend/types.asdl'
-  gen-asdl-py 'core/runtime.asdl'  # depends on syntax.asdl
+  gen-asdl-py 'frontend/types.asdl' --init-zero-N
+  # depends on syntax.asdl
+  gen-asdl-py 'core/runtime.asdl' # --py-init-zero-N
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # dependency on bool_arg_type_e
@@ -192,8 +193,8 @@ py-codegen() {
 
 py-asdl-examples() {
   # dependency of typed_demo
-  gen-asdl-py 'asdl/examples/demo_lib.asdl' --py-init-zero-N
-  gen-asdl-py 'asdl/examples/typed_demo.asdl' --py-init-zero-N
+  gen-asdl-py 'asdl/examples/demo_lib.asdl' --init-zero-N
+  gen-asdl-py 'asdl/examples/typed_demo.asdl' --init-zero-N
 
   gen-asdl-py 'asdl/examples/shared_variant.asdl'
   gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'

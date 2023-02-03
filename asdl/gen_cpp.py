@@ -193,7 +193,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
   def __init__(self, f, e_suffix=True,
-               pretty_print_methods=True, simple_int_sums=None,
+               pretty_print_methods=True,
+               init_zero_n=False,
+               simple_int_sums=None,
                debug_info=None):
     """
     Args:
@@ -203,6 +205,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     visitor.AsdlVisitor.__init__(self, f)
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
+    self.init_zero_n = init_zero_n
     self.simple_int_sums = simple_int_sums or []
     self.debug_info = debug_info if debug_info is not None else {}
 
@@ -357,6 +360,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def _GenClass(self, ast_node, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
+    if self.init_zero_n:
+      self.Emit('// TODO: init_zero_n', depth)
+
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
       self.Emit("class %s : %s {" % (class_name, bases), depth)
