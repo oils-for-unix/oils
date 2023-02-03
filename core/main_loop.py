@@ -270,6 +270,9 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
       status = cmd_ev.LastStatus()
       if is_return:
         done = True
+        break
+
+      break  # QUIT LOOP after one iteration.
 
     # After every "logical line", no lines will be referenced by the Arena.
     # Tokens in the LST still point to many lines, but lines with only comment
