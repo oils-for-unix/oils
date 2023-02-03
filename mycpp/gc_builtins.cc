@@ -243,6 +243,10 @@ bool str_equals(Str* left, Str* right) {
     return true;
   }
 
+  if (left == nullptr || right == nullptr) {
+    return false;
+  }
+
   // obj_len equal implies string lengths are equal
 
   if (STR_LEN(left->header_) == STR_LEN(right->header_)) {
