@@ -633,7 +633,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           rhs_str = _DecayPartValuesToString(assign_part_vals,
                                              self.splitter.GetJoinChar())
           if vtest_place.index is None:  # using None when no index
-            lval = lvalue.Named(vtest_place.name)  # type: lvalue_t
+            lval = lvalue.Named(vtest_place.name, None)  # type: lvalue_t
           else:
             var_name = vtest_place.name
             var_index = vtest_place.index
