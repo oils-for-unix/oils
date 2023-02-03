@@ -332,9 +332,10 @@ class CompGen(vm._Builtin):
     comp = completion.Api('', 0, 0)
     comp.Update('compgen', to_complete, '', -1, None)
     try:
+      f = mylib.Stdout()
       for m, _ in user_spec.Matches(comp):
         matched = True
-        print(m)
+        f.write(m + '\n')
     except error.FatalRuntime:
       # - DynamicWordsAction: We already printed an error, so return failure.
       return 1
