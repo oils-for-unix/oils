@@ -110,17 +110,31 @@ ST_Break = 1
 ST_Other = 2
 
 # State machine definition.
-_TRANSITIONS = {
-    # (state, char) -> (new state, emit span)
-    (ST_Begin, CH_Break): (ST_Break, False),
-    (ST_Begin, CH_Other): (ST_Other, False),
+# (state, char) -> (new state, emit span)
+# NOT: This would be less verbose as a dict, but a C++ compiler will turn this
+# into a lookup table anyway.
+def _TRANSITIONS(state, ch):
+  # type: (int, int) -> Tuple[int, bool]
+  if state == ST_Begin and ch == CH_Break:
+    return (ST_Break, False)
 
-    (ST_Break, CH_Break): (ST_Break, False),
-    (ST_Break, CH_Other): (ST_Other, True),
+  if state == ST_Begin and ch == CH_Other:
+    return (ST_Other, False)
 
-    (ST_Other, CH_Break): (ST_Break, True),
-    (ST_Other, CH_Other): (ST_Other, False),
-}
+  if state == ST_Break and ch == CH_Break:
+    return (ST_Break, False)
+
+  if state == ST_Break and ch == CH_Other:
+    return (ST_Other, True)
+
+  if state == ST_Other and ch == CH_Break:
+    return (ST_Break, True)
+
+  if state == ST_Other and ch == CH_Other:
+    return (ST_Other, False)
+
+  raise ValueError("invalid (state, ch) pair")
+
 
 def AdjustArg(arg, break_chars, argv_out):
   # type: (str, List[str], List[str]) -> None
@@ -129,7 +143,7 @@ def AdjustArg(arg, break_chars, argv_out):
   state = ST_Begin
   for i, c in enumerate(arg):
     ch = CH_Break if c in break_chars else CH_Other
-    state, emit_span = _TRANSITIONS[state, ch]
+    state, emit_span = _TRANSITIONS(state, ch)
     if emit_span:
       end_indices.append(i)
 
@@ -485,9 +499,9 @@ class ShellFuncAction(CompletionAction):
     # TODO: Add file and line number here!
     return '<ShellFuncAction %s>' % (self.func.name,)
 
-  def log(self, msg):
+  def debug(self, msg):
     # type: (str) -> None
-    self.cmd_ev.debug_f.log(msg)
+    self.cmd_ev.debug_f.writeln(msg)
 
   def Matches(self, comp):
     # type: (Api) -> Iterator[str]
@@ -516,23 +530,23 @@ class ShellFuncAction(CompletionAction):
     state.SetGlobalString(self.cmd_ev.mem, 'COMP_POINT', str(comp.end))
 
     argv = [comp.first, comp.to_complete, comp.prev]
-    self.log('Running completion function %r with arguments %s' % (self.func.name, argv))
+    self.debug('Running completion function %r with arguments %s' % (self.func.name, argv))
 
     self.comp_lookup.ClearCommandsChanged()
     status = self.cmd_ev.RunFuncForCompletion(self.func, argv)
     commands_changed = self.comp_lookup.GetCommandsChanged()
 
-    self.log('comp.first %s, commands_changed: %s' % (comp.first, commands_changed))
+    self.debug('comp.first %s, commands_changed: %s' % (comp.first, commands_changed))
 
     if status == 124:
       cmd = os_path.basename(comp.first) 
       if cmd in commands_changed:
-        self.log('Got status 124 from %r and %s commands changed' % (self.func.name, commands_changed))
+        self.debug('Got status 124 from %r and %s commands changed' % (self.func.name, commands_changed))
         raise _RetryCompletion()
       else:
         # This happens with my own completion scripts.  bash doesn't show an
         # error.
-        self.log(
+        self.debug(
             "Function %r returned 124, but the completion spec for %r wasn't "
             "changed" % (self.func.name, cmd))
         return
@@ -553,7 +567,7 @@ class ShellFuncAction(CompletionAction):
     if val.tag_() != value_e.MaybeStrArray:
       log('ERROR: COMPREPLY should be an array, got %s' % val)
       return
-    self.log('COMPREPLY %s' % val)
+    self.debug('COMPREPLY %s' % val)
 
     for s in cast(value__MaybeStrArray, val).strs:
       yield s
@@ -896,13 +910,13 @@ class RootCompleter(CompletionAction):
     except IndexError:
       t2 = None
 
-    debug_f.log('line: %r' % comp.line)
-    debug_f.log('rl_slice from byte %d to %d: %r' % (comp.begin, comp.end,
+    debug_f.writeln('line: %r' % comp.line)
+    debug_f.writeln('rl_slice from byte %d to %d: %r' % (comp.begin, comp.end,
         comp.line[comp.begin:comp.end]))
 
-    debug_f.log('t1 %s' % t1)
-    debug_f.log('t2 %s' % t2)
-    #debug_f.log('tokens %s', tokens)
+    debug_f.writeln('t1 %s' % t1)
+    debug_f.writeln('t2 %s' % t2)
+    #debug_f.writeln('tokens %s', tokens)
 
     # Each of the 'yield' statements below returns a fully-completed line, to
     # appease the readline library.  The root cause of this dance: If there's
@@ -996,15 +1010,15 @@ class RootCompleter(CompletionAction):
         UP_word = arg_word
         arg_word = cast(compound_word, UP_word)
         if WordEndsWithCompDummy(arg_word):
-          debug_f.log('Completing redirect arg')
+          debug_f.writeln('Completing redirect arg')
 
           try:
             val = self.word_ev.EvalWordToString(arg_word)
           except error.FatalRuntime as e:
-            debug_f.log('Error evaluating redirect word: %s' % e)
+            debug_f.writeln('Error evaluating redirect word: %s' % e)
             return
           if val.tag_() != value_e.Str:
-            debug_f.log("Didn't get a string from redir arg")
+            debug_f.writeln("Didn't get a string from redir arg")
             return
 
           span_id = word_.LeftMostSpanForWord(arg_word)
@@ -1036,7 +1050,7 @@ class RootCompleter(CompletionAction):
     if len(trail.words) > 0:
       # Now check if we're completing a word!
       if WordEndsWithCompDummy(trail.words[-1]):
-        debug_f.log('Completing words')
+        debug_f.writeln('Completing words')
         #
         # It didn't look like we need to complete var names, tilde, redirects,
         # etc.  Now try partial_argv, which may involve invoking PLUGINS.
@@ -1045,14 +1059,14 @@ class RootCompleter(CompletionAction):
         trail_words = [cast(word_t, w) for w in trail.words] # mycpp: workaround list cast
         words2 = word_.TildeDetectAll(trail_words)
         if 0:
-          debug_f.log('After tilde detection')
+          debug_f.writeln('After tilde detection')
           for w in words2:
             print(w, file=debug_f)
 
         if 0:
-          debug_f.log('words2:')
+          debug_f.writeln('words2:')
           for w2 in words2:
-            debug_f.log(' %s' % w2)
+            debug_f.writeln(' %s' % w2)
 
         for w in words2:
           try:
@@ -1069,13 +1083,13 @@ class RootCompleter(CompletionAction):
           else:
             pass
 
-        debug_f.log('partial_argv: [%s]' % ','.join(partial_argv))
+        debug_f.writeln('partial_argv: [%s]' % ','.join(partial_argv))
         num_partial = len(partial_argv)
 
         first = partial_argv[0]
         alias_first = None # type: str
         if mylib.PYTHON:
-          debug_f.log('alias_words: [%s]' % trail.alias_words)
+          debug_f.writeln('alias_words: [%s]' % trail.alias_words)
 
         if len(trail.alias_words) > 0:
           w = trail.alias_words[0]
@@ -1084,7 +1098,7 @@ class RootCompleter(CompletionAction):
           except error.FatalRuntime:
             pass
           alias_first = val.s
-          debug_f.log('alias_first: %s' % alias_first)
+          debug_f.writeln('alias_first: %s' % alias_first)
 
         if num_partial == 0:  # should never happen because of Lit_CompDummy
           raise AssertionError()
@@ -1099,7 +1113,7 @@ class RootCompleter(CompletionAction):
           span_id = word_.LeftMostSpanForWord(trail.words[0])
           span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
-          self.debug_f.log('** DISPLAY_POS = %d' % self.comp_ui_state.display_pos)
+          self.debug_f.writeln('** DISPLAY_POS = %d' % self.comp_ui_state.display_pos)
 
         else:
           base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
@@ -1117,9 +1131,9 @@ class RootCompleter(CompletionAction):
           span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
           if mylib.PYTHON:
-            self.debug_f.log('words[-1]: [%s]' % trail.words[-1])
+            self.debug_f.writeln('words[-1]: [%s]' % trail.words[-1])
 
-          self.debug_f.log('display_pos %d' % self.comp_ui_state.display_pos)
+          self.debug_f.writeln('display_pos %d' % self.comp_ui_state.display_pos)
 
         # Update the API for user-defined functions.
         index = len(partial_argv) - 1  # COMP_CWORD is -1 when it's empty
@@ -1128,7 +1142,7 @@ class RootCompleter(CompletionAction):
 
     # This happens in the case of [[ and ((, or a syntax error like 'echo < >'.
     if not user_spec:
-      debug_f.log("Didn't find anything to complete")
+      debug_f.writeln("Didn't find anything to complete")
       return
 
     # Reset it back to what was registered.  User-defined functions can mutate
@@ -1145,7 +1159,7 @@ class RootCompleter(CompletionAction):
               base_opts, dynamic_opts, user_spec, comp):
             yield candidate
         except _RetryCompletion as e:
-          debug_f.log('Got 124, trying again ...')
+          debug_f.writeln('Got 124, trying again ...')
           done = False
 
           # Get another user_spec.  The ShellFuncAction may have 'sourced' code
@@ -1176,7 +1190,7 @@ class RootCompleter(CompletionAction):
     NOTE: This post-processing MUST go here, and not in UserSpec, because it's
     in READLINE in bash.  compgen doesn't see it.
     """
-    self.debug_f.log('Completing %r ... (Ctrl-C to cancel)' % comp.line)
+    self.debug_f.writeln('Completing %r ... (Ctrl-C to cancel)' % comp.line)
     start_time = time_.time()
 
     # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
@@ -1238,13 +1252,13 @@ class RootCompleter(CompletionAction):
 
       # TODO: Show this in the UI if it takes too long!
       if 0:
-        self.debug_f.log(
+        self.debug_f.writeln(
             '... %d match%s for %r in %d ms (Ctrl-C to cancel)' % (i,
             plural, comp.line, elapsed_ms))
 
     elapsed_ms = (time_.time() - start_time) * 1000.0
     plural = '' if i == 1 else 'es'
-    self.debug_f.log(
+    self.debug_f.writeln(
         'Found %d match%s for %r in %d ms' % (i,
         plural, comp.line, elapsed_ms))
 
@@ -1316,7 +1330,7 @@ class ReadlineCallback(object):
       # print it to stderr.  That messes up the completion display.  We could
       # print what WOULD have been COMPREPLY here.
       print_stderr('osh: Runtime error while completing: %s' % e.UserErrorString())
-      self.debug_f.log('Runtime error while completing: %s' % e.UserErrorString())
+      self.debug_f.writeln('Runtime error while completing: %s' % e.UserErrorString())
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
       print_stderr('osh: I/O error in completion: %s' % posix.strerror(e.errno))
@@ -1329,7 +1343,7 @@ class ReadlineCallback(object):
         import traceback
         traceback.print_exc()
       print_stderr('osh: Unhandled exception while completing: %s' % e)
-      self.debug_f.log('Unhandled exception while completing: %s' % e)
+      self.debug_f.writeln('Unhandled exception while completing: %s' % e)
     except SystemExit as e:
       # I think this should no longer be called, because we don't use
       # sys.exit()?
@@ -1337,6 +1351,11 @@ class ReadlineCallback(object):
       posix._exit(e.code)
 
     return None
+
+
+def ExecuteReadlineCallback(cb, word, state):
+  # type: (ReadlineCallback, str, int) -> Optional[str]
+  return cb.__call__(word, state)
 
 
 if __name__ == '__main__':
