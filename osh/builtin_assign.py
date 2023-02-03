@@ -203,7 +203,7 @@ def _ExportReadonly(mem, pair, flags):
   """
   which_scopes = mem.ScopesForWriting()
 
-  lval = lvalue.Named(pair.var_name)
+  lval = lvalue.Named(pair.var_name, None)
   if pair.plus_eq:
     old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
     # When 'export e+=', then rval is value.Str('')
@@ -414,7 +414,7 @@ class NewVar(vm._AssignBuiltin):
           if old_val.tag_() != value_e.AssocArray:
             rval = value.AssocArray({})
 
-      lval = lvalue.Named(pair.var_name)
+      lval = lvalue.Named(pair.var_name, None)
       if pair.plus_eq:
         old_val = sh_expr_eval.OldValue(lval, self.mem, None)  # ignore set -u
         # When 'typeset e+=', then rval is value.Str('')

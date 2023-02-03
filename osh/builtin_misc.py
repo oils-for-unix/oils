@@ -311,7 +311,7 @@ class Read(vm._Builtin):
       tmp = [word_compile.EvalCStringToken(t) for t in tokens]
       line = ''.join(tmp)
 
-    lhs = lvalue.Named(var_name)
+    lhs = lvalue.Named(var_name, None)
     self.mem.SetValue(lhs, value.Str(line), scope_e.LocalOnly)
     return 0
 
@@ -321,7 +321,7 @@ class Read(vm._Builtin):
 
     # No error conditions?
 
-    lhs = lvalue.Named(var_name)
+    lhs = lvalue.Named(var_name, None)
     self.mem.SetValue(lhs, value.Str(contents), scope_e.LocalOnly)
     return 0
 
