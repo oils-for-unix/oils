@@ -275,9 +275,9 @@ class Tracer(object):
     self.val_pid_str = value.Str('')  # mutated by SetProcess
 
     # Can these be global constants?  I don't think we have that in ASDL yet.
-    self.lval_indent = lvalue.Named('SHX_indent')
-    self.lval_punct = lvalue.Named('SHX_punct')
-    self.lval_pid_str = lvalue.Named('SHX_pid_str')
+    self.lval_indent = lvalue.Named('SHX_indent', None)
+    self.lval_punct = lvalue.Named('SHX_punct', None)
+    self.lval_pid_str = lvalue.Named('SHX_pid_str', None)
 
   def CheckCircularDeps(self):
     # type: () -> None
