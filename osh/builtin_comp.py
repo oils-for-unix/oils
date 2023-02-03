@@ -1,6 +1,8 @@
+#!/usr/bin/env python2
 """
 builtin_comp.py - Completion builtins
 """
+from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import value_e, value__MaybeStrArray
