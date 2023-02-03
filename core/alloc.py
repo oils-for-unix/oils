@@ -270,6 +270,8 @@ class Arena(object):
     if span_id == runtime.NO_SPID:
       return None
     else:
+      #if span_id >= len(self.tokens):
+      #  raise RuntimeError('%d >= %d' % (span_id, len(self.tokens)))
       return self.tokens[span_id]
 
   def LastSpanId(self):

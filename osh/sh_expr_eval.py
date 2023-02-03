@@ -274,6 +274,7 @@ class ArithEvaluator(object):
     self.parse_ctx = parse_ctx
     self.errfmt = errfmt
 
+    # BUG: builtin_bracket doesn't set parse_ctx
     self.arena = parse_ctx.arena
 
   def CheckCircularDeps(self):
