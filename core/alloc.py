@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
 from asdl import runtime
 from core.pyerror import log
 
-from typing import List, Any
+from typing import List, Optional, Any
 
 _ = log
 
@@ -258,10 +258,19 @@ class Arena(object):
 
   def GetToken(self, span_id):
     # type: (int) -> Token
+    """ Given a valid span ID, get the corresponding Token.  """
     assert span_id != runtime.NO_SPID, span_id
     assert span_id < len(self.tokens), \
       'Span ID out of range: %d is greater than %d' % (span_id, len(self.tokens))
     return self.tokens[span_id]
+
+  def MaybeGetToken(self, span_id):
+    # type: (int) -> Optional[Token]
+    """ Like GetToken(), but runtime.NO_SPID -> None. """
+    if span_id == runtime.NO_SPID:
+      return None
+    else:
+      return self.tokens[span_id]
 
   def LastSpanId(self):
     # type: () -> int

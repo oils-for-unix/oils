@@ -47,4 +47,7 @@ module arith {
 
   SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
 
+
+  Strings = (string required, string? optional)
+
 }

@@ -101,14 +101,13 @@ module runtime
   -- For OSH assignment, evaluated from osh_ast.lhs_expr
   -- TODO: Rename this to sh_place?
   lvalue = 
-    Named(string name)  -- would be efficient if Str were first class variant
-  | Indexed(string name, int index)
-  | Keyed(string name, string key)
+    Named(string name, Token? blame_tok)  -- would be efficient if Str were first class variant
+  | Indexed(string name, int index, Token? blame_tok)
+  | Keyed(string name, string key, Token? blame_tok)
 
     -- Oil variants
   | ObjIndex(any obj, any index)
   | ObjAttr(any obj, string attr)
-  attributes (int* spids)
 
   redirect_arg =
     Path(string filename)
