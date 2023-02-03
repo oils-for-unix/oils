@@ -274,8 +274,6 @@ class ArithEvaluator(object):
     self.parse_ctx = parse_ctx
     self.errfmt = errfmt
 
-    self.arena = parse_ctx.arena
-
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.word_ev is not None
@@ -772,22 +770,24 @@ class ArithEvaluator(object):
         node = cast(sh_lhs_expr__Name, UP_node)
         assert node.name is not None
 
-        blame_tok = self.arena.MaybeGetToken(spid)
-        lval1 = lvalue.Named(node.name, blame_tok)
+        # Note: C++ constructor doesn't take spids directly.  Should we add that?
+        lval1 = lvalue.Named(node.name)
+        lval1.spids.append(spid)
         lval = lval1
 
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
         node = cast(sh_lhs_expr__IndexedName, UP_node)
         assert node.name is not None
 
-        blame_tok = self.arena.MaybeGetToken(node.left.span_id)
         if self.mem.IsAssocArray(node.name):
           key = self.EvalWordToString(node.index)
-          lval2 = lvalue.Keyed(node.name, key, blame_tok)
+          lval2 = lvalue.Keyed(node.name, key)
+          lval2.spids.append(node.left.span_id)
           lval = lval2
         else:
           index = self.EvalToInt(node.index)
-          lval3 = lvalue.Indexed(node.name, index, blame_tok)
+          lval3 = lvalue.Indexed(node.name, index)
+          lval3.spids.append(node.left.span_id)
           lval = lval3
 
       else:
@@ -819,12 +819,7 @@ class ArithEvaluator(object):
     # type: (arith_expr_t, int) -> lvalue_t
     """
     For (( a[x] = 1 )) etc.
-
-    Args:
-      span_id: may come from arg words: 'printf -v a[i]' or 'unset a[i]'
     """
-    blame_tok = self.arena.MaybeGetToken(span_id)
-
     UP_anode = anode
     if anode.tag_() == arith_expr_e.Binary:
       anode = cast(arith_expr__Binary, UP_anode)
@@ -833,18 +828,21 @@ class ArithEvaluator(object):
         if var_name is not None:
           if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)
-            lval2 = lvalue.Keyed(var_name, key, blame_tok)
+            lval2 = lvalue.Keyed(var_name, key)
+            lval2.spids.append(span_id)
             lval = lval2  # type: lvalue_t
             return lval
           else:
             index = self.EvalToInt(anode.right)
-            lval3 = lvalue.Indexed(var_name, index, blame_tok)
+            lval3 = lvalue.Indexed(var_name, index)
+            lval3.spids.append(span_id)
             lval = lval3
             return lval
 
     var_name, span_id = self._VarNameOrWord(anode)
     if var_name is not None:
-      lval1 = lvalue.Named(var_name, blame_tok)
+      lval1 = lvalue.Named(var_name)
+      lval1.spids.append(span_id)
       lval = lval1
       return lval
 

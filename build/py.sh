@@ -171,10 +171,8 @@ py-codegen() {
   # note: filename must come first
   gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-required
 
-  gen-asdl-py 'frontend/types.asdl' --py-init-required
-
-  # depends on syntax.asdl
-  gen-asdl-py 'core/runtime.asdl' # --py-init-required
+  gen-asdl-py 'frontend/types.asdl'
+  gen-asdl-py 'core/runtime.asdl'  # depends on syntax.asdl
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # dependency on bool_arg_type_e
