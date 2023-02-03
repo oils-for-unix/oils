@@ -1,6 +1,12 @@
 #include <ctype.h>  // isspace()
 #include <errno.h>  // errno
 
+#include "_build/detected-cpp-config.h"
+
+#ifdef HAVE_READLINE
+  #include <readline/readline.h>
+#endif
+
 #include "mycpp/runtime.h"
 
 // Translation of Python's print().
@@ -346,4 +352,16 @@ int max(List<int>* elems) {
   }
 
   return ret;
+}
+
+Str* raw_input(Str* prompt) {
+#ifdef HAVE_READLINE
+  char* ret = readline(prompt->data());
+  if (ret == nullptr) {
+    throw Alloc<EOFError>();
+  }
+  return StrFromC(ret, strlen(ret));
+#else
+  assert(0);  // not implemented
+#endif
 }

@@ -153,4 +153,6 @@ int hash(Str* s);
 
 int max(int a, int b);
 
+Str* raw_input(Str* prompt);
+
 #endif  // GC_BUILTINS_H
