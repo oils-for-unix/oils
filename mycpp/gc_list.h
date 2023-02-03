@@ -279,7 +279,9 @@ int List<T>::index(T value) {
 // https://stackoverflow.com/questions/12600330/pop-back-return-value
 template <typename T>
 T List<T>::pop() {
-  DCHECK(len_ > 0);
+  if (len_ == 0) {
+    throw Alloc<IndexError>();
+  }
   len_--;
   T result = slab_->items_[len_];
   slab_->items_[len_] = 0;  // zero for GC scan
@@ -289,7 +291,9 @@ T List<T>::pop() {
 // Used in osh/word_parse.py to remove from front
 template <typename T>
 T List<T>::pop(int i) {
-  DCHECK(len_ > 0);
+  if (len_ < i) {
+    throw Alloc<IndexError>();
+  }
 
   T result = index_(i);
   len_--;
