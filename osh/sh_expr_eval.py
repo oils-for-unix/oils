@@ -426,9 +426,9 @@ class ArithEvaluator(object):
       named_lval = cast(lvalue__Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
         if val.tag_() == value_e.MaybeStrArray:
-          lval = lvalue.Indexed(named_lval.name, 0)
+          lval = lvalue.Indexed(named_lval.name, 0, None)
         elif val.tag_() == value_e.AssocArray:
-          lval = lvalue.Keyed(named_lval.name, '0')
+          lval = lvalue.Keyed(named_lval.name, '0', None)
         val = word_eval.DecayArray(val)
 
     # This error message could be better, but we already have one

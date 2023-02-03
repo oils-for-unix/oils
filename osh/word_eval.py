@@ -642,10 +642,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(var_index) as case:
               if case(a_index_e.Int):
                 var_index = cast(a_index__Int, UP_var_index)
-                lval = lvalue.Indexed(var_name, var_index.i)
+                lval = lvalue.Indexed(var_name, var_index.i, None)
               elif case(a_index_e.Str):
                 var_index = cast(a_index__Str, UP_var_index)
-                lval = lvalue.Keyed(var_name, var_index.s)
+                lval = lvalue.Keyed(var_name, var_index.s, None)
               else: 
                 raise AssertionError()
 
