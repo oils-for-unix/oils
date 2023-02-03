@@ -30,10 +30,17 @@ def Options():
       '--no-pretty-print-methods', dest='pretty_print_methods',
       action='store_false', default=True,
       help='Whether to generate pretty printing methods')
+
+  # Control Python constructors
   p.add_option(
-      '--py-init-required', dest='py_init_required',
+      '--py-init-N', dest='py_init_n',
       action='store_true', default=False,
-      help='Whether Python codegen should require every field')
+      help='Generate Python __init__ that requires every field')
+
+  p.add_option(
+      '--py-init-zero-N', dest='py_init_zero_n',
+      action='store_true', default=False,
+      help='Generate 0 arg and N arg constructors, like C++')
 
   return p
 
@@ -261,7 +268,8 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
                                   pretty_print_methods=opts.pretty_print_methods,
-                                  py_init_required=opts.py_init_required,
+                                  py_init_n=opts.py_init_n,
+                                  py_init_zero_n=opts.py_init_zero_n,
                                   simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 

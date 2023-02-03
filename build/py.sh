@@ -167,9 +167,12 @@ gen-asdl-py() {
   log "$asdl_path -> (asdl_main) -> $out"
 }
 
+# TODO: turn on --py-init-zero-N everywhere
+
 py-codegen() {
   # note: filename must come first
-  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-required
+  # hnode.asdl has REQUIRED fields so it's --py-init-N
+  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-N
 
   gen-asdl-py 'frontend/types.asdl'
   gen-asdl-py 'core/runtime.asdl'  # depends on syntax.asdl
@@ -189,9 +192,8 @@ py-codegen() {
 
 py-asdl-examples() {
   # dependency of typed_demo
-  # TODO: turn on --py-init-required
-  gen-asdl-py 'asdl/examples/demo_lib.asdl' # --py-init-required
-  gen-asdl-py 'asdl/examples/typed_demo.asdl' # --py-init-required
+  gen-asdl-py 'asdl/examples/demo_lib.asdl' --py-init-zero-N
+  gen-asdl-py 'asdl/examples/typed_demo.asdl' --py-init-zero-N
 
   gen-asdl-py 'asdl/examples/shared_variant.asdl'
   gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'

@@ -27,20 +27,15 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual('', st.required)
     self.assertEqual('', st.optional)
 
-
     # ZERO ARG "constructor" (static method)
-    st = typed_demo_asdl.Strings.InitEmpty()
+    st = typed_demo_asdl.Strings.Create()
     self.assertEqual('', st.required)
-
-    # This fails because we try to set defaults.
-    # The N-arg constructor should not have ANY defaults, and it would solve
-    # this problem.
-    return
     self.assertEqual(None, st.optional)
+
+    # N arg constructor with None
     st = typed_demo_asdl.Strings('', None)
     self.assertEqual('', st.required)
     self.assertEqual(None, st.optional)
-
 
   def testFieldDefaults(self):
     s = arith_expr.Slice()
@@ -110,7 +105,7 @@ class ArithAstTest(unittest.TestCase):
     print('-- PRODUCT --')
     print()
 
-    s = source_location()
+    s = source_location.Create()
     s.path = 'hi'
     s.line = 1
     s.col = 2

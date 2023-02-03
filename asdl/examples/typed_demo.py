@@ -31,7 +31,12 @@ def main(argv):
   print(repr(op))
 
   n1 = cflow.Break()
-  n2 = cflow.Return()  # hm I would like a type error here
+
+  # Type error!
+  # n2 = cflow.Return()
+
+  # The real way to do it
+  n2 = cflow.Return.Create()
 
   #n3 = cflow.Return('hi')  # type error, yay!
   n3 = cflow.Return(42)
@@ -80,7 +85,13 @@ def main(argv):
   #b4 = bool_expr.LogicalBinary(op_id_e.Star, b1, 'a')
 
   # default should be empty dictionary?
-  m = typed_demo_asdl.maps()
+  m = typed_demo_asdl.maps.Create()
+
+  # Note: right now the default is {}
+  # Th
+
+  # assert m.ss is None, m.ss
+  # assert m.ib is None, m.ib
   print(m.ss)
   print(m.ib)
 

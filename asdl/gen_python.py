@@ -26,6 +26,9 @@ _PRIMITIVES = {
 
 
 def _MyPyType(typ):
+  """
+  ASDL type to MyPy Type.
+  """
   type_name = typ.name
 
   if type_name == 'map':
@@ -50,6 +53,46 @@ def _MyPyType(typ):
 
   # 'id' falls through here
   return _PRIMITIVES[type_name]
+
+
+def IsHeapAllocated(typ):
+  """
+  To determine whether nullptr / None is an allowed initialization, as opposed
+  to false, -1, 0.0, scope_e.First (simple sum).
+  """
+  type_name = typ.name
+
+  # All maps and arrays are heap allocated
+  if type_name in ('map', 'array'):
+    return True
+
+  if type_name == 'maybe':
+    child = typ.children[0]
+    if child.name != 'string' and child.name in _PRIMITIVES:
+      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+
+    # maybe[simple_sum] is also invalid
+    if child.resolved and isinstance(child.resolved, ast.SimpleSum):
+      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+
+    return True
+
+  if typ.resolved:
+    if isinstance(typ.resolved, ast.SimpleSum):
+      return False
+    if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
+      return True
+    if isinstance(typ.resolved, ast.Product):
+      return True
+    if isinstance(typ.resolved, ast.Use):
+
+      # TODO: what about simple_int_sum?
+
+      # return ast.TypeNameHeuristic(type_name)
+      return True
+
+  # Primtives aren't heap allocated
+  return False
 
 
 def _DefaultValue(typ):
@@ -190,14 +233,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
   def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
-               pretty_print_methods=True, py_init_required=True,
-               simple_int_sums=None):
+               pretty_print_methods=True, py_init_n=False,
+               py_init_zero_n=True, simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
-    self.py_init_required = py_init_required
+    self.py_init_n = py_init_n
+    self.py_init_zero_n = py_init_zero_n
+
     # For Id to use different code gen.  It's used like an integer, not just
     # like an enum.
     self.simple_int_sums = simple_int_sums or []
@@ -334,9 +379,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # __init__
     #
 
-    if self.py_init_required:
+    if self.py_init_n or self.py_init_zero_n:
       args = [f.name for f in all_fields]
     else:
+      # LEGACY
       args = ['%s=None' % f.name for f in all_fields]
 
     self.Emit('  def __init__(self, %s):' % ', '.join(args))
@@ -344,9 +390,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     arg_types = []
     for f in all_fields:
       t = _MyPyType(f.typ)
+      if self.py_init_n:
+        pass
+      elif self.py_init_zero_n:
+        if IsHeapAllocated(f.typ):
+          t = 'Optional[%s]' % t
+      else:
+        # Old calculation with too many Optionals
+        if f.typ.name != 'maybe':  # already Optional
+          t = 'Optional[%s]' % t
 
-      if not self.py_init_required and f.typ.name != 'maybe':  # already Optional
-        t = 'Optional[%s]' % t
       arg_types.append(t)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
@@ -356,15 +409,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # TODO: Use the field_desc rather than the parse tree, for consistency.
     for f in all_fields:
-      d_str = _DefaultValue(f.typ)
-
-      # PROBLEM: Optional ints are not supported.  I don't want to add if
-      # statements checking against None.  And 0 and -1 are valid values.
-
-      if d_str:
-        expr_str = ' if %s is not None else %s' % (f.name, d_str)
-      else:
+      if self.py_init_n or self.py_init_zero_n:
         expr_str = ''
+      else:
+        d_str = _DefaultValue(f.typ)
+
+        # PROBLEM: Optional ints are not supported.  I don't want to add if
+        # statements checking against None.  And 0 and -1 are valid values.
+
+        if d_str:
+          expr_str = ' if %s is not None else %s' % (f.name, d_str)
+        else:
+          expr_str = ''
 
       # don't wrap the type comment
       self.Emit('    self.%s = %s%s' % (f.name, f.name, expr_str), reflow=False)
@@ -373,17 +429,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     pretty_cls_name = class_name.replace('__', '.')  # used below
 
-    self.Emit('  @staticmethod')
-    self.Emit('  def InitEmpty():')
-    self.Emit('    # type: () -> %s' % class_name)
-    default_vals = []
-    for f in all_fields:
-      d_str = _DefaultValue2(f.typ)
-      default_vals.append(d_str)
+    if len(all_fields) and self.py_init_zero_n:
+      self.Emit('  @staticmethod')
+      self.Emit('  def Create():')
+      self.Emit('    # type: () -> %s' % class_name)
+      default_vals = []
+      for f in all_fields:
+        d_str = _DefaultValue2(f.typ)
+        default_vals.append(d_str)
 
-    self.Emit('    return %s(%s)' % (class_name, ', '.join(default_vals)))
+      self.Emit('    return %s(%s)' % (class_name, ', '.join(default_vals)))
+      self.Emit('')
 
-    self.Emit('')
     if not self.pretty_print_methods:
       return
 
