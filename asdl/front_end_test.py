@@ -44,7 +44,7 @@ class FrontEndTest(unittest.TestCase):
     d.PrettyPrint()
     print()
 
-    b = expr.Binary(d, d)
+    b = expr.Binary(d, d, 42, 43)
     b.PrettyPrint()
 
   def _assertParse(self, code_str):
