@@ -558,24 +558,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         t = self.types[o]
         if o.expr:  
-          if self.writing_default_arg:
-            # debug deps in the decl phase
-            # self.log('member o = %s, o.expr = %s', o, o.expr)
-            pass
-
           is_asdl = o.name == 'Create'  # hack for MyType.Create()
-
-          is_module = isinstance(o.expr, NameExpr) and (
-              o.expr.name in self.imported_names or
-              o.expr.name in ('mylib', 'libc', 'posix', 'fcntl_',
-                              'time_', 'termios', 'signal_', 'fanos')
-          )
-          # TODO: Do we need this?
-          is_init = o.name == '__init__'
+          is_module = isinstance(o.expr, NameExpr) and o.expr.name in self.imported_names
 
           # This is an approximate hack that assumes that locals don't shadow
           # imported names.  Might be a problem with names like 'word'?
-          if is_asdl or is_module or is_init:
+          if is_asdl or is_module:
             op = '::'
           else:
             op = '->'  # Everything is a pointer
@@ -2366,7 +2354,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     # Module structure
 
     def visit_import(self, o: 'mypy.nodes.Import') -> T:
-        pass
+        for name, as_name in o.ids:
+          if as_name is not None:
+            # import time as time_
+            self.imported_names.add(as_name)
+          else:
+            # import libc
+            self.imported_names.add(name)
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
         """
@@ -2374,7 +2368,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         We need them in the 'decl' phase for default arguments like
         runtime_asdl::scope_e -> scope_e
         """
-
         # For MemberExpr . -> module::func() or this->field.  Also needed in
         # the decl phase for default arg values.
         for name, alias in o.names:
