@@ -360,9 +360,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def _GenClass(self, ast_node, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
-    if self.init_zero_n:
-      self.Emit('// TODO: init_zero_n', depth)
-
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
       self.Emit("class %s : %s {" % (class_name, bases), depth)
@@ -392,19 +389,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       # reflow doesn't work well here, so do it manually
       return ',\n        '.join(strs)
 
-    # Define constructor with ZERO args.  And don't emit two constructors for #
-    # types with no fields.
-    if ast_node.fields:
-      default_inits = [header_init]
-      for field in all_fields:
-        default = _DefaultValue(field.typ)
-        default_inits.append('%s(%s)' % (field.name, default))
-
-      self.Emit('  %s()' % class_name, depth)
-      self.Emit('      : %s {' % FieldInitJoin(default_inits), depth, reflow=False)
-      self.Emit('  }')
-      self.Emit('')
-
     params = []
     # All product types and variants have a tag
     inits = [header_init]
@@ -420,6 +404,29 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit('      : %s {' % FieldInitJoin(inits), depth, reflow=False)
     self.Emit('  }')
     self.Emit('')
+
+    # Define constructor with ZERO args.  And don't emit two constructors for #
+    # types with no fields.
+    if ast_node.fields:
+      if self.init_zero_n:
+        init_args = []
+        for field in all_fields:
+          init_args.append(_DefaultValue(field.typ))
+
+        self.Emit('  static %s* Create() { ' % class_name, depth)
+        self.Emit('    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)), depth)
+        self.Emit('  }')
+        self.Emit('')
+      else:
+        default_inits = [header_init]
+        for field in all_fields:
+          default = _DefaultValue(field.typ)
+          default_inits.append('%s(%s)' % (field.name, default))
+
+        self.Emit('  %s()' % class_name, depth)
+        self.Emit('      : %s {' % FieldInitJoin(default_inits), depth, reflow=False)
+        self.Emit('  }')
+        self.Emit('')
 
     if self.pretty_print_methods:
       for abbrev in PRETTY_METHODS:

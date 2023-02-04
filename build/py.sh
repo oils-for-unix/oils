@@ -167,8 +167,6 @@ gen-asdl-py() {
   log "$asdl_path -> (asdl_main) -> $out"
 }
 
-# TODO: turn on --py-init-zero-N everywhere
-
 py-codegen() {
   # note: filename must come first
   # hnode.asdl has REQUIRED fields so it's --py-init-N
@@ -196,7 +194,7 @@ py-asdl-examples() {
   gen-asdl-py 'asdl/examples/demo_lib.asdl' --init-zero-N
   gen-asdl-py 'asdl/examples/typed_demo.asdl' --init-zero-N
 
-  gen-asdl-py 'asdl/examples/shared_variant.asdl'
+  gen-asdl-py 'asdl/examples/shared_variant.asdl' --init-zero-N
   gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
 }
 

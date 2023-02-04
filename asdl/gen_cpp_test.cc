@@ -150,21 +150,21 @@ TEST pretty_print_test() {
 }
 
 TEST maps_test() {
-  typed_demo_asdl::maps m;
-  log("m.ss  = %p", m.ss);
-  log("m.ib = %p", m.ib);
+  auto m = typed_demo_asdl::maps::Create();
+  log("m.ss = %p", m->ss);
+  log("m.ib = %p", m->ib);
 
-  m.ss = NewDict<Str*, Str*>();
-  m.ib = NewDict<int, bool>();
+  m->ss = NewDict<Str*, Str*>();
+  m->ib = NewDict<int, bool>();
 
-  m.ss->set(StrFromC("foo"), StrFromC("bar"));
+  m->ss->set(StrFromC("foo"), StrFromC("bar"));
 
-  m.ib->set(42, true);
+  m->ib->set(42, true);
   // note: Dict<int, bool>::get() doesn't compile because nullptr isn't valid
   // to return.  But Dict<int, bool>::index() does compile.
-  log("mm.ib[42] = %d", m.ib->index_(42));
+  log("mm.ib[42] = %d", m->ib->index_(42));
 
-  hnode_t* t = m.PrettyTree();
+  hnode_t* t = m->PrettyTree();
   auto f = mylib::Stdout();
   auto ast_f = Alloc<format::TextOutput>(f);
   // fails with repr(void *)
