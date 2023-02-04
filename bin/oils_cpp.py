@@ -185,6 +185,12 @@ def AppBundleMain(argv):
 def main(argv):
   # type: (List[str]) -> int
 
+  if mylib.PYTHON:
+    if not pyutil.IsAppBundle():
+      # For unmodified Python interpreters to simulate the OVM_MAIN patch
+      import libc
+      libc.cpython_reset_locale()
+
   try:
     return AppBundleMain(argv)
 

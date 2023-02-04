@@ -40,11 +40,6 @@ def main(argv):
 
 
 if __name__ == '__main__':
-  if not pyutil.IsAppBundle():
-    # For unmodified Python interpreters to simulate the OVM_MAIN patch
-    import libc
-    libc.cpython_reset_locale()
-
   pyann_out = posix.environ.get('PYANN_OUT')
 
   if pyann_out:
