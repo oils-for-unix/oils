@@ -4,6 +4,10 @@
 #
 # Usage:
 #   test/spec-cpp.sh <function name>
+#
+# Examples:
+#   test/spec-cpp.sh run-file smoke -r 0 -v
+#   NUM_SPEC_TASKS=2 test/spec-cpp.sh osh-all
 
 set -o nounset
 set -o pipefail
@@ -26,7 +30,6 @@ NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 
 readonly -a COMPARE_CPP_SHELLS=(
     $REPO_ROOT/bin/osh
-    $REPO_ROOT/bin/osh_cpp
     $OSH_CC
 )
 
@@ -62,7 +65,7 @@ asan-smoke() {
   echo 'echo stdin' | _bin/cxx-asan/osh
 }
 
-run-with-oils-cpp() {
+run-file() {
   ### Run a test with the given name.
 
   local test_name=$1
@@ -201,37 +204,28 @@ FNR != 1 {
 
   if (sh == "osh") {
     osh[result] += 1
-  } else if (sh == "osh_cpp") {  # bin/osh_cpp
-    oils_cpp_py[result] += 1
-  } else if (sh == "osh_ALT") {  # bin/*/osh
-    oils_cpp_cpp[result] += 1
+  } else if (sh == "osh-cpp") {  # bin/osh
+    osh_native[result] += 1
   }
 }
 
 END { 
-  num_osh = osh["pass"]
-  num_py = oils_cpp_py["pass"] 
-  num_cpp = oils_cpp_cpp["pass"]
+  num_py = osh["pass"]
+  num_cpp = osh_native["pass"] 
   if (spec_name == "TOTAL") {
     href = ""
   } else {
     href = sprintf("%s.html", spec_name)
   }
 
-  if (num_osh == num_py) {
-    row_css_class = "py-good"  # yellow
-
-    if (num_py == num_cpp) {
-      row_css_class = "cpp-good"  # upgrade to green
-    }
+  if (num_py == num_cpp) {
+    row_css_class = "cpp-good"  # green
   }
 
-  printf("%s,%s,%s,%d,%d,%d,%d,%d\n",
+  printf("%s,%s,%s,%d,%d,%d\n",
          row_css_class,
          spec_name, href,
-         num_osh,
          num_py,
-         num_osh - num_py,
          num_cpp,
          num_py - num_cpp)
 }
@@ -241,7 +235,7 @@ END {
 summary-csv() {
   # Can't go at the top level because files might not exist!
   cat <<EOF
-ROW_CSS_CLASS,name,name_HREF,osh,osh_cpp.py,delta_py,osh_cpp,delta_cpp
+ROW_CSS_CLASS,name,name_HREF,osh_py,osh_cpp,delta
 EOF
 
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
@@ -314,11 +308,9 @@ column_name   type
 ROW_CSS_CLASS string
 name          string
 name_HREF     string
-osh           integer
-osh_cpp.py    integer
-delta_py      integer
+osh_py        integer
 osh_cpp       integer
-delta_cpp     integer
+delta         integer
 EOF
 
   { html-summary-header
@@ -332,54 +324,6 @@ EOF
 tsv-demo() {
   sh-spec spec/arith.test.sh --tsv-output _tmp/arith.tsv dash bash "$@"
   cat _tmp/arith.tsv
-}
-
-# TODO:
-# Instead of --stats-template 
-# '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d %(osh_ALT_delta)d' \
-#
-# Should you have a TSV file for each file?
-# instead of if_.stats.txt, have if_.tsv
-#
-# And it will be:
-# osh pass, osh fail, osh_ALT_delta = 0 or 1
-# is --osh-failures-allowed something else?
-#
-# case osh eval.py eval.cpp
-# Result.PASS, Result.FAIL
-# Just sum the number of passes
-
-one-off() {
-  set +o errexit
-
-  # pure problem, backslashes
-
-  # this might be an IFS problem, because backslashes are missing from the
-  # unquoted one
-  run-with-oils-cpp quote -r 11 -v
-
-  # not sure
-  run-with-oils-cpp prompt -r 3 -v
-
-  return
-
-  # redirects is nullptr problem
-  run-with-oils-cpp for-expr -r 2 -v
-
-  run-with-oils-cpp builtin-io -r 9 -v  # \0
-  run-with-oils-cpp assign-extended -r 9 -v  # declare -p, crash
-
-  # xtrace: unicode
-  return
-
-  # printf: putenv() and strftime, and %5d
-
-  # unicode.  I think this is a libc glob setting
-  run-with-oils-cpp var-op-strip -r 10 -v
-  run-with-oils-cpp var-op-strip -r 24 -v
-
-  #run-with-oils-cpp builtin-io -r 26 -v  # posix::read
-  #run-with-oils-cpp builtin-io -r 54 -v  # to_float()
 }
 
 repro() {

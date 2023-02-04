@@ -20,8 +20,10 @@ def log(msg, *args):
 
 def MakeShellPairs(shells):
   shell_pairs = []
+
   saw_osh = False
   saw_oil = False
+
   for path in shells:
     name, _ = os.path.splitext(path)
     label = os.path.basename(name)
@@ -29,15 +31,20 @@ def MakeShellPairs(shells):
     if label == 'osh':
       # change the second 'osh' to 'osh_ALT' so it's distinct
       if saw_osh:
-        label = 'osh_ALT'
-      else:
-        saw_osh = True
+        if '_bin/' in path:  # $PWD/_bin/cxx-dbg/osh
+          label = 'osh-cpp'
+        else:
+          label = 'osh_ALT'
+      saw_osh = True
 
-    elif label == 'oil':
+    elif label == 'oil':  # TODO: Rename to ysh
       if saw_oil:
-        label = 'oil_ALT'
-      else:
-        saw_oil = True
+        if '_bin/' in path:
+          label = 'oil-cpp'
+        else:
+          label = 'oil_ALT'
+
+      saw_oil = True
 
     shell_pairs.append((label, path))
   return shell_pairs

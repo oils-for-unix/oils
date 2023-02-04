@@ -78,7 +78,7 @@ var-op-len() {
   sh-spec spec/var-op-len.test.sh $SH "$@"
 }
 
-run-test() {
+run-file() {
   ### Run a test with the given name.
 
   local test_name=$1
