@@ -9,13 +9,13 @@
 namespace completion {
 class ReadlineCallback;
 Str* ExecuteReadlineCallback(ReadlineCallback*, Str*, int);
-}
+}  // namespace completion
 
 // hacky foward decl
 namespace comp_ui {
 class _IDisplay;
 void ExecutePrintCandidates(_IDisplay*, Str*, List<Str*>*, int);
-}
+}  // namespace comp_ui
 
 namespace py_readline {
 
@@ -26,7 +26,7 @@ class Readline {
   void add_history(Str* line);
   void read_history_file(Str* path);
   void write_history_file(Str* path);
-  void set_completer(completion::ReadlineCallback *completer);
+  void set_completer(completion::ReadlineCallback* completer);
   void set_completer_delims(Str* delims);
   void set_completion_display_matches_hook(
       comp_ui::_IDisplay* display = nullptr);

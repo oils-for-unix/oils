@@ -16,47 +16,46 @@ static Readline* gReadline = nullptr;
 // Assuming readline 4.0+
 #if HAVE_READLINE
 
-#define completion_matches(x, y) \
-    rl_completion_matches((x), ((rl_compentry_func_t *)(y)))
+  #define completion_matches(x, y) \
+    rl_completion_matches((x), ((rl_compentry_func_t*)(y)))
 
 static char* do_complete(const char* text, int state) {
   if (gReadline->completer_ == nullptr) {
     return nullptr;
   }
   rl_attempted_completion_over = 1;
-  Str *gc_text = StrFromC(text);
-  Str *result = completion::ExecuteReadlineCallback(gReadline->completer_, gc_text, state);
+  Str* gc_text = StrFromC(text);
+  Str* result = completion::ExecuteReadlineCallback(gReadline->completer_,
+                                                    gc_text, state);
   if (result == nullptr) {
     return nullptr;
   }
 
   // According to https://web.mit.edu/gnu/doc/html/rlman_2.html#SEC37, readline
   // will free any memory we return to it.
-  int n = len(result) + 1;
-  auto* ret = static_cast<char*>(malloc(n));
-  DCHECK(ret != nullptr);
-  memcpy(ret, result->data(), n);
-  return ret;
+  return strdup(result->data());
 }
 
 static char** completion_handler(const char* text, int start, int end) {
-  rl_completion_append_character = '\0';
   rl_completion_suppress_append = 0;
   gReadline->begidx_ = start;
   gReadline->endidx_ = end;
   return completion_matches(text, *do_complete);
 }
 
-static void
-display_matches_hook(char **matches, int num_matches, int max_length) {
+static void display_matches_hook(char** matches, int num_matches,
+                                 int max_length) {
   if (gReadline->display_ == nullptr) {
     return;
   }
   auto* gc_matches = Alloc<List<Str*>>();
-  for (int i = 0; i < num_matches; i++) {
+  // It isn't clear from the readline documentation, but matches[0] is the
+  // completion text and the matches returned by any callbacks start at index 1.
+  for (int i = 1; i <= num_matches; i++) {
     gc_matches->append(StrFromC(matches[i]));
   }
-  comp_ui::ExecutePrintCandidates(gReadline->display_, nullptr, gc_matches, max_length);
+  comp_ui::ExecutePrintCandidates(gReadline->display_, nullptr, gc_matches,
+                                  max_length);
 }
 
 #endif
@@ -147,7 +146,7 @@ void Readline::set_completer_delims(Str* delims) {
 }
 
 void Readline::set_completion_display_matches_hook(
-      comp_ui::_IDisplay* display) {
+    comp_ui::_IDisplay* display) {
 #if HAVE_READLINE
   display_ = display;
 #else
