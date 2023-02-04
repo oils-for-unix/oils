@@ -89,7 +89,10 @@ def DefineTargets(ru):
         phony_prefix = 'mycpp-unit')
 
   # ASDL schema that examples/parse.py depends on
-  ru.asdl_library('mycpp/examples/expr.asdl')
+  ru.asdl_library(
+      'mycpp/examples/expr.asdl',
+      init_zero_n = True,
+      )
 
 
 #

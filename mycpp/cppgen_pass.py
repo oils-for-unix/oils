@@ -563,14 +563,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # self.log('member o = %s, o.expr = %s', o, o.expr)
             pass
 
-          # This is an approximate hack that assumes that locals don't shadow
-          # imported names.  Might be a problem with names like 'word'?
-          if (isinstance(o.expr, NameExpr) and (
+          is_asdl = o.name == 'Create'  # hack for MyType.Create()
+
+          is_module = isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
               o.expr.name in ('mylib', 'libc', 'posix', 'fcntl_',
-                              'time_', 'termios', 'signal_', 'fanos') or
-              o.name == '__init__'
-              )):
+                              'time_', 'termios', 'signal_', 'fanos')
+          )
+          # TODO: Do we need this?
+          is_init = o.name == '__init__'
+
+          # This is an approximate hack that assumes that locals don't shadow
+          # imported names.  Might be a problem with names like 'word'?
+          if is_asdl or is_module or is_init:
             op = '::'
           else:
             op = '->'  # Everything is a pointer

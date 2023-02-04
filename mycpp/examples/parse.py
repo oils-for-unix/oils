@@ -14,6 +14,7 @@ from typing import Tuple, Optional, cast
 from mycpp.mylib import log, tagswitch
 from mycpp import mylib
 from _devbuild.gen.expr_asdl import (
+    expr,
     expr_e,  # for translation only?
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )
@@ -150,8 +151,10 @@ class Parser(object):
     return self.ParseExpr()
 
 
-def run_tests():
+
+def TestParse():
   # type: () -> None
+
   lex = Lexer('abc')
   while True:
     tok_type, tok_val = lex.Read()
@@ -205,6 +208,37 @@ def run_tests():
 
       else:
         log('Other')
+
+
+def TestCreate():
+  # type: () -> None
+
+  c = expr.Const.Create()
+  log('c.i %d', c.i)
+
+  v = expr.Var.Create()
+  log('v.name %r', v.name)
+
+  b = expr.Binary.Create()
+  log('b.op %r', b.op)
+  b.op = '+'
+
+  # Must assign these
+  b.left = c
+  b.right = v
+
+  htree = b.PrettyTree()
+  ast_f = fmt.AnsiOutput(mylib.Stdout())
+
+  fmt.PrintTree(htree, ast_f)
+  ast_f.write('\n')
+
+
+def run_tests():
+  # type: () -> None
+
+  TestParse()
+  TestCreate()
 
 
 def run_benchmarks():

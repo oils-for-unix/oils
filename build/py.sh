@@ -186,7 +186,7 @@ py-codegen() {
   gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev'
 
   # For tests
-  gen-asdl-py 'mycpp/examples/expr.asdl'
+  gen-asdl-py 'mycpp/examples/expr.asdl' --init-zero-N
 }
 
 py-asdl-examples() {
