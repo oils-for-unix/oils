@@ -218,6 +218,22 @@ TEST literal_test() {
   PASS();
 }
 
+TEST string_defaults_test() {
+  auto st = Alloc<typed_demo_asdl::Strings>(kEmptyString, kEmptyString);
+  ASSERT_EQ(kEmptyString, st->required);
+  ASSERT_EQ(kEmptyString, st->optional);
+
+  st = typed_demo_asdl::Strings::Create();
+  ASSERT_EQ(kEmptyString, st->required);
+  ASSERT_EQ(nullptr, st->optional);
+
+  st = Alloc<typed_demo_asdl::Strings>(kEmptyString, nullptr);
+  ASSERT_EQ(kEmptyString, st->required);
+  ASSERT_EQ(nullptr, st->optional);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -230,7 +246,9 @@ int main(int argc, char** argv) {
   RUN_TEST(pretty_print_test);
   RUN_TEST(maps_test);
   RUN_TEST(literal_test);
+  RUN_TEST(string_defaults_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }
+

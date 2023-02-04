@@ -129,8 +129,17 @@ def _DefaultValue(typ):
     return 'NewList<%s>()' % (c_type)
 
   elif type_name == 'maybe':
-    # TODO: maybe[int] and maybe[simple_sum] are invalid
-    return _DefaultValue(typ.children[0])
+    child = typ.children[0]
+
+    # Note: this logic is duplicated in asdl/gen_python.py
+    if child.name != 'string' and child.name in _PRIMITIVES:
+      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+
+    # maybe[simple_sum] is also invalid
+    if child.resolved and isinstance(child.resolved, ast.SimpleSum):
+      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+
+    return 'nullptr'
 
   elif type_name == 'int':
     default = '-1'
