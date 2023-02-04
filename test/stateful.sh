@@ -21,7 +21,7 @@ set -o errexit
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
-source test/common.sh  # log
+source test/common.sh  # log, $OSH
 source test/tsv-lib.sh
 
 # This uses ../oil_DEPS/spec-bin/{bash,dash} if they exist
@@ -173,6 +173,9 @@ EOF
 
 all() {
   ### Run all tests
+
+  # TODO: Run again 'cpp' as well, and write another summary table
+  local bin_mode=${1:-py}
 
   mkdir -p $BASE_DIR
 

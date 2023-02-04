@@ -38,6 +38,11 @@ def NinjaGraph(ru):
         symlinks = symlinks,
         preprocessed = True,
         matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
+
+        # TODO: Rename it to 'oils_for_unix.py' and special binary oils-for-unix
+        #
+        # Then you need a symlink 'oils format', 'oils ysh' or something
+
         top_level = True,  # _bin/cxx-dbg/oils_cpp
         deps = [
           '//cpp/core',

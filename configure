@@ -394,30 +394,31 @@ main() {
 
   mkdir -p _build
 
+  if ! cc_quiet build/detect-cc.c; then
+    die "Couldn't compile a basic C program (cc not installed?)"
+  fi
+
   # Generate configuration for oil-native
   local cpp_out=_build/detected-cpp-config.h
   detect_cpp > $cpp_out
   log "Wrote $cpp_out"
+
+  # Legacy OVM build: shell build actions will 'source
+  # _build/detected-config.sh'.  And then adjust flags to compiler (-D, -l,
+  # etc.)
+  local sh_out=_build/detected-config.sh
+
+  detect_and_echo_vars > $sh_out
+  log "Wrote $sh_out"
 
   # Fast mode
   if test -n "$_OIL_DEV"; then
     return
   fi
 
-  if ! cc_quiet build/detect-cc.c; then
-    die "Couldn't compile a basic C program (cc not installed?)"
-  fi
-
-  # Legacy OVM build: shell build actions will 'source
-  # _build/detected-config.sh'.  And then adjust flags to compiler (-D, -l,
-  # etc.)
-  local sh_out=_build/detected-config.sh
   local c_out=_build/detected-config.h
-
-  detect_and_echo_vars > $sh_out
   detect_c_language > $c_out
-
-  log "Wrote $sh_out and $c_out"
+  log "Wrote $c_out"
 }
 
 if test -z "$_OIL_CONFIGURE_TEST"; then
