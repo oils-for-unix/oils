@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 """
-typed_demo.py: Run by types/run.sh
+typed_demo.py: uses typed_demo.asdl
+
+MyPy typed are checked by asdl/TEST.sh
 """
 from __future__ import print_function
 
@@ -19,8 +21,7 @@ word = typed_demo_asdl.word
 bool_expr = typed_demo_asdl.bool_expr
 bool_expr_e = typed_demo_asdl.bool_expr_e
 
-from typing import cast
-from typing import List
+from typing import List, cast
 
 
 def main(argv):
@@ -72,7 +73,6 @@ def main(argv):
   loc = source_location('foo', 13, 0, 2)
   print(loc)
 
-
   w1 = word('w1')
   w2 = word('e2')
   b1 = bool_expr.Binary(w1, w2)
@@ -84,11 +84,8 @@ def main(argv):
   print(b3)
   #b4 = bool_expr.LogicalBinary(op_id_e.Star, b1, 'a')
 
-  # default should be empty dictionary?
+  # default should be None to avoid allocation?
   m = typed_demo_asdl.maps.Create()
-
-  # Note: right now the default is {}
-  # Th
 
   # assert m.ss is None, m.ss
   # assert m.ib is None, m.ib

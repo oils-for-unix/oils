@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import unittest
 
-from asdl import runtime
 from asdl import pybase
 
 from _devbuild.gen import typed_demo_asdl
@@ -37,6 +36,27 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual('', st.required)
     self.assertEqual(None, st.optional)
 
+  def testArrayDefault(self):
+    obj = typed_demo_asdl.op_array.Create()
+
+    # It's [] but I want it to be None, to avoid allocation
+    print(obj)
+    print(obj.ops)
+
+  def testMapDefault(self):
+    obj = typed_demo_asdl.maps.Create()
+
+    # It's {} but I want it to be None, to avoid allocation
+    print(obj)
+    print(obj.ss)
+
+  def testOptionalDefault(self):
+    obj = typed_demo_asdl.Maybes.Create()
+
+    # These are None
+    self.assertEqual(None, obj.op)
+    self.assertEqual(None, obj.arg)
+
   def testFieldDefaults(self):
     s = arith_expr.Slice()
     s.a = arith_expr.Var('foo')
@@ -49,26 +69,6 @@ class ArithAstTest(unittest.TestCase):
     func.name = 'f'
     self.assertEqual([], func.args)
     print(func)
-
-    return
-    t = typed_demo_asdl.token(5, 'x')
-    self.assertEqual(5, t.id)
-    self.assertEqual('x', t.value)
-    self.assertEqual(runtime.NO_SPID, t.span_id)
-
-  def testTypeCheck(self):
-    return
-    v = arith_expr.ArithVar('name')
-    # Integer is not allowed
-    self.assertRaises(TypeError, arith_expr.Var, 1)
-
-    v = arith_expr.Unary(op_id_e.Minus, arith_expr.Const(99))
-    # Raw integer is not allowed
-    self.assertRaises(TypeError, arith_expr.Unary, op_id_e.Minus, 99)
-
-    v = arith_expr.Unary(op_id_e.Minus, arith_expr.Const(99))
-    # Raw integer is not allowed
-    #self.assertRaises(AssertionError, arith_expr.Unary, op_id_e.Minus, op_id_e.Plus)
 
   def testExtraFields(self):
     v = arith_expr.Var('z')

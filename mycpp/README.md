@@ -134,9 +134,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   - `str` &rarr; `Str*`
   - `List[T]` &rarr; `List<T>*`
   - `Dict[K, V]` &rarr; `Dict<K, V>*`
-  - Semantic change: a `Tuple[str, int]` is a **value type** that can only be
-    returned from a function.  If you want a garbage-collected **reference
-    type**, use an ASDL record `(string s, int i)`
+  - tuples &rarr; `Tuple2<A, B>`, `Tuple3<A, B, C>`, etc.
 - Collection literals turn into initializer lists
   - And there is a C++ type inference issue which requires an explicit
     `std::initializer_list<int>{1, 2, 3}`, not just `{1, 2, 3}`
@@ -188,7 +186,10 @@ Neither of them needs any rooting!  This is because we use **manual collection
 points** in the interpreter, and these functions don't call any functions that
 can collect.  They are "leaves" in the call tree.
 
-### Hard-Coded Lists To Get Rid Of
+### Hard-Coded Names
+
+These are signs of coupling between mycpp and Oil, which ideally shouldn't
+exist.
 
 - `mycpp_main.py`
   - `ModulesToCompile()` -- some files have to be ordered first, like the ASDL
@@ -197,9 +198,9 @@ can collect.  They are "leaves" in the call tree.
     - Another ordering constraint comes from **inheritance**.  The forward
       declaration is NOT sufficient in that case.
 - `cppgen_pass.py`
-  - lists of functions with default arguments (we only allow 1)
-  - lists of modules vs. types: `module.Func()` vs. `sum_type.Variant()`
   - `_GetCastKind()` has some hard-coded names
+  - `AsdlType::Create()` is special cased to `::`, not `->`
+  - Default arguments e.g. `scope_e::Local` need a repeated `using`.
 
 Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 
@@ -247,7 +248,7 @@ In addition to classes, templates, exceptions, etc. mentioned above, we use:
 
 - I/O Streams, RTTI, etc.
 - `const`
-- No smart pointers for now
+- Smart pointers
 
 ## Notes on the Runtime (`mylib`)
 

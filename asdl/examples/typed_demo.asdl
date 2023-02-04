@@ -1,12 +1,7 @@
 -- To test how all ASDL construct generate typed code.
 
 module arith {
-  -- TODO: re-enable this after generating the proper Python code
   use asdl examples demo_lib { value }
-  -- Two of them as a test
-  -- use demo_lib { t2, t3, t4 }
-
-  -- using_value = (string foo, value v)
 
   -- Simple Sum Type
   op_id = Plus | Minus | Star
@@ -33,8 +28,6 @@ module arith {
   Token = (string s, bool b)
   cflow2 = Break | Continue | Return(int status)
 
-  other = (Token t)
-
   maps = (
     map[string, string] ss,
     map[int, bool] ib,
@@ -47,7 +40,8 @@ module arith {
 
   SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
 
-
+  -- Test defaults
   Strings = (string required, string? optional)
 
+  Maybes = (Token? op, word? arg)
 }
