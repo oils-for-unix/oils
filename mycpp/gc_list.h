@@ -253,13 +253,15 @@ template <typename T>
 T List<T>::index_(int i) {
   if (i < 0) {
     int j = len_ + i;
-    DCHECK(j < len_);
-    DCHECK(j >= 0);
+    if (j >= len_ || j < 0) {
+      throw Alloc<IndexError>();
+    }
     return slab_->items_[j];
   }
 
-  DCHECK(i < len_);
-  DCHECK(i >= 0);
+  if (i >= len_ || i < 0) {
+    throw Alloc<IndexError>();
+  }
   return slab_->items_[i];
 }
 
