@@ -914,8 +914,12 @@ class RootCompleter(CompletionAction):
     debug_f.writeln('rl_slice from byte %d to %d: %r' % (comp.begin, comp.end,
         comp.line[comp.begin:comp.end]))
 
-    debug_f.writeln('t1 %s' % t1)
-    debug_f.writeln('t2 %s' % t2)
+    if t1:
+      debug_f.writeln('t1 %s' % t1)
+
+    if t2:
+      debug_f.writeln('t2 %s' % t2)
+
     #debug_f.writeln('tokens %s', tokens)
 
     # Each of the 'yield' statements below returns a fully-completed line, to
