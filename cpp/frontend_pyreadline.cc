@@ -16,9 +16,6 @@ static Readline* gReadline = nullptr;
 // Assuming readline 4.0+
 #if HAVE_READLINE
 
-  #define completion_matches(x, y) \
-    rl_completion_matches((x), ((rl_compentry_func_t*)(y)))
-
 static char* do_complete(const char* text, int state) {
   if (gReadline->completer_ == nullptr) {
     return nullptr;
@@ -40,7 +37,7 @@ static char** completion_handler(const char* text, int start, int end) {
   rl_completion_suppress_append = 0;
   gReadline->begidx_ = start;
   gReadline->endidx_ = end;
-  return completion_matches(text, *do_complete);
+  return rl_completion_matches(text, static_cast<rl_compentry_func_t*>(do_complete));
 }
 
 static void display_matches_hook(char** matches, int num_matches,
@@ -228,7 +225,6 @@ void Readline::resize_terminal() {
 }
 
 Readline* MaybeGetReadline() {
-  // TODO: incorporate OIL_READLINE into the build config
 #ifdef HAVE_READLINE
   gReadline = Alloc<Readline>();
   gHeap.RootGlobalVar(gReadline);
