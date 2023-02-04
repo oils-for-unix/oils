@@ -8,7 +8,6 @@
 """
 bin/oil.py - Python wrapper for oils_cpp.py
 
-- Needed for libc.cpython_reset_locale()
 - Used to build the OVM tarball, which we might want to get rid of.
   - This file should be called bin/oils_py.py, but that might break 
     the deployed oil.ovm, which we we might want to get rid of anyway.
@@ -24,7 +23,6 @@ from _devbuild.gen import id_kind
 _ = id_kind
 
 from bin import oils_cpp
-from core import pyutil
 
 from typing import List
 
@@ -40,11 +38,6 @@ def main(argv):
 
 
 if __name__ == '__main__':
-  if not pyutil.IsAppBundle():
-    # For unmodified Python interpreters to simulate the OVM_MAIN patch
-    import libc
-    libc.cpython_reset_locale()
-
   pyann_out = posix.environ.get('PYANN_OUT')
 
   if pyann_out:

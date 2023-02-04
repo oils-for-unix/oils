@@ -334,7 +334,7 @@ def main(argv):
 
   ru.WritePhony()
 
-  n.default(['_bin/cxx-dbg/oils_cpp'])
+  n.default(['_bin/cxx-dbg/osh'])
 
 
   if action == 'ninja':
