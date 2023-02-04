@@ -62,7 +62,7 @@ sh-snippet() {
 # action.
 oil-dev-snippet() {
   local action=$1
-  sh-snippet oil.py $action
+  sh-snippet oils_cpp.py $action
 }
 
 opy-dev-snippet() {
@@ -94,17 +94,6 @@ make-ovm-links() {
   for link in "${OIL_OVM_NAMES[@]}"; do
     # _bin/ symlink
     ln -s -f --verbose oil.ovm _bin/$link
-  done
-}
-
-make-cpp-links() {
-  for link in "${OIL_OVM_NAMES[@]}"; do
-    # Skip oil in favor of ysh.
-    if test $link != 'oil'; then
-      # TODO: do this in Ninja?
-      # Also to cxx-opt/oils_cpp.stripped
-      ln -s -f --verbose oils_cpp _bin/cxx-dbg/$link
-    fi
   done
 }
 
