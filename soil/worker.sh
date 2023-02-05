@@ -447,8 +447,6 @@ job-main() {
 
   log-context 'job-main'
   mkdir -v -p $out_dir
-
-  set -x
   ls -l -d $out_dir
 
   disable-git-errors

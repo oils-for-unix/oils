@@ -316,7 +316,7 @@ class CommandEvaluator(object):
           arg0 = cmd_val.argv[0]
           if e.span_id == runtime.NO_SPID:  # fill in default location.
             e.span_id = self.errfmt.CurrentLocation()
-          self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+          self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, loc.Span(e.span_id))
           status = 2  # consistent error code for usage error
 
     return status
@@ -1046,7 +1046,7 @@ class CommandEvaluator(object):
           else:
             # Only print warnings, never fatal.
             # Bash oddly only exits 1 for 'return', but no other shell does.
-            self.errfmt.PrefixPrint(msg, prefix='warning: ', span_id=tok.span_id)
+            self.errfmt.PrefixPrint(msg, 'warning: ', tok)
             status = 0
 
       # Note CommandList and DoGroup have no redirects, but BraceGroup does.

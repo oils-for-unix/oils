@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, SourceLine, command_t, command_str,
+    loc_t, Token, SourceLine, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__Alias, source__Reparsed, source__Variable, source__VarRef,
     source__ArgvWord, source__Synthetic
@@ -304,9 +304,10 @@ class ErrorFormatter(object):
     else:
       return runtime.NO_SPID
 
-  def PrefixPrint(self, msg, prefix, span_id=runtime.NO_SPID):
-    # type: (str, str, int) -> None
+  def PrefixPrint(self, msg, prefix, blame_loc):
+    # type: (str, str, loc_t) -> None
     """Print a hard-coded message with a prefix, and quote code."""
+    span_id = location.GetSpanId(blame_loc)
     _PrintWithSpanId(prefix, msg, span_id, self.arena, show_code=True)
 
   def Print_(self, msg, span_id=runtime.NO_SPID):

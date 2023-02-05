@@ -139,7 +139,7 @@ class ShellExecutor(vm._Executor):
           if e.span_id == runtime.NO_SPID:
             e.span_id = self.errfmt.CurrentLocation()
           # e.g. 'type' doesn't accept flag '-x'
-          self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+          self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, loc.Span(e.span_id))
           status = 2  # consistent error code for usage error
 
     return status
