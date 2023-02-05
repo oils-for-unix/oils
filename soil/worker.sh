@@ -451,8 +451,6 @@ job-main() {
   set -x
   ls -l -d $out_dir
 
-  # Debug git safe.directory issue
-  ls -l -d /home/uke/oil
   disable-git-errors
 
   save-metadata $job_name $out_dir
