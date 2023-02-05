@@ -148,7 +148,7 @@ lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
-stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
+stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
@@ -200,6 +200,7 @@ build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
 ninja-config     soil/worker.sh ninja-config           -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
+stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }

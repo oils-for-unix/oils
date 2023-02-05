@@ -334,8 +334,7 @@ def main(argv):
 
   ru.WritePhony()
 
-  n.default(['_bin/cxx-dbg/osh'])
-
+  n.default(['_bin/cxx-dbg/osh', '_bin/cxx-dbg/ysh'])
 
   if action == 'ninja':
     log('  (%s) -> %s (%d targets)', argv[0], BUILD_NINJA,

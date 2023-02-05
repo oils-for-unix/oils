@@ -12,7 +12,8 @@
 #
 #   test/stateful.sh signals-quick                # not all shells
 #
-#   test/stateful.sh soil-run
+#   test/stateful.sh soil-run-py
+#   test/stateful.sh soil-run-cpp
 
 set -o nounset
 set -o pipefail
@@ -191,10 +192,22 @@ all() {
   return $status
 }
 
-soil-run() {
-  ### Run it a few times to work around flakiness
-
+soil-run-py() {
   all
+}
+
+soil-run-cpp() {
+  local bin=_bin/cxx-asan/osh
+
+  ninja $bin
+
+  # TODO: $OSH should be a param for all functions, like signals-quick
+
+  # For now let it fail.
+  set +o errexit
+  OSH=$bin all
+  set -o errexit
+
 }
 
 #
