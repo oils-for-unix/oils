@@ -200,11 +200,10 @@ build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
 ninja-config     soil/worker.sh ninja-config           -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
+stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }
-# TODO: Add pexpect to Dockerfile
-# stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 
 cpp-small-tasks() {
   # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
@@ -421,6 +420,26 @@ save-metadata() {
   git log -n 1 --pretty='format:%s' > $meta_dir/commit-line.txt  # "subject"
 }
 
+disable-git-errors() {
+
+  # 2023-02: The build started failing because of the permissions we set in
+  # soil/host-shim.sh mount-perms.
+  #
+  # The issue is that the guest needs to be able to write to the Docker mount
+  # of the repo.  I think it may have been related to podman vs. Docker.
+  # Should check if mount-perms is necessary in both places.
+  #
+  # git fails unless we have this workaround.
+
+  # https://stackoverflow.com/questions/72978485/git-submodule-update-failed-with-fatal-detected-dubious-ownership-in-repositor
+
+  # https://github.blog/2022-04-12-git-security-vulnerability-announced/
+
+  #git config --global --add safe.directory '*'
+
+  git config --global --add safe.directory /home/uke/oil
+}
+
 job-main() {
   local job_name=$1
 
@@ -428,7 +447,13 @@ job-main() {
 
   log-context 'job-main'
   mkdir -v -p $out_dir
+
+  set -x
   ls -l -d $out_dir
+
+  # Debug git safe.directory issue
+  ls -l -d /home/uke/oil
+  disable-git-errors
 
   save-metadata $job_name $out_dir
 

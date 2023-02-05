@@ -14,6 +14,10 @@ USER uke
 # We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
 # a sibling of the runtime bind mount /home/uke/oil.
 
+# pexpect for test/stateful, using SYSTEM Python, not hermetic
+COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
+RUN deps/from-py.sh cpp
+
 COPY deps/from-R.sh /home/uke/tmp/deps/from-R.sh
 RUN deps/from-R.sh other-tests
 

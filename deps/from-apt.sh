@@ -139,8 +139,7 @@ cpp() {
 
     # for type checking with MyPy binary
     python3
-    python3-pip  # TODO: remove
-    python3-venv  # TODO: remove
+    python3-pip  # for pexpect
 
     # for custom Python 3
     "${PY3_DEPS[@]}"

@@ -14,6 +14,8 @@
 #
 #   test/stateful.sh soil-run-py
 #   test/stateful.sh soil-run-cpp
+#
+# TODO: Should have QUICKLY=1 variants
 
 set -o nounset
 set -o pipefail
@@ -116,6 +118,8 @@ html-summary() {
 
     <h1>Stateful Tests with <a href="//www.oilshell.org/cross-ref.html#pexpect">pexpect</a> </h1>
 
+    <p>OSH binary: $OSH</p>
+
     <table>
       <thead>
         <tr>
@@ -175,9 +179,6 @@ EOF
 all() {
   ### Run all tests
 
-  # TODO: Run again 'cpp' as well, and write another summary table
-  local bin_mode=${1:-py}
-
   mkdir -p $BASE_DIR
 
   manifest | xargs -n 1 -- $0 run-file
@@ -187,7 +188,7 @@ all() {
   html-summary > $BASE_DIR/index.html
   local status=$?
 
-  set -o errexit
+  # Don't turn errexit back on, since that will mess up soil-run-cpp.
 
   return $status
 }
@@ -203,11 +204,11 @@ soil-run-cpp() {
 
   # TODO: $OSH should be a param for all functions, like signals-quick
 
-  # For now let it fail.
-  set +o errexit
   OSH=$bin all
-  set -o errexit
+  local status=$?
 
+  echo "$0 all -> status $status"
+  echo "TODO: CI job should fail if any tests fail"
 }
 
 #

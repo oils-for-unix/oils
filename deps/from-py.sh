@@ -21,4 +21,9 @@ pea() {
   pip3 install --user mypy
 }
 
+cpp() {
+  # pexpect is for test/stateful
+  pip3 install --user mypy pexpect
+}
+
 "$@"

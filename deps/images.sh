@@ -7,18 +7,25 @@
 #
 # Example: Rebuild an image:
 #
-#   deps/images.sh build cpp
+#   deps/images.sh build common  # populates apt cache
+#   deps/images.sh build cpp T   # reuse package cache from apt-get
 #   deps/images.sh smoke cpp
 #
 # Update tag, then
 #   deps/images.sh tag cpp
+#   deps/images.sh push cpp
 #   deps/images.sh push cpp v-2022-08-29
+#   (I don't see why I have to push 'latest' and 'tagged' ?)
 #
-#   Update live version in 'soil/host-shim.sh live-image-tag'
+# Update live version in 'soil/host-shim.sh live-image-tag'
 #
 # Also useful:
 #
 #   deps/images.sh list-tagged
+#
+# URL
+#
+#   https://hub.docker.com/u/oilshell
 
 set -o nounset
 set -o pipefail
@@ -52,6 +59,7 @@ build() {
   local name=${1:-dummy}
   local use_cache=${2:-}  # OFF by default
 
+  # set -x
   local -a flags
   if test -n "$use_cache"; then
     flags=()
@@ -72,7 +80,7 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2022-09-26'
+  local tag='v-2023-02-04'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 

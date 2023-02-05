@@ -4,6 +4,9 @@
 #
 # Usage:
 #   soil/host-shim.sh <function name>
+#
+# Examples:
+#   soil/host-shim.sh local-test-uke cpp-spec
 
 set -o nounset
 set -o pipefail
@@ -19,13 +22,13 @@ live-image-tag() {
   local image_id=$1
 
   case $image_id in
+    (cpp)
+      # Added pexpect for test/stateful in C++
+      echo 'v-2023-02-04'
+      ;;
     (pea)
       # soil-common and cache mount
       echo 'v-2022-09-24'
-      ;;
-    (cpp)
-      # Added cmark for benchmark HTML
-      echo 'v-2022-09-26'
       ;;
     (dev-minimal)
       # soil-common and cache mount
