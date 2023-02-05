@@ -34,6 +34,7 @@ static char* do_complete(const char* text, int state) {
 }
 
 static char** completion_handler(const char* text, int start, int end) {
+  rl_completion_append_character = '\0';
   rl_completion_suppress_append = 0;
   gReadline->begidx_ = start;
   gReadline->endidx_ = end;
