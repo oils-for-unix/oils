@@ -9,6 +9,11 @@
 
 #include "mycpp/runtime.h"
 
+// forward decl
+namespace py_readline {
+Str* readline(Str*);
+}
+
 // Translation of Python's print().
 void print(Str* s) {
   fputs(s->data_, stdout);  // print until first NUL
@@ -356,11 +361,11 @@ int max(List<int>* elems) {
 
 Str* raw_input(Str* prompt) {
 #ifdef HAVE_READLINE
-  char* ret = readline(prompt->data());
+  Str* ret = py_readline::readline(prompt);
   if (ret == nullptr) {
     throw Alloc<EOFError>();
   }
-  return StrFromC(ret, strlen(ret));
+  return ret;
 #else
   assert(0);  // not implemented
 #endif

@@ -38,7 +38,8 @@ static char** completion_handler(const char* text, int start, int end) {
   rl_completion_suppress_append = 0;
   gReadline->begidx_ = start;
   gReadline->endidx_ = end;
-  return rl_completion_matches(text, static_cast<rl_compentry_func_t*>(do_complete));
+  return rl_completion_matches(text,
+                               static_cast<rl_compentry_func_t*>(do_complete));
 }
 
 static void display_matches_hook(char** matches, int num_matches,
@@ -232,6 +233,18 @@ Readline* MaybeGetReadline() {
   return gReadline;
 #else
   return nullptr;
+#endif
+}
+
+Str* readline(Str* prompt) {
+#if HAVE_READLINE
+  char* ret = ::readline(prompt->data());
+  if (ret == nullptr) {
+    return nullptr;
+  }
+  return StrFromC(ret);
+#else
+  assert(0);  // not implemented
 #endif
 }
 

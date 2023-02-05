@@ -55,6 +55,8 @@ class Readline {
 
 Readline* MaybeGetReadline();
 
+Str* readline(Str* prompt);
+
 }  // namespace py_readline
 
 #endif  // FRONTEND_PYREADLINE_H
