@@ -200,10 +200,11 @@ build-minimal    build/py.sh minimal                   -
 HACK-fastlex     build/py.sh fastlex                   -
 ninja-config     soil/worker.sh ninja-config           -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
-stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }
+# TODO: Add pexpect to Dockerfile
+# stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 
 cpp-small-tasks() {
   # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
