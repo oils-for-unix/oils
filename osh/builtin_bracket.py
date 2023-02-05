@@ -193,7 +193,9 @@ class Test(vm._Builtin):
 
       strs = cmd_val.argv
       if not strs or strs[-1] != ']':
-        self.errfmt.Print_('missing closing ]', span_id=cmd_val.arg_spids[0])
+        self.errfmt.Print_(
+            'missing closing ]',
+            location=self.errfmt.arena.GetToken(cmd_val.arg_spids[0]))
         return 2
       # Remove the right bracket
       cmd_val.argv.pop()

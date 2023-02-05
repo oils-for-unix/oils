@@ -163,7 +163,7 @@ class Wait(vm._Builtin):
       job = self.job_state.JobFromPid(pid)
       if job is None:
         self.errfmt.Print_("%d isn't a child of this shell" % pid,
-                           span_id=span_id)
+                           location=self.errfmt.arena.GetToken(span_id))
         return 127
 
       wait_status = job.JobWait(self.waiter)
