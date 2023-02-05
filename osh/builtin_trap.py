@@ -240,7 +240,7 @@ class Trap(vm._Builtin):
 
     if sig_key is None:
       self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                         span_id=cmd_val.arg_spids[2])
+                         location=self.errfmt.arena.GetToken(cmd_val.arg_spids[2]))
       return 1
 
     # NOTE: sig_spec isn't validated when removing handlers.
@@ -276,7 +276,7 @@ class Trap(vm._Builtin):
       # For signal handlers, the traps dictionary is used only for debugging.
       if sig_num in (SIGKILL, SIGSTOP):
         self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
-                           span_id=sig_spid)
+                           location=self.errfmt.arena.GetToken(sig_spid))
         # Other shells return 0, but this seems like an obvious error
         return 1
       self.trap_state.AddUserTrap(sig_num, node)

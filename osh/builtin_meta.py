@@ -103,7 +103,7 @@ class Source(vm._Builtin):
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:
       self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror(e)),
-                         span_id=cmd_val.arg_spids[1])
+                         location=self.errfmt.arena.GetToken(cmd_val.arg_spids[1]))
       return 1
 
     line_reader = reader.FileLineReader(f, self.arena)
@@ -199,9 +199,9 @@ class Builtin(vm._Builtin):
       if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
         # NOTE: There's a similar restriction for 'command'
         self.errfmt.Print_("Can't run assignment builtin recursively",
-                          span_id=span_id)
+                          location=self.errfmt.arena.GetToken(span_id))
       else:
-        self.errfmt.Print_("%r isn't a shell builtin" % name, span_id=span_id)
+        self.errfmt.Print_("%r isn't a shell builtin" % name, location=self.errfmt.arena.GetToken(span_id))
       return 1
 
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],

@@ -325,7 +325,7 @@ class FdState(object):
         except OSError as e:
           self.errfmt.Print_(
               "Can't open %r: %s" % (arg.filename, pyutil.strerror(e)),
-              span_id=r.op_spid)
+              location=self.errfmt.arena.GetToken(r.op_spid))
           raise  # redirect failed
 
         new_fd = self._PushDup(open_fd, r.loc)
@@ -602,7 +602,7 @@ class ExternalProgram(object):
 
       self.errfmt.Print_(
           "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
-          span_id=argv0_spid)
+          location=self.errfmt.arena.GetToken(argv0_spid))
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.

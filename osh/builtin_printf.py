@@ -215,7 +215,7 @@ class Printf(vm._Builtin):
               if width_spid == runtime.NO_SPID:
                 width_spid = part.width.span_id
               self.errfmt.Print_("printf got invalid width %r" % width_str,
-                                 span_id=width_spid)
+                                 location=self.errfmt.arena.GetToken(width_spid))
               return 1
 
           precision = -1  # nonexistent
@@ -244,7 +244,7 @@ class Printf(vm._Builtin):
                 precision_spid = part.precision.span_id
               self.errfmt.Print_(
                   'printf got invalid precision %r' % precision_str,
-                  span_id=precision_spid)
+                  location=self.errfmt.arena.GetToken(precision_spid))
               return 1
 
           if arg_index < num_args:
@@ -315,7 +315,7 @@ class Printf(vm._Builtin):
               else:
                 blame_spid = word_spid if has_arg else part.type.span_id
                 self.errfmt.Print_('printf expected an integer, got %r' % s,
-                                   span_id=blame_spid)
+                                   location=self.errfmt.arena.GetToken(blame_spid))
                 return 1
 
             if part.type.id == Id.Format_Time:
