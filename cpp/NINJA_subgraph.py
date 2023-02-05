@@ -76,6 +76,7 @@ def NinjaGraph(ru):
         'cpp/frontend_pyreadline.cc',
       ],
       deps = [
+        '//cpp/core',
         '//mycpp/runtime',
       ],
   )

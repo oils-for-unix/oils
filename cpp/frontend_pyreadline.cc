@@ -1,6 +1,9 @@
 #include "frontend_pyreadline.h"
 
 #include <assert.h>
+#include <errno.h>       // errno, EINTR
+#include <signal.h>      // SIGINT
+#include <sys/select.h>  // select(), FD_ISSET, FD_SET, FD_ZERO
 
 #include "_build/detected-cpp-config.h"
 
@@ -8,6 +11,8 @@
   #include <readline/history.h>
   #include <readline/readline.h>
 #endif
+
+#include "cpp/core.h"
 
 namespace py_readline {
 
@@ -65,7 +70,8 @@ Readline::Readline()
       endidx_(),
       completer_delims_(StrFromC(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")),
       completer_(),
-      display_() {
+      display_(),
+      latest_line_() {
 #if HAVE_READLINE
   using_history();
   rl_readline_name = "oil";
@@ -236,16 +242,59 @@ Readline* MaybeGetReadline() {
 #endif
 }
 
-Str* readline(Str* prompt) {
-#if HAVE_READLINE
-  char* ret = ::readline(prompt->data());
-  if (ret == nullptr) {
-    return nullptr;
+static void readline_cb(char* line) {
+  if (line == nullptr) {
+    gReadline->latest_line_ = nullptr;
+  } else {
+    gReadline->latest_line_ = line;
   }
-  return StrFromC(ret);
-#else
-  assert(0);  // not implemented
-#endif
+  gReadline->ready_ = true;
+  rl_callback_handler_remove();
+}
+
+// See the following for some loose documentation on the approach here:
+// https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface-Example
+Str* readline(Str* prompt) {
+  fd_set fds;
+  FD_ZERO(&fds);
+  rl_callback_handler_install(prompt->data(), readline_cb);
+
+  gReadline->latest_line_ = nullptr;
+  gReadline->ready_ = false;
+  while (!gReadline->ready_) {
+    // Wait until stdin is ready or we are interrupted.
+    FD_SET(fileno(rl_instream), &fds);
+    int ec = select(FD_SETSIZE, &fds, NULL, NULL, NULL);
+    if (ec == -1) {
+      if (errno == EINTR && pyos::SigintCount() > 0) {
+        // User is trying to cancel. Abort and cleanup readline state.
+        rl_free_line_state();
+        rl_callback_sigcleanup();
+        rl_cleanup_after_signal();
+        rl_callback_handler_remove();
+        throw Alloc<KeyboardInterrupt>();
+      }
+
+      // To be consistent with CPython, retry on all other errors and signals.
+      continue;
+    }
+
+    // Remove this check if we start calling select() with a timeout above.
+    DCHECK(ec > 0);
+    if (FD_ISSET(fileno(rl_instream), &fds)) {
+      // Feed readline.
+      rl_callback_read_char();
+    }
+  }
+
+  if (gReadline->latest_line_ != nullptr) {
+    Str* s = StrFromC(gReadline->latest_line_);
+    free(gReadline->latest_line_);
+    gReadline->latest_line_ = nullptr;
+    return s;
+  }
+
+  return nullptr;
 }
 
 }  // namespace py_readline

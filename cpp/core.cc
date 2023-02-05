@@ -284,6 +284,7 @@ void InitShell() {
   gSignalHandler = Alloc<SignalHandler>();
   gHeap.RootGlobalVar(gSignalHandler);
   gSignalHandler->signal_queue_ = AllocSignalQueue();
+  RegisterSignalInterest(SIGINT);
 }
 
 Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {
