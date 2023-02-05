@@ -41,7 +41,9 @@ class Readline {
 
   GC_OBJ(header_);
   static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(Readline, completer_delims_));
+    return maskbit(offsetof(Readline, completer_delims_)) |
+           maskbit(offsetof(Readline, completer_)) |
+           maskbit(offsetof(Readline, display_));
   }
 
   int begidx_;
