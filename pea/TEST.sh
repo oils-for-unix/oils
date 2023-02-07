@@ -29,7 +29,6 @@ translate-cpp() {
 all-files() {
   # Can't run this on Soil because we only have build/py.sh py-source, not
   # 'minimal'
-  # build/dynamic-deps.sh oils-cpp
 
   # Update this file with build/dynamic-deps.sh pea-hack
 

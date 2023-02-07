@@ -261,8 +261,8 @@ def InitSteps(n):
          description='make-pystub $out $in')
   n.newline()
 
-  n.rule('gen-oils-cpp',
-         command='build/ninja-rules-py.sh gen-oils-cpp $main_name $out_prefix $in',
+  n.rule('gen-oils-for-unix',
+         command='build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $in',
          description='gen-oils-cpp $main_name $out_prefix $in')
   n.newline()
 
@@ -323,7 +323,7 @@ def main(argv):
   ru.WriteRules()
 
   # Collect sources for metrics, tarball, shell script
-  cc_sources = ru.SourcesForBinary('_gen/bin/oils_cpp.mycpp.cc')
+  cc_sources = ru.SourcesForBinary('_gen/bin/oils_for_unix.mycpp.cc')
 
   if 0:
     from pprint import pprint

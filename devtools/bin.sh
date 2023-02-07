@@ -37,10 +37,10 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 EOF
 }
 
-make-oils-cpp() {
-  local out=bin/oils_cpp
+make-oils-for-unix() {
+  local out=bin/oils-for-unix
   { sh-prefix
-    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oils_cpp.py "$@"'
+    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oils_for_unix.py "$@"'
   } > $out
   chmod +x $out
   echo "Wrote $out"
