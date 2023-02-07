@@ -121,7 +121,7 @@ oils-for-unix() {
   ### Report on the ones we just built
 
   # TODO: could compare GCC and Clang once we have R on the CI images
-  local -a targets=(_bin/cxx-{dbg,opt}/oils_cpp)
+  local -a targets=(_bin/cxx-{dbg,opt}/oils-for-unix)
   ninja "${targets[@]}"
 
   collect-and-report $OIL_BASE_DIR "${targets[@]}"
@@ -132,7 +132,7 @@ oils-for-unix() {
 compare-gcc-clang() {
   ### Run by Soil 'cpp-coverage' task, because it has clang
 
-  local -a targets=(_bin/{clang,cxx}-dbg/oils_cpp _bin/{clang,cxx}-opt/oils_cpp.stripped)
+  local -a targets=(_bin/{clang,cxx}-dbg/oils-for-unix _bin/{clang,cxx}-opt/oils-for-unix.stripped)
   ninja "${targets[@]}"
 
   mkdir -p _tmp/metrics
@@ -152,7 +152,7 @@ run-for-release() {
   # TODO: consolidate with benchmarks/common.sh, OSH_CPP_BENCHMARK_DATA
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes
   local bin_dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
-  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/oils_cpp
+  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/oils-for-unix
 }
 
 dupe-strings() {
@@ -186,8 +186,8 @@ for s, count in d.most_common()[:50]:
 # Found StrFromC() and len() duplication
 
 oil-dupe-strings() {
-  local bin=_bin/cxx-opt/oils_cpp.stripped
-  #local bin=_bin/clang-opt/oils_cpp.stripped
+  local bin=_bin/cxx-opt/oils-for-unix.stripped
+  #local bin=_bin/clang-opt/oils-for-unix.stripped
   ninja $bin
 
   dupe-strings $bin

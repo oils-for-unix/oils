@@ -129,7 +129,7 @@ make-readable() {
 }
 
 _record-cpp() {
-  local name=$1  # e.g. oils_cpp, escape
+  local name=$1  # e.g. oils-for-unix, escape
   local mode=$2
   shift 2
 
@@ -185,7 +185,7 @@ profile-osh-parse() {
 
   local mode=${1:-graph}
 
-  local bin='_bin/cxx-opt/oils_cpp'
+  local bin='_bin/cxx-opt/oils-for-unix'
   ninja $bin
 
   local file=benchmarks/testdata/configure
@@ -249,7 +249,7 @@ _stat() {
 stat() { sudo $0 _stat "$@"; }
 
 stat-osh-parse() {
-  stat _bin/cxx-opt/oils_cpp --ast-format none -n benchmarks/testdata/configure
+  stat _bin/cxx-opt/oils-for-unix --ast-format none -n benchmarks/testdata/configure
 }
 
 

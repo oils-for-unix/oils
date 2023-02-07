@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 EOF
 }
 
-oils-cpp-main() {
+oils-for-unix-main() {
   local main_namespace=$1
 
   cat <<EOF
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 EOF
 }
 
-gen-oils-cpp() {
+gen-oils-for-unix() {
   local main_name=$1
   local out_prefix=$2
   shift 2  # rest are inputs
@@ -64,10 +64,10 @@ gen-oils-cpp() {
   local tmp=_build/tmp
   mkdir -p $tmp
 
-  local raw_cc=$tmp/oils_cpp_raw.cc
+  local raw_cc=$tmp/oils_for_unix_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local raw_header=$tmp/oils_cpp_raw.h
+  local raw_header=$tmp/oils_for_unix_raw.h
   local header_out=${out_prefix}.h
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
@@ -79,12 +79,12 @@ gen-oils-cpp() {
 
   { echo "// $main_name.h: translated from Python by mycpp"
     echo
-    echo '#ifndef OILS_CPP_MYCPP_H'
-    echo '#define OILS_CPP_MYCPP_H'
+    echo '#ifndef OILS_FOR_UNIX_MYCPP_H'
+    echo '#define OILS_FOR_UNIX_MYCPP_H'
 
     cat $raw_header
 
-    echo '#endif  // OILS_CPP_MYCPP_H'
+    echo '#endif  // OILS_FOR_UNIX_MYCPP_H'
 
   } > $header_out
 
@@ -98,7 +98,7 @@ EOF
 
     cat $raw_cc
 
-    oils-cpp-main $main_name
+    oils-for-unix-main $main_name
   } > $cc_out
 }
 

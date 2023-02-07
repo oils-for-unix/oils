@@ -72,7 +72,7 @@ setglobal_compile_flags() {
   fi
 
   # TODO: bumpleak and cheney should really be separate binaries like
-  # oils_cpp.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
+  # oils-for-unix.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
   case $variant in
     (bumpleak)
       flags="$flags -D BUMP_LEAK"
@@ -225,11 +225,11 @@ compile_one() {
       flags="$flags -E"
       ;;
 
-    # DISABLE spew for generated code.  mycpp/pea could flag this at the PYTHON
-    # level, rather than doing it at the C++ level.
-    (_build/obj/*/oils_cpp.*)
-      flags="$flags -Wno-unused-variable -Wno-unused-but-set-variable"
-      ;;
+	 # DISABLE spew for mycpp-generated code.  mycpp/pea could flag this at the
+   # PYTHON level, rather than doing it at the C++ level.
+   (_build/obj/*/_gen/bin/oils_for_unix.mycpp.o)
+     flags="$flags -Wno-unused-variable -Wno-unused-but-set-variable"
+     ;;
   esac
 
   # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?

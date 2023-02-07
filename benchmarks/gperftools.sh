@@ -22,7 +22,7 @@ download() {
     'https://github.com/gperftools/gperftools/releases/download/gperftools-2.7/gperftools-2.7.tar.gz'
 }
 
-readonly OILS_CPP='_bin/oils_cpp.tcmalloc '
+readonly OILS_CPP='_bin/oils-for-unix.tcmalloc '
 
 collect-small() {
   HEAPPROFILE=_tmp/small-parse.hprof $OILS_CPP -c 'echo hi'

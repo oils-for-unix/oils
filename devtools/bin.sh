@@ -37,10 +37,10 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 EOF
 }
 
-make-oils-cpp() {
-  local out=bin/oils_cpp
+make-oils-for-unix() {
+  local out=bin/oils-for-unix
   { sh-prefix
-    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oils_cpp.py "$@"'
+    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oils_for_unix.py "$@"'
   } > $out
   chmod +x $out
   echo "Wrote $out"
@@ -62,7 +62,7 @@ sh-snippet() {
 # action.
 oil-dev-snippet() {
   local action=$1
-  sh-snippet oils_cpp.py $action
+  sh-snippet oils_for_unix.py $action
 }
 
 opy-dev-snippet() {
@@ -83,7 +83,7 @@ make-src-stubs() {
 
   make-osh-dbg
 
-  make-oils-cpp
+  make-oils-for-unix
 }
 
 make-ovm-links() {

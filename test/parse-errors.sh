@@ -466,7 +466,7 @@ cmd-parse() {
   _oil-parse-error 'break >out'
 
   if is-oils-cpp; then
-    echo 'Skipping some cmd-parse cases on oils_cpp'
+    echo 'Skipping some cmd-parse cases on oils-for-unix'
     return
   fi
 
@@ -652,7 +652,7 @@ proc_arg_list() {
   set +o errexit
 
   if is-oils-cpp; then
-    echo 'Skipping proc_arg_list cases on oils_cpp'
+    echo 'Skipping proc_arg_list cases on oils-for-unix'
     return
   fi
 
@@ -886,7 +886,7 @@ EOF
 
   # We want these to be tested under OSH, but they won't work under Oil native!
   if is-oils-cpp; then
-    echo 'Skipping some oil_string_literals cases on oils_cpp'
+    echo 'Skipping some oil_string_literals cases on oils-for-unix'
     return
   fi
 
@@ -1020,7 +1020,7 @@ invalid_parens() {
   set +o errexit
 
   if is-oils-cpp; then
-    echo 'skipping invalid_parens on oils_cpp'
+    echo 'skipping invalid_parens on oils-for-unix'
     return
   fi
 
@@ -1451,7 +1451,7 @@ cases-in-files() {
     if is-oils-cpp; then
       case $t in
         */01-bad-func.sh)
-          echo "Skipping file $t for oils_cpp"
+          echo "Skipping file $t for oils-for-unix"
           continue
           ;;
       esac
@@ -1485,7 +1485,7 @@ soil-run-py() {
 }
 
 soil-run-cpp() {
-  ### Run with oils_cpp
+  ### Run with oils-for-unix
 
   ninja _bin/cxx-asan/osh
 

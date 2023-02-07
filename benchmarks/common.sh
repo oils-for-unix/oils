@@ -79,7 +79,7 @@ filter-provenance() {
   # create a regex bash|dash
   local pat=$(echo "$@" | sed 's/ /|/g')
 
-  # Anchor it at the end only.  For _bin/cxx-opt/oils_cpp.stripped and the
+  # Anchor it at the end only.  For _bin/cxx-opt/oils-for-unix.stripped and the
   # ../benchmark-data one.
   pat="($pat)\$"
 

@@ -66,7 +66,7 @@ word_freq-tasks() {
 
   cat $provenance | filter-provenance python2 bash "$OSH_CPP_REGEX" |
   while read fields; do
-    # BUG: oils_cpp differs on these two.  Looks like it's related to
+    # BUG: oils-for-unix differs on these two.  Looks like it's related to
     # backslashes!
     #echo 'word_freq 10 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
     #echo 'word_freq 2 benchmarks/testdata/ltmain.sh' | xargs -n 3 -- echo "$fields"

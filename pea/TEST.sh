@@ -29,11 +29,10 @@ translate-cpp() {
 all-files() {
   # Can't run this on Soil because we only have build/py.sh py-source, not
   # 'minimal'
-  # build/dynamic-deps.sh oils-cpp
 
   # Update this file with build/dynamic-deps.sh pea-hack
 
-  cat pea/oils-cpp-typecheck.txt
+  cat pea/oils-typecheck.txt
 
   for path in */*.pyi; do
     echo $path
@@ -66,7 +65,7 @@ check-types() {
 }
 
 test-translate() {
-  translate-cpp bin/oils_cpp.py
+  translate-cpp bin/oils_for_unix.py
 }
 
 test-syntax-error() {

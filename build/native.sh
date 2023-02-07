@@ -22,7 +22,7 @@ tarball-demo() {
 
   time _build/oils.sh '' '' SKIP_REBUILD
 
-  local bin=_bin/cxx-opt-sh/oils_cpp.stripped
+  local bin=_bin/cxx-opt-sh/oils-for-unix.stripped
 
   ls -l $bin
 
@@ -46,10 +46,10 @@ soil-run() {
   ./NINJA-config.sh
 
   # Keep the Cheney build compiling
-  ninja _bin/cxx-dbg/oils_cpp \
-        _bin/cxx-asan/oils_cpp \
-        _bin/cxx-opt/oils_cpp.stripped \
-        _bin/cxx-cheney/oils_cpp
+  ninja _bin/cxx-dbg/oils-for-unix \
+        _bin/cxx-asan/oils-for-unix \
+        _bin/cxx-opt/oils-for-unix.stripped \
+        _bin/cxx-cheney/oils-for-unix
 }
 
 oil-slice-demo() {
@@ -60,7 +60,7 @@ oil-slice-demo() {
 
   local osh=${1:-bin/osh}
 
-  # Same functionality in bin/oils_cpp
+  # Same functionality in bin/oils-for-unix
   echo 'echo hi' | $osh
   $osh -n -c 'ls -l'
   echo ---

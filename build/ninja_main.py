@@ -120,7 +120,7 @@ main() {
   print('  local out_dir=%s' % out_dir, file=f)
 
   print('''\
-  local out=$out_dir/oils_cpp
+  local out=$out_dir/oils-for-unix
 
   if test -n "$skip_rebuild" && test -f "$out"; then
     echo
@@ -160,7 +160,7 @@ main() {
   # TODO: provide a way for the user to get symbols?
 
   print('''\
-  local out_name=oils_cpp
+  local out_name=oils-for-unix
   if test "$variant" = opt; then
     strip -o "$out.stripped" "$out"
     out_name=$out_name.stripped
@@ -261,8 +261,8 @@ def InitSteps(n):
          description='make-pystub $out $in')
   n.newline()
 
-  n.rule('gen-oils-cpp',
-         command='build/ninja-rules-py.sh gen-oils-cpp $main_name $out_prefix $in',
+  n.rule('gen-oils-for-unix',
+         command='build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $in',
          description='gen-oils-cpp $main_name $out_prefix $in')
   n.newline()
 
@@ -323,7 +323,7 @@ def main(argv):
   ru.WriteRules()
 
   # Collect sources for metrics, tarball, shell script
-  cc_sources = ru.SourcesForBinary('_gen/bin/oils_cpp.mycpp.cc')
+  cc_sources = ru.SourcesForBinary('_gen/bin/oils_for_unix.mycpp.cc')
 
   if 0:
     from pprint import pprint

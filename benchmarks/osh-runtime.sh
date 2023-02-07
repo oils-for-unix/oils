@@ -341,7 +341,7 @@ soil-run() {
   download
   extract
 
-  # could add _bin/cxx-bumpleak/oils_cpp, although sometimes it's slower
+  # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
   local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
   ninja "${oil_bin[@]}"
 

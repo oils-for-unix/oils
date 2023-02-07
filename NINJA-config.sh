@@ -23,9 +23,9 @@ arith-parse-gen() { py-tool osh.arith_parse_gen; }
 signal-gen() { py-tool frontend.signal_gen; }
 
 osh-eval() {
-  ### bin/osh_eval is oil-native
+  ### Old binary
 
-  local dir=$DIR/osh_eval
+  local dir=$DIR/bin.osh_eval
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
@@ -42,14 +42,14 @@ osh-eval() {
   echo DEPS $dir/*
 }
 
-oils-cpp() {
-  ### bin/osh_eval is oil-native
+oils-for-unix() {
+  ### The main binary
 
-  local dir=$DIR/oils_cpp
+  local dir=$DIR/bin.oils_for_unix
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest bin.oils_cpp \
+    build/dynamic_deps.py py-manifest bin.oils_for_unix \
   > $dir/all.txt
 
   set +o errexit
@@ -89,7 +89,7 @@ main() {
   # Explicit dependencies for translating and type checking
   # Baked into mycpp/NINJA.
   osh-eval
-  oils-cpp
+  oils-for-unix
 
   echo DEPS prebuilt/ninja/*/deps.txt
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Build the dev version of Oil on CPython.
-# This is in contrast to oils_cpp and the oil.ovm build.
+# This is in contrast to oils-for-unix and the oil.ovm build.
 #
 # Usage:
 #   build/py.sh <function name>
@@ -280,7 +280,7 @@ print-all() { lexer-gen print-all; }
 #     frontend/
 #       match.re2c.in
 #     bin/
-#       oils_cpp_raw.mycpp.cc
+#       oils_for_unix_raw.mycpp.cc
 
 # re2c native.
 osh-lex-gen-native() {
