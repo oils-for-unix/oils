@@ -23,6 +23,9 @@ Tuple2<int, int> WaitPid() {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED);
   if (result < 0) {
+    if (errno == EINTR && SigintCount() > 0) {
+      throw Alloc<KeyboardInterrupt>();
+    }
     return Tuple2<int, int>(-1, errno);
   }
   return Tuple2<int, int>(result, status);
@@ -33,6 +36,9 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
+    if (errno == EINTR && SigintCount() > 0) {
+      throw Alloc<KeyboardInterrupt>();
+    }
     return Tuple2<int, int>(-1, errno);
   }
   if (length == 0) {
@@ -50,6 +56,9 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
+    if (errno == EINTR && SigintCount() > 0) {
+      throw Alloc<KeyboardInterrupt>();
+    }
     return Tuple2<int, int>(-1, errno);
   } else if (n == 0) {  // EOF
     return Tuple2<int, int>(EOF_SENTINEL, 0);
