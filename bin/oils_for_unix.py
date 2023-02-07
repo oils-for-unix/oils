@@ -102,7 +102,8 @@ def AppBundleMain(argv):
 
   # Are we running the C++ bundle or the Python bundle directly, without a
   # symlink?
-  if main_name == 'oils_for_unix' or (main_name == 'oil' and len(ext)):
+  if (main_name in ('oils_for_unix', 'oils-for-unix') or
+     (main_name == 'oil' and len(ext))):
     arg_r.Next()
     first_arg = arg_r.Peek()
     if first_arg is None:
