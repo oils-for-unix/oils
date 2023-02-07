@@ -9,7 +9,7 @@ _devbuild/gen/types_asdl.py
 asdl/format.py
 asdl/pybase.py
 asdl/runtime.py
-bin/oils_cpp.py
+bin/oils_for_unix.py
 core/alloc.py
 core/ansi.py
 core/comp_ui.py

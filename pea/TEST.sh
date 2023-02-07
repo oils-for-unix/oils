@@ -32,7 +32,7 @@ all-files() {
 
   # Update this file with build/dynamic-deps.sh pea-hack
 
-  cat pea/oils-cpp-typecheck.txt
+  cat pea/oils-typecheck.txt
 
   for path in */*.pyi; do
     echo $path
