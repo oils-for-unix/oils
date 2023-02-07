@@ -15,7 +15,7 @@ compile-quickly() {
   ### For the fast possible development experience
 
   if test -f "$CLANGXX"; then
-    ninja _bin/clang-dbg/oils_cpp
+    ninja _bin/clang-dbg/oils-for-unix
   else
     echo ""
     echo " Error: Unable to locate clang at ($CLANGXX)"
@@ -34,7 +34,7 @@ compiler-trace-build() {
   local variant=${1:-dbg}
 
   # Only clang supports -ftime-trace
-  CXXFLAGS='-ftime-trace' ninja _bin/clang-$variant/oils_cpp
+  CXXFLAGS='-ftime-trace' ninja _bin/clang-$variant/oils-for-unix
 }
 
 "$@"

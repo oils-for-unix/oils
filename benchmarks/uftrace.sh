@@ -122,11 +122,11 @@ record-oils-cpp() {
     # -F 'StrFromC' -A 'StrFromC@arg1' -A 'StrFromC@arg2'
   fi
 
-  local oils_cpp=_bin/cxx-uftrace/oils_cpp 
-  ninja $oils_cpp
+  local oils-for-unix=_bin/cxx-uftrace/oils-for-unix 
+  ninja $oils-for-unix
 
-  time uftrace record -d $out_dir "${flags[@]}" $oils_cpp "$@"
-  #time uftrace record $oils_cpp "$@"
+  time uftrace record -d $out_dir "${flags[@]}" $oils-for-unix "$@"
+  #time uftrace record $oils-for-unix "$@"
 
   ls -d $out_dir/
   ls -l --si $out_dir/

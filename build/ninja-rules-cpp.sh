@@ -72,7 +72,7 @@ setglobal_compile_flags() {
   fi
 
   # TODO: bumpleak and cheney should really be separate binaries like
-  # oils_cpp.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
+  # oils-for-unix.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
   case $variant in
     (bumpleak)
       flags="$flags -D BUMP_LEAK"

@@ -255,7 +255,7 @@ run-tasks() {
 fd-demo() {
   local out=_tmp/gc/demo.txt
 
-  local bin=_bin/cxx-dbg/oils_cpp
+  local bin=_bin/cxx-dbg/oils-for-unix
   ninja $bin
 
   # Hm you can't do $fd>out.txt, but that's OK
@@ -279,7 +279,7 @@ more-variants() {
 
       # 223 ms
       # 61.9 MB bytes allocated
-      local bin=_bin/cxx-opt32/oils_cpp
+      local bin=_bin/cxx-opt32/oils-for-unix
       OIL_GC_THRESHOLD=$big_threshold \
         run-osh $tsv_out $bin 'm32 mutator+malloc' $file
 
@@ -293,7 +293,7 @@ more-variants() {
     (*tcmalloc*)
 
       # 184 ms
-      local tcmalloc_bin=_bin/cxx-tcmalloc/oils_cpp
+      local tcmalloc_bin=_bin/cxx-tcmalloc/oils-for-unix
       OIL_GC_THRESHOLD=$big_threshold \
         run-osh $tsv_out $tcmalloc_bin 'mutator+tcmalloc' $file
 
@@ -307,7 +307,7 @@ more-variants() {
   # Show log of GC
   case $compare_more in
     (*gcverbose*)
-      local bin=_bin/cxx-gcverbose/oils_cpp
+      local bin=_bin/cxx-gcverbose/oils-for-unix
       # 280 ms
       OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
         run-osh $tsv_out $bin 'gcverbose mutator+malloc+free+gc' $file
@@ -451,7 +451,7 @@ gc-parse-smoke() {
   local variant=${1:-opt}
   local file=${2:-configure}
 
-  local bin=_bin/cxx-$variant/oils_cpp
+  local bin=_bin/cxx-$variant/oils-for-unix
   ninja $bin
 
   _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
@@ -470,7 +470,7 @@ gc-parse-big() {
 gc-run-smoke() {
   local variant=${1:-opt}
 
-  local bin=_bin/cxx-$variant/oils_cpp
+  local bin=_bin/cxx-$variant/oils-for-unix
   ninja $bin
 
   # expose a bug with printf
@@ -483,7 +483,7 @@ gc-run-oil() {
 
   local variant=${1:-opt}
 
-  local bin=_bin/cxx-$variant/oils_cpp
+  local bin=_bin/cxx-$variant/oils-for-unix
   ninja $bin
 
   local i=0
@@ -513,7 +513,7 @@ gc-run-oil() {
 gc-run-big() {
   local variant=${1:-opt}
 
-  local target=_bin/cxx-$variant/oils_cpp
+  local target=_bin/cxx-$variant/oils-for-unix
   ninja $target
 
   local osh=$REPO_ROOT/$target

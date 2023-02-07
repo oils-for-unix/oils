@@ -113,11 +113,11 @@ measure-sizes() {
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
 
-  # clang/oils_cpp
-  # clang/oils_cpp.stripped
-  # gcc/oils_cpp
-  # gcc/oils_cpp.stripped
-  sizes-tsv $BASE_DIR/bin/*/{oils_cpp,oils_cpp.stripped} \
+  # clang/oils-for-unix
+  # clang/oils-for-unix.stripped
+  # gcc/oils-for-unix
+  # gcc/oils-for-unix.stripped
+  sizes-tsv $BASE_DIR/bin/*/{oils-for-unix,oils-for-unix.stripped} \
     > ${prefix}.native-sizes.tsv
 
   sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
@@ -222,12 +222,12 @@ build-task() {
       cp -v $target $bin_dir
       ;;
 
-    (oils_cpp*)
+    (oils-for-unix*)
       case $action in
-        (oils_cpp)
+        (oils-for-unix)
           local variant='dbg'
           ;;
-        (oils_cpp.stripped)
+        (oils-for-unix.stripped)
           local variant='opt'
           ;;
         *)
@@ -255,7 +255,7 @@ build-task() {
 
       "${TIME_PREFIX[@]}" -- _build/oils.sh $compiler $variant
 
-      # e.g. cp _bin/clang-opt-sh/oils_cpp.stripped _tmp/ovm-build/bin/clang/
+      # e.g. cp _bin/clang-opt-sh/oils-for-unix.stripped _tmp/ovm-build/bin/clang/
       local filename=$action
       cp -v _bin/$compiler-$variant-sh/$filename $bin_dir
       ;;
@@ -289,8 +289,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $ofu_dir oils_cpp
-    echo "$line" $ofu_dir oils_cpp.stripped
+    echo "$line" $ofu_dir oils-for-unix
+    echo "$line" $ofu_dir oils-for-unix.stripped
   done
 }
 

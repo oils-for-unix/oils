@@ -24,7 +24,7 @@ typecheck-oil() {
   # TODO: remove --no-warn-unused-ignores and type: ignore in
   # osh/builtin_comp.py after help_.py import isn't conditional
 
-  cat _build/NINJA/oils_cpp/typecheck.txt \
+  cat _build/NINJA/oils-for-unix/typecheck.txt \
     | xargs -- $0 typecheck-files --no-warn-unused-ignores 
 }
 
@@ -49,7 +49,7 @@ soil-run() {
   mypy_ --version
   set +x
 
-  # Generate oils_cpp dependencies.  Though this is overly aggressive
+  # Generate oils-for-unix dependencies.  Though this is overly aggressive
   ./NINJA-config.sh
 
   check-all

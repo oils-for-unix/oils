@@ -65,7 +65,7 @@ parser-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh|oils_cpp.*)
+    osh|oils-for-unix.*)
       extra_args='--ast-format none'
       ;;
   esac
@@ -116,7 +116,7 @@ cachegrind-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh|oils_cpp.*)
+    osh|oils-for-unix.*)
       extra_args="--ast-format none"
       ;;
   esac
@@ -166,7 +166,7 @@ cachegrind() {
 cachegrind-parse-configure-coreutils() {
   ### Similar to benchmarks/gc, benchmarks/uftrace
 
-  local bin=_bin/cxx-opt/oils_cpp
+  local bin=_bin/cxx-opt/oils-for-unix
   ninja $bin
   local out=_tmp/parse.configure-coreutils.txt 
 

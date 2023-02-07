@@ -65,7 +65,7 @@ check-types() {
 }
 
 test-translate() {
-  translate-cpp bin/oils_cpp.py
+  translate-cpp bin/oils-for-unix.py
 }
 
 test-syntax-error() {

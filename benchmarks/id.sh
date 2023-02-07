@@ -113,7 +113,7 @@ dump-shell-id() {
           ;;
       esac
       ;;
-    # oils_cpp|oils_cpp.stripped)
+    # oils-for-unix|oils-for-unix.stripped)
     #  ;;
     dash|mksh)
       # These don't have version strings!

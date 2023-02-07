@@ -41,16 +41,16 @@ export ASAN_OPTIONS=detect_leaks=0
 #
 
 oils-cpp-py() {
-  ### Run a suite with oils_cpp.py (manual)
+  ### Run a suite with oils-for-unix.py (manual)
   local suite=${1:-arith}
   if test $# -gt 0; then
     shift
   fi
-  test/spec.sh $suite $PWD/bin/oils_cpp "$@"
+  test/spec.sh $suite $PWD/bin/oils-for-unix "$@"
 }
 
 oils-cpp-cpp() {
-  ### Run a suite with the translation of oils_cpp.py (manual)
+  ### Run a suite with the translation of oils-for-unix.py (manual)
   local suite=${1:-arith}
   if test $# -gt 0; then
     shift
@@ -328,12 +328,12 @@ tsv-demo() {
 
 repro() {
   test/spec.sh alias -r 0 -p > _tmp/a
-  ninja _bin/clang-dbg/oils_cpp
-  _bin/clang-dbg/oils_cpp _tmp/a
+  ninja _bin/clang-dbg/oils-for-unix
+  _bin/clang-dbg/oils-for-unix _tmp/a
 }
 
 repro-all() {
-  OSH_CC=$REPO_ROOT/_bin/clang-dbg/oils_cpp $0 all
+  OSH_CC=$REPO_ROOT/_bin/clang-dbg/oils-for-unix $0 all
 }
 
 "$@"
