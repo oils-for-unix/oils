@@ -293,6 +293,7 @@ class SignalHandler(object):
     self.signal_queue = []  # type: List[int]
     self.last_sig_num = 0  # type: int
     self.sigwinch_num = UNTRAPPED_SIGWINCH
+    self.sigint_count = 0
 
   def __call__(self, sig_num, unused_frame):
     # type: (int, Any) -> None
@@ -300,6 +301,9 @@ class SignalHandler(object):
       self.last_sig_num = self.sigwinch_num
     else:
       self.last_sig_num = sig_num
+
+    if sig_num == signal.SIGINT:
+      self.sigint_count += 1
 
     self.signal_queue.append(sig_num)
 
@@ -356,6 +360,18 @@ def LastSignal():
   """Returns the number of the last signal that fired"""
   assert gSignalHandler is not None
   return gSignalHandler.last_sig_num
+
+
+def SigintCount():
+  # type: () -> int
+  """
+  Returns the number of times SIGINT has been received since the last time
+  SigintCount() was called.
+  """
+  assert gSignalHandler is not None
+  ret = gSignalHandler.sigint_count
+  gSignalHandler.sigint_count = 0
+  return ret
 
 
 def SetSigwinchCode(code):

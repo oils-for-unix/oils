@@ -97,7 +97,8 @@ class SignalHandler {
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalHandler)),
         signal_queue_(nullptr),
         last_sig_num_(0),
-        sigwinch_num_(UNTRAPPED_SIGWINCH) {
+        sigwinch_num_(UNTRAPPED_SIGWINCH),
+        sigint_count_(0) {
   }
 
   void Update(int sig_num);
@@ -107,6 +108,7 @@ class SignalHandler {
   List<int>* signal_queue_;
   int last_sig_num_;
   int sigwinch_num_;
+  int sigint_count_;
 
   static constexpr uint16_t field_mask() {
     return maskbit(offsetof(SignalHandler, signal_queue_));
@@ -120,6 +122,8 @@ void RegisterSignalInterest(int sig_num);
 List<int>* TakeSignalQueue();
 
 int LastSignal();
+
+int SigintCount();
 
 void SetSigwinchCode(int code);
 

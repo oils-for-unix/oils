@@ -208,6 +208,9 @@ void SignalHandler::Update(int sig_num) {
   assert(signal_queue_ != nullptr);
   assert(signal_queue_->len_ < signal_queue_->capacity_);
   signal_queue_->append(sig_num);
+  if (sig_num == SIGINT) {
+    sigint_count_++;
+  }
   if (sig_num == SIGWINCH) {
     sig_num = sigwinch_num_;
   }
@@ -254,6 +257,13 @@ List<int>* TakeSignalQueue() {
 int LastSignal() {
   assert(gSignalHandler != nullptr);
   return gSignalHandler->last_sig_num_;
+}
+
+int SigintCount() {
+  DCHECK(gSignalHandler != nullptr);
+  int ret = gSignalHandler->sigint_count_;
+  gSignalHandler->sigint_count_ = 0;
+  return ret;
 }
 
 void SetSigwinchCode(int code) {
