@@ -224,12 +224,6 @@ compile_one() {
     (_build/preprocessed/*)
       flags="$flags -E"
       ;;
-
-    # DISABLE spew for generated code.  mycpp/pea could flag this at the PYTHON
-    # level, rather than doing it at the C++ level.
-    (_build/obj/*/oils_cpp.*)
-      flags="$flags -Wno-unused-variable -Wno-unused-but-set-variable"
-      ;;
   esac
 
   # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?

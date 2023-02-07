@@ -64,10 +64,10 @@ gen-oils-for-unix() {
   local tmp=_build/tmp
   mkdir -p $tmp
 
-  local raw_cc=$tmp/oils_cpp_raw.cc
+  local raw_cc=$tmp/oils_for_unix_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local raw_header=$tmp/oils_cpp_raw.h
+  local raw_header=$tmp/oils_for_unix_raw.h
   local header_out=${out_prefix}.h
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
