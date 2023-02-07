@@ -363,7 +363,7 @@ class Rules(object):
       bin_dir = '_bin/%s' % config_dir
 
       if c.bin_path:
-        # e.g. _bin/cxx-dbg/oils_cpp
+        # e.g. _bin/cxx-dbg/oils_for_unix
         bin_ = '%s/%s' % (bin_dir, c.bin_path)
       else:
         # e.g. _gen/mycpp/examples/classes.mycpp

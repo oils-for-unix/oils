@@ -120,7 +120,7 @@ main() {
   print('  local out_dir=%s' % out_dir, file=f)
 
   print('''\
-  local out=$out_dir/oils_cpp
+  local out=$out_dir/oils-for-unix
 
   if test -n "$skip_rebuild" && test -f "$out"; then
     echo
@@ -160,7 +160,7 @@ main() {
   # TODO: provide a way for the user to get symbols?
 
   print('''\
-  local out_name=oils_cpp
+  local out_name=oils-for-unix
   if test "$variant" = opt; then
     strip -o "$out.stripped" "$out"
     out_name=$out_name.stripped

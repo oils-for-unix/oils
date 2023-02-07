@@ -32,7 +32,7 @@ def NinjaGraph(ru):
     # The main program!
 
     if main_name == 'oils_for_unix':
-      bin_path = 'oils_cpp'
+      bin_path = 'oils_for_unix'
       symlinks = ['osh', 'ysh'] 
     else:
       symlinks = []

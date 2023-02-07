@@ -6,7 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-bin/oil.py - Python wrapper for oils_cpp.py
+bin/oil.py - Python wrapper for oils_for_unix.py
 
 - Used to build the OVM tarball, which we might want to get rid of.
   - This file should be called bin/oils_py.py, but that might break 
@@ -22,19 +22,19 @@ import sys
 from _devbuild.gen import id_kind
 _ = id_kind
 
-from bin import oils_cpp
+from bin import oils_for_unix
 
 from typing import List
 
 # Called from Python-2.7.13/Modules/main.c.
 def _cpython_main_hook():
   # type: () -> None
-  sys.exit(oils_cpp.main(sys.argv))
+  sys.exit(oils_for_unix.main(sys.argv))
 
 
 def main(argv):
   # type: (List[str]) -> int
-  return oils_cpp.main(sys.argv)
+  return oils_for_unix.main(sys.argv)
 
 
 if __name__ == '__main__':
