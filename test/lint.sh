@@ -53,6 +53,7 @@ readonly -a CPP_FILES=(
   cpp/*.{c,cc,h}
   mycpp/*.{cc,h} 
   mycpp/demo/*.{cc,h}
+  demo/*.c
 
   # Could add pyext, but they have sort of a Python style
   # pyext/fanos.c

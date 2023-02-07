@@ -251,4 +251,3 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }
-

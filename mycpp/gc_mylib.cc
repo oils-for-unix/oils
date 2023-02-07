@@ -133,8 +133,8 @@ Str* BufLineReader::readline() {
     int new_pos = p - s_->data_;
     line_len = new_pos - pos_ + 1;  // past newline char
     pos_ = new_pos + 1;
-  } else {  // leftover line
-    if (pos_ == 0) {  // The string has no newlines at all -- just return it
+  } else {             // leftover line
+    if (pos_ == 0) {   // The string has no newlines at all -- just return it
       pos_ = str_len;  // advance to the end
       return s_;
     } else {

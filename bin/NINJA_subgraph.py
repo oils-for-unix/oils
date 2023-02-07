@@ -10,7 +10,7 @@ from build.ninja_lib import log
 _ = log
 
 
-# TODO: remove this; probably should be sh_binary
+# TODO: should have dependencies with sh_binary
 RULES_PY = 'build/ninja-rules-py.sh'
 
 def NinjaGraph(ru):
@@ -23,15 +23,13 @@ def NinjaGraph(ru):
       deps = [line.strip() for line in f]
 
     prefix = '_gen/bin/%s.mycpp' % main_name
-    # header exports osh.cmd_eval
     outputs = [prefix + '.cc', prefix + '.h']
     n.build(outputs, 'gen-oils-for-unix', deps,
             implicit=['_bin/shwrap/mycpp_main', RULES_PY],
             variables=[('out_prefix', prefix), ('main_name', main_name)])
 
-    # The main program!
-
     if main_name == 'oils_for_unix':
+      # The main program!
       bin_path = 'oils-for-unix'
       symlinks = ['osh', 'ysh'] 
     else:
@@ -45,10 +43,6 @@ def NinjaGraph(ru):
 
         preprocessed = True,
         matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
-
-        # TODO: Rename it to 'oils_for_unix.py' and special binary oils-for-unix
-        #
-        # Then you need a symlink 'oils format', 'oils ysh' or something
 
         deps = [
           '//cpp/core',

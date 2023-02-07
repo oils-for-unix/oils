@@ -111,6 +111,14 @@ print-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
 
+  if test -n "${TCMALLOC:-}"; then
+    shells+=(
+      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc"
+      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc+free"
+      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc+free+gc"
+    )
+  fi
+
   local id=0
 
   for workload in "${workloads[@]}"; do
@@ -289,21 +297,6 @@ more-variants() {
       ;;
   esac
 
-  case $compare_more in
-    (*tcmalloc*)
-
-      # 184 ms
-      local tcmalloc_bin=_bin/cxx-tcmalloc/oils-for-unix
-      OIL_GC_THRESHOLD=$big_threshold \
-        run-osh $tsv_out $tcmalloc_bin 'mutator+tcmalloc' $file
-
-      # Faster: 218 ms!  It doesn't have the huge free() penalty that glibc does.
-      # Maybe it doesn't do all the malloc_consolidate() stuff.
-      OIL_GC_STATS=1 \
-        run-osh $tsv_out $tcmalloc_bin 'mutator+tcmalloc+free+gc' $file
-      ;;
-  esac
-
   # Show log of GC
   case $compare_more in
     (*gcverbose*)
@@ -320,7 +313,12 @@ more-variants() {
 }
 
 measure-all() {
-  ninja _bin/cxx-bumpleak/osh _bin/cxx-opt/osh
+  local -a bin=( _bin/cxx-bumpleak/osh _bin/cxx-opt/osh )
+
+  if test -n "${TCMALLOC:-}"; then
+    bin+=( _bin/cxx-tcmalloc/osh )
+  fi
+  ninja "${bin[@]}"
 
   local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
   mkdir -p $(dirname $tsv_out)
@@ -451,10 +449,11 @@ gc-parse-smoke() {
   local variant=${1:-opt}
   local file=${2:-configure}
 
-  local bin=_bin/cxx-$variant/oils-for-unix
+  local bin=_bin/cxx-$variant/osh
   ninja $bin
 
-  _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
+  # OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
+  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
     $bin --ast-format none -n $file
 
   # No leaks
