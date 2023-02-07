@@ -24,7 +24,7 @@ typecheck-oil() {
   # TODO: remove --no-warn-unused-ignores and type: ignore in
   # osh/builtin_comp.py after help_.py import isn't conditional
 
-  cat _build/NINJA/oils-for-unix/typecheck.txt \
+  cat _build/NINJA/bin.oils_for_unix/typecheck.txt \
     | xargs -- $0 typecheck-files --no-warn-unused-ignores 
 }
 

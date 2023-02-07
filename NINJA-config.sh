@@ -23,9 +23,9 @@ arith-parse-gen() { py-tool osh.arith_parse_gen; }
 signal-gen() { py-tool frontend.signal_gen; }
 
 osh-eval() {
-  ### bin/osh_eval is oil-native
+  ### Old binary
 
-  local dir=$DIR/osh_eval
+  local dir=$DIR/bin.osh_eval
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
@@ -43,9 +43,9 @@ osh-eval() {
 }
 
 oils-for-unix() {
-  ### bin/osh_eval is oil-native
+  ### The main binary
 
-  local dir=$DIR/oils_for_unix
+  local dir=$DIR/bin.oils_for_unix
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
