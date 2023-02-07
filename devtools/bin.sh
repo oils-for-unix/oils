@@ -62,7 +62,7 @@ sh-snippet() {
 # action.
 oil-dev-snippet() {
   local action=$1
-  sh-snippet oils_cpp.py $action
+  sh-snippet oils_for_unix.py $action
 }
 
 opy-dev-snippet() {
@@ -83,7 +83,7 @@ make-src-stubs() {
 
   make-osh-dbg
 
-  make-oils-cpp
+  make-oils-for-unix
 }
 
 make-ovm-links() {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-oils_cpp.py - A busybox-like binary for OSH and YSH (formerly Oil).
+oils_for_unix.py - A busybox-like binary for OSH and YSH (formerly Oil).
 
 This is the main program that is translated to C++ by mycpp.
 
@@ -102,7 +102,7 @@ def AppBundleMain(argv):
 
   # Are we running the C++ bundle or the Python bundle directly, without a
   # symlink?
-  if main_name == 'oils_cpp' or (main_name == 'oil' and len(ext)):
+  if main_name == 'oils_for_unix' or (main_name == 'oil' and len(ext)):
     arg_r.Next()
     first_arg = arg_r.Peek()
     if first_arg is None:
