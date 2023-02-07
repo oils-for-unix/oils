@@ -52,7 +52,7 @@ bool isdir(Str* path) {
   if (::stat(path->data_, &st) < 0) {
     return false;
   }
-  return (st.st_mode & S_IFMT) == S_IFDIR;
+  return S_ISDIR(st.st_mode);
 }
 
 }  // namespace path_stat

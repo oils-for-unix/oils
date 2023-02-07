@@ -417,7 +417,7 @@ class FileSystemAction(CompletionAction):
     self.add_slash = add_slash  # for directories
 
   # mycpp: rewrite of isinstance()
-  def IsFileSystemAciton(self):
+  def IsFileSystemAction(self):
     # type: () -> bool
     return True
 
