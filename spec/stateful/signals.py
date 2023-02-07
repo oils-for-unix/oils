@@ -105,6 +105,7 @@ def sigmultiple_trapped_prompt(sh):
   expect_prompt(sh)
 
   sh.kill(signal.SIGUSR1)
+  time.sleep(0.1) # pause for a bit to avoid racing on signal order in osh-cpp
   sh.kill(signal.SIGUSR2)
 
   sh.sendline('echo hi')
