@@ -31,11 +31,18 @@ def NinjaGraph(ru):
 
     # The main program!
 
-    symlinks = ['osh', 'ysh'] if main_name == 'oils_cpp' else []
+    if main_name == 'oils_cpp':
+      bin_path = 'oils_cpp'
+      symlinks = ['osh', 'ysh'] 
+    else:
+      symlinks = []
+      bin_path = None  # use default
 
     ru.cc_binary(
         '_gen/bin/%s.mycpp.cc' % main_name,
+        bin_path = bin_path,
         symlinks = symlinks,
+
         preprocessed = True,
         matrix = ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
 
@@ -43,7 +50,6 @@ def NinjaGraph(ru):
         #
         # Then you need a symlink 'oils format', 'oils ysh' or something
 
-        top_level = True,  # _bin/cxx-dbg/oils_cpp
         deps = [
           '//cpp/core',
           '//cpp/libc',

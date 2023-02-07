@@ -97,7 +97,7 @@ def ObjPath(src_path, config):
 # Used namedtuple since it doesn't have any state
 CcBinary = collections.namedtuple(
     'CcBinary',
-    'main_cc symlinks implicit deps matrix phony_prefix preprocessed top_level')
+    'main_cc symlinks implicit deps matrix phony_prefix preprocessed bin_path')
 
 
 class CcLibrary(object):
@@ -313,7 +313,7 @@ class Rules(object):
       matrix = None,  # $compiler $variant
       phony_prefix = None,
       preprocessed = False,
-      top_level = False,
+      bin_path = None,  # default is _bin/$compiler-$variant/rel/path
       ):
     symlinks = symlinks or []
     implicit = implicit or []
@@ -322,7 +322,7 @@ class Rules(object):
       raise RuntimeError("Config matrix required")
 
     cc_bin = CcBinary(main_cc, symlinks, implicit, deps, matrix, phony_prefix,
-                      preprocessed, top_level)
+                      preprocessed, bin_path)
 
     self.cc_bins.append(cc_bin)
 
@@ -361,13 +361,10 @@ class Rules(object):
 
       config_dir = ConfigDir(config)
       bin_dir = '_bin/%s' % config_dir
-      first_name = None
 
-      if c.top_level:
+      if c.bin_path:
         # e.g. _bin/cxx-dbg/oils_cpp
-        basename = os.path.basename(c.main_cc)
-        first_name = basename.split('.')[0]
-        bin_ = '%s/%s' % (bin_dir, first_name)
+        bin_ = '%s/%s' % (bin_dir, c.bin_path)
       else:
         # e.g. _gen/mycpp/examples/classes.mycpp
         rel_path, _ = os.path.splitext(c.main_cc)
@@ -383,13 +380,13 @@ class Rules(object):
 
       # Make symlinks
       for symlink in c.symlinks:
-        # Only top_level binaries can have symlinks for now
-        assert first_name is not None
+        # Must explicitly specify bin_path to have a symlink, for now
+        assert c.bin_path is not None
         self.n.build(
             ['%s/%s' % (bin_dir, symlink)],
             'symlink',
             [bin_],
-            variables = [('dir', bin_dir), ('target', first_name), ('new', symlink)])
+            variables = [('dir', bin_dir), ('target', c.bin_path), ('new', symlink)])
         self.n.newline() 
 
       if c.phony_prefix:
