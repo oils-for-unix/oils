@@ -102,8 +102,8 @@ module runtime
   -- TODO: Rename this to sh_place?
   lvalue = 
     Named(string name)  -- would be efficient if Str were first class variant
-  | Indexed(string name, int index)
-  | Keyed(string name, string key)
+  | Indexed(string name, int index, int blame_spid)
+  | Keyed(string name, string key, int blame_spid)
 
     -- Oil variants
   | ObjIndex(any obj, any index)

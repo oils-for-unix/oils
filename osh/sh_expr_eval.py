@@ -424,9 +424,9 @@ class ArithEvaluator(object):
       named_lval = cast(lvalue__Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
         if val.tag_() == value_e.MaybeStrArray:
-          lval = lvalue.Indexed(named_lval.name, 0)
+          lval = lvalue.Indexed(named_lval.name, 0, runtime.NO_SPID)
         elif val.tag_() == value_e.AssocArray:
-          lval = lvalue.Keyed(named_lval.name, '0')
+          lval = lvalue.Keyed(named_lval.name, '0', runtime.NO_SPID)
         val = word_eval.DecayArray(val)
 
     # This error message could be better, but we already have one
@@ -781,13 +781,11 @@ class ArithEvaluator(object):
 
         if self.mem.IsAssocArray(node.name):
           key = self.EvalWordToString(node.index)
-          lval2 = lvalue.Keyed(node.name, key)
-          lval2.spids.append(node.left.span_id)
+          lval2 = lvalue.Keyed(node.name, key, node.left.span_id)
           lval = lval2
         else:
           index = self.EvalToInt(node.index)
-          lval3 = lvalue.Indexed(node.name, index)
-          lval3.spids.append(node.left.span_id)
+          lval3 = lvalue.Indexed(node.name, index, node.left.span_id)
           lval = lval3
 
       else:
@@ -828,14 +826,12 @@ class ArithEvaluator(object):
         if var_name is not None:
           if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)
-            lval2 = lvalue.Keyed(var_name, key)
-            lval2.spids.append(span_id)
+            lval2 = lvalue.Keyed(var_name, key, span_id)
             lval = lval2  # type: lvalue_t
             return lval
           else:
             index = self.EvalToInt(anode.right)
-            lval3 = lvalue.Indexed(var_name, index)
-            lval3.spids.append(span_id)
+            lval3 = lvalue.Indexed(var_name, index, span_id)
             lval = lval3
             return lval
 

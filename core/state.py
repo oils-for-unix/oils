@@ -1774,9 +1774,8 @@ class Mem(object):
         #if keyword_id == Id.KW_SetRef:
         #  lval.name = '__' + lval.name
 
-        # TODO: All paths should have this?  We can get here by a[x]=1 or
-        # (( a[ x ] = 1 )).  Maybe we should make them different?
-        left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
+        # Note: location could be a[x]=1 or (( a[ x ] = 1 ))
+        left_spid = lval.blame_spid
 
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
@@ -1831,7 +1830,6 @@ class Mem(object):
         e_die("Value of type %s can't be indexed" % ui.ValType(cell.val),
               loc.Span(left_spid))
 
-
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)
         # There is no syntax 'declare A["x"]'
@@ -1839,7 +1837,7 @@ class Mem(object):
         assert val.tag_() == value_e.Str, val
         rval = cast(value__Str, val)
 
-        left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
+        left_spid = lval.blame_spid
 
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
                                                    is_setref)
