@@ -341,7 +341,8 @@ class Hay(object):
 
   def __init__(self):
     # type: () -> None
-    self.root_defs = hay_node()
+    ch = NewDict()  # type: Dict[str, hay_node]
+    self.root_defs = hay_node(ch)
     self.cur_defs = self.root_defs  # Same as ClearDefs()
     self.def_stack = [self.root_defs]
 
@@ -402,14 +403,16 @@ class Hay(object):
     current = self.root_defs
     for name in path:
       if name not in current.children:
-        current.children[name] = hay_node()
+        ch = NewDict()  # type: Dict[str, hay_node]
+        current.children[name] = hay_node(ch)
       current = current.children[name]
 
   def Reset(self):
     # type: () -> None
 
     # reset definitions
-    self.root_defs = hay_node()
+    ch = NewDict()  # type: Dict[str, hay_node]
+    self.root_defs = hay_node(ch)
     self.cur_defs = self.root_defs
 
     # reset output

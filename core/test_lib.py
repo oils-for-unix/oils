@@ -47,7 +47,7 @@ from mycpp import mylib
 
 
 def MakeBuiltinArgv(argv):
-  return cmd_value.Argv(argv, [0] * len(argv))
+  return cmd_value.Argv(argv, [0] * len(argv), None)
 
 
 def Tok(id_, val):

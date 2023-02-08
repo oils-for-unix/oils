@@ -13,9 +13,12 @@ from frontend import args  # module under test
 
 
 def _MakeBuiltinArgv(argv):
+  """
+  Different than test_lib.MakeBuiltinArgv()
+  """
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
+  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
 
 
 def _MakeReader(argv):

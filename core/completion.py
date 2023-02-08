@@ -569,7 +569,8 @@ class ShellFuncAction(CompletionAction):
       return
     self.debug('COMPREPLY %s' % val)
 
-    for s in cast(value__MaybeStrArray, val).strs:
+    array_val = cast(value__MaybeStrArray, val)
+    for s in array_val.strs:
       yield s
 
 

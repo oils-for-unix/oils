@@ -273,7 +273,8 @@ class OilEvaluator(object):
   def EvalExprSub(self, part):
     # type: (word_part__ExprSub) -> part_value_t
     py_val = self.EvalExpr(part.child)
-    return part_value.String(Stringify(py_val, word_part=part))
+    s = Stringify(py_val, word_part=part)
+    return part_value.String(s, False, False)
 
   def EvalInlineFunc(self, part):
     # type: (word_part__FuncCall) -> part_value_t
@@ -292,7 +293,7 @@ class OilEvaluator(object):
       if id_ == Id.VSub_DollarName:
         # func() can raise TypeError, ValueError, etc.
         s = Stringify(func(*pos_args, **named_args), word_part=part)
-        part_val = part_value.String(s)  # type: part_value_t
+        part_val = part_value.String(s, False, False)  # type: part_value_t
 
       elif id_ == Id.Lit_Splice:
         # func() can raise TypeError, ValueError, etc.

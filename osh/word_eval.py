@@ -1207,7 +1207,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     var_name = None  # type: str
     vtest_place = VTestPlace(var_name, None)  # For ${foo=default}
-    vsub_state = VarSubState()  # for $*, ${a[*]}, etc.
+    vsub_state = VarSubState.Create()  # for $*, ${a[*]}, etc.
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
@@ -1404,7 +1404,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     token = part.left
     var_name = part.var_name
 
-    vsub_state = VarSubState()
+    vsub_state = VarSubState.Create()
 
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
@@ -1591,9 +1591,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # Create a node to hold the flattened tree.  The caller decides whether
         # to pass it to fnmatch() or replace it with '*' and pass it to glob().
-        v2 = part_value.ExtGlob()
-        self._EvalExtGlob(part, v2.part_vals)  # flattens tree
-        part_vals.append(v2)
+        part_vals2 = []  # type: List[part_value_t]
+        self._EvalExtGlob(part, part_vals2)  # flattens tree
+        part_vals.append(part_value.ExtGlob(part_vals2))
 
       elif case(word_part_e.Splice):
         part = cast(word_part__Splice, UP_part)

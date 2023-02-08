@@ -1450,8 +1450,8 @@ class CommandEvaluator(object):
     # in the redirect word:
     #     { echo one; echo two; } > >(tac)
 
-    cmd_st = CommandStatus()
-    process_sub_st = StatusArray()
+    cmd_st = CommandStatus.Create()
+    process_sub_st = StatusArray.Create()
 
     errexit_spid = runtime.NO_SPID
     check_errexit = True

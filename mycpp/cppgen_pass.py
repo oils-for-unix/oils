@@ -414,6 +414,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         msg = msg % args
       self.f.write(ind_str + msg)
 
+    def CanBeOptional(self, t):
+      # To iterate over ASDL Optional[List[T]].  Right now we don't have
+      # strict Null checking.
+      if isinstance(t, UnionType):
+        if len(t.items) != 2:
+          self.report_error(o, 'Invalid union type to iterate over: %s' % t)
+          return
+        if not isinstance(t.items[1], NoneTyp):
+          self.report_error(o, 'Expected Optional, got %s' % t)
+          return
+        return t.items[0]
+
+      return t
 
     #
     # COPIED from IRBuilder
@@ -1360,7 +1373,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write('Alloc<%s>();\n' % c_type[:-1])
 
             over_type = self.types[seq]
-            #self.log('  iterating over type %s', over_type)
+            over_type = self.CanBeOptional(over_type)
 
             if over_type.type.fullname == 'builtins.list':
               c_type = GetCType(over_type)
@@ -1374,8 +1387,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(seq)
             self.write('); !it.Done(); it.Next()) {\n')
 
-            seq_type = self.types[seq]
-            item_type = seq_type.args[0]  # get 'int' from 'List<int>'
+            item_type = over_type.args[0]  # get 'int' from 'List<int>'
 
             if isinstance(item_type, Instance):
               self.write_ind('  %s ', GetCType(item_type))
@@ -1601,6 +1613,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         over_type = self.types[iterated_over]
         if isinstance(over_type, TypeAliasType):
           over_type = over_type.alias.target
+
+        over_type = self.CanBeOptional(over_type)
 
         #self.log('  iterating over type %s', over_type)
         #self.log('  iterating over type %s', over_type.type.fullname)

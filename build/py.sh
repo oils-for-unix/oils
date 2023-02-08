@@ -174,7 +174,7 @@ py-codegen() {
 
   gen-asdl-py 'frontend/types.asdl' --init-zero-N
   # depends on syntax.asdl
-  gen-asdl-py 'core/runtime.asdl' # --init-zero-N
+  gen-asdl-py 'core/runtime.asdl' --init-zero-N
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # dependency on bool_arg_type_e
