@@ -86,11 +86,9 @@ banner() {
 }
 
 print-tasks() {
-  local workload='parse.configure-coreutils'
-  local -a rows=( $workload"$TAB"{bash,dash,zsh,osh-{1,2,3,4,5}} )
-
   local -a workloads=(
     parse.configure-coreutils
+    parse.configure-cpython
     parse.abuild
     ex.bashcomp-parse-help  # only runs with bash
     ex.abuild-print-help  # bash / dash / zsh
@@ -159,6 +157,9 @@ run-tasks() {
     case $task in
       parse.configure-coreutils)
         data_file='benchmarks/testdata/configure-coreutils'
+        ;;
+      parse.configure-cpython)
+        data_file='Python-2.7.13/configure'
         ;;
       parse.abuild)
         data_file='benchmarks/testdata/abuild'
