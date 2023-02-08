@@ -18,12 +18,22 @@ from _devbuild.gen.syntax_asdl import (
 
     arith_expr_e, arith_expr_t, compound_word, simple_var_sub, Token,
 )
+from _devbuild.gen.runtime_asdl import lvalue, lvalue__Named
 from asdl import runtime
 from core.pyerror import log
 from mycpp.mylib import tagswitch
 from osh import word_
 
 from typing import cast, TYPE_CHECKING
+
+
+def LName(name):
+  # type: (str) -> lvalue__Named
+  """
+  Wrapper for lvalue::Named() with location.  TODO: add locations and remove
+  this.
+  """
+  return lvalue.Named(name, runtime.NO_SPID)
 
 
 def GetSpanId(loc_):

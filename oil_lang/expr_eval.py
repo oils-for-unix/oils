@@ -42,6 +42,7 @@ from core import state
 from core.pyerror import e_die, e_die_status, log
 from frontend import consts
 from frontend import match
+from frontend import location
 from oil_lang import objects
 from osh import braces
 from osh import word_compile
@@ -173,7 +174,7 @@ class OilEvaluator(object):
     with tagswitch(node) as case:
       if case(expr_e.Var):
         node = cast(expr__Var, UP_node)
-        return lvalue.Named(node.name.tval)
+        return location.LName(node.name.tval)
       else:
         # TODO:
         # subscripts, tuple unpacking, starred expressions, etc.
@@ -247,7 +248,7 @@ class OilEvaluator(object):
       if case(place_expr_e.Var):
         place = cast(place_expr__Var, UP_place)
 
-        return lvalue.Named(place.name.tval)
+        return location.LName(place.name.tval)
 
       elif case(place_expr_e.Subscript):
         place = cast(subscript, UP_place)
@@ -744,7 +745,7 @@ class OilEvaluator(object):
           except StopIteration:
             break
           self.mem.SetValue(
-              lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
+              location.LName(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
           if comp.cond:
             b = self._EvalExpr(comp.cond)

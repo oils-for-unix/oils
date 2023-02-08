@@ -41,7 +41,7 @@ from _devbuild.gen.syntax_asdl import (
     Token, loc,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
+    lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     redirect, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
@@ -568,7 +568,7 @@ class CommandEvaluator(object):
       val = self.word_ev.EvalRhsWord(e_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetValue(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
+      self.mem.SetValue(location.LName(e_pair.name), val, scope_e.LocalOnly,
                         flags=flags)
 
   def _StrictErrExit(self, node):
@@ -806,7 +806,7 @@ class CommandEvaluator(object):
             self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
             # Note: there's only one LHS
-            vd_lval = lvalue.Named(node.lhs[0].name.tval)  # type: lvalue_t
+            vd_lval = location.LName(node.lhs[0].name.tval)  # type: lvalue_t
             py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)  # type: value_t
 
@@ -820,7 +820,7 @@ class CommandEvaluator(object):
             vd_lvals = []  # type: List[lvalue_t]
             vals = []  # type: List[value_t]
             if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
-              vd_lval = lvalue.Named(node.lhs[0].name.tval)
+              vd_lval = location.LName(node.lhs[0].name.tval)
               val = _PyObjectToVal(py_val)
 
               vd_lvals.append(vd_lval)
@@ -828,7 +828,7 @@ class CommandEvaluator(object):
             else:
               it = py_val.__iter__()
               for vd_lhs in node.lhs:
-                vd_lval = lvalue.Named(vd_lhs.name.tval)
+                vd_lval = location.LName(vd_lhs.name.tval)
                 val = _PyObjectToVal(it.next())
 
                 vd_lvals.append(vd_lval)
@@ -903,7 +903,7 @@ class CommandEvaluator(object):
             # transformer and not the grammar.  We should do that too.
 
             place_expr = cast(place_expr__Var, node.lhs[0])
-            pe_lval = lvalue.Named(place_expr.name.tval)
+            pe_lval = location.LName(place_expr.name.tval)
             py_val = self.expr_ev.EvalExpr(node.rhs)
 
             new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
@@ -1172,10 +1172,10 @@ class CommandEvaluator(object):
                 assert n > 0
                 if n == 1:
                   i_name = None
-                  val_name = lvalue.Named(node.iter_names[0])
+                  val_name = location.LName(node.iter_names[0])
                 elif n == 2:
-                  i_name = lvalue.Named(node.iter_names[0])
-                  val_name = lvalue.Named(node.iter_names[1])
+                  i_name = location.LName(node.iter_names[0])
+                  val_name = location.LName(node.iter_names[1])
                 else:
                   # This is similar to a parse error
                   e_die_status(2, 'List iteration expects at most 2 loop variables',
@@ -1206,16 +1206,16 @@ class CommandEvaluator(object):
                 assert n > 0
                 if n == 1:
                   i_name = None
-                  key_name = lvalue.Named(node.iter_names[0])
+                  key_name = location.LName(node.iter_names[0])
                   val_name = None
                 elif n == 2:
                   i_name = None
-                  key_name = lvalue.Named(node.iter_names[0])
-                  val_name = lvalue.Named(node.iter_names[1])
+                  key_name = location.LName(node.iter_names[0])
+                  val_name = location.LName(node.iter_names[1])
                 elif n == 3:
-                  i_name = lvalue.Named(node.iter_names[0])
-                  key_name = lvalue.Named(node.iter_names[1])
-                  val_name = lvalue.Named(node.iter_names[2])
+                  i_name = location.LName(node.iter_names[0])
+                  key_name = location.LName(node.iter_names[1])
+                  val_name = location.LName(node.iter_names[2])
                 else:
                   # already checked at parse time
                   assert False
@@ -1254,10 +1254,10 @@ class CommandEvaluator(object):
             assert n > 0
             if n == 1:
               i_name = None
-              val_name = lvalue.Named(node.iter_names[0])
+              val_name = location.LName(node.iter_names[0])
             elif n == 2:
-              i_name = lvalue.Named(node.iter_names[0])
-              val_name = lvalue.Named(node.iter_names[1])
+              i_name = location.LName(node.iter_names[0])
+              val_name = location.LName(node.iter_names[1])
             else:
               # This is similar to a parse error
               e_die_status(2, 'List iteration expects at most 2 loop variables',
@@ -1761,14 +1761,14 @@ class CommandEvaluator(object):
           else:
             flags = 0
 
-          self.mem.SetValue(lvalue.Named(param_name), val, scope_e.LocalOnly,
+          self.mem.SetValue(location.LName(param_name), val, scope_e.LocalOnly,
                             flags=flags)
 
         n_params = len(sig.untyped)
         if sig.rest:
           leftover = value.MaybeStrArray(argv[n_params:])
           self.mem.SetValue(
-              lvalue.Named(sig.rest.tval), leftover, scope_e.LocalOnly)
+              location.LName(sig.rest.tval), leftover, scope_e.LocalOnly)
         else:
           if n_args > n_params:
             self.errfmt.Print_(

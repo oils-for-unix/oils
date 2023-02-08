@@ -37,6 +37,7 @@ from qsn_ import qsn
 from core.pyerror import log, e_die
 from frontend import consts
 from frontend import lexer
+from frontend import location
 from mycpp.mylib import tagswitch, NewDict
 from mycpp import mylib
 from osh import braces
@@ -634,7 +635,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           rhs_str = _DecayPartValuesToString(assign_part_vals,
                                              self.splitter.GetJoinChar())
           if vtest_place.index is None:  # using None when no index
-            lval = lvalue.Named(vtest_place.name)  # type: lvalue_t
+            lval = location.LName(vtest_place.name)  # type: lvalue_t
           else:
             var_name = vtest_place.name
             var_index = vtest_place.index

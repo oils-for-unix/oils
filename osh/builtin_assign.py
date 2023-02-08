@@ -9,7 +9,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
     value__AssocArray,
-    lvalue, scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
+    scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
 )
 
 from core import error
@@ -17,6 +17,7 @@ from core.pyerror import e_usage, log
 from core import state
 from core import vm
 from frontend import flag_spec
+from frontend import location
 from frontend import args
 from mycpp import mylib
 from osh import sh_expr_eval
@@ -203,7 +204,7 @@ def _ExportReadonly(mem, pair, flags):
   """
   which_scopes = mem.ScopesForWriting()
 
-  lval = lvalue.Named(pair.var_name)
+  lval = location.LName(pair.var_name)
   if pair.plus_eq:
     old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
     # When 'export e+=', then rval is value.Str('')
@@ -414,7 +415,7 @@ class NewVar(vm._AssignBuiltin):
           if old_val.tag_() != value_e.AssocArray:
             rval = value.AssocArray({})
 
-      lval = lvalue.Named(pair.var_name)
+      lval = location.LName(pair.var_name)
       if pair.plus_eq:
         old_val = sh_expr_eval.OldValue(lval, self.mem, None)  # ignore set -u
         # When 'typeset e+=', then rval is value.Str('')

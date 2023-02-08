@@ -90,7 +90,7 @@ def OldValue(lval, mem, exec_opts):
   TODO: A stricter and less ambiguous version for Oil.
   - Problem: why does lvalue have Indexed and Keyed, while sh_lhs_expr only has
     IndexedName?
-    - should I have lvalue.Named and lvalue.Indexed only?
+    - should I have location.LName and lvalue.Indexed only?
     - and Indexed uses the index_t type?
       - well that might be Str or Int
   """
@@ -771,7 +771,7 @@ class ArithEvaluator(object):
         assert node.name is not None
 
         # Note: C++ constructor doesn't take spids directly.  Should we add that?
-        lval1 = lvalue.Named(node.name)
+        lval1 = location.LName(node.name)
         lval1.spids.append(node.left.span_id)
         lval = lval1
 
@@ -837,7 +837,7 @@ class ArithEvaluator(object):
 
     var_name, span_id = self._VarNameOrWord(anode)
     if var_name is not None:
-      lval1 = lvalue.Named(var_name)
+      lval1 = location.LName(var_name)
       lval1.spids.append(span_id)
       lval = lval1
       return lval

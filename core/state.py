@@ -15,7 +15,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, hay_node
 )
 from _devbuild.gen.syntax_asdl import loc, loc_t
@@ -29,6 +29,7 @@ from core import pyutil
 from core import optview
 from core import ui
 from frontend import consts
+from frontend import location
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, iteritems, NewDict
@@ -1029,7 +1030,7 @@ def _InitVarsFromEnv(mem, environ):
   # 'environ' variable into shell variables.  Bash has an export_env
   # variable.  Dash has a loop through environ in init.c
   for n, v in iteritems(environ):
-    mem.SetValue(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
+    mem.SetValue(location.LName(n), value.Str(v), scope_e.GlobalOnly,
                  flags=SetExport)
 
   # If it's not in the environment, initialize it.  This makes it easier to
@@ -1043,7 +1044,7 @@ def _InitVarsFromEnv(mem, environ):
     SetGlobalString(mem, 'SHELLOPTS', '')
   # Now make it readonly
   mem.SetValue(
-      lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly, flags=SetReadOnly)
+      location.LName('SHELLOPTS'), None, scope_e.GlobalOnly, flags=SetReadOnly)
 
   # Usually we inherit PWD from the parent shell.  When it's not set, we may
   # compute it.
@@ -1053,7 +1054,7 @@ def _InitVarsFromEnv(mem, environ):
   # Now mark it exported, no matter what.  This is one of few variables
   # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
   mem.SetValue(
-      lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
+      location.LName('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
   val = mem.GetValue('PATH')
   if val.tag_() == value_e.Undef:
@@ -1152,7 +1153,7 @@ class ctx_Shvar(object):
   def _Push(self, pairs):
     # type: (List[Tuple[str, str]]) -> None
     for name, s in pairs:
-      lval = lvalue.Named(name)  # type: lvalue_t
+      lval = location.LName(name)  # type: lvalue_t
       # LocalOnly because we are only overwriting the current scope
       old_val = self.mem.GetValue(name, scope_e.LocalOnly)
       self.restore.append((lval, old_val))
@@ -2294,7 +2295,7 @@ def BuiltinSetString(mem, name, s):
   Used for 'read', 'getopts', completion builtins, etc.
   """
   assert isinstance(s, str)
-  BuiltinSetValue(mem, lvalue.Named(name), value.Str(s))
+  BuiltinSetValue(mem, location.LName(name), value.Str(s))
 
 
 def BuiltinSetArray(mem, name, a):
@@ -2309,7 +2310,7 @@ def BuiltinSetArray(mem, name, a):
   Used by compadjust, read -a, etc.
   """
   assert isinstance(a, list)
-  BuiltinSetValue(mem, lvalue.Named(name), value.MaybeStrArray(a))
+  BuiltinSetValue(mem, location.LName(name), value.MaybeStrArray(a))
 
 
 def SetGlobalString(mem, name, s):
@@ -2317,14 +2318,14 @@ def SetGlobalString(mem, name, s):
   """Helper for completion, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetValue(lvalue.Named(name), val, scope_e.GlobalOnly)
+  mem.SetValue(location.LName(name), val, scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   # type: (Mem, str, List[str]) -> None
   """Used by completion, shell initialization, etc."""
   assert isinstance(a, list)
-  mem.SetValue(lvalue.Named(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
+  mem.SetValue(location.LName(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):
@@ -2332,7 +2333,7 @@ def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetValue(lvalue.Named(name), val, scope_e.GlobalOnly, flags=SetExport)
+  mem.SetValue(location.LName(name), val, scope_e.GlobalOnly, flags=SetExport)
 
 #
 # Wrappers to Get Variables

@@ -20,7 +20,7 @@ from _devbuild.gen.runtime_asdl import (
     wait_status, wait_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, lvalue, value__Str, trace, trace_t
+    value, value_e, value__Str, trace, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
@@ -32,6 +32,7 @@ from core import state
 from core import ui
 from core import util
 from core.pyerror import log, e_die
+from frontend import location
 from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
@@ -169,7 +170,7 @@ class FdState(object):
     # type: (str, int) -> None
     if self.mem:
       # setvar, not setref
-      state.OshLanguageSetValue(self.mem, lvalue.Named(fd_name), value.Str(str(fd)))
+      state.OshLanguageSetValue(self.mem, location.LName(fd_name), value.Str(str(fd)))
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int

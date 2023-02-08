@@ -13,7 +13,7 @@ import string
 import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
-from _devbuild.gen.runtime_asdl import cmd_value, lvalue, value, scope_e
+from _devbuild.gen.runtime_asdl import cmd_value, value, scope_e
 from _devbuild.gen.syntax_asdl import source, SourceLine
 from asdl import pybase
 from core import alloc
@@ -28,6 +28,7 @@ from core import ui
 from core import util
 from core import vm
 from frontend import lexer
+from frontend import location
 from frontend import parse_lib
 from frontend import reader
 from osh import builtin_assign
@@ -333,4 +334,4 @@ def SetLocalString(mem, name, s):
   # type: (state.Mem, str, str) -> None
   """Bind a local string."""
   assert isinstance(s, str)
-  mem.SetValue(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)
+  mem.SetValue(location.LName(name), value.Str(s), scope_e.LocalOnly)

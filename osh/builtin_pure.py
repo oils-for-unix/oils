@@ -17,7 +17,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    scope_e, lvalue,
+    scope_e,
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     value__Obj
 )
@@ -37,6 +37,7 @@ from frontend import args
 from frontend import consts
 from frontend import flag_spec
 from frontend import lexer
+from frontend import location
 from frontend import match
 from frontend import typed_args
 from qsn_ import qsn
@@ -937,7 +938,7 @@ if mylib.PYTHON:
         result = self.hay_state.Result()
 
         self.mem.SetValue(
-            lvalue.Named(var_name), value.Obj(result), scope_e.LocalOnly)
+            location.LName(var_name), value.Obj(result), scope_e.LocalOnly)
 
       elif action == 'reset':
         self.hay_state.Reset()

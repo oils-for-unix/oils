@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue, lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     cmd_value__Assign, scope_e, trace_e, trace_t, trace__External
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
@@ -275,9 +275,9 @@ class Tracer(object):
     self.val_pid_str = value.Str('')  # mutated by SetProcess
 
     # Can these be global constants?  I don't think we have that in ASDL yet.
-    self.lval_indent = lvalue.Named('SHX_indent')
-    self.lval_punct = lvalue.Named('SHX_punct')
-    self.lval_pid_str = lvalue.Named('SHX_pid_str')
+    self.lval_indent = location.LName('SHX_indent')
+    self.lval_punct = location.LName('SHX_punct')
+    self.lval_pid_str = location.LName('SHX_pid_str')
 
   def CheckCircularDeps(self):
     # type: () -> None

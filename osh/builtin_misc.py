@@ -14,7 +14,8 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
-    span_e, cmd_value__Argv, lvalue, value, scope_e)
+    span_e, cmd_value__Argv, value, scope_e
+)
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
@@ -26,6 +27,7 @@ from core import state
 from core import ui
 from core import vm
 from frontend import flag_spec
+from frontend import location
 from frontend import reader
 from frontend import typed_args
 from mycpp import mylib
@@ -311,7 +313,7 @@ class Read(vm._Builtin):
       tmp = [word_compile.EvalCStringToken(t) for t in tokens]
       line = ''.join(tmp)
 
-    lhs = lvalue.Named(var_name)
+    lhs = location.LName(var_name)
     self.mem.SetValue(lhs, value.Str(line), scope_e.LocalOnly)
     return 0
 
@@ -321,7 +323,7 @@ class Read(vm._Builtin):
 
     # No error conditions?
 
-    lhs = lvalue.Named(var_name)
+    lhs = location.LName(var_name)
     self.mem.SetValue(lhs, value.Str(contents), scope_e.LocalOnly)
     return 0
 
