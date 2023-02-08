@@ -108,7 +108,6 @@ module runtime
     -- Oil variants
   | ObjIndex(any obj, any index)
   | ObjAttr(any obj, string attr)
-  attributes (int* spids)
 
   redirect_arg =
     Path(string filename)

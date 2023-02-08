@@ -211,7 +211,6 @@ class MemTest(unittest.TestCase):
     self.assertEqual(False, mem.var_stack[0]['PYTHONPATH'].exported)
 
     lhs = lvalue.Indexed('a', 1, runtime.NO_SPID)
-    lhs.spids.append(0)
     # a[1]=2
     mem.SetValue(lhs, value.Str('2'), scope_e.Dynamic)
     self.assertEqual([None, '2'], mem.var_stack[0]['a'].val.strs)

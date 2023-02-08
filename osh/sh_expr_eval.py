@@ -771,8 +771,7 @@ class ArithEvaluator(object):
         assert node.name is not None
 
         # Note: C++ constructor doesn't take spids directly.  Should we add that?
-        lval1 = location.LName(node.name)
-        lval1.spids.append(node.left.span_id)
+        lval1 = lvalue.Named(node.name, node.left.span_id)
         lval = lval1
 
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
@@ -826,21 +825,14 @@ class ArithEvaluator(object):
         if var_name is not None:
           if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)
-            lval2 = lvalue.Keyed(var_name, key, span_id)
-            lval = lval2  # type: lvalue_t
-            return lval
+            return lvalue.Keyed(var_name, key, span_id)
           else:
             index = self.EvalToInt(anode.right)
-            lval3 = lvalue.Indexed(var_name, index, span_id)
-            lval = lval3
-            return lval
+            return lvalue.Indexed(var_name, index, span_id)
 
     var_name, span_id = self._VarNameOrWord(anode)
     if var_name is not None:
-      lval1 = location.LName(var_name)
-      lval1.spids.append(span_id)
-      lval = lval1
-      return lval
+      return lvalue.Named(var_name, span_id)
 
     # e.g. unset 'x-y'.  status 2 for runtime parse error
     e_die_status(2, 'Invalid place to modify', loc.Span(span_id))
