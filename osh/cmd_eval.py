@@ -933,14 +933,14 @@ class CommandEvaluator(object):
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
             rhs = self.word_ev.EvalRhsWord(pair.rhs)
 
-            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
             # do not respect set -u
             old_val = sh_expr_eval.OldValue(lval, self.mem, None)
 
             val = PlusEquals(old_val, rhs)
 
           else:  # plain assignment
-            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, which_scopes)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
 
             # RHS can be a string or array.
             if pair.rhs:

@@ -755,8 +755,8 @@ class ArithEvaluator(object):
       # TODO: location info for original
       e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
 
-  def EvalShellLhs(self, node, spid, which_scopes):
-    # type: (sh_lhs_expr_t, int, scope_t) -> lvalue_t
+  def EvalShellLhs(self, node, which_scopes):
+    # type: (sh_lhs_expr_t, scope_t) -> lvalue_t
     """Evaluate a shell LHS expression, i.e. place expression.
 
     For  a=b  and  a[x]=b  etc.
@@ -772,7 +772,7 @@ class ArithEvaluator(object):
 
         # Note: C++ constructor doesn't take spids directly.  Should we add that?
         lval1 = lvalue.Named(node.name)
-        lval1.spids.append(spid)
+        lval1.spids.append(node.left.span_id)
         lval = lval1
 
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
