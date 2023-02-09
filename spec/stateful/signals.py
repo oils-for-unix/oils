@@ -385,6 +385,23 @@ def t5(sh):
   sh.expect('status=130')
 
 
+@register()
+def loop_break(sh):
+  'Ctrl-C (untrapped) exits loop'
+
+  sh.sendline('while true; do continue; done')
+
+  time.sleep(0.1)
+
+  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+  sh.sendintr()  # SIGINT
+
+  expect_prompt(sh)
+
+  sh.sendline('echo done=$?')
+  sh.expect('done=130')
+
+
 if __name__ == '__main__':
   try:
     sys.exit(harness.main(sys.argv))
