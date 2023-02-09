@@ -23,6 +23,9 @@ Tuple2<int, int> WaitPid() {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED);
   if (result < 0) {
+    if (errno == EINTR && SigintCount() > 0) {
+      throw Alloc<KeyboardInterrupt>();
+    }
     return Tuple2<int, int>(-1, errno);
   }
   return Tuple2<int, int>(result, status);
@@ -33,6 +36,9 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
+    if (errno == EINTR && SigintCount() > 0) {
+      throw Alloc<KeyboardInterrupt>();
+    }
     return Tuple2<int, int>(-1, errno);
   }
   if (length == 0) {
@@ -50,6 +56,9 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
+    if (errno == EINTR && SigintCount() > 0) {
+      throw Alloc<KeyboardInterrupt>();
+    }
     return Tuple2<int, int>(-1, errno);
   } else if (n == 0) {  // EOF
     return Tuple2<int, int>(EOF_SENTINEL, 0);
@@ -208,6 +217,9 @@ void SignalHandler::Update(int sig_num) {
   assert(signal_queue_ != nullptr);
   assert(signal_queue_->len_ < signal_queue_->capacity_);
   signal_queue_->append(sig_num);
+  if (sig_num == SIGINT) {
+    sigint_count_++;
+  }
   if (sig_num == SIGWINCH) {
     sig_num = sigwinch_num_;
   }
@@ -256,6 +268,13 @@ int LastSignal() {
   return gSignalHandler->last_sig_num_;
 }
 
+int SigintCount() {
+  DCHECK(gSignalHandler != nullptr);
+  int ret = gSignalHandler->sigint_count_;
+  gSignalHandler->sigint_count_ = 0;
+  return ret;
+}
+
 void SetSigwinchCode(int code) {
   assert(gSignalHandler != nullptr);
   gSignalHandler->sigwinch_num_ = code;
@@ -265,6 +284,7 @@ void InitShell() {
   gSignalHandler = Alloc<SignalHandler>();
   gHeap.RootGlobalVar(gSignalHandler);
   gSignalHandler->signal_queue_ = AllocSignalQueue();
+  RegisterSignalInterest(SIGINT);
 }
 
 Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {

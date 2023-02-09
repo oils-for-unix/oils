@@ -105,6 +105,7 @@ def sigmultiple_trapped_prompt(sh):
   expect_prompt(sh)
 
   sh.kill(signal.SIGUSR1)
+  time.sleep(0.1) # pause for a bit to avoid racing on signal order in osh-cpp
   sh.kill(signal.SIGUSR2)
 
   sh.sendline('echo hi')
@@ -382,6 +383,23 @@ def t5(sh):
   sh.sendline('echo status=$?')
   # TODO: This should be status 130 like bash
   sh.expect('status=130')
+
+
+@register()
+def loop_break(sh):
+  'Ctrl-C (untrapped) exits loop'
+
+  sh.sendline('while true; do continue; done')
+
+  time.sleep(0.1)
+
+  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+  sh.sendintr()  # SIGINT
+
+  expect_prompt(sh)
+
+  sh.sendline('echo done=$?')
+  sh.expect('done=130')
 
 
 if __name__ == '__main__':

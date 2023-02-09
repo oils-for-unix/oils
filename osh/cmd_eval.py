@@ -1444,6 +1444,12 @@ class CommandEvaluator(object):
     # and maybe throw an exception.
     self.RunPendingTraps()
 
+    # We only need this somewhat hacky check in osh-cpp since python's runtime
+    # handles SIGINT for us in osh.
+    if mylib.CPP:
+      if pyos.SigintCount() > 0:
+        raise KeyboardInterrupt()
+
     # Manual GC point before every statement
     mylib.MaybeCollect()
 

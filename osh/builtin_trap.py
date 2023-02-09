@@ -126,11 +126,9 @@ class TrapState(object):
         if sig_num == SIGWINCH:
           if mylib.PYTHON:
             self.display.OnWindowChange()
-          if node is None:
-            continue
 
-        assert node is not None
-        run_list.append(node)
+        if node is not None:
+          run_list.append(node)
 
       return run_list
 

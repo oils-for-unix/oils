@@ -51,9 +51,20 @@ class Readline {
   Str* completer_delims_;
   completion::ReadlineCallback* completer_;
   comp_ui::_IDisplay* display_;
+
+  // readline will set this to NULL when EOF is received, else this will point
+  // to a line of input.
+  char* latest_line_;
+
+  // readline will set this flag when either:
+  //   - it receives EOF
+  //   - it has a complete line of input (it has seen "\n")
+  bool ready_;
 };
 
 Readline* MaybeGetReadline();
+
+Str* readline(Str* prompt);
 
 }  // namespace py_readline
 
