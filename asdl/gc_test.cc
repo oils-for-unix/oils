@@ -7,6 +7,7 @@
 #include "vendor/greatest.h"
 
 using hnode_asdl::color_e;
+using hnode_asdl::hnode;
 using hnode_asdl::hnode__Array;
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode__Record;
@@ -57,10 +58,10 @@ TEST hnode_test() {
 
   f = mylib::Stdout();
   ast_f = Alloc<format::TextOutput>(f);
-  array = Alloc<hnode__Array>();
+  array = hnode::Array::Create();
   ASSERT_EQ_FMT(4, gHeap.Collect(), "%d");
 
-  rec = Alloc<hnode__Record>();
+  rec = hnode::Record::Create();
   rec->node_type = StrFromC("dummy_node");
   ASSERT_EQ_FMT(8, gHeap.Collect(), "%d");
 
