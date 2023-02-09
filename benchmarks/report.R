@@ -848,6 +848,7 @@ GcReport = function(in_dir, out_dir) {
 
   # Write out separate rows
   WriteTimes(times, 'parse.configure-coreutils')
+  WriteTimes(times, 'parse.configure-cpython')
   WriteTimes(times, 'parse.abuild')
   WriteTimes(times, 'ex.compute-fib')
   WriteTimes(times, 'ex.bashcomp-parse-help')

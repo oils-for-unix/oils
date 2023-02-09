@@ -367,6 +367,13 @@ EOF
 
 ### Resource Usage
 
+#### parse.configure-cpython
+
+EOF
+
+  tsv2html $in_dir/parse.configure-cpython.tsv
+
+  cmark << 'EOF'
 #### parse.configure-coreutils
 
 Parsing the autoconf-generated `configure` script from GNU coreutils.
