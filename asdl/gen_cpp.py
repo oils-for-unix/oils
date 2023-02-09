@@ -119,12 +119,12 @@ def _DefaultValue(typ):
   """ Values that the ::Create() constructor passes. """
   type_name = typ.name
 
-  if type_name == 'map':
+  if type_name == 'map':  # TODO: use Empty dict optimization
     return 'nullptr'
 
-  elif type_name == 'array':  # TODO: nullptr
+  elif type_name == 'array':  # TODO: nullptr or Empty list optimization
     c_type = _GetCppType(typ.children[0])
-    return 'NewList<%s>()' % (c_type)
+    return 'Alloc<List<%s>>()' % (c_type)
 
   elif type_name == 'maybe':
     child = typ.children[0]
@@ -493,7 +493,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       typ = field.typ.children[0]
 
       self.Emit('if (this->%s != nullptr) {  // array' % (field.name))
-      self.Emit('  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>());' % out_val_name)
+      self.Emit('  hnode__Array* %s = Alloc<hnode__Array>(Alloc<List<hnode_t*>>());' % out_val_name)
       item_type = _GetCppType(typ)
       self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))

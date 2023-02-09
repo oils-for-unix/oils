@@ -107,12 +107,15 @@ class List {
 // constructor.  Allocation may cause garbage collection, which interferes with
 // placement new.
 
+// This is not really necessary, only syntactic sugar.
 template <typename T>
 List<T>* NewList() {
   return Alloc<List<T>>();
 }
 
 // Literal ['foo', 'bar']
+// This seems to allow better template argument type deduction than a
+// constructor.
 template <typename T>
 List<T>* NewList(std::initializer_list<T> init) {
   auto self = Alloc<List<T>>();

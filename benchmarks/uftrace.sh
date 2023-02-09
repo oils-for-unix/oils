@@ -18,6 +18,8 @@ set -o errexit
 
 source test/common.sh  # R_PATH
 
+readonly BASE_DIR=_tmp/uftrace
+
 download() {
   wget --no-clobber --directory _deps \
     https://github.com/namhyung/uftrace/archive/refs/tags/v0.12.tar.gz
@@ -57,17 +59,9 @@ EOF
   uftrace _tmp/hello
 }
 
-# Now we can analyze uftrace.data.
-# NOTE: This wasn't that useful because it doesn't give line numbers?
-
-replay() {
-  #uftrace replay -F vm::ctx_Redirect::ctx_Redirect
-
-  uftrace replay -F cmd_eval::CommandEvaluator::_Execute
-}
-
-# creates uftrace.data/ dir
 record-oils-cpp() {
+  ### Record a trace, but limit to allocations functions, for size
+
   local out_dir=$1
   local unfiltered=${2:-}
   shift 2
@@ -95,9 +89,13 @@ record-oils-cpp() {
   else
     # It's faster to filter just these function calls
     flags=(
-      -F 'Alloc'  # missing type info
-      # arg1 is this, arg2 is num_bytes
+      # low level allocation
       -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
+
+      # typed allocation
+      -F 'Alloc'  # missing type info
+
+      # Flexible array allocation
       # arg 1 is str_len
       -F 'NewStr' -A 'NewStr@arg1'
       -F 'OverAllocatedStr' -A 'OverAllocatedStr@arg1'
@@ -105,13 +103,15 @@ record-oils-cpp() {
       # arg1 is number of elements of type T
       -F 'NewSlab' -A 'NewSlab@arg1'
       -F 'Slab::Slab'
-      -F 'NewList' -F 'List::List'
-      -F 'List::append'
+
+      # Fixed size header allocation
+      # arg2 is the number of items to reserve
+      -F 'List::List'
+      -F 'List::reserve' -A 'List::reserve@arg2'
       -F 'Dict::Dict'  # does not allocate
-      -F 'Dict::reserve'  # this allocates
-      -F 'Dict::append'
-      -F 'Dict::extend'
-      -F 'Dict::set'
+      -F 'Dict::reserve' -A 'Dict::reserve@arg2'
+
+      # Common object
       -F 'syntax_asdl::Token::Token'
       -D 1
     )
@@ -135,49 +135,77 @@ record-oils-cpp() {
   ls -l --si $out_dir/
 }
 
-record-parse() {
-  local path=${1:-benchmarks/testdata/abuild}
+run-tasks() {
+  #local sh_path=_bin/cxx-uftrace/osh
 
-  # For abuild, unfiltered gives 1.6 GB of data, vs. 19 MB filtered!
-  local unfiltered=${2:-}
+  while read task; do
 
-  # 2.3 seconds to parse under -O2, 15 under -O0, which we need
-  #local path=${1:-benchmarks/testdata/configure}
+    # TODO: Could share with benchmarks/gc
+    case $task in
+      parse.configure-cpython)
+        data_file='Python-2.7.13/configure'
+        ;;
+      parse.abuild)
+        data_file='benchmarks/testdata/abuild'
+        ;;
+    esac
 
-  # 9 seconds to parse, 5 seconds to analyze
-  #local path=${1:-benchmarks/testdata/configure-coreutils}
+    # Construct argv for each task
+    local -a argv
+    case $task in
+      parse.*)
+        argv=( --ast-format none -n $data_file  )
+        ;;
 
-  # 635 MB of trace data for this file, Allocate() calls only
-  #local path=${1:-benchmarks/testdata/configure-coreutils}
+      ex.compute-fib)
+        argv=( benchmarks/compute/fib.sh 10 44 )
+        ;;
 
-  local out_dir=_tmp/uftrace/parse.data
-  mkdir -p $out_dir
+      ex.bashcomp-parse-help)
+        # NOTE: benchmarks/gc.sh uses the larger clang.txt file
+        argv=( benchmarks/parse-help/pure-excerpt.sh parse_help_file 
+               benchmarks/parse-help/mypy.txt )
+        ;;
 
-  record-oils-cpp $out_dir "$unfiltered" --ast-format none -n $path
+    esac
+
+    local out_dir=$BASE_DIR/$task
+
+    record-oils-cpp $out_dir '' "${argv[@]}"
+  done
 }
 
-record-execute() {
-  local out_dir=_tmp/uftrace/execute.data
-  local unfiltered=${2:-}
-  mkdir -p $out_dir
+print-tasks() {
+  # Same as benchmarks/gc
+  local -a tasks=(
+    # This one is a bit big
+    # parse.configure-cpython
 
-  local -a cmd=( benchmarks/compute/fib.sh 10 44 )
-  #local -a cmd=( benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+    parse.abuild
+    ex.bashcomp-parse-help
+    ex.compute-fib
+  )
 
-  record-oils-cpp $out_dir "$unfiltered" "${cmd[@]}"
+  for task in "${tasks[@]}"; do
+    echo $task
+  done
 }
 
-run-suite() {
-  record-parse
-  record-execute
+measure-all() {
+  mkdir -p $BASE_DIR
 
-  echo 'PARSE (abuild)'
-  frequent-calls _tmp/uftrace/parse.data
-  echo
+  ninja
+  print-tasks | run-tasks
+}
 
-  echo 'EXECUTE (fib)'
-  frequent-calls _tmp/uftrace/execute.data
-  echo
+report-all() {
+  print-tasks | while read task; do
+    echo "TASK $task"
+    echo
+
+    frequent-calls _tmp/uftrace/$task
+    echo
+  done
 }
 
 frequent-calls() {

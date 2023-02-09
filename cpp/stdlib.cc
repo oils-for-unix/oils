@@ -129,7 +129,7 @@ List<Str*>* listdir(Str* path) {
     throw Alloc<OSError>(errno);
   }
 
-  auto* ret = NewList<Str*>();
+  auto* ret = Alloc<List<Str*>>();
   while (true) {
     errno = 0;
     struct dirent* ep = readdir(dirp);

@@ -153,7 +153,7 @@ readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
 run-tasks() {
   while read -r join_id task sh_path shell_runtime_opts; do
 
-    # Parse two different files
+    # Parse different files
     case $task in
       parse.configure-coreutils)
         data_file='benchmarks/testdata/configure-coreutils'
