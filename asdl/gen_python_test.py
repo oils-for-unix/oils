@@ -58,14 +58,14 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual(None, obj.arg)
 
   def testFieldDefaults(self):
-    s = arith_expr.Slice()
+    s = arith_expr.Slice.Create()
     s.a = arith_expr.Var('foo')
     self.assertEqual(None, s.begin)
     self.assertEqual(None, s.end)
     self.assertEqual(None, s.stride)
     print(s)
 
-    func = arith_expr.FuncCall()
+    func = arith_expr.FuncCall.Create()
     func.name = 'f'
     self.assertEqual([], func.args)
     print(func)
@@ -85,14 +85,14 @@ class ArithAstTest(unittest.TestCase):
     print(n2)
 
     # Not good because not assigned?
-    n3 = arith_expr.Var()
+    n3 = arith_expr.Var.Create()
 
     # NOTE: You cannot instantiate a product type directly?  It's just used for
     # type checking.  What about OCaml?
     # That means you just need to create classes for the records (arith_expr.Constructor).
     # They all descend from Obj.  They don't need
 
-    n3 = arith_expr.Var()
+    n3 = arith_expr.Var.Create()
     try:
       n4 = arith_expr.Var('x', name='X')
     except TypeError as e:
@@ -141,7 +141,11 @@ class ArithAstTest(unittest.TestCase):
     c = arith_expr.Const(66)
     print(c)
 
-    print((arith_expr.Slice(arith_expr.Const(1), arith_expr.Const(5), arith_expr.Const(2))))
+    sl = arith_expr.Slice(
+        arith_expr.Const(1), arith_expr.Const(5), arith_expr.Const(2),
+        arith_expr.Const(3),
+        )
+    print(sl)
 
     print((op_id_e.Plus))
 
@@ -151,7 +155,7 @@ class ArithAstTest(unittest.TestCase):
     # Invalid because only half were assigned
     #print(arith_expr.Binary(op_id_e.Plus, arith_expr.Const(5)))
 
-    n = arith_expr.Binary()
+    n = arith_expr.Binary.Create()
     #n.CheckUnassigned()
     n.op_id = op_id_e.Plus
     n.left = arith_expr.Const(5)

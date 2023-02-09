@@ -32,14 +32,17 @@ def Options():
       help='Whether to generate pretty printing methods')
 
   # Control Python constructors
+
+  # for hnode.asdl
   p.add_option(
       '--py-init-N', dest='py_init_n',
       action='store_true', default=False,
       help='Generate Python __init__ that requires every field')
 
+  # The default, which matches C++
   p.add_option(
       '--init-zero-N', dest='init_zero_n',
-      action='store_true', default=False,
+      action='store_true', default=True,
       help='Generate 0 arg and N arg constructors, in Python and C++')
 
   return p
