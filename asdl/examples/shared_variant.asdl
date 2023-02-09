@@ -3,7 +3,7 @@
 module shared_variant {
 
   -- Testing out this unused syntax
-  prod_with_attrs = (string a, string b) attributes (int spid)
+  prod_with_attrs = (string a, string b) attributes (int* spid)
 
   double_quoted = (int left, string* tokens) 
 
@@ -12,7 +12,7 @@ module shared_variant {
     -- Use the existing TYPE double_quoted, but create a new TAG
     -- expr_e.DoubleQuoted.
   | DoubleQuoted %double_quoted
-  attributes (int left_spid, int right_spid)
+  attributes (int* spids)
 
   Token = (int id, string val)
 

@@ -195,7 +195,7 @@ py-asdl-examples() {
   gen-asdl-py 'asdl/examples/typed_demo.asdl' --init-zero-N
 
   gen-asdl-py 'asdl/examples/shared_variant.asdl' --init-zero-N
-  gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
+  gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev' --init-zero-N
 }
 
 oil-cpp() {
