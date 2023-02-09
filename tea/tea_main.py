@@ -58,7 +58,7 @@ def Main(arg_r):
   else:
     script_name = arg_r.Peek()
     if script_name is None:
-      arena.PushSource(source.Stdin())
+      arena.PushSource(source.Stdin(''))
       f = mylib.Stdin()  # type: mylib.LineReader
     else:
       arena.PushSource(source.MainFile(script_name))

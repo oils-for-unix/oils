@@ -69,7 +69,14 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//frontend/consts',
       srcs = ['_gen/frontend/consts.cc'],
-      generated_headers = ['_gen/frontend/consts.h'])
+      generated_headers = ['_gen/frontend/consts.h'],
+      # See header
+      deps = [
+        '//core/runtime.asdl',
+        '//frontend/id_kind.asdl',
+        '//frontend/option.asdl',
+        '//frontend/types.asdl',
+        ])
 
   prefix = '_gen/frontend/arg_types'
   n.build([prefix + '.h', prefix + '.cc'], 'flag-gen', [],
@@ -130,7 +137,8 @@ def NinjaGraph(ru):
 
   ru.asdl_library(
       'frontend/syntax.asdl',
-      deps = ['//frontend/id_kind.asdl'])
+      deps = ['//frontend/id_kind.asdl'],
+      init_zero_n = True)
 
   ru.cc_binary(
       'frontend/syntax_asdl_test.cc',

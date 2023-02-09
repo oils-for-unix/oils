@@ -419,7 +419,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     if ast_node.fields:
       if self.init_zero_n:
         init_args = []
-        for field in all_fields:
+        for field in ast_node.fields:
           init_args.append(_DefaultValue(field.typ))
 
         self.Emit('  static %s* Create() { ' % class_name, depth)

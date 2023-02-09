@@ -380,7 +380,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     #
 
     if self.py_init_n or self.py_init_zero_n:
-      args = [f.name for f in all_fields]
+      args = [f.name for f in ast_node.fields]
+      args.extend('%s=None' % a.name for a in attributes)
     else:
       # LEGACY
       args = ['%s=None' % f.name for f in all_fields]
@@ -411,6 +412,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       if self.py_init_n or self.py_init_zero_n:
         expr_str = ''
+
+        # Special initialization for attributes .spids=[] -- only in
+        # syntax.asdl
+        if f in attributes:
+          d_str = _DefaultValue(f.typ)
+          if d_str:
+            expr_str = ' if %s is not None else %s' % (f.name, d_str)
       else:
         d_str = _DefaultValue(f.typ)
 

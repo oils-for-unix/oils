@@ -183,7 +183,7 @@ py-codegen() {
 
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?
-  gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev'
+  gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev' --init-zero-N
 
   # For tests
   gen-asdl-py 'mycpp/examples/expr.asdl' --init-zero-N

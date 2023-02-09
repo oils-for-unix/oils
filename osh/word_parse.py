@@ -352,7 +352,7 @@ class WordParser(WordEmitter):
     else:
       bracket_op = None
 
-    part = braced_var_sub()
+    part = braced_var_sub.Create()
     part.token = name_token
     part.var_name = lexer.TokenVal(name_token)
     part.bracket_op = bracket_op
@@ -784,13 +784,13 @@ class WordParser(WordEmitter):
 
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
-          arms.append(compound_word())
+          arms.append(compound_word([]))
         spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
         if not read_word:
-          arms.append(compound_word())
+          arms.append(compound_word([]))
         read_word = False
         self._Next(lex_mode_e.ExtGlob)
 
@@ -1287,7 +1287,7 @@ class WordParser(WordEmitter):
       p_die('Expected ) to end for loop expression', self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
-    node = command.ForExpr()  # no redirects yet
+    node = command.ForExpr.Create()  # no redirects yet
     node.init = init_node
     node.cond = cond_node
     node.update = update_node
@@ -1388,7 +1388,7 @@ class WordParser(WordEmitter):
     """ For json write (x) """
     self.lexer.MaybeUnreadOne()
 
-    arg_list = ArgList()
+    arg_list = ArgList.Create()
     arg_list.left = self.cur_token
     self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
     return arg_list
@@ -1435,7 +1435,7 @@ class WordParser(WordEmitter):
 
       next_id = self.lexer.LookAheadOne(lex_mode)
       if next_id == Id.Op_LParen:  # @arrayfunc(x)
-        arglist = ArgList()
+        arglist = ArgList.Create()
         self._ParseInlineCallArgs(arglist)
         part2 = word_part.FuncCall(splice_tok, arglist)
       else:
@@ -1485,7 +1485,7 @@ class WordParser(WordEmitter):
     could be an operator delimiting a compound word.  Can we change lexer modes
     and remove this special case?
     """
-    w = compound_word()
+    w = compound_word([])
     num_parts = 0
     brace_count = 0
     done = False
@@ -1532,7 +1532,7 @@ class WordParser(WordEmitter):
 
           next_id = self.lexer.LookAheadOne(lex_mode)
           if next_id == Id.Op_LParen:
-            arglist = ArgList()
+            arglist = ArgList.Create()
             self._ParseInlineCallArgs(arglist)
             part = word_part.FuncCall(vsub_token, arglist)
 
@@ -1846,7 +1846,7 @@ class WordParser(WordEmitter):
     This is just like reading a here doc line.  "\n" is allowed, as well as the
     typical substitutions ${x} $(echo hi) $((1 + 2)).
     """
-    w = compound_word()
+    w = compound_word([])
     self._ReadLikeDQ(None, False, w.parts)
     return w
 

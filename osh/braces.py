@@ -182,7 +182,7 @@ class _StackFrame(object):
   def __init__(self, cur_parts):
     # type: (List[word_part_t]) -> None
     self.cur_parts = cur_parts
-    self.alt_part = word_part.BracedTuple()
+    self.alt_part = word_part.BracedTuple.Create()
     self.saw_comma = False
 
 

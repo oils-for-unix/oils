@@ -44,12 +44,20 @@ class VarOpTest(unittest.TestCase):
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
     left = None
-    unset_sub = braced_var_sub(left, Tok(Id.VSub_Name, 'unset'), 'unset')
+    unset_sub = braced_var_sub.Create()
+    unset_sub.left = left
+    unset_sub.token = Tok(Id.VSub_Name, 'unset')
+    unset_sub.var_name = 'unset'
+
     part_vals = []
     ev._EvalWordPart(unset_sub, part_vals, 0)
     print(part_vals)
 
-    set_sub = braced_var_sub(left, Tok(Id.VSub_Name, 'x'), 'x')
+    set_sub = braced_var_sub.Create()
+    set_sub.left = left
+    set_sub.token = Tok(Id.VSub_Name, 'x')
+    set_sub.var_name = 'x'
+
     part_vals = []
     ev._EvalWordPart(set_sub, part_vals, 0)
     print(part_vals)

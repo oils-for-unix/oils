@@ -1707,7 +1707,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.extend(word_part_vals)
       else:
         # e.g. simple_word_eval, assignment builtin
-        e_die('Extended glob not allowed in this word', loc.Word())
+        e_die('Extended glob not allowed in this word', loc.Word(w))
     else:
       part_vals.extend(word_part_vals)
 

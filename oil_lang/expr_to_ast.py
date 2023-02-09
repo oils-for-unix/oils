@@ -128,7 +128,7 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      arglist = ArgList()
+      arglist = ArgList.Create()
       if len(children) == 2:  # ()
         return expr.FuncCall(base, arglist)
 
@@ -931,7 +931,7 @@ class Transformer(object):
     if n == 1:  # proc f { 
       sig = proc_sig.Open()  # type: proc_sig_t
     elif n == 3:  # proc f () {
-      sig = proc_sig.Closed()  # no params
+      sig = proc_sig.Closed.Create()  # no params
     elif n == 4:  # proc f [foo, bar='z', @args] {
       sig = self._ProcParams(children[1])
     else:
@@ -976,7 +976,7 @@ class Transformer(object):
     elif node.tok.id == Id.Expr_Return:
       # 'return' [testlist]
       if len(node.children) == 1:
-        return command.Return()
+        return command.Return(None)
       else:
         return command.Return(self.Expr(node.children[1]))
     elif node.tok.id == Id.Expr_Name:
