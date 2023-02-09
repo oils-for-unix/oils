@@ -1595,7 +1595,7 @@ class CommandEvaluator(object):
     with tagswitch(node) as case:
       if case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
-        if len(node.redirects) == 0:
+        if node.redirects is None or len(node.redirects) == 0:
           # Note: technically we could optimize this into BraceGroup with
           # redirects.  Some shells appear to do that.
           if 0:
