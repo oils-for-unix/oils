@@ -5,7 +5,10 @@
 # Usage:
 #   benchmarks/report.R OUT_DIR [TIMES_CSV...]
 
-library(dplyr)
+# Supress warnings about functions masked from 'package:stats' and 'package:base'
+#   filter, lag
+#   intersect, setdiff, setequal, union
+library(dplyr, warn.conflicts = FALSE)
 library(tidyr)  # spread()
 library(stringr)
 

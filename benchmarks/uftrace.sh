@@ -128,8 +128,8 @@ record-oils-cpp() {
   local bin=_bin/cxx-uftrace/osh
   ninja $bin
 
+  mkdir -p $out_dir
   time uftrace record -d $out_dir "${flags[@]}" $bin "$@"
-  #time uftrace record $oils-for-unix "$@"
 
   ls -d $out_dir/
   ls -l --si $out_dir/
@@ -169,7 +169,7 @@ run-tasks() {
 
     esac
 
-    local out_dir=$BASE_DIR/$task
+    local out_dir=$BASE_DIR/$task/raw
 
     record-oils-cpp $out_dir '' "${argv[@]}"
   done
@@ -192,20 +192,8 @@ print-tasks() {
 }
 
 measure-all() {
-  mkdir -p $BASE_DIR
-
   ninja
   print-tasks | run-tasks
-}
-
-report-all() {
-  print-tasks | while read task; do
-    echo "TASK $task"
-    echo
-
-    frequent-calls _tmp/uftrace/$task
-    echo
-  done
 }
 
 frequent-calls() {
@@ -220,6 +208,47 @@ call-graph() {
 
   local out_dir=$1
   uftrace graph -d $out_dir
+}
+
+tsv-plugin() {
+  local task=${1:-ex.compute-fib}
+
+  local dir=$BASE_DIR/$task/raw
+
+  # On the big configure-coreutils script, this takes 10 seconds.  That's
+  # acceptable.  Gives 2,402,003 allocations.
+
+  local out_dir=_tmp/uftrace/$task/stage1
+  mkdir -p $out_dir
+  time uftrace script -d $dir -S benchmarks/uftrace_allocs.py $out_dir
+
+  wc -l $out_dir/*.tsv
+}
+
+R-stats() {
+  local task=${1:-ex.compute-fib}
+
+  local in_dir=$BASE_DIR/$task/stage1
+  local out_dir=$BASE_DIR/$task/stage2
+  mkdir -p $out_dir
+
+  R_LIBS_USER=$R_PATH benchmarks/report.R alloc $in_dir $out_dir
+
+  #ls $dir/*.tsv
+}
+
+report-all() {
+  print-tasks | while read task; do
+    echo "TASK $task"
+    echo
+
+    # frequent-calls $BASE_DIR/$task/raw
+
+    # tsv-plugin $task
+    R-stats $task
+
+    echo
+  done
 }
 
 # Hm this shows EVERY call stack that produces a list!
@@ -250,31 +279,6 @@ replay-alloc() {
 plugin() {
   # Note this one likes UNFILTERED data
   uftrace script -S benchmarks/uftrace_plugin.py
-}
-
-plugin-allocs() {
-  local name=${1:-parse}
-
-  local dir=_tmp/uftrace/$name.data
-
-  # On the big configure-coreutils script, this takes 10 seconds.  That's
-  # acceptable.  Gives 2,402,003 allocations.
-
-  local out_dir=_tmp/uftrace/${name}_tsv
-  mkdir -p $out_dir
-  time uftrace script -d $dir -S benchmarks/uftrace_allocs.py $out_dir
-
-  wc -l $out_dir/*.tsv
-}
-
-report() {
-  local name=${1:-parse}
-
-  local in_dir=_tmp/uftrace/${name}_tsv
-
-  R_LIBS_USER=$R_PATH benchmarks/report.R alloc $in_dir _tmp/uftrace
-
-  #ls $dir/*.tsv
 }
 
 # TODO:
