@@ -44,9 +44,9 @@ module find
     EQ(int n)
   | GE(int n)
   | LE(int n)
-  | StringMatch(string str, bool? ignoreCase)
-  | GlobMatch(string glob, bool? ignoreCase)
-  | RegexMatch(string re, bool? ignoreCase)
+  | StringMatch(string str, bool ignoreCase)
+  | GlobMatch(string glob, bool ignoreCase)
+  | RegexMatch(string re, bool ignoreCase)
   | Readable
   | Writable
   | Executable
