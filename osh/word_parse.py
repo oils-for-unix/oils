@@ -638,7 +638,7 @@ class WordParser(WordEmitter):
             p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
                   tok)
 
-          if self.token_type == Id.Char_Hex and len(self.cur_token.tval) != 4:
+          if self.token_type == Id.Char_Hex and self.cur_token.length != 4:
             # disallow \xH
             p_die(r'Invalid hex escape in Oil string (must be \xHH)', tok)
 

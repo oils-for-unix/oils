@@ -538,9 +538,6 @@ class CommandEvaluator(object):
         # command_e.BareDecl
         redirects = []
 
-    if redirects is None:  # To save allocations, nodes don't need this
-      return []
-
     result = []  # type: List[redirect]
     for redir in redirects:
       result.append(self._EvalRedirect(redir))
@@ -1595,7 +1592,7 @@ class CommandEvaluator(object):
     with tagswitch(node) as case:
       if case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
-        if node.redirects is None or len(node.redirects) == 0:
+        if len(node.redirects) == 0:
           # Note: technically we could optimize this into BraceGroup with
           # redirects.  Some shells appear to do that.
           if 0:

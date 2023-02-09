@@ -654,7 +654,7 @@ class CommandParser(object):
     return redir(op_tok, where, cast(compound_word, arg_word))
 
   def _ParseRedirectList(self):
-    # type: () -> Optional[List[redir]]
+    # type: () -> List[redir]
     """Try parsing any redirects at the cursor.
 
     This is used for blocks only, not commands.
@@ -664,7 +664,7 @@ class CommandParser(object):
       self._Peek()
 
       # This prediction needs to ONLY accept redirect operators.  Should we
-      # make them a separate TokeNkind?
+      # make them a separate Kind?
       if self.c_kind != Kind.Redir:
         break
 
@@ -672,10 +672,7 @@ class CommandParser(object):
       redirects.append(node)
       self._Next()
 
-    if len(redirects):
-      return redirects
-    else:
-      return None  # save allocations by making None equivalent to []
+    return redirects
 
   def _ScanSimpleCommand(self):
     # type: () -> Tuple[List[redir], List[compound_word], Optional[ArgList], Optional[BlockArg]]
