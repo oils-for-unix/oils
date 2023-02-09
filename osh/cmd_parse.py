@@ -654,12 +654,10 @@ class CommandParser(object):
     return redir(op_tok, where, cast(compound_word, arg_word))
 
   def _ParseRedirectList(self):
-    # type: () -> List[redir]
+    # type: () -> Optional[List[redir]]
     """Try parsing any redirects at the cursor.
 
     This is used for blocks only, not commands.
-
-    Return None on error.
     """
     redirects = []  # type: List[redir]
     while True:
@@ -673,7 +671,11 @@ class CommandParser(object):
       node = self.ParseRedirect()
       redirects.append(node)
       self._Next()
-    return redirects
+
+    if len(redirects):
+      return redirects
+    else:
+      return None  # save allocations by making None equivalent to []
 
   def _ScanSimpleCommand(self):
     # type: () -> Tuple[List[redir], List[compound_word], Optional[ArgList], Optional[BlockArg]]

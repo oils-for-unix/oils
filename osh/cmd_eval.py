@@ -538,9 +538,13 @@ class CommandEvaluator(object):
         # command_e.BareDecl
         redirects = []
 
+    if redirects is None:  # To save allocations, nodes don't need this
+      return []
+
     result = []  # type: List[redirect]
     for redir in redirects:
       result.append(self._EvalRedirect(redir))
+
     return result
 
   def _RunSimpleCommand(self, cmd_val, cmd_st, do_fork):
