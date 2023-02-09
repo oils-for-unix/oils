@@ -1099,8 +1099,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if not self.exec_opts.nounset():
       return value.Str('')
 
-    tval = lexer.TokenVal(token)
-    name = tval[1:] if tval.startswith('$') else tval
+    tok_str = lexer.TokenVal(token)
+    name = tok_str[1:] if tok_str.startswith('$') else tok_str
     e_die('Undefined variable %r' % name, token)
 
   def _EmptyMaybeStrArrayOrError(self, token):

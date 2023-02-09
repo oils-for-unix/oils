@@ -89,6 +89,9 @@ record-oils-cpp() {
       -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
       -D 2
     )
+    # If we don't filter at all, then it's huge
+    # flags=()
+
   else
     # It's faster to filter just these function calls
     flags=(
@@ -122,10 +125,10 @@ record-oils-cpp() {
     # -F 'StrFromC' -A 'StrFromC@arg1' -A 'StrFromC@arg2'
   fi
 
-  local oils-for-unix=_bin/cxx-uftrace/oils-for-unix 
-  ninja $oils-for-unix
+  local bin=_bin/cxx-uftrace/osh
+  ninja $bin
 
-  time uftrace record -d $out_dir "${flags[@]}" $oils-for-unix "$@"
+  time uftrace record -d $out_dir "${flags[@]}" $bin "$@"
   #time uftrace record $oils-for-unix "$@"
 
   ls -d $out_dir/
@@ -158,31 +161,37 @@ record-execute() {
   local unfiltered=${2:-}
   mkdir -p $out_dir
 
-  #local cmd=( benchmarks/compute/fib.sh 10 44 )
-  local cmd=( benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+  local -a cmd=( benchmarks/compute/fib.sh 10 44 )
+  #local -a cmd=( benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
 
   record-oils-cpp $out_dir "$unfiltered" "${cmd[@]}"
 }
 
-by-call() {
-  uftrace report -s call
+run-suite() {
+  record-parse
+  record-execute
+
+  echo 'PARSE (abuild)'
+  frequent-calls _tmp/uftrace/parse.data
+  echo
+
+  echo 'EXECUTE (fib)'
+  frequent-calls _tmp/uftrace/execute.data
+  echo
 }
 
-# Results: Tuple, List / Str are more common any individual ASDL types.
-#
-# Most common:
-# word_t / word_part_t base constructor, which does nothing
-# syntax_asdl::{Token,line_span}
-# And then compound_word is fairly far down.
+frequent-calls() {
+  ### Histogram
 
-# NOTE: requires uftrace -00
-important-types() {
-  local pat='Str::Str|List::List|Tuple.::Tuple|syntax_asdl::'
+  local out_dir=$1
+  uftrace report -d $out_dir -s call
+}
 
-  # syntax_asdl ... ::tag_() is very common, but we don't care here
-  # don't track sum types constructors like word_t::word_t because they're
-  # empty
-  uftrace report -s call | egrep "$pat" | egrep -v '::tag_|_t::'
+call-graph() {
+  ### Time-based trace
+
+  local out_dir=$1
+  uftrace graph -d $out_dir
 }
 
 # Hm this shows EVERY call stack that produces a list!
@@ -190,36 +199,9 @@ important-types() {
 # uftrace graph usage shown here
 # https://github.com/namhyung/uftrace/wiki/Tutorial
 
-# Hot list creation:
-# - _ScanSimpleCommand
-# - _MakeSimpleCommand
-#   - _BraceDetect
-#   - _TildeDetect
-# - _ReadCompoundWord which instantiates compound_word
-# - _MaybeExpandAliases
-#
-# could you insert manual deletion here?
-# or reuse members?  
-
-# TODO: It would actually be better to get the DIRECT ancestor only, not the
-# full strack trace.
-
-list-creation() {
-  #uftrace graph -f total,self,call 'List::List'
-  # This shows how often List::List is called from each site
-  uftrace graph -C 'List::List'
-}
-
-# Not many dicts!
-dict-creation() {
-  uftrace graph -C 'Dict::Dict'
-}
-
-str-creation() {
-  uftrace graph -C 'Str::Str'
-}
-
 replay-alloc() {
+  local out_dir=$1
+
   # call graph
   #uftrace graph -C 'MarkSweepHeap::Allocate'
 
@@ -271,7 +253,7 @@ report() {
 #
 # - all heap allocations vs. all string allocations (include StrFromC())
 #   - obj length vs. string length
-#   - the -D 1 arg interfers?
+#   - the -D 1 arg interferes?
 # - parse workload vs evaluation workload (benchmarks/compute/*.sh)
 
 "$@"

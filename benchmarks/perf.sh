@@ -185,7 +185,7 @@ profile-osh-parse() {
 
   local mode=${1:-graph}
 
-  local bin='_bin/cxx-opt/oils-for-unix'
+  local bin='_bin/cxx-opt/osh'
   ninja $bin
 
   local file=benchmarks/testdata/configure
@@ -200,6 +200,17 @@ profile-osh-parse() {
 
   # Run again with GC stats
   time OIL_GC_STATS=1 "${cmd[@]}"
+}
+
+profile-execute() {
+  local mode=${1:-graph}
+
+  local bin='_bin/cxx-opt/osh'
+  ninja $bin
+
+  local -a cmd=( $bin benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+
+  profile-cpp 'parse-help' $mode "${cmd[@]}"
 }
 
 profile-example() {

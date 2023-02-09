@@ -161,4 +161,25 @@ revert() {
   done
 }
 
+#
+# Things we want to get rid of
+#
+
+# 117 tval, 95 outside tests
+tval() {
+  #grep -n -w tval */*.py | grep -v _test.py | tee _tmp/tval
+  grep -n -w tval */*_eval.py | grep -v _test.py | tee _tmp/tval
+}
+
+# 869 spid, 855 outside tests.  Wow!
+spid() {
+  egrep -n 'span_id|spid' */*.py | grep -v _test.py | tee _tmp/spid
+}
+
+# We also want to get rid of 2 instances of 'attributes' in frontend/syntax.asdl
+#
+# - Every node in command_t has a left token
+# - Every node in word_par_t has a left AND a right -- so we can look up the
+#   right most span for a word
+
 "$@"
