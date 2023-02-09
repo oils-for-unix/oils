@@ -1450,6 +1450,7 @@ class CommandEvaluator(object):
     # in the redirect word:
     #     { echo one; echo two; } > >(tac)
 
+    # TODO: Remove 4 allocations in the common case: pipelines and process sub
     cmd_st = CommandStatus.Create()
     process_sub_st = StatusArray.Create()
 

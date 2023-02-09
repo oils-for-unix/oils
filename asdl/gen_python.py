@@ -258,7 +258,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
       typ = field.typ.children[0]
 
-      self.Emit('  if self.%s:  # ArrayType' % field.name)
+      self.Emit('  if self.%s is not None:  # array' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
       child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
@@ -268,7 +268,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif field.IsMaybe():
       typ = field.typ.children[0]
 
-      self.Emit('  if self.%s is not None:  # MaybeType' % field.name)
+      self.Emit('  if self.%s is not None:  # maybe' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
@@ -283,7 +283,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('  if self.%s:  # ArrayType' % field.name)
+      self.Emit('  if self.%s is not None:  # map' % field.name)
       self.Emit('    m = hnode.Leaf("map", color_e.OtherConst)')
       self.Emit('    %s = hnode.Array([m])' % out_val_name)
       self.Emit('    for %s, %s in self.%s.iteritems():' % (k, v, field.name))

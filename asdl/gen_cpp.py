@@ -492,7 +492,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
       typ = field.typ.children[0]
 
-      self.Emit('if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
+      self.Emit('if (this->%s != nullptr) {  // array' % (field.name))
       self.Emit('  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>());' % out_val_name)
       item_type = _GetCppType(typ)
       self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
@@ -507,7 +507,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     elif field.IsMaybe():
       typ = field.typ.children[0]
 
-      self.Emit('if (this->%s) {  // MaybeType' % field.name)
+      self.Emit('if (this->%s) {  // maybe' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
       self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
       self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' % (field.name, out_val_name))
@@ -526,7 +526,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('if (this->%s) {' % field.name)
+      self.Emit('if (this->%s) {  // map' % field.name)
       # TODO: m can be a global constant!
       self.Emit('  auto m = Alloc<hnode__Leaf>(StrFromC("map"), color_e::OtherConst);')
       self.Emit('  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>({m}));' % out_val_name)
