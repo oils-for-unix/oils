@@ -116,15 +116,15 @@ def _IsManagedType(typ):
 
 
 def _DefaultValue(typ):
+  """ Values that the ::Create() constructor passes. """
   type_name = typ.name
 
-  # Note: NewDict and NewList makes constructors INVALID at the top level.
-  if type_name == 'map':
+  if type_name == 'map':  # TODO: nullptr
     k_type = _GetCppType(typ.children[0])
     v_type = _GetCppType(typ.children[1])
     return 'NewDict<%s, %s>()' % (k_type, v_type)
 
-  elif type_name == 'array':
+  elif type_name == 'array':  # TODO: nullptr
     c_type = _GetCppType(typ.children[0])
     return 'NewList<%s>()' % (c_type)
 
@@ -203,7 +203,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def __init__(self, f, e_suffix=True,
                pretty_print_methods=True,
-               init_zero_n=False,
                simple_int_sums=None,
                debug_info=None):
     """
@@ -214,7 +213,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     visitor.AsdlVisitor.__init__(self, f)
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
-    self.init_zero_n = init_zero_n
     self.simple_int_sums = simple_int_sums or []
     self.debug_info = debug_info if debug_info is not None else {}
 
@@ -414,28 +412,17 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit('  }')
     self.Emit('')
 
-    # Define constructor with ZERO args.  And don't emit two constructors for #
-    # types with no fields.
+    # Define static constructor with ZERO args.  Don't emit for types with no
+    # fields.
     if ast_node.fields:
-      if self.init_zero_n:
-        init_args = []
-        for field in ast_node.fields:
-          init_args.append(_DefaultValue(field.typ))
+      init_args = []
+      for field in ast_node.fields:
+        init_args.append(_DefaultValue(field.typ))
 
-        self.Emit('  static %s* Create() { ' % class_name, depth)
-        self.Emit('    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)), depth)
-        self.Emit('  }')
-        self.Emit('')
-      else:
-        default_inits = [header_init]
-        for field in all_fields:
-          default = _DefaultValue(field.typ)
-          default_inits.append('%s(%s)' % (field.name, default))
-
-        self.Emit('  %s()' % class_name, depth)
-        self.Emit('      : %s {' % FieldInitJoin(default_inits), depth, reflow=False)
-        self.Emit('  }')
-        self.Emit('')
+      self.Emit('  static %s* Create() { ' % class_name, depth)
+      self.Emit('    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)), depth)
+      self.Emit('  }')
+      self.Emit('')
 
     if self.pretty_print_methods:
       for abbrev in PRETTY_METHODS:

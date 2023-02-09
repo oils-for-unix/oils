@@ -95,73 +95,17 @@ def IsHeapAllocated(typ):
   return False
 
 
-def _DefaultValue(typ):
-  """
-  Given an ASDL type, return the default value in Python.
-
-  TODO: Reconcile this with C++.  Many of the commented out values below BREAK
-  UNIT AND SPEC TESTS.  The interpreter should be written so that isn't the
-  case.
-  """
-  type_name = typ.name
-
-  default = None
-
-  if type_name == 'map':
-    # need this cast for MyPy
-    default = "cast('%s', OrderedDict())" % _MyPyType(typ)
-
-  elif type_name == 'array':
-    default = '[]'
-
-  elif type_name == 'maybe':
-    child_typ = typ.children[0]
-    if child_typ.name == 'string':
-      default = "''"
-    else:
-      default = 'None'
-
-  elif type_name == 'int':
-    #default = '-1'
-    pass
-
-  elif type_name == 'id':  # hard-coded HACK
-    #default = '-1'
-    pass
-
-  elif type_name == 'bool':
-    #default = 'False'
-    pass
-  elif type_name == 'float':
-    #default = '0.0'  # or should it be NaN?
-    pass
-
-  elif type_name == 'string':
-    #default = "''"
-    pass
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    sum_type = typ.resolved
-    # Just make it the first variant.  We could define "Undef" for
-    # each enum, but it doesn't seem worth it.
-    default = '%s_e.%s' % (type_name, sum_type.types[0].name)
-
-  return default
-
-
 def _DefaultValue2(typ):
-  """
-  TODO: Delete _DefaultValue and replace it with this
-  """
+  """Values that the static Create() constructor passes."""
   type_name = typ.name
 
   default = 'None'
 
-  if type_name == 'map':
+  if type_name == 'map':  # TODO: Consider None
     # need this cast for MyPy
     default = "cast('%s', OrderedDict())" % _MyPyType(typ)
 
-  elif type_name == 'array':
+  elif type_name == 'array':  # TODO: change to None
     default = '[]'
 
   elif type_name == 'maybe':
@@ -234,14 +178,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
                pretty_print_methods=True, py_init_n=False,
-               py_init_zero_n=True, simple_int_sums=None):
+               simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.py_init_n = py_init_n
-    self.py_init_zero_n = py_init_zero_n
 
     # For Id to use different code gen.  It's used like an integer, not just
     # like an enum.
@@ -372,35 +315,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     quoted_fields = repr(tuple(field_names))
     self.Emit('  __slots__ = %s' % quoted_fields)
-
     self.Emit('')
 
     #
     # __init__
     #
 
-    if self.py_init_n or self.py_init_zero_n:
-      args = [f.name for f in ast_node.fields]
-      args.extend('%s=None' % a.name for a in attributes)
-    else:
-      # LEGACY
-      args = ['%s=None' % f.name for f in all_fields]
+    args = [f.name for f in ast_node.fields]
+    args.extend('%s=None' % a.name for a in attributes)
 
     self.Emit('  def __init__(self, %s):' % ', '.join(args))
 
     arg_types = []
     for f in all_fields:
       t = _MyPyType(f.typ)
-      if self.py_init_n:
-        pass
-      elif self.py_init_zero_n:
-        if IsHeapAllocated(f.typ):
-          t = 'Optional[%s]' % t
-      else:
-        # Old calculation with too many Optionals
-        if f.typ.name != 'maybe':  # already Optional
-          t = 'Optional[%s]' % t
-
+      if not self.py_init_n and IsHeapAllocated(f.typ):
+        t = 'Optional[%s]' % t
       arg_types.append(t)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
@@ -410,25 +340,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # TODO: Use the field_desc rather than the parse tree, for consistency.
     for f in all_fields:
-      if self.py_init_n or self.py_init_zero_n:
-        expr_str = ''
+      expr_str = ''
 
-        # Special initialization for attributes .spids=[] -- only in
-        # syntax.asdl
-        if f in attributes:
-          d_str = _DefaultValue(f.typ)
-          if d_str:
-            expr_str = ' if %s is not None else %s' % (f.name, d_str)
-      else:
-        d_str = _DefaultValue(f.typ)
-
-        # PROBLEM: Optional ints are not supported.  I don't want to add if
-        # statements checking against None.  And 0 and -1 are valid values.
-
-        if d_str:
-          expr_str = ' if %s is not None else %s' % (f.name, d_str)
-        else:
-          expr_str = ''
+      # Special initialization for attributes .spids=[] -- only in
+      # syntax.asdl
+      if f in attributes:
+        assert f.typ.name == 'array'
+        expr_str = ' if %s is not None else []' % f.name
 
       # don't wrap the type comment
       self.Emit('    self.%s = %s%s' % (f.name, f.name, expr_str), reflow=False)
@@ -437,7 +355,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     pretty_cls_name = class_name.replace('__', '.')  # used below
 
-    if len(all_fields) and self.py_init_zero_n:
+    if len(all_fields) and not self.py_init_n:
       self.Emit('  @staticmethod')
       self.Emit('  def Create():')
       self.Emit('    # type: () -> %s' % class_name)

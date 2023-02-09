@@ -151,7 +151,6 @@ namespace %s {
 
       debug_info = {}
       v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=opts.pretty_print_methods,
-                                   init_zero_n=opts.init_zero_n,
                                    simple_int_sums=_SIMPLE,
                                    debug_info=debug_info)
       v2.VisitModule(schema_ast)
@@ -273,7 +272,6 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
     v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
                                   pretty_print_methods=opts.pretty_print_methods,
                                   py_init_n=opts.py_init_n,
-                                  py_init_zero_n=opts.init_zero_n,
                                   simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 

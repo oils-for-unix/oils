@@ -90,9 +90,7 @@ def DefineTargets(ru):
 
   # ASDL schema that examples/parse.py depends on
   ru.asdl_library(
-      'mycpp/examples/expr.asdl',
-      init_zero_n = True,
-      )
+      'mycpp/examples/expr.asdl')
 
 
 #

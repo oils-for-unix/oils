@@ -137,8 +137,7 @@ def NinjaGraph(ru):
 
   ru.asdl_library(
       'frontend/syntax.asdl',
-      deps = ['//frontend/id_kind.asdl'],
-      init_zero_n = True)
+      deps = ['//frontend/id_kind.asdl'])
 
   ru.cc_binary(
       'frontend/syntax_asdl_test.cc',

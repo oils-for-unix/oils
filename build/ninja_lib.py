@@ -408,8 +408,7 @@ class Rules(object):
     return sources
 
   def asdl_library(self, asdl_path, deps = None,
-      pretty_print_methods=True,
-      init_zero_n=False):
+      pretty_print_methods=True):
 
     deps = deps or []
 
@@ -429,9 +428,6 @@ class Rules(object):
     else:
       outputs = [out_header]
       asdl_flags += '--no-pretty-print-methods'
-
-    if init_zero_n:
-      asdl_flags += ' --init-zero-N'
 
     debug_mod = prefix + '_debug.py'
     outputs.append(debug_mod)

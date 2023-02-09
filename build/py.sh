@@ -172,9 +172,9 @@ py-codegen() {
   # hnode.asdl has REQUIRED fields so it's --py-init-N
   gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-N
 
-  gen-asdl-py 'frontend/types.asdl' --init-zero-N
+  gen-asdl-py 'frontend/types.asdl'
   # depends on syntax.asdl
-  gen-asdl-py 'core/runtime.asdl' --init-zero-N
+  gen-asdl-py 'core/runtime.asdl'
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # dependency on bool_arg_type_e
@@ -183,19 +183,19 @@ py-codegen() {
 
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?
-  gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev' --init-zero-N
+  gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev'
 
   # For tests
-  gen-asdl-py 'mycpp/examples/expr.asdl' --init-zero-N
+  gen-asdl-py 'mycpp/examples/expr.asdl'
 }
 
 py-asdl-examples() {
   # dependency of typed_demo
-  gen-asdl-py 'asdl/examples/demo_lib.asdl' --init-zero-N
-  gen-asdl-py 'asdl/examples/typed_demo.asdl' --init-zero-N
+  gen-asdl-py 'asdl/examples/demo_lib.asdl'
+  gen-asdl-py 'asdl/examples/typed_demo.asdl'
 
-  gen-asdl-py 'asdl/examples/shared_variant.asdl' --init-zero-N
-  gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev' --init-zero-N
+  gen-asdl-py 'asdl/examples/shared_variant.asdl'
+  gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
 }
 
 oil-cpp() {
