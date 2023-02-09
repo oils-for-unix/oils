@@ -95,15 +95,14 @@ def IsHeapAllocated(typ):
   return False
 
 
-def _DefaultValue2(typ):
+def _DefaultValue(typ):
   """Values that the static Create() constructor passes."""
   type_name = typ.name
 
   default = 'None'
 
-  if type_name == 'map':  # TODO: Consider None
-    # need this cast for MyPy
-    default = "cast('%s', OrderedDict())" % _MyPyType(typ)
+  if type_name == 'map':
+    return 'None'
 
   elif type_name == 'array':  # TODO: change to None
     default = '[]'
@@ -361,7 +360,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    # type: () -> %s' % class_name)
       default_vals = []
       for f in all_fields:
-        d_str = _DefaultValue2(f.typ)
+        d_str = _DefaultValue(f.typ)
         default_vals.append(d_str)
 
       self.Emit('    return %s(%s)' % (class_name, ', '.join(default_vals)))

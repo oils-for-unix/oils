@@ -119,10 +119,8 @@ def _DefaultValue(typ):
   """ Values that the ::Create() constructor passes. """
   type_name = typ.name
 
-  if type_name == 'map':  # TODO: nullptr
-    k_type = _GetCppType(typ.children[0])
-    v_type = _GetCppType(typ.children[1])
-    return 'NewDict<%s, %s>()' % (k_type, v_type)
+  if type_name == 'map':
+    return 'nullptr'
 
   elif type_name == 'array':  # TODO: nullptr
     c_type = _GetCppType(typ.children[0])
