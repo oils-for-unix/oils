@@ -21,9 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
-//#include "cpp/dumb_alloc.h"
 #include "mycpp/runtime.h"
-#include "mycpp/smartptr.h"
 #include "vendor/greatest.h"
 
 using std::unordered_map;

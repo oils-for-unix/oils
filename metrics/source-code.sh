@@ -161,7 +161,7 @@ cpp-counts() {
     "$@"
 
   # Remove code that isn't "in production"
-  ls mycpp/*.{cc,h} | egrep -v '_test.cc|cheney_heap|bump_leak_heap|smartptr' \
+  ls mycpp/*.{cc,h} | egrep -v '_test.cc|cheney_heap|bump_leak_heap' \
     | $count \
     'Garbage-Collected Runtime' \
     'Uses a simple Cheney / semi-space collector.' \
