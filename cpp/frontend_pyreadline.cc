@@ -252,9 +252,7 @@ static void readline_cb(char* line) {
   rl_callback_handler_remove();
 }
 
-// See the following for some loose documentation on the approach here:
-// https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface-Example
-Str* readline(Str* prompt) {
+static Str* readline_tty(Str* prompt) {
   fd_set fds;
   FD_ZERO(&fds);
   rl_callback_handler_install(prompt->data(), readline_cb);
@@ -295,6 +293,29 @@ Str* readline(Str* prompt) {
   }
 
   return nullptr;
+}
+
+static Str* readline_no_tty(Str* prompt) {
+  mylib::Writer* w = mylib::Stderr();
+  w->write(prompt);
+  w->flush();
+
+  mylib::LineReader* r = mylib::Stdin();
+  Str* s = r->readline();
+  if (s != kEmptyString) {
+    return s;
+  }
+
+  return nullptr;
+}
+
+// See the following for some loose documentation on the approach here:
+// https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface-Example
+Str* readline(Str* prompt) {
+  if (!mylib::Stdin()->isatty() || !mylib::Stdout()->isatty()) {
+    return readline_no_tty(prompt);
+  }
+  return readline_tty(prompt);
 }
 
 }  // namespace py_readline
