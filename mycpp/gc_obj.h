@@ -6,7 +6,8 @@
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
                           // Cheney: Don't copy or scan.
-const int Opaque = 1;     // Mark and sweep, e.g. List<int>, Str.
+const int Opaque = 1;     // e.g. List<int>, Str
+                          // Mark and sweep, but don't trace children
                           // Cheney: Copy, but don't scan.
 const int FixedSize = 2;  // Consult field_mask for children
 const int Scanned = 3;    // Scan a contiguous range of children
@@ -14,6 +15,8 @@ const int Scanned = 3;    // Scan a contiguous range of children
 const int Forwarded = 4;  // For the Cheney algorithm.
 };                        // namespace HeapTag
 
+// These tags are mainly for debugging.  Oil is a statically typed
+// program, so we don't need runtime types in general.
 // This "enum" starts from the end of the valid type_tag range.
 // asdl/gen_cpp.py starts from 1 for variants, or 64 for shared variants.
 namespace TypeTag {
@@ -23,7 +26,7 @@ const int Slab = 125;
 const int Tuple = 124;
 };  // namespace TypeTag
 
-const int kIsHeader = 1;
+const int kIsHeader = 1;  // for is_header bit
 
 const unsigned kZeroMask = 0;  // for types with no pointers
 
@@ -40,7 +43,7 @@ struct ObjHeader {
                            // Overlaps with RawObject::points_to_header
   unsigned type_tag : 7;   // TypeTag, ASDL variant / shared variant
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  unsigned obj_id : 24;  // For some user-defined classes, so max 16 fields
+  unsigned obj_id : 24;  // 16 Mi live objects.  TODO: Change to 30 bits
 #else
   unsigned field_mask : 24;  // Cheney needs field_maks AND obj_len
 #endif
@@ -49,13 +52,14 @@ struct ObjHeader {
   unsigned heap_tag : 2;                  // HeapTag::Opaque, etc.
   unsigned u_mask_npointers_strlen : 30;  // Mark-sweep: derive Str length, Slab
                                           // length
+                                          // TODO: Move Str length to Str object
 #else
   unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
 #endif
 };
 
-// TODO: we could determine the max statically!
+// TODO: we could determine the max of all objects statically!
 const int kFieldMaskBits = 16;
 
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
@@ -177,7 +181,7 @@ class LayoutFixed {
  public:
   ObjHeader header_;
   // only the entries denoted in field_mask will be valid
-  RawObject* children_[16];
+  RawObject* children_[kFieldMaskBits];
 };
 
 #endif  // MYCPP_GC_OBJ_H
