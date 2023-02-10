@@ -16,6 +16,11 @@ source('benchmarks/common.R')
 
 options(stringsAsFactors = F)
 
+# For pretty printing
+commas = function(x) {
+  format(x, big.mark=',')
+}
+
 sourceUrl = function(path) {
   sprintf('https://github.com/oilshell/oil/blob/master/%s', path)
 }
@@ -917,7 +922,9 @@ AllocReport = function(in_dir, out_dir) {
 
   # median string length is 4, mean is 9.5!
   print(summary(strings))
+  Log('')
   print(summary(allocs))
+  Log('')
 
   # TODO: Output these totals PER WORKLOAD, e.g. parsing big/small, executing
   # big/small
@@ -927,17 +934,19 @@ AllocReport = function(in_dir, out_dir) {
   num_allocs = nrow(allocs)
   total_bytes = sum(allocs$obj_len)
 
-  Log('')
-  Log('%d total allocations, total bytes = %d', num_allocs, total_bytes)
-  Log('')
-
   allocs %>% group_by(obj_len) %>% count() %>% ungroup() %>%
     mutate(n_less_than = cumsum(n),
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
 
-  print(alloc_sizes %>% head(20))
-  print(alloc_sizes %>% tail(10))
+  Log('')
+  Log('All allocations')
+  print(alloc_sizes %>% head(10))
+  print(alloc_sizes %>% tail(5))
+
+  Log('')
+  Log('    %s total allocations, total bytes = %s', commas(num_allocs), commas(total_bytes))
+  Log('')
 
   #
   # Strings
@@ -945,14 +954,6 @@ AllocReport = function(in_dir, out_dir) {
 
   num_strings = nrow(strings)
   total_string_bytes = sum(strings$obj_len)
-
-  Log('')
-  Log('%d string allocations, total length = %d, total bytes = %d', num_strings,
-      sum(strings$str_len), total_string_bytes)
-  Log('')
-  Log('%.2f%% of allocs are strings', num_strings * 100 / num_allocs)
-  Log('%.2f%% of bytes are strings', total_string_bytes * 100 / total_bytes)
-  Log('')
 
   strings %>% group_by(str_len) %>% count() %>% ungroup() %>%
     mutate(n_less_than = cumsum(n),
@@ -962,9 +963,18 @@ AllocReport = function(in_dir, out_dir) {
   # Parse workload
   # 62% of strings <= 6 bytes
   # 84% of strings <= 14 bytes
-  print(string_lengths %>% head(16))
-  print(string_lengths %>% tail(10))
 
+  Log('String allocations')
+  print(string_lengths %>% head(16))
+  print(string_lengths %>% tail(5))
+
+  Log('')
+  Log('%s string allocations, total length = %s, total bytes = %s', commas(num_strings),
+      commas(sum(strings$str_len)), commas(total_string_bytes))
+  Log('')
+  Log('%.2f%% of allocs are strings', num_strings * 100 / num_allocs)
+  Log('%.2f%% of bytes are strings', total_string_bytes * 100 / total_bytes)
+  Log('')
 }
 
 main = function(argv) {

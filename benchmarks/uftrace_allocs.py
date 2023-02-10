@@ -82,7 +82,7 @@ def uftrace_begin(ctx):
 
   #print(ctx)
   args = ctx['cmds']
-  log('args %r', args)
+  #log('args %r', args)
   out_dir = args[0]
 
   global gStats
@@ -96,19 +96,23 @@ def uftrace_entry(ctx):
   func_name = ctx["name"]
 
   #print(ctx)
+  #log('f %r', func_name)
 
-  if func_name == 'List::List':
-    num_lists += 1
+  if func_name.startswith('MarkSweepHeap::Allocate'):
+    #log("MSW !!")
+    num_bytes = ctx['args'][0]
+    #log("MSW %d", num_bytes)
+    gStats.EmitAlloc(num_bytes)
+    num_allocs += 1
 
   # Get string size is available here
-  if func_name in ('NewStr', 'OverAllocatedStr'):
+  if func_name.startswith('NewStr') or func_name.startswith('OverAllocatedStr'):
     str_len = ctx['args'][0]
     gStats.EmitString(func_name, str_len)
 
-  if func_name == 'MarkSweepHeap::Allocate':
-    num_bytes = ctx['args'][0]
-    gStats.EmitAlloc(num_bytes)
-    num_allocs += 1
+  # TODO: Slab length, and allocation size
+  if func_name.startswith('List::List'):
+    num_lists += 1
 
 
 def uftrace_exit(ctx):

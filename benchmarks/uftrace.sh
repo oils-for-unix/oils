@@ -17,6 +17,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # R_PATH
+source devtools/common.sh  # banner
 
 readonly BASE_DIR=_tmp/uftrace
 
@@ -88,31 +89,34 @@ record-oils-cpp() {
 
   else
     # It's faster to filter just these function calls
+    # Need .* for --demangle full
+
     flags=(
       # low level allocation
-      -F 'MarkSweepHeap::Allocate' -A 'MarkSweepHeap::Allocate@arg2'
+      -F 'MarkSweepHeap::Allocate.*' -A 'MarkSweepHeap::Allocate.*@arg2'
 
       # typed allocation
-      -F 'Alloc'  # missing type info
+      -F 'Alloc<.*'  # missing type info
 
       # Flexible array allocation
       # arg 1 is str_len
-      -F 'NewStr' -A 'NewStr@arg1'
-      -F 'OverAllocatedStr' -A 'OverAllocatedStr@arg1'
-      -F 'Str::Str'
+      -F 'NewStr.*' -A 'NewStr.*@arg1'
+      -F 'OverAllocatedStr.*' -A 'OverAllocatedStr.*@arg1'
+      -F 'Str::Str.*'
       # arg1 is number of elements of type T
-      -F 'NewSlab' -A 'NewSlab@arg1'
-      -F 'Slab::Slab'
+      -F 'NewSlab<.*' -A 'NewSlab.*@arg1'
+      -F 'Slab::Slab<.*'
 
       # Fixed size header allocation
       # arg2 is the number of items to reserve
-      -F 'List::List'
-      -F 'List::reserve' -A 'List::reserve@arg2'
-      -F 'Dict::Dict'  # does not allocate
-      -F 'Dict::reserve' -A 'Dict::reserve@arg2'
+      -F 'List::List<.*'
+      -F 'List::reserve.*' -A 'List::reserve.*@arg2'
+      -F 'Dict::Dict<.*'  # does not allocate
+      -F 'Dict::reserve.*' -A 'Dict::reserve.*@arg2'
 
       # Common object
-      -F 'syntax_asdl::Token::Token'
+      # -F 'syntax_asdl::Token::Token'
+
       -D 1
     )
 
@@ -129,7 +133,7 @@ record-oils-cpp() {
   ninja $bin
 
   mkdir -p $out_dir
-  time uftrace record -d $out_dir "${flags[@]}" $bin "$@"
+  time uftrace record --demangle full -d $out_dir "${flags[@]}" $bin "$@"
 
   ls -d $out_dir/
   ls -l --si $out_dir/
@@ -200,7 +204,7 @@ frequent-calls() {
   ### Histogram
 
   local out_dir=$1
-  uftrace report -d $out_dir -s call
+  uftrace report -d $out_dir -s call --demangle full
 }
 
 call-graph() {
@@ -220,7 +224,7 @@ tsv-plugin() {
 
   local out_dir=_tmp/uftrace/$task/stage1
   mkdir -p $out_dir
-  time uftrace script -d $dir -S benchmarks/uftrace_allocs.py $out_dir
+  time uftrace script --demangle full -d $dir -S benchmarks/uftrace_allocs.py $out_dir
 
   wc -l $out_dir/*.tsv
 }
@@ -239,15 +243,22 @@ R-stats() {
 
 report-all() {
   print-tasks | while read task; do
-    echo "TASK $task"
+    banner "uftrace TASK $task"
+
+    frequent-calls $BASE_DIR/$task/raw
+
     echo
+  done
+}
 
-    # frequent-calls $BASE_DIR/$task/raw
+analyze-all() {
+  print-tasks | while read task; do
+    banner "uftrace TASK $task"
+    tsv-plugin $task
 
-    # tsv-plugin $task
+    # TODO: Join into a single TSV file
     R-stats $task
 
-    echo
   done
 }
 
