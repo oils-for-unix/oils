@@ -102,17 +102,21 @@ record-oils-cpp() {
       # arg 1 is str_len
       -F 'NewStr.*' -A 'NewStr.*@arg1'
       -F 'OverAllocatedStr.*' -A 'OverAllocatedStr.*@arg1'
-      -F 'Str::Str.*'
+
+      # This constructor doesn't matter.  We care about the interface in in
+      # mycpp/gc_alloc.h
+      # -F 'Str::Str.*'
+
       # arg1 is number of elements of type T
-      -F 'NewSlab<.*' -A 'NewSlab.*@arg1'
-      -F 'Slab::Slab<.*'
+      -F 'NewSlab<.*' -A 'NewSlab<.*@arg1'
+      # -F 'Slab<.*>::Slab.*'
 
       # Fixed size header allocation
       # arg2 is the number of items to reserve
-      -F 'List::List<.*'
-      -F 'List::reserve.*' -A 'List::reserve.*@arg2'
-      -F 'Dict::Dict<.*'  # does not allocate
-      -F 'Dict::reserve.*' -A 'Dict::reserve.*@arg2'
+      # -F 'List<.*>::List.*'
+      -F 'List<.*>::reserve.*' -A 'List<.*>::reserve.*@arg2'
+      # -F 'Dict<.*>::Dict.*'  # does not allocate
+      -F 'Dict<.*>::reserve.*' -A 'Dict<.*>::reserve.*@arg2'
 
       # Common object
       # -F 'syntax_asdl::Token::Token'
@@ -186,8 +190,8 @@ print-tasks() {
     # parse.configure-cpython
 
     parse.abuild
-    ex.bashcomp-parse-help
-    ex.compute-fib
+    #ex.bashcomp-parse-help
+    #ex.compute-fib
   )
 
   for task in "${tasks[@]}"; do

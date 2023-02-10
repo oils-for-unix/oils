@@ -35,6 +35,8 @@ Alloc() {
   }
 }
 """
+from __future__ import print_function
+
 import collections
 import os
 import sys
@@ -54,24 +56,46 @@ gOutDir = None
 class Stats(object):
 
   def __init__(self, out_dir):
+    p = os.path.join(out_dir, 'all-untyped.tsv')
+    self.untyped = open(p, 'w')
+    header = ['obj_len']
+    print('\t'.join(header), file=self.untyped)
+
+    p = os.path.join(out_dir, 'typed.tsv')
+    self.typed = open(p, 'w')
+    header = ['func_name']
+    print('\t'.join(header), file=self.typed)
+
     p = os.path.join(out_dir, 'strings.tsv')
     self.strings = open(p, 'w')
     header = ['func_name', 'str_len']
     print('\t'.join(header), file=self.strings)
 
-    p = os.path.join(out_dir, 'allocs.tsv')
-    self.allocs = open(p, 'w')
-    header = ['obj_len']
-    print('\t'.join(header), file=self.allocs)
+    # Note: we could extract Slab type
+    p = os.path.join(out_dir, 'slabs.tsv')
+    self.slabs = open(p, 'w')
+    header = ['func_name', 'slab_len']
+    print('\t'.join(header), file=self.slabs)
+
+    log('self.untyped %r', self.untyped)
+
+  def EmitUntyped(self, obj_len):
+    print('%d' % (obj_len), file=self.untyped)
+
+  def EmitTyped(self, func):
+    print('%s' % (func), file=self.typed)
 
   def EmitString(self, func, str_len):
     print('%s\t%d' % (func, str_len), file=self.strings)
 
-  def EmitAlloc(self, obj_len):
-    print('%d' % (obj_len), file=self.allocs)
+  def EmitSlab(self, func, slab_len):
+    print('%s\t%d' % (func, slab_len), file=self.slabs)
 
   def Close(self):
+    self.untyped.close()
+    self.typed.close()
     self.strings.close()
+    self.slabs.close()
 
 
 gStats = None
@@ -101,18 +125,32 @@ def uftrace_entry(ctx):
   if func_name.startswith('MarkSweepHeap::Allocate'):
     #log("MSW !!")
     num_bytes = ctx['args'][0]
-    #log("MSW %d", num_bytes)
-    gStats.EmitAlloc(num_bytes)
+    #log("MSW %r %s", num_bytes, type(num_bytes))
+    gStats.EmitUntyped(num_bytes)
     num_allocs += 1
+    return
+
+  # Get string size is available here
+  if 'Alloc<' in func_name:
+    # TODO: We don't have the size
+    gStats.EmitTyped(func_name)
+    return
 
   # Get string size is available here
   if func_name.startswith('NewStr') or func_name.startswith('OverAllocatedStr'):
+    #log("Str")
     str_len = ctx['args'][0]
+    #log("Str %d", str_len)
     gStats.EmitString(func_name, str_len)
+    return
 
-  # TODO: Slab length, and allocation size
-  if func_name.startswith('List::List'):
-    num_lists += 1
+  # Get string size is available here
+  if 'NewSlab<' in func_name:
+    #log('SLAB %r', func_name)
+    slab_len = ctx['args'][0]
+    #log('len %d', slab_len)
+    gStats.EmitSlab(func_name, slab_len)
+    return
 
 
 def uftrace_exit(ctx):

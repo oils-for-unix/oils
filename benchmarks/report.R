@@ -914,16 +914,29 @@ MyCppReport = function(in_dir, out_dir) {
 
 AllocReport = function(in_dir, out_dir) {
   # TSV file, not CSV
+  untyped = readTsv(file.path(in_dir, 'all-untyped.tsv'))
+  typed = readTsv(file.path(in_dir, 'typed.tsv'))
   strings = readTsv(file.path(in_dir, 'strings.tsv'))
-  allocs = readTsv(file.path(in_dir, 'allocs.tsv'))
+  slabs = readTsv(file.path(in_dir, 'slabs.tsv'))
 
   string_overhead = 13
   strings %>% mutate(obj_len = str_len + string_overhead) -> strings
 
   # median string length is 4, mean is 9.5!
+  Log('UNTYPED')
+  print(summary(untyped))
+  Log('')
+
+  Log('TYPED')
+  print(summary(typed))
+  Log('')
+
+  Log('STRINGS')
   print(summary(strings))
   Log('')
-  print(summary(allocs))
+
+  Log('SLABS')
+  print(summary(slabs))
   Log('')
 
   # TODO: Output these totals PER WORKLOAD, e.g. parsing big/small, executing
@@ -931,10 +944,10 @@ AllocReport = function(in_dir, out_dir) {
   #
   # And then zoom in on distributions as well
 
-  num_allocs = nrow(allocs)
-  total_bytes = sum(allocs$obj_len)
+  num_allocs = nrow(untyped)
+  total_bytes = sum(untyped$obj_len)
 
-  allocs %>% group_by(obj_len) %>% count() %>% ungroup() %>%
+  untyped %>% group_by(obj_len) %>% count() %>% ungroup() %>%
     mutate(n_less_than = cumsum(n),
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
@@ -946,6 +959,15 @@ AllocReport = function(in_dir, out_dir) {
 
   Log('')
   Log('    %s total allocations, total bytes = %s', commas(num_allocs), commas(total_bytes))
+  Log('')
+
+  Log('Typed allocations')
+
+  num_typed = nrow(typed)
+
+  Log('')
+  Log('%s typed allocs', commas(num_typed))
+  Log('%.2f%% of allocs are typed', num_typed * 100 / num_allocs)
   Log('')
 
   #
@@ -964,7 +986,7 @@ AllocReport = function(in_dir, out_dir) {
   # 62% of strings <= 6 bytes
   # 84% of strings <= 14 bytes
 
-  Log('String allocations')
+  Log('Str - NewStr() and OverAllocatedStr()')
   print(string_lengths %>% head(16))
   print(string_lengths %>% tail(5))
 
@@ -975,6 +997,35 @@ AllocReport = function(in_dir, out_dir) {
   Log('%.2f%% of allocs are strings', num_strings * 100 / num_allocs)
   Log('%.2f%% of bytes are strings', total_string_bytes * 100 / total_bytes)
   Log('')
+
+  #
+  # Slabs
+  #
+
+  Log('NewSlab()')
+
+  num_slabs = nrow(slabs)
+  slabs %>% group_by(slab_len) %>% count() %>% ungroup() %>%
+    mutate(n_less_than = cumsum(n),
+           percent = n_less_than * 100.0 / num_slabs) ->
+    slab_lengths
+
+  print(slab_lengths %>% head())
+  print(slab_lengths %>% tail(5))
+
+  total_slab_items = sum(slabs$slab_len)
+
+  Log('')
+  Log('%s slabs, total items = %s', commas(num_slabs),
+      commas(sum(slabs$slab_len)))
+  Log('%.2f%% of allocs are slabs', num_slabs * 100 / num_allocs)
+  Log('')
+
+
+  # Accounting for all allocations!
+  Log('Untyped: %s', commas(num_allocs))
+  Log('Typed + Str + Slab: %s', commas(num_typed + num_strings + num_slabs))
+
 }
 
 main = function(argv) {
