@@ -151,6 +151,20 @@ class VirtualLineReader(_Reader):
     return src_line, start_offset
 
 
+def _readline_no_tty(prompt):
+  # type: (str) -> str
+  w = mylib.Stderr()
+  w.write(prompt)
+  w.flush()
+
+  line = mylib.Stdin().readline()
+  if line is None or len(line) == 0:
+    # empty string == EOF
+    raise EOFError()
+
+  return line
+
+
 class InteractiveLineReader(_Reader):
   def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
     # type: (Arena, prompt.Evaluator, history.Evaluator, Readline, PromptState) -> None
@@ -186,11 +200,14 @@ class InteractiveLineReader(_Reader):
       self.prompt_str = self.prompt_ev.EvalFirstPrompt()
       self.prompt_state.SetLastPrompt(self.prompt_str)
 
+    line = None # type: Optional[str]
     try:
-      line = raw_input(self.prompt_str) + '\n'  # newline required
+      if not mylib.Stdout().isatty() or not mylib.Stdin().isatty():
+        line = _readline_no_tty(self.prompt_str) + '\n'  # newline required
+      else:
+        line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
       print('^D')  # bash prints 'exit'; mksh prints ^D.
-      line = None
 
     if line is not None:
       # NOTE: Like bash, OSH does this on EVERY line in a multi-line command,
