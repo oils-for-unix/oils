@@ -51,7 +51,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    Token, loc,
+    BoolOutParam, Token, loc,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal, assoc_pair,
 
@@ -698,15 +698,20 @@ class WordParser(WordEmitter):
 
     raise AssertionError(self.cur_token)
 
-  def _ReadUnquotedLeftParts(self, try_triple_quote, triple_out):
-    # type: (bool, List[bool]) -> word_part_t
-    """Read substitutions and quoted strings (for lex_mode_e.ShCommand)."""
+  def _ReadUnquotedLeftParts(self, triple_out):
+    # type: (Optional[BoolOutParam]) -> word_part_t
+    """Read substitutions and quoted strings (for lex_mode_e.ShCommand).
+
+    If triple_out is set, then we try parsing triple quoted strings, and set
+    its value to True if we got one.
+
+    """
     if self.token_type in (Id.Left_DoubleQuote, Id.Left_DollarDoubleQuote):
       # NOTE: $"" is a synonym for "" for now.
       # It would make sense if it added \n \0 \x00 \u{123} etc.  But that's not
       # what bash does!
       dq_part = self._ReadDoubleQuoted(self.cur_token)
-      if try_triple_quote and len(dq_part.parts) == 0:  # read empty word ""
+      if triple_out and len(dq_part.parts) == 0:  # read empty word ""
         if self.lexer.ByteLookAhead() == '"':
           self._Next(lex_mode_e.ShCommand)
           self._Peek()
@@ -714,7 +719,7 @@ class WordParser(WordEmitter):
           # Id.Left_TDoubleQuote, so that """ is the terminator
           left_dq_token = self.cur_token
           left_dq_token.id = Id.Left_TDoubleQuote
-          triple_out[0] = True  # let caller know we got it
+          triple_out.b = True  # let caller know we got it
           return self._ReadDoubleQuoted(left_dq_token)
 
       return dq_part
@@ -729,7 +734,7 @@ class WordParser(WordEmitter):
         new_id = Id.Left_TSingleQuote
 
       sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
-      if try_triple_quote and len(sq_part.tokens) == 0:  # read empty '' or r'' or $''
+      if triple_out and len(sq_part.tokens) == 0:  # read empty '' or r'' or $''
         if self.lexer.ByteLookAhead() == "'":
           self._Next(lex_mode_e.ShCommand)
           self._Peek()
@@ -738,7 +743,7 @@ class WordParser(WordEmitter):
           # Id.Left_TSingleQuote, so that ''' is the terminator
           left_sq_token = self.cur_token
           left_sq_token.id = new_id
-          triple_out[0] = True  # let caller know we got it
+          triple_out.b = True  # let caller know we got it
           return self._ReadSingleQuoted(left_sq_token, lexer_mode)
 
       return sq_part
@@ -1489,6 +1494,7 @@ class WordParser(WordEmitter):
     num_parts = 0
     brace_count = 0
     done = False
+    is_triple_quoted = None  # type: Optional[BoolOutParam]
 
     while not done:
       self._Peek()
@@ -1570,11 +1576,9 @@ class WordParser(WordEmitter):
 
         # Save allocation
         if try_triple_quote:
-          triple_out = [False]
-        else:
-          triple_out = None
+          is_triple_quoted = BoolOutParam(False)
 
-        part = self._ReadUnquotedLeftParts(try_triple_quote, triple_out)
+        part = self._ReadUnquotedLeftParts(is_triple_quoted)
         w.parts.append(part)
 
       # NOT done yet, will advance below
@@ -1628,7 +1632,7 @@ class WordParser(WordEmitter):
           'Word has unbalanced { }.  Maybe add a space or quote it like \{',
           loc.Word(w))
 
-    if triple_out[0] and num_parts > 1:
+    if is_triple_quoted and is_triple_quoted.b and num_parts > 1:
       p_die('Unexpected parts after triple quoted string', loc.WordPart(w.parts[-1]))
 
     return w

@@ -44,6 +44,9 @@
 
 module syntax
 {
+  -- More efficient than the List[bool] pattern we've been using
+  BoolOutParam = (bool b)
+
   -- core/main_loop.py
   parse_result = EmptyLine | Eof | Node(command cmd)
  
@@ -596,14 +599,3 @@ module syntax
     -- String substitutions are evaluated into literals
   | LiteralChars(string s, int spid)
 }
-
--- Ideas for even more precise error messages
-
--- A temporary value that's NOT stored in the LST.  It's the beginning or end
--- of a line_span / extent.
--- position = (int line_id, int col)
-
--- An extent represents the source locations of a word or word_part, which
--- may span multiple lines.  Encoded into LST with 'int exid'.
--- extent = (int s_line_id, int s_col,
-             int e_line_id, int e_col)
