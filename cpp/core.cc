@@ -8,6 +8,7 @@
 #include <pwd.h>   // passwd
 #include <signal.h>
 #include <sys/resource.h>  // getrusage
+#include <sys/select.h>    // select(), FD_ISSET, FD_SET, FD_ZERO
 #include <sys/stat.h>      // stat
 #include <sys/times.h>     // tms / times()
 #include <sys/utsname.h>   // uname
@@ -210,7 +211,11 @@ void PrintTimes() {
 }
 
 bool InputAvailable(int fd) {
-  FAIL(kNotImplemented);
+  fd_set fds;
+  FD_ZERO(&fds);
+  struct timeval timeout = {0};  // return immediately
+  FD_SET(fd, &fds);
+  return select(FD_SETSIZE, &fds, NULL, NULL, &timeout) > 0;
 }
 
 void SignalHandler::Update(int sig_num) {
