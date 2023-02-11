@@ -37,6 +37,12 @@ class List {
   static_assert(kSlabHeaderSize % sizeof(T) == 0,
                 "Slab header size should be multiple of item size");
 
+  // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
+  // Smallest non-empty List<int> should have about 8 items, or 7 without header
+  static const int kMinItems = 32 / sizeof(T);
+  static_assert(32 % sizeof(T) == 0,
+                "An integral number of items should fit in 32 bytes");
+
  public:
   List()
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(List<T>)),
@@ -101,6 +107,14 @@ class List {
   }
 
   DISALLOW_COPY_AND_ASSIGN(List)
+
+ private:
+  int RoundCapacity(int n) {
+    if (n < kMinItems) {
+      return kMinItems;
+    }
+    return RoundUp(n);
+  }
 };
 
 // "Constructors" as free functions since we can't allocate within a
@@ -224,11 +238,15 @@ void List<T>::reserve(int n) {
     return;
   }
 
-  // Example: The user asks for space for 7 integers.  Account for the
-  // header, and say we need 9 to determine the obj length.  9 is
-  // rounded up to 16, for a 64-byte obj.  Then we actually have space
-  // for 14 items.
-  capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+  // Slabs should be a total of 2^N bytes.  kCapacityAdjust is the number of
+  // items that the 8 byte header takes up: 1 for List<T*>, and 2 for
+  // List<int>.
+  //
+  // Example: the user reserves space for 3 integers.  The minimum number of
+  // items would be 5, which is rounded up to 8.  Subtract 2 again, giving 6,
+  // which leads to 8 + 6*4 = 32 byte Slab.
+
+  capacity_ = RoundCapacity(n + kCapacityAdjust) - kCapacityAdjust;
   auto new_slab = NewSlab<T>(capacity_);
 
   if (len_ > 0) {

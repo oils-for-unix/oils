@@ -12,9 +12,10 @@
 //
 // https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
 inline int RoundUp(int n) {
-  // minimum size
-  if (n < 8) {
-    return 8;
+  // Note: List::RoundCapacity refines this.  TODO: remove this check when we
+  // have Dict::RoundCapacity.
+  if (n < 4) {
+    return 4;
   }
 
   // TODO: what if int isn't 32 bits?

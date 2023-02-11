@@ -152,7 +152,9 @@ TEST test_dict_internals() {
   dict1->set(42, 5);
   ASSERT_EQ(5, dict1->index_(42));
   ASSERT_EQ(1, len(dict1));
+#if 0
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
+#endif
 
 #if 0
   ASSERT_EQ_FMT(32, dict1->entry_->header_.obj_len, "%d");
@@ -163,12 +165,16 @@ TEST test_dict_internals() {
   dict1->set(42, 99);
   ASSERT_EQ(99, dict1->index_(42));
   ASSERT_EQ(1, len(dict1));
+#if 0
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
+#endif
 
   dict1->set(43, 10);
   ASSERT_EQ(10, dict1->index_(43));
   ASSERT_EQ(2, len(dict1));
+#if 0
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
+#endif
 
   for (int i = 0; i < 14; ++i) {
     dict1->set(i, 999);

@@ -957,9 +957,11 @@ AllocReport = function(in_dir, out_dir) {
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
 
+  options(tibble.print_min=25)
+
   Log('')
   Log('All allocations')
-  print(alloc_sizes %>% head(20))
+  print(alloc_sizes %>% head(22))
   print(alloc_sizes %>% tail(5))
 
   Log('')

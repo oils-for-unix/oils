@@ -27,7 +27,8 @@ def NinjaGraph(ru):
         '//core/runtime.asdl',
         '//mycpp/runtime',
         ],
-      matrix = ninja_lib.COMPILERS_VARIANTS)
+      # Add tcmalloc for malloc_address_test
+      matrix = ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
 
   ru.cc_library(
       '//cpp/core', 

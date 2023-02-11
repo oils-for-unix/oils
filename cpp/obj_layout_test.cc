@@ -9,17 +9,17 @@ TEST sizeof_syntax() {
   // - Maybe recompute length on demand
   log("sizeof(Token) = %d", sizeof(syntax_asdl::Token));
   log("alignof(Token) = %d", alignof(syntax_asdl::Token));
-  log("alignof(Token*) = %d", alignof(syntax_asdl::Token*));
+  log("alignof(Token*) = %d", alignof(syntax_asdl::Token *));
 
   // Reordered to be 16 bytes
   log("sizeof(cell) = %d", sizeof(runtime_asdl::cell));
 
   // 24 bytes: std::vector
   log("sizeof(List<int>) = %d", sizeof(List<int>));
-  log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
+  log("sizeof(List<Str*>) = %d", sizeof(List<Str *>));
 
   log("sizeof(Slab<int>) = %d", sizeof(Slab<int>));
-  log("sizeof(Slab<Str*>) = %d", sizeof(Slab<Str*>));
+  log("sizeof(Slab<Str*>) = %d", sizeof(Slab<Str *>));
   // Right after object header
   log("kSlabHeaderSize = %d", kSlabHeaderSize);
 
@@ -34,8 +34,8 @@ TEST sizeof_syntax() {
   log("sizeof(Str) = %d", sizeof(Str));
   log("alignof(Str) = %d", alignof(Str));
 
-  log("sizeof(Str*) = %d", sizeof(Str*));
-  log("alignof(Str*) = %d", alignof(Str*));
+  log("sizeof(Str*) = %d", sizeof(Str *));
+  log("alignof(Str*) = %d", alignof(Str *));
 
   log("alignof(max_align_t) = %d", alignof(max_align_t));
 
@@ -90,23 +90,86 @@ TEST sizeof_core_types() {
   log("");
   log("sizeof(Str) = %zu", sizeof(Str));
   log("sizeof(List<int>) = %zu", sizeof(List<int>));
-  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str*>));
+  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str *>));
   log("sizeof(Tuple2<int, int>) = %zu", sizeof(Tuple2<int, int>));
-  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str*, Str*>));
+  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str *, Str *>));
   log("sizeof(Tuple3<int, int, int>) = %zu", sizeof(Tuple3<int, int, int>));
+
+  PASS();
+}
+
+TEST slab_growth() {
+  // TODO: All slabs should start out at 32
+
+  auto li = Alloc<List<int>>();
+  log("li->items_ %p", li->slab_);
+
+  // At some point it moves
+  for (int i = 0; i < 20; ++i) {
+    li->append(42);
+    int size = 8 + (sizeof(int) * li->capacity_);
+    log("%2d. cap %2d, size %3d, li->slab_ %p", i, li->capacity_, size,
+        li->slab_);
+  }
+
+  log("---");
+
+  auto lp = Alloc<List<Str *>>();
+  log("lp->items_ %p", lp->slab_);
+
+  // At some point it moves
+  for (int i = 0; i < 20; ++i) {
+    lp->append(kEmptyString);
+    int size = 8 + (sizeof(Str *) * lp->capacity_);
+    log("%2d. cap %2d, size %3d, lp->slab_ %p", i, lp->capacity_, size,
+        lp->slab_);
+  }
+
+  PASS();
+}
+
+TEST malloc_address_test() {
+  // glibc gives us blocks of 32 bytes!
+  // 1. diff = -240
+  // 2. diff = 94064
+  // 3. diff = 32
+  // 4. diff = 32
+  // 5. diff = 32
+
+  // tcmalloc has tighter packing!
+  // 1. diff = -8
+  // 2. diff = 32
+  // 3. diff = 8
+  // 4. diff = 8
+  // 5. diff = 8
+
+  char *p[20];
+  for (int i = 0; i < 20; ++i) {
+    p[i] = static_cast<char *>(malloc(1));
+    if (i != 0) {
+      char *prev = p[i - 1];
+      log("%2d. diff = %d", i, p[i] - prev);
+    }
+  }
+
+  for (int i = 0; i < 20; ++i) {
+    free(p[i]);
+  }
 
   PASS();
 }
 
 GREATEST_MAIN_DEFS();
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   gHeap.Init();
 
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(sizeof_syntax);
   RUN_TEST(sizeof_core_types);
+  RUN_TEST(slab_growth);
+  RUN_TEST(malloc_address_test);
 
   gHeap.CleanProcessExit();
 

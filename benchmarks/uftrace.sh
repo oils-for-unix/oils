@@ -189,9 +189,9 @@ print-tasks() {
     # This one is a bit big
     # parse.configure-cpython
 
-    parse.abuild
+    #parse.abuild
     #ex.bashcomp-parse-help
-    #ex.compute-fib
+    ex.compute-fib
   )
 
   for task in "${tasks[@]}"; do
@@ -200,7 +200,6 @@ print-tasks() {
 }
 
 measure-all() {
-  ninja
   print-tasks | run-tasks
 }
 
