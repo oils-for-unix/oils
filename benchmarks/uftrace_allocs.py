@@ -77,7 +77,12 @@ class Stats(object):
     header = ['func_name', 'slab_len']
     print('\t'.join(header), file=self.slabs)
 
-    log('self.untyped %r', self.untyped)
+    # For the actual number of items
+    p = os.path.join(out_dir, 'reserve.tsv')
+    self.reserve = open(p, 'w')
+    header = ['func_name', 'num_items']
+    print('\t'.join(header), file=self.reserve)
+
 
   def EmitUntyped(self, obj_len):
     print('%d' % (obj_len), file=self.untyped)
@@ -91,11 +96,15 @@ class Stats(object):
   def EmitSlab(self, func, slab_len):
     print('%s\t%d' % (func, slab_len), file=self.slabs)
 
+  def EmitReserve(self, func, num_items):
+    print('%s\t%d' % (func, num_items), file=self.reserve)
+
   def Close(self):
     self.untyped.close()
     self.typed.close()
     self.strings.close()
     self.slabs.close()
+    self.reserve.close()
 
 
 gStats = None
@@ -150,6 +159,12 @@ def uftrace_entry(ctx):
     slab_len = ctx['args'][0]
     #log('len %d', slab_len)
     gStats.EmitSlab(func_name, slab_len)
+    return
+
+  # Get string size is available here
+  if '::reserve(' in func_name:
+    num_items = ctx['args'][0]
+    gStats.EmitReserve(func_name, num_items)
     return
 
 

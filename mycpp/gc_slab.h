@@ -28,11 +28,10 @@ inline int RoundUp(int n) {
   return n;
 }
 
-// Opaque slab, e.g. for List<int>
 template <typename T>
 class Slab {
+  // Slabs of pointers are scanned; slabs of ints/bools are opaque.
  public:
-  // slabs of pointers are scanned; slabs of ints/bools are opaque.
   explicit Slab(unsigned num_items)
       : GC_SLAB(header_,
                 std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque,
@@ -46,8 +45,8 @@ class Slab {
 
 template <typename T, int N>
 class GlobalSlab {
-  // A template type with the same layout as Str with length N-1 (which needs a
-  // buffer of size N).  For initializing global constant instances.
+  // A template type with the same layout as Slab of length N.  For
+  // initializing global constant List.
  public:
   ObjHeader header_;
   T items_[N];

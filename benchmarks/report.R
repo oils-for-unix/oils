@@ -918,6 +918,7 @@ AllocReport = function(in_dir, out_dir) {
   typed = readTsv(file.path(in_dir, 'typed.tsv'))
   strings = readTsv(file.path(in_dir, 'strings.tsv'))
   slabs = readTsv(file.path(in_dir, 'slabs.tsv'))
+  reserve = readTsv(file.path(in_dir, 'reserve.tsv'))
 
   string_overhead = 13
   strings %>% mutate(obj_len = str_len + string_overhead) -> strings
@@ -939,6 +940,10 @@ AllocReport = function(in_dir, out_dir) {
   print(summary(slabs))
   Log('')
 
+  Log('RESERVE')
+  print(summary(reserve))
+  Log('')
+
   # TODO: Output these totals PER WORKLOAD, e.g. parsing big/small, executing
   # big/small
   #
@@ -954,7 +959,7 @@ AllocReport = function(in_dir, out_dir) {
 
   Log('')
   Log('All allocations')
-  print(alloc_sizes %>% head(10))
+  print(alloc_sizes %>% head(20))
   print(alloc_sizes %>% tail(5))
 
   Log('')
@@ -962,6 +967,11 @@ AllocReport = function(in_dir, out_dir) {
   Log('')
 
   Log('Typed allocations')
+
+  # TODO:
+  # - How many are List,T>?
+  # - How many List<T> have zero or one element?
+  #   - we might be able to tell zero elements because there's no associated Slab?
 
   num_typed = nrow(typed)
 
@@ -1035,11 +1045,34 @@ AllocReport = function(in_dir, out_dir) {
   Log('%.2f%% of allocs are slabs', num_slabs * 100 / num_allocs)
   Log('')
 
+  #
+  # reserve() calls
+  #
+
+  # There should be strictly more List::reserve() calls than NewSlab
+
+  Log('::reserve(int n)')
+  Log('')
+
+  num_reserve = nrow(reserve)
+  reserve %>% group_by(num_items) %>% count() %>% ungroup() %>%
+    mutate(n_less_than = cumsum(n),
+           percent = n_less_than * 100.0 / num_reserve) ->
+    reserve_args
+
+  Log('  Num Items')
+  print(reserve_args %>% head(15))
+  print(reserve_args %>% tail(5))
+  Log('')
+
+  Log('%s reserve() calls, total items = %s', commas(num_reserve),
+      commas(sum(reserve$num_items)))
+  Log('')
 
   # Accounting for all allocations!
   Log('Untyped: %s', commas(num_allocs))
   Log('Typed + Str + Slab: %s', commas(num_typed + num_strings + num_slabs))
-
+  Log('')
 }
 
 main = function(argv) {
