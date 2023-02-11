@@ -965,6 +965,12 @@ AllocReport = function(in_dir, out_dir) {
 
   num_typed = nrow(typed)
 
+  typed %>% group_by(func_name) %>% count() %>% ungroup() %>%
+    arrange(desc(n)) -> type_counts
+
+  print(type_counts %>% head(20))
+  print(type_counts %>% tail(5))
+
   Log('')
   Log('%s typed allocs', commas(num_typed))
   Log('%.2f%% of allocs are typed', num_typed * 100 / num_allocs)
@@ -1010,8 +1016,16 @@ AllocReport = function(in_dir, out_dir) {
            percent = n_less_than * 100.0 / num_slabs) ->
     slab_lengths
 
+  slabs %>% group_by(func_name) %>% count() %>% ungroup() %>%
+    arrange(desc(n)) -> slab_types
+
+  Log('  Lengths')
   print(slab_lengths %>% head())
   print(slab_lengths %>% tail(5))
+
+  Log('  Types')
+  print(slab_types %>% head())
+  print(slab_types %>% tail(5))
 
   total_slab_items = sum(slabs$slab_len)
 

@@ -1489,7 +1489,6 @@ class WordParser(WordEmitter):
     num_parts = 0
     brace_count = 0
     done = False
-    triple_out = [False]
 
     while not done:
       self._Peek()
@@ -1564,8 +1563,17 @@ class WordParser(WordEmitter):
         w.parts.append(part)
 
       elif self.token_kind == Kind.Left:
-        try_triple_quote = (self.parse_opts.parse_triple_quote() and
-            lex_mode == lex_mode_e.ShCommand and num_parts == 0)
+        try_triple_quote = (
+            self.parse_opts.parse_triple_quote() and
+            lex_mode == lex_mode_e.ShCommand and
+            num_parts == 0)
+
+        # Save allocation
+        if try_triple_quote:
+          triple_out = [False]
+        else:
+          triple_out = None
+
         part = self._ReadUnquotedLeftParts(try_triple_quote, triple_out)
         w.parts.append(part)
 

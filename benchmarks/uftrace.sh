@@ -255,14 +255,19 @@ report-all() {
   done
 }
 
-analyze-all() {
+export-all() {
+  # TODO: Join into a single TSV file
   print-tasks | while read task; do
     banner "uftrace TASK $task"
-    tsv-plugin $task
+    time tsv-plugin $task
+  done
+}
 
-    # TODO: Join into a single TSV file
-    R-stats $task
+analyze-all() {
 
+  print-tasks | while read task; do
+    banner "uftrace TASK $task"
+    time R-stats $task
   done
 }
 
