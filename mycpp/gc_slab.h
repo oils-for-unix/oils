@@ -6,18 +6,14 @@
 #include "mycpp/common.h"  // DISALLOW_COPY_AND_ASSIGN
 #include "mycpp/gc_obj.h"  // GC_OBJ
 
-// Return the size of a resizeable allocation.  For now we just round up by
-// powers of 2. This could be optimized later.  CPython has an interesting
-// policy in listobject.c.
+// Return the size of a resizeable allocation.  Just round up to the nearest
+// power of 2.  (CPython has an interesting policy in listobject.c.)
 //
 // https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
-inline int RoundUp(int n) {
-  // Note: List::RoundCapacity refines this.  TODO: remove this check when we
-  // have Dict::RoundCapacity.
-  if (n < 4) {
-    return 4;
-  }
+//
+// Used by List<T> and Dict<K, V>.
 
+inline int RoundUp(int n) {
   // TODO: what if int isn't 32 bits?
   n--;
   n |= n >> 1;

@@ -25,18 +25,13 @@ class GlobalList {
 
 template <typename T>
 class List {
-  // TODO: Move methods that don't allocate or resize: out of gc_heap?
-  // - allocate: append(), extend()
-  // - resize: pop(), clear()
-  // - neither: reverse(), sort() -- these are more like functions.  Except
-  //   sort() is a templated method that depends on type param T.
-  // - neither: index(), slice()
-
+  // Relate slab size to number of items (capacity)
   // 8 / 4 = 2 items, or 8 / 8 = 1 item
   static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
   static_assert(kSlabHeaderSize % sizeof(T) == 0,
                 "Slab header size should be multiple of item size");
 
+  // Relates to minimum Slab size.
   // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
   // Smallest non-empty List<int> should have about 8 items, or 7 without header
   static const int kMinItems = 32 / sizeof(T);

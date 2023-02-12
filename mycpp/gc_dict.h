@@ -37,6 +37,11 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
 
 template <class K, class V>
 class Dict {
+  // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
+  // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
+  // case is rare.
+  static const int kMinItems = 4;
+
  public:
   Dict()
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
@@ -121,6 +126,14 @@ class Dict {
   }
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
+
+ private:
+  int RoundCapacity(int n) {
+    if (n < kMinItems) {
+      return kMinItems;
+    }
+    return RoundUp(n);
+  }
 };
 
 template <typename K, typename V>
@@ -157,7 +170,7 @@ void Dict<K, V>::reserve(int n) {
   //
   if (capacity_ < n) {  // TODO: use load factor, not exact fit
     // calculate the number of keys and values we should have
-    capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+    capacity_ = RoundCapacity(n + kCapacityAdjust) - kCapacityAdjust;
 
     // TODO: This is SPARSE.  How to compute a size that ensures a decent
     // load factor?
