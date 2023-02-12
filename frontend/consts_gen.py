@@ -15,9 +15,11 @@ import sys
 
 from asdl import gen_cpp
 from core.pyerror import log
+from core import pyutil
 from frontend import id_kind_def
 from frontend import builtin_def
 from frontend import option_def
+from pylib import os_path
 
 
 def _CreateModule(id_spec, ids):
@@ -321,6 +323,8 @@ namespace consts {
 
 extern int NO_INDEX;
 
+extern Str* gVersion;
+
 int RedirDefaultFd(id_kind_asdl::Id_t id);
 types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
@@ -362,6 +366,15 @@ namespace consts {
 
 int NO_INDEX = 0;  // duplicated from frontend/consts.py
 """)
+
+      # Generate gVersion, which is read by pyutil::GetVersion()
+      this_dir = os_path.dirname(os_path.abspath(sys.argv[0]))
+      root_dir = os_path.join(this_dir, '..')  # ~/git/oilshell/oil
+      loader = pyutil._FileResourceLoader(root_dir)
+
+      version_str = pyutil.GetVersion(loader)
+      out('GLOBAL_STR(gVersion, "%s");' % version_str)
+      out('')
 
       # Note: could use opt_num:: instead of raw ints
       for name in LIST_INT:

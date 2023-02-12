@@ -34,6 +34,7 @@ def NinjaGraph(ru):
       '//cpp/core', 
       srcs = ['cpp/core.cc'],
       deps = [
+        '//frontend/consts',  # for gVersion
         '//frontend/syntax.asdl',
         '//mycpp/runtime',
         ],

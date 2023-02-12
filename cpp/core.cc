@@ -16,6 +16,8 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
+#include "_gen/frontend/consts.h"  // gVersion
+
 namespace pyos {
 
 static SignalHandler* gSignalHandler = nullptr;
@@ -340,7 +342,7 @@ _ResourceLoader* GetResourceLoader() {
 }
 
 Str* GetVersion(_ResourceLoader* loader) {
-  return StrFromC("TODO");
+  return consts::gVersion;
 }
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader) {
