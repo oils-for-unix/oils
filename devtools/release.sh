@@ -658,12 +658,18 @@ _tarball-links-row-html() {
 EOF
 
   # only release .xz for oils-for-unix
-  for name in oil-$version.tar.{xz,gz} oils-for-unix-$version.tar.xz; do
+  for name in oil-$version.tar.{xz,gz} \
+    oils-for-unix-$version.tar.xz \
+    oil-native-$version.tar.xz; do
+
     local url="/download/$name"  # The server URL
     local path="../oilshell.org__deploy/download/$name"
 
-    # The native version might not exist
+    # Don't show tarballs that don't exist
     if [[ $name == oils-for-unix-* && ! -f $path ]]; then
+      continue
+    fi
+    if [[ $name == oil-native-* && ! -f $path ]]; then
       continue
     fi
 
