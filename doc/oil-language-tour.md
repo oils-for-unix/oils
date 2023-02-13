@@ -97,7 +97,22 @@ They take rich Python-like expressions on the right:
     setvar x += 5          # Increment by 5
     echo $x                # => 6
 
-Oil also has Ruby-like blocks:
+    var mylist = [x, 7]    # two integers [6, 7]
+
+Expressions are often surrounded by `()`:
+
+    if (x > 0) {
+      echo 'positive'
+    }  # => positive
+
+    for i, item in (mylist) {  # 'mylist' is a variable, not a string
+      echo "[$i] item $item"
+    }
+    # =>
+    # [0] item 6
+    # [1] item 7
+
+Oil has Ruby-like blocks:
 
     cd /tmp {
       echo hi > greeting.txt  # file created inside /tmp
@@ -107,8 +122,8 @@ Oil also has Ruby-like blocks:
 
 And utilities to read and write JSON:
 
-    var d = {name: 'bob', age: 42}
-    json write (d)
+    var person = {name: 'bob', age: 42}
+    json write (person)
     # =>
     # {
     #   "name": "bob",
@@ -188,16 +203,12 @@ three varieties, and leading whitespace is stripped in a convenient way.
 
 ### Five Kinds of Substitution
 
-Oil has syntax for 5 types of substitution, all of which start with `$`.  That
-is, these things can all be converted to a **string**:
+Oil has syntax for 3 types of substitution, all of which start with `$`.  These
+things can all be converted to a **string**:
 
 1. Variables
 2. The output of commands
-3. The output of builtins and procs that invoke them (a performance
-   optimization)
-4. The value of expressions
-5. The return value of functions (which is syntactic sugar, since functions are
-   expressions)
+3. The value of expressions
 
 #### Variable Sub
 
@@ -219,31 +230,6 @@ The `$(echo hi)` syntax runs a command and captures its `stdout`:
     echo $(hostname)                 # => example.com
     echo "_ $(hostname) _"           # => _ example.com _
 
-#### Builtin Sub
-
-The syntax `${.myproc $s arg2}` is called a *builtin sub*.  It's similar to a command
-sub `$(myproc $s arg2)`, but it doesn't fork a process.  It can only capture
-the output of `echo`, `printf`, and `write`.
-
-It exists to efficiently build up long strings (like web pages) with sequences
-of **commands** rather than expressions.  It can be used in config files which
-can't perform I/O.
-
-TODO: Builtin sub isn't yet implemented.
-
-    proc p(x) {
-      echo start
-      echo "_ $x _"
-      echo end
-    }
-
-    # var s = ${.p 'bean'}             # capture stdout as a variable
-    # echo $s
-    # =>
-    # start
-    # _ bean _
-    # end
-
 #### Expression Sub
 
 The `$[myexpr]` syntax evaluates an expression and converts it to a string:
@@ -252,20 +238,7 @@ The `$[myexpr]` syntax evaluates an expression and converts it to a string:
     echo $[1 + 2 * 3]                # => 7
     echo "_ $[1 + 2 * 3] _"          # => _ 7 _
 
-<!-- TODO: safe substitution with $[a] -->
-
-#### Function Sub
-
-As a shortcut for `$[f(x)]`, you can turn the result of a function into a
-string with `$f(x)`:
-
-    var foods = ['pea', 'nut']
-    echo $join(foods)               # => peanut
-
-Function subs **can't** be used in double quotes, so `echo "_ $join(foods) _"`
-is invalid.  Use the longer *expression sub* instead:
-
-    echo "_ $[join(foods)] _"       # => _ peanut _
+<!-- TODO: safe substitution with "$[a -> html]" -->
 
 ### Arrays of Strings: Globs, Brace Expansion, Splicing, and Splitting
 
@@ -314,29 +287,15 @@ You can also splice the result of a function returning an array:
     # ale
     # bean
 
-Recall that *function sub* looks like `$join(mylist)`, which is consistent with
-*function splice*.
-
 #### Split Command Sub / Split Builtin Sub
 
-There are also variants of *command sub* and *builtin sub* that split first:
+There is also a variant of *command sub* that splits first:
 
     write @(seq 3)  # write gets 3 arguments
     # =>
     # 1
     # 2
     # 3
-
-Builtin sub isn't implemented yet:
-
-    proc digits {
-      echo '4 5'
-    }
-
-    # write @{.digits}     # write gets 2 arguments
-    # =>
-    # 4
-    # 5
 
 ## Command Language: I/O, Control Flow, Abstraction
 
@@ -660,6 +619,10 @@ It's just a visual indication that the string arg is a variable name.
 
 Oil expressions are more like Python and JavaScript than traditional shell
 syntax.  For example, we write `if (x < y)` instead of `if [ $x -lt $y ]`.
+
+Expressions are usually surrounded by `( )`.  [Command vs. Expression
+Mode](command-vs-expression-mode.html) may help you understand how Oil is
+parsed.
 
 ### Types and Literals: `Int`, `List`, `Dict`, ...
 

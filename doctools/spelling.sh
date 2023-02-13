@@ -24,6 +24,10 @@ echo $OIL_ROOT
 readonly SPELLING_PY=$OIL_ROOT/doctools/spelling.py
 readonly BASE_DIR=_tmp/spelling  # relative path
 
+spelling() {
+  PYTHONPATH=. $SPELLING_PY "$@"
+}
+
 to-ninja() {
   echo '
 rule text-dump
@@ -31,7 +35,7 @@ rule text-dump
   description = text-dump $in $out
 
 rule word-split
-  command = cat $in | '$SPELLING_PY' word-split > $out
+  command = cat $in | PYTHONPATH=. '$SPELLING_PY' word-split > $out
   description = word-split $in $out
 
 '
@@ -82,13 +86,13 @@ check-tree() {
 
   # Use alphabetical order
   find $BASE_DIR -name '*.words' | sort | xargs \
-    $SPELLING_PY check --known-words /usr/share/dict/words
+    $0 spelling check --known-words /usr/share/dict/words
 }
 
 check-one() {
   local words=${1:-_tmp/spelling/_release/VERSION/doc/eggex.words}
 
-  $SPELLING_PY check --known-words /usr/share/dict/words $words
+  spelling check --known-words /usr/share/dict/words $words
 }
 
 check-oil-docs() {

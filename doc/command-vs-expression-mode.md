@@ -63,25 +63,9 @@ Throw away the value:
 
     _ L.append(x)
 
-
-### Expression Substitution
-
-    echo $[42 + a[i]]
-
-### Arguments to Inline Function Calls
-
-    echo $strfunc(1, 2, a[i])
-    echo @arrayfunc('three', 'four', f(x))
-
-### Parameter Lists
-
-    proc p(x, y) {  # what's between () is in expression mode
-      echo $x $y    # back to command mode
-    }
-
 ### Oil `if`, `while`, and `for`
 
-Expressions appear inside `()`:
+Expressions are surrounded by `( )`:
 
     if (x > 0) { 
       echo 'positive'
@@ -97,6 +81,32 @@ Expressions appear inside `()`:
 
 (The syntax of `case` breaks this rule.  It's a [wart inherited from
 shell](warts.html#case-patterns-are-in-parens-but-theyre-words-not-expressions).)
+
+### Expression Substitution
+
+The `$[]` construct converts an expression to a string:
+
+    echo $[42 + a[i]]
+
+### Function Splice Arguments
+
+    echo @arrayfunc('three', 'four', f(x))
+
+### Typed Arguments to Procs
+
+Typed arguments are surrounded by `( )`:
+
+    json write (['three', 'four'])
+    # =>
+    [ "three", "four" ]
+
+### Proc Parameter Lists
+
+Parameters aren't expressions, but they're parsed with the same lexer:
+
+    proc p(x, y) {    # what's between () is in expression mode
+      echo "$x $y"    # back to command mode
+    }
 
 ## From Expression Mode to Command Mode
 
