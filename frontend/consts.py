@@ -234,7 +234,7 @@ def LookupCharInt(c):
   return _ONE_CHAR_INT[c]
 
 
-# NOTE: Prompts chars and printf are consistent, e.g. \E is \e in printf, but
+# NOTE: Prompts chars and printf are inconsistent, e.g. \E is \e in printf, but
 # not in PS1.
 _ONE_CHAR_PROMPT = {
   'a' : '\a',

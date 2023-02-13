@@ -177,7 +177,7 @@ py-codegen() {
   gen-asdl-py 'core/runtime.asdl'
   gen-asdl-py 'tools/find/find.asdl'
 
-  const-mypy-gen  # dependency on bool_arg_type_e
+  const-mypy-gen  # depends on bool_arg_type_e, generates Id_t
   option-mypy-gen
   flag-gen-mypy
 

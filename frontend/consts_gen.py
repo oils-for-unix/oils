@@ -11,15 +11,14 @@ consts_gen.py - Code generation for consts.py, id_kind_def.py, etc.
 from __future__ import print_function
 
 import collections
+import os
 import sys
 
 from asdl import gen_cpp
 from core.pyerror import log
-from core import pyutil
 from frontend import id_kind_def
 from frontend import builtin_def
 from frontend import option_def
-from pylib import os_path
 
 
 def _CreateModule(id_spec, ids):
@@ -281,6 +280,10 @@ from asdl import pybase
     v.VisitModule(schema_ast)
 
   elif action == 'cpp-consts':
+
+    # Break circular deps
+
+    from core import pyutil
     from frontend import consts
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
@@ -368,8 +371,8 @@ int NO_INDEX = 0;  // duplicated from frontend/consts.py
 """)
 
       # Generate gVersion, which is read by pyutil::GetVersion()
-      this_dir = os_path.dirname(os_path.abspath(sys.argv[0]))
-      root_dir = os_path.join(this_dir, '..')  # ~/git/oilshell/oil
+      this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+      root_dir = os.path.join(this_dir, '..')  # ~/git/oilshell/oil
       loader = pyutil._FileResourceLoader(root_dir)
 
       version_str = pyutil.GetVersion(loader)
