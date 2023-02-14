@@ -289,6 +289,14 @@ spec-all() {
   OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
 }
 
+spec-cpp() {
+  ### For repair
+
+  # Quick
+  # NUM_SPEC_TASKS=2 OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
+  OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
+}
+
 # For quickly debugging failures that don't happen in dev mode.
 spec-one() {
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"

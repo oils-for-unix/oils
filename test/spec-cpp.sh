@@ -40,25 +40,6 @@ export ASAN_OPTIONS=detect_leaks=0
 # For translation
 #
 
-oils-cpp-py() {
-  ### Run a suite with oils-for-unix.py (manual)
-  local suite=${1:-arith}
-  if test $# -gt 0; then
-    shift
-  fi
-  test/spec.sh $suite $PWD/bin/oils-for-unix "$@"
-}
-
-oils-cpp-cpp() {
-  ### Run a suite with the translation of oils-for-unix.py (manual)
-  local suite=${1:-arith}
-  if test $# -gt 0; then
-    shift
-  fi
-
-  test/spec.sh $suite $OSH_CC "$@"
-}
-
 asan-smoke() {
   ninja _bin/cxx-asan/osh
   _bin/cxx-asan/osh -c 'echo -c'

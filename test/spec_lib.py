@@ -21,8 +21,8 @@ def log(msg, *args):
 # Note that devtools/release.sh spec-all runs with bin/osh and $DIR/_bin/osh,
 # which should NOT match
 
-OSH_CPP_RE = re.compile(r'_bin/\w+-\w+/osh')  # e.g. $PWD/_bin/cxx-dbg/osh
-OIL_CPP_RE = re.compile(r'_bin/\w+-\w+/oil')
+OSH_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/osh')  # e.g. $PWD/_bin/cxx-dbg/osh
+OIL_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/oil')
 
 def MakeShellPairs(shells):
   shell_pairs = []

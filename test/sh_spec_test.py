@@ -136,12 +136,18 @@ class ShSpecTest(unittest.TestCase):
   def testMakeShellPairs(self):
     pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/osh'])
     print(pairs)
+    self.assertEqual(
+        [('osh', 'bin/osh'), ('osh_ALT', '_bin/osh')], pairs)
 
     pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/cxx-dbg/osh'])
     print(pairs)
+    self.assertEqual(
+        [('osh', 'bin/osh'), ('osh-cpp', '_bin/cxx-dbg/osh')], pairs)
 
-    pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/osh_cpp'])
+    pairs = spec_lib.MakeShellPairs(['bin/osh', '_bin/cxx-dbg-sh/osh'])
     print(pairs)
+    self.assertEqual(
+        [('osh', 'bin/osh'), ('osh-cpp', '_bin/cxx-dbg-sh/osh')], pairs)
 
 
 if __name__ == '__main__':

@@ -591,7 +591,7 @@ soil-run() {
 }
 
 run-for-release() {
-  run-test-funcs
+  run-other-suite-for-release ysh-prettify run-test-funcs
 }
 
 "$@"
