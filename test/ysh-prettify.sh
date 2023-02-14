@@ -14,6 +14,50 @@ source test/common.sh
 
 readonly TEMP_DIR=_tmp
 
+prettify-one() {
+  local file=$1
+
+  set +o errexit
+  bin/oshc translate "$file"
+  local status=$?
+  set +o errexit
+
+  if test $status = 0; then
+    echo "    (DONE $file)"
+  else
+    echo "    FAIL: $file"
+    return 255  # xargs FAILURE
+  fi
+}
+
+smoke-test() {
+  ### Run it against many of our files
+  find build benchmarks -name '*.sh' | xargs -n 1 -- $0 prettify-one
+}
+
+run-all() {
+  ### For both CI and release.  
+  
+  # Note: might want to split these up.
+
+  run-test-funcs
+
+  smoke-test
+}
+
+soil-run() {
+  run-all
+}
+
+run-for-release() {
+  run-other-suite-for-release ysh-prettify run-all
+}
+
+
+#
+# Test Harness
+#
+
 check-osh2ysh() {
   local osh_str=$1
   local ysh_str=$2  # expected
@@ -573,25 +617,6 @@ match $var {
     echo bar  # no dsemi
 }
 '
-}
-
-prettify-one() {
-  local file=$1
-  bin/oshc translate "$file"
-  echo "    (DONE $file)"
-}
-
-smoke-test() {
-  # Lots of real files
-  find test benchmarks -name '*.sh' | xargs -n 1 -- $0 prettify-one
-}
-
-soil-run() {
-  run-test-funcs
-}
-
-run-for-release() {
-  run-other-suite-for-release ysh-prettify run-test-funcs
 }
 
 "$@"

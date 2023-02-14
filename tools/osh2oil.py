@@ -319,7 +319,7 @@ class OilPrinter(object):
       #self.cursor.SkipUntil(here_end_spid2)
 
     else:
-      raise AssertionError(node.__class__.__name__)
+      pass
 
     # cat << EOF
     # hello $name
