@@ -372,23 +372,18 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("class %s {" % class_name, depth)
     self.Emit(" public:", depth)
 
-    all_fields = ast_node.fields + attributes
-
-    bits = []
-    if all_fields:
-      for field in all_fields:
-        if _IsManagedType(field.typ):
-          bits.append('maskbit(offsetof(%s, %s))' % (class_name, field.name))
-
-    if bits:
-      mask_init = 'field_mask()'
-      #mask_init = 'field_mask_(kZeroMask)'
-    else:
-      mask_init = 'kZeroMask'
+    # Ensure that the member variables are ordered such that GC managed objects
+    # come before any unmanaged ones because we use `HeapTag::Scanned`.
+    managed_fields, unmanaged_fields = [], []
+    for f in ast_node.fields + attributes:
+        if _IsManagedType(f.typ):
+          managed_fields.append(f)
+        else:
+          unmanaged_fields.append(f)
+    all_fields = managed_fields + unmanaged_fields
 
     line_break = '\n' + ' ' * 22  # wrapping/indent determined manually
-    header_init = 'GC_ASDL_CLASS(header_, %s,%s%s, sizeof(%s))' % (
-        tag, line_break, mask_init, class_name)
+    header_init = 'GC_ASDL_CLASS(header_, %s, %d)' % (tag, len(managed_fields))
 
     def FieldInitJoin(strs):
       # reflow doesn't work well here, so do it manually
@@ -398,11 +393,19 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # All product types and variants have a tag
     inits = [header_init]
 
+    # Ensure that the constructor params are listed in the same order as the
+    # equivalent python constructors for compatibility in translated code.
     for f in ast_node.fields:
       params.append('%s %s' % (_GetCppType(f.typ), f.name))
-      inits.append('%s(%s)' % (f.name, f.name))
-    for f in attributes:  # spids are initialized separately
-      inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
+
+    # Member initializers are in the same order as the member variables to
+    # avoid compiler warnings (the order doesn't affect the semantics).
+    for f in all_fields:
+      if f in attributes:
+        # spids are initialized separately
+        inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
+      else:
+        inits.append('%s(%s)' % (f.name, f.name))
 
     # Define constructor with N args
     self.Emit('  %s(%s)' % (class_name, ', '.join(params)), depth)
@@ -433,19 +436,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit('  GC_OBJ(header_);')
     for field in all_fields:
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
-
-    if bits:
-      self.Emit('', depth)
-      self.Emit('  static constexpr uint16_t field_mask() {', depth)
-      # do our own formatting of this expression
-      self.f.write('    return ')
-      for i, b in enumerate(bits):
-        if i != 0:
-          self.f.write('\n')
-          self.f.write('         | ')
-        self.f.write(b)
-      self.f.write(';\n')
-      self.Emit('  }', depth)
 
     self.Emit('')
     self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
