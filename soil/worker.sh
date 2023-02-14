@@ -191,14 +191,9 @@ EOF
 cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
-  # BUG: oil-cpp can't run with 'build/py.sh minimal' because 'fastlex' isn't built
-  # can't run with 'build/py.sh all' because we don't have cmark
-
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
-build-minimal    build/py.sh minimal                   -
-HACK-fastlex     build/py.sh fastlex                   -
-ninja-config     soil/worker.sh ninja-config           -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
