@@ -103,10 +103,10 @@ struct RawObject {
     kIsHeader, TypeTag::OtherClass, kNoObjId, heap_tag, field_mask \
   }
 
-// Used by ASDL.  TODO: Sort fields and use GC_CLASS_SCANNED
-#define GC_ASDL_CLASS(header_, type_tag, field_mask, obj_len)     \
+// Used by ASDL.
+#define GC_ASDL_CLASS(header_, type_tag, num_pointers)            \
   header_ {                                                       \
-    kIsHeader, type_tag, kNoObjId, HeapTag::FixedSize, field_mask \
+    kIsHeader, type_tag, kNoObjId, HeapTag::Scanned, num_pointers \
   }
 
 #define GC_STR(header_)                                            \
