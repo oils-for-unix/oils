@@ -254,12 +254,7 @@ build() {
     ${BASE_LDFLAGS} \
     ${LDFLAGS} \
     $readline_flags \
-    "$@" \
-    || true
-  popd
-
-  # TODO: Return proper exit code from this action
-  return 0
+    "$@"
 
   # NOTE:
   # -l readline -l termcap -- for Python readline.  Hm it builds without -l
@@ -377,6 +372,9 @@ make-tar() {
   #
   # - We include intermediate files like c-module-srcs.txt, so we don't have to
   #   ship tools dynamic_deps.py.  The end-user build shouldn't depend on Python.
+
+  # Note: python-headers runs gcc -M, including pyconfig.h and
+  # _build/detected-config.h.
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \

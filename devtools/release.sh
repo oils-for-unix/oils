@@ -887,12 +887,9 @@ more-release-deps() {
   fi
 }
 
-# This is a hack because the Makefile dependencies aren't correct.
 quick-oil-tarball() {
   # Can't delete _gen/_devbuild because there are source files there we want
   rm -r -f --verbose _bin _build _release
-
-  make _bin/oil.ovm-dbg
 
   local in=_release/oil.tar
   local out=_release/oil-$OIL_VERSION.tar.gz
