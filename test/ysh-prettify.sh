@@ -590,4 +590,8 @@ soil-run() {
   run-test-funcs
 }
 
+run-for-release() {
+  run-test-funcs
+}
+
 "$@"
