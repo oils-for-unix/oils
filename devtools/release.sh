@@ -271,7 +271,8 @@ _test-release-build() {
 spec-all() {
   ### Run all spec tests
 
-  test/stateful.sh soil-run  # Same as CI
+  test/stateful.sh soil-run-py  # Same as CI
+  # TODO: could run soil-run-cpp as well
 
   # Create the tests we're running
   test/smoosh.sh make-spec

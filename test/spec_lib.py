@@ -18,6 +18,12 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
+# Note that devtools/release.sh spec-all runs with bin/osh and $DIR/_bin/osh,
+# which should NOT match
+
+OSH_CPP_RE = re.compile(r'_bin/\w+-\w+/osh')  # e.g. $PWD/_bin/cxx-dbg/osh
+OIL_CPP_RE = re.compile(r'_bin/\w+-\w+/oil')
+
 def MakeShellPairs(shells):
   shell_pairs = []
 
@@ -31,7 +37,7 @@ def MakeShellPairs(shells):
     if label == 'osh':
       # change the second 'osh' to 'osh_ALT' so it's distinct
       if saw_osh:
-        if '_bin/' in path:  # $PWD/_bin/cxx-dbg/osh
+        if OSH_CPP_RE.search(path):
           label = 'osh-cpp'
         else:
           label = 'osh_ALT'
@@ -39,7 +45,7 @@ def MakeShellPairs(shells):
 
     elif label == 'oil':  # TODO: Rename to ysh
       if saw_oil:
-        if '_bin/' in path:
+        if OIL_CPP_RE.search(path):
           label = 'oil-cpp'
         else:
           label = 'oil_ALT'
