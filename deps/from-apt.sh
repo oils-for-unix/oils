@@ -26,6 +26,11 @@ declare -a R_DEPS=(
     libicu-dev
 )
 
+install-R() {
+  ### For manual use OUTSIDE container
+  apt-install "${R_DEPS[@]}"
+}
+
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md#run---mounttypecache
 
 # TODO: Use this for ALL images

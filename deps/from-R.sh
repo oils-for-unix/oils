@@ -12,15 +12,20 @@ set -o errexit
 # TODO: cache the package downloads with Docker, since they takes about 20
 # seconds to retrieve.
 
+
+# Notes: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  I
+# apparently did an R 4.0 installation.
+# See build/py.sh install-new-R
+#
+# February 2023: compile errors with dplyr and Ubuntu 18.04, which has R 3.4.4.
+# tidyverse has minimum R of 3.6.
+
 other-tests() {
   readonly R_PATH=~/R  # duplicates what's in test/common.sh
 
   # Install to a directory that doesn't require root.  This requires setting
   # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
   mkdir -p ~/R
-
-  # Note: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  See R 4.0
-  # installation below.
 
   # TODO: Add RUnit for devtools/R-test.sh
   INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
