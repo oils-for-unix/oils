@@ -13,12 +13,12 @@ set -o errexit
 # seconds to retrieve.
 
 
-# Notes: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  I
-# apparently did an R 4.0 installation.
-# See build/py.sh install-new-R
+# Notes: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  
+# I did an R 4.0 installation.  See build/py.sh install-new-R
 #
 # February 2023: compile errors with dplyr and Ubuntu 18.04, which has R 3.4.4.
 # tidyverse has minimum R of 3.6.
+# I need to install a new R again.
 
 other-tests() {
   readonly R_PATH=~/R  # duplicates what's in test/common.sh

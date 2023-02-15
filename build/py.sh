@@ -103,6 +103,10 @@ release-ubuntu-deps() {
 
 # 5/2021: Upgraded to Ubuntu Bionic, which has R 3.4.4.  So it looks like I no
 # longer need this.
+#
+# 2/2023: I need this again because R 3.4.4 is too old for dplyr.
+#
+# https://cloud.r-project.org/bin/linux/ubuntu/
 
 _install-new-r() {
   # update indices
@@ -115,7 +119,10 @@ _install-new-r() {
   apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 
   # add the R 4.0 repo from CRAN -- adjust 'focal' to 'groovy' or 'bionic' as needed
-  add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran40/'
+
+  local ubuntu_version
+  ubuntu_version=$(lsb_release -cs)
+  add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $ubuntu_version-cran40/"
 
   # Hm I had to run this manually and I got R 4.0
   # 2021-04: Hm this had to be run twice
