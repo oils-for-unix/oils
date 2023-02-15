@@ -132,22 +132,35 @@ main() {
   echo
   echo "$0: Building oils-for-unix: $out"
   echo
-
-  mkdir -p "_build/obj/$compiler-$variant-sh" "_bin/$compiler-$variant-sh"
 ''', file=f)
 
   objects = []
+
+  in_out = []
   for src in sorted(cc_sources):
     # e.g. _build/obj/cxx-dbg-sh/posix.o
-    base_name, _ = os.path.splitext(os.path.basename(src))
+    prefix, _ = os.path.splitext(src)
+    obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
+    in_out.append((src, obj))
 
-    obj_quoted = '"_build/obj/$compiler-$variant-sh/%s.o"' % base_name
+  bin_dir = '_bin/$compiler-$variant-sh'
+  obj_dirs = sorted(set(os.path.dirname(obj) for _, obj in in_out))
+  
+  all_dirs = [bin_dir] + obj_dirs
+  # Double quote
+  all_dirs = ['"%s"' % d for d in all_dirs]
+
+  print('  mkdir -p \\', file=f)
+  print('    %s' % ' \\\n    '.join(all_dirs), file=f)
+  print('', file=f)
+
+  for src, obj in in_out:
+    obj_quoted = '"%s"' % obj
     objects.append(obj_quoted)
 
     print('  _compile_one "$compiler" "$variant" "" \\', file=f)
     print('    %s %s' % (src, obj_quoted), file=f)
-
-  print('', file=f)
+    print('', file=f)
 
   print('  echo "LINK $out"', file=f)
   # note: can't have spaces in filenames
