@@ -30,7 +30,8 @@ and benchmarks.
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
-Note: `oil-native` is a **preview** release, not a working shell.
+Note: `oil-$VERSION` is the slow Python build, while `oils-for-unix-$VERSION`
+is the new, fast C++ build.
 
 ## What's New
 

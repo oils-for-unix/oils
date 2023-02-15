@@ -23,7 +23,7 @@
 readonly OVM_NAME=oil.ovm
 readonly OVM_PATH=_bin/$OVM_NAME
 
-readonly OILS_PATH=_bin/cxx-opt-sh/oils_cpp.stripped
+readonly OILS_PATH=_bin/cxx-opt-sh/oils-for-unix.stripped
 
 
 log() {
