@@ -368,6 +368,20 @@ ok
 ## N-I dash stderr: STDERR
 ## N-I dash status: 1
 
+#### >&word redirects stdout and stderr when word is not a number or -
+# dash, mksh don't implement this bash behaviour.
+case $SH in (dash|mksh) exit 1 ;; esac
+stdout_stderr.py >&$TMP/f.txt
+# order is indeterminate
+grep STDOUT $TMP/f.txt >/dev/null && echo 'ok'
+grep STDERR $TMP/f.txt >/dev/null && echo 'ok'
+## STDOUT:
+ok
+ok
+## END
+## OK dash/mksh status: 1
+## OK dash/mksh stdout-json: ""
+
 #### 1>&- to close file descriptor
 exec 5> "$TMP/f.txt"
 echo hello >&5
