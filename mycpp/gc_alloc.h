@@ -122,7 +122,7 @@ inline Str* NewStr(int len) {
 
   auto s = new (place) Str();
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  STR_LEN(s->header_) = len;
+  s->len_ = len;
 #else
   // reversed in len() to derive string length
   s->header_.obj_len = kStrHeaderSize + len + 1;

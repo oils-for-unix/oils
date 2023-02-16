@@ -52,7 +52,7 @@ class HeapStr {
   }
   int Length() {
 #ifdef MARK_SWEEP
-    return header_.u_mask_npointers_strlen;
+    return header_.u_mask_npointers;
 #elif BUMP_LEAK
   #error "TODO: add field to HeapStr"
 #else
@@ -66,7 +66,7 @@ class HeapStr {
     assert(len > kSmallStrThreshold);
 
 #ifdef MARK_SWEEP
-    header_.u_mask_npointers_strlen = len;
+    header_.u_mask_npointers = len;
 #elif BUMP_LEAK
   #error "TODO: add field to HeapStr"
 #else

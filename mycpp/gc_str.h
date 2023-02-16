@@ -70,7 +70,7 @@ class Str {
   //   too much coupling between strings, hash tables, and GC?
 
   GC_OBJ(header_);
-  int hash_value_;
+  int len_;
   char data_[1];  // flexible array
 
  private:
@@ -84,18 +84,15 @@ constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 // Note: for SmallStr, we might copy into the VALUE
 inline void Str::MaybeShrink(int str_len) {
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  STR_LEN(header_) = str_len;
-#else
-  // reversed in len() to derive string length
-  header_.obj_len = kStrHeaderSize + str_len + 1;
-#endif
+  len_ = str_len;
 }
 
 inline int len(const Str* s) {
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  return STR_LEN(s->header_);
-#else
+  return s->len_;
+
+  // For Cheney, it's possible we could use this startegy of computing it from
+  // the object length.
+#if 0
   DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
   return s->header_.obj_len - kStrHeaderSize - 1;
 #endif
@@ -159,11 +156,11 @@ class GlobalStr {
 // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-#define GLOBAL_STR(name, val)                                                 \
-  GlobalStr<sizeof(val)> _##name = {                                          \
-      {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Global, sizeof(val) - 1}, \
-      -1,                                                                     \
-      val};                                                                   \
+#define GLOBAL_STR(name, val)                                   \
+  GlobalStr<sizeof(val)> _##name = {                            \
+      {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Global, 0}, \
+      sizeof(val) - 1,                                          \
+      val};                                                     \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
 #endif  // MYCPP_GC_STR_H

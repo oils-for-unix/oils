@@ -49,10 +49,10 @@ struct ObjHeader {
 #endif
 
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  unsigned heap_tag : 2;                  // HeapTag::Opaque, etc.
-  unsigned u_mask_npointers_strlen : 30;  // Mark-sweep: derive Str length, Slab
-                                          // length
-                                          // TODO: Move Str length to Str object
+  unsigned heap_tag : 2;           // HeapTag::Opaque, etc.
+  unsigned u_mask_npointers : 30;  // Mark-sweep: derive Str length, Slab
+                                   // length
+                                   // TODO: Move Str length to Str object
 #else
   unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
@@ -63,14 +63,12 @@ struct ObjHeader {
 const int kFieldMaskBits = 16;
 
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  #define FIELD_MASK(header) (header).u_mask_npointers_strlen
-  #define STR_LEN(header) (header).u_mask_npointers_strlen
-  #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
+  #define FIELD_MASK(header) (header).u_mask_npointers
+  #define NUM_POINTERS(header) (header).u_mask_npointers
 
 #else
   #define FIELD_MASK(header) (header).field_mask
                              // TODO: derive from obj_len
-  #define STR_LEN(header) -1
   #define NUM_POINTERS(header) \
     ((header.obj_len - kSlabHeaderSize) / sizeof(void*))
 #endif
