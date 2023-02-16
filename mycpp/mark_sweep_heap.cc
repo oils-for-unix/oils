@@ -11,6 +11,10 @@
 #include "mycpp/gc_builtins.h"           // StringToInteger()
 #include "mycpp/gc_slab.h"
 
+#ifdef OILS_MIMALLOC
+#include "../mimalloc/include/mimalloc.h"
+#endif
+
 // TODO: Remove this guard when we have separate binaries
 #if MARK_SWEEP
 
@@ -75,10 +79,20 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     ObjHeader* header = FindObjHeader(dead);
     obj_id_after_allocate_ = header->obj_id;  // reuse the dead object's ID
 
+#ifdef OILS_MIMALLOC
+    mi_free(dead);
+#else
     free(dead);
+#endif
   }
 
+#ifdef OILS_MIMALLOC
+  void* result = mi_malloc(num_bytes);
+  memset(result, 0, num_bytes);
+#else
   void* result = calloc(num_bytes, 1);
+#endif
+
   DCHECK(result != nullptr);
 
   live_objs_.push_back(reinterpret_cast<RawObject*>(result));
@@ -310,7 +324,11 @@ void MarkSweepHeap::PrintStats(int fd) {
 
 void MarkSweepHeap::EagerFree() {
   for (auto obj : to_free_) {
+#ifdef OILS_MIMALLOC
+    mi_free(obj);
+#else
     free(obj);
+#endif
   }
 }
 

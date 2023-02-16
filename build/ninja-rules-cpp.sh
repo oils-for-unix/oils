@@ -138,6 +138,9 @@ setglobal_compile_flags() {
     (tcmalloc)
       flags="$flags -O2 -g -D TCMALLOC"
       ;;
+    (mimalloc)
+      flags="$flags -O2 -g -D OILS_MIMALLOC"
+      ;;
 
     (uftrace)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
@@ -263,9 +266,16 @@ link() {
 
   setglobal_cxx $compiler
 
+  # Hack for mimalloc, since LD_PRELOAD doesn't seem to work.
+  local extra=''
+  if test $variant = mimalloc; then
+    extra='../mimalloc/mimalloc.o'
+    link_flags="$link_flags -lpthread"
+  fi
+
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  "$cxx" -o "$out" "$@" $link_flags
+  "$cxx" -o "$out" "$@" $extra $link_flags
 }
 
 compile_and_link() {

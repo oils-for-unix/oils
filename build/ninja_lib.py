@@ -57,6 +57,7 @@ COMPILERS_VARIANTS_LEAKY = [
 GC_PERF_VARIANTS = [
     ('cxx', 'bumpleak'),
     ('cxx', 'tcmalloc'),
+    ('cxx', 'mimalloc'),
 
     # TODO: should be binary with different files
     ('cxx', 'cheney'),

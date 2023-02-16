@@ -48,6 +48,28 @@ build-mimalloc() {
   popd
 }
 
+build-main() {
+  ### static build of main + mimalloc
+
+  # Note that alloc.c #includes alloc-override.c
+
+  gcc -O2 -I $DIR/include -o _tmp/mimalloc.o -c $DIR/src/static.c
+
+  gcc -O2 -o _tmp/ld_preload_main.o -c demo/ld_preload_main.c
+  file _tmp/ld_preload_main.o
+
+  #gcc -o _tmp/main _tmp/ld_preload_main.o ../mimalloc/mimalloc.o -lpthread
+  #gcc -o _tmp/main ../mimalloc/mimalloc.o _tmp/ld_preload_main.o -lpthread
+
+  gcc -o _tmp/main _tmp/mimalloc.o _tmp/ld_preload_main.o -lpthread
+  file _tmp/main
+
+  nm _tmp/main | grep -i malloc
+
+  set -x
+  MIMALLOC_VERBOSE=1 _tmp/main
+}
+
 # https://microsoft.github.io/mimalloc/environment.html
 
 # Not working, try STATIC linking
