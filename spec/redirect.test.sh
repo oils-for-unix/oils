@@ -356,17 +356,42 @@ ZZ
 ## END
 
 #### &> redirects stdout and stderr
-stdout_stderr.py &> $TMP/f.txt
+tmp="$(basename $SH)-$$.txt"  # unique name for shell and test case
+#echo $tmp
+
+stdout_stderr.py &> $tmp
+
 # order is indeterminate
-grep STDOUT $TMP/f.txt >/dev/null && echo 'ok'
-grep STDERR $TMP/f.txt >/dev/null && echo 'ok'
+grep STDOUT $tmp
+grep STDERR $tmp
+
 ## STDOUT:
-ok
-ok
+STDOUT
+STDERR
 ## END
 ## N-I dash stdout: STDOUT
 ## N-I dash stderr: STDERR
 ## N-I dash status: 1
+
+#### >&word redirects stdout and stderr when word is not a number or -
+
+# dash, mksh don't implement this bash behaviour.
+case $SH in (dash|mksh) exit 1 ;; esac
+
+tmp="$(basename $SH)-$$.txt"  # unique name for shell and test case
+
+stdout_stderr.py >&$tmp
+
+# order is indeterminate
+grep STDOUT $tmp
+grep STDERR $tmp
+
+## STDOUT:
+STDOUT
+STDERR
+## END
+## N-I dash/mksh status: 1
+## N-I dash/mksh stdout-json: ""
 
 #### 1>&- to close file descriptor
 exec 5> "$TMP/f.txt"
