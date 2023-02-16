@@ -158,8 +158,8 @@ def GetVersion(loader):
   return version_str
 
 
-def ShowAppVersion(app_name, loader):
-  # type: (str, _ResourceLoader) -> None
+def ShowAppVersion(loader):
+  # type: (_ResourceLoader) -> None
   """Show version and platform information."""
   try:
     contents = loader.Get('release-date.txt')
@@ -194,8 +194,8 @@ def ShowAppVersion(app_name, loader):
 
   version_str = GetVersion(loader)
 
-  # What C functions do these come from?
-  print('%s version %s' % (app_name, version_str))
+  # Call it OSH because "Oil" is deprecated
+  print('OSH version %s' % version_str)
   print('Release Date: %s' % release_date)
   print('Arch: %s' % machine)
   print('OS: %s' % system)
@@ -204,6 +204,8 @@ def ShowAppVersion(app_name, loader):
   print('Interpreter: %s' % py_impl)
   print('Interpreter version: %s' % py_version)
   print('Bytecode: %s' % pyc_version)
+
+  # TODO: advertise oils-for-unix when it's ready
 
 
 # This was useful for debugging.

@@ -153,7 +153,7 @@ _ResourceLoader* GetResourceLoader();
 
 Str* GetVersion(_ResourceLoader* loader);
 
-Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);
+void ShowAppVersion(_ResourceLoader* loader);
 
 Str* strerror(IOError_OSError* e);
 

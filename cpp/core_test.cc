@@ -13,8 +13,12 @@
 
 TEST for_test_coverage() {
   pyos::FlushStdout();
-  auto r = pyutil::GetResourceLoader();
-  (void)r;
+  auto loader = pyutil::GetResourceLoader();
+
+  Str* version = pyutil::GetVersion(loader);
+  ASSERT(len(version) > 3);
+
+  pyutil::ShowAppVersion(StrFromC("ysh"), loader);
 
   PASS();
 }

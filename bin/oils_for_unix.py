@@ -121,7 +121,7 @@ def AppBundleMain(argv):
       return 0
 
     if first_arg in ('-V', '--version'):
-      pyutil.ShowAppVersion('Oil', loader)
+      pyutil.ShowAppVersion(loader)
       return 0
 
     # This has THREE dashes since it isn't a normal flag

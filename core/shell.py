@@ -232,8 +232,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     help_builtin.Run(shell_native.MakeBuiltinArgv(['%s-usage' % lang]))
     return 0
   if flag.version:
-    # OSH version is the only binary in Oil right now, so it's all one version.
-    pyutil.ShowAppVersion('Oil', loader)
+    pyutil.ShowAppVersion(loader)
     return 0
 
   no_str = None  # type: str
