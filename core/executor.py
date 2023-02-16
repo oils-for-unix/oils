@@ -528,11 +528,6 @@ class ShellExecutor(vm._Executor):
       st = p.Wait(self.waiter)
       compound_st.codes.append(st)
       compound_st.spids.append(frame.span_ids[i])
-      #i += 1
-
-  def Time(self):
-    # type: () -> None
-    pass
 
   def PushRedirects(self, redirects):
     # type: (List[redirect]) -> bool
@@ -556,3 +551,11 @@ class ShellExecutor(vm._Executor):
     """
     frame = self.process_sub_stack.pop()
     self.MaybeWaitOnProcessSubs(frame, compound_st)
+
+    # Note: the 3 lists in _ProcessSubFrame are hot in our profiles.  It would
+    # be nice to somehow "destroy" them here, rather than letting them become
+    # garbage that needs to be traced.
+
+    # The CommandEvaluator could have a ProcessSubStack, which supports Push(),
+    # Pop(), and Top() of VALUES rather than GC objects?
+

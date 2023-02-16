@@ -188,10 +188,6 @@ class _Executor(object):
     # type: (command_sub) -> str
     return ''
 
-  def Time(self):
-    # type: () -> None
-    pass
-
   def PushRedirects(self, redirects):
     # type: (List[redirect]) -> bool
     return True
