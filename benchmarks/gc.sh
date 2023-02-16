@@ -117,14 +117,6 @@ print-tasks() {
     )
   fi
 
-  if test -n "${MIMALLOC:-}"; then
-    shells+=(
-      "_bin/cxx-mimalloc/osh${TAB}mut+alloc"
-      "_bin/cxx-mimalloc/osh${TAB}mut+alloc+free"
-      "_bin/cxx-mimalloc/osh${TAB}mut+alloc+free+gc"
-    )
-  fi
-
   local id=0
 
   for workload in "${workloads[@]}"; do
@@ -327,10 +319,6 @@ measure-all() {
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-tcmalloc/osh )
   fi
-  if test -n "${MIMALLOC:-}"; then
-    bin+=( _bin/cxx-mimalloc/osh )
-  fi
-
   ninja "${bin[@]}"
 
   local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
