@@ -6,7 +6,8 @@
 
 #include <new>  // placement new
 
-#include "mycpp/common.h"  // for log()
+#include "mycpp/common.h"  // log()
+#include "mycpp/gc_obj.h"  // ObjHeader
 #include "vendor/greatest.h"
 
 namespace demo {
@@ -21,202 +22,64 @@ bool IsLittleEndian() {
   return c == 42;
 }
 
-const int kIsHeader = 1;
-const int kNoObjId = 0;
+#define GC_NEW(T, ...)                                                \
+  LayoutGc* untyped = gHeap.Allocate();                               \
+  T* obj = new (untyped.place)(...) untyped.header = T::obj_header(); \
+  untyped.header.obj_id = gHeap.mark_set_.NextObjectId() return obj
 
-enum TypeTag {
-  Class = 0,
-  String = 1,  // note: 'Str' would conflict with 'class Str'
-};
+class Point {
+ public:
+  int x;
+  int y;
 
-enum HeapTag {
-  Global = 0,
-  Opaque = 1,
-  FixedSize = 2,
-  Scanned = 3,
-
-  Forwarded = 4,  // only for Cheney
-};
-
-//
-// NEW OBJECT HEADER (with 24-bit object ID, also usable with Cheney collector)
-//
-
-struct ObjHeader {
-  // --- First 32 bits ---
-
-#if 1  // little endian
-  // Set to 1, for the garbage collector to distinguish with vtable bits
-  unsigned is_header : 1;
-
-  // - 0 is for user-defined classes
-  // - 1 to 6 reserved for "tagless" value:
-  // value_e.{Str,List,Dict,Bool,Int,Float}
-  // - 7 to 127: ASDL union, so we have a maximuim of ~120 variants.
-  unsigned type_tag : 7;
-
-  #if MARK_SWEEP
-  unsigned obj_id : 24;  // small index into mark bitmap, implies 16 Mi unique
-                         // objects
-  #else
-  unsigned field_mask : 24;  // Cheney doesn't need obj_id, but needs
-                             // field_mask AND obj_len
-  #endif
-
-#else
-  // Possible 32-bit big endian version.  TODO: Put tests in
-  // mycpp/portability_test.cc
-  unsigned obj_id : 24;
-  unsigned is_header : 1;
-  unsigned type_tag : 7;
-#endif
-
-  // --- Second 32 bits ---
-
-#if MARK_SWEEP
-  // A fake "union", because unions and bitfields don't pack as you'd like
-  unsigned heap_tag : 2;  // HeapTag::Opaque, HeapTag::Scanned, etc.
-  unsigned u_mask_npointers_strlen : 30;
-#else
-  unsigned heap_tag : 3;  // also needs HeapTag::Forwarded
-  unsigned obj_len : 29;
-#endif
-};
-
-#ifdef BUMP_LEAK
-  // omit GC header
-  #define GC_OBJ(var_name)
-#else
-  #define GC_OBJ(var_name) ObjHeader var_name
-#endif
-
-// ON string construction, we don't know the string length or object length
-#define GC_STR(header_)                                      \
-  header_ {                                                  \
-    kIsHeader, TypeTag::String, kNoObjId, HeapTag::Opaque, 0 \
+  int vtag() {
+    char* p = reinterpret_cast<char*>(this);
+    ObjHeader* header = reinterpret_cast<ObjHeader*>(p - sizeof(void*));
+    return header->type_tag;
   }
 
-#ifdef MARK_SWEEP
-  // obj_len thrown away
-  #define GC_CLASS_FIXED(header_, field_mask, obj_len)                    \
-    header_ {                                                             \
-      kIsHeader, TypeTag::Class, kNoObjId, HeapTag::FixedSize, field_mask \
-    }
-  // Used by code generators: ASDL, mycpp
-  #define GC_CLASS_SCANNED(header_, num_pointers, obj_len)                \
-    header_ {                                                             \
-      kIsHeader, TypeTag::Class, kNoObjId, HeapTag::Scanned, num_pointers \
-    }
+  static constexpr ObjHeader object_header() {
+    // type_tag is 42
+    return ObjHeader{kIsHeader, 42};
+  }
+};
 
-  // Different values stored in the same "union" field
-  #define FIELD_MASK(header) (header).u_mask_npointers_strlen
-  #define NUM_POINTERS(header) (header).u_mask_npointers_strlen
+// Alloc<T> allocates an instance of T and fills in the GC header BEFORE the
+// object, and BEFORE any vtable (for classes with virtual functions).
+//
+// Alloc<T> is nicer for static dispatch; GC_NEW(T, ...) would be awkward.
 
-#else
-
-  // 24-bit object ID is used for field mask, 30-bit obj_len for copying
-  #define GC_CLASS_FIXED(header_, field_mask, obj_len)                   \
-    header_ {                                                            \
-      kIsHeader, TypeTag::Class, field_mask, HeapTag::FixedSize, obj_len \
-    }
-  // num_pointers thrown away, because it can be derived
-  #define GC_CLASS_SCANNED(header_, num_pointers, obj_len)            \
-    header_ {                                                         \
-      kIsHeader, TypeTag::Class, kZeroMask, HeapTag::Scanned, obj_len \
-    }
-
-  // Store field_mask in 24-bit field (~24 fields with inheritance)
-  #define FIELD_MASK(header) (header).field_mask
-
-  // Derive num pointers from object length
-  #define NUM_POINTERS(header) \
-    (((header).obj_len - sizeof(ObjHeader)) / sizeof(void*))
-
-#endif
+// Steps to initialize a GC object:
+//
+// 1. Allocate untyped data
+// 2. Fill in constexpr header data
+// 3. Fill in DYNAMIC header data, like object ID
+// 4. Invoke constructor with placement new
 
 struct LayoutGc {
   ObjHeader header;
   uint8_t place[1];  // flexible array, for placement new
 };
 
-// Hm I guess this has to be templated.
-
-// 4 steps:
-// 1. allocate untyped data
-// 2. invoke constructor
-// 3. header data known statically
-// 4. header data that's dynamic, like object ID
-
-#define GC_NEW(T, ...)                                                \
-  LayoutGc* untyped = gHeap.Allocate();                               \
-  T* obj = new (untyped.place)(...) untyped.header = T::obj_header(); \
-  untyped.header.obj_id = gHeap.mark_set_.NextObjectId() return obj
-
-// Alloc<T> can solve the  VTABLE problem if we want
-// However it can't solve the code bloat problem
-// you need to be able to do "return GC_NEW()"
-
-// We remove FindHeader etc.
-
-class Point {
- public:
-  int x;
-  int y;
-  static constexpr ObjHeader object_header() {
-    return ObjHeader{0};
-  }
-};
-
-// Replacement for crazy macro
-// Problem: you can't dynamically assign object ID this way.
-//
-// Actually if you say the ALLOCATOR always does it ... hm.
-// Because it's always in the same place?
-//
-// code bloat isn't that bad actually
-// But yeah you want to reduce it by not having FindObjHeader() in there!!!
-// I think we can do that
-// ---
-// And also if MarkSweepHeap is responsible for it, then you don't have as many
-// code paths You don't have to check every caller of Allocate()
-
 template <typename T>
 T* Alloc() {
-  // return reinterpret_cast<T*>( LayoutGc { T::object_header(), new (malloc(1))
-  // T() }.place );
+  // TODO: use gHeap.Allocate()
 
-  // gHeap.Allocate()
   LayoutGc* untyped =
       static_cast<LayoutGc*>(malloc(sizeof(ObjHeader) + sizeof(T)));
   untyped->header = T::object_header();  // It's always before the vtable
 
-  // gHeap.GetObjectId()
-  untyped->header.obj_id = 124;  // dynamic, but ca be done by allocator
+  // TODO: assign proper object ID from MarkSweepHeap
+  untyped->header.obj_id = 124;  // dynamic, but can be done by allocator
   return new (untyped->place) T();
 }
 
-TEST gc_new_test() {
+TEST gc_header_test() {
   Point* p = Alloc<Point>();
   log("p = %p", p);
 
-  PASS();
-}
-
-TEST gc_header_test() {
-  ObjHeader obj;
-  // log("sizeof(Introspect) = %d", sizeof(Introspect));
-  log("sizeof(ObjHeader) = %d", sizeof(ObjHeader));
-
-  static_assert(sizeof(ObjHeader) == 8, "expected 8 byte header");
-
-  obj.type_tag = 127;
-  log("type tag %d", obj.type_tag);
-
-  obj.heap_tag = HeapTag::Scanned;
-  log("heap tag %d", obj.heap_tag);
-
-  // obj.heap_tag = 4;  // Overflow
-  // log("heap tag %d", obj.heap_tag);
+  log("p->vtag() = %d", p->vtag());
+  ASSERT_EQ(42, p->vtag());
 
   PASS();
 }
@@ -499,7 +362,6 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(demo::gc_new_test);
   RUN_TEST(demo::gc_header_test);
   RUN_TEST(demo::endian_test);
   RUN_TEST(demo::dual_header_test);

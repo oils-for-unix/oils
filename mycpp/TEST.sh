@@ -181,7 +181,7 @@ unit() {
     local asan_options=''
     case $b in
       # leaks with malloc
-      (*/demo/hash_table|*/demo/target_lang|*/demo/gc_header)
+      (*/demo/hash_table|*/demo/target_lang|*/demo/gc_header|*/small_str_test)
         asan_options='detect_leaks=0'
         ;;
     esac
