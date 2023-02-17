@@ -127,9 +127,9 @@ TEST test_list_gc_header() {
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
 GlobalSlab<int, 3> _gSlab = {
-    {kIsHeader, HeapTag::Global, 0, kZeroMask, kNoObjLen}, {5, 6, 7}};
+    {kIsHeader, 0, kZeroMask, HeapTag::Global, kUndefinedId}, {5, 6, 7}};
 GlobalList<int, 3> _gList = {
-    {kIsHeader, HeapTag::Global, 0, kZeroMask, kNoObjLen},
+    {kIsHeader, 0, kZeroMask, HeapTag::Global, kUndefinedId},
     3,  // len
     3,  // capacity
     &_gSlab};

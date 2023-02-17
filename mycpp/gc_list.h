@@ -418,9 +418,9 @@ List<T>* list(List<T>* other) {
 
 #define GLOBAL_LIST(T, N, name, array)                               \
   GlobalSlab<T, N> _slab_##name = {                                  \
-      {kIsHeader, 0, kZeroMask, HeapTag::Global, kNoObjLen}, array}; \
+      {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal}, array}; \
   GlobalList<T, N> _list_##name = {                                  \
-      {kIsHeader, 0, kZeroMask, HeapTag::Global, kNoObjLen},         \
+      {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal},         \
       N,                                                             \
       N,                                                             \
       &_slab_##name};                                                \

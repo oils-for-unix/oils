@@ -107,9 +107,11 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 
 void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   ObjHeader* header = FindObjHeader(obj);
-  int obj_id = header->obj_id;
+  if (header->heap_tag == HeapTag::Global) {  // don't mark or push
+    return;
+  }
 
-  // Don't re-mark or re-push
+  int obj_id = header->obj_id;
   if (mark_set_.IsMarked(obj_id)) {
     return;
   }
@@ -123,9 +125,6 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   case HeapTag::FixedSize:
     mark_set_.Mark(obj_id);
     gray_stack_.push_back(header);  // Push the header, not the object!
-    break;
-
-  case HeapTag::Global:  // don't mark or push
     break;
 
   default:
