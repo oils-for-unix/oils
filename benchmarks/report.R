@@ -952,7 +952,9 @@ AllocReport = function(in_dir, out_dir) {
   num_allocs = nrow(untyped)
   total_bytes = sum(untyped$obj_len)
 
-  untyped %>% group_by(obj_len) %>% count() %>% ungroup() %>%
+  untyped %>% group_by(obj_len) %>% count() %>% ungroup() -> untyped_hist
+  
+  untyped_hist %>%
     mutate(n_less_than = cumsum(n),
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
@@ -963,6 +965,10 @@ AllocReport = function(in_dir, out_dir) {
   Log('All allocations')
   print(alloc_sizes %>% head(22))
   print(alloc_sizes %>% tail(5))
+
+  Log('')
+  Log('Common Sizes')
+  print(untyped_hist %>% arrange(desc(n)) %>% head(8))
 
   Log('')
   Log('    %s total allocations, total bytes = %s', commas(num_allocs), commas(total_bytes))

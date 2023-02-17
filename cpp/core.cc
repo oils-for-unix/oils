@@ -220,10 +220,19 @@ bool InputAvailable(int fd) {
   return select(FD_SETSIZE, &fds, NULL, NULL, &timeout) > 0;
 }
 
+// Called directly from signal handler.  Do not allocate.
 void SignalHandler::Update(int sig_num) {
-  assert(signal_queue_ != nullptr);
-  assert(signal_queue_->len_ < signal_queue_->capacity_);
-  signal_queue_->append(sig_num);
+  DCHECK(signal_queue_ != nullptr);
+
+  if (signal_queue_->len_ < signal_queue_->capacity_) {
+    // We can append without allocating
+    signal_queue_->append(sig_num);
+  } else {
+    // Unlikely: we would have to allocate.  Just increment a counter, which we
+    // could expose this counter somewhere in the UI.
+    num_dropped_++;
+  }
+
   if (sig_num == SIGINT) {
     sigint_count_++;
   }
@@ -237,6 +246,10 @@ static List<int>* AllocSignalQueue() {
   List<int>* ret = NewList<int>();
   ret->reserve(kMaxSignalsInFlight);
   return ret;
+}
+
+void SignalHandler::Init() {
+  signal_queue_ = AllocSignalQueue();
 }
 
 List<int>* SignalHandler::TakeSignalQueue() {
@@ -290,7 +303,7 @@ void SetSigwinchCode(int code) {
 void InitShell() {
   gSignalHandler = Alloc<SignalHandler>();
   gHeap.RootGlobalVar(gSignalHandler);
-  gSignalHandler->signal_queue_ = AllocSignalQueue();
+  gSignalHandler->Init();
   RegisterSignalInterest(SIGINT);
 }
 

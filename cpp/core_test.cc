@@ -301,6 +301,31 @@ TEST dir_cache_key_test() {
   PASS();
 }
 
+TEST sig_shared_state_test() {
+  pyos::SignalHandler sig_shared_state;
+  sig_shared_state.Init();
+
+  List<int>* received = sig_shared_state.TakeSignalQueue();
+
+  // We got now signals
+  ASSERT_EQ_FMT(0, len(received), "%d");
+
+  // The existing queue is of length 0
+  ASSERT_EQ_FMT(0, len(sig_shared_state.signal_queue_), "%d");
+
+  // Capacity is a ROUND NUMBER from the allocator's POV
+  // There's no convenient way to test the obj_len we pass to gHeap.Allocate,
+  // but it should be (1022 + 2) * 4.
+  ASSERT_EQ_FMT(1022, sig_shared_state.signal_queue_->capacity_, "%d");
+
+  // Register too many signals
+  for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
+    sig_shared_state.Update(SIGINT);
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -321,6 +346,7 @@ int main(int argc, char** argv) {
   RUN_TEST(signal_test);
   RUN_TEST(passwd_test);
   RUN_TEST(dir_cache_key_test);
+  RUN_TEST(sig_shared_state_test);
 
   gHeap.CleanProcessExit();
 

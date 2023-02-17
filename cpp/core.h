@@ -23,7 +23,10 @@ const int TERM_ECHO = ECHO;
 const int EOF_SENTINEL = 256;
 const int NEWLINE_CH = 10;
 const int UNTRAPPED_SIGWINCH = -1;
-const int kMaxSignalsInFlight = 1024;
+
+// Make the signal queue slab 4096 bytes, including the GC header.  See
+// cpp/core_test.cc.
+const int kMaxSignalsInFlight = 1022;
 
 Tuple2<int, int> WaitPid();
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
@@ -98,17 +101,26 @@ class SignalHandler {
         signal_queue_(nullptr),
         last_sig_num_(0),
         sigwinch_num_(UNTRAPPED_SIGWINCH),
-        sigint_count_(0) {
+        sigint_count_(0),
+        num_dropped_(0) {
   }
 
+  // Real initialization in main()
+  void Init();
+
+  // Called directly from signal handler.
   void Update(int sig_num);
+
+  // Called from main thread.
   List<int>* TakeSignalQueue();
 
   GC_OBJ(header_);
   List<int>* signal_queue_;
-  int last_sig_num_;
-  int sigwinch_num_;
-  int sigint_count_;
+
+  int last_sig_num_;  // main thread reads with LastSignal()
+  int sigwinch_num_;  // main thread writes with SetSigwinchCode()
+  int sigint_count_;  // main thread reads with SigintCount()
+  int num_dropped_;
 
   static constexpr uint16_t field_mask() {
     return maskbit(offsetof(SignalHandler, signal_queue_));
