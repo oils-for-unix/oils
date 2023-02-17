@@ -3,22 +3,31 @@
 
 #### cd with block
 shopt -s oil:all
+
+const saved = "$PWD"
+
 # OLDPWD is NOT defined
 cd / { echo $PWD; echo OLDPWD=${OLDPWD:-} }; echo done
-echo $(basename $PWD)  # restored
+
+if ! test "$saved" = $PWD; then
+  echo FAIL
+fi
+
 cd /tmp {
   write PWD=$PWD
   write --sep ' ' pwd builtin: $(pwd)
 }
-echo $(basename $PWD)  # restored
+
+if ! test "$saved" = $PWD; then
+  echo FAIL
+fi
+
 ## STDOUT:
 /
 OLDPWD=
 done
-oil-blocks.test.sh
 PWD=/tmp
 pwd builtin: /tmp
-oil-blocks.test.sh
 ## END
 
 #### cd with block: fatal error in block

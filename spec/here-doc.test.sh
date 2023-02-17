@@ -58,13 +58,18 @@ $(a)
 ## OK mksh status: 1
 
 #### Here doc and < redirect -- last one wins
-echo hello >$TMP/hello.txt  # temporary fix
+
+echo hello >$TMP/hello.txt
+
 cat <<EOF <$TMP/hello.txt
 here
 EOF
 ## stdout: hello
 
 #### < redirect and here doc -- last one wins
+
+echo hello >$TMP/hello.txt
+
 cat <$TMP/hello.txt <<EOF
 here
 EOF

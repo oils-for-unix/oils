@@ -21,9 +21,6 @@ sh-spec() {
   local tmp_env
   tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
 
-  # note: this other _tmp dir is for tests that assume '_tmp' is available
-  mkdir -p $tmp_env $tmp_env/_tmp
-
   # - Prepend spec/bin on the front of the $PATH.  We can't isolate $PATH
   #   because we might be running in Nix, etc.
   # - Force LC_ALL=C.UTF-8 because
@@ -36,7 +33,7 @@ sh-spec() {
   # - REPO_ROOT is to find things in spec/testdata
 
   PYTHONPATH=. test/sh_spec.py \
-      --tmp-env $tmp_env \
+      --tmp-env "$tmp_env" \
       --path-env "$this_dir/../spec/bin:$PATH" \
       --env-pair 'LC_ALL=C.UTF-8' \
       --env-pair "LOCALE_ARCHIVE=${LOCALE_ARCHIVE:-}" \

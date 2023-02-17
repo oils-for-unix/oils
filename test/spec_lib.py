@@ -182,9 +182,6 @@ def DefineShSpec(p):
   p.add_option(
       '--sh-env-var-name', dest='sh_env_var_name', default='SH',
       help="Set this environment variable to the path of the shell")
-  p.add_option(
-      '--rm-tmp', dest='rm_tmp', default=False, action='store_true',
-      help='clear the tmp dir after running each test case')
 
   p.add_option(
       '--pyann-out-dir', dest='pyann_out_dir', default=None,

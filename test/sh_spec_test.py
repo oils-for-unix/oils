@@ -8,8 +8,8 @@ import optparse
 import pprint
 import unittest
 
-from sh_spec import *  # module under test
-import spec_lib
+from test.sh_spec import *  # module under test
+from test import spec_lib
 
 TEST1 = """\
 #### Env binding in readonly/declare disallowed
@@ -118,13 +118,16 @@ class ShSpecTest(unittest.TestCase):
     print(CreateAssertions(self.CASE1, 'bash'))
 
   def testRunCases(self):
+    this_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    repo_root = os.path.dirname(this_dir)
+
     o = optparse.OptionParser()
     spec_lib.DefineCommon(o)
     spec_lib.DefineShSpec(o)
-    opts, _ = o.parse_args([])
+    opts, _ = o.parse_args(['--tmp-env', os.path.join(repo_root, '_tmp')])
 
-    shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
-    env = {'TMP': os.getcwd()}  # hack to cd $REPO_ROOT
+    shells = [('bash', '/bin/bash'), ('osh', os.path.join(repo_root, 'bin/osh'))]
+    env = {}
     if 0:
       out_f = sys.stdout
     else:

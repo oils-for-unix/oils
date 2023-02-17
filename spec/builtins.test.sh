@@ -289,7 +289,7 @@ die() { echo "$@"; exit 1; }
 targ=$TMP/cd-symtarget/subdir
 lnk=$TMP/cd-symlink
 mkdir -p $targ
-ln -s $targ $lnk
+ln -s $TMP/cd-symtarget $lnk
 
 # -L behavior is the default
 cd $lnk/subdir
@@ -407,7 +407,7 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 
 #### set umask symbolically
 umask 0002  # begin in a known state for the test
-rm $TMP/umask-one $TMP/umask-two
+rm -f $TMP/umask-one $TMP/umask-two
 echo one > $TMP/umask-one
 umask g-w,o-w
 echo two > $TMP/umask-two

@@ -727,6 +727,7 @@ case $SH in (dash|ash|mksh|zsh) return ;; esac  # not implemented
 mkdir -p dir
 mapfile $x < ./dir
 echo status=$?
+
 ## STDOUT:
 status=1
 ## END
@@ -736,10 +737,13 @@ status=0
 ## N-I dash/ash/mksh/zsh stdout-json: ""
 
 #### Redirect to directory
+mkdir -p dir
+
 echo foo > ./dir
 echo status=$?
 printf foo > ./dir
 echo status=$?
+
 ## STDOUT:
 status=1
 status=1

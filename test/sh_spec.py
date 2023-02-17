@@ -51,6 +51,7 @@ world
 import collections
 import cgi
 import cStringIO
+import errno
 import json
 import optparse
 import os
@@ -617,7 +618,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
     result_row = []
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
-      timeout_file = os.path.join(timeout_dir, '%s-%d' % (sh_label, i))
+      timeout_file = os.path.join(timeout_dir, '%02d-%s' % (i, sh_label))
       if opts.timeout:
         if opts.timeout_bin:
           # This is what smoosh itself uses.  See smoosh/tests/shell_tests.sh
@@ -650,17 +651,33 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       if opts.trace:
         log('\t%s', ' '.join(argv))
 
-      if opts.rm_tmp:  # Remove BEFORE the test case runs.
-        shutil.rmtree(env['TMP'])
-        os.mkdir(env['TMP'])
-
       case_env = sh_env[shell_index]
+
+      # Unique dir for every test case and shell
+      tmp_base = os.path.normpath(opts.tmp_env)  # no . or ..
+      case_tmp_dir = os.path.join(tmp_base, '%02d-%s' % (i, sh_label))
+
+      try:
+        os.makedirs(case_tmp_dir)
+      except OSError as e:
+        if e.errno != errno.EEXIST:
+          raise
+
+      # Some tests assume _tmp exists
+      try:
+        os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
+      except OSError as e:
+        if e.errno != errno.EEXIST:
+          raise
+
+      case_env['TMP'] = case_tmp_dir
+
       if opts.pyann_out_dir:
         case_env = dict(case_env)
         case_env['PYANN_OUT'] = os.path.join(opts.pyann_out_dir, '%d.json' % i)
 
       try:
-        p = subprocess.Popen(argv, env=case_env, cwd=env['TMP'],
+        p = subprocess.Popen(argv, env=case_env, cwd=case_tmp_dir,
                              stdin=PIPE, stdout=PIPE, stderr=PIPE)
       except OSError as e:
         print('Error running %r: %s' % (sh_path, e), file=sys.stderr)
@@ -1145,7 +1162,6 @@ def MakeTestEnv(opts):
   if not opts.path_env:
     raise RuntimeError('--path-env required')
   env = {
-    'TMP': os.path.normpath(opts.tmp_env),  # no .. or .
     'PATH': opts.path_env,
     'LANG': opts.lang_env,
   }
