@@ -464,7 +464,7 @@ vars-bash() {
 }
 
 vars-special() {
-  sh-spec spec/vars-special.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/vars-special.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 

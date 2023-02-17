@@ -1266,6 +1266,7 @@ class Mem(object):
 
     self.current_spid = runtime.NO_SPID
 
+    self.last_arg = ''  # $_ is initially empty, NOT unset
     self.line_num = value.Str('')
 
     # Done ONCE on initialization
@@ -1339,6 +1340,13 @@ class Mem(object):
       return var_stack, argv_stack, debug_stack
 
     raise AssertionError()
+
+  def SetLastArgument(self, s):
+    # type: (str) -> None
+    """
+    For $_
+    """
+    self.last_arg = s
 
   def SetCurrentSpanId(self, span_id):
     # type: (int) -> None
@@ -2003,6 +2011,9 @@ class Mem(object):
 
     if name == 'BASHPID':  # TODO: Oil name for it
       return value.Str(str(posix.getpid()))
+
+    if name == '_':
+      return value.Str(self.last_arg)
 
     # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
     # fix this:

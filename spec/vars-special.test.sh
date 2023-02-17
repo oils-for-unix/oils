@@ -98,13 +98,6 @@ echo $#
 ## stdout: 4
 ## status: 0
 
-#### $_
-# This is bash-specific.
-echo hi
-echo $_
-## stdout-json: "hi\nhi\n"
-## N-I dash/mksh stdout-json: "hi\n\n"
-
 #### $$ looks like a PID
 # Just test that it has decimal digits
 echo $$ | egrep '[0-9]+'
@@ -282,7 +275,7 @@ written
 5
 ## END
 
-#### $LINENO for [[
+#### $LINENO in [[
 echo one
 [[ $LINENO -eq 2 ]] && echo OK
 ## STDOUT:
@@ -294,7 +287,7 @@ OK
 ## N-I mksh status: 1
 ## N-I mksh stdout: one
 
-#### $LINENO for ((
+#### $LINENO in ((
 echo one
 (( x = LINENO ))
 echo $x
@@ -361,71 +354,219 @@ echo $b1 $b2
 ## END
 
 
-#### $_
-: 1
-echo $_
+#### $_ with simple command and evaluation
+
+name=world
+echo "hi $name"
+echo "$_"
+## STDOUT:
+hi world
+hi world
+## END
+## N-I dash/mksh STDOUT:
+hi world
+
+## END
+
+#### $_ and ${_}
+case $SH in (dash|mksh) exit ;; esac
+
+_var=value
+
+: 42
+echo $_ $_var ${_}var
+
 : 'foo'"bar"
 echo $_
+
 ## STDOUT:
-1
+42 value 42var
 foobar
 ## END
-## N-I dash/mksh stdout-json: "\n\n"
+## N-I dash/mksh stdout-json: ""
+
+#### $_ with word splitting
+case $SH in (dash|mksh) exit ;; esac
+
+setopt shwordsplit  # for ZSH
+
+x='with spaces'
+: $x
+echo $_
+
+## STDOUT:
+spaces
+## END
+## N-I dash/mksh stdout-json: ""
+
+#### $_ with pipeline and subshell
+case $SH in (dash|mksh) exit ;; esac
+
+shopt -s lastpipe
+
+seq 3 | echo last=$_
+
+echo pipeline=$_
+
+( echo subshell=$_ )
+echo done=$_
+
+## STDOUT:
+last=
+pipeline=last=
+subshell=pipeline=last=
+done=pipeline=last=
+## END
+
+# very weird semantics for zsh!
+## OK zsh STDOUT:
+last=3
+pipeline=last=3
+subshell=
+done=
+## END
+
+## N-I dash/mksh stdout-json: ""
+
+
+#### $_ with && and ||
+case $SH in (dash|mksh) exit ;; esac
+
+echo hi && echo last=$_
+echo and=$_
+
+echo hi || echo last=$_
+echo or=$_
+
+## STDOUT:
+hi
+last=hi
+and=last=hi
+hi
+or=hi
+## END
+
+## N-I dash/mksh stdout-json: ""
+
+#### $_ is not reset with (( and [[
+
+# bash is inconsistent because it does it for pipelines and assignments, but
+# not (( and [[
+
+case $SH in (dash|mksh) exit ;; esac
+
+echo simple
+(( a = 2 + 3 ))
+echo "(( $_"
+
+[[ a == *.py ]]
+echo "[[ $_"
+
+## STDOUT:
+simple
+(( simple
+[[ (( simple
+## END
+
+## N-I dash/mksh stdout-json: ""
+
 
 #### $_ with assignments, arrays, etc.
 case $SH in (dash|mksh) exit ;; esac
 
 : foo
-echo $_
+echo "colon [$_]"
 
 s=bar
-echo s:$_
+echo "bare assign [$_]"
 
 # zsh uses declare; bash uses s=bar
 declare s=bar
-echo s:$_
+echo "declare [$_]"
 
 # zsh remains s:declare, bash resets it
 a=(1 2)
-echo a:$_
+echo "array [$_]"
 
 # zsh sets it to declare, bash uses the LHS a
 declare a=(1 2)
-echo a:$_
+echo "declare array [$_]"
 
-declare -g a=(1 2)
-echo flag:$_
+declare -g d=(1 2)
+echo "declare flag [$_]"
 
 ## STDOUT:
-foo
-s:
-s:s=bar
-a:
-a:a
-flag:a
+colon [foo]
+bare assign []
+declare [s=bar]
+array []
+declare array [a]
+declare flag [d]
 ## END
+
 ## OK zsh STDOUT:
-foo
-s:
-s:declare
-a:s:declare
-a:declare
-flag:-g
+colon [foo]
+bare assign []
+declare [declare]
+array [declare [declare]]
+declare array [declare]
+declare flag [-g]
+## END
+
+## OK osh STDOUT:
+colon [foo]
+bare assign [colon [foo]]
+declare [bare assign [colon [foo]]]
+array [declare [bare assign [colon [foo]]]]
+declare array [array [declare [bare assign [colon [foo]]]]]
+declare flag [declare array [array [declare [bare assign [colon [foo]]]]]]
+## END
+
+## N-I dash/mksh stdout-json: ""
+
+#### $_ with loop
+
+case $SH in (dash|mksh) exit ;; esac
+
+# zsh resets it when in a loop
+
+echo init
+echo begin=$_
+for x in 1 2 3; do
+  echo prev=$_
+done
+
+## STDOUT:
+init
+begin=init
+prev=begin=init
+prev=prev=begin=init
+prev=prev=prev=begin=init
+## END
+
+## OK zsh STDOUT:
+init
+begin=init
+prev=
+prev=prev=
+prev=prev=prev=
 ## END
 ## N-I dash/mksh stdout-json: ""
 
-#### $_ undefined
+
+#### $_ is not undefined on first use
 set -e
 
-# seems to be set to $0 at first, interesting.
-x=$($SH -u -c 'echo $_')
-test -n "$x"
-echo nonempty=$?
+x=$($SH -u -c 'echo prev=$_')
+echo status=$?
+
+# bash and mksh set $_ to $0 at first; zsh is empty
+#echo "$x"
+
 ## STDOUT:
-nonempty=0
+status=0
 ## END
-## OK zsh status: 1
-## OK zsh stdout-json: ""
+
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 

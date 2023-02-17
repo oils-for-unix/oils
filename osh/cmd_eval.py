@@ -680,6 +680,11 @@ class CommandEvaluator(object):
         if UP_cmd_val.tag_() == cmd_value_e.Argv:
           cmd_val = cast(cmd_value__Argv, UP_cmd_val)
 
+          if len(cmd_val.argv):  # it can be empty in rare cases
+            self.mem.SetLastArgument(cmd_val.argv[-1])
+          else:
+            self.mem.SetLastArgument('')
+
           typed_args = None  # type: ArgList
           if node.typed_args:
             orig = node.typed_args
@@ -708,6 +713,11 @@ class CommandEvaluator(object):
           if node.block:
             e_die("ShAssignment builtins don't accept blocks", node.block.brace_group.left)
           cmd_val = cast(cmd_value__Assign, UP_cmd_val)
+
+          # Could reset $_ after assignment, but then we'd have to do it for
+          # all Oil constructs too.  It's easier to let it persist.  Other
+          # shells aren't consistent.
+          # self.mem.SetLastArgument('')
 
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
@@ -751,6 +761,10 @@ class CommandEvaluator(object):
         cmd_st.check_errexit = True
         if len(node.stderr_indices):
           e_die("|& isn't supported", loc.Span(node.spids[0]))
+
+        # Remove $_ before pipeline.  This matches bash, and is important in
+        # pipelines than assignments because pipelines are non-deterministic.
+        self.mem.SetLastArgument('')
 
         # TODO: how to get errexit_spid into _Execute?
         # It can be the span_id of !, or of the pipeline component that failed,
