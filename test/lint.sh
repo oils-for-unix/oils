@@ -189,6 +189,53 @@ flake8-all() {
     --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 }
 
+#
+# More Python, including Python 3
+#
+
+install-black() {
+  ../oil_DEPS/python3 -m pip install black
+}
+
+mycpp-files() {
+  for f in mycpp/*.py; do
+    case $f in
+      */NINJA_subgraph.py)
+        continue
+        ;;
+    esac
+
+    echo $f
+  done
+}
+
+# Black fixes indentation, but also turns all our single quotes into double
+# quotes
+run-black() {
+  mycpp-files | xargs --verbose -- ../oil_DEPS/python3 -m black
+}
+
+
+install-yapf() {
+  pip3 install yapf
+}
+
+run-yapf-3() {
+  ### Run yapf on Python 3 code
+  mycpp-files | xargs python3 -m yapf -i
+}
+
+run-yapf-2() {
+  ### Run yapf on Python 2 code
+
+  # TODO: Expand this
+  echo osh/*.py | xargs python3 -m yapf -i --style='{based_on_style: google, indent_width: 2}'
+}
+
+#
+# Main
+#
+
 # Hook for soil
 soil-run() {
   if test -n "${TRAVIS_SKIP:-}"; then

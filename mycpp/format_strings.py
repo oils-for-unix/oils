@@ -25,53 +25,58 @@ def DecodeMyPyString(s):
 
 
 class LiteralPart:
-  def __init__(self, s):
-    self.s = s
-    self.strlen = len(s)
 
-  def __repr__(self):
-    return '(Literal %r)' % (self.s)
+    def __init__(self, s):
+        self.s = s
+        self.strlen = len(s)
+
+    def __repr__(self):
+        return '(Literal %r)' % (self.s)
 
 
 class SubstPart:
-  def __init__(self, width, char_code, arg_num):
-    self.width = width
-    self.char_code = char_code
-    self.arg_num = arg_num
 
-  def __repr__(self):
-    return '(Subst %r %s %d)' % (self.width, self.char_code, self.arg_num)
+    def __init__(self, width, char_code, arg_num):
+        self.width = width
+        self.char_code = char_code
+        self.arg_num = arg_num
+
+    def __repr__(self):
+        return '(Subst %r %s %d)' % (self.width, self.char_code, self.arg_num)
 
 
-PAT = re.compile('''
+PAT = re.compile(
+    '''
 ([^%]*)
 (?:
   %([0-9]*)(.)   # optional number, and then character code
 )?
 ''', re.VERBOSE)
 
+
 def Parse(fmt):
 
-  arg_num = 0
-  parts = []
-  for m in PAT.finditer(fmt):
-    lit = m.group(1)
-    width = m.group(2)
-    char_code = m.group(3)
+    arg_num = 0
+    parts = []
+    for m in PAT.finditer(fmt):
+        lit = m.group(1)
+        width = m.group(2)
+        char_code = m.group(3)
 
-    if lit:
-      parts.append(LiteralPart(lit))
-    if char_code:
-      if char_code == '%':
-        part = LiteralPart('%')
-      else:
-        part = SubstPart(width, char_code, arg_num)
-        arg_num += 1
-      parts.append(part)
+        if lit:
+            parts.append(LiteralPart(lit))
+        if char_code:
+            if char_code == '%':
+                part = LiteralPart('%')
+            else:
+                part = SubstPart(width, char_code, arg_num)
+                arg_num += 1
+            parts.append(part)
 
-    #print('end =', m.end(0))
+        #print('end =', m.end(0))
 
-  return parts
+    return parts
+
 
 # Note: This would be a lot easier in Oil!
 # TODO: Should there be a char type?
@@ -107,4 +112,3 @@ func Parse(fmt Str) {
   return parts
 }
 """
-

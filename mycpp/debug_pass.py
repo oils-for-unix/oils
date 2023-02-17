@@ -10,8 +10,8 @@ from typing import overload, Union, Optional, Any, Dict
 from mycpp.crash import catch_errors
 from mycpp.util import log
 
-
 T = None
+
 
 class UnsupportedException(Exception):
     pass
@@ -20,22 +20,24 @@ class UnsupportedException(Exception):
 class Print(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type]):
-      self.types = types
-      self.indent = 0
+        self.types = types
+        self.indent = 0
 
     def log(self, msg, *args):
-      ind_str = self.indent * '  '
-      log(ind_str + msg, *args)
+        ind_str = self.indent * '  '
+        log(ind_str + msg, *args)
 
     #
     # COPIED from IRBuilder
     #
 
     @overload
-    def accept(self, node: Expression) -> T: ...
+    def accept(self, node: Expression) -> T:
+        ...
 
     @overload
-    def accept(self, node: Statement) -> None: ...
+    def accept(self, node: Statement) -> None:
+        ...
 
     def accept(self, node: Union[Statement, Expression]) -> Optional[T]:
         with catch_errors(self.module_path, node.line):
@@ -63,9 +65,9 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
         # Skip some stdlib stuff.  A lot of it is brought in by 'import
         # typing'.
-        if o.fullname() in (
-            '__future__', 'sys', 'types', 'typing', 'abc', '_ast', 'ast',
-            '_weakrefset', 'collections', 'cStringIO', 're', 'builtins'):
+        if o.fullname() in ('__future__', 'sys', 'types', 'typing', 'abc',
+                            '_ast', 'ast', '_weakrefset', 'collections',
+                            'cStringIO', 're', 'builtins'):
 
             # These module are special; their contents are currently all
             # built-in primitives.
@@ -129,9 +131,9 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         for arg in o.args:
-          self.accept(arg)
-          # The type of each argument
-          #self.log(':: %s', self.types[arg])
+            self.accept(arg)
+            # The type of each argument
+            #self.log(':: %s', self.types[arg])
         self.indent -= 1
         #self.log(  'args %s', o.args)
 
@@ -151,10 +153,10 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         for operand in o.operands:
-          self.log('operand')
-          self.indent += 1
-          self.accept(operand)
-          self.indent -= 1
+            self.log('operand')
+            self.indent += 1
+            self.accept(operand)
+            self.indent -= 1
 
         self.indent -= 1
 
@@ -205,7 +207,8 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
         pass
 
-    def visit_dictionary_comprehension(self, o: 'mypy.nodes.DictionaryComprehension') -> T:
+    def visit_dictionary_comprehension(
+            self, o: 'mypy.nodes.DictionaryComprehension') -> T:
         pass
 
     def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> T:
@@ -218,13 +221,13 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('end %s', o.end_index)
 
         if o.begin_index:
-          self.accept(o.begin_index)
+            self.accept(o.begin_index)
 
         if o.end_index:
-          self.accept(o.end_index)
+            self.accept(o.end_index)
 
         if o.stride:
-          self.accept(o.stride)
+            self.accept(o.stride)
         self.indent -= 1
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
@@ -267,29 +270,29 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         # I thought we did parse_and_typecheck already?
 
         if 1:
-          self.log('AssignmentStmt')
-          #self.log('  type %s', o.type)
-          #self.log('  unanalyzed_type %s', o.unanalyzed_type)
+            self.log('AssignmentStmt')
+            #self.log('  type %s', o.type)
+            #self.log('  unanalyzed_type %s', o.unanalyzed_type)
 
-          # NICE!  Got the lvalue 
-          for lval in o.lvalues:
+            # NICE!  Got the lvalue
+            for lval in o.lvalues:
+                try:
+                    self.log('  lval %s :: %s', lval, self.types[lval])
+                except KeyError:  # TODO: handle this
+                    pass
             try:
-              self.log('  lval %s :: %s', lval, self.types[lval])
-            except KeyError:  # TODO: handle this
-              pass
-          try:
-            r = self.types[o.rvalue]
-          except KeyError:
-            # This seems to only happen for Ellipsis, I guess in the abc module
-            #log('    NO TYPE FOR RVALUE: %s', o.rvalue)
-            pass
-          else:
-            #self.log('    %s :: %s', o.rvalue, r)
-            self.indent += 1
-            self.log('    rvalue :: %s', r)
-            self.accept(o.rvalue)
-            self.indent -= 1
-            #self.log('  o.rvalue %s', o.rvalue)
+                r = self.types[o.rvalue]
+            except KeyError:
+                # This seems to only happen for Ellipsis, I guess in the abc module
+                #log('    NO TYPE FOR RVALUE: %s', o.rvalue)
+                pass
+            else:
+                #self.log('    %s :: %s', o.rvalue, r)
+                self.indent += 1
+                self.log('    rvalue :: %s', r)
+                self.accept(o.rvalue)
+                self.indent -= 1
+                #self.log('  o.rvalue %s', o.rvalue)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         self.log('ForStmt')
@@ -300,7 +303,7 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.expr)  # the thing being iterated over
         self.accept(o.body)
         if o.else_body:
-          self.accept(o.else_body)
+            self.accept(o.else_body)
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
         pass
@@ -315,32 +318,33 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('%s', type(typ))
 
         for t, name in zip(typ.arg_types, typ.arg_names):
-          self.log('  arg %s %s', t, name)
+            self.log('  arg %s %s', t, name)
         self.log('  ret %s', o.type.ret_type)
 
         self.indent += 1
         for arg in o.arguments:
-          # We can't use __str__ on these Argument objects?  That seems like an
-          # oversight
-          #self.log('%r', arg)
+            # We can't use __str__ on these Argument objects?  That seems like an
+            # oversight
+            #self.log('%r', arg)
 
-          self.log('Argument %s', arg.variable)
-          self.log('  type_annotation %s', arg.type_annotation)
-          # I think these are for default values
-          self.log('  initializer %s', arg.initializer)
-          self.log('  kind %s', arg.kind)
+            self.log('Argument %s', arg.variable)
+            self.log('  type_annotation %s', arg.type_annotation)
+            # I think these are for default values
+            self.log('  initializer %s', arg.initializer)
+            self.log('  kind %s', arg.kind)
 
         self.accept(o.body)
         self.indent -= 1
 
-    def visit_overloaded_func_def(self, o: 'mypy.nodes.OverloadedFuncDef') -> T:
+    def visit_overloaded_func_def(self,
+                                  o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
         # woohoo!!
         self.log('ClassDef %s', o.name)
         for b in o.base_type_exprs:
-          self.log('  base_type_expr %s', b)
+            self.log('  base_type_expr %s', b)
         self.indent += 1
         self.accept(o.defs)
         self.indent -= 1
@@ -384,7 +388,8 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.expr)
         self.indent -= 1
 
-    def visit_operator_assignment_stmt(self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
+    def visit_operator_assignment_stmt(
+            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
         self.log('OperatorAssignmentStmt %s', o.op)
         self.indent += 1
         self.accept(o.lvalue)
@@ -399,9 +404,9 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
         self.log('ReturnStmt')
         if o.expr:
-          self.indent += 1
-          self.accept(o.expr)
-          self.indent -= 1
+            self.indent += 1
+            self.accept(o.expr)
+            self.indent -= 1
 
     def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
         pass
@@ -410,11 +415,11 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('IfStmt')
         self.indent += 1
         for e in o.expr:
-          self.accept(e)
+            self.accept(e)
         for node in o.body:
-          self.accept(node)
+            self.accept(node)
         if o.else_body:
-          self.accept(o.else_body)
+            self.accept(o.else_body)
         self.indent -= 1
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
@@ -429,9 +434,9 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
         self.log('RaiseStmt')
         if o.expr:
-          self.indent += 1
-          self.accept(o.expr)
-          self.indent -= 1
+            self.indent += 1
+            self.accept(o.expr)
+            self.indent -= 1
 
     def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
         self.log('TryStmt')
@@ -440,15 +445,15 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.body)
 
         for t, v, handler in zip(o.types, o.vars, o.handlers):
-          self.log('except %s as %s', t, v)
-          self.indent += 1
-          self.accept(handler)
-          self.indent -= 1
+            self.log('except %s as %s', t, v)
+            self.indent += 1
+            self.accept(handler)
+            self.indent -= 1
 
         if o.else_body:
-          self.accept(o.else_body)
+            self.accept(o.else_body)
         if o.finally_body:
-          self.accept(o.finally_body)
+            self.accept(o.finally_body)
 
         self.indent -= 1
 

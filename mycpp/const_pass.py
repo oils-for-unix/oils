@@ -10,9 +10,8 @@ import os
 from typing import overload, Union, Optional, Any, Dict, List
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.nodes import (
-    Expression, Statement, ExpressionStmt, StrExpr, ComparisonExpr, NameExpr,
-    MemberExpr, IntExpr)
+from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
+                        ComparisonExpr, NameExpr, MemberExpr, IntExpr)
 
 from mypy.types import Type
 
@@ -22,39 +21,40 @@ from mycpp.util import log
 
 T = None  # TODO: Make it type check?
 
+
 class UnsupportedException(Exception):
     pass
 
 
 class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
-    def __init__(self,
-        types: Dict[Expression, Type],
-        const_lookup: Dict[Expression, str],
-        const_code: List[str]):
+    def __init__(self, types: Dict[Expression, Type],
+                 const_lookup: Dict[Expression, str], const_code: List[str]):
 
-      self.types = types
-      self.const_lookup = const_lookup
-      self.const_code = const_code
-      self.unique_id = 0
+        self.types = types
+        self.const_lookup = const_lookup
+        self.const_code = const_code
+        self.unique_id = 0
 
-      self.indent = 0
+        self.indent = 0
 
     def out(self, msg, *args):
-      ind_str = self.indent * '  '
-      if args:
-        msg = msg % args
-      self.const_code.append(msg)
+        ind_str = self.indent * '  '
+        if args:
+            msg = msg % args
+        self.const_code.append(msg)
 
     #
     # COPIED from IRBuilder
     #
 
     @overload
-    def accept(self, node: Expression) -> T: ...
+    def accept(self, node: Expression) -> T:
+        ...
 
     @overload
-    def accept(self, node: Statement) -> None: ...
+    def accept(self, node: Statement) -> None:
+        ...
 
     def accept(self, node: Union[Statement, Expression]) -> Optional[T]:
         with catch_errors(self.module_path, node.line):
@@ -78,18 +78,18 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 return None
 
     def log(self, msg, *args):
-      if 0:  # quiet
-        ind_str = self.indent * '  '
-        log(ind_str + msg, *args)
+        if 0:  # quiet
+            ind_str = self.indent * '  '
+            log(ind_str + msg, *args)
 
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
         # Skip some stdlib stuff.  A lot of it is brought in by 'import
         # typing'.
-        if o.fullname in (
-            '__future__', 'sys', 'types', 'typing', 'abc', '_ast', 'ast',
-            '_weakrefset', 'collections', 'cStringIO', 're', 'builtins'):
+        if o.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
+                          '_ast', 'ast', '_weakrefset', 'collections',
+                          'cStringIO', 're', 'builtins'):
 
             # These module are special; their contents are currently all
             # built-in primitives.
@@ -100,7 +100,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
         for node in o.defs:
             # skip module docstring
-            if isinstance(node, ExpressionStmt) and isinstance(node.expr, StrExpr):
+            if isinstance(node, ExpressionStmt) and isinstance(
+                    node.expr, StrExpr):
                 continue
             self.accept(node)
         self.indent -= 1
@@ -147,7 +148,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
-          self.accept(o.expr)
+            self.accept(o.expr)
 
     def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
         pass
@@ -161,9 +162,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         for arg in o.args:
-          self.accept(arg)
-          # The type of each argument
-          #self.log(':: %s', self.types[arg])
+            self.accept(arg)
+            # The type of each argument
+            #self.log(':: %s', self.types[arg])
         self.indent -= 1
         #self.log(  'args %s', o.args)
 
@@ -183,9 +184,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         for operand in o.operands:
-          self.indent += 1
-          self.accept(operand)
-          self.indent -= 1
+            self.indent += 1
+            self.accept(operand)
+            self.indent -= 1
 
         self.indent -= 1
 
@@ -244,12 +245,13 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(index_expr)
         self.accept(seq)
         for c in cond:
-          self.accept(c)
+            self.accept(c)
 
     def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
         pass
 
-    def visit_dictionary_comprehension(self, o: 'mypy.nodes.DictionaryComprehension') -> T:
+    def visit_dictionary_comprehension(
+            self, o: 'mypy.nodes.DictionaryComprehension') -> T:
         pass
 
     def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> T:
@@ -257,13 +259,13 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> T:
         if o.begin_index:
-          self.accept(o.begin_index)
+            self.accept(o.begin_index)
 
         if o.end_index:
-          self.accept(o.end_index)
+            self.accept(o.end_index)
 
         if o.stride:
-          self.accept(o.stride)
+            self.accept(o.stride)
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
         self.accept(o.cond)
@@ -307,31 +309,31 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         # I thought we did parse_and_typecheck already?
 
         if 1:
-          self.log('AssignmentStmt')
-          #self.log('  type %s', o.type)
-          #self.log('  unanalyzed_type %s', o.unanalyzed_type)
+            self.log('AssignmentStmt')
+            #self.log('  type %s', o.type)
+            #self.log('  unanalyzed_type %s', o.unanalyzed_type)
 
-          # NICE!  Got the lvalue 
-          for lval in o.lvalues:
+            # NICE!  Got the lvalue
+            for lval in o.lvalues:
+                try:
+                    self.log('  lval %s :: %s', lval, self.types[lval])
+                except KeyError:  # TODO: handle this
+                    pass
+                self.accept(lval)
+
             try:
-              self.log('  lval %s :: %s', lval, self.types[lval])
-            except KeyError:  # TODO: handle this
-              pass
-            self.accept(lval)
-
-          try:
-            r = self.types[o.rvalue]
-          except KeyError:
-            # This seems to only happen for Ellipsis, I guess in the abc module
-            #log('    NO TYPE FOR RVALUE: %s', o.rvalue)
-            pass
-          else:
-            #self.log('    %s :: %s', o.rvalue, r)
-            self.indent += 1
-            #self.log('    rvalue :: %s', r)
-            self.accept(o.rvalue)
-            self.indent -= 1
-            #self.log('  o.rvalue %s', o.rvalue)
+                r = self.types[o.rvalue]
+            except KeyError:
+                # This seems to only happen for Ellipsis, I guess in the abc module
+                #log('    NO TYPE FOR RVALUE: %s', o.rvalue)
+                pass
+            else:
+                #self.log('    %s :: %s', o.rvalue, r)
+                self.indent += 1
+                #self.log('    rvalue :: %s', r)
+                self.accept(o.rvalue)
+                self.indent -= 1
+                #self.log('  o.rvalue %s', o.rvalue)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         self.log('ForStmt')
@@ -342,7 +344,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.expr)  # the thing being iterated over
         self.accept(o.body)
         if o.else_body:
-          raise AssertionError("can't translate for-else")
+            raise AssertionError("can't translate for-else")
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
         assert len(o.expr) == 1, o.expr
@@ -359,35 +361,36 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('%s', type(typ))
 
         for t, name in zip(typ.arg_types, typ.arg_names):
-          self.log('  arg %s %s', t, name)
+            self.log('  arg %s %s', t, name)
         self.log('  ret %s', o.type.ret_type)
 
         self.indent += 1
         for arg in o.arguments:
-          # e.g. foo=''
-          if arg.initializer:
-            self.accept(arg.initializer)
+            # e.g. foo=''
+            if arg.initializer:
+                self.accept(arg.initializer)
 
-          # We can't use __str__ on these Argument objects?  That seems like an
-          # oversight
-          #self.log('%r', arg)
+            # We can't use __str__ on these Argument objects?  That seems like an
+            # oversight
+            #self.log('%r', arg)
 
-          self.log('Argument %s', arg.variable)
-          self.log('  type_annotation %s', arg.type_annotation)
-          # I think these are for default values
-          self.log('  initializer %s', arg.initializer)
-          self.log('  kind %s', arg.kind)
+            self.log('Argument %s', arg.variable)
+            self.log('  type_annotation %s', arg.type_annotation)
+            # I think these are for default values
+            self.log('  initializer %s', arg.initializer)
+            self.log('  kind %s', arg.kind)
 
         self.accept(o.body)
         self.indent -= 1
 
-    def visit_overloaded_func_def(self, o: 'mypy.nodes.OverloadedFuncDef') -> T:
+    def visit_overloaded_func_def(self,
+                                  o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
         self.log('const_pass ClassDef %s', o.name)
         for b in o.base_type_exprs:
-          self.log('  base_type_expr %s', b)
+            self.log('  base_type_expr %s', b)
         self.indent += 1
         self.accept(o.defs)
         self.indent -= 1
@@ -422,7 +425,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
         for stmt in block.body:
             # Ignore things that look like docstrings
-            if isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, StrExpr):
+            if isinstance(stmt, ExpressionStmt) and isinstance(
+                    stmt.expr, StrExpr):
                 continue
             #log('-- %d', self.indent)
             self.accept(stmt)
@@ -434,7 +438,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.expr)
         self.indent -= 1
 
-    def visit_operator_assignment_stmt(self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
+    def visit_operator_assignment_stmt(
+            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
         self.log('OperatorAssignmentStmt')
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
@@ -445,7 +450,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
         self.log('ReturnStmt')
         if o.expr:
-          self.accept(o.expr)
+            self.accept(o.expr)
 
     def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
         pass
@@ -457,41 +462,41 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Omit anything that looks like if __name__ == ...
         cond = o.expr[0]
-        if (isinstance(cond, ComparisonExpr) and
-            isinstance(cond.operands[0], NameExpr) and 
-            cond.operands[0].name == '__name__'):
-          return
+        if (isinstance(cond, ComparisonExpr)
+                and isinstance(cond.operands[0], NameExpr)
+                and cond.operands[0].name == '__name__'):
+            return
 
         # Omit if 0:
         if isinstance(cond, IntExpr) and cond.value == 0:
-          return
+            return
 
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that
         # don't type check!
         if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
-          return
+            return
         # mylib.CPP
         if isinstance(cond, MemberExpr) and cond.name == 'CPP':
-          # just take the if block
-          for node in o.body:
-            self.accept(node)
-          return
+            # just take the if block
+            for node in o.body:
+                self.accept(node)
+            return
         # mylib.PYTHON
         if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
-          if o.else_body:
-            self.accept(o.else_body)
-          return
+            if o.else_body:
+                self.accept(o.else_body)
+            return
 
         self.log('IfStmt')
         self.indent += 1
         for e in o.expr:
-          self.accept(e)
+            self.accept(e)
 
         for node in o.body:
-          self.accept(node)
+            self.accept(node)
 
         if o.else_body:
-          self.accept(o.else_body)
+            self.accept(o.else_body)
         self.indent -= 1
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
@@ -505,12 +510,12 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
         if o.expr:
-          self.accept(o.expr)
+            self.accept(o.expr)
 
     def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
         self.accept(o.body)
         for t, v, handler in zip(o.types, o.vars, o.handlers):
-          self.accept(handler)
+            self.accept(handler)
 
         #if o.else_body:
         #  raise AssertionError('try/else not supported')

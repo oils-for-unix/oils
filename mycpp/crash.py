@@ -1,6 +1,7 @@
 # Our copy of mypy/mypyc/crash.py, patched to write to stderr
 
 from typing import Iterator
+
 MYPY = False
 if MYPY:
     from typing import NoReturn
@@ -31,5 +32,7 @@ def crash_report(module_path: str, line: int) -> 'NoReturn':
     print('Traceback (most recent call last):', file=sys.stderr)
     for s in traceback.format_list(tb + tb2):
         print(s.rstrip('\n'), file=sys.stderr)
-    print('{}:{}: {}: {}'.format(module_path, line, type(err).__name__, err), file=sys.stderr)
+    print('{}:{}: {}: {}'.format(module_path, line,
+                                 type(err).__name__, err),
+          file=sys.stderr)
     raise SystemExit(2)

@@ -9,6 +9,6 @@ from typing import Any
 
 
 def log(msg: str, *args: Any) -> None:
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+    if args:
+        msg = msg % args
+    print(msg, file=sys.stderr)
