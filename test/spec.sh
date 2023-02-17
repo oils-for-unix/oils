@@ -1156,4 +1156,29 @@ one-off() {
   test/spec.sh builtin-vars -r 39-40
 }
 
-"$@"
+# List all functions defined in this file (and not in sourced files).
+_list-funcs() {
+    local funcs=($(compgen -A function))
+    # extdebug makes `declare -F` print the file path, but, annoyingly, only
+    # if you pass the function names as arguments.
+    shopt -s extdebug
+    declare -F "${funcs[@]}" | grep --fixed-strings " $0" | awk '{print $1}'
+}
+
+main() {
+  if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
+      echo "Usage: $0 <function> [<args>]"
+      echo
+      echo "For bash completion of available functions, run:"
+      echo "   source devtools/completion.bash"
+      echo
+      echo "For more help try passing --help, e.g.,"
+      echo "   $0 alias --help"
+      echo
+      echo "Available functions:"
+      _list-funcs | column
+  fi
+  "$@"
+}
+
+main "$@"
