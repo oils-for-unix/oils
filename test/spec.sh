@@ -1177,6 +1177,7 @@ main() {
       echo
       echo "Available functions:"
       _list-funcs | column
+      exit
   fi
   "$@"
 }
