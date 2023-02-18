@@ -157,7 +157,7 @@ List<T>* NewList(T item, int times) {
 template <typename T>
 void List<T>::append(T item) {
   reserve(len_ + 1);
-  set(len_, item);
+  slab_->items_[len_] = item;
   ++len_;
 }
 
