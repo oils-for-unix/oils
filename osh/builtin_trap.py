@@ -17,6 +17,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
+from core.pyerror import log
 from core import pyos
 from core import vm
 from frontend import flag_spec
@@ -32,58 +33,66 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
 
+_ = log
+
 
 class TrapState(object):
-  """All changes to global signal and hook state go through this object."""
+  """Traps are shell callbacks that the user wants to run on certain events.
+
+  There are 2 catogires:
+  1. Signals like SIGUSR1
+  2. Hooks like EXIT
+
+  Traps execute in the main loop and within blocking syscalls.
+  """
   def __init__(self, signal_safe):
     # type: (pyos.SignalSafe) -> None
     self.signal_safe = signal_safe
     self.hooks = {}  # type: Dict[str, command_t]
     self.traps = {}  # type: Dict[int, command_t]
-    self.display = None  # type: _IDisplay
+
+    # The display can be notified when we get SIGWINCH.
+    self.display = None  # type: Optional[_IDisplay]
 
   def GetHook(self, hook_name):
     # type: (str) -> command_t
-    """Return the handler associated with hook_name"""
+    """ e.g. EXIT hook """
     return self.hooks.get(hook_name, None)
 
   def AddUserHook(self, hook_name, handler):
     # type: (str, command_t) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
     self.hooks[hook_name] = handler
 
   def RemoveUserHook(self, hook_name):
     # type: (str) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
     mylib.dict_erase(self.hooks, hook_name)
 
   def AddUserTrap(self, sig_num, handler):
     # type: (int, command_t) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
+    """ e.g. SIGUSR1 """
     self.traps[sig_num] = handler
 
     if sig_num == SIGWINCH:
-      assert self.display is not None
       self.signal_safe.SetSigWinchCode(SIGWINCH)
     else:
       pyos.RegisterSignalInterest(sig_num)
-    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
 
   def RemoveUserTrap(self, sig_num):
     # type: (int) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
-    # Restore default
+
     mylib.dict_erase(self.traps, sig_num)
 
     if sig_num == SIGWINCH:
       self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
     else:
       pyos.Sigaction(sig_num, SIG_DFL)
-    # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
 
   def InitInteractiveShell(self, display, my_pid):
     # type: (_IDisplay, int) -> None
     """Called when initializing an interactive shell."""
+
+    self.display = display
+
     # The shell itself should ignore Ctrl-\.
     pyos.Sigaction(SIGQUIT, SIG_IGN)
 
@@ -101,7 +110,6 @@ class TrapState(object):
 
     # This is ALWAYS on, which means that it can cause EINTR, and wait() and
     # read() have to handle it
-    self.display = display
     pyos.RegisterSignalInterest(SIGWINCH)
     self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
 
@@ -114,8 +122,8 @@ class TrapState(object):
     for sig_num in sig_queue:
       node = self.traps.get(sig_num, None)
 
-      if sig_num == SIGWINCH:
-        if mylib.PYTHON:
+      if mylib.PYTHON:
+        if sig_num == SIGWINCH and self.display:
           self.display.OnWindowChange()
 
       if node is not None:
