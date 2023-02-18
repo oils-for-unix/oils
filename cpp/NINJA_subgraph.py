@@ -52,7 +52,6 @@ def NinjaGraph(ru):
       'cpp/data_race_test.cc',
       deps = [
         '//cpp/core',
-        '//mycpp/runtime',
         ],
       matrix = ninja_lib.SMALL_TEST_MATRIX + [
         ('cxx', 'tsan'),

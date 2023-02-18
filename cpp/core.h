@@ -106,6 +106,7 @@ class SignalSafe {
         num_dropped_(0) {
   }
 
+  // Called from signal handling context.  Do not allocate.
   void UpdateFromSignalHandler(int sig_num) {
     DCHECK(signal_queue_ != nullptr);
 
@@ -114,7 +115,7 @@ class SignalSafe {
       signal_queue_->append(sig_num);
     } else {
       // Unlikely: we would have to allocate.  Just increment a counter, which
-      // we could expose this counter somewhere in the UI.
+      // we could expose somewhere in the UI.
       num_dropped_++;
     }
 
@@ -129,7 +130,7 @@ class SignalSafe {
 
   // Main thread takes signals so it can run traps.
   List<int>* TakeSignalQueue() {
-    // TODO: Consider using 2 List<int> and swapping them.
+    // TODO: Consider using 2 List<int> and atomically swapping them.
 
     List<int>* new_queue = AllocSignalQueue();
     List<int>* ret = signal_queue_;
@@ -147,7 +148,7 @@ class SignalSafe {
     return last_sig_num_;
   }
 
-  // Main thread wants to know if SIGINT received since the last time
+  // Main thread wants to know if SIGINT was received since the last time
   // PollSigInt was called.
   bool PollSigInt() {
     bool result = num_sigint_ > 0;
@@ -165,10 +166,10 @@ class SignalSafe {
   List<int>* signal_queue_;  // public for testing
 
  private:
-  // Enforcing private state because two different threads will use it!
+  // Enforce private state because two different "threads" will use it!
 
+  // Reserve a fixed number of signals.
   List<int>* AllocSignalQueue() {
-    // Reserve a fixed number of signals.  We never allocate in Update().
     List<int>* ret = NewList<int>();
     ret->reserve(kMaxSignalsInFlight);
     return ret;
