@@ -325,6 +325,16 @@ class SignalSafe(object):
     """Return the number of the last signal that fired"""
     return self.last_sig_num
 
+  def TakeSigInt(self):
+    # type: () -> bool
+    """
+    Returns whether SIGINT has been received since the last time TakeSigInt()
+    was called.
+    """
+    result = self.sigint_count > 0
+    self.sigint_count = 0
+    return result
+
   def TakeSignalQueue(self):
     # type: () -> List[int]
     # A note on signal-safety here. The main loop might be calling this function
@@ -379,18 +389,6 @@ def TakeSignalQueue():
   global gSignalSafe
   assert gSignalSafe is not None
   return gSignalSafe.TakeSignalQueue()
-
-
-def SigintCount():
-  # type: () -> int
-  """
-  Returns the number of times SIGINT has been received since the last time
-  SigintCount() was called.
-  """
-  assert gSignalSafe is not None
-  ret = gSignalSafe.sigint_count
-  gSignalSafe.sigint_count = 0
-  return ret
 
 
 def MakeDirCacheKey(path):

@@ -195,22 +195,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # - shopt -s oil:all
   # - Change the prompt in the interactive shell?
 
-  # osh-pure:
-  # - no oil grammar
-  # - no expression evaluator
-  # - no interactive shell, or readline
-  # - no process.*
-  #   process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
-  #   to evaluate config files without any of these
-  # Modules not translated yet: completion, comp_ui, builtin_comp, process
-  # - word evaluator
-  #   - shouldn't glob?  set -o noglob?  or hard failure?
-  #   - ~ shouldn't read from the file system
-  #     - I guess it can just be the HOME=HOME?
-  # Builtin:
-  #   shellvm -c 'echo hi'
-  #   shellvm <<< 'echo hi'
-
   argv0 = arg_r.Peek()
   assert argv0 is not None
   arg_r.Next()
@@ -435,7 +419,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   assign_b = shell_native.InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_b, arena, cmd_deps, trap_state)
+                                     assign_b, arena, cmd_deps, trap_state,
+                                     signal_safe)
 
   AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 

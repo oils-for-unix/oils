@@ -20,13 +20,13 @@
 
 namespace pyos {
 
-static SignalSafe* gSignalSafe = nullptr;
+SignalSafe* gSignalSafe = nullptr;
 
 Tuple2<int, int> WaitPid() {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED);
   if (result < 0) {
-    if (errno == EINTR && SigintCount() > 0) {
+    if (errno == EINTR && gSignalSafe->TakeSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -39,7 +39,7 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
-    if (errno == EINTR && SigintCount() > 0) {
+    if (errno == EINTR && gSignalSafe->TakeSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -59,7 +59,7 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
-    if (errno == EINTR && SigintCount() > 0) {
+    if (errno == EINTR && gSignalSafe->TakeSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -234,7 +234,7 @@ void SignalSafe::Update(int sig_num) {
   }
 
   if (sig_num == SIGINT) {
-    sigint_count_++;
+    num_sigint_++;
   }
   if (sig_num == SIGWINCH) {
     sig_num = sigwinch_num_;
@@ -271,13 +271,6 @@ void RegisterSignalInterest(int sig_num) {
 List<int>* TakeSignalQueue() {
   assert(gSignalSafe != nullptr);
   return gSignalSafe->TakeSignalQueue();
-}
-
-int SigintCount() {
-  DCHECK(gSignalSafe != nullptr);
-  int ret = gSignalSafe->sigint_count_;
-  gSignalSafe->sigint_count_ = 0;
-  return ret;
 }
 
 SignalSafe* InitSignalSafe() {

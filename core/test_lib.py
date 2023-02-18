@@ -161,8 +161,10 @@ def InitWordEvaluator(exec_opts=None):
   return ev
 
 
-def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
-                 aliases=None, ext_prog=None):
+def InitCommandEvaluator(
+    parse_ctx=None, comp_lookup=None, arena=None, mem=None, aliases=None,
+    ext_prog=None):
+
   opt0_array = state.InitOpts()
   opt_stacks = [None] * option_i.ARRAY_SIZE
   if parse_ctx:
@@ -236,7 +238,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   trap_state = builtin_trap.TrapState(signal_safe)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps,
-                                     trap_state)
+                                     trap_state, signal_safe)
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
   waiter = process.Waiter(job_state, exec_opts, trap_state, tracer)

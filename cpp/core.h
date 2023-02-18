@@ -99,10 +99,10 @@ class SignalSafe {
  public:
   SignalSafe()
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
-        sigint_count_(0),
         signal_queue_(AllocSignalQueue()),
         last_sig_num_(0),
         sigwinch_num_(UNTRAPPED_SIGWINCH),
+        num_sigint_(0),
         num_dropped_(0) {
   }
 
@@ -117,6 +117,16 @@ class SignalSafe {
     return last_sig_num_;
   }
 
+  bool TakeSigInt() {
+    // Was SIGINT received since the last time TakeSigInt was called?
+
+    bool result = num_sigint_ > 0;
+
+    num_sigint_ = 0;  // Reset counter
+
+    return result;
+  }
+
   // Called from main thread.
   List<int>* TakeSignalQueue();
 
@@ -125,7 +135,6 @@ class SignalSafe {
   }
 
   GC_OBJ(header_);
-  int sigint_count_;         // main thread reads with SigintCount()
   List<int>* signal_queue_;  // public for testing
 
  private:
@@ -140,16 +149,17 @@ class SignalSafe {
 
   int last_sig_num_;
   int sigwinch_num_;
+  int num_sigint_;
   int num_dropped_;
 };
+
+extern SignalSafe* gSignalSafe;
 
 void Sigaction(int sig_num, sighandler_t handler);
 
 void RegisterSignalInterest(int sig_num);
 
 List<int>* TakeSignalQueue();
-
-int SigintCount();
 
 // Allocate global and return it.
 SignalSafe* InitSignalSafe();

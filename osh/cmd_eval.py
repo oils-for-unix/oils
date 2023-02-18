@@ -257,6 +257,7 @@ class CommandEvaluator(object):
                arena,            # type: Arena
                cmd_deps,         # type: Deps
                trap_state,       # type: TrapState
+               signal_safe,      # type: pyos.SignalSafe
   ):
     # type: (...) -> None
     """
@@ -287,6 +288,7 @@ class CommandEvaluator(object):
     self.debug_f = cmd_deps.debug_f  # Used by ShellFuncAction too
 
     self.trap_state = trap_state
+    self.signal_safe = signal_safe
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
@@ -1434,10 +1436,7 @@ class CommandEvaluator(object):
   def RunPendingTraps(self):
     # type: () -> None
 
-    # See osh/builtin_trap.py SignalState for the code that populates this
-    # list.
     trap_nodes = self.trap_state.TakeRunList()
-
     if len(trap_nodes):
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
         for trap_node in trap_nodes:
@@ -1461,7 +1460,7 @@ class CommandEvaluator(object):
     # We only need this somewhat hacky check in osh-cpp since python's runtime
     # handles SIGINT for us in osh.
     if mylib.CPP:
-      if pyos.SigintCount() > 0:
+      if self.signal_safe.TakeSigInt():
         raise KeyboardInterrupt()
 
     # Manual GC point before every statement
