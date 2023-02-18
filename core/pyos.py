@@ -290,10 +290,10 @@ class SignalSafe(object):
   """
   def __init__(self):
     # type: () -> None
-    self.signal_queue = []  # type: List[int]
+    self.pending_signals = []  # type: List[int]
     self.last_sig_num = 0  # type: int
-    self.sigwinch_num = UNTRAPPED_SIGWINCH
-    self.sigint_count = 0
+    self.sigwinch_code = UNTRAPPED_SIGWINCH
+    self.num_sigint = 0
 
   def UpdateFromSignalHandler(self, sig_num, unused_frame):
     # type: (int, Any) -> None
@@ -302,14 +302,14 @@ class SignalSafe(object):
     This method registered as a Python signal handler.
     """
     if sig_num == signal.SIGWINCH:
-      self.last_sig_num = self.sigwinch_num
+      self.last_sig_num = self.sigwinch_code
     else:
       self.last_sig_num = sig_num
 
     if sig_num == signal.SIGINT:
-      self.sigint_count += 1
+      self.num_sigint += 1
 
-    self.signal_queue.append(sig_num)
+    self.pending_signals.append(sig_num)
 
   def SetSigWinchCode(self, code):
     # type: (int) -> None
@@ -318,7 +318,7 @@ class SignalSafe(object):
     report a different code to `wait`. SetSigwinchCode() lets us set which code is
     reported.
     """
-    self.sigwinch_num = code
+    self.sigwinch_code = code
 
   def LastSignal(self):
     # type: () -> int
@@ -331,22 +331,22 @@ class SignalSafe(object):
     Returns whether SIGINT has been received since the last time PollSigInt()
     was called.
     """
-    result = self.sigint_count > 0
-    self.sigint_count = 0
+    result = self.num_sigint > 0
+    self.num_sigint = 0
     return result
 
   def TakePendingSignals(self):
     # type: () -> List[int]
     # A note on signal-safety here. The main loop might be calling this function
     # at the same time a signal is firing and appending to
-    # `self.signal_queue`. We can forgoe using a lock here
+    # `self.pending_signals`. We can forgoe using a lock here
     # (which would be problematic for the signal handler) because mutual
     # exclusivity should be maintained by the atomic nature of pointer
     # assignment (i.e. word-sized writes) on most modern platforms.
     # The replacement run list is allocated before the swap, so it can be
     # interuppted at any point without consequence.
     # This means the signal handler always has exclusive access to
-    # `self.signal_queue`. In the worst case the signal handler might write to
+    # `self.pending_signals`. In the worst case the signal handler might write to
     # `new_queue` and the corresponding trap handler won't get executed
     # until the main loop calls this function again.
     # NOTE: It's important to distinguish between signal-saftey an
@@ -354,8 +354,8 @@ class SignalSafe(object):
     # loop, while concurrent threads do not and would have to worry about
     # cache-coherence and instruction reordering.
     new_queue = []  #  type: List[int]
-    ret = self.signal_queue
-    self.signal_queue = new_queue
+    ret = self.pending_signals
+    self.pending_signals = new_queue
     return ret
 
 

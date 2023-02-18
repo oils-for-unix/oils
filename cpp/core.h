@@ -15,7 +15,7 @@
 #define LOCK_FREE_ATOMICS 0
 
 #if LOCK_FREE_ATOMICS
-#include <atomic>
+  #include <atomic>
 #endif
 
 #include "_gen/frontend/syntax.asdl.h"
@@ -103,25 +103,25 @@ class TermState {
 
 // Make the signal queue slab 4096 bytes, including the GC header.  See
 // cpp/core_test.cc.
-const int kMaxSignalsInFlight = 1022;
+const int kMaxPendingSignals = 1022;
 
 class SignalSafe {
   // State that is shared between the main thread and signal handlers.
  public:
   SignalSafe()
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
-        signal_queue_(AllocSignalQueue()),
+        pending_signals_(AllocSignalList()),
         last_sig_num_(0),
-        sigwinch_num_(UNTRAPPED_SIGWINCH),
+        sigwinch_code_(UNTRAPPED_SIGWINCH),
         num_sigint_(0),
         num_dropped_(0) {
   }
 
   // Called from signal handling context.  Do not allocate.
   void UpdateFromSignalHandler(int sig_num) {
-    if (signal_queue_->len_ < signal_queue_->capacity_) {
+    if (pending_signals_->len_ < pending_signals_->capacity_) {
       // We can append without allocating
-      signal_queue_->append(sig_num);
+      pending_signals_->append(sig_num);
     } else {
       // Unlikely: we would have to allocate.  Just increment a counter, which
       // we could expose somewhere in the UI.
@@ -132,7 +132,7 @@ class SignalSafe {
       num_sigint_++;
     }
     if (sig_num == SIGWINCH) {
-      sig_num = sigwinch_num_;
+      sig_num = sigwinch_code_;
     }
 #if LOCK_FREE_ATOMICS
     last_sig_num_.store(sig_num);
@@ -144,15 +144,15 @@ class SignalSafe {
   // Main thread takes signals so it can run traps.
   List<int>* TakePendingSignals() {
     // TODO: Consider ReuseEmptyList() to avoid allocation
-    List<int>* new_queue = AllocSignalQueue();
-    List<int>* ret = signal_queue_;
-    signal_queue_ = new_queue;
+    List<int>* new_queue = AllocSignalList();
+    List<int>* ret = pending_signals_;
+    pending_signals_ = new_queue;
     return ret;
   }
 
   // Main thread tells us whether SIGWINCH is trapped.
   void SetSigWinchCode(int code) {
-    sigwinch_num_ = code;
+    sigwinch_code_ = code;
   }
 
   // Main thread wants to get the last signal received.
@@ -173,19 +173,19 @@ class SignalSafe {
   }
 
   static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(SignalSafe, signal_queue_));
+    return maskbit(offsetof(SignalSafe, pending_signals_));
   }
 
   GC_OBJ(header_);
-  List<int>* signal_queue_;  // public for testing
+  List<int>* pending_signals_;  // public for testing
 
  private:
   // Enforce private state because two different "threads" will use it!
 
   // Reserve a fixed number of signals.
-  List<int>* AllocSignalQueue() {
+  List<int>* AllocSignalList() {
     List<int>* ret = NewList<int>();
-    ret->reserve(kMaxSignalsInFlight);
+    ret->reserve(kMaxPendingSignals);
     return ret;
   }
 
@@ -198,7 +198,7 @@ class SignalSafe {
   // volatile sig_atomic_t num_sigint_;
   // Does not change ThreadSanitizer reports
 
-  int sigwinch_num_;
+  int sigwinch_code_;
   int num_sigint_;
   int num_dropped_;
 };

@@ -69,7 +69,7 @@ void* SimulateSignalHandlers(void* p) {
 
   // Send a whole bunch of SIGINT in a tight loop, which will append to
   // List<int> signal_queue_.
-  for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
+  for (int i = 0; i < pyos::kMaxPendingSignals + 10; ++i) {
     // This line can race with PollSigInt and LastSignal
     signal_safe->UpdateFromSignalHandler(SIGINT);
 

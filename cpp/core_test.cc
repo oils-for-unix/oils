@@ -271,15 +271,15 @@ TEST signal_safe_test() {
   ASSERT_EQ_FMT(0, len(received), "%d");
 
   // The existing queue is of length 0
-  ASSERT_EQ_FMT(0, len(signal_safe.signal_queue_), "%d");
+  ASSERT_EQ_FMT(0, len(signal_safe.pending_signals_), "%d");
 
   // Capacity is a ROUND NUMBER from the allocator's POV
   // There's no convenient way to test the obj_len we pass to gHeap.Allocate,
   // but it should be (1022 + 2) * 4.
-  ASSERT_EQ_FMT(1022, signal_safe.signal_queue_->capacity_, "%d");
+  ASSERT_EQ_FMT(1022, signal_safe.pending_signals_->capacity_, "%d");
 
   // Register too many signals
-  for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
+  for (int i = 0; i < pyos::kMaxPendingSignals + 10; ++i) {
     signal_safe.UpdateFromSignalHandler(SIGINT);
   }
 
