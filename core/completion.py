@@ -917,11 +917,14 @@ class RootCompleter(CompletionAction):
     debug_f.writeln('rl_slice from byte %d to %d: %r' % (comp.begin, comp.end,
         comp.line[comp.begin:comp.end]))
 
+    # Note: this logging crashes C++ because of type mismatch
     if t1:
-      debug_f.writeln('t1 %s' % t1)
+      #debug_f.writeln('t1 %s' % t1)
+      pass
 
     if t2:
-      debug_f.writeln('t2 %s' % t2)
+      #debug_f.writeln('t2 %s' % t2)
+      pass
 
     #debug_f.writeln('tokens %s', tokens)
 
