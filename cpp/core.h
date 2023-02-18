@@ -94,10 +94,11 @@ class TermState {
   }
 };
 
-class SignalHandler {
+class SignalSafe {
+  // State that is shared between the main thread and signal handlers.
  public:
-  SignalHandler()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalHandler)),
+  SignalSafe()
+      : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
         signal_queue_(nullptr),
         last_sig_num_(0),
         sigwinch_num_(UNTRAPPED_SIGWINCH),
@@ -123,7 +124,7 @@ class SignalHandler {
   int num_dropped_;
 
   static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(SignalHandler, signal_queue_));
+    return maskbit(offsetof(SignalSafe, signal_queue_));
   }
 };
 

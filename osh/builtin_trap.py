@@ -115,22 +115,22 @@ class TrapState(object):
     return pyos.LastSignal()
 
   def TakeRunList(self):
-      # type: () -> List[command_t]
-      """Transfer ownership of the current queue of pending trap handlers to the caller."""
-      sig_queue = pyos.TakeSignalQueue()
+    # type: () -> List[command_t]
+    """Transfer ownership of the current queue of pending trap handlers to the caller."""
+    sig_queue = pyos.TakeSignalQueue()
 
-      run_list = []  # type: List[command_t]
-      for sig_num in sig_queue:
-        node = self.traps.get(sig_num, None)
+    run_list = []  # type: List[command_t]
+    for sig_num in sig_queue:
+      node = self.traps.get(sig_num, None)
 
-        if sig_num == SIGWINCH:
-          if mylib.PYTHON:
-            self.display.OnWindowChange()
+      if sig_num == SIGWINCH:
+        if mylib.PYTHON:
+          self.display.OnWindowChange()
 
-        if node is not None:
-          run_list.append(node)
+      if node is not None:
+        run_list.append(node)
 
-      return run_list
+    return run_list
 
 
 def _GetSignalNumber(sig_spec):

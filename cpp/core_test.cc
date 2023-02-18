@@ -302,7 +302,7 @@ TEST dir_cache_key_test() {
 }
 
 TEST sig_shared_state_test() {
-  pyos::SignalHandler sig_shared_state;
+  pyos::SignalSafe sig_shared_state;
   sig_shared_state.Init();
 
   List<int>* received = sig_shared_state.TakeSignalQueue();

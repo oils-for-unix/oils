@@ -283,10 +283,10 @@ def InputAvailable(fd):
 UNTRAPPED_SIGWINCH = -1
 
 
-class SignalHandler(object):
-  """
-  A basic signal handler that enqueues signals for asynchrnous processing as
-  they are fired.
+class SignalSafe(object):
+  """State that is shared between the main thread and signal handlers.
+
+  See C++ implementation in cpp/core.h
   """
   def __init__(self):
     # type: () -> None
@@ -331,7 +331,7 @@ class SignalHandler(object):
     return ret
 
 
-gSignalHandler = None  #  type: SignalHandler
+gSignalSafe = None  #  type: SignalSafe
 
 
 def Sigaction(sig_num, handler):
@@ -343,23 +343,23 @@ def Sigaction(sig_num, handler):
 def RegisterSignalInterest(sig_num):
   # type: (int) -> None
   """Have the kernel notify the main loop about the given signal"""
-  assert gSignalHandler is not None
-  signal.signal(sig_num, gSignalHandler)
+  assert gSignalSafe is not None
+  signal.signal(sig_num, gSignalSafe)
 
 
 def TakeSignalQueue():
   # type: () -> List[int]
   """Transfer ownership of the current queue of pending signals to the caller."""
-  global gSignalHandler
-  assert gSignalHandler is not None
-  return gSignalHandler.TakeSignalQueue()
+  global gSignalSafe
+  assert gSignalSafe is not None
+  return gSignalSafe.TakeSignalQueue()
 
 
 def LastSignal():
   # type: () -> int
   """Returns the number of the last signal that fired"""
-  assert gSignalHandler is not None
-  return gSignalHandler.last_sig_num
+  assert gSignalSafe is not None
+  return gSignalSafe.last_sig_num
 
 
 def SigintCount():
@@ -368,9 +368,9 @@ def SigintCount():
   Returns the number of times SIGINT has been received since the last time
   SigintCount() was called.
   """
-  assert gSignalHandler is not None
-  ret = gSignalHandler.sigint_count
-  gSignalHandler.sigint_count = 0
+  assert gSignalSafe is not None
+  ret = gSignalSafe.sigint_count
+  gSignalSafe.sigint_count = 0
   return ret
 
 
@@ -381,15 +381,15 @@ def SetSigwinchCode(code):
   report a different code to `wait`. SetSigwinchCode() lets us set which code is
   reported.
   """
-  global gSignalHandler
-  assert gSignalHandler is not None
-  gSignalHandler.sigwinch_num = code
+  global gSignalSafe
+  assert gSignalSafe is not None
+  gSignalSafe.sigwinch_num = code
 
 
 def InitShell():
   # type: () -> None
-  global gSignalHandler
-  gSignalHandler = SignalHandler()
+  global gSignalSafe
+  gSignalSafe = SignalSafe()
 
 
 def MakeDirCacheKey(path):

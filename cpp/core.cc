@@ -20,7 +20,7 @@
 
 namespace pyos {
 
-static SignalHandler* gSignalHandler = nullptr;
+static SignalSafe* gSignalSafe = nullptr;
 
 Tuple2<int, int> WaitPid() {
   int status;
@@ -221,7 +221,7 @@ bool InputAvailable(int fd) {
 }
 
 // Called directly from signal handler.  Do not allocate.
-void SignalHandler::Update(int sig_num) {
+void SignalSafe::Update(int sig_num) {
   DCHECK(signal_queue_ != nullptr);
 
   if (signal_queue_->len_ < signal_queue_->capacity_) {
@@ -248,11 +248,11 @@ static List<int>* AllocSignalQueue() {
   return ret;
 }
 
-void SignalHandler::Init() {
+void SignalSafe::Init() {
   signal_queue_ = AllocSignalQueue();
 }
 
-List<int>* SignalHandler::TakeSignalQueue() {
+List<int>* SignalSafe::TakeSignalQueue() {
   List<int>* new_queue = AllocSignalQueue();
   List<int>* ret = signal_queue_;
   signal_queue_ = new_queue;
@@ -268,8 +268,8 @@ void Sigaction(int sig_num, sighandler_t handler) {
 }
 
 static void signal_handler(int sig_num) {
-  assert(gSignalHandler != nullptr);
-  gSignalHandler->Update(sig_num);
+  assert(gSignalSafe != nullptr);
+  gSignalSafe->Update(sig_num);
 }
 
 void RegisterSignalInterest(int sig_num) {
@@ -279,31 +279,31 @@ void RegisterSignalInterest(int sig_num) {
 }
 
 List<int>* TakeSignalQueue() {
-  assert(gSignalHandler != nullptr);
-  return gSignalHandler->TakeSignalQueue();
+  assert(gSignalSafe != nullptr);
+  return gSignalSafe->TakeSignalQueue();
 }
 
 int LastSignal() {
-  assert(gSignalHandler != nullptr);
-  return gSignalHandler->last_sig_num_;
+  assert(gSignalSafe != nullptr);
+  return gSignalSafe->last_sig_num_;
 }
 
 int SigintCount() {
-  DCHECK(gSignalHandler != nullptr);
-  int ret = gSignalHandler->sigint_count_;
-  gSignalHandler->sigint_count_ = 0;
+  DCHECK(gSignalSafe != nullptr);
+  int ret = gSignalSafe->sigint_count_;
+  gSignalSafe->sigint_count_ = 0;
   return ret;
 }
 
 void SetSigwinchCode(int code) {
-  assert(gSignalHandler != nullptr);
-  gSignalHandler->sigwinch_num_ = code;
+  assert(gSignalSafe != nullptr);
+  gSignalSafe->sigwinch_num_ = code;
 }
 
 void InitShell() {
-  gSignalHandler = Alloc<SignalHandler>();
-  gHeap.RootGlobalVar(gSignalHandler);
-  gSignalHandler->Init();
+  gSignalSafe = Alloc<SignalSafe>();
+  gHeap.RootGlobalVar(gSignalSafe);
+  gSignalSafe->Init();
   RegisterSignalInterest(SIGINT);
 }
 
