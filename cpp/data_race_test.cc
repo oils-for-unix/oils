@@ -9,6 +9,7 @@
 
 #include <pthread.h>
 
+#include <atomic>
 #include <map>
 
 #include "cpp/core.h"
@@ -108,6 +109,8 @@ TEST set_sigwinch_test() {
   PASS();
 }
 
+// #define LOCK_FREE_ATOMICS in core.h makes this PASS ThreadSanitizer
+
 TEST last_signal_test() {
   pyos::SignalSafe signal_safe;
 
@@ -138,6 +141,21 @@ TEST poll_sigint_test() {
   PASS();
 }
 
+TEST atomic_demo() {
+  std::atomic<int> a(3);
+
+  // true on my machine
+  log("is_lock_free = %d", a.is_lock_free());
+
+  log("a.load() = %d", a.load());
+
+  a.store(42);
+
+  log("a.load() = %d", a.load());
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -153,6 +171,8 @@ int main(int argc, char** argv) {
   RUN_TEST(set_sigwinch_test);
   RUN_TEST(last_signal_test);
   RUN_TEST(poll_sigint_test);
+
+  RUN_TEST(atomic_demo);
 
   // Also test: Can MarkObjects() race with UpdateFromSignalHandler() ?  It
   // only reads the ObjHeader, so it doesn't seem like it.

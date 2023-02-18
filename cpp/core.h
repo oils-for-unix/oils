@@ -7,6 +7,17 @@
 #include <signal.h>  // sighandler_t
 #include <termios.h>
 
+// For now, we assume that simple int and pointer operations are atomic, rather
+// than using std::atomic.  Could be a ./configure option later.
+//
+// See doc/portability.md.
+
+#define LOCK_FREE_ATOMICS 0
+
+#if LOCK_FREE_ATOMICS
+#include <atomic>
+#endif
+
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/pgen2.h"
 #include "mycpp/runtime.h"
@@ -123,12 +134,16 @@ class SignalSafe {
     if (sig_num == SIGWINCH) {
       sig_num = sigwinch_num_;
     }
+#if LOCK_FREE_ATOMICS
+    last_sig_num_.store(sig_num);
+#else
     last_sig_num_ = sig_num;
+#endif
   }
 
   // Main thread takes signals so it can run traps.
   List<int>* TakePendingSignals() {
-    // TODO: Consider ReuseList() to avoid allocation
+    // TODO: Consider ReuseEmptyList() to avoid allocation
     List<int>* new_queue = AllocSignalQueue();
     List<int>* ret = signal_queue_;
     signal_queue_ = new_queue;
@@ -142,7 +157,11 @@ class SignalSafe {
 
   // Main thread wants to get the last signal received.
   int LastSignal() {
+#if LOCK_FREE_ATOMICS
+    return last_sig_num_.load();
+#else
     return last_sig_num_;
+#endif
   }
 
   // Main thread wants to know if SIGINT was received since the last time
@@ -170,16 +189,17 @@ class SignalSafe {
     return ret;
   }
 
-  int last_sig_num_;
-  int sigwinch_num_;
-
-#if 1
-  int num_sigint_;
+#if LOCK_FREE_ATOMICS
+  std::atomic<int> last_sig_num_;
 #else
-  // Doesn't change races that ThreadSanitizer reports
-  volatile sig_atomic_t num_sigint_;
+  int last_sig_num_;
 #endif
+  // Also tried
+  // volatile sig_atomic_t num_sigint_;
+  // Does not change ThreadSanitizer reports
 
+  int sigwinch_num_;
+  int num_sigint_;
   int num_dropped_;
 };
 
