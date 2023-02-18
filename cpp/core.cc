@@ -242,16 +242,6 @@ void SignalSafe::Update(int sig_num) {
   last_sig_num_ = sig_num;
 }
 
-static List<int>* AllocSignalQueue() {
-  List<int>* ret = NewList<int>();
-  ret->reserve(kMaxSignalsInFlight);
-  return ret;
-}
-
-void SignalSafe::Init() {
-  signal_queue_ = AllocSignalQueue();
-}
-
 List<int>* SignalSafe::TakeSignalQueue() {
   List<int>* new_queue = AllocSignalQueue();
   List<int>* ret = signal_queue_;
@@ -283,11 +273,6 @@ List<int>* TakeSignalQueue() {
   return gSignalSafe->TakeSignalQueue();
 }
 
-int LastSignal() {
-  assert(gSignalSafe != nullptr);
-  return gSignalSafe->last_sig_num_;
-}
-
 int SigintCount() {
   DCHECK(gSignalSafe != nullptr);
   int ret = gSignalSafe->sigint_count_;
@@ -295,16 +280,13 @@ int SigintCount() {
   return ret;
 }
 
-void SetSigwinchCode(int code) {
-  assert(gSignalSafe != nullptr);
-  gSignalSafe->sigwinch_num_ = code;
-}
-
-void InitShell() {
+SignalSafe* InitSignalSafe() {
   gSignalSafe = Alloc<SignalSafe>();
   gHeap.RootGlobalVar(gSignalSafe);
-  gSignalSafe->Init();
-  RegisterSignalInterest(SIGINT);
+
+  RegisterSignalInterest(SIGINT);  // for KeyboardInterrupt checks
+
+  return gSignalSafe;
 }
 
 Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {

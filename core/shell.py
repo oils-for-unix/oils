@@ -350,9 +350,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
   fd_state.tracer = tracer  # circular dep
 
-  trap_state = builtin_trap.TrapState()
-  trap_state.InitShell()
-  waiter = process.Waiter(job_state, exec_opts, trap_state, tracer)
+  signal_safe = pyos.InitSignalSafe()
+  trap_state = builtin_trap.TrapState(signal_safe)
+
+  waiter = process.Waiter(job_state, exec_opts, signal_safe, tracer)
   fd_state.waiter = waiter
 
   cmd_deps.debug_f = debug_f

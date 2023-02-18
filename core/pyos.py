@@ -295,8 +295,12 @@ class SignalSafe(object):
     self.sigwinch_num = UNTRAPPED_SIGWINCH
     self.sigint_count = 0
 
-  def __call__(self, sig_num, unused_frame):
+  def Update(self, sig_num, unused_frame):
     # type: (int, Any) -> None
+    """Receive the given signal, and update shared state.
+
+    This method registered as a Python signal handler.
+    """
     if sig_num == signal.SIGWINCH:
       self.last_sig_num = self.sigwinch_num
     else:
@@ -306,6 +310,20 @@ class SignalSafe(object):
       self.sigint_count += 1
 
     self.signal_queue.append(sig_num)
+
+  def SetSigWinchCode(self, code):
+    # type: (int) -> None
+    """
+    Depending on whether or not SIGWINCH is trapped by a user, it is expected to
+    report a different code to `wait`. SetSigwinchCode() lets us set which code is
+    reported.
+    """
+    self.sigwinch_num = code
+
+  def LastSignal(self):
+    # type: () -> int
+    """Return the number of the last signal that fired"""
+    return self.last_sig_num
 
   def TakeSignalQueue(self):
     # type: () -> List[int]
@@ -334,6 +352,14 @@ class SignalSafe(object):
 gSignalSafe = None  #  type: SignalSafe
 
 
+def InitSignalSafe():
+  # type: () -> SignalSafe
+  """Set global instance so the signal handler can access it."""
+  global gSignalSafe
+  gSignalSafe = SignalSafe()
+  return gSignalSafe
+
+
 def Sigaction(sig_num, handler):
   # type: (int, Any) -> None
   """Register a signal handler"""
@@ -344,7 +370,7 @@ def RegisterSignalInterest(sig_num):
   # type: (int) -> None
   """Have the kernel notify the main loop about the given signal"""
   assert gSignalSafe is not None
-  signal.signal(sig_num, gSignalSafe)
+  signal.signal(sig_num, gSignalSafe.Update)
 
 
 def TakeSignalQueue():
@@ -353,13 +379,6 @@ def TakeSignalQueue():
   global gSignalSafe
   assert gSignalSafe is not None
   return gSignalSafe.TakeSignalQueue()
-
-
-def LastSignal():
-  # type: () -> int
-  """Returns the number of the last signal that fired"""
-  assert gSignalSafe is not None
-  return gSignalSafe.last_sig_num
 
 
 def SigintCount():
@@ -372,24 +391,6 @@ def SigintCount():
   ret = gSignalSafe.sigint_count
   gSignalSafe.sigint_count = 0
   return ret
-
-
-def SetSigwinchCode(code):
-  # type: (int) -> None
-  """
-  Depending on whether or not SIGWINCH is trapped by a user, it is expected to
-  report a different code to `wait`. SetSigwinchCode() lets us set which code is
-  reported.
-  """
-  global gSignalSafe
-  assert gSignalSafe is not None
-  gSignalSafe.sigwinch_num = code
-
-
-def InitShell():
-  # type: () -> None
-  global gSignalSafe
-  gSignalSafe = SignalSafe()
 
 
 def MakeDirCacheKey(path):

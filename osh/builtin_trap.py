@@ -35,8 +35,9 @@ if TYPE_CHECKING:
 
 class TrapState(object):
   """All changes to global signal and hook state go through this object."""
-  def __init__(self):
-    # type: () -> None
+  def __init__(self, signal_safe):
+    # type: (pyos.SignalSafe) -> None
+    self.signal_safe = signal_safe
     self.hooks = {}  # type: Dict[str, command_t]
     self.traps = {}  # type: Dict[int, command_t]
     self.display = None  # type: _IDisplay
@@ -63,7 +64,7 @@ class TrapState(object):
 
     if sig_num == SIGWINCH:
       assert self.display is not None
-      pyos.SetSigwinchCode(SIGWINCH)
+      self.signal_safe.SetSigWinchCode(SIGWINCH)
     else:
       pyos.RegisterSignalInterest(sig_num)
     # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
@@ -75,15 +76,10 @@ class TrapState(object):
     mylib.dict_erase(self.traps, sig_num)
 
     if sig_num == SIGWINCH:
-      pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
+      self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
     else:
       pyos.Sigaction(sig_num, SIG_DFL)
     # TODO: SIGINT is similar: set a flag, then optionally call user _TrapHandler
-
-  def InitShell(self):
-    # type: () -> None
-    """Always called when initializing the shell process."""
-    pyos.InitShell()
 
   def InitInteractiveShell(self, display, my_pid):
     # type: (_IDisplay, int) -> None
@@ -107,12 +103,7 @@ class TrapState(object):
     # read() have to handle it
     self.display = display
     pyos.RegisterSignalInterest(SIGWINCH)
-    pyos.SetSigwinchCode(pyos.UNTRAPPED_SIGWINCH)
-
-  def GetLastSignal(self):
-    # type: () -> int
-    """Return the last signal that fired"""
-    return pyos.LastSignal()
+    self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
 
   def TakeRunList(self):
     # type: () -> List[command_t]

@@ -206,7 +206,7 @@ TEST strerror_test() {
 }
 
 TEST signal_test() {
-  pyos::InitShell();
+  pyos::SignalSafe* signal_safe = pyos::InitSignalSafe();
 
   {
     // Approximate TrapState::TakeRunList()
@@ -219,18 +219,20 @@ TEST signal_test() {
 
   pyos::RegisterSignalInterest(SIGUSR1);
   pyos::RegisterSignalInterest(SIGUSR2);
+
   kill(mypid, SIGUSR1);
-  ASSERT(pyos::LastSignal() == SIGUSR1);
+  ASSERT_EQ(SIGUSR1, signal_safe->LastSignal());
+
   kill(mypid, SIGUSR2);
-  ASSERT(pyos::LastSignal() == SIGUSR2);
+  ASSERT_EQ(SIGUSR2, signal_safe->LastSignal());
 
   {
     // Approximate TrapState::TakeRunList()
     List<int>* q = pyos::TakeSignalQueue();
     ASSERT(q != nullptr);
-    ASSERT(len(q) == 2);
-    ASSERT(q->index_(0) == SIGUSR1);
-    ASSERT(q->index_(1) == SIGUSR2);
+    ASSERT_EQ(2, len(q));
+    ASSERT_EQ(SIGUSR1, q->index_(0));
+    ASSERT_EQ(SIGUSR2, q->index_(1));
   }
 
   pyos::Sigaction(SIGUSR1, SIG_IGN);
@@ -244,18 +246,45 @@ TEST signal_test() {
   pyos::Sigaction(SIGUSR2, SIG_IGN);
 
   pyos::RegisterSignalInterest(SIGWINCH);
+
   kill(mypid, SIGWINCH);
-  ASSERT(pyos::LastSignal() == pyos::UNTRAPPED_SIGWINCH);
-  pyos::SetSigwinchCode(SIGWINCH);
+  ASSERT_EQ(pyos::UNTRAPPED_SIGWINCH, signal_safe->LastSignal());
+
+  signal_safe->SetSigWinchCode(SIGWINCH);
+
   kill(mypid, SIGWINCH);
-  ASSERT(pyos::LastSignal() == SIGWINCH);
+  ASSERT_EQ(SIGWINCH, signal_safe->LastSignal());
   {
     // Approximate TrapState::TakeRunList()
     List<int>* q = pyos::TakeSignalQueue();
     ASSERT(q != nullptr);
-    ASSERT(len(q) == 2);
-    ASSERT(q->index_(0) == SIGWINCH);
-    ASSERT(q->index_(1) == SIGWINCH);
+    ASSERT_EQ(2, len(q));
+    ASSERT_EQ(SIGWINCH, q->index_(0));
+    ASSERT_EQ(SIGWINCH, q->index_(1));
+  }
+
+  PASS();
+}
+
+TEST signal_safe_test() {
+  pyos::SignalSafe signal_safe;
+
+  List<int>* received = signal_safe.TakeSignalQueue();
+
+  // We got now signals
+  ASSERT_EQ_FMT(0, len(received), "%d");
+
+  // The existing queue is of length 0
+  ASSERT_EQ_FMT(0, len(signal_safe.signal_queue_), "%d");
+
+  // Capacity is a ROUND NUMBER from the allocator's POV
+  // There's no convenient way to test the obj_len we pass to gHeap.Allocate,
+  // but it should be (1022 + 2) * 4.
+  ASSERT_EQ_FMT(1022, signal_safe.signal_queue_->capacity_, "%d");
+
+  // Register too many signals
+  for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
+    signal_safe.Update(SIGINT);
   }
 
   PASS();
@@ -301,31 +330,6 @@ TEST dir_cache_key_test() {
   PASS();
 }
 
-TEST sig_shared_state_test() {
-  pyos::SignalSafe sig_shared_state;
-  sig_shared_state.Init();
-
-  List<int>* received = sig_shared_state.TakeSignalQueue();
-
-  // We got now signals
-  ASSERT_EQ_FMT(0, len(received), "%d");
-
-  // The existing queue is of length 0
-  ASSERT_EQ_FMT(0, len(sig_shared_state.signal_queue_), "%d");
-
-  // Capacity is a ROUND NUMBER from the allocator's POV
-  // There's no convenient way to test the obj_len we pass to gHeap.Allocate,
-  // but it should be (1022 + 2) * 4.
-  ASSERT_EQ_FMT(1022, sig_shared_state.signal_queue_->capacity_, "%d");
-
-  // Register too many signals
-  for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
-    sig_shared_state.Update(SIGINT);
-  }
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -343,10 +347,12 @@ int main(int argc, char** argv) {
   RUN_TEST(pyos_test);  // non-hermetic
   RUN_TEST(pyutil_test);
   RUN_TEST(strerror_test);
+
   RUN_TEST(signal_test);
+  RUN_TEST(signal_safe_test);
+
   RUN_TEST(passwd_test);
   RUN_TEST(dir_cache_key_test);
-  RUN_TEST(sig_shared_state_test);
 
   gHeap.CleanProcessExit();
 

@@ -49,7 +49,10 @@ class ProcessTest(unittest.TestCase):
     state.InitMem(mem, {}, '0.1')
 
     self.job_state = process.JobState()
-    trap_state = builtin_trap.TrapState()
+
+    signal_safe = pyos.InitSignalSafe()
+    trap_state = builtin_trap.TrapState(signal_safe)
+
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
     self.waiter = process.Waiter(self.job_state, exec_opts, trap_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)

@@ -24,10 +24,6 @@ const int EOF_SENTINEL = 256;
 const int NEWLINE_CH = 10;
 const int UNTRAPPED_SIGWINCH = -1;
 
-// Make the signal queue slab 4096 bytes, including the GC header.  See
-// cpp/core_test.cc.
-const int kMaxSignalsInFlight = 1022;
-
 Tuple2<int, int> WaitPid();
 Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
 Tuple2<int, int> ReadByte(int fd);
@@ -94,38 +90,57 @@ class TermState {
   }
 };
 
+// Make the signal queue slab 4096 bytes, including the GC header.  See
+// cpp/core_test.cc.
+const int kMaxSignalsInFlight = 1022;
+
 class SignalSafe {
   // State that is shared between the main thread and signal handlers.
  public:
   SignalSafe()
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
-        signal_queue_(nullptr),
+        sigint_count_(0),
+        signal_queue_(AllocSignalQueue()),
         last_sig_num_(0),
         sigwinch_num_(UNTRAPPED_SIGWINCH),
-        sigint_count_(0),
         num_dropped_(0) {
   }
-
-  // Real initialization in main()
-  void Init();
 
   // Called directly from signal handler.
   void Update(int sig_num);
 
+  void SetSigWinchCode(int code) {
+    sigwinch_num_ = code;
+  }
+
+  int LastSignal() {
+    return last_sig_num_;
+  }
+
   // Called from main thread.
   List<int>* TakeSignalQueue();
-
-  GC_OBJ(header_);
-  List<int>* signal_queue_;
-
-  int last_sig_num_;  // main thread reads with LastSignal()
-  int sigwinch_num_;  // main thread writes with SetSigwinchCode()
-  int sigint_count_;  // main thread reads with SigintCount()
-  int num_dropped_;
 
   static constexpr uint16_t field_mask() {
     return maskbit(offsetof(SignalSafe, signal_queue_));
   }
+
+  GC_OBJ(header_);
+  int sigint_count_;         // main thread reads with SigintCount()
+  List<int>* signal_queue_;  // public for testing
+
+ private:
+  // Enforcing private state because two different threads will use it!
+
+  List<int>* AllocSignalQueue() {
+    // Reserve a fixed number of signals.  We never allocate in Update().
+    List<int>* ret = NewList<int>();
+    ret->reserve(kMaxSignalsInFlight);
+    return ret;
+  }
+
+  int last_sig_num_;
+  int sigwinch_num_;
+  int num_dropped_;
 };
 
 void Sigaction(int sig_num, sighandler_t handler);
@@ -134,13 +149,10 @@ void RegisterSignalInterest(int sig_num);
 
 List<int>* TakeSignalQueue();
 
-int LastSignal();
-
 int SigintCount();
 
-void SetSigwinchCode(int code);
-
-void InitShell();
+// Allocate global and return it.
+SignalSafe* InitSignalSafe();
 
 Tuple2<Str*, int>* MakeDirCacheKey(Str* path);
 
