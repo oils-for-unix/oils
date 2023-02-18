@@ -209,7 +209,7 @@ TEST signal_test() {
   pyos::SignalSafe* signal_safe = pyos::InitSignalSafe();
 
   {
-    List<int>* q = signal_safe->TakeSignalQueue();
+    List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT_EQ(0, len(q));
   }
@@ -226,7 +226,7 @@ TEST signal_test() {
   ASSERT_EQ(SIGUSR2, signal_safe->LastSignal());
 
   {
-    List<int>* q = signal_safe->TakeSignalQueue();
+    List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT_EQ(2, len(q));
     ASSERT_EQ(SIGUSR1, q->index_(0));
@@ -236,7 +236,7 @@ TEST signal_test() {
   pyos::Sigaction(SIGUSR1, SIG_IGN);
   kill(mypid, SIGUSR1);
   {
-    List<int>* q = signal_safe->TakeSignalQueue();
+    List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 0);
   }
@@ -252,7 +252,7 @@ TEST signal_test() {
   kill(mypid, SIGWINCH);
   ASSERT_EQ(SIGWINCH, signal_safe->LastSignal());
   {
-    List<int>* q = signal_safe->TakeSignalQueue();
+    List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT_EQ(2, len(q));
     ASSERT_EQ(SIGWINCH, q->index_(0));
@@ -265,7 +265,7 @@ TEST signal_test() {
 TEST signal_safe_test() {
   pyos::SignalSafe signal_safe;
 
-  List<int>* received = signal_safe.TakeSignalQueue();
+  List<int>* received = signal_safe.TakePendingSignals();
 
   // We got now signals
   ASSERT_EQ_FMT(0, len(received), "%d");

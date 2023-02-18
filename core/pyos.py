@@ -335,7 +335,7 @@ class SignalSafe(object):
     self.sigint_count = 0
     return result
 
-  def TakeSignalQueue(self):
+  def TakePendingSignals(self):
     # type: () -> List[int]
     # A note on signal-safety here. The main loop might be calling this function
     # at the same time a signal is firing and appending to

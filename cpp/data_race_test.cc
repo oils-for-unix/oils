@@ -69,7 +69,6 @@ void* SimulateSignalHandlers(void* p) {
   // Send a whole bunch of SIGINT in a tight loop, which will append to
   // List<int> signal_queue_.
   for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
-
     // This line can race with PollSigInt and LastSignal
     signal_safe->UpdateFromSignalHandler(SIGINT);
 
@@ -79,40 +78,63 @@ void* SimulateSignalHandlers(void* p) {
   return nullptr;
 }
 
-TEST signal_safe_test() {
+TEST take_pending_signals_test() {
   pyos::SignalSafe signal_safe;
 
-  // Create background thread that simulates signal handler
+  // Background thread that simulates signal handler
   pthread_t t;
   pthread_create(&t, 0, SimulateSignalHandlers, &signal_safe);
 
-  // Test FOUR different functions we call from the main thread
-
-#if 0
-  List<int>* received;
-  received = signal_safe.TakeSignalQueue();
-  log("received 1 %d", len(received));
-#endif
-
-#if 0
-  signal_safe.SetSigWinchCode(pyos::UNTRAPPED_SIGWINCH);
-#endif
-
-#if 0
-  int last_signal = signal_safe.LastSignal();
-  log("last signal = %d", last_signal);
-#endif
-
-#if 1
-  bool sigint = signal_safe.PollSigInt();
-  log("sigint? = %d", sigint);
-#endif
+  // Concurrent access in main thread
+  List<int>* received = signal_safe.TakePendingSignals();
+  log("received %d signals", len(received));
 
   pthread_join(t, 0);
 
-  // Also test: Can MarkObjects() race with UpdateFromSignalHandler() ?  It
-  // only reads the ObjHeader, so it doesn't seem like it.
+  PASS();
+}
 
+TEST set_sigwinch_test() {
+  pyos::SignalSafe signal_safe;
+
+  // Background thread that simulates signal handler
+  pthread_t t;
+  pthread_create(&t, 0, SimulateSignalHandlers, &signal_safe);
+
+  // Concurrent access in main thread
+  signal_safe.SetSigWinchCode(pyos::UNTRAPPED_SIGWINCH);
+
+  pthread_join(t, 0);
+  PASS();
+}
+
+TEST last_signal_test() {
+  pyos::SignalSafe signal_safe;
+
+  // Background thread that simulates signal handler
+  pthread_t t;
+  pthread_create(&t, 0, SimulateSignalHandlers, &signal_safe);
+
+  // Concurrent access in main thread
+  int last_signal = signal_safe.LastSignal();
+  log("last signal = %d", last_signal);
+
+  pthread_join(t, 0);
+  PASS();
+}
+
+TEST poll_sigint_test() {
+  pyos::SignalSafe signal_safe;
+
+  // Background thread that simulates signal handler
+  pthread_t t;
+  pthread_create(&t, 0, SimulateSignalHandlers, &signal_safe);
+
+  // Concurrent access in main thread
+  bool sigint = signal_safe.PollSigInt();
+  log("sigint? = %d", sigint);
+
+  pthread_join(t, 0);
   PASS();
 }
 
@@ -125,7 +147,15 @@ int main(int argc, char** argv) {
 
   RUN_TEST(tsan_demo);
   RUN_TEST(list_test);
-  RUN_TEST(signal_safe_test);
+
+  // SignalSafe tests
+  RUN_TEST(take_pending_signals_test);
+  RUN_TEST(set_sigwinch_test);
+  RUN_TEST(last_signal_test);
+  RUN_TEST(poll_sigint_test);
+
+  // Also test: Can MarkObjects() race with UpdateFromSignalHandler() ?  It
+  // only reads the ObjHeader, so it doesn't seem like it.
 
   gHeap.CleanProcessExit();
 

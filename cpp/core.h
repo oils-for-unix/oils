@@ -108,8 +108,6 @@ class SignalSafe {
 
   // Called from signal handling context.  Do not allocate.
   void UpdateFromSignalHandler(int sig_num) {
-    DCHECK(signal_queue_ != nullptr);
-
     if (signal_queue_->len_ < signal_queue_->capacity_) {
       // We can append without allocating
       signal_queue_->append(sig_num);
@@ -129,9 +127,8 @@ class SignalSafe {
   }
 
   // Main thread takes signals so it can run traps.
-  List<int>* TakeSignalQueue() {
-    // TODO: Consider using 2 List<int> and atomically swapping them.
-
+  List<int>* TakePendingSignals() {
+    // TODO: Consider ReuseList() to avoid allocation
     List<int>* new_queue = AllocSignalQueue();
     List<int>* ret = signal_queue_;
     signal_queue_ = new_queue;
@@ -152,9 +149,7 @@ class SignalSafe {
   // PollSigInt was called.
   bool PollSigInt() {
     bool result = num_sigint_ > 0;
-
     num_sigint_ = 0;  // Reset counter
-
     return result;
   }
 
@@ -177,7 +172,14 @@ class SignalSafe {
 
   int last_sig_num_;
   int sigwinch_num_;
+
+#if 1
   int num_sigint_;
+#else
+  // Doesn't change races that ThreadSanitizer reports
+  volatile sig_atomic_t num_sigint_;
+#endif
+
   int num_dropped_;
 };
 
