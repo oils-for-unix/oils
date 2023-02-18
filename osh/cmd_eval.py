@@ -1436,7 +1436,7 @@ class CommandEvaluator(object):
   def RunPendingTraps(self):
     # type: () -> None
 
-    trap_nodes = self.trap_state.TakeRunList()
+    trap_nodes = self.trap_state.GetPendingTraps()
     if len(trap_nodes):
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
         for trap_node in trap_nodes:
@@ -1460,7 +1460,7 @@ class CommandEvaluator(object):
     # We only need this somewhat hacky check in osh-cpp since python's runtime
     # handles SIGINT for us in osh.
     if mylib.CPP:
-      if self.signal_safe.TakeSigInt():
+      if self.signal_safe.PollSigInt():
         raise KeyboardInterrupt()
 
     # Manual GC point before every statement

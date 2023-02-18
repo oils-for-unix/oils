@@ -106,29 +106,56 @@ class SignalSafe {
         num_dropped_(0) {
   }
 
-  // Called directly from signal handler.
-  void Update(int sig_num);
+  void UpdateFromSignalHandler(int sig_num) {
+    DCHECK(signal_queue_ != nullptr);
 
+    if (signal_queue_->len_ < signal_queue_->capacity_) {
+      // We can append without allocating
+      signal_queue_->append(sig_num);
+    } else {
+      // Unlikely: we would have to allocate.  Just increment a counter, which
+      // we could expose this counter somewhere in the UI.
+      num_dropped_++;
+    }
+
+    if (sig_num == SIGINT) {
+      num_sigint_++;
+    }
+    if (sig_num == SIGWINCH) {
+      sig_num = sigwinch_num_;
+    }
+    last_sig_num_ = sig_num;
+  }
+
+  // Main thread takes signals so it can run traps.
+  List<int>* TakeSignalQueue() {
+    // TODO: Consider using 2 List<int> and swapping them.
+
+    List<int>* new_queue = AllocSignalQueue();
+    List<int>* ret = signal_queue_;
+    signal_queue_ = new_queue;
+    return ret;
+  }
+
+  // Main thread tells us whether SIGWINCH is trapped.
   void SetSigWinchCode(int code) {
     sigwinch_num_ = code;
   }
 
+  // Main thread wants to get the last signal received.
   int LastSignal() {
     return last_sig_num_;
   }
 
-  bool TakeSigInt() {
-    // Was SIGINT received since the last time TakeSigInt was called?
-
+  // Main thread wants to know if SIGINT received since the last time
+  // PollSigInt was called.
+  bool PollSigInt() {
     bool result = num_sigint_ > 0;
 
     num_sigint_ = 0;  // Reset counter
 
     return result;
   }
-
-  // Called from main thread.
-  List<int>* TakeSignalQueue();
 
   static constexpr uint16_t field_mask() {
     return maskbit(offsetof(SignalSafe, signal_queue_));
@@ -155,14 +182,12 @@ class SignalSafe {
 
 extern SignalSafe* gSignalSafe;
 
+// Allocate global and return it.
+SignalSafe* InitSignalSafe();
+
 void Sigaction(int sig_num, sighandler_t handler);
 
 void RegisterSignalInterest(int sig_num);
-
-List<int>* TakeSignalQueue();
-
-// Allocate global and return it.
-SignalSafe* InitSignalSafe();
 
 Tuple2<Str*, int>* MakeDirCacheKey(Str* path);
 

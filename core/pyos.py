@@ -295,7 +295,7 @@ class SignalSafe(object):
     self.sigwinch_num = UNTRAPPED_SIGWINCH
     self.sigint_count = 0
 
-  def Update(self, sig_num, unused_frame):
+  def UpdateFromSignalHandler(self, sig_num, unused_frame):
     # type: (int, Any) -> None
     """Receive the given signal, and update shared state.
 
@@ -325,10 +325,10 @@ class SignalSafe(object):
     """Return the number of the last signal that fired"""
     return self.last_sig_num
 
-  def TakeSigInt(self):
+  def PollSigInt(self):
     # type: () -> bool
     """
-    Returns whether SIGINT has been received since the last time TakeSigInt()
+    Returns whether SIGINT has been received since the last time PollSigInt()
     was called.
     """
     result = self.sigint_count > 0
@@ -380,15 +380,7 @@ def RegisterSignalInterest(sig_num):
   # type: (int) -> None
   """Have the kernel notify the main loop about the given signal"""
   assert gSignalSafe is not None
-  signal.signal(sig_num, gSignalSafe.Update)
-
-
-def TakeSignalQueue():
-  # type: () -> List[int]
-  """Transfer ownership of the current queue of pending signals to the caller."""
-  global gSignalSafe
-  assert gSignalSafe is not None
-  return gSignalSafe.TakeSignalQueue()
+  signal.signal(sig_num, gSignalSafe.UpdateFromSignalHandler)
 
 
 def MakeDirCacheKey(path):

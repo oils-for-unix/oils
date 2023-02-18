@@ -266,7 +266,7 @@ Str* readline(Str* prompt) {
     FD_SET(fileno(rl_instream), &fds);
     int ec = select(FD_SETSIZE, &fds, NULL, NULL, NULL);
     if (ec == -1) {
-      if (errno == EINTR && pyos::gSignalSafe->TakeSigInt()) {
+      if (errno == EINTR && pyos::gSignalSafe->PollSigInt()) {
         // User is trying to cancel. Abort and cleanup readline state.
         rl_free_line_state();
         rl_callback_sigcleanup();

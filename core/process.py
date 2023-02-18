@@ -934,7 +934,8 @@ class Process(Job):
     # type: (Waiter) -> int
     """Wait for this process to finish."""
     while self.state == job_state_e.Running:
-      # signals are ignored
+      # Only return if there's nothing to wait for.  Keep waiting if we were
+      # interrupted with a signal.
       if waiter.WaitForOne() == W1_ECHILD:
         break
 
@@ -1112,7 +1113,7 @@ class Pipeline(Job):
     assert self.procs, "no procs for Wait()"
     # waitpid(-1) zero or more times
     while self.state == job_state_e.Running:
-      # signals are ignored
+      # Keep waiting until there's nothing to wait for.
       if waiter.WaitForOne() == W1_ECHILD:
         break
 
@@ -1393,13 +1394,9 @@ class JobState(object):
     return count
 
 
-# WaitForOne() return values
-
-# -1: pyos.UNTRAPPED_SIGWINCH
+# Some WaitForOne() return values
 W1_OK = -2      # waitpid(-1) returned
 W1_ECHILD = -3  # no processes to wait for
-# result > 0:   # a signal number that we exited with!
-                # ignoring untrapped SIGWINCH
 
 
 class Waiter(object):
@@ -1436,9 +1433,12 @@ class Waiter(object):
     """Wait until the next process returns (or maybe Ctrl-C).
 
     Returns:
-      W1_ECHILD     Nothing to wait for
-      W1_OK         Caller should keep waiting
-      result > 0    Signal interrupted with
+      One of these negative numbers:
+        W1_ECHILD           Nothing to wait for
+        W1_OK               Caller should keep waiting
+        UNTRAPPED_SIGWINCH
+      Or
+        result > 0          Signal that waitpid() was interrupted with
 
       In the interactive shell, we return 0 if we get a Ctrl-C, so the caller
       will try again.

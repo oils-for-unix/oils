@@ -26,7 +26,7 @@ Tuple2<int, int> WaitPid() {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED);
   if (result < 0) {
-    if (errno == EINTR && gSignalSafe->TakeSigInt()) {
+    if (errno == EINTR && gSignalSafe->PollSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -39,7 +39,7 @@ Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
-    if (errno == EINTR && gSignalSafe->TakeSigInt()) {
+    if (errno == EINTR && gSignalSafe->PollSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -59,7 +59,7 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
-    if (errno == EINTR && gSignalSafe->TakeSigInt()) {
+    if (errno == EINTR && gSignalSafe->PollSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -220,33 +220,13 @@ bool InputAvailable(int fd) {
   return select(FD_SETSIZE, &fds, NULL, NULL, &timeout) > 0;
 }
 
-// Called directly from signal handler.  Do not allocate.
-void SignalSafe::Update(int sig_num) {
-  DCHECK(signal_queue_ != nullptr);
+SignalSafe* InitSignalSafe() {
+  gSignalSafe = Alloc<SignalSafe>();
+  gHeap.RootGlobalVar(gSignalSafe);
 
-  if (signal_queue_->len_ < signal_queue_->capacity_) {
-    // We can append without allocating
-    signal_queue_->append(sig_num);
-  } else {
-    // Unlikely: we would have to allocate.  Just increment a counter, which we
-    // could expose this counter somewhere in the UI.
-    num_dropped_++;
-  }
+  RegisterSignalInterest(SIGINT);  // for KeyboardInterrupt checks
 
-  if (sig_num == SIGINT) {
-    num_sigint_++;
-  }
-  if (sig_num == SIGWINCH) {
-    sig_num = sigwinch_num_;
-  }
-  last_sig_num_ = sig_num;
-}
-
-List<int>* SignalSafe::TakeSignalQueue() {
-  List<int>* new_queue = AllocSignalQueue();
-  List<int>* ret = signal_queue_;
-  signal_queue_ = new_queue;
-  return ret;
+  return gSignalSafe;
 }
 
 void Sigaction(int sig_num, sighandler_t handler) {
@@ -259,27 +239,13 @@ void Sigaction(int sig_num, sighandler_t handler) {
 
 static void signal_handler(int sig_num) {
   assert(gSignalSafe != nullptr);
-  gSignalSafe->Update(sig_num);
+  gSignalSafe->UpdateFromSignalHandler(sig_num);
 }
 
 void RegisterSignalInterest(int sig_num) {
   struct sigaction act = {};
   act.sa_handler = signal_handler;
   assert(sigaction(sig_num, &act, nullptr) == 0);
-}
-
-List<int>* TakeSignalQueue() {
-  assert(gSignalSafe != nullptr);
-  return gSignalSafe->TakeSignalQueue();
-}
-
-SignalSafe* InitSignalSafe() {
-  gSignalSafe = Alloc<SignalSafe>();
-  gHeap.RootGlobalVar(gSignalSafe);
-
-  RegisterSignalInterest(SIGINT);  // for KeyboardInterrupt checks
-
-  return gSignalSafe;
 }
 
 Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {

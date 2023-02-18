@@ -209,10 +209,9 @@ TEST signal_test() {
   pyos::SignalSafe* signal_safe = pyos::InitSignalSafe();
 
   {
-    // Approximate TrapState::TakeRunList()
-    List<int>* q = pyos::TakeSignalQueue();
+    List<int>* q = signal_safe->TakeSignalQueue();
     ASSERT(q != nullptr);
-    ASSERT(len(q) == 0);
+    ASSERT_EQ(0, len(q));
   }
 
   pid_t mypid = getpid();
@@ -227,8 +226,7 @@ TEST signal_test() {
   ASSERT_EQ(SIGUSR2, signal_safe->LastSignal());
 
   {
-    // Approximate TrapState::TakeRunList()
-    List<int>* q = pyos::TakeSignalQueue();
+    List<int>* q = signal_safe->TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT_EQ(2, len(q));
     ASSERT_EQ(SIGUSR1, q->index_(0));
@@ -238,8 +236,7 @@ TEST signal_test() {
   pyos::Sigaction(SIGUSR1, SIG_IGN);
   kill(mypid, SIGUSR1);
   {
-    // Approximate TrapState::TakeRunList()
-    List<int>* q = pyos::TakeSignalQueue();
+    List<int>* q = signal_safe->TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 0);
   }
@@ -255,8 +252,7 @@ TEST signal_test() {
   kill(mypid, SIGWINCH);
   ASSERT_EQ(SIGWINCH, signal_safe->LastSignal());
   {
-    // Approximate TrapState::TakeRunList()
-    List<int>* q = pyos::TakeSignalQueue();
+    List<int>* q = signal_safe->TakeSignalQueue();
     ASSERT(q != nullptr);
     ASSERT_EQ(2, len(q));
     ASSERT_EQ(SIGWINCH, q->index_(0));
@@ -284,7 +280,7 @@ TEST signal_safe_test() {
 
   // Register too many signals
   for (int i = 0; i < pyos::kMaxSignalsInFlight + 10; ++i) {
-    signal_safe.Update(SIGINT);
+    signal_safe.UpdateFromSignalHandler(SIGINT);
   }
 
   PASS();
