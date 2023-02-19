@@ -268,6 +268,7 @@ EOF
     <pre>
 EOF
 
+  # TODO: can pass shells here, e.g. for test/spec-cpp.sh
   test/spec.sh ${suite}-version-text
 
   cat <<EOF

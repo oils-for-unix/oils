@@ -143,12 +143,6 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   regex_t pat;
   regmatch_t m[NMATCH];
 
-  const char* old_locale = setlocale(LC_CTYPE, NULL);
-
-  if (setlocale(LC_CTYPE, "") == NULL) {
-    throw Alloc<RuntimeError>(StrFromC("Invalid locale for LC_CTYPE"));
-  }
-
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
@@ -160,8 +154,6 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   // Match at offset 'pos'
   int result = regexec(&pat, str->data_ + pos, NMATCH, m, 0 /*flags*/);
   regfree(&pat);
-
-  setlocale(LC_CTYPE, old_locale);
 
   if (result != 0) {
     return nullptr;
