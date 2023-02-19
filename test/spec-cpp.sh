@@ -63,7 +63,8 @@ run-file() {
       shells=( "${COMPARE_CPP_SHELLS[@]}" )
       ;;
     *)
-      shells=( $REPO_ROOT/bin/osh $REPO_ROOT/_bin/cxx-dbg/osh )
+      shells=( "${COMPARE_CPP_SHELLS[@]}" )
+      #shells=( $REPO_ROOT/bin/osh $REPO_ROOT/_bin/cxx-dbg/osh )
       ;;
   esac
 
