@@ -123,6 +123,12 @@ void kill(int pid, int sig) {
   }
 }
 
+void killpg(int pgid, int sig) {
+  if (::killpg(pgid, sig) != 0) {
+    throw Alloc<OSError>(errno);
+  }
+}
+
 List<Str*>* listdir(Str* path) {
   DIR* dirp = opendir(path->data());
   if (dirp == NULL) {
