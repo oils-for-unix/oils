@@ -40,7 +40,7 @@ from _devbuild.gen.syntax_asdl import (
     compound_word, word_part_e, word_t, redir_param_e, Token
 )
 from _devbuild.gen.runtime_asdl import (
-    value_e, value__MaybeStrArray, value__Str, scope_e, Proc
+    value_e, value__MaybeStrArray, value__Str, value_str, scope_e, Proc
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
@@ -530,18 +530,19 @@ class ShellFuncAction(CompletionAction):
     state.SetGlobalString(self.cmd_ev.mem, 'COMP_POINT', str(comp.end))
 
     argv = [comp.first, comp.to_complete, comp.prev]
-    self.debug('Running completion function %r with arguments %s' % (self.func.name, argv))
+    # TODO: log the arguments
+    self.debug('Running completion function %r with %d arguments' % (self.func.name, len(argv)))
 
     self.comp_lookup.ClearCommandsChanged()
     status = self.cmd_ev.RunFuncForCompletion(self.func, argv)
     commands_changed = self.comp_lookup.GetCommandsChanged()
 
-    self.debug('comp.first %s, commands_changed: %s' % (comp.first, commands_changed))
+    #self.debug('comp.first %s, commands_changed: %s' % (comp.first, commands_changed))
 
     if status == 124:
       cmd = os_path.basename(comp.first) 
       if cmd in commands_changed:
-        self.debug('Got status 124 from %r and %s commands changed' % (self.func.name, commands_changed))
+        #self.debug('Got status 124 from %r and %s commands changed' % (self.func.name, commands_changed))
         raise _RetryCompletion()
       else:
         # This happens with my own completion scripts.  bash doesn't show an
@@ -551,8 +552,7 @@ class ShellFuncAction(CompletionAction):
             "changed" % (self.func.name, cmd))
         return
 
-    # Read the response.  # Note: the name 'COMP_REPLY' would be more
-    # consistent!
+    # Read the response.  (The name 'COMP_REPLY' would be more consistent with others.)
     val = self.cmd_ev.mem.GetValue('COMPREPLY', scope_e.GlobalOnly)
 
     if val.tag_() == value_e.Undef:
@@ -565,7 +565,7 @@ class ShellFuncAction(CompletionAction):
       return
 
     if val.tag_() != value_e.MaybeStrArray:
-      log('ERROR: COMPREPLY should be an array, got %s' % val)
+      print_stderr('ERROR: COMPREPLY should be an array, got %s' % value_str(val.tag_()))
       return
 
     # TODO: Print structured value_t in C++.  This line is wrong:

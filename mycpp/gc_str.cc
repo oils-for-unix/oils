@@ -524,7 +524,9 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     }
     case 's': {
       Str* s = va_arg(args, Str*);
-      // TODO: DCHECK() that it's a valid string
+      // Check type unconditionally because mycpp doesn't always check it
+      CHECK(s->header_.type_tag == TypeTag::Str);
+
       str_to_add = s->data();
       add_len = len(s);
       zero_pad = false;  // python ignores the 0 directive for strings
@@ -532,7 +534,9 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     }
     case 'r': {
       Str* s = va_arg(args, Str*);
-      // TODO: DCHECK() that it's a valid string
+      // Check type unconditionally because mycpp doesn't always check it
+      CHECK(s->header_.type_tag == TypeTag::Str);
+
       s = repr(s);
       str_to_add = s->data();
       add_len = len(s);
