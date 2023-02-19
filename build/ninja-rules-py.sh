@@ -152,11 +152,6 @@ task() {
   # The rest of the args are passed as flags to time-tsv
 
   case $bin in
-    (_bin/cxx-asan/*)
-      # We could detect leaks when GC is turned on?
-      export ASAN_OPTIONS='detect_leaks=0'
-      ;;
-
     (mycpp/examples/*.py)
       # we import mycpp.mylib and pylib.collections_
       export PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT"

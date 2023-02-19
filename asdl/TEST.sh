@@ -14,9 +14,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source devtools/common.sh  # banner
 source test/common.sh      # run-one-test
 
-# Could we turn on the leak detector for the GC tests?
-export ASAN_OPTIONS='detect_leaks=0'
-
 unit() {
   ### Run unit tests
 

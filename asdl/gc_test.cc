@@ -101,6 +101,8 @@ int main(int argc, char** argv) {
 
   RUN_TEST(pretty_print_test);
 
+  gHeap.CleanProcessExit();
+
   GREATEST_MAIN_END();
   return 0;
 }

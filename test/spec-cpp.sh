@@ -33,8 +33,9 @@ readonly -a COMPARE_CPP_SHELLS=(
     $OSH_CC
 )
 
-# TODO: Use OIL_GC_ON_EXIT=1 instead
-export ASAN_OPTIONS='detect_leaks=0'
+# So we can pass ASAN.  Note that test/spec-common.sh has to pass this to
+# sh_spec.py.
+export OIL_GC_ON_EXIT=1
 
 #
 # For translation
