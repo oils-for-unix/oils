@@ -19,7 +19,7 @@ source web/table/html.sh
 
 shopt -s failglob  # to debug TSV expansion failure below
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 # Run with ASAN binary by default
@@ -40,12 +40,6 @@ export ASAN_OPTIONS='detect_leaks=0'
 # For translation
 #
 
-asan-smoke() {
-  ninja _bin/cxx-asan/osh
-  _bin/cxx-asan/osh -c 'echo -c'
-  echo 'echo stdin' | _bin/cxx-asan/osh
-}
-
 run-file() {
   ### Run a test with the given name.
 
@@ -56,22 +50,11 @@ run-file() {
   local base_dir=_tmp/spec/$spec_subdir
   mkdir -p "$base_dir"
 
-  local -a shells
-  case $test_name in
-    # Start using ASAN.  TODO: Use ASAN for everything.
-    var-opt-patsub|alias)
-      shells=( "${COMPARE_CPP_SHELLS[@]}" )
-      ;;
-    *)
-      shells=( $REPO_ROOT/bin/osh $REPO_ROOT/_bin/cxx-dbg/osh )
-      ;;
-  esac
-
   # Output TSV so we can compare the data.  2022-01: Try 10 second timeout.
   sh-spec spec/$test_name.test.sh \
     --timeout 10 \
     --tsv-output $base_dir/${test_name}.tsv \
-    "${shells[@]}" \
+    "${COMPARE_CPP_SHELLS[@]}" \
     "$@"
 }
 
@@ -81,8 +64,7 @@ osh-all() {
   # For debugging hangs
   #export MAX_PROCS=1
 
-  # TODO: use ASAN for everything
-  ninja _bin/cxx-{asan,dbg}/osh
+  ninja _bin/cxx-asan/osh
 
   test/spec-runner.sh shell-sanity-check "${COMPARE_CPP_SHELLS[@]}"
 
@@ -93,19 +75,21 @@ osh-all() {
 }
 
 all() {
-  # TODO: add oil-all eventually
+  # TODO: add oil-all
+
   osh-all
 }
 
 soil-run() {
-  local opt_bin=_bin/cxx-opt/osh
-
   # Run with optimized binary since it's faster
-  ninja $opt_bin
+  local opt_bin=_bin/cxx-opt/osh
+  # ninja $opt_bin
 
   # Do less work to start
   # export NUM_SPEC_TASKS=8
-  OSH_CC=$REPO_ROOT/$opt_bin all
+  # OSH_CC=$REPO_ROOT/$opt_bin all
+
+  osh-all
 }
 
 console-row() {
