@@ -292,24 +292,38 @@ class SignalSafe(object):
     # type: () -> None
     self.pending_signals = []  # type: List[int]
     self.last_sig_num = 0  # type: int
+    self.received_sigint = False
+    self.received_sigwinch = False
     self.sigwinch_code = UNTRAPPED_SIGWINCH
-    self.received_sigint = True
 
   def UpdateFromSignalHandler(self, sig_num, unused_frame):
     # type: (int, Any) -> None
     """Receive the given signal, and update shared state.
 
-    This method registered as a Python signal handler.
+    This method is registered as a Python signal handler.
     """
-    if sig_num == signal.SIGWINCH:
-      self.last_sig_num = self.sigwinch_code
-    else:
-      self.last_sig_num = sig_num
+    self.pending_signals.append(sig_num)
 
     if sig_num == signal.SIGINT:
       self.received_sigint = True
 
-    self.pending_signals.append(sig_num)
+    if sig_num == signal.SIGWINCH:
+      self.received_sigwinch = True
+      sig_num = self.sigwinch_code  # mutate param
+
+    self.last_sig_num = sig_num
+
+  def LastSignal(self):
+    # type: () -> int
+    """Return the number of the last signal that fired"""
+    return self.last_sig_num
+
+  def PollSigInt(self):
+    # type: () -> bool
+    """ Has SIGINT received since the last time PollSigInt() was called? """
+    result = self.received_sigint
+    self.received_sigint = False
+    return result
 
   def SetSigWinchCode(self, code):
     # type: (int) -> None
@@ -320,19 +334,11 @@ class SignalSafe(object):
     """
     self.sigwinch_code = code
 
-  def LastSignal(self):
-    # type: () -> int
-    """Return the number of the last signal that fired"""
-    return self.last_sig_num
-
-  def PollSigInt(self):
+  def PollSigWinch(self):
     # type: () -> bool
-    """
-    Returns whether SIGINT has been received since the last time PollSigInt()
-    was called.
-    """
-    result = self.received_sigint
-    self.received_sigint = False
+    """ Has SIGWINCH been received since the last time PollSigWinch() was called? """
+    result = self.received_sigwinch
+    self.received_sigwinch = False
     return result
 
   def TakePendingSignals(self):

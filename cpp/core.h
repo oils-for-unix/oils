@@ -112,8 +112,9 @@ class SignalSafe {
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
         pending_signals_(AllocSignalList()),
         last_sig_num_(0),
-        sigwinch_code_(UNTRAPPED_SIGWINCH),
         received_sigint_(false),
+        received_sigwinch_(false),
+        sigwinch_code_(UNTRAPPED_SIGWINCH),
         num_dropped_(0) {
   }
 
@@ -131,9 +132,12 @@ class SignalSafe {
     if (sig_num == SIGINT) {
       received_sigint_ = true;
     }
+
     if (sig_num == SIGWINCH) {
-      sig_num = sigwinch_code_;
+      received_sigwinch_ = true;
+      sig_num = sigwinch_code_;  // mutate param
     }
+
 #if LOCK_FREE_ATOMICS
     last_sig_num_.store(sig_num);
 #else
@@ -150,11 +154,6 @@ class SignalSafe {
     return ret;
   }
 
-  // Main thread tells us whether SIGWINCH is trapped.
-  void SetSigWinchCode(int code) {
-    sigwinch_code_ = code;
-  }
-
   // Main thread wants to get the last signal received.
   int LastSignal() {
 #if LOCK_FREE_ATOMICS
@@ -169,6 +168,19 @@ class SignalSafe {
   bool PollSigInt() {
     bool result = received_sigint_;
     received_sigint_ = false;
+    return result;
+  }
+
+  // Main thread tells us whether SIGWINCH is trapped.
+  void SetSigWinchCode(int code) {
+    sigwinch_code_ = code;
+  }
+
+  // Main thread wants to know if SIGWINCH was received since the last time
+  // PollSigWinch was called.
+  bool PollSigWinch() {
+    bool result = received_sigwinch_;
+    received_sigwinch_ = false;
     return result;
   }
 
@@ -196,8 +208,9 @@ class SignalSafe {
 #endif
   // Not sufficient: volatile sig_atomic_t last_sig_num_;
 
-  int sigwinch_code_;
   int received_sigint_;
+  int received_sigwinch_;
+  int sigwinch_code_;
   int num_dropped_;
 };
 

@@ -141,6 +141,21 @@ TEST poll_sigint_test() {
   PASS();
 }
 
+TEST poll_sigwinch_test() {
+  pyos::SignalSafe signal_safe;
+
+  // Background thread that simulates signal handler
+  pthread_t t;
+  pthread_create(&t, 0, SimulateSignalHandlers, &signal_safe);
+
+  // Concurrent access in main thread
+  bool sigwinch = signal_safe.PollSigWinch();
+  log("sigwinch? = %d", sigwinch);
+
+  pthread_join(t, 0);
+  PASS();
+}
+
 TEST atomic_demo() {
   std::atomic<int> a(3);
 
@@ -171,6 +186,7 @@ int main(int argc, char** argv) {
   RUN_TEST(set_sigwinch_test);
   RUN_TEST(last_signal_test);
   RUN_TEST(poll_sigint_test);
+  RUN_TEST(poll_sigwinch_test);
 
   RUN_TEST(atomic_demo);
 
