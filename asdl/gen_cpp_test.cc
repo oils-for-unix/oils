@@ -248,6 +248,9 @@ int main(int argc, char** argv) {
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
 
-  GREATEST_MAIN_END(); /* display results */
+  gHeap.CleanProcessExit();
+
+  GREATEST_MAIN_END();
+
   return 0;
 }

@@ -29,7 +29,7 @@ sh-spec() {
   #   - en_US.UTF-8 seems hard to support on Debian, even though it's the default on Debian.
   #   - Description: https://stackoverflow.com/questions/55673886/what-is-the-difference-between-c-utf-8-and-en-us-utf-8-locales/55693338
   # - LOCALE_ARCHIVE is allowed to leak for Nix.
-  # - ASAN_OPTIONS leaks for memory
+  # - OIL_GC_ON_EXIT is to pass ASAN.
   # - REPO_ROOT is to find things in spec/testdata
 
   PYTHONPATH=. test/sh_spec.py \
@@ -37,9 +37,12 @@ sh-spec() {
       --path-env "$this_dir/../spec/bin:$PATH" \
       --env-pair 'LC_ALL=C.UTF-8' \
       --env-pair "LOCALE_ARCHIVE=${LOCALE_ARCHIVE:-}" \
-      --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \
+      --env-pair "OIL_GC_ON_EXIT=${OIL_GC_ON_EXIT:-}" \
       --env-pair "REPO_ROOT=$this_dir/.." \
       "$test_file" \
       "$@"
+
+  # Don't need this now that we have OIL_GC_ON_EXIT
+  #    --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \
 }
 
