@@ -116,9 +116,17 @@ tea-version-text() {
 
 # This has to be in test/spec because it uses $OSH_LIST, etc.
 osh-version-text() {
+
+  local -a osh_list
+  if test $# -eq 0; then
+    osh_list=( $OSH_LIST )  # word splitting
+  else
+    osh_list=( "$@" )  # explicit arguments
+  fi
+
   date-and-git-info
 
-  for bin in $OSH_LIST; do
+  for bin in "${osh_list[@]}"; do
     echo ---
     echo "\$ $bin --version"
     $bin --version
@@ -256,17 +264,6 @@ tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 
 soil-run-osh() {
   osh-all-serial
-}
-
-
-# Usage: test/spec.sh dbg smoke, dbg-all
-dbg() {
-  OSH_LIST='_bin/osh-dbg' $0 "$@"
-}
-
-# For completion
-dbg-all() {
-  $0 dbg all
 }
 
 #

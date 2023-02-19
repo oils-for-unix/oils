@@ -613,7 +613,6 @@ expand-loop() {
 }
 
 test-brace-exp() {
-
   expand-loop 330000
   expand-loop 340000
 }
