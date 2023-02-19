@@ -293,7 +293,7 @@ class SignalSafe(object):
     self.pending_signals = []  # type: List[int]
     self.last_sig_num = 0  # type: int
     self.sigwinch_code = UNTRAPPED_SIGWINCH
-    self.num_sigint = 0
+    self.received_sigint = True
 
   def UpdateFromSignalHandler(self, sig_num, unused_frame):
     # type: (int, Any) -> None
@@ -307,7 +307,7 @@ class SignalSafe(object):
       self.last_sig_num = sig_num
 
     if sig_num == signal.SIGINT:
-      self.num_sigint += 1
+      self.received_sigint = True
 
     self.pending_signals.append(sig_num)
 
@@ -331,8 +331,8 @@ class SignalSafe(object):
     Returns whether SIGINT has been received since the last time PollSigInt()
     was called.
     """
-    result = self.num_sigint > 0
-    self.num_sigint = 0
+    result = self.received_sigint
+    self.received_sigint = False
     return result
 
   def TakePendingSignals(self):

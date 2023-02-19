@@ -113,7 +113,7 @@ class SignalSafe {
         pending_signals_(AllocSignalList()),
         last_sig_num_(0),
         sigwinch_code_(UNTRAPPED_SIGWINCH),
-        num_sigint_(0),
+        received_sigint_(false),
         num_dropped_(0) {
   }
 
@@ -129,7 +129,7 @@ class SignalSafe {
     }
 
     if (sig_num == SIGINT) {
-      num_sigint_++;
+      received_sigint_ = true;
     }
     if (sig_num == SIGWINCH) {
       sig_num = sigwinch_code_;
@@ -167,8 +167,8 @@ class SignalSafe {
   // Main thread wants to know if SIGINT was received since the last time
   // PollSigInt was called.
   bool PollSigInt() {
-    bool result = num_sigint_ > 0;
-    num_sigint_ = 0;  // Reset counter
+    bool result = received_sigint_;
+    received_sigint_ = false;
     return result;
   }
 
@@ -194,12 +194,10 @@ class SignalSafe {
 #else
   int last_sig_num_;
 #endif
-  // Also tried
-  // volatile sig_atomic_t num_sigint_;
-  // Does not change ThreadSanitizer reports
+  // Not sufficient: volatile sig_atomic_t last_sig_num_;
 
   int sigwinch_code_;
-  int num_sigint_;
+  int received_sigint_;
   int num_dropped_;
 };
 

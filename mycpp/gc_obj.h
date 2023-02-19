@@ -21,7 +21,7 @@ const int Forwarded = 4;  // For the Cheney algorithm.
 // asdl/gen_cpp.py starts from 1 for variants, or 64 for shared variants.
 namespace TypeTag {
 const int OtherClass = 127;  // non-ASDL class
-const int Str = 126;  // asserted in dynamic StrFormat()
+const int Str = 126;         // asserted in dynamic StrFormat()
 const int Slab = 125;
 const int Tuple = 124;
 };  // namespace TypeTag

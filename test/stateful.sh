@@ -70,6 +70,10 @@ job-control() { job-control-quick dash "$@"; }
 manifest() {
   ### List all tests
 
+  # TODO: 
+  # - Print a table with --osh-allowed-failures and shells.  It can be filtered
+  # - Compare Python and C++ side by side
+
   cat <<EOF
 interactive
 job-control
@@ -86,8 +90,6 @@ run-file() {
 
   local log_filename=$spec_name.log.txt
   local results_filename=$spec_name.results.txt
-
-  # TODO: I want allowed failures here
 
   time-tsv -o $base_dir/${spec_name}.task.txt \
     --field $spec_name --field $log_filename --field $results_filename -- \
