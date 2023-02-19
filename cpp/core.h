@@ -196,7 +196,8 @@ class SignalSafe {
   }
 
   static constexpr uint16_t field_mask() {
-    return maskbit(offsetof(SignalSafe, pending_signals_));
+    return maskbit(offsetof(SignalSafe, pending_signals_)) |
+           maskbit(offsetof(SignalSafe, empty_list_));
   }
 
   GC_OBJ(header_);
