@@ -111,6 +111,7 @@ class SignalSafe {
   SignalSafe()
       : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
         pending_signals_(AllocSignalList()),
+        empty_list_(AllocSignalList()),  // to avoid repeated allocation
         last_sig_num_(0),
         received_sigint_(false),
         received_sigwinch_(false),
@@ -147,11 +148,21 @@ class SignalSafe {
 
   // Main thread takes signals so it can run traps.
   List<int>* TakePendingSignals() {
-    // TODO: Consider ReuseEmptyList() to avoid allocation
-    List<int>* new_queue = AllocSignalList();
     List<int>* ret = pending_signals_;
-    pending_signals_ = new_queue;
+
+    // Make sure we have a distinct list to reuse.
+    DCHECK(empty_list_ != pending_signals_);
+    pending_signals_ = empty_list_;
+
     return ret;
+  }
+
+  // Main thread returns the same list as an optimization to avoid allocation.
+  void ReuseEmptyList(List<int>* empty_list) {
+    DCHECK(len(empty_list) == 0);            // main thread clears
+    DCHECK(empty_list != pending_signals_);  // must be different
+
+    empty_list_ = empty_list;
   }
 
   // Main thread wants to get the last signal received.
@@ -190,6 +201,7 @@ class SignalSafe {
 
   GC_OBJ(header_);
   List<int>* pending_signals_;  // public for testing
+  List<int>* empty_list_;
 
  private:
   // Enforce private state because two different "threads" will use it!
