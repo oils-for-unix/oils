@@ -9,13 +9,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO: Make this pass!
-test-gc-cleanup() {
+# Check that we don't have any leaks!
+soil-run() {
   ninja _bin/cxx-asan/osh
 
   OIL_GC_ON_EXIT=1 _bin/cxx-asan/osh --version
 
-  #_bin/cxx-asan/osh -c 'echo hi'
+  OIL_GC_ON_EXIT=1 _bin/cxx-asan/osh -c 'echo hi'
 }
 
 "$@"

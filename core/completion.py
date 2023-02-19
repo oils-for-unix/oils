@@ -86,7 +86,7 @@ if TYPE_CHECKING:
 #   ~    in filenames should be quoted
 #
 # TODO: Also escape tabs as \t and newlines at \n?
-SHELL_META_CHARS = r' ~`!$&|;()\"*?[]{}<>' + "'"
+# SHELL_META_CHARS = r' ~`!$&|;()\"*?[]{}<>' + "'"
 
 
 
