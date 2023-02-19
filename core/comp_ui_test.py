@@ -9,6 +9,7 @@ import sys
 import unittest
 
 from core import comp_ui  # module under test
+from core import pyos
 from core import util
 
 import line_input
@@ -117,10 +118,11 @@ class UiTest(unittest.TestCase):
     comp_ui_state = comp_ui.State()
     prompt_state = comp_ui.PromptState()
     debug_f = util.DebugFile(sys.stdout)
+    signal_safe = pyos.InitSignalSafe()
 
     # terminal width
     d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f,
-                             line_input)
+                             line_input, signal_safe)
     d2 = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     prompt_state.SetLastPrompt('$ ')
@@ -139,8 +141,6 @@ class UiTest(unittest.TestCase):
 
       matches = ['echo one', 'echo two']
       disp.PrintCandidates(None, matches, None)
-
-      disp.OnWindowChange()
 
       # This needs to be aware of the terminal width.
       # It's a bit odd since it's called as a side effect of the PromptEvaluator.

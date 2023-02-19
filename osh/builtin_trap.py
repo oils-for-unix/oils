@@ -121,11 +121,6 @@ class TrapState(object):
     run_list = []  # type: List[command_t]
     for sig_num in sig_queue:
       node = self.traps.get(sig_num, None)
-
-      if mylib.PYTHON:
-        if sig_num == SIGWINCH and self.display:
-          self.display.OnWindowChange()
-
       if node is not None:
         run_list.append(node)
 

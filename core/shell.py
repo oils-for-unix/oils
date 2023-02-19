@@ -610,8 +610,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
           pass
 
       if term_width != 0:
-        display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f, readline)  # type: comp_ui._IDisplay
+        display = comp_ui.NiceDisplay(
+            term_width, comp_ui_state, prompt_state, debug_f, readline,
+            signal_safe)  # type: comp_ui._IDisplay
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 

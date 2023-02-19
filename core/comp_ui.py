@@ -14,6 +14,7 @@ if TYPE_CHECKING:
   from frontend.py_readline import Readline
   from core.util import _DebugFile
   from core import completion
+  from core import pyos
 
 
 # ANSI escape codes affect the prompt!
@@ -135,11 +136,6 @@ class _IDisplay(object):
     def PrintOptional(self, msg, *args):
       # type: (str, *Any) -> None
       pass
-
-  def OnWindowChange(self):
-    # type: () -> None
-    # MinimalDisplay doesn't care about terminal width.
-    pass
 
 
 class MinimalDisplay(_IDisplay):
@@ -316,6 +312,7 @@ class NiceDisplay(_IDisplay):
                prompt_state,  # type: PromptState
                debug_f,  # type: _DebugFile
                readline,  # type: Optional[Readline]
+               signal_safe,  # type: pyos.SignalSafe
                ):
     # type: (...) -> None
     """
@@ -324,9 +321,12 @@ class NiceDisplay(_IDisplay):
     """
     _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
                        debug_f)
+
+    self.term_width = term_width  # initial terminal width; will be invalidated
+
     self.readline = readline
-    self.term_width = term_width
-    self.width_is_dirty = False
+    self.signal_safe = signal_safe
+
 
     self.bold_line = False
 
@@ -509,7 +509,7 @@ class NiceDisplay(_IDisplay):
 
   def _GetTerminalWidth(self):
     # type: () -> int
-    if self.width_is_dirty:
+    if self.signal_safe.PollSigWinch():  # is our value dirty?
       try:
         self.term_width = libc.get_terminal_width()
       except IOError:
@@ -517,26 +517,7 @@ class NiceDisplay(_IDisplay):
         # rare circumstances stdin can change, e.g. if you do exec <&
         # input.txt.  So we have a fallback.
         self.term_width = 80
-      self.width_is_dirty = False
     return self.term_width
-
-  def OnWindowChange(self):
-    # type: () -> None
-    # Only do it for the NEXT completion.  The signal handler can be run in
-    # between arbitrary bytecodes, and we don't want a single completion
-    # display to be shown with different widths.
-    self.width_is_dirty = True
-
-    # NOTE: This readline function REDRAWS the prompt, and we don't want to
-    # happen on SIGWINCH -- e.g. in the middle of a read().
-    #
-    # We could call rl_set_screen_size or rl_get_screen_size() instead.
-    # But Oil is handling all the drawing, so I don't see why readline needs
-    # to know about the terminal size.
-    #
-    # https://tiswww.case.edu/php/chet/readline/readline.html
-
-    #self.readline.resize_terminal()
 
 
 def ExecutePrintCandidates(display, sub, matches, max_len):
