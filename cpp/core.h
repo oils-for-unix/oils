@@ -159,9 +159,9 @@ class SignalSafe {
 
   // Main thread returns the same list as an optimization to avoid allocation.
   void ReuseEmptyList(List<int>* empty_list) {
+    DCHECK(empty_list != pending_signals_);  // must be different
     DCHECK(len(empty_list) == 0);            // main thread clears
     DCHECK(empty_list->capacity_ == kMaxPendingSignals);
-    DCHECK(empty_list != pending_signals_);  // must be different
 
     empty_list_ = empty_list;
   }
