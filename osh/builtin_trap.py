@@ -116,13 +116,17 @@ class TrapState(object):
   def GetPendingTraps(self):
     # type: () -> List[command_t]
     """Transfer ownership of the current queue of pending trap handlers to the caller."""
-    sig_queue = self.signal_safe.TakePendingSignals()
+    signals = self.signal_safe.TakePendingSignals()
 
     run_list = []  # type: List[command_t]
-    for sig_num in sig_queue:
+    for sig_num in signals:
       node = self.traps.get(sig_num, None)
       if node is not None:
         run_list.append(node)
+
+    # Optimization to avoid allocation in the main loop.
+    del signals[:]
+    self.signal_safe.ReuseEmptyList(signals)
 
     return run_list
 

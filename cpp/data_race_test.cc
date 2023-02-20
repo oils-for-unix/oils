@@ -88,7 +88,13 @@ TEST take_pending_signals_test() {
 
   // Concurrent access in main thread
   List<int>* received = signal_safe.TakePendingSignals();
-  log("received %d signals", len(received));
+  log("(1) received %d signals", len(received));
+
+  received->clear();
+  signal_safe.ReuseEmptyList(received);
+
+  received = signal_safe.TakePendingSignals();
+  log("(2) received %d signals", len(received));
 
   pthread_join(t, 0);
 

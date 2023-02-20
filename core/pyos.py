@@ -364,6 +364,11 @@ class SignalSafe(object):
     self.pending_signals = new_queue
     return ret
 
+  def ReuseEmptyList(self, empty_list):
+    # type: (List[int]) -> None
+    """This optimization only happens in C++."""
+    pass
+
 
 gSignalSafe = None  #  type: SignalSafe
 

@@ -212,6 +212,7 @@ TEST signal_test() {
     List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT_EQ(0, len(q));
+    signal_safe->ReuseEmptyList(q);
   }
 
   pid_t mypid = getpid();
@@ -231,6 +232,9 @@ TEST signal_test() {
     ASSERT_EQ(2, len(q));
     ASSERT_EQ(SIGUSR1, q->index_(0));
     ASSERT_EQ(SIGUSR2, q->index_(1));
+
+    q->clear();
+    signal_safe->ReuseEmptyList(q);
   }
 
   pyos::Sigaction(SIGUSR1, SIG_IGN);
@@ -239,6 +243,7 @@ TEST signal_test() {
     List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT(len(q) == 0);
+    signal_safe->ReuseEmptyList(q);
   }
   pyos::Sigaction(SIGUSR2, SIG_IGN);
 

@@ -310,7 +310,7 @@ task-all() {
     case $task_name in
       (hello|fib)
         # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
-        # than dash, because bash uses more memory.
+        # then dash, because bash uses more memory.
         cmd=($runtime benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
         ;;
       (*)
@@ -382,6 +382,7 @@ measure() {
 
   mkdir -p $BASE_DIR/{tmp,raw,stage1} $out_dir
 
+  # set -x
   hello-all $provenance $host_job_id $out_dir
   fib-all $provenance $host_job_id $out_dir
 
