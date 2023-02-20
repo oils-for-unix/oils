@@ -250,9 +250,11 @@ class ShellExecutor(vm._Executor):
       p = process.Process(thunk, self.job_state, self.tracer)
       if pipeline is not None:
         p.Init_ParentPipeline(pipeline)
+        p.Start(trace.PipelinePart())
         pipeline.Add(p)
-
-      status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
+        status = p.Wait(self.waiter)
+      else:
+        status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
 
       # this is close to a "leaf" for errors
       # problem: permission denied EACCESS prints duplicate messages

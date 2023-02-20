@@ -1494,7 +1494,7 @@ class CommandEvaluator(object):
           # redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
             try:
-              status = self._Dispatch(node, cmd_st, None)
+              status = self._Dispatch(node, cmd_st, pipeline)
               check_errexit = cmd_st.check_errexit
             except error.FailGlob as e:
               if not e.HasLocation():  # Last resort!
@@ -1656,7 +1656,7 @@ class CommandEvaluator(object):
     err = None  # type: error.FatalRuntime
 
     try:
-      status = self._Execute(node)
+      status = self._Execute(node, pipeline)
     except vm.ControlFlow as e:
       if cmd_flags & RaiseControlFlow:
         raise  # 'eval break' and 'source return.sh', etc.
