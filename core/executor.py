@@ -280,7 +280,7 @@ class ShellExecutor(vm._Executor):
 
     if UP_node.tag_() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
-      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
+      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
       for child in node.children:
         p = self._MakeProcess(child)
         p.Init_ParentPipeline(pi)
@@ -306,7 +306,7 @@ class ShellExecutor(vm._Executor):
   def RunPipeline(self, node, status_out):
     # type: (command__Pipeline, CommandStatus) -> None
 
-    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
+    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
     self.job_state.AddPipeline(pi)
 
     # First n-1 processes (which is empty when n == 1)
@@ -370,7 +370,8 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    p.Start(trace.CommandSub())
+    # Command subs run in the parent shell's group
+    p.Start(trace.CommandSub(), posix.getpgid(0))
     #log('Command sub started %d', pid)
 
     chunks = []  # type: List[str]

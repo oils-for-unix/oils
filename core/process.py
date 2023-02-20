@@ -23,7 +23,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, trace, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
-    redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
+    command_e, command__Simple, redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
 from core import dev
 from core import pyutil
@@ -44,7 +44,7 @@ from posix_ import (
     # translated by mycpp and directly called!  No wrapper!
     WIFSIGNALED, WIFEXITED, WIFSTOPPED,
     WEXITSTATUS, WTERMSIG,
-    O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
+    O_APPEND, O_CREAT, O_NONBLOCK, O_NOCTTY, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
 )
 
 from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -73,6 +73,17 @@ _SHELL_MIN_FD = 100
 STYLE_DEFAULT = 0
 STYLE_LONG = 1
 STYLE_PID_ONLY = 2
+
+
+def GetTtyFd():
+  # type: () -> int
+  """
+  Returns -1 if stdio is not a TTY.
+  """
+  try:
+    return posix.open("/dev/tty", O_NONBLOCK | O_NOCTTY | O_RDWR, 0o666)
+  except OSError as e:
+    return -1
 
 
 def SaveFd(fd):
@@ -696,7 +707,6 @@ class SubProgramThunk(Thunk):
 
   def Run(self):
     # type: () -> None
-
     #self.errfmt.OneLineErrExit()  # don't quote code in child processes
 
     # NOTE: may NOT return due to exec().
@@ -797,6 +807,17 @@ class Job(object):
     raise NotImplementedError()
 
 
+def _setpgid(pid, pgrp):
+  # type: (int, int) -> None
+  if pgrp == -1:
+    pgrp = pid
+
+  try:
+    posix.setpgid(pid, pgrp)
+  except OSError as e:
+    print_stderr('osh: Failed to set process group for PID %d to %d: %s' % (pid, pgrp, pyutil.strerror(e)))
+
+
 class Process(Job):
   """A process to run.
 
@@ -840,6 +861,23 @@ class Process(Job):
     #return '<Process %s%s>' % (self.thunk, s)
     return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
 
+  def GroupId(self):
+    # type: () -> int
+    """
+    Returns -1 if not in a subshell and this process or its parent pipeline hasn't been started.
+    Returns a valid process group ID in all other cases.
+    """
+    curr_pid = posix.getpid()
+    if curr_pid != self.job_state.shell_pid:
+      # If we are creating a process in a subshell, use the subshell's group as
+      # our group.
+      return posix.getpgid(0)
+
+    if self.parent_pipeline is not None:
+      return self.parent_pipeline.group_id
+
+    return self.pid
+
   def DisplayJob(self, job_id, f, style):
     # type: (int, mylib.Writer, int) -> None
     if job_id == -1:
@@ -868,23 +906,17 @@ class Process(Job):
       posix.close(self.close_r)
       posix.close(self.close_w)
 
-  def Start(self, why):
-    # type: (trace_t) -> int
-    """Start this process with fork(), handling redirects."""
-    # TODO: If OSH were a job control shell, we might need to call some of
-    # these here.  They control the distribution of signals, some of which
-    # originate from a terminal.  All the processes in a pipeline should be in
-    # a single process group.
-    #
-    # - posix.setpgid()
-    # - posix.setpgrp() 
-    # - posix.tcsetpgrp()
-    #
-    # NOTE: posix.setsid() isn't called by the shell; it's should be called by the
-    # login program that starts the shell.
-    #
-    # The whole job control mechanism is complicated and hacky.
+  def Start(self, why, pgrp=-1):
+    # type: (trace_t, int) -> int
+    """
+    Start this process with fork(), handling redirects.
+    If job control is enabled and pgrp is positive, the process will be placed in the provided group.
+    """
+    if self.job_state.fg_pipeline:
+      self.parent_pipeline = self.job_state.fg_pipeline
 
+    if pgrp == -1:
+      pgrp = self.GroupId()
     pid = posix.fork()
     if pid < 0:
       # When does this happen?
@@ -894,6 +926,9 @@ class Process(Job):
       # Note: this happens in BOTH interactive and non-interactive shells.
       # We technically don't need to do most of it in non-interactive, since we
       # did not change state in InitInteractiveShell().
+      pid = posix.getpid()
+      if self.job_state.JobControlEnabled():
+        _setpgid(pid, pgrp)
 
       # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
       # shouldn't have this.
@@ -904,8 +939,10 @@ class Process(Job):
       # Respond to Ctrl-\ (core dump)
       pyos.Sigaction(SIGQUIT, SIG_DFL)
 
-      # Child processes should get Ctrl-Z.
-      pyos.Sigaction(SIGTSTP, SIG_DFL)
+      # Only standalone children should get Ctrl-Z. Pipelines should remain in
+      # the foreground.
+      if posix.getpgid(0) == pid and self.parent_pipeline is None:
+        pyos.Sigaction(SIGTSTP, SIG_DFL)
 
       # More signals from
       # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
@@ -916,9 +953,16 @@ class Process(Job):
       for st in self.state_changes:
         st.Apply()
 
-      self.tracer.SetProcess(posix.getpid())
+      self.tracer.SetProcess(pid)
+      # clear foreground pieline for subshells
+      self.job_state.fg_pipeline = None
       self.thunk.Run()
       # Never returns
+
+    # We call setpgid() in the the parent and child to avoid racing on group
+    # membership in GiveTerminal() if the child wakes up first.
+    if self.job_state.JobControlEnabled():
+      _setpgid(pid, pgrp)
 
     #log('STARTED process %s, pid = %d', self, pid)
     self.tracer.OnProcessStart(pid, why)
@@ -927,6 +971,8 @@ class Process(Job):
     self.pid = pid
     # Program invariant: We keep track of every child process!
     self.job_state.AddChildProcess(pid, self)
+    if self.job_state.fg_pipeline:
+      self.job_state.fg_pipeline.AddLastPid(pid)
 
     return pid
 
@@ -958,6 +1004,7 @@ class Process(Job):
   def WhenStopped(self):
     # type: () -> None
     self.state = job_state_e.Stopped
+    self.job_state.MaybeTakeTerminal()
 
   def WhenDone(self, pid, status):
     # type: (int, int) -> None
@@ -969,20 +1016,36 @@ class Process(Job):
     self.state = job_state_e.Done
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
+    else:
+      self.job_state.MaybeTakeTerminal()
 
   def RunWait(self, waiter, why):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
     self.Start(why)
+
+    # ShellExecutor might be calling this for the last part of a pipeline.
+    if self.parent_pipeline is None:
+      self.job_state.MaybeGiveTerminal(posix.getpgid(self.pid))
+
     return self.Wait(waiter)
 
 
 class ctx_Pipe(object):
 
-  def __init__(self, fd_state, fd):
-    # type: (FdState, int) -> None
+  def __init__(self, fd_state, fd, job_state, pipeline, last_node):
+    # type: (FdState, int, JobState, Pipeline, command_t) -> None
     fd_state.PushStdinFromPipe(fd)
     self.fd_state = fd_state
+    self.job_state = job_state
+
+    if self.job_state.JobControlEnabled():
+      UP_node = last_node
+      with tagswitch(last_node) as case:
+        if case(command_e.Simple):
+          last_node = cast(command__Simple, UP_node)
+          if last_node.do_fork:
+            self.job_state.fg_pipeline = pipeline
 
   def __enter__(self):
     # type: () -> None
@@ -991,6 +1054,7 @@ class ctx_Pipe(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.fd_state.Pop()
+    self.job_state.fg_pipeline = None
 
 
 class Pipeline(Job):
@@ -1002,13 +1066,21 @@ class Pipeline(Job):
   $(foo | bar)
   foo | bar | read v
   """
-  def __init__(self, sigpipe_status_ok):
-    # type: (bool) -> None
+  def __init__(self, sigpipe_status_ok, job_state):
+    # type: (bool, JobState) -> None
     Job.__init__(self)
+    self.job_state = job_state
     self.procs = []  # type: List[Process]
     self.pids = []  # type: List[int]  # pids in order
     self.pipe_status = []  # type: List[int]  # status in order
     self.status = -1  # for 'wait' jobs
+    self.group_id = -1  # for job control signals
+
+    # If we are creating a pipeline in a subshell, use the subshell's PID as the
+    # pipelines's group ID.
+    curr_pid = posix.getpid()
+    if curr_pid != self.job_state.shell_pid:
+      self.group_id = curr_pid
 
     # Optional for foreground
     self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
@@ -1041,6 +1113,11 @@ class Pipeline(Job):
       _, last_node = self.last_thunk
       print('  last %s' % last_node)
       print('  pipe_status %s' % self.pipe_status)
+
+  def AddLastPid(self, pid):
+    # type: (int) -> None
+    """Add the PID of the last process to this pipeline's list of children."""
+    self.pids.append(pid)
 
   def Add(self, p):
     # type: (Process) -> None
@@ -1087,6 +1164,11 @@ class Pipeline(Job):
 
     for i, proc in enumerate(self.procs):
       pid = proc.Start(trace.PipelinePart())
+      if i == 0 and self.group_id == -1:
+        # Mimick bash and use the PID of the first process as the group for the
+        # whole pipeline.
+        self.group_id = pid
+
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 
@@ -1144,6 +1226,10 @@ class Pipeline(Job):
       pipe_status (list of integers).
     """
     self.Start(waiter)
+    if self.group_id == -1:
+      self.group_id = self.job_state.shell_pgrp
+
+    self.job_state.MaybeGiveTerminal(self.group_id)
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
     # may or may not fork:
@@ -1157,7 +1243,7 @@ class Pipeline(Job):
       r, w = self.last_pipe  # set in AddLast()
       posix.close(w)  # we will not write here
 
-      with ctx_Pipe(fd_state, r):
+      with ctx_Pipe(fd_state, r, self.job_state, self, last_node):
         cmd_ev.ExecuteAndCatch(last_node)
 
       # We won't read anymore.  If we don't do this, then 'cat' in 'cat
@@ -1175,7 +1261,6 @@ class Pipeline(Job):
       self.state = job_state_e.Done
 
     #log('pipestatus before all have finished = %s', self.pipe_status)
-
     if len(self.procs):
       return self.Wait(waiter)
     else:
@@ -1205,6 +1290,7 @@ class Pipeline(Job):
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
+      self.job_state.MaybeTakeTerminal()
 
 
 def _JobStateStr(i):
@@ -1230,6 +1316,52 @@ class JobState(object):
     self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
     self.job_id = 1  # Strictly increasing
 
+    # The main shell's PID and group ID.
+    self.shell_pid = -1
+    self.shell_pgrp = -1
+
+    # The fd of the controlling tty. Set to -1 when job control is disabled.
+    self.shell_tty_fd = -1
+
+    # For giving the terminal back to our parent before exiting (if not a login
+    # shell).
+    self.original_tty_pgrp = -1
+
+    self.fg_pipeline = None # type: Optional[Pipeline]
+
+  def InitJobControl(self):
+    # type: () -> None
+    self.shell_pid = posix.getpid()
+    orig_shell_pgrp = posix.getpgid(0)
+    self.shell_pgrp = orig_shell_pgrp
+    self.shell_tty_fd = GetTtyFd()
+
+    # If we aren't the leader of our process group, create a group and mark
+    # ourselves as the leader.
+    if self.shell_pgrp != self.shell_pid:
+      try:
+        posix.setpgid(self.shell_pid, self.shell_pid)
+        self.shell_pgrp = self.shell_pid
+      except OSError as e:
+        self.shell_tty_fd = -1
+
+    if self.shell_tty_fd != -1:
+      self.original_tty_pgrp = posix.tcgetpgrp(self.shell_tty_fd)
+
+      # If stdio is a TTY, put the shell's process group in the foreground.
+      try:
+        posix.tcsetpgrp(self.shell_tty_fd, self.shell_pgrp)
+      except OSError as e:
+        # We probably aren't in the session leader's process group. Disable job
+        # control.
+        self.shell_tty_fd = -1
+        self.shell_pgrp = orig_shell_pgrp
+        posix.setpgid(self.shell_pid, self.shell_pgrp)
+
+  def JobControlEnabled(self):
+    # type: () -> bool
+    return self.shell_tty_fd != -1
+
   # TODO: This isn't a PID.  This is a process group ID?
   #
   # What should the table look like?
@@ -1242,6 +1374,24 @@ class JobState(object):
   # job_id is just an integer.  This is sort of lame.
   #
   # [job_id, flag, pgid, job_state, node]
+
+  def MaybeGiveTerminal(self, pgrp):
+    # type: (int) -> None
+    """If stdio is a TTY, move the given process group to the foreground."""
+    if not self.JobControlEnabled() or posix.getpid() != self.shell_pid:
+      # Only call tcsetpgrp when job control is enabled and only call it from
+      # the main shell.
+      return
+
+    try:
+      posix.tcsetpgrp(self.shell_tty_fd, pgrp)
+    except OSError as e:
+      e_die('osh: Failed to move process group %d to foreground: %s' % (pgrp, pyutil.strerror(e)))
+
+  def MaybeTakeTerminal(self):
+    # type: () -> None
+    """If stdio is a TTY, return the main shell's process group to the foreground."""
+    self.MaybeGiveTerminal(self.shell_pgrp)
 
   def WhenStopped(self, pid):
     # type: (int) -> None
@@ -1510,8 +1660,6 @@ class Waiter(object):
     elif WIFSTOPPED(status):
       #sig = posix.WSTOPSIG(status)
 
-      # BUG: Stopping pipelines doesn't work!
-      # sleep 5 | wc -l then Ctrl-Z and fg
       log('')
       log('[PID %d] Stopped', pid)
       self.job_state.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'

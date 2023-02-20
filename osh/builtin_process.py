@@ -62,8 +62,6 @@ class Fg(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    # Note: 'fg' currently works with processes, but not pipelines.  See issue
-    # #360.  Part of it is that we should use posix.killpg().
     pid = self.job_state.GetLastStopped()
     if pid == -1:
       log('No job to put in the foreground')
@@ -71,7 +69,12 @@ class Fg(vm._Builtin):
 
     # TODO: Print job ID rather than the PID
     log('Continue PID %d', pid)
-    posix.kill(pid, SIGCONT)
+    # Put the job's process group back into the foreground. GiveTerminal() must
+    # be called before sending SIGCONT or else the process might immediately get
+    # suspsended again if it tries to read/write on the terminal.
+    pgrp = posix.getpgid(pid)
+    self.job_state.MaybeGiveTerminal(pgrp)
+    posix.killpg(pgrp, SIGCONT)
     return self.job_state.WhenContinued(pid, self.waiter)
 
 

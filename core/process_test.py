@@ -127,7 +127,7 @@ class ProcessTest(unittest.TestCase):
     cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena, ext_prog=self.ext_prog)
     print('BEFORE', os.listdir('/dev/fd'))
 
-    p = process.Pipeline(False)
+    p = process.Pipeline(False, self.job_state)
     p.Add(self._ExtProc(['ls']))
     p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
     p.Add(self._ExtProc(['sort']))
@@ -143,7 +143,7 @@ class ProcessTest(unittest.TestCase):
     cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena, ext_prog=self.ext_prog)
 
     Banner('ls | cut -d . -f 1 | head')
-    p = process.Pipeline(False)
+    p = process.Pipeline(False, self.job_state)
     p.Add(self._ExtProc(['ls']))
     p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
@@ -157,7 +157,7 @@ class ProcessTest(unittest.TestCase):
     node2 = _CommandNode('head', self.arena)
     node3 = _CommandNode('sort --reverse', self.arena)
 
-    p = process.Pipeline(False)
+    p = process.Pipeline(False, self.job_state)
     p.Add(Process(process.SubProgramThunk(cmd_ev, node1), self.job_state, self.tracer)) 
     p.Add(Process(process.SubProgramThunk(cmd_ev, node2), self.job_state, self.tracer))
     p.Add(Process(process.SubProgramThunk(cmd_ev, node3), self.job_state, self.tracer))
