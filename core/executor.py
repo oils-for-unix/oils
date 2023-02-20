@@ -250,7 +250,7 @@ class ShellExecutor(vm._Executor):
       p = process.Process(thunk, self.job_state, self.tracer)
       if pipeline is not None:
         p.Init_ParentPipeline(pipeline)
-        p.Start(trace.PipelinePart())
+        p.Start(trace.External(cmd_val.argv))
         pipeline.Add(p)
         status = p.Wait(self.waiter)
       else:
