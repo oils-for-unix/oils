@@ -704,7 +704,7 @@ class SubProgramThunk(Thunk):
       self.cmd_ev.mutable_opts.DisableErrExit()
     try:
       # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
-      self.cmd_ev.ExecuteAndCatch(self.node, cmd_flags=cmd_eval.Optimize)
+      self.cmd_ev.ExecuteAndCatch(self.node, None, cmd_flags=cmd_eval.Optimize)
       status = self.cmd_ev.LastStatus()
       # NOTE: We ignore the is_fatal return value.  The user should set -o
       # errexit so failures in subprocesses cause failures in the parent.
@@ -1158,7 +1158,7 @@ class Pipeline(Job):
       posix.close(w)  # we will not write here
 
       with ctx_Pipe(fd_state, r):
-        cmd_ev.ExecuteAndCatch(last_node)
+        cmd_ev.ExecuteAndCatch(last_node, self)
 
       # We won't read anymore.  If we don't do this, then 'cat' in 'cat
       # /dev/urandom | sleep 1' will never get SIGPIPE.
@@ -1166,9 +1166,9 @@ class Pipeline(Job):
 
     else:
       if len(self.procs):
-        cmd_ev.ExecuteAndCatch(last_node)  # Background pipeline without last_pipe
+        cmd_ev.ExecuteAndCatch(last_node, self)  # Background pipeline without last_pipe
       else:
-        cmd_ev._Execute(last_node)  # singleton foreground pipeline, e.g. '! func'
+        cmd_ev._Execute(last_node, self)  # singleton foreground pipeline, e.g. '! func'
 
     self.pipe_status[-1] = cmd_ev.LastStatus()
     if self.AllDone():

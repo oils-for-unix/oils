@@ -71,7 +71,7 @@ from mycpp.mylib import switch, tagswitch
 import posix_ as posix
 import libc  # for fnmatch
 
-from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Any, Optional, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
@@ -84,6 +84,7 @@ if TYPE_CHECKING:
   )
   from core.alloc import Arena
   from core import optview
+  from core.process import Pipeline
   from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
@@ -546,15 +547,15 @@ class CommandEvaluator(object):
 
     return result
 
-  def _RunSimpleCommand(self, cmd_val, cmd_st, do_fork):
-    # type: (cmd_value_t, CommandStatus, bool) -> int
+  def _RunSimpleCommand(self, cmd_val, cmd_st, do_fork, pipeline):
+    # type: (cmd_value_t, CommandStatus, bool, Optional[Pipeline]) -> int
     """Private interface to run a simple command (including assignment)."""
     UP_cmd_val = cmd_val
     with tagswitch(UP_cmd_val) as case:
       if case(cmd_value_e.Argv):
         cmd_val = cast(cmd_value__Argv, UP_cmd_val)
         self.tracer.OnSimpleCommand(cmd_val.argv)
-        return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, do_fork)
+        return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, do_fork, pipeline)
 
       elif case(cmd_value_e.Assign):
         cmd_val = cast(cmd_value__Assign, UP_cmd_val)
@@ -633,8 +634,8 @@ class CommandEvaluator(object):
 
     return b
 
-  def _Dispatch(self, node, cmd_st):
-    # type: (command_t, CommandStatus) -> int
+  def _Dispatch(self, node, cmd_st, pipeline):
+    # type: (command_t, CommandStatus, Optional[Pipeline]) -> int
     """Switch on the command_t variants and execute them."""
 
     # If we call RunCommandSub in a recursive call to the executor, this will
@@ -727,13 +728,13 @@ class CommandEvaluator(object):
           if cmd_val.tag_() == cmd_value_e.Assign or is_other_special:
             # Special builtins have their temp env persisted.
             self._EvalTempEnv(node.more_env, 0)
-            status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+            status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork, pipeline)
           else:
             with state.ctx_Temp(self.mem):
               self._EvalTempEnv(node.more_env, state.SetExport)
-              status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+              status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork, pipeline)
         else:
-          status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+          status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork, pipeline)
 
       elif case(command_e.ExpandedAlias):
         node = cast(command__ExpandedAlias, UP_node)
@@ -1446,8 +1447,8 @@ class CommandEvaluator(object):
             with dev.ctx_Tracer(self.tracer, 'trap', None):
               self._Execute(trap_node)
 
-  def _Execute(self, node):
-    # type: (command_t) -> int
+  def _Execute(self, node, pipeline=None):
+    # type: (command_t, Optional[Pipeline]) -> int
     """Apply redirects, call _Dispatch(), and performs the errexit check.
 
     Also runs trap handlers.
@@ -1493,7 +1494,7 @@ class CommandEvaluator(object):
           # redirects can fail.
           with vm.ctx_Redirect(self.shell_ex):
             try:
-              status = self._Dispatch(node, cmd_st)
+              status = self._Dispatch(node, cmd_st, None)
               check_errexit = cmd_st.check_errexit
             except error.FailGlob as e:
               if not e.HasLocation():  # Last resort!
@@ -1620,8 +1621,8 @@ class CommandEvaluator(object):
           return self._RemoveSubshells(node.child)
     return node
 
-  def ExecuteAndCatch(self, node, cmd_flags=0):
-    # type: (command_t, int) -> Tuple[bool, bool]
+  def ExecuteAndCatch(self, node, pipeline, cmd_flags=0):
+    # type: (command_t, Optional[Pipeline], int) -> Tuple[bool, bool]
     """Execute a subprogram, handling vm.ControlFlow and fatal exceptions.
 
     Args:
@@ -1725,7 +1726,7 @@ class CommandEvaluator(object):
     if node:
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:
-          is_return, is_fatal = self.ExecuteAndCatch(node)
+          is_return, is_fatal = self.ExecuteAndCatch(node, None)
         except util.UserExit as e:  # explicit exit
           mut_status[0] = e.status
           return

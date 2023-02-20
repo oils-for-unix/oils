@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import Token
 from core.pyerror import log
 from core import pyos
 
-from typing import List, Any, TYPE_CHECKING
+from typing import List, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
       cmd_value__Argv, cmd_value__Assign, redirect
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from osh.cmd_eval import CommandEvaluator
   from osh import prompt
   from core import dev
+  from core.process import Pipeline
   from core import state
 
 _ = log
@@ -164,8 +165,8 @@ class _Executor(object):
     """
     return 0
 
-  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
+  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, pipeline, call_procs=True):
+    # type: (cmd_value__Argv, CommandStatus, bool, Optional[Pipeline], bool) -> int
     return 0
 
   def RunBackgroundJob(self, node):

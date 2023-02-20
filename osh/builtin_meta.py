@@ -172,7 +172,7 @@ class Command(vm._Builtin):
     # shell does that, and this rare case isn't worth the bookkeeping.
     # See test/syscall
     cmd_st = CommandStatus.Create()
-    return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, True, call_procs=False)
+    return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, True, None, call_procs=False)
 
 
 class Builtin(vm._Builtin):
@@ -233,7 +233,7 @@ class RunProc(vm._Builtin):
 
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
     cmd_st = CommandStatus.Create()
-    return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+    return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True, None)
 
 
 class Try(vm._Builtin):
@@ -307,7 +307,7 @@ class Try(vm._Builtin):
         # or forkwait { status ls }, but that is NOT idiomatic code.  status is
         # for functions.
         cmd_st = CommandStatus.Create()  # TODO: take param
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True, None)
         #log('st %d', status)
     except error.Expr as e:
       status = e.ExitStatus()
@@ -338,7 +338,7 @@ class BoolStatus(vm._Builtin):
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
 
     cmd_st = CommandStatus.Create()
-    status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+    status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True, None)
 
     if status not in (0, 1):
       e_die_status(

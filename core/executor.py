@@ -26,7 +26,7 @@ from frontend import location
 
 import posix_ as posix
 
-from typing import cast, Dict, List, TYPE_CHECKING
+from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
       cmd_value__Argv, CommandStatus, StatusArray, Proc
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core import optview
   from core import state
+  from core.process import Pipeline
   from core.vm import _Builtin
 
 _ = log
@@ -144,8 +145,8 @@ class ShellExecutor(vm._Executor):
 
     return status
 
-  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
+  def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, pipeline, call_procs=True):
+    # type: (cmd_value__Argv, CommandStatus, bool, Optional[Pipeline], bool) -> int
     """Run builtins, functions, external commands
 
     Possible variations:
@@ -247,6 +248,10 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
+      if pipeline is not None:
+        p.Init_ParentPipeline(pipeline)
+        pipeline.Add(p)
+
       status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
 
       # this is close to a "leaf" for errors

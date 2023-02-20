@@ -259,7 +259,7 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
         break
 
       try:
-        is_return, _ = cmd_ev.ExecuteAndCatch(node)
+        is_return, _ = cmd_ev.ExecuteAndCatch(node, None)
       except KeyboardInterrupt:  # issue 467, Ctrl-C during $(sleep 1)
         is_return = False
         display.EraseLines()
@@ -345,7 +345,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
       cmd_flags |= cmd_eval.Optimize
 
     # can't optimize this because we haven't seen the end yet
-    is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, cmd_flags=cmd_flags)
+    is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, None, cmd_flags=cmd_flags)
     status = cmd_ev.LastStatus()
     # e.g. 'return' in middle of script, or divide by zero
     if is_return or is_fatal:
