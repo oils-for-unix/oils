@@ -202,6 +202,18 @@ profile-osh-parse() {
   time OIL_GC_STATS=1 "${cmd[@]}"
 }
 
+profile-fib() {
+  local mode=${1:-graph}
+
+  local bin='_bin/cxx-opt/osh'
+  ninja $bin
+
+  # Same iterations as benchmarks/gc
+  local -a cmd=( $bin benchmarks/compute/fib.sh 100 44 )
+
+  profile-cpp 'fib' $mode "${cmd[@]}"
+}
+
 profile-execute() {
   local mode=${1:-graph}
 

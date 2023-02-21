@@ -11,7 +11,7 @@ fib() {
   ninja _bin/cxx-dbg/osh
 
   valgrind --tool=callgrind \
-    _bin/cxx-dbg/osh benchmarks/compute/fib.sh
+    _bin/cxx-dbg/osh benchmarks/compute/fib.sh 10 44
 }
 
 install-kcachegrind() {
