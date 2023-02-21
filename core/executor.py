@@ -337,9 +337,14 @@ class ShellExecutor(vm._Executor):
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str
 
-    if not self.exec_opts.allow_csub_psub():
-      e_die("Command subs not allowed here because status wouldn't be checked (strict_errexit).",
-            loc.WordPart(cs_part))
+    if not self.exec_opts._allow_command_sub():
+      # _allow_command_sub is used in two places.  Only one of them turns off _allow_process_sub
+      if not self.exec_opts._allow_process_sub():
+        why = "status wouldn't be checked (strict_errexit)"
+      else:
+        why = 'eval_unsafe_arith is off'
+
+      e_die("Command subs not allowed here because %s" % why, loc.WordPart(cs_part))
 
     node = cs_part.child
 
@@ -454,8 +459,8 @@ class ShellExecutor(vm._Executor):
       shopt -s process_sub_fail
       _process_sub_status
     """
-    if not self.exec_opts.allow_csub_psub():
-      e_die("Process subs not allowed here because status wouldn't be checked (strict_errexit).",
+    if not self.exec_opts._allow_process_sub():
+      e_die("Process subs not allowed here because status wouldn't be checked (strict_errexit)",
             loc.WordPart(cs_part))
 
     p = self._MakeProcess(cs_part.child)

@@ -186,7 +186,8 @@ class ctx_AssignBuiltin(object):
     # type: (MutableOpts) -> None
     self.strict = False
     if mutable_opts.Get(option_i.strict_errexit):
-      mutable_opts.Push(option_i.allow_csub_psub, False)
+      mutable_opts.Push(option_i._allow_command_sub, False)
+      mutable_opts.Push(option_i._allow_process_sub, False)
       self.strict = True
 
     self.mutable_opts = mutable_opts
@@ -198,7 +199,8 @@ class ctx_AssignBuiltin(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     if self.strict:
-      self.mutable_opts.Pop(option_i.allow_csub_psub)
+      self.mutable_opts.Pop(option_i._allow_command_sub)
+      self.mutable_opts.Pop(option_i._allow_process_sub)
 
 
 class ctx_OilExpr(object):
@@ -238,7 +240,8 @@ class ctx_ErrExit(object):
 
     self.strict = False
     if mutable_opts.Get(option_i.strict_errexit):
-      mutable_opts.Push(option_i.allow_csub_psub, False)
+      mutable_opts.Push(option_i._allow_command_sub, False)
+      mutable_opts.Push(option_i._allow_process_sub, False)
       self.strict = True
 
     self.mutable_opts = mutable_opts
@@ -253,7 +256,8 @@ class ctx_ErrExit(object):
     self.mutable_opts.Pop(option_i.errexit)
 
     if self.strict:
-      self.mutable_opts.Pop(option_i.allow_csub_psub)
+      self.mutable_opts.Pop(option_i._allow_command_sub)
+      self.mutable_opts.Pop(option_i._allow_process_sub)
 
 
 class ctx_HayNode(object):

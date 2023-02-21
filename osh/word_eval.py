@@ -477,7 +477,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
-    self.mutable_opts = mutable_opts  # for allow_csub_psub
+    self.mutable_opts = mutable_opts  # for _allow_command_sub
     self.splitter = splitter
     self.errfmt = errfmt
 

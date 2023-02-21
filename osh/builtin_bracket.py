@@ -257,7 +257,7 @@ class Test(vm._Builtin):
     # We technically don't need mem because we don't support BASH_REMATCH here.
     # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is
     # a weird case of [[ being less strict.
-    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None,
+    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None, None,
                                          self.errfmt, always_strict=True)
     bool_ev.word_ev = word_ev
     bool_ev.CheckCircularDeps()

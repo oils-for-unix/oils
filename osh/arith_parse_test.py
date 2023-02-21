@@ -45,7 +45,9 @@ def ParseAndEval(code_str):
   word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
                                               splitter, errfmt)
 
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, arena)
+  arith_ev = sh_expr_eval.ArithEvaluator(
+      mem, exec_opts, mutable_opts, parse_ctx, arena)
+
   arith_ev.word_ev = word_ev
   return arith_ev.EvalToInt(anode)
 

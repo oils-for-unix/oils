@@ -29,6 +29,7 @@ from _devbuild.gen.syntax_asdl import (
     braced_var_sub, simple_var_sub,
     loc
 )
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
 from core import alloc
@@ -266,11 +267,12 @@ class ArithEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, exec_opts, parse_ctx, errfmt):
-    # type: (Mem, optview.Exec, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
     self.word_ev = None  # type: word_eval.StringWordEvaluator
     self.mem = mem
     self.exec_opts = exec_opts
+    self.mutable_opts = mutable_opts
     self.parse_ctx = parse_ctx
     self.errfmt = errfmt
 
@@ -341,7 +343,7 @@ class ArithEvaluator(object):
       # doesn't look like an integer
 
       # note: 'test' and '[' never evaluate recursively
-      if self.exec_opts.eval_unsafe_arith() and self.parse_ctx:
+      if self.parse_ctx:
         arena = self.parse_ctx.arena
 
         # Special case so we don't get EOF error
@@ -350,7 +352,8 @@ class ArithEvaluator(object):
 
         # For compatibility: Try to parse it as an expression and evaluate it.
         a_parser = self.parse_ctx.MakeArithParser(s)
-        # don't know var name here
+
+        # TODO: Fill in the variable name
         with alloc.ctx_Location(arena, source.Variable(None, span_id)):
           try:
             node2 = a_parser.Parse()  # may raise error.Parse
@@ -362,8 +365,18 @@ class ArithEvaluator(object):
         # to itself, and you don't want to reparse it as a word.
         if node2.tag_() == arith_expr_e.Word:
           e_die("Invalid integer constant %r" % s, loc.Span(span_id))
-        else:
+
+        if self.exec_opts.eval_unsafe_arith():
           integer = self.EvalToInt(node2)
+        else:
+          # BoolEvaluator doesn't have parse_ctx or mutable_opts
+          assert self.mutable_opts is not None
+
+          # We don't need to flip _allow_process_sub, because they can't be
+          # parsed.  See spec/bugs.test.sh.
+          with state.ctx_Option(self.mutable_opts, [option_i._allow_command_sub], False):
+            integer = self.EvalToInt(node2)
+
       else:
         if len(s.strip()) == 0 or match.IsValidVarName(s):
           # x42 could evaluate to 0
@@ -847,9 +860,9 @@ class BoolEvaluator(ArithEvaluator):
   where x='1+2'
   """
 
-  def __init__(self, mem, exec_opts, parse_ctx, errfmt, always_strict=False):
-    # type: (Mem, optview.Exec, Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
-    ArithEvaluator.__init__(self, mem, exec_opts, parse_ctx, errfmt)
+  def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt, always_strict=False):
+    # type: (Mem, optview.Exec, Optional[state.MutableOpts], Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
+    ArithEvaluator.__init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt)
     self.always_strict = always_strict
 
   def _StringToIntegerOrError(self, s, blame_word=None):

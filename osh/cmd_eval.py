@@ -155,7 +155,8 @@ def _HasManyStatuses(node):
   """
   Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
 
-  Note: The other part of strict_errexit is shopt --unset allow_csub_psub
+  Note: strict_errexit also uses
+    shopt --unset _allow_command_sub _allow_process_sub
   """
   # Sentence check is for   if false;   versus   if false
   if node.tag_() == command_e.Sentence:

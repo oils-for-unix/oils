@@ -229,8 +229,8 @@ def InitCommandEvaluator(
 
   splitter = split.SplitContext(mem)
 
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
-  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                           splitter, errfmt)

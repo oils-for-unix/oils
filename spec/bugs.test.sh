@@ -256,3 +256,50 @@ echo $as_val
 ## STDOUT:
 2
 ## END
+
+#### command execution $(echo 42 | tee PWNED) not allowed
+
+rm -f PWNED
+
+x='a[$(echo 42 | tee PWNED)]=1'
+echo $(( x ))
+
+if test -f PWNED; then
+  cat PWNED
+else
+  echo NOPE
+fi
+
+## status: 1
+## OK dash/ash status: 2
+## stdout-json: ""
+## BUG bash/mksh/zsh status: 0
+## BUG bash/mksh/zsh STDOUT:
+1
+42
+## END
+
+#### process sub <(echo 42 | tee PWNED) not allowed
+
+rm -f PWNED
+
+x='a[<(echo 42 | tee PWNED)]=1'
+echo $(( x ))
+
+if test -f PWNED; then
+  cat PWNED
+else
+  echo NOPE
+fi
+
+## status: 1
+## stdout-json: ""
+
+## OK dash/ash status: 2
+
+# bash keeps going
+## BUG bash status: 0
+## BUG bash STDOUT:
+NOPE
+## END
+

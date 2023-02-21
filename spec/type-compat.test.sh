@@ -71,9 +71,6 @@ echo "$s|$i|$j"
 ## STDOUT:
 3|3|2
 ## END
-## N-I osh status: 1
-## N-I osh STDOUT:
-## END
 
 #### declare array vs. string: mixing -a +a and () ''
 # dynamic parsing of first argument.

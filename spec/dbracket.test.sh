@@ -248,8 +248,6 @@ expr='1+2'
 true
 true
 ## END
-## N-I osh stdout-json: ""
-## N-I osh status: 1
 
 #### -eq coercion produces weird results
 shopt -u strict_arith || true

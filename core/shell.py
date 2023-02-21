@@ -406,8 +406,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # Initialize Evaluators
   #
 
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
-  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
 
   if mylib.PYTHON:
     expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
