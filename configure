@@ -149,11 +149,10 @@ parse_flags() {
     esac
     shift
   done
+
+  # If not set, fallback to --prefix
+  FLAG_datarootdir=${FLAG_datarootdir:-$FLAG_prefix/share}
 }
-
-# If not set, fallback to --prefix
-FLAG_datarootdir=${FLAG_datarootdir:-$FLAG_prefix/share}
-
 
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
@@ -358,6 +357,12 @@ EOF
 }
 
 detect_cpp() {
+  # Dev builds can use non-portable clock_gettime()
+  if test -n "$_OIL_DEV"; then
+    echo '#define GC_TIMING 1'
+    log 'Turned on -D GC_TIMING because $_OIL_DEV is set'
+  fi
+
   if test "$FLAG_without_readline" = 1; then
     echo '#define HAVE_READLINE 0'
   else
@@ -367,22 +372,18 @@ detect_cpp() {
           -I "$FLAG_readline/include" \
           -l readline; then
         echo '#define HAVE_READLINE 1'
+        return 0
       fi
     else
       if cc_quiet build/detect-readline.c -l readline; then
         echo '#define HAVE_READLINE 1'
+        return 0
       fi
     fi
 
     if test "$FLAG_with_readline" = 1; then
       die 'readline was not detected on the system (--with-readline passed).'
     fi
-  fi
-
-  # Dev builds can use non-portable clock_gettime()
-  if test -n "$_OIL_DEV"; then
-    echo '#define GC_TIMING 1'
-    log 'Turned on -D GC_TIMING because $_OIL_DEV is set'
   fi
 }
 
