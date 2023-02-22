@@ -535,8 +535,7 @@ x=XX
 y=z
 ## END
 
-#### a[2] in nameref (eval_unsafe_arith)
-shopt -s eval_unsafe_arith
+#### a[2] in nameref
 
 typeset -n ref='a[2]'
 a=(zero one two three)
@@ -545,8 +544,7 @@ echo ref=$ref
 ref=two
 ## END
 
-#### a[expr] in nameref (eval_unsafe_arith)
-shopt -s eval_unsafe_arith
+#### a[expr] in nameref
 
 # this confuses code and data
 typeset -n ref='a[$(echo 2) + 1]'
@@ -556,8 +554,7 @@ echo ref=$ref
 ref=three
 ## END
 
-#### a[@] in nameref (eval_unsafe_arith)
-shopt -s eval_unsafe_arith
+#### a[@] in nameref
 
 # this confuses code and data
 typeset -n ref='a[@]'
@@ -606,7 +603,6 @@ foo Y Z
 ## END
 
 #### @ in nameref isn't supported, unlike in ${!ref}
-shopt -s eval_unsafe_arith
 
 set -- A B
 typeset -n ref='@'  # bash gives an error here

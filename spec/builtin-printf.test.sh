@@ -55,7 +55,6 @@ OK
 ## N-I dash status: 1
 
 #### printf -v a[1]
-shopt -s eval_unsafe_arith
 a=(a b c)
 printf -v 'a[1]' %s 'foo'
 echo status=$?
@@ -72,7 +71,6 @@ status=0
 ## N-I dash/ash status: 2
 
 #### printf -v syntax error
-shopt -s eval_unsafe_arith
 printf -v 'a[' %s 'foo'
 echo status=$?
 ## STDOUT:

@@ -241,21 +241,18 @@ echo bad=${!badref}
 ## OK bash status: 0
 ## OK bash stdout: bad=
 
-#### array ref without eval_unsafe_arith
+#### array ref
 shopt -s compat_array
 
 declare -a array=(ale bean)
 ref='array[0]'
 echo ${!ref}
-## status: 1
-## stdout-json: ""
-## N-I bash status: 0
-## N-I bash STDOUT:
+## status: 0
+## STDOUT:
 ale
 ## END
 
 #### array ref without compat_array
-shopt -s eval_unsafe_arith
 
 declare -a array=(ale bean)
 ref='array'
@@ -268,7 +265,7 @@ ale
 ## END
 
 #### var ref TO array var
-shopt -s eval_unsafe_arith compat_array
+shopt -s compat_array
 
 declare -a array=(ale bean)
 
@@ -284,8 +281,6 @@ ale bean
 ## END
 
 #### var ref TO array var, with subscripts
-shopt -s eval_unsafe_arith
-
 f() {
   argv.py "${!1}"
 }
@@ -305,7 +300,7 @@ f 'array[*]'
 ## END
 
 #### var ref TO assoc array a[key]
-shopt -s eval_unsafe_arith compat_array
+shopt -s compat_array
 
 declare -A assoc=([ale]=bean [corn]=dip)
 ref=assoc
@@ -392,7 +387,6 @@ y
 ## END
 
 #### Indirect expansion TO fancy expansion features bash disallows
-shopt -s eval_unsafe_arith
 
 check_indir() {
     result="${!1}"
@@ -482,4 +476,31 @@ cycle=x
 ## OK bash STDOUT:
 cycle=x
 cycle=
+## END
+
+#### Var Ref Code Injection $(tee PWNED)
+
+typeset -a a
+a=(42)
+
+x='a[$(echo 0 | tee PWNED)]'
+
+echo ${!x}
+
+if test -f PWNED; then
+  echo PWNED
+  cat PWNED
+else
+  echo NOPE
+fi
+
+## status: 1
+## STDOUT:
+## END
+
+## BUG bash status: 0
+## BUG bash STDOUT:
+42
+PWNED
+0
 ## END

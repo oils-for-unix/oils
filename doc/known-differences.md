@@ -30,37 +30,31 @@ TODO:
 
 ## Numbers and Arithmetic
 
-Roughly speaking, shells treat arithmetic like "macro processing", while OSH
-treats it more like part of a programming language.
-
-Despite these differences, OSH is very compatible with existing shell scripts.
-
-Note that you can opt into more errors with `shopt -s strict_arith`.
-
-### Static Parsing
-
-Arithmetic is [statically parsed](https://www.oilshell.org/blog/2016/10/22.html), so expressions like `$(( 1 $op 2 ))` fail with
-a parse error.  Use an explicit `eval` for these rare use cases.
-
-Related: [A 30-year-old security problem](https://www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem) / [Simple Word Evaluation](simple-word-eval.html)
-
-### Array Indices Are Static unless `shopt -s eval_unsafe_arith`
-
-If you have a variable like `code='1+2'`, OSH doesn't accept
-
-    a[$code]=value  # dynamic parsing and evaluation in bash, mksh, zsh
-
-or
-
-    echo ${a[$code]}  # ditto
-
-by default.  If you want this behavior, you can turn on `shopt -s
-eval_unsafe_arith`.
-
 ### printf '%d' and other numeric formats require a valid integer
 
 In other shells, `printf %d invalid_integer` prints `0` and a warning.  OSH
 gives you a runtime error.
+
+### Code Parsed from Data Can't Have Command Subs unless `shopt -s eval_unsafe_arith`
+
+In shell, array locations are often dynamically parsed, and the index can have
+command subs, which execute arbitrary code.
+
+For example, if you have `code='a[$(echo 42 | tee PWNED)]'`, shells will parse
+this data and execute it in many sitautions:
+
+    echo $(( code ))  # dynamic parsing and evaluation in bash, mksh, zsh
+
+    unset $code
+
+    printf -v $code hi
+
+    echo ${!code}
+
+OSH disallows this by default.  If you want this behavior, you can turn on
+`shopt -s eval_unsafe_arith`.
+
+Related: [A 30-year-old security problem](https://www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem)
 
 ## Parsing Differences
 

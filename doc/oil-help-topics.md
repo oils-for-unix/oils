@@ -190,11 +190,12 @@ X [External Lang] BEGIN   END   when (awk)
                   X old_syntax (-u)      [[   $(( ))  ${x%prefix}   ${a[@]}
                                          $$
   [Compatibility] compat_array           ${array} is ${array[0]}
-                  eval_unsafe_arith      Recursively parse and evaluate
+                  eval_unsafe_arith      Allow dynamically parsed a[$(echo 42)]
                   parse_dynamic_arith    LHS can contain variables
                   verbose_errexit        Whether to print detailed errors
-  [More Options]  allow_csub_psub        For implementing strict_errexit
-                  dynamic_scope          For implementing 'proc'
+  [More Options]  _allow_command_sub     To implement strict_errexit, eval_unsafe_arith
+                  _allow_process_sub     To implement strict_errexit
+                  dynamic_scope          To implement 'proc'
 ```
 
 <h2 id="env">

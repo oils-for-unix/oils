@@ -184,10 +184,11 @@ if mylib.PYTHON:
 class UnsafeArith(object):
   """For parsing a[i] at RUNTIME."""
 
-  def __init__(self, mem, exec_opts, parse_ctx, arith_ev, errfmt):
-    # type: (state.Mem, optview.Exec, parse_lib.ParseContext, ArithEvaluator, ui.ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, arith_ev, errfmt):
+    # type: (state.Mem, optview.Exec, state.MutableOpts, parse_lib.ParseContext, ArithEvaluator, ui.ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
+    self.mutable_opts = mutable_opts
     self.parse_ctx = parse_ctx
     self.arith_ev = arith_ev
     self.errfmt = errfmt
@@ -210,14 +211,14 @@ class UnsafeArith(object):
         # Exception for builtins 'unset' and 'printf'
         e_usage('got invalid place expression', span_id=span_id)
 
-    lval = self.arith_ev.EvalArithLhs(anode, span_id)
-
-    # Prevent attacks like these by default:
-    #
-    # unset -v 'A["$(echo K; rm *)"]'
-    if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
-      e_usage('expected a var name.  shopt -s eval_unsafe_arith allows a[i]',
-              span_id=span_id)
+    if self.exec_opts.eval_unsafe_arith():
+      lval = self.arith_ev.EvalArithLhs(anode, span_id)
+    else:
+      # Prevent attacks like these by default:
+      #
+      # unset -v 'A["$(echo K; rm *)"]'
+      with state.ctx_Option(self.mutable_opts, [option_i._allow_command_sub], False):
+        lval = self.arith_ev.EvalArithLhs(anode, span_id)
 
     return lval
 

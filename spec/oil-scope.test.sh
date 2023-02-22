@@ -142,7 +142,6 @@ x=
 
 #### printf -v a[i] respects dynamic_scope
 set -o errexit
-shopt --set eval_unsafe_arith
 
 set-item() {
   printf -v 'a[1]' "%s" dynamic-scope

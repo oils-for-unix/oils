@@ -543,8 +543,7 @@ xbar[5]=42
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### shopt -s eval_unsafe_arith
-shopt -s eval_unsafe_arith
+#### Dynamic parsing of arithmetic
 e=1+2
 echo $(( e + 3 ))
 [[ e -eq 3 ]] && echo true
@@ -563,8 +562,7 @@ status=0
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### eval_unsafe_arith on empty string
-shopt -s eval_unsafe_arith
+#### Dynamic parsing on empty string
 a=''
 echo $(( a ))
 
@@ -605,7 +603,6 @@ $SH -c 'echo $((a + 42x))'
 echo status=$?
 
 # regression
-shopt -s eval_unsafe_arith
 echo $((a + 42x))
 echo status=$?
 ## status: 1

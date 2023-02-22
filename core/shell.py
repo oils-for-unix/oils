@@ -444,8 +444,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # Initialize builtins that depend on evaluators
   #
 
-  unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, parse_ctx, arith_ev,
-                                          errfmt)
+  unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
+                                          parse_ctx, arith_ev, errfmt)
   vm.InitUnsafeArith(mem, word_ev, unsafe_arith)
 
   builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx,

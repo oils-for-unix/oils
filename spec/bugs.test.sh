@@ -241,10 +241,7 @@ esac
 NOT SPLIT
 ## END
 
-#### autoconf arithmetic - eval_unsafe_arith (#1450)
-
-# Fixes the bug, but not sure
-# shopt -s eval_unsafe_arith
+#### autoconf arithmetic - relaxed eval_unsafe_arith (#1450)
 
 as_fn_arith ()
 {
@@ -301,5 +298,46 @@ fi
 ## BUG bash status: 0
 ## BUG bash STDOUT:
 NOPE
+## END
+
+
+#### unset doesn't allow command execution
+
+typeset -a a  # for mksh
+a=(42)
+echo len=${#a[@]}
+
+unset -v 'a[$(echo 0 | tee PWNED)]'
+echo len=${#a[@]}
+
+if test -f PWNED; then
+  echo PWNED
+  cat PWNED
+else
+  echo NOPE
+fi
+
+## status: 1
+## STDOUT:
+len=1
+## END
+
+## N-I dash/ash status: 2
+## N-I dash/ash stdout-json: ""
+
+## BUG bash/mksh status: 0
+## BUG bash/mksh STDOUT:
+len=1
+len=0
+PWNED
+0
+## END
+
+## BUG zsh status: 0
+## BUG zsh STDOUT:
+len=1
+len=1
+PWNED
+0
 ## END
 

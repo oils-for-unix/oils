@@ -3,8 +3,6 @@
 # This idiom discussed on
 # https://github.com/NixOS/nixpkgs/pull/147629
 
-shopt -s eval_unsafe_arith 2>/dev/null  # required for OSH
-
 show() {
   echo show
 
@@ -57,7 +55,8 @@ show
 show() {
   echo show
 
-  # These are actually different
+  # bash gives an error here - !hookSlice unbound, even though preHooks exists
+  # OSH currently does the "logical" thing
   argv.py ${!hooksSlice}
 
   argv.py ${!hooksSlice+"${!hooksSlice}"}

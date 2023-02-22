@@ -543,7 +543,6 @@ values: val3
 ## END
 
 #### ${!ref} and assoc array
-shopt -s eval_unsafe_arith
 
 show-values() {
   echo values: ${A[@]}
@@ -566,7 +565,6 @@ ref val
 ## END
 
 #### printf -v and assoc array
-shopt -s eval_unsafe_arith
 
 show-values() {
   echo values: ${assoc[@]}

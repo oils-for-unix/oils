@@ -27,6 +27,7 @@ from _devbuild.gen.runtime_asdl import (
     a_index, a_index_e, a_index__Int, a_index__Str,
     VTestPlace, VarSubState,
 )
+from _devbuild.gen.option_asdl import option_i
 from asdl import runtime
 from core import error
 from core import pyos
@@ -758,8 +759,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
         bvs_part = self.unsafe_arith.ParseVarRef(val.s, blame_tok)
-        if not self.exec_opts.eval_unsafe_arith() and bvs_part.bracket_op:
-          e_die('a[i] not allowed without shopt -s eval_unsafe_arith', blame_tok)
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
       elif case(value_e.MaybeStrArray):  # caught earlier but OK
@@ -1160,7 +1159,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
 
     # We don't need var_index because it's only for L-Values of test ops?
-    val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
+    if self.exec_opts.eval_unsafe_arith():
+      val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
+    else:
+      with state.ctx_Option(self.mutable_opts, [option_i._allow_command_sub], False):
+        val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
+
     return val
 
   def _EvalBracedVarSub(self, part, part_vals, quoted):

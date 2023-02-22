@@ -108,7 +108,6 @@ argv.py "${a[-1]}" "${a[-2]}" "${a[-5]}"  # last one out of bounds
 ## N-I mksh stdout: ['', '', '']
 
 #### Negative index and sparse array
-shopt -s eval_unsafe_arith  # for unset
 a=(0 1 2 3 4)
 unset a[1]
 unset a[4]
@@ -146,7 +145,6 @@ echo ${a[@]}
 ## END
 
 #### Negative index and sparse array
-shopt -s eval_unsafe_arith  # for unset
 a=(0 1)
 unset 'a[-1]'  # remove last element
 a+=(2 3)
@@ -168,7 +166,6 @@ echo ${a[3]} $((a[3]))
 ## END
 
 #### Length after unset
-shopt -s eval_unsafe_arith
 a=(0 1 2 3)
 unset a[-1]
 echo len=${#a[@]}
@@ -591,8 +588,7 @@ foo
 ## END
 
 
-#### Dynamic parsing of LHS a[$code]=value (eval_unsafe_arith)
-shopt -s eval_unsafe_arith  # 
+#### Dynamic parsing of LHS a[$code]=value
 
 declare -a array
 array[x=1]='one'
@@ -613,9 +609,7 @@ y=2
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
-#### Dynamic parsing of RHS ${a[$code]} (eval_unsafe_arith)
-shopt -s eval_unsafe_arith
-
+#### Dynamic parsing of RHS ${a[$code]}
 declare -a array
 array=(zero one two three)
 
