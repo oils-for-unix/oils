@@ -201,6 +201,12 @@ class UnsafeArith(object):
 
     It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
     """
+    if not self.parse_ctx.parse_opts.parse_sh_arith():
+      # Do something simpler for Oil
+      if not match.IsValidVarName(s):
+        e_die('Invalid variable name %r (parse_sh_arith is off)' % s, loc.Span(span_id))
+      return lvalue.Named(s, span_id)
+
     a_parser = self.parse_ctx.MakeArithParser(s)
 
     with alloc.ctx_Location(self.arena, source.ArgvWord('dynamic place', span_id)):
@@ -210,6 +216,9 @@ class UnsafeArith(object):
         self.errfmt.PrettyPrintError(e)
         # Exception for builtins 'unset' and 'printf'
         e_usage('got invalid place expression', span_id=span_id)
+
+    # Note: we parse '1+2', and then it becomes a runtime error because it's
+    # not a valid place.  Could be a parse error.
 
     if self.exec_opts.eval_unsafe_arith():
       lval = self.arith_ev.EvalArithLhs(anode, span_id)

@@ -330,5 +330,29 @@ class TdopParser(object):
 
   def Parse(self):
     # type: () -> arith_expr_t
+
     self.Next()  # may raise ParseError
+
+    if not self.parse_opts.parse_sh_arith():
+      # Affects:
+      #    echo $(( x ))
+      #    ${a[i]} which should be $[a[i]] -- could have better error
+      #
+      # Note: sh_expr_eval.UnsafeArith has a dynamic e_die() check
+      #
+      # Doesn't affect:
+      #    printf -v x         # unsafe_arith.ParseLValue
+      #    unset x             # unsafe_arith.ParseLValue
+      #    ${!ref}             # unsafe_arith.ParseVarRef
+      #    declare -n          # not fully implemented yet
+      #
+      #    a[i+1]=             # parse_sh_assign
+      #
+      #    (( a = 1 ))         # parse_dparen
+      #    for (( i = 0; ...   # parse_dparen
+
+      p_die(
+          "POSIX shell arithmetic isn't allowed (parse_sh_arith)",
+          loc.Word(self.cur_word))
+
     return self.ParseUntil(0)

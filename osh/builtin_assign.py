@@ -433,6 +433,8 @@ class NewVar(vm._AssignBuiltin):
 # TODO:
 # - It would make more sense to treat no args as an error (bash doesn't.)
 #   - Should we have strict builtins?  Or just make it stricter?
+# - Typed args: unset (mylist[0]) is like Python's del
+#   - It has the same word as 'setvar', which makes sense
 
 class Unset(vm._Builtin):
 
