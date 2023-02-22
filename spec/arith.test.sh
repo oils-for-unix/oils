@@ -312,12 +312,15 @@ echo $a
 #### Invalid LValue that looks like array
 (( 1[2] = 3 ))
 echo "status=$?"
-## status: 2
+## status: 1
 ## stdout-json: ""
+
 ## OK bash stdout: status=1
 ## OK bash status: 0
+
 ## OK mksh/zsh stdout: status=2
 ## OK mksh/zsh status: 0
+
 ## N-I dash stdout: status=127
 ## N-I dash status: 0
 
@@ -488,7 +491,6 @@ last=6
 ## END
 
 #### assignment with dynamic var name
-shopt -s parse_dynamic_arith
 foo=bar
 echo $(( x$foo = 42 ))
 echo xbar=$xbar
@@ -498,7 +500,6 @@ xbar=42
 ## END
 
 #### array assignment with dynamic array name
-shopt -s parse_dynamic_arith
 foo=bar
 echo $(( x$foo[5] = 42 ))
 echo 'xbar[5]='${xbar[5]}
@@ -514,7 +515,6 @@ xbar[5]=
 ## N-I dash stdout-json: ""
 
 #### unary assignment with dynamic var name
-shopt -s parse_dynamic_arith
 foo=bar
 xbar=42
 echo $(( x$foo++ ))
@@ -527,7 +527,6 @@ xbar=43
 ## BUG dash stdout-json: ""
 
 #### unary array assignment with dynamic var name
-shopt -s parse_dynamic_arith
 foo=bar
 xbar[5]=42
 echo $(( x$foo[5]++ ))

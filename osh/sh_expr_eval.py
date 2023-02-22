@@ -845,6 +845,11 @@ class ArithEvaluator(object):
       anode = cast(arith_expr__Binary, UP_anode)
       if anode.op_id == Id.Arith_LBracket:
         var_name, span_id = self._VarNameOrWord(anode.left)
+
+        # (( 1[2] = 3 )) isn't valid
+        if not match.IsValidVarName(var_name):
+          e_die('Invalid variable name %r' % var_name, loc.Span(span_id))
+
         if var_name is not None:
           if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)

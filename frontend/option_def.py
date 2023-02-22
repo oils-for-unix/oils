@@ -258,7 +258,6 @@ def _Init(opt_def):
 
   # Compatibility
   opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
-  opt_def.Add('parse_dynamic_arith')  # dynamic LHS
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
 
   # For implementing strict_errexit

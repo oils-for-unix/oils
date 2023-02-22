@@ -26,36 +26,22 @@ if TYPE_CHECKING:  # break circular dep
   NullFunc = Callable[['TdopParser', word_t, int], arith_expr_t]
 
 
-def IsIndexable(node, parse_dynamic_arith):
-  # type: (arith_expr_t, bool) -> bool
+def IsIndexable(node):
+  # type: (arith_expr_t) -> bool
   """
-  a[1] is allowed but a[1][1] isn't
+  In POSIX shell arith, a[1] is allowed but a[1][1] isn't
 
+  We also allow $a[i] and foo$x[i] (formerly parse_dynamic_arith)
   """
   tag = node.tag_()
-  if tag == arith_expr_e.VarSub:
-    return True
-  # x$foo[1] is also allowed with option
-  if parse_dynamic_arith and tag == arith_expr_e.Word:
-    return True
-  return False
-
-
-def _VarRefOrWord(node, dynamic_arith):
-  # type: (arith_expr_t, bool) -> bool
   with tagswitch(node) as case:
-    if case(arith_expr_e.VarSub):
+    if case(arith_expr_e.VarSub, arith_expr_e.Word):
       return True
-
-    elif case(arith_expr_e.Word):
-      if dynamic_arith:
-        return True
-
   return False
 
 
-def CheckLhsExpr(node, dynamic_arith, blame_word):
-  # type: (arith_expr_t, bool, word_t) -> None
+def CheckLhsExpr(node, blame_word):
+  # type: (arith_expr_t, word_t) -> None
   """Determine if a node is a valid L-value by whitelisting tags.
 
   Valid:
@@ -67,11 +53,11 @@ def CheckLhsExpr(node, dynamic_arith, blame_word):
   UP_node = node
   if node.tag_() == arith_expr_e.Binary:
     node = cast(arith_expr__Binary, UP_node)
-    if node.op_id == Id.Arith_LBracket and _VarRefOrWord(node.left, dynamic_arith):
+    if node.op_id == Id.Arith_LBracket and IsIndexable(node.left):
       return
     # But a[0][0] = 1 is NOT valid.
 
-  if _VarRefOrWord(node, dynamic_arith):
+  if IsIndexable(node):
     return
 
   p_die("Left-hand side of this assignment is invalid", loc.Word(blame_word))
@@ -144,7 +130,7 @@ def LeftAssign(p, w, left, rbp):
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
 
-  CheckLhsExpr(left, p.parse_opts.parse_dynamic_arith(), w)
+  CheckLhsExpr(left, w)
   return arith_expr.BinaryAssign(word_.ArithId(w), left, p.ParseUntil(rbp))
 
 

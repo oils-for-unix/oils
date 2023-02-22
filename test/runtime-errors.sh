@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 #
-# Usage:
-#   $SH test/runtime-errors.sh <function name>
+# A file that tickles many runtime errors, to see the error message.
 #
-# Run with bash/dash/mksh/zsh.
+# Usage:
+#   test/runtime-errors.sh <function name>
+#
+# Note that 'test/spec.sh -d' can also show errors clearly.
+#
+# It's a mix of styles:
+# - Sometimes we assert errors with _error-case and the like.
+# - Sometimes we just write a function without a wrapper.
+#
+# It would be nice to clean this up.
 
 source test/common.sh
 
-# Run with SH=bash too
+# Note: many cases fail if this is overridden.
 SH=${SH:-bin/osh}
 
 banner() {
@@ -32,7 +40,7 @@ _error-case-2() {
   # NOTE: This works with osh, not others.
   local status=$?
   if test $status != 2; then
-    die "Expected status 1, got $status"
+    die "Expected status 2, got $status"
   fi
 }
 
@@ -634,18 +642,13 @@ divzero() {
 }
 
 unsafe_arith_eval() {
-  shopt -s unsafe_arith_eval
-
-  local e1='1+'
-  local e2='e1 + 5'
-  echo $(( e2 ))
+  local e1=1+
+  local e2="e1 + 5"
+  echo $(( e2 ))  # recursively references e1
 }
 
 unset_expr() {
-  shopt -s unsafe_arith_eval
-
-  # returns status 2
-  _error-case-2 'unset -v 1[1]'
+  _error-case 'unset -v 1[1]'
   _error-case-2 'unset -v 1+2'
 }
 
@@ -1037,7 +1040,7 @@ EOF
 
 _run_test() {
   local t=$1
-  local assert_status_zero=${2:-}
+  local expected_status=${2:-}
 
   echo "--------"
   echo "    CASE: $t"
@@ -1045,31 +1048,28 @@ _run_test() {
   # Run in subshell so the whole thing doesn't exit
   ( $t )
   status=$?
-  if test -n "$assert_status_zero"; then
-    if test $status != 0; then
-      die "*** Test $t failed with status $status"
+  if test -n "$expected_status"; then
+    if test $status != $expected_status; then
+      die "*** Test $t -> status $status, expected $expected_status"
     fi
-  else
-    echo "    STATUS: $?"
   fi
+
+  echo "    STATUS: $?"
   echo
 }
 
 all() {
-  # Can't be done inside a loop!
-  _run_test control_flow 
+  # A messy grab-bag of styles
 
-  # TODO: Move more tests here so we check errors!  _error-case needs it.
-  for t in \
-    strict_errexit_1 strict_errexit_conditionals strict_errexit_old \
-    unset_expr \
-    divzero; do
-    _run_test $t yes
-  done
+  # TODO: Could rename them with 'test-' prefix
+  #
+  # And then we want metadata for the status code?
+  # test_nounset_0 ?
+  # test_no_such_command_127
 
+  # No assertions.  Just showing the error.
   for t in \
-    no_such_command no_such_command_commandsub no_such_command_heredoc \
-    failed_command \
+    no_such_command_commandsub no_such_command_heredoc \
     errexit_usage_error errexit_subshell errexit_pipeline errexit_dbracket errexit_alias \
     errexit_one_process errexit_multiple_processes \
     command_sub_errexit process_sub_fail \
@@ -1080,7 +1080,6 @@ all() {
     nounset_arith \
     array_arith undef_arith undef_arith2 \
     undef_assoc_array \
-    unsafe_arith_eval \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool string_as_array \
     array_assign_1 array_assign_2 readonly_assign \
@@ -1096,6 +1095,26 @@ all() {
 
     _run_test $t ''  # don't assert status
   done
+
+  # Tests that have _error-case assertions may be here
+  for t in \
+    strict_errexit_1 \
+    strict_errexit_conditionals \
+    strict_errexit_old \
+    unset_expr \
+    divzero; do
+
+    # expect status 0
+    _run_test $t 0
+  done
+
+  # Can't be done inside a loop!
+  _run_test control_flow 
+
+  # Test without inner assertions may be here.  _run_test is an "outer" assertion.
+  _run_test failed_command 1     # status 1
+  _run_test unsafe_arith_eval 1
+  _run_test no_such_command 127  # status 127
 
   return 0
 }

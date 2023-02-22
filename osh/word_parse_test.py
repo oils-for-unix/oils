@@ -442,9 +442,6 @@ class WordParserTest(unittest.TestCase):
           break
 
   def testOilSplice(self):
-    # Enable after checking __syntax__
-    #return
-
     w = _assertReadWord(self, '@words', oil_at=True)
 
     # These are normal words

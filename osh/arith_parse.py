@@ -19,7 +19,7 @@ def NullIncDec(p, w, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
-  tdop.CheckLhsExpr(right, p.parse_opts.parse_dynamic_arith(), w)
+  tdop.CheckLhsExpr(right, w)
   return arith_expr.UnaryAssign(word_.ArithId(w), right)
 
 
@@ -49,7 +49,7 @@ def LeftIncDec(p, w, left, rbp):
   else:
     raise AssertionError()
 
-  tdop.CheckLhsExpr(left, p.parse_opts.parse_dynamic_arith(), w)
+  tdop.CheckLhsExpr(left, w)
   return arith_expr.UnaryAssign(op_id, left)
 
 
@@ -73,7 +73,7 @@ def LeftIndex(p, w, left, unused_bp):
   2. function calls return COPIES.  They need a name, at least in osh.
   3. strings don't have mutable characters.
   """
-  if not tdop.IsIndexable(left, p.parse_opts.parse_dynamic_arith()):
+  if not tdop.IsIndexable(left):
     p_die("The [ operator doesn't apply to this expression", loc.Word(w))
   index = p.ParseUntil(0)  # ] has bp = -1
   p.Eat(Id.Arith_RBracket)

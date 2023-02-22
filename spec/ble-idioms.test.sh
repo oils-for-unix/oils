@@ -1,6 +1,5 @@
 
 #### recursive arith: one level
-shopt -s eval_unsafe_arith
 a='b=123'
 echo $((a))
 ## stdout: 123
@@ -9,7 +8,6 @@ echo $((a))
 ## N-I yash stdout: b=123
 
 #### recursive arith: two levels
-shopt -s eval_unsafe_arith
 a='b=c' c='d=123'
 echo $((a))
 ## stdout: 123
@@ -22,7 +20,6 @@ echo $((a))
 #   "echo $((cond&&(a=1)))", it doesn't work with "x=a=1; echo
 #   $((cond&&x))". It is fixed at least in mksh R57.
 # Note: "busybox sh" doesn't support short circuit.
-shopt -s eval_unsafe_arith
 a=b=123
 echo $((1||a)):$((b))
 echo $((0||a)):$((b))
@@ -37,7 +34,6 @@ echo $((1&&c)):$((d))
 
 #### recursive arith: short circuit ?:
 # Note: "busybox sh" behaves strangely.
-shopt -s eval_unsafe_arith
 y=a=123 n=a=321
 echo $((1?(y):(n))):$((a))
 echo $((0?(y):(n))):$((a))
@@ -59,7 +55,6 @@ a=321:0
 #### recursive arith: side effects
 # In Zsh and Busybox sh, the side effect of inner arithmetic
 # evaluations seems to take effect only after the whole evaluation.
-shopt -s eval_unsafe_arith
 a='b=c' c='d=123'
 echo $((a,d)):$((d))
 ## stdout: 123:123
@@ -68,7 +63,6 @@ echo $((a,d)):$((d))
 ## N-I dash/yash stdout-json: ""
 
 #### recursive arith: recursion
-shopt -s eval_unsafe_arith
 loop='i<=100&&(s+=i,i++,loop)' s=0 i=0
 echo $((a=loop,s))
 ## stdout: 5050
@@ -78,7 +72,6 @@ echo $((a=loop,s))
 ## N-I ash/dash/yash stdout-json: ""
 
 #### recursive arith: array elements
-shopt -s eval_unsafe_arith
 text[1]='d=123'
 text[2]='text[1]'
 text[3]='text[2]'
@@ -88,8 +81,6 @@ echo $((a=text[3]))
 ## N-I ash/dash/yash stdout-json: ""
 
 #### dynamic arith varname: assign
-shopt -s parse_dynamic_arith  # for LHS
-
 vec2_set () {
   local this=$1 x=$2 y=$3
   : $(( ${this}_x = $2 ))
@@ -105,7 +96,6 @@ b_x=5 b_y=12
 ## END
 
 #### dynamic arith varname: read
-shopt -s eval_unsafe_arith  # for RHS
 
 vec2_load() {
   local this=$1
@@ -120,7 +110,6 @@ x=12 y=34
 ## END
 
 #### dynamic arith varname: copy/add
-shopt -s parse_dynamic_arith  # for LHS
 shopt -s eval_unsafe_arith  # for RHS
 
 vec2_copy () {
