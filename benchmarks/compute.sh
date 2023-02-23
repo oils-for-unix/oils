@@ -147,16 +147,6 @@ parse_help-tasks() {
   done
 }
 
-# We also want:
-#   status, elapsed
-#   host_name, host_hash (we don't want to test only fast machines)
-#   shell_name, shell_hash (which records version.  Make sure osh --version works)
-#     or really runtime_name and runtime_hash
-#   task, task args -- I guess these can be space separated
-#   stdout md5sum -- so it's correct!  Because I did catch some problems earlier.
-
-readonly -a TIME_PREFIX=(benchmarks/time_.py --tsv --append --rusage)
-
 ext() {
   local ext
   case $runtime in 
@@ -319,8 +309,9 @@ task-all() {
     esac
 
     # join args into a single field
-    "${TIME_PREFIX[@]}" \
-      --stdout $tmp_dir/$stdout -o $times_tsv \
+    time-tsv -o $times_tsv --append \
+      --stdout $tmp_dir/$stdout \
+      --rusage \
       --field "$host" --field "$host_hash" \
       --field $runtime --field $runtime_hash \
       --field "$task_name" --field "$arg1" --field "$arg2" -- \

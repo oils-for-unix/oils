@@ -372,4 +372,48 @@ soil-run() {
   benchmarks/report.sh stage3 $BASE_DIR
 }
 
+#
+# Debugging
+#
+
+compare-cpython() {
+  local -a a=( ../benchmark-data/osh-runtime/*.broome.2023* )
+  #local -a b=( ../benchmark-data/osh-runtime/*.lenny.2023* )
+
+  local dir=${a[-1]}
+
+  echo $dir
+
+  head -n 1 $dir/times.tsv
+  fgrep 'configure.cpython' $dir/times.tsv
+
+  local bash_id=2
+  local dash_id=8
+  local osh_py_id=14
+  local osh_cpp_id=20
+
+  set +o errexit
+
+  echo 'bash vs. dash'
+  diff -u --recursive $dir/{files-2,files-8} | diffstat
+  echo
+
+  echo 'bash vs. osh-py'
+  diff -u --recursive $dir/{files-2,files-14} | diffstat
+  echo
+
+  echo 'bash vs. osh-cpp'
+  diff -u --recursive $dir/{files-2,files-20} | diffstat
+  echo
+
+  diff -u $dir/{files-2,files-20}/STDOUT.txt
+  echo
+
+  diff -u $dir/{files-2,files-20}/pyconfig.h
+  echo
+
+  cdiff -u $dir/{files-2,files-20}/config.log
+  echo
+}
+
 "$@"
