@@ -197,38 +197,13 @@ cc_header_file() {
   cc_statement "$pp_var" 'return 0;' "#include <$c_lib>"
 }
 
-# Write a shell script to standard out with variables, or fail.
-detect_readline() {
-  if test -n "$FLAG_readline"; then
-    if cc_quiet build/detect-readline.c \
-	-L "$FLAG_readline/lib" \
-	-I "$FLAG_readline/include" \
-	-l readline; then
-      echo "READLINE_DIR=$FLAG_readline"
-      echo 'HAVE_READLINE=1'
-      return 0
-    fi
-  else
-    if cc_quiet build/detect-readline.c -l readline; then
-      echo "READLINE_DIR="
-      echo 'HAVE_READLINE=1'
-      return 0
-    fi
-  fi
-
-  if test "$FLAG_with_readline" = 1; then
-    die 'readline was not detected on the system (--with-readline passed).'
-  fi
-  echo 'READLINE_DIR='
-  echo 'HAVE_READLINE='
-  return 1
-}
-
 detect_and_echo_vars() {
   if test "$FLAG_without_readline" = 1; then
     echo 'HAVE_READLINE='
   else
-    detect_readline
+    # readline already confirmed to exist by detect_cpp
+    echo "READLINE_DIR=$FLAG_readline"
+    echo 'HAVE_READLINE=1'
   fi
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
@@ -372,18 +347,22 @@ detect_cpp() {
           -I "$FLAG_readline/include" \
           -l readline; then
         echo '#define HAVE_READLINE 1'
-        return 0
+        return
       fi
     else
       if cc_quiet build/detect-readline.c -l readline; then
         echo '#define HAVE_READLINE 1'
-        return 0
+        return
       fi
     fi
 
     if test "$FLAG_with_readline" = 1; then
       die 'readline was not detected on the system (--with-readline passed).'
     fi
+
+    echo '#define HAVE_READLINE 0'
+    # set flag to indicate readline not found
+    FLAG_without_readline=1
   fi
 }
 
