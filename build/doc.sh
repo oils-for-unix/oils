@@ -141,7 +141,6 @@ readonly TIMESTAMP=$(date)
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
-  local out=${2:-}
 
   local rel_path=${src%'.md'}  # doc/known-differences
   local tmp_prefix=_tmp/$rel_path  # temp dir for splitting
@@ -408,9 +407,90 @@ all-help() {
   #LANG=C ls -l $TEXT_DIR
 }
 
+_copy-path() {
+  local src=$1 dest=$2
+  mkdir -p $(dirname $dest)
+  cp -v $src $dest
+}
+
+copy-web() {
+  find web \
+    \( -name _tmp -a -prune \) -o \
+    \( -name '*.css' -o -name '*.js' \) -a -printf '%p _release/VERSION/%p\n' |
+  xargs -n 2 -- $0 _copy-path
+}
+
+this-release-links() {
+  echo '<div class="file-table">'
+  echo '<table>'
+  _tarball-links-row-html "$OIL_VERSION"
+  echo '</table>'
+  echo '</div>'
+}
+
+# Turn HTML comment into a download link
+add-date-and-links() {
+  awk -v date=$1 -v snippet="$(this-release-links)" '
+    /<!-- REPLACE_WITH_DOWNLOAD_LINKS -->/ {
+      print(snippet)
+      next
+    }
+
+    /<!-- REPLACE_WITH_DATE -->/ {
+      print(date)
+      next
+    }
+
+    # Everything else
+    { print }
+  '
+}
+
+modify-pages() {
+  local release_date
+  release_date=$(cat _build/release-date.txt)
+
+  local root=_release/VERSION
+
+  add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
+  add-date-and-links $release_date < _tmp/release-quality.html > $root/quality.html
+}
+
 run-for-release() {
+  ### Build a tree.  Requires _build/release-date.txt to exist
+
+  local root=_release/VERSION
+  mkdir -p $root/{doc,test,pub}
+
+  # Metadata
+  cp -v _build/release-date.txt oil-version.txt $root
+
+  # Docs
+  # Writes _release/VERSION and _tmp/release-index.html
   all-markdown
   all-help
+
+  modify-pages
+
+  # Problem: You can't preview it without .wwz!
+  # Maybe have local redirects VERSION/test/wild/ to 
+  #
+  # Instead of linking, I should compress them all here.
+
+  copy-web
+
+  if command -v tree >/dev/null; then
+    tree $root
+  else
+    find $root
+  fi
+}
+
+soil-run() {
+  build/ovm-actions.sh write-release-date
+
+  run-for-release
 }
 
 "$@"
+

@@ -29,7 +29,7 @@
 #   Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 deploy-tar  # needed to checksum
-#   $0 build-tree
+#   build/doc.sh run-for-release
 #   $0 compress
 #   devtools/release-version.sh git-changelog-$VERSION
 #   devtools/release-version.sh announcement-$VERSION
@@ -513,78 +513,6 @@ metrics() {
   build/doc.sh important-source-code
 
   tree $out
-}
-
-_copy-path() {
-  local src=$1 dest=$2
-  mkdir -p $(dirname $dest)
-  cp -v $src $dest
-}
-
-copy-web() {
-  find web \
-    \( -name _tmp -a -prune \) -o \
-    \( -name '*.css' -o -name '*.js' \) -a -printf '%p _release/VERSION/%p\n' |
-  xargs -n 2 -- $0 _copy-path
-}
-
-this-release-links() {
-  echo '<div class="file-table">'
-  echo '<table>'
-  _tarball-links-row-html "$OIL_VERSION"
-  echo '</table>'
-  echo '</div>'
-}
-
-# Turn HTML comment into a download link
-add-date-and-links() {
-  awk -v date=$1 -v snippet="$(this-release-links)" '
-    /<!-- REPLACE_WITH_DOWNLOAD_LINKS -->/ {
-      print(snippet)
-      next
-    }
-
-    /<!-- REPLACE_WITH_DATE -->/ {
-      print(date)
-      next
-    }
-
-    # Everything else
-    { print }
-  '
-}
-
-modify-pages() {
-  local release_date
-  release_date=$(cat _build/release-date.txt)
-
-  local root=_release/VERSION
-
-  add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
-  add-date-and-links $release_date < _tmp/release-quality.html > $root/quality.html
-}
-
-build-tree() {
-  local root=_release/VERSION
-  mkdir -p $root/{doc,test,pub}
-
-  # Metadata
-  cp -v _build/release-date.txt oil-version.txt $root
-
-  # Docs
-  # Writes _release/VERSION and _tmp/release-index.html
-  build/doc.sh run-for-release
-
-  modify-pages
-
-  # Problem: You can't preview it without .wwz!
-  # Maybe have local redirects VERSION/test/wild/ to 
-  #
-  # Instead of linking, I should compress them all here.
-
-  copy-web
-
-  tree $root
 }
 
 deploy-doc() {

@@ -263,7 +263,7 @@ make-job-wwz() {
     _tmp/{soil,spec,stateful,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts,benchmarks}.css web/ajax.js \
     web/table/table-sort.{css,js} \
-    _release/oil*.tar _release/VERSION/doc
+    _release/oil*.tar _release/VERSION/
 }
 
 deploy-job-results() {

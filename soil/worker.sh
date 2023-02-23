@@ -242,18 +242,14 @@ ovm-tarball-tasks() {
   ### Print tasks for the 'ovm-tarball' build
 
   # notes:
-  # - dev-all needed to crawl dependencies to make tarball.
-  # - The 'tour' also depends on buildings docs.
-  # - 'all-markdown' could be published.
-  # - build/py.sh all does 'all-help', so we don't need it explicitly
+  # - py-all needed to crawl dependencies to make tarball.
+  # - quick-oil-tarball deletes _release, so we have to put docs afterward
 
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-locale       soil/worker.sh dump-locale             -
 py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
-tour              build/doc.sh tour                      _release/VERSION/doc/oil-language-tour.html
-all-markdown      build/doc.sh all-markdown              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh soil-run-osh              _tmp/spec/survey/osh.html
@@ -262,6 +258,7 @@ osh-usage         test/osh-usage.sh soil-run             -
 oshc-deps         test/oshc-deps.sh soil-run             -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      devtools/release.sh test-oil-tar       -
+docs              build/doc.sh soil-run                  _release/VERSION/index.html
 EOF
 }
 
