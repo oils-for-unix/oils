@@ -717,7 +717,7 @@ class SubProgramThunk(Thunk):
       print('')
       status = 130  # 128 + 2
     except (IOError, OSError) as e:
-      print_stderr('osh I/O error: %s' % pyutil.strerror(e))
+      print_stderr('osh I/O error (subprogram): %s' % pyutil.strerror(e))
       status = 2
 
     # If ProcessInit() doesn't turn off buffering, this is needed before

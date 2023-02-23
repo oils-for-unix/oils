@@ -225,7 +225,7 @@ def main(argv):
       traceback.print_exc()
 
     # test this with prlimit --nproc=1 --pid=$$
-    print_stderr('osh I/O error: %s' % posix.strerror(e.errno))
+    print_stderr('osh I/O error (main): %s' % posix.strerror(e.errno))
     return 2  # dash gives status 2
 
 

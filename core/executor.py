@@ -383,7 +383,7 @@ class ShellExecutor(vm._Executor):
           pass  # retry
         else:
           # Like the top level IOError handler
-          e_die_status(2, 'osh I/O error: %s' % posix.strerror(err_num))
+          e_die_status(2, 'osh I/O error (read): %s' % posix.strerror(err_num))
 
       elif n == 0:  # EOF
         break

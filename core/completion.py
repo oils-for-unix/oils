@@ -1343,7 +1343,7 @@ class ReadlineCallback(object):
       self.debug_f.writeln('Runtime error while completing: %s' % e.UserErrorString())
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
-      print_stderr('osh: I/O error in completion: %s' % posix.strerror(e.errno))
+      print_stderr('osh: I/O error (completion): %s' % posix.strerror(e.errno))
     except KeyboardInterrupt:
       # It appears GNU readline handles Ctrl-C to cancel a long completion.
       # So this may never happen?
