@@ -47,7 +47,7 @@ To build oil-native, use:
     oil$ ./NINJA-config.sh
     oil$ ninja              # translate and compile, may take 30 seconds
 
-    oil$ _bin/cxx-dbg/osh_eval -c 'echo hi'  # running compiled C++ !
+    oil$ _bin/cxx-dbg/osh -c 'echo hi'  # running compiled C++ !
     hi
 
 To run the tests and benchmarks:
