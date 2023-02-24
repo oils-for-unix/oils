@@ -60,61 +60,109 @@ test_parse_flags() {
   FLAG_datarootdir=''
 }
 
-test_detect_cpp() {
+test_echo_cpp() {
   local output
 
-  FLAG_without_readline=1
-  output="$(detect_cpp)"
-
-  if ! test "$?" = 0; then
-    die "Expected detect_cpp to succeed, but failed"
-  fi
-  if ! test "$output" = "#define HAVE_READLINE 0"; then
-    die "Unexpected detect_cpp output: $output"
-  fi
-
-  # test with_readline and unfindable readline
-  FLAG_without_readline=''
-  FLAG_with_readline=1
-  FLAG_readline=/path/to/fake/readline
-
-  output="$(detect_cpp 2>&1)"
-
+  # before calling detect_readline
+  output="$(echo_cpp 2>&1)"
   if test "$?" = 0; then
-    die "Expected detect_cpp to fail, but succeeded"
+    die 'Expected echo_cpp to fail, but succeeded'
   fi
-  if ! test "$output" = "$0 ERROR: readline was not detected on the system (--with-readline passed)."; then
-    die "Unexpected detect_cpp output: $output"
+  if ! test "$output" = "$0 ERROR: called echo_cpp before detecting readline."; then
+    die "Unexpected echo_cpp output: $output"
   fi
 
-  # test neither with_readline nor without_readline and unfindable readline
-  FLAG_without_readline=''
-  FLAG_with_readline=''
-  FLAG_readline=/path/to/fake/readline
+  # pretend detected_readline was called
+  detected_readline=1
 
-  detect_cpp >$TMP/detect_cpp.out
-
+  # no readline
+  output="$(echo_cpp)"
   if ! test "$?" = 0; then
-    die "Expected detect_cpp to succeed, but failed"
+    die 'Expected echo_cpp to succeed, but failed'
+  fi
+  if ! test "$output" = '#define HAVE_READLINE 0'; then
+    die "Unexpected echo_cpp output: $output"
   fi
 
-  output="$(cat $TMP/detect_cpp.out)"
-
-  if ! test "$output" = "#define HAVE_READLINE 0"; then
-    die "Unexpected detect_cpp output: $output"
+  # have readline
+  have_readline=1
+  output="$(echo_cpp)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_cpp to succeed, but failed'
   fi
-  if ! test "$FLAG_without_readline" = 1; then
-    die "detect_cpp failed to set FLAG_without_readline"
+  if ! test "$output" = '#define HAVE_READLINE 1'; then
+    die "Unexpected echo_cpp output: $output"
   fi
 
-  FLAG_with_readline=''
-  FLAG_readline=''
+  # clean-up
+  detected_readline=''
+  have_readline=''
+}
+
+test_echo_vars() {
+  local output
+
+  # before calling detect_readline
+  output="$(echo_vars 2>&1)"
+  if test "$?" = 0; then
+    die 'Expected echo_vars to fail, but succeeded'
+  fi
+  if ! test "$output" = "$0 ERROR: called echo_vars before detecting readline."; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+  # pretend detected_readline was called
+  detected_readline=1
+
+  # no readline
+  output="$(echo_vars)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_vars to succeed, but failed'
+  fi
+  if ! test "$output" = 'HAVE_READLINE=
+PREFIX=/usr/local
+DATAROOTDIR='; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+  # have readline, no readline_dir
+  have_readline=1
+  output="$(echo_vars)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_vars to succeed, but failed'
+  fi
+  if ! test "$output" = 'HAVE_READLINE=1
+READLINE_DIR=
+PREFIX=/usr/local
+DATAROOTDIR='; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+   # have readline, readline_dir present
+  have_readline=1
+  readline_dir=/path/to/readline
+  output="$(echo_vars)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_vars to succeed, but failed'
+  fi
+  if ! test "$output" = 'HAVE_READLINE=1
+READLINE_DIR=/path/to/readline
+PREFIX=/usr/local
+DATAROOTDIR='; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+  # clean-up
+  detected_readline=''
+  have_readline=''
+  readline_dir=''
 }
 
 soil_run() {
   test_cc_statements
   test_parse_flags
-  test_detect_cpp
+  test_echo_cpp
+  test_echo_vars
 }
 
 "$@"
