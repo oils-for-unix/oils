@@ -12,7 +12,7 @@ export _OIL_CONFIGURE_TEST=1  # so we don't run main
 
 . $PWD/configure  # define the functions to be test
 
-test_configure() {
+test_cc_statements() {
   cc_print_expr 'sizeof(int)'
 
   local actual
@@ -36,8 +36,133 @@ test_configure() {
   fi
 }
 
+test_parse_flags() {
+  parse_flags --prefix /usr --datarootdir /usr/local/share
+
+  if ! test "$FLAG_prefix" = '/usr'; then
+    die "FAILED - prefix is $FLAG_prefix not /usr"
+  fi
+
+  if ! test "$FLAG_datarootdir" = '/usr/local/share'; then
+    die "FAILED - datarootdir is $FLAG_datarootdir not /usr/local/share"
+  fi
+
+  FLAG_prefix='/usr/local'
+  FLAG_datarootdir=''
+
+  parse_flags --prefix /usr
+
+  if ! test "$FLAG_datarootdir" = '/usr/share'; then
+    die "FAILED - datarootdir is $FLAG_datarootdir not /usr/share"
+  fi
+
+  FLAG_prefix='/usr/local'
+  FLAG_datarootdir=''
+}
+
+test_echo_cpp() {
+  local output
+
+  # before calling detect_readline
+  output="$(echo_cpp 2>&1)"
+  if test "$?" = 0; then
+    die 'Expected echo_cpp to fail, but succeeded'
+  fi
+  if ! test "$output" = "$0 ERROR: called echo_cpp before detecting readline."; then
+    die "Unexpected echo_cpp output: $output"
+  fi
+
+  # pretend detected_readline was called
+  detected_readline=1
+
+  # no readline
+  output="$(echo_cpp)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_cpp to succeed, but failed'
+  fi
+  if ! test "$output" = '#define HAVE_READLINE 0'; then
+    die "Unexpected echo_cpp output: $output"
+  fi
+
+  # have readline
+  have_readline=1
+  output="$(echo_cpp)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_cpp to succeed, but failed'
+  fi
+  if ! test "$output" = '#define HAVE_READLINE 1'; then
+    die "Unexpected echo_cpp output: $output"
+  fi
+
+  # clean-up
+  detected_readline=''
+  have_readline=''
+}
+
+test_echo_vars() {
+  local output
+
+  # before calling detect_readline
+  output="$(echo_vars 2>&1)"
+  if test "$?" = 0; then
+    die 'Expected echo_vars to fail, but succeeded'
+  fi
+  if ! test "$output" = "$0 ERROR: called echo_vars before detecting readline."; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+  # pretend detected_readline was called
+  detected_readline=1
+
+  # no readline
+  output="$(echo_vars)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_vars to succeed, but failed'
+  fi
+  if ! test "$output" = 'HAVE_READLINE=
+PREFIX=/usr/local
+DATAROOTDIR='; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+  # have readline, no readline_dir
+  have_readline=1
+  output="$(echo_vars)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_vars to succeed, but failed'
+  fi
+  if ! test "$output" = 'HAVE_READLINE=1
+READLINE_DIR=
+PREFIX=/usr/local
+DATAROOTDIR='; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+   # have readline, readline_dir present
+  have_readline=1
+  readline_dir=/path/to/readline
+  output="$(echo_vars)"
+  if ! test "$?" = 0; then
+    die 'Expected echo_vars to succeed, but failed'
+  fi
+  if ! test "$output" = 'HAVE_READLINE=1
+READLINE_DIR=/path/to/readline
+PREFIX=/usr/local
+DATAROOTDIR='; then
+    die "Unexpected echo_vars output: $output"
+  fi
+
+  # clean-up
+  detected_readline=''
+  have_readline=''
+  readline_dir=''
+}
+
 soil_run() {
-  test_configure
+  test_cc_statements
+  test_parse_flags
+  test_echo_cpp
+  test_echo_vars
 }
 
 "$@"

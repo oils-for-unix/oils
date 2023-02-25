@@ -63,6 +63,12 @@ FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available
 FLAG_readline=''
 
+# These variables are set by detect_readline and used by echo_cpp and
+# echo_vars
+detected_readline=''
+have_readline=''
+readline_dir=''
+
 parse_flags() {
   while true; do
     case "$1" in
@@ -149,11 +155,10 @@ parse_flags() {
     esac
     shift
   done
+
+  # If not set, fallback to --prefix
+  FLAG_datarootdir=${FLAG_datarootdir:-$FLAG_prefix/share}
 }
-
-# If not set, fallback to --prefix
-FLAG_datarootdir=${FLAG_datarootdir:-$FLAG_prefix/share}
-
 
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
@@ -198,38 +203,36 @@ cc_header_file() {
   cc_statement "$pp_var" 'return 0;' "#include <$c_lib>"
 }
 
-# Write a shell script to standard out with variables, or fail.
 detect_readline() {
   if test -n "$FLAG_readline"; then
     if cc_quiet build/detect-readline.c \
 	-L "$FLAG_readline/lib" \
 	-I "$FLAG_readline/include" \
 	-l readline; then
-      echo "READLINE_DIR=$FLAG_readline"
-      echo 'HAVE_READLINE=1'
-      return 0
+      readline_dir="$FLAG_readline"
+      have_readline=1
     fi
   else
     if cc_quiet build/detect-readline.c -l readline; then
-      echo "READLINE_DIR="
-      echo 'HAVE_READLINE=1'
-      return 0
+      have_readline=1
     fi
   fi
+  detected_readline=1
 
-  if test "$FLAG_with_readline" = 1; then
+  if test "$FLAG_with_readline" = 1 && ! test "$have_readline" = 1; then
     die 'readline was not detected on the system (--with-readline passed).'
   fi
-  echo 'READLINE_DIR='
-  echo 'HAVE_READLINE='
-  return 1
 }
 
-detect_and_echo_vars() {
-  if test "$FLAG_without_readline" = 1; then
-    echo 'HAVE_READLINE='
+echo_vars() {
+  if ! test "$detected_readline" = 1; then
+    die 'called echo_vars before detecting readline.'
+  fi
+  if test "$have_readline" = 1; then
+    echo 'HAVE_READLINE=1'
+    echo "READLINE_DIR=$readline_dir"
   else
-    detect_readline
+    echo 'HAVE_READLINE='
   fi
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
@@ -357,32 +360,20 @@ EOF
     '#include <sys/stat.h>'
 }
 
-detect_cpp() {
-  if test "$FLAG_without_readline" = 1; then
-    echo '#define HAVE_READLINE 0'
-  else
-    if test -n "$FLAG_readline"; then
-      if cc_quiet build/detect-readline.c \
-          -L "$FLAG_readline/lib" \
-          -I "$FLAG_readline/include" \
-          -l readline; then
-        echo '#define HAVE_READLINE 1'
-      fi
-    else
-      if cc_quiet build/detect-readline.c -l readline; then
-        echo '#define HAVE_READLINE 1'
-      fi
-    fi
-
-    if test "$FLAG_with_readline" = 1; then
-      die 'readline was not detected on the system (--with-readline passed).'
-    fi
+echo_cpp() {
+  if ! test "$detected_readline" = 1; then
+    die 'called echo_cpp before detecting readline.'
   fi
-
   # Dev builds can use non-portable clock_gettime()
   if test -n "$_OIL_DEV"; then
     echo '#define GC_TIMING 1'
     log 'Turned on -D GC_TIMING because $_OIL_DEV is set'
+  fi
+
+  if test "$have_readline" = 1; then
+    echo '#define HAVE_READLINE 1'
+  else
+    echo '#define HAVE_READLINE 0'
   fi
 }
 
@@ -398,9 +389,11 @@ main() {
     die "Couldn't compile a basic C program (cc not installed?)"
   fi
 
+  detect_readline
+
   # Generate configuration for oil-native
   local cpp_out=_build/detected-cpp-config.h
-  detect_cpp > $cpp_out
+  echo_cpp > $cpp_out
   log "Wrote $cpp_out"
 
   # Legacy OVM build: shell build actions will 'source
@@ -408,7 +401,7 @@ main() {
   # etc.)
   local sh_out=_build/detected-config.sh
 
-  detect_and_echo_vars > $sh_out
+  echo_vars > $sh_out
   log "Wrote $sh_out"
 
   # Fast mode
