@@ -10,7 +10,7 @@ class List;
 class Str {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
-  Str() : GC_STR(header_) {
+  Str() : header_(obj_header()) {
   }
 
   char* data() {
@@ -68,6 +68,10 @@ class Str {
   // - Intern strings at GARBAGE COLLECTION TIME, with
   //   LayoutForwarded::new_location_?  Is this possible?  Does it introduce
   //   too much coupling between strings, hash tables, and GC?
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::Str();
+  }
 
   GC_OBJ(header_);
   int len_;

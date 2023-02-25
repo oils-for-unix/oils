@@ -68,6 +68,10 @@ struct ObjHeader {
     return {kIsHeader, TypeTag::OtherClass, num_pointers, HeapTag::Scanned,
             kUndefinedId};
   }
+
+  static constexpr ObjHeader Str() {
+    return {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
+  }
 };
 
 // TODO: we could determine the max of all objects statically!
