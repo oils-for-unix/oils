@@ -76,6 +76,11 @@ struct ObjHeader {
   static constexpr ObjHeader Slab(uint8_t heap_tag, uint32_t num_pointers) {
     return {kIsHeader, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
   }
+
+  static constexpr ObjHeader Tuple(uint16_t field_mask, uint32_t obj_len) {
+    return {kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
+            kUndefinedId};
+  }
 };
 
 // TODO: we could determine the max of all objects statically!

@@ -6,8 +6,7 @@ class Tuple2 {
   typedef Tuple2<A, B> this_type;
 
  public:
-  Tuple2(A a, B b)
-      : GC_TUPLE(header_, field_mask(), sizeof(this_type)), a_(a), b_(b) {
+  Tuple2(A a, B b) : header_(obj_header()), a_(a), b_(b) {
   }
 
   A at0() {
@@ -15,6 +14,10 @@ class Tuple2 {
   }
   B at1() {
     return b_;
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::Tuple(field_mask(), sizeof(this_type));
   }
 
   static constexpr uint16_t field_mask() {
@@ -34,11 +37,7 @@ class Tuple3 {
   typedef Tuple3<A, B, C> this_type;
 
  public:
-  Tuple3(A a, B b, C c)
-      : GC_TUPLE(header_, field_mask(), sizeof(this_type)),
-        a_(a),
-        b_(b),
-        c_(c) {
+  Tuple3(A a, B b, C c) : header_(obj_header()), a_(a), b_(b), c_(c) {
   }
   A at0() {
     return a_;
@@ -48,6 +47,10 @@ class Tuple3 {
   }
   C at2() {
     return c_;
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::Tuple(field_mask(), sizeof(this_type));
   }
 
   static constexpr uint16_t field_mask() {
@@ -70,11 +73,7 @@ class Tuple4 {
 
  public:
   Tuple4(A a, B b, C c, D d)
-      : GC_TUPLE(header_, field_mask(), sizeof(this_type)),
-        a_(a),
-        b_(b),
-        c_(c),
-        d_(d) {
+      : header_(obj_header()), a_(a), b_(b), c_(c), d_(d) {
   }
   A at0() {
     return a_;
@@ -87,6 +86,10 @@ class Tuple4 {
   }
   D at3() {
     return d_;
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::Tuple(field_mask(), sizeof(this_type));
   }
 
   static constexpr uint16_t field_mask() {
