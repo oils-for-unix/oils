@@ -240,8 +240,6 @@ extern int NO_SPID;
 class Usage {
  public:
   Usage(Str* msg, int span_id = NO_SPID);
-
-  GC_OBJ(header_);
   Str* msg;
   int span_id;
 
@@ -257,8 +255,6 @@ class _ErrorWithLocation {
   _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);
   bool HasLocation();
   Str* UserErrorString();
-
-  GC_OBJ(header_);
   syntax_asdl::loc_t* location;
   Str* msg;
   
@@ -278,8 +274,6 @@ class Runtime {
  public:
   Runtime(Str* msg);
   Str* UserErrorString();
-
-  GC_OBJ(header_);
   Str* msg;
 
   static constexpr ObjHeader obj_header() {
@@ -292,9 +286,13 @@ class Runtime {
 class Parse : public _ErrorWithLocation {
  public:
   Parse(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Parse));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Parse));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Parse)
@@ -303,9 +301,13 @@ class Parse : public _ErrorWithLocation {
 class FailGlob : public _ErrorWithLocation {
  public:
   FailGlob(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(FailGlob));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(FailGlob));
   }
 
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
@@ -314,9 +316,13 @@ class FailGlob : public _ErrorWithLocation {
 class RedirectEval : public _ErrorWithLocation {
  public:
   RedirectEval(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(RedirectEval));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(RedirectEval));
   }
 
   DISALLOW_COPY_AND_ASSIGN(RedirectEval)
@@ -328,9 +334,13 @@ class FatalRuntime : public _ErrorWithLocation {
   int ExitStatus();
 
   int exit_status;
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(FatalRuntime));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(FatalRuntime));
   }
 
   DISALLOW_COPY_AND_ASSIGN(FatalRuntime)
@@ -339,9 +349,13 @@ class FatalRuntime : public _ErrorWithLocation {
 class Strict : public FatalRuntime {
  public:
   Strict(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Strict));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Strict));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Strict)
@@ -352,9 +366,13 @@ class ErrExit : public FatalRuntime {
   ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool show_code = false);
 
   bool show_code;
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(ErrExit));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ErrExit));
   }
 
   DISALLOW_COPY_AND_ASSIGN(ErrExit)
@@ -363,9 +381,13 @@ class ErrExit : public FatalRuntime {
 class Expr : public FatalRuntime {
  public:
   Expr(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Expr));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Expr));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Expr)
@@ -426,7 +448,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
   }
 }
 
-ColorOutput::ColorOutput(mylib::Writer* f) : header_(obj_header()) {
+ColorOutput::ColorOutput(mylib::Writer* f) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -594,7 +616,7 @@ void AnsiOutput::PopColor() {
 }
 int INDENT = 2;
 
-_PrettyPrinter::_PrettyPrinter(int max_col) : header_(obj_header()) {
+_PrettyPrinter::_PrettyPrinter(int max_col) {
   this->max_col = max_col;
 }
 
@@ -1353,13 +1375,12 @@ namespace error {  // define
 
 int NO_SPID = -1;
 
-Usage::Usage(Str* msg, int span_id) : header_(obj_header()) {
+Usage::Usage(Str* msg, int span_id) {
   this->msg = msg;
   this->span_id = span_id;
 }
 
-_ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location)
-    : header_(obj_header()) {
+_ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
   this->location = location;
 }
@@ -1378,7 +1399,7 @@ Str* _ErrorWithLocation::UserErrorString() {
   return this->msg;
 }
 
-Runtime::Runtime(Str* msg) : header_(obj_header()) {
+Runtime::Runtime(Str* msg) {
   this->msg = msg;
 }
 
@@ -1466,8 +1487,7 @@ int Int = 2;
 int Float = 3;
 int Bool = 4;
 
-_Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults)
-    : header_(obj_header()) {
+_Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) {
   this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
@@ -1494,7 +1514,7 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   this->attrs->set(name, val);
 }
 
-Reader::Reader(List<Str*>* argv, List<int>* spids) : header_(obj_header()) {
+Reader::Reader(List<Str*>* argv, List<int>* spids) {
   this->argv = argv;
   this->spids = spids;
   this->n = len(argv);
@@ -1590,7 +1610,7 @@ int Reader::SpanId() {
   }
 }
 
-_Action::_Action() : header_(obj_header()) {
+_Action::_Action() {
   ;  // pass
 }
 
@@ -1600,8 +1620,7 @@ bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes*
   FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
-_ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid)  {
-  FIELD_MASK(header_) |= _ArgAction::field_mask();
+_ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid) {
   this->name = name;
   this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
@@ -1683,8 +1702,7 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
   return Alloc<value::Str>(arg);
 }
 
-SetAttachedBool::SetAttachedBool(Str* name)  {
-  FIELD_MASK(header_) |= SetAttachedBool::field_mask();
+SetAttachedBool::SetAttachedBool(Str* name) {
   this->name = name;
 }
 
@@ -1712,8 +1730,7 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
   return false;
 }
 
-SetToTrue::SetToTrue(Str* name)  {
-  FIELD_MASK(header_) |= SetToTrue::field_mask();
+SetToTrue::SetToTrue(Str* name) {
   this->name = name;
 }
 
@@ -1724,8 +1741,7 @@ bool SetToTrue::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   return false;
 }
 
-SetOption::SetOption(Str* name)  {
-  FIELD_MASK(header_) |= SetOption::field_mask();
+SetOption::SetOption(Str* name) {
   this->name = name;
 }
 
@@ -1738,8 +1754,7 @@ bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   return false;
 }
 
-SetNamedOption::SetNamedOption(bool shopt)  {
-  FIELD_MASK(header_) |= SetNamedOption::field_mask();
+SetNamedOption::SetNamedOption(bool shopt) {
   this->names = Alloc<List<Str*>>();
   this->shopt = shopt;
 }
@@ -1773,8 +1788,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   return false;
 }
 
-SetAction::SetAction(Str* name)  {
-  FIELD_MASK(header_) |= SetAction::field_mask();
+SetAction::SetAction(Str* name) {
   this->name = name;
 }
 
@@ -1785,8 +1799,7 @@ bool SetAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   return false;
 }
 
-SetNamedAction::SetNamedAction()  {
-  FIELD_MASK(header_) |= SetNamedAction::field_mask();
+SetNamedAction::SetNamedAction() {
   this->names = Alloc<List<Str*>>();
 }
 

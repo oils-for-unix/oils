@@ -38,7 +38,7 @@ class Point {
     return header->type_tag;
   }
 
-  static constexpr ObjHeader object_header() {
+  static constexpr ObjHeader obj_header() {
     // type_tag is 42
     return ObjHeader{kIsHeader, 42};
   }
@@ -67,7 +67,7 @@ T* Alloc() {
 
   LayoutGc* untyped =
       static_cast<LayoutGc*>(malloc(sizeof(ObjHeader) + sizeof(T)));
-  untyped->header = T::object_header();  // It's always before the vtable
+  untyped->header = T::obj_header();
 
   // TODO: assign proper object ID from MarkSweepHeap
   untyped->header.obj_id = 124;  // dynamic, but can be done by allocator
@@ -86,7 +86,7 @@ TEST gc_header_test() {
 
 class Node {
  public:
-  Node() : header_(obj_header()) {
+  Node() {
   }
 
   virtual int Method() {
@@ -97,8 +97,7 @@ class Node {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Node));
   }
 
-  GC_OBJ(header_);
-
+  int x;
   // max is either 24 or 30 bits, so use unsigned int
   static constexpr unsigned int field_mask() {
     return 0x0f;
@@ -108,7 +107,6 @@ class Node {
 class Derived : public Node {
  public:
   Derived() : Node() {
-    FIELD_MASK(header_) |= Derived::field_mask();
   }
 
   virtual int Method() {
@@ -118,20 +116,23 @@ class Derived : public Node {
   int x;
 
   static constexpr unsigned field_mask() {
-    return 0x30;
+    return Node::field_mask() | 0x30;
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Derived));
   }
 };
 
 class NoVirtual {
  public:
-  NoVirtual() : header_(obj_header()) {
+  NoVirtual() {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(NoVirtual));
   }
 
-  GC_OBJ(header_);
   int i;
 
   static constexpr unsigned field_mask() {
@@ -144,33 +145,22 @@ class NoVirtual {
 TEST endian_test() {
   log("little endian? %d", IsLittleEndian());
 
-  Derived derived;
+  Derived* derived = Alloc<Derived>();
   log("sizeof(Node) = %d", sizeof(Node));
   log("sizeof(Derived) = %d", sizeof(Derived));
 
-  ObjHeader* header = reinterpret_cast<ObjHeader*>(&derived);
-  log("Derived is GC object? %d", header->type_tag & 0x1);
+  ObjHeader& header = ObjHeader::FromObject(derived);
+  log("Derived is GC object? %d", header.type_tag & 0x1);
 
-  NoVirtual n2;
-  ObjHeader* header2 = reinterpret_cast<ObjHeader*>(&n2);
-  log("NoVirtual is GC object? %d", header2->type_tag & 0x1);
+  NoVirtual* n2 = Alloc<NoVirtual>();
+  ObjHeader& header2 = ObjHeader::FromObject(n2);
+  log("NoVirtual is GC object? %d", header2.type_tag & 0x1);
 
-  auto n = new Node();
-  FIELD_MASK(n->header_) = 0b11;
-  log("field mask %d", FIELD_MASK(n->header_));
-  log("num pointers %d", NUM_POINTERS(n->header_));
-
-  PASS();
-}
-
-// #if MARK_SWEEP -> change to #if CHENEY_SEMI
-// #if BUMP_LEAK
-
-TEST dual_header_test() {
-  auto* n = new Node();
-  log("n = %p", n);
-  log("n->heap_tag %d", n->header_.heap_tag);
-  log("FIELD_MASK(n) %d", FIELD_MASK(n->header_));
+  Node* n = Alloc<Node>();
+  ObjHeader& h = ObjHeader::FromObject(n);
+  FIELD_MASK(h) = 0b11;
+  log("field mask %d", FIELD_MASK(h));
+  log("num pointers %d", NUM_POINTERS(h));
 
   PASS();
 }
@@ -317,7 +307,7 @@ union ObjHeader2 {
 
 class Token {
  public:
-  Token() : header_() {
+  Token() {
   }
 
   ObjHeader2 header_;
@@ -361,6 +351,13 @@ TEST union_test() {
   PASS();
 }
 
+TEST my_test() {
+  log("offset of x in Derived: %d", offsetof(Derived, x));
+  log("offset of x in Node: %d", offsetof(Node, x));
+  log("offset of i in NoVirtual: %x", offsetof(NoVirtual, i));
+  PASS();
+}
+
 }  // namespace demo
 
 GREATEST_MAIN_DEFS();
@@ -372,8 +369,8 @@ int main(int argc, char** argv) {
 
   RUN_TEST(demo::gc_header_test);
   RUN_TEST(demo::endian_test);
-  RUN_TEST(demo::dual_header_test);
   RUN_TEST(demo::union_test);
+  RUN_TEST(demo::my_test);
 
   // gHeap.CleanProcessExit();
 

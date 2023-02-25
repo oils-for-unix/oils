@@ -48,7 +48,7 @@ class SmallStr {
 
 class HeapStr {
  public:
-  HeapStr() : header_(obj_header()) {
+  HeapStr() {
   }
   int Length() {
 #ifdef MARK_SWEEP

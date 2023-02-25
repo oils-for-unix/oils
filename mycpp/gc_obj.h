@@ -3,6 +3,8 @@
 
 #include <stdint.h>  // uint8_t
 
+#include <utility>
+
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
                           // Cheney: Don't copy or scan.
@@ -35,8 +37,7 @@ const int kIsGlobal = kMaxObjId;      // for debugging, not strictly needed
 
 const int kUndefinedId = 0;  // Unitialized object ID
 
-// The first member of every GC-managed object is 'ObjHeader header_'.
-// (There's no inheritance!)
+// Every GC-managed object is preceded in memory by an ObjHeader.
 // TODO: ./configure could detect endian-ness, and reorder the fields in
 // ObjHeader.  See mycpp/demo/gc_header.cc.
 struct ObjHeader {
@@ -57,6 +58,18 @@ struct ObjHeader {
   unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
 #endif
+
+  // Returns the address of the GC managed object associated with this header.
+  void* ObjectAddress() {
+    return reinterpret_cast<void*>(reinterpret_cast<char*>(this) +
+                                   sizeof(ObjHeader));
+  }
+
+  // Returns the header for the given GC managed object.
+  static ObjHeader& FromObject(const void* obj) {
+    return *reinterpret_cast<ObjHeader*>(
+        static_cast<char*>(const_cast<void*>(obj)) - sizeof(ObjHeader));
+  }
 
   // Used by hand-written and generated classes
   static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
@@ -111,69 +124,59 @@ const int kFieldMaskBits = 24;
     ((header.obj_len - kSlabHeaderSize) / sizeof(void*))
 #endif
 
-// A RawObject* is like a void* -- it can point to any C++ object.  The object
-// may start with either ObjHeader, or vtable pointer then an ObjHeader.
-struct RawObject {
-  unsigned points_to_header : 1;  // same as ObjHeader::is_header
-  unsigned pad : 31;
-};
-
-// TODO: could omit this in BUMP_LEAK mode
-#define GC_OBJ(var_name) ObjHeader var_name
+// A RawObject* is like a void*. We use it to represent GC managed objects.
+struct RawObject;
 
 //
 // Compile-time computation of GC field masks.
 //
-
-class _DummyObj {  // For maskbit()
- public:
-  ObjHeader header_;
-  int first_field_;
-};
 
 // maskbit(field_offset) returns a bit in mask that you can bitwise-or (|) with
 // other bits.
 //
 // - Note that we only call maskbit() on offsets of pointer fields, which must
 //   be POINTER-ALIGNED.
-// - _DummyObj is used in case ObjHeader requires padding, then
-//   sizeof(ObjHeader) != offsetof(_DummyObj, first_field_)
 
-constexpr int maskbit(int offset) {
-  return 1 << ((offset - offsetof(_DummyObj, first_field_)) / sizeof(void*));
+constexpr int maskbit(size_t offset) {
+  return 1 << (offset / sizeof(void*));
 }
 
-class _DummyObj_v {  // For maskbit_v()
+// A wrapper for a GC object and its header. For creating static lifetime GC
+// objects, like GlobalStrs.
+// TODO: Make this more ergonomic by automatically initializing header
+// with T::obj_header() and providing a forwarding constructor for obj.
+template <typename T>
+class InlineGcObjImpl {
  public:
-  void* vtable;  // how the compiler does dynamic dispatch
-  ObjHeader header_;
-  int first_field_;
+  ObjHeader header;
+  T obj;
+
+  // This class only exists to write the static_assert. If you try to put the
+  // static_assert directly in this class the compiler complains that taking the
+  // offsets is an 'invalid use of incomplete type'. But in doing it this way
+  // means the type is completed before the assert.
+  struct Internal {
+    using type = InlineGcObjImpl<T>;
+    static_assert(offsetof(type, obj) - sizeof(ObjHeader) ==
+                  offsetof(type, header));
+  };
+
+  DISALLOW_COPY_AND_ASSIGN(InlineGcObjImpl);
 };
 
-// maskbit_v(field_offset) is like maskbit(), but accounts for the vtable
-// pointer.
+// Refer to `Internal::type` to force Internal to be instantiated.
+template <typename T>
+using InlineGcObj = typename InlineGcObjImpl<T>::Internal::type;
 
+// TODO: Delete this.
 constexpr int maskbit_v(int offset) {
-  return 1 << ((offset - offsetof(_DummyObj_v, first_field_)) / sizeof(void*));
-}
-
-inline ObjHeader* FindObjHeader(RawObject* obj) {
-  if (obj->points_to_header) {
-    return reinterpret_cast<ObjHeader*>(obj);
-  } else {
-    // We saw a vtable pointer, so return the ObjHeader* header that
-    // immediately follows.
-    return reinterpret_cast<ObjHeader*>(reinterpret_cast<char*>(obj) +
-                                        sizeof(void*));
-  }
+  return maskbit(offset);
 }
 
 // The "homogeneous" layout of objects with HeapTag::FixedSize.  LayoutFixed is
 // for casting; it isn't a real type.
 
-class LayoutFixed {
- public:
-  ObjHeader header_;
+struct LayoutFixed {
   // only the entries denoted in field_mask will be valid
   RawObject* children_[kFieldMaskBits];
 };

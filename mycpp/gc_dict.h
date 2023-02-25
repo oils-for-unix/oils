@@ -44,8 +44,7 @@ class Dict {
 
  public:
   Dict()
-      : header_(obj_header()),
-        len_(0),
+      : len_(0),
         capacity_(0),
         entry_(nullptr),
         keys_(nullptr),
@@ -53,8 +52,7 @@ class Dict {
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : header_(obj_header()),
-        len_(0),
+      : len_(0),
         capacity_(0),
         entry_(nullptr),
         keys_(nullptr),
@@ -112,7 +110,6 @@ class Dict {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Dict));
   }
 
-  GC_OBJ(header_);
   int len_;       // number of entries (keys and values, almost dense)
   int capacity_;  // number of entries before resizing
 

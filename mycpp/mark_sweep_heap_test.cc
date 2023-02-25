@@ -161,14 +161,13 @@ TEST list_collection_test() {
 
 class Node {
  public:
-  Node() : header_(obj_header()), next_(nullptr) {
+  Node() : next_(nullptr) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Node));
   }
 
-  GC_OBJ(header_);
   Node *next_;
 
   static constexpr uint32_t field_mask() {

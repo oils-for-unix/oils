@@ -46,22 +46,20 @@ Str* GetHomeDir(Str* user_name);
 
 class ReadError {
  public:
-  explicit ReadError(int err_num_) : header_(obj_header()), err_num(err_num_) {
+  explicit ReadError(int err_num_) : err_num(err_num_) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(ReadError));
   }
 
-  GC_OBJ(header_);
   int err_num;
 };
 
 class PasswdEntry {
  public:
   explicit PasswdEntry(const passwd* entry)
-      : header_(obj_header()),
-        pw_name(StrFromC(entry->pw_name)),
+      : pw_name(StrFromC(entry->pw_name)),
         pw_uid(entry->pw_uid),
         pw_gid(entry->pw_gid) {
   }
@@ -70,7 +68,6 @@ class PasswdEntry {
     return ObjHeader::ClassFixed(field_mask(), sizeof(PasswdEntry));
   }
 
-  GC_OBJ(header_);
   Str* pw_name;
   int pw_uid;
   int pw_gid;
@@ -105,6 +102,9 @@ class TermState {
   void Restore() {
     assert(0);
   }
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(TermState));
+  }
 };
 
 // Make the signal queue slab 4096 bytes, including the GC header.  See
@@ -115,8 +115,7 @@ class SignalSafe {
   // State that is shared between the main thread and signal handlers.
  public:
   SignalSafe()
-      : header_(obj_header()),
-        pending_signals_(AllocSignalList()),
+      : pending_signals_(AllocSignalList()),
         empty_list_(AllocSignalList()),  // to avoid repeated allocation
         last_sig_num_(0),
         received_sigint_(false),
@@ -211,7 +210,6 @@ class SignalSafe {
     return ObjHeader::ClassFixed(field_mask(), sizeof(SignalSafe));
   }
 
-  GC_OBJ(header_);
   List<int>* pending_signals_;  // public for testing
   List<int>* empty_list_;
 
@@ -258,7 +256,7 @@ Str* ChArrayToString(List<int>* ch_array);
 
 class _ResourceLoader {
  public:
-  _ResourceLoader() : header_(obj_header()) {
+  _ResourceLoader() {
   }
 
   virtual Str* Get(Str* path);
@@ -266,8 +264,6 @@ class _ResourceLoader {
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(_ResourceLoader));
   }
-
-  GC_OBJ(header_);
 };
 
 _ResourceLoader* GetResourceLoader();

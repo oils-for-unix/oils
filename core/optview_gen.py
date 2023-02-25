@@ -33,8 +33,7 @@ using option_asdl::option_i;
 class _View {
  public:
   _View(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
-      : header_(obj_header()),
-        opt0_array(opt0_array), opt_stacks(opt_stacks) {
+      : opt0_array(opt0_array), opt_stacks(opt_stacks) {
   }
 
   bool _Get(int opt_num) {
@@ -50,7 +49,6 @@ class _View {
     return ObjHeader::ClassFixed(field_mask(), sizeof(_View));
   }
 
-  GC_OBJ(header_);
   List<bool>* opt0_array;
   List<List<bool>*>* opt_stacks;
 

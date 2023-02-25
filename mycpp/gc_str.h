@@ -10,7 +10,7 @@ class List;
 class Str {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
-  Str() : header_(obj_header()) {
+  Str() {
   }
 
   char* data() {
@@ -73,7 +73,6 @@ class Str {
     return ObjHeader::Str();
   }
 
-  GC_OBJ(header_);
   int len_;
   char data_[1];  // flexible array
 
@@ -145,7 +144,6 @@ class GlobalStr {
   // A template type with the same layout as Str with length N-1 (which needs a
   // buffer of size N).  For initializing global constant instances.
  public:
-  ObjHeader header_;
   int hash_value_;
   const char data_[N];
 
@@ -161,10 +159,9 @@ class GlobalStr {
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
 #define GLOBAL_STR(name, val)                                           \
-  GlobalStr<sizeof(val)> _##name = {                                    \
+  InlineGcObj<GlobalStr<sizeof(val)>> _##name = {                       \
       {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Global, kIsGlobal}, \
-      sizeof(val) - 1,                                                  \
-      val};                                                             \
-  Str* name = reinterpret_cast<Str*>(&_##name);
+      {sizeof(val) - 1, val}};                                          \
+  Str* name = reinterpret_cast<Str*>(&_##name.obj);
 
 #endif  // MYCPP_GC_STR_H

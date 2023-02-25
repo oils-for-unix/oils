@@ -14,13 +14,11 @@ class Str;
 
 class _ExceptionOpaque {
  public:
-  _ExceptionOpaque() : header_(obj_header()) {
+  _ExceptionOpaque() {
   }
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(_ExceptionOpaque));
   }
-
-  GC_OBJ(header_);
 };
 
 // mycpp removes constructor arguments
@@ -38,16 +36,15 @@ class StopIteration : public _ExceptionOpaque {};
 
 class ValueError {
  public:
-  ValueError() : header_(obj_header()), message(nullptr) {
+  ValueError() : message(nullptr) {
   }
-  explicit ValueError(Str* message) : header_(obj_header()), message(message) {
+  explicit ValueError(Str* message) : message(message) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(ValueError));
   }
 
-  GC_OBJ(header_);
   Str* message;
 
   static constexpr uint32_t field_mask() {
@@ -62,15 +59,13 @@ class ValueError {
 // libc::regex_match and other bindings raise RuntimeError
 class RuntimeError {
  public:
-  explicit RuntimeError(Str* message)
-      : header_(obj_header()), message(message) {
+  explicit RuntimeError(Str* message) : message(message) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(RuntimeError));
   }
 
-  GC_OBJ(header_);
   Str* message;
 
   static constexpr uint32_t field_mask() {

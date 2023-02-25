@@ -61,13 +61,12 @@ namespace error {  // define
 
 int NO_SPID = -1;
 
-Usage::Usage(Str* msg, int span_id) : header_(obj_header()) {
+Usage::Usage(Str* msg, int span_id) {
   this->msg = msg;
   this->span_id = span_id;
 }
 
-_ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location)
-    : header_(obj_header()) {
+_ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
   this->location = location;
 }
@@ -86,7 +85,7 @@ Str* _ErrorWithLocation::UserErrorString() {
   return this->msg;
 }
 
-Runtime::Runtime(Str* msg) : header_(obj_header()) {
+Runtime::Runtime(Str* msg) {
   this->msg = msg;
 }
 

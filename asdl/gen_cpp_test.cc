@@ -179,11 +179,11 @@ using typed_demo_asdl::flag_type;
 using typed_demo_asdl::SetToArg_;
 
 // TODO: We should always use these, rather than 'new flag_type::Bool()'
-flag_type::Bool g_ft = {};
+InlineGcObj<flag_type::Bool> g_ft = {flag_type::Bool::obj_header()};
 
 // Use __ style
 using typed_demo_asdl::cflow__Return;
-cflow__Return g_ret = {5};
+InlineGcObj<cflow__Return> g_ret = {cflow__Return::obj_header(), {5}};
 
 int i0 = 7;
 
@@ -197,15 +197,15 @@ List<int>* g_list = NewList<int>({i0, 8, 9});
 TEST literal_test() {
   // Interesting, initializer list part of the constructor "runs".  Otherwise
   // this doesn't work.
-  log("g_ft.tag_() = %d", g_ft.tag_());
+  log("g_ft.tag_() = %d", g_ft.obj.tag_());
   auto ft = Alloc<flag_type::Bool>();
-  ASSERT_EQ(g_ft.tag_(), ft->tag_());
+  ASSERT_EQ(g_ft.obj.tag_(), ft->tag_());
 
-  log("g_ret.tag_() = %d", g_ret.tag_());
-  log("g_ret.status = %d", g_ret.status);
+  log("g_ret.tag_() = %d", g_ret.obj.tag_());
+  log("g_ret.status = %d", g_ret.obj.status);
   auto ret = Alloc<cflow__Return>(5);
-  ASSERT_EQ(g_ret.tag_(), ret->tag_());
-  ASSERT_EQ(g_ret.status, ret->status);
+  ASSERT_EQ(g_ret.obj.tag_(), ret->tag_());
+  ASSERT_EQ(g_ret.obj.status, ret->status);
 
 #if 0
   // Wow this works too?  Is it the the constexpr interpreter, or is this code

@@ -85,8 +85,7 @@ namespace flag_spec {
 class _FlagSpec {
  public:
   _FlagSpec()
-      : header_(obj_header()),
-        arity0(nullptr),
+      : arity0(nullptr),
         arity1(nullptr),
         plus_flags(nullptr),
         actions_long(nullptr),
@@ -97,7 +96,6 @@ class _FlagSpec {
     return ObjHeader::ClassFixed(field_mask(), sizeof(_FlagSpec));
   }
 
-  GC_OBJ(header_);
   List<Str*>* arity0;
   Dict<Str*, args::_Action*>* arity1;
   List<Str*>* plus_flags;
@@ -116,8 +114,7 @@ class _FlagSpec {
 class _FlagSpecAndMore {
  public:
   _FlagSpecAndMore()
-      : header_(obj_header()),
-        actions_long(nullptr),
+      : actions_long(nullptr),
         actions_short(nullptr),
         plus_flags(nullptr),
         defaults(nullptr) {
@@ -127,7 +124,6 @@ class _FlagSpecAndMore {
     return ObjHeader::ClassFixed(field_mask(), sizeof(_FlagSpecAndMore));
   }
 
-  GC_OBJ(header_);
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, args::_Action*>* actions_short;
   List<Str*>* plus_flags;

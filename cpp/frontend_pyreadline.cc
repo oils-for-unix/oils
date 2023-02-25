@@ -65,8 +65,7 @@ static void display_matches_hook(char** matches, int num_matches,
 #endif
 
 Readline::Readline()
-    : header_(obj_header()),
-      begidx_(),
+    : begidx_(),
       endidx_(),
       completer_delims_(StrFromC(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")),
       completer_(),

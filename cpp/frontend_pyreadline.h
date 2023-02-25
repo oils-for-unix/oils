@@ -49,8 +49,6 @@ class Readline {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Readline));
   }
 
-  GC_OBJ(header_);
-
   int begidx_;
   int endidx_;
   Str* completer_delims_;
