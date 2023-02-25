@@ -1,0 +1,12 @@
+BasedOnStyle: Google
+# We have a lot of switch statements, and the extra indent doesn't help.
+IndentCaseLabels: false
+# I like consistent Python-style functions and blocks, e.g. not if (x) return
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: false
+IndentPPDirectives: BeforeHash
+
+# Does not do what I want
+# TypenameMacros: ["SUM", "VARIANT"]
+WhitespaceSensitiveMacros: ["SUM", "VARIANT", "SCHEMA"]
+TypenameMacros: ["SUM_NS", "PROD"]
