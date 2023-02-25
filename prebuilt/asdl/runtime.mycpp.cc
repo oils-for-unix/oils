@@ -216,8 +216,7 @@ format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
   }
 }
 
-ColorOutput::ColorOutput(mylib::Writer* f) 
-    : GC_CLASS_FIXED(header_, field_mask(), sizeof(ColorOutput)) {
+ColorOutput::ColorOutput(mylib::Writer* f) : header_(obj_header()) {
   this->f = f;
   this->num_chars = 0;
 }
@@ -385,8 +384,7 @@ void AnsiOutput::PopColor() {
 }
 int INDENT = 2;
 
-_PrettyPrinter::_PrettyPrinter(int max_col) 
-    : GC_CLASS_SCANNED(header_, 0, sizeof(_PrettyPrinter)) {
+_PrettyPrinter::_PrettyPrinter(int max_col) : header_(obj_header()) {
   this->max_col = max_col;
 }
 

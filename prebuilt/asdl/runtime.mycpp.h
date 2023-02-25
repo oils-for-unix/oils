@@ -57,6 +57,10 @@ class ColorOutput {
     return maskbit_v(offsetof(ColorOutput, f));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ColorOutput));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
 
@@ -66,6 +70,10 @@ class TextOutput : public ColorOutput {
   virtual format::TextOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(TextOutput));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
 };
@@ -80,6 +88,10 @@ class HtmlOutput : public ColorOutput {
   virtual void PopColor();
   virtual void write(Str* s);
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(HtmlOutput));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
 };
 
@@ -89,6 +101,10 @@ class AnsiOutput : public ColorOutput {
   virtual format::AnsiOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(AnsiOutput));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(AnsiOutput)
 };
@@ -104,6 +120,10 @@ class _PrettyPrinter {
 
   GC_OBJ(header_);
   int max_col;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(_PrettyPrinter));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
 };

@@ -83,6 +83,10 @@ class ColorOutput {
     return maskbit_v(offsetof(ColorOutput, f));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ColorOutput));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
 
@@ -92,6 +96,10 @@ class TextOutput : public ColorOutput {
   virtual format::TextOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(TextOutput));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
 };
@@ -106,6 +114,10 @@ class HtmlOutput : public ColorOutput {
   virtual void PopColor();
   virtual void write(Str* s);
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(HtmlOutput));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
 };
 
@@ -115,6 +127,10 @@ class AnsiOutput : public ColorOutput {
   virtual format::AnsiOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(AnsiOutput));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(AnsiOutput)
 };
@@ -130,6 +146,10 @@ class _PrettyPrinter {
 
   GC_OBJ(header_);
   int max_col;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(_PrettyPrinter));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
 };
@@ -173,6 +193,10 @@ class _Attributes {
   bool show_options;
   bool saw_double_dash;
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(4, sizeof(_Attributes));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(_Attributes)
 };
 
@@ -196,6 +220,10 @@ class Reader {
   int n;
   int i;
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(Reader));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(Reader)
 };
 
@@ -205,6 +233,10 @@ class _Action {
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   GC_OBJ(header_);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(_Action));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(_Action)
 };
@@ -224,6 +256,10 @@ class _ArgAction : public _Action {
          | maskbit_v(offsetof(_ArgAction, valid));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(_ArgAction));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(_ArgAction)
 };
 
@@ -231,6 +267,10 @@ class SetToInt : public _ArgAction {
  public:
   SetToInt(Str* name);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(SetToInt));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetToInt)
 };
@@ -240,6 +280,10 @@ class SetToFloat : public _ArgAction {
   SetToFloat(Str* name);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(SetToFloat));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(SetToFloat)
 };
 
@@ -247,6 +291,10 @@ class SetToString : public _ArgAction {
  public:
   SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(SetToString));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(SetToString)
 };
@@ -260,6 +308,10 @@ class SetAttachedBool : public _Action {
   
   static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetAttachedBool, name));
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetAttachedBool));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetAttachedBool)
@@ -276,6 +328,10 @@ class SetToTrue : public _Action {
     return maskbit_v(offsetof(SetToTrue, name));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetToTrue));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(SetToTrue)
 };
 
@@ -288,6 +344,10 @@ class SetOption : public _Action {
   
   static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetOption, name));
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetOption));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetOption)
@@ -306,6 +366,10 @@ class SetNamedOption : public _Action {
     return maskbit_v(offsetof(SetNamedOption, names));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetNamedOption));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(SetNamedOption)
 };
 
@@ -318,6 +382,10 @@ class SetAction : public _Action {
   
   static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetAction, name));
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetAction));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetAction)
@@ -333,6 +401,10 @@ class SetNamedAction : public _Action {
   
   static constexpr uint16_t field_mask() {
     return maskbit_v(offsetof(SetNamedAction, names));
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetNamedAction));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetNamedAction)

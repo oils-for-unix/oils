@@ -38,6 +38,10 @@ class Usage {
   Str* msg;
   int span_id;
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(Usage));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(Usage)
 };
 
@@ -56,6 +60,10 @@ class _ErrorWithLocation {
          | maskbit(offsetof(_ErrorWithLocation, msg));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(_ErrorWithLocation));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(_ErrorWithLocation)
 };
 
@@ -67,12 +75,20 @@ class Runtime {
   GC_OBJ(header_);
   Str* msg;
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(Runtime));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(Runtime)
 };
 
 class Parse : public _ErrorWithLocation {
  public:
   Parse(Str* msg, syntax_asdl::loc_t* location);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Parse));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(Parse)
 };
@@ -81,12 +97,20 @@ class FailGlob : public _ErrorWithLocation {
  public:
   FailGlob(Str* msg, syntax_asdl::loc_t* location);
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(FailGlob));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
 };
 
 class RedirectEval : public _ErrorWithLocation {
  public:
   RedirectEval(Str* msg, syntax_asdl::loc_t* location);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(RedirectEval));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(RedirectEval)
 };
@@ -98,12 +122,20 @@ class FatalRuntime : public _ErrorWithLocation {
 
   int exit_status;
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(FatalRuntime));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(FatalRuntime)
 };
 
 class Strict : public FatalRuntime {
  public:
   Strict(Str* msg, syntax_asdl::loc_t* location);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Strict));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(Strict)
 };
@@ -114,12 +146,20 @@ class ErrExit : public FatalRuntime {
 
   bool show_code;
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(ErrExit));
+  }
+
   DISALLOW_COPY_AND_ASSIGN(ErrExit)
 };
 
 class Expr : public FatalRuntime {
  public:
   Expr(Str* msg, syntax_asdl::loc_t* location);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Expr));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(Expr)
 };
