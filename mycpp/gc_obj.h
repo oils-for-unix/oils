@@ -55,6 +55,13 @@ struct ObjHeader {
   unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
 #endif
+
+  // Classes with no inheritance (e.g. used by mycpp)
+  static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
+                                          uint32_t obj_len) {
+    return {kIsHeader, TypeTag::OtherClass, num_pointers, HeapTag::Scanned,
+            kUndefinedId};
+  }
 };
 
 // TODO: we could determine the max of all objects statically!
