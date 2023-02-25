@@ -64,7 +64,7 @@ FLAG_without_readline=''  # Don't even check if it's available
 FLAG_readline=''
 
 # These variables are set by detect_readline and used by echo_cpp and
-# echo_vars
+# echo_shell_vars
 detected_readline=''
 have_readline=''
 readline_dir=''
@@ -204,29 +204,42 @@ cc_header_file() {
 }
 
 detect_readline() {
+  detected_readline=1  # for assertions in echo_shell_vars and echo_cpp
+
+  # User disabled readline
+  if test -n "$FLAG_without_readline"; then
+    # have_readline remains false
+    return
+  fi
+
+  # User requested specific location
   if test -n "$FLAG_readline"; then
     if cc_quiet build/detect-readline.c \
-	-L "$FLAG_readline/lib" \
-	-I "$FLAG_readline/include" \
-	-l readline; then
+      -L "$FLAG_readline/lib" \
+      -I "$FLAG_readline/include" \
+      -l readline; then
+
       readline_dir="$FLAG_readline"
       have_readline=1
     fi
-  else
-    if cc_quiet build/detect-readline.c -l readline; then
-      have_readline=1
-    fi
+    return
   fi
-  detected_readline=1
 
-  if test "$FLAG_with_readline" = 1 && ! test "$have_readline" = 1; then
+  # Detect in default location
+  if cc_quiet build/detect-readline.c -l readline; then
+    have_readline=1
+    return
+  fi
+
+  # User requested that it be found
+  if test "$FLAG_with_readline" = 1 && test "$have_readline" != 1; then
     die 'readline was not detected on the system (--with-readline passed).'
   fi
 }
 
-echo_vars() {
-  if ! test "$detected_readline" = 1; then
-    die 'called echo_vars before detecting readline.'
+echo_shell_vars() {
+  if test "$detected_readline" != 1; then
+    die 'called echo_shell_vars before detecting readline.'
   fi
   if test "$have_readline" = 1; then
     echo 'HAVE_READLINE=1'
@@ -361,7 +374,7 @@ EOF
 }
 
 echo_cpp() {
-  if ! test "$detected_readline" = 1; then
+  if test "$detected_readline" != 1; then
     die 'called echo_cpp before detecting readline.'
   fi
   # Dev builds can use non-portable clock_gettime()
@@ -389,6 +402,7 @@ main() {
     die "Couldn't compile a basic C program (cc not installed?)"
   fi
 
+  # Sets globals $have_readline and $readline_dir
   detect_readline
 
   # Generate configuration for oil-native
@@ -401,7 +415,7 @@ main() {
   # etc.)
   local sh_out=_build/detected-config.sh
 
-  echo_vars > $sh_out
+  echo_shell_vars > $sh_out
   log "Wrote $sh_out"
 
   # Fast mode
