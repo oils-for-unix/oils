@@ -14,9 +14,12 @@ class Str;
 
 class _ExceptionOpaque {
  public:
-  _ExceptionOpaque()
-      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(_ExceptionOpaque)) {
+  _ExceptionOpaque() : header_(obj_header()) {
   }
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(_ExceptionOpaque));
+  }
+
   GC_OBJ(header_);
 };
 
@@ -35,13 +38,13 @@ class StopIteration : public _ExceptionOpaque {};
 
 class ValueError {
  public:
-  ValueError()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(ValueError)),
-        message(nullptr) {
+  ValueError() : header_(obj_header()), message(nullptr) {
   }
-  explicit ValueError(Str* message)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(ValueError)),
-        message(message) {
+  explicit ValueError(Str* message) : header_(obj_header()), message(message) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ValueError));
   }
 
   GC_OBJ(header_);
@@ -60,8 +63,11 @@ class ValueError {
 class RuntimeError {
  public:
   explicit RuntimeError(Str* message)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(RuntimeError)),
-        message(message) {
+      : header_(obj_header()), message(message) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(RuntimeError));
   }
 
   GC_OBJ(header_);

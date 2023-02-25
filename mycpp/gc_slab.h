@@ -29,11 +29,14 @@ template <typename T>
 class Slab {
   // Slabs of pointers are scanned; slabs of ints/bools are opaque.
  public:
-  explicit Slab(unsigned num_items)
-      : GC_SLAB(header_,
-                std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque,
-                num_items) {
+  explicit Slab(unsigned num_items) : header_(obj_header(num_items)) {
   }
+
+  static constexpr ObjHeader obj_header(unsigned num_items) {
+    return ObjHeader::Slab(
+        std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque, num_items);
+  }
+
   GC_OBJ(header_);
   T items_[1];  // variable length
 

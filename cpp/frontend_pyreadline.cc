@@ -65,7 +65,7 @@ static void display_matches_hook(char** matches, int num_matches,
 #endif
 
 Readline::Readline()
-    : GC_CLASS_FIXED(header_, Readline::field_mask(), sizeof(Readline)),
+    : header_(obj_header()),
       begidx_(),
       endidx_(),
       completer_delims_(StrFromC(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")),

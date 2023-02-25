@@ -55,6 +55,44 @@ struct ObjHeader {
   unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
 #endif
+
+  // Used by hand-written and generated classes
+  static constexpr ObjHeader ClassFixed(uint16_t field_mask, uint32_t obj_len) {
+    return {kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
+            kUndefinedId};
+  }
+
+  // Classes with no inheritance (e.g. used by mycpp)
+  static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
+                                          uint32_t obj_len) {
+    return {kIsHeader, TypeTag::OtherClass, num_pointers, HeapTag::Scanned,
+            kUndefinedId};
+  }
+
+  // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
+  static constexpr ObjHeader Class(uint8_t heap_tag, uint16_t field_mask,
+                                   uint32_t obj_len) {
+    return {kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
+  }
+
+  // Used by ASDL.
+  static constexpr ObjHeader AsdlClass(uint8_t type_tag,
+                                       uint32_t num_pointers) {
+    return {kIsHeader, type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
+  }
+
+  static constexpr ObjHeader Str() {
+    return {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
+  }
+
+  static constexpr ObjHeader Slab(uint8_t heap_tag, uint32_t num_pointers) {
+    return {kIsHeader, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
+  }
+
+  static constexpr ObjHeader Tuple(uint16_t field_mask, uint32_t obj_len) {
+    return {kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
+            kUndefinedId};
+  }
 };
 
 // TODO: we could determine the max of all objects statically!

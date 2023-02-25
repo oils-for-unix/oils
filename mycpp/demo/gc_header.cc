@@ -86,11 +86,15 @@ TEST gc_header_test() {
 
 class Node {
  public:
-  Node() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Node)) {
+  Node() : header_(obj_header()) {
   }
 
   virtual int Method() {
     return 42;
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Node));
   }
 
   GC_OBJ(header_);
@@ -120,7 +124,11 @@ class Derived : public Node {
 
 class NoVirtual {
  public:
-  NoVirtual() : GC_CLASS_FIXED(header_, field_mask(), sizeof(NoVirtual)) {
+  NoVirtual() : header_(obj_header()) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(NoVirtual));
   }
 
   GC_OBJ(header_);

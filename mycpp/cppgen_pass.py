@@ -2308,6 +2308,23 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.decl_write(';\n')
                 self.decl_write_ind('}\n')
 
+            obj_tag, obj_arg = self.field_gc[o]
+            if obj_tag == 'HeapTag::FixedSize':
+                obj_mask = obj_arg
+                obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (
+                    obj_mask, o.name)
+            elif obj_tag == 'HeapTag::Scanned':
+                num_pointers = obj_arg
+                obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                    num_pointers, o.name)
+            else:
+                raise AssertionError(o.name)
+
+            self.decl_write('\n')
+            self.decl_write_ind('static constexpr ObjHeader obj_header() {\n')
+            self.decl_write_ind('  return %s;\n' % obj_header)
+            self.decl_write_ind('}\n')
+
             self.decl_write('\n')
             self.decl_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
             self.indent -= 1
@@ -2332,22 +2349,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
                     self.write(') ')
 
-                    # Base class can use Obj() constructor directly, but Derived class can't
+                    # Base class must initialize the header.
                     if not base_class_name:
-                        obj_tag, obj_arg = self.field_gc[o]
-                        if obj_tag == 'HeapTag::FixedSize':
-                            obj_mask = obj_arg
-                            header_init = 'GC_CLASS_FIXED(header_, %s, sizeof(%s))' % (
-                                obj_mask, o.name)
-                        elif obj_tag == 'HeapTag::Scanned':
-                            num_pointers = obj_arg
-                            header_init = 'GC_CLASS_SCANNED(header_, %s, sizeof(%s))' % (
-                                num_pointers, o.name)
-                        else:
-                            raise AssertionError(o.name)
-
                         self.write('\n')
-                        self.write('    : %s' % header_init)
+                        self.write('    : header_(obj_header())')
 
                     # Check for Base.__init__(self, ...) and move that to the initializer list.
 

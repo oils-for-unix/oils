@@ -383,7 +383,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     all_fields = managed_fields + unmanaged_fields
 
     line_break = '\n' + ' ' * 22  # wrapping/indent determined manually
-    header_init = 'GC_ASDL_CLASS(header_, %s, %d)' % (tag, len(managed_fields))
 
     def FieldInitJoin(strs):
       # reflow doesn't work well here, so do it manually
@@ -391,6 +390,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     params = []
     # All product types and variants have a tag
+    header_init = 'header_(obj_header())'
     inits = [header_init]
 
     # Ensure that the constructor params are listed in the same order as the
@@ -429,6 +429,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       for abbrev in PRETTY_METHODS:
         self.Emit('  hnode_t* %s();' % abbrev, depth)
       self.Emit('')
+
+    self.Emit('  static constexpr ObjHeader obj_header() {')
+    self.Emit('    return ObjHeader::AsdlClass(%s, %d);' % (tag, len(managed_fields)))
+    self.Emit('  }')
+    self.Emit('')
 
     #
     # Members

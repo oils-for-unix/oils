@@ -161,7 +161,11 @@ TEST list_collection_test() {
 
 class Node {
  public:
-  Node() : GC_CLASS_FIXED(header_, field_mask(), sizeof(Node)), next_(nullptr) {
+  Node() : header_(obj_header()), next_(nullptr) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Node));
   }
 
   GC_OBJ(header_);

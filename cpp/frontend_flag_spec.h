@@ -85,12 +85,16 @@ namespace flag_spec {
 class _FlagSpec {
  public:
   _FlagSpec()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_FlagSpec)),
+      : header_(obj_header()),
         arity0(nullptr),
         arity1(nullptr),
         plus_flags(nullptr),
         actions_long(nullptr),
         defaults(nullptr) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(_FlagSpec));
   }
 
   GC_OBJ(header_);
@@ -112,11 +116,15 @@ class _FlagSpec {
 class _FlagSpecAndMore {
  public:
   _FlagSpecAndMore()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_FlagSpecAndMore)),
+      : header_(obj_header()),
         actions_long(nullptr),
         actions_short(nullptr),
         plus_flags(nullptr),
         defaults(nullptr) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(_FlagSpecAndMore));
   }
 
   GC_OBJ(header_);

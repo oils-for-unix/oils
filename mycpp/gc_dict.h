@@ -44,7 +44,7 @@ class Dict {
 
  public:
   Dict()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
+      : header_(obj_header()),
         len_(0),
         capacity_(0),
         entry_(nullptr),
@@ -53,7 +53,7 @@ class Dict {
   }
 
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(Dict)),
+      : header_(obj_header()),
         len_(0),
         capacity_(0),
         entry_(nullptr),
@@ -107,6 +107,10 @@ class Dict {
   //   - SetAndIntern<V>(D, &string_key, value)
   //   This will enable duplicate copies of the string to be garbage collected
   int position_of_key(K key);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Dict));
+  }
 
   GC_OBJ(header_);
   int len_;       // number of entries (keys and values, almost dense)

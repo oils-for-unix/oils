@@ -115,12 +115,16 @@ TEST roundup_test() {
 
 class Point {
  public:
-  Point(int x, int y)
-      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(Point)), x_(x), y_(y) {
+  Point(int x, int y) : header_(obj_header()), x_(x), y_(y) {
   }
   int size() {
     return x_ + y_;
   }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Point));
+  }
+
   GC_OBJ(header_);
   int x_;
   int y_;
@@ -130,11 +134,13 @@ const int kLineMask = 0x3;  // 0b0011
 
 class Line {
  public:
-  Line()
-      : GC_CLASS_FIXED(header_, kLineMask, sizeof(Line)),
-        begin_(nullptr),
-        end_(nullptr) {
+  Line() : header_(obj_header()), begin_(nullptr), end_(nullptr) {
   }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kLineMask, sizeof(Line));
+  }
+
   GC_OBJ(header_);
   Point* begin_;
   Point* end_;
@@ -282,14 +288,17 @@ TEST global_trace_test() {
 // 8 byte vtable, 8 byte ObjHeader, then member_
 class BaseObj {
  public:
-  explicit BaseObj(uint32_t obj_len)
-      : GC_CLASS_FIXED(header_, kZeroMask, obj_len) {
+  explicit BaseObj(uint32_t obj_len) : header_(obj_header(obj_len)) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }
 
   virtual int Method() {
     return 3;
+  }
+
+  static constexpr ObjHeader obj_header(uint32_t obj_len) {
+    return ObjHeader::ClassFixed(kZeroMask, obj_len);
   }
 
   GC_OBJ(header_);

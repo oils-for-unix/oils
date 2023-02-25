@@ -39,11 +39,7 @@ class List {
                 "An integral number of items should fit in 32 bytes");
 
  public:
-  List()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(List<T>)),
-        len_(0),
-        capacity_(0),
-        slab_(nullptr) {
+  List() : header_(obj_header()), len_(0), capacity_(0), slab_(nullptr) {
   }
 
   // Implements L[i]
@@ -87,6 +83,10 @@ class List {
 
   // Extend this list with multiple elements.
   void extend(List<T>* other);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(List<T>));
+  }
 
   GC_OBJ(header_);
 

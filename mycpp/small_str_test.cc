@@ -48,7 +48,7 @@ class SmallStr {
 
 class HeapStr {
  public:
-  HeapStr() : GC_STR(header_) {
+  HeapStr() : header_(obj_header()) {
   }
   int Length() {
 #ifdef MARK_SWEEP
@@ -74,6 +74,11 @@ class HeapStr {
     header.obj_len = kStrHeaderSize + len + 1;  // +1 for
 #endif
   }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::Str();
+  }
+
   ObjHeader header_;
   char data_[1];
 };
