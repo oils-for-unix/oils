@@ -29,22 +29,8 @@ cpplint() {
 }
 
 clang-format() {
-  # I like consistent Python-style functions and blocks, e.g. not if (x) return
-  local style='{
-      BasedOnStyle: Google,
-      IndentCaseLabels: false,
-      AllowShortFunctionsOnASingleLine: None,
-      AllowShortBlocksOnASingleLine: false,
-      IndentPPDirectives: BeforeHash,
-
-      # Does not do what I want
-      # TypenameMacros: ["SUM", "VARIANT"]
-      WhitespaceSensitiveMacros: ["SUM", "VARIANT", "SCHEMA"]
-      TypenameMacros: ["SUM_NS", "PROD"]
-    }
-  '
-  # We have a lot of switch statements, and the extra indent doesn't help.
-  $CLANG_DIR/bin/clang-format -style="$style" "$@"
+  # See //.clang-format for the style config.
+  $CLANG_DIR/bin/clang-format --style=file "$@"
 }
 
 readonly -a CPP_FILES=(
