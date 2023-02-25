@@ -24,14 +24,15 @@ typedef void (*MatchFunc)(const unsigned char* line, int line_len,
 class SimpleLexer {
  public:
   SimpleLexer(MatchFunc match_func, Str* s)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(SimpleLexer)),
-        match_func_(match_func),
-        s_(s),
-        pos_(0) {
+      : header_(obj_header()), match_func_(match_func), s_(s), pos_(0) {
   }
 
   Tuple2<Id_t, Str*> Next();
   List<Tuple2<Id_t, Str*>*>* Tokens();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SimpleLexer));
+  }
 
   static constexpr uint16_t field_mask() {
     return maskbit(offsetof(SimpleLexer, s_));

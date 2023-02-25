@@ -46,9 +46,11 @@ Str* GetHomeDir(Str* user_name);
 
 class ReadError {
  public:
-  explicit ReadError(int err_num_)
-      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(ReadError)),
-        err_num(err_num_) {
+  explicit ReadError(int err_num_) : header_(obj_header()), err_num(err_num_) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(ReadError));
   }
 
   GC_OBJ(header_);
@@ -58,10 +60,14 @@ class ReadError {
 class PasswdEntry {
  public:
   explicit PasswdEntry(const passwd* entry)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(PasswdEntry)),
+      : header_(obj_header()),
         pw_name(StrFromC(entry->pw_name)),
         pw_uid(entry->pw_uid),
         pw_gid(entry->pw_gid) {
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(PasswdEntry));
   }
 
   GC_OBJ(header_);
@@ -109,7 +115,7 @@ class SignalSafe {
   // State that is shared between the main thread and signal handlers.
  public:
   SignalSafe()
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(SignalSafe)),
+      : header_(obj_header()),
         pending_signals_(AllocSignalList()),
         empty_list_(AllocSignalList()),  // to avoid repeated allocation
         last_sig_num_(0),
@@ -201,6 +207,10 @@ class SignalSafe {
            maskbit(offsetof(SignalSafe, empty_list_));
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SignalSafe));
+  }
+
   GC_OBJ(header_);
   List<int>* pending_signals_;  // public for testing
   List<int>* empty_list_;
@@ -248,11 +258,14 @@ Str* ChArrayToString(List<int>* ch_array);
 
 class _ResourceLoader {
  public:
-  _ResourceLoader()
-      : GC_CLASS_FIXED(header_, kZeroMask, sizeof(_ResourceLoader)) {
+  _ResourceLoader() : header_(obj_header()) {
   }
 
   virtual Str* Get(Str* path);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(_ResourceLoader));
+  }
 
   GC_OBJ(header_);
 };

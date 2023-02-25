@@ -544,7 +544,10 @@ TEST field_mask_demo() {
 
 class Base {
  public:
-  Base(int i) : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen), i(i) {
+  Base(int i) : header_(obj_header()), i(i) {
+  }
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Base));
   }
   GC_OBJ(header_);
   int i;

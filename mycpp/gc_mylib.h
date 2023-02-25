@@ -80,11 +80,15 @@ inline Str* octal(int i) {
 class LineReader {
  public:
   // Abstract type with no fields: unknown size
-  LineReader() : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen) {
+  LineReader() : header_(obj_header()) {
   }
   virtual Str* readline() = 0;
   virtual bool isatty() = 0;
   virtual void close() = 0;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(LineReader));
+  }
 
   GC_OBJ(header_);
 };
@@ -143,11 +147,15 @@ LineReader* open(Str* path);
 class Writer {
  public:
   // subclasses mutate the mask (and can set obj_len length for Cheney)
-  Writer() : GC_CLASS_FIXED(header_, kZeroMask, kNoObjLen) {
+  Writer() : header_(obj_header()) {
   }
   virtual void write(Str* s) = 0;
   virtual void flush() = 0;
   virtual bool isatty() = 0;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Writer));
+  }
 
   GC_OBJ(header_);
 };

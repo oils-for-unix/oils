@@ -56,6 +56,12 @@ struct ObjHeader {
   unsigned obj_len : 29;     // Cheney: number of bytes to copy
 #endif
 
+  // Used by hand-written and generated classes
+  static constexpr ObjHeader ClassFixed(uint16_t field_mask, uint32_t obj_len) {
+    return {kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
+            kUndefinedId};
+  }
+
   // Classes with no inheritance (e.g. used by mycpp)
   static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
                                           uint32_t obj_len) {

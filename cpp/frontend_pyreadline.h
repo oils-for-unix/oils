@@ -39,12 +39,17 @@ class Readline {
   int get_current_history_length();
   void resize_terminal();
 
-  GC_OBJ(header_);
   static constexpr uint16_t field_mask() {
     return maskbit(offsetof(Readline, completer_delims_)) |
            maskbit(offsetof(Readline, completer_)) |
            maskbit(offsetof(Readline, display_));
   }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Readline));
+  }
+
+  GC_OBJ(header_);
 
   int begidx_;
   int endidx_;
