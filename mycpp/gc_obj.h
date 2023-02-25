@@ -75,6 +75,12 @@ struct ObjHeader {
     return {kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
   }
 
+  // Used by ASDL.
+  static constexpr ObjHeader AsdlClass(uint8_t type_tag,
+                                       uint32_t num_pointers) {
+    return {kIsHeader, type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
+  }
+
   static constexpr ObjHeader Str() {
     return {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
   }
