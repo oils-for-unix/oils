@@ -260,8 +260,8 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
 class %s {
  public:
   %s(Dict<Str*, runtime_asdl::value_t*>* attrs)
-      : GC_CLASS(header_, %s, %s, sizeof(%s)),
-""" % (spec_name, spec_name, obj_tag, mask_str, spec_name))
+      : header_(obj_header()),
+""" % (spec_name, spec_name))
 
     for i, field_name in enumerate(field_names):
       if i != 0:
@@ -274,6 +274,11 @@ class %s {
     header_f.write('  GC_OBJ(header_);\n')
     for decl in field_decls:
       header_f.write('  %s\n' % decl)
+
+    header_f.write('\n')
+    header_f.write('  static constexpr ObjHeader obj_header() {\n')
+    header_f.write('    return ObjHeader::Class(%s, %s, sizeof(%s));\n' % (obj_tag, mask_str, spec_name))
+    header_f.write('  }\n')
 
     if bits:
       header_f.write('\n')

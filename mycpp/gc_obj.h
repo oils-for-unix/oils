@@ -69,6 +69,12 @@ struct ObjHeader {
             kUndefinedId};
   }
 
+  // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
+  static constexpr ObjHeader Class(uint8_t heap_tag, uint16_t field_mask,
+                                   uint32_t obj_len) {
+    return {kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
+  }
+
   static constexpr ObjHeader Str() {
     return {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
   }
