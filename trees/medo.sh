@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   trees/shrub.sh <function name>
+#   trees/medo.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -18,18 +18,18 @@ main() {
   case $action in
 
     sync)
-      local shrub_dir=${2:-''}
+      local medo_dir=${2:-''}
       local dest=${3:-'.'}
 
-      if test -z "$shrub_dir"; then
-        die "$0: sync SHRUB_DIR DEST"
+      if test -z "$medo_dir"; then
+        die "$0: sync MEDO_DIR DEST"
       fi
 
       # Each vref should be sync'd
       # It can have "blobsum" or "treesum", but at first we only support "blobsum"
       # And then we look that up
 
-      find $shrub_dir -name '*.vref' | xargs echo TODO
+      find $medo_dir -name '*.vref' | xargs echo TODO
 
       # Make the 00/ object dirs on demand
       ;;
@@ -53,10 +53,10 @@ main() {
       ;;
 
     reachable)
-      local shrub_dir=${2:-'.'}
+      local medo_dir=${2:-'.'}
 
-      if test -z "$shrub_dir"; then
-        die "$0: reachable SHRUB_DIR"
+      if test -z "$medo_dir"; then
+        die "$0: reachable MEDO_DIR"
       fi
 
       # TODO: print a list of vblob IDs that are reachable to stdout.  Then you
@@ -66,7 +66,7 @@ main() {
       # - Copy them to a new vat
       # - You can also walk the git history, etc.
 
-      find $shrub_dir -name '*.vref' | xargs echo TODO
+      find $medo_dir -name '*.vref' | xargs echo TODO
 
       ;;
 

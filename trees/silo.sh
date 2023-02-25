@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   trees/vat.sh <function name>
+#   trees/silo.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -21,7 +21,7 @@ main() {
       local dir=${2:-'.'}
 
       # Set up repo structure
-      mkdir -v -p $dir/{primary,cache}
+      mkdir -v -p $dir/{objects,pack,derived}
 
       # Make the 00 objects on demand
       ;;
