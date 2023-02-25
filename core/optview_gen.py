@@ -33,7 +33,7 @@ using option_asdl::option_i;
 class _View {
  public:
   _View(List<bool>* opt0_array, List<List<bool>*>* opt_stacks)
-      : GC_CLASS_FIXED(header_, field_mask(), sizeof(_View)),
+      : header_(obj_header()),
         opt0_array(opt0_array), opt_stacks(opt_stacks) {
   }
 
@@ -44,6 +44,10 @@ class _View {
     } else {
       return overlay->index_(-1);
     }
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(_View));
   }
 
   GC_OBJ(header_);
