@@ -688,7 +688,7 @@ golden-subset() {
 # Make a copy of the output for comparison.
 copy-golden-ast() {
   local dest=${1:-_tmp/wild-gold}
-  find _tmp/wild/www/esoteric/ -name '*__ast.html' -a -printf '%p %P\n' \
+  find _tmp/wild-www/esoteric/ -name '*__ast.html' -a -printf '%p %P\n' \
     | ~/git/tree-tools/bin/multi cp $dest
 }
 
@@ -707,8 +707,14 @@ soil-run() {
     # Do a quick version
     all '^oil'
   else
-    # TODO: Speed up build with re2c / C++, turn on
-    all '^oil'
+    # This takes longer than 15 minutes with build/dev.sh minimal !
+    # That's with xargs -P $MAX_PROCS in test/wild-runner.sh
+
+    # TODO: Add C++ here as well.
+    # Just distro is too slow!
+    # all '^distro'
+
+    all '^cloud|^gnu|^freebsd'
   fi
 }
 

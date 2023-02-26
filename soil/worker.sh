@@ -169,7 +169,7 @@ wild-tasks() {
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
 build-py            build/py.sh all                              -
-wild                test/wild.sh soil-run                        _tmp/wild/www/index.html
+wild                test/wild.sh soil-run                        _tmp/wild-www/index.html
 EOF
 }
 

@@ -6,10 +6,13 @@ test -n "${__TEST_COMMON_SH:-}" && return
 readonly __TEST_COMMON_SH=1
 
 # Used by test/{gold,osh-usage,stateful,wild-runner}
-OSH=${OSH:-bin/osh}
+OSH=${OSH:-'bin/osh'}
 
 # For xargs -P in spec-runner.sh, wild-runner.sh.
-MAX_PROCS=${MAX_PROCS:-$(( $(nproc) - 1 ))}
+# If we have 2 cores or less (as on CI machines), use them all.  Otherwise save
+# 1 for multitasking.
+nproc=$(nproc)
+MAX_PROCS=${MAX_PROCS:-"$(( nproc <= 2 ? nproc : nproc - 1 ))"}
 
 readonly R_PATH=~/R  # Like PYTHONPATH, but for running R scripts
 

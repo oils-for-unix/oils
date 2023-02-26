@@ -432,7 +432,7 @@ compress() {
 
   log "--- test/wild"
   local out="$root/test/wild.wwz"
-  pushd _tmp/wild/www
+  pushd _tmp/wild-www
   time zip -r -q $out .  # recursive, quiet
   popd
 

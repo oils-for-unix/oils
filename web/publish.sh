@@ -92,7 +92,7 @@ benchmark() {
 
 compress-wild() {
   local out="$PWD/_tmp/wild/wild.wwz"
-  pushd _tmp/wild/www
+  pushd _tmp/wild-www
   time zip -r -q $out .  # recursive, quiet
   ls -l $out
 }

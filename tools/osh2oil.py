@@ -412,6 +412,10 @@ class OilPrinter(object):
           else:
             self.DoRhsWord(pair.rhs, local_symbols)
 
+        elif case(sh_lhs_expr_e.UnparsedIndex):
+          # --one-pass-parse gives us this node, instead of IndexedName
+          pass
+
         else: 
           raise AssertionError(pair.lhs.__class__.__name__)
 

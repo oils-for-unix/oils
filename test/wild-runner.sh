@@ -15,7 +15,7 @@ dump-html-and-translate-file() {
   local abs_path=$2
 
   local raw_base=_tmp/wild/raw/$rel_path
-  local www_base=_tmp/wild/www/$rel_path
+  local www_base=_tmp/wild-www/$rel_path
   mkdir -p $(dirname $raw_base) $(dirname $www_base)
 
   log "--- Processing $rel_path"
@@ -85,6 +85,10 @@ readonly MANIFEST=_tmp/wild/MANIFEST.txt
 
 parse-in-parallel() {
   local func=${1:-dump-html-and-translate-file}
+
+  log ''
+  log "$0: Making wild report with $MAX_PROCS parallel processes"
+  log ''
 
   local failed=''
   xargs -n 2 -P $MAX_PROCS -- $0 $func || failed=1
@@ -174,7 +178,7 @@ version-text() {
 make-report() {
   local manifest_regex=${1:-}
   local in_dir=_tmp/wild/raw
-  local out_dir=_tmp/wild/www
+  local out_dir=_tmp/wild-www
 
   # TODO: This could also go in 'raw', and then be processed by Python?
   version-text > $out_dir/version-info.txt
