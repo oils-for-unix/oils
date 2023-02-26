@@ -5,19 +5,14 @@
 # Usage:
 #   test/wild.sh <function name>
 #
-# Example:
-#   test/wild.sh fetch-archive
-#   test/wild.sh extract-archive
-#   test/wild.sh manifest-from-archive
-#
+# Examples:
 #   test/wild.sh all
+#   test/wild.sh all '^oil'  # subset
 
 # TODO:
 # - There are a lot of hard-coded source paths here.  These files could
 #   published in a tarball or torrent.
-# - Add gentoo
-# - This doesn't work without ~/git/other!
-#   test/wild.sh write-manifest
+# - Add more scripts, like gentoo package defs
 
 set -o nounset
 set -o pipefail
@@ -453,20 +448,6 @@ make-archive() {
   ls -l $out
 }
 
-# Fetch the archive we published.
-fetch-archive() {
-  local dir=_tmp/wild
-  mkdir -p $DEPS_WILD_DIR
-  wget --directory $DEPS_WILD_DIR --no-clobber \
-    https://www.oilshell.org/blob/wild/wild-source.tar.gz
-}
-
-extract-archive() {
-  local out=$DEPS_WILD_DIR/src
-  mkdir -p $out
-  tar --extract -z --directory $out < $DEPS_WILD_DIR/wild-source.tar.gz
-}
-
 # This is opposed to crawling the file system with 'find'.
 manifest-from-archive() {
   mkdir -p $(dirname $MANIFEST)
@@ -547,8 +528,11 @@ wild-types() {
   cat _tmp/wild/file-types.txt | test/wild_types.py
 }
 
-# Make a report for all, but only run some
 all() {
+  ### Run by devtools/release.sh
+
+  # Make a report for all, but only run some
+
   test/wild-runner.sh parse-and-report "$@"
 }
 
@@ -716,6 +700,16 @@ rootfs-manifest() {
     -executable -a \
     -exec test/shebang.sh is-shell {} ';' \
     -a -print | tee _tmp/rootfs.txt
+}
+
+soil-run() {
+  if test -n "${QUICKLY:-}"; then
+    # Do a quick version
+    all '^oil'
+  else
+    # TODO: Speed up build with re2c / C++, turn on
+    all '^oil'
+  fi
 }
 
 if test "$(basename $0)" = 'wild.sh'; then

@@ -786,12 +786,6 @@ dep-smoosh() {
   fi
 }
 
-dep-wild-testdata() {
-  test/wild.sh fetch-archive
-  test/wild.sh extract-archive
-  test/wild.sh manifest-from-archive
-}
-
 dep-benchmarks() {
   benchmarks/osh-runtime.sh download
   benchmarks/osh-runtime.sh extract
@@ -816,9 +810,6 @@ more-release-deps() {
 
     # test/smoosh.sh
     dep-smoosh
-
-    # test/wild.sh
-    dep-wild-testdata
 
     dep-benchmarks
   fi

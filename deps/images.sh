@@ -7,7 +7,7 @@
 #
 # Example: Rebuild an image:
 #
-#   deps/images.sh build common  # populates apt cache
+#   deps/images.sh build common  # populates apt cache.  WHY DO I NEED THIS?
 #   deps/images.sh build cpp T   # reuse package cache from apt-get
 #   deps/images.sh smoke cpp
 #
@@ -80,7 +80,7 @@ build() {
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2023-02-04'
+  local tag='v-2023-02-26a'
   sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
 }
 

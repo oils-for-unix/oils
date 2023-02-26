@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
 source soil/common.sh
@@ -159,6 +159,17 @@ oil-large           oil_lang/run.sh soil-run                     -
 tea-large           tea/run.sh soil-run                          -
 link-busybox-ash    test/spec.sh link-busybox-ash                -
 osh-minimal         test/spec.sh osh-minimal                     _tmp/spec/survey/osh-minimal.html
+EOF
+}
+
+wild-tasks() {
+  ### Print tasks for the 'wild' build
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+dump-user-host      soil/worker.sh dump-user-host                -
+build-minimal       build/py.sh minimal                          -
+wild                test/wild.sh soil-run                        _tmp/wild/www/index.html
 EOF
 }
 
@@ -467,6 +478,8 @@ JOB-app-tests() { job-main 'app-tests'; }
 JOB-cpp-small() { job-main 'cpp-small'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
 JOB-benchmarks() { job-main 'benchmarks'; }
+
+JOB-wild() { job-main 'wild'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 

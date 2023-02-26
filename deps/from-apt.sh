@@ -79,6 +79,15 @@ test-image() {
   apt-install build-essential "${PY3_DEPS[@]}"
 }
 
+wild() {
+  local -a packages=(
+    python2-dev  # for building Python extensions
+    libreadline-dev
+  )
+
+  apt-install "${packages[@]}"
+}
+
 dev-minimal() {
   local -a packages=(
     # Shouldn't require a C++ compiler in build-essential?  Only gcc?
@@ -102,7 +111,6 @@ dev-minimal() {
   )
 
   apt-install "${packages[@]}"
-
 }
 
 pea() {

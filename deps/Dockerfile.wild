@@ -1,0 +1,27 @@
+# For running test/wild.sh
+# 
+# Start with build/dev.sh minimal, then later add run with _bin/cxx-opt/osh,
+# including the translator.
+
+FROM oilshell/soil-common
+
+# Copy again to prevent unsound caching
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh wild
+
+USER uke
+
+# TODO: Use a /wedge, rather than copying the tarball
+COPY --chown=uke _cache/wild-source.tar.gz \
+  /home/uke/tmp/_cache/wild-source.tar.gz
+
+COPY build/common.sh /home/uke/tmp/build/common.sh
+COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+
+RUN deps/from-tar.sh extract-wild
+
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-wild'"]

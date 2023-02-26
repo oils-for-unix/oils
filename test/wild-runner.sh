@@ -90,7 +90,9 @@ parse-in-parallel() {
   xargs -n 2 -P $MAX_PROCS -- $0 $func || failed=1
 
   # Limit the output depth
-  tree -L 3 _tmp/wild
+  if command -v tree > /dev/null; then
+    tree -L 3 _tmp/wild
+  fi
 }
 
 filter-manifest() {

@@ -22,6 +22,10 @@ live-image-tag() {
   local image_id=$1
 
   case $image_id in
+    (wild)
+      # Initial build
+      echo 'v-2023-02-26a'
+      ;;
     (cpp)
       # Added pexpect for test/stateful in C++
       echo 'v-2023-02-04'

@@ -7,7 +7,7 @@
 #
 # Examples:
 #   deps/from-tar.sh download-re2c
-#   deps/from-tar.sh install-re2c
+#   deps/from-tar.sh build-re2c
 #
 # The executable will be in ../oil_DEPS/re2c/re2c.
 
@@ -40,6 +40,7 @@ download-re2c() {
     https://github.com/skvadrik/re2c/releases/download/$RE2C_VERSION/re2c-$RE2C_VERSION.tar.xz
 }
 
+# TODO: Use make install to minimize
 build-re2c() {
   cd $REPO_ROOT/_cache
   tar -x --xz < re2c-$RE2C_VERSION.tar.xz
@@ -68,6 +69,7 @@ extract-cmark() {
   popd
 }
 
+# TODO: Use make install
 build-cmark() {
   mkdir -p $DEPS_DIR/cmark
   pushd $DEPS_DIR/cmark
@@ -239,6 +241,24 @@ bloaty-sizes() {
 
   # 694 MB, OK we have to fix this
   du --si -s $DEPS_DIR/bin/bloaty
+}
+
+
+download-wild() {
+  ### Done outside the container
+
+  mkdir -p $REPO_ROOT/_cache
+  wget --directory $REPO_ROOT/_cache --no-clobber \
+    https://www.oilshell.org/blob/wild/wild-source.tar.gz
+}
+
+extract-wild() {
+  ### Done in the container build
+
+  mkdir -p $DEPS_DIR/wild/src
+  pushd $DEPS_DIR/wild/src
+  tar --extract -z < $REPO_ROOT/_cache/wild-source.tar.gz
+  popd
 }
 
 "$@"
