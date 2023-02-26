@@ -168,7 +168,7 @@ wild-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
-build-minimal       build/py.sh minimal                          -
+build-py            build/py.sh all                              -
 wild                test/wild.sh soil-run                        _tmp/wild/www/index.html
 EOF
 }

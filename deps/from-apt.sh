@@ -83,6 +83,13 @@ wild() {
   local -a packages=(
     python2-dev  # for building Python extensions
     libreadline-dev
+
+    xz-utils  # extract re2c.  TODO: medo should remove this
+    build-essential  # build re2c in C++
+    make  # to build re2c
+
+    # for cmark and yajl
+    cmake
   )
 
   apt-install "${packages[@]}"

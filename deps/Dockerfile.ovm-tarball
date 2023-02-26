@@ -18,6 +18,10 @@ USER uke
 
 COPY Python-2.7.13/ /home/uke/tmp/Python-2.7.13/
 
+# cmark tarball
+COPY --chown=uke _cache/0.29.0.tar.gz \
+  /home/uke/tmp/_cache/0.29.0.tar.gz
+
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 

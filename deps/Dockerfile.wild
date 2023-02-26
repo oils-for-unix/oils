@@ -15,12 +15,24 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 USER uke
 
-# TODO: Use a /wedge, rather than copying the tarball
+# TODO: Use a /wedge, rather than copying the tarballs
+
+# cmark tarball
+COPY --chown=uke _cache/0.29.0.tar.gz \
+  /home/uke/tmp/_cache/0.29.0.tar.gz
+
+COPY --chown=uke _cache/re2c-3.0.tar.xz \
+  /home/uke/tmp/_cache/re2c-3.0.tar.xz
+
 COPY --chown=uke _cache/wild-source.tar.gz \
   /home/uke/tmp/_cache/wild-source.tar.gz
 
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+
+RUN deps/from-tar.sh layer-cmark
+
+RUN deps/from-tar.sh build-re2c
 
 RUN deps/from-tar.sh extract-wild
 

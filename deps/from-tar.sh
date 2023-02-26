@@ -163,7 +163,6 @@ build-python() {
 #
 
 layer-cmark() {
-  download-cmark
   extract-cmark
   build-cmark
   symlink-cmark

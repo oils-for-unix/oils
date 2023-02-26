@@ -260,7 +260,7 @@ make-job-wwz() {
   zip -q -r $wwz \
     index.html \
     _test \
-    _tmp/{soil,spec,stateful,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
+    _tmp/{soil,spec,wild,stateful,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts,benchmarks}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil*.tar _release/VERSION/

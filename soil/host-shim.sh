@@ -23,8 +23,8 @@ live-image-tag() {
 
   case $image_id in
     (wild)
-      # Initial build
-      echo 'v-2023-02-26a'
+      # add re2c
+      echo 'v-2023-02-27a'
       ;;
     (cpp)
       # Added pexpect for test/stateful in C++
