@@ -22,13 +22,20 @@ source devtools/common.sh  # banner
 readonly BASE_DIR=_tmp/uftrace
 
 download() {
-  wget --no-clobber --directory _deps \
+  wget --no-clobber --directory _cache \
     https://github.com/namhyung/uftrace/archive/refs/tags/v0.13.tar.gz
     #https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
+
+}
+
+extract() {
+  pushd _cache
+  tar --extract -z < v0.13.tar.gz
+  popd
 }
 
 build() {
-  cd _deps/uftrace-0.13
+  cd _cache/uftrace-0.13
   ./configure
   make
 
