@@ -7,8 +7,8 @@
 #
 # Examples:
 #
-#   $0 raw-build   deps/source.medo/re2c.wedge.sh
-#   $0 raw-install deps/source.medo/re2c.wedge.sh  # Do it as root
+#   $0 unboxed-build   deps/source.medo/re2c.wedge.sh
+#   $0 unboxed-install deps/source.medo/re2c.wedge.sh  # Do it as root
 #
 # Input:
 #
@@ -139,7 +139,7 @@ _run-sourced-func() {
 # Actions
 #
 
-raw-build() {
+unboxed-build() {
   ### Build on the host
 
   local wedge=$1  # e.g. re2c.wedge.sh
@@ -165,7 +165,7 @@ raw-build() {
 # normal execution. Users that need stripped binaries may invoke the
 # install-strip target to do that. 
 
-_raw-install() {
+_unboxed-install() {
   local wedge=$1  # e.g. re2.wedge.sh
 
   load-wedge $wedge
@@ -173,10 +173,10 @@ _raw-install() {
   wedge-install $(build-dir)
 }
 
-raw-install() {
+unboxed-install() {
   local wedge=$1  # e.g. re2.wedge.sh
 
-  sudo $0 _raw-install "$@"
+  sudo $0 _unboxed-install "$@"
 
   load-wedge $wedge
 
@@ -185,7 +185,14 @@ raw-install() {
   echo '  OK'
 }
 
-raw-stats() {
+unboxed-smoke-test() {
+  local wedge=$1  # e.g. re2.wedge.sh
+
+  load-wedge $wedge
+  wedge-smoke-test $(install-dir)
+}
+
+unboxed-stats() {
   local wedge=$1
 
   load-wedge $wedge
@@ -207,7 +214,7 @@ create() {
 }
 
 case $1 in
-  raw-build|raw-install|raw-stats|create|_raw-install)
+  unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|unboxed-stats|create)
     "$@"
     ;;
 
