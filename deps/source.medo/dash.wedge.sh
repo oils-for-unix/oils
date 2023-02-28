@@ -1,4 +1,4 @@
-# Wedge definition for cmark
+# Wedge definition for dash
 #
 # Loaded by deps/wedge.sh.
 
@@ -7,8 +7,8 @@ set -o pipefail
 set -o errexit
 
 # sourced
-WEDGE_NAME='cmark'
-WEDGE_VERSION='0.29.0'
+WEDGE_NAME='dash'
+WEDGE_VERSION='0.5.10.2'
 
 wedge-build() {
   local src_dir=$1
@@ -17,7 +17,7 @@ wedge-build() {
 
   pushd $build_dir
 
-  time cmake -DCMAKE_INSTALL_PREFIX=$install_dir $src_dir
+  time $src_dir/configure --prefix=$install_dir
 
   time make
 
@@ -31,7 +31,7 @@ wedge-install() {
 
   pushd $build_dir
 
-  time make install
+  time make install-strip
 
   popd
 }
@@ -39,5 +39,5 @@ wedge-install() {
 wedge-smoke-test() {
   local install_dir=$1
 
-  ldd $install_dir/lib/libcmark.so.$WEDGE_VERSION
+  $install_dir/bin/dash -c 'echo "hi from dash"'
 }

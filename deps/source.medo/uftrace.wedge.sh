@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-#
 # Wedge definition for uftrace.
 #
 # Loaded by deps/wedge.sh.

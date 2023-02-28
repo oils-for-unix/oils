@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-#
 # Wedge definition for re2c.
 #
 # Loaded by deps/wedge.sh.

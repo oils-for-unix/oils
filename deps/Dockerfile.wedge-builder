@@ -16,7 +16,10 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh layer-wedge-builder
 
-RUN useradd --create-home uke && chown -R uke /home/uke
+# Password-less sudo for 'sudo make install'
+RUN useradd --create-home -G sudo uke && \
+  echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+  chown -R uke /home/uke
 
 USER uke
 

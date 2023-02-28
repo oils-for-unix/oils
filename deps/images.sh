@@ -7,15 +7,12 @@
 #
 # Example: Rebuild an image:
 #
+#   Update LATEST_TAG
 #   deps/images.sh build common  # populates apt cache.  WHY DO I NEED THIS?
 #   deps/images.sh build cpp T   # reuse package cache from apt-get
 #   deps/images.sh smoke cpp
 #
-# Update tag, then
-#   deps/images.sh tag cpp
 #   deps/images.sh push cpp
-#   deps/images.sh push cpp v-2022-08-29
-#   (I don't see why I have to push 'latest' and 'tagged' ?)
 #
 # Update live version in 'soil/host-shim.sh live-image-tag'
 #
@@ -30,6 +27,9 @@
 set -o nounset
 set -o pipefail
 set -o errexit
+
+# Build with this tag
+readonly LATEST_TAG='v-2023-02-28d'
 
 # BUGS in Docker.
 #
@@ -74,14 +74,15 @@ build() {
   # It is more parallel and has colored output.
 
   sudo DOCKER_BUILDKIT=1 \
-    docker build "${flags[@]}" --tag oilshell/soil-$name --file deps/Dockerfile.$name .
+    docker build "${flags[@]}" \
+    --tag "oilshell/soil-$name:$LATEST_TAG" \
+    --file deps/Dockerfile.$name .
 }
 
 tag() {
   local name=${1:-dummy}
 
-  local tag='v-2023-02-28'
-  sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$tag 
+  sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$LATEST_TAG
 }
 
 list-images() {
@@ -115,15 +116,9 @@ list-tagged() {
 
 push() {
   local name=${1:-dummy}
-  local tag=${2:-}
+  local tag=${2:-$LATEST_TAG}
 
-  local image
-  if test -n "$tag"; then
-    image="oilshell/soil-$name:$tag"
-  else
-    image="oilshell/soil-$name:latest"
-  fi
-
+  local image="oilshell/soil-$name:$tag"
   sudo docker push $image
 }
 
