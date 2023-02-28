@@ -23,12 +23,12 @@ live-image-tag() {
 
   case $image_id in
     (wild)
-      # Rebuild with smaller common layer without GCC
+      # Rebuild with smaller common layer, without GCC
       echo 'v-2023-02-28e'
       ;;
     (cpp)
-      # Added pexpect for test/stateful in C++
-      echo 'v-2023-02-04'
+      # Rebuild with wedges
+      echo 'v-2023-02-28e'
       ;;
     (pea)
       # soil-common and cache mount

@@ -11,6 +11,16 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 # Build other dependencies as non-root uke
 USER uke
 
+# Copy pre-built wedges
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
+  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
+  /wedge/oils-for-unix.org/pkg/re2c/3.0
+
 # We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
 # a sibling of the runtime bind mount /home/uke/oil.
 
@@ -25,22 +35,12 @@ RUN deps/from-R.sh other-tests
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
-# cmark tarball
-COPY --chown=uke _cache/0.29.0.tar.gz \
-  /home/uke/tmp/_cache/0.29.0.tar.gz
-
-# cmark is used to make benchmark HTML
-RUN deps/from-tar.sh layer-cmark
-
 COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \
   /home/uke/tmp/_cache/bloaty-1.1.tar.bz2
 RUN deps/from-tar.sh layer-bloaty && \
     deps/from-tar.sh clean-temp
 
-# TODO: slim down re2c, Python 3, like clean-temp
-
-# re2c
-RUN deps/from-tar.sh layer-re2c
+# TODO: slim down Python 3 with wedge
 
 # Run MyPy under Python 3.10
 # Problem: .py files in _cache are used?
