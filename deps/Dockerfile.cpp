@@ -21,6 +21,11 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
+# For measuring sizes
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/bloaty/1.1 \
+  /wedge/oils-for-unix.org/pkg/bloaty/1.1
+
 # We're in /home/uke/tmp, so these will create /home/uke/oil_DEPS, which will be 
 # a sibling of the runtime bind mount /home/uke/oil.
 
@@ -34,11 +39,6 @@ RUN deps/from-R.sh other-tests
 # Used by deps/from-tar.sh
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
-
-COPY --chown=uke _cache/bloaty-1.1.tar.bz2 \
-  /home/uke/tmp/_cache/bloaty-1.1.tar.bz2
-RUN deps/from-tar.sh layer-bloaty && \
-    deps/from-tar.sh clean-temp
 
 # TODO: slim down Python 3 with wedge
 

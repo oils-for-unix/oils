@@ -13,7 +13,8 @@ source test/common.sh  # run-test-funcs
 source devtools/common.sh
 
 # not using build/dev-shell.sh for now
-readonly PY3=../oil_DEPS/python3
+#readonly PY3=../oil_DEPS/python3
+readonly PY3=/wedge/oils-for-unix.org/pkg/python3/3.10.4/bin/python3
 
 parse-one() {
   # Use PY3 because Python 3.8 and above has type comments
@@ -43,25 +44,14 @@ parse-all() {
   time all-files | xargs --verbose -- $0 parse-one
 }
 
-dump-sys-path() {
-  ### Dump for debugging
-  python3 -c 'import sys; print(sys.path)'
-}
-
-pip3-lib-path() {
-  ### python3.6 on Ubuntu; python3.7 in debian:buster-slim in the container
-  shopt -s failglob
-  echo ~/.local/lib/python3.?/site-packages
-}
-
 check-types() {
   #mypy_ test/py3_parse.py
 
-  local pip3_lib_path
-  pip3_lib_path=$(pip3-lib-path)
+  # Note: not using mycpp/common.sh maybe-our-python3
 
-  PYTHONPATH=$pip3_lib_path ../oil_DEPS/python3 \
-    ~/.local/bin/mypy --strict pea/pea_main.py
+  #local py3=../oil_DEPS/python3
+
+  $PY3 -m mypy --strict pea/pea_main.py
 }
 
 test-translate() {

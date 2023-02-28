@@ -31,8 +31,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (pea)
-      # soil-common and cache mount
-      echo 'v-2022-09-24'
+      # Rebuild with wedges
+      echo 'v-2023-02-28e'
       ;;
     (dev-minimal)
       # soil-common and cache mount

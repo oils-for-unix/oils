@@ -14,7 +14,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh  # for log, $CLANGXX
-source deps/from-apt.sh   # PY3_DEPS
+source deps/from-apt.sh   # PY3_BUILD_DEPS
 # TODO: We could have the user run deps/from-apt.sh directly
 
 if test -z "${IN_NIX_SHELL:-}"; then
@@ -42,7 +42,7 @@ ubuntu-deps() {
   # pass -y for say gitpod
   sudo apt "$@" install \
     $python2_package gawk libreadline-dev ninja-build cmake \
-    "${PY3_DEPS[@]}"
+    "${PY3_BUILD_DEPS}"
   set +x
 
   test/spec.sh install-shells-with-apt

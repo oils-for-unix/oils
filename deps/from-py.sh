@@ -18,7 +18,8 @@ dev-minimal() {
 }
 
 pea() {
-  pip3 install --user mypy
+  echo 'Not used by Dockerfile.pea'
+  # pip3 install --user mypy
 }
 
 cpp() {

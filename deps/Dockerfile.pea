@@ -1,22 +1,18 @@
 FROM oilshell/soil-common
 
-RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
-    du --si -s /var/cache/apt /var/lib/apt && \
-    deps/from-apt.sh pea
+# No more apt packages, only Python 3 packages
 
 USER uke
 
-# from-tar.sh has a 'wget' step which we're skipping
-COPY --chown=uke _cache/Python-3.10.4.tar.xz \
-  /home/uke/tmp/_cache/Python-3.10.4.tar.xz
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
+  /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
-COPY build/common.sh /home/uke/tmp/build/common.sh
-COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
-RUN deps/from-tar.sh layer-py3
+# Install MyPy with the python3 wedge
+RUN /wedge/oils-for-unix.org/pkg/python3/3.10.4/bin/python3 -m pip \
+  install mypy
 
-COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
-RUN deps/from-py.sh pea
+# pea/TEST.sh uses the wedge as well
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-pea'"]
 

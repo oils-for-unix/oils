@@ -104,7 +104,14 @@ die() {
 #
 
 source-dir() {
-  echo "$REPO_ROOT/_cache/$WEDGE_NAME-$WEDGE_VERSION"
+  if test -n "${WEDGE_TARBALL_NAME:-}"; then
+
+    # for Python-3.10.4 to override 'python3' package name
+    echo "$REPO_ROOT/_cache/$WEDGE_TARBALL_NAME-$WEDGE_VERSION"
+
+  else
+    echo "$REPO_ROOT/_cache/$WEDGE_NAME-$WEDGE_VERSION"
+  fi
 }
 
 build-dir() {
@@ -117,15 +124,20 @@ install-dir() {
 }
 
 load-wedge() {
-  ### source .wedge.sh file an ensure it conforms to protocol
+  ### source .wedge.sh file and ensure it conforms to protocol
 
   local wedge=$1
 
   echo "Loading $wedge"
+  echo
+
   source $wedge
 
   echo "  OK  name: ${WEDGE_NAME?"$wedge: WEDGE_NAME required"}"
   echo "  OK  version: ${WEDGE_VERSION?"$wedge: WEDGE_VERSION required"}"
+  if test -n "${WEDGE_TARBALL_NAME:-}"; then
+    echo "  --  tarball name: $WEDGE_TARBALL_NAME"
+  fi
 
   for func in wedge-build wedge-install wedge-smoke-test; do
     if declare -f $func > /dev/null; then
@@ -147,6 +159,12 @@ _run-sourced-func() {
 #
 # Actions
 #
+
+validate() {
+  local wedge=$1
+
+  load-wedge $wedge
+}
 
 unboxed-build() {
   ### Build on the host
@@ -225,12 +243,6 @@ _build-inside() {
 
   unboxed-build $wedge
 
-  # BUG: Either remove sudo, run as root, or use docker -t ?
-  #
-  # sudo: no tty present and no askpass program specified
-  #
-  # Do you care about being root inside the container?
-
   unboxed-install $wedge
 }
 
@@ -265,7 +277,7 @@ build() {
   )
 
   local image=oilshell/soil-wedge-builder
-  local tag=v-2023-02-28d
+  local tag=v-2023-02-28e
 
   # TODO:
   # - It would be nice to make the repo root mount read-only
@@ -293,7 +305,7 @@ if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
 fi
 
 case $1 in
-  unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|unboxed-stats|build|_build-inside)
+  validate|unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|unboxed-stats|build|_build-inside)
     "$@"
     ;;
 

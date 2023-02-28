@@ -14,7 +14,7 @@ set -o errexit
 #   libssl-dev: to download packages
 #   libffi-dev: for working setuptools
 #   zlib1g-dev: needed for 'import zlib'
-declare -a PY3_DEPS=(libssl-dev libffi-dev zlib1g-dev)
+declare -a PY3_BUILD_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
 # for deps/from-R.sh
 declare -a R_DEPS=(
@@ -57,6 +57,10 @@ layer-wedge-builder() {
 
     # For 'deps/wedge.sh unboxed-install'
     sudo
+
+    # Make sure Python3 wedge works.
+    # Dockerfile.{cpp,pea,..} need runtime deps if they do pip3 install
+    "${PY3_BUILD_DEPS[@]}"
   )
 
   apt-get update
@@ -95,7 +99,7 @@ layer-locales() {
 test-image() {
   ### For testing builds, not run on CI
 
-  apt-install build-essential "${PY3_DEPS[@]}"
+  apt-install build-essential "${PY3_BUILD_DEPS[@]}"
 }
 
 wild() {
@@ -136,7 +140,9 @@ dev-minimal() {
 
 pea() {
   # For installing MyPy
-  apt-install python3-pip
+  # apt-install python3-pip
+
+  echo 'None'
 }
 
 other-tests() {
@@ -162,29 +168,26 @@ cpp() {
   ### For both cpp-small and cpp-spec
 
   local -a packages=(
-    build-essential
-
-    # retrieving deps -- TODO: move to build time
-    wget
-
-    # line_input.so needs this
+    # for build/py.sh all
     libreadline-dev
     python2-dev
+
+    build-essential
+
+    # retrieving deps like benchmarks/osh-runtime -- TODO: move to build time
+    wget
 
     # for type checking with MyPy binary
     python3
     python3-pip  # for pexpect
 
     # for custom Python 3
-    "${PY3_DEPS[@]}"
+    # I think we should have a working pip3 ?
+    # "${PY3_BUILD_DEPS[@]}"
 
     "${R_DEPS[@]}"
 
-    # To build bloaty
-    # TODO: should we use multi-stage builds?
-    cmake
-    bzip2  # to extract bloaty
-
+    # To build Oil
     ninja-build
     # to create _test/index.html
     gawk
@@ -220,7 +223,7 @@ clang() {
     python3-venv  # TODO: try removing
 
     # for custom Python 3
-    "${PY3_DEPS[@]}"
+    "${PY3_BUILD_DEPS[@]}"
   )
 
   apt-install "${packages[@]}"
