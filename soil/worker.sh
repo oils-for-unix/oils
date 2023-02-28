@@ -30,6 +30,8 @@ dump-timezone() {
 dump-versions() {
   set +o errexit
 
+  source build/dev-shell.sh  # python3 may be here
+
   set -x
   which python2
   python2 -V

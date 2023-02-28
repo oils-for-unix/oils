@@ -3,7 +3,7 @@
 # Quick test for a potential rewrite of mycpp.
 #
 # Usage:
-#   test/py3_parse.sh <function name>
+#   pea/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -11,20 +11,17 @@ set -o errexit
 
 source test/common.sh  # run-test-funcs
 source devtools/common.sh
-
-# not using build/dev-shell.sh for now
-#readonly PY3=../oil_DEPS/python3
-readonly PY3=/wedge/oils-for-unix.org/pkg/python3/3.10.4/bin/python3
+source build/dev-shell.sh  # find python3 in /wedge PATH component
 
 parse-one() {
   # Use PY3 because Python 3.8 and above has type comments
-  PYTHONPATH=. $PY3 pea/pea_main.py parse "$@"
+  PYTHONPATH=. python3 pea/pea_main.py parse "$@"
 }
 
 translate-cpp() {
   ### Used by mycpp/NINJA-steps.sh
 
-  PYTHONPATH=. $PY3 pea/pea_main.py cpp "$@"
+  PYTHONPATH=. python3 pea/pea_main.py cpp "$@"
 }
 
 all-files() {
@@ -51,7 +48,7 @@ check-types() {
 
   #local py3=../oil_DEPS/python3
 
-  $PY3 -m mypy --strict pea/pea_main.py
+  python3 -m mypy --strict pea/pea_main.py
 }
 
 test-translate() {

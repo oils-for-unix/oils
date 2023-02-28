@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/dev-shell.sh  # may use different python3
+
 dev-minimal() {
   # Python 2 packages for linting linting Python 2 code.
   pip install --user flake8 typing
@@ -24,7 +26,7 @@ pea() {
 
 cpp() {
   # pexpect is for test/stateful
-  pip3 install --user mypy pexpect
+  python3 -m pip install --user mypy pexpect
 }
 
 "$@"

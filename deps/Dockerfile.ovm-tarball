@@ -14,19 +14,23 @@ RUN deps/from-apt.sh layer-python-symlink
 
 USER uke
 
-# TODO: Optimize the size of Python 2.7, cmark, re2c, spec-bin
+# Copy pre-built wedges
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
+  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
+  /wedge/oils-for-unix.org/pkg/re2c/3.0
+
+# TODO: Could make a wedges out of Python 2.7, and all shells in spec-bin
 
 COPY Python-2.7.13/ /home/uke/tmp/Python-2.7.13/
-
-# cmark tarball
-COPY --chown=uke _cache/0.29.0.tar.gz \
-  /home/uke/tmp/_cache/0.29.0.tar.gz
 
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
-RUN deps/from-tar.sh layer-cmark
-RUN deps/from-tar.sh layer-re2c
 RUN deps/from-tar.sh layer-cpython
 
 COPY test/spec-common.sh /home/uke/tmp/test/spec-common.sh

@@ -594,9 +594,9 @@ _tarball-links-row-html() {
 </tr>
 EOF
 
-  # only release .xz for oils-for-unix
-  for name in oil-$version.tar.{xz,gz} \
-    oils-for-unix-$version.tar.xz \
+  # we switched to .gz for oils for Unix
+  for name in oil-$version.tar.{gz,xz} \
+    oils-for-unix-$version.tar.{gz,xz} \
     oil-native-$version.tar.xz; do
 
     local url="/download/$name"  # The server URL

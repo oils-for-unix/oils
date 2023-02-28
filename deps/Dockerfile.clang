@@ -10,38 +10,29 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 USER uke
 
-# Used by deps/from-binary.sh
-COPY build/common.sh /home/uke/tmp/build/common.sh
-
 # Copy pre-built Clang to use Clang's coverage
 #
-# Requires deps/from-binary.sh download-clang beforehand
-# Note that the path is changed from ~/oil/_cache to ~/oil_DEPS
-# - If both are ~/oil/_cache, ~/oil is mounted at runtime
-# - If both are ~/oil_DEPS, the Docker context is wrong
-# 
-# Not sure why --chown=uke is necessary here and not above
+# Note we don't expand the .xz file at build time.  That makes the Docker image
+# bigger.  Instead, we expand it at runtime.
 
 COPY --chown=uke _cache/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz \
   /home/uke/oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 
 # re2c
-COPY --chown=uke _cache/re2c-3.0.tar.xz \
-  /home/uke/tmp/_cache/re2c-3.0.tar.xz
-COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
-RUN deps/from-tar.sh build-re2c
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
+  /wedge/oils-for-unix.org/pkg/re2c/3.0
 
-# mypy deps: Installs from PyPI
-# needed to measure coverage of mycpp/examples
+# To install MyPy and deps
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
+  /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
-# Run MyPy under Python 3.10
-COPY --chown=uke _cache/Python-3.10.4.tar.xz \
-  /home/uke/tmp/_cache/Python-3.10.4.tar.xz
-RUN deps/from-tar.sh layer-py3
-
-COPY mycpp/common.sh /home/uke/tmp/mycpp/common.sh
+# Installs from PyPI
 COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh
+COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
+
 RUN deps/from-git.sh layer-mycpp
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-clang'"]

@@ -118,8 +118,9 @@ dev-minimal() {
     # Shouldn't require a C++ compiler in build-essential?  Only gcc?
 
     libreadline-dev
-    procps  # pgrep used by test/interactive
     gawk
+
+    procps  # pgrep used by test/stateful
 
     python2-dev  # for building Python extensions
     python-setuptools  # Python 2, for flake8
@@ -147,7 +148,7 @@ pea() {
 
 other-tests() {
   local -a packages=(
-    # Includes C++ compiler.  This popped up with --no-install-recommends
+    # TODO: try g++
     build-essential
 
     libreadline-dev
@@ -155,6 +156,7 @@ other-tests() {
 
     make  # to build py27.grammar.marshal, ugh
 
+    # TODO: Try removing
     # for py3-parse -- is this obsolete?
     python3
 
@@ -164,27 +166,40 @@ other-tests() {
   apt-install "${packages[@]}"
 }
 
+cpp-small() {
+  local -a packages=(
+    # for build/py.sh all
+    libreadline-dev
+    python2-dev
+
+    # To compile Oil
+    g++
+    ninja-build
+
+    # For some tests
+    gawk
+
+    # for MyPy git clone https://.  TODO: remove when the build is hermetic
+    ca-certificates
+  )
+
+  apt-install "${packages[@]}"
+}
+
 cpp() {
-  ### For both cpp-small and cpp-spec
+  ### For cpp-spec, benchmarks
 
   local -a packages=(
     # for build/py.sh all
     libreadline-dev
     python2-dev
 
+    # build-essential is for building Debian packages, which we're not really
+    # doing.
+    # TODO: try 'g++' package
     build-essential
 
-    # retrieving deps like benchmarks/osh-runtime -- TODO: move to build time
-    wget
-
-    # for type checking with MyPy binary
-    python3
-    python3-pip  # for pexpect
-
-    # for custom Python 3
-    # I think we should have a working pip3 ?
-    # "${PY3_BUILD_DEPS[@]}"
-
+    # For benchmarks only
     "${R_DEPS[@]}"
 
     # To build Oil
@@ -194,8 +209,23 @@ cpp() {
 
     # for stable benchmarks
     valgrind
-    # the shell benchmarks compare shells
+
+    # benchmarks compare system shells -- they don't use our spec-bin?  In case
+    # there are perf bugs caused by the build
     busybox-static mksh zsh
+
+    # Can remove some of these
+
+    # Keep system Python for awhile, e.g. for
+    python3
+    python3-pip  # for pexpect
+
+    # retrieving deps like benchmarks/osh-runtime -- TODO: move to build time
+    wget
+
+    # for custom Python 3
+    # I think we should have a working pip3 ?
+    # "${PY3_BUILD_DEPS[@]}"
   )
 
   apt-install "${packages[@]}"
@@ -205,25 +235,18 @@ clang() {
   ### For cpp-coverage
 
   local -a packages=(
-    # retrieving deps -- TODO: move to build time
-    wget
-
-    build-essential
-    xz-utils  # to extract Clang
-
-    # build/py.sh minimal is necessary to run tests?
+    # For build/py.sh minimal
     libreadline-dev
     python2-dev
 
+    # Compile Oils
+    g++
     ninja-build
 
-    # for type checking with MyPy binary
-    python3
-    python3-pip  # TODO: try removing
-    python3-venv  # TODO: try removing
+    xz-utils  # to extract Clang
 
-    # for custom Python 3
-    "${PY3_BUILD_DEPS[@]}"
+    # for MyPy git clone https://.  TODO: remove when the build is hermetic
+    ca-certificates
   )
 
   apt-install "${packages[@]}"
@@ -231,12 +254,16 @@ clang() {
 
 ovm-tarball() {
   local -a packages=(
-    # retrieving deps -- TODO: move to build time
+    # build/py.sh all
+    libreadline-dev
+    python2-dev
+
+    # retrieving spec-bin -- TODO: move to build time
     wget
     # for wget https://.  TODO: remove when the build is hermetic
     ca-certificates
 
-    # spec tests need the 'time' command, not the shell builtin
+    # when spec tests use 'time', dash falls back on 'time' command
     'time'
 
     # This is a separate package needed for re2c.  TODO: remove when we've
@@ -244,15 +271,11 @@ ovm-tarball() {
     g++
     # for cmark and yajl
     cmake
-    # needed to build cmark (although we could use Ninja)
+    # needed to build CPython
     make
 
-    xz-utils  # extract e.g. re2c tarball
+    xz-utils  # extract e.g. zsh/yash tarballs
     bzip2  # extract e.g. busybox tarball
-
-    # line_input.so needs this
-    libreadline-dev
-    python2-dev
 
     # for syscall measurements
     strace

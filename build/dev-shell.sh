@@ -6,10 +6,16 @@
 #
 # Note: assumes that $REPO_ROOT is $PWD.
 
-# TODO: Move everything into 'bin'
-readonly DEPS_BIN_DIR="$PWD/../oil_DEPS/bin"
-if test -d $DEPS_BIN_DIR; then
-  export PATH="$DEPS_BIN_DIR:$PATH"
+# Old location for python3
+readonly DEPS_DIR="$PWD/../oil_DEPS"
+if test -f $DEPS_DIR/python3; then
+  export PATH="$DEPS_DIR:$PATH"
+fi
+
+# Takes precedence over ../oil_DEPS.  TODO: always use wedge
+readonly WEDGE_PY3_DIR=/wedge/oils-for-unix.org/pkg/python3/3.10.4/bin
+if test -d $WEDGE_PY3_DIR; then
+  export PATH="$WEDGE_PY3_DIR:$PATH"
 fi
 
 readonly WEDGE_BLOATY_DIR=/wedge/oils-for-unix.org/pkg/bloaty/1.1  # not in bin
@@ -47,9 +53,8 @@ fi
 # TODO: I should fix the machines, and make this a FATAL error.  The $PATH
 # leaks on purpose because we might want to run with nix-shell -- see
 # test/spec-common.sh.
-good_path=${PATH//::/:}
-if test "$good_path" != "$PATH"; then
-  #echo "Warning: Fixing PATH misconfigured with current dir: $PATH" >&2
-  PATH=$good_path
-fi
-
+case $PATH in
+  *::*)
+    PATH=$(echo "$PATH" | sed 's/::/:/g')
+    ;;
+esac

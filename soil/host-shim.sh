@@ -34,6 +34,19 @@ live-image-tag() {
       # Rebuild with wedges
       echo 'v-2023-02-28e'
       ;;
+    (cpp-small)
+      # Create new image with wedges
+      echo 'v-2023-02-28e'
+      ;;
+    (clang)
+      # Rebuild with wedges
+      echo 'v-2023-02-28e'
+      ;;
+    (ovm-tarball)
+      # Rebuild with SOME wedges, coudl have more
+      echo 'v-2023-02-28e'
+      ;;
+
     (dev-minimal)
       # soil-common and cache mount
       echo 'v-2022-09-24'
@@ -44,14 +57,6 @@ live-image-tag() {
       ;;
     (other-tests)
       # soil-common and cache mount
-      echo 'v-2022-09-25'
-      ;;
-    (ovm-tarball)
-      # soil-common and cache mount
-      echo 'v-2022-09-25'
-      ;;
-    (clang)
-      # Updated with layer-py3
       echo 'v-2022-09-25'
       ;;
     (*)
@@ -232,7 +237,7 @@ run-job-uke() {
       # allocate pseudo TTY, otherwise fails on opening /dev/tty 
       flags=( -t )
       ;;
-    (cpp-small|cpp-spec|benchmarks)
+    (cpp-spec|benchmarks)
       image_id='cpp'
       ;;
     (cpp-coverage)
@@ -323,6 +328,7 @@ local-test-uke() {
   # Simulate sourcehut with 'local-test-uke dummy dummy'
   local job_name=${1:-dummy}
   local job2=${2:-}
+  local debug_shell=${3:-}  # add 'bash' to change it to a debug shell
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
 
@@ -336,7 +342,9 @@ local-test-uke() {
   git checkout $branch
 
   sudo $0 mount-perms $fresh_clone
-  sudo $0 run-job-uke docker $fresh_clone $job_name
+  sudo $0 run-job-uke docker $fresh_clone $job_name "$debug_shell"
+
+  # Run another job in the same container, to test interactions
 
   if test -n "$job2"; then
     $0 job-reset
@@ -347,12 +355,8 @@ local-test-uke() {
 local-shell() {
   local job_name=${1:-cpp}
 
-  # Note: this currently requires local-test-uke first.  TODO: Remove that
-  # restriction.
-
-  local repo_root=/tmp/soil-$job_name
-  # Run bash as debug shell
-  sudo $0 run-job-uke docker $repo_root $job_name bash
+  # no job 2
+  local-test-uke $job_name '' bash
 }
 
 cleanup() {

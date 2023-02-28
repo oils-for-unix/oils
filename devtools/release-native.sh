@@ -35,8 +35,8 @@ make-tar() {
   PYTHONPATH=. build/ninja_main.py tarball-manifest \
     | xargs -- tar --create --transform "$sed_expr" --file $tar
 
-  local tar_xz=_release/${app_name}-${OIL_VERSION}.tar.xz
-  xz -c $tar > $tar_xz
+  local tar_gz=_release/${app_name}-${OIL_VERSION}.tar.gz
+  gzip -c $tar > $tar_gz
 
   ls -l _release
 }

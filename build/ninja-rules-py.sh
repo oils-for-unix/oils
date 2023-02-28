@@ -11,8 +11,8 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source $REPO_ROOT/mycpp/common.sh  # maybe-our-python3
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
+source mycpp/common-vars.sh  # MYPY_REPO
 
 example-main() {
   local main_module=${1:-fib_iter}
@@ -195,10 +195,13 @@ benchmark-table() {
   } > $out
 }
 
-# For consistency, use the copy of MyPy in our mycpp dependencies
+# TODO: No longer works.  This is called by ninja mycpp-check
+# I think it's giving strict warnings.
 mypy() {
   ( source $MYCPP_VENV/bin/activate
-    PYTHONPATH=$MYPY_REPO maybe-our-python3 -m mypy "$@";
+    # Don't need this since the virtualenv we created with it?
+    # source build/dev-shell.sh
+    PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
   )
 }
 
@@ -247,12 +250,16 @@ shift 2
 
 . $REPO_ROOT/mycpp/common-vars.sh  # for $MYCPP_VENV $MYPY_REPO
 
+# puts mycpp-venv/bin/ on $PATH to find python3
 . $MYCPP_VENV/bin/activate  # so MyPy can import
+
+# This also modifies $PATH; do not combine
+# . build/dev-shell.sh
 
 tmp=$out.tmp  # avoid creating partial files
 
 PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
-  ../oil_DEPS/python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+  python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
 status=$?
 
 mv $tmp $out
@@ -271,7 +278,7 @@ shift 2
 tmp=$out.tmp  # avoid creating partial files
 
 PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
-  ../oil_DEPS/python3 pea/pea_main.py cpp "$@" > $tmp
+  python3 pea/pea_main.py cpp "$@" > $tmp
 status=$?
 
 mv $tmp $out
