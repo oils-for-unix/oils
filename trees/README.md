@@ -198,7 +198,23 @@ be versioned, immutable, and cached, so it doesn't use timestamps!
 Distributed builds, too?  Multiple workers can pull and publish intermediate
 values to the same Silo.
 
+Key ideas:
+
+- the knot worker pulls tasks and is pointed at source.medo and derived.medo
+  directories.
+- All of this metadata is in git.  The git repo is sync'd on worker
+  initialization, and continually updated.
+  - TODO: if 2 workers grab the same task, it should be OK.  One of their git
+    commits will fail?
+- The worker does a lazy 'medo sync'
+- The worker keeps a local cache of the Silo, according to the parts of the
+  Medo it needs
+  - It can give HINTS for differential compression, saying "I have
+    Python-3.10.4, send me delta for Python-3.10.5"
+  - If all metadata is local, it can be even smarter
+
 (Name: it's geometry like "wedge", and hopefully cuts a "Gordian knot.")
+
 
 ## TODO 
 

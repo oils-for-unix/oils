@@ -31,7 +31,19 @@ from doctools import oil_doc
 # I think normally you'd just patch/substitute this path during the Nix build.
 # See note in shell.nix
 this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
-libname = os.environ.get('_NIX_SHELL_LIBCMARK', os.path.join(this_dir, '../../oil_DEPS/libcmark.so'))
+
+cmark1 = os.environ.get('_NIX_SHELL_LIBCMARK')
+cmark2 = os.path.join(this_dir, '../../oil_DEPS/libcmark.so')
+cmark3 = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0/lib/libcmark.so'  # a symlink
+
+if cmark1 is not None and os.path.exists(cmark1):
+  libname = cmark1
+elif os.path.exists(cmark2):
+  libname = cmark2
+elif os.path.exists(cmark3):
+  libname = cmark3
+else:
+  raise AssertionError("Couldn't find libcmark.so")
 
 cmark = ctypes.CDLL(libname)
 

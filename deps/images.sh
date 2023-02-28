@@ -151,9 +151,12 @@ done
 
 cmd() {
   ### Run an arbitrary command
-  local name=$1
-  shift
-  sudo docker run oilshell/soil-$name "$@"
+  local name=${1:-dummy}
+  local tag=${2:-$LATEST_TAG}
+
+  shift 2
+
+  sudo docker run oilshell/soil-$name:$tag "$@"
 }
 
 utf8() {
@@ -210,13 +213,16 @@ save() {
 
 layers() {
   local name=${1:-dummy}
+  local tag=${2:-$LATEST_TAG}
+
+  local image="oilshell/soil-$name:$tag"
 
   # Gah this still prints 237M, not the exact number of bytes!
   # --format ' {{ .Size }} ' 
-  sudo docker history --no-trunc oilshell/soil-$name
+  sudo docker history --no-trunc $image
 
   echo $'Size\tVirtual Size'
-  sudo docker inspect oilshell/soil-$name \
+  sudo docker inspect $image \
     | jq --raw-output '.[0] | [.Size, .VirtualSize] | @tsv' \
     | commas
 }

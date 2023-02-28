@@ -22,8 +22,13 @@ if test -d $DEPS_BIN_DIR; then
   export PATH="$DEPS_BIN_DIR:$PATH"
 fi
 
+# TODO: Always use wedge dirs?
+WEDGE_RE2C_DIR=/wedge/oils-for-unix.org/pkg/re2c/3.0/bin
+
 if test -d $RE2C_DIR; then
   export PATH="$RE2C_DIR:$PATH"
+elif test -d $WEDGE_RE2C_DIR; then
+  export PATH="$WEDGE_RE2C_DIR:$PATH"
 fi
 
 if test -d $ASH_SYMLINK_DIR; then

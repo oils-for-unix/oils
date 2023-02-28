@@ -69,11 +69,21 @@
 #       re2c/
 #         3.0/
 
-# TODO: Install BUILD_PACKAGES in the build container
+# Oil temp dir structure
 #
-#   Dockerfile.wedge-builder
-
-readonly -a BUILD_PACKAGES=( build-essential make )
+# ~/git/oilshell/oil
+#   _build/
+#     obj/       # for C++ / Ninja
+#     wedge/     # for containerized builds
+#       source/          # sync'd from deps/source.medo
+#       unboxed-tmp/     # build directory
+#       binary/          # output of containerized build
+#                        # can be mounted
+#                   
+# Then Dockerfile.wild does:
+#
+#  COPY _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
+#    /wedge/oils-for-unix.org/pkg/re2c/3.0
 
 set -o nounset
 set -o pipefail
@@ -96,11 +106,6 @@ die() {
 source-dir() {
   echo "$REPO_ROOT/_cache/$WEDGE_NAME-$WEDGE_VERSION"
 }
-
-# _build/wedge/
-#   ro-mount/    # for the inputs
-#   tmp/         # build directory
-#   out/         # output of containerized build
 
 build-dir() {
   echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME"
@@ -234,11 +239,9 @@ build() {
   # TODO: Specify the container OS, CPU like x86-64, etc.
 
   local wedge=$1
-  local wedge_out_dir=$2
+  local wedge_out_dir=${2:-_build/wedge/binary}
 
-  if ! test -d $wedge_out_dir; then
-    die "$wedge_out_dir doesn't exist"
-  fi
+  mkdir -p $wedge_out_dir
 
   # Can use podman too
   local docker=${3:-docker}
@@ -251,6 +254,7 @@ build() {
   #  INPUTS: the PKG.wedge.sh, and the tarball
   #  CODE: this script: deps/wedge.sh
   #  OUTPUT: /wedge/oils-for-unix.org
+  #    TODO: Also put logs and symbols somewhere
 
   local repo_root=$REPO_ROOT
   local -a flags=()
