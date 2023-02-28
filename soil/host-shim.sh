@@ -23,8 +23,8 @@ live-image-tag() {
 
   case $image_id in
     (wild)
-      # add re2c
-      echo 'v-2023-02-28d'
+      # Rebuild with smaller common layer without GCC
+      echo 'v-2023-02-28e'
       ;;
     (cpp)
       # Added pexpect for test/stateful in C++

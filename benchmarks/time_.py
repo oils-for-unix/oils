@@ -6,7 +6,9 @@ The interface of this program is modelled after:
 
 /usr/bin/time --append --output foo.txt --format '%x %e'
 
-Problems with /usr/bin/time:
+Why we're not using /usr/bin/time:
+- We need to print extra TSV fields at the end of the row, but it prints a newline
+- It prints extraneous output: 'Command exited with non-zero status 1'
 - Elapsed time only has 2 digits of precision.  Apparently it uses times()
   rather than getrusage()?  https://unix.stackexchange.com/questions/70653/increase-e-precision-with-usr-bin-time-shell-command 
 
@@ -25,7 +27,7 @@ This program also writes CSV and TSV directly.
 - CSV values get escaped
 - TSV values can't have tabs
 
-Real solution: Write a tiny C program to do it, and ditch /usr/bin/time.
+So we use a tiny C program time-helper.c to do it, and not /usr/bin/time.
 """
 from __future__ import print_function
 
@@ -37,8 +39,17 @@ import subprocess
 import time
 
 THIS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
-TIME_HELPER = os.path.abspath(
-    os.path.join(THIS_DIR, '../_devbuild/bin/time-helper'))
+
+time1 = os.path.abspath(os.path.join(THIS_DIR, '../_devbuild/bin/time-helper'))
+# Pre-built one
+time2 = '/wedge/oils-for-unix.org/pkg/time-helper/2023-02-28/time-helper'
+
+if os.path.exists(time1):
+  TIME_HELPER = time1
+elif os.path.exists(time2):
+  TIME_HELPER = time2
+else:
+  raise AssertionError('time-helper not found')
 
 
 def log(msg, *args):

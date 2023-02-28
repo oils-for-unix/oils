@@ -224,7 +224,7 @@ EOF
   # First column is number of bytes; ignore header
   local total_bytes=$(awk '
       { sum += $1 }
-  END { print sum / 1000000 }
+  END { printf("%.1f", sum / 1000000) }
   ' $soil_dir/image-layers.tsv)
 
   echo "<p>Total Size: <b>$total_bytes MB</b></p>"

@@ -21,3 +21,7 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 # packages.
 
 RUN useradd --create-home uke && chown -R uke /home/uke
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/time-helper/2023-02-28 \
+  /wedge/oils-for-unix.org/pkg/time-helper/2023-02-28

@@ -3,6 +3,7 @@
 # Start with build/dev.sh minimal, then later add run with _bin/cxx-opt/osh,
 # including the translator.
 
+# Note: have to push latest tag to see this?
 FROM oilshell/soil-common
 
 # Copy again to prevent unsound caching

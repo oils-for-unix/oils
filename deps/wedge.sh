@@ -179,7 +179,8 @@ _unboxed-install() {
 
   load-wedge $wedge
 
-  wedge-install $(build-dir)
+  # Note: install-dir needed for time-helper, but not others
+  wedge-install $(build-dir) $(install-dir)
 }
 
 unboxed-install() {
@@ -257,7 +258,6 @@ build() {
   #    TODO: Also put logs and symbols somewhere
 
   local repo_root=$REPO_ROOT
-  local -a flags=()
 
   # Run unboxed-build,unboxed-install INSIDE the container
   local -a args=(
@@ -272,7 +272,9 @@ build() {
   # - Should we not mount the whole repo root?
   # - We only want to make the bare minimum of files visible, for cache invalidation
 
-  sudo $docker run "${flags[@]}" \
+  # - Disable network for hermetic builds.  TODO: Add automated test
+  sudo $docker run \
+    --network none \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
       --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
       $image:$tag \

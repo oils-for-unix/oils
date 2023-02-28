@@ -72,6 +72,7 @@ parser-task() {
 
   # exit code, time in seconds, host_hash, shell_hash, path.  \0
   # would have been nice here!
+  # TODO: TSV
   benchmarks/time_.py \
     --append \
     --output $times_out \
@@ -223,6 +224,7 @@ measure() {
   write-sorted-manifest '' $lines_out
 
   # Write Header of the CSV file that is appended to.
+  # TODO: TSV
   benchmarks/time_.py --print-header \
     --rusage \
     --field host_name --field host_hash \

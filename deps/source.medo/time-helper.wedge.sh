@@ -1,0 +1,42 @@
+# Wedge definition for time-helper
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='time-helper'
+WEDGE_VERSION='2023-02-28'
+
+wedge-build() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  # TODO: Should not have access to this!!!
+  # Usually this is _cache, but it's not here
+  local repo_root=/home/uke/oil
+
+  local in=$repo_root/benchmarks/time-helper.c
+  local out=$build_dir/time-helper
+
+  # Copied from build/py.sh time-helper
+  cc -std=c99 -o $out $in
+}
+
+wedge-install() {
+  local build_dir=$1
+  local install_dir=$2
+
+  # TODO: The harness should make this
+  mkdir -p $install_dir
+  cp $build_dir/time-helper $install_dir/time-helper
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  $install_dir/time-helper -o /dev/stdout -x true
+}

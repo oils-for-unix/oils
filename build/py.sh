@@ -466,9 +466,11 @@ demo-grammar() {
 }
 
 time-helper() {
+  local out=${1:-_devbuild/bin/time-helper}
   local in=benchmarks/time-helper.c
-  local out=_devbuild/bin/time-helper
+
   mkdir -p $(dirname $out)
+
   cc -std=c99 -o $out $in
   log "  CC $in"
 }

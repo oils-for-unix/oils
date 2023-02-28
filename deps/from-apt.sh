@@ -73,7 +73,7 @@ layer-for-soil() {
   # gcc: time-helper is needed.  TODO: remove this dependency
   # git: for checking out code
   # python2: for various tools
-  apt-install gcc git python2
+  apt-install git python2
 }
 
 layer-common() {
@@ -101,6 +101,7 @@ test-image() {
 wild() {
   # for build/py.sh all
   local -a packages=(
+    gcc  # 'cc' for compiling Python extensions
     python2-dev
     libreadline-dev
   )

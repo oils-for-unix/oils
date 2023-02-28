@@ -332,8 +332,18 @@ run-tasks() {
 
   mkdir -p $out_dir/logs
 
-  # So we can always run benchmarks/time_.py.  TODO: Use Ninja for deps.
-  build/py.sh time-helper
+  # So we can run benchmarks/time_.py.  
+  # 2023-02-28: Images like soil-wild based off the new soil-common no longer
+  # have 'cc'.  Instead they use a wedge.
+  if command -v cc > /dev/null; then
+    build/py.sh time-helper
+  else
+    echo 'test time-tsv'
+    time-tsv -o /tmp/echo.tsv --append -- echo hi
+
+    echo '/tmp/echo.tsv:'
+    cat /tmp/echo.tsv
+  fi
 
   # For the later deploy step to pick up
   date +%s > $out_dir/task-run-start-time.txt
@@ -356,7 +366,7 @@ run-tasks() {
     local timeout_secs=900
 
     set +o errexit
-    time-tsv -o $tsv --append --time-fmt '%.2f' \
+    time-tsv -o $tsv --append \
       --field $task_name --field $script --field $action \
       --field $result_html -- \
       timeout $timeout_secs $script $action >$log_path 2>&1

@@ -65,6 +65,6 @@ log() {
 }
 
 die() {
-  log "FATAL: $@"
+  log "$0: FATAL: $@"
   exit 1
 }

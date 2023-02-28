@@ -12,12 +12,16 @@
 #   deps/images.sh build cpp T   # reuse package cache from apt-get
 #   deps/images.sh smoke cpp
 #
-#   deps/images.sh push cpp
+#   deps/images.sh push cpp      # pushes the LATEST_TAG
+#
+#   sudo docker tag abcdef oilshell/soil-common:latest
+#   deps/images.sh push common latest  # update latest, for next Docker build
 #
 # Update live version in 'soil/host-shim.sh live-image-tag'
 #
 # Also useful:
 #
+#   sudo docker images oilshell/soil-common -- list tags for image
 #   deps/images.sh list-tagged
 #
 # URL
@@ -29,7 +33,7 @@ set -o pipefail
 set -o errexit
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-02-28d'
+readonly LATEST_TAG='v-2023-02-28e'
 
 # BUGS in Docker.
 #
@@ -77,12 +81,6 @@ build() {
     docker build "${flags[@]}" \
     --tag "oilshell/soil-$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
-}
-
-tag() {
-  local name=${1:-dummy}
-
-  sudo docker tag oilshell/soil-$name:latest oilshell/soil-$name:$LATEST_TAG
 }
 
 list-images() {

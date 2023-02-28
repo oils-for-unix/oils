@@ -43,13 +43,13 @@ assert() {
 run-task-with-status() {
   ### Run a process and write a file with status and time
 
+  # Used by test/{spec,wild}-runner.sh
+
   local out_file=$1
   shift
 
-  # spec/wild tests only need two digits of precision
   benchmarks/time_.py \
     --tsv \
-    --time-fmt '%.2f' \
     --output $out_file \
     -- "$@" || true  # suppress failure
 
