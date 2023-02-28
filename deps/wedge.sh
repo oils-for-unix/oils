@@ -8,7 +8,10 @@
 # Examples:
 #
 #   $0 unboxed-build   deps/source.medo/re2c.wedge.sh
-#   $0 unboxed-install deps/source.medo/re2c.wedge.sh  # Do it as root
+#   $0 unboxed-install deps/source.medo/re2c.wedge.sh
+#
+#   # Containerized build
+#   $0 build deps/source.medo/re2c.wedge.sh _tmp/wedge-out
 #
 # Input:
 #
@@ -18,10 +21,6 @@
 #       re2c.wedge.sh  # later it will be re2c.wedge.hay
 #       re2c-3.0.blob  # .tar.gz file that you can 'medo sync'
 #       re2c-3.1.blob
-#
-# Containerized build:
-#
-#   $0 create debian/bullseye deps/source.medo/re2c.wedge.sh _tmp/wedge/  # Output directory
 
 # TODO:
 # - Right now they assume shared Dockerfile.wedge-build ?  I think that's
@@ -86,7 +85,7 @@ readonly REPO_ROOT
 OILS_WEDGE_ROOT='/wedge/oils-for-unix.org'
 
 die() {
-  echo "$@" >& 2
+  echo "$0: $@" >& 2
   exit 1
 }
 
@@ -98,8 +97,13 @@ source-dir() {
   echo "$REPO_ROOT/_cache/$WEDGE_NAME-$WEDGE_VERSION"
 }
 
+# _build/wedge/
+#   ro-mount/    # for the inputs
+#   tmp/         # build directory
+#   out/         # output of containerized build
+
 build-dir() {
-  echo "$REPO_ROOT/_build/wedge/$WEDGE_NAME"
+  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME"
 }
 
 install-dir() {
@@ -207,14 +211,83 @@ unboxed-stats() {
   echo
 }
 
-create() {
-  # TODO: launch Docker container
+_build-inside() {
+  local wedge=$1
 
-  echo
+  # TODO:
+  # - Would be nice to export the logs somewhere
+
+  unboxed-build $wedge
+
+  # BUG: Either remove sudo, run as root, or use docker -t ?
+  #
+  # sudo: no tty present and no askpass program specified
+  #
+  # Do you care about being root inside the container?
+
+  unboxed-install $wedge
 }
 
+build() {
+  ### Build inside a container, and put output in a specific place.
+
+  # TODO: Specify the container OS, CPU like x86-64, etc.
+
+  local wedge=$1
+  local wedge_out_dir=$2
+
+  if ! test -d $wedge_out_dir; then
+    die "$wedge_out_dir doesn't exist"
+  fi
+
+  # Can use podman too
+  local docker=${3:-docker}
+
+  load-wedge $wedge
+
+  # TODO: 
+  #
+  # Mount
+  #  INPUTS: the PKG.wedge.sh, and the tarball
+  #  CODE: this script: deps/wedge.sh
+  #  OUTPUT: /wedge/oils-for-unix.org
+
+  local repo_root=$REPO_ROOT
+  local -a flags=()
+
+  # Run unboxed-build,unboxed-install INSIDE the container
+  local -a args=(
+      sh -c 'cd ~/oil; deps/wedge.sh _build-inside $1' dummy "$wedge"
+  )
+
+  local image=oilshell/soil-wedge-builder
+  local tag=v-2023-02-28
+
+  # TODO:
+  # - It would be nice to make the repo root mount read-only
+  # - Should we not mount the whole repo root?
+  # - We only want to make the bare minimum of files visible, for cache invalidation
+
+  sudo $docker run "${flags[@]}" \
+      --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
+      --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
+      $image:$tag \
+      "${args[@]}"
+}
+
+if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
+  # A trick for help.  TODO: Move this to a common file, and combine with help
+  # in test/spec.sh.
+
+  awk '
+  $0 ~ /^#/ { print $0 }
+  $0 !~ /^#/ { print ""; exit }
+  ' $0
+  exit
+fi
+
 case $1 in
-  unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|unboxed-stats|create)
+  unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|unboxed-stats|build|_build-inside)
     "$@"
     ;;
 

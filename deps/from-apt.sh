@@ -45,6 +45,25 @@ init-deb-cache() {
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 }
 
+layer-wedge-builder() {
+  local -a packages=(
+    # xz-utils  # do we need this for extraction?
+
+    build-essential  # build re2c in C++
+    make  # to build re2c
+
+    # for cmark and yajl
+    cmake
+
+    # For 'deps/wedge.sh unboxed-install'
+    sudo
+  )
+
+  apt-get update
+
+  apt-install "${packages[@]}"
+}
+
 layer-python-symlink() {
   ### A special layer for building CPython; done as root
   ln -s -f -v /usr/bin/python2 /usr/bin/python

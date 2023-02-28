@@ -1,0 +1,23 @@
+# For buildings wedges.  Similar to Dockerfile.common
+
+# TODO: use bullseye?
+FROM debian:buster-slim
+
+WORKDIR /home/uke/tmp
+
+# Copy again to prevent unsound caching
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+
+RUN deps/from-apt.sh init-deb-cache
+
+# Note we do apt-get update here too
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh layer-wedge-builder
+
+RUN useradd --create-home uke && chown -R uke /home/uke
+
+USER uke
+
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-wedge-builder'"]
