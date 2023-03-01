@@ -1,5 +1,3 @@
-# cpp-spec: Similar to Dockerfile.cpp-small, except for pexpect
-
 FROM oilshell/soil-common
 
 # Copy again to prevent unsound caching
@@ -8,12 +6,12 @@ COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
-    deps/from-apt.sh cpp-spec
+    deps/from-apt.sh benchmarks
 
 # Build other dependencies as non-root uke
 USER uke
 
-# Pre-built wedges
+# Copy pre-built wedges
 
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
@@ -24,19 +22,18 @@ COPY --chown=uke \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
 COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/uftrace/0.13 \
+  /wedge/oils-for-unix.org/pkg/uftrace/0.13
+
+COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
   /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
-# pexpect will use the python3 wedge; it can also use system Python
-COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
-COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
-
-RUN deps/from-py.sh cpp-spec
-
 # Install mycpp deps with python3 wedge
+COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh
 COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
 
 RUN deps/from-git.sh layer-mycpp
 
-CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp-spec'"]
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-benchmarks2'"]

@@ -11,7 +11,7 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 # Build other dependencies as non-root uke
 USER uke
 
-# Copy pre-built wedges
+# Pre-built wedges
 
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
@@ -21,16 +21,15 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
-# To install MyPy and deps
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
   /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
-# Installs from PyPI
+# Install mycpp deps with python3 wedge
 COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
 
 RUN deps/from-git.sh layer-mycpp
 
-CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp'"]
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp-small'"]

@@ -27,8 +27,12 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (benchmarks)
-      # NEW image
-      echo 'v-2023-02-28f'
+      # Clean up new image
+      echo 'v-2023-02-28g'
+      ;;
+    (benchmarks2)
+      # NEW image with uftrace
+      echo 'v-2023-02-28g'
       ;;
     (cpp-spec)
       # NEW image
@@ -62,8 +66,14 @@ live-image-tag() {
       # Rebuild with wedges
       echo 'v-2023-02-28e'
       ;;
+
+    # Not run directly
+    (common)
+      # Rebuild with wedges
+      echo 'v-2023-02-28f'
+      ;;
     (*)
-      echo 'v-2022-08-04'
+      die "Invalid image $image"
       ;;
   esac
 }

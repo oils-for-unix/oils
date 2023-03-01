@@ -7,7 +7,8 @@
 #
 # Example: Rebuild an image:
 #
-#   Update LATEST_TAG
+# - Update LATEST_TAG
+#
 #   deps/images.sh build common  # populates apt cache.  WHY DO I NEED THIS?
 #   deps/images.sh build cpp T   # reuse package cache from apt-get
 #   deps/images.sh smoke cpp
@@ -17,7 +18,7 @@
 #   sudo docker tag abcdef oilshell/soil-common:latest
 #   deps/images.sh push common latest  # update latest, for next Docker build
 #
-# Update live version in 'soil/host-shim.sh live-image-tag'
+# - Update live version in 'soil/host-shim.sh live-image-tag'
 #
 # Also useful:
 #
@@ -33,7 +34,7 @@ set -o pipefail
 set -o errexit
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-02-28f'
+readonly LATEST_TAG='v-2023-02-28g'
 
 # BUGS in Docker.
 #
@@ -93,19 +94,27 @@ list-images() {
   done
 }
 
+tag-all-latest() {
+  list-images | grep -v 'wedge-builder' | while read image; do
+    local tag
+    tag=$(soil/host-shim.sh live-image-tag $image)
+
+    echo "$tag $image"
+
+    # syntax: source -> target
+    sudo docker tag oilshell/soil-$image:$tag oilshell/soil-$image:latest
+  done
+}
+
 push-all-latest() {
   ### 'latest' can lag behind the tagged version, so push to catch up
 
   # because our 'my-sizes' script fetches the latest manifest
 
-  list-images | while read image_id; do
+  list-images | grep -v 'wedge-builder' | while read image_id; do
     echo "___ $image_id"
-    push $image_id
+    push $image_id latest
   done
-}
-
-tag-all() {
-  list-images | xargs --verbose -- $0 tag $image
 }
 
 list-tagged() {

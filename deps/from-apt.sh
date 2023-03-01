@@ -197,7 +197,7 @@ benchmarks() {
     libreadline-dev
     python2-dev
 
-    # For benchmarks only
+    # For analyzing benchmarks.  TODO: would be nice to move somewhere else.
     "${R_DEPS[@]}"
 
     # To build Oil
@@ -215,16 +215,29 @@ benchmarks() {
     # there are perf bugs caused by the build
     busybox-static mksh zsh
 
-    # Can remove some of these
-
-    # Keep system Python for awhile, e.g. for
-    python3
-    python3-pip  # for pexpect
-
     # retrieving deps like benchmarks/osh-runtime -- TODO: move to build time
     wget
     bzip2  # extracting benchmarks/osh-runtime
     xz-utils
+  )
+
+  apt-install "${packages[@]}"
+}
+
+benchmarks2() {
+  ### uftrace needs a Python plugin
+
+  local -a packages=(
+    # for build/py.sh all
+    libreadline-dev
+    python2-dev
+
+    # To build Oil
+    g++
+    ninja-build
+
+    # uftrace needs a Python 3 plugin
+    python3
   )
 
   apt-install "${packages[@]}"

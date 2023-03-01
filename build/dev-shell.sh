@@ -33,6 +33,12 @@ elif test -d $WEDGE_RE2C_DIR; then
   export PATH="$WEDGE_RE2C_DIR:$PATH"
 fi
 
+# uftrace must be installed by wedge?
+readonly UFTRACE_WEDGE_DIR=/wedge/oils-for-unix.org/pkg/uftrace/0.13/bin
+if test -d $UFTRACE_WEDGE_DIR; then
+  export PATH="$UFTRACE_WEDGE_DIR:$PATH"
+fi
+
 # FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
 if test -d $ASH_SYMLINK_DIR; then

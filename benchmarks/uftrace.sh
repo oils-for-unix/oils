@@ -18,6 +18,7 @@ set -o errexit
 
 source test/common.sh  # R_PATH
 source devtools/common.sh  # banner
+source build/dev-shell.sh  # put uftrace in $PATH
 
 readonly BASE_DIR=_tmp/uftrace
 
@@ -307,11 +308,10 @@ plugin() {
   uftrace script -S benchmarks/uftrace_plugin.py
 }
 
-# TODO:
-#
-# - all heap allocations vs. all string allocations (include StrFromC())
-#   - obj length vs. string length
-#   - the -D 1 arg interferes?
-# - parse workload vs evaluation workload (benchmarks/compute/*.sh)
+soil-run() {
+  measure-all
+  export-all
+  analyze-all
+}
 
 "$@"

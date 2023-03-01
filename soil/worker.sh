@@ -186,8 +186,6 @@ EOF
 benchmarks-tasks() {
   # (task_name, script, action, result_html)
 
-  # Note: id-test doesn't run in 'other-tests' because 'gawk' isn't in that image
-
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
@@ -199,6 +197,15 @@ vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.ht
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
 mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/index.html
+EOF
+}
+
+benchmarks2-tasks() {
+  # Note: id-test doesn't run in 'other-tests' because 'gawk' isn't in that image
+  cat <<EOF
+dump-versions    soil/worker.sh dump-versions          -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+uftrace          benchmarks/uftrace.sh soil-run        -
 EOF
 }
 
@@ -490,6 +497,7 @@ JOB-app-tests() { job-main 'app-tests'; }
 JOB-cpp-small() { job-main 'cpp-small'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
 JOB-benchmarks() { job-main 'benchmarks'; }
+JOB-benchmarks2() { job-main 'benchmarks2'; }
 
 JOB-wild() { job-main 'wild'; }
 
