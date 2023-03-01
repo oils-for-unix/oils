@@ -33,7 +33,7 @@ set -o pipefail
 set -o errexit
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-02-28e'
+readonly LATEST_TAG='v-2023-02-28f'
 
 # BUGS in Docker.
 #

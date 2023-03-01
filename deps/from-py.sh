@@ -10,12 +10,12 @@ set -o errexit
 source build/dev-shell.sh  # may use different python3
 
 dev-minimal() {
-  # Python 2 packages for linting linting Python 2 code.
+  # System Python 2 packages for linting linting Python 2 code.
   pip install --user flake8 typing
 
   # Python 3 packages
 
-  # - pexpect is for test/interactive.py
+  # pexpect is for spec/stateful
   pip3 install --user pexpect
 
   # Last official release that supported Python 2 was 0.971 in July 2022
@@ -28,9 +28,17 @@ pea() {
   # pip3 install --user mypy
 }
 
-cpp() {
-  # pexpect is for test/stateful
-  python3 -m pip install --user mypy pexpect
+# TODO:
+# - We don't really need MyPy for C++ tasks, since mycpp checks types
+# - pexpect might go in a new image for spec/stateful
+
+cpp-spec() {
+  python3 -m pip install pexpect
+}
+
+do-we-need() {
+  # Do the C++ tasks need MyPy?
+  python3 -m pip install 'mypy<=0.971'
 }
 
 "$@"

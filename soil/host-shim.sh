@@ -26,17 +26,21 @@ live-image-tag() {
       # Rebuild with smaller common layer, without GCC
       echo 'v-2023-02-28e'
       ;;
-    (cpp)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+    (benchmarks)
+      # NEW image
+      echo 'v-2023-02-28f'
+      ;;
+    (cpp-spec)
+      # NEW image
+      echo 'v-2023-02-28f'
       ;;
     (pea)
       # Rebuild with wedges
       echo 'v-2023-02-28e'
       ;;
     (cpp-small)
-      # NEW image with wedges
-      echo 'v-2023-02-28e'
+      # Cleanup
+      echo 'v-2023-02-28f'
       ;;
     (clang)
       # Rebuild with wedges
@@ -235,9 +239,6 @@ run-job-uke() {
       image_id='ovm-tarball'
       # allocate pseudo TTY, otherwise fails on opening /dev/tty 
       flags=( -t )
-      ;;
-    (cpp-spec|benchmarks)
-      image_id='cpp'
       ;;
     (cpp-coverage)
       image_id='clang'

@@ -49,11 +49,15 @@ layer-wedge-builder() {
   local -a packages=(
     # xz-utils  # do we need this for extraction?
 
-    build-essential  # build re2c in C++
+    gcc
+    g++  # re2c is C++
     make  # to build re2c
 
     # for cmark and yajl
     cmake
+
+    # cmake -G Ninja can be used
+    ninja-build
 
     # For 'deps/wedge.sh unboxed-install'
     sudo
@@ -114,8 +118,6 @@ wild() {
 
 dev-minimal() {
   local -a packages=(
-    # Shouldn't require a C++ compiler in build-essential?  Only gcc?
-
     gcc  # for building Python extensions
 
     python2-dev  # for building Python extensions
@@ -187,24 +189,22 @@ cpp-small() {
   apt-install "${packages[@]}"
 }
 
-cpp() {
-  ### For cpp-spec, benchmarks
+benchmarks() {
+  ### For benchmarks
 
   local -a packages=(
     # for build/py.sh all
     libreadline-dev
     python2-dev
 
-    # build-essential is for building Debian packages, which we're not really
-    # doing.
-    # TODO: try 'g++' package
-    build-essential
-
     # For benchmarks only
     "${R_DEPS[@]}"
 
     # To build Oil
+    g++
     ninja-build
+    make  # to build R packages
+
     # to create _test/index.html
     gawk
 
@@ -223,10 +223,30 @@ cpp() {
 
     # retrieving deps like benchmarks/osh-runtime -- TODO: move to build time
     wget
+    bzip2  # extracting benchmarks/osh-runtime
+    xz-utils
+  )
 
-    # for custom Python 3
-    # I think we should have a working pip3 ?
-    # "${PY3_BUILD_DEPS[@]}"
+  apt-install "${packages[@]}"
+}
+
+cpp-spec() {
+  ### For cpp-spec
+
+  local -a packages=(
+    # for build/py.sh all
+    libreadline-dev
+    python2-dev
+
+    # To build Oil
+    g++
+    ninja-build
+
+    # to create _test/index.html
+    gawk
+
+    # for MyPy git clone https://.  TODO: remove when the build is hermetic
+    ca-certificates
   )
 
   apt-install "${packages[@]}"

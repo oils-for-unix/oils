@@ -277,7 +277,7 @@ build() {
   )
 
   local image=oilshell/soil-wedge-builder
-  local tag=v-2023-02-28e
+  local tag=v-2023-02-28f
 
   # TODO:
   # - It would be nice to make the repo root mount read-only

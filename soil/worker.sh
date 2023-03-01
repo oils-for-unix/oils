@@ -192,6 +192,7 @@ benchmarks-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 id-test          benchmarks/id-test.sh soil-run        -
+native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/index.html
 osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
 osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
@@ -227,7 +228,6 @@ oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 asan             test/asan.sh soil-run                 -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
-native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
