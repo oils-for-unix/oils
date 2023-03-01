@@ -5,44 +5,42 @@
 # Usage:
 #   deps/wedge.sh <function name>
 #
-# Examples:
+# Example of host build:
 #
 #   $0 unboxed-build   deps/source.medo/re2c.wedge.sh
 #   $0 unboxed-install deps/source.medo/re2c.wedge.sh
 #
-#   # Containerized build
-#   $0 build deps/source.medo/re2c.wedge.sh _tmp/wedge-out
+# Containerized build:
 #
-# Input:
+#   $0 build deps/source.medo/re2c.wedge.sh
 #
+# Host dir structure:
+#
+# ~/git/oilshell/oil
 #   deps/
-#     source.medo/
+#     source.medo/     # Source Files
 #       MEDO           # points to silo
 #       re2c.wedge.sh  # later it will be re2c.wedge.hay
 #       re2c-3.0.blob  # .tar.gz file that you can 'medo sync'
 #       re2c-3.1.blob
-
-# TODO:
-# - Right now they assume shared Dockerfile.wedge-build ?  I think that's
-#   easiest.
-
-# TODO:
-# 1. Build and install re2c outside the container, for Ubuntu 18
+#     opaque.medo/     # Binary files, e.g. Clang
+#     derived.medo/    # Svaed output of 'wedge build'
 #
-# 2. Then run the same script inside a Debian container
-#    Copy the directory out
-#
-# 3. Store the tarball somewhere -- deps/derived.medo/debian/bullseye/re2c/$VERSION
-#
-# 4. Mount that result inside a container, and use it to build Oil, test Oil, etc.
+#   _build/            # Temp dirs and output
+#     obj/             # for C++ / Ninja
+#     wedge/           # for containerized builds
+#       source/        # sync'd from deps/source.medo
+#       unboxed-tmp/   # build directory
+#       boxed/         # output of containerized build
+#                      # TODO: rename from /binary/
 
-
-# Every C package has 4 dirs:
+# Every package ("wedge") has these dirs associated with it:
 #
-# 1. Where the tarball is stored
-# 2. Where it's extracted
-# 3. The directory you run ./configure --prefix; make; make install from
-# 4. The directory you install to 
+# 1. Dir with additional tests / files, near tarball and *.wedge.sh ($wedge_dir)
+# 2. Where it's extracted ($src_dir)
+# 3. The temp dir where you run ./configure --prefix; make; make install ($build_dir)
+# 4. The dir to install to ($install_dir)
+# 5. The temp dir where the smoke test is run
 
 # For Debian/Ubuntu
 
@@ -68,18 +66,7 @@
 #                        # --debug-link
 #       re2c/
 #         3.0/
-
-# Oil temp dir structure
 #
-# ~/git/oilshell/oil
-#   _build/
-#     obj/       # for C++ / Ninja
-#     wedge/     # for containerized builds
-#       source/          # sync'd from deps/source.medo
-#       unboxed-tmp/     # build directory
-#       binary/          # output of containerized build
-#                        # can be mounted
-#                   
 # Then Dockerfile.wild does:
 #
 #  COPY _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
@@ -115,12 +102,17 @@ source-dir() {
 }
 
 build-dir() {
+  # call it tmp-build?
   echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME"
 }
 
 install-dir() {
   # pkg/ leaves room for parallel debug-info/
   echo "$OILS_WEDGE_ROOT/pkg/$WEDGE_NAME/$WEDGE_VERSION"
+}
+
+smoke-test-dir() {
+  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME"
 }
 
 load-wedge() {
@@ -180,7 +172,11 @@ unboxed-build() {
 
   echo SOURCE $(source-dir)
 
+  # TODO: pushd/popd error handling
+
+  pushd $build_dir
   wedge-build $(source-dir) $build_dir $(install-dir)
+  popd
 }
 
 
@@ -193,7 +189,7 @@ unboxed-build() {
 # install-strip target to do that. 
 
 _unboxed-install() {
-  local wedge=$1  # e.g. re2.wedge.sh
+  local wedge=$1  # e.g. re2c.wedge.sh
 
   load-wedge $wedge
 
@@ -208,16 +204,33 @@ unboxed-install() {
 
   load-wedge $wedge
 
-  echo '  SMOKE TEST'
-  wedge-smoke-test $(install-dir)
-  echo '  OK'
+  unboxed-smoke-test $wedge
+
 }
 
 unboxed-smoke-test() {
   local wedge=$1  # e.g. re2.wedge.sh
 
   load-wedge $wedge
-  wedge-smoke-test $(install-dir)
+
+  local smoke_test_dir=$(smoke-test-dir)
+  local install_dir=$(install-dir)
+
+  echo '  SMOKE TEST'
+
+  # TODO: To ensure a clean dir, it might be better to test that it does NOT
+  # exist first, and just make it.  If it exists, then remove everything.
+
+  rm -r -f -v $smoke_test_dir
+  mkdir -p $smoke_test_dir
+
+  pushd $smoke_test_dir
+  set -x
+  wedge-smoke-test $install_dir
+  set +x
+  popd
+
+  echo '  OK'
 }
 
 unboxed-stats() {
@@ -245,6 +258,9 @@ _build-inside() {
 
   unboxed-install $wedge
 }
+
+readonly BUILD_IMAGE=oilshell/soil-wedge-builder
+readonly BUILD_IMAGE_TAG=v-2023-02-28g
 
 build() {
   ### Build inside a container, and put output in a specific place.
@@ -276,9 +292,6 @@ build() {
       sh -c 'cd ~/oil; deps/wedge.sh _build-inside $1' dummy "$wedge"
   )
 
-  local image=oilshell/soil-wedge-builder
-  local tag=v-2023-02-28f
-
   # TODO:
   # - It would be nice to make the repo root mount read-only
   # - Should we not mount the whole repo root?
@@ -289,7 +302,7 @@ build() {
     --network none \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
       --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
-      $image:$tag \
+      $BUILD_IMAGE:$BUILD_IMAGE_TAG \
       "${args[@]}"
 }
 

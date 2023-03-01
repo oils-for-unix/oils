@@ -211,6 +211,27 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit benchmarks T
 
+  benchmarks2:
+    runs-on: ubuntu-20.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: benchmarks2
+        run: |
+          soil/github-actions.sh run-job benchmarks2
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit benchmarks2 T
+
   cpp-small:
     runs-on: ubuntu-20.04
     env:

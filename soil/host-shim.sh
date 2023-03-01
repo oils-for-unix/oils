@@ -32,7 +32,7 @@ live-image-tag() {
       ;;
     (benchmarks2)
       # NEW image with uftrace
-      echo 'v-2023-02-28g'
+      echo 'v-2023-03-01'
       ;;
     (cpp-spec)
       # NEW image

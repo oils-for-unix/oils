@@ -6,7 +6,7 @@ COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
-    deps/from-apt.sh benchmarks
+    deps/from-apt.sh benchmarks2
 
 # Build other dependencies as non-root uke
 USER uke

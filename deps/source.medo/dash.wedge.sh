@@ -15,15 +15,10 @@ wedge-build() {
   local build_dir=$2
   local install_dir=$3
 
-  pushd $build_dir
-
   time $src_dir/configure --prefix=$install_dir
 
   time make
-
-  # make test
-
-  popd
+  # make test?
 }
 
 wedge-install() {

@@ -62,8 +62,13 @@ layer-wedge-builder() {
     # For 'deps/wedge.sh unboxed-install'
     sudo
 
-    # Make sure Python3 wedge works.
-    # Dockerfile.{cpp,pea,..} need runtime deps if they do pip3 install
+    # So uftrace configure can detect Python plugins
+    pkg-config
+    python3-dev
+
+    # Dependencies for building our own Python3 wedge.  Otherwise 'pip install'
+    # won't work.
+    # TODO: We should move 'pip install' to build time.
     "${PY3_BUILD_DEPS[@]}"
   )
 
@@ -237,7 +242,12 @@ benchmarks2() {
     ninja-build
 
     # uftrace needs a Python 3 plugin
-    python3
+    # Technically we don't need 'python3' or 'python3.7' -- only the shared
+    # lib?
+    libpython3.7
+
+    # for MyPy git clone https://.  TODO: remove when the build is hermetic
+    ca-certificates
   )
 
   apt-install "${packages[@]}"

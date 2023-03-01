@@ -263,6 +263,16 @@ report-all() {
 }
 
 export-all() {
+  set -x
+  which uftrace
+  uftrace --version
+
+  if uftrace --version | grep python3; then
+    echo 'uftrace has Python 3 plugin support'
+  else
+    die 'uftrace is MISSING Python 3 plugin support'
+  fi
+
   # TODO: Join into a single TSV file
   print-tasks | while read task; do
     banner "uftrace TASK $task"

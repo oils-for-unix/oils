@@ -20,7 +20,17 @@ wedge-build() {
   $src_dir/configure --help || true
   echo
 
-  time $src_dir/configure --prefix=$install_dir
+  # Note: smoke test should look like this, with Python 3 plugins
+  #
+  # uftrace v0.13 ( x86_64 python3 perf sched )
+  #
+  # It depends on 'pkg-config python3 --cflags'
+  #
+  # There is a misleading message at the beginning that says libpython OFF
+  #
+  # I tried --with-libpython, and it doesn't seem to affect it either way.
+
+  $src_dir/configure --prefix=$install_dir
   echo
 
   time make
