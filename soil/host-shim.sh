@@ -35,7 +35,7 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (cpp-small)
-      # Create new image with wedges
+      # NEW image with wedges
       echo 'v-2023-02-28e'
       ;;
     (clang)
@@ -46,18 +46,17 @@ live-image-tag() {
       # Rebuild with SOME wedges, coudl have more
       echo 'v-2023-02-28e'
       ;;
-
-    (dev-minimal)
-      # soil-common and cache mount
-      echo 'v-2022-09-24'
+    (other-tests)
+      # Rebuild with wedges
+      echo 'v-2023-02-28e'
       ;;
     (dummy)
-      # cache mount
-      echo 'v-2022-09-24'
+      # Rebuild with wedges
+      echo 'v-2023-02-28e'
       ;;
-    (other-tests)
-      # soil-common and cache mount
-      echo 'v-2022-09-25'
+    (dev-minimal)
+      # Rebuild with wedges
+      echo 'v-2023-02-28e'
       ;;
     (*)
       echo 'v-2022-08-04'

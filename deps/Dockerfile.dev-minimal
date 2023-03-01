@@ -10,6 +10,7 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 USER uke
 
+COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
 RUN deps/from-py.sh dev-minimal
 

@@ -74,7 +74,6 @@ layer-python-symlink() {
 }
 
 layer-for-soil() {
-  # gcc: time-helper is needed.  TODO: remove this dependency
   # git: for checking out code
   # python2: for various tools
   apt-install git python2
@@ -117,20 +116,26 @@ dev-minimal() {
   local -a packages=(
     # Shouldn't require a C++ compiler in build-essential?  Only gcc?
 
-    libreadline-dev
-    gawk
-
-    procps  # pgrep used by test/stateful
+    gcc  # for building Python extensions
 
     python2-dev  # for building Python extensions
+    libreadline-dev
+
     python-setuptools  # Python 2, for flake8
 
     python-pip  # flake8 typing
     python3-setuptools  # mypy
     python3-pip
 
-    # Note: osh-minimal task needs shells; not using spec-bin for now
+    # Note: osh-minimal task needs shells; testing WITHOUT spec-bin shells
     busybox-static mksh zsh
+
+    gawk
+
+    # pgrep used by test/stateful
+    # TODO: Could move both Python and C++ to their own image
+    # That will be a good use case once we have
+    procps
 
     # for oil-spec task
     jq
@@ -148,17 +153,13 @@ pea() {
 
 other-tests() {
   local -a packages=(
-    # TODO: try g++
-    build-essential
-
     libreadline-dev
     python2-dev  # osh2oil needs build/py.sh minimal
 
+    # Compilers for R
+    gcc
+    g++
     make  # to build py27.grammar.marshal, ugh
-
-    # TODO: Try removing
-    # for py3-parse -- is this obsolete?
-    python3
 
     "${R_DEPS[@]}"
   )
@@ -266,12 +267,13 @@ ovm-tarball() {
     # when spec tests use 'time', dash falls back on 'time' command
     'time'
 
-    # This is a separate package needed for re2c.  TODO: remove when we've
-    # built it into the image.
+    # TODO: probably can remove C++ compiler now that re2c is a wedge
+    gcc
     g++
+
     # for cmark and yajl
     cmake
-    # needed to build CPython
+    # to build Python-2.7.13 (could be a wedge)
     make
 
     xz-utils  # extract e.g. zsh/yash tarballs
@@ -280,7 +282,7 @@ ovm-tarball() {
     # for syscall measurements
     strace
 
-    # test/spec-runner.sh needs this
+    # used by test/spec-runner.sh
     gawk
   )
 

@@ -14,9 +14,13 @@ dev-minimal() {
   pip install --user flake8 typing
 
   # Python 3 packages
-  # - MyPy requires Python 3
+
   # - pexpect is for test/interactive.py
-  pip3 install --user mypy pexpect
+  pip3 install --user pexpect
+
+  # Last official release that supported Python 2 was 0.971 in July 2022
+  # https://mypy-lang.blogspot.com/2022/07/mypy-0971-released.html
+  pip3 install --user 'mypy<=0.971'
 }
 
 pea() {
