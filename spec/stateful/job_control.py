@@ -45,6 +45,13 @@ def expect_no_job(sh):
     raise AssertionError()
 
 
+def expect_continued(sh):
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+  else:
+    sh.expect('cat')
+
+
 @register()
 def bug_1004(sh):
   'fg twice should not result in fatal error (issue 1004)'
@@ -209,6 +216,29 @@ def stopped_pipeline(sh):
     sh.expect(r'Continue PID \d+')
   else:
     sh.expect('cat')
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+  sh.sendline('fg')
+  expect_no_job(sh)
+
+
+@register()
+def cycle_process_bg_fg(sh):
+  'Suspend and resume a process several times'
+  expect_prompt(sh)
+
+  sh.sendline('cat')
+  time.sleep(0.1)  # seems necessary
+
+  for _ in range(3):
+    ctrl_z(sh)
+    sh.expect('.*Stopped.*')
+    sh.sendline('')  # needed for dash for some reason
+    expect_prompt(sh)
+    sh.sendline('fg')
+    expect_continued(sh)
 
   ctrl_c(sh)
   expect_prompt(sh)
