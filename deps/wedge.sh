@@ -7,12 +7,13 @@
 #
 # Example of host build:
 #
-#   $0 unboxed-build   deps/source.medo/re2c.wedge.sh
-#   $0 unboxed-install deps/source.medo/re2c.wedge.sh
+#   $0 unboxed-build      deps/source.medo/re2c/
+#   $0 unboxed-install    deps/source.medo/re2c/
+#   $0 unboxed-smoke-test deps/source.medo/re2c/
 #
 # Containerized build:
 #
-#   $0 build deps/source.medo/re2c.wedge.sh
+#   $0 build deps/source.medo/re2c/
 #
 # Host dir structure:
 #
@@ -118,15 +119,15 @@ smoke-test-dir() {
 load-wedge() {
   ### source .wedge.sh file and ensure it conforms to protocol
 
-  local wedge=$1
+  local wedge_dir=$1
 
-  echo "Loading $wedge"
+  echo "Loading $wedge_dir"
   echo
 
-  source $wedge
+  source $wedge_dir/WEDGE
 
-  echo "  OK  name: ${WEDGE_NAME?"$wedge: WEDGE_NAME required"}"
-  echo "  OK  version: ${WEDGE_VERSION?"$wedge: WEDGE_VERSION required"}"
+  echo "  OK  name: ${WEDGE_NAME?"$wedge_dir: WEDGE_NAME required"}"
+  echo "  OK  version: ${WEDGE_VERSION?"$wedge_dir: WEDGE_VERSION required"}"
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
     echo "  --  tarball name: $WEDGE_TARBALL_NAME"
   fi
@@ -135,12 +136,12 @@ load-wedge() {
     if declare -f $func > /dev/null; then
       echo "  OK  $func"
     else
-      die "$wedge: $func not declared"
+      die "$wedge_dir: $func not declared"
     fi
   done
   echo
 
-  echo "Loaded $wedge"
+  echo "Loaded $wedge_dir"
   echo
 }
 
@@ -209,14 +210,24 @@ unboxed-install() {
 }
 
 unboxed-smoke-test() {
-  local wedge=$1  # e.g. re2.wedge.sh
+  local wedge_dir=$1  # e.g. re2c/ with WEDGE
 
-  load-wedge $wedge
+  load-wedge $wedge_dir
 
   local smoke_test_dir=$(smoke-test-dir)
   local install_dir=$(install-dir)
 
   echo '  SMOKE TEST'
+
+  local abs_wedge_dir
+  case $wedge_dir in
+    /*)  # it's already absolute
+      abs_wedge_dir=$wedge_dir
+      ;;
+    *)
+      abs_wedge_dir=$PWD/$wedge_dir
+      ;;
+  esac
 
   # TODO: To ensure a clean dir, it might be better to test that it does NOT
   # exist first, and just make it.  If it exists, then remove everything.
@@ -226,7 +237,7 @@ unboxed-smoke-test() {
 
   pushd $smoke_test_dir
   set -x
-  wedge-smoke-test $install_dir
+  wedge-smoke-test $install_dir $abs_wedge_dir
   set +x
   popd
 
@@ -257,10 +268,14 @@ _build-inside() {
   unboxed-build $wedge
 
   unboxed-install $wedge
+
+  unboxed-smoke-test $wedge
 }
 
 readonly BUILD_IMAGE=oilshell/soil-wedge-builder
 readonly BUILD_IMAGE_TAG=v-2023-02-28g
+
+DOCKER=${DOCKER:-docker}
 
 build() {
   ### Build inside a container, and put output in a specific place.
@@ -268,12 +283,11 @@ build() {
   # TODO: Specify the container OS, CPU like x86-64, etc.
 
   local wedge=$1
-  local wedge_out_dir=${2:-_build/wedge/binary}
+  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: should be boxed
 
   mkdir -p $wedge_out_dir
 
   # Can use podman too
-  local docker=${3:-docker}
 
   load-wedge $wedge
 
@@ -285,9 +299,7 @@ build() {
   #  OUTPUT: /wedge/oils-for-unix.org
   #    TODO: Also put logs and symbols somewhere
 
-  local repo_root=$REPO_ROOT
-
-  # Run unboxed-build,unboxed-install INSIDE the container
+  # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
       sh -c 'cd ~/oil; deps/wedge.sh _build-inside $1' dummy "$wedge"
   )
@@ -298,12 +310,30 @@ build() {
   # - We only want to make the bare minimum of files visible, for cache invalidation
 
   # - Disable network for hermetic builds.  TODO: Add automated test
-  sudo $docker run \
+  sudo $DOCKER run \
     --network none \
-      --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-      --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
-      $BUILD_IMAGE:$BUILD_IMAGE_TAG \
-      "${args[@]}"
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke/oil" \
+    --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
+    $BUILD_IMAGE:$BUILD_IMAGE_TAG \
+    "${args[@]}"
+}
+
+boxed-smoke-test() {
+  local wedge_dir=$1
+  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: should be boxed
+
+  load-wedge $wedge_dir
+
+  local -a args=(
+      sh -c 'cd ~/oil; deps/wedge.sh unboxed-smoke-test $1' dummy "$wedge_dir"
+  )
+
+  sudo $DOCKER run \
+    --network none \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke/oil" \
+    --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
+    $BUILD_IMAGE:$BUILD_IMAGE_TAG \
+    "${args[@]}"
 }
 
 if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
@@ -318,7 +348,9 @@ if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
 fi
 
 case $1 in
-  validate|unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|unboxed-stats|build|_build-inside)
+  validate|unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|\
+  unboxed-stats|\
+  build|_build-inside|boxed-smoke-test)
     "$@"
     ;;
 

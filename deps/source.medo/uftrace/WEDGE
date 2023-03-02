@@ -57,7 +57,21 @@ wedge-install() {
 
 wedge-smoke-test() {
   local install_dir=$1
+  local wedge_dir=$2
 
-  # Hm it says it has Python 3 support?
-  $install_dir/bin/uftrace --version
+  local uftrace=$install_dir/bin/uftrace 
+  $uftrace --version | tee version.txt
+
+  if grep python3 version.txt; then
+    echo 'Python 3 support found'
+  else
+    echo 'FAILED to build with Python 3 support'
+    return 1
+  fi
+
+  cc -pg -o hello $wedge_dir/hello.c
+
+  $uftrace record hello
+  $uftrace replay hello
+  $uftrace script -S $wedge_dir/plugin.py
 }
