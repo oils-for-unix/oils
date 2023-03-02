@@ -17,7 +17,7 @@ set -o errexit
 declare -a PY3_BUILD_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
 # for deps/from-R.sh
-declare -a R_DEPS=(
+declare -a R_BUILD_DEPS=(
     r-base-core  # R interpreter
 
     # ICU for the R stringi package.  This makes compilation faster; otherwise
@@ -28,7 +28,7 @@ declare -a R_DEPS=(
 
 install-R() {
   ### For manual use OUTSIDE container
-  apt-install "${R_DEPS[@]}"
+  apt-install "${R_BUILD_DEPS[@]}"
 }
 
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/reference.md#run---mounttypecache
@@ -74,6 +74,9 @@ layer-wedge-builder() {
     # won't work.
     # TODO: We should move 'pip install' to build time.
     "${PY3_BUILD_DEPS[@]}"
+
+    # For installing R packages
+    "${R_BUILD_DEPS[@]}"
   )
 
   apt-get update
@@ -167,12 +170,12 @@ other-tests() {
     libreadline-dev
     python2-dev  # osh2oil needs build/py.sh minimal
 
-    # Compilers for R
-    gcc
-    g++
+    # Compilers for R.  TODO: try removing after wedge
+    gcc g++
+
     make  # to build py27.grammar.marshal, ugh
 
-    "${R_DEPS[@]}"
+    "${R_BUILD_DEPS[@]}"
   )
 
   apt-install "${packages[@]}"
@@ -207,7 +210,7 @@ benchmarks() {
     python2-dev
 
     # For analyzing benchmarks.  TODO: would be nice to move somewhere else.
-    "${R_DEPS[@]}"
+    "${R_BUILD_DEPS[@]}"
 
     # To build Oil
     g++

@@ -53,6 +53,17 @@ if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
 fi
 
+R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-03-01
+user=$(whoami)  # somehow $USER is not available in CI
+
+if test $user = uke; then
+  # in the CI
+  export R_LIBS_USER=$R_LIBS_WEDGE
+else
+  # version matching on host doesn't work
+  export R_LIBS_USER=~/R
+fi
+
 # Hack for misconfigured RC cluster!  Some machines have the empty string in
 # their $PATH (due to some having CUDA and others not).
 #

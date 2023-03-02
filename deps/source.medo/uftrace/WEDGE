@@ -8,6 +8,7 @@ set -o errexit
 
 WEDGE_NAME='uftrace'
 WEDGE_VERSION='0.13'
+WEDGE_IS_ABSOLUTE=1  # TODO: consider relaxing
 
 wedge-build() {
   local src_dir=$1

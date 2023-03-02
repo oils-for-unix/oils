@@ -10,10 +10,10 @@
 # TODO: use bullseye?
 FROM debian:buster-slim
 
-WORKDIR /home/uke/tmp
+WORKDIR /home/wedge-builder/tmp
 
 # Copy again to prevent unsound caching
-COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+COPY deps/from-apt.sh /home/wedge-builder/tmp/deps/from-apt.sh
 
 RUN deps/from-apt.sh init-deb-cache
 
@@ -24,10 +24,10 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
     deps/from-apt.sh layer-wedge-builder
 
 # Password-less sudo for 'sudo make install'
-RUN useradd --create-home -G sudo uke && \
+RUN useradd --create-home -G sudo wedge-builder && \
   echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-  chown -R uke /home/uke
+  chown -R wedge-builder /home/wedge-builder
 
-USER uke
+USER wedge-builder
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-wedge-builder'"]

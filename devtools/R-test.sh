@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh  # R_PATH
+source build/dev-shell.sh  # R_LIBS_USER
 
 show-r() {
   set -x
@@ -18,7 +18,8 @@ show-r() {
 
 test-r-packages() {
   # tidyr and stringr don't print anything
-  R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr); library(tidyr); library(stringr); print("OK")'
+
+  Rscript -e 'library(dplyr); library(tidyr); library(stringr); library("RUnit"); print("OK")'
 }
 
 soil-run() {
@@ -28,9 +29,6 @@ soil-run() {
   test-r-packages
   echo
 
-  return
-
-  # TODO: Container image needs RUnit!
   benchmarks/report.sh report-test
   echo
 }

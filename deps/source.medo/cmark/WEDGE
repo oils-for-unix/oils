@@ -9,6 +9,7 @@ set -o errexit
 # sourced
 WEDGE_NAME='cmark'
 WEDGE_VERSION='0.29.0'
+WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
 
 wedge-build() {
   local src_dir=$1

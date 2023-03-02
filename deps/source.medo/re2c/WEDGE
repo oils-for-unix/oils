@@ -9,6 +9,7 @@ set -o errexit
 # sourced
 WEDGE_NAME='re2c'
 WEDGE_VERSION='3.0'
+WEDGE_IS_ABSOLUTE=1  # TODO: consider relaxing
 
 wedge-build() {
   local src_dir=$1

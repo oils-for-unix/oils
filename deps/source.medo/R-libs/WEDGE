@@ -1,0 +1,41 @@
+# Wedge definition for R libraries
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='R-libs'
+WEDGE_VERSION='2023-03-01'
+
+# We are installing into /home/wedge-builder, and we want to use it from
+# /home/andy or /home/uke
+#
+# WEDGE_IS_ABSOLUTE=1
+
+# R hits the network
+WEDGE_LEAKY_BUILD=1
+
+wedge-build() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  INSTALL_DEST=$install_dir Rscript -e \
+    'install.packages(c("dplyr", "tidyr", "stringr", "RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+}
+
+wedge-install() {
+  local build_dir=$1
+
+  echo 'No install step'
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  R_LIBS_USER=$install_dir Rscript -e \
+    'library(dplyr); library(tidyr); library(stringr); library("RUnit"); print("OK")'
+}

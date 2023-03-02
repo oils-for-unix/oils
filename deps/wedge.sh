@@ -80,7 +80,10 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
-OILS_WEDGE_ROOT='/wedge/oils-for-unix.org'
+OILS_ABSOLUTE_ROOT='/wedge/oils-for-unix.org'
+
+# The user may build a wedge outside a container here
+OILS_RELATIVE_ROOT="$HOME/wedge/oils-for-unix.org"
 
 die() {
   echo "$0: $@" >& 2
@@ -108,8 +111,13 @@ build-dir() {
 }
 
 install-dir() {
-  # pkg/ leaves room for parallel debug-info/
-  echo "$OILS_WEDGE_ROOT/pkg/$WEDGE_NAME/$WEDGE_VERSION"
+  local prefix
+  if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
+    prefix=$OILS_ABSOLUTE_ROOT
+  else
+    prefix=$OILS_RELATIVE_ROOT
+  fi
+  echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
 }
 
 smoke-test-dir() {
@@ -130,6 +138,14 @@ load-wedge() {
   echo "  OK  version: ${WEDGE_VERSION?"$wedge_dir: WEDGE_VERSION required"}"
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
     echo "  --  tarball name: $WEDGE_TARBALL_NAME"
+  fi
+  if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
+    echo '  --  WEDGE_IS_ABSOLUTE'
+  fi
+
+  # Python and R installation use the network
+  if test -n "${WEDGE_LEAKY_BUILD:-}"; then
+    echo '  --  WEDGE_LEAKY_BUILD'
   fi
 
   for func in wedge-build wedge-install wedge-smoke-test; do
@@ -167,16 +183,17 @@ unboxed-build() {
   load-wedge $wedge
 
   local build_dir=$(build-dir) 
+  local install_dir=$(install-dir)
 
-  rm -r -f -v $build_dir
-  mkdir -p $build_dir
+  rm -r -f -v $build_dir $install_dir
+  mkdir -p $build_dir $install_dir
 
   echo SOURCE $(source-dir)
 
   # TODO: pushd/popd error handling
 
   pushd $build_dir
-  wedge-build $(source-dir) $build_dir $(install-dir)
+  wedge-build $(source-dir) $build_dir $install_dir
   popd
 }
 
@@ -201,12 +218,11 @@ _unboxed-install() {
 unboxed-install() {
   local wedge=$1  # e.g. re2.wedge.sh
 
-  sudo $0 _unboxed-install "$@"
-
-  load-wedge $wedge
-
-  unboxed-smoke-test $wedge
-
+  if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
+    sudo $0 _unboxed-install "$@"
+  else
+    _unboxed-install "$@"
+  fi
 }
 
 unboxed-smoke-test() {
@@ -273,7 +289,7 @@ _build-inside() {
 }
 
 readonly BUILD_IMAGE=oilshell/soil-wedge-builder
-readonly BUILD_IMAGE_TAG=v-2023-02-28g
+readonly BUILD_IMAGE_TAG=v-2023-03-01
 
 DOCKER=${DOCKER:-docker}
 
@@ -283,9 +299,20 @@ build() {
   # TODO: Specify the container OS, CPU like x86-64, etc.
 
   local wedge=$1
-  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed/
 
-  mkdir -p $wedge_out_dir
+  # Permissions will be different, so we separate the two
+
+  local wedge_host_dir
+  local wedge_guest_dir
+  if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
+    wedge_host_dir=_build/wedge/binary  # TODO: rename to /absolute/
+    wedge_guest_dir=/wedge
+  else
+    wedge_host_dir=_build/wedge/relative
+    wedge_guest_dir=/home/wedge-builder/wedge
+  fi
+
+  mkdir -p $wedge_host_dir
 
   # Can use podman too
 
@@ -304,16 +331,23 @@ build() {
       sh -c 'cd ~/oil; deps/wedge.sh _build-inside $1' dummy "$wedge"
   )
 
+  local -a docker_flags=()
+  if test -n "${WEDGE_LEAKY_BUILD:-}"; then
+    :
+  else
+    docker_flags=( --network none )
+  fi
+
+
   # TODO:
   # - It would be nice to make the repo root mount read-only
   # - Should we not mount the whole repo root?
   # - We only want to make the bare minimum of files visible, for cache invalidation
 
   # - Disable network for hermetic builds.  TODO: Add automated test
-  sudo $DOCKER run \
-    --network none \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/uke/oil" \
-    --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
+  sudo $DOCKER run "${docker_flags[@]}" \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
+    --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
     $BUILD_IMAGE:$BUILD_IMAGE_TAG \
     "${args[@]}"
 }
@@ -334,10 +368,17 @@ boxed-smoke-test() {
     args=( "$debug_shell" )
   fi
 
+  local wedge_mount_dir
+  if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
+    wedge_mount_dir=/wedge
+  else
+    wedge_mount_dir=/home/wedge-builder/wedge
+  fi
+
   sudo $DOCKER run "${docker_flags[@]}" \
     --network none \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/uke/oil" \
-    --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
+    --mount "type=bind,source=$PWD/$wedge_out_dir,target=$wedge_mount_dir" \
     $BUILD_IMAGE:$BUILD_IMAGE_TAG \
     "${args[@]}"
 }

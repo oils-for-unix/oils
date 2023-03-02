@@ -8,6 +8,7 @@ set -o errexit
 
 WEDGE_NAME='bloaty'
 WEDGE_VERSION='1.1'
+WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
 
 wedge-build() {
   local src_dir=$1

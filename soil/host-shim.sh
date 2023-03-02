@@ -55,8 +55,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (other-tests)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      # Rebuild with R-libs wedge
+      echo 'v-2023-03-01'
       ;;
     (dummy)
       # Rebuild with wedges

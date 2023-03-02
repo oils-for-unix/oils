@@ -22,6 +22,10 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 RUN useradd --create-home uke && chown -R uke /home/uke
 
+# TODO: try making this a relative wedge:
+# - It's installed in /home/wedge-builder/wedge/...
+# - It's RUN from /home/uke/wedge/...
+
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/time-helper/2023-02-28 \
   /wedge/oils-for-unix.org/pkg/time-helper/2023-02-28

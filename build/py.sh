@@ -96,11 +96,11 @@ install-old-flake8() {
 }
 
 # Needed for the release process, but not the dev process.
+# TODO: remove in favor of wedges in deps/
 release-ubuntu-deps() {
   # For the release to run test/report.R, you need r-base-core too.
   # cloc is used for line counts
   # valgrind/cachegrind for benchmarks
-  # TODO: Unify this with deps/from-apt.sh R_DEPS
   sudo apt install r-base-core cloc valgrind
 }
 

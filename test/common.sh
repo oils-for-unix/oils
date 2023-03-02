@@ -14,7 +14,9 @@ OSH=${OSH:-'bin/osh'}
 nproc=$(nproc)
 MAX_PROCS=${MAX_PROCS:-"$(( nproc <= 2 ? nproc : nproc - 1 ))"}
 
-readonly R_PATH=~/R  # Like PYTHONPATH, but for running R scripts
+# Like PYTHONPATH, but for running R scripts
+# TODO: Remove in favor of build/dev-shell.sh
+readonly R_PATH=~/R
 
 log() {
   echo "$@" 1>&2

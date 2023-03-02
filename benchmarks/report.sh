@@ -8,6 +8,7 @@ set -o pipefail
 set -o errexit
 
 source benchmarks/common.sh  # maybe-tree
+source build/dev-shell.sh  # R_LIBS_USER
 source test/common.sh  # log
 
 # TODO: Move stuff from osh-parser.sh, osh-runtime.sh, etc.
@@ -105,7 +106,7 @@ dev-index() {
 }
 
 report-test() {
-  R_LIBS_USER=$R_PATH benchmarks/report_test.R
+  benchmarks/report_test.R
 }
 
 "$@"
