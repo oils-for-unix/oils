@@ -62,9 +62,13 @@ layer-wedge-builder() {
     # For 'deps/wedge.sh unboxed-install'
     sudo
 
-    # So uftrace configure can detect Python plugins
+    # uftrace configure uses pkg-config to find python3 flags
     pkg-config
+    # uftrace configure detects with #include "Python.h"
     python3-dev
+    # shared library for uftrace to do dlopen()
+    # requires path in uftrace source
+    libpython3.7
 
     # Dependencies for building our own Python3 wedge.  Otherwise 'pip install'
     # won't work.

@@ -321,7 +321,7 @@ plugin() {
 soil-run() {
   measure-all
   export-all
-  analyze-all
+  #analyze-all
 }
 
 "$@"

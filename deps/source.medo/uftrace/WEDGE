@@ -9,11 +9,28 @@ set -o errexit
 WEDGE_NAME='uftrace'
 WEDGE_VERSION='0.13'
 
-# 17 seconds
 wedge-build() {
   local src_dir=$1
   local build_dir=$2
   local install_dir=$3
+
+  # PATCH SOURCE FOR SHARED LIB PROBLEM
+  # TODO:
+  # - use 'diff' util
+  # - upgrade all containers to Debian bullseye / Python 3.9, to get rid of
+  #   this garbage
+  #   - there was no 'm' ABI flag in python 2.7 or 3.9, but there is in 3.6 and 3.7
+
+  local makefile=$src_dir/check-deps/Makefile.check
+
+  # look for libpython3.6m.so, not libpython3.6.so
+  sed -i 's/--modversion)$/--modversion)m/' $makefile
+
+  # additionally, look for libpython3.6m.so.1.0 !!!
+
+  local c_file=$src_dir/utils/script-python.c
+
+  sed -i 's/".so"/".so.1.0"/' $c_file
 
   pushd $build_dir
 

@@ -205,9 +205,8 @@ benchmarks2-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+uftrace          benchmarks/uftrace.sh soil-run        -
 EOF
-# TODO: Enable
-# uftrace          benchmarks/uftrace.sh soil-run        -
 }
 
 cpp-spec-tasks() {

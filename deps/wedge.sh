@@ -283,7 +283,7 @@ build() {
   # TODO: Specify the container OS, CPU like x86-64, etc.
 
   local wedge=$1
-  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: should be boxed
+  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed/
 
   mkdir -p $wedge_out_dir
 
@@ -320,15 +320,21 @@ build() {
 
 boxed-smoke-test() {
   local wedge_dir=$1
-  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: should be boxed
+  local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed
+  local debug_shell=${3:-}
 
   load-wedge $wedge_dir
 
   local -a args=(
       sh -c 'cd ~/oil; deps/wedge.sh unboxed-smoke-test $1' dummy "$wedge_dir"
   )
+  local -a docker_flags=()
+  if test -n "$debug_shell"; then
+    docker_flags=( -i -t )
+    args=( "$debug_shell" )
+  fi
 
-  sudo $DOCKER run \
+  sudo $DOCKER run "${docker_flags[@]}" \
     --network none \
     --mount "type=bind,source=$REPO_ROOT,target=/home/uke/oil" \
     --mount "type=bind,source=$PWD/$wedge_out_dir,target=/wedge" \
