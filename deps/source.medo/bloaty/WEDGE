@@ -10,7 +10,7 @@ WEDGE_NAME='bloaty'
 WEDGE_VERSION='1.1'
 WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
 
-wedge-build() {
+wedge-make() {
   local src_dir=$1
   local build_dir=$2
   local install_dir=$3
@@ -18,7 +18,7 @@ wedge-build() {
   pushd $build_dir
 
   # It's much slower without -G Ninja!
-  # TODO: Ninja is not in the wedge-builder
+  # TODO: Ninja is not in the wedge-makeer
   # time cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$install_dir $src_dir
 
   # Limit parallelism.  This build is ridiculously expensive?

@@ -11,7 +11,7 @@ WEDGE_NAME='dash'
 WEDGE_VERSION='0.5.10.2'
 WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
 
-wedge-build() {
+wedge-make() {
   local src_dir=$1
   local build_dir=$2
   local install_dir=$3

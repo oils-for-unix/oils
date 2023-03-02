@@ -10,7 +10,7 @@ set -o errexit
 WEDGE_NAME='RUnit'
 WEDGE_VERSION='2023-03-01'
 
-# We are installing into /home/wedge-builder, and we want to use it from
+# We are installing into /home/wedge-makeer, and we want to use it from
 # /home/andy or /home/uke
 #
 # WEDGE_IS_ABSOLUTE=1
@@ -18,19 +18,16 @@ WEDGE_VERSION='2023-03-01'
 # R hits the network
 WEDGE_LEAKY_BUILD=1
 
-wedge-build() {
-  local src_dir=$1
-  local build_dir=$2
-  local install_dir=$3
-
-  INSTALL_DEST=$install_dir Rscript -e \
-    'install.packages(c("RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+wedge-make() {
+  echo 'No make step'
 }
 
 wedge-install() {
   local build_dir=$1
+  local install_dir=$2
 
-  echo 'No install step'
+  INSTALL_DEST=$install_dir Rscript -e \
+    'install.packages(c("RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 }
 
 wedge-smoke-test() {

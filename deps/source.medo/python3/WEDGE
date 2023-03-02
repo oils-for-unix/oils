@@ -13,7 +13,7 @@ WEDGE_VERSION='3.10.4'
 WEDGE_TARBALL_NAME='Python'
 WEDGE_IS_ABSOLUTE=1  # This is probably a requirement, but not sure
 
-wedge-build() {
+wedge-make() {
   local src_dir=$1
   local build_dir=$2
   local install_dir=$3

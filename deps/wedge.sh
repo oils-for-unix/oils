@@ -5,15 +5,19 @@
 # Usage:
 #   deps/wedge.sh <function name>
 #
-# Example of host build:
-#
-#   $0 unboxed-build      deps/source.medo/re2c/
-#   $0 unboxed-install    deps/source.medo/re2c/
-#   $0 unboxed-smoke-test deps/source.medo/re2c/
-#
 # Containerized build:
 #
 #   $0 build deps/source.medo/re2c/
+#
+# Host build, without containers:
+#
+#   $0 unboxed-build      deps/source.medo/re2c/
+#
+# Individual steps:
+#
+#   $0 unboxed-make       deps/source.medo/re2c/
+#   $0 unboxed-install    deps/source.medo/re2c/
+#   $0 unboxed-smoke-test deps/source.medo/re2c/
 #
 # Host dir structure:
 #
@@ -148,7 +152,7 @@ load-wedge() {
     echo '  --  WEDGE_LEAKY_BUILD'
   fi
 
-  for func in wedge-build wedge-install wedge-smoke-test; do
+  for func in wedge-make wedge-install wedge-smoke-test; do
     if declare -f $func > /dev/null; then
       echo "  OK  $func"
     else
@@ -175,7 +179,7 @@ validate() {
   load-wedge $wedge
 }
 
-unboxed-build() {
+unboxed-make() {
   ### Build on the host
 
   local wedge=$1  # e.g. re2c.wedge.sh
@@ -183,17 +187,19 @@ unboxed-build() {
   load-wedge $wedge
 
   local build_dir=$(build-dir) 
+
+  # NOT created because it might require root permissions!
   local install_dir=$(install-dir)
 
-  rm -r -f -v $build_dir $install_dir
-  mkdir -p $build_dir $install_dir
+  rm -r -f -v $build_dir
+  mkdir -p $build_dir
 
   echo SOURCE $(source-dir)
 
   # TODO: pushd/popd error handling
 
   pushd $build_dir
-  wedge-build $(source-dir) $build_dir $install_dir
+  wedge-make $(source-dir) $build_dir $install_dir
   popd
 }
 
@@ -275,17 +281,17 @@ unboxed-stats() {
   echo
 }
 
-_build-inside() {
-  local wedge=$1
+unboxed-build() {
+  local wedge_dir=$1
 
   # TODO:
   # - Would be nice to export the logs somewhere
 
-  unboxed-build $wedge
+  unboxed-make $wedge_dir
 
-  unboxed-install $wedge
+  unboxed-install $wedge_dir
 
-  unboxed-smoke-test $wedge
+  unboxed-smoke-test $wedge_dir
 }
 
 readonly BUILD_IMAGE=oilshell/soil-wedge-builder
@@ -328,7 +334,7 @@ build() {
 
   # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
-      sh -c 'cd ~/oil; deps/wedge.sh _build-inside $1' dummy "$wedge"
+      sh -c 'cd ~/oil; deps/wedge.sh unboxed-build $1' dummy "$wedge"
   )
 
   local -a docker_flags=()
@@ -352,7 +358,7 @@ build() {
     "${args[@]}"
 }
 
-boxed-smoke-test() {
+smoke-test() {
   local wedge_dir=$1
   local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed
   local debug_shell=${3:-}
@@ -395,9 +401,11 @@ if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
 fi
 
 case $1 in
-  validate|unboxed-build|unboxed-install|_unboxed-install|unboxed-smoke-test|\
-  unboxed-stats|\
-  build|_build-inside|boxed-smoke-test)
+  validate|\
+  unboxed-build|\
+  unboxed-make|unboxed-install|_unboxed-install|\
+  unboxed-smoke-test|unboxed-stats|\
+  build|smoke-test)
     "$@"
     ;;
 

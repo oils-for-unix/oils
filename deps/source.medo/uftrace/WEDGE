@@ -10,7 +10,7 @@ WEDGE_NAME='uftrace'
 WEDGE_VERSION='0.13'
 WEDGE_IS_ABSOLUTE=1  # TODO: consider relaxing
 
-wedge-build() {
+wedge-make() {
   local src_dir=$1
   local build_dir=$2
   local install_dir=$3
