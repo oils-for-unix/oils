@@ -175,7 +175,7 @@ other-tests() {
 
     make  # to build py27.grammar.marshal, ugh
 
-    "${R_BUILD_DEPS[@]}"
+    r-base-core
   )
 
   apt-install "${packages[@]}"
@@ -209,9 +209,6 @@ benchmarks() {
     libreadline-dev
     python2-dev
 
-    # For analyzing benchmarks.  TODO: would be nice to move somewhere else.
-    "${R_BUILD_DEPS[@]}"
-
     # To build Oil
     g++
     ninja-build
@@ -231,6 +228,9 @@ benchmarks() {
     wget
     bzip2  # extracting benchmarks/osh-runtime
     xz-utils
+
+    # For analyzing benchmarks.
+    r-base-core
   )
 
   apt-install "${packages[@]}"
@@ -252,6 +252,9 @@ benchmarks2() {
     # Technically we don't need 'python3' or 'python3.7' -- only the shared
     # lib?
     libpython3.7
+
+    # Analyze uftrace
+    r-base-core
 
     # for MyPy git clone https://.  TODO: remove when the build is hermetic
     ca-certificates

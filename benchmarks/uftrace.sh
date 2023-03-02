@@ -16,9 +16,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh  # R_PATH
 source devtools/common.sh  # banner
-source build/dev-shell.sh  # put uftrace in $PATH
+source build/dev-shell.sh  # put uftrace in $PATH, R_LIBS_USER
 
 readonly BASE_DIR=_tmp/uftrace
 
@@ -247,7 +246,7 @@ R-stats() {
   local out_dir=$BASE_DIR/$task/stage2
   mkdir -p $out_dir
 
-  R_LIBS_USER=$R_PATH benchmarks/report.R alloc $in_dir $out_dir
+  benchmarks/report.R alloc $in_dir $out_dir
 
   #ls $dir/*.tsv
 }
@@ -321,7 +320,7 @@ plugin() {
 soil-run() {
   measure-all
   export-all
-  #analyze-all
+  analyze-all
 }
 
 "$@"

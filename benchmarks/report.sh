@@ -25,7 +25,7 @@ stage2() {
   local out=$base_dir/stage2
   mkdir -p $out
 
-  R_LIBS_USER=$R_PATH benchmarks/report.R $action $base_dir/stage1 $out
+  benchmarks/report.R $action $base_dir/stage1 $out
 
   maybe-tree $out
 }

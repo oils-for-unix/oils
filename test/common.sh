@@ -15,7 +15,7 @@ nproc=$(nproc)
 MAX_PROCS=${MAX_PROCS:-"$(( nproc <= 2 ? nproc : nproc - 1 ))"}
 
 # Like PYTHONPATH, but for running R scripts
-# TODO: Remove in favor of build/dev-shell.sh
+# Fallback in build/dev-shell.sh
 readonly R_PATH=~/R
 
 log() {

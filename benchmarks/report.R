@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 #
 # benchmarks/report.R -- Analyze data collected by shell scripts.
 #

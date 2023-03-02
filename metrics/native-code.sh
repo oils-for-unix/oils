@@ -7,8 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh  # for $R_PATH
-source build/dev-shell.sh  # put bloaty in $PATH
+source build/dev-shell.sh  # put bloaty in $PATH, R_LIBS_USER
 
 readonly OVM_BASE_DIR=_tmp/metrics/ovm
 readonly OIL_BASE_DIR=_tmp/metrics/oils-for-unix
@@ -71,7 +70,7 @@ symbols() {
 }
 
 R-report() {
-  R_LIBS_USER=$R_PATH metrics/native-code.R "$@"
+  metrics/native-code.R "$@"
 }
 
 build-ovm() {

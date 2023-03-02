@@ -18,7 +18,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh
+source build/dev-shell.sh  # R_LIBS_USER
 
 readonly BASE_DIR=_tmp/metrics/bytecode
 
@@ -84,7 +84,7 @@ cpython-dis-tables() {
 
 
 report() {
-  R_LIBS_USER=$R_PATH metrics/bytecode.R "$@"
+  metrics/bytecode.R "$@"
 }
 
 # Reads the 5 tables and produces some metrics.

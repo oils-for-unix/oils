@@ -38,8 +38,9 @@ COPY --chown=uke \
 # - add osh-runtime testdata, from deps/source.medo
 # - not running ovm-build yet, but it also has testdata
 
-COPY deps/from-R.sh /home/uke/tmp/deps/from-R.sh
-RUN deps/from-R.sh other-tests
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-03-01 \
+  /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-03-01
 
 # Install mycpp deps with python3 wedge
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh

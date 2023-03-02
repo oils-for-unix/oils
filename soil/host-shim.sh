@@ -27,12 +27,12 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (benchmarks)
-      # Clean up new image
-      echo 'v-2023-02-28g'
+      # with R wedge
+      echo 'v-2023-03-02'
       ;;
     (benchmarks2)
-      # NEW image with uftrace
-      echo 'v-2023-03-01'
+      # with R wedge, uftrace
+      echo 'v-2023-03-02'
       ;;
     (cpp-spec)
       # NEW image
@@ -55,8 +55,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (other-tests)
-      # Rebuild with R-libs wedge
-      echo 'v-2023-03-01'
+      # slim down R, remove libicu-dev
+      echo 'v-2023-03-02'
       ;;
     (dummy)
       # Rebuild with wedges

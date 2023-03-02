@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh  # R_PATH
+source build/dev-shell.sh  # R_LIBS_USER
 
 readonly ROOT=../oilshell.org__deploy
 readonly BASE_DIR=_tmp/release-history
@@ -161,7 +161,7 @@ tsv-preview() {
 }
 
 report() {
-  R_LIBS_USER=$R_PATH devtools/release-history.R $BASE_DIR $BASE_DIR
+  devtools/release-history.R $BASE_DIR $BASE_DIR
 }
 
 copy() {

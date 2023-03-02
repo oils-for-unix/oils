@@ -31,7 +31,7 @@ COPY --chown=uke \
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
 
-RUN deps/from-py.sh cpp-spec
+RUN deps/from-py.sh pexpect
 
 # Install mycpp deps with python3 wedge
 COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh

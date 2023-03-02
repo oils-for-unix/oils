@@ -10,7 +10,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source benchmarks/common.sh  # benchmark-html-head
-source test/common.sh  # R_PATH
+source build/dev-shell.sh  # R_LIBS_USER
 source test/tsv-lib.sh
 
 readonly BASE_DIR=_tmp/gc
@@ -437,7 +437,7 @@ make-report() {
     > $BASE_DIR/stage1/gc_stats.tsv
 
   # Make TSV files
-  R_LIBS_USER=$R_PATH benchmarks/report.R gc $BASE_DIR $BASE_DIR/stage2
+  benchmarks/report.R gc $BASE_DIR $BASE_DIR/stage2
 
   # Make HTML
   benchmarks/report.sh stage3 $BASE_DIR

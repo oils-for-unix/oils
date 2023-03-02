@@ -1,5 +1,3 @@
-#!/usr/bin/Rscript
-#
 # common.R - Shared R functions.
 
 Log = function(fmt, ...) {

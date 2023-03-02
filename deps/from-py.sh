@@ -16,7 +16,7 @@ dev-minimal() {
   # Python 3 packages
 
   # pexpect is for spec/stateful
-  pip3 install --user pexpect
+  install-expect
 
   # Last official release that supported Python 2 was 0.971 in July 2022
   # https://mypy-lang.blogspot.com/2022/07/mypy-0971-released.html
@@ -32,7 +32,8 @@ pea() {
 # - We don't really need MyPy for C++ tasks, since mycpp checks types
 # - pexpect might go in a new image for spec/stateful
 
-cpp-spec() {
+install-pexpect() {
+  ### done in spec-cpp, but also need it in dev-minimal
   python3 -m pip install pexpect
 }
 

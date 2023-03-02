@@ -10,11 +10,6 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 USER uke
 
-# Old build
-#
-# COPY deps/from-R.sh /home/uke/tmp/deps/from-R.sh
-# RUN deps/from-R.sh other-tests
-
 COPY --chown=uke \
   _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-03-01 \
   /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-03-01

@@ -18,6 +18,13 @@ WEDGE_VERSION='2023-03-01'
 # R hits the network
 WEDGE_LEAKY_BUILD=1
 
+# Notes: dplyr 1.0.3 as of January 2021 made these fail on Xenial.  
+# I did an R 4.0 installation.  See build/py.sh install-new-R
+#
+# February 2023: compile errors with dplyr and Ubuntu 18.04, which has R 3.4.4.
+# tidyverse has minimum R of 3.6.
+# I need to install a new R again.
+
 wedge-build() {
   local src_dir=$1
   local build_dir=$2

@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 #
 # metrics/native-code.R -- Analyze output of bloaty
 #

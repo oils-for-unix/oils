@@ -19,7 +19,8 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
-source test/common.sh
+source build/dev-shell.sh  # R_LIBS_USER, but also changes python3
+source test/common.sh  # html-head
 source test/tsv-lib.sh
 
 export PYTHONPATH='.:vendor'  # repo root and vendor subdir
@@ -115,15 +116,6 @@ minimal() {
   time py2-tests T | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
   echo "Minimal unit tests passed."
-}
-
-soil-run() {
-  if test -n "${TRAVIS_SKIP:-}"; then
-    echo "TRAVIS_SKIP: Skipping $0"
-    return
-  fi
-
-  minimal
 }
 
 # Run all unit tests in one process.
@@ -233,9 +225,17 @@ EOF
 
 write-report() {
   local out=_tmp/unit/index.html
-  R_LIBS_USER=$R_PATH test/report.R unit _tmp/unit _tmp/unit
+  test/report.R unit _tmp/unit _tmp/unit
   print-report > $out
   echo "Wrote $out"
+}
+
+soil-run() {
+  # TODO: Should run everything in CI, but it depends on R.  dev-minimal
+  # doesn't have it
+  #
+  # Skips fastlex_test.py and cmark_test.py
+  minimal
 }
 
 # Called by scripts/release.sh.

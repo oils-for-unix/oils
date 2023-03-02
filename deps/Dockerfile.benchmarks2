@@ -29,6 +29,10 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
   /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-03-01 \
+  /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-03-01
+
 # Install mycpp deps with python3 wedge
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh

@@ -13,8 +13,8 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 source benchmarks/common.sh
+source build/dev-shell.sh  # R_LIBS_USER
 source soil/common.sh  # find-dir-html
-source test/common.sh  # R_PATH
 source test/tsv-lib.sh  # tsv2html
 
 print-report() {
@@ -113,7 +113,7 @@ soil-run() {
   local dir2=$base_dir/stage2
   mkdir -p $dir2
 
-  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp $base_dir/raw $dir2
+  benchmarks/report.R mycpp $base_dir/raw $dir2
 
   benchmarks/report.sh stage3 $base_dir mycpp
 
