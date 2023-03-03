@@ -205,7 +205,7 @@ benchmarks2-tasks() {
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-uftrace          benchmarks/uftrace.sh soil-run        -
+uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 EOF
 }
 

@@ -154,6 +154,7 @@ run-tasks() {
   #local sh_path=_bin/cxx-uftrace/osh
 
   while read task; do
+    banner "$task: utrace record"
 
     # TODO: Could share with benchmarks/gc
     case $task in
@@ -196,8 +197,8 @@ print-tasks() {
     # This one is a bit big
     # parse.configure-cpython
 
-    #parse.abuild
-    #ex.bashcomp-parse-help
+    parse.abuild
+    ex.bashcomp-parse-help
     ex.compute-fib
   )
 
@@ -253,7 +254,7 @@ R-stats() {
 
 report-all() {
   print-tasks | while read task; do
-    banner "uftrace TASK $task"
+    banner "$task: report"
 
     frequent-calls $BASE_DIR/$task/raw
 
@@ -262,10 +263,6 @@ report-all() {
 }
 
 export-all() {
-  set -x
-  which uftrace
-  uftrace --version
-
   if uftrace --version | grep python3; then
     echo 'uftrace has Python 3 plugin support'
   else
@@ -274,17 +271,30 @@ export-all() {
 
   # TODO: Join into a single TSV file
   print-tasks | while read task; do
-    banner "uftrace TASK $task"
+    banner "$task: export to TSV with Python3 plugin"
     time tsv-plugin $task
   done
 }
 
 analyze-all() {
 
+  local html=$BASE_DIR/index.html 
+
+  echo '<h1>uftrace reports</h1>' > $html
+
   print-tasks | while read task; do
-    banner "uftrace TASK $task"
-    time R-stats $task
+    banner "$task: analyze with R"
+
+    local task_report=$BASE_DIR/$task.report.txt
+
+    time R-stats $task > $task_report
+
+    echo "Wrote $task_report"
+
+    echo "<a href="$task.report.txt">$task</a> <br/>" >> $html
   done
+
+  echo "Wrote $html"
 }
 
 # Hm this shows EVERY call stack that produces a list!

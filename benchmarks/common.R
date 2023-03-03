@@ -1,5 +1,11 @@
 # common.R - Shared R functions.
 
+# So tibble doesn't print ANSI char to text files
+# https://github.com/r-lib/crayon/issues/96
+if (!isatty(stdout())) {
+  options(crayon.enabled = F)
+}
+
 Log = function(fmt, ...) {
   cat(sprintf(fmt, ...))
   cat('\n')
