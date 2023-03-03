@@ -16,8 +16,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/common.sh  # banner
+source benchmarks/common.sh  # cmark function.  TODO: could use executable
 source build/dev-shell.sh  # put uftrace in $PATH, R_LIBS_USER
+source devtools/common.sh  # banner
 
 readonly BASE_DIR=_tmp/uftrace
 
