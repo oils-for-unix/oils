@@ -159,11 +159,13 @@ def OptionName(opt_num):
 
 OPTION_GROUPS = {
     'strict:all': opt_group_i.StrictAll,
+
+    # Aliases to deprecate
     'oil:upgrade': opt_group_i.OilUpgrade,
     'oil:all': opt_group_i.OilAll,
 
-    # ALIAS to deprecate
-    'oil:basic': opt_group_i.OilUpgrade,
+    'ysh:upgrade': opt_group_i.OilUpgrade,
+    'ysh:all': opt_group_i.OilAll,
 }
 
 def OptionGroupNum(s):
