@@ -185,7 +185,7 @@ run-tasks() {
 
     esac
 
-    local out_dir=$BASE_DIR/$task/raw
+    local out_dir=$BASE_DIR/raw/$task
 
     record-oils-cpp $out_dir '' "${argv[@]}"
   done
@@ -228,12 +228,12 @@ call-graph() {
 tsv-plugin() {
   local task=${1:-ex.compute-fib}
 
-  local dir=$BASE_DIR/$task/raw
+  local dir=$BASE_DIR/raw/$task
 
   # On the big configure-coreutils script, this takes 10 seconds.  That's
   # acceptable.  Gives 2,402,003 allocations.
 
-  local out_dir=_tmp/uftrace/$task/stage1
+  local out_dir=_tmp/uftrace/stage1/$task
   mkdir -p $out_dir
   time uftrace script --demangle full -d $dir -S benchmarks/uftrace_allocs.py $out_dir
 
@@ -243,8 +243,8 @@ tsv-plugin() {
 R-stats() {
   local task=${1:-ex.compute-fib}
 
-  local in_dir=$BASE_DIR/$task/stage1
-  local out_dir=$BASE_DIR/$task/stage2
+  local in_dir=$BASE_DIR/stage1/$task
+  local out_dir=$BASE_DIR/stage2/$task  # Note: unused right now
   mkdir -p $out_dir
 
   benchmarks/report.R alloc $in_dir $out_dir
@@ -256,7 +256,7 @@ report-all() {
   print-tasks | while read task; do
     banner "$task: report"
 
-    frequent-calls $BASE_DIR/$task/raw
+    frequent-calls $BASE_DIR/raw/$task
 
     echo
   done
@@ -277,25 +277,41 @@ export-all() {
 }
 
 analyze-all() {
-
-  local html=$BASE_DIR/index.html 
-
-  echo '<h1>uftrace reports</h1>' > $html
-
   print-tasks | while read task; do
     banner "$task: analyze with R"
 
-    local task_report=$BASE_DIR/$task.report.txt
+    local dir=$BASE_DIR/stage2/$task
+    mkdir -p $dir
 
-    time R-stats $task > $task_report
+    time R-stats $task > $dir/report.txt
 
-    echo "Wrote $task_report"
+    echo "Wrote $dir/report.txt"
+  done
+}
 
-    echo "<a href="$task.report.txt">$task</a> <br/>" >> $html
+html-index() {
+  cmark << 'EOF'
+# uftrace reports
+
+Workloads:
+EOF
+
+  print-tasks | while read task; do
+    echo "<a href="stage2/$task/report.txt">$task</a> <br/>"
   done
 
-  echo "Wrote $html"
+  cmark << 'EOF'
+TODO:
+
+- summary table, which will be easier if we load multiple TSV files from all
+  tasks into the same R session.
+- `.wwz` should support dynamic index.html generation, so we can browse raw/,
+  stage1/ TSV, etc.
+EOF
+  # Link to individual TSV files
 }
+
+
 
 # Hm this shows EVERY call stack that produces a list!
 
@@ -331,6 +347,9 @@ soil-run() {
   measure-all
   export-all
   analyze-all
+
+  html-index > $BASE_DIR/index.html
+  echo "Wrote $BASE_DIR/index.html"
 }
 
 "$@"
