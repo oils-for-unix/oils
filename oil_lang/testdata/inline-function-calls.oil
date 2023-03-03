@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./inline-function-calls.sh <function name>
+#   oil_lang/inline-function-calls.sh <function name>
 
-shopt -s oil:basic
+shopt -s ysh:upgrade
 
 simple-demo() {
   var myarray = %(spam eggs ham)

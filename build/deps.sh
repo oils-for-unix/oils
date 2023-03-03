@@ -24,8 +24,12 @@ readonly CMARK_URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.t
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
+log() {
+  echo "$0: $@" >& 2
+}
+
 die() {
-  echo "$@" >& 2
+  "$@"
   exit 1
 }
 
@@ -41,7 +45,7 @@ maybe-extract() {
   local out_dir=$3
 
   if test -d "$wedge_dir/$out_dir"; then
-    echo "Not extracting because $wedge_dir/$out_dir exists"
+    log "Not extracting because $wedge_dir/$out_dir exists"
     return
   fi
 
@@ -71,7 +75,7 @@ clone-mypy() {
 
   local dest=$dest_dir/mypy-$version
   if test -d $dest; then
-    echo "Not cloning because $dest exists"
+    log "Not cloning because $dest exists"
     return
   fi
 
@@ -112,6 +116,16 @@ fetch() {
   fi
 }
 
+wedge-exists() {
+  local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+  if test -d $installed; then
+    log "$installed already exists"
+    return 0
+  else
+    return 1
+  fi
+}
+
 install() {
   # TODO:
   # - Make all of these RELATIVE wedges
@@ -119,12 +133,25 @@ install() {
   #   - unboxed-rel-smoke-test -- move it inside container
   #   - rel-smoke-test -- mount it in a different location
 
-  deps/wedge.sh unboxed-build _build/deps-source/re2c/
-  deps/wedge.sh unboxed-build _build/deps-source/cmark/
-  deps/wedge.sh unboxed-build _build/deps-source/python3/
+  if ! wedge-exists cmark 0.29.0; then
+    deps/wedge.sh unboxed-build _build/deps-source/cmark/
+  fi
+
+  if ! wedge-exists re2c 3.0; then
+    deps/wedge.sh unboxed-build _build/deps-source/re2c/
+  fi
+
+  if ! wedge-exists python3 3.10.4; then
+    deps/wedge.sh unboxed-build _build/deps-source/python3/
+  fi
+
+  # TODO:
+  # - This has to use the python3 we just installed!  Do we need to source
+  # build/dev-shell.sh again?
+  # - Also, let's make the Python build faster by using all your cores?
 
   # Depends on source.medo/mypy, which uses the git repo
-  deps/wedge.sh unboxed-build _build/deps-source/mypy-venv/
+  # deps/wedge.sh unboxed-build _build/deps-source/mypy-venv/
 }
 
 "$@"
