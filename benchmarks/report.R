@@ -912,37 +912,20 @@ MyCppReport = function(in_dir, out_dir) {
   writeTsv(details, file.path(out_dir, 'details'))
 }
 
-AllocReport = function(in_dir, out_dir) {
-  # TSV file, not CSV
-  untyped = readTsv(file.path(in_dir, 'all-untyped.tsv'))
-  typed = readTsv(file.path(in_dir, 'typed.tsv'))
-  strings = readTsv(file.path(in_dir, 'strings.tsv'))
-  slabs = readTsv(file.path(in_dir, 'slabs.tsv'))
-  reserve = readTsv(file.path(in_dir, 'reserve.tsv'))
+UftraceTaskReport = function(env, task_name, summaries) {
+  # Need this again after redirect
+  MaybeDisableColor(stdout())
+
+  task_env = env[[task_name]]
+
+  untyped = task_env$untyped
+  typed = task_env$typed
+  strings = task_env$strings
+  slabs = task_env$slabs
+  reserve = task_env$reserve
 
   string_overhead = 13
   strings %>% mutate(obj_len = str_len + string_overhead) -> strings
-
-  # median string length is 4, mean is 9.5!
-  Log('UNTYPED')
-  print(summary(untyped))
-  Log('')
-
-  Log('TYPED')
-  print(summary(typed))
-  Log('')
-
-  Log('STRINGS')
-  print(summary(strings))
-  Log('')
-
-  Log('SLABS')
-  print(summary(slabs))
-  Log('')
-
-  Log('RESERVE')
-  print(summary(reserve))
-  Log('')
 
   # TODO: Output these totals PER WORKLOAD, e.g. parsing big/small, executing
   # big/small
@@ -958,6 +941,11 @@ AllocReport = function(in_dir, out_dir) {
     mutate(n_less_than = cumsum(n),
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
+
+  allocs_16_bytes_or_less = alloc_sizes %>% filter(obj_len == 16) %>% select(percent)
+  allocs_32_bytes_or_less = alloc_sizes %>% filter(obj_len == 32) %>% select(percent)
+  allocs_64_bytes_or_less = alloc_sizes %>% filter(obj_len == 64) %>% select(percent)
+  Log('Percentage of allocs less than 32 bytes: %.1f', allocs_32_bytes_or_less)
 
   options(tibble.print_min=25)
 
@@ -984,13 +972,20 @@ AllocReport = function(in_dir, out_dir) {
   num_typed = nrow(typed)
 
   typed %>% group_by(func_name) %>% count() %>% ungroup() %>%
-    arrange(desc(n)) -> type_counts
+    mutate(percent = n * 100.0 / num_typed) %>%
+    arrange(desc(n)) -> most_common_types
 
-  print(type_counts %>% head(20))
-  print(type_counts %>% tail(5))
+  print(most_common_types %>% head(20))
+  print(most_common_types %>% tail(5))
+
+  lists = typed %>% filter(str_starts(func_name, ('List<')))
+  #print(lists)
+
+  num_lists = nrow(lists)
+  total_list_bytes = num_lists * 24  # sizeof List<T> head is hard-coded
 
   Log('')
-  Log('%s typed allocs', commas(num_typed))
+  Log('%s typed allocs, including %s List<T>', commas(num_typed), commas(num_lists))
   Log('%.2f%% of allocs are typed', num_typed * 100 / num_allocs)
   Log('')
 
@@ -1006,6 +1001,9 @@ AllocReport = function(in_dir, out_dir) {
            percent = n_less_than * 100.0 / num_strings) ->
     string_lengths
 
+  strs_7_bytes_or_less = string_lengths %>% filter(str_len == 7) %>% select(percent)
+  strs_15_bytes_or_less = string_lengths %>% filter(str_len == 15) %>% select(percent)
+
   # Parse workload
   # 62% of strings <= 6 bytes
   # 84% of strings <= 14 bytes
@@ -1013,8 +1011,8 @@ AllocReport = function(in_dir, out_dir) {
   Log('Str - NewStr() and OverAllocatedStr()')
   print(string_lengths %>% head(16))
   print(string_lengths %>% tail(5))
-
   Log('')
+
   Log('%s string allocations, total length = %s, total bytes = %s', commas(num_strings),
       commas(sum(strings$str_len)), commas(total_string_bytes))
   Log('')
@@ -1040,14 +1038,15 @@ AllocReport = function(in_dir, out_dir) {
   Log('  Lengths')
   print(slab_lengths %>% head())
   print(slab_lengths %>% tail(5))
+  Log('')
 
-  Log('  Types')
+  Log('  Slab Types')
   print(slab_types %>% head())
   print(slab_types %>% tail(5))
+  Log('')
 
   total_slab_items = sum(slabs$slab_len)
 
-  Log('')
   Log('%s slabs, total items = %s', commas(num_slabs),
       commas(sum(slabs$slab_len)))
   Log('%.2f%% of allocs are slabs', num_slabs * 100 / num_allocs)
@@ -1081,6 +1080,140 @@ AllocReport = function(in_dir, out_dir) {
   Log('Untyped: %s', commas(num_allocs))
   Log('Typed + Str + Slab: %s', commas(num_typed + num_strings + num_slabs))
   Log('')
+
+  # TODO:
+  # - use percentages
+  # - List<> and Dict<> allocs, and other typed allocs
+
+  num_other_typed = num_typed - num_lists
+  stats = tibble(task = task_name,
+                 total_bytes_ = commas(total_bytes),
+                 num_allocs_ = commas(num_allocs),
+                 sum_typed_strs_slabs = commas(num_typed + num_strings + num_slabs),
+                 num_reserve_calls = commas(num_reserve),
+
+                 percent_list_allocs = Percent(num_lists, num_allocs),
+                 percent_slab_allocs = Percent(num_slabs, num_allocs),
+                 percent_string_allocs = Percent(num_strings, num_allocs),
+                 percent_other_typed_allocs = Percent(num_other_typed, num_allocs),
+
+                 percent_list_bytes = Percent(total_list_bytes, total_bytes),
+                 percent_string_bytes = Percent(total_string_bytes, total_bytes),
+
+                 allocs_16_bytes_or_less = sprintf('%.1f%%', allocs_16_bytes_or_less),
+                 allocs_32_bytes_or_less = sprintf('%.1f%%', allocs_32_bytes_or_less),
+                 allocs_64_bytes_or_less = sprintf('%.1f%%', allocs_64_bytes_or_less),
+
+                 strs_7_bytes_or_less = sprintf('%.1f%%', strs_7_bytes_or_less),
+                 strs_15_bytes_or_less = sprintf('%.1f%%', strs_15_bytes_or_less),
+                 )
+
+  summaries$stats[[task_name]] = stats
+  summaries$most_common_types[[task_name]] = most_common_types
+}
+
+LoadUftraceTsv = function(in_dir, env) {
+  for (task in list.files(in_dir)) {
+    Log('Loading data for task %s', task)
+    base_dir = file.path(in_dir, task)
+
+    task_env = new.env()
+    env[[task]] = task_env
+
+    # TSV file, not CSV
+    task_env$untyped = readTsv(file.path(base_dir, 'all-untyped.tsv'))
+    task_env$typed = readTsv(file.path(base_dir, 'typed.tsv'))
+    task_env$strings = readTsv(file.path(base_dir, 'strings.tsv'))
+    task_env$slabs = readTsv(file.path(base_dir, 'slabs.tsv'))
+    task_env$reserve = readTsv(file.path(base_dir, 'reserve.tsv'))
+
+    # median string length is 4, mean is 9.5!
+    Log('UNTYPED')
+    print(summary(task_env$untyped))
+    Log('')
+
+    Log('TYPED')
+    print(summary(task_env$typed))
+    Log('')
+
+    Log('STRINGS')
+    print(summary(task_env$strings))
+    Log('')
+
+    Log('SLABS')
+    print(summary(task_env$slabs))
+    Log('')
+
+    Log('RESERVE')
+    print(summary(task_env$reserve))
+    Log('')
+  }
+}
+
+Percent = function(n, total) {
+  sprintf('%.1f%%', n * 100.0 / total)
+}
+
+PrettyPrintLong = function(d) {
+  tr = t(d)  # tranpose
+
+  row_names = rownames(tr)
+
+  for (i in 1:nrow(tr)) {
+    row_name = row_names[i]
+    cat(sprintf('%30s', row_name))
+    cat(sprintf('%24s', tr[i,]))
+    cat('\n')
+
+    # Extra spacing
+    if (row_name %in% c('num_reserve_calls',
+                        'percent_string_bytes',
+                        'percent_other_typed_allocs',
+                        'allocs_64_bytes_or_less')) {
+      cat('\n')
+    }
+  }
+}
+
+
+UftraceReport = function(env, out_dir) {
+  # summaries$stats should be a list of 1-row data frames
+  # summaries$top_types should be a list of types
+  summaries = new.env()
+
+  for (task_name in names(env)) {
+    report_out = file.path(out_dir, paste0(task_name, '.txt'))
+
+    Log('Making report for task %s -> %s', task_name, report_out)
+
+    sink(file = report_out)
+    UftraceTaskReport(env, task_name, summaries)
+    sink()  # reset
+  }
+  Log('')
+
+  # Concate all the data frames added to summary
+  stats = bind_rows(as.list(summaries$stats))
+
+  sink(file = file.path(out_dir, 'summary.txt'))
+  #print(stats)
+  #Log('')
+
+  PrettyPrintLong(stats)
+  Log('')
+
+  mct = summaries$most_common_types
+  for (task_name in names(mct)) {
+    Log('Common types in workload %s', task_name)
+    Log('')
+
+    print(mct[[task_name]] %>% head(5))
+    Log('')
+  }
+  sink()
+
+  # For the REPL
+  return(list(stats = stats))
 }
 
 main = function(argv) {
@@ -1109,8 +1242,10 @@ main = function(argv) {
   } else if (action == 'mycpp') {
     MyCppReport(in_dir, out_dir)
 
-  } else if (action == 'alloc') {
-    AllocReport(in_dir, out_dir)
+  } else if (action == 'uftrace') {
+    d = new.env()
+    LoadUftraceTsv(in_dir, d)
+    UftraceReport(d, out_dir)
 
   } else {
     Log("Invalid action '%s'", action)

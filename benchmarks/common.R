@@ -2,9 +2,14 @@
 
 # So tibble doesn't print ANSI char to text files
 # https://github.com/r-lib/crayon/issues/96
-if (!isatty(stdout())) {
-  options(crayon.enabled = F)
+MaybeDisableColor = function(f) {
+  if (!isatty(f)) {
+    options(crayon.enabled = F)
+  }
 }
+
+# Disable it globally
+MaybeDisableColor(stdout())
 
 Log = function(fmt, ...) {
   cat(sprintf(fmt, ...))

@@ -139,13 +139,11 @@ def uftrace_entry(ctx):
     num_allocs += 1
     return
 
-  # Get string size is available here
   if 'Alloc<' in func_name:
     # TODO: We don't have the size
     gStats.EmitTyped(func_name)
     return
 
-  # Get string size is available here
   if func_name.startswith('NewStr') or func_name.startswith('OverAllocatedStr'):
     #log("Str")
     str_len = ctx['args'][0]
@@ -153,7 +151,6 @@ def uftrace_entry(ctx):
     gStats.EmitString(func_name, str_len)
     return
 
-  # Get string size is available here
   if 'NewSlab<' in func_name:
     #log('SLAB %r', func_name)
     slab_len = ctx['args'][0]
@@ -161,7 +158,6 @@ def uftrace_entry(ctx):
     gStats.EmitSlab(func_name, slab_len)
     return
 
-  # Get string size is available here
   if '::reserve(' in func_name:
     num_items = ctx['args'][0]
     gStats.EmitReserve(func_name, num_items)

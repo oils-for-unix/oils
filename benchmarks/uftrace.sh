@@ -152,8 +152,6 @@ record-oils-cpp() {
 }
 
 run-tasks() {
-  #local sh_path=_bin/cxx-uftrace/osh
-
   while read task; do
     banner "$task: utrace record"
 
@@ -241,18 +239,6 @@ tsv-plugin() {
   wc -l $out_dir/*.tsv
 }
 
-R-stats() {
-  local task=${1:-ex.compute-fib}
-
-  local in_dir=$BASE_DIR/stage1/$task
-  local out_dir=$BASE_DIR/stage2/$task  # Note: unused right now
-  mkdir -p $out_dir
-
-  benchmarks/report.R alloc $in_dir $out_dir
-
-  #ls $dir/*.tsv
-}
-
 report-all() {
   print-tasks | while read task; do
     banner "$task: report"
@@ -277,20 +263,14 @@ export-all() {
   done
 }
 
-analyze-all() {
-  print-tasks | while read task; do
-    banner "$task: analyze with R"
-
-    local dir=$BASE_DIR/stage2/$task
-    mkdir -p $dir
-
-    time R-stats $task > $dir/report.txt
-
-    echo "Wrote $dir/report.txt"
-  done
+escape-html() {
+  # Annoying that & has to be escaped in substitution!
+  sed -e 's|&|\&amp;|g' -e 's|<|\&lt;|g' -e 's|>|\&gt;|g'
 }
 
 html-index() {
+  echo '<body style="margin: 0 auto; width: 40em; font-size: large">'
+
   cmark << 'EOF'
 # uftrace reports
 
@@ -298,20 +278,43 @@ Workloads:
 EOF
 
   print-tasks | while read task; do
-    echo "<a href="stage2/$task/report.txt">$task</a> <br/>"
+    echo "<a href="stage2/$task.txt">$task</a> <br/>"
   done
 
-  cmark << 'EOF'
-TODO:
+  cmark <<< '## Summary'
 
-- summary table, which will be easier if we load multiple TSV files from all
-  tasks into the same R session.
+  echo '<pre>'
+
+  cat $BASE_DIR/stage2/summary.txt | escape-html
+
+  echo '</pre>'
+
+  cmark << 'EOF'
+## TODO
+
 - `.wwz` should support dynamic index.html generation, so we can browse raw/,
   stage1/ TSV, etc.
 EOF
   # Link to individual TSV files
+
+  echo '</body>'
 }
 
+analyze-all() {
+  local in_dir=$BASE_DIR/stage1/
+  local out_dir=$BASE_DIR/stage2/
+
+  # prepare dirs for R to write to
+  print-tasks | while read task; do
+    mkdir -v -p $out_dir/$task
+  done
+
+  # Writes stage2/summary.txt
+  benchmarks/report.R uftrace  $in_dir $out_dir
+
+  html-index > $BASE_DIR/index.html
+  echo "Wrote $BASE_DIR/index.html"
+}
 
 
 # Hm this shows EVERY call stack that produces a list!
@@ -349,8 +352,6 @@ soil-run() {
   export-all
   analyze-all
 
-  html-index > $BASE_DIR/index.html
-  echo "Wrote $BASE_DIR/index.html"
 }
 
 "$@"
