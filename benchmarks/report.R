@@ -964,11 +964,6 @@ UftraceTaskReport = function(env, task_name, summaries) {
 
   Log('Typed allocations')
 
-  # TODO:
-  # - How many are List,T>?
-  # - How many List<T> have zero or one element?
-  #   - we might be able to tell zero elements because there's no associated Slab?
-
   num_typed = nrow(typed)
 
   typed %>% group_by(func_name) %>% count() %>% ungroup() %>%
@@ -1081,11 +1076,9 @@ UftraceTaskReport = function(env, task_name, summaries) {
   Log('Typed + Str + Slab: %s', commas(num_typed + num_strings + num_slabs))
   Log('')
 
-  # TODO:
-  # - use percentages
-  # - List<> and Dict<> allocs, and other typed allocs
-
   num_other_typed = num_typed - num_lists
+
+  # Summary table
   stats = tibble(task = task_name,
                  total_bytes_ = commas(total_bytes),
                  num_allocs_ = commas(num_allocs),
@@ -1107,8 +1100,8 @@ UftraceTaskReport = function(env, task_name, summaries) {
                  strs_7_bytes_or_less = sprintf('%.1f%%', strs_7_bytes_or_less),
                  strs_15_bytes_or_less = sprintf('%.1f%%', strs_15_bytes_or_less),
                  )
-
   summaries$stats[[task_name]] = stats
+
   summaries$most_common_types[[task_name]] = most_common_types
 }
 

@@ -31,8 +31,8 @@ live-image-tag() {
       echo 'v-2023-03-02'
       ;;
     (benchmarks2)
-      # with R wedge, uftrace
-      echo 'v-2023-03-02'
+      # mypy and py3-libs wedges
+      echo 'v-2023-03-04'
       ;;
     (cpp-spec)
       # NEW image

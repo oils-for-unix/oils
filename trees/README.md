@@ -11,19 +11,22 @@ composing and rationalizing existing software and protocols:
 - Static WWW file servers like Apache and nginx
 - tar files, gzip files
 
-## Initial Use Cases
+## Use Cases
 
-1. Building CI containers faster, with
+1. Building CI containers faster with wedges
    - native deps: re2c, bloaty, uftrace, ...
    - Python deps, e.g. MyPy
    - R deps, e.g. dplyr
-   - The total size should also be smaller.
-2. Running benchmarks on multiple machines
+   - wedge source is a .treeptr tarball
+   - wedge derived is a .treeptr file
+2. CI serving `.wwz` files.  We need fast random access.
+3. Running benchmarks on multiple machines
    - `oils-for-unix` tarball from EVERY commit, sync'd to different CI tasks
-3. Comparisons across distros and Unixes
+4. Comparisons across distros, OSes, and hardware
    - building same packages on Debian, Ubuntu, Alpine
    - and FreeBSD
-4. Maybe: serving `.wwz` files
+   - x86 / x86-64 / ARM
+5. Web .log files can be .treeptr files
 
 ## Silo: Large Trees Managed Outside Git
 
@@ -78,55 +81,55 @@ To start, this will untar and uncompress blobs from a Silo.  We can also:
 ### Data
 
     ~/git/oilshell/oil/    
-      deps/                         # 3 medo structure is arbitrary; they're
-                                    # generally mounted in different places, and
-                                    # used by different tools
+      deps/                          # 3 medo structure is arbitrary; they're
+                                     # generally mounted in different places, and
+                                     # used by different tools
        
-        source.medo/                # Relocatable data
-          SILO.json                 # Can point to multiple Silos
-          Python-3.10.4.valu        # valu with checksum and provenance (original URL)
+        source.medo/                 # Relocatable data
+          SILO.json                  # Can point to multiple Silos
+          Python-3.10.4.treeptr      # with checksum and provenance (original URL)
 
-        derived.medo/               # derived values, some are wedges with absolute paths
-          SILO.json                 # Can point to multiple Silos
+        derived.medo/                # derived values, some are wedges with absolute paths
+          SILO.json                  # Can point to multiple Silos
           debian/
             bullseye/
-              Python-3.10.4.valu
+              Python-3.10.4.treeptr
           ubuntu/
             20.04/
-              Python-3.10.4.valu    # derived data has provenance:
-                                    # base layer, mounts of input / code, env / shell command
+              Python-3.10.4.treeptr  # derived data has provenance:
+                                     # base layer, mounts of input / code, env / shell command
             22.04/
-              Python-3.10.4.valu
+              Python-3.10.4.treeptr
 
         opaque.medo/                # Opaque values that can use more provenance.
           SILO.json
           images/                   # 'docker save' format.  Make sure it can be imported.
             debian/
               bullseye/
-                slim.valu           
+                slim.treeptr
 
           layers/
             debian/
               bullseye/
-                uftrace-build.valu  # packages needed to build it
+                mypy-deps.treeptr   # packages needed to build it
 
 ### Commands
 
     # Get files to build.  This does uncompress/untar.
-    medo sync deps/source.medo/Python-3.10.4.valu _tmp/source/
+    medo expand deps/source.medo/Python-3.10.4.treeptr _tmp/source/
 
     # Or sync files that are already built.  If they already exist, verify
     # checksums.
-    medo sync deps/derived.medo/debian/bullseye/ /wedge/oilshell.org/deps
+    medo expand deps/derived.medo/debian/bullseye/ /wedge/oilshell.org/deps
 
-    # Combine SILO.json and the JSON in the .valu
-    medo url-for deps/source.medo/Python-3.10.4.valu
+    # Combine SILO.json and the JSON in the .treeptr
+    medo url-for deps/source.medo/Python-3.10.4.treeptr
 
     # Verify checksums.
     medo verify deps.medo/ /wedge/oilshell.org/deps
 
-    # Makes a tarball and .valu that you can scp/rsync
-    medo add /wedge/oilshell.org/bash-4.4/ deps.medo/ubuntu/18.04/bash-4.4.valu
+    # Makes a tarball and .treeptr that you can scp/rsync
+    medo add /wedge/oilshell.org/bash-4.4/ deps.medo/ubuntu/18.04/bash-4.4.treeptr
 
     medo reachable deps.medo/  # first step of garbage collection
 
@@ -134,7 +137,7 @@ To start, this will untar and uncompress blobs from a Silo.  We can also:
 
 ## `/wedge`: A binary-centric "semi-distro" that works with OCI containers, and without
 
-A package exports one or more binaries, and is a `valu`:
+A package exports one or more binaries, and is a `treeptr` value:
 
 - metadata is stored in a `.medo` directory
 - data is stored in a Silo
@@ -147,7 +150,7 @@ What can you do with it?
 - A wedge can be mounted, e.g. `--mount type=bind,...`
 - It can be copied into an image: `COPY ...`
   - for quick deployment to cloud services, like Github Actions or fly.io
-- It has provenance, like other valus.  The provenance is either:
+- It has provenance, like other treeptr values.  The provenance is either:
   - the original URL, for source data
   - the code, data, and environment used to build it
 
@@ -162,12 +165,12 @@ Related:
 
 ### Data
 
-    /wedge/               # an absolute path, for --configure --prefix=/wedge/..
-      oilshell.org/       # scoped to domain
-        dev/              # arbitrary structure, for dev dependencies
-          Python-3.10.4.valu  # metadata
+    /wedge/                     # an absolute path, for --configure --prefix=/wedge/..
+      oils-for-unix.org/        # scoped to domain
+        pkg/                    # arbitrary structure, for dev dependencies
+          Python-3.10.4.treeptr # metadata
           Python-3.10.4/
-            python            # Executable, which needs a 'python3' symlink
+            python              # Executable, which needs a 'python3' symlink
 
 ## Design Notes
 
@@ -175,7 +178,7 @@ Related:
 
 Text:
 
-- JSON for .valu and SILO.json
+- JSON for .treeptr, MEDO.json, SILO.json
 - lockfile / "world" / manifest - what does this look like?
 
 Data:

@@ -19,10 +19,7 @@ set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-#source $REPO_ROOT/mycpp/common.sh  
-
-source build/dev-shell.sh  # find python3 in /wedge dir (or oil_DEPS)
-source mycpp/common-vars.sh  # MYPY_REPO
+source $REPO_ROOT/mycpp/common.sh  
 
 mypy-git-clone() {
   ### Clone mypy at a specific branch
@@ -36,7 +33,7 @@ mypy-git-clone() {
 create-venv() {
   local dir=$MYCPP_VENV
 
-  python3 -m venv $dir
+  maybe-our-python3 -m venv $dir
 
   ls -l $dir
   
@@ -48,13 +45,13 @@ ensure-pip() {
 
   # Weird that it's a bunch of wheels
 
-  python3 -m ensurepip
+  maybe-our-python3 -m ensurepip
 }
 
 # Do this inside the virtualenv
 # Re-run this when UPGRADING MyPy.  10/2019: Upgraded from 0.670 to 0.730.
 mypy-deps() {
-  python3 -m pip install -r $MYPY_REPO/test-requirements.txt
+  maybe-our-python3 -m pip install -r $MYPY_REPO/test-requirements.txt
 }
 
 mypy-pip-install() {

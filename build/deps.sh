@@ -15,6 +15,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# Also in build/dev-shell.sh
+USER_WEDGE_DIR=~/wedge/oils-for-unix.org
+
+readonly DEPS_SOURCE_DIR=_build/deps-source
+
 readonly RE2C_VERSION=3.0
 readonly RE2C_URL="https://github.com/skvadrik/re2c/releases/download/$RE2C_VERSION/re2c-$RE2C_VERSION.tar.xz"
 
@@ -24,12 +29,20 @@ readonly CMARK_URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.t
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
+readonly MYPY_GIT_URL=https://github.com/python/mypy
+readonly MYPY_VERSION=0.780
+
+readonly PY3_LIBS_VERSION=2023-03-04
+
+readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
+
+
 log() {
   echo "$0: $@" >& 2
 }
 
 die() {
-  "$@"
+  log "$@"
   exit 1
 }
 
@@ -71,21 +84,20 @@ maybe-extract() {
 clone-mypy() {
   ### replaces deps/from-git
   local dest_dir=$1
-  local version=0.780
 
-  local dest=$dest_dir/mypy-$version
+  local dest=$dest_dir/mypy-$MYPY_VERSION
   if test -d $dest; then
     log "Not cloning because $dest exists"
     return
   fi
 
   # TODO: verify commit checksum
-  git clone --recursive --depth=50 --branch=release-$version \
-    https://github.com/python/mypy $dest
+  git clone --recursive --depth=50 --branch=release-$MYPY_VERSION \
+    $MYPY_GIT_URL $dest
 }
 
 fetch() {
-  # For now, simulate what 'medo sync deps/source.medo _build/deps-source'
+  # For now, simulate what 'medo expand deps/source.medo _build/deps-source'
   # would do: fetch compressed tarballs designated by .treeptr files, and
   # expand them.
 
@@ -94,25 +106,27 @@ fetch() {
   #     WEDGE
   #     re2c-3.0/  # expanded .tar.xz file
 
-  local base_dir=_build/deps-source
-  mkdir -p $base_dir
+  mkdir -p $DEPS_SOURCE_DIR
 
   # Copy the whole tree, including the .treeptr files
   cp --verbose --recursive --no-target-directory \
-    deps/source.medo/ $base_dir/
+    deps/source.medo/ $DEPS_SOURCE_DIR/
 
-  download-to $base_dir/re2c "$RE2C_URL"
-  download-to $base_dir/cmark "$CMARK_URL"
-  download-to $base_dir/python3 "$PY3_URL"
+  download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
+  download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"
+  download-to $DEPS_SOURCE_DIR/python3 "$PY3_URL"
 
-  maybe-extract $base_dir/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
-  maybe-extract $base_dir/cmark "$(basename $CMARK_URL)" cmark-$CMARK_VERSION
-  maybe-extract $base_dir/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/cmark "$(basename $CMARK_URL)" cmark-$CMARK_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
-  clone-mypy $base_dir/mypy
+  # This is in $DEPS_SOURCE_DIR so to COPY into containers.  It doesn't overlap
+  # with the Oil repo.
+  clone-mypy $DEPS_SOURCE_DIR/mypy
 
   if command -v tree > /dev/null; then
-    tree -L 2 $base_dir
+    tree -L 2 $DEPS_SOURCE_DIR
+    tree -L 2 $USER_WEDGE_DIR
   fi
 }
 
@@ -126,12 +140,68 @@ wedge-exists() {
   fi
 }
 
+# TODO: py3-libs needs to be a WEDGE, so that that you can run
+# 'wedge build deps/source.medo/py3-libs/' and then get it in
+#
+# _build/wedge/{absolute,relative}   # which one?
+#
+# It needs a BUILD DEPENDENCY on the python3 wedge, so you can do python3 -m
+# pip install.
+
+
+install-py3-libs-in-venv() {
+  local venv_dir=$1
+  local mypy_dir=$2  # This is a param for host build vs. container build
+
+  source $venv_dir/bin/activate  # enter virtualenv
+
+  # Needed for spec/stateful/*.py
+  python3 -m pip install pexpect
+
+  # for mycpp/
+  time python3 -m pip install -r $mypy_dir/test-requirements.txt
+}
+
+install-py3-libs() {
+  local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
+
+  # Load it as the default python3
+  source build/dev-shell.sh
+
+  local py3
+  py3=$(command -v python3)
+  case $py3 in
+    *wedge/oils-for-unix.org/*)
+      ;;
+    *)
+      die "python3 is '$py3', but expected it to be in a wedge"
+      ;;
+  esac
+
+  log "Ensuring pip is installed (interpreter $(command -v python3)"
+  python3 -m ensurepip
+
+  local venv_dir=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION
+  log "Creating venv in $venv_dir"
+
+  # Note: the bin/python3 in this venv is a symlink to python3 in $PATH, i.e.
+  # the /wedge we just built
+  python3 -m venv $venv_dir
+
+  log "Installing MyPy deps in venv"
+
+  # Run in a subshell because it mutates shell state
+  $0 install-py3-libs-in-venv $venv_dir $mypy_dir
+}
+
+
 install() {
   # TODO:
   # - Make all of these RELATIVE wedges
   # - Add
   #   - unboxed-rel-smoke-test -- move it inside container
   #   - rel-smoke-test -- mount it in a different location
+  # - Should have a CI task that does all of this!
 
   if ! wedge-exists cmark 0.29.0; then
     deps/wedge.sh unboxed-build _build/deps-source/cmark/
@@ -141,17 +211,12 @@ install() {
     deps/wedge.sh unboxed-build _build/deps-source/re2c/
   fi
 
+  # TODO: make the Python build faster by using all your cores?
   if ! wedge-exists python3 3.10.4; then
     deps/wedge.sh unboxed-build _build/deps-source/python3/
   fi
 
-  # TODO:
-  # - This has to use the python3 we just installed!  Do we need to source
-  # build/dev-shell.sh again?
-  # - Also, let's make the Python build faster by using all your cores?
-
-  # Depends on source.medo/mypy, which uses the git repo
-  # deps/wedge.sh unboxed-build _build/deps-source/mypy-venv/
+  install-py3-libs
 }
 
 "$@"
