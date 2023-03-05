@@ -341,16 +341,17 @@ build() {
   if test -n "${WEDGE_LEAKY_BUILD:-}"; then
     :
   else
+    # Disable network for hermetic builds.  TODO: Add automated test
     docker_flags=( --network none )
   fi
 
-
   # TODO:
-  # - It would be nice to make the repo root mount read-only
-  # - Should we not mount the whole repo root?
-  # - We only want to make the bare minimum of files visible, for cache invalidation
+  # - Don't mount the whole REPO_ROOT
+  #   - We want the bare minimum of files, for cache invalidation
+  # - Maybe make it read only
+  # - Bind mount WEDGE_DEPS='', space separated list of paths
+  #   - py3-libs depends on python3 and mypy wedges!
 
-  # - Disable network for hermetic builds.  TODO: Add automated test
   sudo $DOCKER run "${docker_flags[@]}" \
     --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \

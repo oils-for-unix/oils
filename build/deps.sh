@@ -15,6 +15,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source deps/from-apt.sh   # PY3_BUILD_DEPS
+
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
 
@@ -44,6 +46,30 @@ log() {
 die() {
   log "$@"
   exit 1
+}
+
+install-ubuntu-packages() {
+  ### Packages for build/py.sh all and more
+
+  # python-dev: for all the extension modules
+  # libreadline-dev: needed for the build/prepare.sh Python build.
+  # gawk: used by spec-runner.sh for the special match() function.
+  # cmake: for build/py.sh yajl-release (TODO: remove eventually)
+  if apt-cache show python2-dev > /dev/null 2>&1; then
+    local python2_package=python2-dev 
+  else
+    local python2_package=python-dev 
+  fi
+
+  set -x  # show what needs sudo
+
+  # pass -y for say gitpod
+  sudo apt "$@" install \
+    $python2_package gawk libreadline-dev ninja-build cmake \
+    "${PY3_BUILD_DEPS}"
+  set +x
+
+  test/spec.sh install-shells-with-apt
 }
 
 download-to() {
@@ -120,8 +146,8 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/cmark "$(basename $CMARK_URL)" cmark-$CMARK_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
-  # This is in $DEPS_SOURCE_DIR so to COPY into containers.  It doesn't overlap
-  # with the Oil repo.
+  # This is in $DEPS_SOURCE_DIR to COPY into containers, which mycpp will directly import.
+  # It's also copied into a wedge in install-wedges.
   clone-mypy $DEPS_SOURCE_DIR/mypy
 
   if command -v tree > /dev/null; then
@@ -194,8 +220,7 @@ install-py3-libs() {
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
 }
 
-
-install() {
+install-wedges() {
   # TODO:
   # - Make all of these RELATIVE wedges
   # - Add
@@ -214,6 +239,17 @@ install() {
   # TODO: make the Python build faster by using all your cores?
   if ! wedge-exists python3 3.10.4; then
     deps/wedge.sh unboxed-build _build/deps-source/python3/
+  fi
+
+  # Copy all the contents, except for .git folder.
+  if ! wedge-exists mypy $MYPY_VERSION; then
+    local dest=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+    mkdir -p $dest
+
+    pushd $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION 
+    # git archive makes a tarball
+    git archive release-$MYPY_VERSION | tar --extract --directory $dest
+    popd
   fi
 
   install-py3-libs

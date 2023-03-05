@@ -15,7 +15,7 @@ It's inspired by both mypyc and Shed Skin.  These posts give background:
 
 Running `mycpp` is best done on a Debian / Ubuntu-ish machine.  Follow the
 instructions at <https://github.com/oilshell/oil/wiki/Contributing> to create
-the "dev build" first, which is DISTINCT from `oil-native`.  Make sure you can
+the "dev build" first, which is DISTINCT from the C++ build.  Make sure you can
 run:
 
     oil$ build/py.sh all
@@ -25,22 +25,19 @@ This will give you a working shell:
     oil$ bin/osh -c 'echo hi'  # running interpreted Python
     hi
 
-To run mycpp, you should first build Python 3.10 (which has the `match`
-statement and enhanced `ast` module).  First install dependencies of CPython:
+To run mycpp, we will build Python 3.10, clone MyPy, and install MyPy's
+dependencies.  First install packages:
 
     # We need libssl-dev, libffi-dev, zlib1g-dev to bootstrap Python
-    oil$ build/dev.sh ubuntu-deps
+    oil$ build/deps.sh install-ubuntu-packages
 
-And then download and build it:
+Then fetch data, like the Python 3.10 tarball and MyPy repo:
 
-    oil$ deps/from-tar.sh download-py3
-    oil$ deps/from-tar.sh layer-py3
+    oil$ build/deps.sh fetch
 
-Then you'll need the MyPy source repository, as well as a virtualenv containing
-MyPy's dependencies.
+Then build from source:
 
-    oil$ deps/from-git.sh mypy-git-clone
-    oil$ deps/from-git.sh mypy-pip-install
+    oil$ build/deps.sh install-wedges
 
 To build oil-native, use:
 
