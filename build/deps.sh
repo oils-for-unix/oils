@@ -5,11 +5,30 @@
 # Usage:
 #   build/deps.sh <function name>
 #
+# Examples:
+#   build/deps.sh fetch
+#   build/deps.sh install
+#
 # - re2c
 # - cmark
 # - python3
 # - mypy and deps, so mycpp can import htem
+
+# TODO:
+# - remove cmark dependency for help.  It's still used for docs and benchmarks.
+# - remove re2c from dev build?  Are there any bugs?  I think it's just slow.
+# - add spec-bin so people can always run the tests
 #
+# - change Contributing page
+#   - build/deps.sh fetch-py
+#   - build/deps.sh install-wedges-py
+#
+# mycpp/README.md:
+#
+#   - build/deps.sh fetch
+#   - build/deps.sh install-wedges
+#
+# Can we make most of them non-root deps?
 
 set -o nounset
 set -o pipefail
@@ -123,6 +142,8 @@ clone-mypy() {
 }
 
 fetch() {
+  local py_only=${1:-}
+
   # For now, simulate what 'medo expand deps/source.medo _build/deps-source'
   # would do: fetch compressed tarballs designated by .treeptr files, and
   # expand them.
@@ -140,6 +161,12 @@ fetch() {
 
   download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
   download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"
+
+  if test -n "$py_only"; then
+    log "Fetched dependencies for 'build/py.sh'"
+    return
+  fi
+
   download-to $DEPS_SOURCE_DIR/python3 "$PY3_URL"
 
   maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
@@ -154,6 +181,10 @@ fetch() {
     tree -L 2 $DEPS_SOURCE_DIR
     tree -L 2 $USER_WEDGE_DIR
   fi
+}
+
+fetch-py() {
+  fetch py_only
 }
 
 wedge-exists() {
@@ -221,6 +252,8 @@ install-py3-libs() {
 }
 
 install-wedges() {
+  local py_only=${1:-}
+
   # TODO:
   # - Make all of these RELATIVE wedges
   # - Add
@@ -234,6 +267,11 @@ install-wedges() {
 
   if ! wedge-exists re2c 3.0; then
     deps/wedge.sh unboxed-build _build/deps-source/re2c/
+  fi
+
+  if test -n "$py_only"; then
+    log "Installed dependencies for 'build/py.sh'"
+    return
   fi
 
   # TODO: make the Python build faster by using all your cores?
@@ -255,6 +293,10 @@ install-wedges() {
   fi
 
   install-py3-libs
+}
+
+install-wedges-py() {
+  install-wedges py_only
 }
 
 "$@"
