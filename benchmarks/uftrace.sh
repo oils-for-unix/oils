@@ -176,7 +176,7 @@ run-tasks() {
         argv=( benchmarks/compute/fib.sh 10 44 )
         ;;
 
-      ex.bashcomp-parse-help)
+      ex.bashcomp-excerpt)
         # NOTE: benchmarks/gc.sh uses the larger clang.txt file
         argv=( benchmarks/parse-help/pure-excerpt.sh parse_help_file 
                benchmarks/parse-help/mypy.txt )
@@ -197,7 +197,7 @@ print-tasks() {
     # parse.configure-cpython
 
     parse.abuild
-    ex.bashcomp-parse-help
+    ex.bashcomp-excerpt
     ex.compute-fib
   )
 
@@ -277,6 +277,7 @@ html-index() {
 Workloads:
 EOF
 
+  # Link to text files
   print-tasks | while read task; do
     echo "<a href="stage2/$task.txt">$task</a> <br/>"
   done
@@ -288,15 +289,6 @@ EOF
   cat $BASE_DIR/stage2/summary.txt | escape-html
 
   echo '</pre>'
-
-  cmark << 'EOF'
-## TODO
-
-- `.wwz` should support dynamic index.html generation, so we can browse raw/,
-  stage1/ TSV, etc.
-EOF
-  # Link to individual TSV files
-
   echo '</body>'
 }
 

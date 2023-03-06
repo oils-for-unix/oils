@@ -243,13 +243,15 @@ install-wedges() {
 
   # Copy all the contents, except for .git folder.
   if ! wedge-exists mypy $MYPY_VERSION; then
-    local dest=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
-    mkdir -p $dest
 
-    pushd $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION 
-    # git archive makes a tarball
-    git archive release-$MYPY_VERSION | tar --extract --directory $dest
-    popd
+    # NOTE: We have to also copy the .git dir, because it has
+    # .git/modules/typeshed
+
+    local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+    mkdir -p $dest_dir
+
+    cp --verbose --recursive --no-target-directory \
+      $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
   install-py3-libs

@@ -1154,8 +1154,8 @@ PrettyPrintLong = function(d) {
 
   for (i in 1:nrow(tr)) {
     row_name = row_names[i]
-    cat(sprintf('%30s', row_name))
-    cat(sprintf('%24s', tr[i,]))
+    cat(sprintf('%26s', row_name))  # calculated min width manually
+    cat(sprintf('%20s', tr[i,]))
     cat('\n')
 
     # Extra spacing
