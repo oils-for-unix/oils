@@ -117,20 +117,7 @@ find-long-lines() {
 }
 
 bin-flake8() {
-  # pip2 puts it here
-  local ubuntu_flake8=~/.local/bin/flake8
-
-  # pip3 for Python 3 puts it here
-  #local ubuntu_flake8=/usr/local/bin/flake8 
-
-  # This is another Python 3 version
-  #local ubuntu_flake8=/usr/bin/flake8
-
-  if test -f "$ubuntu_flake8"; then
-    $ubuntu_flake8 "$@"
-  else
-    python2 -m flake8 "$@"
-  fi
+  python2 -m flake8 "$@"
 }
 
 # Just do a single file

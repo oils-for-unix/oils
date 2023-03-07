@@ -45,7 +45,7 @@ install-py2() {
   # typing: because the build/cpython-defs tool
   # flake8: for linting
   # pygments: for doc rendering
-  pip install pyyaml typing flake8 pygments
+  python2 -m pip install pyyaml typing flake8 pygments
 
   # not sure why this requires sudo and pip2 doesn't
   # this doesn't work on our code

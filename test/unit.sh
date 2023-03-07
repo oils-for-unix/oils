@@ -23,12 +23,12 @@ source build/dev-shell.sh  # R_LIBS_USER, but also changes python3
 source test/common.sh  # html-head
 source test/tsv-lib.sh
 
-export PYTHONPATH='.:vendor'  # repo root and vendor subdir
+# for 'import typing' in Python 2. Can't go in build/dev-shell.sh because it
+# would affect Python 3.
+export PYTHONPATH="vendor:$PYTHONPATH"
 
 # For auto-complete
 unit() {
-  #$py "$@"
-
   "$@"
 }
 
