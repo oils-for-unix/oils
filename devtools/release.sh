@@ -568,70 +568,6 @@ deploy-tar() {
 # - Ruby: https://www.ruby-lang.org/en/downloads/releases/
 # - https://www.lua.org/download.html
 
-pretty-size() {
-  local path=$1
-  stat --format '%s' "$path" | python -c '
-import sys
-num_bytes = int(sys.stdin.read())
-print "{:,}".format(num_bytes)
-'
-}
-
-# NOTE: It might be better to link to files like this in the /release/ tree.
-# Although I am not signing them.
-
-# https://nodejs.org/dist/v8.11.4/SHASUMS256.txt.asc
-
-_tarball-links-row-html() {
-  local version=$1
-
-  cat <<EOF
-<tr class="file-table-heading">
-  <td></td>
-  <td>File / SHA256 checksum</td>
-  <td class="size">Size</td>
-  <td></td>
-</tr>
-EOF
-
-  # we switched to .gz for oils for Unix
-  for name in oil-$version.tar.{gz,xz} \
-    oils-for-unix-$version.tar.{gz,xz} \
-    oil-native-$version.tar.xz; do
-
-    local url="/download/$name"  # The server URL
-    local path="../oilshell.org__deploy/download/$name"
-
-    # Don't show tarballs that don't exist
-    if [[ $name == oils-for-unix-* && ! -f $path ]]; then
-      continue
-    fi
-    if [[ $name == oil-native-* && ! -f $path ]]; then
-      continue
-    fi
-
-    local checksum
-    checksum=$(sha256sum $path | awk '{print $1}')
-    local size
-    size=$(pretty-size $path)
-
-    # TODO: Port this to oil with "commas" extension.
-
-    # Three columns: date, version, and links
-    cat <<EOF
-    <tr> 
-      <td></td>
-      <td class="filename"><a href="$url">$name</a></td>
-      <td class="size">$size</td>
-    </tr>
-    <tr>
-      <td></td>
-      <td colspan=2 class="checksum">$checksum</td>
-    </tr>
-EOF
-  done
-}
-
 # Columns: Date / Version / Docs /    / Files
 #                           Changelog  .xz
 #                           Install
@@ -700,7 +636,7 @@ _html-index() {
 </tr>
 EOF
 
-    _tarball-links-row-html $version
+    build/doc.sh tarball-links-row-html $version
 
     cat <<EOF
 <tr>

@@ -17,7 +17,7 @@ readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
 
 # Run it against the dev version of OSH
-REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 count-procs() {
   local out_prefix=$1

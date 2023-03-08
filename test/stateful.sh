@@ -32,8 +32,6 @@ source test/tsv-lib.sh
 # we should build another container
 source build/dev-shell.sh
 
-export PYTHONPATH=.
-
 readonly BASE_DIR=_tmp/spec/stateful
 
 run() {

@@ -19,6 +19,7 @@ set -o pipefail
 set -o errexit
 
 source build/dev-shell.sh  # R_LIBS_USER
+source test/common.sh  # log
 
 readonly BASE_DIR=_tmp/metrics/bytecode
 
