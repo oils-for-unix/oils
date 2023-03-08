@@ -50,7 +50,7 @@ print-thread() {
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
   messages-in-stream "$@" | jq -r \
-    '.messages[] | { content: .content, subject: .subject } | select( .subject == "0.13.1 Release" ) | .content '
+    '.messages[] | { content: .content, subject: .subject } | select( .subject == "Oil 0.14.2" ) | .content '
     #'{ content: .messages[].content, subject: .messages[].subject }'
     #'{ subject: .messages[].subject }'
 }

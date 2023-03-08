@@ -1,21 +1,27 @@
-oil-native
-==========
+Oils for Unix
+=============
 
-This is a preview of Oil's translation to C++, not a working shell!
+This is a preview of Oil's translation to C++.
 
-Visit http://www.oilshell.org/releases.html and download
-oil-$VERSION.tar.{gz,xz} to get a working Oil shell.
+To use it, run
 
-To try oil-native, run:
+    ./configure     # detects whether GNU readline is installed, etc.
 
-    build/native.sh tarball-demo
+    _build/oils.sh  # builds optimized binary
+
+    sudo ./install
     
 All you need is a C++ compiler.
 
-It will compile the code and parse a shell snippet with it.  It will show you
-how to parse other files.
+Then try:
 
-Feel free to send feedback at:
+    osh -c 'echo hi'    
+
+    osh -n -c 'echo hi'  # parse a script
+
+Send feedback to:
 
     https://github.com/oilshell/oil/issues
+
+(TODO: Replace this with INSTALL.txt)
 
