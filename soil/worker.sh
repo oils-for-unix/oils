@@ -152,6 +152,7 @@ oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
 stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 arena               test/arena.sh soil-run                       -
+group-session       test/group-session.sh soil-run               -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh soil-run          -
