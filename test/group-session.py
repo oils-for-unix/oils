@@ -135,14 +135,12 @@ def check_psub(ptree, shell, interactive):
       sys.exit(1)
   else:
     ptree.assert_child_count(2)
-    for child in ptree.children:
-      if 'ps' in child.proc.comm:
-        ps = child
-      elif 'cat' in child.proc.comm:
-        cat = child
-      else:
-        print('[%s] has unexpected child [%s]' % (ptree.proc, child), file=sys.stderr)
-        sys.exit(1)
+    # NOTE: Ideally we would check the comm field of the children, but `ps` may
+    # have run before some of them called exec(). Luckily we're only checkign
+    # that both children are in their own group in this case, so we just
+    # guess...
+    ps = ptree.children[0]
+    cat = ptree.children[1]
 
   if not ps:
     print('missing ps', file=sys.stderr)
