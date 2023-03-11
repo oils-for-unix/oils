@@ -256,7 +256,7 @@ run-job-uke() {
     (interactive)
       image_id='dev-minimal'
       # pseudo TTY for job control tests (group-session)
-      # flags=( -t )
+      flags=( -t )
       ;;
     (*)
       # docker.io is the namespace for hub.docker.com
