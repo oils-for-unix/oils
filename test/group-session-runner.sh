@@ -99,21 +99,24 @@ run_with_shell() {
   local sh=$1
   shift
 
-  local status=0
+  echo "sh = $sh"
 
   $sh $0 show_group_session $sh "$@" > _tmp/group-session-output
-  test/group-session.py $$ $sh $1 < _tmp/group-session-output; status=$?
-  if test $status -ne 0; then
-    cat _tmp/group-session-output
-    return $status
-  fi
+
+  test/group-session.py $$ $sh $1 < _tmp/group-session-output
+  local status=$?
+
+  cat _tmp/group-session-output
+  echo
+
+  return $status
 }
 
 run_with_shell_interactive() {
   local sh=$1
   shift
 
-  local status=0
+  echo "sh = $sh"
 
   local more_flags=''
   case $sh in
@@ -123,11 +126,14 @@ run_with_shell_interactive() {
   esac
 
   $sh $more_flags -i -c '. $0; show_group_session "$@"' $0 $sh "$@" > _tmp/group-session-output
-  test/group-session.py -i $$ $sh $1 < _tmp/group-session-output; status=$?
-  if test $status -ne 0; then
-    cat _tmp/group-session-output
-    return $status
-  fi
+
+  test/group-session.py -i $$ $sh $1 < _tmp/group-session-output
+  local status=$?
+
+  cat _tmp/group-session-output
+  echo
+
+  return $status
 }
 
 compare_shells() {
