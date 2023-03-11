@@ -380,7 +380,7 @@ run-tasks() {
     local log_path=$out_dir/logs/$task_name.txt 
 
     local -a timeout
-    if test $script = 'test/group-session.sh'; then
+    if test $script = 'test/job-control.sh'; then
       # Workaround for weird interaction, see test/group-session.sh
       # timeout-issue
       timeout=()
