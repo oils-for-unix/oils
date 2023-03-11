@@ -370,8 +370,7 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    # Command subs run in the parent shell's group
-    p.Start(trace.CommandSub(), posix.getpgid(0))
+    p.Start(trace.CommandSub())
     #log('Command sub started %d', pid)
 
     chunks = []  # type: List[str]

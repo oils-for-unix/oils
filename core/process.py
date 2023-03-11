@@ -20,7 +20,7 @@ from _devbuild.gen.runtime_asdl import (
     wait_status, wait_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, value__Str, trace, trace_t
+    value, value_e, value__Str, trace, trace_e, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
@@ -861,23 +861,6 @@ class Process(Job):
     #return '<Process %s%s>' % (self.thunk, s)
     return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
 
-  def GroupId(self):
-    # type: () -> int
-    """
-    Returns -1 if not in a subshell and this process or its parent pipeline hasn't been started.
-    Returns a valid process group ID in all other cases.
-    """
-    curr_pid = posix.getpid()
-    if curr_pid != self.job_state.shell_pid:
-      # If we are creating a process in a subshell, use the subshell's group as
-      # our group.
-      return posix.getpgid(0)
-
-    if self.parent_pipeline is not None:
-      return self.parent_pipeline.group_id
-
-    return self.pid
-
   def DisplayJob(self, job_id, f, style):
     # type: (int, mylib.Writer, int) -> None
     if job_id == -1:
@@ -914,9 +897,12 @@ class Process(Job):
     """
     if self.job_state.fg_pipeline:
       self.parent_pipeline = self.job_state.fg_pipeline
+      pgrp = self.parent_pipeline.group_id
 
-    if pgrp == -1:
-      pgrp = self.GroupId()
+    # Command substitution should run in its parent shell's group.
+    if why.tag_() == trace_e.CommandSub:
+      pgrp = posix.getpgid(0)
+
     pid = posix.fork()
     if pid < 0:
       # When does this happen?
@@ -1163,7 +1149,7 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
-      pid = proc.Start(trace.PipelinePart())
+      pid = proc.Start(trace.PipelinePart(), self.group_id)
       if i == 0 and self.group_id == -1:
         # Mimick bash and use the PID of the first process as the group for the
         # whole pipeline.
@@ -1360,7 +1346,9 @@ class JobState(object):
 
   def JobControlEnabled(self):
     # type: () -> bool
-    return self.shell_tty_fd != -1
+    curr_pid = posix.getpid()
+    # Only the main shell should bother with job control functions.
+    return curr_pid == self.shell_pid and self.shell_tty_fd != -1
 
   # TODO: This isn't a PID.  This is a process group ID?
   #
