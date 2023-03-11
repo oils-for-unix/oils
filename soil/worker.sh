@@ -379,16 +379,23 @@ run-tasks() {
 
     local log_path=$out_dir/logs/$task_name.txt 
 
-    # 15 minutes per task
-    # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
-    # TODO: should have a configurable timeout
-    local timeout_secs=900
+    local -a timeout
+    if test $script = 'test/group-session.sh'; then
+      # Workaround for weird interaction, see test/group-session.sh
+      # timeout-issue
+      timeout=()
+    else
+      # 15 minutes per task
+      # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
+      # TODO: should have a configurable timeout
+      timeout=(timeout 900)
+    fi
 
     set +o errexit
     time-tsv -o $tsv --append \
       --field $task_name --field $script --field $action \
       --field $result_html -- \
-      timeout $timeout_secs $script $action >$log_path 2>&1
+      "${timeout[@]}" "$script" "$action" >$log_path 2>&1
     status=$?
     set -o errexit
 

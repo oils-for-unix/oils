@@ -175,9 +175,9 @@ def main():
     sys.argv.pop(1)
 
     # CI doesn't have a TTY. Relax interactivity checks in that case.
-    if not sys.stderr.isatty():
-      interactive = False
-      print('Warning: stderr is not a TTY and got -i')
+    #if not sys.stderr.isatty():
+    #  interactive = False
+    #  print('Warning: stderr is not a TTY and got -i')
 
   runner_pid = sys.argv[1]
   shell = sys.argv[2]

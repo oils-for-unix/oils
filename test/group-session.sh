@@ -72,9 +72,38 @@ soil-run() {
   for sh in bash bin/osh; do
     SH=$sh run-test-funcs
 
+    # This could be QUICKLY=1
+    # SH=$sh test-bgproc-interactive
+
     echo
     echo
   done
+
+}
+
+timeout-issue() {
+  ### For some reason bgproc-interactive conflicts with 'timeout' command
+
+  set -x
+
+  # doesn't hang with OSH
+  timeout 900 $0 test-bgproc-interactive
+
+  # doesn't hang
+  SH=dash timeout --foreground 900 $0 test-bgproc-interactive
+  SH=bash timeout --foreground 900 $0 test-bgproc-interactive
+
+  # these both hang
+  # SH=dash timeout 900 $0 test-bgproc-interactive
+  # SH=bash timeout 900 $0 test-bgproc-interactive
+}
+
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source test/tsv-lib.sh
+
+time-tsv-issue() {
+  #time-tsv -o _tmp/tsv -- $0 test-bgproc-interactive
+  time-tsv -o _tmp/tsv -- $0 soil-run
 }
 
 "$@"
