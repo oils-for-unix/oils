@@ -1366,9 +1366,8 @@ class JobState(object):
   def MaybeGiveTerminal(self, pgrp):
     # type: (int) -> None
     """If stdio is a TTY, move the given process group to the foreground."""
-    if not self.JobControlEnabled() or posix.getpid() != self.shell_pid:
-      # Only call tcsetpgrp when job control is enabled and only call it from
-      # the main shell.
+    if not self.JobControlEnabled():
+      # Only call tcsetpgrp when job control is enabled.
       return
 
     try:
