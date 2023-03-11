@@ -146,12 +146,10 @@ dev-minimal-tasks() {
 dump-user-host      soil/worker.sh dump-user-host                -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
-group-session       test/group-session.sh soil-run               -
 lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
-stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
@@ -162,6 +160,16 @@ oil-large           oil_lang/run.sh soil-run                     -
 tea-large           tea/run.sh soil-run                          -
 link-busybox-ash    test/spec.sh link-busybox-ash                -
 osh-minimal         test/spec.sh osh-minimal                     _tmp/spec/survey/osh-minimal.html
+EOF
+}
+
+interactive-tasks() {
+  ### Print tasks for the 'interactive' build
+  cat <<EOF
+dump-user-host      soil/worker.sh dump-user-host                -
+build-minimal       build/py.sh minimal                          -
+group-session       test/group-session.sh soil-run               -
+stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 EOF
 }
 
@@ -484,6 +492,7 @@ job-main() {
 JOB-dummy() { job-main 'dummy'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
+JOB-interactive() { job-main 'interactive'; }
 
 JOB-other-tests() { job-main 'other-tests'; }
 

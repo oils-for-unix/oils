@@ -253,6 +253,11 @@ run-job-uke() {
     (cpp-coverage)
       image_id='clang'
       ;;
+    (interactive)
+      image_id='dev-minimal'
+      # pseudo TTY for job control tests (group-session)
+      flags=( -t )
+      ;;
     (*)
       # docker.io is the namespace for hub.docker.com
       image_id=$job_name
