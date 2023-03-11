@@ -36,10 +36,6 @@ delete-pyc() {
   find . -name '*.pyc' | xargs --no-run-if-empty -- rm || true
 }
 
-readonly PY_273=~/src/languages/Python-2.7.3/python
-readonly PY_272=~/src/languages/Python-2.7.2/python
-readonly PY_27=~/src/languages/Python-2.7/python
-
 # WTF, fixes native_test issue
 #export PYTHONDONTWRITEBYTECODE=1
 
@@ -88,24 +84,17 @@ all-tests() {
   py3-tests
 }
 
-# Exits 255 if a test fails.
-run-test-and-maybe-abort() {
-  local t=$1
-  echo
-  echo "[$t]"
-  if ! $t >/dev/null; then
-    echo
-    echo "*** $t FAILED ***"
-    echo
-    return 255  # xargs aborts
-  fi
-  #echo "OK    $t"
+run-unit-tests() {
+  while read test_path; do
+    # no separate working dir
+    run-test-bin $test_path '' _test/py-unit
+  done
 }
 
 all() {
   ### Run unit tests after build/py.sh all
 
-  time all-tests "$@" | xargs -n 1 -- $0 run-test-and-maybe-abort
+  time all-tests "$@" | run-unit-tests
   echo
   echo "All unit tests passed."
 }
@@ -113,22 +102,74 @@ all() {
 minimal() {
   ### Run unit tests after build/py.sh minimal
 
-  time py2-tests T | xargs -n 1 -- $0 run-test-and-maybe-abort
+  time py2-tests T | run-unit-tests
   echo
   echo "Minimal unit tests passed."
 }
 
-# Run all unit tests in one process.
-all-in-one() {
-  # -s: start dir -t: top level are defaults
-  # NOTE: without the pattern, it finds byterun unit tests called 'test*'.
-  _OVM_RESOURCE_ROOT=$PWD python -m unittest discover \
-    --failfast --verbose --pattern '*_test.py'
+#
+# Experimental tsv-stream
+#
 
-  # This style fails due to the arguments being filenames and not Python module
-  # names.
-  #tests-to-run | xargs python -m unittest
+tsv-stream-one() {
+  local rel_path=$1
 
+  local log_file=_tmp/unit/$rel_path.txt
+  mkdir -p "$(dirname $log_file)"
+
+  echo
+  echo "| ROW test=$rel_path test_HREF=$log_file"
+
+  # TODO: Emit | ADD status=0 elapsed_secs=0.11
+
+  time-tsv -o /dev/stdout -- $rel_path
+  local status=$?
+
+  if test $status -ne 0; then
+    echo
+    echo "*** $t FAILED ***"
+    echo
+    return 255  # xargs aborts
+  fi
+
+}
+
+tsv-stream-all() {
+  echo '| HEADER status elapsed_secs test test_HREF'
+
+  time py2-tests T | head -n 20 | xargs -n 1 -- $0 tsv-stream-one
+}
+
+# Experimental idea: Capture tsv-stream-all, and turn it into two things:
+#
+# - A TSV file, which can be turned into HTML, and summarized with counts
+# - An HTML text string with <a name=""> anchors, which the table can link to
+#
+# At the terminal, the raw output is still readable, without a filter.
+# Although we might want:
+#
+# | OK
+# | FAIL
+#
+# Instead of:
+#
+# | ADD status=0
+# | ADD status=1
+#
+# Also, we currently send output to /dev/null at the terminal, and we save it
+# when doing a release.
+#
+# We might also do something like C++ unit tests:
+# 
+# RUN osh/split_test.py &> _test/osh/split_test
+
+
+all-2() {
+  ### New harness that uses tsv-stream
+
+  # Use this at the command line, in the CI, and in the release.
+
+  tsv-stream-all | devtools/tsv_stream.py
 }
 
 # NOTE: Show options like this:
