@@ -151,6 +151,8 @@ print-tasks() {
 readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
 
 run-tasks() {
+  local tsv_out=$1
+
   while read -r join_id task sh_path shell_runtime_opts; do
 
     # Parse different files
