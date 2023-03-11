@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Test kernel state: the process group and session leader.
+# Helper for test/job-control.sh.  This is a portable shell script, since it
+# has to run under dash, mksh, etc.
 #
 # Usage:
 #   test/group-session-runner.sh <function name>
@@ -136,31 +137,8 @@ run_with_shell_interactive() {
   return $status
 }
 
-compare_shells() {
-  ### Pass tasks, any of fgproc-fgpipe-bgpipe
-
-  local status=0
-
-  for sh in dash bash mksh zsh bin/osh; do
-  #for sh in dash bash bin/osh; do
-    echo -----
-    echo $sh
-    echo -----
-
-    echo NON-INTERACTIVE
-    run_with_shell $sh $@
-    echo
-
-    echo INTERACTIVE
-    run_with_shell_interactive $sh $@
-    echo
-
-  done
-  exit $status
-}
-
 # We might be sourced by INTERACTIVE, so avoid running anything in that case.
 case $1 in
-  setup|show_group_session|compare_shells|run_with_shell|run_with_shell_interactive)
+  setup|show_group_session|run_with_shell|run_with_shell_interactive)
     "$@"
 esac

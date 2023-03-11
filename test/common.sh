@@ -102,9 +102,10 @@ run-test-bin() {
   # Compare with run-test-funcs
   local bin=$1
   local working_dir=${2:-}
+  local log_base_dir=${3:-'_test'}  # used by test/unit.sh
 
-  local rel_path=${bin#'_bin/'}
-  local log_dir="_test/$(dirname $rel_path)"
+  local rel_path=${bin#'_bin/'}  # for C++ only
+  local log_dir="$log_base_dir/$(dirname $rel_path)"
   mkdir -p $REPO_ROOT/$log_dir  # abs path
 
   local name=$(basename $bin)
