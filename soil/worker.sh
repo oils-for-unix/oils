@@ -168,7 +168,7 @@ interactive-tasks() {
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
 build-minimal       build/py.sh minimal                          -
-group-session       test/group-session.sh soil-run               -
+job-control         test/job-control.sh soil-run                 -
 stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 EOF
 }
