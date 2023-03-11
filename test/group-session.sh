@@ -67,7 +67,14 @@ test-psub-interactive() {
 
 soil-run() {
   test/group-session-runner.sh setup
-  run-test-funcs
+
+  # Note: zsh also passes all tests
+  for sh in bash bin/osh; do
+    SH=$sh run-test-funcs
+
+    echo
+    echo
+  done
 }
 
 "$@"
