@@ -27,12 +27,12 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (benchmarks)
-      # with R wedge
-      echo 'v-2023-03-02'
+      # with py3-libs
+      echo 'v-2023-03-11'
       ;;
     (benchmarks2)
-      # mypy and py3-libs wedges
-      echo 'v-2023-03-04'
+      # new R-libs version
+      echo 'v-2023-03-11'
       ;;
     (cpp-spec)
       # NEW image
@@ -55,8 +55,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (other-tests)
-      # slim down R, remove libicu-dev
-      echo 'v-2023-03-02'
+      # new R-libs version
+      echo 'v-2023-03-11'
       ;;
     (dummy)
       # Rebuild with wedges
@@ -217,7 +217,6 @@ save-image-stats() {
 
   here-schema-tsv >$soil_dir/image-layers.schema.tsv <<EOF
 column_name   type
-ROW_CSS_CLASS string
 num_bytes     integer
 created_at    string
 created_by    string
@@ -254,7 +253,14 @@ run-job-uke() {
       image_id='clang'
       ;;
     (interactive)
-      image_id='dev-minimal'
+      # missing mksh
+      # image_id='benchmarks2'
+
+      # has mksh, but missing C++ stuff
+      # image_id='dev-minimal'
+
+      image_id='benchmarks'
+
       # pseudo TTY for job control tests (group-session)
       flags=( -t )
       ;;

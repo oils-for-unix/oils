@@ -178,6 +178,7 @@ EOF
 
 all() {
   ### Run all tests
+  local impl=$1
 
   mkdir -p $BASE_DIR
 
@@ -185,7 +186,7 @@ all() {
 
   # Returns whether all passed
   set +o errexit
-  html-summary > $BASE_DIR/index.html
+  html-summary > $BASE_DIR/$impl.html
   local status=$?
 
   # Don't turn errexit back on, since that will mess up soil-run-cpp.
@@ -194,7 +195,7 @@ all() {
 }
 
 soil-run-py() {
-  all
+  all 'py'
 }
 
 soil-run-cpp() {
@@ -204,7 +205,7 @@ soil-run-cpp() {
 
   # TODO: $OSH should be a param for all functions, like signals-quick
 
-  OSH=$bin all
+  OSH=$bin all 'cpp'
   local status=$?
 
   echo "$0 all -> status $status"

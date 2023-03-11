@@ -146,11 +146,6 @@ dev-minimal() {
 
     gawk
 
-    # pgrep used by test/stateful
-    # TODO: Could move both Python and C++ to their own image
-    # That will be a good use case once we have
-    procps
-
     # for oil-spec task
     jq
   )
@@ -231,6 +226,11 @@ benchmarks() {
 
     # For analyzing benchmarks.
     r-base-core
+
+    # pgrep used by test/stateful in interactive task
+    # TODO: Could move both Python and C++ to their own image
+    # That will be a good use case once we have
+    procps
   )
 
   apt-install "${packages[@]}"

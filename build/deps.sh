@@ -299,4 +299,15 @@ install-wedges-py() {
   install-wedges py_only
 }
 
+container-wedges() {
+  deps/wedge.sh build deps/source.medo/time-helper
+  return
+  deps/wedge.sh build deps/source.medo/cmark/
+  deps/wedge.sh build deps/source.medo/re2c/
+  deps/wedge.sh build deps/source.medo/bloaty/
+  deps/wedge.sh build deps/source.medo/uftrace/
+  deps/wedge.sh build deps/source.medo/python3/
+  deps/wedge.sh build deps/source.medo/R-libs/
+}
+
 "$@"

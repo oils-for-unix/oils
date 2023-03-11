@@ -18,7 +18,7 @@ wedge-make() {
 
   # TODO: Should not have access to this!!!
   # Usually this is _cache, but it's not here
-  local repo_root=/home/uke/oil
+  local repo_root=/home/wedge-builder/oil
 
   local in=$repo_root/benchmarks/time-helper.c
   local out=$build_dir/time-helper

@@ -217,8 +217,12 @@ _unboxed-install() {
 
   load-wedge $wedge
 
+  local install_dir
+  install_dir=$(install-dir)
+  mkdir -p $install_dir
+
   # Note: install-dir needed for time-helper, but not others
-  wedge-install $(build-dir) $(install-dir)
+  wedge-install $(build-dir) $install_dir
 }
 
 unboxed-install() {
@@ -306,6 +310,8 @@ build() {
 
   local wedge=$1
 
+  load-wedge $wedge
+
   # Permissions will be different, so we separate the two
 
   local wedge_host_dir
@@ -318,11 +324,7 @@ build() {
     wedge_guest_dir=/home/wedge-builder/wedge
   fi
 
-  mkdir -p $wedge_host_dir
-
-  # Can use podman too
-
-  load-wedge $wedge
+  mkdir -v -p $wedge_host_dir
 
   # TODO: 
   #

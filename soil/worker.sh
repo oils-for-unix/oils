@@ -165,11 +165,14 @@ EOF
 
 interactive-tasks() {
   ### Print tasks for the 'interactive' build
+
+  # TODO: make different indices for stateful tests
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
-build-minimal       build/py.sh minimal                          -
-job-control         test/job-control.sh soil-run                 -
-stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
+py-all-and-ninja    soil/worker.sh py-all-and-ninja              -
+job-control         test/job-control.sh soil-run                 _tmp/job-control/index.html
+stateful-py         test/stateful.sh soil-run-py                 _tmp/spec/stateful/py.html
+stateful-cpp        test/stateful.sh soil-run-cpp                _tmp/spec/stateful/cpp.html
 EOF
 }
 
@@ -226,7 +229,6 @@ cpp-spec-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
-stateful         test/stateful.sh soil-run-cpp         _tmp/spec/stateful/index.html
 spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
 EOF
 }

@@ -8,7 +8,7 @@ set -o errexit
 
 # sourced
 WEDGE_NAME='R-libs'
-WEDGE_VERSION='2023-03-01'
+WEDGE_VERSION='2023-03-11'
 
 # We are installing into /home/wedge-makeer, and we want to use it from
 # /home/andy or /home/uke
