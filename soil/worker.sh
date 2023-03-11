@@ -150,7 +150,6 @@ lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
-stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
@@ -161,6 +160,16 @@ oil-large           oil_lang/run.sh soil-run                     -
 tea-large           tea/run.sh soil-run                          -
 link-busybox-ash    test/spec.sh link-busybox-ash                -
 osh-minimal         test/spec.sh osh-minimal                     _tmp/spec/survey/osh-minimal.html
+EOF
+}
+
+interactive-tasks() {
+  ### Print tasks for the 'interactive' build
+  cat <<EOF
+dump-user-host      soil/worker.sh dump-user-host                -
+build-minimal       build/py.sh minimal                          -
+job-control         test/job-control.sh soil-run                 -
+stateful            test/stateful.sh soil-run-py                 _tmp/spec/stateful/index.html
 EOF
 }
 
@@ -370,16 +379,23 @@ run-tasks() {
 
     local log_path=$out_dir/logs/$task_name.txt 
 
-    # 15 minutes per task
-    # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
-    # TODO: should have a configurable timeout
-    local timeout_secs=900
+    local -a timeout
+    if test $script = 'test/job-control.sh'; then
+      # Workaround for weird interaction, see test/group-session.sh
+      # timeout-issue
+      timeout=()
+    else
+      # 15 minutes per task
+      # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
+      # TODO: should have a configurable timeout
+      timeout=(timeout 900)
+    fi
 
     set +o errexit
     time-tsv -o $tsv --append \
       --field $task_name --field $script --field $action \
       --field $result_html -- \
-      timeout $timeout_secs $script $action >$log_path 2>&1
+      "${timeout[@]}" "$script" "$action" >$log_path 2>&1
     status=$?
     set -o errexit
 
@@ -483,6 +499,7 @@ job-main() {
 JOB-dummy() { job-main 'dummy'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
+JOB-interactive() { job-main 'interactive'; }
 
 JOB-other-tests() { job-main 'other-tests'; }
 

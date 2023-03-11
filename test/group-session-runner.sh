@@ -3,7 +3,7 @@
 # Test kernel state: the process group and session leader.
 #
 # Usage:
-#   test/group-session.sh <function name>
+#   test/group-session-runner.sh <function name>
 
 setup() {
   mkdir -p _tmp
@@ -20,7 +20,8 @@ show_group_session() {
   #   - it's always the same number, so it's misleading to associate with a process
   #   - see APUE section on setpgid(), tcsetgprp()
 
-  local kind=$1
+  local sh=$1
+  local kind=$2
 
   # We have many case statements here to allow choosing many tests as a "mask",
   # e.g. show_group_session fgproc+bgproc
@@ -64,7 +65,7 @@ show_group_session() {
     # interrupted?
 
     echo '[subshell]'
-    ( ps -o pid,ppid,pgid,sid,comm; echo ALIVE )
+    ( ps -o pid,ppid,pgid,sid,tpgid,comm; echo ALIVE )
     # subshell gets its own PGID in every shell!
     ;;
   esac
@@ -74,15 +75,19 @@ show_group_session() {
     # interrupted?
     echo '[command sub]'
     local x
-    x=$(ps -o pid,ppid,pgid,sid,comm)
+    x=$(ps -o pid,ppid,pgid,sid,tpgid,comm)
     echo "$x"
     ;;
   esac
 
   case $kind in (*psub*)
+    case $sh in (dash|mksh)
+      return
+    esac
+
     echo '[process sub]'
     # use 'eval' as workaround for syntax error in dash and mksh
-    eval 'cat <(ps -o pid,ppid,pgid,sid,comm)'
+    eval 'cat <(ps -o pid,ppid,pgid,sid,tpgid,comm)'
     # RESULTS
     # zsh: ps and cat are in their own process groups distinct from the shell!
     # bash: cat is in its own process group, but ps is in one with bash.  Hm
@@ -90,38 +95,72 @@ show_group_session() {
   esac
 }
 
+run_with_shell() {
+  local sh=$1
+  shift
+
+  echo "sh = $sh"
+
+  $sh $0 show_group_session $sh "$@" > _tmp/group-session-output
+
+  test/assert_process_table.py $$ $sh $1 < _tmp/group-session-output
+  local status=$?
+
+  cat _tmp/group-session-output
+  echo
+
+  return $status
+}
+
+run_with_shell_interactive() {
+  local sh=$1
+  shift
+
+  echo "sh = $sh"
+
+  local more_flags=''
+  case $sh in
+    (bash|bin/osh)
+      more_flags='--rcfile /dev/null'
+      ;;
+  esac
+
+  $sh $more_flags -i -c '. $0; show_group_session "$@"' $0 $sh "$@" > _tmp/group-session-output
+
+  test/assert_process_table.py -i $$ $sh $1 < _tmp/group-session-output
+  local status=$?
+
+  cat _tmp/group-session-output
+  echo
+
+  return $status
+}
+
 compare_shells() {
   ### Pass tasks, any of fgproc-fgpipe-bgpipe
 
+  local status=0
+
   for sh in dash bash mksh zsh bin/osh; do
   #for sh in dash bash bin/osh; do
-
-  # for psub
-  #for sh in bash zsh bin/osh; do
     echo -----
     echo $sh
     echo -----
 
-    echo 'NON-INTERACTIVE'
-    $sh $0 show_group_session "$@"
+    echo NON-INTERACTIVE
+    run_with_shell $sh $@
     echo
-
-    local more_flags=''
-    case $sh in
-      (bash|bin/osh)
-        more_flags='--rcfile /dev/null'
-        ;;
-    esac
 
     echo INTERACTIVE
-    $sh $more_flags -i -c '. $0; show_group_session "$@"' $0 "$@"
+    run_with_shell_interactive $sh $@
     echo
+
   done
+  exit $status
 }
 
 # We might be sourced by INTERACTIVE, so avoid running anything in that case.
 case $1 in
-  setup|show_group_session|compare_shells)
+  setup|show_group_session|compare_shells|run_with_shell|run_with_shell_interactive)
     "$@"
-    ;;
 esac

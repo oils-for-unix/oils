@@ -85,6 +85,27 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit dev-minimal T
 
+  interactive:
+    runs-on: ubuntu-20.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: interactive
+        run: |
+          soil/github-actions.sh run-job interactive
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit interactive T
+
   pea:
     runs-on: ubuntu-20.04
     env:
@@ -300,7 +321,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild']
+    needs: ['dummy', 'benchmarks', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
