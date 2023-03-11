@@ -71,11 +71,11 @@ soil-run() {
   test/group-session-runner.sh setup
 
   # TODO:
-  # - Add bin/osh, _bin/cxx-dbg/osh
+  # - Add _bin/cxx-dbg/osh
   # - dash and mksh also pass many tests
   # - zsh is failing in the CI?  Seems to pass locally
 
-  for sh in bash; do
+  for sh in bash bin/osh; do
     SH=$sh run-test-funcs
 
     # This could be QUICKLY=1
