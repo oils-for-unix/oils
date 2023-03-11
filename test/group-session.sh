@@ -68,8 +68,11 @@ test-psub-interactive() {
 soil-run() {
   test/group-session-runner.sh setup
 
-  # Note: zsh also passes all tests
-  for sh in bash bin/osh; do
+  # TODO:
+  # - Add bin/osh, _bin/cxx-dbg/osh
+  # - dash and mksh also pass many tests
+
+  for sh in bash zsh; do
     SH=$sh run-test-funcs
 
     # This could be QUICKLY=1

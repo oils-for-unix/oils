@@ -103,7 +103,7 @@ run_with_shell() {
 
   $sh $0 show_group_session $sh "$@" > _tmp/group-session-output
 
-  test/group-session.py $$ $sh $1 < _tmp/group-session-output
+  test/assert_process_table.py $$ $sh $1 < _tmp/group-session-output
   local status=$?
 
   cat _tmp/group-session-output
@@ -127,7 +127,7 @@ run_with_shell_interactive() {
 
   $sh $more_flags -i -c '. $0; show_group_session "$@"' $0 $sh "$@" > _tmp/group-session-output
 
-  test/group-session.py -i $$ $sh $1 < _tmp/group-session-output
+  test/assert_process_table.py -i $$ $sh $1 < _tmp/group-session-output
   local status=$?
 
   cat _tmp/group-session-output
