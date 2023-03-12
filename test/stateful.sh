@@ -138,7 +138,6 @@ html-summary() {
       <thead>
         <tr>
           <td>Test File</td>
-          <td>Log</td>
           <td>Elapsed seconds</td>
           <td>Status</td>
         </tr>
@@ -149,6 +148,9 @@ EOF
 
   shopt -s lastpipe  # to mutate all_passed in while
 
+  local results_tmp=$BASE_DIR/results.html
+  echo '' > $results_tmp  # Accumulate more here
+
   print-tasks | while read spec_name; do
 
     # Note: in test/spec-runner.sh, an awk script creates this table.  It reads
@@ -157,10 +159,9 @@ EOF
     read status elapsed _ log_filename results_filename < $BASE_DIR/${spec_name}.task.txt
 
     echo '<tr>'
-    echo "<td> <a href="$results_filename">$spec_name</a> </td>"
-    echo "<td> <a href="$log_filename">Log</a> </td>"
+    echo "<td> <a href="$log_filename">$spec_name</a> </td>"
 
-    printf -v elapsed_str '%.2f' $elapsed
+    printf -v elapsed_str '%.1f' $elapsed
     echo "<td>$elapsed_str</td>"
 
     case $status in
@@ -175,9 +176,20 @@ EOF
         all_passed=1
         ;;
     esac
-
     echo '</tr>'
+
+    # Append to temp file
+    {
+      echo "<h2>$spec_name</h2>"
+      echo '<pre>'
+      escape-html $BASE_DIR/$results_filename
+      echo '</pre>'
+    } >> $results_tmp
+
   done
+  echo '</table>'
+
+  cat $results_tmp
 
   cat <<EOF
     </table>

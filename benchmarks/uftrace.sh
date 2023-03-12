@@ -19,6 +19,7 @@ set -o errexit
 source benchmarks/common.sh  # cmark function.  TODO: could use executable
 source build/dev-shell.sh  # put uftrace in $PATH, R_LIBS_USER
 source devtools/common.sh  # banner
+source test/common.sh  # escape-html
 
 readonly BASE_DIR=_tmp/uftrace
 
@@ -261,11 +262,6 @@ export-all() {
     banner "$task: export to TSV with Python3 plugin"
     time tsv-plugin $task
   done
-}
-
-escape-html() {
-  # Annoying that & has to be escaped in substitution!
-  sed -e 's|&|\&amp;|g' -e 's|<|\&lt;|g' -e 's|>|\&gt;|g'
 }
 
 html-index() {

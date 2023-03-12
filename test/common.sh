@@ -232,3 +232,8 @@ date-and-git-info() {
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
 }
+
+escape-html() {
+  # Annoying that & has to be escaped in substitution!
+  sed -e 's|&|\&amp;|g' -e 's|<|\&lt;|g' -e 's|>|\&gt;|g' "$@"
+}
