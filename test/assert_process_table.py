@@ -169,33 +169,25 @@ def check_psub(ptree, shell, interactive):
 
 
 def main():
-  interactive = False
-  if sys.argv[1] == "-i":
-    interactive = True
-    sys.argv.pop(1)
-
-    # CI doesn't have a TTY. Relax interactivity checks in that case.
-    #if not sys.stderr.isatty():
-    #  interactive = False
-    #  print('Warning: stderr is not a TTY and got -i')
-
   runner_pid = sys.argv[1]
   shell = sys.argv[2]
-  kind = sys.argv[3]
+  snippet = sys.argv[3]
+  interactive = (sys.argv[4] == 'yes')
+
   ptree = parse_process_tree(sys.stdin, runner_pid)
-  if 'fgproc' in kind:
+  if snippet == 'fgproc':
     check_proc(ptree, shell, interactive)
-  elif 'bgproc' in kind:
+  elif snippet == 'bgproc':
     check_proc(ptree, shell, interactive)
-  elif 'fgpipe' in kind:
+  elif snippet == 'fgpipe':
     check_pipe(ptree, shell, interactive)
-  elif 'bgpipe' in kind:
+  elif snippet == 'bgpipe':
     check_pipe(ptree, shell, interactive)
-  elif 'subshell' in kind:
+  elif snippet == 'subshell':
     check_subshell(ptree, shell, interactive)
-  elif 'csub' in kind:
+  elif snippet == 'csub':
     check_csub(ptree, shell, interactive)
-  elif 'psub' in kind:
+  elif snippet == 'psub':
     check_psub(ptree, shell, interactive)
   else:
     assert False

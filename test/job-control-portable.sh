@@ -12,7 +12,9 @@ setup() {
   ln -s -f -v $(which cat) _tmp/cat2
 }
 
-show_group_session() {
+readonly PS_COLS='pid,ppid,pgid,sid,tpgid,comm'
+
+show_process_table() {
   # by default, it shows processes that use the same terminal
   #ps -o pid,ppid,pgid,sid,tname,comm | cat | _tmp/cat2
 
@@ -23,116 +25,101 @@ show_group_session() {
   #   - see APUE section on setpgid(), tcsetgprp()
 
   local sh=$1
-  local kind=$2
+  local snippet=$2
 
-  # We have many case statements here to allow choosing many tests as a "mask",
-  # e.g. show_group_session fgproc+bgproc
-
-  case $kind in (*fgproc*)
-    echo '[foreground process]'
-    ps -o pid,ppid,pgid,sid,tpgid,comm
-    ;;
-  esac
-
-  case $kind in (*bgproc*)
-    echo '[background process]'
-    ps -o pid,ppid,pgid,sid,tpgid,comm &
-    wait
+  case $snippet in 
+    fgproc)
+      echo '[foreground process]'
+      ps -o $PS_COLS
+      ;;
+    bgproc)
+      echo '[background process]'
+      ps -o $PS_COLS &
+      wait
+      ;;
 
     # - Gets its own PGID
     # - Hm UNLIKE bgpipe it also gets its own TPGID?  Seems consistent in all
     #   shells.  Why is that?
-    ;;
+    fgpipe)
+      echo '[foreground pipeline]'
+      ps -o $PS_COLS | cat | _tmp/cat2
+      ;;
+
+    bgpipe)
+      # For interactive shells, the TPGID is different here.
+      # Foreground: it matches the PGID of 'ps | cat | cat2'
+      # Background: it matches the PGID of bash!
+
+      echo '[background pipeline]'
+      ps -o $PS_COLS | cat | _tmp/cat2 &
+      wait
+      ;;
+
+    subshell)
+      # does NOT create a new process group.  So what happens when it's
+      # interrupted?
+
+      echo '[subshell]'
+      ( ps -o $PS_COLS; echo ALIVE )
+      # subshell gets its own PGID in every shell!
+      ;;
+
+    csub)
+      # does NOT create a new process group.  So what happens when it's
+      # interrupted?
+      echo '[command sub]'
+      local x
+      x=$(ps -o $PS_COLS)
+      echo "$x"
+      ;;
+
+    psub)
+      case $sh in (dash|mksh)
+        return
+      esac
+
+      echo '[process sub]'
+      # use 'eval' as workaround for syntax error in dash and mksh
+      eval "cat <(ps -o $PS_COLS)"
+      # RESULTS
+      # zsh: ps and cat are in their own process groups distinct from the shell!
+      # bash: cat is in its own process group, but ps is in one with bash.  Hm
+      ;;
+
   esac
+}
 
-  case $kind in (*fgpipe*)
-    echo '[foreground pipeline]'
-    ps -o pid,ppid,pgid,sid,tpgid,comm | cat | _tmp/cat2
-    ;;
-  esac
+run_snippet() {
+  local sh=$1
+  local snippet=$2
+  local interactive=$3
 
-  case $kind in (*bgpipe*)
-    # For interactive shells, the TPGID is different here.
-    # Foreground: it matches the PGID of 'ps | cat | cat2'
-    # Background: it matches the PGID of bash!
+  echo "run_snippet $sh $snippet $interactive"
 
-    echo '[background pipeline]'
-    ps -o pid,ppid,pgid,sid,tpgid,comm | cat | _tmp/cat2 &
-    wait
-    ;;
-  esac
+  local tmp=_tmp/job-control-ps.txt
 
-  case $kind in (*subshell*)
-    # does NOT create a new process group.  So what happens when it's
-    # interrupted?
+  if test $interactive = 'yes'; then
+    # Run shell with -i, but source the code first.
 
-    echo '[subshell]'
-    ( ps -o pid,ppid,pgid,sid,tpgid,comm; echo ALIVE )
-    # subshell gets its own PGID in every shell!
-    ;;
-  esac
-
-  case $kind in (*csub*)
-    # does NOT create a new process group.  So what happens when it's
-    # interrupted?
-    echo '[command sub]'
-    local x
-    x=$(ps -o pid,ppid,pgid,sid,tpgid,comm)
-    echo "$x"
-    ;;
-  esac
-
-  case $kind in (*psub*)
-    case $sh in (dash|mksh)
-      return
+    local more_flags=''
+    case $sh in
+      (bash|bin/osh)
+        more_flags='--rcfile /dev/null'
+        ;;
     esac
 
-    echo '[process sub]'
-    # use 'eval' as workaround for syntax error in dash and mksh
-    eval 'cat <(ps -o pid,ppid,pgid,sid,tpgid,comm)'
-    # RESULTS
-    # zsh: ps and cat are in their own process groups distinct from the shell!
-    # bash: cat is in its own process group, but ps is in one with bash.  Hm
-    ;;
-  esac
-}
+    $sh $more_flags -i -c '. $0; show_process_table "$@"' $0 $sh $snippet > $tmp
+  else
+    # Run shell without -i.
 
-run_with_shell() {
-  local sh=$1
-  shift
+    $sh $0 show_process_table $sh $snippet > $tmp
+  fi
 
-  echo "sh = $sh"
-
-  $sh $0 show_group_session $sh "$@" > _tmp/group-session-output
-
-  test/assert_process_table.py $$ $sh $1 < _tmp/group-session-output
+  test/assert_process_table.py $$ $sh $snippet $interactive < $tmp
   local status=$?
 
-  cat _tmp/group-session-output
-  echo
-
-  return $status
-}
-
-run_with_shell_interactive() {
-  local sh=$1
-  shift
-
-  echo "sh = $sh"
-
-  local more_flags=''
-  case $sh in
-    (bash|bin/osh)
-      more_flags='--rcfile /dev/null'
-      ;;
-  esac
-
-  $sh $more_flags -i -c '. $0; show_group_session "$@"' $0 $sh "$@" > _tmp/group-session-output
-
-  test/assert_process_table.py -i $$ $sh $1 < _tmp/group-session-output
-  local status=$?
-
-  cat _tmp/group-session-output
+  cat $tmp
   echo
 
   return $status
@@ -141,6 +128,6 @@ run_with_shell_interactive() {
 # We might be sourced by run_with_shell_interactive, so avoid running anything
 # in that case.
 case $1 in
-  setup|show_group_session|run_with_shell|run_with_shell_interactive)
+  setup|show_process_table|run_snippet|run_with_shell|run_with_shell_interactive)
     "$@"
 esac
