@@ -411,7 +411,7 @@ class FdState(object):
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
-          here_proc.Start(trace.HereDoc())
+          here_proc.StartProcess(trace.HereDoc())
           #log('Started %s as %d', here_proc, pid)
           self._PushWait(here_proc)
 
@@ -889,7 +889,7 @@ class Process(Job):
       posix.close(self.close_r)
       posix.close(self.close_w)
 
-  def Start(self, why, pgrp=-1):
+  def StartProcess(self, why, pgrp=-1):
     # type: (trace_t, int) -> int
     """
     Start this process with fork(), handling redirects.
@@ -1008,7 +1008,7 @@ class Process(Job):
   def RunWait(self, waiter, why):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
-    self.Start(why)
+    self.StartProcess(why)
 
     # ShellExecutor might be calling this for the last part of a pipeline.
     if self.parent_pipeline is None:
@@ -1116,10 +1116,10 @@ class Pipeline(Job):
     #log('pipe for %s: %d %d', p, r, w)
     prev = self.procs[-1]
 
-    prev.AddStateChange(StdoutToPipe(r, w))  # applied on Start()
-    p.AddStateChange(StdinFromPipe(r, w))  # applied on Start()
+    prev.AddStateChange(StdoutToPipe(r, w))  # applied on StartPipeline()
+    p.AddStateChange(StdinFromPipe(r, w))  # applied on StartPipeline()
 
-    p.AddPipeToClose(r, w)  # MaybeClosePipe() on Start()
+    p.AddPipeToClose(r, w)  # MaybeClosePipe() on StartPipeline()
 
     self.procs.append(p)
 
@@ -1141,7 +1141,7 @@ class Pipeline(Job):
 
     self.last_pipe = (r, w)  # So we can connect it to last_thunk
 
-  def Start(self, waiter):
+  def StartPipeline(self, waiter):
     # type: (Waiter) -> None
     # TODO: pipelines should be put in their own process group with setpgid().
     # I tried 'cat | cat' and Ctrl-C, and it works without this, probably
@@ -1149,7 +1149,7 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
-      pid = proc.Start(trace.PipelinePart(), self.group_id)
+      pid = proc.StartProcess(trace.PipelinePart(), self.group_id)
       if i == 0 and self.group_id == -1:
         # Mimick bash and use the PID of the first process as the group for the
         # whole pipeline.
@@ -1211,7 +1211,7 @@ class Pipeline(Job):
     Returns:
       pipe_status (list of integers).
     """
-    self.Start(waiter)
+    self.StartPipeline(waiter)
     if self.group_id == -1:
       self.group_id = self.job_state.shell_pgrp
 
@@ -1387,7 +1387,7 @@ class JobState(object):
     # And display it in the table?
     # What if it's not here?
     # We need a table of processes state.
-    # Every time we do Process.Start() we need to record it, in case we get a
+    # Every time we do p.StartPipeline() we need to record it, in case we get a
     # notification that it stopped?  Then we look up what process it was.
     # And we can find what part of the pipeline it's in.
 
