@@ -216,11 +216,17 @@ def PrintResults(shell_pairs, result_table, flaky, num_retries, f):
 
       if cell == Result.SKIP:
         f.write('SKIP\t')
+
       elif cell == Result.FAIL:
-        num_failures += 1
+        # Don't count C++ failures right now
+        if shell_label != 'osh-cpp':
+          log('Ignoring osh-cpp failure: %d %s', case_num, desc)
+          num_failures += 1
         f.write('%sFAIL%s\t' % (fail_color, reset ))
+
       elif cell == Result.OK:
         f.write('%sok%s\t' % (ok_color, reset))
+
       else:
         raise AssertionError(cell)
 

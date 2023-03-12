@@ -34,52 +34,68 @@ source build/dev-shell.sh
 
 readonly BASE_DIR=_tmp/spec/stateful
 
-run() {
-  ### for PYTHONPATH
-  "$@"
-}
-
 # Hack for testing the harness
 #readonly FIRST='-r 0'
 readonly FIRST=''
+readonly OSH_CPP=_bin/cxx-dbg/osh
 
-signals-quick() {
-  spec/stateful/signals.py $FIRST \
-    $OSH bash "$@"
+#readonly -a QUICK_SHELLS=( $OSH bash )
+readonly -a QUICK_SHELLS=( $OSH $OSH_CPP bash )
+
+#
+# Suites in spec/stateful
+#
+
+signals() {
+  spec/stateful/signals.py $FIRST "$@"
 }
 
-# They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.
-# zsh doesn't work now, but could if the prompt was changed to $ ?
-signals() { signals-quick dash mksh "$@"; }
-
-interactive-quick() {
-  spec/stateful/interactive.py $FIRST --osh-failures-allowed 1 \
-    $OSH bash "$@"
+interactive() {
+  spec/stateful/interactive.py $FIRST --osh-failures-allowed 1 "$@"
 }
-# Doesn't work in zsh
-interactive() { interactive-quick dash mksh "$@"; }
 
-job-control-quick() {
-  spec/stateful/job_control.py $FIRST --osh-failures-allowed 1 \
-    $OSH bash "$@"
+job-control() {
+  spec/stateful/job_control.py $FIRST --osh-failures-allowed 1 "$@"
 }
-job-control() { job-control-quick dash "$@"; }
 
-manifest() {
+# Run on just 2 shells
+
+signals-quick() { signals "${QUICK_SHELLS[@]}"; }
+interactive-quick() { interactive "${QUICK_SHELLS[@]}"; }
+job-control-quick() { job-control "${QUICK_SHELLS[@]}"; }
+
+# Run on all shells we can
+
+# They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.  zsh
+# doesn't work now, but could if the prompt was changed to $ ?
+signals-all() { signals "${QUICK_SHELLS[@]}" dash mksh "$@"; }
+
+interactive-all() { interactive "${QUICK_SHELLS[@]}" dash mksh "$@"; }
+
+job-control-all() { job-control "${QUICK_SHELLS[@]}" dash "$@"; }
+
+#
+# More automation
+#
+
+print-tasks() {
   ### List all tests
 
   # TODO: 
   # - Print a table with --osh-allowed-failures and shells.  It can be filtered
-  # - Compare Python and C++ side by side
 
-  cat <<EOF
-interactive
-job-control
-signals
-EOF
+  if test -n "${QUICKLY:-}"; then
+    echo 'interactive'
+  else
+    echo 'interactive'
+    echo 'job-control'
+    echo 'signals'
+  fi
 }
 
 run-file() {
+  ### Run a spec/stateful file, logging output
+
   local spec_name=$1
 
   log "__ $spec_name"
@@ -91,7 +107,7 @@ run-file() {
 
   time-tsv -o $base_dir/${spec_name}.task.txt \
     --field $spec_name --field $log_filename --field $results_filename -- \
-    $0 $spec_name --results-file $base_dir/$results_filename \
+    $0 "$spec_name-all" --results-file $base_dir/$results_filename \
     >$base_dir/$log_filename 2>&1 || true
 }
 
@@ -118,8 +134,6 @@ html-summary() {
 
     <h1>Stateful Tests with <a href="//www.oilshell.org/cross-ref.html#pexpect">pexpect</a> </h1>
 
-    <p>OSH binary: $OSH</p>
-
     <table>
       <thead>
         <tr>
@@ -135,7 +149,7 @@ EOF
 
   shopt -s lastpipe  # to mutate all_passed in while
 
-  manifest | while read spec_name; do
+  print-tasks | while read spec_name; do
 
     # Note: in test/spec-runner.sh, an awk script creates this table.  It reads
     # *.task.txt and *.stats.txt.  I could add --stats-file to harness.py
@@ -176,40 +190,15 @@ EOF
   return $all_passed
 }
 
-all() {
-  ### Run all tests
-  local impl=$1
+soil-run() {
+  ninja $OSH_CPP
 
   mkdir -p $BASE_DIR
 
-  manifest | xargs -n 1 -- $0 run-file
+  print-tasks | xargs -n 1 -- $0 run-file
 
   # Returns whether all passed
-  set +o errexit
-  html-summary > $BASE_DIR/$impl.html
-  local status=$?
-
-  # Don't turn errexit back on, since that will mess up soil-run-cpp.
-
-  return $status
-}
-
-soil-run-py() {
-  all 'py'
-}
-
-soil-run-cpp() {
-  local bin=_bin/cxx-dbg/osh
-
-  ninja $bin
-
-  # TODO: $OSH should be a param for all functions, like signals-quick
-
-  OSH=$bin all 'cpp'
-  local status=$?
-
-  echo "$0 all -> status $status"
-  echo "TODO: CI job should fail if any tests fail"
+  html-summary > $BASE_DIR/index.html
 }
 
 #
