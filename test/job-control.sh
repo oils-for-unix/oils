@@ -46,7 +46,7 @@ run-tasks() {
     # Suppress failure, since exit code is recorded
     time-tsv -o $tsv_out --append \
       --field $sh --field $snippet --field $interactive -- \
-      test/group-session-runner.sh $func $sh $snippet || true
+      test/job-control-portable.sh $func $sh $snippet || true
   done
 }
 
@@ -110,7 +110,7 @@ make-report() {
 }
 
 soil-run() {
-  test/group-session-runner.sh setup
+  test/job-control-portable.sh setup
 
   ninja $OSH_CPP
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# Helper for test/job-control.sh.  This is a portable shell script, since it
-# has to run under dash, mksh, etc.
+# test/job-control-portable.sh: helper for job-control.sh.
+#
+# This is a portable shell script, since it has to run under dash, mksh, etc.
 #
 # Usage:
-#   test/group-session-runner.sh <function name>
+#   test/job-control-portable.sh <function name>
 
 setup() {
   mkdir -p _tmp
@@ -137,7 +138,8 @@ run_with_shell_interactive() {
   return $status
 }
 
-# We might be sourced by INTERACTIVE, so avoid running anything in that case.
+# We might be sourced by run_with_shell_interactive, so avoid running anything
+# in that case.
 case $1 in
   setup|show_group_session|run_with_shell|run_with_shell_interactive)
     "$@"
