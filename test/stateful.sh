@@ -199,7 +199,7 @@ soil-run-py() {
 }
 
 soil-run-cpp() {
-  local bin=_bin/cxx-asan/osh
+  local bin=_bin/cxx-dbg/osh
 
   ninja $bin
 

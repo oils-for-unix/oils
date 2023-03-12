@@ -18,9 +18,8 @@ source test/tsv-lib.sh  # time-tsv
 
 readonly BASE_DIR=_tmp/job-control
 
-# TODO: Add _bin/cxx-dbg/osh
-# - zsh is failing in the CI?  Seems to pass locally
-readonly -a JC_SHELLS=(bash dash mksh zsh bin/osh)
+readonly OSH_CPP=_bin/cxx-dbg/osh
+readonly -a JC_SHELLS=(bash dash mksh zsh bin/osh $OSH_CPP)
 
 print-tasks() {
   for sh in "${JC_SHELLS[@]}"; do
@@ -112,6 +111,8 @@ make-report() {
 
 soil-run() {
   test/group-session-runner.sh setup
+
+  ninja $OSH_CPP
 
   local times_tsv=$BASE_DIR/times.tsv
   mkdir -p $BASE_DIR
