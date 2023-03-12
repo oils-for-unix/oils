@@ -56,7 +56,7 @@ if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
 fi
 
-R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-03-01
+R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-03-11
 user=$(whoami)  # somehow $USER is not available in CI
 
 if test $user = uke; then

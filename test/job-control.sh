@@ -12,76 +12,17 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 REPO_ROOT=$(cd "$(dirname $0)"/..; pwd)
 
+source benchmarks/common.sh  # html-head
 source test/common.sh
-source test/tsv-lib.sh
+source test/tsv-lib.sh  # time-tsv
 
 readonly BASE_DIR=_tmp/job-control
 
-SH=${SH:-bin/osh}
-
-
-test-fgproc() {
-  test/group-session-runner.sh run_with_shell $SH fgproc
-}
-
-test-fgproc-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH fgproc
-}
-
-test-bgproc() {
-  test/group-session-runner.sh run_with_shell $SH bgproc
-}
-
-test-bgproc-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH bgproc
-}
-
-test-fgpipe() {
-  test/group-session-runner.sh run_with_shell $SH fgpipe
-}
-
-test-fgpipe-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH fgpipe
-}
-
-test-bgpipe() {
-  test/group-session-runner.sh run_with_shell $SH bgpipe
-}
-
-test-bgpipe-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH bgpipe
-}
-
-test-subshell() {
-  test/group-session-runner.sh run_with_shell $SH subshell
-}
-
-test-subshell-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH subshell
-}
-
-test-csub() {
-  test/group-session-runner.sh run_with_shell $SH csub
-}
-
-test-csub-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH csub
-}
-
-test-psub() {
-  test/group-session-runner.sh run_with_shell $SH psub
-}
-
-test-psub-interactive() {
-  test/group-session-runner.sh run_with_shell_interactive $SH psub
-}
-
-# TODO: Add _bin/cxx-dbg/osh
-# - zsh is failing in the CI?  Seems to pass locally
-readonly -a SHELLS=(bash dash mksh zsh bin/osh)
+readonly OSH_CPP=_bin/cxx-dbg/osh
+readonly -a JC_SHELLS=(bash dash mksh zsh bin/osh $OSH_CPP)
 
 print-tasks() {
-  for sh in "${SHELLS[@]}"; do
+  for sh in "${JC_SHELLS[@]}"; do
     for snippet in fgproc bgproc fgpipe bgpipe subshell csub psub; do
       for interactive in - yes; do
         echo "${sh}${TAB}${snippet}${TAB}${interactive}"
@@ -109,36 +50,91 @@ run-tasks() {
   done
 }
 
-nice-tsv() {
-  ### like my pretty-tsv utility
+report-html-head() {
+  local title=$1
 
-  python2 -c '
-from __future__ import print_function
+  local base_url='../../web'
 
-import sys
+  html-head --title "$title" \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css"
+}
 
-for line in sys.stdin:
-  cells = line.rstrip().split("\t")
-  for cell in cells:
-    print("%13s" % cell, end="")
-  print()
+print-report() {
+  local tsv_out=$1
+
+  local title='Job Control Tests'
+  report-html-head "$title"
+
+  # Extra style, doesn't go on any element
+  # Pink background same as web/spec-tests.css
+  echo '<style>.fail { background-color: #ffe0e0 }</style>'
+
+  # Copied from uftrace
+  echo '<body style="margin: 0 auto; width: 40em; font-size: large">'
+
+  echo "<h1>$title</h1>"
+
+  tsv2html $tsv_out 
+
+  echo '
+  </body>
+</html>
 '
+}
+
+add-css-class() {
+  python2 -c '
+import sys
+for i, line in enumerate(sys.stdin):
+  rest = line.rstrip()
+  if i == 0:
+    print("ROW_CSS_CLASS\t%s" % rest)
+  else:
+    row_css_class = "pass" if line.startswith("0") else "fail"
+    print("%s\t%s" % (row_css_class, rest))
+'
+}
+
+make-report() {
+  local times_tsv=$1
+
+  # TODO: Add ROW_CSS_CLASS when status != 0
+  add-css-class < $times_tsv > $BASE_DIR/index.tsv
+
+  local html=$BASE_DIR/index.html
+  print-report $BASE_DIR/index.tsv > $html
+
+  echo "Wrote $html"
 }
 
 soil-run() {
   test/group-session-runner.sh setup
 
-  local tsv_out=$BASE_DIR/times.tsv
+  ninja $OSH_CPP
+
+  local times_tsv=$BASE_DIR/times.tsv
   mkdir -p $BASE_DIR
 
-  time-tsv -o $tsv_out --print-header \
+  # note: it seems better to align everything right
+
+  here-schema-tsv >$BASE_DIR/index.schema.tsv <<EOF
+column_name   type
+ROW_CSS_CLASS string
+status        integer
+elapsed_secs  number
+sh            string
+snippet       string
+interactive   string
+EOF
+
+  time-tsv -o $times_tsv --print-header \
     --field sh --field snippet --field interactive
 
-  print-tasks | run-tasks $tsv_out
+  print-tasks | run-tasks $times_tsv
 
-  nice-tsv < $tsv_out
-
-  return
+  make-report $times_tsv
 }
 
 #
