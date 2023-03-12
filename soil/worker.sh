@@ -171,8 +171,7 @@ interactive-tasks() {
 dump-user-host      soil/worker.sh dump-user-host                -
 py-all-and-ninja    soil/worker.sh py-all-and-ninja              -
 job-control         test/job-control.sh soil-run                 _tmp/job-control/index.html
-stateful-py         test/stateful.sh soil-run-py                 _tmp/spec/stateful/py.html
-stateful-cpp        test/stateful.sh soil-run-cpp                _tmp/spec/stateful/cpp.html
+stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
 EOF
 }
 
