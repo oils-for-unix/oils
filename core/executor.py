@@ -247,7 +247,7 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
+      status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
 
       # this is close to a "leaf" for errors
       # problem: permission denied EACCESS prints duplicate messages
@@ -332,7 +332,7 @@ class ShellExecutor(vm._Executor):
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    return p.RunWait(self.waiter, trace.ForkWait())
+    return p.RunProcess(self.waiter, trace.ForkWait())
 
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str

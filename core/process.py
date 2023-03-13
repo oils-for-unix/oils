@@ -1005,7 +1005,7 @@ class Process(Job):
     else:
       self.job_state.MaybeTakeTerminal()
 
-  def RunWait(self, waiter, why):
+  def RunProcess(self, waiter, why):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
     self.StartProcess(why)
