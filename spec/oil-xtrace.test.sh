@@ -286,9 +286,7 @@ set -x
 ## stdout-json: ""
 ## STDERR:
 . builtin ':' begin
-> pipeline
-  . builtin false
-< pipeline
+. builtin false
 . builtin ':' end
 ## END
 
