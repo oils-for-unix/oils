@@ -649,11 +649,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     status = box[0]
 
     # Return the TTY to the original owner before exiting.
-    if job_state.JobControlEnabled():
-      try:
-        job_state.MaybeGiveTerminal(job_state.original_tty_pgrp)
-      except error.FatalRuntime as e:
-        errfmt.PrettyPrintError(e)
+    try:
+      job_state.MaybeReturnTerminal()
+    except error.FatalRuntime as e:
+      # Don't abort the shell on error, just print a message.
+      errfmt.PrettyPrintError(e)
 
     if readline:
       try:
