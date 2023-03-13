@@ -1069,8 +1069,7 @@ class Pipeline(Job):
     """
     self.last_thunk = thunk
 
-    if len(self.procs) == 0:   # No pipe: if ! foo
-      return
+    assert len(self.procs) != 0
 
     r, w = posix.pipe()
     prev = self.procs[-1]
@@ -1143,6 +1142,8 @@ class Pipeline(Job):
     Returns:
       pipe_status (list of integers).
     """
+    assert len(self.procs) != 0
+
     self.StartPipeline(waiter)
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
@@ -1165,10 +1166,7 @@ class Pipeline(Job):
       posix.close(r)
 
     else:
-      if len(self.procs):
-        cmd_ev.ExecuteAndCatch(last_node)  # Background pipeline without last_pipe
-      else:
-        cmd_ev._Execute(last_node)  # singleton foreground pipeline, e.g. '! func'
+      cmd_ev.ExecuteAndCatch(last_node)  # Background pipeline without last_pipe
 
     self.pipe_status[-1] = cmd_ev.LastStatus()
     if self.AllDone():
@@ -1176,10 +1174,7 @@ class Pipeline(Job):
 
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
-    if len(self.procs):
-      return self.Wait(waiter)
-    else:
-      return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
+    return self.Wait(waiter)
 
   def AllDone(self):
     # type: () -> bool
