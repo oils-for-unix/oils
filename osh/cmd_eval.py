@@ -769,22 +769,30 @@ class CommandEvaluator(object):
         # pipelines than assignments because pipelines are non-deterministic.
         self.mem.SetLastArgument('')
 
+        # Set status to INVALID value, because we MIGHT set cmd_st.pipe_status,
+        # which _Execute() boils down into a status for us.
+        status = -1
+
         # TODO: how to get errexit_spid into _Execute?
         # It can be the span_id of !, or of the pipeline component that failed,
         # recorded in c_status.
         if node.negated:
           self._StrictErrExit(node)
-          cmd_st.pipe_negated = True
           # spid of !
           with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
-            self.shell_ex.RunPipeline(node, cmd_st)
+            # '! grep' is parsed as a pipeline, according to the grammar, but
+            # there's no pipe() call.
+            if len(node.children) == 1:
+              tmp_status = self._Execute(node.children[0])
+              status = 1 if tmp_status == 0 else 0
+            else:
+              self.shell_ex.RunPipeline(node, cmd_st)
+              cmd_st.pipe_negated = True
 
           # errexit is disabled for !.
           cmd_st.check_errexit = False
         else:
           self.shell_ex.RunPipeline(node, cmd_st)
-
-        status = -1  # INVALID value because the caller will compute it
 
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)

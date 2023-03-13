@@ -61,7 +61,7 @@ class ProcessTest(unittest.TestCase):
                                             util.NullDebugFile())
 
   def _ExtProc(self, argv):
-    arg_vec = cmd_value.Argv(argv, [0] * len(argv), None)
+    arg_vec = cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
     argv0_path = None
     for path_entry in ['/bin', '/usr/bin']:
       full_path = os.path.join(path_entry, argv[0])
