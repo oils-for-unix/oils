@@ -1009,11 +1009,14 @@ class Process(Job):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
     self.StartProcess(why)
+<<<<<<< HEAD
 
     # ShellExecutor might be calling this for the last part of a pipeline.
     if self.parent_pipeline is None:
       self.job_state.MaybeGiveTerminal(posix.getpgid(self.pid))
 
+=======
+>>>>>>> soil-staging
     return self.Wait(waiter)
 
 
@@ -1149,12 +1152,16 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
+<<<<<<< HEAD
       pid = proc.StartProcess(trace.PipelinePart(), self.group_id)
       if i == 0 and self.group_id == -1:
         # Mimick bash and use the PID of the first process as the group for the
         # whole pipeline.
         self.group_id = pid
 
+=======
+      pid = proc.StartProcess(trace.PipelinePart())
+>>>>>>> soil-staging
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 
@@ -1212,10 +1219,13 @@ class Pipeline(Job):
       pipe_status (list of integers).
     """
     self.StartPipeline(waiter)
+<<<<<<< HEAD
     if self.group_id == -1:
       self.group_id = self.job_state.shell_pgrp
 
     self.job_state.MaybeGiveTerminal(self.group_id)
+=======
+>>>>>>> soil-staging
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
     # may or may not fork:
@@ -1387,7 +1397,11 @@ class JobState(object):
     # And display it in the table?
     # What if it's not here?
     # We need a table of processes state.
+<<<<<<< HEAD
     # Every time we do p.StartPipeline() we need to record it, in case we get a
+=======
+    # Every time we do p.StartProcess() we need to record it, in case we get a
+>>>>>>> soil-staging
     # notification that it stopped?  Then we look up what process it was.
     # And we can find what part of the pipeline it's in.
 

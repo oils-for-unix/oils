@@ -87,6 +87,26 @@ show_process_table() {
       # bash: cat is in its own process group, but ps is in one with bash.  Hm
       ;;
 
+    nested_eval)
+      echo '[nested eval]'
+      ps -o $PS_COLS | tac | eval 'cat | _tmp/cat2'
+      ;;
+
+    nested_pipeline)
+      echo '[nested pipeline]'
+      ps -o $PS_COLS | { cat | _tmp/cat2; } | tac
+      ;;
+
+    nested_pipeline_last)
+      echo '[nested pipeline]'
+      ps -o $PS_COLS | tac | { cat | _tmp/cat2; }
+      ;;
+
+    *)
+      echo "Invalid snippet $snippet"
+      exit 1
+      ;;
+
   esac
 }
 
