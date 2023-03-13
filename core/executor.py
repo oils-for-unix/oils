@@ -247,7 +247,7 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      status = p.RunWait(self.waiter, trace.External(cmd_val.argv))
+      status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
 
       # this is close to a "leaf" for errors
       # problem: permission denied EACCESS prints duplicate messages
@@ -286,7 +286,7 @@ class ShellExecutor(vm._Executor):
         p.Init_ParentPipeline(pi)
         pi.Add(p)
 
-      pi.Start(self.waiter)
+      pi.StartPipeline(self.waiter)
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
@@ -298,7 +298,7 @@ class ShellExecutor(vm._Executor):
       # If we haven't called Register yet, then we won't know who to notify.
 
       p = self._MakeProcess(node)
-      pid = p.Start(trace.Fork())
+      pid = p.StartProcess(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
       self.job_state.AddJob(p)  # show in 'jobs' list
     return 0
@@ -327,12 +327,12 @@ class ShellExecutor(vm._Executor):
     status_out.pipe_spids.append(location.SpanForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
-      status_out.pipe_status = pi.Run(self.waiter, self.fd_state)
+      status_out.pipe_status = pi.RunPipeline(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    return p.RunWait(self.waiter, trace.ForkWait())
+    return p.RunProcess(self.waiter, trace.ForkWait())
 
   def RunCommandSub(self, cs_part):
     # type: (command_sub) -> str
@@ -370,7 +370,7 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    p.Start(trace.CommandSub())
+    p.StartProcess(trace.CommandSub())
     #log('Command sub started %d', pid)
 
     chunks = []  # type: List[str]
@@ -490,7 +490,7 @@ class ShellExecutor(vm._Executor):
     p.AddStateChange(redir)
 
     # Fork, letting the child inherit the pipe file descriptors.
-    p.Start(trace.ProcessSub())
+    p.StartProcess(trace.ProcessSub())
 
     ps_frame = self.process_sub_stack[-1]
 

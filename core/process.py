@@ -400,7 +400,7 @@ class FdState(object):
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
-          here_proc.Start(trace.HereDoc())
+          here_proc.StartProcess(trace.HereDoc())
           #log('Started %s as %d', here_proc, pid)
           self._PushWait(here_proc)
 
@@ -868,7 +868,7 @@ class Process(Job):
       posix.close(self.close_r)
       posix.close(self.close_w)
 
-  def Start(self, why):
+  def StartProcess(self, why):
     # type: (trace_t) -> int
     """Start this process with fork(), handling redirects."""
     # TODO: If OSH were a job control shell, we might need to call some of
@@ -970,10 +970,10 @@ class Process(Job):
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
 
-  def RunWait(self, waiter, why):
+  def RunProcess(self, waiter, why):
     # type: (Waiter, trace_t) -> int
     """Run this process synchronously."""
-    self.Start(why)
+    self.StartProcess(why)
     return self.Wait(waiter)
 
 
@@ -1053,10 +1053,10 @@ class Pipeline(Job):
     #log('pipe for %s: %d %d', p, r, w)
     prev = self.procs[-1]
 
-    prev.AddStateChange(StdoutToPipe(r, w))  # applied on Start()
-    p.AddStateChange(StdinFromPipe(r, w))  # applied on Start()
+    prev.AddStateChange(StdoutToPipe(r, w))  # applied on StartPipeline()
+    p.AddStateChange(StdinFromPipe(r, w))  # applied on StartPipeline()
 
-    p.AddPipeToClose(r, w)  # MaybeClosePipe() on Start()
+    p.AddPipeToClose(r, w)  # MaybeClosePipe() on StartPipeline()
 
     self.procs.append(p)
 
@@ -1078,7 +1078,7 @@ class Pipeline(Job):
 
     self.last_pipe = (r, w)  # So we can connect it to last_thunk
 
-  def Start(self, waiter):
+  def StartPipeline(self, waiter):
     # type: (Waiter) -> None
     # TODO: pipelines should be put in their own process group with setpgid().
     # I tried 'cat | cat' and Ctrl-C, and it works without this, probably
@@ -1086,7 +1086,7 @@ class Pipeline(Job):
     # whole pipeline.
 
     for i, proc in enumerate(self.procs):
-      pid = proc.Start(trace.PipelinePart())
+      pid = proc.StartProcess(trace.PipelinePart())
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 
@@ -1136,14 +1136,14 @@ class Pipeline(Job):
 
     return wait_status.Pipeline(self.pipe_status)
 
-  def Run(self, waiter, fd_state):
+  def RunPipeline(self, waiter, fd_state):
     # type: (Waiter, FdState) -> List[int]
     """Run this pipeline synchronously (foreground pipeline).
 
     Returns:
       pipe_status (list of integers).
     """
-    self.Start(waiter)
+    self.StartPipeline(waiter)
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
     # may or may not fork:
@@ -1250,7 +1250,7 @@ class JobState(object):
     # And display it in the table?
     # What if it's not here?
     # We need a table of processes state.
-    # Every time we do Process.Start() we need to record it, in case we get a
+    # Every time we do p.StartProcess() we need to record it, in case we get a
     # notification that it stopped?  Then we look up what process it was.
     # And we can find what part of the pipeline it's in.
 
