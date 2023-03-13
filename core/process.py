@@ -948,6 +948,8 @@ class Process(Job):
     self.pid = pid
     # Program invariant: We keep track of every child process!
     self.job_state.AddChildProcess(pid, self)
+
+    # QUESTION: Why do we need to add the last PID?
     if self.job_state.fg_pipeline:
       self.job_state.fg_pipeline.AddLastPid(pid)
 
@@ -1002,6 +1004,8 @@ class Process(Job):
     self.StartProcess(why)
     # ShellExecutor might be calling this for the last part of a pipeline.
     if self.parent_pipeline is None:
+      # QUESTION: Can the PGID of a single process just be the PID?  i.e. avoid
+      # calling getpgid()?
       self.job_state.MaybeGiveTerminal(posix.getpgid(self.pid))
     return self.Wait(waiter)
 
@@ -1016,6 +1020,12 @@ class ctx_Pipe(object):
 
     if self.job_state.JobControlEnabled():
       UP_node = last_node
+
+      # QUESTION: Why only set fg_pipeline when do_fork?
+      # do_fork=False ONLY when CommandEvaluator is called through
+      # main_loop.Batch().  Although I suppose main_loop.Batch() can happen in
+      # 'eval', not just in non-interactive 'osh -c'.
+
       with tagswitch(last_node) as case:
         if case(command_e.Simple):
           last_node = cast(command__Simple, UP_node)
@@ -1201,6 +1211,8 @@ class Pipeline(Job):
       pipe_status (list of integers).
     """
     self.StartPipeline(waiter)
+    # QUESTION: I think we can get rid of this if we make sure that a Pipeline
+    # always have a non-zero number of processes
     if self.group_id == -1:
       self.group_id = self.job_state.shell_pgrp
 
