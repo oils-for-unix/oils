@@ -1153,20 +1153,16 @@ class Pipeline(Job):
 
     cmd_ev, last_node = self.last_thunk
 
-    #log('thunk %s', self.last_thunk)
-    if self.last_pipe is not None:
-      r, w = self.last_pipe  # set in AddLast()
-      posix.close(w)  # we will not write here
+    assert self.last_pipe is not None
+    r, w = self.last_pipe  # set in AddLast()
+    posix.close(w)  # we will not write here
 
-      with ctx_Pipe(fd_state, r):
-        cmd_ev.ExecuteAndCatch(last_node)
+    with ctx_Pipe(fd_state, r):
+      cmd_ev.ExecuteAndCatch(last_node)
 
-      # We won't read anymore.  If we don't do this, then 'cat' in 'cat
-      # /dev/urandom | sleep 1' will never get SIGPIPE.
-      posix.close(r)
-
-    else:
-      cmd_ev.ExecuteAndCatch(last_node)  # Background pipeline without last_pipe
+    # We won't read anymore.  If we don't do this, then 'cat' in 'cat
+    # /dev/urandom | sleep 1' will never get SIGPIPE.
+    posix.close(r)
 
     self.pipe_status[-1] = cmd_ev.LastStatus()
     if self.AllDone():
