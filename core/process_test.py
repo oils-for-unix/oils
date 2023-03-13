@@ -134,7 +134,7 @@ class ProcessTest(unittest.TestCase):
 
     p.AddLast((cmd_ev, node))
 
-    pipe_status = p.Run(self.waiter, self.fd_state)
+    pipe_status = p.RunPipeline(self.waiter, self.fd_state)
     log('pipe_status: %s', pipe_status)
 
     print('AFTER', os.listdir('/dev/fd'))
@@ -150,7 +150,7 @@ class ProcessTest(unittest.TestCase):
     node = _CommandNode('head', self.arena)
     p.AddLast((cmd_ev, node))
 
-    print(p.Run(self.waiter, self.fd_state))
+    print(p.RunPipeline(self.waiter, self.fd_state))
 
     # Simulating subshell for each command
     node1 = _CommandNode('ls', self.arena)
@@ -165,7 +165,7 @@ class ProcessTest(unittest.TestCase):
     last_thunk = (cmd_ev, _CommandNode('cat', self.arena))
     p.AddLast(last_thunk)
 
-    print(p.Run(self.waiter, self.fd_state))
+    print(p.RunPipeline(self.waiter, self.fd_state))
 
     # TODO: Combine pipelines for other things:
 

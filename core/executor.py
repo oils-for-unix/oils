@@ -327,7 +327,7 @@ class ShellExecutor(vm._Executor):
     status_out.pipe_spids.append(location.SpanForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
-      status_out.pipe_status = pi.Run(self.waiter, self.fd_state)
+      status_out.pipe_status = pi.RunPipeline(self.waiter, self.fd_state)
 
   def RunSubshell(self, node):
     # type: (command_t) -> int

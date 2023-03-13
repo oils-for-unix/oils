@@ -1204,7 +1204,7 @@ class Pipeline(Job):
 
     return wait_status.Pipeline(self.pipe_status)
 
-  def Run(self, waiter, fd_state):
+  def RunPipeline(self, waiter, fd_state):
     # type: (Waiter, FdState) -> List[int]
     """Run this pipeline synchronously (foreground pipeline).
 
