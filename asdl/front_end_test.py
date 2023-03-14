@@ -94,6 +94,11 @@ module foo {
     self._assertParseError('module foo { t = (map[string] a) }')
     self._assertParseError('module foo { t = (map[string, ] a) }')
 
+    self._assertParseError('module foo { ( }')
+
+    # Abandoned syntax
+    self._assertParseError('module foo { simple: integers = A | B }')
+
   def _assertResolve(self, code_str):
     f = cStringIO.StringIO(code_str)
     schema_ast = front_end.LoadSchema(f, {})

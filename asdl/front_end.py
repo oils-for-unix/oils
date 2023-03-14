@@ -114,7 +114,22 @@ class ASDLParser(object):
 
     def _parse_module(self):
         """
-        module = 'module' NAME '{' use* type* '}'
+        type_decl  : NAME (':' NAME) '=' compound_type
+        module     : 'module' NAME '{' use* type_decl* '}'
+
+        We added:
+        - : for code gen options
+        - use for imports
+
+        alloc_members =
+          List
+        | Dict
+        | Struct
+        generate [bit_set]
+        
+        -- color::Red, not color_e::Red or color_i::Red
+        color = Red | Green
+                generate [integers, no_sum_suffix]
         """
         if not self._at_keyword('module'):
             raise ASDLSyntaxError(
@@ -132,7 +147,7 @@ class ASDLParser(object):
         while self.cur_token.kind == TokenKind.Name:
             typename = self._advance()
             self._match(TokenKind.Equals)
-            type_ = self._parse_type_decl()
+            type_ = self._parse_compound_type()
             defs.append(TypeDecl(typename, type_))
 
         self._match(TokenKind.RBrace)
@@ -140,7 +155,7 @@ class ASDLParser(object):
 
     def _parse_use(self):
         """
-        use = 'use' NAME+ '{' NAME+ '}'
+        use: 'use' NAME+ '{' NAME+ '}'
 
         example: use frontend syntax { Token }
 
@@ -167,11 +182,13 @@ class ASDLParser(object):
         #print('MOD %s' % module_parts)
         return Use(module_parts, type_names)
 
-    def _parse_type_decl(self):
+    def _parse_compound_type(self):
         """
-        constructor: Name fields?
-        sum: constructor ('|' constructor)*
-        type: product | sum
+        constructor : NAME fields?
+                    | NAME '%' NAME  # shared variant
+
+        compound_type : product
+                      | constructor ('|' constructor)* attributes?
         """
         if self.cur_token.kind == TokenKind.LParen:
             # If we see a (, it's a product
@@ -209,14 +226,14 @@ class ASDLParser(object):
         """
         We just need these expressions, not arbitrary ones:
 
-        one_param: ('array' | 'maybe') '[' type_expr ']'
+        one_param : ('array' | 'maybe') '[' type_expr ']'
+        # note: we might also want 'val[Token]' for a value type
+
         two_params: 'map' '[' type_expr ',' type_expr ']'
 
-        type_expr:
-          Name ( '?' | '*' )
-        | one_param
-        | two_params
-
+        type_expr : Name ( '?' | '*' )
+                  | one_param
+                  | two_params
         """
         type_name = self._match(TokenKind.Name)
         typ = TypeExpr(type_name)
@@ -249,11 +266,9 @@ class ASDLParser(object):
 
     def _parse_fields(self):
         """
-        fields:
-          '('
-                   type_expr Name
-             ( ',' type_expr Name )*
-          ')'
+        fields: '(' type_expr Name
+                    ( ',' type_expr Name )*
+                ')'
 
         Name Quantifier?  should be changed to typename.
         """
@@ -274,6 +289,9 @@ class ASDLParser(object):
         return fields
 
     def _parse_optional_attributes(self):
+        """
+        attributes = 'attributes' fields
+        """
         if self._at_keyword('attributes'):
             self._advance()
             return self._parse_fields()
@@ -281,6 +299,9 @@ class ASDLParser(object):
             return None
 
     def _parse_product(self):
+        """
+        product: fields attributes?
+        """
         return Product(self._parse_fields(), self._parse_optional_attributes())
 
     def _advance(self):
