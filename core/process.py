@@ -1139,24 +1139,12 @@ class Pipeline(Job):
 
     self.last_pipe = (r, w)  # So we can connect it to last_thunk
 
-  def StartInBackground(self):
-    # type: () -> None
-    """ For background pipelines e.g. sleep 5 | ls & """
-    assert self.last_thunk is None
-
-    for i, proc in enumerate(self.procs):
-      pid = proc.StartProcess(trace.PipelinePart())
-      self.pids.append(pid)
-      self.pipe_status.append(-1)  # uninitialized
-
-      # NOTE: This is done in the SHELL PROCESS after every fork() call.
-      # It can't be done at the end; otherwise processes will have descriptors
-      # from non-adjacent pipes.
-      proc.MaybeClosePipe()
-
-  def _Start(self):
-    # type: () -> None
-    """ For sleep 5 | ls, which may be a foreground pipeline """
+  def StartPipeline(self, waiter):
+    # type: (Waiter) -> None
+    # TODO: pipelines should be put in their own process group with setpgid().
+    # I tried 'cat | cat' and Ctrl-C, and it works without this, probably
+    # because of SIGPIPE?  I think you will need that for Ctrl-Z, to suspend a
+    # whole pipeline.
 
     for i, proc in enumerate(self.procs):
       pid = proc.StartProcess(trace.PipelinePart(), self.group_id)
@@ -1173,8 +1161,8 @@ class Pipeline(Job):
       # from non-adjacent pipes.
       proc.MaybeClosePipe()
 
-    assert self.last_thunk is not None
-    self.pipe_status.append(-1)  # for self.last_thunk
+    if self.last_thunk:
+      self.pipe_status.append(-1)  # for self.last_thunk
 
   def LastPid(self):
     # type: () -> int
@@ -1223,7 +1211,7 @@ class Pipeline(Job):
     """
     assert len(self.procs) != 0
 
-    self._Start()
+    self.StartPipeline(waiter)
 
     # QUESTION: I think we can get rid of this if we make sure that a Pipeline
     # always have a non-zero number of processes
