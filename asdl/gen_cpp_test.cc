@@ -150,7 +150,7 @@ TEST pretty_print_test() {
 }
 
 TEST maps_test() {
-  auto m = typed_demo_asdl::maps::Create();
+  auto m = typed_demo_asdl::maps::CreateNull();
   log("m.ss = %p", m->ss);
   log("m.ib = %p", m->ib);
 
@@ -223,7 +223,7 @@ TEST string_defaults_test() {
   ASSERT_EQ(kEmptyString, st->required);
   ASSERT_EQ(kEmptyString, st->optional);
 
-  st = typed_demo_asdl::Strings::Create();
+  st = typed_demo_asdl::Strings::CreateNull();
   ASSERT_EQ(kEmptyString, st->required);
   ASSERT_EQ(nullptr, st->optional);
 

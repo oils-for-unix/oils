@@ -1210,7 +1210,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     var_name = None  # type: str
     vtest_place = VTestPlace(var_name, None)  # For ${foo=default}
-    vsub_state = VarSubState.Create()  # for $*, ${a[*]}, etc.
+    vsub_state = VarSubState.CreateNull()  # for $*, ${a[*]}, etc.
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
@@ -1407,7 +1407,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     token = part.left
     var_name = part.var_name
 
-    vsub_state = VarSubState.Create()
+    vsub_state = VarSubState.CreateNull()
 
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:

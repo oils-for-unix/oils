@@ -116,7 +116,7 @@ def _IsManagedType(typ):
 
 
 def _DefaultValue(typ):
-  """ Values that the ::Create() constructor passes. """
+  """ Values that the ::CreateNull() constructor passes. """
   type_name = typ.name
 
   if type_name == 'map':  # TODO: use Empty dict optimization
@@ -420,7 +420,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       for field in ast_node.fields:
         init_args.append(_DefaultValue(field.typ))
 
-      self.Emit('  static %s* Create() { ' % class_name, depth)
+      self.Emit('  static %s* CreateNull(bool alloc_lists = false) { ' % class_name, depth)
       self.Emit('    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)), depth)
       self.Emit('  }')
       self.Emit('')

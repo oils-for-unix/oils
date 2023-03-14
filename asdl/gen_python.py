@@ -96,7 +96,7 @@ def IsHeapAllocated(typ):
 
 
 def _DefaultValue(typ):
-  """Values that the static Create() constructor passes."""
+  """Values that the static CreateNull() constructor passes."""
   type_name = typ.name
 
   default = 'None'
@@ -356,7 +356,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     if len(all_fields) and not self.py_init_n:
       self.Emit('  @staticmethod')
-      self.Emit('  def Create():')
+      self.Emit('  def CreateNull(alloc_lists=False):')
       self.Emit('    # type: () -> %s' % class_name)
       default_vals = []
       for f in all_fields:

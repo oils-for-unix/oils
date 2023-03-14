@@ -1479,8 +1479,8 @@ class CommandEvaluator(object):
     #     { echo one; echo two; } > >(tac)
 
     # TODO: Remove 4 allocations in the common case: pipelines and process sub
-    cmd_st = CommandStatus.Create()
-    process_sub_st = StatusArray.Create()
+    cmd_st = CommandStatus.CreateNull()
+    process_sub_st = StatusArray.CreateNull()
 
     errexit_spid = runtime.NO_SPID
     check_errexit = True

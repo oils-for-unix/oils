@@ -27,7 +27,7 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual('', st.optional)
 
     # ZERO ARG "constructor" (static method)
-    st = typed_demo_asdl.Strings.Create()
+    st = typed_demo_asdl.Strings.CreateNull()
     self.assertEqual('', st.required)
     self.assertEqual(None, st.optional)
 
@@ -37,35 +37,35 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual(None, st.optional)
 
   def testArrayDefault(self):
-    obj = typed_demo_asdl.op_array.Create()
+    obj = typed_demo_asdl.op_array.CreateNull()
 
     # It's [] but I want it to be None, to avoid allocation
     print(obj)
     print(obj.ops)
 
   def testMapDefault(self):
-    obj = typed_demo_asdl.maps.Create()
+    obj = typed_demo_asdl.maps.CreateNull()
 
     # It's {} but I want it to be None, to avoid allocation
     print(obj)
     print(obj.ss)
 
   def testOptionalDefault(self):
-    obj = typed_demo_asdl.Maybes.Create()
+    obj = typed_demo_asdl.Maybes.CreateNull()
 
     # These are None
     self.assertEqual(None, obj.op)
     self.assertEqual(None, obj.arg)
 
   def testFieldDefaults(self):
-    s = arith_expr.Slice.Create()
+    s = arith_expr.Slice.CreateNull()
     s.a = arith_expr.Var('foo')
     self.assertEqual(None, s.begin)
     self.assertEqual(None, s.end)
     self.assertEqual(None, s.stride)
     print(s)
 
-    func = arith_expr.FuncCall.Create()
+    func = arith_expr.FuncCall.CreateNull()
     func.name = 'f'
     self.assertEqual([], func.args)
     print(func)
@@ -85,14 +85,14 @@ class ArithAstTest(unittest.TestCase):
     print(n2)
 
     # Not good because not assigned?
-    n3 = arith_expr.Var.Create()
+    n3 = arith_expr.Var.CreateNull()
 
     # NOTE: You cannot instantiate a product type directly?  It's just used for
     # type checking.  What about OCaml?
     # That means you just need to create classes for the records (arith_expr.Constructor).
     # They all descend from Obj.  They don't need
 
-    n3 = arith_expr.Var.Create()
+    n3 = arith_expr.Var.CreateNull()
     try:
       n4 = arith_expr.Var('x', name='X')
     except TypeError as e:
@@ -105,7 +105,7 @@ class ArithAstTest(unittest.TestCase):
     print('-- PRODUCT --')
     print()
 
-    s = source_location.Create()
+    s = source_location.CreateNull()
     s.path = 'hi'
     s.line = 1
     s.col = 2
@@ -155,7 +155,7 @@ class ArithAstTest(unittest.TestCase):
     # Invalid because only half were assigned
     #print(arith_expr.Binary(op_id_e.Plus, arith_expr.Const(5)))
 
-    n = arith_expr.Binary.Create()
+    n = arith_expr.Binary.CreateNull()
     #n.CheckUnassigned()
     n.op_id = op_id_e.Plus
     n.left = arith_expr.Const(5)
