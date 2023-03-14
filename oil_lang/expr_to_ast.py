@@ -128,7 +128,9 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      arglist = ArgList.Create()
+      lparen = children[0].tok
+      rparen = children[-1].tok
+      arglist = ArgList(lparen, [], [], rparen)
       if len(children) == 2:  # ()
         return expr.FuncCall(base, arglist)
 

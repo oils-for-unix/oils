@@ -701,14 +701,13 @@ class CommandEvaluator(object):
               # ArgList already has a spid in this case
           else:
             if node.block:
-              # create ArgList for the block
-              typed_args = ArgList.Create()
-              typed_args.positional.append(node.block)
-
-              # TODO: Since we only have { } and not (), copy them from
-              # BraceGroup
-              typed_args.left = node.block.brace_group.left
-              typed_args.right = node.block.brace_group.right
+              # Create ArgList for the block.  Since we have { } and not (),
+              # copy them from BraceGroup
+              typed_args = ArgList(
+                  node.block.brace_group.left,
+                  [node.block],
+                  [],
+                  node.block.brace_group.right)
 
           cmd_val.typed_args = typed_args
        
