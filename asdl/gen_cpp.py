@@ -201,7 +201,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def __init__(self, f,
                pretty_print_methods=True,
-               simple_int_sums=None,
                debug_info=None):
     """
     Args:
@@ -210,7 +209,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     """
     visitor.AsdlVisitor.__init__(self, f)
     self.pretty_print_methods = pretty_print_methods
-    self.simple_int_sums = simple_int_sums or []
     self.debug_info = debug_info if debug_info is not None else {}
 
     self._shared_type_tags = {}
@@ -300,7 +298,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Note: there can be more than 128 variants in a simple sum, because it's an
     # integer and doesn't have an object header.
 
-    if name in self.simple_int_sums:
+    if 'integers' in sum.generate:
       self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
       self.Emit('typedef int %s_t;' % name)
       self.Emit('')
@@ -473,10 +471,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   We have to do this in another pass because types and schemas have circular
   dependencies.
   """
-  def __init__(self, f, pretty_print_methods=True,
-               simple_int_sums=None):
+  def __init__(self, f, pretty_print_methods=True):
     visitor.AsdlVisitor.__init__(self, f)
-    self.simple_int_sums = simple_int_sums or []
 
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
@@ -640,7 +636,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    if name in self.simple_int_sums:
+    if 'integers' in sum.generate:
       self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
     else:
       self._EmitStrFunction(sum, name, depth, strong=True)

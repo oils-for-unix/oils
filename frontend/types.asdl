@@ -5,6 +5,7 @@ module types {
   redir_arg_type = Path | Desc | Here
 
   opt_group = StrictAll | OilUpgrade | OilAll
+              generate [integers]
 
   -- Fifteen lexer modes for OSH
 

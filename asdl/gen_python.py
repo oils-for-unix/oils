@@ -211,8 +211,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       variants.append((variant, tag_num))
 
     add_suffix = not ('no_namespace_suffix' in sum.generate)
+    gen_integers = 'integers' in sum.generate
 
-    if sum_name in self.simple_int_sums:
+    if gen_integers:
       self.Emit('%s_t = int  # type alias for integer' % sum_name)
       self.Emit('')
 

@@ -11,10 +11,6 @@ from asdl.visitor import FormatLines
 from frontend import builtin_def
 from frontend import option_def
 
-_OPT_ENUM = 'option'
-_BUILTIN_ENUM = 'builtin'
-_SIMPLE = [_OPT_ENUM, _BUILTIN_ENUM]
-
 
 def _CreateSum(sum_name, variant_names):
   """ 
@@ -30,7 +26,8 @@ def _CreateSum(sum_name, variant_names):
   from _devbuild.gen.option_asdl import opt_num
   opt_num.nounset
   """
-  sum_ = ast.SimpleSum([ast.Constructor(name) for name in variant_names])
+  sum_ = ast.SimpleSum([ast.Constructor(name) for name in variant_names],
+                       generate=['integers'])
   typ = ast.TypeDecl(sum_name, sum_)
   return typ
 
@@ -45,8 +42,8 @@ def main(argv):
   # This relies on the assigned option numbers matching ASDL's numbering!
   # TODO: Allow controlling the integer values in ASDL enums?
 
-  option = _CreateSum(_OPT_ENUM, [opt.name for opt in option_def.All()])
-  builtin = _CreateSum(_BUILTIN_ENUM, [b.enum_name for b in builtin_def.All()])
+  option = _CreateSum('option', [opt.name for opt in option_def.All()])
+  builtin = _CreateSum('builtin', [b.enum_name for b in builtin_def.All()])
   # TODO: could shrink array later.
   # [opt.name for opt in option_def.All() if opt.implemented])
 
@@ -68,8 +65,7 @@ namespace option_asdl {
 """)
 
       # Don't need option_str()
-      v = gen_cpp.ClassDefVisitor(f, pretty_print_methods=False,
-                                  simple_int_sums=_SIMPLE)
+      v = gen_cpp.ClassDefVisitor(f, pretty_print_methods=False)
       v.VisitModule(schema_ast)
 
       f.write("""
@@ -88,7 +84,7 @@ from asdl import pybase
 
 """)
     # option_i type
-    v = gen_python.GenMyPyVisitor(f, None, simple_int_sums=_SIMPLE)
+    v = gen_python.GenMyPyVisitor(f, None)
     v.VisitModule(schema_ast)
 
   else:
