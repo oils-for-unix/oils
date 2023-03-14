@@ -37,7 +37,7 @@ def main(argv):
   # n2 = cflow.Return()
 
   # The real way to do it
-  n2 = cflow.Return.Create()
+  n2 = cflow.Return.CreateNull()
 
   #n3 = cflow.Return('hi')  # type error, yay!
   n3 = cflow.Return(42)
@@ -85,7 +85,7 @@ def main(argv):
   #b4 = bool_expr.LogicalBinary(op_id_e.Star, b1, 'a')
 
   # default should be None to avoid allocation?
-  m = typed_demo_asdl.maps.Create()
+  m = typed_demo_asdl.maps.CreateNull()
 
   # assert m.ss is None, m.ss
   # assert m.ib is None, m.ib

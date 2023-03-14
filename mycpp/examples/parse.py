@@ -210,16 +210,16 @@ def TestParse():
         log('Other')
 
 
-def TestCreate():
+def TestCreateNull():
   # type: () -> None
 
-  c = expr.Const.Create()
+  c = expr.Const.CreateNull()
   log('c.i %d', c.i)
 
-  v = expr.Var.Create()
+  v = expr.Var.CreateNull()
   log('v.name %r', v.name)
 
-  b = expr.Binary.Create()
+  b = expr.Binary.CreateNull()
   log('b.op %r', b.op)
   b.op = '+'
 
@@ -238,7 +238,7 @@ def run_tests():
   # type: () -> None
 
   TestParse()
-  TestCreate()
+  TestCreateNull()
 
 
 def run_benchmarks():
