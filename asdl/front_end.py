@@ -13,7 +13,7 @@ from asdl.ast import (
 from core.pyerror import log
 _ = log
 
-_KEYWORDS = ['use', 'module', 'attributes']
+_KEYWORDS = ['use', 'module', 'attributes', 'generate']
 
 _TOKENS = [
     ('Keyword', ''),
@@ -216,11 +216,18 @@ class ASDLParser(object):
                   break
                 self._advance()
             attributes = self._parse_optional_attributes()
+            generate = self._parse_optional_generate()
+
+            ### Additional validation
+            if generate is not None:
+              for g in generate:
+                if g not in ['integers', 'bit_set', 'no_namespace_suffix']:
+                  raise ASDLSyntaxError('Invalid code gen option %r' % g, self.cur_token.lineno)
 
             if ast.is_simple(sumlist):
-              return SimpleSum(sumlist, attributes)
+              return SimpleSum(sumlist, attributes, generate)
             else:
-              return Sum(sumlist, attributes)
+              return Sum(sumlist, attributes, generate)
 
     def _parse_type_expr(self):
         """
@@ -266,9 +273,9 @@ class ASDLParser(object):
 
     def _parse_fields(self):
         """
-        fields: '(' type_expr Name
-                    ( ',' type_expr Name )*
-                ')'
+        fields_inner: type_expr NAME ( ',' type_expr NAME )* ','?
+
+        fields      : '(' fields_inner? ')'
 
         Name Quantifier?  should be changed to typename.
         """
@@ -295,6 +302,36 @@ class ASDLParser(object):
         if self._at_keyword('attributes'):
             self._advance()
             return self._parse_fields()
+        else:
+            return None
+
+    def _parse_list(self):
+        """
+        list_inner: NAME ( ',' NAME )* ','?
+        list      : '[' list_inner? ']'
+        """
+        generate = []
+        self._match(TokenKind.LBracket)
+        while self.cur_token.kind == TokenKind.Name:
+            name = self._match(TokenKind.Name)
+
+            generate.append(name)
+
+            if self.cur_token.kind == TokenKind.RBracket:
+                break
+            elif self.cur_token.kind == TokenKind.Comma:
+                self._advance()
+
+        self._match(TokenKind.RBracket)
+        return generate
+
+    def _parse_optional_generate(self):
+        """
+        attributes = 'generate' list
+        """
+        if self._at_keyword('generate'):
+            self._advance()
+            return self._parse_list()
         else:
             return None
 

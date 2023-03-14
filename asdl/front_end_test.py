@@ -66,6 +66,13 @@ module foo {
 
   -- this check happens later
   does_not_resolve = (typo zz)
+
+  color = Red | Green
+
+  color2 = Red | Green generate []
+
+  color3 = Red | Green
+           generate [integers]
 }
 """)
 
@@ -98,6 +105,12 @@ module foo {
 
     # Abandoned syntax
     self._assertParseError('module foo { simple: integers = A | B }')
+
+    self._assertParseError('module foo { integers = A | B generate }')
+
+    self._assertParseError('module foo { integers = A | B generate [integers, ,] }')
+
+    self._assertParseError('module foo { integers = A | B generate [invalid] }')
 
   def _assertResolve(self, code_str):
     f = cStringIO.StringIO(code_str)
