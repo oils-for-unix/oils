@@ -286,7 +286,7 @@ class ShellExecutor(vm._Executor):
         p.Init_ParentPipeline(pi)
         pi.Add(p)
 
-      pi.StartInBackground()
+      pi.StartPipeline(self.waiter)
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
