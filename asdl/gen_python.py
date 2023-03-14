@@ -175,13 +175,12 @@ def _HNodeExpr(abbrev, typ, var_name):
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
-  def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
+  def __init__(self, f, abbrev_mod_entries=None,
                pretty_print_methods=True, py_init_n=False,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
     self.abbrev_mod_entries = abbrev_mod_entries or []
-    self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.py_init_n = py_init_n
 
@@ -211,11 +210,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       int_to_str[tag_num] = tag_str
       variants.append((variant, tag_num))
 
+    add_suffix = not ('no_namespace_suffix' in sum.generate)
+
     if sum_name in self.simple_int_sums:
       self.Emit('%s_t = int  # type alias for integer' % sum_name)
       self.Emit('')
 
-      i_name = ('%s_i' % sum_name) if self.e_suffix else sum_name
+      i_name = ('%s_i' % sum_name) if add_suffix else sum_name
 
       self.Emit('class %s(object):' % i_name, depth)
 
@@ -234,7 +235,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('', depth)
 
       # Now emit a namespace
-      e_name = ('%s_e' % sum_name) if self.e_suffix else sum_name
+      e_name = ('%s_e' % sum_name) if add_suffix else sum_name
       self.Emit('class %s(object):' % e_name, depth)
 
       for variant, tag_num in variants:

@@ -199,7 +199,7 @@ def _HNodeExpr(abbrev, typ, var_name):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
-  def __init__(self, f, e_suffix=True,
+  def __init__(self, f,
                pretty_print_methods=True,
                simple_int_sums=None,
                debug_info=None):
@@ -209,7 +209,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       debug_info: dictionary fill in with info for GDB
     """
     visitor.AsdlVisitor.__init__(self, f)
-    self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
     self.debug_info = debug_info if debug_info is not None else {}
@@ -223,6 +222,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
     enum = []
     int_to_type = {}
+    add_suffix = not ('no_namespace_suffix' in sum.generate)
     for i, variant in enumerate(sum.types):
       if variant.shared_type:  # Copied from gen_python.py
         tag_num = self._shared_type_tags[variant.shared_type]
@@ -243,7 +243,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       enum.append((variant.name, tag_num))  # zero is reserved
 
     if strong:
-      enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+      enum_name = '%s_e' % sum_name if add_suffix else sum_name
 
       # Simple sum types can be STRONG since there's no possibility of multiple
       # inheritance!
@@ -263,9 +263,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     else:
       if is_simple:
-        enum_name = '%s_i' % sum_name if self.e_suffix else sum_name
+        enum_name = '%s_i' % sum_name if add_suffix else sum_name
       else:
-        enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+        enum_name = '%s_e' % sum_name if add_suffix else sum_name
 
       # Awkward struct/enum C++ idiom because:
 
@@ -473,10 +473,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   We have to do this in another pass because types and schemas have circular
   dependencies.
   """
-  def __init__(self, f, e_suffix=True, pretty_print_methods=True,
+  def __init__(self, f, pretty_print_methods=True,
                simple_int_sums=None):
     visitor.AsdlVisitor.__init__(self, f)
-    self.e_suffix = e_suffix
     self.simple_int_sums = simple_int_sums or []
 
   def _EmitCodeForField(self, abbrev, field, counter):
@@ -612,7 +611,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}')
 
   def _EmitStrFunction(self, sum, sum_name, depth, strong=False, simple=False):
-    if self.e_suffix:  # note: can be i_suffix too
+    add_suffix = not ('no_namespace_suffix' in sum.generate)
+    if add_suffix:
       if simple:
         enum_name = '%s_i' % sum_name
       else:
