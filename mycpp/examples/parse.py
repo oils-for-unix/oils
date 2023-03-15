@@ -213,13 +213,13 @@ def TestParse():
 def TestCreateNull():
   # type: () -> None
 
-  c = expr.Const.CreateNull()
+  c = expr.Const.CreateNull(alloc_lists=True)
   log('c.i %d', c.i)
 
-  v = expr.Var.CreateNull()
+  v = expr.Var.CreateNull(alloc_lists=True)
   log('v.name %r', v.name)
 
-  b = expr.Binary.CreateNull()
+  b = expr.Binary.CreateNull(alloc_lists=True)
   log('b.op %r', b.op)
   b.op = '+'
 

@@ -218,7 +218,7 @@ class ASDLParser(object):
             attributes = self._parse_optional_attributes()
             generate = self._parse_optional_generate()
 
-            ### Additional validation
+            # Additional validation
             if generate is not None:
               for g in generate:
                 if g not in ['integers', 'bit_set', 'no_namespace_suffix']:

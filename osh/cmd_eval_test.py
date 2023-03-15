@@ -44,7 +44,7 @@ class VarOpTest(unittest.TestCase):
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
     left = None
-    unset_sub = braced_var_sub.CreateNull()
+    unset_sub = braced_var_sub.CreateNull(alloc_lists=True)
     unset_sub.left = left
     unset_sub.token = Tok(Id.VSub_Name, 'unset')
     unset_sub.var_name = 'unset'
@@ -53,7 +53,7 @@ class VarOpTest(unittest.TestCase):
     ev._EvalWordPart(unset_sub, part_vals, 0)
     print(part_vals)
 
-    set_sub = braced_var_sub.CreateNull()
+    set_sub = braced_var_sub.CreateNull(alloc_lists=True)
     set_sub.left = left
     set_sub.token = Tok(Id.VSub_Name, 'x')
     set_sub.var_name = 'x'

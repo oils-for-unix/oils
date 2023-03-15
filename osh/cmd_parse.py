@@ -630,7 +630,7 @@ class CommandParser(object):
 
     # Here doc
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      arg = redir_param.HereDoc.CreateNull()
+      arg = redir_param.HereDoc.CreateNull(alloc_lists=True)
       arg.here_begin = self.cur_word
       r = redir(op_tok, where, arg)
 
@@ -982,7 +982,7 @@ class CommandParser(object):
     if len(words) == 0:  # e.g.  >out.txt  # redirect without words
       if typed_spid != runtime.NO_SPID:
         p_die("Unexpected typed args", loc.Span(typed_spid))
-      simple = command.Simple.CreateNull()  # no words, more_env, or block,
+      simple = command.Simple.CreateNull(alloc_lists=True)  # no words, more_env, or block,
       simple.redirects = redirects
       return simple
 
@@ -1187,7 +1187,7 @@ class CommandParser(object):
 
   def _ParseForEachLoop(self, for_spid):
     # type: (int) -> command__ForEach
-    node = command.ForEach.CreateNull()
+    node = command.ForEach.CreateNull(alloc_lists=True)
     node.spids.append(for_spid)  # for $LINENO and error fallback
 
     num_iter_names = 0
@@ -1429,7 +1429,7 @@ class CommandParser(object):
     """
     case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
     """
-    case_node = command.Case.CreateNull()
+    case_node = command.Case.CreateNull(alloc_lists=True)
 
     case_spid = _KeywordSpid(self.cur_word)
     self._Next()  # skip case
@@ -1536,7 +1536,7 @@ class CommandParser(object):
     form ANY CompoundWord, make sure it's balanced for Lit_LBrace and
     Lit_RBrace?  Maybe this is pre-parsing step in teh WordParser?
     """
-    if_node = command.If.CreateNull()
+    if_node = command.If.CreateNull(alloc_lists=True)
 
     body1 = self.ParseBraceGroup()
     # Every arm has 1 spid, unlike shell-style
@@ -1593,7 +1593,7 @@ class CommandParser(object):
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
     if_spid = _KeywordSpid(self.cur_word)
-    if_node = command.If.CreateNull()
+    if_node = command.If.CreateNull(alloc_lists=True)
     self._Next()  # skip if
 
     # Remove ambiguity with if cd / {
@@ -1758,7 +1758,7 @@ class CommandParser(object):
 
       self._NewlineOk()
 
-      func = command.ShFunction.CreateNull()
+      func = command.ShFunction.CreateNull(alloc_lists=True)
       func.name = name
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
@@ -1802,7 +1802,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    func = command.ShFunction.CreateNull()
+    func = command.ShFunction.CreateNull(alloc_lists=True)
     func.name = name
     with ctx_VarChecker(self.var_checker, keyword_tok):
       func.body = self.ParseCompoundCommand()
@@ -1815,7 +1815,7 @@ class CommandParser(object):
 
   def ParseOilProc(self):
     # type: () -> command__Proc
-    node = command.Proc.CreateNull()
+    node = command.Proc.CreateNull(alloc_lists=True)
 
     keyword_tok = _KeywordToken(self.cur_word)
     with ctx_VarChecker(self.var_checker, keyword_tok):
@@ -1980,28 +1980,28 @@ class CommandParser(object):
     # 'use'.
     if self.parse_opts.parse_tea():
       if self.c_id == Id.KW_Func:
-        out0 = command.Func.CreateNull()
+        out0 = command.Func.CreateNull(alloc_lists=True)
         self.parse_ctx.ParseFunc(self.lexer, out0)
         self._Next()
         return out0
       if self.c_id == Id.KW_Data:
-        out1 = command.Data.CreateNull()
+        out1 = command.Data.CreateNull(alloc_lists=True)
         self.parse_ctx.ParseDataType(self.lexer, out1)
         self._Next()
         return out1
       if self.c_id == Id.KW_Enum:
-        out2 = command.Enum.CreateNull()
+        out2 = command.Enum.CreateNull(alloc_lists=True)
         self.parse_ctx.ParseEnum(self.lexer, out2)
         self._Next()
         return out2
       if self.c_id == Id.KW_Class:
-        out3 = command.Class.CreateNull()
+        out3 = command.Class.CreateNull(alloc_lists=True)
         self.parse_ctx.ParseClass(self.lexer, out3)
         self._Next()
         return out3
       if self.c_id == Id.KW_Import:
         # Needs last_token because it ends with an optional thing?
-        out4 = command.Import.CreateNull()
+        out4 = command.Import.CreateNull(alloc_lists=True)
         self.w_parser.ParseImport(out4)
         self._Next()
         return out4

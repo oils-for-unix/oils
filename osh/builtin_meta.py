@@ -171,7 +171,7 @@ class Command(vm._Builtin):
     # 'command date | wc -l' would take 2 processes instead of 3.  But no other
     # shell does that, and this rare case isn't worth the bookkeeping.
     # See test/syscall
-    cmd_st = CommandStatus.CreateNull()
+    cmd_st = CommandStatus.CreateNull(alloc_lists=True)
     return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, True, call_procs=False)
 
 
@@ -232,7 +232,7 @@ class RunProc(vm._Builtin):
       return 1
 
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
-    cmd_st = CommandStatus.CreateNull()
+    cmd_st = CommandStatus.CreateNull(alloc_lists=True)
     return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
 
@@ -306,7 +306,7 @@ class Try(vm._Builtin):
         # extra fork (miss out on an optimization) of code like ( status ls )
         # or forkwait { status ls }, but that is NOT idiomatic code.  status is
         # for functions.
-        cmd_st = CommandStatus.CreateNull()  # TODO: take param
+        cmd_st = CommandStatus.CreateNull(alloc_lists=True)  # TODO: take param
         status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
         #log('st %d', status)
     except error.Expr as e:
@@ -337,7 +337,7 @@ class BoolStatus(vm._Builtin):
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
 
-    cmd_st = CommandStatus.CreateNull()
+    cmd_st = CommandStatus.CreateNull(alloc_lists=True)
     status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
     if status not in (0, 1):
