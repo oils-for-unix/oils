@@ -183,7 +183,7 @@ spid() {
 #   right most span for a word
 
 asdl-create() {
-  fgrep -n 'CreateNull(' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
+  fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
 
 "$@"

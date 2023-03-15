@@ -352,7 +352,7 @@ class WordParser(WordEmitter):
     else:
       bracket_op = None
 
-    part = braced_var_sub.CreateNull(alloc_lists=True)
+    part = braced_var_sub.CreateNull()
     part.token = name_token
     part.var_name = lexer.TokenVal(name_token)
     part.bracket_op = bracket_op
@@ -1292,7 +1292,8 @@ class WordParser(WordEmitter):
       p_die('Expected ) to end for loop expression', self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
-    node = command.ForExpr.CreateNull(alloc_lists=True)  # no redirects yet
+    # redirects is None, will be assigned in CommandEvaluator
+    node = command.ForExpr.CreateNull()
     node.init = init_node
     node.cond = cond_node
     node.update = update_node

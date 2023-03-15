@@ -630,8 +630,10 @@ class CommandParser(object):
 
     # Here doc
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      arg = redir_param.HereDoc.CreateNull(alloc_lists=True)
+      arg = redir_param.HereDoc.CreateNull()
       arg.here_begin = self.cur_word
+      arg.stdin_parts = []
+
       r = redir(op_tok, where, arg)
 
       self.pending_here_docs.append(r)  # will be filled on next newline.
@@ -982,8 +984,10 @@ class CommandParser(object):
     if len(words) == 0:  # e.g.  >out.txt  # redirect without words
       if typed_spid != runtime.NO_SPID:
         p_die("Unexpected typed args", loc.Span(typed_spid))
-      simple = command.Simple.CreateNull(alloc_lists=True)  # no words, more_env, or block,
+      simple = command.Simple.CreateNull()
+      simple.words = []
       simple.redirects = redirects
+      simple.more_env = []
       return simple
 
     # Disallow =a because it's confusing
@@ -1758,7 +1762,7 @@ class CommandParser(object):
 
       self._NewlineOk()
 
-      func = command.ShFunction.CreateNull(alloc_lists=True)
+      func = command.ShFunction.CreateNull()
       func.name = name
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
@@ -1802,7 +1806,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    func = command.ShFunction.CreateNull(alloc_lists=True)
+    func = command.ShFunction.CreateNull()
     func.name = name
     with ctx_VarChecker(self.var_checker, keyword_tok):
       func.body = self.ParseCompoundCommand()
