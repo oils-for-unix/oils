@@ -1478,8 +1478,9 @@ class CommandEvaluator(object):
     # in the redirect word:
     #     { echo one; echo two; } > >(tac)
 
-    # TODO: Remove 4 allocations in the common case: pipelines and process sub
-    cmd_st = CommandStatus.CreateNull(alloc_lists=True)
+    # Optimization: These 2 records have rarely-used lists, so we don't pass
+    # alloc_lists=True.  We create them on demand.
+    cmd_st = CommandStatus.CreateNull()
     process_sub_st = StatusArray.CreateNull()
 
     errexit_spid = runtime.NO_SPID
@@ -1511,20 +1512,20 @@ class CommandEvaluator(object):
               check_errexit = True
 
           # Compute status from @PIPESTATUS
-          codes = cmd_st.pipe_status
-          if len(codes):  # Did we run a pipeline?
-            self.mem.SetPipeStatus(codes)
+          pipe_status = cmd_st.pipe_status
+          if pipe_status is not None:  # Did we run a pipeline?
+            self.mem.SetPipeStatus(pipe_status)
 
             if self.exec_opts.pipefail():
               # The status is that of the last command that is non-zero.
               status = 0
-              for i, st in enumerate(codes):
+              for i, st in enumerate(pipe_status):
                 if st != 0:
                   status = st
                   errexit_spid = cmd_st.pipe_spids[i]
             else:
               # The status is that of last command, period.
-              status = codes[-1]
+              status = pipe_status[-1]
 
             if cmd_st.pipe_negated:
               status = 1 if status == 0 else 0

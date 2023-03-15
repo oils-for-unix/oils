@@ -74,8 +74,8 @@ class _ProcessSubFrame(object):
     for fd in self.to_close:
       posix.close(fd)
 
-    codes = []
-    spids = []
+    codes = []  # type: List[int]
+    spids = []  # type: List[int]
     for i, p in enumerate(self.to_wait):
       #log('waiting for %s', p)
       st = p.Wait(waiter)
@@ -348,13 +348,16 @@ class ShellExecutor(vm._Executor):
     pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
     self.job_state.AddPipeline(pi)
 
+    # initialized with CommandStatus.CreateNull()
+    pipe_spids = []  # type: List[int]
+
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
     for i in xrange(n - 1):
       child = node.children[i]
 
       # TODO: determine these locations at parse time?
-      status_out.pipe_spids.append(location.SpanForCommand(child))
+      pipe_spids.append(location.SpanForCommand(child))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -363,10 +366,11 @@ class ShellExecutor(vm._Executor):
     last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, last_child))
-    status_out.pipe_spids.append(location.SpanForCommand(last_child))
+    pipe_spids.append(location.SpanForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
       status_out.pipe_status = pi.RunPipeline(self.waiter, self.fd_state)
+    status_out.pipe_spids = pipe_spids
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
