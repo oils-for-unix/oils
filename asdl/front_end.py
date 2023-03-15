@@ -378,68 +378,6 @@ class ASDLParser(object):
                 self.cur_token.value == keyword)
 
 
-# A generic visitor for the meta-AST that describes ASDL. This can be used by
-# emitters. Note that this visitor does not provide a generic visit method, so a
-# subclass needs to define visit methods from visitModule to as deep as the
-# interesting node.
-# We also define a Check visitor that makes sure the parsed ASDL is well-formed.
-
-class _VisitorBase(object):
-    """Generic tree visitor for ASTs."""
-    def __init__(self):
-        self.cache = {}
-
-    def visit(self, obj, *args):
-        klass = obj.__class__
-        meth = self.cache.get(klass)
-        if meth is None:
-            methname = "visit" + klass.__name__
-            meth = getattr(self, methname, None)
-            self.cache[klass] = meth
-        if meth:
-            try:
-                meth(obj, *args)
-            except Exception as e:
-                print("Error visiting %r: %s" % (obj, e))
-                raise
-
-
-class Check(_VisitorBase):
-    """A visitor that checks a parsed ASDL tree for correctness.
-
-    Errors are printed and accumulated.
-    """
-    def __init__(self):
-        super(Check, self).__init__()
-        self.cons = {}
-        self.errors = 0  # No longer used, but maybe in the future?
-        self.types = {}  # list of declared field types
-
-    def visitModule(self, mod):
-        for dfn in mod.dfns:
-            self.visit(dfn)
-
-    def visitType(self, type):
-        self.visit(type.value, str(type.name))
-
-    def visitSum(self, sum, name):
-        for t in sum.types:
-            self.visit(t, name)
-
-    def visitConstructor(self, cons, name):
-        for f in cons.fields:
-            self.visit(f, cons.name)
-
-    def visitField(self, field, name):
-        key = str(field.type)
-        l = self.types.setdefault(key, [])
-        l.append(name)
-
-    def visitProduct(self, prod, name):
-        for f in prod.fields:
-            self.visit(f, name)
-
-
 _PRIMITIVE_TYPES = [
     'string', 'int', 'float', 'bool',
 
@@ -543,12 +481,6 @@ def LoadSchema(f, app_types, verbose=False):
   if verbose:
     import sys
     schema_ast.Print(sys.stdout, 0)
-
-  v = Check()
-  v.visit(schema_ast)
-
-  if v.errors:
-    raise AssertionError('ASDL file is invalid: %s' % v.errors)
 
   # Make sure all the names are valid
   _ResolveModule(schema_ast, app_types)
