@@ -114,9 +114,15 @@ class TrapState(object):
     self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
 
   def GetPendingTraps(self):
-    # type: () -> List[command_t]
+    # type: () -> Optional[List[command_t]]
     """Transfer ownership of the current queue of pending trap handlers to the caller."""
     signals = self.signal_safe.TakePendingSignals()
+
+    # Optimization for the common case: do not allocate a list.  This function
+    # is called in the interpreter loop.
+    if len(signals) == 0:
+      self.signal_safe.ReuseEmptyList(signals)
+      return None
 
     run_list = []  # type: List[command_t]
     for sig_num in signals:

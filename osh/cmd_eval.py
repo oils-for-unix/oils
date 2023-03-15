@@ -1445,7 +1445,7 @@ class CommandEvaluator(object):
     # type: () -> None
 
     trap_nodes = self.trap_state.GetPendingTraps()
-    if len(trap_nodes):
+    if trap_nodes is not None:
       with state.ctx_Option(self.mutable_opts, [option_i._running_trap], True):
         for trap_node in trap_nodes:
           # Isolate the exit status.
