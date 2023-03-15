@@ -37,18 +37,16 @@ class ArithAstTest(unittest.TestCase):
     self.assertEqual(None, st.optional)
 
   def testArrayDefault(self):
-    obj = typed_demo_asdl.op_array.CreateNull(alloc_lists=True)
+    obj = typed_demo_asdl.op_array.CreateNull()
+    self.assertEqual(None, obj.ops)
 
-    # It's [] but I want it to be None, to avoid allocation
-    print(obj)
-    print(obj.ops)
+    obj = typed_demo_asdl.op_array.CreateNull(alloc_lists=True)
+    self.assertEqual([], obj.ops)
 
   def testMapDefault(self):
+    # TODO: alloc_dicts=True
     obj = typed_demo_asdl.maps.CreateNull(alloc_lists=True)
-
-    # It's {} but I want it to be None, to avoid allocation
-    print(obj)
-    print(obj.ss)
+    self.assertEqual(None, obj.ss)
 
   def testOptionalDefault(self):
     obj = typed_demo_asdl.Maybes.CreateNull(alloc_lists=True)

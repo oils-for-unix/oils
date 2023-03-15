@@ -101,11 +101,11 @@ def _DefaultValue(typ):
 
   default = 'None'
 
-  if type_name == 'map':
+  if type_name == 'map':  # TODO: can respect alloc_dicts=True
     return 'None'
 
-  elif type_name == 'array':  # TODO: change to None
-    default = '[]'
+  elif type_name == 'array':
+    default = '[] if alloc_lists else None'
 
   elif type_name == 'maybe':
     child_typ = typ.children[0]

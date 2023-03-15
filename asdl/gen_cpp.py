@@ -115,16 +115,21 @@ def _IsManagedType(typ):
   return _GetCppType(typ).endswith('*')
 
 
-def _DefaultValue(typ):
+def _DefaultValue(typ, conditional=True):
   """ Values that the ::CreateNull() constructor passes. """
   type_name = typ.name
 
-  if type_name == 'map':  # TODO: use Empty dict optimization
+  if type_name == 'map':  # TODO: can respect alloc_dicts=True
     return 'nullptr'
 
-  elif type_name == 'array':  # TODO: nullptr or Empty list optimization
+  elif type_name == 'array':
     c_type = _GetCppType(typ.children[0])
-    return 'Alloc<List<%s>>()' % (c_type)
+
+    d = 'Alloc<List<%s>>()' % (c_type)
+    if conditional:
+      return 'alloc_lists ? %s : nullptr' % d
+    else:
+      return d
 
   elif type_name == 'maybe':
     child = typ.children[0]
@@ -401,7 +406,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       if f in attributes:
         # spids are initialized separately
-        inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
+        inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ, conditional=False)))
       else:
         inits.append('%s(%s)' % (f.name, f.name))
 
