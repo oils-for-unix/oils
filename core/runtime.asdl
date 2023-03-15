@@ -135,17 +135,15 @@ module runtime
     -- set for atoms
     bool check_errexit,
 
-    -- for atoms like ls  ((  [[
-    -- Not using this yet because the return value is baked in everywhere
-    -- int simple_status,
+    -- By default, don't show the code on errexit.  Sometimes we want to.
+    bool show_code
+
+    -- Should we use 'int simple_status' for atoms like atoms like ls  ((  [[ ?
 
     -- for pipeline
     bool pipe_negated,
     int* pipe_status,
     int* pipe_spids,
-
-    -- By default, don't show the code on errexit.  Sometimes we want to.
-    bool show_code
   )
 
   wait_status =

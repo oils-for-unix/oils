@@ -64,7 +64,7 @@ class _ProcessSubFrame(object):
       self.to_close.append(fd)
       self.span_ids.append(span_id)
 
-  def MaybeWaitOnProcessSubs(self, waiter, compound_st):
+  def MaybeWaitOnProcessSubs(self, waiter, status_array):
     # type: (process.Waiter, StatusArray) -> None
 
     if self.to_wait is None:
@@ -74,11 +74,16 @@ class _ProcessSubFrame(object):
     for fd in self.to_close:
       posix.close(fd)
 
+    codes = []
+    spids = []
     for i, p in enumerate(self.to_wait):
       #log('waiting for %s', p)
       st = p.Wait(waiter)
-      compound_st.codes.append(st)
-      compound_st.spids.append(self.span_ids[i])
+      codes.append(st)
+      spids.append(self.span_ids[i])
+
+    status_array.codes = codes
+    status_array.spids = spids
 
 
 class ShellExecutor(vm._Executor):

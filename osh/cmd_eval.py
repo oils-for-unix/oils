@@ -1480,7 +1480,7 @@ class CommandEvaluator(object):
 
     # TODO: Remove 4 allocations in the common case: pipelines and process sub
     cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-    process_sub_st = StatusArray.CreateNull(alloc_lists=True)
+    process_sub_st = StatusArray.CreateNull()
 
     errexit_spid = runtime.NO_SPID
     check_errexit = True
@@ -1534,7 +1534,7 @@ class CommandEvaluator(object):
           status = 1
 
     # Compute status from _process_sub_status
-    if len(process_sub_st.codes):
+    if process_sub_st.codes is not None:
       codes = process_sub_st.codes
       self.mem.SetProcessSubStatus(codes)
       if status == 0 and self.exec_opts.process_sub_fail():
