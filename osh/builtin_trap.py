@@ -121,6 +121,7 @@ class TrapState(object):
     # Optimization for the common case: do not allocate a list.  This function
     # is called in the interpreter loop.
     if len(signals) == 0:
+      self.signal_safe.ReuseEmptyList(signals)
       return None
 
     run_list = []  # type: List[command_t]
