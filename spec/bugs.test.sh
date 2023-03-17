@@ -128,7 +128,7 @@ echo x=${x@P}
 x=\D{%H:%M
 ## END
 
-## bash just ignores the missing }
+# bash just ignores the missing }
 ## BUG bash stdout-json: ""
 
 # These shells don't understand @P

@@ -34,7 +34,7 @@ t=foofoo
 
 #### Append to array to undefined variable
 
-## TODO: strict_array could get rid of this?
+# TODO: strict_array could get rid of this?
 y+=(c d)
 argv.py "${y[@]}"
 ## STDOUT:
