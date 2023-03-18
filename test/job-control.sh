@@ -22,8 +22,15 @@ readonly OSH_CPP=_bin/cxx-dbg/osh
 readonly -a JC_SHELLS=(bash dash mksh zsh bin/osh $OSH_CPP)
 
 print-tasks() {
+  readonly -a SNIPPETS=(
+    fgproc bgproc
+    fgpipe fgpipe-lastpipe 
+    bgpipe bgpipe-lastpipe
+    subshell csub psub
+  )
+
   for sh in "${JC_SHELLS[@]}"; do
-    for snippet in fgproc bgproc fgpipe bgpipe subshell csub psub; do
+    for snippet in "${SNIPPETS[@]}"; do
       for interactive in - yes; do
         echo "${sh}${TAB}${snippet}${TAB}${interactive}"
       done
@@ -61,7 +68,7 @@ print-report() {
 
   # Extra style, doesn't go on any element
   # Pink background same as web/spec-tests.css
-  echo '<style>.fail { background-color: #ffe0e0 }</style>'
+  echo '<style> .fail { background-color: #ffe0e0 } </style>'
 
   # Copied from uftrace
   echo '<body style="margin: 0 auto; width: 40em; font-size: large">'
