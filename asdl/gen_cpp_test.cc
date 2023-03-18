@@ -150,8 +150,8 @@ TEST pretty_print_test() {
   PASS();
 }
 
-TEST maps_test() {
-  auto m = typed_demo_asdl::maps::CreateNull();
+TEST dicts_test() {
+  auto m = typed_demo_asdl::Dicts::CreateNull();
   log("m.ss = %p", m->ss);
   log("m.ib = %p", m->ib);
 
@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
   RUN_TEST(misc_test);
   RUN_TEST(shared_variant_test);
   RUN_TEST(pretty_print_test);
-  RUN_TEST(maps_test);
+  RUN_TEST(dicts_test);
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
   RUN_TEST(list_defaults_test);
