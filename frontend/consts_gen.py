@@ -27,10 +27,12 @@ def _CreateModule(id_spec, ids):
   """
   from asdl import ast
 
-  id_sum = ast.SimpleSum([ast.Constructor(name) for name, _ in ids])
+  id_variants = [ast.Constructor(name) for name, _ in ids]
+  id_sum = ast.SimpleSum(
+      id_variants, generate=['integers', 'no_namespace_suffix'])
 
-  variants2 = [ast.Constructor(name) for name in id_spec.kind_name_list]
-  kind_sum = ast.SimpleSum(variants2)
+  kind_variants = [ast.Constructor(name) for name in id_spec.kind_name_list]
+  kind_sum = ast.SimpleSum(kind_variants, generate=['no_namespace_suffix'])
 
   id_ = ast.TypeDecl('Id', id_sum)
   kind_ = ast.TypeDecl('Kind', kind_sum)
@@ -236,8 +238,7 @@ namespace id_kind_asdl {
 #define ASDL_NAMES struct
 """)
 
-      v = gen_cpp.ClassDefVisitor(f, e_suffix=False,
-                                  simple_int_sums=['Id'])
+      v = gen_cpp.ClassDefVisitor(f)
       v.VisitModule(schema_ast)
 
       f.write("""
@@ -255,8 +256,7 @@ namespace id_kind_asdl {
 
 """)
 
-      v = gen_cpp.MethodDefVisitor(f, e_suffix=False,
-                                   simple_int_sums=['Id'])
+      v = gen_cpp.MethodDefVisitor(f)
 
       v.VisitModule(schema_ast)
 
@@ -275,8 +275,7 @@ from asdl import pybase
 
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
-    v = gen_python.GenMyPyVisitor(f, e_suffix=False,
-                                  simple_int_sums=['Id'])
+    v = gen_python.GenMyPyVisitor(f)
     v.VisitModule(schema_ast)
 
   elif action == 'cpp-consts':

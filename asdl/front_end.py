@@ -13,7 +13,7 @@ from asdl.ast import (
 from core.pyerror import log
 _ = log
 
-_KEYWORDS = ['use', 'module', 'attributes']
+_KEYWORDS = ['use', 'module', 'attributes', 'generate']
 
 _TOKENS = [
     ('Keyword', ''),
@@ -114,7 +114,22 @@ class ASDLParser(object):
 
     def _parse_module(self):
         """
-        module = 'module' NAME '{' use* type* '}'
+        type_decl  : NAME (':' NAME) '=' compound_type
+        module     : 'module' NAME '{' use* type_decl* '}'
+
+        We added:
+        - : for code gen options
+        - use for imports
+
+        alloc_members =
+          List
+        | Dict
+        | Struct
+        generate [bit_set]
+        
+        -- color::Red, not color_e::Red or color_i::Red
+        color = Red | Green
+                generate [integers, no_sum_suffix]
         """
         if not self._at_keyword('module'):
             raise ASDLSyntaxError(
@@ -132,7 +147,7 @@ class ASDLParser(object):
         while self.cur_token.kind == TokenKind.Name:
             typename = self._advance()
             self._match(TokenKind.Equals)
-            type_ = self._parse_type_decl()
+            type_ = self._parse_compound_type()
             defs.append(TypeDecl(typename, type_))
 
         self._match(TokenKind.RBrace)
@@ -140,7 +155,7 @@ class ASDLParser(object):
 
     def _parse_use(self):
         """
-        use = 'use' NAME+ '{' NAME+ '}'
+        use: 'use' NAME+ '{' NAME+ '}'
 
         example: use frontend syntax { Token }
 
@@ -167,11 +182,13 @@ class ASDLParser(object):
         #print('MOD %s' % module_parts)
         return Use(module_parts, type_names)
 
-    def _parse_type_decl(self):
+    def _parse_compound_type(self):
         """
-        constructor: Name fields?
-        sum: constructor ('|' constructor)*
-        type: product | sum
+        constructor : NAME fields?
+                    | NAME '%' NAME  # shared variant
+
+        compound_type : product
+                      | constructor ('|' constructor)* attributes?
         """
         if self.cur_token.kind == TokenKind.LParen:
             # If we see a (, it's a product
@@ -199,24 +216,31 @@ class ASDLParser(object):
                   break
                 self._advance()
             attributes = self._parse_optional_attributes()
+            generate = self._parse_optional_generate()
+
+            # Additional validation
+            if generate is not None:
+              for g in generate:
+                if g not in ['integers', 'bit_set', 'no_namespace_suffix']:
+                  raise ASDLSyntaxError('Invalid code gen option %r' % g, self.cur_token.lineno)
 
             if ast.is_simple(sumlist):
-              return SimpleSum(sumlist, attributes)
+              return SimpleSum(sumlist, attributes, generate)
             else:
-              return Sum(sumlist, attributes)
+              return Sum(sumlist, attributes, generate)
 
     def _parse_type_expr(self):
         """
         We just need these expressions, not arbitrary ones:
 
-        one_param: ('array' | 'maybe') '[' type_expr ']'
+        one_param : ('array' | 'maybe') '[' type_expr ']'
+        # note: we might also want 'val[Token]' for a value type
+
         two_params: 'map' '[' type_expr ',' type_expr ']'
 
-        type_expr:
-          Name ( '?' | '*' )
-        | one_param
-        | two_params
-
+        type_expr : Name ( '?' | '*' )
+                  | one_param
+                  | two_params
         """
         type_name = self._match(TokenKind.Name)
         typ = TypeExpr(type_name)
@@ -249,11 +273,9 @@ class ASDLParser(object):
 
     def _parse_fields(self):
         """
-        fields:
-          '('
-                   type_expr Name
-             ( ',' type_expr Name )*
-          ')'
+        fields_inner: type_expr NAME ( ',' type_expr NAME )* ','?
+
+        fields      : '(' fields_inner? ')'
 
         Name Quantifier?  should be changed to typename.
         """
@@ -274,13 +296,49 @@ class ASDLParser(object):
         return fields
 
     def _parse_optional_attributes(self):
+        """
+        attributes = 'attributes' fields
+        """
         if self._at_keyword('attributes'):
             self._advance()
             return self._parse_fields()
         else:
             return None
 
+    def _parse_list(self):
+        """
+        list_inner: NAME ( ',' NAME )* ','?
+        list      : '[' list_inner? ']'
+        """
+        generate = []
+        self._match(TokenKind.LBracket)
+        while self.cur_token.kind == TokenKind.Name:
+            name = self._match(TokenKind.Name)
+
+            generate.append(name)
+
+            if self.cur_token.kind == TokenKind.RBracket:
+                break
+            elif self.cur_token.kind == TokenKind.Comma:
+                self._advance()
+
+        self._match(TokenKind.RBracket)
+        return generate
+
+    def _parse_optional_generate(self):
+        """
+        attributes = 'generate' list
+        """
+        if self._at_keyword('generate'):
+            self._advance()
+            return self._parse_list()
+        else:
+            return None
+
     def _parse_product(self):
+        """
+        product: fields attributes?
+        """
         return Product(self._parse_fields(), self._parse_optional_attributes())
 
     def _advance(self):
@@ -318,68 +376,6 @@ class ASDLParser(object):
     def _at_keyword(self, keyword):
         return (self.cur_token.kind == TokenKind.Keyword and
                 self.cur_token.value == keyword)
-
-
-# A generic visitor for the meta-AST that describes ASDL. This can be used by
-# emitters. Note that this visitor does not provide a generic visit method, so a
-# subclass needs to define visit methods from visitModule to as deep as the
-# interesting node.
-# We also define a Check visitor that makes sure the parsed ASDL is well-formed.
-
-class _VisitorBase(object):
-    """Generic tree visitor for ASTs."""
-    def __init__(self):
-        self.cache = {}
-
-    def visit(self, obj, *args):
-        klass = obj.__class__
-        meth = self.cache.get(klass)
-        if meth is None:
-            methname = "visit" + klass.__name__
-            meth = getattr(self, methname, None)
-            self.cache[klass] = meth
-        if meth:
-            try:
-                meth(obj, *args)
-            except Exception as e:
-                print("Error visiting %r: %s" % (obj, e))
-                raise
-
-
-class Check(_VisitorBase):
-    """A visitor that checks a parsed ASDL tree for correctness.
-
-    Errors are printed and accumulated.
-    """
-    def __init__(self):
-        super(Check, self).__init__()
-        self.cons = {}
-        self.errors = 0  # No longer used, but maybe in the future?
-        self.types = {}  # list of declared field types
-
-    def visitModule(self, mod):
-        for dfn in mod.dfns:
-            self.visit(dfn)
-
-    def visitType(self, type):
-        self.visit(type.value, str(type.name))
-
-    def visitSum(self, sum, name):
-        for t in sum.types:
-            self.visit(t, name)
-
-    def visitConstructor(self, cons, name):
-        for f in cons.fields:
-            self.visit(f, cons.name)
-
-    def visitField(self, field, name):
-        key = str(field.type)
-        l = self.types.setdefault(key, [])
-        l.append(name)
-
-    def visitProduct(self, prod, name):
-        for f in prod.fields:
-            self.visit(f, name)
 
 
 _PRIMITIVE_TYPES = [
@@ -485,12 +481,6 @@ def LoadSchema(f, app_types, verbose=False):
   if verbose:
     import sys
     schema_ast.Print(sys.stdout, 0)
-
-  v = Check()
-  v.visit(schema_ast)
-
-  if v.errors:
-    raise AssertionError('ASDL file is invalid: %s' % v.errors)
 
   # Make sure all the names are valid
   _ResolveModule(schema_ast, app_types)

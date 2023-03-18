@@ -40,11 +40,50 @@ _ = log
 
 
 class _ProcessSubFrame(object):
+  """To keep track of diff <(cat 1) <(cat 2) > >(tac)"""
+
   def __init__(self):
     # type: () -> None
-    self.to_close = []  # type: List[int]  # file descriptors
-    self.to_wait = []  # type: List[process.Process]
-    self.span_ids = []  # type: List[int]
+
+    # These objects appear unconditionally in the main loop, and aren't
+    # commonly used, so we manually optimize [] into None.
+
+    self.to_wait = None  # type: List[process.Process]
+    self.to_close = None  # type: List[int]  # file descriptors
+    self.span_ids = None  # type: List[int]
+
+  def Append(self, p, fd, span_id):
+    # type: (process.Process, int, int) -> None
+
+    if self.to_wait is None:
+      self.to_wait = [p]
+      self.to_close = [fd]
+      self.span_ids = [span_id]
+    else:
+      self.to_wait.append(p)
+      self.to_close.append(fd)
+      self.span_ids.append(span_id)
+
+  def MaybeWaitOnProcessSubs(self, waiter, status_array):
+    # type: (process.Waiter, StatusArray) -> None
+
+    if self.to_wait is None:
+      return
+
+    # Wait in the same order that they were evaluated.  That seems fine.
+    for fd in self.to_close:
+      posix.close(fd)
+
+    codes = []  # type: List[int]
+    spids = []  # type: List[int]
+    for i, p in enumerate(self.to_wait):
+      #log('waiting for %s', p)
+      st = p.Wait(waiter)
+      codes.append(st)
+      spids.append(self.span_ids[i])
+
+    status_array.codes = codes
+    status_array.spids = spids
 
 
 class ShellExecutor(vm._Executor):
@@ -309,13 +348,16 @@ class ShellExecutor(vm._Executor):
     pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
     self.job_state.AddPipeline(pi)
 
+    # initialized with CommandStatus.CreateNull()
+    pipe_spids = []  # type: List[int]
+
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
     for i in xrange(n - 1):
       child = node.children[i]
 
       # TODO: determine these locations at parse time?
-      status_out.pipe_spids.append(location.SpanForCommand(child))
+      pipe_spids.append(location.SpanForCommand(child))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -324,10 +366,11 @@ class ShellExecutor(vm._Executor):
     last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, last_child))
-    status_out.pipe_spids.append(location.SpanForCommand(last_child))
+    pipe_spids.append(location.SpanForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
       status_out.pipe_status = pi.RunPipeline(self.waiter, self.fd_state)
+    status_out.pipe_spids = pipe_spids
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
@@ -497,17 +540,17 @@ class ShellExecutor(vm._Executor):
     # Note: bash never waits() on the process, but zsh does.  The calling
     # program needs to read() before we can wait, e.g.
     #   diff <(sort left.txt) <(sort right.txt)
-    ps_frame.to_wait.append(p)
-    ps_frame.span_ids.append(cs_part.left_token.span_id)
+        
+    span_id = cs_part.left_token.span_id
 
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
       posix.close(w)  # cat < <(head foo.txt)
-      ps_frame.to_close.append(r)  # close later
+      ps_frame.Append(p, r, span_id)  # close later
     elif op_id == Id.Left_ProcSubOut:
       posix.close(r)
       #log('Left_ProcSubOut closed %d', r)
-      ps_frame.to_close.append(w)  # close later
+      ps_frame.Append(p, w, span_id)  # close later
     else:
       raise AssertionError()
 
@@ -520,19 +563,6 @@ class ShellExecutor(vm._Executor):
 
     else:
       raise AssertionError()
-
-  def MaybeWaitOnProcessSubs(self, frame, compound_st):
-    # type: (_ProcessSubFrame, StatusArray) -> None
-
-    # Wait in the same order that they were evaluated.  That seems fine.
-    for fd in frame.to_close:
-      posix.close(fd)
-
-    for i, p in enumerate(frame.to_wait):
-      #log('waiting for %s', p)
-      st = p.Wait(self.waiter)
-      compound_st.codes.append(st)
-      compound_st.spids.append(frame.span_ids[i])
 
   def PushRedirects(self, redirects):
     # type: (List[redirect]) -> bool
@@ -555,7 +585,7 @@ class ShellExecutor(vm._Executor):
     wait.
     """
     frame = self.process_sub_stack.pop()
-    self.MaybeWaitOnProcessSubs(frame, compound_st)
+    frame.MaybeWaitOnProcessSubs(self.waiter, compound_st)
 
     # Note: the 3 lists in _ProcessSubFrame are hot in our profiles.  It would
     # be nice to somehow "destroy" them here, rather than letting them become

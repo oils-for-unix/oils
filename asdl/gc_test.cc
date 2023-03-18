@@ -58,10 +58,10 @@ TEST hnode_test() {
 
   f = mylib::Stdout();
   ast_f = Alloc<format::TextOutput>(f);
-  array = hnode::Array::Create();
+  array = hnode::Array::CreateNull(true);
   ASSERT_EQ_FMT(4, gHeap.Collect(), "%d");
 
-  rec = hnode::Record::Create();
+  rec = hnode::Record::CreateNull(true);
   rec->node_type = StrFromC("dummy_node");
   ASSERT_EQ_FMT(8, gHeap.Collect(), "%d");
 

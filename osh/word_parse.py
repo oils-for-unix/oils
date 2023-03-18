@@ -352,7 +352,7 @@ class WordParser(WordEmitter):
     else:
       bracket_op = None
 
-    part = braced_var_sub.Create()
+    part = braced_var_sub.CreateNull()
     part.token = name_token
     part.var_name = lexer.TokenVal(name_token)
     part.bracket_op = bracket_op
@@ -1292,7 +1292,8 @@ class WordParser(WordEmitter):
       p_die('Expected ) to end for loop expression', self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
-    node = command.ForExpr.Create()  # no redirects yet
+    # redirects is None, will be assigned in CommandEvaluator
+    node = command.ForExpr.CreateNull()
     node.init = init_node
     node.cond = cond_node
     node.update = update_node
@@ -1393,7 +1394,7 @@ class WordParser(WordEmitter):
     """ For json write (x) """
     self.lexer.MaybeUnreadOne()
 
-    arg_list = ArgList.Create()
+    arg_list = ArgList.CreateNull(alloc_lists=True)
     arg_list.left = self.cur_token
     self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
     return arg_list
@@ -1440,7 +1441,7 @@ class WordParser(WordEmitter):
 
       next_id = self.lexer.LookAheadOne(lex_mode)
       if next_id == Id.Op_LParen:  # @arrayfunc(x)
-        arglist = ArgList.Create()
+        arglist = ArgList.CreateNull(alloc_lists=True)
         self._ParseInlineCallArgs(arglist)
         part2 = word_part.FuncCall(splice_tok, arglist)
       else:
@@ -1537,7 +1538,7 @@ class WordParser(WordEmitter):
 
           next_id = self.lexer.LookAheadOne(lex_mode)
           if next_id == Id.Op_LParen:
-            arglist = ArgList.Create()
+            arglist = ArgList.CreateNull(alloc_lists=True)
             self._ParseInlineCallArgs(arglist)
             part = word_part.FuncCall(vsub_token, arglist)
 

@@ -23,5 +23,27 @@ module hnode {
     -- TODO: get rid of since Id is now in ASDL
   | External(any obj)
 
+  -- Bit flags for CreateNull().  NOT part of pretty printing / hnode.
+  -- We really only need alloc_members_b::List right now, but let's be
+  -- consistent.
 
+  -- TODO: put the concrete type of the enum in the schema
+  -- state: integers = ...  # state_i::
+  -- alloc_members: bits = ... # alloc_members_b::
+  --
+  -- can also generate alloc_members_b::{None,All}
+  --
+  -- Related:
+  -- * it would be nice to have ASDL value types (pass by value),
+  --   e.g. val[Token] or inline[Token]
+  -- * we should be able to pack i8, i16, u8, u16, or even bitfields
+  --   Point = (int x, int y)
+  --   Point = (int[signed, 16] x, int[unsigned, 8] y)
+  -- It's not i16 and u8 because we recognize C++ implicit int conversions. 
+  -- This is storage only.
+
+  alloc_members =
+    List
+  | Dict
+  | Struct  -- ASDL product or sum types
 }

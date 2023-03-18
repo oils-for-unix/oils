@@ -201,8 +201,9 @@ run-yapf-3() {
 run-yapf-2() {
   ### Run yapf on Python 2 code
 
-  # TODO: Expand this
-  echo osh/*.py | xargs python3 -m yapf -i --style='{based_on_style: google, indent_width: 2}'
+  # These files originally had 4 space indentation, but it got inconsistent
+  echo asdl/{front_end,ast}.py \
+    | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 2}'
 }
 
 #

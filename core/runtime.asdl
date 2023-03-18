@@ -135,17 +135,15 @@ module runtime
     -- set for atoms
     bool check_errexit,
 
-    -- for atoms like ls  ((  [[
-    -- Not using this yet because the return value is baked in everywhere
-    -- int simple_status,
+    -- By default, don't show the code on errexit.  Sometimes we want to.
+    bool show_code
+
+    -- Should we use 'int simple_status' for atoms like atoms like ls  ((  [[ ?
 
     -- for pipeline
     bool pipe_negated,
     int* pipe_status,
     int* pipe_spids,
-
-    -- By default, don't show the code on errexit.  Sometimes we want to.
-    bool show_code
   )
 
   wait_status =
@@ -158,13 +156,17 @@ module runtime
 
   -- For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
+
   emit = Part | Delim | Empty | Escape | Nothing
+         generate [integers]
   state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash | Done
+          generate [integers]
 
   -- Edges are characters.  DE_ is the delimiter prefix.  DE_White is for
   -- whitespace; DE_Gray is for other IFS chars; Black is for significant
   -- characters.  Sentinel is the end of the string.
   char_kind = DE_White | DE_Gray | Black | Backslash | Sentinel
+              generate [integers]
 
   -- core/process.py
   -- A Job is a Process or Pipeline.

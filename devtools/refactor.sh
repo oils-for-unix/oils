@@ -182,4 +182,8 @@ spid() {
 # - Every node in word_par_t has a left AND a right -- so we can look up the
 #   right most span for a word
 
+asdl-create() {
+  fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
+}
+
 "$@"

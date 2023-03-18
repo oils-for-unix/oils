@@ -78,7 +78,7 @@ class _FormatStringParser(object):
     """ fmt production """
     self._Next(lex_mode_e.PrintfPercent)  # move past %
 
-    part = printf_part.Percent.Create()
+    part = printf_part.Percent.CreateNull(alloc_lists=True)
     while self.token_type in (Id.Format_Flag, Id.Format_Zero):
       # space and + could be implemented
       flag = lexer.TokenVal(self.cur_token)  # allocation will be cached

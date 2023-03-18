@@ -42,7 +42,7 @@ fi
 
 #### if break corner case
 
-## This is analogous to the 'while' case in spec/loop
+# This is analogous to the 'while' case in spec/loop
 f() {
   if break; then
     echo hi

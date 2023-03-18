@@ -17,10 +17,6 @@ from asdl import gen_python
 
 ARG_0 = os.path.basename(sys.argv[0])
 
-# Special cases like Id
-# TODO: Put this in the ASDL schema!
-_SIMPLE = ['state', 'emit', 'char_kind', 'opt_group']
-
 
 def Options():
   """Returns an option parser instance."""
@@ -151,7 +147,6 @@ namespace %s {
 
       debug_info = {}
       v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=opts.pretty_print_methods,
-                                   simple_int_sums=_SIMPLE,
                                    debug_info=debug_info)
       v2.VisitModule(schema_ast)
 
@@ -214,7 +209,7 @@ namespace %s {
 
 """ % ns)
 
-        v3 = gen_cpp.MethodDefVisitor(f, simple_int_sums=_SIMPLE)
+        v3 = gen_cpp.MethodDefVisitor(f)
         v3.VisitModule(schema_ast)
 
         f.write("""
@@ -271,8 +266,7 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
                                   pretty_print_methods=opts.pretty_print_methods,
-                                  py_init_n=opts.py_init_n,
-                                  simple_int_sums=_SIMPLE)
+                                  py_init_n=opts.py_init_n)
     v.VisitModule(schema_ast)
 
     if abbrev_mod:

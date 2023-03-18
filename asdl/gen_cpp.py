@@ -115,16 +115,21 @@ def _IsManagedType(typ):
   return _GetCppType(typ).endswith('*')
 
 
-def _DefaultValue(typ):
-  """ Values that the ::Create() constructor passes. """
+def _DefaultValue(typ, conditional=True):
+  """ Values that the ::CreateNull() constructor passes. """
   type_name = typ.name
 
-  if type_name == 'map':  # TODO: use Empty dict optimization
+  if type_name == 'map':  # TODO: can respect alloc_dicts=True
     return 'nullptr'
 
-  elif type_name == 'array':  # TODO: nullptr or Empty list optimization
+  elif type_name == 'array':
     c_type = _GetCppType(typ.children[0])
-    return 'Alloc<List<%s>>()' % (c_type)
+
+    d = 'Alloc<List<%s>>()' % (c_type)
+    if conditional:
+      return 'alloc_lists ? %s : nullptr' % d
+    else:
+      return d
 
   elif type_name == 'maybe':
     child = typ.children[0]
@@ -199,9 +204,8 @@ def _HNodeExpr(abbrev, typ, var_name):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
-  def __init__(self, f, e_suffix=True,
+  def __init__(self, f,
                pretty_print_methods=True,
-               simple_int_sums=None,
                debug_info=None):
     """
     Args:
@@ -209,9 +213,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       debug_info: dictionary fill in with info for GDB
     """
     visitor.AsdlVisitor.__init__(self, f)
-    self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
-    self.simple_int_sums = simple_int_sums or []
     self.debug_info = debug_info if debug_info is not None else {}
 
     self._shared_type_tags = {}
@@ -223,6 +225,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
     enum = []
     int_to_type = {}
+    add_suffix = not ('no_namespace_suffix' in sum.generate)
     for i, variant in enumerate(sum.types):
       if variant.shared_type:  # Copied from gen_python.py
         tag_num = self._shared_type_tags[variant.shared_type]
@@ -243,7 +246,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       enum.append((variant.name, tag_num))  # zero is reserved
 
     if strong:
-      enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+      enum_name = '%s_e' % sum_name if add_suffix else sum_name
 
       # Simple sum types can be STRONG since there's no possibility of multiple
       # inheritance!
@@ -263,9 +266,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     else:
       if is_simple:
-        enum_name = '%s_i' % sum_name if self.e_suffix else sum_name
+        enum_name = '%s_i' % sum_name if add_suffix else sum_name
       else:
-        enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+        enum_name = '%s_e' % sum_name if add_suffix else sum_name
 
       # Awkward struct/enum C++ idiom because:
 
@@ -300,7 +303,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Note: there can be more than 128 variants in a simple sum, because it's an
     # integer and doesn't have an object header.
 
-    if name in self.simple_int_sums:
+    if 'integers' in sum.generate:
       self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
       self.Emit('typedef int %s_t;' % name)
       self.Emit('')
@@ -403,7 +406,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       if f in attributes:
         # spids are initialized separately
-        inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
+        inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ, conditional=False)))
       else:
         inits.append('%s(%s)' % (f.name, f.name))
 
@@ -420,7 +423,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       for field in ast_node.fields:
         init_args.append(_DefaultValue(field.typ))
 
-      self.Emit('  static %s* Create() { ' % class_name, depth)
+      self.Emit('  static %s* CreateNull(bool alloc_lists = false) { ' % class_name, depth)
       self.Emit('    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)), depth)
       self.Emit('  }')
       self.Emit('')
@@ -473,11 +476,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   We have to do this in another pass because types and schemas have circular
   dependencies.
   """
-  def __init__(self, f, e_suffix=True, pretty_print_methods=True,
-               simple_int_sums=None):
+  def __init__(self, f, pretty_print_methods=True):
     visitor.AsdlVisitor.__init__(self, f)
-    self.e_suffix = e_suffix
-    self.simple_int_sums = simple_int_sums or []
 
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
@@ -612,7 +612,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}')
 
   def _EmitStrFunction(self, sum, sum_name, depth, strong=False, simple=False):
-    if self.e_suffix:  # note: can be i_suffix too
+    add_suffix = not ('no_namespace_suffix' in sum.generate)
+    if add_suffix:
       if simple:
         enum_name = '%s_i' % sum_name
       else:
@@ -640,7 +641,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    if name in self.simple_int_sums:
+    if 'integers' in sum.generate:
       self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
     else:
       self._EmitStrFunction(sum, name, depth, strong=True)

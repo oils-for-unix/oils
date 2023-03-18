@@ -21,6 +21,7 @@ using typed_arith_asdl::arith_expr__Var;
 
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::bool_expr__LogicalBinary;
+using typed_demo_asdl::op_array;
 using typed_demo_asdl::op_id_e;
 
 using hnode_asdl::hnode__Leaf;
@@ -150,7 +151,7 @@ TEST pretty_print_test() {
 }
 
 TEST maps_test() {
-  auto m = typed_demo_asdl::maps::Create();
+  auto m = typed_demo_asdl::maps::CreateNull();
   log("m.ss = %p", m->ss);
   log("m.ib = %p", m->ib);
 
@@ -223,13 +224,24 @@ TEST string_defaults_test() {
   ASSERT_EQ(kEmptyString, st->required);
   ASSERT_EQ(kEmptyString, st->optional);
 
-  st = typed_demo_asdl::Strings::Create();
+  st = typed_demo_asdl::Strings::CreateNull();
   ASSERT_EQ(kEmptyString, st->required);
   ASSERT_EQ(nullptr, st->optional);
 
   st = Alloc<typed_demo_asdl::Strings>(kEmptyString, nullptr);
   ASSERT_EQ(kEmptyString, st->required);
   ASSERT_EQ(nullptr, st->optional);
+
+  PASS();
+}
+
+TEST list_defaults_test() {
+  auto o = op_array::CreateNull();
+  ASSERT_EQ(nullptr, o->ops);
+
+  // Empty list
+  auto o2 = op_array::CreateNull(true);
+  ASSERT_EQ(0, len(o2->ops));
 
   PASS();
 }
@@ -247,6 +259,7 @@ int main(int argc, char** argv) {
   RUN_TEST(maps_test);
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
+  RUN_TEST(list_defaults_test);
 
   gHeap.CleanProcessExit();
 

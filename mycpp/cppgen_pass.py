@@ -582,7 +582,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         t = self.types[o]
         if o.expr:
-            is_asdl = o.name == 'Create'  # hack for MyType.Create()
+            is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
             is_module = isinstance(
                 o.expr, NameExpr) and o.expr.name in self.imported_names
 
