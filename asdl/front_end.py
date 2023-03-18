@@ -6,8 +6,8 @@ from __future__ import print_function
 import re
 
 from asdl import ast
-from asdl.ast import (Use, Module, TypeDecl, Constructor, Field, Sum, SimpleSum,
-                      Product)
+from asdl.ast import (AST, Use, Module, TypeDecl, Constructor, Field, Sum,
+                      SimpleSum, Product)
 
 from core.pyerror import log
 
@@ -36,10 +36,10 @@ _TOKENS = [
     ('RBracket', ']'),
 
     # - Start with map[string, bool].
-    # - array[string] is an alias for string*
+    # - List[string] is an alias for string*
     #   - do we need set[string] instead of map[string]bool?
     #
-    # statically typed: map and array
+    # statically typed: Dict and List
     # dynamically typed: dict and list
 ]
 
@@ -251,7 +251,7 @@ class ASDLParser(object):
     """
     We just need these expressions, not arbitrary ones:
 
-    one_param : ('array' | 'maybe') '[' type_expr ']'
+    one_param : ('List' | 'Optional') '[' type_expr ']'
     # note: we might also want 'val[Token]' for a value type
 
     two_params: 'map' '[' type_expr ',' type_expr ']'
@@ -262,7 +262,7 @@ class ASDLParser(object):
     """
     type_name = self._match(TokenKind.Name)
 
-    if type_name in ('array', 'maybe'):
+    if type_name in ('List', 'Optional'):
       self._match(TokenKind.LBracket)
       child = self._parse_type_expr()
       typ = ast.ParameterizedType(type_name, [child])
@@ -279,16 +279,16 @@ class ASDLParser(object):
       return typ
 
     if self.cur_token.kind == TokenKind.Asterisk:
-      # string* is equivalent to array[string]
+      # string* is equivalent to List[string]
       child = ast.NamedType(type_name)
-      typ = ast.ParameterizedType('array', [child])
+      typ = ast.ParameterizedType('List', [child])
       self._advance()
       return typ
 
     if self.cur_token.kind == TokenKind.Question:
-      # string* is equivalent to maybe[string]
+      # string* is equivalent to Optional[string]
       child = ast.NamedType(type_name)
-      typ = ast.ParameterizedType('maybe', [child])
+      typ = ast.ParameterizedType('Optional', [child])
       self._advance()
       return typ
 
@@ -413,9 +413,9 @@ _PRIMITIVE_TYPES = [
 
 
 def _ResolveType(typ, type_lookup):
-  # type: (AST, Dict) -> None
+  # type: (AST, dict) -> None
   """
-  Recursively attach a 'resolved' field to TypeExpr nodes.
+  Recursively attach a 'resolved' field to AST nodes.
   """
   if isinstance(typ, ast.NamedType):
     if typ.name not in _PRIMITIVE_TYPES:
@@ -428,7 +428,7 @@ def _ResolveType(typ, type_lookup):
     for child in typ.children:
       _ResolveType(child, type_lookup)
 
-    if typ.type_name == 'maybe':
+    if typ.type_name == 'Optional':
       child = typ.children[0]
       if isinstance(child, ast.NamedType):
         if child.name in _PRIMITIVE_TYPES and child.name != 'string':

@@ -35,11 +35,10 @@ def _MyPyType(typ):
       v_type = _MyPyType(typ.children[1])
       return 'Dict[%s, %s]' % (k_type, v_type)
 
-    if typ.type_name == 'array':
+    if typ.type_name == 'List':
       return 'List[%s]' % _MyPyType(typ.children[0])
 
-    if typ.type_name == 'maybe':
-      # TODO: maybe[int] and maybe[simple_sum] are invalid
+    if typ.type_name == 'Optional':
       return 'Optional[%s]' % _MyPyType(typ.children[0])
 
   elif isinstance(typ, ast.NamedType):
@@ -66,8 +65,8 @@ def IsHeapAllocated(typ):
   if isinstance(typ, ast.ParameterizedType):
     # All maps and arrays are heap allocated
 
-    # maybe is only allowed for nullable pointer types, so those are also heap
-    # allocated
+    # Optional is only allowed for nullable pointer types, so those are also
+    # heap allocated
     return True
 
   elif isinstance(typ, ast.NamedType):
@@ -103,10 +102,10 @@ def _DefaultValue(typ):
     if type_name == 'map':  # TODO: can respect alloc_dicts=True
       return 'None'
 
-    elif type_name == 'array':
+    elif type_name == 'List':
       default = '[] if alloc_lists else None'
 
-    elif type_name == 'maybe':
+    elif type_name == 'Optional':
       child_typ = typ.children[0]
       default = 'None'
 
@@ -147,33 +146,42 @@ def _DefaultValue(typ):
 def _HNodeExpr(abbrev, typ, var_name):
   # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
-  type_name = typ.name
 
-  if type_name == 'bool':
-    code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
-
-  elif type_name == 'int':
-    code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
-
-  elif type_name == 'float':
-    code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
-
-  elif type_name == 'string':
-    code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
-
-  elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-    code_str = 'hnode.External(%s)' % var_name
-
-  elif type_name == 'id':  # was meta.UserType
-    # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-    code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (typ.name, var_name)
-
-  else:
+  if isinstance(typ, ast.ParameterizedType):
     code_str = '%s.%s()' % (var_name, abbrev)
     none_guard = True
+
+  elif isinstance(typ, ast.NamedType):
+    type_name = typ.name
+
+    if type_name == 'bool':
+      code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
+
+    elif type_name == 'int':
+      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+    elif type_name == 'float':
+      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+    elif type_name == 'string':
+      code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
+
+    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+      code_str = 'hnode.External(%s)' % var_name
+
+    elif type_name == 'id':  # was meta.UserType
+      # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
+      code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
+
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (type_name,
+                                                               var_name)
+
+    else:
+      code_str = '%s.%s()' % (var_name, abbrev)
+
+  else:
+    raise AssertionError()
 
   return code_str, none_guard
 
@@ -269,7 +277,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
       typ = field.typ.children[0]
 
-      self.Emit('  if self.%s is not None:  # array' % field.name)
+      self.Emit('  if self.%s is not None:  # List' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
       child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
@@ -279,7 +287,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif field.IsMaybe():
       typ = field.typ.children[0]
 
-      self.Emit('  if self.%s is not None:  # maybe' % field.name)
+      self.Emit('  if self.%s is not None:  # Optional' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))

@@ -124,7 +124,7 @@ class ParameterizedType(AST):
 
   def __init__(self, type_name, children=None):
     self.type_name = type_name  # type: str
-    self.children = children or []  # type: List[TypeExpr]
+    self.children = children or []  # type: List[AST]
 
   def Print(self, f, indent):
     """Printed on one line."""
@@ -142,17 +142,17 @@ class ParameterizedType(AST):
 class Field(AST):
 
   def __init__(self, typ, name):
-    # type: (TypeExpr, str) -> None
+    # type: (AST, str) -> None
     self.typ = typ  # type expression
     self.name = name  # variable name
 
   def IsArray(self):
     return isinstance(self.typ,
-                      ParameterizedType) and self.typ.type_name == 'array'
+                      ParameterizedType) and self.typ.type_name == 'List'
 
   def IsMaybe(self):
     return isinstance(self.typ,
-                      ParameterizedType) and self.typ.type_name == 'maybe'
+                      ParameterizedType) and self.typ.type_name == 'Optional'
 
   def IsMap(self):
     return isinstance(self.typ,

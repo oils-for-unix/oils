@@ -87,13 +87,12 @@ def _GetCppType(typ):
       v_type = _GetCppType(typ.children[1])
       return 'Dict<%s, %s>*' % (k_type, v_type)
 
-    elif type_name == 'array':
+    elif type_name == 'List':
       c_type = _GetCppType(typ.children[0])
       return 'List<%s>*' % (c_type)
 
-    elif type_name == 'maybe':
+    elif type_name == 'Optional':
       c_type = _GetCppType(typ.children[0])
-      # TODO: maybe[int] and maybe[simple_sum] are invalid
       return c_type
 
   elif isinstance(typ, ast.NamedType):
@@ -130,7 +129,7 @@ def _DefaultValue(typ, conditional=True):
     if type_name == 'map':  # TODO: can respect alloc_dicts=True
       return 'nullptr'
 
-    elif type_name == 'array':
+    elif type_name == 'List':
       c_type = _GetCppType(typ.children[0])
 
       d = 'Alloc<List<%s>>()' % (c_type)
@@ -139,7 +138,7 @@ def _DefaultValue(typ, conditional=True):
       else:
         return d
 
-    elif type_name == 'maybe':
+    elif type_name == 'Optional':
       return 'nullptr'
 
     else:
@@ -178,32 +177,42 @@ def _DefaultValue(typ, conditional=True):
 def _HNodeExpr(abbrev, typ, var_name):
   # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
-  type_name = typ.name
 
-  if type_name == 'bool':
-    code_str = "Alloc<hnode__Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
-
-  elif type_name == 'int':
-    code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
-
-  elif type_name == 'float':
-    code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
-
-  elif type_name == 'string':
-    code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
-
-  elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-    code_str = 'Alloc<hnode__External>(%s)' % var_name
-
-  elif type_name == 'id':  # was meta.UserType
-    code_str = 'Alloc<hnode__Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    code_str = 'Alloc<hnode__Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
-        typ.name, var_name)
-  else:
+  if isinstance(typ, ast.ParameterizedType):
     code_str = '%s->%s()' % (var_name, abbrev)
     none_guard = True
+
+  elif isinstance(typ, ast.NamedType):
+
+    type_name = typ.name
+
+    if type_name == 'bool':
+      code_str = "Alloc<hnode__Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
+
+    elif type_name == 'int':
+      code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
+
+    elif type_name == 'float':
+      code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
+
+    elif type_name == 'string':
+      code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
+
+    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+      code_str = 'Alloc<hnode__External>(%s)' % var_name
+
+    elif type_name == 'id':  # was meta.UserType
+      code_str = 'Alloc<hnode__Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
+
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      code_str = 'Alloc<hnode__Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
+          type_name, var_name)
+
+    else:
+      code_str = '%s->%s()' % (var_name, abbrev)
+
+  else:
+    raise AssertionError()
 
   return code_str, none_guard
 
@@ -498,7 +507,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
       typ = field.typ.children[0]
 
-      self.Emit('if (this->%s != nullptr) {  // array' % (field.name))
+      self.Emit('if (this->%s != nullptr) {  // List' % (field.name))
       self.Emit(
           '  hnode__Array* %s = Alloc<hnode__Array>(Alloc<List<hnode_t*>>());' %
           out_val_name)
@@ -517,7 +526,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     elif field.IsMaybe():
       typ = field.typ.children[0]
 
-      self.Emit('if (this->%s) {  // maybe' % field.name)
+      self.Emit('if (this->%s) {  // Optional' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
       self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
       self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' %
