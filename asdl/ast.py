@@ -25,24 +25,6 @@ import cStringIO
 
 from typing import List
 
-# TODO: There should be SimpleSumType(_SumType) and CompoundSumType(_SumType)
-# That can be determined at compile time with this function.  is_simple()
-# should move to front_end.py.
-
-
-# PATCH: Moved this function from asdl_c.py.
-def is_simple(variant_list):
-  """Return True if a sum is a simple.
-
-  A sum is simple if its types have no fields, e.g.
-  unaryop = Invert | Not | UAdd | USub
-  """
-  for t in variant_list:
-    if t.fields or t.shared_type:
-      return False
-  return True
-
-
 # The following classes are the AST for the ASDL schema, i.e. the "meta-AST".
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
@@ -53,7 +35,7 @@ class AST(object):
   def Print(self, f, indent):
     raise NotImplementedError()
 
-  def __repr__(self):
+  def __str__(self):
     f = cStringIO.StringIO()
     self.Print(f, 0)
     return f.getvalue()
@@ -107,7 +89,27 @@ class TypeDecl(AST):
     f.write('%s}\n' % ind)
 
 
-class TypeExpr(AST):
+class NamedType(AST):
+  """ 
+  int, string are resolved to a Primitive type
+  'Point' can be resolved to CompoundSum instance, etc.
+  """
+
+  def __init__(self, name):
+    # type: (str) -> None
+    self.name = name
+
+    # Mutated by _ResolveModule / _ResolveType
+    self.resolved = None
+
+  def Print(self, f, indent):
+    """Printed on one line."""
+    ind = indent * '  '
+    f.write('NamedType %s' % (self.name))  # printed after field
+    f.write(' (%r)' % self.resolved)
+
+
+class ParameterizedType(AST):
   """A parameterized type expression, e.g. the type of a field.
 
   e.g. map[string, int]   map[int, array[string]]
@@ -120,17 +122,14 @@ class TypeExpr(AST):
   mytype?  <=>  maybe[mytype]
   """
 
-  def __init__(self, name, children=None, seq=False, opt=False):
-    self.name = name  # type: str
+  def __init__(self, type_name, children=None):
+    self.type_name = type_name  # type: str
     self.children = children or []  # type: List[TypeExpr]
-
-    # mutated by name resolution stage.
-    self.resolved = None  # type: AST
 
   def Print(self, f, indent):
     """Printed on one line."""
     ind = indent * '  '
-    f.write('TypeExpr %s' % (self.name))  # printed after field
+    f.write('%s' % (self.type_name))  # printed after field
     if self.children:
       f.write(' [ ')
       for i, child in enumerate(self.children):
@@ -148,13 +147,16 @@ class Field(AST):
     self.name = name  # variable name
 
   def IsArray(self):
-    return self.typ.name == 'array'
+    return isinstance(self.typ,
+                      ParameterizedType) and self.typ.type_name == 'array'
 
   def IsMaybe(self):
-    return self.typ.name == 'maybe'
+    return isinstance(self.typ,
+                      ParameterizedType) and self.typ.type_name == 'maybe'
 
   def IsMap(self):
-    return self.typ.name == 'map'
+    return isinstance(self.typ,
+                      ParameterizedType) and self.typ.type_name == 'map'
 
   def Print(self, f, indent):
     ind = indent * '  '
@@ -166,8 +168,8 @@ class Field(AST):
 class _CompoundAST(AST):
   """Either a Product or Constructor.
 
-    encode.py and format.py need a reflection API.
-    """
+  encode.py and format.py need a reflection API.
+  """
 
   def __init__(self, fields):
     self.fields = fields or []
@@ -238,6 +240,11 @@ class Product(_CompoundAST):
       for a in self.attributes:
         a.Print(f, indent + 1)
     f.write('%s}\n' % ind)
+
+
+#
+# Helpers
+#
 
 
 def TypeNameHeuristic(t):

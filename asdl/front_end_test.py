@@ -117,22 +117,11 @@ module foo {
 
     self._assertParseError('module foo { integers = A | B generate [invalid] }')
 
-    return
-    # Optional integer isn't allowed, because C++ can't express it
-    # Integers are initialized to -1
-    self._assertParseError('module foo { t = (int? status) }')
-
-    # Optional simple sum isn't allowed
-    self._assertParseError('''
-        module foo { 
-          color = Red | Green
-          t = (color? status)
-        }
-        ''')
-
   def _assertResolve(self, code_str):
     f = cStringIO.StringIO(code_str)
     schema_ast = front_end.LoadSchema(f, {})
+
+    print(type(schema_ast))
     print(schema_ast)
 
   def testResolve(self):
@@ -153,22 +142,34 @@ module foo {
     else:
       self.fail("Expected name resolution error: %r" % code_str)
 
-  def testResolveError(self):
+  def testResolveErrors(self):
     self._assertResolveError("""
 module foo {
   place = None | Two(typo b)
 }
 """)
 
+    # Optional integer isn't allowed, because C++ can't express it
+    # Integers are initialized to -1
+    self._assertResolveError('module foo { t = (int? status) }')
+
+    # Optional simple sum isn't allowed
+    self._assertResolveError('''
+        module foo { 
+          color = Red | Green
+          t = (color? status)
+        }
+        ''')
+
   def testAstNodes(self):
     # maybe[string]
-    n1 = ast.TypeExpr('string')
+    n1 = ast.NamedType('string')
     print(n1)
 
-    n2 = ast.TypeExpr('maybe', [n1])
+    n2 = ast.ParameterizedType('maybe', [n1])
     print(n2)
 
-    n3 = ast.TypeExpr('map', [n1, ast.TypeExpr('int')])
+    n3 = ast.ParameterizedType('map', [n1, ast.NamedType('int')])
     print(n3)
 
 

@@ -7,7 +7,7 @@ import re
 
 from asdl import ast
 from asdl.ast import (Use, Module, TypeDecl, Constructor, Field, Sum, SimpleSum,
-                      Product, TypeExpr)
+                      Product)
 
 from core.pyerror import log
 
@@ -97,6 +97,18 @@ def _Tokenize(f):
         except KeyError:
           raise ASDLSyntaxError('Invalid operator %s' % c, lineno)
         yield Token(op_kind, c, lineno)
+
+
+def _SumIsSimple(variant_list):
+  """Return True if a sum is a simple.
+
+  A sum is simple if its types have no fields, e.g.
+  unaryop = Invert | Not | UAdd | USub
+  """
+  for t in variant_list:
+    if t.fields or t.shared_type:
+      return False
+  return True
 
 
 class ASDLParser(object):
@@ -230,7 +242,7 @@ class ASDLParser(object):
             raise ASDLSyntaxError('Invalid code gen option %r' % g,
                                   self.cur_token.lineno)
 
-      if ast.is_simple(sumlist):
+      if _SumIsSimple(sumlist):
         return SimpleSum(sumlist, attributes, generate)
       else:
         return Sum(sumlist, attributes, generate)
@@ -249,12 +261,11 @@ class ASDLParser(object):
               | two_params
     """
     type_name = self._match(TokenKind.Name)
-    typ = TypeExpr(type_name)
 
     if type_name in ('array', 'maybe'):
       self._match(TokenKind.LBracket)
       child = self._parse_type_expr()
-      typ = TypeExpr(type_name, [child])
+      typ = ast.ParameterizedType(type_name, [child])
       self._match(TokenKind.RBracket)
       return typ
 
@@ -263,19 +274,25 @@ class ASDLParser(object):
       k = self._parse_type_expr()
       self._match(TokenKind.Comma)
       v = self._parse_type_expr()
-      typ = TypeExpr(type_name, [k, v])
+      typ = ast.ParameterizedType(type_name, [k, v])
       self._match(TokenKind.RBracket)
       return typ
 
     if self.cur_token.kind == TokenKind.Asterisk:
       # string* is equivalent to array[string]
-      typ = TypeExpr('array', [typ])
+      child = ast.NamedType(type_name)
+      typ = ast.ParameterizedType('array', [child])
       self._advance()
-    elif self.cur_token.kind == TokenKind.Question:
+      return typ
+
+    if self.cur_token.kind == TokenKind.Question:
       # string* is equivalent to maybe[string]
-      typ = TypeExpr('maybe', [typ])
+      child = ast.NamedType(type_name)
+      typ = ast.ParameterizedType('maybe', [child])
       self._advance()
-    return typ
+      return typ
+
+    return ast.NamedType(type_name)
 
   def _parse_fields(self):
     """
@@ -396,20 +413,34 @@ _PRIMITIVE_TYPES = [
 
 
 def _ResolveType(typ, type_lookup):
+  # type: (AST, Dict) -> None
   """
   Recursively attach a 'resolved' field to TypeExpr nodes.
   """
-  if typ.children:
-    assert typ.name in ('map', 'array', 'maybe'), typ
-    for t in typ.children:
-      _ResolveType(t, type_lookup)  # recurse
-  else:
+  if isinstance(typ, ast.NamedType):
     if typ.name not in _PRIMITIVE_TYPES:
       ast_node = type_lookup.get(typ.name)
       if ast_node is None:
         raise ASDLSyntaxError("Couldn't find type %r" % typ.name)
       typ.resolved = ast_node
-      #log('resolved = %s', typ.resolved)
+
+  elif isinstance(typ, ast.ParameterizedType):
+    for child in typ.children:
+      _ResolveType(child, type_lookup)
+
+    if typ.type_name == 'maybe':
+      child = typ.children[0]
+      if isinstance(child, ast.NamedType):
+        if child.name in _PRIMITIVE_TYPES and child.name != 'string':
+          raise ASDLSyntaxError('Optional primitive type {} not allowed'.format(
+              child.name))
+
+        if child.resolved and isinstance(child.resolved, ast.SimpleSum):
+          raise ASDLSyntaxError(
+              'Optional simple sum type {} not allowed'.format(child.name))
+
+  else:
+    raise AssertionError()
 
 
 def _ResolveFields(field_ast_nodes, type_lookup):
@@ -422,6 +453,7 @@ def _ResolveFields(field_ast_nodes, type_lookup):
 
 
 def _ResolveModule(module, app_types):
+  """ Name resolution for NamedType """
   # Types that fields are declared with: int, id, word_part, etc.
   # Fields are NOT declared with Constructor names.
   type_lookup = dict(app_types)

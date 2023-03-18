@@ -28,30 +28,34 @@ def _MyPyType(typ):
   """
   ASDL type to MyPy Type.
   """
-  type_name = typ.name
+  if isinstance(typ, ast.ParameterizedType):
 
-  if type_name == 'map':
-    k_type = _MyPyType(typ.children[0])
-    v_type = _MyPyType(typ.children[1])
-    return 'Dict[%s, %s]' % (k_type, v_type)
+    if typ.type_name == 'map':
+      k_type = _MyPyType(typ.children[0])
+      v_type = _MyPyType(typ.children[1])
+      return 'Dict[%s, %s]' % (k_type, v_type)
 
-  if type_name == 'array':
-    return 'List[%s]' % _MyPyType(typ.children[0])
+    if typ.type_name == 'array':
+      return 'List[%s]' % _MyPyType(typ.children[0])
 
-  if type_name == 'maybe':
-    # TODO: maybe[int] and maybe[simple_sum] are invalid
-    return 'Optional[%s]' % _MyPyType(typ.children[0])
+    if typ.type_name == 'maybe':
+      # TODO: maybe[int] and maybe[simple_sum] are invalid
+      return 'Optional[%s]' % _MyPyType(typ.children[0])
 
-  if typ.resolved:
-    if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
-      return '%s_t' % typ.name
-    if isinstance(typ.resolved, ast.Product):
-      return typ.name
-    if isinstance(typ.resolved, ast.Use):
-      return ast.TypeNameHeuristic(type_name)
+  elif isinstance(typ, ast.NamedType):
+    if typ.resolved:
+      if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
+        return '%s_t' % typ.name
+      if isinstance(typ.resolved, ast.Product):
+        return typ.name
+      if isinstance(typ.resolved, ast.Use):
+        return ast.TypeNameHeuristic(typ.name)
 
-  # 'id' falls through here
-  return _PRIMITIVES[type_name]
+    # 'id' falls through here
+    return _PRIMITIVES[typ.name]
+
+  else:
+    raise AssertionError()
 
 
 def IsHeapAllocated(typ):
@@ -59,78 +63,83 @@ def IsHeapAllocated(typ):
   To determine whether nullptr / None is an allowed initialization, as opposed
   to false, -1, 0.0, scope_e.First (simple sum).
   """
-  type_name = typ.name
+  if isinstance(typ, ast.ParameterizedType):
+    # All maps and arrays are heap allocated
 
-  # All maps and arrays are heap allocated
-  if type_name in ('map', 'array'):
+    # maybe is only allowed for nullable pointer types, so those are also heap
+    # allocated
     return True
 
-  if type_name == 'maybe':
-    child = typ.children[0]
-    if child.name != 'string' and child.name in _PRIMITIVES:
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+  elif isinstance(typ, ast.NamedType):
+    if typ.resolved:
+      if isinstance(typ.resolved, ast.SimpleSum):
+        return False
+      if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
+        return True
+      if isinstance(typ.resolved, ast.Product):
+        return True
+      if isinstance(typ.resolved, ast.Use):
 
-    # maybe[simple_sum] is also invalid
-    if child.resolved and isinstance(child.resolved, ast.SimpleSum):
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+        # TODO: what about simple_int_sum?
 
-    return True
+        # return ast.TypeNameHeuristic(type_name)
+        return True
 
-  if typ.resolved:
-    if isinstance(typ.resolved, ast.SimpleSum):
-      return False
-    if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
-      return True
-    if isinstance(typ.resolved, ast.Product):
-      return True
-    if isinstance(typ.resolved, ast.Use):
+    # Primitives aren't heap allocated
+    return False
 
-      # TODO: what about simple_int_sum?
-
-      # return ast.TypeNameHeuristic(type_name)
-      return True
-
-  # Primtives aren't heap allocated
-  return False
+  else:
+    raise AssertionError()
 
 
 def _DefaultValue(typ):
   """Values that the static CreateNull() constructor passes."""
-  type_name = typ.name
 
   default = 'None'
 
-  if type_name == 'map':  # TODO: can respect alloc_dicts=True
-    return 'None'
+  if isinstance(typ, ast.ParameterizedType):
+    type_name = typ.type_name
 
-  elif type_name == 'array':
-    default = '[] if alloc_lists else None'
+    if type_name == 'map':  # TODO: can respect alloc_dicts=True
+      return 'None'
 
-  elif type_name == 'maybe':
-    child_typ = typ.children[0]
-    default = 'None'
+    elif type_name == 'array':
+      default = '[] if alloc_lists else None'
 
-  elif type_name == 'int':
-    default = '-1'
+    elif type_name == 'maybe':
+      child_typ = typ.children[0]
+      default = 'None'
 
-  elif type_name == 'id':  # hard-coded HACK
-    default = '-1'
+    else:
+      raise AssertionError(type_name)
 
-  elif type_name == 'bool':
-    default = 'False'
+  elif isinstance(typ, ast.NamedType):
+    type_name = typ.name
 
-  elif type_name == 'float':
-    default = '0.0'  # or should it be NaN?
+    if type_name == 'int':
+      default = '-1'
 
-  elif type_name == 'string':
-    default = "''"
-    pass
+    elif type_name == 'id':  # hard-coded HACK
+      default = '-1'
 
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    sum_type = typ.resolved
-    # Just make it the first variant.  We could define "Undef" for
-    # each enum, but it doesn't seem worth it.
-    default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+    elif type_name == 'bool':
+      default = 'False'
+
+    elif type_name == 'float':
+      default = '0.0'  # or should it be NaN?
+
+    elif type_name == 'string':
+      default = "''"
+      pass
+
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      sum_type = typ.resolved
+      # Just make it the first variant.  We could define "Undef" for
+      # each enum, but it doesn't seem worth it.
+      default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+
+  else:
+    raise AssertionError()
 
   return default
 
@@ -346,7 +355,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # Special initialization for attributes .spids=[] -- only in
       # syntax.asdl
       if f in attributes:
-        assert f.typ.name == 'array'
+        assert f.IsArray(), f
         expr_str = ' if %s is not None else []' % f.name
 
       # don't wrap the type comment

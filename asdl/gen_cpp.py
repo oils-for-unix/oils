@@ -79,35 +79,41 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 
 
 def _GetCppType(typ):
-  type_name = typ.name
+  if isinstance(typ, ast.ParameterizedType):
+    type_name = typ.type_name
 
-  if type_name == 'map':
-    k_type = _GetCppType(typ.children[0])
-    v_type = _GetCppType(typ.children[1])
-    return 'Dict<%s, %s>*' % (k_type, v_type)
+    if type_name == 'map':
+      k_type = _GetCppType(typ.children[0])
+      v_type = _GetCppType(typ.children[1])
+      return 'Dict<%s, %s>*' % (k_type, v_type)
 
-  elif type_name == 'array':
-    c_type = _GetCppType(typ.children[0])
-    return 'List<%s>*' % (c_type)
+    elif type_name == 'array':
+      c_type = _GetCppType(typ.children[0])
+      return 'List<%s>*' % (c_type)
 
-  elif type_name == 'maybe':
-    c_type = _GetCppType(typ.children[0])
-    # TODO: maybe[int] and maybe[simple_sum] are invalid
-    return c_type
+    elif type_name == 'maybe':
+      c_type = _GetCppType(typ.children[0])
+      # TODO: maybe[int] and maybe[simple_sum] are invalid
+      return c_type
 
-  elif typ.resolved:
-    if isinstance(typ.resolved, ast.SimpleSum):
-      return '%s_t' % typ.name
-    if isinstance(typ.resolved, ast.Sum):
-      return '%s_t*' % typ.name
-    if isinstance(typ.resolved, ast.Product):
-      return '%s*' % typ.name
-    if isinstance(typ.resolved, ast.Use):
-      return '%s_asdl::%s*' % (typ.resolved.module_parts[-1],
-                               ast.TypeNameHeuristic(type_name))
+  elif isinstance(typ, ast.NamedType):
 
-  # 'id' falls through here
-  return _PRIMITIVES[typ.name]
+    if typ.resolved:
+      if isinstance(typ.resolved, ast.SimpleSum):
+        return '%s_t' % typ.name
+      if isinstance(typ.resolved, ast.Sum):
+        return '%s_t*' % typ.name
+      if isinstance(typ.resolved, ast.Product):
+        return '%s*' % typ.name
+      if isinstance(typ.resolved, ast.Use):
+        return '%s_asdl::%s*' % (typ.resolved.module_parts[-1],
+                                 ast.TypeNameHeuristic(typ.name))
+
+    # 'id' falls through here
+    return _PRIMITIVES[typ.name]
+
+  else:
+    raise AssertionError()
 
 
 def _IsManagedType(typ):
@@ -117,55 +123,56 @@ def _IsManagedType(typ):
 
 def _DefaultValue(typ, conditional=True):
   """ Values that the ::CreateNull() constructor passes. """
-  type_name = typ.name
 
-  if type_name == 'map':  # TODO: can respect alloc_dicts=True
-    return 'nullptr'
+  if isinstance(typ, ast.ParameterizedType):
+    type_name = typ.type_name
 
-  elif type_name == 'array':
-    c_type = _GetCppType(typ.children[0])
+    if type_name == 'map':  # TODO: can respect alloc_dicts=True
+      return 'nullptr'
 
-    d = 'Alloc<List<%s>>()' % (c_type)
-    if conditional:
-      return 'alloc_lists ? %s : nullptr' % d
+    elif type_name == 'array':
+      c_type = _GetCppType(typ.children[0])
+
+      d = 'Alloc<List<%s>>()' % (c_type)
+      if conditional:
+        return 'alloc_lists ? %s : nullptr' % d
+      else:
+        return d
+
+    elif type_name == 'maybe':
+      return 'nullptr'
+
     else:
-      return d
+      raise AssertionError(type_name)
 
-  elif type_name == 'maybe':
-    child = typ.children[0]
+  elif isinstance(typ, ast.NamedType):
+    type_name = typ.name
 
-    # Note: this logic is duplicated in asdl/gen_python.py
-    if child.name != 'string' and child.name in _PRIMITIVES:
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+    if type_name == 'int':
+      default = '-1'
+    elif type_name == 'id':  # hard-coded HACK
+      default = '-1'
+    elif type_name == 'bool':
+      default = 'false'
+    elif type_name == 'float':
+      default = '0.0'  # or should it be NaN?
 
-    # maybe[simple_sum] is also invalid
-    if child.resolved and isinstance(child.resolved, ast.SimpleSum):
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+    elif type_name == 'string':
+      default = 'kEmptyString'
 
-    return 'nullptr'
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      sum_type = typ.resolved
+      # Just make it the first variant.  We could define "Undef" for
+      # each enum, but it doesn't seem worth it.
+      default = '%s_e::%s' % (type_name, sum_type.types[0].name)
 
-  elif type_name == 'int':
-    default = '-1'
-  elif type_name == 'id':  # hard-coded HACK
-    default = '-1'
-  elif type_name == 'bool':
-    default = 'false'
-  elif type_name == 'float':
-    default = '0.0'  # or should it be NaN?
+    else:
+      default = 'nullptr'  # Sum or Product
 
-  elif type_name == 'string':
-    default = 'kEmptyString'
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    sum_type = typ.resolved
-    # Just make it the first variant.  We could define "Undef" for
-    # each enum, but it doesn't seem worth it.
-    default = '%s_e::%s' % (type_name, sum_type.types[0].name)
+    return default
 
   else:
-    default = 'nullptr'  # Sum or Product
-
-  return default
+    raise AssertionError()
 
 
 def _HNodeExpr(abbrev, typ, var_name):
