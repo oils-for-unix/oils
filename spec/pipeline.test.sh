@@ -164,3 +164,19 @@ echo ${PIPESTATUS[@]}
 ## N-I zsh stdout:
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### Nested pipelines
+{ sleep 0.1 | seq 3; } | cat
+{ sleep 0.1 | seq 10; } | { cat | cat; } | wc -l
+## STDOUT:
+1
+2
+3
+10
+## END
+
+#### Pipeline in eval
+ls /dev/null | eval 'cat | cat' | wc -l
+## STDOUT:
+1
+## END

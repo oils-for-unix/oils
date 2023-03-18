@@ -23,6 +23,7 @@ static PyMethodDef posix_methods[] = {
   {"getpid", posix_getpid, METH_NOARGS},
   {"getuid", posix_getuid, METH_NOARGS},
   {"getppid", posix_getppid, METH_NOARGS},
+  {"getpgid", posix_getpgid, METH_VARARGS},
 
   {"open", posix_open, METH_VARARGS},
   {"close", posix_close_, METH_VARARGS},
@@ -39,6 +40,7 @@ static PyMethodDef posix_methods[] = {
   /* job control stuff */
   {"setpgid", posix_setpgid, METH_VARARGS},
   {"tcsetpgrp", posix_tcsetpgrp, METH_VARARGS},
+  {"tcgetpgrp", posix_tcgetpgrp, METH_VARARGS},
 
   /* note: replaced wait() call with waitpid() */
   {"wait", posix_wait, METH_NOARGS},

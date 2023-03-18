@@ -107,6 +107,32 @@ inline void write(int fd, Str* s) {
   }
 }
 
+inline void setpgid(pid_t pid, pid_t pgid) {
+  pid_t ret = ::setpgid(pid, pgid);
+  if (ret < 0) {
+    throw Alloc<OSError>(errno);
+  }
+}
+
+inline int getpgid(pid_t pid) {
+  return ::getpgid(pid);
+}
+
+inline void tcsetpgrp(int fd, pid_t pgid) {
+  pid_t ret = ::tcsetpgrp(fd, pgid);
+  if (ret < 0) {
+    throw Alloc<OSError>(errno);
+  }
+}
+
+inline int tcgetpgrp(int fd) {
+  pid_t ret = ::tcgetpgrp(fd);
+  if (ret < 0) {
+    throw Alloc<OSError>(errno);
+  }
+  return ret;
+}
+
 // Can we use fcntl instead?
 void dup2(int oldfd, int newfd);
 
@@ -117,6 +143,7 @@ mylib::LineReader* fdopen(int fd, Str* c_mode);
 void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ);
 
 void kill(int pid, int sig);
+void killpg(int pgid, int sig);
 
 List<Str*>* listdir(Str* path);
 
