@@ -82,7 +82,7 @@ def _GetCppType(typ):
   if isinstance(typ, ast.ParameterizedType):
     type_name = typ.type_name
 
-    if type_name == 'map':
+    if type_name == 'Dict':
       k_type = _GetCppType(typ.children[0])
       v_type = _GetCppType(typ.children[1])
       return 'Dict<%s, %s>*' % (k_type, v_type)
@@ -126,7 +126,7 @@ def _DefaultValue(typ, conditional=True):
   if isinstance(typ, ast.ParameterizedType):
     type_name = typ.type_name
 
-    if type_name == 'map':  # TODO: can respect alloc_dicts=True
+    if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
       return 'nullptr'
 
     elif type_name == 'List':
@@ -547,10 +547,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('if (this->%s) {  // map' % field.name)
+      self.Emit('if (this->%s) {  // Dict' % field.name)
       # TODO: m can be a global constant!
       self.Emit(
-          '  auto m = Alloc<hnode__Leaf>(StrFromC("map"), color_e::OtherConst);'
+          '  auto m = Alloc<hnode__Leaf>(StrFromC("Dict"), color_e::OtherConst);'
       )
       self.Emit(
           '  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>({m}));' %

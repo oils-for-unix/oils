@@ -63,7 +63,7 @@ module foo {
   action = Foo | Bar(point z)
 
   foo = (List[int] span_ids)
-  bar = (map[string, int] options)
+  bar = (Dict[string, int] options)
 
   -- this check happens later
   does_not_resolve = (typo zz)
@@ -103,9 +103,9 @@ module foo {
     self._assertParseError('module foo { t = (string[string] a) }')
 
     # Not enough params
-    self._assertParseError('module foo { t = (map[] a) }')
-    self._assertParseError('module foo { t = (map[string] a) }')
-    self._assertParseError('module foo { t = (map[string, ] a) }')
+    self._assertParseError('module foo { t = (Dict[] a) }')
+    self._assertParseError('module foo { t = (Dict[string] a) }')
+    self._assertParseError('module foo { t = (Dict[string, ] a) }')
 
     self._assertParseError('module foo { ( }')
 
@@ -131,7 +131,7 @@ module foo {
 module foo {
   point = (int x, int y)
   place = None | Two(point a, point b)
-  options = (map[string, int] names)
+  options = (Dict[string, int] names)
 }
 """)
 
@@ -168,10 +168,10 @@ module foo {
     n1 = ast.NamedType('string')
     print(n1)
 
-    n2 = ast.ParameterizedType('maybe', [n1])
+    n2 = ast.ParameterizedType('Optional', [n1])
     print(n2)
 
-    n3 = ast.ParameterizedType('map', [n1, ast.NamedType('int')])
+    n3 = ast.ParameterizedType('Dict', [n1, ast.NamedType('int')])
     print(n3)
 
 

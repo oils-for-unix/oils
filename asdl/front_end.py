@@ -35,9 +35,8 @@ _TOKENS = [
     ('LBracket', '['),
     ('RBracket', ']'),
 
-    # - Start with map[string, bool].
+    # - Start with Dict[string, bool].
     # - List[string] is an alias for string*
-    #   - do we need set[string] instead of map[string]bool?
     #
     # statically typed: Dict and List
     # dynamically typed: dict and list
@@ -254,7 +253,7 @@ class ASDLParser(object):
     one_param : ('List' | 'Optional') '[' type_expr ']'
     # note: we might also want 'val[Token]' for a value type
 
-    two_params: 'map' '[' type_expr ',' type_expr ']'
+    two_params: 'Dict' '[' type_expr ',' type_expr ']'
 
     type_expr : Name ( '?' | '*' )
               | one_param
@@ -269,7 +268,7 @@ class ASDLParser(object):
       self._match(TokenKind.RBracket)
       return typ
 
-    if type_name == 'map':
+    if type_name == 'Dict':
       self._match(TokenKind.LBracket)
       k = self._parse_type_expr()
       self._match(TokenKind.Comma)
@@ -458,11 +457,8 @@ def _ResolveModule(module, app_types):
   # Fields are NOT declared with Constructor names.
   type_lookup = dict(app_types)
 
-  # TODO: Need to resolve 'imports' to the right descriptor.  Code generation
-  # relies on it:
-  # - To pick the method to call in AbbreviatedTree etc.
-  # - To generate 'value_t' instead of 'value' in type annotations.
-
+  # Note: we don't actually load the type, and instead leave that to MyPy /
+  # C++.  A consequence of this is TypeNameHeuristic().
   for u in module.uses:
     for type_name in u.type_names:
       type_lookup[type_name] = u  # type: ast.Use()
@@ -474,16 +470,7 @@ def _ResolveModule(module, app_types):
   for d in module.dfns:
     type_lookup[d.name] = d.value
 
-  # Second pass: resolve type declarations in Product and constructor.
-  #
-  # - check that the type of every field is valid
-  #   - fields in products, constructors
-  #   - fields in attributes
-  #   - parameterized types like map[int, action]   -- TODO
-  # - mutations:
-  #   - constructors that refer to first-class variants?  For inheritance I
-  #     guess.
-
+  # Second pass: add NamedType.resolved field
   for d in module.dfns:
     ast_node = d.value
     if isinstance(ast_node, ast.Product):

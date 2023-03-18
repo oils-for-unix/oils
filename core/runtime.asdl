@@ -43,7 +43,7 @@ module runtime
     -- "holes" in the array are represented by None
   | MaybeStrArray(string* strs)
     -- d will be a dict
-  | AssocArray(map[string, string] d)
+  | AssocArray(Dict[string, string] d)
 
   | Bool(bool b)
   | Float(float f) -- For flags only now.  TODO: ASDL needs float type.
@@ -193,5 +193,5 @@ module runtime
   word_style = Expr | Unquoted | DQ | SQ
 
   -- Hay "first word" namespace
-  hay_node = (map[string, hay_node] children)
+  hay_node = (Dict[string, hay_node] children)
 }

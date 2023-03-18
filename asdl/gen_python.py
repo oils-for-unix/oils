@@ -30,7 +30,7 @@ def _MyPyType(typ):
   """
   if isinstance(typ, ast.ParameterizedType):
 
-    if typ.type_name == 'map':
+    if typ.type_name == 'Dict':
       k_type = _MyPyType(typ.children[0])
       v_type = _MyPyType(typ.children[1])
       return 'Dict[%s, %s]' % (k_type, v_type)
@@ -99,7 +99,7 @@ def _DefaultValue(typ):
   if isinstance(typ, ast.ParameterizedType):
     type_name = typ.type_name
 
-    if type_name == 'map':  # TODO: can respect alloc_dicts=True
+    if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
       return 'None'
 
     elif type_name == 'List':
@@ -303,8 +303,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('  if self.%s is not None:  # map' % field.name)
-      self.Emit('    m = hnode.Leaf("map", color_e.OtherConst)')
+      self.Emit('  if self.%s is not None:  # Dict' % field.name)
+      self.Emit('    m = hnode.Leaf("Dict", color_e.OtherConst)')
       self.Emit('    %s = hnode.Array([m])' % out_val_name)
       self.Emit('    for %s, %s in self.%s.iteritems():' % (k, v, field.name))
       self.Emit('      %s.children.append(%s)' % (out_val_name, k_code_str))

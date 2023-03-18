@@ -45,7 +45,7 @@ class ArithAstTest(unittest.TestCase):
 
   def testMapDefault(self):
     # TODO: alloc_dicts=True
-    obj = typed_demo_asdl.maps.CreateNull(alloc_lists=True)
+    obj = typed_demo_asdl.Dicts.CreateNull(alloc_lists=True)
     self.assertEqual(None, obj.ss)
 
   def testOptionalDefault(self):

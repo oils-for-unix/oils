@@ -112,7 +112,7 @@ class NamedType(AST):
 class ParameterizedType(AST):
   """A parameterized type expression, e.g. the type of a field.
 
-  e.g. map[string, int]   map[int, array[string]]
+  e.g. Dict[string, int]   Dict[int, array[string]]
 
   self.children is empty if it's a leaf.
 
@@ -156,7 +156,7 @@ class Field(AST):
 
   def IsMap(self):
     return isinstance(self.typ,
-                      ParameterizedType) and self.typ.type_name == 'map'
+                      ParameterizedType) and self.typ.type_name == 'Dict'
 
   def Print(self, f, indent):
     ind = indent * '  '
