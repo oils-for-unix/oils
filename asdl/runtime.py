@@ -6,22 +6,23 @@ runtime.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.hnode_asdl import (
-    hnode__Record, hnode__Leaf, color_t, color_e
-)
+from _devbuild.gen.hnode_asdl import (hnode__Record, hnode__Leaf, color_t,
+                                      color_e)
 
 from typing import Optional
 
-
 # Used throughout the "LST" to indicate we don't have location info.
 NO_SPID = -1
+
 
 def NewRecord(node_type):
   # type: (str) -> hnode__Record
   return hnode__Record(
       node_type,
       [],  # fields
-      False, '(', ')',  # abbrev, left, right
+      False,
+      '(',
+      ')',  # abbrev, left, right
       []  # unnamed fields
   )
 

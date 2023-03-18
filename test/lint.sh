@@ -198,11 +198,19 @@ run-yapf-3() {
   mycpp-files | xargs python3 -m yapf -i
 }
 
+py2-files-to-format() {
+  ### Just print ASDL files for now
+
+  for name in asdl/*.py; do
+    echo $name
+  done | grep -v 'NINJA_subgraph'  # leave out for now
+}
+
 run-yapf-2() {
   ### Run yapf on Python 2 code
 
   # These files originally had 4 space indentation, but it got inconsistent
-  echo asdl/{front_end,ast}.py \
+  py2-files-to-format \
     | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 2}'
 }
 

@@ -16,10 +16,9 @@ Places where we try a single line:
 """
 from typing import Tuple, List
 
-from _devbuild.gen.hnode_asdl import (
-    hnode_e, hnode_t, hnode__Record, hnode__Array, hnode__Leaf,
-    hnode__External, color_e, color_t
-)
+from _devbuild.gen.hnode_asdl import (hnode_e, hnode_t, hnode__Record,
+                                      hnode__Array, hnode__Leaf,
+                                      hnode__External, color_e, color_t)
 from core import ansi
 from qsn_ import qsn
 from pylib import cgi
@@ -122,6 +121,7 @@ class HtmlOutput(ColorOutput):
 
   Color: HTML spans
   """
+
   def __init__(self, f):
     # type: (mylib.Writer) -> None
     ColorOutput.__init__(self, f)
@@ -134,7 +134,7 @@ class HtmlOutput(ColorOutput):
     # type: () -> None
     # TODO: Use a different CSS file to make the colors match.  I like string
     # literals as yellow, etc.
-     #<link rel="stylesheet" type="text/css" href="/css/code.css" />
+    #<link rel="stylesheet" type="text/css" href="/css/code.css" />
     self.f.write("""
 <html>
   <head>
@@ -219,7 +219,9 @@ class AnsiOutput(ColorOutput):
 
 INDENT = 2
 
+
 class _PrettyPrinter(object):
+
   def __init__(self, max_col):
     # type: (int) -> None
     self.max_col = max_col
@@ -299,8 +301,8 @@ class _PrettyPrinter(object):
         f.write(' ')
 
       prefix_len = len(prefix) + len(node.node_type) + 1
-      all_fit = self._PrintWrappedArray(
-          node.unnamed_fields, prefix_len, f, indent)
+      all_fit = self._PrintWrappedArray(node.unnamed_fields, prefix_len, f,
+                                        indent)
 
       if not all_fit:
         f.write('\n')
@@ -319,7 +321,7 @@ class _PrettyPrinter(object):
         name = field.name
         val = field.val
 
-        ind1 = ' ' * (indent+INDENT)
+        ind1 = ' ' * (indent + INDENT)
         UP_val = val  # for mycpp
         tag = val.tag_()
         if tag == hnode_e.Array:
@@ -332,7 +334,7 @@ class _PrettyPrinter(object):
           if not self._PrintWholeArray(val.children, prefix_len, f, indent):
             f.write('\n')
             for child in val.children:
-              self.PrintNode(child, f, indent+INDENT+INDENT)
+              self.PrintNode(child, f, indent + INDENT + INDENT)
               f.write('\n')
             f.write('%s]' % ind1)
 
@@ -349,7 +351,7 @@ class _PrettyPrinter(object):
             f.WriteRaw((s, num_chars))
           else:
             f.write('\n')
-            self.PrintNode(val, f, indent+INDENT+INDENT)
+            self.PrintNode(val, f, indent + INDENT + INDENT)
 
         f.write('\n')  # separate fields
 

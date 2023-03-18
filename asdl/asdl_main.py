@@ -22,24 +22,27 @@ def Options():
   """Returns an option parser instance."""
 
   p = optparse.OptionParser()
-  p.add_option(
-      '--no-pretty-print-methods', dest='pretty_print_methods',
-      action='store_false', default=True,
-      help='Whether to generate pretty printing methods')
+  p.add_option('--no-pretty-print-methods',
+               dest='pretty_print_methods',
+               action='store_false',
+               default=True,
+               help='Whether to generate pretty printing methods')
 
   # Control Python constructors
 
   # for hnode.asdl
-  p.add_option(
-      '--py-init-N', dest='py_init_n',
-      action='store_true', default=False,
-      help='Generate Python __init__ that requires every field')
+  p.add_option('--py-init-N',
+               dest='py_init_n',
+               action='store_true',
+               default=False,
+               help='Generate Python __init__ that requires every field')
 
   # The default, which matches C++
-  p.add_option(
-      '--init-zero-N', dest='init_zero_n',
-      action='store_true', default=True,
-      help='Generate 0 arg and N arg constructors, in Python and C++')
+  p.add_option('--init-zero-N',
+               dest='init_zero_n',
+               action='store_true',
+               default=True,
+               help='Generate 0 arg and N arg constructors, in Python and C++')
 
   return p
 
@@ -48,6 +51,7 @@ class UserType(object):
   """
   TODO: Delete this class after we have modules with 'use'?
   """
+
   def __init__(self, mod_name, type_name):
     self.mod_name = mod_name
     self.type_name = type_name
@@ -70,7 +74,7 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Schema path required')
 
-  schema_filename = os.path.basename(schema_path) 
+  schema_filename = os.path.basename(schema_path)
   if schema_filename in ('syntax.asdl', 'runtime.asdl'):
     app_types = {'id': UserType('id_kind_asdl', 'Id_t')}
   else:
@@ -129,9 +133,10 @@ using id_kind_asdl::Id_t;
 
         # assume sum type for now!
         cpp_names = [
-            'class %s;' % ast.TypeNameHeuristic(n) for n in use.type_names]
-        f.write('namespace %s_asdl { %s }\n' % (
-            use.module_parts[-1], ' '.join(cpp_names)))
+            'class %s;' % ast.TypeNameHeuristic(n) for n in use.type_names
+        ]
+        f.write('namespace %s_asdl { %s }\n' %
+                (use.module_parts[-1], ' '.join(cpp_names)))
         f.write('\n')
 
       f.write("""\
@@ -146,8 +151,10 @@ namespace %s {
       v.VisitModule(schema_ast)
 
       debug_info = {}
-      v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=opts.pretty_print_methods,
-                                   debug_info=debug_info)
+      v2 = gen_cpp.ClassDefVisitor(
+          f,
+          pretty_print_methods=opts.pretty_print_methods,
+          debug_info=debug_info)
       v2.VisitModule(schema_ast)
 
       f.write("""
@@ -186,7 +193,8 @@ tags_to_types = \\
 
         # To call pretty-printing methods
         for use in schema_ast.uses:
-          f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL \n' % '/'.join(use.module_parts))
+          f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL \n' %
+                  '/'.join(use.module_parts))
 
         f.write("""\
 
@@ -202,7 +210,6 @@ using hnode_asdl::color_e;
 
         if app_types:
           f.write('using id_kind_asdl::Id_str;\n')
-
 
         f.write("""
 namespace %s {
@@ -243,14 +250,14 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
     for use in schema_ast.uses:
       py_names = [ast.TypeNameHeuristic(n) for n in use.type_names]
       # indented
-      f.write('  from _devbuild.gen.%s_asdl import %s\n' % (
-        use.module_parts[-1], ', '.join(py_names)))
+      f.write('  from _devbuild.gen.%s_asdl import %s\n' %
+              (use.module_parts[-1], ', '.join(py_names)))
     f.write('\n')
 
     for typ in app_types.itervalues():
       if isinstance(typ, UserType):
-        f.write('from _devbuild.gen.%s import %s\n' % (
-          typ.mod_name, typ.type_name))
+        f.write('from _devbuild.gen.%s import %s\n' %
+                (typ.mod_name, typ.type_name))
         # HACK
         f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
         f.write('\n')
@@ -264,9 +271,11 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
 """)
 
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
-    v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
-                                  pretty_print_methods=opts.pretty_print_methods,
-                                  py_init_n=opts.py_init_n)
+    v = gen_python.GenMyPyVisitor(
+        f,
+        abbrev_mod_entries,
+        pretty_print_methods=opts.pretty_print_methods,
+        py_init_n=opts.py_init_n)
     v.VisitModule(schema_ast)
 
     if abbrev_mod:
@@ -290,5 +299,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print('%s: FATAL: %s' % (ARG_0, e) , file=sys.stderr)
+    print('%s: FATAL: %s' % (ARG_0, e), file=sys.stderr)
     sys.exit(1)

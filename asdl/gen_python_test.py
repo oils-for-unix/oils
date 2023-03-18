@@ -140,9 +140,11 @@ class ArithAstTest(unittest.TestCase):
     print(c)
 
     sl = arith_expr.Slice(
-        arith_expr.Const(1), arith_expr.Const(5), arith_expr.Const(2),
+        arith_expr.Const(1),
+        arith_expr.Const(5),
+        arith_expr.Const(2),
         arith_expr.Const(3),
-        )
+    )
     print(sl)
 
     print((op_id_e.Plus))

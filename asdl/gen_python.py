@@ -12,7 +12,6 @@ from core.pyerror import log
 
 _ = log  # shut up lint
 
-
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
@@ -161,8 +160,7 @@ def _HNodeExpr(abbrev, typ, var_name):
     code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
 
   elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
-        typ.name, var_name)
+    code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (typ.name, var_name)
 
   else:
     code_str = '%s.%s()' % (var_name, abbrev)
@@ -171,12 +169,14 @@ def _HNodeExpr(abbrev, typ, var_name):
   return code_str, none_guard
 
 
-
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
-  def __init__(self, f, abbrev_mod_entries=None,
-               pretty_print_methods=True, py_init_n=False,
+  def __init__(self,
+               f,
+               abbrev_mod_entries=None,
+               pretty_print_methods=True,
+               py_init_n=False,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
@@ -228,7 +228,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # Help in sizing array.  Note that we're 1-based.
       line = '  %s = %d' % ('ARRAY_SIZE', len(variants) + 1)
       self.Emit(line, depth)
-     
+
     else:
       # First emit a type
       self.Emit('class %s_t(pybase.SimpleObj):' % sum_name, depth)
@@ -456,9 +456,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         base_class = sum_name + '_t'
         bases = self._product_bases[variant.shared_type]
         if base_class in bases:
-          raise RuntimeError(
-              "Two tags in sum %r refer to product type %r" %
-              (sum_name, variant.shared_type))
+          raise RuntimeError("Two tags in sum %r refer to product type %r" %
+                             (sum_name, variant.shared_type))
 
         else:
           bases.append(base_class)
@@ -489,31 +488,31 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # This is what we would do in C++, but we don't need it in Python because
     # every function is virtual.
     if 0:
-    #if self.pretty_print_methods:
+      #if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
         self.Emit('')
-	self.Emit('def %s(self):' % abbrev, depth)
-	self.Emit('  # type: () -> hnode_t', depth)
-	self.Indent()
-	depth = self.current_depth
-	self.Emit('UP_self = self', depth)
-	self.Emit('', depth)
+        self.Emit('def %s(self):' % abbrev, depth)
+        self.Emit('  # type: () -> hnode_t', depth)
+        self.Indent()
+        depth = self.current_depth
+        self.Emit('UP_self = self', depth)
+        self.Emit('', depth)
 
-	for variant in sum.types:
-	  if variant.shared_type:
+        for variant in sum.types:
+          if variant.shared_type:
             subtype_name = variant.shared_type
-	  else:
-	    subtype_name = '%s__%s' % (sum_name, variant.name)
+          else:
+            subtype_name = '%s__%s' % (sum_name, variant.name)
 
-	  self.Emit('if self.tag_() == %s_e.%s:' % (sum_name, variant.name),
-		    depth)
-	  self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
-	  self.Emit('  return self.%s()' % abbrev, depth)
+          self.Emit('if self.tag_() == %s_e.%s:' % (sum_name, variant.name),
+                    depth)
+          self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
+          self.Emit('  return self.%s()' % abbrev, depth)
 
-	self.Emit('raise AssertionError', depth)
+        self.Emit('raise AssertionError', depth)
 
-	self.Dedent()
-	depth = self.current_depth
+        self.Dedent()
+        depth = self.current_depth
     else:
       # Otherwise it's empty
       self.Emit('pass', depth)
@@ -531,7 +530,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # oil_cmd.Simple.
         fq_name = '%s__%s' % (sum_name, variant.name)
         self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                       depth, i+1)
+                       depth, i + 1)
 
     # Emit a namespace
     self.Emit('class %s(object):' % sum_name, depth)
@@ -552,8 +551,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # Create a tuple of _GenClass args to create LAST.  They may inherit from
     # sum types that have yet to be defined.
     self._products.append(
-        (product, product.attributes, name, depth, self._product_counter)
-    )
+        (product, product.attributes, name, depth, self._product_counter))
     self._product_counter += 1
 
   def EmitFooter(self):
