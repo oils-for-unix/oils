@@ -179,6 +179,7 @@ def _HNodeExpr(abbrev, typ, var_name):
 
     else:
       code_str = '%s.%s()' % (var_name, abbrev)
+      none_guard = True
 
   else:
     raise AssertionError()

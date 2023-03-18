@@ -57,10 +57,12 @@ class FrontEndTest(unittest.TestCase):
   def testParse(self):
     self._assertParse("""
 module foo {
+  -- these are invalid, but checked in name resolution stage
   point = (int? x, int* y)
+
   action = Foo | Bar(point z)
 
-  foo = (array[int] span_ids)
+  foo = (List[int] span_ids)
   bar = (map[string, int] options)
 
   -- this check happens later
@@ -74,7 +76,7 @@ module foo {
            generate [integers]
 
   -- New optional lists
-  spam = (maybe[array[int]] pipe_status)
+  spam = (Optional[List[int]] pipe_status)
   -- Nicer way of writing it
   -- spam2 = (array[int]? pipe_status)
 }
@@ -95,7 +97,7 @@ module foo {
     self._assertParseError('module foo { t = (int) }')
 
     # Need []
-    self._assertParseError('module foo { t = (array foo) }')
+    self._assertParseError('module foo { t = (List foo) }')
 
     # Shouldn't have []
     self._assertParseError('module foo { t = (string[string] a) }')
