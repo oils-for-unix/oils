@@ -359,7 +359,7 @@ echo $(( 3 ** 2 ))
 # NOTE: All shells agree on this, but R and Python give -9, which is more
 # mathematically correct.
 echo $(( -3 ** 2 ))
-## osh stdout: 9
+## stdout: 9
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 ## N-I mksh stdout-json: ""

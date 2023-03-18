@@ -348,7 +348,7 @@ good
 status=0
 one two
 ## END
-## N-I bash/dash/mksh  status: 0
+## N-I bash/dash/mksh status: 0
 ## N-I bash/dash/mksh STDOUT:
 good
 status=0
