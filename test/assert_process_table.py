@@ -21,9 +21,9 @@ class Process(object):
 
   def assert_pgid(self, pgid):
     if self.pgid != pgid:
-      print('[%s] has pgid %s. expected %s.' % (self, self.pgid, pgid), file=sys.stderr)
+      print('[%s] has pgid %s. expected %s.' %
+          (self, self.pgid, pgid), file=sys.stderr)
       sys.exit(1)
-
 
 class ProcessTree(object):
 
@@ -40,7 +40,8 @@ class ProcessTree(object):
 
   def assert_child_count(self, n):
     if len(self.children) != n:
-      print('[%s] has %d children. expected %d.' % (self.proc, len(self.children), n), file=sys.stderr)
+      print('[%s] has %d children. expected %d.' %
+          (self.proc, len(self.children), n), file=sys.stderr)
       sys.exit(1)
 
 
@@ -78,8 +79,14 @@ def check_proc(ptree, shell, interactive):
     ps.proc.assert_pgid(ptree.proc.pgid)
 
 
-def check_pipe(ptree, shell, interactive):
-  ptree.assert_child_count(3)
+def check_pipe(ptree, shell, snippet, interactive):
+  if snippet == 'fgpipe-lastpipe' and ('zsh' in shell or 'osh' in shell):
+    expected_children = 2
+  else:
+    expected_children = 3
+
+  ptree.assert_child_count(expected_children)
+
   first = None
   for child in ptree.children:
     if child.proc.pid == child.proc.pgid:
@@ -168,30 +175,49 @@ def check_psub(ptree, shell, interactive):
       cat.proc.assert_pgid(cat.proc.pid)
 
 
-def main():
-  runner_pid = sys.argv[1]
-  shell = sys.argv[2]
-  snippet = sys.argv[3]
-  interactive = (sys.argv[4] == 'yes')
+def main(argv):
+  runner_pid = argv[1]
+  shell = argv[2]
+  snippet = argv[3]
+  interactive = (argv[4] == 'yes')
 
   ptree = parse_process_tree(sys.stdin, runner_pid)
   if snippet == 'fgproc':
     check_proc(ptree, shell, interactive)
+
   elif snippet == 'bgproc':
     check_proc(ptree, shell, interactive)
+
   elif snippet == 'fgpipe':
-    check_pipe(ptree, shell, interactive)
+    check_pipe(ptree, shell, snippet, interactive)
+
+  elif snippet == 'fgpipe-lastpipe':
+    check_pipe(ptree, shell, snippet, interactive)
+
   elif snippet == 'bgpipe':
-    check_pipe(ptree, shell, interactive)
+    check_pipe(ptree, shell, snippet, interactive)
+
+  elif snippet == 'bgpipe-lastpipe':
+    check_pipe(ptree, shell, snippet, interactive)
+
   elif snippet == 'subshell':
     check_subshell(ptree, shell, interactive)
+
   elif snippet == 'csub':
     check_csub(ptree, shell, interactive)
+
   elif snippet == 'psub':
     check_psub(ptree, shell, interactive)
+
   else:
-    assert False
+    raise RuntimeError('Invalid snippet %r' % snippet)
+
+  return 0
 
 
 if __name__ == '__main__':
-  main()
+  try:
+    sys.exit(main(sys.argv))
+  except RuntimeError as e:
+    print('FATAL: %s' % e, file=sys.stderr)
+    sys.exit(1)
