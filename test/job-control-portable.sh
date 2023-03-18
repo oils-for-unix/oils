@@ -42,8 +42,13 @@ show_process_table() {
     # - Hm UNLIKE bgpipe it also gets its own TPGID?  Seems consistent in all
     #   shells.  Why is that?
     fgpipe)
-      echo '[foreground pipeline]'
+      echo '[foreground pipeline, last is external]'
       ps -o $PS_COLS | cat | _tmp/cat2
+      ;;
+
+    fgpipe-lastpipe)
+      echo '[foreground pipeline, last is builtin]'
+      ps -o $PS_COLS | _tmp/cat2 | while read -r line; do echo "$line"; done
       ;;
 
     bgpipe)
@@ -53,6 +58,12 @@ show_process_table() {
 
       echo '[background pipeline]'
       ps -o $PS_COLS | cat | _tmp/cat2 &
+      wait
+      ;;
+
+    bgpipe-lastpipe)
+      echo '[background pipeline, last is builtin]'
+      ps -o $PS_COLS | _tmp/cat2 | while read -r line; do echo "$line"; done &
       wait
       ;;
 
