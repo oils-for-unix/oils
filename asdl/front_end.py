@@ -80,15 +80,19 @@ class ASDLSyntaxError(Exception):
 def _Tokenize(f):
   """Tokenize the given buffer. Yield Token objects."""
   for lineno, line in enumerate(f, 1):
-    for m in re.finditer(r'\s*(\w+|--.*|.)', line.strip()):
+    for m in re.finditer(r'\s*(\w+|--.*|#.*|.)', line.strip()):
       c = m.group(1)
       if c in _KEYWORDS:
         yield Token(TokenKind.Keyword, c, lineno)
+
       elif c[0].isalpha():
         yield Token(TokenKind.Name, c, lineno)
-      elif c[:2] == '--':
-        # Comment
+
+      elif c.startswith('--') or c.startswith('#'):
+        # ASDL comments start with --
+        # Added # comments like Python and shell
         break
+
       else:
         # Operators
         try:
