@@ -392,9 +392,6 @@ _PRIMITIVE_TYPES = [
     # - for value.Obj in the the Oil expression evaluator.  We're not doing any
     #   dynamic or static checking now.
     'any',
-
-    # no 'array' or 'maybe' because TypeName() doesn't return them
-    'map',
 ]
 
 
@@ -422,18 +419,6 @@ def _ResolveFields(field_ast_nodes, type_lookup):
   """
   for field in field_ast_nodes:
     _ResolveType(field.typ, type_lookup)
-
-    # TODO: Get rid of resolved_type everywhere
-
-    type_name = field.TypeName()
-    assert field.resolved_type is None, field  # it's not initialized yet
-
-    # We only use the resolved type for determining if it's a simple sum?
-    if type_name not in _PRIMITIVE_TYPES:
-      ast_node = type_lookup.get(type_name)
-      if ast_node is None:
-        raise ASDLSyntaxError("Couldn't find type %r" % type_name)
-      field.resolved_type = ast_node
 
 
 def _ResolveModule(module, app_types):

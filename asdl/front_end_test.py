@@ -72,6 +72,11 @@ module foo {
 
   color3 = Red | Green
            generate [integers]
+
+  -- New optional lists
+  spam = (maybe[array[int]] pipe_status)
+  -- Nicer way of writing it
+  -- spam2 = (array[int]? pipe_status)
 }
 """)
 
@@ -111,6 +116,19 @@ module foo {
         'module foo { integers = A | B generate [integers, ,] }')
 
     self._assertParseError('module foo { integers = A | B generate [invalid] }')
+
+    return
+    # Optional integer isn't allowed, because C++ can't express it
+    # Integers are initialized to -1
+    self._assertParseError('module foo { t = (int? status) }')
+
+    # Optional simple sum isn't allowed
+    self._assertParseError('''
+        module foo { 
+          color = Red | Green
+          t = (color? status)
+        }
+        ''')
 
   def _assertResolve(self, code_str):
     f = cStringIO.StringIO(code_str)

@@ -147,14 +147,6 @@ class Field(AST):
     self.typ = typ  # type expression
     self.name = name  # variable name
 
-    # This field is initialized in the name resolution phase.  If the field
-    # is 'action x', then we want to know if 'action' is a sum type, simple
-    # type, or product type
-    self.resolved_type = None  # type: AST
-
-    # TODO: It would be nice to have a token for line numbers in name
-    # resolution errors
-
   def IsArray(self):
     return self.typ.name == 'array'
 
@@ -163,13 +155,6 @@ class Field(AST):
 
   def IsMap(self):
     return self.typ.name == 'map'
-
-  def TypeName(self):
-    # Compatibility for foo?   and   foo*
-    if self.typ.name in ('array', 'maybe'):
-      return self.typ.children[0].name
-    else:
-      return self.typ.name
 
   def Print(self, f, indent):
     ind = indent * '  '
