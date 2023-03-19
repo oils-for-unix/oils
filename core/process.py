@@ -20,10 +20,10 @@ from _devbuild.gen.runtime_asdl import (
     wait_status, wait_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, value__Str, trace, trace_e, trace_t
+    value, value_e, value__Str, trace, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__Simple, redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
+    redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
 from core import dev
 from core import pyutil
@@ -488,6 +488,11 @@ class ChildStateChange(object):
     # type: () -> None
     raise NotImplementedError()
 
+  def ApplyFromParent(self, proc):
+    # type: (Process) -> None
+    """Noop for all state changes other than SetProcessGroup for mycpp."""
+    pass
+
 
 class StdinFromPipe(ChildStateChange):
   def __init__(self, pipe_read_fd, w):
@@ -525,6 +530,28 @@ class StdoutToPipe(ChildStateChange):
 
     posix.close(self.r)  # we're writing to the pipe, not reading
     #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
+
+
+class SetProcessGroup(ChildStateChange):
+  def __init__(self, group_id):
+    # type: (int) -> None
+    self.group_id = group_id
+
+  def Apply(self):
+    # type: () -> None
+    try:
+      posix.setpgid(0, self.group_id)
+    except OSError as e:
+      print_stderr('osh: Failed to set process group for PID %d to %d: %s' % (posix.getpid(), self.group_id, pyutil.strerror(e)))
+
+  def ApplyFromParent(self, proc):
+    # type: (Process) -> None
+    try:
+      posix.setpgid(proc.pid, self.group_id)
+    except OSError as e:
+      print_stderr('osh: Failed to set process group for PID %d to %d: %s' %
+              (proc.pid, self.group_id, pyutil.strerror(e)))
+
 
 
 class ExternalProgram(object):
@@ -878,21 +905,13 @@ class Process(Job):
       posix.close(self.close_r)
       posix.close(self.close_w)
 
-  def StartProcess(self, why, pgrp=-1):
-    # type: (trace_t, int) -> int
+  def StartProcess(self, why):
+    # type: (trace_t) -> int
     """
     Start this process with fork(), handling redirects.
     If job control is enabled and pgrp is positive, the process will be placed
     in the provided group.
     """
-    if self.job_state.fg_pipeline:
-      self.parent_pipeline = self.job_state.fg_pipeline
-      pgrp = self.parent_pipeline.group_id
-
-    # Command substitution should run in its parent shell's group.
-    if why.tag_() == trace_e.CommandSub:
-      pgrp = posix.getpgid(0)
-
     pid = posix.fork()
     if pid < 0:
       # When does this happen?
@@ -902,9 +921,9 @@ class Process(Job):
       # Note: this happens in BOTH interactive and non-interactive shells.
       # We technically don't need to do most of it in non-interactive, since we
       # did not change state in InitInteractiveShell().
-      pid = posix.getpid()
-      if self.job_state.JobControlEnabled():
-        _setpgid(pid, pgrp)
+
+      for st in self.state_changes:
+        st.Apply()
 
       # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
       # shouldn't have this.
@@ -918,6 +937,7 @@ class Process(Job):
       # Only standalone children should get Ctrl-Z. Pipelines remain in the
       # foreground because suspending them is difficult with our 'lastpipe'
       # semantics.
+      pid = posix.getpid()
       if posix.getpgid(0) == pid and self.parent_pipeline is None:
         pyos.Sigaction(SIGTSTP, SIG_DFL)
 
@@ -927,31 +947,24 @@ class Process(Job):
       pyos.Sigaction(SIGTTOU, SIG_DFL)
       pyos.Sigaction(SIGTTIN, SIG_DFL)
 
-      for st in self.state_changes:
-        st.Apply()
-
       self.tracer.SetProcess(pid)
       # clear foreground pipeline for subshells
-      self.job_state.fg_pipeline = None
       self.thunk.Run()
       # Never returns
-
-    # We call setpgid() in the the parent and child to avoid racing on group
-    # membership in GiveTerminal() if the child wakes up first.
-    if self.job_state.JobControlEnabled():
-      _setpgid(pid, pgrp)
 
     #log('STARTED process %s, pid = %d', self, pid)
     self.tracer.OnProcessStart(pid, why)
 
     # Class invariant: after the process is started, it stores its PID.
     self.pid = pid
+
+    # SetProcessGroup needs to be applied from the child and the parent to avoid
+    # racing in calls to tcsetpgrp() in the parent. See APUE sec. 9.2.
+    for st in self.state_changes:
+      st.ApplyFromParent(self)
+
     # Program invariant: We keep track of every child process!
     self.job_state.AddChildProcess(pid, self)
-
-    # QUESTION: Why do we need to add the last PID?
-    if self.job_state.fg_pipeline:
-      self.job_state.fg_pipeline.AddLastPid(pid)
 
     return pid
 
@@ -1012,25 +1025,10 @@ class Process(Job):
 
 class ctx_Pipe(object):
 
-  def __init__(self, fd_state, fd, job_state, pipeline, last_node):
-    # type: (FdState, int, JobState, Pipeline, command_t) -> None
+  def __init__(self, fd_state, fd):
+    # type: (FdState, int) -> None
     fd_state.PushStdinFromPipe(fd)
     self.fd_state = fd_state
-    self.job_state = job_state
-
-    if self.job_state.JobControlEnabled():
-      UP_node = last_node
-
-      # QUESTION: Why only set fg_pipeline when do_fork?
-      # do_fork=False ONLY when CommandEvaluator is called through
-      # main_loop.Batch().  Although I suppose main_loop.Batch() can happen in
-      # 'eval', not just in non-interactive 'osh -c'.
-
-      with tagswitch(last_node) as case:
-        if case(command_e.Simple):
-          last_node = cast(command__Simple, UP_node)
-          if last_node.do_fork:
-            self.job_state.fg_pipeline = pipeline
 
   def __enter__(self):
     # type: () -> None
@@ -1039,7 +1037,6 @@ class ctx_Pipe(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.fd_state.Pop()
-    self.job_state.fg_pipeline = None
 
 
 class Pipeline(Job):
@@ -1059,13 +1056,6 @@ class Pipeline(Job):
     self.pids = []  # type: List[int]  # pids in order
     self.pipe_status = []  # type: List[int]  # status in order
     self.status = -1  # for 'wait' jobs
-    self.group_id = -1  # for job control signals
-
-    # If we are creating a pipeline in a subshell, use the subshell's PID as
-    # the pipelines's group ID.
-    curr_pid = posix.getpid()
-    if curr_pid != self.job_state.shell_pid:
-      self.group_id = curr_pid
 
     # Optional for foreground
     self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
@@ -1141,17 +1131,23 @@ class Pipeline(Job):
 
   def StartPipeline(self, waiter):
     # type: (Waiter) -> None
-    # TODO: pipelines should be put in their own process group with setpgid().
-    # I tried 'cat | cat' and Ctrl-C, and it works without this, probably
-    # because of SIGPIPE?  I think you will need that for Ctrl-Z, to suspend a
-    # whole pipeline.
+
+    # If we are creating a pipeline in a subshell or we aren't running with job
+    # control, our children should remain in our inherited process group.
+    # the pipelines's group ID.
+    group_id = -1
+    if self.job_state.JobControlEnabled():
+      group_id = 0 # first process will create a group
 
     for i, proc in enumerate(self.procs):
-      pid = proc.StartProcess(trace.PipelinePart(), self.group_id)
-      if i == 0 and self.group_id == -1:
+      if group_id != -1:
+        proc.AddStateChange(SetProcessGroup(group_id))
+
+      pid = proc.StartProcess(trace.PipelinePart())
+      if i == 0 and group_id != -1:
         # Mimick bash and use the PID of the first process as the group for the
         # whole pipeline.
-        self.group_id = pid
+        group_id = pid
 
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
@@ -1202,23 +1198,16 @@ class Pipeline(Job):
 
     return wait_status.Pipeline(self.pipe_status)
 
-  def RunPipeline(self, waiter, fd_state):
+  def RunLastPart(self, waiter, fd_state):
     # type: (Waiter, FdState) -> List[int]
     """Run this pipeline synchronously (foreground pipeline).
 
     Returns:
       pipe_status (list of integers).
     """
-    assert len(self.procs) != 0
+    assert len(self.pids) == len(self.procs)
 
-    self.StartPipeline(waiter)
-
-    # QUESTION: I think we can get rid of this if we make sure that a Pipeline
-    # always have a non-zero number of processes
-    if self.group_id == -1:
-      self.group_id = self.job_state.shell_pgrp
-
-    self.job_state.MaybeGiveTerminal(self.group_id)
+    self.job_state.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
     # may or may not fork:
@@ -1231,7 +1220,7 @@ class Pipeline(Job):
     r, w = self.last_pipe  # set in AddLast()
     posix.close(w)  # we will not write here
 
-    with ctx_Pipe(fd_state, r, self.job_state, self, last_node):
+    with ctx_Pipe(fd_state, r):
       cmd_ev.ExecuteAndCatch(last_node)
 
     # We won't read anymore.  If we don't do this, then 'cat' in 'cat
@@ -1316,8 +1305,6 @@ class JobState(object):
     # For giving the terminal back to our parent before exiting (if not a login
     # shell).
     self.original_tty_pgrp = -1
-
-    self.fg_pipeline = None # type: Optional[Pipeline]
 
   def InitJobControl(self):
     # type: () -> None
