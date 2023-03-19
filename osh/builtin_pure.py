@@ -22,6 +22,7 @@ from _devbuild.gen.runtime_asdl import (
     value__Obj
 )
 from _devbuild.gen.types_asdl import opt_group_i
+from _devbuild.gen.syntax_asdl import loc
 
 from asdl import format as fmt
 from asdl import runtime
@@ -92,8 +93,8 @@ class Alias(vm._Builtin):
       if alias_exp is None:  # if we get a plain word without, print alias
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
-          self.errfmt.Print_('No alias named %r' % name,
-                             span_id=cmd_val.arg_spids[i])
+          self.errfmt.PrintLoc_('No alias named %r' % name,
+                             blame_loc=loc.Span(cmd_val.arg_spids[i]))
           status = 1
         else:
           print('alias %s=%r' % (name, alias_exp))
@@ -627,14 +628,14 @@ class Use(vm._Builtin):
         if actual == expected:
           return 0  # OK
         else:
-          self.errfmt.Print_(
+          self.errfmt.PrintLoc_(
               'Expected dialect %r, got %r' % (expected, actual),
-              span_id=e_spid)
+              blame_loc=loc.Span(e_spid))
 
           return 1
       else:
         # Not printing expected value
-        self.errfmt.Print_('Expected dialect %r' % expected, span_id=e_spid)
+        self.errfmt.PrintLoc_('Expected dialect %r' % expected, blame_loc=loc.Span(e_spid))
         return 1
 
     # 'use bin' can be used for static analysis.  Although could it also
