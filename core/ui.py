@@ -317,8 +317,10 @@ class ErrorFormatter(object):
       span_id = self.CurrentLocation()
     _PrintWithSpanId('', msg, loc.Span(span_id), self.arena, show_code=True)
 
-  def PrintLoc_(self, msg, blame_loc=loc.Missing()):
+  def PrintLoc_(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
+    if not blame_loc:
+        blame_loc = loc.Missing()
     self.Print_(msg, location.GetSpanId(blame_loc))
 
   def PrintMessage(self, msg):
