@@ -275,14 +275,15 @@ class ASDLParser(object):
     if type_name in ('List', 'Optional'):
       if len(children) != 1:
         raise ASDLSyntaxError('Expected 1 type param to {}'.format(type_name),
-            self.cur_token.lineno)
+                              self.cur_token.lineno)
     elif type_name == 'Dict':
       if len(children) != 2:
         raise ASDLSyntaxError('Expected 2 type params to {}'.format(type_name),
-            self.cur_token.lineno)
+                              self.cur_token.lineno)
     else:
       if len(children) != 0:
-        raise ASDLSyntaxError('Expected zero type params to {}'.format(type_name),
+        raise ASDLSyntaxError(
+            'Expected zero type params to {}'.format(type_name),
             self.cur_token.lineno)
 
     if len(children):

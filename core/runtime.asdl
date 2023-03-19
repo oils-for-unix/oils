@@ -20,9 +20,9 @@ module runtime
   # part_value.
   part_value = 
 
-    # * Single or double quoted parts get neither split or globbed.
-    # * Bare words like echo or *.py are globbed, but NOT split with IFS.
-    # * Unquoted Substitutions are split and globbed.
+    # - Single or double quoted parts get neither split or globbed.
+    # - Bare words like echo or *.py are globbed, but NOT split with IFS.
+    # - Unquoted Substitutions are split and globbed.
     String(string s, bool quoted, bool do_split)
 
     # "$@" or "${a[@]}" # never globbed or split (though other shells
@@ -173,9 +173,9 @@ module runtime
 
   # core/process.py
   # A Job is a Process or Pipeline.
-  # * Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
+  # - Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
   #   them.
-  # * Pipelines go Running to Done.  They are never stopped; only the processes
+  # - Pipelines go Running to Done.  They are never stopped; only the processes
   #   inside them are stopped.
   job_state = Running | Done | Stopped
 

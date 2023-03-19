@@ -4,23 +4,20 @@
 # tree.
 #
 # Exceptions:
-# * <<- here docs with leading tabs, since we don't want those for
+# - <<- here docs with leading tabs, since we don't want those for
 #   conversion.  We don't want files with mixed tabs and spaces.
-# * Distinguishing between function styles wasn't necessary:
-#   * foo() { } vs function foo { } # ksh 
-#
-# The AST is composed of the builtin ASDL types (string, int, bool) and our
-# application type 'id', which is core.id_kind.Id.
-
-# Unrepresented:
-# * let arithmetic (rarely used)
-# * coprocesses # one with arg and one without
-# * select block
-# * case fallthrough ;& and ;;&
+# - Distinguishing between function styles wasn't necessary:
+#   - foo() { } vs function foo { } # ksh 
 
 # We usually try to preserve the physical order of the source in the ASDL
-# fields. Exception:
-# * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
+# fields.  Exception:
+# - order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
+
+# Unrepresented:
+# - let arithmetic (rarely used)
+# - coprocesses # one with arg and one without
+# - select block
+# - case fallthrough ;& and ;;&
 
 # Refactorings:
 #
@@ -38,8 +35,7 @@
 #   seq_word = Compound %compound_word | BracedTree(...)
 
 # Conventions:
-#
-#   'Token left' and 'Token right' are generally for location info, but their
+# - 'Token left' and 'Token right' are generally for location info, but their
 #   Id_t can also be used for execution
 
 module syntax
@@ -88,9 +84,9 @@ module syntax
   SourceLine = (int line_num, string content, source src)
 
   # Token TODO:
-  # * get rid of redundant span_id
-  # * function to compute string val on demand
-  # * maybe re-compute length on demand too
+  # - get rid of redundant span_id
+  # - function to compute string val on demand
+  # - maybe re-compute length on demand too
   Token = (id id, int col, int length, int span_id, SourceLine? line, string tval)
 
   # Source location for errors
@@ -135,8 +131,8 @@ module syntax
   )
 
   # Variants:
-  # * Look at left token for $'' c'' vs r'' ''
-  # * """ and ''' strings have a boolean set
+  # - Look at left token for $'' c'' vs r'' ''
+  # - """ and ''' strings have a boolean set
   double_quoted = (Token left, word_part* parts, Token right)
   single_quoted = (Token left, Token* tokens, Token right)
 
@@ -144,8 +140,8 @@ module syntax
 
   command_sub = (Token left_token, command child, Token right)
 
-  # * can contain word.BracedTree
-  # * no 'Token right' for now, doesn't appear to be used
+  # - can contain word.BracedTree
+  # - no 'Token right' for now, doesn't appear to be used
   sh_array_literal = (Token left, word* words)
 
   # Used in both expr and a word_part
@@ -403,8 +399,8 @@ module syntax
   | CharClass(bool negated, string* strs)
 
   # Char classes are opaque for now.  If we ever need them:
-  # * Collating symbols are [. .]
-  # * Equivalence classes are [=
+  # - Collating symbols are [. .]
+  # - Equivalence classes are [=
 
   printf_part =
     Literal(Token token)
@@ -591,9 +587,9 @@ module syntax
 
   # Regex Evaluation Shares the Same Structure, but uses slightly different
   # nodes.
-  # * Speck/Token (syntactic concepts) -> Primitive (logical)
-  # * Splice -> re_t
-  # * All Strings -> Literal
+  # - Token (syntactic concepts) -> Primitive (logical)
+  # - Splice -> re_t
+  # - All Strings -> Literal
 
   | Primitive(id id)  # . dot etc.
     # String substitutions are evaluated into literals
