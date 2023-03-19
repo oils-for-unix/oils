@@ -317,14 +317,10 @@ class ErrorFormatter(object):
       span_id = self.CurrentLocation()
     _PrintWithSpanId('', msg, span_id, self.arena, show_code=True)
 
-  def PrintMessage(self, msg): #, blame_loc=loc.Missing()):
+  def PrintMessage(self, msg):
     # type: (str) -> None
-    # (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
-    blame_loc = loc.Missing()
-    span_id = location.GetSpanId(blame_loc)
-    if span_id == runtime.NO_SPID:
-      span_id = self.CurrentLocation()
+    span_id = self.CurrentLocation()
     _PrintWithSpanId('', msg, span_id, self.arena, show_code=False)
 
   def StderrLine(self, msg):
