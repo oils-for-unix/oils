@@ -172,8 +172,8 @@ class ShellExecutor(vm._Executor):
     if builtin_id != consts.NO_INDEX:
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
-      self.errfmt.Print_("Can't run assignment builtin recursively",
-                         span_id=arg0_spid)
+      self.errfmt.PrintLoc_("Can't run assignment builtin recursively",
+                         blame_loc=loc.Span(arg0_spid))
       return 1
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
@@ -193,8 +193,8 @@ class ShellExecutor(vm._Executor):
         if self.exec_opts.strict_errexit():
           disabled_spid = self.mutable_opts.ErrExitDisabledSpanId()
           if disabled_spid != runtime.NO_SPID:
-            self.errfmt.Print_('errexit was disabled for this construct',
-                               span_id=disabled_spid)
+            self.errfmt.PrintLoc_('errexit was disabled for this construct',
+                               blame_loc=loc.Span(disabled_spid))
             self.errfmt.StderrLine('')
             e_die("Can't run a proc while errexit is disabled. "
                   "Use 'try' or wrap it in a process with $0 myproc",
@@ -223,8 +223,8 @@ class ShellExecutor(vm._Executor):
         cmd_st.show_code = True  # this is a "leaf" for errors
         return self.RunBuiltin(builtin_id, cmd_val)
 
-      self.errfmt.Print_('Unknown command %r while running hay' % arg0,
-                         span_id=arg0_spid)
+      self.errfmt.PrintLoc_('Unknown command %r while running hay' % arg0,
+                         blame_loc=loc.Span(arg0_spid))
       return 127
 
     if builtin_id != consts.NO_INDEX:
@@ -240,7 +240,7 @@ class ShellExecutor(vm._Executor):
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)
     if argv0_path is None:
-      self.errfmt.Print_('%r not found' % arg0, span_id=arg0_spid)
+      self.errfmt.PrintLoc_('%r not found' % arg0, blame_loc=loc.Span(arg0_spid))
       return 127
 
     # Normal case: ls /

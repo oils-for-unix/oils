@@ -1670,9 +1670,9 @@ class CommandEvaluator(object):
           # We need a flag.
 
           # Invalid control flow
-          self.errfmt.Print_(
+          self.errfmt.PrintLoc_(
               "Loop and control flow can't be in different processes",
-              span_id=e.token.span_id)
+              blame_loc=e.token)
           is_fatal = True
           # All shells exit 0 here.  It could be hidden behind
           # strict_control_flow if the incompatibility causes problems.
