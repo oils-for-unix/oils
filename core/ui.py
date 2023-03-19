@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    loc_t, Token, SourceLine, command_t, command_str,
+    loc, loc_t, Token, SourceLine, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__Alias, source__Reparsed, source__Variable, source__VarRef,
     source__ArgvWord, source__Synthetic
@@ -317,9 +317,10 @@ class ErrorFormatter(object):
       span_id = self.CurrentLocation()
     _PrintWithSpanId('', msg, span_id, self.arena, show_code=True)
 
-  def PrintMessage(self, msg, span_id=runtime.NO_SPID):
-    # type: (str, int) -> None
+  def PrintMessage(self, msg, blame_loc=loc.Missing()):
+    # type: (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
+    span_id = location.GetSpanId(blame_loc)
     if span_id == runtime.NO_SPID:
       span_id = self.CurrentLocation()
     _PrintWithSpanId('', msg, span_id, self.arena, show_code=False)
