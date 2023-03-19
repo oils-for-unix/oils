@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    loc_t, Token, SourceLine, command_t, command_str,
+    loc, loc_t, Token, SourceLine, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__Alias, source__Reparsed, source__Variable, source__VarRef,
     source__ArgvWord, source__Synthetic
@@ -199,14 +199,15 @@ def GetLineSourceString(arena, line, quote_filename=False):
   return s
 
 
-def _PrintWithSpanId(prefix, msg, span_id, arena, show_code):
-  # type: (str, str, int, Arena, bool) -> None
+def _PrintWithSpanId(prefix, msg, span, arena, show_code):
+  # type: (str, str, loc_t, Arena, bool) -> None
   """
   Should we have multiple error formats:
   - single line and verbose?
   - and turn on "stack" tracing?  For 'source' and more?
   """
   f = mylib.Stderr()
+  span_id = location.GetSpanId(span)
   if span_id == runtime.NO_SPID:  # When does this happen?
     f.write('[??? no location ???] %s%s\n' % (prefix, msg))
     return
@@ -307,22 +308,22 @@ class ErrorFormatter(object):
   def PrefixPrint(self, msg, prefix, blame_loc):
     # type: (str, str, loc_t) -> None
     """Print a hard-coded message with a prefix, and quote code."""
-    span_id = location.GetSpanId(blame_loc)
-    _PrintWithSpanId(prefix, msg, span_id, self.arena, show_code=True)
+    _PrintWithSpanId(prefix, msg, blame_loc, self.arena, show_code=True)
 
   def Print_(self, msg, span_id=runtime.NO_SPID):
     # type: (str, int) -> None
     """Print a hard-coded message, and quote code."""
     if span_id == runtime.NO_SPID:
       span_id = self.CurrentLocation()
-    _PrintWithSpanId('', msg, span_id, self.arena, show_code=True)
+    _PrintWithSpanId('', msg, loc.Span(span_id), self.arena, show_code=True)
 
-  def PrintMessage(self, msg, span_id=runtime.NO_SPID):
-    # type: (str, int) -> None
+  def PrintMessage(self, msg, span=loc.Missing()):
+    # type: (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
+    span_id = location.GetSpanId(span)
     if span_id == runtime.NO_SPID:
       span_id = self.CurrentLocation()
-    _PrintWithSpanId('', msg, span_id, self.arena, show_code=False)
+    _PrintWithSpanId('', msg, loc.Span(span_id), self.arena, show_code=False)
 
   def StderrLine(self, msg):
     # type: (str) -> None
@@ -338,7 +339,6 @@ class ErrorFormatter(object):
     level, in CommandEvaluator.
     """
     msg = err.UserErrorString()
-    span_id = location.GetSpanId(err.location)
 
     # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
     # means there is no location info, but 0 could mean that the location is EOF.
@@ -348,7 +348,7 @@ class ErrorFormatter(object):
     # that is OK.
     # Problem: the column for Eof could be useful.
 
-    _PrintWithSpanId(prefix, msg, span_id, self.arena, True)
+    _PrintWithSpanId(prefix, msg, err.location, self.arena, True)
 
   def PrintErrExit(self, err, pid):
     # type: (error.ErrExit, int) -> None
@@ -361,8 +361,7 @@ class ErrorFormatter(object):
     #self.PrettyPrintError(err, prefix=prefix)
 
     msg = err.UserErrorString()
-    span_id = location.GetSpanId(err.location)
-    _PrintWithSpanId(prefix, msg, span_id, self.arena, err.show_code)
+    _PrintWithSpanId(prefix, msg, err.location, self.arena, err.show_code)
 
 
 def PrintAst(node, flag):
