@@ -1,160 +1,163 @@
--- Data types for evaluating the syntax tree
+# Data types for evaluating the syntax tree
 
 module runtime
 {
-  -- import these types from syntax.asdl
+  # import these types from syntax.asdl
   use frontend syntax { ArgList command re redir_loc Token proc_sig }
 
-  -- Evaluating SimpleCommand results in either an argv array or an assignment.
-  -- in 'local foo', rval is None.
+  # Evaluating SimpleCommand results in either an argv array or an assignment.
+  # in 'local foo', rval is None.
   assign_arg = (string var_name, value? rval, bool plus_eq, int spid)
 
-  -- note: could import 'builtin' from synthetic option_asdl
+  # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(string* argv, int* arg_spids, ArgList? typed_args)
   | Assign(int builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)
 
-  -- A parse-time word_part from syntax.asdl is evaluated to a runtime
-  -- part_value.
+  # A parse-time word_part from syntax.asdl is evaluated to a runtime
+  # part_value.
   part_value = 
 
-    -- * Single or double quoted parts get neither split or globbed.
-    -- * Bare words like echo or *.py are globbed, but NOT split with IFS.
-    -- * Unquoted Substitutions are split and globbed.
+    # - Single or double quoted parts get neither split or globbed.
+    # - Bare words like echo or *.py are globbed, but NOT split with IFS.
+    # - Unquoted Substitutions are split and globbed.
     String(string s, bool quoted, bool do_split)
 
-    -- "$@" or "${a[@]}" -- never globbed or split (though other shells
-    -- split them)
+    # "$@" or "${a[@]}" # never globbed or split (though other shells
+    # split them)
   | Array(string* strs)
-    -- only produced when EXTGLOB_FS flag is passed
+    # only produced when EXTGLOB_FS flag is passed
   | ExtGlob(part_value* part_vals)
 
-  -- A static word from osh.asdl is evaluted to a dynamic value.  value
-  -- instances are stored in state.Mem().
+  # A static word from osh.asdl is evaluted to a dynamic value.  value
+  # instances are stored in state.Mem().
   value =
-    -- An Undef value is different than "no binding" because of dynamic scope.
+    # An Undef value is different than "no binding" because of dynamic scope.
     Undef
   | Str(string s)
-    -- Important: This is NOT stored in state.Mem now.  It's used only by
-    -- the arithmetic evaluator.
+    # Important: This is NOT stored in state.Mem now.  It's used only by
+    # the arithmetic evaluator.
   | Int(int i)
-    -- "holes" in the array are represented by None
+    # "holes" in the array are represented by None
   | MaybeStrArray(string* strs)
-    -- d will be a dict
-  | AssocArray(map[string, string] d)
+    # d will be a dict
+  | AssocArray(Dict[string, string] d)
 
   | Bool(bool b)
-  | Float(float f) -- For flags only now.  TODO: ASDL needs float type.
+  | Float(float f) # For flags only now.  TODO: ASDL needs float type.
 
-    -- / d+ /
+    # / d+ /
   | Eggex(re expr, string as_ere)
 
-    -- &(echo one; echo two)
+    # &(echo one; echo two)
   | Block(command body)
-    -- Is Proc separate?  Or should Block be a "open Proc"?
+    # Is Proc separate?  Or should Block be a "open Proc"?
 
-    -- Tea stuff: Func, Data, Enum, Class, and maybe File?
+    # Tea stuff: Func, Data, Enum, Class, and maybe File?
 
-    -- A Python-style object.  'any' is not currently type checked.
-    -- TODO: Remove this
+    # A Python-style object.  'any' is not currently type checked.
+    # TODO: Remove this
   | Obj(any obj)
 
-  -- What is valid in arrays or assoc arrays a[i] or A[i] in shell.
-  -- Used for ${a[i]=x}.  TODO: also use for lvalue/place.
+  # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
+  # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
   a_index = Str(string s) | Int(int i)
 
-  -- for the place in ${a[0]=a}
+  # for the place in ${a[0]=a}
   VTestPlace = (string name, a_index index)
 
-  -- evaluation state for braced_var_sub 
+  # evaluation state for braced_var_sub 
   VarSubState = (bool join_array, bool is_type_query)
 
-  -- A cell is a wrapper for a value.
-  -- TODO: add spid for declaration for 'assigning const' error
+  # A cell is a wrapper for a value.
+  # TODO: add spid for declaration for 'assigning const' error
 
-  -- Invariant: if exported or nameref is set, the val should be Str or Undef.
-  -- This is enforced in mem.SetValue but isn't expressed in the schema.
+  # Invariant: if exported or nameref is set, the val should be Str or Undef.
+  # This is enforced in mem.SetValue but isn't expressed in the schema.
   cell = (bool exported, bool readonly, bool nameref, value val)
 
-  -- Where scopes are used
-  -- Parent: for the 'setref' keyword
-  -- Shopt: to respect shopt -u dynamic_scope.
-  --   Dynamic -> LocalOrGlobal for reading
-  --   Dynamic -> LocalOnly for writing.
-  -- Dynamic:
-  --   GetValue: Shell Style
-  --   SetValue: Shell Style
-  -- LocalOrGlobal:
-  --   GetValue: Oil style
-  --   SetValue: N/A
-  -- LocalOnly:
-  --   GetValue: N/A, we can always READ globals
-  --   SetValue: setvar, parameter bindings, for loop iterator vars
-  -- GlobalOnly:
-  --   GetValue: N/A
-  --   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
+  # Where scopes are used
+  # Parent: for the 'setref' keyword
+  # Shopt: to respect shopt -u dynamic_scope.
+  #   Dynamic -> LocalOrGlobal for reading
+  #   Dynamic -> LocalOnly for writing.
+  # Dynamic:
+  #   GetValue: Shell Style
+  #   SetValue: Shell Style
+  # LocalOrGlobal:
+  #   GetValue: Oil style
+  #   SetValue: N/A
+  # LocalOnly:
+  #   GetValue: N/A, we can always READ globals
+  #   SetValue: setvar, parameter bindings, for loop iterator vars
+  # GlobalOnly:
+  #   GetValue: N/A
+  #   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
 
   scope = Parent | Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
 
-  -- For OSH assignment, evaluated from osh_ast.lhs_expr
-  -- TODO: Rename this to sh_place?
+  # For OSH assignment, evaluated from osh_ast.lhs_expr
+  # TODO: Rename this to sh_place?
   lvalue = 
     Named(string name, int blame_spid)
   | Indexed(string name, int index, int blame_spid)
   | Keyed(string name, string key, int blame_spid)
 
-    -- Oil variants
+    # Oil variants
   | ObjIndex(any obj, any index)
   | ObjAttr(any obj, string attr)
 
   redirect_arg =
     Path(string filename)
   | CopyFd(int target_fd)
-  | MoveFd(int target_fd)  -- 3>&1-
+  | MoveFd(int target_fd)  # 3>&1-
   | CloseFd
-  | HereDoc(string body)  -- call this String and combine with Path?
+  | HereDoc(string body)  # call this String and combine with Path?
 
-  -- evaluated version of syntax.redir
+  # evaluated version of syntax.redir
   redirect = (id op_id, int op_spid, redir_loc loc, redirect_arg arg)
 
-  -- What command.ShFunction and command.Proc evaluate to
-  -- For ShFunction, this is trivial.  For Proc, we evaluate default args.
-  -- We store name_spid separately because ShFunction has a word as a name, but
-  -- a Proc has a Token.
+  # What command.ShFunction and command.Proc evaluate to
+  # For ShFunction, this is trivial.  For Proc, we evaluate default args.
+  # We store name_spid separately because ShFunction has a word as a name, but
+  # a Proc has a Token.
   Proc = (
     string name, int name_spid, proc_sig sig, command body, value* defaults,
     bool dynamic_scope
   )
 
-  -- An exit status with location info.  For process sub.
-  StatusArray = (int* codes, int* spids)
+  # An exit status with location info.  For process sub.
+  StatusArray = (
+    List[int]? codes,  # init to null, rarely allocated
+    List[int]? spids   # init to null, rarely allocated
+  )
 
   CommandStatus = (
-    -- set for atoms
+    # set for atoms
     bool check_errexit,
 
-    -- By default, don't show the code on errexit.  Sometimes we want to.
+    # By default, don't show the code on errexit.  Sometimes we want to.
     bool show_code
 
-    -- Should we use 'int simple_status' for atoms like atoms like ls  ((  [[ ?
+    # Should we use 'int simple_status' for atoms like atoms like ls  ((  [[ ?
 
-    -- for pipeline
+    # for pipeline
     bool pipe_negated,
-    int* pipe_status,
-    int* pipe_spids,
+    List[int]? pipe_status,  # init to null, rarely allocated
+    List[int]? pipe_spids,   # init to null, rarely allocated
   )
 
   wait_status =
     Proc(int code)
   | Pipeline(int* codes)
-    -- because the 'wait' builtin is interruptible
+    # because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
 
   flow = Nothing | Break | Raise
 
-  -- For word splitting (in frontend/consts.py and osh/split.py)
+  # For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
 
   emit = Part | Delim | Empty | Escape | Nothing
@@ -162,36 +165,36 @@ module runtime
   state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash | Done
           generate [integers]
 
-  -- Edges are characters.  DE_ is the delimiter prefix.  DE_White is for
-  -- whitespace; DE_Gray is for other IFS chars; Black is for significant
-  -- characters.  Sentinel is the end of the string.
+  # Edges are characters.  DE_ is the delimiter prefix.  DE_White is for
+  # whitespace; DE_Gray is for other IFS chars; Black is for significant
+  # characters.  Sentinel is the end of the string.
   char_kind = DE_White | DE_Gray | Black | Backslash | Sentinel
               generate [integers]
 
-  -- core/process.py
-  -- A Job is a Process or Pipeline.
-  -- * Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
-  --   them.
-  -- * Pipelines go Running to Done.  They are never stopped; only the processes
-  --   inside them are stopped.
+  # core/process.py
+  # A Job is a Process or Pipeline.
+  # - Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
+  #   them.
+  # - Pipelines go Running to Done.  They are never stopped; only the processes
+  #   inside them are stopped.
   job_state = Running | Done | Stopped
 
-  -- Flag arguments can be any of these types.
+  # Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str
 
-  -- For dev.Tracer
+  # For dev.Tracer
   trace =
-    External(string* argv) -- sync, needs argv (command.Simple or 'command')
-  | CommandSub             -- sync
-  | ForkWait               -- sync
-  | Fork                   -- async, needs argv, & fork
-  | PipelinePart           -- async
-  | ProcessSub             -- async (other processes can be started)
-  | HereDoc                -- async (multiple here docs per process)
+    External(string* argv) # sync, needs argv (command.Simple or 'command')
+  | CommandSub             # sync
+  | ForkWait               # sync
+  | Fork                   # async, needs argv, & fork
+  | PipelinePart           # async
+  | ProcessSub             # async (other processes can be started)
+  | HereDoc                # async (multiple here docs per process)
 
-  -- tools/osh2oil.py
+  # tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ
 
-  -- Hay "first word" namespace
-  hay_node = (map[string, hay_node] children)
+  # Hay "first word" namespace
+  hay_node = (Dict[string, hay_node] children)
 }

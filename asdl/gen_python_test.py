@@ -45,7 +45,7 @@ class ArithAstTest(unittest.TestCase):
 
   def testMapDefault(self):
     # TODO: alloc_dicts=True
-    obj = typed_demo_asdl.maps.CreateNull(alloc_lists=True)
+    obj = typed_demo_asdl.Dicts.CreateNull(alloc_lists=True)
     self.assertEqual(None, obj.ss)
 
   def testOptionalDefault(self):
@@ -140,9 +140,11 @@ class ArithAstTest(unittest.TestCase):
     print(c)
 
     sl = arith_expr.Slice(
-        arith_expr.Const(1), arith_expr.Const(5), arith_expr.Const(2),
+        arith_expr.Const(1),
+        arith_expr.Const(5),
+        arith_expr.Const(2),
         arith_expr.Const(3),
-        )
+    )
     print(sl)
 
     print((op_id_e.Plus))

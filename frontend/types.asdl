@@ -1,4 +1,4 @@
--- Types that don't depend on Id.  (To break dependency)
+# Types that don't depend on Id.  (To break dependency)
 
 module types {
   bool_arg_type = Undefined | Path | Int | Str | Other
@@ -7,36 +7,36 @@ module types {
   opt_group = StrictAll | OilUpgrade | OilAll
               generate [integers]
 
-  -- Fifteen lexer modes for OSH
+  # Fifteen lexer modes for OSH
 
   lex_mode =
     Undefined
   | Comment
   | ShCommand
-  | Backtick  -- preprocessing before Outer
+  | Backtick  # preprocessing before Outer
   | DBracket
   | SQ_Raw | DQ | SQ_C
   | Arith
   | ExtGlob
   | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ
   | BashRegex | BashRegexChars
-  | FuncParens -- for Id.LookAhead_FuncParens
+  | FuncParens  # for Id.LookAhead_FuncParens
 
-  -- Two for printf builtin
+  # Two for printf builtin
 
   | PrintfOuter | PrintfPercent
 
-  -- Oil language has 4 main modes, 2 for regexes, and 4 kinds of strings
-  -- (or maybe 6 with multiline?  Not sure if that's handled in the lexer.)
+  # Oil language has 4 main modes, 2 for regexes, and 4 kinds of strings
+  # (or maybe 6 with multiline?  Not sure if that's handled in the lexer.)
 
-  | Expr      -- var x = 1 + 2 * 3; echo $f(a, b + 1)
+  | Expr      # var x = 1 + 2 * 3; echo $f(a, b + 1)
 
   | QSN
 
-  -- TODO:
-  -- * Tagged strings.  Are these raw by default?
+  # TODO:
+  # - Tagged strings.  Are these raw by default?
 
-  -- More possibilities
-  -- * printf formatting ${x %05d}.  I think that is mostly in expression mode
-  --   like ${x|html} or ${x|title}
+  # More possibilities
+  # - printf formatting ${x %05d}.  I think that is mostly in expression mode
+  #   like ${x|html} or ${x|title}
 }

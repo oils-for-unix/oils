@@ -30,7 +30,6 @@ from core.pyerror import log
 
 _ = log
 
-
 # Not supporting concise syntax tree like Python
 ABBREV = False
 
@@ -68,6 +67,7 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 
   ASDL allows forward references of types, but C++ doesn't.
   """
+
   def VisitCompoundSum(self, sum, name, depth):
     self.Emit("class %(name)s_t;" % locals(), depth)
 
@@ -79,35 +79,40 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 
 
 def _GetCppType(typ):
-  type_name = typ.name
+  if isinstance(typ, ast.ParameterizedType):
+    type_name = typ.type_name
 
-  if type_name == 'map':
-    k_type = _GetCppType(typ.children[0])
-    v_type = _GetCppType(typ.children[1])
-    return 'Dict<%s, %s>*' % (k_type, v_type)
+    if type_name == 'Dict':
+      k_type = _GetCppType(typ.children[0])
+      v_type = _GetCppType(typ.children[1])
+      return 'Dict<%s, %s>*' % (k_type, v_type)
 
-  elif type_name == 'array':
-    c_type = _GetCppType(typ.children[0])
-    return 'List<%s>*' % (c_type)
+    elif type_name == 'List':
+      c_type = _GetCppType(typ.children[0])
+      return 'List<%s>*' % (c_type)
 
-  elif type_name == 'maybe':
-    c_type = _GetCppType(typ.children[0])
-    # TODO: maybe[int] and maybe[simple_sum] are invalid
-    return c_type
+    elif type_name == 'Optional':
+      c_type = _GetCppType(typ.children[0])
+      return c_type
 
-  elif typ.resolved:
-    if isinstance(typ.resolved, ast.SimpleSum):
-      return '%s_t' % typ.name
-    if isinstance(typ.resolved, ast.Sum):
-      return '%s_t*' % typ.name
-    if isinstance(typ.resolved, ast.Product):
-      return '%s*' % typ.name
-    if isinstance(typ.resolved, ast.Use):
-      return '%s_asdl::%s*' % (
-          typ.resolved.module_parts[-1], ast.TypeNameHeuristic(type_name))
+  elif isinstance(typ, ast.NamedType):
 
-  # 'id' falls through here
-  return _PRIMITIVES[typ.name]
+    if typ.resolved:
+      if isinstance(typ.resolved, ast.SimpleSum):
+        return '%s_t' % typ.name
+      if isinstance(typ.resolved, ast.Sum):
+        return '%s_t*' % typ.name
+      if isinstance(typ.resolved, ast.Product):
+        return '%s*' % typ.name
+      if isinstance(typ.resolved, ast.Use):
+        return '%s_asdl::%s*' % (typ.resolved.module_parts[-1],
+                                 ast.TypeNameHeuristic(typ.name))
+
+    # 'id' falls through here
+    return _PRIMITIVES[typ.name]
+
+  else:
+    raise AssertionError()
 
 
 def _IsManagedType(typ):
@@ -117,86 +122,98 @@ def _IsManagedType(typ):
 
 def _DefaultValue(typ, conditional=True):
   """ Values that the ::CreateNull() constructor passes. """
-  type_name = typ.name
 
-  if type_name == 'map':  # TODO: can respect alloc_dicts=True
-    return 'nullptr'
+  if isinstance(typ, ast.ParameterizedType):
+    type_name = typ.type_name
 
-  elif type_name == 'array':
-    c_type = _GetCppType(typ.children[0])
+    if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
+      return 'nullptr'
 
-    d = 'Alloc<List<%s>>()' % (c_type)
-    if conditional:
-      return 'alloc_lists ? %s : nullptr' % d
+    elif type_name == 'List':
+      c_type = _GetCppType(typ.children[0])
+
+      d = 'Alloc<List<%s>>()' % (c_type)
+      if conditional:
+        return 'alloc_lists ? %s : nullptr' % d
+      else:
+        return d
+
+    elif type_name == 'Optional':
+      return 'nullptr'
+
     else:
-      return d
+      raise AssertionError(type_name)
 
-  elif type_name == 'maybe':
-    child = typ.children[0]
+  elif isinstance(typ, ast.NamedType):
+    type_name = typ.name
 
-    # Note: this logic is duplicated in asdl/gen_python.py
-    if child.name != 'string' and child.name in _PRIMITIVES:
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+    if type_name == 'int':
+      default = '-1'
+    elif type_name == 'id':  # hard-coded HACK
+      default = '-1'
+    elif type_name == 'bool':
+      default = 'false'
+    elif type_name == 'float':
+      default = '0.0'  # or should it be NaN?
 
-    # maybe[simple_sum] is also invalid
-    if child.resolved and isinstance(child.resolved, ast.SimpleSum):
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+    elif type_name == 'string':
+      default = 'kEmptyString'
 
-    return 'nullptr'
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      sum_type = typ.resolved
+      # Just make it the first variant.  We could define "Undef" for
+      # each enum, but it doesn't seem worth it.
+      default = '%s_e::%s' % (type_name, sum_type.types[0].name)
 
-  elif type_name == 'int':
-    default = '-1'
-  elif type_name == 'id':  # hard-coded HACK
-    default = '-1'
-  elif type_name == 'bool':
-    default = 'false'
-  elif type_name == 'float':
-    default = '0.0'  # or should it be NaN?
+    else:
+      default = 'nullptr'  # Sum or Product
 
-  elif type_name == 'string':
-    default = 'kEmptyString'
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    sum_type = typ.resolved
-    # Just make it the first variant.  We could define "Undef" for
-    # each enum, but it doesn't seem worth it.
-    default = '%s_e::%s' % (type_name, sum_type.types[0].name)
+    return default
 
   else:
-    default = 'nullptr'  # Sum or Product
-
-  return default
+    raise AssertionError()
 
 
 def _HNodeExpr(abbrev, typ, var_name):
   # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
-  type_name = typ.name
 
-  if type_name == 'bool':
-    code_str = "Alloc<hnode__Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
-
-  elif type_name == 'int':
-    code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
-
-  elif type_name == 'float':
-    code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
-
-  elif type_name == 'string':
-    code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
-
-  elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-    code_str = 'Alloc<hnode__External>(%s)' % var_name
-
-  elif type_name == 'id':  # was meta.UserType
-    code_str = 'Alloc<hnode__Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    code_str = 'Alloc<hnode__Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
-        typ.name, var_name)
-  else:
+  if isinstance(typ, ast.ParameterizedType):
     code_str = '%s->%s()' % (var_name, abbrev)
     none_guard = True
+
+  elif isinstance(typ, ast.NamedType):
+
+    type_name = typ.name
+
+    if type_name == 'bool':
+      code_str = "Alloc<hnode__Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
+
+    elif type_name == 'int':
+      code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
+
+    elif type_name == 'float':
+      code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
+
+    elif type_name == 'string':
+      code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
+
+    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+      code_str = 'Alloc<hnode__External>(%s)' % var_name
+
+    elif type_name == 'id':  # was meta.UserType
+      code_str = 'Alloc<hnode__Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
+
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      code_str = 'Alloc<hnode__Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
+          type_name, var_name)
+
+    else:
+      code_str = '%s->%s()' % (var_name, abbrev)
+      none_guard = True
+
+  else:
+    raise AssertionError()
 
   return code_str, none_guard
 
@@ -204,9 +221,7 @@ def _HNodeExpr(abbrev, typ, var_name):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
-  def __init__(self, f,
-               pretty_print_methods=True,
-               debug_info=None):
+  def __init__(self, f, pretty_print_methods=True, debug_info=None):
     """
     Args:
       f: file to write to
@@ -233,9 +248,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         base_class = sum_name + '_t'
         bases = self._product_bases[variant.shared_type]
         if base_class in bases:
-          raise RuntimeError(
-              "Two tags in sum %r refer to product type %r" %
-              (sum_name, variant.shared_type))
+          raise RuntimeError("Two tags in sum %r refer to product type %r" %
+                             (sum_name, variant.shared_type))
         else:
           bases.append(base_class)
         type_str = variant.shared_type
@@ -354,8 +368,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         super_name = '%s_t' % sum_name
         tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name, variant.name)
         class_name = '%s__%s' % (sum_name, variant.name)
-        self._GenClass(variant, sum.attributes, class_name, [super_name],
-                       depth, tag)
+        self._GenClass(variant, sum.attributes, class_name, [super_name], depth,
+                       tag)
 
     # Allow expr::Const in addition to expr__Const.
     Emit('ASDL_NAMES %(sum_name)s {')
@@ -366,7 +380,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('};')
     Emit('')
 
-  def _GenClass(self, ast_node, attributes, class_name, base_classes, depth, tag):
+  def _GenClass(self, ast_node, attributes, class_name, base_classes, depth,
+                tag):
     """For Product and Constructor."""
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
@@ -379,10 +394,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # come before any unmanaged ones because we use `HeapTag::Scanned`.
     managed_fields, unmanaged_fields = [], []
     for f in ast_node.fields + attributes:
-        if _IsManagedType(f.typ):
-          managed_fields.append(f)
-        else:
-          unmanaged_fields.append(f)
+      if _IsManagedType(f.typ):
+        managed_fields.append(f)
+      else:
+        unmanaged_fields.append(f)
     all_fields = managed_fields + unmanaged_fields
 
     line_break = '\n' + ' ' * 22  # wrapping/indent determined manually
@@ -406,7 +421,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       if f in attributes:
         # spids are initialized separately
-        inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ, conditional=False)))
+        inits.append('%s(%s)' %
+                     (f.name, _DefaultValue(f.typ, conditional=False)))
       else:
         inits.append('%s(%s)' % (f.name, f.name))
 
@@ -423,8 +439,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       for field in ast_node.fields:
         init_args.append(_DefaultValue(field.typ))
 
-      self.Emit('  static %s* CreateNull(bool alloc_lists = false) { ' % class_name, depth)
-      self.Emit('    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)), depth)
+      self.Emit(
+          '  static %s* CreateNull(bool alloc_lists = false) { ' % class_name,
+          depth)
+      self.Emit(
+          '    return Alloc<%s>(%s);' % (class_name, ', '.join(init_args)),
+          depth)
       self.Emit('  }')
       self.Emit('')
 
@@ -434,7 +454,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit('')
 
     self.Emit('  static constexpr ObjHeader obj_header() {')
-    self.Emit('    return ObjHeader::AsdlClass(%s, %d);' % (tag, len(managed_fields)))
+    self.Emit('    return ObjHeader::AsdlClass(%s, %d);' %
+              (tag, len(managed_fields)))
     self.Emit('  }')
     self.Emit('')
 
@@ -455,8 +476,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Create a tuple of _GenClass args to create LAST.  They may inherit from
     # sum types that have yet to be defined.
     self._products.append(
-        (product, product.attributes, name, depth, self._product_counter)
-    )
+        (product, product.attributes, name, depth, self._product_counter))
     self._product_counter += 1
 
   def EmitFooter(self):
@@ -476,6 +496,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   We have to do this in another pass because types and schemas have circular
   dependencies.
   """
+
   def __init__(self, f, pretty_print_methods=True):
     visitor.AsdlVisitor.__init__(self, f)
 
@@ -483,37 +504,50 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    if field.IsArray():
+    if field.typ.IsList():
       iter_name = 'i%d' % counter
-      typ = field.typ.children[0]
 
-      self.Emit('if (this->%s != nullptr) {  // array' % (field.name))
-      self.Emit('  hnode__Array* %s = Alloc<hnode__Array>(Alloc<List<hnode_t*>>());' % out_val_name)
-      item_type = _GetCppType(typ)
-      self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
-                % (item_type, field.name))
-      self.Emit('    %s %s = it.Value();' % (item_type, iter_name))
-      child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
-      self.Emit('    %s->children->append(%s);' % (out_val_name, child_code_str))
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+      item_type = typ.children[0]
+
+      self.Emit('if (this->%s != nullptr) {  // List' % (field.name))
+      self.Emit(
+          '  hnode__Array* %s = Alloc<hnode__Array>(Alloc<List<hnode_t*>>());' %
+          out_val_name)
+      c_item_type = _GetCppType(item_type)
+      self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {' %
+                (c_item_type, field.name))
+      self.Emit('    %s %s = it.Value();' % (c_item_type, iter_name))
+      child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
+      self.Emit('    %s->children->append(%s);' %
+                (out_val_name, child_code_str))
       self.Emit('  }')
-      self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' %
+                (field.name, out_val_name))
       self.Emit('}')
 
-    elif field.IsMaybe():
+    elif field.typ.IsOptional():
       typ = field.typ.children[0]
 
-      self.Emit('if (this->%s) {  // maybe' % field.name)
+      self.Emit('if (this->%s) {  // Optional' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
       self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
-      self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' %
+                (field.name, out_val_name))
       self.Emit('}')
 
-    elif field.IsMap():
+    elif field.typ.IsDict():
       k = 'k%d' % counter
       v = 'v%d' % counter
 
-      k_typ = field.typ.children[0]
-      v_typ = field.typ.children[1]
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+
+      k_typ = typ.children[0]
+      v_typ = typ.children[1]
 
       k_c_type = _GetCppType(k_typ)
       v_c_type = _GetCppType(v_typ)
@@ -521,19 +555,25 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('if (this->%s) {  // map' % field.name)
+      self.Emit('if (this->%s) {  // Dict' % field.name)
       # TODO: m can be a global constant!
-      self.Emit('  auto m = Alloc<hnode__Leaf>(StrFromC("map"), color_e::OtherConst);')
-      self.Emit('  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>({m}));' % out_val_name)
-      self.Emit('  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' % (
-                k_c_type, v_c_type, field.name))
+      self.Emit(
+          '  auto m = Alloc<hnode__Leaf>(StrFromC("Dict"), color_e::OtherConst);'
+      )
+      self.Emit(
+          '  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>({m}));' %
+          out_val_name)
+      self.Emit(
+          '  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' %
+          (k_c_type, v_c_type, field.name))
       self.Emit('    auto %s = it.Key();' % k)
       self.Emit('    auto %s = it.Value();' % v)
       self.Emit('    %s->children->append(%s);' % (out_val_name, k_code_str))
       self.Emit('    %s->children->append(%s);' % (out_val_name, v_code_str))
       self.Emit('  }')
-      self.Emit('  L->append(Alloc<field>(StrFromC ("%s"), %s));' % (field.name, out_val_name))
-      self.Emit('}');
+      self.Emit('  L->append(Alloc<field>(StrFromC ("%s"), %s));' %
+                (field.name, out_val_name))
+      self.Emit('}')
 
     else:
       var_name = 'this->%s' % field.name
@@ -544,7 +584,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         pass
       self.Emit('hnode_t* %s = %s;' % (out_val_name, code_str), depth)
 
-      self.Emit('L->append(Alloc<field>(StrFromC("%s"), %s));' % (field.name, out_val_name), depth)
+      self.Emit(
+          'L->append(Alloc<field>(StrFromC("%s"), %s));' %
+          (field.name, out_val_name), depth)
 
   def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
     pretty_cls_name = class_name.replace('__', '.')  # used below
@@ -558,7 +600,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     self.Emit('')
     self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
-    self.Emit('  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' % pretty_cls_name)
+    self.Emit(
+        '  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
+        pretty_cls_name)
     if all_fields:
       self.Emit('  List<field*>* L = out_node->fields;')
       self.Emit('')
@@ -573,7 +617,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('  return out_node;')
     self.Emit('}')
 
-
     #
     # _AbbreviatedTree
     #
@@ -583,7 +626,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     self.Emit('')
     self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
-    self.Emit('  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' % pretty_cls_name)
+    self.Emit(
+        '  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
+        pretty_cls_name)
     if ast_node.fields:
       self.Emit('  List<field*>* L = out_node->fields;')
 
@@ -636,7 +681,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     self.Emit('default:', depth + 1)
     self.Emit('  assert(0);', depth + 1)
-    
+
     self.Emit('  }', depth)
     self.Emit('}', depth)
 
@@ -672,8 +717,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
           subtype_name = '%s__%s' % (sum_name, variant.name)
 
         self.Emit('  case %s_e::%s: {' % (sum_name, variant.name), depth)
-        self.Emit('    %s* obj = static_cast<%s*>(this);' %
-                  (subtype_name, subtype_name), depth)
+        self.Emit(
+            '    %s* obj = static_cast<%s*>(this);' %
+            (subtype_name, subtype_name), depth)
         self.Emit('    return obj->%s();' % func_name, depth)
         self.Emit('  }', depth)
 

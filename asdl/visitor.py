@@ -16,6 +16,7 @@ class AsdlVisitor:
   - Also remove self.f and self.Emit.  Those can go in self.output?
   - Move to common location, since gen_python uses it as well.
   """
+
   def __init__(self, f):
     self.f = f
     self.current_depth = 0  # the current number of indent levels
@@ -54,10 +55,13 @@ class AsdlVisitor:
   # Optionally overridden.
   def VisitSimpleSum(self, value, name, depth):
     pass
+
   def VisitCompoundSum(self, value, name, depth):
     pass
+
   def VisitProduct(self, value, name, depth):
     pass
+
   def EmitFooter(self):
     pass
 
@@ -66,6 +70,7 @@ TABSIZE = 2
 MAX_COL = 80
 
 # Copied from asdl_c.py
+
 
 def _ReflowLines(s, depth):
   """Reflow the line s indented depth tabs.
@@ -87,8 +92,10 @@ def _ReflowLines(s, depth):
     i = cur.rfind(' ', 0, size)
     if i == -1:
       if 0:
-        print("Warning: No space to reflow line (size=%d, depth=%d, cur=%r): %r"
-              % (size, depth, cur, s), file=sys.stderr)
+        print(
+            "Warning: No space to reflow line (size=%d, depth=%d, cur=%r): %r" %
+            (size, depth, cur, s),
+            file=sys.stderr)
       lines.append(padding + cur)
       break
 

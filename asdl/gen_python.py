@@ -12,7 +12,6 @@ from core.pyerror import log
 
 _ = log  # shut up lint
 
-
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
@@ -29,109 +28,110 @@ def _MyPyType(typ):
   """
   ASDL type to MyPy Type.
   """
-  type_name = typ.name
+  if isinstance(typ, ast.ParameterizedType):
 
-  if type_name == 'map':
-    k_type = _MyPyType(typ.children[0])
-    v_type = _MyPyType(typ.children[1])
-    return 'Dict[%s, %s]' % (k_type, v_type)
+    if typ.type_name == 'Dict':
+      k_type = _MyPyType(typ.children[0])
+      v_type = _MyPyType(typ.children[1])
+      return 'Dict[%s, %s]' % (k_type, v_type)
 
-  if type_name == 'array':
-    return 'List[%s]' % _MyPyType(typ.children[0])
+    if typ.type_name == 'List':
+      return 'List[%s]' % _MyPyType(typ.children[0])
 
-  if type_name == 'maybe':
-    # TODO: maybe[int] and maybe[simple_sum] are invalid
-    return 'Optional[%s]' % _MyPyType(typ.children[0])
+    if typ.type_name == 'Optional':
+      return 'Optional[%s]' % _MyPyType(typ.children[0])
 
-  if typ.resolved:
-    if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
-      return '%s_t' % typ.name
-    if isinstance(typ.resolved, ast.Product):
-      return typ.name
-    if isinstance(typ.resolved, ast.Use):
-      return ast.TypeNameHeuristic(type_name)
+  elif isinstance(typ, ast.NamedType):
+    if typ.resolved:
+      if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
+        return '%s_t' % typ.name
+      if isinstance(typ.resolved, ast.Product):
+        return typ.name
+      if isinstance(typ.resolved, ast.Use):
+        return ast.TypeNameHeuristic(typ.name)
 
-  # 'id' falls through here
-  return _PRIMITIVES[type_name]
+    # 'id' falls through here
+    return _PRIMITIVES[typ.name]
+
+  else:
+    raise AssertionError()
 
 
-def IsHeapAllocated(typ):
+def _AddOptional(typ):
   """
   To determine whether nullptr / None is an allowed initialization, as opposed
   to false, -1, 0.0, scope_e.First (simple sum).
   """
-  type_name = typ.name
+  if isinstance(typ, ast.ParameterizedType):
+    return typ.type_name != 'Optional'
 
-  # All maps and arrays are heap allocated
-  if type_name in ('map', 'array'):
-    return True
+  elif isinstance(typ, ast.NamedType):
+    if typ.resolved:
+      if isinstance(typ.resolved, ast.SimpleSum):
+        return False
+      if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
+        return True
+      if isinstance(typ.resolved, ast.Product):
+        return True
+      if isinstance(typ.resolved, ast.Use):
+        # TODO: is this correct?
+        return True
 
-  if type_name == 'maybe':
-    child = typ.children[0]
-    if child.name != 'string' and child.name in _PRIMITIVES:
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
+    # Primitives aren't heap allocated
+    return False
 
-    # maybe[simple_sum] is also invalid
-    if child.resolved and isinstance(child.resolved, ast.SimpleSum):
-      raise RuntimeError("Optional primitive type %s not allowed" % child.name)
-
-    return True
-
-  if typ.resolved:
-    if isinstance(typ.resolved, ast.SimpleSum):
-      return False
-    if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
-      return True
-    if isinstance(typ.resolved, ast.Product):
-      return True
-    if isinstance(typ.resolved, ast.Use):
-
-      # TODO: what about simple_int_sum?
-
-      # return ast.TypeNameHeuristic(type_name)
-      return True
-
-  # Primtives aren't heap allocated
-  return False
+  else:
+    raise AssertionError()
 
 
 def _DefaultValue(typ):
   """Values that the static CreateNull() constructor passes."""
-  type_name = typ.name
 
   default = 'None'
 
-  if type_name == 'map':  # TODO: can respect alloc_dicts=True
-    return 'None'
+  if isinstance(typ, ast.ParameterizedType):
+    type_name = typ.type_name
 
-  elif type_name == 'array':
-    default = '[] if alloc_lists else None'
+    if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
+      return 'None'
 
-  elif type_name == 'maybe':
-    child_typ = typ.children[0]
-    default = 'None'
+    elif type_name == 'List':
+      default = '[] if alloc_lists else None'
 
-  elif type_name == 'int':
-    default = '-1'
+    elif type_name == 'Optional':
+      child_typ = typ.children[0]
+      default = 'None'
 
-  elif type_name == 'id':  # hard-coded HACK
-    default = '-1'
+    else:
+      raise AssertionError(type_name)
 
-  elif type_name == 'bool':
-    default = 'False'
+  elif isinstance(typ, ast.NamedType):
+    type_name = typ.name
 
-  elif type_name == 'float':
-    default = '0.0'  # or should it be NaN?
+    if type_name == 'int':
+      default = '-1'
 
-  elif type_name == 'string':
-    default = "''"
-    pass
+    elif type_name == 'id':  # hard-coded HACK
+      default = '-1'
 
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    sum_type = typ.resolved
-    # Just make it the first variant.  We could define "Undef" for
-    # each enum, but it doesn't seem worth it.
-    default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+    elif type_name == 'bool':
+      default = 'False'
+
+    elif type_name == 'float':
+      default = '0.0'  # or should it be NaN?
+
+    elif type_name == 'string':
+      default = "''"
+      pass
+
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      sum_type = typ.resolved
+      # Just make it the first variant.  We could define "Undef" for
+      # each enum, but it doesn't seem worth it.
+      default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+
+  else:
+    raise AssertionError()
 
   return default
 
@@ -139,44 +139,55 @@ def _DefaultValue(typ):
 def _HNodeExpr(abbrev, typ, var_name):
   # type: (str, ast.TypeExpr, str) -> str
   none_guard = False
-  type_name = typ.name
 
-  if type_name == 'bool':
-    code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
-
-  elif type_name == 'int':
-    code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
-
-  elif type_name == 'float':
-    code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
-
-  elif type_name == 'string':
-    code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
-
-  elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-    code_str = 'hnode.External(%s)' % var_name
-
-  elif type_name == 'id':  # was meta.UserType
-    # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-    code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
-
-  elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-    code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
-        typ.name, var_name)
-
-  else:
+  if isinstance(typ, ast.ParameterizedType):
     code_str = '%s.%s()' % (var_name, abbrev)
     none_guard = True
 
-  return code_str, none_guard
+  elif isinstance(typ, ast.NamedType):
+    type_name = typ.name
 
+    if type_name == 'bool':
+      code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
+
+    elif type_name == 'int':
+      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+    elif type_name == 'float':
+      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+    elif type_name == 'string':
+      code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
+
+    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+      code_str = 'hnode.External(%s)' % var_name
+
+    elif type_name == 'id':  # was meta.UserType
+      # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
+      code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
+
+    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+      code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (type_name,
+                                                               var_name)
+
+    else:
+      code_str = '%s.%s()' % (var_name, abbrev)
+      none_guard = True
+
+  else:
+    raise AssertionError()
+
+  return code_str, none_guard
 
 
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
-  def __init__(self, f, abbrev_mod_entries=None,
-               pretty_print_methods=True, py_init_n=False,
+  def __init__(self,
+               f,
+               abbrev_mod_entries=None,
+               pretty_print_methods=True,
+               py_init_n=False,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
@@ -228,7 +239,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # Help in sizing array.  Note that we're 1-based.
       line = '  %s = %d' % ('ARRAY_SIZE', len(variants) + 1)
       self.Emit(line, depth)
-     
+
     else:
       # First emit a type
       self.Emit('class %s_t(pybase.SimpleObj):' % sum_name, depth)
@@ -256,37 +267,45 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    if field.IsArray():
+    if field.typ.IsList():
       iter_name = 'i%d' % counter
-      typ = field.typ.children[0]
 
-      self.Emit('  if self.%s is not None:  # array' % field.name)
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+      item_type = typ.children[0]
+
+      self.Emit('  if self.%s is not None:  # List' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-      child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
+      child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
-    elif field.IsMaybe():
+    elif field.typ.IsOptional():
       typ = field.typ.children[0]
 
-      self.Emit('  if self.%s is not None:  # maybe' % field.name)
+      self.Emit('  if self.%s is not None:  # Optional' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
-    elif field.IsMap():
+    elif field.typ.IsDict():
       k = 'k%d' % counter
       v = 'v%d' % counter
 
-      k_typ = field.typ.children[0]
-      v_typ = field.typ.children[1]
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+
+      k_typ = typ.children[0]
+      v_typ = typ.children[1]
 
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
-      self.Emit('  if self.%s is not None:  # map' % field.name)
-      self.Emit('    m = hnode.Leaf("map", color_e.OtherConst)')
+      self.Emit('  if self.%s is not None:  # Dict' % field.name)
+      self.Emit('    m = hnode.Leaf("Dict", color_e.OtherConst)')
       self.Emit('    %s = hnode.Array([m])' % out_val_name)
       self.Emit('    for %s, %s in self.%s.iteritems():' % (k, v, field.name))
       self.Emit('      %s.children.append(%s)' % (out_val_name, k_code_str))
@@ -330,7 +349,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     arg_types = []
     for f in all_fields:
       t = _MyPyType(f.typ)
-      if not self.py_init_n and IsHeapAllocated(f.typ):
+      if not self.py_init_n and _AddOptional(f.typ):
         t = 'Optional[%s]' % t
       arg_types.append(t)
 
@@ -346,7 +365,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # Special initialization for attributes .spids=[] -- only in
       # syntax.asdl
       if f in attributes:
-        assert f.typ.name == 'array'
+        assert f.typ.IsList(), f
         expr_str = ' if %s is not None else []' % f.name
 
       # don't wrap the type comment
@@ -456,9 +475,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         base_class = sum_name + '_t'
         bases = self._product_bases[variant.shared_type]
         if base_class in bases:
-          raise RuntimeError(
-              "Two tags in sum %r refer to product type %r" %
-              (sum_name, variant.shared_type))
+          raise RuntimeError("Two tags in sum %r refer to product type %r" %
+                             (sum_name, variant.shared_type))
 
         else:
           bases.append(base_class)
@@ -489,31 +507,31 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # This is what we would do in C++, but we don't need it in Python because
     # every function is virtual.
     if 0:
-    #if self.pretty_print_methods:
+      #if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
         self.Emit('')
-	self.Emit('def %s(self):' % abbrev, depth)
-	self.Emit('  # type: () -> hnode_t', depth)
-	self.Indent()
-	depth = self.current_depth
-	self.Emit('UP_self = self', depth)
-	self.Emit('', depth)
+        self.Emit('def %s(self):' % abbrev, depth)
+        self.Emit('  # type: () -> hnode_t', depth)
+        self.Indent()
+        depth = self.current_depth
+        self.Emit('UP_self = self', depth)
+        self.Emit('', depth)
 
-	for variant in sum.types:
-	  if variant.shared_type:
+        for variant in sum.types:
+          if variant.shared_type:
             subtype_name = variant.shared_type
-	  else:
-	    subtype_name = '%s__%s' % (sum_name, variant.name)
+          else:
+            subtype_name = '%s__%s' % (sum_name, variant.name)
 
-	  self.Emit('if self.tag_() == %s_e.%s:' % (sum_name, variant.name),
-		    depth)
-	  self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
-	  self.Emit('  return self.%s()' % abbrev, depth)
+          self.Emit('if self.tag_() == %s_e.%s:' % (sum_name, variant.name),
+                    depth)
+          self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
+          self.Emit('  return self.%s()' % abbrev, depth)
 
-	self.Emit('raise AssertionError', depth)
+        self.Emit('raise AssertionError', depth)
 
-	self.Dedent()
-	depth = self.current_depth
+        self.Dedent()
+        depth = self.current_depth
     else:
       # Otherwise it's empty
       self.Emit('pass', depth)
@@ -531,7 +549,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # oil_cmd.Simple.
         fq_name = '%s__%s' % (sum_name, variant.name)
         self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                       depth, i+1)
+                       depth, i + 1)
 
     # Emit a namespace
     self.Emit('class %s(object):' % sum_name, depth)
@@ -552,8 +570,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # Create a tuple of _GenClass args to create LAST.  They may inherit from
     # sum types that have yet to be defined.
     self._products.append(
-        (product, product.attributes, name, depth, self._product_counter)
-    )
+        (product, product.attributes, name, depth, self._product_counter))
     self._product_counter += 1
 
   def EmitFooter(self):
