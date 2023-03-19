@@ -13,7 +13,7 @@ module types {
     Undefined
   | Comment
   | ShCommand
-  | Backtick  -- preprocessing before Outer
+  | Backtick  # preprocessing before Outer
   | DBracket
   | SQ_Raw | DQ | SQ_C
   | Arith
@@ -29,7 +29,7 @@ module types {
   # Oil language has 4 main modes, 2 for regexes, and 4 kinds of strings
   # (or maybe 6 with multiline?  Not sure if that's handled in the lexer.)
 
-  | Expr      -- var x = 1 + 2 * 3; echo $f(a, b + 1)
+  | Expr      # var x = 1 + 2 * 3; echo $f(a, b + 1)
 
   | QSN
 
