@@ -214,8 +214,8 @@ class Printf(vm._Builtin):
             except ValueError:
               if width_spid == runtime.NO_SPID:
                 width_spid = part.width.span_id
-              self.errfmt.Print_("printf got invalid width %r" % width_str,
-                                 span_id=width_spid)
+              self.errfmt.PrintLoc_("printf got invalid width %r" % width_str,
+                                 blame_loc=loc.Span(width_spid))
               return 1
 
           precision = -1  # nonexistent

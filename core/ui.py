@@ -317,6 +317,10 @@ class ErrorFormatter(object):
       span_id = self.CurrentLocation()
     _PrintWithSpanId('', msg, loc.Span(span_id), self.arena, show_code=True)
 
+  def PrintLoc_(self, msg, blame_loc=loc.Missing()):
+    # type: (str, loc_t) -> None
+    self.Print_(msg, location.GetSpanId(blame_loc))
+
   def PrintMessage(self, msg):
     # type: (str) -> None
     """Print a message WITHOUT quoting code."""
@@ -337,7 +341,6 @@ class ErrorFormatter(object):
     level, in CommandEvaluator.
     """
     msg = err.UserErrorString()
-    span_id = location.GetSpanId(err.location)
 
     # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
     # means there is no location info, but 0 could mean that the location is EOF.
