@@ -108,6 +108,15 @@ class NamedType(AST):
     f.write('NamedType %s' % (self.name))  # printed after field
     f.write(' (%r)' % self.resolved)
 
+  def IsOptional(self):
+    return False
+
+  def IsList(self):
+    return False
+
+  def IsDict(self):
+    return False
+
 
 class ParameterizedType(AST):
   """A parameterized type expression, e.g. the type of a field.
@@ -138,6 +147,23 @@ class ParameterizedType(AST):
         child.Print(f, indent + 1)
       f.write(' ]')
 
+  def IsOptional(self):
+    return self.type_name == 'Optional'
+
+  def IsList(self):
+    if self.type_name == 'List':
+      return True
+    if self.type_name == 'Optional':
+      return self.children[0].IsList()
+    return False
+
+  def IsDict(self):
+    if self.type_name == 'Dict':
+      return True
+    if self.type_name == 'Optional':
+      return self.children[0].IsDict()
+    return False
+
 
 class Field(AST):
 
@@ -145,18 +171,6 @@ class Field(AST):
     # type: (AST, str) -> None
     self.typ = typ  # type expression
     self.name = name  # variable name
-
-  def IsArray(self):
-    return isinstance(self.typ,
-                      ParameterizedType) and self.typ.type_name == 'List'
-
-  def IsMaybe(self):
-    return isinstance(self.typ,
-                      ParameterizedType) and self.typ.type_name == 'Optional'
-
-  def IsMap(self):
-    return isinstance(self.typ,
-                      ParameterizedType) and self.typ.type_name == 'Dict'
 
   def Print(self, f, indent):
     ind = indent * '  '

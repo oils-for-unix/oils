@@ -57,17 +57,13 @@ def _MyPyType(typ):
     raise AssertionError()
 
 
-def IsHeapAllocated(typ):
+def _AddOptional(typ):
   """
   To determine whether nullptr / None is an allowed initialization, as opposed
   to false, -1, 0.0, scope_e.First (simple sum).
   """
   if isinstance(typ, ast.ParameterizedType):
-    # All maps and arrays are heap allocated
-
-    # Optional is only allowed for nullable pointer types, so those are also
-    # heap allocated
-    return True
+    return typ.type_name != 'Optional'
 
   elif isinstance(typ, ast.NamedType):
     if typ.resolved:
@@ -78,10 +74,7 @@ def IsHeapAllocated(typ):
       if isinstance(typ.resolved, ast.Product):
         return True
       if isinstance(typ.resolved, ast.Use):
-
-        # TODO: what about simple_int_sum?
-
-        # return ast.TypeNameHeuristic(type_name)
+        # TODO: is this correct?
         return True
 
     # Primitives aren't heap allocated
@@ -274,18 +267,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    if field.IsArray():
+    if field.typ.IsList():
       iter_name = 'i%d' % counter
-      typ = field.typ.children[0]
+
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+      item_type = typ.children[0]
 
       self.Emit('  if self.%s is not None:  # List' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-      child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
+      child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
-    elif field.IsMaybe():
+    elif field.typ.IsOptional():
       typ = field.typ.children[0]
 
       self.Emit('  if self.%s is not None:  # Optional' % field.name)
@@ -293,12 +290,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
-    elif field.IsMap():
+    elif field.typ.IsDict():
       k = 'k%d' % counter
       v = 'v%d' % counter
 
-      k_typ = field.typ.children[0]
-      v_typ = field.typ.children[1]
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+
+      k_typ = typ.children[0]
+      v_typ = typ.children[1]
 
       k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
       v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
@@ -348,7 +349,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     arg_types = []
     for f in all_fields:
       t = _MyPyType(f.typ)
-      if not self.py_init_n and IsHeapAllocated(f.typ):
+      if not self.py_init_n and _AddOptional(f.typ):
         t = 'Optional[%s]' % t
       arg_types.append(t)
 
@@ -364,7 +365,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # Special initialization for attributes .spids=[] -- only in
       # syntax.asdl
       if f in attributes:
-        assert f.IsArray(), f
+        assert f.typ.IsList(), f
         expr_str = ' if %s is not None else []' % f.name
 
       # don't wrap the type comment

@@ -129,7 +129,10 @@ module runtime
   )
 
   # An exit status with location info.  For process sub.
-  StatusArray = (int* codes, int* spids)
+  StatusArray = (
+    List[int]? codes,  # init to null, rarely allocated
+    List[int]? spids   # init to null, rarely allocated
+  )
 
   CommandStatus = (
     # set for atoms
@@ -142,8 +145,8 @@ module runtime
 
     # for pipeline
     bool pipe_negated,
-    int* pipe_status,
-    int* pipe_spids,
+    List[int]? pipe_status,  # init to null, rarely allocated
+    List[int]? pipe_spids,   # init to null, rarely allocated
   )
 
   wait_status =

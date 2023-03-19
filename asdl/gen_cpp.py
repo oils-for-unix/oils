@@ -504,19 +504,23 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    if field.IsArray():
+    if field.typ.IsList():
       iter_name = 'i%d' % counter
-      typ = field.typ.children[0]
+
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+      item_type = typ.children[0]
 
       self.Emit('if (this->%s != nullptr) {  // List' % (field.name))
       self.Emit(
           '  hnode__Array* %s = Alloc<hnode__Array>(Alloc<List<hnode_t*>>());' %
           out_val_name)
-      item_type = _GetCppType(typ)
+      c_item_type = _GetCppType(item_type)
       self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {' %
-                (item_type, field.name))
-      self.Emit('    %s %s = it.Value();' % (item_type, iter_name))
-      child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
+                (c_item_type, field.name))
+      self.Emit('    %s %s = it.Value();' % (c_item_type, iter_name))
+      child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
       self.Emit('    %s->children->append(%s);' %
                 (out_val_name, child_code_str))
       self.Emit('  }')
@@ -524,7 +528,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 (field.name, out_val_name))
       self.Emit('}')
 
-    elif field.IsMaybe():
+    elif field.typ.IsOptional():
       typ = field.typ.children[0]
 
       self.Emit('if (this->%s) {  // Optional' % field.name)
@@ -534,12 +538,16 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 (field.name, out_val_name))
       self.Emit('}')
 
-    elif field.IsMap():
+    elif field.typ.IsDict():
       k = 'k%d' % counter
       v = 'v%d' % counter
 
-      k_typ = field.typ.children[0]
-      v_typ = field.typ.children[1]
+      typ = field.typ
+      if typ.type_name == 'Optional':  # descend one level
+        typ = typ.children[0]
+
+      k_typ = typ.children[0]
+      v_typ = typ.children[1]
 
       k_c_type = _GetCppType(k_typ)
       v_c_type = _GetCppType(v_typ)
