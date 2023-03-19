@@ -252,50 +252,55 @@ class ASDLParser(object):
 
   def _parse_type_expr(self):
     """
-    We just need these expressions, not arbitrary ones:
+    One or two params:
 
-    one_param : ('List' | 'Optional') '[' type_expr ']'
-    # note: we might also want 'val[Token]' for a value type
+    type_params : '[' type_expr ( ',' type_expr )* ']'
 
-    two_params: 'Dict' '[' type_expr ',' type_expr ']'
+    type_expr   : NAME type_params? (''?' | '*')?  # allow one suffix
 
-    type_expr : Name ( '?' | '*' )
-              | one_param
-              | two_params
+    NAME is validated against Optional, List, Dict afterward
     """
     type_name = self._match(TokenKind.Name)
 
-    if type_name in ('List', 'Optional'):
-      self._match(TokenKind.LBracket)
-      child = self._parse_type_expr()
-      typ = ast.ParameterizedType(type_name, [child])
-      self._match(TokenKind.RBracket)
-      return typ
+    children = []
+    if self.cur_token.kind == TokenKind.LBracket:
+      self._advance()
+      children.append(self._parse_type_expr())
+      if self.cur_token.kind == TokenKind.Comma:
+        self._advance()
+        children.append(self._parse_type_expr())
 
-    if type_name == 'Dict':
-      self._match(TokenKind.LBracket)
-      k = self._parse_type_expr()
-      self._match(TokenKind.Comma)
-      v = self._parse_type_expr()
-      typ = ast.ParameterizedType(type_name, [k, v])
       self._match(TokenKind.RBracket)
-      return typ
+
+    if type_name in ('List', 'Optional'):
+      if len(children) != 1:
+        raise ASDLSyntaxError('Expected 1 type param to {}'.format(type_name),
+            self.cur_token.lineno)
+    elif type_name == 'Dict':
+      if len(children) != 2:
+        raise ASDLSyntaxError('Expected 2 type params to {}'.format(type_name),
+            self.cur_token.lineno)
+    else:
+      if len(children) != 0:
+        raise ASDLSyntaxError('Expected zero type params to {}'.format(type_name),
+            self.cur_token.lineno)
+
+    if len(children):
+      typ = ast.ParameterizedType(type_name, children)
+    else:
+      typ = ast.NamedType(type_name)
 
     if self.cur_token.kind == TokenKind.Asterisk:
       # string* is equivalent to List[string]
-      child = ast.NamedType(type_name)
-      typ = ast.ParameterizedType('List', [child])
+      typ = ast.ParameterizedType('List', [typ])
       self._advance()
-      return typ
 
-    if self.cur_token.kind == TokenKind.Question:
+    elif self.cur_token.kind == TokenKind.Question:
       # string* is equivalent to Optional[string]
-      child = ast.NamedType(type_name)
-      typ = ast.ParameterizedType('Optional', [child])
+      typ = ast.ParameterizedType('Optional', [typ])
       self._advance()
-      return typ
 
-    return ast.NamedType(type_name)
+    return typ
 
   def _parse_fields(self):
     """

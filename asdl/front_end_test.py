@@ -78,7 +78,7 @@ module foo {
   -- New optional lists
   spam = (Optional[List[int]] pipe_status)
   -- Nicer way of writing it
-  -- spam2 = (array[int]? pipe_status)
+  spam2 = (List[int]? pipe_status)
 }
 """)
 

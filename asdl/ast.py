@@ -122,9 +122,9 @@ class ParameterizedType(AST):
   mytype?  <=>  maybe[mytype]
   """
 
-  def __init__(self, type_name, children=None):
+  def __init__(self, type_name, children):
     self.type_name = type_name  # type: str
-    self.children = children or []  # type: List[AST]
+    self.children = children  # type: List[AST]
 
   def Print(self, f, indent):
     """Printed on one line."""
