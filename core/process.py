@@ -23,8 +23,9 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, trace, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
-    loc, redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
+    redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
+from _devbuild.gen.syntax_asdl import loc as _loc
 from core import dev
 from core import pyutil
 from core import pyos
@@ -325,7 +326,7 @@ class FdState(object):
         except OSError as e:
           self.errfmt.Print_(
               "Can't open %r: %s" % (arg.filename, pyutil.strerror(e)),
-              blame_loc=loc.Span(r.op_spid))
+              blame_loc=_loc.Span(r.op_spid))
           raise  # redirect failed
 
         new_fd = self._PushDup(open_fd, r.loc)
@@ -602,7 +603,7 @@ class ExternalProgram(object):
 
       self.errfmt.Print_(
           "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
-          blame_loc=loc.Span(argv0_spid))
+          blame_loc=_loc.Span(argv0_spid))
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
