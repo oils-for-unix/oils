@@ -598,8 +598,8 @@ class Cd(vm._Builtin):
 
     err_num = pyos.Chdir(real_dest_dir)
     if err_num != 0:
-      self.errfmt.Print_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
-                         span_id=arg_spid)
+      self.errfmt.PrintLoc_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
+                         blame_loc=loc.Span(arg_spid))
       return 1
 
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)

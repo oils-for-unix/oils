@@ -242,9 +242,9 @@ class Printf(vm._Builtin):
             except ValueError:
               if precision_spid == runtime.NO_SPID:
                 precision_spid = part.precision.span_id
-              self.errfmt.Print_(
+              self.errfmt.PrintLoc_(
                   'printf got invalid precision %r' % precision_str,
-                  span_id=precision_spid)
+                  blame_loc=loc.Span(precision_spid))
               return 1
 
           if arg_index < num_args:
@@ -314,8 +314,8 @@ class Printf(vm._Builtin):
 
               else:
                 blame_spid = word_spid if has_arg else part.type.span_id
-                self.errfmt.Print_('printf expected an integer, got %r' % s,
-                                   span_id=blame_spid)
+                self.errfmt.PrintLoc_('printf expected an integer, got %r' % s,
+                                   blame_loc=loc.Span(blame_spid))
                 return 1
 
             if part.type.id == Id.Format_Time:

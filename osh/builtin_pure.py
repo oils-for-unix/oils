@@ -125,8 +125,8 @@ class UnAlias(vm._Builtin):
       if name in self.aliases:
         mylib.dict_erase(self.aliases, name)
       else:
-        self.errfmt.Print_('No alias named %r' % name,
-                           span_id=cmd_val.arg_spids[i])
+        self.errfmt.PrintLoc_('No alias named %r' % name,
+                           blame_loc=loc.Span(cmd_val.arg_spids[i]))
         status = 1
     return status
 

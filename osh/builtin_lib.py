@@ -5,6 +5,7 @@ builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
+from _devbuild.gen.syntax_asdl import loc
 from core import vm
 from core.pyerror import e_usage
 from frontend import flag_spec
@@ -26,8 +27,8 @@ class Bind(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    self.errfmt.Print_("warning: bind isn't implemented",
-                       span_id=cmd_val.arg_spids[0])
+    self.errfmt.PrintLoc_("warning: bind isn't implemented",
+                       blame_loc=loc.Span(cmd_val.arg_spids[0]))
     return 1
 
 
