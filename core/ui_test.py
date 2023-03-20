@@ -6,6 +6,8 @@ ui_test.py: Tests for ui.py
 
 import unittest
 
+from _devbuild.gen.syntax_asdl import loc
+
 from core import test_lib
 from core import ui  # module under test
 
@@ -25,7 +27,7 @@ class UiTest(unittest.TestCase):
 
     with ui.ctx_Location(errfmt, span_id):
       errfmt.Print_('zero')
-      errfmt.Print_('zero', span_id=spid1)
+      errfmt.Print_('zero', blame_loc=loc.span(spid1))
 
 
 if __name__ == '__main__':
