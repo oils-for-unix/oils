@@ -11,6 +11,7 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray,
     scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
 )
+from _devbuild.gen.syntax_asdl import loc
 
 from core import error
 from core.pyerror import e_usage, log
@@ -461,7 +462,7 @@ class Unset(vm._Builtin):
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
       msg = e.UserErrorString()
-      self.errfmt.Print_(msg, span_id=spid)
+      self.errfmt.PrintLoc_(msg, blame_loc=loc.Span(spid))
       return False
 
     if proc_fallback and not found:
