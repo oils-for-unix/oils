@@ -3,7 +3,7 @@
 # Process table tests for job control.
 #
 # Usage:
-#   test/process-table .sh <function name>
+#   test/process-table.sh <function name>
 
 set -o nounset
 set -o pipefail

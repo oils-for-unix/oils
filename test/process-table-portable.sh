@@ -159,6 +159,6 @@ run_snippet() {
 # We might be sourced by run_with_shell_interactive, so avoid running anything
 # in that case.
 case $1 in
-  setup|show_process_table|run_snippet|run_with_shell|run_with_shell_interactive)
+  setup|show_process_table|run_snippet)
     "$@"
 esac
