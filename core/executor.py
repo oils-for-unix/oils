@@ -26,7 +26,7 @@ from frontend import location
 
 import posix_ as posix
 
-from typing import cast, Dict, List, TYPE_CHECKING
+from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
       cmd_value__Argv, CommandStatus, StatusArray, Proc
@@ -123,6 +123,15 @@ class ShellExecutor(vm._Executor):
     self.fd_state = fd_state
     self.errfmt = errfmt
     self.process_sub_stack = []  # type: List[_ProcessSubFrame]
+
+    # When starting a pipeline in the foreground, we need to pass a handle to it
+    # through the evaluation of the last node back to ourselves for execution.
+    # We use this handle to make sure any processes forked for the last part of
+    # the pipeline are placed into the same process group as the rest of the
+    # pipeline. Since there is, by design, only ever one foreground pipeline and
+    # any pipelines started within subshells run in their parent's process
+    # group, we only need one pointer here, not some collection.
+    self.fg_pipeline = None  # type: Optional[process.Pipeline]
 
   def CheckCircularDeps(self):
     # type: () -> None
@@ -286,6 +295,12 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
+      if self.fg_pipeline is not None:
+        p.AddStateChange(process.SetProcessGroup(posix.getpgid(self.fg_pipeline.pids[0])))
+        self.fg_pipeline = None # clear to avoid confusion in subshells
+      elif self.job_state.JobControlEnabled():
+        p.AddStateChange(process.SetProcessGroup(0))
+
       status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
 
       # this is close to a "leaf" for errors
@@ -319,7 +334,7 @@ class ShellExecutor(vm._Executor):
 
     if UP_node.tag_() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
-      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
+      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
       for child in node.children:
         p = self._MakeProcess(child)
         p.Init_ParentPipeline(pi)
@@ -337,6 +352,9 @@ class ShellExecutor(vm._Executor):
       # If we haven't called Register yet, then we won't know who to notify.
 
       p = self._MakeProcess(node)
+      if self.job_state.JobControlEnabled():
+        p.AddStateChange(process.SetProcessGroup(0))
+
       pid = p.StartProcess(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
       self.job_state.AddJob(p)  # show in 'jobs' list
@@ -345,7 +363,7 @@ class ShellExecutor(vm._Executor):
   def RunPipeline(self, node, status_out):
     # type: (command__Pipeline, CommandStatus) -> None
 
-    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok())
+    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
     self.job_state.AddPipeline(pi)
 
     # initialized with CommandStatus.CreateNull()
@@ -369,12 +387,19 @@ class ShellExecutor(vm._Executor):
     pipe_spids.append(location.SpanForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
-      status_out.pipe_status = pi.RunPipeline(self.waiter, self.fd_state)
+      pi.StartPipeline(self.waiter)
+      self.fg_pipeline = pi
+      status_out.pipe_status = pi.RunLastPart(self.waiter, self.fd_state)
+      self.fg_pipeline = None # clear in case we didn't end up forking
+
     status_out.pipe_spids = pipe_spids
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
+    if self.job_state.JobControlEnabled():
+      p.AddStateChange(process.SetProcessGroup(0))
+
     return p.RunProcess(self.waiter, trace.ForkWait())
 
   def RunCommandSub(self, cs_part):
@@ -409,6 +434,8 @@ class ShellExecutor(vm._Executor):
 
     p = self._MakeProcess(node,
                           inherit_errexit=self.exec_opts.inherit_errexit())
+    if self.job_state.JobControlEnabled():
+      p.AddStateChange(process.SetProcessGroup(posix.getpgid(0)))
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
@@ -531,6 +558,9 @@ class ShellExecutor(vm._Executor):
       raise AssertionError()
 
     p.AddStateChange(redir)
+
+    if self.job_state.JobControlEnabled():
+      p.AddStateChange(process.SetProcessGroup(0))
 
     # Fork, letting the child inherit the pipe file descriptors.
     p.StartProcess(trace.ProcessSub())

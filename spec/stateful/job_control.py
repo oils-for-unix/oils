@@ -9,7 +9,7 @@ import sys
 import time
 
 import harness
-from harness import register, stop_process__hack, expect_prompt
+from harness import register, expect_prompt
 from test.spec_lib import log
 
 
@@ -35,7 +35,7 @@ def ctrl_z(sh):
 
 def expect_no_job(sh):
   """Helper function."""
-  if sh.shell_label == 'osh':
+  if 'osh' in sh.shell_label:
     sh.expect('No job to put in the foreground')
   elif sh.shell_label == 'dash':
     sh.expect('.*fg: No current job')
@@ -43,6 +43,13 @@ def expect_no_job(sh):
     sh.expect('.*fg: current: no such job.*')
   else:
     raise AssertionError()
+
+
+def expect_continued(sh):
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+  else:
+    sh.expect('cat')
 
 
 @register()
@@ -70,10 +77,7 @@ def bug_1004(sh):
     # DIFFERENT TERMINAL.
     subprocess.call(['ps', '-o', 'pid,ppid,pgid,sid,tpgid,comm'])
 
-  if debug:
-    ctrl_z(sh)
-  else:
-    stop_process__hack('cat')
+  ctrl_z(sh)
 
   sh.expect('.*Stopped.*')
 
@@ -83,7 +87,7 @@ def bug_1004(sh):
   expect_prompt(sh)
 
   sh.sendline('fg')
-  if sh.shell_label == 'osh':
+  if 'osh' in sh.shell_label:
     sh.expect(r'Continue PID \d+')
   else:
     sh.expect('cat')
@@ -133,10 +137,7 @@ def bug_1005(sh):
   sh.sendline('sleep 10')
 
   time.sleep(0.1)
-  if 1:  # TODO: remove hack for OSH
-    stop_process__hack('sleep')
-  else:
-    ctrl_z(sh)
+  ctrl_z(sh)
 
   sh.expect(r'.*Stopped.*')
 
@@ -154,10 +155,7 @@ def bug_1005_wait_n(sh):
   sh.sendline('sleep 10')
 
   time.sleep(0.1)
-  if 1:  # TODO: remove hack for OSH
-    stop_process__hack('sleep')
-  else:
-    ctrl_z(sh)
+  ctrl_z(sh)
 
   sh.expect(r'.*Stopped.*')
 
@@ -175,10 +173,7 @@ def stopped_process(sh):
 
   time.sleep(0.1)  # seems necessary
 
-  if 0:
-    ctrl_z(sh)
-  else:
-    stop_process__hack('cat')
+  ctrl_z(sh)
 
   sh.expect('.*Stopped.*')
 
@@ -187,7 +182,7 @@ def stopped_process(sh):
 
   sh.sendline('fg')
 
-  if sh.shell_label == 'osh':
+  if 'osh' in sh.shell_label:
     sh.expect(r'Continue PID \d+')
   else:
     sh.expect('cat')
@@ -209,7 +204,6 @@ def stopped_pipeline(sh):
   time.sleep(0.1)  # seems necessary
 
   ctrl_z(sh)
-  # stop_process__hack doesn't work here
 
   sh.expect('.*Stopped.*')
 
@@ -218,10 +212,33 @@ def stopped_pipeline(sh):
 
   sh.sendline('fg')
 
-  if sh.shell_label == 'osh':
+  if 'osh' in sh.shell_label:
     sh.expect(r'Continue PID \d+')
   else:
     sh.expect('cat')
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+  sh.sendline('fg')
+  expect_no_job(sh)
+
+
+@register()
+def cycle_process_bg_fg(sh):
+  'Suspend and resume a process several times'
+  expect_prompt(sh)
+
+  sh.sendline('cat')
+  time.sleep(0.1)  # seems necessary
+
+  for _ in range(3):
+    ctrl_z(sh)
+    sh.expect('.*Stopped.*')
+    sh.sendline('')  # needed for dash for some reason
+    expect_prompt(sh)
+    sh.sendline('fg')
+    expect_continued(sh)
 
   ctrl_c(sh)
   expect_prompt(sh)

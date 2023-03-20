@@ -127,14 +127,15 @@ class ProcessTest(unittest.TestCase):
     cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena, ext_prog=self.ext_prog)
     print('BEFORE', os.listdir('/dev/fd'))
 
-    p = process.Pipeline(False)
+    p = process.Pipeline(False, self.job_state)
     p.Add(self._ExtProc(['ls']))
     p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
     p.Add(self._ExtProc(['sort']))
 
     p.AddLast((cmd_ev, node))
 
-    pipe_status = p.RunPipeline(self.waiter, self.fd_state)
+    p.StartPipeline(self.waiter)
+    pipe_status = p.RunLastPart(self.waiter, self.fd_state)
     log('pipe_status: %s', pipe_status)
 
     print('AFTER', os.listdir('/dev/fd'))
@@ -143,21 +144,22 @@ class ProcessTest(unittest.TestCase):
     cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena, ext_prog=self.ext_prog)
 
     Banner('ls | cut -d . -f 1 | head')
-    p = process.Pipeline(False)
+    p = process.Pipeline(False, self.job_state)
     p.Add(self._ExtProc(['ls']))
     p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
     node = _CommandNode('head', self.arena)
     p.AddLast((cmd_ev, node))
 
-    print(p.RunPipeline(self.waiter, self.fd_state))
+    p.StartPipeline(self.waiter)
+    print(p.RunLastPart(self.waiter, self.fd_state))
 
     # Simulating subshell for each command
     node1 = _CommandNode('ls', self.arena)
     node2 = _CommandNode('head', self.arena)
     node3 = _CommandNode('sort --reverse', self.arena)
 
-    p = process.Pipeline(False)
+    p = process.Pipeline(False, self.job_state)
     p.Add(Process(process.SubProgramThunk(cmd_ev, node1), self.job_state, self.tracer)) 
     p.Add(Process(process.SubProgramThunk(cmd_ev, node2), self.job_state, self.tracer))
     p.Add(Process(process.SubProgramThunk(cmd_ev, node3), self.job_state, self.tracer))
@@ -165,7 +167,8 @@ class ProcessTest(unittest.TestCase):
     last_thunk = (cmd_ev, _CommandNode('cat', self.arena))
     p.AddLast(last_thunk)
 
-    print(p.RunPipeline(self.waiter, self.fd_state))
+    p.StartPipeline(self.waiter)
+    print(p.RunLastPart(self.waiter, self.fd_state))
 
     # TODO: Combine pipelines for other things:
 

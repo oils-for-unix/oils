@@ -625,6 +625,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     trap_state.InitInteractiveShell(display, my_pid)
+    job_state.InitJobControl()
 
     # NOTE: called AFTER _InitDefaultCompletions.
     with state.ctx_ThisDir(mem, rc_path):
@@ -646,6 +647,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     box = [status]
     cmd_ev.MaybeRunExitTrap(box)
     status = box[0]
+
+    # Return the TTY to the original owner before exiting.
+    try:
+      job_state.MaybeReturnTerminal()
+    except error.FatalRuntime as e:
+      # Don't abort the shell on error, just print a message.
+      errfmt.PrettyPrintError(e)
 
     if readline:
       try:
