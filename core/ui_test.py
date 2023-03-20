@@ -27,7 +27,7 @@ class UiTest(unittest.TestCase):
 
     with ui.ctx_Location(errfmt, span_id):
       errfmt.Print_('zero')
-      errfmt.Print_('zero', blame_loc=loc.span(spid1))
+      errfmt.Print_('zero', blame_loc=loc.Span(spid1))
 
 
 if __name__ == '__main__':
