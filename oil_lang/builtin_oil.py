@@ -160,7 +160,7 @@ class Append(_Builtin):
           val.obj.extend(arg_r.Rest())
           ok = True
     if not ok:
-      self.errfmt.Print_("%r isn't an array" % var_name, span_id=var_spid)
+      self.errfmt.Print_("%r isn't an array" % var_name, blame_loc=loc.Span(var_spid))
       return 1
 
     return 0
