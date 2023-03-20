@@ -823,17 +823,6 @@ class Job(object):
     raise NotImplementedError()
 
 
-def _setpgid(pid, pgrp):
-  # type: (int, int) -> None
-  if pgrp == -1:
-    pgrp = pid
-
-  try:
-    posix.setpgid(pid, pgrp)
-  except OSError as e:
-    print_stderr('osh: Failed to set process group for PID %d to %d: %s' % (pid, pgrp, pyutil.strerror(e)))
-
-
 class Process(Job):
   """A process to run.
 
@@ -1088,11 +1077,6 @@ class Pipeline(Job):
       _, last_node = self.last_thunk
       print('  last %s' % last_node)
       print('  pipe_status %s' % self.pipe_status)
-
-  def AddLastPid(self, pid):
-    # type: (int) -> None
-    """Add the PID of the last process to this pipeline's list of children."""
-    self.pids.append(pid)
 
   def Add(self, p):
     # type: (Process) -> None
