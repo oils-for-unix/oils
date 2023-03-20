@@ -310,8 +310,8 @@ class ErrorFormatter(object):
     """Print a hard-coded message with a prefix, and quote code."""
     _PrintWithSpanId(prefix, msg, blame_loc, self.arena, show_code=True)
 
-  def Print_(self, msg): #, span_id=runtime.NO_SPID):
-    # type: (str) -> None
+  def Print_(self, msg, span_id=runtime.NO_SPID):
+    # type: (str, int) -> None
     """Print a hard-coded message, and quote code."""
     span_id = runtime.NO_SPID
     if span_id == runtime.NO_SPID:
