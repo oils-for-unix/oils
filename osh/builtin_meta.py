@@ -102,7 +102,7 @@ class Source(vm._Builtin):
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:
-      self.errfmt.PrintLoc_('source %r failed: %s' % (path, pyutil.strerror(e)),
+      self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror(e)),
                          blame_loc=loc.Span(cmd_val.arg_spids[1]))
       return 1
 
@@ -198,10 +198,10 @@ class Builtin(vm._Builtin):
       span_id = cmd_val.arg_spids[1]
       if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
         # NOTE: There's a similar restriction for 'command'
-        self.errfmt.PrintLoc_("Can't run assignment builtin recursively",
+        self.errfmt.Print_("Can't run assignment builtin recursively",
                           blame_loc=loc.Span(span_id))
       else:
-        self.errfmt.PrintLoc_("%r isn't a shell builtin" % name, blame_loc=loc.Span(span_id))
+        self.errfmt.Print_("%r isn't a shell builtin" % name, blame_loc=loc.Span(span_id))
       return 1
 
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],

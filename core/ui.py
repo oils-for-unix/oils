@@ -310,18 +310,11 @@ class ErrorFormatter(object):
     """Print a hard-coded message with a prefix, and quote code."""
     _PrintWithSpanId(prefix, msg, blame_loc, self.arena, show_code=True)
 
-  def Print_(self, msg, span_id=runtime.NO_SPID):
-    # type: (str, int) -> None
-    """Print a hard-coded message, and quote code."""
-    if span_id == runtime.NO_SPID:
-      span_id = self.CurrentLocation()
-    _PrintWithSpanId('', msg, loc.Span(span_id), self.arena, show_code=True)
-
-  def PrintLoc_(self, msg, blame_loc=None):
+  def Print_(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
     if not blame_loc:
         blame_loc = loc.Missing()
-    self.Print_(msg, location.GetSpanId(blame_loc))
+    _PrintWithSpanId('', msg, blame_loc, self.arena, show_code=True)
 
   def PrintMessage(self, msg):
     # type: (str) -> None

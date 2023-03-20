@@ -1670,7 +1670,7 @@ class CommandEvaluator(object):
           # We need a flag.
 
           # Invalid control flow
-          self.errfmt.PrintLoc_(
+          self.errfmt.Print_(
               "Loop and control flow can't be in different processes",
               blame_loc=e.token)
           is_fatal = True
@@ -1793,7 +1793,7 @@ class CommandEvaluator(object):
               location.LName(sig.rest.tval), leftover, scope_e.LocalOnly)
         else:
           if n_args > n_params:
-            self.errfmt.PrintLoc_(
+            self.errfmt.Print_(
                 "proc %r expected %d arguments, but got %d" %
                 (proc.name, n_params, n_args), blame_loc=loc.Span(arg0_spid))
             # This should be status 2 because it's like a usage error.
@@ -1865,7 +1865,7 @@ class CommandEvaluator(object):
     except vm.ControlFlow as e:
       # shouldn't be able to exit the shell from a completion hook!
       # TODO: Avoid overwriting the prompt!
-      self.errfmt.PrintLoc_('Attempted to exit from completion hook.',
+      self.errfmt.Print_('Attempted to exit from completion hook.',
                          blame_loc=e.token)
 
       status = 1

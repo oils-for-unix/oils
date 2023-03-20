@@ -235,7 +235,7 @@ class Trap(vm._Builtin):
         sig_key = str(sig_num)
 
     if sig_key is None:
-      self.errfmt.PrintLoc_("Invalid signal or hook %r" % sig_spec,
+      self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
                          blame_loc=loc.Span(cmd_val.arg_spids[2]))
       return 1
 
@@ -271,7 +271,7 @@ class Trap(vm._Builtin):
     if sig_num != signal_def.NO_SIGNAL:
       # For signal handlers, the traps dictionary is used only for debugging.
       if sig_num in (SIGKILL, SIGSTOP):
-        self.errfmt.PrintLoc_("Signal %r can't be handled" % sig_spec,
+        self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
                            blame_loc=loc.Span(sig_spid))
         # Other shells return 0, but this seems like an obvious error
         return 1

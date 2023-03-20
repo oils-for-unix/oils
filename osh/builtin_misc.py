@@ -598,7 +598,7 @@ class Cd(vm._Builtin):
 
     err_num = pyos.Chdir(real_dest_dir)
     if err_num != 0:
-      self.errfmt.PrintLoc_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
+      self.errfmt.Print_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
                          blame_loc=loc.Span(arg_spid))
       return 1
 
@@ -672,7 +672,7 @@ class Pushd(vm._Builtin):
     dest_dir = os_path.abspath(dir_arg)
     err_num = pyos.Chdir(dest_dir)
     if err_num != 0:
-      self.errfmt.PrintLoc_("pushd: %r: %s" % (dest_dir, posix.strerror(err_num)),
+      self.errfmt.Print_("pushd: %r: %s" % (dest_dir, posix.strerror(err_num)),
                          blame_loc=loc.Span(dir_arg_spid))
       return 1
 
@@ -831,7 +831,7 @@ class Help(vm._Builtin):
 
       # 3. This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
-      self.errfmt.PrintLoc_('no help topics match %r' % topic,
+      self.errfmt.Print_('no help topics match %r' % topic,
                          blame_loc=loc.Span(blame_spid))
       return 1
 

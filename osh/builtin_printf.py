@@ -214,7 +214,7 @@ class Printf(vm._Builtin):
             except ValueError:
               if width_spid == runtime.NO_SPID:
                 width_spid = part.width.span_id
-              self.errfmt.PrintLoc_("printf got invalid width %r" % width_str,
+              self.errfmt.Print_("printf got invalid width %r" % width_str,
                                  blame_loc=loc.Span(width_spid))
               return 1
 
@@ -242,7 +242,7 @@ class Printf(vm._Builtin):
             except ValueError:
               if precision_spid == runtime.NO_SPID:
                 precision_spid = part.precision.span_id
-              self.errfmt.PrintLoc_(
+              self.errfmt.Print_(
                   'printf got invalid precision %r' % precision_str,
                   blame_loc=loc.Span(precision_spid))
               return 1
@@ -314,7 +314,7 @@ class Printf(vm._Builtin):
 
               else:
                 blame_spid = word_spid if has_arg else part.type.span_id
-                self.errfmt.PrintLoc_('printf expected an integer, got %r' % s,
+                self.errfmt.Print_('printf expected an integer, got %r' % s,
                                    blame_loc=loc.Span(blame_spid))
                 return 1
 

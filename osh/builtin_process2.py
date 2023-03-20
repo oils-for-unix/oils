@@ -162,7 +162,7 @@ class Wait(vm._Builtin):
 
       job = self.job_state.JobFromPid(pid)
       if job is None:
-        self.errfmt.PrintLoc_("%d isn't a child of this shell" % pid,
+        self.errfmt.Print_("%d isn't a child of this shell" % pid,
                            blame_loc=loc.Span(span_id))
         return 127
 

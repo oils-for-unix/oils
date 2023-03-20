@@ -93,7 +93,7 @@ class Alias(vm._Builtin):
       if alias_exp is None:  # if we get a plain word without, print alias
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
-          self.errfmt.PrintLoc_('No alias named %r' % name,
+          self.errfmt.Print_('No alias named %r' % name,
                              blame_loc=loc.Span(cmd_val.arg_spids[i]))
           status = 1
         else:
@@ -125,7 +125,7 @@ class UnAlias(vm._Builtin):
       if name in self.aliases:
         mylib.dict_erase(self.aliases, name)
       else:
-        self.errfmt.PrintLoc_('No alias named %r' % name,
+        self.errfmt.Print_('No alias named %r' % name,
                            blame_loc=loc.Span(cmd_val.arg_spids[i]))
         status = 1
     return status
@@ -628,14 +628,14 @@ class Use(vm._Builtin):
         if actual == expected:
           return 0  # OK
         else:
-          self.errfmt.PrintLoc_(
+          self.errfmt.Print_(
               'Expected dialect %r, got %r' % (expected, actual),
               blame_loc=loc.Span(e_spid))
 
           return 1
       else:
         # Not printing expected value
-        self.errfmt.PrintLoc_('Expected dialect %r' % expected, blame_loc=loc.Span(e_spid))
+        self.errfmt.Print_('Expected dialect %r' % expected, blame_loc=loc.Span(e_spid))
         return 1
 
     # 'use bin' can be used for static analysis.  Although could it also

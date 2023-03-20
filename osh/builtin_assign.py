@@ -462,7 +462,7 @@ class Unset(vm._Builtin):
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
       msg = e.UserErrorString()
-      self.errfmt.PrintLoc_(msg, blame_loc=loc.Span(spid))
+      self.errfmt.Print_(msg, blame_loc=loc.Span(spid))
       return False
 
     if proc_fallback and not found:
