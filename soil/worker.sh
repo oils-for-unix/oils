@@ -166,11 +166,10 @@ EOF
 interactive-tasks() {
   ### Print tasks for the 'interactive' build
 
-  # TODO: make different indices for stateful tests
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
 py-all-and-ninja    soil/worker.sh py-all-and-ninja              -
-job-control         test/job-control.sh soil-run                 _tmp/job-control/index.html
+process-table       test/process-table.sh soil-run               _tmp/process-table/index.html
 stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
 EOF
 }

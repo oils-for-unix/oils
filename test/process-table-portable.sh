@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# test/job-control-portable.sh: helper for job-control.sh.
+# test/process-table-portable.sh: helper for process-table.sh.
 #
 # This is a portable shell script, since it has to run under dash, mksh, etc.
 #
 # Usage:
-#   test/job-control-portable.sh <function name>
+#   test/process-table-portable.sh <function name>
 
 setup() {
   mkdir -p _tmp
@@ -128,7 +128,7 @@ run_snippet() {
 
   echo "run_snippet $sh $snippet $interactive"
 
-  local tmp=_tmp/job-control-ps.txt
+  local tmp=_tmp/process-table.txt
 
   if test $interactive = 'yes'; then
     # Run shell with -i, but source the code first.
@@ -147,7 +147,7 @@ run_snippet() {
     $sh $0 show_process_table $sh $snippet > $tmp
   fi
 
-  test/assert_process_table.py $$ $sh $snippet $interactive < $tmp
+  test/process_table.py $$ $sh $snippet $interactive < $tmp
   local status=$?
 
   cat $tmp

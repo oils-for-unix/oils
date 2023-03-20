@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Tests for job control.
+# Process table tests for job control.
 #
 # Usage:
-#   test/job-control.sh <function name>
+#   test/process-table .sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -16,7 +16,7 @@ source benchmarks/common.sh  # html-head
 source test/common.sh
 source test/tsv-lib.sh  # time-tsv
 
-readonly BASE_DIR=_tmp/job-control
+readonly BASE_DIR=_tmp/process-table
 
 readonly OSH_CPP=_bin/cxx-dbg/osh
 readonly -a JC_SHELLS=(bash dash mksh zsh bin/osh $OSH_CPP)
@@ -45,7 +45,7 @@ run-tasks() {
     # Suppress failure, since exit code is recorded
     time-tsv -o $tsv_out --append \
       --field $sh --field $snippet --field $interactive -- \
-      test/job-control-portable.sh run_snippet $sh $snippet $interactive || true
+      test/process-table-portable.sh run_snippet $sh $snippet $interactive || true
   done
 }
 
@@ -109,7 +109,7 @@ make-report() {
 }
 
 soil-run() {
-  test/job-control-portable.sh setup
+  test/process-table-portable.sh setup
 
   ninja $OSH_CPP
 
