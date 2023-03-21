@@ -199,7 +199,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
   return s
 
 
-def _PrintWithSpanId(prefix, msg, blame_loc, arena, show_code):
+def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
   # type: (str, str, loc_t, Arena, bool) -> None
   """
   Should we have multiple error formats:
@@ -308,19 +308,20 @@ class ErrorFormatter(object):
   def PrefixPrint(self, msg, prefix, blame_loc):
     # type: (str, str, loc_t) -> None
     """Print a hard-coded message with a prefix, and quote code."""
-    _PrintWithSpanId(prefix, msg, blame_loc, self.arena, show_code=True)
+    _PrintWithLocation(prefix, msg, blame_loc, self.arena, show_code=True)
 
   def Print_(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
     if not blame_loc:
         blame_loc = loc.Missing()
-    _PrintWithSpanId('', msg, blame_loc, self.arena, show_code=True)
+    _PrintWithLocation('', msg, blame_loc, self.arena, show_code=True)
 
-  def PrintMessage(self, msg):
-    # type: (str) -> None
+  def PrintMessage(self, msg, blame_loc=None):
+    # type: (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
-    span_id = self.CurrentLocation()
-    _PrintWithSpanId('', msg, loc.Span(span_id), self.arena, show_code=False)
+    if not blame_loc:
+        blame_loc = loc.Missing()
+    _PrintWithLocation('', msg, blame_loc, self.arena, show_code=False)
 
   def StderrLine(self, msg):
     # type: (str) -> None
@@ -345,20 +346,20 @@ class ErrorFormatter(object):
     # that is OK.
     # Problem: the column for Eof could be useful.
 
-    _PrintWithSpanId(prefix, msg, err.location, self.arena, True)
+    _PrintWithLocation(prefix, msg, err.location, self.arena, True)
 
   def PrintErrExit(self, err, pid):
     # type: (error.ErrExit, int) -> None
 
     # TODO:
     # - Don't quote code if you already quoted something on the same line?
-    #   - _PrintWithSpanId calculates the line_id.  So you need to remember that?
+    #   - _PrintWithLocation calculates the line_id.  So you need to remember that?
     #   - return it here?
     prefix = 'errexit PID %d: ' % pid
     #self.PrettyPrintError(err, prefix=prefix)
 
     msg = err.UserErrorString()
-    _PrintWithSpanId(prefix, msg, err.location, self.arena, err.show_code)
+    _PrintWithLocation(prefix, msg, err.location, self.arena, err.show_code)
 
 
 def PrintAst(node, flag):
