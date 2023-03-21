@@ -9,13 +9,14 @@ set -o errexit
 
 source test/common.sh
 
-# TODO: Put parse-all and run-all in test/oil-language.sh?
+# TODO: Rename to ysh
+OIL=${OIL:-'bin/oil'}
 
 # This doesn't distinguish if they should parse with osh or Oil though!
 
 parse-one() {
   set +o errexit
-  bin/osh -n "$@"
+  $OSH -n "$@"
   if test $? -ne 0; then return 255; fi  # make xargs quit
 }
 
@@ -24,7 +25,21 @@ test-parse-osh() {
     | xargs -n 1 -- $0 parse-one
 }
 
+DISABLED-osh-cpp() {
+  # We get buffer overflow here?
+  local osh=_bin/cxx-asan/osh
+
+  # Assertion failed
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  OSH=$osh test-parse-osh
+}
+
 test-run-osh() {
+  ### Run programs with OSH
+
   for prog in oil_lang/testdata/*.{sh,osh}; do
     echo $prog
 
@@ -41,14 +56,16 @@ test-run-osh() {
     fi
 
     echo ---
-    bin/osh $prog
+    $OSH $prog
   done
 }
 
 test-run-oil() {
+  ### Run programs with Oil / YSH
+
   for prog in oil_lang/testdata/*.oil; do
     echo ---
-    bin/oil $prog all
+    $OIL $prog all
   done
 }
 
