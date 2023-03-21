@@ -21,8 +21,20 @@ namespace parse {
 
 class ParseError {
  public:
-  ParseError(Str* msg, int type_, syntax_asdl::Token* tok);
+  ParseError(Str* msg, int type_, syntax_asdl::Token* tok)
+      : header_(obj_header()) {
+  }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ParseError));
+  }
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(ParseError, msg)) |
+           maskbit(offsetof(ParseError, tok));
+  }
+
+  GC_OBJ(header_);
   Str* msg;
   syntax_asdl::Token* tok;
   int type;
@@ -33,15 +45,25 @@ class Parser {
   // In C, the grammar is a constant, so the grammar arg is ignored.  (We can't
   // get easily rid of it because the call site has to type check and run in
   // Python.)
-  explicit Parser(grammar::Grammar* grammar) {
+  explicit Parser(grammar::Grammar* grammar) : header_(obj_header()) {
   }
   void setup(int start);
   bool addtoken(int typ, syntax_asdl::Token* opaque, int ilabel);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ParseError));
+  }
+
+  static constexpr uint16_t field_mask() {
+    return maskbit(offsetof(Parser, rootnode));
+  }
 
   // Probably should delete these
   // void shift(int typ, syntax_asdl::Token* opaque, int newstate);
   // void push(int typ, syntax_asdl::Token* opaque, Tuple2<List<List<Tuple2<int,
   // int>*>*>*, Dict<int, int>*>* newdfa, int newstate);  void pop();
+
+  GC_OBJ(header_);
 
   // grammar::Grammar* grammar;
   pnode::PNode* rootnode;
