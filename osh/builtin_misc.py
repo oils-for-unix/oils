@@ -16,7 +16,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     span_e, cmd_value__Argv, value, scope_e
 )
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, loc
 from asdl import runtime
 from core import alloc
 from core import error
@@ -599,7 +599,7 @@ class Cd(vm._Builtin):
     err_num = pyos.Chdir(real_dest_dir)
     if err_num != 0:
       self.errfmt.Print_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
-                         span_id=arg_spid)
+                         blame_loc=loc.Span(arg_spid))
       return 1
 
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
@@ -673,7 +673,7 @@ class Pushd(vm._Builtin):
     err_num = pyos.Chdir(dest_dir)
     if err_num != 0:
       self.errfmt.Print_("pushd: %r: %s" % (dest_dir, posix.strerror(err_num)),
-                         span_id=dir_arg_spid)
+                         blame_loc=loc.Span(dir_arg_spid))
       return 1
 
     self.dir_stack.Push(dest_dir)
@@ -832,7 +832,7 @@ class Help(vm._Builtin):
       # 3. This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
       self.errfmt.Print_('no help topics match %r' % topic,
-                         span_id=blame_spid)
+                         blame_loc=loc.Span(blame_spid))
       return 1
 
     print(contents)

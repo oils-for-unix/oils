@@ -1680,7 +1680,7 @@ class CommandEvaluator(object):
           # Invalid control flow
           self.errfmt.Print_(
               "Loop and control flow can't be in different processes",
-              span_id=e.token.span_id)
+              blame_loc=e.token)
           is_fatal = True
           # All shells exit 0 here.  It could be hidden behind
           # strict_control_flow if the incompatibility causes problems.
@@ -1803,7 +1803,7 @@ class CommandEvaluator(object):
           if n_args > n_params:
             self.errfmt.Print_(
                 "proc %r expected %d arguments, but got %d" %
-                (proc.name, n_params, n_args), span_id=arg0_spid)
+                (proc.name, n_params, n_args), blame_loc=loc.Span(arg0_spid))
             # This should be status 2 because it's like a usage error.
             return 2
 
@@ -1874,7 +1874,7 @@ class CommandEvaluator(object):
       # shouldn't be able to exit the shell from a completion hook!
       # TODO: Avoid overwriting the prompt!
       self.errfmt.Print_('Attempted to exit from completion hook.',
-                         span_id=e.token.span_id)
+                         blame_loc=e.token)
 
       status = 1
     # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback

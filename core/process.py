@@ -23,7 +23,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, trace, trace_t
 )
 from _devbuild.gen.syntax_asdl import (
-    redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
+    loc, redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
 from core import dev
 from core import pyutil
@@ -205,14 +205,14 @@ class FdState(object):
 
     return ok
 
-  def _PushDup(self, fd1, loc):
+  def _PushDup(self, fd1, blame_loc):
     # type: (int, redir_loc_t) -> int
     """Save fd2 in a higher range, and dup fd1 onto fd2.
 
     Returns whether F_DUPFD/dup2 succeeded, and the new descriptor.
     """
-    UP_loc = loc
-    if loc.tag_() == redir_loc_e.VarName:
+    UP_loc = blame_loc
+    if blame_loc.tag_() == redir_loc_e.VarName:
       fd2_name = cast(redir_loc__VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
@@ -226,7 +226,7 @@ class FdState(object):
 
       self._WriteFdToMem(fd2_name, new_fd)
 
-    elif loc.tag_() == redir_loc_e.Fd:
+    elif blame_loc.tag_() == redir_loc_e.Fd:
       fd2 = cast(redir_loc__Fd, UP_loc).fd
 
       if fd1 == fd2:
@@ -265,19 +265,19 @@ class FdState(object):
 
     return new_fd
 
-  def _PushCloseFd(self, loc):
+  def _PushCloseFd(self, blame_loc):
     # type: (redir_loc_t) -> bool
     """For 2>&-"""
     # exec {fd}>&- means close the named descriptor
 
-    UP_loc = loc
-    if loc.tag_() == redir_loc_e.VarName:
+    UP_loc = blame_loc
+    if blame_loc.tag_() == redir_loc_e.VarName:
       fd_name = cast(redir_loc__VarName, UP_loc).name
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD:
         return False
 
-    elif loc.tag_() == redir_loc_e.Fd:
+    elif blame_loc.tag_() == redir_loc_e.Fd:
       fd = cast(redir_loc__Fd, UP_loc).fd
 
     else:
@@ -325,7 +325,7 @@ class FdState(object):
         except OSError as e:
           self.errfmt.Print_(
               "Can't open %r: %s" % (arg.filename, pyutil.strerror(e)),
-              span_id=r.op_spid)
+              blame_loc=loc.Span(r.op_spid))
           raise  # redirect failed
 
         new_fd = self._PushDup(open_fd, r.loc)
@@ -629,7 +629,7 @@ class ExternalProgram(object):
 
       self.errfmt.Print_(
           "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
-          span_id=argv0_spid)
+          blame_loc=loc.Span(argv0_spid))
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.

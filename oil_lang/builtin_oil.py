@@ -16,7 +16,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, scope_e, Proc, cmd_value__Assign
 )
 from _devbuild.gen.syntax_asdl import (
-    sh_lhs_expr, command_e, BraceGroup, 
+    loc, sh_lhs_expr, command_e, BraceGroup, 
 )
 from core import error
 from core.pyerror import log, e_usage
@@ -83,7 +83,7 @@ class Pp(_Builtin):
         cell = self.mem.GetCell(name)
         if cell is None:
           self.errfmt.Print_("Couldn't find a variable named %r" % name,
-                             span_id=spids[i])
+                             blame_loc=loc.Span(spids[i]))
           status = 1
         else:
           sys.stdout.write('%s = ' % name)
@@ -160,7 +160,7 @@ class Append(_Builtin):
           val.obj.extend(arg_r.Rest())
           ok = True
     if not ok:
-      self.errfmt.Print_("%r isn't an array" % var_name, span_id=var_spid)
+      self.errfmt.Print_("%r isn't an array" % var_name, blame_loc=loc.Span(var_spid))
       return 1
 
     return 0
@@ -296,7 +296,7 @@ class Json(vm._Builtin):
 
         obj = yajl.load(_STDIN)
       except ValueError as e:
-        self.errfmt.Print_('json read: %s' % e, span_id=action_spid)
+        self.errfmt.Print_('json read: %s' % e, blame_loc=loc.Span(action_spid))
         return 1
 
       # TODO: use token directly
