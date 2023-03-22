@@ -71,7 +71,7 @@ def _DefaultValue(typ, mypy_type):
 
     if type_name == 'Optional':
       child_typ = typ.children[0]
-      return 'cast(%s, None)' % mypy_type
+      return "cast('%s', None)" % mypy_type
 
     if type_name == 'List':
       return "[] if alloc_lists else cast('%s', None)" % mypy_type
