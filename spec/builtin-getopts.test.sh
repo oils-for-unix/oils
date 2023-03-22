@@ -316,3 +316,32 @@ status=1
 ## END
 ## OK dash status: 2
 ## OK dash stdout-json: ""
+
+
+#### getopts bug #1523
+
+$SH $REPO_ROOT/spec/testdata/getopts-1523.sh -abcdef -abcde
+
+## status: 1
+## STDOUT:
+opt:a
+opt:b
+opt:c arg:def
+opt:a
+opt:b
+opt:c arg:de
+## END
+
+#### More regression for #1523
+
+$SH $REPO_ROOT/spec/testdata/getopts-1523.sh -abcdef -xyz
+
+## status: 1
+## STDOUT:
+opt:a
+opt:b
+opt:c arg:def
+err:?
+err:?
+err:?
+## END

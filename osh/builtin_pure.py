@@ -329,8 +329,9 @@ def _ParseOptSpec(spec_str):
 class GetOptsState(object):
   """State persisted across invocations.
 
-  TODO: Handle arg smooshing behavior here too.
+  This would be simpler in GetOpts.
   """
+
   def __init__(self, mem, errfmt):
     # type: (Mem, ui.ErrorFormatter) -> None
     self.mem = mem
@@ -352,6 +353,9 @@ class GetOptsState(object):
   def GetArg(self, argv):
     # type: (List[str]) -> Optional[str]
     """Get the value of argv at OPTIND.  Returns None if it's out of range."""
+
+    #log('_optind %d flag_pos %d', self._optind, self.flag_pos)
+
     optind = self._OptInd()
     if optind == -1:
       return None
@@ -370,6 +374,7 @@ class GetOptsState(object):
     # Note: bash-completion uses a *local* OPTIND !  Not global.
     assert self._optind != -1
     state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
+    self.flag_pos = 1
 
   def SetArg(self, optarg):
     # type: (str) -> None
@@ -444,6 +449,7 @@ class GetOpts(vm._Builtin):
     self.mem = mem
     self.errfmt = errfmt
 
+    # TODO: state could just be in this object
     self.my_state = GetOptsState(mem, errfmt)
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
@@ -465,7 +471,7 @@ class GetOpts(vm._Builtin):
       self.spec_cache[spec_str] = spec
 
     user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
-    #util.log('user_argv %s', user_argv)
+    #log('user_argv %s', user_argv)
     status, flag_char = _GetOpts(spec, user_argv, self.my_state, self.errfmt)
 
     if match.IsValidVarName(var_name):
