@@ -126,6 +126,7 @@ def _DefaultValue(typ):
       # each enum, but it doesn't seem worth it.
       return '%s_e.%s' % (type_name, sum_type.types[0].name)
 
+    # CompoundSum or Product type
     return 'None'
 
   else:
@@ -338,34 +339,39 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     #
 
     args = [f.name for f in ast_node.fields]
-    args.extend('%s=None' % a.name for a in attributes)
 
     self.Emit('  def __init__(self, %s):' % ', '.join(args))
 
     arg_types = []
-    for f in all_fields:
+    default_vals = []
+    for f in ast_node.fields:
       t = _MyPyType(f.typ)
+
+      if f in attributes:
+        # TODO: Make it Optional, and the default is just None
+        pass
+
       if not self.py_init_n and _AddOptional(f.typ):
         t = 'Optional[%s]' % t
       arg_types.append(t)
+
+      d_str = _DefaultValue(f.typ)
+      default_vals.append(d_str)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
 
     if not all_fields:
       self.Emit('    pass')  # for types like NoOp
 
-    # TODO: Use the field_desc rather than the parse tree, for consistency.
-    for f in all_fields:
-      expr_str = ''
-
-      # Special initialization for attributes .spids=[] -- only in
-      # syntax.asdl
-      if f in attributes:
-        assert f.typ.IsList(), f
-        expr_str = ' if %s is not None else []' % f.name
-
+    for f in ast_node.fields:
       # don't wrap the type comment
-      self.Emit('    self.%s = %s%s' % (f.name, f.name, expr_str), reflow=False)
+      self.Emit('    self.%s = %s' % (f.name, f.name), reflow=False)
+
+    # Initialize attributes
+    for f in attributes:
+      assert f.typ.IsList(), f
+      t = _MyPyType(f.typ)
+      self.Emit('    self.%s = []  # type: %s' % (f.name, t), reflow=False)
 
     self.Emit('')
 
@@ -375,11 +381,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('  @staticmethod')
       self.Emit('  def CreateNull(alloc_lists=False):')
       self.Emit('    # type: () -> %s' % class_name)
-      default_vals = []
-      for f in all_fields:
-        d_str = _DefaultValue(f.typ)
-        default_vals.append(d_str)
-
       self.Emit('    return %s(%s)' % (class_name, ', '.join(default_vals)))
       self.Emit('')
 
