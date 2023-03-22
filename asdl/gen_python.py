@@ -57,48 +57,27 @@ def _MyPyType(typ):
     raise AssertionError()
 
 
-def _AddOptional(typ):
+def _DefaultValue(typ, mypy_type):
+  """Values that the static CreateNull() constructor passes.
+
+  mypy_type is used to cast None, to maintain mypy --strict for ASDL.
+
+  We circumvent the type system on CreateNull().  Then the user is responsible
+  for filling in all the fields.  If they do so, we can rely on it when reading
+  fields at runtime.
   """
-  To determine whether nullptr / None is an allowed initialization, as opposed
-  to false, -1, 0.0, scope_e.First (simple sum).
-  """
-  if isinstance(typ, ast.ParameterizedType):
-    return typ.type_name != 'Optional'
-
-  elif isinstance(typ, ast.NamedType):
-    if typ.resolved:
-      if isinstance(typ.resolved, ast.SimpleSum):
-        return False
-      if isinstance(typ.resolved, ast.Sum):  # includes SimpleSum
-        return True
-      if isinstance(typ.resolved, ast.Product):
-        return True
-      if isinstance(typ.resolved, ast.Use):
-        # TODO: is this correct?
-        return True
-
-    # Primitives aren't heap allocated
-    return False
-
-  else:
-    raise AssertionError()
-
-
-def _DefaultValue(typ):
-  """Values that the static CreateNull() constructor passes."""
-
   if isinstance(typ, ast.ParameterizedType):
     type_name = typ.type_name
 
-    if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
-      return 'None'
-
-    if type_name == 'List':
-      return '[] if alloc_lists else None'
-
     if type_name == 'Optional':
       child_typ = typ.children[0]
-      return 'None'
+      return 'cast(%s, None)' % mypy_type
+
+    if type_name == 'List':
+      return "[] if alloc_lists else cast('%s', None)" % mypy_type
+
+    if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
+      return "cast('%s', None)" % mypy_type
 
     raise AssertionError(type_name)
 
@@ -127,7 +106,7 @@ def _DefaultValue(typ):
       return '%s_e.%s' % (type_name, sum_type.types[0].name)
 
     # CompoundSum or Product type
-    return 'None'
+    return 'cast(%s, None)' % mypy_type
 
   else:
     raise AssertionError()
@@ -345,17 +324,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     arg_types = []
     default_vals = []
     for f in ast_node.fields:
-      t = _MyPyType(f.typ)
+      mypy_type = _MyPyType(f.typ)
+      arg_types.append(mypy_type)
 
-      if f in attributes:
-        # TODO: Make it Optional, and the default is just None
-        pass
-
-      if not self.py_init_n and _AddOptional(f.typ):
-        t = 'Optional[%s]' % t
-      arg_types.append(t)
-
-      d_str = _DefaultValue(f.typ)
+      d_str = _DefaultValue(f.typ, mypy_type)
       default_vals.append(d_str)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
