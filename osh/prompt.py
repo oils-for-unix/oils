@@ -200,7 +200,7 @@ class Evaluator(object):
         ret.append(r.replace('$', '\\$'))
 
       else:
-        raise AssertionError('Invalid token %r' % id_)
+        raise AssertionError('Invalid token %r %r' % (id_, value))
 
     # mismatched brackets, see https://github.com/oilshell/oil/pull/256
     if non_printing != 0:
