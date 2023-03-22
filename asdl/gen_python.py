@@ -87,53 +87,49 @@ def _AddOptional(typ):
 def _DefaultValue(typ):
   """Values that the static CreateNull() constructor passes."""
 
-  default = 'None'
-
   if isinstance(typ, ast.ParameterizedType):
     type_name = typ.type_name
 
     if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
       return 'None'
 
-    elif type_name == 'List':
-      default = '[] if alloc_lists else None'
+    if type_name == 'List':
+      return '[] if alloc_lists else None'
 
-    elif type_name == 'Optional':
+    if type_name == 'Optional':
       child_typ = typ.children[0]
-      default = 'None'
+      return 'None'
 
-    else:
-      raise AssertionError(type_name)
+    raise AssertionError(type_name)
 
-  elif isinstance(typ, ast.NamedType):
+  if isinstance(typ, ast.NamedType):
     type_name = typ.name
 
+    if type_name == 'id':  # hard-coded HACK
+      return '-1'
+
     if type_name == 'int':
-      default = '-1'
+      return '-1'
 
-    elif type_name == 'id':  # hard-coded HACK
-      default = '-1'
+    if type_name == 'bool':
+      return 'False'
 
-    elif type_name == 'bool':
-      default = 'False'
+    if type_name == 'float':
+      return '0.0'  # or should it be NaN?
 
-    elif type_name == 'float':
-      default = '0.0'  # or should it be NaN?
+    if type_name == 'string':
+      return "''"
 
-    elif type_name == 'string':
-      default = "''"
-      pass
-
-    elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+    if isinstance(typ.resolved, ast.SimpleSum):
       sum_type = typ.resolved
       # Just make it the first variant.  We could define "Undef" for
       # each enum, but it doesn't seem worth it.
-      default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+      return '%s_e.%s' % (type_name, sum_type.types[0].name)
+
+    return 'None'
 
   else:
     raise AssertionError()
-
-  return default
 
 
 def _HNodeExpr(abbrev, typ, var_name):

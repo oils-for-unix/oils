@@ -44,4 +44,6 @@ module arith {
   Strings = (string required, string? optional)
 
   Maybes = (Token? op, word? arg)
+
+  OptionalList = (List[word]? words)
 }
