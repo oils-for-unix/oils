@@ -27,10 +27,10 @@ messages-in-stream() {
   my-curl \
     -u "$bot_email:$bot_api_key" \
     -d 'anchor=newest' \
-    -d 'num_before=50' \
+    -d 'num_before=1000' \
     -d 'num_after=0' \
     -d 'apply_markdown=false' \
-    --data-urlencode narrow='[{"operand": "oil-dev", "operator": "stream"}]' \
+    --data-urlencode narrow='[{"operand": "blog-ideas", "operator": "stream"}]' \
     https://oilshell.zulipchat.com/api/v1/messages 
 
     # doesn't work
@@ -49,8 +49,10 @@ print-thread() {
 
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
-  messages-in-stream "$@" | jq -r \
-    '.messages[] | { content: .content, subject: .subject } | select( .subject == "Oil 0.14.2" ) | .content '
+  local needle="Spring 2023 Blog Posts"
+  messages-in-stream "$@" | jq --arg needle "$needle" -r \
+    '.messages[] | { content: .content, subject: .subject } |
+      select( .subject == $needle ) | (.content + "\n\n")'
     #'{ content: .messages[].content, subject: .messages[].subject }'
     #'{ subject: .messages[].subject }'
 }

@@ -25,7 +25,7 @@ readonly SPELLING_PY=$OIL_ROOT/doctools/spelling.py
 readonly BASE_DIR=_tmp/spelling  # relative path
 
 spelling() {
-  PYTHONPATH=. $SPELLING_PY "$@"
+  PYTHONPATH=$OIL_ROOT $SPELLING_PY "$@"
 }
 
 to-ninja() {
@@ -35,7 +35,7 @@ rule text-dump
   description = text-dump $in $out
 
 rule word-split
-  command = cat $in | PYTHONPATH=. '$SPELLING_PY' word-split > $out
+  command = cat $in | PYTHONPATH='"$OIL_ROOT $SPELLING_PY"' word-split > $out
   description = word-split $in $out
 
 '
