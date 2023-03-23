@@ -36,6 +36,24 @@ tarball-demo() {
   $bin osh -n -c 'echo "hello $name"'
 }
 
+measure-build-times() {
+  local variant=${1:-opt}
+
+  mkdir -p _bin
+
+  ./configure
+
+  local out_tsv=_tmp/time-tarball-$variant.tsv
+
+  # Header for functions in build/ninja-rules-cpp.sh
+  benchmarks/time_.py --tsv --out $out_tsv --rusage --print-header --field verb --field out
+
+  time TIME_TSV_OUT=$out_tsv _build/oils.sh '' $variant
+
+  echo
+  cat $out_tsv
+}
+
 #
 # Ninja Wrappers
 #

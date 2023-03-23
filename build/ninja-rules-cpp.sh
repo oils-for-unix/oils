@@ -11,8 +11,9 @@
 #   build/ninja-rules-cpp.sh <function name>
 #
 # Env variables:
-#   CXXFLAGS - additional flags
-#   OIL_NINJA_VERBOSE - show command lines
+#   CXXFLAGS= - additional flags
+#   OIL_NINJA_VERBOSE=1 - show command lines
+#   TIME_TSV_OUT=file - compile_one and link output rows to this TSV file
 
 set -o nounset
 set -o errexit
@@ -247,7 +248,14 @@ compile_one() {
   if test -n "${OIL_NINJA_VERBOSE:-}"; then
     echo '__' "$cxx" $flags -o "$out" -c "$in" >&2
   fi
-  "$cxx" $flags -o "$out" -c "$in"
+
+  # Not using arrays because this is POSIX shell
+  local prefix=''
+  if test -n "${TIME_TSV_OUT:-}"; then
+    prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field compile_one --field $out --"
+  fi
+
+  $prefix "$cxx" $flags -o "$out" -c "$in"
 }
 
 link() {
@@ -263,9 +271,14 @@ link() {
 
   setglobal_cxx $compiler
 
+  local prefix=''
+  if test -n "${TIME_TSV_OUT:-}"; then
+    prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field link --field $out --"
+  fi
+
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  "$cxx" -o "$out" "$@" $link_flags
+  $prefix "$cxx" -o "$out" "$@" $link_flags
 }
 
 compile_and_link() {

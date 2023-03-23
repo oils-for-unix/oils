@@ -238,10 +238,11 @@ cpp-small-tasks() {
 
   cat <<EOF
 dump-versions    soil/worker.sh dump-versions          -
+dump-hardware    soil/worker.sh dump-hardware          -
 build-minimal    build/py.sh minimal                   -
 ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
-oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
+oils-cpp-smoke   build/native.sh soil-run              -
 asan             test/asan.sh soil-run                 -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
@@ -249,6 +250,7 @@ mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
 test-tar         devtools/release-native.sh test-tar   -
+build-times      build/native.sh measure-build-times   -
 EOF
 }
 
