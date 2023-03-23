@@ -154,13 +154,34 @@ main() {
   print('    %s' % ' \\\n    '.join(all_dirs), file=f)
   print('', file=f)
 
-  for src, obj in in_out:
+  do_fork = ''
+
+  for i, (src, obj) in enumerate(in_out):
     obj_quoted = '"%s"' % obj
     objects.append(obj_quoted)
 
+    # Only fork one translation unit that we know to be slow
+    if 'oils_for_unix.mycpp.cc' in src:
+      # There should only be one forked translation unit
+      assert do_fork == ''
+      do_fork = '&' 
+    else:
+      do_fork = ''
+
+    if do_fork:
+      print('  # fork this large translation unit with &', file=f)
     print('  _compile_one "$compiler" "$variant" "" \\', file=f)
-    print('    %s %s' % (src, obj_quoted), file=f)
+    print('    %s %s %s' % (src, obj_quoted, do_fork), file=f)
     print('', file=f)
+
+  print('  # wait for the translation unit before linking', file=f)
+  print('  echo WAIT', file=f)
+  # time -p shows any excess parallelism on 2 cores
+  # example: oils_for_unix.mycpp.cc takes ~8 seconds longer to compile than all
+  # other translation units combined!
+
+  print('  time -p wait', file=f)
+  print('', file=f)
 
   print('  echo "LINK $out"', file=f)
   # note: can't have spaces in filenames
