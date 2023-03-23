@@ -99,13 +99,19 @@ def ShellFunctions(cc_sources, f, argv0):
 
 . build/ninja-rules-cpp.sh
 
+OILS_PARALLEL_BUILD=${OILS_PARALLEL_BUILD:-1}
+
 _compile_one() {
   local src=$4
 
   echo "CXX $src"
 
   # Delegate to function in build/ninja-rules-cpp.sh
-  compile_one "$@"
+  if test "${_do_fork:-}" = 1; then
+    compile_one "$@" &   # we will wait later
+  else
+    compile_one "$@"
+  fi
 }
 
 main() {
@@ -163,15 +169,16 @@ main() {
     # Only fork one translation unit that we know to be slow
     if 'oils_for_unix.mycpp.cc' in src:
       # There should only be one forked translation unit
+      # It can be turned off with OILS_PARALLEL_BUILD= _build/oils
       assert do_fork == ''
-      do_fork = '&' 
+      do_fork = '_do_fork=$OILS_PARALLEL_BUILD' 
     else:
       do_fork = ''
 
     if do_fork:
-      print('  # fork this large translation unit with &', file=f)
-    print('  _compile_one "$compiler" "$variant" "" \\', file=f)
-    print('    %s %s %s' % (src, obj_quoted, do_fork), file=f)
+      print('  # Potentially fork this translation unit with &', file=f)
+    print('  %s _compile_one "$compiler" "$variant" "" \\' % do_fork, file=f)
+    print('    %s %s' % (src, obj_quoted), file=f)
     print('', file=f)
 
   print('  # wait for the translation unit before linking', file=f)
