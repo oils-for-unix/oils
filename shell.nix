@@ -35,7 +35,7 @@ let
     trap 'echo "NOT cleaning up Oil dev build."' EXIT
   '' else ''
     echo "Note: nix-shell will clean up the dev build on exit."
-    trap 'echo "Cleaning up Oil dev build."; "$PWD/build/dev.sh" clean' EXIT
+    trap 'echo "Cleaning up Oil dev build."; "$PWD/build/clean.sh"' EXIT
   '';
 in with pkgs;
 
@@ -125,7 +125,7 @@ in mkShell rec {
       ${test_oil}
     else
       echo "Dev build already exists. If you made changes, run:"
-      echo "    'build/dev.sh clean' and "
+      echo "    'build/clean.sh' and "
       echo "    'build/dev.sh all' or 'build/dev.sh minimal'"
     fi
 
