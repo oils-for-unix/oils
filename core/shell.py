@@ -548,8 +548,28 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   assert home_dir is not None
   rc_path = flag.rcfile
   # mycpp: rewrite of or
+
+  rc_paths = []
+  # TODO: Decide if this should be first or last rc_path (as in: should it overwrite modular includes or not)
   if rc_path is None:
-    rc_path = os_path.join(home_dir, '.config/oil/%src' % lang)
+    rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
+  else:
+    rc_paths.append(rc_path)
+
+  # Experimentally try to load all files in ~/.config/oil/oshrc.d | ~/.config/oil/oilrc.d
+  # TODO: Decide on proper directory, `oil/oshrcd.d` seems ugly
+  # TODO: Add a flag/parameter to manually pass/disable reading the rc_dir
+  rc_dir = None
+  if rc_dir is None:
+    rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
+
+  try:
+      import os # required for listdir
+      rc_files = os.listdir(rc_dir)
+      for line in rc_files:
+          rc_paths.append(os_path.join(rc_dir, line))
+  except (IOError, OSError) as e:
+      pass # No rc_dir is still fine
 
   if flag.headless:
     state.InitInteractive(mem)
@@ -561,11 +581,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     # NOTE: called AFTER _InitDefaultCompletions.
-    with state.ctx_ThisDir(mem, rc_path):
-      try:
-        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
-      except util.UserExit as e:
-        return e.status
+    for rc_path in rc_paths:
+      # NOTE: called AFTER _InitDefaultCompletions.
+      with state.ctx_ThisDir(mem, rc_path):
+        try:
+          SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
+        except util.UserExit as e:
+          return e.status
+
 
     loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
     try:
@@ -628,11 +651,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     job_state.InitJobControl()
 
     # NOTE: called AFTER _InitDefaultCompletions.
-    with state.ctx_ThisDir(mem, rc_path):
-      try:
-        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
-      except util.UserExit as e:
-        return e.status
+    for rc_path in rc_paths:
+      # NOTE: called AFTER _InitDefaultCompletions.
+      with state.ctx_ThisDir(mem, rc_path):
+        try:
+          SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
+        except util.UserExit as e:
+          return e.status
+
 
     assert line_reader is not None
     line_reader.Reset()  # After sourcing startup file, render $PS1
