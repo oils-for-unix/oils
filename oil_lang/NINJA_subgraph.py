@@ -21,7 +21,7 @@ def NinjaGraph(ru):
          command='_bin/shwrap/grammar_gen cpp $in $out_dir',
          description='grammar_gen cpp $in $out_dir')
 
-  n.build(['_gen/oil_lang/grammar_nt.h'], 'grammar-gen', ['oil_lang/grammar.pgen2'],
+  n.build(['_gen/oil_lang/grammar_nt.h', '_gen/oil_lang/grammar_tables.h', '_gen/oil_lang/grammar_tables.cc'], 'grammar-gen', ['oil_lang/grammar.pgen2'],
           implicit=['_bin/shwrap/grammar_gen'],
           variables = [('out_dir', '_gen/oil_lang')],
           )
@@ -29,7 +29,10 @@ def NinjaGraph(ru):
 
   ru.cc_library(
       '//oil_lang/grammar',
-      srcs = [],
-      generated_headers = ['_gen/oil_lang/grammar_nt.h'])
+      srcs = ['_gen/oil_lang/grammar_tables.cc'],
+      generated_headers = [
+        '_gen/oil_lang/grammar_nt.h',
+        '_gen/oil_lang/grammar_tables.h'
+      ])
 
 
