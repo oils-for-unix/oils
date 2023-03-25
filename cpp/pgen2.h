@@ -1,7 +1,7 @@
 // pgen2.h
 
-#ifndef LEAKY_PGEN2_H
-#define LEAKY_PGEN2_H
+#ifndef CPP_PGEN2_H
+#define CPP_PGEN2_H
 
 #include "_gen/frontend/id_kind.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
@@ -51,7 +51,7 @@ class Parser {
   bool addtoken(int typ, syntax_asdl::Token* opaque, int ilabel);
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(ParseError));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Parser));
   }
 
   static constexpr uint16_t field_mask() {
@@ -72,4 +72,4 @@ class Parser {
 
 }  // namespace parse
 
-#endif  // LEAKY_PGEN2_H
+#endif  // CPP_PGEN2_H
