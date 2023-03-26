@@ -29,7 +29,7 @@ class ParseError {
     return ObjHeader::ClassFixed(field_mask(), sizeof(ParseError));
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(ParseError, msg)) |
            maskbit(offsetof(ParseError, tok));
   }
@@ -54,7 +54,7 @@ class Parser {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Parser));
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Parser, rootnode));
   }
 

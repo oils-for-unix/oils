@@ -2297,7 +2297,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if mask_bits:
                 self.decl_write_ind('\n')
                 self.decl_write_ind(
-                    'static constexpr uint16_t field_mask() {\n')
+                    'static constexpr uint32_t field_mask() {\n')
 
                 self.decl_write_ind('  return ')
                 for i, b in enumerate(mask_bits):

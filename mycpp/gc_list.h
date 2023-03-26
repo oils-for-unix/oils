@@ -97,7 +97,7 @@ class List {
   Slab<T>* slab_;
 
   // A list has one Slab pointer which we need to follow.
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(List, slab_));
   }
 

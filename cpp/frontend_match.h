@@ -34,7 +34,7 @@ class SimpleLexer {
     return ObjHeader::ClassFixed(field_mask(), sizeof(SimpleLexer));
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(SimpleLexer, s_));
   }
 

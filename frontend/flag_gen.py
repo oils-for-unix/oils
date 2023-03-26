@@ -282,7 +282,7 @@ class %s {
 
     if bits:
       header_f.write('\n')
-      header_f.write('  static constexpr uint16_t field_mask() {\n')
+      header_f.write('  static constexpr uint32_t field_mask() {\n')
       header_f.write('    return\n')
       header_f.write('      ')
       header_f.write('\n    | '.join(bits))

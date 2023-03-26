@@ -79,7 +79,7 @@ class ColorOutput {
   mylib::Writer* f;
   int num_chars;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(ColorOutput, f));
   }
 
@@ -251,7 +251,7 @@ class _ArgAction : public _Action {
   bool quit_parsing_flags;
   List<Str*>* valid;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(_ArgAction, name))
          | maskbit_v(offsetof(_ArgAction, valid));
   }
@@ -306,7 +306,7 @@ class SetAttachedBool : public _Action {
 
   Str* name;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(SetAttachedBool, name));
   }
 
@@ -324,7 +324,7 @@ class SetToTrue : public _Action {
 
   Str* name;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(SetToTrue, name));
   }
 
@@ -342,7 +342,7 @@ class SetOption : public _Action {
 
   Str* name;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(SetOption, name));
   }
 
@@ -362,7 +362,7 @@ class SetNamedOption : public _Action {
   List<Str*>* names;
   bool shopt;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(SetNamedOption, names));
   }
 
@@ -380,7 +380,7 @@ class SetAction : public _Action {
 
   Str* name;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(SetAction, name));
   }
 
@@ -399,7 +399,7 @@ class SetNamedAction : public _Action {
 
   List<Str*>* names;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(SetNamedAction, names));
   }
 

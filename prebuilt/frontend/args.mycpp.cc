@@ -262,7 +262,7 @@ class _ErrorWithLocation {
   syntax_asdl::loc_t* location;
   Str* msg;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_ErrorWithLocation, location))
          | maskbit(offsetof(_ErrorWithLocation, msg));
   }
