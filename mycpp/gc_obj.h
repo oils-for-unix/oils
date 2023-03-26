@@ -37,6 +37,8 @@ const int kUndefinedId = 0;  // Unitialized object ID
 
 // The first member of every GC-managed object is 'ObjHeader header_'.
 // (There's no inheritance!)
+// TODO: ./configure could detect endian-ness, and reorder the fields in
+// ObjHeader.  See mycpp/demo/gc_header.cc.
 struct ObjHeader {
   unsigned is_header : 1;  // To distinguish from vtable pointer
                            // Overlaps with RawObject::points_to_header
@@ -115,50 +117,6 @@ struct RawObject {
   unsigned points_to_header : 1;  // same as ObjHeader::is_header
   unsigned pad : 31;
 };
-
-// TODO: ./configure could detect endian-ness, and reorder the fields in
-// ObjHeader.  See mycpp/demo/gc_header.cc.
-
-// Used by hand-written and generated classes
-#define GC_CLASS_FIXED(header_, field_mask, obj_len)                \
-  header_ {                                                         \
-    kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize, \
-        kUndefinedId                                                \
-  }
-
-// Classes with no inheritance (e.g. used by mycpp)
-#define GC_CLASS_SCANNED(header_, num_pointers, obj_len)            \
-  header_ {                                                         \
-    kIsHeader, TypeTag::OtherClass, num_pointers, HeapTag::Scanned, \
-        kUndefinedId                                                \
-  }
-
-// Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
-#define GC_CLASS(header_, heap_tag, field_mask, obj_len)               \
-  header_ {                                                            \
-    kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId \
-  }
-
-// Used by ASDL.
-#define GC_ASDL_CLASS(header_, type_tag, num_pointers)                \
-  header_ {                                                           \
-    kIsHeader, type_tag, num_pointers, HeapTag::Scanned, kUndefinedId \
-  }
-
-#define GC_STR(header_)                                               \
-  header_ {                                                           \
-    kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId \
-  }
-
-#define GC_SLAB(header_, heap_tag, num_pointers)                   \
-  header_ {                                                        \
-    kIsHeader, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId \
-  }
-
-#define GC_TUPLE(header_, field_mask, obj_len)                              \
-  header_ {                                                                 \
-    kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize, kUndefinedId \
-  }
 
 // TODO: could omit this in BUMP_LEAK mode
 #define GC_OBJ(var_name) ObjHeader var_name
