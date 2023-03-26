@@ -104,7 +104,7 @@ class _FlagSpec {
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_FlagSpec, arity0)) |
            maskbit(offsetof(_FlagSpec, arity1)) |
            maskbit(offsetof(_FlagSpec, plus_flags)) |
@@ -133,7 +133,7 @@ class _FlagSpecAndMore {
   List<Str*>* plus_flags;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_FlagSpecAndMore, actions_long)) |
            maskbit(offsetof(_FlagSpecAndMore, actions_short)) |
            maskbit(offsetof(_FlagSpecAndMore, plus_flags)) |

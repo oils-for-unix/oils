@@ -54,7 +54,7 @@ class _View {
   List<bool>* opt0_array;
   List<List<bool>*>* opt_stacks;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return
       maskbit(offsetof(_View, opt0_array))
     | maskbit(offsetof(_View, opt_stacks));

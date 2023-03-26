@@ -57,7 +57,7 @@ struct ObjHeader {
 #endif
 
   // Used by hand-written and generated classes
-  static constexpr ObjHeader ClassFixed(uint16_t field_mask, uint32_t obj_len) {
+  static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
     return {kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
             kUndefinedId};
   }
@@ -70,7 +70,7 @@ struct ObjHeader {
   }
 
   // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
-  static constexpr ObjHeader Class(uint8_t heap_tag, uint16_t field_mask,
+  static constexpr ObjHeader Class(uint8_t heap_tag, uint32_t field_mask,
                                    uint32_t obj_len) {
     return {kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
   }
@@ -89,14 +89,14 @@ struct ObjHeader {
     return {kIsHeader, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
   }
 
-  static constexpr ObjHeader Tuple(uint16_t field_mask, uint32_t obj_len) {
+  static constexpr ObjHeader Tuple(uint32_t field_mask, uint32_t obj_len) {
     return {kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
             kUndefinedId};
   }
 };
 
 // TODO: we could determine the max of all objects statically!
-const int kFieldMaskBits = 16;
+const int kFieldMaskBits = 24;
 
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   #define FIELD_MASK(header) (header).u_mask_npointers

@@ -20,7 +20,7 @@ class Tuple2 {
     return ObjHeader::Tuple(field_mask(), sizeof(this_type));
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
            (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0);
   }
@@ -53,7 +53,7 @@ class Tuple3 {
     return ObjHeader::Tuple(field_mask(), sizeof(this_type));
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
            (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0) |
            (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0);
@@ -92,7 +92,7 @@ class Tuple4 {
     return ObjHeader::Tuple(field_mask(), sizeof(this_type));
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return (std::is_pointer<A>() ? maskbit(offsetof(this_type, a_)) : 0) |
            (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0) |
            (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0) |

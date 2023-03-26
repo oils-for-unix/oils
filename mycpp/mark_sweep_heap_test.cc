@@ -171,7 +171,7 @@ class Node {
   GC_OBJ(header_);
   Node *next_;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Node, next_));
   }
 };

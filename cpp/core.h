@@ -75,7 +75,7 @@ class PasswdEntry {
   int pw_uid;
   int pw_gid;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(PasswdEntry, pw_name));
   }
 };
@@ -202,7 +202,7 @@ class SignalSafe {
     return result;
   }
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(SignalSafe, pending_signals_)) |
            maskbit(offsetof(SignalSafe, empty_list_));
   }

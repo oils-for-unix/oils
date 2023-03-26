@@ -50,7 +50,7 @@ class ValueError {
   GC_OBJ(header_);
   Str* message;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(ValueError, message));
   }
 };
@@ -73,7 +73,7 @@ class RuntimeError {
   GC_OBJ(header_);
   Str* message;
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(RuntimeError, message));
   }
 };

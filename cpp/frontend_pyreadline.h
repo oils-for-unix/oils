@@ -39,7 +39,7 @@ class Readline {
   int get_current_history_length();
   void resize_terminal();
 
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Readline, completer_delims_)) |
            maskbit(offsetof(Readline, completer_)) |
            maskbit(offsetof(Readline, display_));
