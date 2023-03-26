@@ -10,12 +10,12 @@ ui.py - User interface constructs.
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.syntax_asdl import (
-    loc, loc_t, Token, SourceLine, command_t, command_str,
-    source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__Alias, source__Reparsed, source__Variable, source__VarRef,
-    source__ArgvWord, source__Synthetic
-)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, SourceLine, command_t,
+                                       command_str, source_e, source__Stdin,
+                                       source__MainFile, source__SourcedFile,
+                                       source__Alias, source__Reparsed,
+                                       source__Variable, source__VarRef,
+                                       source__ArgvWord, source__Synthetic)
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
@@ -64,7 +64,7 @@ def PrettyToken(tok, arena):
   if tok.id == Id.Eof_Real:
     return 'EOF'
 
-  val = tok.line.content[tok.col: tok.col + tok.length]
+  val = tok.line.content[tok.col:tok.col + tok.length]
   # TODO: Print length 0 as 'EOF'?
   return repr(val)
 
@@ -87,13 +87,14 @@ def _PrintCodeExcerpt(line, col, length, f):
 
   buf = mylib.BufWriter()
 
-  buf.write('  '); buf.write(line.rstrip())
+  buf.write('  ')
+  buf.write(line.rstrip())
   buf.write('\n  ')
   # preserve tabs
   for c in line[:col]:
     buf.write('\t' if c == '\t' else ' ')
   buf.write('^')
-  buf.write('~' * (length-1))
+  buf.write('~' * (length - 1))
   buf.write('\n')
 
   # Do this all in a single write() call so it's less likely to be
@@ -142,7 +143,8 @@ def GetLineSourceString(arena, line, quote_filename=False):
       else:
         token = arena.GetToken(src.span_id)
         line_num = token.line.line_num
-        outer_source = GetLineSourceString(arena, token.line,
+        outer_source = GetLineSourceString(arena,
+                                           token.line,
                                            quote_filename=quote_filename)
         s = '[ %s word at line %d of %s ]' % (src.what, line_num, outer_source)
       # Note: _PrintCodeExcerpt called above
@@ -153,14 +155,15 @@ def GetLineSourceString(arena, line, quote_filename=False):
       if src.var_name is None:
         var_name = '?'
       else:
-        var_name = repr(src.var_name) 
+        var_name = repr(src.var_name)
 
       if src.span_id == runtime.NO_SPID:
         where = '?'
       else:
         token = arena.GetToken(src.span_id)
         line_num = token.line.line_num
-        outer_source = GetLineSourceString(arena, token.line,
+        outer_source = GetLineSourceString(arena,
+                                           token.line,
                                            quote_filename=quote_filename)
         where = 'line %d of %s' % (line_num, outer_source)
 
@@ -171,7 +174,8 @@ def GetLineSourceString(arena, line, quote_filename=False):
 
       orig_tok = src.orig_tok
       line_num = orig_tok.line.line_num
-      outer_source = GetLineSourceString(arena, orig_tok.line,
+      outer_source = GetLineSourceString(arena,
+                                         orig_tok.line,
                                          quote_filename=quote_filename)
       where = 'line %d of %s' % (line_num, outer_source)
 
@@ -185,7 +189,8 @@ def GetLineSourceString(arena, line, quote_filename=False):
     elif case(source_e.Reparsed):
       src = cast(source__Reparsed, UP_src)
       span2 = src.left_token
-      outer_source = GetLineSourceString(arena, span2.line,
+      outer_source = GetLineSourceString(arena,
+                                         span2.line,
                                          quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
 
@@ -271,6 +276,7 @@ class ctx_Location(object):
 # Are these controlled by a flag?  It's sort of like --comp-ui.  Maybe
 # --error-ui.
 
+
 class ErrorFormatter(object):
   """Print errors with code excerpts.
 
@@ -313,14 +319,14 @@ class ErrorFormatter(object):
   def Print_(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
     if not blame_loc:
-        blame_loc = loc.Missing()
+      blame_loc = loc.Missing()
     _PrintWithLocation('', msg, blame_loc, self.arena, show_code=True)
 
   def PrintMessage(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
     if not blame_loc:
-        blame_loc = loc.Missing()
+      blame_loc = loc.Missing()
     _PrintWithLocation('', msg, blame_loc, self.arena, show_code=False)
 
   def StderrLine(self, msg):
