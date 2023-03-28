@@ -559,17 +559,17 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   # Experimentally try to load all files in ~/.config/oil/oshrc.d | ~/.config/oil/oilrc.d
   # TODO: Decide on proper directory, `oil/oshrcd.d` seems ugly
   # TODO: Add a flag/parameter to manually pass/disable reading the rc_dir
-  rc_dir = None
+  rc_dir = flag.rcdir
   if rc_dir is None:
     rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
 
   try:
-      import os # required for listdir
-      rc_files = os.listdir(rc_dir)
-      for line in rc_files:
-          rc_paths.append(os_path.join(rc_dir, line))
+    import os # required for listdir
+    rc_files = os.listdir(rc_dir)
+    for line in rc_files:
+      rc_paths.append(os_path.join(rc_dir, line))
   except (IOError, OSError) as e:
-      pass # No rc_dir is still fine
+    print_stderr('osh warning: --rcdir "%s" couldn\'t be read' % rc_dir)
 
   if flag.headless:
     state.InitInteractive(mem)
@@ -691,6 +691,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
     print_stderr('osh warning: --rcfile ignored in non-interactive shell')
+  if flag.rcdir is not None:
+    print_stderr('osh warning: --rcdir ignored in non-interactive shell')
 
   if exec_opts.noexec():
     status = 0

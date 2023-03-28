@@ -56,6 +56,12 @@ Otherwise:
 
 Pass --rcfile /dev/null to disable this behavior.
 
+If the --rcdir flag is specified, all files in that folder will be executed on startup.
+Othewise:
+
+- `bin/osh` runs everything in `~/.config/oil/oshrc.d/`
+- `bin/oil` runs everything in `~/.config/oil/oilrc.d/`
+
 <h4 id="startup">Startup Files</h4>
 
 History is read?

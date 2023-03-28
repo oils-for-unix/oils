@@ -49,6 +49,30 @@ RCFILE
 ## N-I dash status: 2
 ## N-I mksh status: 1
 
+
+#### interactive shell loads files in rcdir (when combined with -c)
+$SH -c 'echo 1'
+mkdir $TMP/rcdir
+cat >$TMP/rcdir/file1 <<EOF
+echo RCFILE1
+EOF
+cat >$TMP/rcdir/file2 <<EOF
+echo RCFILE2
+EOF
+$SH --rcdir $TMP/rcdir -i -c 'echo 2'
+## STDOUT:
+1
+RCFILE1
+RCFILE2
+2
+## END
+## N-I dash/mksh/bash STDOUT:
+1
+## END
+## N-I bash status: 2
+## N-I dash status: 2
+## N-I mksh status: 1
+
 #### interactive shell runs PROMPT_COMMAND after each command
 export PS1=''  # OSH prints prompt to stdout
 
