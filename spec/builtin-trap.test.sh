@@ -475,6 +475,7 @@ hi
 
 
 #### exit codes for traps are isolated
+
 trap 'echo USR1 trap status=$?; ( exit 42 )' USR1
 
 echo before=$?
@@ -491,6 +492,11 @@ after=0
 ## END
 
 #### traps are cleared in subshell (started with &)
+
+# bash is FLAKY on CI for some reason.  dash/mksh are enough for us to test
+# against.
+case $SH in bash) exit ;; esac
+
 trap 'echo USR1' USR1
 
 kill -USR1 $$
@@ -507,4 +513,6 @@ USR1
 begin child
 end child
 done
+## END
+## BUG bash STDOUT:
 ## END
