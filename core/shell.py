@@ -624,7 +624,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    trap_state.InitInteractiveShell(display, my_pid)
+    process.InitInteractiveShell()
     job_state.InitJobControl()
 
     # NOTE: called AFTER _InitDefaultCompletions.

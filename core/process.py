@@ -12,7 +12,8 @@ from __future__ import print_function
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
-from signal import SIG_DFL, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN
+from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
+                    SIGTTOU, SIGTTIN, SIGWINCH)
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
@@ -86,6 +87,30 @@ _SHELL_MIN_FD = 100
 STYLE_DEFAULT = 0
 STYLE_LONG = 1
 STYLE_PID_ONLY = 2
+
+
+def InitInteractiveShell():
+  # type: () -> None
+  """Called when initializing an interactive shell."""
+
+  # The shell itself should ignore Ctrl-\.
+  pyos.Sigaction(SIGQUIT, SIG_IGN)
+
+  # This prevents Ctrl-Z from suspending OSH in interactive mode.
+  pyos.Sigaction(SIGTSTP, SIG_IGN)
+
+  # More signals from
+  # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
+  # (but not SIGCHLD)
+  pyos.Sigaction(SIGTTOU, SIG_IGN)
+  pyos.Sigaction(SIGTTIN, SIG_IGN)
+
+  # Register a callback to receive terminal width changes.
+  # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
+
+  # This is ALWAYS on, which means that it can cause EINTR, and wait() and
+  # read() have to handle it
+  pyos.RegisterSignalInterest(SIGWINCH)
 
 
 def SaveFd(fd):
@@ -749,8 +774,8 @@ class SubProgramThunk(Thunk):
     # type: () -> None
     #self.errfmt.OneLineErrExit()  # don't quote code in child processes
 
-    # traps aren't inherited
-    self.trap_state.Clear()
+    # signal handlers aren't inherited
+    self.trap_state.ClearForSubProgram()
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:

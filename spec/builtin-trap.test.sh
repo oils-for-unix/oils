@@ -36,10 +36,35 @@ status=0
 ## END
 
 #### trap -p
+case $SH in (dash|mksh) exit ;; esac
+
 trap 'echo exit' EXIT
-trap -p | grep EXIT >/dev/null
-## status: 0
-## N-I dash/mksh status: 1
+# debug trap also remains on
+#trap 'echo debug' DEBUG
+
+trap -p > parent.txt
+
+trap -p | cat > child.txt
+
+grep EXIT parent.txt >/dev/null
+echo status=$?
+
+grep EXIT child.txt >/dev/null
+echo status=$?
+
+#grep DEBUG parent.txt >/dev/null
+#echo status=$?
+
+#grep DEBUG child.txt >/dev/null
+#echo status=$?
+
+## STDOUT:
+status=0
+status=0
+exit
+## END
+## N-I dash/mksh STDOUT:
+## END
 
 #### Register invalid trap
 trap 'foo' SIGINVALID
