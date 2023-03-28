@@ -122,22 +122,78 @@ IN TRAP
 FOO
 ## END
 
-#### trap DEBUG
-debuglog() {
-  echo "debuglog [$@]"
-}
-trap 'debuglog x y' DEBUG
-echo 1
-echo 2
+#### trap with command sub / subshell / pipeline
+trap 'echo EXIT TRAP' EXIT 
+
+echo $(echo command sub)
+
+( echo subshell )
+
+echo pipeline | cat
+
 ## STDOUT:
-debuglog [x y]
-1
-debuglog [x y]
-2
+command sub
+subshell
+pipeline
+EXIT TRAP
+## END
+
+#### trap DEBUG
+case $SH in (dash|mksh) exit ;; esac
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+echo a
+echo b; echo c
+
+echo d && echo e
+echo f || echo g
+
+(( h = 42 ))
+[[ j == j ]]
+
+## STDOUT:
+  [8]
+a
+  [9]
+b
+  [9]
+c
+  [11]
+d
+  [11]
+e
+  [12]
+f
+  [14]
+  [15]
 ## END
 ## N-I dash/mksh STDOUT:
-1
-2
+## END
+
+#### trap DEBUG and command sub / subshell
+case $SH in (dash|mksh) exit ;; esac
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+echo "result =" $(echo command sub)
+( echo subshell )
+echo done
+
+## STDOUT:
+  [8]
+result = command sub
+subshell
+  [10]
+done
+## END
+## N-I dash/mksh STDOUT:
 ## END
 
 #### trap DEBUG and pipeline
@@ -151,7 +207,7 @@ trap 'debuglog $LINENO' DEBUG
 # gets run for each one of these
 { echo a; echo b; }
 
-# only run for the last one
+# only run for the last one, maybe I guess because traps aren't inherited?
 { echo x; echo y; } | wc -l
 
 # gets run for both of these
@@ -407,4 +463,23 @@ echo after=$?
 before=0
 USR1 trap status=0
 after=0
+## END
+
+#### traps are cleared in subshell (started with &)
+trap 'echo USR1' USR1
+
+kill -USR1 $$
+
+# Hm trap doesn't happen here
+{ echo begin child; sleep 0.1; echo end child; } &
+kill -USR1 $!
+wait
+
+echo done
+
+## STDOUT:
+USR1
+begin child
+end child
+done
 ## END
