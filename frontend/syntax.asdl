@@ -41,7 +41,8 @@
 module syntax
 {
   # More efficient than the List[bool] pattern we've been using
-  BoolOutParam = (bool b)
+  BoolParamBox = (bool b)
+  IntParamBox = (int i)
 
   # core/main_loop.py
   parse_result = EmptyLine | Eof | Node(command cmd)

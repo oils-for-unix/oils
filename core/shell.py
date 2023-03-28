@@ -8,7 +8,7 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.syntax_asdl import source, source_t
+from _devbuild.gen.syntax_asdl import source, source_t, IntParamBox
 
 from asdl import runtime
 
@@ -575,9 +575,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       status = e.status
 
     # Same logic as interactive shell
-    box = [status]
-    cmd_ev.MaybeRunExitTrap(box)
-    status = box[0]
+    mut_status = IntParamBox(status)
+    cmd_ev.MaybeRunExitTrap(mut_status)
+    status = mut_status.i
 
     return status
 
@@ -644,9 +644,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     except util.UserExit as e:
       status = e.status
 
-    box = [status]
-    cmd_ev.MaybeRunExitTrap(box)
-    status = box[0]
+    mut_status = IntParamBox(status)
+    cmd_ev.MaybeRunExitTrap(mut_status)
+    status = mut_status.i
 
     # Return the TTY to the original owner before exiting.
     try:
@@ -683,9 +683,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                  cmd_flags=cmd_eval.IsMainProgram)
       except util.UserExit as e:
         status = e.status
-    box = [status]
-    cmd_ev.MaybeRunExitTrap(box)
-    status = box[0]
+    mut_status = IntParamBox(status)
+    cmd_ev.MaybeRunExitTrap(mut_status)
+    status = mut_status.i
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status

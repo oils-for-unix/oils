@@ -51,7 +51,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    BoolOutParam, Token, loc,
+    BoolParamBox, Token, loc,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal, assoc_pair,
 
@@ -699,7 +699,7 @@ class WordParser(WordEmitter):
     raise AssertionError(self.cur_token)
 
   def _ReadUnquotedLeftParts(self, triple_out):
-    # type: (Optional[BoolOutParam]) -> word_part_t
+    # type: (Optional[BoolParamBox]) -> word_part_t
     """Read substitutions and quoted strings (for lex_mode_e.ShCommand).
 
     If triple_out is set, then we try parsing triple quoted strings, and set
@@ -1495,7 +1495,7 @@ class WordParser(WordEmitter):
     num_parts = 0
     brace_count = 0
     done = False
-    is_triple_quoted = None  # type: Optional[BoolOutParam]
+    is_triple_quoted = None  # type: Optional[BoolParamBox]
 
     while not done:
       self._Peek()
@@ -1577,7 +1577,7 @@ class WordParser(WordEmitter):
 
         # Save allocation
         if try_triple_quote:
-          is_triple_quoted = BoolOutParam(False)
+          is_triple_quoted = BoolParamBox(False)
 
         part = self._ReadUnquotedLeftParts(is_triple_quoted)
         w.parts.append(part)

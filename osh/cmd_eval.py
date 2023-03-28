@@ -39,6 +39,7 @@ from _devbuild.gen.syntax_asdl import (
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
     Token, loc,
+    IntParamBox,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
@@ -1717,7 +1718,7 @@ class CommandEvaluator(object):
     return is_return, is_fatal
 
   def MaybeRunExitTrap(self, mut_status):
-    # type: (List[int]) -> None
+    # type: (IntParamBox) -> None
     """If an EXIT trap exists, run it.
     
     Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
@@ -1736,10 +1737,10 @@ class CommandEvaluator(object):
         try:
           is_return, is_fatal = self.ExecuteAndCatch(node)
         except util.UserExit as e:  # explicit exit
-          mut_status[0] = e.status
+          mut_status.i = e.status
           return
         if is_return:  # explicit 'return' in the trap handler!
-          mut_status[0] = self.LastStatus()
+          mut_status.i = self.LastStatus()
 
   def RunProc(self, proc, argv, arg0_spid):
     # type: (Proc, List[str], int) -> int

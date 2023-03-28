@@ -26,7 +26,6 @@ from mycpp.mylib import iteritems, print_stderr
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
-  from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
 
