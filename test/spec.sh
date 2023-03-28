@@ -444,7 +444,7 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

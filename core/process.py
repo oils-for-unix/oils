@@ -70,6 +70,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.util import _DebugFile
   from osh.cmd_eval import CommandEvaluator
+  from osh import builtin_trap
 
 NO_FD = -1
 
@@ -727,10 +728,11 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, cmd_ev, node, inherit_errexit=True):
-    # type: (CommandEvaluator, command_t, bool) -> None
+  def __init__(self, cmd_ev, node, trap_state, inherit_errexit=True):
+    # type: (CommandEvaluator, command_t, builtin_trap.TrapState, bool) -> None
     self.cmd_ev = cmd_ev
     self.node = node
+    self.trap_state = trap_state
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
   def UserString(self):
@@ -746,6 +748,9 @@ class SubProgramThunk(Thunk):
   def Run(self):
     # type: () -> None
     #self.errfmt.OneLineErrExit()  # don't quote code in child processes
+
+    # traps aren't inherited
+    self.trap_state.Clear()
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:

@@ -54,6 +54,12 @@ class TrapState(object):
     # The display can be notified when we get SIGWINCH.
     self.display = None  # type: Optional[_IDisplay]
 
+  def Clear(self):
+    # type: () -> None
+    """ SubProgramThunk uses this because traps aren't inherited. """
+    self.hooks.clear()
+    self.traps.clear()
+
   def GetHook(self, hook_name):
     # type: (str) -> command_t
     """ e.g. EXIT hook """

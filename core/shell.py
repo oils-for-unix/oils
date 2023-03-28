@@ -387,7 +387,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
-      ext_prog, waiter, tracer, job_state, fd_state, errfmt)
+      ext_prog, waiter, tracer, job_state, fd_state, trap_state, errfmt)
 
   shell_native.AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
                        search_path, errfmt)
