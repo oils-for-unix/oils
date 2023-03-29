@@ -77,7 +77,6 @@ class ArgsTest(unittest.TestCase):
         [('errexit', False), ('nounset', False), ('pipefail', True)],
         arg.opt_changes)
 
-    # Not sure if rcdir is requried here :)
     arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc', '--rcdir', 'bashrcdir'])
     arg = args.ParseMore(s, arg_r)
     self.assertEqual('echo hi', arg.c)

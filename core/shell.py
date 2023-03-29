@@ -556,8 +556,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   else:
     rc_paths.append(rc_path)
 
-  # Experimentally try to load all files in ~/.config/oil/oshrc.d | ~/.config/oil/oilrc.d
-  # TODO: Decide on proper directory, `oil/oshrcd.d` seems ugly
+  # Load all files in ~/.config/oil/oshrc.d or oilrc.d
+  # This way "installers" can avoid mutating oshrc directly
+
   # TODO: Add a flag/parameter to manually pass/disable reading the rc_dir
   rc_dir = flag.rcdir
   if rc_dir is None:
@@ -566,10 +567,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   try:
     import os # required for listdir
     rc_files = os.listdir(rc_dir)
-    for line in rc_files:
-      rc_paths.append(os_path.join(rc_dir, line))
+    for path in rc_files:
+      rc_paths.append(os_path.join(rc_dir, path))
   except (IOError, OSError) as e:
-    print_stderr('osh warning: --rcdir "%s" couldn\'t be read' % rc_dir)
+    print_stderr("osh warning: --rcdir %r couldn't be read" % rc_dir)
 
   if flag.headless:
     state.InitInteractive(mem)
@@ -580,15 +581,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # below.  Note: this may need to be tweaked.
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
-    # NOTE: called AFTER _InitDefaultCompletions.
+    # NOTE: rc files loaded AFTER _InitDefaultCompletions.
     for rc_path in rc_paths:
-      # NOTE: called AFTER _InitDefaultCompletions.
       with state.ctx_ThisDir(mem, rc_path):
         try:
           SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
         except util.UserExit as e:
           return e.status
-
 
     loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
     try:
@@ -650,15 +649,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     trap_state.InitInteractiveShell(display, my_pid)
     job_state.InitJobControl()
 
-    # NOTE: called AFTER _InitDefaultCompletions.
+    # NOTE: rc files loaded AFTER _InitDefaultCompletions.
     for rc_path in rc_paths:
-      # NOTE: called AFTER _InitDefaultCompletions.
       with state.ctx_ThisDir(mem, rc_path):
         try:
           SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
         except util.UserExit as e:
           return e.status
-
 
     assert line_reader is not None
     line_reader.Reset()  # After sourcing startup file, render $PS1
