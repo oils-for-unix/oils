@@ -74,7 +74,7 @@ core/optview.py
 frontend/py.*.py
 frontend/consts.py
 frontend/match.py
-pgen2/parse.py
+pgen2/grammar.py
 pylib/path_stat.py
 oil_lang/builtin_oil.py
 oil_lang/expr_eval.py

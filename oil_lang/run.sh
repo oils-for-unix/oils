@@ -11,10 +11,28 @@ source test/common.sh
 
 # TODO: Rename to ysh
 OIL=${OIL:-'bin/oil'}
+OSH_CPP=_bin/cxx-asan/osh
+# Assertion failed
+#OSH_CPP=_bin/cxx-dbg/osh
 
 # This doesn't distinguish if they should parse with osh or Oil though!
 
 parse-one() {
+  echo ---
+  # TODO: these tests can be removed once the rest of oil_lang/ is translated
+  if test "$OSH" = "$OSH_CPP"; then
+    local prog="$@"
+    local skip=''
+    case $prog in
+      (*/assign.osh) skip=T ;;
+    esac
+
+    if test -n "$skip"; then
+      echo "skipping $prog"
+      return
+    fi
+  fi
+
   set +o errexit
   $OSH -n "$@"
   if test $? -ne 0; then return 255; fi  # make xargs quit
@@ -25,16 +43,13 @@ test-parse-osh() {
     | xargs -n 1 -- $0 parse-one
 }
 
-DISABLED-osh-cpp() {
+test-parse-osh-cpp() {
   # We get buffer overflow here?
-  local osh=_bin/cxx-asan/osh
-
-  # Assertion failed
-  #local osh=_bin/cxx-dbg/osh
+  local osh=$OSH_CPP
 
   ninja $osh
 
-  OSH=$osh test-parse-osh
+  OIL_GC_ON_EXIT=1 OSH=$osh test-parse-osh
 }
 
 test-run-osh() {

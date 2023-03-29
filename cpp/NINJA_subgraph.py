@@ -37,6 +37,7 @@ def NinjaGraph(ru):
         '//frontend/consts',  # for gVersion
         '//frontend/syntax.asdl',
         '//mycpp/runtime',
+        '//oil_lang/grammar',
         ],
   )
 
@@ -151,14 +152,6 @@ def NinjaGraph(ru):
         '//prebuilt/core/error.mycpp',  # prebuilt e_die()
         ],
       matrix = ninja_lib.COMPILERS_VARIANTS)
-
-  ru.cc_library(
-      '//cpp/pgen2', 
-      srcs = ['cpp/pgen2.cc'],
-      deps = [
-        '//mycpp/runtime',
-        '//frontend/syntax.asdl',
-        ])
 
   ru.cc_library(
       '//cpp/pylib', 

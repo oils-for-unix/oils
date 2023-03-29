@@ -92,6 +92,8 @@ class Parser(object):
         up to the converter function.
         """
         self.grammar = grammar
+        self.rootnode = None  # type: Optional[PNode]
+        self.stack = [] # type: List[_StackItem]
 
     def setup(self, start):
         # type: (int) -> None
@@ -109,7 +111,7 @@ class Parser(object):
         newnode = PNode(start, None, [])
         # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [_StackItem(self.grammar.dfas[start], 0, newnode)]
-        self.rootnode = None  # type: Optional[PNode]
+        self.rootnode = None
 
     def addtoken(self, typ, opaque, ilabel):
         # type: (int, Token, int) -> bool
@@ -139,8 +141,15 @@ class Parser(object):
                     # Pop while we are in an accept-only state
                     state = newstate
                      
-                    # TODO: Does this condition translate?
-                    while states[state] == [(0, state)]:
+                    while True:
+                        # mycpp: rewrite of tuple-in-list comparison
+                        if len(states[state]) != 1:
+                            break
+
+                        s0, s1 = states[state][0]
+                        if s0 != 0 or s1 != state:
+                            break
+
                         self.pop()
                         if len(self.stack) == 0:
                             # Done parsing!

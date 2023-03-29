@@ -3,69 +3,39 @@
 #ifndef CPP_PGEN2_H
 #define CPP_PGEN2_H
 
-#include "_gen/frontend/id_kind.asdl.h"
+#include <vector>
+
 #include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
-// Hacky forward declaration for translated pgen2/pnode.py
-// Note: it's probably better to express PNode in ASDL, like Token.
-namespace pnode {
-class PNode;
-}
-// Hacky stub
 namespace grammar {
-class Grammar;
-}
 
-namespace parse {
+typedef Tuple2<int, int> arc_t;
+typedef Dict<int, int> first_t;
+typedef List<List<arc_t*>*> states_t;
+typedef Tuple2<states_t*, first_t*> dfa_t;
 
-class ParseError {
+class Grammar {
  public:
-  ParseError(Str* msg, int type_, syntax_asdl::Token* tok) {
-  }
+  Grammar();
+
+  Dict<Str*, int>* symbol2number;
+  Dict<int, Str*>* number2symbol;
+  List<List<Tuple2<int, int>*>*>* states;
+  Dict<int, Tuple2<List<List<Tuple2<int, int>*>*>*, Dict<int, int>*>*>* dfas;
+  List<int>* labels;
+  Dict<Str*, int>* keywords;
+  Dict<int, int>* tokens;
+  Dict<Str*, int>* symbol2label;
+  int start;
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(ParseError));
+    return ObjHeader::ClassScanned(8, sizeof(Grammar));
   }
 
-  static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(ParseError, msg)) |
-           maskbit(offsetof(ParseError, tok));
-  }
-
-  Str* msg;
-  syntax_asdl::Token* tok;
-  int type;
+  DISALLOW_COPY_AND_ASSIGN(Grammar)
 };
 
-class Parser {
- public:
-  // In C, the grammar is a constant, so the grammar arg is ignored.  (We can't
-  // get easily rid of it because the call site has to type check and run in
-  // Python.)
-  explicit Parser(grammar::Grammar* grammar) {
-  }
-  void setup(int start);
-  bool addtoken(int typ, syntax_asdl::Token* opaque, int ilabel);
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(Parser));
-  }
-
-  static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(Parser, rootnode));
-  }
-
-  // Probably should delete these
-  // void shift(int typ, syntax_asdl::Token* opaque, int newstate);
-  // void push(int typ, syntax_asdl::Token* opaque, Tuple2<List<List<Tuple2<int,
-  // int>*>*>*, Dict<int, int>*>* newdfa, int newstate);  void pop();
-
-  // grammar::Grammar* grammar;
-  pnode::PNode* rootnode;
-  // List<parse::_StackItem*>* stack;
-};
-
-}  // namespace parse
+}  // namespace grammar
 
 #endif  // CPP_PGEN2_H
