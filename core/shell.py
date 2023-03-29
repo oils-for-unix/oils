@@ -546,11 +546,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   home_dir = pyos.GetMyHomeDir()
   assert home_dir is not None
-  rc_path = flag.rcfile
-  # mycpp: rewrite of or
 
-  rc_paths = []
-  # TODO: Decide if this should be first or last rc_path (as in: should it overwrite modular includes or not)
+  rc_paths = []  # type: List[str]
+
+  # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
+  rc_path = flag.rcfile
   if rc_path is None:
     rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
   else:
@@ -564,13 +564,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   if rc_dir is None:
     rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
 
-  try:
-    import os # required for listdir
-    rc_files = os.listdir(rc_dir)
-    for path in rc_files:
-      rc_paths.append(os_path.join(rc_dir, path))
-  except (IOError, OSError) as e:
-    print_stderr("osh warning: --rcdir %r couldn't be read" % rc_dir)
+  rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
 
   if flag.headless:
     state.InitInteractive(mem)
