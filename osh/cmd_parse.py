@@ -544,6 +544,7 @@ class CommandParser(object):
     if self.next_lex_mode != lex_mode_e.Undefined:
       w = self.w_parser.ReadWord(self.next_lex_mode)
       #log("w %s", w)
+
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
       if w.tag_() == word_e.Token:
@@ -557,6 +558,8 @@ class CommandParser(object):
 
       self.c_kind = word_.CommandKind(self.cur_word)
       self.c_id = word_.CommandId(self.cur_word)
+      # Note: could use the equivalent of _KeywordSpid here, or _KeywordToken
+
       self.next_lex_mode = lex_mode_e.Undefined
 
   def _Eat(self, c_id):
@@ -1162,12 +1165,14 @@ class CommandParser(object):
       self._Next()
     return words, semi_spid
 
-  def _ParseForExprLoop(self):
-    # type: () -> command__ForExpr
+  def _ParseForExprLoop(self, for_spid):
+    # type: (int) -> command__ForExpr
     """
     for (( init; cond; update )) for_sep? do_group
     """
     node = self.w_parser.ReadForExpression()
+    node.spids.append(for_spid)
+
     self._Next()
 
     self._Peek()
@@ -1303,7 +1308,7 @@ class CommandParser(object):
               loc.Word(self.cur_word))
 
       # for (( i = 0; i < 10; i++)
-      n1 = self._ParseForExprLoop()
+      n1 = self._ParseForExprLoop(for_spid)
       n1.redirects = self._ParseRedirectList()
       return n1
     else:

@@ -1,5 +1,23 @@
 # builtin-trap-bash.test.sh
 
+# Notes on bash semantics:
+
+# https://www.gnu.org/software/bash/manual/bash.html
+#
+# Commands specified with a DEBUG trap are executed before every simple
+# command, for command, case command, select command, every arithmetic for
+# command, and before the first command executes in a shell function. The DEBUG
+# trap is not inherited by shell functions unless the function has been given
+# the trace attribute or the functrace option has been enabled using the shopt
+# builtin. The extdebug shell option has additional effects on the DEBUG trap.
+
+# The trap builtin (see Bourne Shell Builtins) allows an ERR pseudo-signal
+# specification, similar to EXIT and DEBUG. Commands specified with an ERR trap
+# are executed after a simple command fails, with a few exceptions. The ERR
+# trap is not inherited by shell functions unless the -o errtrace option to the
+# set builtin is enabled. 
+
+
 #### trap -l
 trap -l | grep INT >/dev/null
 ## status: 0
@@ -110,6 +128,8 @@ echo status=$?
 echo B
 echo status=$?
 
+## status: 0
+
 ## STDOUT:
   [8]
 status=0
@@ -121,6 +141,13 @@ status=0
 B
   [12]
 status=0
+## END
+
+# OSH doesn't ignore this
+
+## OK osh status: 42
+## OK osh STDOUT:
+  [8]
 ## END
 
 #### trap DEBUG with 'exit'
@@ -143,7 +170,7 @@ echo status=$?
 
 
 
-#### trap DEBUG
+#### trap DEBUG with non-compound commands
 case $SH in (dash|mksh) exit ;; esac
 
 debuglog() {
@@ -160,6 +187,8 @@ echo f || echo g
 (( h = 42 ))
 [[ j == j ]]
 
+var=value
+
 ## STDOUT:
   [8]
 a
@@ -175,6 +204,7 @@ e
 f
   [14]
   [15]
+  [17]
 ## END
 
 #### trap DEBUG and command sub / subshell
@@ -198,8 +228,6 @@ done
 ## END
 
 #### trap DEBUG and pipeline
-case $SH in (dash|mksh) exit 1 ;; esac
-
 debuglog() {
   echo "  [$@]"
 }
@@ -211,40 +239,47 @@ trap 'debuglog $LINENO' DEBUG
 # only run for the last one, maybe I guess because traps aren't inherited?
 { echo x; echo y; } | wc -l
 
-# gets run for both of these
-date | wc -l
+# bash runs for all of these, but OSH doesn't because we have SubProgramThunk
+# Hm.
+date | cat | wc -l
 
 date |
+  cat |
   wc -l
 
 ## STDOUT:
-  [8]
+  [6]
 a
-  [8]
+  [6]
 b
-  [10]
+  [8]
 2
-  [12]
-  [12]
+  [10]
+  [10]
+  [10]
 1
+  [12]
+  [13]
   [14]
-  [15]
 1
 ## END
 
+# Marking OK due to fundamental execution difference
 
-#### trap DEBUG with compound commands
-case $SH in (dash|mksh) exit 1 ;; esac
+## OK osh STDOUT:
+  [6]
+a
+  [6]
+b
+  [8]
+2
+  [10]
+1
+  [14]
+1
+## END
 
-# I'm not sure if the observed behavior actually matches the bash documentation
-# ...
-#
-# https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html#Bourne-Shell-Builtins
-#
-# "If a sigspec is DEBUG, the command arg is executed before every simple 
-# command, for command, case command, select command, every arithmetic for
-# command, and before the first command executes in a shell function."
-
+#### trap DEBUG function call
 debuglog() {
   echo "  [$@]"
 }
@@ -257,85 +292,138 @@ f() {
   done
 }
 
-echo '-- assign --'
-g=1   # executes ONCE here
-
 echo '-- function call --'
-f A B C  # executes ONCE here, but does NOT go into th efunction call
+f A B C  # executes ONCE here, but does NOT go into the function call
 
-
-echo '-- for --'
-# why does it execute twice here?  because of the for loop?  That's not a
-# simple command.
-for i in 1 2; do
-  echo for1 $i
-  echo for2 $i
-done
-
-echo '-- while --'
-i=0
-while (( i < 2 )); do
-  echo while1 
-  echo while2
-  (( i++ ))
-done
-
-echo '-- if --'
-if true; then
-  echo IF
-fi
-
-echo '-- case --'
-case x in
-  (x)
-    echo CASE
-esac
+f X Y
 
 ## STDOUT:
-  [16]
--- assign --
-  [17]
-  [19]
+  [13]
 -- function call --
-  [20]
-  [23]
--- for --
-  [24]
-  [25]
-for1 1
-  [26]
-for2 1
-  [24]
-  [25]
-for1 2
-  [26]
-for2 2
-  [29]
--- while --
-  [30]
-  [31]
-  [32]
-while1
-  [33]
-while2
-  [34]
-  [31]
-  [32]
-while1
-  [33]
-while2
-  [34]
-  [31]
-  [37]
--- if --
-  [38]
-  [39]
-IF
-  [42]
--- case --
-  [43]
-  [45]
-CASE
+  [14]
+  [16]
+## END
+
+#### trap DEBUG case
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+name=foo.py
+
+case $name in 
+  *.py)
+    echo python
+    ;;
+  *.sh)
+    echo shell
+    ;;
+esac
+echo ok
+
+## STDOUT:
+  [6]
+  [8]
+  [10]
+python
+  [16]
+ok
+## END
+
+#### trap DEBUG for each
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+for x in 1 2; do
+  echo x=$x
+done
+
+echo ok
+
+## STDOUT:
+  [6]
+  [7]
+x=1
+  [6]
+  [7]
+x=2
+  [10]
+ok
+## END
+
+# NOT matching bash right now because 'while' loops don't have it
+# And we have MORE LOOPS
+#
+# What we really need is a trap that runs in the main loop and TELLS you what
+# kind of node it is?
+
+## N-I osh STDOUT:
+  [7]
+x=1
+  [7]
+x=2
+  [10]
+ok
+## END
+
+#### trap DEBUG for expr
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+for (( i =3 ; i < 5; ++i )); do
+  echo i=$i
+done
+
+echo ok
+
+## STDOUT:
+  [6]
+  [6]
+  [7]
+i=3
+  [6]
+  [6]
+  [7]
+i=4
+  [6]
+  [6]
+  [10]
+ok
+## END
+## N-I osh STDOUT:
+  [7]
+i=3
+  [7]
+i=4
+  [10]
+ok
+## END
+
+#### trap DEBUG if while
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+if test x = x; then
+  echo if
+fi 
+
+while test x != x; do
+  echo while
+done
+
+## STDOUT:
+  [6]
+  [7]
+if
+  [10]
 ## END
 
 

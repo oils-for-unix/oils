@@ -661,7 +661,7 @@ class CommandEvaluator(object):
           if span_id != runtime.NO_SPID:
             self.mem.SetCurrentSpanId(span_id)
 
-        self.MaybeRunDebugTrap()
+        self._MaybeRunDebugTrap()
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
@@ -806,7 +806,7 @@ class CommandEvaluator(object):
         node = cast(command__DBracket, UP_node)
         left_spid = node.spids[0]
         self.mem.SetCurrentSpanId(left_spid)
-        self.MaybeRunDebugTrap()
+        self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
@@ -819,7 +819,7 @@ class CommandEvaluator(object):
         node = cast(command__DParen, UP_node)
         left_spid = node.spids[0]
         self.mem.SetCurrentSpanId(left_spid)
-        self.MaybeRunDebugTrap()
+        self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
@@ -988,6 +988,8 @@ class CommandEvaluator(object):
           flags = 0
           self.mem.SetValue(lval, val, which_scopes, flags=flags)
           self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
+
+        self._MaybeRunDebugTrap()
 
         # PATCH to be compatible with existing shells: If the assignment had a
         # command sub like:
@@ -1319,6 +1321,10 @@ class CommandEvaluator(object):
 
       elif case(command_e.ForExpr):
         node = cast(command__ForExpr, UP_node)
+
+        self.mem.SetCurrentSpanId(node.spids[0])
+        #self._MaybeRunDebugTrap()
+
         status = 0
 
         init = node.init
@@ -1406,6 +1412,9 @@ class CommandEvaluator(object):
         node = cast(command__Case, UP_node)
         str_val = self.word_ev.EvalWordToString(node.to_match)
         to_match = str_val.s
+
+        self.mem.SetCurrentSpanId(node.spids[0])
+        self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?
         done = False
@@ -1749,7 +1758,7 @@ class CommandEvaluator(object):
         if is_return:  # explicit 'return' in the trap handler!
           mut_status.i = self.LastStatus()
 
-  def MaybeRunDebugTrap(self):
+  def _MaybeRunDebugTrap(self):
     # type: () -> None
     """If an EXIT trap exists, run it.
     

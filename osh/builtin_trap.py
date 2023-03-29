@@ -39,7 +39,9 @@ class TrapState(object):
   1. Signals like SIGUSR1
   2. Hooks like EXIT
 
-  Traps execute in the main loop and within blocking syscalls.
+  Signal handlers execute in the main loop, and within blocking syscalls.
+
+  EXIT, DEBUG, ERR, RETURN execute in specific places in the interpreter.
   """
   def __init__(self, signal_safe):
     # type: (pyos.SignalSafe) -> None
