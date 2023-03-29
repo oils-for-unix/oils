@@ -244,7 +244,7 @@ class Trap(vm._Builtin):
 
     # Register a hook.
     if sig_key in _HOOK_NAMES:
-      if sig_key in ('ERR', 'RETURN'):
+      if sig_key == 'RETURN':
         print_stderr("osh warning: The %r hook isn't implemented" % sig_spec)
       self.trap_state.AddUserHook(sig_key, node)
       return 0

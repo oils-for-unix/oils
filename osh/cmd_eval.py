@@ -244,6 +244,23 @@ class ctx_LoopLevel(object):
     self.cmd_ev.loop_level -= 1
 
 
+class ctx_ErrTrap(object):
+  """For trap ERR."""
+
+  def __init__(self, cmd_ev):
+    # type: (CommandEvaluator) -> None
+    cmd_ev.running_err_trap = True
+    self.cmd_ev = cmd_ev
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.cmd_ev.running_err_trap = False
+
+
 class CommandEvaluator(object):
   """Executes the program by tree-walking.
 
@@ -292,6 +309,7 @@ class CommandEvaluator(object):
     self.trap_state = trap_state
     self.signal_safe = signal_safe
 
+    self.running_err_trap = False
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
@@ -335,6 +353,10 @@ class CommandEvaluator(object):
   def _CheckStatus(self, status, cmd_st, node, blame_spid):
     # type: (int, CommandStatus, command_t, int) -> None
     """Raises error.ErrExit, maybe with location info attached."""
+
+    if status != 0:
+      self._MaybeRunErrTrap()
+
     if self.exec_opts.errexit() and status != 0:
       # NOTE: Sometimes location info is duplicated.
       # - 'type -z' has a UsageError with location, then errexit
@@ -1733,7 +1755,7 @@ class CommandEvaluator(object):
 
   def MaybeRunExitTrap(self, mut_status):
     # type: (IntParamBox) -> None
-    """If an EXIT trap exists, run it.
+    """If an EXIT trap handler exists, run it.
     
     Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
     all bash/dash/mksh seem to agree on it.  See cases in
@@ -1760,18 +1782,7 @@ class CommandEvaluator(object):
 
   def _MaybeRunDebugTrap(self):
     # type: () -> None
-    """If an EXIT trap exists, run it.
-    
-    Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
-    all bash/dash/mksh seem to agree on it.  See cases in
-    builtin-trap.test.sh.
-
-    Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
-    of this awkward interface.  But that's true in Python and not C!
-
-    Could use i & (n-1) == i & 255  because we have a power of 2.
-    https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
-    """
+    """If a DEBUG trap handler exists, run it."""
     if not self.mem.ShouldRunDebugTrap():
       return
 
@@ -1784,6 +1795,24 @@ class CommandEvaluator(object):
         with state.ctx_Registers(self.mem):  # prevent setting $? etc.
           with state.ctx_DebugTrap(self.mem):  # for SetCurrentSpanId $LINENO
             # Don't catch util.UserExit, etc.
+            self._Execute(node)
+
+  def _MaybeRunErrTrap(self):
+    # type: () -> None
+    """If a ERR trap handler exists, run it."""
+
+    # Prevent infinite recursion
+    if self.running_err_trap:
+      return
+
+    node = self.trap_state.GetHook('ERR')  # type: command_t
+    if node:
+      # NOTE: Don't set option_i._running_trap, because that's for
+      # RunPendingTraps() in the MAIN LOOP
+
+      with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+        with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+          with ctx_ErrTrap(self):
             self._Execute(node)
 
   def RunProc(self, proc, argv, arg0_spid):

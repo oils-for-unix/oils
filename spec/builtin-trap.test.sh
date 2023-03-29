@@ -111,7 +111,7 @@ IN TRAP
 FOO
 ## END
 
-#### trap with command sub / subshell / pipeline
+#### trap EXIT with command sub / subshell / pipeline
 trap 'echo EXIT TRAP' EXIT 
 
 echo $(echo command sub)
@@ -146,6 +146,14 @@ trap - ERR  # disable trap
 false
 echo D
 
+trap 'echo after errexit $?' ERR 
+
+set -o errexit
+
+( exit 99 )
+echo E
+
+## status: 99
 ## STDOUT:
 A
 err [x y] 1
@@ -153,6 +161,7 @@ B
 err [x y] 42
 C
 D
+after errexit 99
 ## END
 ## N-I dash STDOUT:
 A
@@ -165,7 +174,7 @@ D
 case $SH in dash) exit ;; esac
 
 err() {
-  echo "err [$@] $? [$PIPESTATUS]"
+  echo "err [$@] $? [${PIPESTATUS[@]}]"
 }
 trap 'err x y' ERR 
 
@@ -193,13 +202,33 @@ echo ok
 A
 err [x y] 1 [1]
 B
-err [x y] 1 [0]
-err [x y] 1 [0]
+err [x y] 1 [0 1]
+err [x y] 1 [0 1 0]
 ok
 ## END
 ## N-I dash STDOUT:
 ## END
 
+#### error in trap ERR (recursive)
+case $SH in dash) exit ;; esac
+
+err() {
+  echo err status $?
+  ( exit 2 )
+}
+trap 'err' ERR 
+
+echo A
+false
+echo B
+
+## STDOUT:
+A
+err status 1
+B
+## END
+## N-I dash STDOUT:
+## END
 
 #### trap 0 is equivalent to EXIT
 # not sure why this is, but POSIX wants it.

@@ -202,7 +202,7 @@ download-original-source() {
 
   # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
   # https://ftp.gnu.org/gnu/bash/
-  _wget https://ftp.gnu.org/gnu/bash/bash-5.1.tar.gz
+  _wget https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz
 
   # https://www.mirbsd.org/mksh.htm
   _wget https://www.mirbsd.org/MirOS/dist/mir/mksh/mksh-R59.tgz
