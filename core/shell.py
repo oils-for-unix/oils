@@ -546,10 +546,25 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   home_dir = pyos.GetMyHomeDir()
   assert home_dir is not None
+
+  rc_paths = []  # type: List[str]
+
+  # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
   rc_path = flag.rcfile
-  # mycpp: rewrite of or
   if rc_path is None:
-    rc_path = os_path.join(home_dir, '.config/oil/%src' % lang)
+    rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
+  else:
+    rc_paths.append(rc_path)
+
+  # Load all files in ~/.config/oil/oshrc.d or oilrc.d
+  # This way "installers" can avoid mutating oshrc directly
+
+  # TODO: Add a flag/parameter to manually pass/disable reading the rc_dir
+  rc_dir = flag.rcdir
+  if rc_dir is None:
+    rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
+
+  rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
 
   if flag.headless:
     state.InitInteractive(mem)
@@ -560,12 +575,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # below.  Note: this may need to be tweaked.
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
-    # NOTE: called AFTER _InitDefaultCompletions.
-    with state.ctx_ThisDir(mem, rc_path):
-      try:
-        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
-      except util.UserExit as e:
-        return e.status
+    # NOTE: rc files loaded AFTER _InitDefaultCompletions.
+    for rc_path in rc_paths:
+      with state.ctx_ThisDir(mem, rc_path):
+        try:
+          SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
+        except util.UserExit as e:
+          return e.status
 
     loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
     try:
@@ -627,12 +643,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     process.InitInteractiveShell()
     job_state.InitJobControl()
 
-    # NOTE: called AFTER _InitDefaultCompletions.
-    with state.ctx_ThisDir(mem, rc_path):
-      try:
-        SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
-      except util.UserExit as e:
-        return e.status
+    # NOTE: rc files loaded AFTER _InitDefaultCompletions.
+    for rc_path in rc_paths:
+      with state.ctx_ThisDir(mem, rc_path):
+        try:
+          SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
+        except util.UserExit as e:
+          return e.status
 
     assert line_reader is not None
     line_reader.Reset()  # After sourcing startup file, render $PS1
@@ -665,6 +682,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
     print_stderr('osh warning: --rcfile ignored in non-interactive shell')
+  if flag.rcdir is not None:
+    print_stderr('osh warning: --rcdir ignored in non-interactive shell')
 
   if exec_opts.noexec():
     status = 0

@@ -49,6 +49,56 @@ RCFILE
 ## N-I dash status: 2
 ## N-I mksh status: 1
 
+#### interactive shell loads files in rcdir (when combined with -c)
+case $SH in dash|bash|mksh) exit ;; esac
+
+$SH -c 'echo A'
+
+cat >$TMP/rcfile <<EOF
+echo 'rcfile first'
+EOF
+
+mkdir -p $TMP/rcdir
+
+cat >$TMP/rcdir/file1 <<EOF
+echo rcdir 1
+EOF
+
+cat >$TMP/rcdir/file2 <<EOF
+echo rcdir 2
+EOF
+
+# --rcdir only
+$SH --rcdir $TMP/rcdir -i -c 'echo B'
+
+$SH --rcfile $TMP/rcfile --rcdir $TMP/rcdir -i -c 'echo C'
+
+## STDOUT:
+A
+rcdir 1
+rcdir 2
+B
+rcfile first
+rcdir 1
+rcdir 2
+C
+## END
+## N-I dash/mksh/bash STDOUT:
+## END
+
+#### nonexistent --rcdir is ignored
+case $SH in dash|bash|mksh) exit ;; esac
+
+$SH --rcdir $TMP/__does-not-exist -i -c 'echo hi'
+echo status=$?
+
+## STDOUT:
+hi
+status=0
+## END
+## N-I dash/bash/mksh STDOUT:
+## END
+
 #### interactive shell runs PROMPT_COMMAND after each command
 export PS1=''  # OSH prints prompt to stdout
 

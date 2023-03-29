@@ -46,6 +46,7 @@ class ArgsTest(unittest.TestCase):
 
     s.LongFlag('--help')
     s.LongFlag('--rcfile', args.String)
+    s.LongFlag('--rcdir', args.String)
 
     s.LongFlag('--ast-format', ['text', 'html'])
 
@@ -76,11 +77,13 @@ class ArgsTest(unittest.TestCase):
         [('errexit', False), ('nounset', False), ('pipefail', True)],
         arg.opt_changes)
 
-    arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc'])
+    arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc', '--rcdir', 'bashrcdir'])
     arg = args.ParseMore(s, arg_r)
     self.assertEqual('echo hi', arg.c)
     self.assertEqual(True, arg.help)
     self.assertEqual('bashrc', arg.rcfile)
+    self.assertEqual('bashrcdir', arg.rcdir)
+
 
     # This is an odd syntax!
     arg_r = args.Reader(['-euo', 'pipefail'])
