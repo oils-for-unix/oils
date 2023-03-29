@@ -124,7 +124,7 @@ class Dict {
   Slab<V>* values_;   // Dict<K, int>
 
   // A dict has 3 pointers the GC needs to follow.
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Dict, entry_)) | maskbit(offsetof(Dict, keys_)) |
            maskbit(offsetof(Dict, values_));
   }

@@ -4,10 +4,7 @@ builtin_trap.py
 """
 from __future__ import print_function
 
-from signal import (
-    SIG_DFL, SIG_IGN, SIGKILL, SIGSTOP, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN,
-    SIGWINCH
-)
+from signal import SIG_DFL, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -29,7 +26,6 @@ from mycpp.mylib import iteritems, print_stderr
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
-  from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
 
@@ -51,8 +47,13 @@ class TrapState(object):
     self.hooks = {}  # type: Dict[str, command_t]
     self.traps = {}  # type: Dict[int, command_t]
 
-    # The display can be notified when we get SIGWINCH.
-    self.display = None  # type: Optional[_IDisplay]
+  def ClearForSubProgram(self):
+    # type: () -> None
+    """ SubProgramThunk uses this because traps aren't inherited. """
+
+    # Hooks like EXIT remain
+    #self.hooks.clear()
+    self.traps.clear()
 
   def GetHook(self, hook_name):
     # type: (str) -> command_t
@@ -86,32 +87,6 @@ class TrapState(object):
       self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
     else:
       pyos.Sigaction(sig_num, SIG_DFL)
-
-  def InitInteractiveShell(self, display, my_pid):
-    # type: (_IDisplay, int) -> None
-    """Called when initializing an interactive shell."""
-
-    self.display = display
-
-    # The shell itself should ignore Ctrl-\.
-    pyos.Sigaction(SIGQUIT, SIG_IGN)
-
-    # This prevents Ctrl-Z from suspending OSH in interactive mode.
-    pyos.Sigaction(SIGTSTP, SIG_IGN)
-
-    # More signals from
-    # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
-    # (but not SIGCHLD)
-    pyos.Sigaction(SIGTTOU, SIG_IGN)
-    pyos.Sigaction(SIGTTIN, SIG_IGN)
-
-    # Register a callback to receive terminal width changes.
-    # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
-
-    # This is ALWAYS on, which means that it can cause EINTR, and wait() and
-    # read() have to handle it
-    pyos.RegisterSignalInterest(SIGWINCH)
-    self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
 
   def GetPendingTraps(self):
     # type: () -> Optional[List[command_t]]

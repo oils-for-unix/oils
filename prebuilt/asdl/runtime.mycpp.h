@@ -53,7 +53,7 @@ class ColorOutput {
   mylib::Writer* f;
   int num_chars;
   
-  static constexpr uint16_t field_mask() {
+  static constexpr uint32_t field_mask() {
     return maskbit_v(offsetof(ColorOutput, f));
   }
 

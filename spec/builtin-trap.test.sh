@@ -36,10 +36,35 @@ status=0
 ## END
 
 #### trap -p
+case $SH in (dash|mksh) exit ;; esac
+
 trap 'echo exit' EXIT
-trap -p | grep EXIT >/dev/null
-## status: 0
-## N-I dash/mksh status: 1
+# debug trap also remains on
+#trap 'echo debug' DEBUG
+
+trap -p > parent.txt
+
+trap -p | cat > child.txt
+
+grep EXIT parent.txt >/dev/null
+echo status=$?
+
+grep EXIT child.txt >/dev/null
+echo status=$?
+
+#grep DEBUG parent.txt >/dev/null
+#echo status=$?
+
+#grep DEBUG child.txt >/dev/null
+#echo status=$?
+
+## STDOUT:
+status=0
+status=0
+exit
+## END
+## N-I dash/mksh STDOUT:
+## END
 
 #### Register invalid trap
 trap 'foo' SIGINVALID
@@ -122,22 +147,78 @@ IN TRAP
 FOO
 ## END
 
-#### trap DEBUG
-debuglog() {
-  echo "debuglog [$@]"
-}
-trap 'debuglog x y' DEBUG
-echo 1
-echo 2
+#### trap with command sub / subshell / pipeline
+trap 'echo EXIT TRAP' EXIT 
+
+echo $(echo command sub)
+
+( echo subshell )
+
+echo pipeline | cat
+
 ## STDOUT:
-debuglog [x y]
-1
-debuglog [x y]
-2
+command sub
+subshell
+pipeline
+EXIT TRAP
+## END
+
+#### trap DEBUG
+case $SH in (dash|mksh) exit ;; esac
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+echo a
+echo b; echo c
+
+echo d && echo e
+echo f || echo g
+
+(( h = 42 ))
+[[ j == j ]]
+
+## STDOUT:
+  [8]
+a
+  [9]
+b
+  [9]
+c
+  [11]
+d
+  [11]
+e
+  [12]
+f
+  [14]
+  [15]
 ## END
 ## N-I dash/mksh STDOUT:
-1
-2
+## END
+
+#### trap DEBUG and command sub / subshell
+case $SH in (dash|mksh) exit ;; esac
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+echo "result =" $(echo command sub)
+( echo subshell )
+echo done
+
+## STDOUT:
+  [8]
+result = command sub
+subshell
+  [10]
+done
+## END
+## N-I dash/mksh STDOUT:
 ## END
 
 #### trap DEBUG and pipeline
@@ -151,7 +232,7 @@ trap 'debuglog $LINENO' DEBUG
 # gets run for each one of these
 { echo a; echo b; }
 
-# only run for the last one
+# only run for the last one, maybe I guess because traps aren't inherited?
 { echo x; echo y; } | wc -l
 
 # gets run for both of these
@@ -394,6 +475,7 @@ hi
 
 
 #### exit codes for traps are isolated
+
 trap 'echo USR1 trap status=$?; ( exit 42 )' USR1
 
 echo before=$?
@@ -407,4 +489,30 @@ echo after=$?
 before=0
 USR1 trap status=0
 after=0
+## END
+
+#### traps are cleared in subshell (started with &)
+
+# bash is FLAKY on CI for some reason.  dash/mksh are enough for us to test
+# against.
+case $SH in bash) exit ;; esac
+
+trap 'echo USR1' USR1
+
+kill -USR1 $$
+
+# Hm trap doesn't happen here
+{ echo begin child; sleep 0.1; echo end child; } &
+kill -USR1 $!
+wait
+
+echo done
+
+## STDOUT:
+USR1
+begin child
+end child
+done
+## END
+## BUG bash STDOUT:
 ## END

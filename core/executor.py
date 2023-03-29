@@ -35,6 +35,7 @@ if TYPE_CHECKING:
   from core import optview
   from core import state
   from core.vm import _Builtin
+  from osh import builtin_trap
 
 _ = log
 
@@ -104,6 +105,7 @@ class ShellExecutor(vm._Executor):
       tracer,  # type: dev.Tracer
       job_state,  # type: process.JobState
       fd_state,  # type: process.FdState
+      trap_state,  # type: builtin_trap.TrapState
       errfmt  # type: ui.ErrorFormatter
     ):
     # type: (...) -> None
@@ -121,6 +123,7 @@ class ShellExecutor(vm._Executor):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = job_state
     self.fd_state = fd_state
+    self.trap_state = trap_state
     self.errfmt = errfmt
     self.process_sub_stack = []  # type: List[_ProcessSubFrame]
 
@@ -162,7 +165,7 @@ class ShellExecutor(vm._Executor):
     #   interleaved.
     # - We could turn the `exit` builtin into a error.FatalRuntime exception
     #   and get this check for "free".
-    thunk = process.SubProgramThunk(self.cmd_ev, node,
+    thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
                                     inherit_errexit=inherit_errexit)
     p = process.Process(thunk, self.job_state, self.tracer)
     return p

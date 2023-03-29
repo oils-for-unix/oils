@@ -51,10 +51,11 @@ class ProcessTest(unittest.TestCase):
     self.job_state = process.JobState()
 
     signal_safe = pyos.InitSignalSafe()
-    trap_state = builtin_trap.TrapState(signal_safe)
+    self.trap_state = builtin_trap.TrapState(signal_safe)
 
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
-    self.waiter = process.Waiter(self.job_state, exec_opts, trap_state, self.tracer)
+    self.waiter = process.Waiter(
+        self.job_state, exec_opts, self.trap_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)
     self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer, None)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
@@ -159,10 +160,14 @@ class ProcessTest(unittest.TestCase):
     node2 = _CommandNode('head', self.arena)
     node3 = _CommandNode('sort --reverse', self.arena)
 
+    thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state)
+    thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
+    thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state)
+
     p = process.Pipeline(False, self.job_state)
-    p.Add(Process(process.SubProgramThunk(cmd_ev, node1), self.job_state, self.tracer)) 
-    p.Add(Process(process.SubProgramThunk(cmd_ev, node2), self.job_state, self.tracer))
-    p.Add(Process(process.SubProgramThunk(cmd_ev, node3), self.job_state, self.tracer))
+    p.Add(Process(thunk1, self.job_state, self.tracer))
+    p.Add(Process(thunk2, self.job_state, self.tracer))
+    p.Add(Process(thunk3, self.job_state, self.tracer))
 
     last_thunk = (cmd_ev, _CommandNode('cat', self.arena))
     p.AddLast(last_thunk)

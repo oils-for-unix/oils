@@ -12,18 +12,22 @@ from __future__ import print_function
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
-from signal import SIG_DFL, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP, SIGTTOU, SIGTTIN
+from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
+                    SIGTTOU, SIGTTIN, SIGWINCH)
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    job_state_e, job_state_t, job_state_str,
-    wait_status, wait_status_t,
+    job_state_e, job_state_t, job_state_str, wait_status, wait_status_t,
     redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
-    redirect_arg__MoveFd, redirect_arg__HereDoc,
-    value, value_e, value__Str, trace, trace_t
-)
+    redirect_arg__MoveFd, redirect_arg__HereDoc, value, value_e, value__Str,
+    trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
-    loc, redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
+    loc,
+    redir_loc,
+    redir_loc_e,
+    redir_loc_t,
+    redir_loc__VarName,
+    redir_loc__Fd,
 )
 from core import dev
 from core import pyutil
@@ -42,9 +46,19 @@ from mycpp.mylib import print_stderr, tagswitch, iteritems, StrFromC
 import posix_ as posix
 from posix_ import (
     # translated by mycpp and directly called!  No wrapper!
-    WIFSIGNALED, WIFEXITED, WIFSTOPPED,
-    WEXITSTATUS, WTERMSIG,
-    O_APPEND, O_CREAT, O_NONBLOCK, O_NOCTTY, O_RDONLY, O_RDWR, O_WRONLY, O_TRUNC,
+    WIFSIGNALED,
+    WIFEXITED,
+    WIFSTOPPED,
+    WEXITSTATUS,
+    WTERMSIG,
+    O_APPEND,
+    O_CREAT,
+    O_NONBLOCK,
+    O_NOCTTY,
+    O_RDONLY,
+    O_RDWR,
+    O_WRONLY,
+    O_TRUNC,
 )
 
 from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -57,7 +71,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.util import _DebugFile
   from osh.cmd_eval import CommandEvaluator
-
+  from osh import builtin_trap
 
 NO_FD = -1
 
@@ -75,6 +89,30 @@ STYLE_LONG = 1
 STYLE_PID_ONLY = 2
 
 
+def InitInteractiveShell():
+  # type: () -> None
+  """Called when initializing an interactive shell."""
+
+  # The shell itself should ignore Ctrl-\.
+  pyos.Sigaction(SIGQUIT, SIG_IGN)
+
+  # This prevents Ctrl-Z from suspending OSH in interactive mode.
+  pyos.Sigaction(SIGTSTP, SIG_IGN)
+
+  # More signals from
+  # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
+  # (but not SIGCHLD)
+  pyos.Sigaction(SIGTTOU, SIG_IGN)
+  pyos.Sigaction(SIGTTIN, SIG_IGN)
+
+  # Register a callback to receive terminal width changes.
+  # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
+
+  # This is ALWAYS on, which means that it can cause EINTR, and wait() and
+  # read() have to handle it
+  pyos.RegisterSignalInterest(SIGWINCH)
+
+
 def SaveFd(fd):
   # type: (int) -> int
   saved = fcntl_.fcntl(fd, F_DUPFD, _SHELL_MIN_FD)  # type: int
@@ -82,6 +120,7 @@ def SaveFd(fd):
 
 
 class _RedirFrame(object):
+
   def __init__(self, saved_fd, orig_fd, forget):
     # type: (int, int, bool) -> None
     self.saved_fd = saved_fd
@@ -90,6 +129,7 @@ class _RedirFrame(object):
 
 
 class _FdFrame(object):
+
   def __init__(self):
     # type: () -> None
     self.saved = []  # type: List[_RedirFrame]
@@ -116,6 +156,7 @@ class FdState(object):
   For example, you can do 'myfunc > out.txt' without forking.  Child processes
   inherit our state.
   """
+
   def __init__(self, errfmt, job_state, mem, tracer, waiter):
     # type: (ErrorFormatter, JobState, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
     """
@@ -169,7 +210,8 @@ class FdState(object):
     # type: (str, int) -> None
     if self.mem:
       # setvar, not setref
-      state.OshLanguageSetValue(self.mem, location.LName(fd_name), value.Str(str(fd)))
+      state.OshLanguageSetValue(self.mem, location.LName(fd_name),
+                                value.Str(str(fd)))
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int
@@ -323,9 +365,9 @@ class FdState(object):
         try:
           open_fd = posix.open(arg.filename, mode, 0o666)
         except OSError as e:
-          self.errfmt.Print_(
-              "Can't open %r: %s" % (arg.filename, pyutil.strerror(e)),
-              blame_loc=loc.Span(r.op_spid))
+          self.errfmt.Print_("Can't open %r: %s" %
+                             (arg.filename, pyutil.strerror(e)),
+                             blame_loc=loc.Span(r.op_spid))
           raise  # redirect failed
 
         new_fd = self._PushDup(open_fd, r.loc)
@@ -462,7 +504,8 @@ class FdState(object):
         try:
           posix.dup2(rf.saved_fd, rf.orig_fd)
         except OSError as e:
-          log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd, pyutil.strerror(e))
+          log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
+              pyutil.strerror(e))
           #log('fd state:')
           #posix.system('ls -l /proc/%s/fd' % posix.getpid())
           raise
@@ -479,6 +522,7 @@ class FdState(object):
 
 
 class ChildStateChange(object):
+
   def __init__(self):
     # type: () -> None
     """Empty constructor for mycpp."""
@@ -495,6 +539,7 @@ class ChildStateChange(object):
 
 
 class StdinFromPipe(ChildStateChange):
+
   def __init__(self, pipe_read_fd, w):
     # type: (int, int) -> None
     self.r = pipe_read_fd
@@ -514,6 +559,7 @@ class StdinFromPipe(ChildStateChange):
 
 
 class StdoutToPipe(ChildStateChange):
+
   def __init__(self, r, pipe_write_fd):
     # type: (int, int) -> None
     self.r = r
@@ -533,6 +579,7 @@ class StdoutToPipe(ChildStateChange):
 
 
 class SetProcessGroup(ChildStateChange):
+
   def __init__(self, group_id):
     # type: (int) -> None
     self.group_id = group_id
@@ -542,7 +589,8 @@ class SetProcessGroup(ChildStateChange):
     try:
       posix.setpgid(0, self.group_id)
     except OSError as e:
-      print_stderr('osh: Failed to set process group for PID %d to %d: %s' % (posix.getpid(), self.group_id, pyutil.strerror(e)))
+      print_stderr('osh: Failed to set process group for PID %d to %d: %s' %
+                   (posix.getpid(), self.group_id, pyutil.strerror(e)))
 
   def ApplyFromParent(self, proc):
     # type: (Process) -> None
@@ -550,19 +598,19 @@ class SetProcessGroup(ChildStateChange):
       posix.setpgid(proc.pid, self.group_id)
     except OSError as e:
       print_stderr('osh: Failed to set process group for PID %d to %d: %s' %
-              (proc.pid, self.group_id, pyutil.strerror(e)))
-
+                   (proc.pid, self.group_id, pyutil.strerror(e)))
 
 
 class ExternalProgram(object):
   """The capability to execute an external program like 'ls'. """
 
-  def __init__(self,
-               hijack_shebang,  # type: str
-               fd_state,  # type: FdState
-               errfmt,  # type: ErrorFormatter
-               debug_f,  # type: _DebugFile
-               ):
+  def __init__(
+      self,
+      hijack_shebang,  # type: str
+      fd_state,  # type: FdState
+      errfmt,  # type: ErrorFormatter
+      debug_f,  # type: _DebugFile
+  ):
     # type: (...) -> None
     """
     Args:
@@ -584,7 +632,7 @@ class ExternalProgram(object):
       ( ls / )
     """
     self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_spids[0], environ, True)
-    assert False, "This line should never execute" # NO RETURN
+    assert False, "This line should never execute"  # NO RETURN
 
   def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
     # type: (str, List[str], int, Dict[str, str], bool) -> None
@@ -627,9 +675,9 @@ class ExternalProgram(object):
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
 
-      self.errfmt.Print_(
-          "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
-          blame_loc=loc.Span(argv0_spid))
+      self.errfmt.Print_("Can't execute %r: %s" %
+                         (argv0_path, pyutil.strerror(e)),
+                         blame_loc=loc.Span(argv0_spid))
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
@@ -705,10 +753,11 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, cmd_ev, node, inherit_errexit=True):
-    # type: (CommandEvaluator, command_t, bool) -> None
+  def __init__(self, cmd_ev, node, trap_state, inherit_errexit=True):
+    # type: (CommandEvaluator, command_t, builtin_trap.TrapState, bool) -> None
     self.cmd_ev = cmd_ev
     self.node = node
+    self.trap_state = trap_state
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
   def UserString(self):
@@ -724,6 +773,9 @@ class SubProgramThunk(Thunk):
   def Run(self):
     # type: () -> None
     #self.errfmt.OneLineErrExit()  # don't quote code in child processes
+
+    # signal handlers aren't inherited
+    self.trap_state.ClearForSubProgram()
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:
@@ -761,6 +813,7 @@ class _HereDocWriterThunk(Thunk):
 
   May be be executed in either a child process or the main shell process.
   """
+
   def __init__(self, w, body_str):
     # type: (int, str) -> None
     self.w = w
@@ -831,6 +884,7 @@ class Process(Job):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
+
   def __init__(self, thunk, job_state, tracer):
     # type: (Thunk, JobState, dev.Tracer) -> None
     """
@@ -1037,6 +1091,7 @@ class Pipeline(Job):
   $(foo | bar)
   foo | bar | read v
   """
+
   def __init__(self, sigpipe_status_ok, job_state):
     # type: (bool, JobState) -> None
     Job.__init__(self)
@@ -1064,7 +1119,8 @@ class Pipeline(Job):
         else:
           job_id_str = '  '  # 2 spaces
 
-          f.write('%s %d %7s ' % (job_id_str, proc.pid, _JobStateStr(proc.state)))
+          f.write('%s %d %7s ' %
+                  (job_id_str, proc.pid, _JobStateStr(proc.state)))
           f.write(proc.thunk.UserString())
           f.write('\n')
 
@@ -1121,7 +1177,7 @@ class Pipeline(Job):
     # the pipelines's group ID.
     group_id = -1
     if self.job_state.JobControlEnabled():
-      group_id = 0 # first process will create a group
+      group_id = 0  # first process will create a group
 
     for i, proc in enumerate(self.procs):
       if group_id != -1:
@@ -1268,7 +1324,7 @@ class JobState(object):
     # type: () -> None
 
     # pid -> Job instance
-    # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict! 
+    # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict!
     # This is for display in 'jobs' builtin and for %+ %1 lookup.
     self.jobs = {}  # type: Dict[int, Job]
 
@@ -1348,7 +1404,8 @@ class JobState(object):
     try:
       posix.tcsetpgrp(self.shell_tty_fd, pgrp)
     except OSError as e:
-      e_die('osh: Failed to move process group %d to foreground: %s' % (pgrp, pyutil.strerror(e)))
+      e_die('osh: Failed to move process group %d to foreground: %s' %
+            (pgrp, pyutil.strerror(e)))
 
   def MaybeTakeTerminal(self):
     # type: () -> None
@@ -1382,7 +1439,7 @@ class JobState(object):
   def WhenContinued(self, pid, waiter):
     # type: (int, Waiter) -> int
     if pid == self.last_stopped_pid:
-        self.last_stopped_pid = -1
+      self.last_stopped_pid = -1
     job = self.JobFromPid(pid)
     # needed for Wait() loop to work
     job.state = job_state_e.Running
@@ -1512,7 +1569,7 @@ class JobState(object):
 
 
 # Some WaitForOne() return values
-W1_OK = -2      # waitpid(-1) returned
+W1_OK = -2  # waitpid(-1) returned
 W1_ECHILD = -3  # no processes to wait for
 
 
@@ -1537,6 +1594,7 @@ class Waiter(object):
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
   """
+
   def __init__(self, job_state, exec_opts, signal_safe, tracer):
     # type: (JobState, optview.Exec, pyos.SignalSafe, dev.Tracer) -> None
     self.job_state = job_state

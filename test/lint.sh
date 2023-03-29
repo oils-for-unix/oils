@@ -81,8 +81,6 @@ test-asdl-format() {
 # Python
 #
 
-# yapf: was useful, but might cause big diffs
-
 find-prune() {
   ### find real source files
 
@@ -200,6 +198,10 @@ run-yapf-3() {
 
 py2-files-to-format() {
   ### Just print ASDL files for now
+
+  # Recently modified
+  echo core/process.py
+  echo core/ui.py
 
   for name in asdl/*.py; do
     echo $name

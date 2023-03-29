@@ -22,15 +22,18 @@ my-curl() {
 messages-in-stream() {
   local bot_email=$1
   local bot_api_key=$2
+  local stream=${3:-'blog-ideas'}
+
+  local narrow='[{"operand": "'$stream'", "operator": "stream"}]'
 
   # copied from example at https://zulip.com/api/get-messages 
   my-curl \
     -u "$bot_email:$bot_api_key" \
     -d 'anchor=newest' \
-    -d 'num_before=50' \
+    -d 'num_before=1000' \
     -d 'num_after=0' \
     -d 'apply_markdown=false' \
-    --data-urlencode narrow='[{"operand": "oil-dev", "operator": "stream"}]' \
+    --data-urlencode narrow="$narrow" \
     https://oilshell.zulipchat.com/api/v1/messages 
 
     # doesn't work
@@ -38,21 +41,21 @@ messages-in-stream() {
 }
 
 print-thread() {
+  # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
+
+  #local needle="Spring 2023 Blog Posts"
+  local needle="Notes on Naming Blog Post"
+  local needle='Renaming Oil to "Oils for Unix" and YSH, like Busybox'
 
   # JQ query
   # - narrow to messages array
-  # - select content and subject field
-  # - select only records where subject is a certain value
-  # - then print the content.  -r prints it raw.
+  # - create record with content and subject field
+  # - select records where subject is "needle" var
+  # - print the content.  -r prints it raw.
 
-  # TODO: Make the subject an argument.  Maybe do fuzzy matching with JQ.
-
-  # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
-
-  messages-in-stream "$@" | jq -r \
-    '.messages[] | { content: .content, subject: .subject } | select( .subject == "Oil 0.14.2" ) | .content '
-    #'{ content: .messages[].content, subject: .messages[].subject }'
-    #'{ subject: .messages[].subject }'
+  messages-in-stream "$@" | jq --arg needle "$needle" -r \
+    '.messages[] | { content: .content, subject: .subject } |
+      select( .subject == $needle ) | (.content + "\n\n")'
 }
 
 #
@@ -62,9 +65,6 @@ print-thread() {
 topics() {
   local bot_email=$1
   local bot_api_key=$2
-
-  # stream ID for #oil-discuss
-  #local stream_id=121540
 
   # stream ID for #oil-dev.  You get the max ID
   local stream_id=121539
