@@ -52,7 +52,7 @@ RCFILE
 
 #### interactive shell loads files in rcdir (when combined with -c)
 $SH -c 'echo 1'
-mkdir $TMP/rcdir
+mkdir -p $TMP/rcdir
 cat >$TMP/rcdir/file1 <<EOF
 echo RCFILE1
 EOF
