@@ -444,8 +444,13 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
+}
+
+builtin-trap-bash() {
+  sh-spec spec/builtin-trap-bash.test.sh --osh-failures-allowed 5 \
+    $BASH $OSH_LIST "$@"
 }
 
 # Bash implements type -t, but no other shell does.  For Nix.
