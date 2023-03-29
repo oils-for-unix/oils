@@ -189,6 +189,8 @@ echo f || echo g
 
 var=value
 
+readonly r=value
+
 ## STDOUT:
   [8]
 a
@@ -205,6 +207,7 @@ f
   [14]
   [15]
   [17]
+  [19]
 ## END
 
 #### trap DEBUG and command sub / subshell
@@ -288,20 +291,29 @@ trap 'debuglog $LINENO' DEBUG
 f() {
   local mylocal=1
   for i in "$@"; do
-    export i=$i
+    echo i=$i
   done
 }
 
-echo '-- function call --'
-f A B C  # executes ONCE here, but does NOT go into the function call
+f A B  # executes ONCE here, but does NOT go into the function call
+
+echo next
 
 f X Y
 
+echo ok
+
 ## STDOUT:
   [13]
--- function call --
-  [14]
-  [16]
+i=A
+i=B
+  [15]
+next
+  [17]
+i=X
+i=Y
+  [19]
+ok
 ## END
 
 #### trap DEBUG case

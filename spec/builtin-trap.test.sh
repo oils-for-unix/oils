@@ -127,28 +127,79 @@ pipeline
 EXIT TRAP
 ## END
 
-#### trap ERR and disable it
+#### trap ERR
 err() {
   echo "err [$@] $?"
 }
 trap 'err x y' ERR 
-echo 1
+
+echo A
+
 false
-echo 2
+echo B
+
+( exit 42 )
+echo C
+
 trap - ERR  # disable trap
+
 false
-echo 3
+echo D
+
 ## STDOUT:
-1
+A
 err [x y] 1
-2
-3
+B
+err [x y] 42
+C
+D
 ## END
 ## N-I dash STDOUT:
-1
-2
-3
+A
+B
+C
+D
 ## END
+
+#### trap ERR and pipelines
+case $SH in dash) exit ;; esac
+
+err() {
+  echo "err [$@] $? [$PIPESTATUS]"
+}
+trap 'err x y' ERR 
+
+echo A
+
+false
+
+# succeeds
+echo B | grep B
+
+# fails
+echo C | grep zzz
+
+echo D | grep zzz | cat
+
+set -o pipefail
+echo E | grep zzz | cat
+
+trap - ERR  # disable trap
+
+echo F | grep zz
+echo ok
+
+## STDOUT:
+A
+err [x y] 1 [1]
+B
+err [x y] 1 [0]
+err [x y] 1 [0]
+ok
+## END
+## N-I dash STDOUT:
+## END
+
 
 #### trap 0 is equivalent to EXIT
 # not sure why this is, but POSIX wants it.

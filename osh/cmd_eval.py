@@ -1772,7 +1772,7 @@ class CommandEvaluator(object):
     Could use i & (n-1) == i & 255  because we have a power of 2.
     https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
-    if self.mem.running_debug_trap:  # prevent infinite recursion
+    if not self.mem.ShouldRunDebugTrap():
       return
 
     node = self.trap_state.GetHook('DEBUG')  # type: command_t

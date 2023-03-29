@@ -1450,6 +1450,17 @@ class Mem(object):
     self.var_stack.pop()
     self.argv_stack.pop()
 
+  def ShouldRunDebugTrap(self):
+    # Don't recursively run DEBUG trap
+    if self.running_debug_trap:
+      return False
+
+    # Don't run it inside functions
+    if len(self.var_stack) > 1:
+      return False
+
+    return True
+
   def PushSource(self, source_name, argv):
     # type: (str, List[str]) -> None
     """For 'source foo.sh 1 2 3."""
