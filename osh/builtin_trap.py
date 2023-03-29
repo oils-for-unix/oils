@@ -51,8 +51,7 @@ class TrapState(object):
     # type: () -> None
     """ SubProgramThunk uses this because traps aren't inherited. """
 
-    # Hooks like EXIT remain
-    #self.hooks.clear()
+    self.hooks.clear()
     self.traps.clear()
 
   def GetHook(self, hook_name):
@@ -243,7 +242,7 @@ class Trap(vm._Builtin):
 
     # Register a hook.
     if sig_key in _HOOK_NAMES:
-      if sig_key in ('ERR', 'RETURN', 'DEBUG'):
+      if sig_key in ('ERR', 'RETURN'):
         print_stderr("osh warning: The %r hook isn't implemented" % sig_spec)
       self.trap_state.AddUserHook(sig_key, node)
       return 0

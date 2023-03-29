@@ -8,28 +8,42 @@ trap -l | grep INT >/dev/null
 #### trap -p
 
 trap 'echo exit' EXIT
-# debug trap also remains on
-#trap 'echo debug' DEBUG
 
 trap -p > parent.txt
 
-trap -p | cat > child.txt
-
 grep EXIT parent.txt >/dev/null
-echo status=$?
-
-grep EXIT child.txt >/dev/null
-echo status=$?
-
-#grep DEBUG parent.txt >/dev/null
-#echo status=$?
-
-#grep DEBUG child.txt >/dev/null
-#echo status=$?
+if test $? -eq 0; then
+  echo shown
+else
+  echo not shown
+fi
 
 ## STDOUT:
-status=0
-status=0
+shown
+exit
+## END
+
+#### trap -p in child is BUGGY in bash
+
+# It shows the trap even though it doesn't execute it!
+
+trap 'echo exit' EXIT
+
+trap -p | cat > child.txt
+
+grep EXIT child.txt >/dev/null
+if test $? -eq 0; then
+  echo shown
+else
+  echo not shown
+fi
+
+## STDOUT:
+not shown
+exit
+## END
+## BUG bash STDOUT:
+shown
 exit
 ## END
 

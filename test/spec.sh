@@ -449,7 +449,7 @@ builtin-trap() {
 }
 
 builtin-trap-bash() {
-  sh-spec spec/builtin-trap-bash.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/builtin-trap-bash.test.sh --osh-failures-allowed 4 \
     $BASH $OSH_LIST "$@"
 }
 
