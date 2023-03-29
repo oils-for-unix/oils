@@ -33,6 +33,102 @@ status=0
 exit
 ## END
 
+#### trap DEBUG ignores $?
+debuglog() {
+  echo "  [$@]"
+  return 42     # IGNORED FAILURE
+}
+
+trap 'debuglog $LINENO' DEBUG
+
+echo status=$?
+echo A
+echo status=$?
+echo B
+echo status=$?
+
+## STDOUT:
+  [8]
+status=0
+  [9]
+A
+  [10]
+status=0
+  [11]
+B
+  [12]
+status=0
+## END
+
+#### but trap DEBUG respects errexit
+set -o errexit
+
+debuglog() {
+  echo "  [$@]"
+  return 42
+}
+
+trap 'debuglog $LINENO' DEBUG
+
+echo status=$?
+echo A
+echo status=$?
+echo B
+echo status=$?
+
+## status: 42
+## STDOUT:
+  [10]
+## END
+
+#### trap DEBUG with 'return'
+
+debuglog() {
+  echo "  [$@]"
+}
+
+
+trap 'debuglog $LINENO; return 42' DEBUG
+
+echo status=$?
+echo A
+echo status=$?
+echo B
+echo status=$?
+
+## STDOUT:
+  [8]
+status=0
+  [9]
+A
+  [10]
+status=0
+  [11]
+B
+  [12]
+status=0
+## END
+
+#### trap DEBUG with 'exit'
+debuglog() {
+  echo "  [$@]"
+}
+
+trap 'debuglog $LINENO; exit 42' DEBUG
+
+echo status=$?
+echo A
+echo status=$?
+echo B
+echo status=$?
+
+## status: 42
+## STDOUT:
+  [7]
+## END
+
+
+
 #### trap DEBUG
 case $SH in (dash|mksh) exit ;; esac
 

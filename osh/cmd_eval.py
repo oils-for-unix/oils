@@ -648,6 +648,7 @@ class CommandEvaluator(object):
     with tagswitch(node) as case:
       if case(command_e.Simple):
         node = cast(command__Simple, UP_node)
+
         cmd_st.check_errexit = True
 
         # Find span_id for a basic implementation of $LINENO, e.g.
@@ -659,6 +660,8 @@ class CommandEvaluator(object):
           # Special case for __cat < file: leave it at the redirect.
           if span_id != runtime.NO_SPID:
             self.mem.SetCurrentSpanId(span_id)
+
+        self.MaybeRunDebugTrap()
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
@@ -803,6 +806,7 @@ class CommandEvaluator(object):
         node = cast(command__DBracket, UP_node)
         left_spid = node.spids[0]
         self.mem.SetCurrentSpanId(left_spid)
+        self.MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
@@ -815,6 +819,7 @@ class CommandEvaluator(object):
         node = cast(command__DParen, UP_node)
         left_spid = node.spids[0]
         self.mem.SetCurrentSpanId(left_spid)
+        self.MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
 
@@ -1722,7 +1727,7 @@ class CommandEvaluator(object):
     """If an EXIT trap exists, run it.
     
     Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
-    all bash/dash/mksh seem to agree on it.  See cases 7-10 in
+    all bash/dash/mksh seem to agree on it.  See cases in
     builtin-trap.test.sh.
 
     Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
@@ -1733,6 +1738,8 @@ class CommandEvaluator(object):
     """
     node = self.trap_state.GetHook('EXIT')  # type: command_t
     if node:
+      # NOTE: Don't set option_i._running_trap, because that's for
+      # RunPendingTraps() in the MAIN LOOP
       with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
         try:
           is_return, is_fatal = self.ExecuteAndCatch(node)
@@ -1741,6 +1748,34 @@ class CommandEvaluator(object):
           return
         if is_return:  # explicit 'return' in the trap handler!
           mut_status.i = self.LastStatus()
+
+  def MaybeRunDebugTrap(self):
+    # type: () -> None
+    """If an EXIT trap exists, run it.
+    
+    Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
+    all bash/dash/mksh seem to agree on it.  See cases in
+    builtin-trap.test.sh.
+
+    Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
+    of this awkward interface.  But that's true in Python and not C!
+
+    Could use i & (n-1) == i & 255  because we have a power of 2.
+    https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
+    """
+    if self.mem.running_debug_trap:  # prevent infinite recursion
+      return
+
+    node = self.trap_state.GetHook('DEBUG')  # type: command_t
+    if node:
+      # NOTE: Don't set option_i._running_trap, because that's for
+      # RunPendingTraps() in the MAIN LOOP
+
+      with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
+        with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+          with state.ctx_DebugTrap(self.mem):  # for SetCurrentSpanId $LINENO
+            # Don't catch util.UserExit, etc.
+            self._Execute(node)
 
   def RunProc(self, proc, argv, arg0_spid):
     # type: (Proc, List[str], int) -> int

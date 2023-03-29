@@ -156,6 +156,23 @@ class ctx_Source(object):
     self.mem.PopSource(self.argv)
 
 
+class ctx_DebugTrap(object):
+  """For trap DEBUG."""
+
+  def __init__(self, mem):
+    # type: (Mem) -> None
+    mem.running_debug_trap = True
+    self.mem = mem
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mem.running_debug_trap = False
+
+
 class ctx_Option(object):
   """shopt --unset errexit { false } """
   def __init__(self, mutable_opts, opt_nums, b):
@@ -1293,6 +1310,8 @@ class Mem(object):
 
     self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
+    self.running_debug_trap = False  # set by ctx_DebugTrap()
+
   def __repr__(self):
     # type: () -> str
     parts = []  # type: List[str]
@@ -1360,6 +1379,9 @@ class Mem(object):
     It's also set on SimpleCommand, ShAssignment, ((, [[, etc. and used as
     a fallback when e_die() didn't set any location information.
     """
+    if self.running_debug_trap:
+      return
+
     if span_id == runtime.NO_SPID:
       # NOTE: This happened in the osh-runtime benchmark for yash.
       log('Warning: span_id undefined in SetCurrentSpanId')
