@@ -1451,6 +1451,8 @@ class Mem(object):
     self.argv_stack.pop()
 
   def ShouldRunDebugTrap(self):
+    # type: () -> bool
+
     # Don't recursively run DEBUG trap
     if self.running_debug_trap:
       return False
