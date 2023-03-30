@@ -1577,6 +1577,8 @@ class CommandEvaluator(object):
 
           if 0:
             from _devbuild.gen.syntax_asdl import command_str
+            if status == 1 and node.tag_() == command_e.Simple:
+              log('node %s', node)
             log('node %s status %d PIPE %s', command_str(node.tag_()), status, pipe_status)
 
         else:

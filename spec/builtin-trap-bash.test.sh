@@ -230,7 +230,7 @@ subshell
 done
 ## END
 
-#### trap DEBUG and pipeline
+#### trap DEBUG and pipeline (lastpipe difference)
 debuglog() {
   echo "  [$@]"
 }
@@ -267,7 +267,7 @@ b
 1
 ## END
 
-# Marking OK due to fundamental execution difference
+# Marking OK due to lastpipe execution difference
 
 ## OK osh STDOUT:
   [6]
