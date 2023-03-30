@@ -1423,6 +1423,16 @@ class Mem(object):
     # type: (List[int]) -> None
     self.pipe_status[-1] = x
 
+  def SetSimplePipeStatus(self, status):
+    # type: (int) -> None
+
+    # Optimization to avoid allocations
+    top = self.pipe_status[-1]
+    if len(top) == 1:
+      top[0] = status
+    else:
+      self.pipe_status[-1] = [status]
+
   def SetProcessSubStatus(self, x):
     # type: (List[int]) -> None
     self.process_sub_status[-1] = x

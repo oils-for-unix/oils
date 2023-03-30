@@ -174,9 +174,9 @@ D
 case $SH in dash) exit ;; esac
 
 err() {
-  echo "err [$@] $? [${PIPESTATUS[@]}]"
+  echo "err [$@] status=$? [${PIPESTATUS[@]}]"
 }
-trap 'err x y' ERR 
+trap 'err' ERR 
 
 echo A
 
@@ -200,10 +200,10 @@ echo ok
 
 ## STDOUT:
 A
-err [x y] 1 [1]
+err [] status=1 [1]
 B
-err [x y] 1 [0 1]
-err [x y] 1 [0 1 0]
+err [] status=1 [0 1]
+err [] status=1 [0 1 0]
 ok
 ## END
 ## N-I dash STDOUT:

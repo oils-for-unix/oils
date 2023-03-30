@@ -353,11 +353,14 @@ class CommandEvaluator(object):
   def _CheckStatus(self, status, cmd_st, node, blame_spid):
     # type: (int, CommandStatus, command_t, int) -> None
     """Raises error.ErrExit, maybe with location info attached."""
+    assert status >= 0
 
-    if status != 0:
-      self._MaybeRunErrTrap()
+    if status == 0:
+      return  # Nothing to do
 
-    if self.exec_opts.errexit() and status != 0:
+    self._MaybeRunErrTrap()
+
+    if self.exec_opts.errexit():
       # NOTE: Sometimes location info is duplicated.
       # - 'type -z' has a UsageError with location, then errexit
       # - '> /nonexistent' has an I/O error, then errexit
@@ -1550,7 +1553,12 @@ class CommandEvaluator(object):
 
           # Compute status from @PIPESTATUS
           pipe_status = cmd_st.pipe_status
-          if pipe_status is not None:  # Did we run a pipeline?
+
+          if pipe_status is None:
+            # PIPESTATUS set even on non-pipelines
+            self.mem.SetSimplePipeStatus(status) 
+
+          else:  # Did we run a pipeline?
             self.mem.SetPipeStatus(pipe_status)
 
             if self.exec_opts.pipefail():
@@ -1566,6 +1574,10 @@ class CommandEvaluator(object):
 
             if cmd_st.pipe_negated:
               status = 1 if status == 0 else 0
+
+          if 0:
+            from _devbuild.gen.syntax_asdl import command_str
+            log('node %s status %d PIPE %s', command_str(node.tag_()), status, pipe_status)
 
         else:
           # I/O error when applying redirects, e.g. bad file descriptor.
@@ -1811,7 +1823,7 @@ class CommandEvaluator(object):
       # RunPendingTraps() in the MAIN LOOP
 
       with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
-        with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+        #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
           with ctx_ErrTrap(self):
             self._Execute(node)
 

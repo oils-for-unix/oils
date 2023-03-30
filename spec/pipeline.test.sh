@@ -49,6 +49,18 @@ echo ${PIPESTATUS[@]}
 ## N-I zsh status: 0
 ## N-I zsh stdout-json: "\n"
 
+#### PIPESTATUS is set on simple commands
+case $SH in dash|zsh) exit ;; esac
+
+false
+echo pipestatus ${PIPESTATUS[@]}
+
+## STDOUT:
+pipestatus 1
+## END
+## N-I dash/zsh STDOUT:
+## END
+
 #### PIPESTATUS with shopt -s lastpipe
 shopt -s lastpipe
 return3() {
