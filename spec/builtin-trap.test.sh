@@ -170,7 +170,7 @@ C
 D
 ## END
 
-#### trap ERR and pipelines (lastpipe difference)
+#### trap ERR and pipelines (lastpipe and PIPESTATUS difference)
 case $SH in dash) exit ;; esac
 
 err() {
@@ -208,12 +208,13 @@ ok
 ## END
 
 # lastpipe semantics mean we get another call!
+# also we don't set PIPESTATUS unless we get a pipeline
 
 ## OK osh STDOUT:
 A
-err [] status=1 [1]
+err [] status=1 []
 B
-err [] status=1 [1]
+err [] status=1 [0 0]
 err [] status=1 [0 1]
 err [] status=1 [0 1 0]
 ok

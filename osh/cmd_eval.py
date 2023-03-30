@@ -1555,8 +1555,11 @@ class CommandEvaluator(object):
           pipe_status = cmd_st.pipe_status
 
           if pipe_status is None:
-            # PIPESTATUS set even on non-pipelines
-            self.mem.SetSimplePipeStatus(status) 
+            # bash/mksh set PIPESTATUS set even on non-pipelines
+            # This makes it annoying to check both _process_sub_status and
+            # _pipeline_status
+            #self.mem.SetSimplePipeStatus(status) 
+            pass
 
           else:  # Did we run a pipeline?
             self.mem.SetPipeStatus(pipe_status)
