@@ -589,16 +589,18 @@ class SetProcessGroup(ChildStateChange):
     try:
       posix.setpgid(0, self.group_id)
     except OSError as e:
-      print_stderr('osh: Failed to set process group for PID %d to %d: %s' %
-                   (posix.getpid(), self.group_id, pyutil.strerror(e)))
+      print_stderr(
+          'osh: child failed to set process group for PID %d to %d: %s' %
+          (posix.getpid(), self.group_id, pyutil.strerror(e)))
 
   def ApplyFromParent(self, proc):
     # type: (Process) -> None
     try:
       posix.setpgid(proc.pid, self.group_id)
     except OSError as e:
-      print_stderr('osh: Failed to set process group for PID %d to %d: %s' %
-                   (proc.pid, self.group_id, pyutil.strerror(e)))
+      print_stderr(
+          'osh: parent failed to set process group for PID %d to %d: %s' %
+          (proc.pid, self.group_id, pyutil.strerror(e)))
 
 
 class ExternalProgram(object):
