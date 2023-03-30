@@ -12,8 +12,7 @@
 #
 #   test/stateful.sh signals-quick                # not all shells
 #
-#   test/stateful.sh soil-run-py
-#   test/stateful.sh soil-run-cpp
+#   test/stateful.sh soil-run
 #
 # TODO: Should have QUICKLY=1 variants
 
