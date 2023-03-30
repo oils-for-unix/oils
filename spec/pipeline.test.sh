@@ -49,7 +49,7 @@ echo ${PIPESTATUS[@]}
 ## N-I zsh status: 0
 ## N-I zsh stdout-json: "\n"
 
-#### PIPESTATUS is set on simple commands
+#### PIPESTATUS is set on simple commands, but NOT in OSH
 case $SH in dash|zsh) exit ;; esac
 
 false
@@ -57,6 +57,9 @@ echo pipestatus ${PIPESTATUS[@]}
 
 ## STDOUT:
 pipestatus 1
+## END
+## OK osh STDOUT:
+pipestatus
 ## END
 ## N-I dash/zsh STDOUT:
 ## END
