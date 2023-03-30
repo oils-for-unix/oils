@@ -168,6 +168,7 @@ interactive-tasks() {
 
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host                -
+dump-hardware       soil/worker.sh dump-hardware                 -
 py-all-and-ninja    soil/worker.sh py-all-and-ninja              -
 process-table       test/process-table.sh soil-run               _tmp/process-table/index.html
 stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html

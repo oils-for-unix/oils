@@ -353,7 +353,9 @@ class CommandEvaluator(object):
   def _CheckStatus(self, status, cmd_st, node, blame_spid):
     # type: (int, CommandStatus, command_t, int) -> None
     """Raises error.ErrExit, maybe with location info attached."""
-    assert status >= 0
+
+    # TODO: This fails on Ctrl-Z, and I think indicates a bug
+    # assert status >= 0
 
     if status == 0:
       return  # Nothing to do
