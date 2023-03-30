@@ -354,8 +354,7 @@ class CommandEvaluator(object):
     # type: (int, CommandStatus, command_t, int) -> None
     """Raises error.ErrExit, maybe with location info attached."""
 
-    # TODO: This fails on Ctrl-Z, and I think indicates a bug
-    # assert status >= 0
+    assert status >= 0, status
 
     if status == 0:
       return  # Nothing to do

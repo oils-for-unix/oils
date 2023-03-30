@@ -247,6 +247,25 @@ def cycle_process_bg_fg(sh):
   expect_no_job(sh)
 
 
+@register()
+def suspend_status(sh):
+  'Ctrl-Z and then look at $?'
+
+  # This test seems flaky under bash for some reason
+
+  expect_prompt(sh)
+  sh.sendline('cat')
+
+  time.sleep(0.1)
+
+  ctrl_z(sh)
+  expect_prompt(sh)
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=148')
+  expect_prompt(sh)
+
+
 if __name__ == '__main__':
   try:
     sys.exit(harness.main(sys.argv))

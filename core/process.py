@@ -50,6 +50,7 @@ from posix_ import (
     WIFEXITED,
     WIFSTOPPED,
     WEXITSTATUS,
+    WSTOPSIG,
     WTERMSIG,
     O_APPEND,
     O_CREAT,
@@ -1022,6 +1023,7 @@ class Process(Job):
       if waiter.WaitForOne() == W1_ECHILD:
         break
 
+    assert self.status >= 0, self.status
     return self.status
 
   def JobWait(self, waiter):
@@ -1038,8 +1040,12 @@ class Process(Job):
 
     return wait_status.Proc(self.status)
 
-  def WhenStopped(self):
-    # type: () -> None
+  def WhenStopped(self, stop_sig):
+    # type: (int) -> None
+
+    # 128 is a shell thing
+    # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    self.status = 128 + stop_sig
     self.state = job_state_e.Stopped
     self.job_state.MaybeTakeTerminal()
 
@@ -1685,12 +1691,13 @@ class Waiter(object):
       proc.WhenDone(pid, status)
 
     elif WIFSTOPPED(status):
-      #sig = posix.WSTOPSIG(status)
+      #status = WEXITSTATUS(status)
+      stop_sig = WSTOPSIG(status)
 
-      log('')
-      log('[PID %d] Stopped', pid)
+      print_stderr('')
+      print_stderr('[PID %d] Suspended with signal %d' % (pid, stop_sig))
       self.job_state.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
-      proc.WhenStopped()
+      proc.WhenStopped(stop_sig)
 
     else:
       raise AssertionError(status)

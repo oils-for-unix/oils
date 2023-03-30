@@ -60,9 +60,9 @@ job-control() {
 
 # Run on just 2 shells
 
-signals-quick() { signals "${QUICK_SHELLS[@]}"; }
-interactive-quick() { interactive "${QUICK_SHELLS[@]}"; }
-job-control-quick() { job-control "${QUICK_SHELLS[@]}"; }
+signals-quick() { signals "${QUICK_SHELLS[@]}" "$@"; }
+interactive-quick() { interactive "${QUICK_SHELLS[@]}" "$@"; }
+job-control-quick() { job-control "${QUICK_SHELLS[@]}" "$@"; }
 
 # Run on all shells we can
 
