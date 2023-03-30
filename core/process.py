@@ -1695,7 +1695,7 @@ class Waiter(object):
       stop_sig = WSTOPSIG(status)
 
       print_stderr('')
-      print_stderr('[PID %d] Suspended with signal %d' % (pid, stop_sig))
+      print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
       self.job_state.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped(stop_sig)
 
