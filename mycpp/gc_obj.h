@@ -71,6 +71,11 @@ struct ObjHeader {
         static_cast<char*>(const_cast<void*>(obj)) - sizeof(ObjHeader));
   }
 
+  ObjHeader& SetIsGlobal() {
+    heap_tag = HeapTag::Global;
+    return *this;
+  }
+
   // Used by hand-written and generated classes
   static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
     return {kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
