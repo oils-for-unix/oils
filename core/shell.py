@@ -38,6 +38,7 @@ from frontend import reader
 from frontend import parse_lib
 
 from oil_lang import expr_eval
+from oil_lang import builtin_json
 from oil_lang import builtin_oil
 from oil_lang import funcs
 from oil_lang import funcs_builtin
@@ -169,12 +170,11 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
   b[builtin_i.fopen] = builtin_pure.Fopen(mem, cmd_ev)
   b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
 
-  if mylib.PYTHON:
-    b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
-    b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
-    b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
-    b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
-    b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
+  b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
+  b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
+  b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
+  b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
+  b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, readline):
@@ -479,7 +479,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
   if mylib.PYTHON:
-    builtins[builtin_i.json] = builtin_oil.Json(mem, expr_ev, errfmt)
+    builtins[builtin_i.json] = builtin_json.Json(mem, expr_ev, errfmt)
 
   builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer, errfmt)
 

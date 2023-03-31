@@ -47,7 +47,7 @@ EOF
 __init__.py
 typing.py
 mycpp/mylib.py
-oil_lang/builtin_oil.py
+oil_lang/builtin_json.py
 oil_lang/funcs_builtin.py
 pylib/collections_.py
 tools/deps.py
@@ -77,7 +77,7 @@ frontend/match.py
 pgen2/grammar.py
 pgen2/pnode.py
 pylib/path_stat.py
-oil_lang/builtin_oil.py
+oil_lang/builtin_json.py
 oil_lang/expr_eval.py
 oil_lang/objects.py
 osh/bool_stat.py
