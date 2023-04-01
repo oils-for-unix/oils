@@ -114,7 +114,7 @@ class BufLineReader : public LineReader {
   }
 
   static constexpr uint32_t field_mask() {
-    return LineReader::field_mask() | maskbit_v(offsetof(BufLineReader, s_));
+    return LineReader::field_mask() | maskbit(offsetof(BufLineReader, s_));
   }
 
   DISALLOW_COPY_AND_ASSIGN(BufLineReader)
@@ -196,7 +196,7 @@ class BufWriter : public Writer {
 
   static constexpr unsigned field_mask() {
     // maskvit_v() because BufWriter has virtual methods
-    return Writer::field_mask() | maskbit_v(offsetof(BufWriter, str_));
+    return Writer::field_mask() | maskbit(offsetof(BufWriter, str_));
   }
 
  private:

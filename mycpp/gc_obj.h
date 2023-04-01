@@ -172,11 +172,6 @@ class GcGlobalImpl {
 template <typename T>
 using GcGlobal = typename GcGlobalImpl<T>::Internal::type;
 
-// TODO: Delete this.
-constexpr int maskbit_v(int offset) {
-  return maskbit(offset);
-}
-
 // The "homogeneous" layout of objects with HeapTag::FixedSize.  LayoutFixed is
 // for casting; it isn't a real type.
 

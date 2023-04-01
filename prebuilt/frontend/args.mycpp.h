@@ -78,7 +78,7 @@ class ColorOutput {
   int num_chars;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(ColorOutput, f));
+    return maskbit(offsetof(ColorOutput, f));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -259,8 +259,8 @@ class _ArgAction : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(_ArgAction, name))
-         | maskbit_v(offsetof(_ArgAction, valid));
+         | maskbit(offsetof(_ArgAction, name))
+         | maskbit(offsetof(_ArgAction, valid));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -327,7 +327,7 @@ class SetAttachedBool : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(SetAttachedBool, name));
+         | maskbit(offsetof(SetAttachedBool, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -346,7 +346,7 @@ class SetToTrue : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(SetToTrue, name));
+         | maskbit(offsetof(SetToTrue, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -365,7 +365,7 @@ class SetOption : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(SetOption, name));
+         | maskbit(offsetof(SetOption, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -386,7 +386,7 @@ class SetNamedOption : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(SetNamedOption, names));
+         | maskbit(offsetof(SetNamedOption, names));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -405,7 +405,7 @@ class SetAction : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(SetAction, name));
+         | maskbit(offsetof(SetAction, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -425,7 +425,7 @@ class SetNamedAction : public _Action {
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
-         | maskbit_v(offsetof(SetNamedAction, names));
+         | maskbit(offsetof(SetNamedAction, names));
   }
 
   static constexpr ObjHeader obj_header() {
