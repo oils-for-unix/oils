@@ -414,9 +414,9 @@ List<T>* list(List<T>* other) {
 }
 
 #define GLOBAL_LIST(T, N, name, array)                               \
-  InlineGcObj<GlobalSlab<T, N>> _slab_##name = {                     \
+  GcGlobal<GlobalSlab<T, N>> _slab_##name = {                        \
       {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal}, array}; \
-  InlineGcObj<GlobalList<T, N>> _list_##name = {                     \
+  GcGlobal<GlobalList<T, N>> _list_##name = {                        \
       {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal},         \
       {N, N, &_slab_##name.obj}};                                    \
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);

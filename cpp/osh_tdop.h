@@ -40,11 +40,11 @@ class ParserSpec {
   LeftInfo* LookupLed(Id_t id);
   NullInfo* LookupNud(Id_t id);
 
-  DISALLOW_COPY_AND_ASSIGN(ParserSpec)
-
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(ParserSpec));
   }
+
+  DISALLOW_COPY_AND_ASSIGN(ParserSpec)
 };
 
 }  // namespace tdop

@@ -40,15 +40,15 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(0, list1->capacity_, "%d");
   ASSERT_EQ_FMT(0, list2->capacity_, "%d");
 
-  ASSERT_EQ_FMT(HeapTag::FixedSize, ObjHeader::FromObject(list1).heap_tag,
+  ASSERT_EQ_FMT(HeapTag::FixedSize, ObjHeader::FromObject(list1)->heap_tag,
                 "%d");
-  ASSERT_EQ_FMT(HeapTag::FixedSize, ObjHeader::FromObject(list2).heap_tag,
+  ASSERT_EQ_FMT(HeapTag::FixedSize, ObjHeader::FromObject(list2)->heap_tag,
                 "%d");
 
 #if 0
   // 8 byte obj header + 2 integers + pointer
-  ASSERT_EQ_FMT(24, ObjHeader::FromObject(list1).obj_len, "%d");
-  ASSERT_EQ_FMT(24, ObjHeader::FromObject(list2).obj_len, "%d");
+  ASSERT_EQ_FMT(24, ObjHeader::FromObject(list1)->obj_len, "%d");
+  ASSERT_EQ_FMT(24, ObjHeader::FromObject(list2)->obj_len, "%d");
 #endif
 
   // Make sure they're on the heap
@@ -66,12 +66,12 @@ TEST test_list_gc_header() {
 
   // 32 byte block - 8 byte header = 24 bytes, 6 elements
   ASSERT_EQ_FMT(6, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(HeapTag::Opaque, ObjHeader::FromObject(list1->slab_).heap_tag,
+  ASSERT_EQ_FMT(HeapTag::Opaque, ObjHeader::FromObject(list1->slab_)->heap_tag,
                 "%d");
 
 #if 0
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(list1->slab_).obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(list1->slab_)->obj_len, "%d");
 #endif
 
   ASSERT_EQ_FMT(11, list1->index_(0), "%d");
@@ -89,7 +89,7 @@ TEST test_list_gc_header() {
 
 #if 0
   // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
-  ASSERT_EQ_FMT(64, ObjHeader::FromObject(list1->slab_).obj_len, "%d");
+  ASSERT_EQ_FMT(64, ObjHeader::FromObject(list1->slab_)->obj_len, "%d");
 #endif
 
   ASSERT_EQ_FMT(11, list1->index_(0), "%d");
@@ -129,9 +129,9 @@ TEST test_list_gc_header() {
 }
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
-InlineGcObj<GlobalSlab<int, 3>> _gSlab = {
+GcGlobal<GlobalSlab<int, 3>> _gSlab = {
     {kIsHeader, 0, kZeroMask, HeapTag::Global, kUndefinedId}, {5, 6, 7}};
-InlineGcObj<GlobalList<int, 3>> _gList = {
+GcGlobal<GlobalList<int, 3>> _gList = {
     {kIsHeader, 0, kZeroMask, HeapTag::Global, kUndefinedId},
     {3,  // len
      3,  // capacity

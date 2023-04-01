@@ -24,13 +24,13 @@ static_assert(offsetof(List<int>, slab_) ==
 
 void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
-  auto& header = ObjHeader::FromObject(obj);
-  assert(header.heap_tag == HeapTag::Scanned);
+  auto* header = ObjHeader::FromObject(obj);
+  assert(header->heap_tag == HeapTag::Scanned);
 
-  int n = NUM_POINTERS(header);
+  int n = NUM_POINTERS(*header);
 #if 0
   int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", ObjHeader::FromObject(slab).obj_len, n);
+  log("slab len = %d, n = %d", ObjHeader::FromObject(slab)->obj_len, n);
 #endif
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
@@ -48,7 +48,7 @@ TEST field_masks_test() {
   StackRoots _roots({&L});
 
   L->append(1);
-  log("List mask = %d", FIELD_MASK(ObjHeader::FromObject(L)));
+  log("List mask = %d", FIELD_MASK(*ObjHeader::FromObject(L)));
 
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -61,7 +61,7 @@ TEST field_masks_test() {
   // expression!  Gah!
   // d->set(StrFromC("foo"), 3);
 
-  log("Dict mask = %d", FIELD_MASK(ObjHeader::FromObject(d)));
+  log("Dict mask = %d", FIELD_MASK(*ObjHeader::FromObject(d)));
 
 #if 0
   ShowFixedChildren(L);

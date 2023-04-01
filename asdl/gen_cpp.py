@@ -349,7 +349,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit(' public:')
     Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return ObjHeader::FromObject(this).type_tag;')
+    Emit('    return ObjHeader::FromObject(this)->type_tag;')
     Emit('  }')
 
     if self.pretty_print_methods:

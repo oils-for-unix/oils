@@ -72,10 +72,10 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     RawObject* dead = to_free_.back();
     to_free_.pop_back();
 
-    ObjHeader& header = ObjHeader::FromObject(dead);
-    obj_id_after_allocate_ = header.obj_id;  // reuse the dead object's ID
+    ObjHeader* header = ObjHeader::FromObject(dead);
+    obj_id_after_allocate_ = header->obj_id;  // reuse the dead object's ID
 
-    free(&header);
+    free(header);
   }
 
   void* result = calloc(num_bytes, 1);
@@ -107,17 +107,17 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 // - Tag::{FixedSize,Scanned} are also pushed on the gray stack
 
 void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
-  ObjHeader& header = ObjHeader::FromObject(obj);
-  if (header.heap_tag == HeapTag::Global) {  // don't mark or push
+  ObjHeader* header = ObjHeader::FromObject(obj);
+  if (header->heap_tag == HeapTag::Global) {  // don't mark or push
     return;
   }
 
-  int obj_id = header.obj_id;
+  int obj_id = header->obj_id;
   if (mark_set_.IsMarked(obj_id)) {
     return;
   }
 
-  switch (header.heap_tag) {
+  switch (header->heap_tag) {
   case HeapTag::Opaque:  // e.g. strings have no children
     mark_set_.Mark(obj_id);
     break;
@@ -125,7 +125,7 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   case HeapTag::Scanned:  // these 2 types have children
   case HeapTag::FixedSize:
     mark_set_.Mark(obj_id);
-    gray_stack_.push_back(&header);  // Push the header, not the object!
+    gray_stack_.push_back(header);  // Push the header, not the object!
     break;
 
   default:
@@ -180,8 +180,8 @@ void MarkSweepHeap::Sweep() {
     RawObject* obj = live_objs_[i];
     assert(obj);  // malloc() shouldn't have returned nullptr
 
-    ObjHeader& header = ObjHeader::FromObject(obj);
-    bool is_live = mark_set_.IsMarked(header.obj_id);
+    ObjHeader* header = ObjHeader::FromObject(obj);
+    bool is_live = mark_set_.IsMarked(header->obj_id);
 
     // Compact live_objs_ and populate to_free_.  Note: doing the reverse could
     // be more efficient when many objects are dead.
@@ -306,7 +306,7 @@ void MarkSweepHeap::PrintStats(int fd) {
 
 void MarkSweepHeap::EagerFree() {
   for (auto obj : to_free_) {
-    free(&ObjHeader::FromObject(obj));
+    free(ObjHeader::FromObject(obj));
   }
 }
 

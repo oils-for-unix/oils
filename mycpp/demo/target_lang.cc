@@ -558,7 +558,7 @@ class Derived : public Base {
  public:
   Derived(int i, int j) : Base(i), j(j) {
     // annoying: should be in initializer list
-    FIELD_MASK(ObjHeader::FromObject(this)) |= 0x5;
+    FIELD_MASK(*ObjHeader::FromObject(this)) |= 0x5;
   }
   int j;
   Node* three;

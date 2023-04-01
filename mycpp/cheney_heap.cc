@@ -124,7 +124,7 @@ void CheneyHeap::Collect(int to_space_size) {
   #endif
 
     if (root) {  // could be nullptr
-      auto header = &ObjHeader::FromObject(root);
+      auto header = ObjHeader::FromObject(root);
 
       // This updates the underlying Str/List/Dict with a forwarding pointer,
       // i.e. for other objects that are pointing to it
@@ -159,18 +159,18 @@ void CheneyHeap::Collect(int to_space_size) {
 
   while (scan < free_) {
     auto obj = reinterpret_cast<RawObject*>(scan);
-    auto header = &ObjHeader::FromObject(obj);
+    auto header = ObjHeader::FromObject(obj);
 
     switch (header->heap_tag) {
     case HeapTag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(obj);
-      int mask = ObjHeader::FromObject(obj).field_mask;
+      int mask = ObjHeader::FromObject(obj)->field_mask;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
           RawObject* child = fixed->children_[i];
           // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
           if (child) {
-            auto child_header = &ObjHeader::FromObject(child);
+            auto child_header = ObjHeader::FromObject(child);
             // log("  fixed: child %d from %p", i, child);
             fixed->children_[i] = Relocate(child, child_header);
             // log("  to %p", fixed->children_[i]);
@@ -181,12 +181,12 @@ void CheneyHeap::Collect(int to_space_size) {
     }
     case HeapTag::Scanned: {
       auto slab = reinterpret_cast<Slab<void*>*>(obj);
-      auto& header = ObjHeader::FromObject(obj);
-      int n = (header.obj_len - kSlabHeaderSize) / sizeof(void*);
+      auto header = ObjHeader::FromObject(obj);
+      int n = (header->obj_len - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {
         RawObject* child = reinterpret_cast<RawObject*>(slab->items_[i]);
         if (child) {  // note: List<> may have nullptr; Dict is sparse
-          auto child_header = &ObjHeader::FromObject(child);
+          auto child_header = ObjHeader::FromObject(child);
           slab->items_[i] = Relocate(child, child_header);
         }
       }

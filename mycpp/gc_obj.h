@@ -60,20 +60,19 @@ struct ObjHeader {
 #endif
 
   // Returns the address of the GC managed object associated with this header.
+  // Note: this relies on there being no padding between the header and the
+  // object. See Alloc<T>() and GcGlobal<T> for relevant static_assert()s.
   void* ObjectAddress() {
     return reinterpret_cast<void*>(reinterpret_cast<char*>(this) +
                                    sizeof(ObjHeader));
   }
 
   // Returns the header for the given GC managed object.
-  static ObjHeader& FromObject(const void* obj) {
-    return *reinterpret_cast<ObjHeader*>(
+  // Note: this relies on there being no padding between the header and the
+  // object. See Alloc<T>() and GcGlobal<T> for relevant static_assert()s.
+  static ObjHeader* FromObject(const void* obj) {
+    return reinterpret_cast<ObjHeader*>(
         static_cast<char*>(const_cast<void*>(obj)) - sizeof(ObjHeader));
-  }
-
-  ObjHeader& SetIsGlobal() {
-    heap_tag = HeapTag::Global;
-    return *this;
   }
 
   // Used by hand-written and generated classes
@@ -146,32 +145,32 @@ constexpr int maskbit(size_t offset) {
   return 1 << (offset / sizeof(void*));
 }
 
-// A wrapper for a GC object and its header. For creating static lifetime GC
-// objects, like GlobalStrs.
+// A wrapper for a GC object and its header. For creating global GC objects,
+// like GlobalStr.
 // TODO: Make this more ergonomic by automatically initializing header
 // with T::obj_header() and providing a forwarding constructor for obj.
 template <typename T>
-class InlineGcObjImpl {
+class GcGlobalImpl {
  public:
   ObjHeader header;
   T obj;
 
   // This class only exists to write the static_assert. If you try to put the
-  // static_assert directly in this class the compiler complains that taking the
-  // offsets is an 'invalid use of incomplete type'. But in doing it this way
-  // means the type is completed before the assert.
+  // static_assert directly in the outer class you get a compiler error that
+  // taking the offsets is an 'invalid use of incomplete type'. Doing it this
+  // way means the type gets completed before the assert.
   struct Internal {
-    using type = InlineGcObjImpl<T>;
+    using type = GcGlobalImpl<T>;
     static_assert(offsetof(type, obj) - sizeof(ObjHeader) ==
                   offsetof(type, header));
   };
 
-  DISALLOW_COPY_AND_ASSIGN(InlineGcObjImpl);
+  DISALLOW_COPY_AND_ASSIGN(GcGlobalImpl);
 };
 
 // Refer to `Internal::type` to force Internal to be instantiated.
 template <typename T>
-using InlineGcObj = typename InlineGcObjImpl<T>::Internal::type;
+using GcGlobal = typename GcGlobalImpl<T>::Internal::type;
 
 // TODO: Delete this.
 constexpr int maskbit_v(int offset) {

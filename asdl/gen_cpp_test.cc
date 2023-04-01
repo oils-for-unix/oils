@@ -178,12 +178,17 @@ TEST dicts_test() {
 using typed_demo_asdl::flag_type;
 using typed_demo_asdl::SetToArg_;
 
+ObjHeader make_global(ObjHeader header) {
+  header.heap_tag = HeapTag::Global;
+  return header;
+}
+
 // TODO: We should always use these, rather than 'new flag_type::Bool()'
-InlineGcObj<flag_type::Bool> g_ft = {flag_type::Bool::obj_header()};
+GcGlobal<flag_type::Bool> g_ft = {make_global(flag_type::Bool::obj_header())};
 
 // Use __ style
 using typed_demo_asdl::cflow__Return;
-InlineGcObj<cflow__Return> g_ret = {cflow__Return::obj_header(), {5}};
+GcGlobal<cflow__Return> g_ret = {make_global(cflow__Return::obj_header()), {5}};
 
 int i0 = 7;
 

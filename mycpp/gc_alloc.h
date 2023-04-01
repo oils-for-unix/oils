@@ -85,9 +85,17 @@ class StackRoots {
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
-  // The objects are placed directly after the headers (i.e., at an address
-  // with alignment = sizeof(ObjHeader)).
-  static_assert(alignof(T) <= sizeof(ObjHeader));
+  // Alloc() allocates space for both a header and object and guarantees that
+  // they're adjacent in memory (so that they're at known offsets from one
+  // another). However, this means that the address that the object is
+  // constructed at is offset from the address returned by the memory allocator
+  // (by the size of the header), and therefore may not be sufficiently aligned.
+  // Here we assert that the object will be sufficiently aligned by making the
+  // equivalent assertion that zero padding would be required to align it.
+  // Note: the required padding is given by the following (according to
+  // https://en.wikipedia.org/wiki/Data_structure_alignment):
+  // `padding = -offset & (align - 1)`.
+  static_assert((-sizeof(ObjHeader) & (alignof(T) - 1)) == 0);
   DCHECK(gHeap.is_initialized_);
 
   void* place = gHeap.Allocate(sizeof(ObjHeader) + sizeof(T));

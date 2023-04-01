@@ -16,7 +16,8 @@ using syntax_asdl::loc;
 
 namespace arith_parse {
 
-InlineGcObj<tdop::ParserSpec> kArithSpec_ = {tdop::ParserSpec::obj_header().SetIsGlobal()};
+GcGlobal<tdop::ParserSpec> kArithSpec_ = {
+    kIsHeader, TypeTag::OtherClass, kZeroMask, HeapTag::Global, kIsGlobal};
 tdop::ParserSpec* kArithSpec = &kArithSpec_.obj;
 
 }  // namespace arith_parse

@@ -149,18 +149,18 @@ TEST endian_test() {
   log("sizeof(Node) = %d", sizeof(Node));
   log("sizeof(Derived) = %d", sizeof(Derived));
 
-  ObjHeader& header = ObjHeader::FromObject(derived);
-  log("Derived is GC object? %d", header.type_tag & 0x1);
+  ObjHeader* header = ObjHeader::FromObject(derived);
+  log("Derived is GC object? %d", header->type_tag & 0x1);
 
   NoVirtual* n2 = Alloc<NoVirtual>();
-  ObjHeader& header2 = ObjHeader::FromObject(n2);
-  log("NoVirtual is GC object? %d", header2.type_tag & 0x1);
+  ObjHeader* header2 = ObjHeader::FromObject(n2);
+  log("NoVirtual is GC object? %d", header2->type_tag & 0x1);
 
   Node* n = Alloc<Node>();
-  ObjHeader& h = ObjHeader::FromObject(n);
-  FIELD_MASK(h) = 0b11;
-  log("field mask %d", FIELD_MASK(h));
-  log("num pointers %d", NUM_POINTERS(h));
+  ObjHeader* h = ObjHeader::FromObject(n);
+  FIELD_MASK(*h) = 0b11;
+  log("field mask %d", FIELD_MASK(*h));
+  log("num pointers %d", NUM_POINTERS(*h));
 
   PASS();
 }
@@ -351,13 +351,6 @@ TEST union_test() {
   PASS();
 }
 
-TEST my_test() {
-  log("offset of x in Derived: %d", offsetof(Derived, x));
-  log("offset of x in Node: %d", offsetof(Node, x));
-  log("offset of i in NoVirtual: %x", offsetof(NoVirtual, i));
-  PASS();
-}
-
 }  // namespace demo
 
 GREATEST_MAIN_DEFS();
@@ -370,7 +363,6 @@ int main(int argc, char** argv) {
   RUN_TEST(demo::gc_header_test);
   RUN_TEST(demo::endian_test);
   RUN_TEST(demo::union_test);
-  RUN_TEST(demo::my_test);
 
   // gHeap.CleanProcessExit();
 

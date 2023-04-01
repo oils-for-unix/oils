@@ -2262,7 +2262,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # Has inheritance
 
-                # The field mask of a derived class extends that of its base.
+                # The field mask of a derived class is unioned with its base's
+                # field mask.
                 if base_class_name:
                     mask_bits.append('%s::field_mask()' % base_class_name)
 
