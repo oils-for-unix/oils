@@ -102,8 +102,8 @@ install_bin_and_links() {
 }
 
 if test -f "$OVM_PATH"; then
-  # old name is 'oil'
-  install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh oil
+  # Python tarball keeps 'oil' for compatibility
+  install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
 elif test -f "$OILS_PATH"; then
   # new name is 'ysh', which points at oils-for-unix
   install_bin_and_links "$OILS_PATH" 'oils-for-unix' osh ysh
