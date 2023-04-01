@@ -137,9 +137,9 @@ class MarkSweepHeap {
   std::vector<RawObject*> global_roots_;
 
   // Allocate() appends live objects, and Sweep() compacts it
-  std::vector<RawObject*> live_objs_;
+  std::vector<ObjHeader*> live_objs_;
   // Allocate lazily frees these, and Sweep() replenishes it
-  std::vector<RawObject*> to_free_;
+  std::vector<ObjHeader*> to_free_;
 
   std::vector<ObjHeader*> gray_stack_;
   MarkSet mark_set_;
