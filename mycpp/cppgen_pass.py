@@ -2234,12 +2234,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.accept(stmt)
 
             # List of field mask expressions
-            if self.virtual.HasVTable(
-                    o.name):  # Account for vtable pointer offset
-                mask_func_name = 'maskbit_v'
-            else:
-                mask_func_name = 'maskbit'
-
             mask_bits = []
             if self.virtual.CanReorderFields(o.name):
                 # No inheritance, so we are free to REORDER member vars, putting
@@ -2270,8 +2264,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 for name in sorted(self.member_vars):
                     c_type = GetCType(self.member_vars[name])
                     if CTypeIsManaged(c_type):
-                        mask_bits.append('%s(offsetof(%s, %s))' %
-                                         (mask_func_name, o.name, name))
+                        mask_bits.append('maskbit(offsetof(%s, %s))' %
+                                         (o.name, name))
 
                 # A base class with no fields has kZeroMask.
                 if not base_class_name and not mask_bits:
