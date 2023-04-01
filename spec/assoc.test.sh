@@ -173,13 +173,23 @@ one
 wo
 ## END
 
-#### ${assoc} disallowed in OSH, like ${assoc[0]} in bash
+#### ${assoc} is like ${assoc[0]}
 declare -A a
+
 a=([aa]=b [foo]=bar ['a+1']=c)
-echo "${a}"
-## stdout-json: "\n"
-## OK osh stdout-json: ""
-## OK osh status: 1
+echo a="${a}"
+
+a=([0]=zzz)
+echo a="${a}"
+
+a=(['0']=yyy)
+echo a="${a}"
+
+## STDOUT:
+a=
+a=zzz
+a=yyy
+## END
 
 #### length ${#a[@]}
 declare -A a
@@ -356,8 +366,11 @@ echo ${assoc[1]} ${assoc[2]} ${assoc}
 1 2 zero
 1 2 string
 ## END
-## N-I osh stdout-json: ""
 ## N-I osh status: 1
+## N-I osh STDOUT:
+1 2
+1 2 zero
+## END
 
 #### Associative array expressions inside (( )) with keys that look like numbers
 declare -A assoc

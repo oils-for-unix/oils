@@ -398,25 +398,24 @@ echo [$a]
 ## END
 ## OK bash status: 0
 
-#### Can't add integer to indexed array
+#### Add integer to indexed array (a[0] decay)
 declare -a array=(1 2 3)
 echo $((array + 5))
-## status: 1
-## stdout-json: ""
-## BUG bash status: 0
-## BUG bash STDOUT:
+## status: 0
+## STDOUT:
 6
 ## END
 ## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout-json: ""
 
-#### Can't add integer to associative array
+#### Add integer to associative array (a[0] decay)
 typeset -A assoc
 assoc[0]=42
 echo $((assoc + 5))
-## status: 1
-## stdout-json: ""
-## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh stdout: 47
+## status: 0
+## stdout: 47
 ## BUG dash status: 0
 ## BUG dash stdout: 5
 
@@ -435,38 +434,40 @@ echo $(( a[1][1] ))
 1
 ## END
 
-#### result of ArithSub is array
+#### result of ArithSub -- array[0] decay
 a=(4 5 6)
 echo declared
 b=$(( a ))
 echo $b
-## status: 1
+
+## status: 0
 ## STDOUT:
-declared
-## END
-## BUG bash/mksh status: 0
-## BUG bash/mksh STDOUT:
 declared
 4
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+## N-I zsh status: 1
+## N-I zsh STDOUT:
+declared
+## END
 
-#### result of ArithSub is assoc array
+#### result of ArithSub -- assoc[0] decay
 declare -A A=(['foo']=bar ['spam']=eggs)
 echo declared
 b=$(( A ))
 echo $b
-## status: 1
+
+## status: 0
 ## STDOUT:
-declared
-## END
-## N-I mksh stdout-json: ""
-## BUG bash/zsh status: 0
-## BUG bash/zsh STDOUT:
 declared
 0
 ## END
+
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+
+
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
@@ -479,16 +480,16 @@ a=(4 5 6)
 echo $(( a, last = a[2], 42 ))
 echo last=$last
 
-## status: 1
-## stdout-json: ""
-
-## N-I dash status: 2
-
-## OK bash/mksh status: 0
-## OK bash/mksh STDOUT:
+## status: 0
+## STDOUT:
 42
 last=6
 ## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
+
 
 #### assignment with dynamic var name
 foo=bar

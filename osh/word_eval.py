@@ -84,7 +84,7 @@ def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
   # type: (str, optview.Exec, bool) -> bool
   """Return whether we should allow ${a} to mean ${a[0]}."""
   return (
-      exec_opts.compat_array() or
+      not exec_opts.strict_array() or
       is_plain_var_sub and var_name in _STRING_AND_ARRAY
   )
 

@@ -238,7 +238,8 @@ status=0
 ## OK osh STDOUT:
 status=1
 status=1
-status=1
+x
+status=0
 ## END
 
 #### default PS1

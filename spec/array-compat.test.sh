@@ -34,7 +34,9 @@ argv.py "${c[@]}"
 ['x', 'YYY', 'z']
 ## END
 
-#### $array is not valid in OSH, is ${array[0]} in ksh/bash
+#### strict_array: $array is not valid in OSH, is ${array[0]} in ksh/bash
+shopt -s strict_array
+
 a=(1 '2 3')
 echo $a
 ## STDOUT:
@@ -43,7 +45,9 @@ echo $a
 ## OK osh status: 1
 ## OK osh stdout-json: ""
 
-#### ${array} is not valid in OSH, is ${array[0]} in ksh/bash
+#### strict_array: ${array} is not valid in OSH, is ${array[0]} in ksh/bash
+shopt -s strict_array
+
 a=(1 '2 3')
 echo ${a}
 ## STDOUT:
@@ -76,7 +80,9 @@ echo ${#a[@]} ${#s}
 EQUAL
 ## END
 
-#### ++ on a whole array increments the first element (disallowed in OSH)
+#### ++ on a whole array increments the first element (disallowed with strict_array)
+shopt -s strict_array
+
 a=(1 10)
 (( a++ ))  # doesn't make sense
 echo "${a[@]}"

@@ -46,7 +46,6 @@ undef=default
 ## END
 
 #### comparison to ${!array[@]} keys (similar SYNTAX)
-shopt --set compat_array  # bypass errors on ${!a} and ${!A}
 
 declare -a a=(x y)
 argv.py "${!a[@]}"
@@ -170,7 +169,6 @@ echo done
 ## END
 
 #### Indirect expansion, THEN suffix operators
-shopt -s compat_array
 
 check_eq() {
   [ "$1" = "$2" ] || { echo "$1 vs $2"; }
@@ -232,17 +230,20 @@ check_expand '${!p@P}' '$ '
 echo ok
 ## stdout: ok
 
-#### var ref OF array var
-declare -a badref=(ale bean)
-echo bad=${!badref}
-## status: 1
+#### var ref OF array var -- silent a[0] decay
+declare -a a=(ale bean)
+echo first=${!a}
+
+ale=zzz
+echo first=${!a}
+
+## status: 0
 ## STDOUT:
+first=
+first=zzz
 ## END
-## OK bash status: 0
-## OK bash stdout: bad=
 
 #### array ref
-shopt -s compat_array
 
 declare -a array=(ale bean)
 ref='array[0]'
@@ -252,7 +253,8 @@ echo ${!ref}
 ale
 ## END
 
-#### array ref without compat_array
+#### array ref with strict_array
+shopt -s strict_array
 
 declare -a array=(ale bean)
 ref='array'

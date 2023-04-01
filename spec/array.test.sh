@@ -219,15 +219,16 @@ argv.py "${!a[1]}"
 ## stdout: ['bar']
 ## N-I mksh stdout: ['a[1]']
 
-#### ${!a} on array is disallowed
+#### ${!a} on array
+
 # bash gives empty string because it's like a[0]
 # mksh gives the name of the variable with !.  Very weird.
+
 a=(1 '2 3')
 argv.py "${!a}"
-## stdout-json: ""
-## status: 1
-## BUG bash stdout: ['']
-## BUG bash status: 0
+
+## stdout: ['']
+## status: 0
 ## BUG mksh stdout: ['a']
 ## BUG mksh status: 0
 
@@ -551,11 +552,8 @@ a[a]=42
 a[a]=99
 argv.py "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
 
-## status: 1
-## stdout-json: ""
-
-## BUG bash/mksh status: 0
-## BUG bash/mksh STDOUT:
+## status: 0
+## STDOUT:
 ['42', '99', '42', '99', '']
 ## END
 
@@ -564,10 +562,8 @@ shopt -u strict_arith
 a=(1 2 3)
 (( x = a[a] ))
 echo $x
-## status: 1
-## stdout-json: ""
-## BUG bash/mksh status: 0
-## BUG bash/mksh STDOUT:
+## status: 0
+## STDOUT:
 2
 ## END
 
