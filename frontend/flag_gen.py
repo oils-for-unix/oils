@@ -259,19 +259,18 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
     header_f.write("""
 class %s {
  public:
-  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)
-      : header_(obj_header()),
-""" % (spec_name, spec_name))
+  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)""" % (spec_name, spec_name))
 
-    for i, field_name in enumerate(field_names):
-      if i != 0:
-        header_f.write(',\n')
-      header_f.write('        %s(%s)' % (field_name, init_vals[i]))
+    if field_names:
+      header_f.write('\n      : ')
+      for i, field_name in enumerate(field_names):
+        if i != 0:
+          header_f.write(',\n        ')
+        header_f.write('%s(%s)' % (field_name, init_vals[i]))
     header_f.write(' {\n')
     header_f.write('  }\n')
     header_f.write('\n')
 
-    header_f.write('  GC_OBJ(header_);\n')
     for decl in field_decls:
       header_f.write('  %s\n' % decl)
 

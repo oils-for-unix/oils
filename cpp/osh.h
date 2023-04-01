@@ -9,10 +9,10 @@
 
 namespace arith_parse {
 
-extern tdop::ParserSpec kArithSpec;
+extern tdop::ParserSpec* kArithSpec;
 
 inline tdop::ParserSpec* Spec() {
-  return &kArithSpec;
+  return kArithSpec;
 }
 
 // Generated tables in _devbuild/gen-cpp/

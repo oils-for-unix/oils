@@ -24,7 +24,7 @@ typedef void (*MatchFunc)(const unsigned char* line, int line_len,
 class SimpleLexer {
  public:
   SimpleLexer(MatchFunc match_func, Str* s)
-      : header_(obj_header()), match_func_(match_func), s_(s), pos_(0) {
+      : match_func_(match_func), s_(s), pos_(0) {
   }
 
   Tuple2<Id_t, Str*> Next();
@@ -39,7 +39,6 @@ class SimpleLexer {
   }
 
  private:
-  GC_OBJ(header_);
   MatchFunc match_func_;
   Str* s_;
   int pos_;

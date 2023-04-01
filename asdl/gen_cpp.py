@@ -3,7 +3,7 @@ gen_cpp.py - Generate C++ classes from an ASDL schema.
 
 TODO:
 
-- Integrate some of the lessons here:  
+- Integrate some of the lessons here:
   - https://github.com/oilshell/blog-code/tree/master/asdl
   - And maybe mycpp/target_lang.cc
 
@@ -349,7 +349,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit(' public:')
     Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return reinterpret_cast<const ObjHeader*>(this)->type_tag;')
+    Emit('    return ObjHeader::FromObject(this)->type_tag;')
     Emit('  }')
 
     if self.pretty_print_methods:
@@ -406,18 +406,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       # reflow doesn't work well here, so do it manually
       return ',\n        '.join(strs)
 
-    params = []
-    # All product types and variants have a tag
-    header_init = 'header_(obj_header())'
-    inits = [header_init]
-
     # Ensure that the constructor params are listed in the same order as the
     # equivalent python constructors for compatibility in translated code.
+    params = []
     for f in ast_node.fields:
       params.append('%s %s' % (_GetCppType(f.typ), f.name))
 
     # Member initializers are in the same order as the member variables to
     # avoid compiler warnings (the order doesn't affect the semantics).
+    inits = []
     for f in all_fields:
       if f in attributes:
         # spids are initialized separately
@@ -428,8 +425,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     # Define constructor with N args
     self.Emit('  %s(%s)' % (class_name, ', '.join(params)), depth)
-    self.Emit('      : %s {' % FieldInitJoin(inits), depth, reflow=False)
-    self.Emit('  }')
+    if len(inits):
+      self.Emit('      : %s {' % FieldInitJoin(inits), depth, reflow=False)
+      self.Emit('  }')
+    else:
+      self.Emit('{ }')
     self.Emit('')
 
     # Define static constructor with ZERO args.  Don't emit for types with no
@@ -462,7 +462,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     #
     # Members
     #
-    self.Emit('  GC_OBJ(header_);')
     for field in all_fields:
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 

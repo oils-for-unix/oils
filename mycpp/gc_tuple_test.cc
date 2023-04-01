@@ -2,26 +2,26 @@
 #include "vendor/greatest.h"
 
 TEST tuple_field_masks_test() {
-  Tuple2<Str *, Str *> ss(nullptr, nullptr);
-  ASSERT_EQ_FMT(0b11, FIELD_MASK(ss.header_), "%d");
+  auto ss = Tuple2<Str *, Str *>::obj_header();
+  ASSERT_EQ_FMT(0b11, FIELD_MASK(ss), "%d");
 
   // 8 + 4 on 64 bit
-  Tuple2<Str *, int> si(nullptr, 42);
-  ASSERT_EQ_FMT(0b01, FIELD_MASK(si.header_), "%d");
+  auto si = Tuple2<Str *, int>::obj_header();
+  ASSERT_EQ_FMT(0b01, FIELD_MASK(si), "%d");
 
   // 4 + 8 on 64 bit
-  Tuple2<int, Str *> is(42, nullptr);
-  ASSERT_EQ_FMT(0b10, FIELD_MASK(is.header_), "%d");
+  auto is = Tuple2<int, Str *>::obj_header();
+  ASSERT_EQ_FMT(0b10, FIELD_MASK(is), "%d");
 
-  Tuple3<Str *, Str *, Str *> sss(nullptr, nullptr, nullptr);
-  ASSERT_EQ_FMT(0b111, FIELD_MASK(sss.header_), "%d");
+  auto sss = Tuple3<Str *, Str *, Str *>::obj_header();
+  ASSERT_EQ_FMT(0b111, FIELD_MASK(sss), "%d");
 
-  Tuple3<int, Str *, Str *> iss(42, nullptr, nullptr);
-  ASSERT_EQ_FMT(0b110, FIELD_MASK(iss.header_), "%d");
+  auto iss = Tuple3<int, Str *, Str *>::obj_header();
+  ASSERT_EQ_FMT(0b110, FIELD_MASK(iss), "%d");
 
   // 4 + 4 + 8 + 8, so it's 0b110 not 0b1100
-  Tuple4<int, int, Str *, Str *> iiss(42, 42, nullptr, nullptr);
-  ASSERT_EQ_FMT(0b110, FIELD_MASK(iiss.header_), "%d");
+  auto iiss = Tuple4<int, int, Str *, Str *>::obj_header();
+  ASSERT_EQ_FMT(0b110, FIELD_MASK(iiss), "%d");
 
   PASS();
 }

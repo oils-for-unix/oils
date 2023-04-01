@@ -72,16 +72,17 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     RawObject* dead = to_free_.back();
     to_free_.pop_back();
 
-    ObjHeader* header = FindObjHeader(dead);
+    ObjHeader* header = ObjHeader::FromObject(dead);
     obj_id_after_allocate_ = header->obj_id;  // reuse the dead object's ID
 
-    free(dead);
+    free(header);
   }
 
   void* result = calloc(num_bytes, 1);
   DCHECK(result != nullptr);
 
-  live_objs_.push_back(reinterpret_cast<RawObject*>(result));
+  live_objs_.push_back(static_cast<RawObject*>(
+      reinterpret_cast<ObjHeader*>(result)->ObjectAddress()));
 
   num_live_++;
   num_allocated_++;
@@ -106,7 +107,7 @@ void* MarkSweepHeap::Reallocate(void* p, size_t num_bytes) {
 // - Tag::{FixedSize,Scanned} are also pushed on the gray stack
 
 void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
-  ObjHeader* header = FindObjHeader(obj);
+  ObjHeader* header = ObjHeader::FromObject(obj);
   if (header->heap_tag == HeapTag::Global) {  // don't mark or push
     return;
   }
@@ -139,8 +140,8 @@ void MarkSweepHeap::TraceChildren() {
 
     switch (header->heap_tag) {
     case HeapTag::FixedSize: {
-      auto fixed = reinterpret_cast<LayoutFixed*>(header);
-      int mask = FIELD_MASK(fixed->header_);
+      auto fixed = reinterpret_cast<LayoutFixed*>(header->ObjectAddress());
+      int mask = FIELD_MASK(*header);
 
       for (int i = 0; i < kFieldMaskBits; ++i) {
         if (mask & (1 << i)) {
@@ -154,13 +155,9 @@ void MarkSweepHeap::TraceChildren() {
     }
 
     case HeapTag::Scanned: {
-      // no vtable
-      // assert(reinterpret_cast<void*>(header) ==
-      // reinterpret_cast<void*>(obj));
+      auto slab = reinterpret_cast<Slab<RawObject*>*>(header->ObjectAddress());
 
-      auto slab = reinterpret_cast<Slab<RawObject*>*>(header);
-
-      int n = NUM_POINTERS(slab->header_);
+      int n = NUM_POINTERS(*header);
       for (int i = 0; i < n; ++i) {
         RawObject* child = slab->items_[i];
         if (child) {
@@ -183,7 +180,7 @@ void MarkSweepHeap::Sweep() {
     RawObject* obj = live_objs_[i];
     assert(obj);  // malloc() shouldn't have returned nullptr
 
-    ObjHeader* header = FindObjHeader(obj);
+    ObjHeader* header = ObjHeader::FromObject(obj);
     bool is_live = mark_set_.IsMarked(header->obj_id);
 
     // Compact live_objs_ and populate to_free_.  Note: doing the reverse could
@@ -309,7 +306,7 @@ void MarkSweepHeap::PrintStats(int fd) {
 
 void MarkSweepHeap::EagerFree() {
   for (auto obj : to_free_) {
-    free(obj);
+    free(ObjHeader::FromObject(obj));
   }
 }
 

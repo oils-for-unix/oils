@@ -18,21 +18,19 @@ static_assert(offsetof(Slab<int>, items_) ==
                   offsetof(GlobalSlab<int COMMA 1>, items_),
               "Slab and GlobalSlab should be consistent");
 
-static_assert(kSlabHeaderSize == offsetof(GlobalSlab<int COMMA 1>, items_),
-              "kSlabHeaderSize and GlobalSlab should be consistent");
-
 static_assert(offsetof(List<int>, slab_) ==
                   offsetof(GlobalList<int COMMA 1>, slab_),
               "List and GlobalList should be consistent");
 
 void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
-  assert(slab->header_.heap_tag == HeapTag::Scanned);
+  auto* header = ObjHeader::FromObject(obj);
+  assert(header->heap_tag == HeapTag::Scanned);
 
-  int n = NUM_POINTERS(slab->header_);
+  int n = NUM_POINTERS(*header);
 #if 0
   int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", slab->header_.obj_len, n);
+  log("slab len = %d, n = %d", ObjHeader::FromObject(slab)->obj_len, n);
 #endif
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
@@ -50,7 +48,7 @@ TEST field_masks_test() {
   StackRoots _roots({&L});
 
   L->append(1);
-  log("List mask = %d", FIELD_MASK(L->header_));
+  log("List mask = %d", FIELD_MASK(*ObjHeader::FromObject(L)));
 
   auto d = Alloc<Dict<Str*, int>>();
   StackRoots _roots2({&d});
@@ -63,7 +61,7 @@ TEST field_masks_test() {
   // expression!  Gah!
   // d->set(StrFromC("foo"), 3);
 
-  log("Dict mask = %d", FIELD_MASK(d->header_));
+  log("Dict mask = %d", FIELD_MASK(*ObjHeader::FromObject(d)));
 
 #if 0
   ShowFixedChildren(L);
@@ -92,9 +90,9 @@ TEST offsets_test() {
   unsigned list_mask = List<int>::field_mask();
   ASSERT_EQ_FMT(0x0002, list_mask, "0x%x");
 
-  // in binary: 0b 0000 0000 0000 01110
+  // in binary: 0b 0000 0000 0000 1110
   unsigned dict_mask = Dict<int COMMA int>::field_mask();
-  ASSERT_EQ_FMT(0x000E, dict_mask, "0x%x");
+  ASSERT_EQ_FMT(0x0000e, dict_mask, "0x%x");
 
   PASS();
 }
@@ -115,7 +113,7 @@ TEST roundup_test() {
 
 class Point {
  public:
-  Point(int x, int y) : header_(obj_header()), x_(x), y_(y) {
+  Point(int x, int y) : x_(x), y_(y) {
   }
   int size() {
     return x_ + y_;
@@ -125,7 +123,6 @@ class Point {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(Point));
   }
 
-  GC_OBJ(header_);
   int x_;
   int y_;
 };
@@ -134,14 +131,13 @@ const int kLineMask = 0x3;  // 0b0011
 
 class Line {
  public:
-  Line() : header_(obj_header()), begin_(nullptr), end_(nullptr) {
+  Line() : begin_(nullptr), end_(nullptr) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kLineMask, sizeof(Line));
   }
 
-  GC_OBJ(header_);
   Point* begin_;
   Point* end_;
 };
@@ -288,7 +284,7 @@ TEST global_trace_test() {
 // 8 byte vtable, 8 byte ObjHeader, then member_
 class BaseObj {
  public:
-  explicit BaseObj(uint32_t obj_len) : header_(obj_header(obj_len)) {
+  explicit BaseObj(uint32_t obj_len) {
   }
   BaseObj() : BaseObj(sizeof(BaseObj)) {
   }
@@ -297,11 +293,10 @@ class BaseObj {
     return 3;
   }
 
-  static constexpr ObjHeader obj_header(uint32_t obj_len) {
-    return ObjHeader::ClassFixed(kZeroMask, obj_len);
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(BaseObj));
   }
 
-  GC_OBJ(header_);
   int member_ = 254;
 };
 
@@ -314,6 +309,10 @@ class DerivedObj : public BaseObj {
     return 4;
   }
 
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(DerivedObj));
+  }
+
   int derived_member_ = 253;
   int derived_member2_ = 252;
 };
@@ -323,54 +322,6 @@ void ShowObj(ObjHeader* obj) {
 #if 0
   log("obj->obj_len %d", obj->obj_len);
 #endif
-}
-
-TEST vtable_test() {
-  DerivedObj d3;
-  BaseObj* b3 = &d3;
-  log("method = %d", b3->Method());
-
-  BaseObj base3;
-
-#if 0
-  log("BaseObj obj_len = %d", base3.header_.obj_len);
-  log("derived b3->obj_len = %d", b3->header_.obj_len);  // derived length
-#endif
-  log("sizeof(d3) = %d", sizeof(d3));
-
-  unsigned char* c3 = reinterpret_cast<unsigned char*>(b3);
-  log("c3[0] = %x", c3[0]);
-  log("c3[1] = %x", c3[1]);
-  log("c3[2] = %x", c3[2]);
-  log("c3[8] = %x", c3[8]);  // this is the ObjHeader
-
-  log("c3[12] = %x", c3[12]);  // this is padding?   gah.
-
-  log("c3[16] = %x", c3[16]);  // 0xfe is member_
-  log("c3[20] = %x", c3[20]);  // 0xfd is derived_member_
-
-  // Note: if static casting, then it doesn't include the vtable pointer!  Must
-  // reinterpret_cast!
-  ObjHeader* obj = reinterpret_cast<ObjHeader*>(b3);
-
-  ShowObj(obj);
-  if (obj->is_header) {
-    ASSERT(false);  // shouldn't get here
-  } else {          // vtable pointer, NOT A TAG!
-    ObjHeader* header = reinterpret_cast<ObjHeader*>(
-        reinterpret_cast<char*>(obj) + sizeof(void*));
-    // Now we have the right GC info.
-    ShowObj(header);
-
-    ASSERT_EQ_FMT(HeapTag::FixedSize, header->heap_tag, "%d");
-    ASSERT_EQ_FMT(0, FIELD_MASK(*header), "%d");
-#if 0
-    // casts get rid of warning
-    ASSERT_EQ_FMT((int)sizeof(DerivedObj), (int)header->obj_len, "%d");
-#endif
-  }
-
-  PASS();
 }
 
 TEST inheritance_test() {
@@ -431,7 +382,6 @@ int main(int argc, char** argv) {
   RUN_TEST(slab_trace_test);
   RUN_TEST(global_trace_test);
 
-  RUN_TEST(vtable_test);
   RUN_TEST(inheritance_test);
 
   RUN_TEST(stack_roots_test);

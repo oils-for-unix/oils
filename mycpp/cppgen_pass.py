@@ -60,7 +60,7 @@ def _GetCTypeForCast(type_expr):
 
 def _GetCastKind(module_path, cast_to_type):
     """Translate MyPy cast to C++ cast.
-  
+
   Prefer static_cast, but sometimes we need reinterpret_cast.
   """
 
@@ -2262,26 +2262,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # Has inheritance
 
+                # The field mask of a derived class is unioned with its base's
+                # field mask.
+                if base_class_name:
+                    mask_bits.append('%s::field_mask()' % base_class_name)
+
                 for name in sorted(self.member_vars):
                     c_type = GetCType(self.member_vars[name])
                     if CTypeIsManaged(c_type):
                         mask_bits.append('%s(offsetof(%s, %s))' %
                                          (mask_func_name, o.name, name))
 
-                if len(mask_bits) == 0:
-                    # Bug fix: even if the base class has no mask_bits, it can't be
-                    # HeapTag::Opaque, because that would mess up derived classes.
-                    self.field_gc[o] = ('HeapTag::FixedSize', 'kZeroMask')
-                else:
-                    self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
+                # A base class with no fields has kZeroMask.
+                if not base_class_name and not mask_bits:
+                    mask_bits.append('kZeroMask')
 
                 sorted_member_names = sorted(self.member_vars)
 
-            # Write member variables
+                self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
 
-            if not base_class_name:
-                self.decl_write('\n')  # separate from functions
-                self.decl_write_ind('GC_OBJ(header_);\n')
+            # Write member variables
 
             #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
             if self.member_vars:
@@ -2298,7 +2298,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.decl_write_ind('\n')
                 self.decl_write_ind(
                     'static constexpr uint32_t field_mask() {\n')
-
                 self.decl_write_ind('  return ')
                 for i, b in enumerate(mask_bits):
                     if i != 0:
@@ -2347,12 +2346,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     self.write('\n')
                     self.write('%s::%s(', o.name, o.name)
                     self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
-                    self.write(') ')
-
-                    # Base class must initialize the header.
-                    if not base_class_name:
-                        self.write('\n')
-                        self.write('    : header_(obj_header())')
+                    self.write(')')
 
                     # Check for Base.__init__(self, ...) and move that to the initializer list.
 
@@ -2377,7 +2371,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                 MemberExpr) and callee.name == '__init__':
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
-                            self.write(': %s(', base_class_name)
+                            self.write(' : %s(', base_class_name)
                             for i, arg in enumerate(base_constructor_args):
                                 if i == 0:
                                     continue  # Skip 'this'
@@ -2392,14 +2386,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                     # Debug Tag!
                     # self.write('  type_tag_ = kMycppDebugType;\n')
-
-                    # Derived classes MUTATE the mask
-                    if base_class_name:
-                        obj_tag, obj_arg = self.field_gc[o]
-                        if obj_tag == 'HeapTag::FixedSize' and obj_arg != 'kZeroMask':
-                            self.write(
-                                '  FIELD_MASK(header_) |= %s::field_mask();\n'
-                                % o.name)
 
                     # Now visit the rest of the statements
                     self.indent += 1

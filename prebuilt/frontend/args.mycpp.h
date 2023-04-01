@@ -74,8 +74,6 @@ class ColorOutput {
   void WriteRaw(Tuple2<Str*, int>* raw);
   int NumChars();
   Tuple2<Str*, int> GetRaw();
-
-  GC_OBJ(header_);
   mylib::Writer* f;
   int num_chars;
   
@@ -96,9 +94,13 @@ class TextOutput : public ColorOutput {
   virtual format::TextOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+  
+  static constexpr uint32_t field_mask() {
+    return ColorOutput::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(TextOutput));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(TextOutput));
   }
 
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
@@ -113,9 +115,13 @@ class HtmlOutput : public ColorOutput {
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
   virtual void write(Str* s);
+  
+  static constexpr uint32_t field_mask() {
+    return ColorOutput::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(HtmlOutput));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(HtmlOutput));
   }
 
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
@@ -127,9 +133,13 @@ class AnsiOutput : public ColorOutput {
   virtual format::AnsiOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+  
+  static constexpr uint32_t field_mask() {
+    return ColorOutput::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(AnsiOutput));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(AnsiOutput));
   }
 
   DISALLOW_COPY_AND_ASSIGN(AnsiOutput)
@@ -143,8 +153,6 @@ class _PrettyPrinter {
   bool _PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
   void _PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
-
-  GC_OBJ(header_);
   int max_col;
 
   static constexpr ObjHeader obj_header() {
@@ -184,8 +192,6 @@ class _Attributes {
   _Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults);
   void SetTrue(Str* name);
   void Set(Str* name, runtime_asdl::value_t* val);
-
-  GC_OBJ(header_);
   Dict<Str*, runtime_asdl::value_t*>* attrs;
   List<Tuple2<Str*, bool>*>* opt_changes;
   List<Tuple2<Str*, bool>*>* shopt_changes;
@@ -213,8 +219,6 @@ class Reader {
   bool AtEnd();
   int _FirstSpanId();
   int SpanId();
-
-  GC_OBJ(header_);
   List<Str*>* argv;
   List<int>* spids;
   int n;
@@ -231,11 +235,13 @@ class _Action {
  public:
   _Action();
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
-
-  GC_OBJ(header_);
+  
+  static constexpr uint32_t field_mask() {
+    return kZeroMask;
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(_Action));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(_Action));
   }
 
   DISALLOW_COPY_AND_ASSIGN(_Action)
@@ -252,7 +258,8 @@ class _ArgAction : public _Action {
   List<Str*>* valid;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(_ArgAction, name))
+    return _Action::field_mask()
+         | maskbit_v(offsetof(_ArgAction, name))
          | maskbit_v(offsetof(_ArgAction, valid));
   }
 
@@ -267,9 +274,13 @@ class SetToInt : public _ArgAction {
  public:
   SetToInt(Str* name);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  
+  static constexpr uint32_t field_mask() {
+    return _ArgAction::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(SetToInt));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetToInt));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetToInt)
@@ -279,9 +290,13 @@ class SetToFloat : public _ArgAction {
  public:
   SetToFloat(Str* name);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  
+  static constexpr uint32_t field_mask() {
+    return _ArgAction::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(SetToFloat));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetToFloat));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetToFloat)
@@ -291,9 +306,13 @@ class SetToString : public _ArgAction {
  public:
   SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
   virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  
+  static constexpr uint32_t field_mask() {
+    return _ArgAction::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(SetToString));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(SetToString));
   }
 
   DISALLOW_COPY_AND_ASSIGN(SetToString)
@@ -307,7 +326,8 @@ class SetAttachedBool : public _Action {
   Str* name;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(SetAttachedBool, name));
+    return _Action::field_mask()
+         | maskbit_v(offsetof(SetAttachedBool, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -325,7 +345,8 @@ class SetToTrue : public _Action {
   Str* name;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(SetToTrue, name));
+    return _Action::field_mask()
+         | maskbit_v(offsetof(SetToTrue, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -343,7 +364,8 @@ class SetOption : public _Action {
   Str* name;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(SetOption, name));
+    return _Action::field_mask()
+         | maskbit_v(offsetof(SetOption, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -363,7 +385,8 @@ class SetNamedOption : public _Action {
   bool shopt;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(SetNamedOption, names));
+    return _Action::field_mask()
+         | maskbit_v(offsetof(SetNamedOption, names));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -381,7 +404,8 @@ class SetAction : public _Action {
   Str* name;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(SetAction, name));
+    return _Action::field_mask()
+         | maskbit_v(offsetof(SetAction, name));
   }
 
   static constexpr ObjHeader obj_header() {
@@ -400,7 +424,8 @@ class SetNamedAction : public _Action {
   List<Str*>* names;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(SetNamedAction, names));
+    return _Action::field_mask()
+         | maskbit_v(offsetof(SetNamedAction, names));
   }
 
   static constexpr ObjHeader obj_header() {

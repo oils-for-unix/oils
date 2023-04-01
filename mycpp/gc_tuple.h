@@ -6,7 +6,7 @@ class Tuple2 {
   typedef Tuple2<A, B> this_type;
 
  public:
-  Tuple2(A a, B b) : header_(obj_header()), a_(a), b_(b) {
+  Tuple2(A a, B b) : a_(a), b_(b) {
   }
 
   A at0() {
@@ -25,8 +25,6 @@ class Tuple2 {
            (std::is_pointer<B>() ? maskbit(offsetof(this_type, b_)) : 0);
   }
 
-  GC_OBJ(header_);
-
  private:
   A a_;
   B b_;
@@ -37,7 +35,7 @@ class Tuple3 {
   typedef Tuple3<A, B, C> this_type;
 
  public:
-  Tuple3(A a, B b, C c) : header_(obj_header()), a_(a), b_(b), c_(c) {
+  Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
   }
   A at0() {
     return a_;
@@ -59,8 +57,6 @@ class Tuple3 {
            (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0);
   }
 
-  GC_OBJ(header_);
-
  private:
   A a_;
   B b_;
@@ -72,8 +68,7 @@ class Tuple4 {
   typedef Tuple4<A, B, C, D> this_type;
 
  public:
-  Tuple4(A a, B b, C c, D d)
-      : header_(obj_header()), a_(a), b_(b), c_(c), d_(d) {
+  Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
   }
   A at0() {
     return a_;
@@ -98,8 +93,6 @@ class Tuple4 {
            (std::is_pointer<C>() ? maskbit(offsetof(this_type, c_)) : 0) |
            (std::is_pointer<D>() ? maskbit(offsetof(this_type, d_)) : 0);
   }
-
-  GC_OBJ(header_);
 
  private:
   A a_;

@@ -544,12 +544,11 @@ TEST field_mask_demo() {
 
 class Base {
  public:
-  Base(int i) : header_(obj_header()), i(i) {
+  Base(int i) : i(i) {
   }
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(Base));
   }
-  GC_OBJ(header_);
   int i;
   Node* left;
   Node* right;
@@ -559,7 +558,7 @@ class Derived : public Base {
  public:
   Derived(int i, int j) : Base(i), j(j) {
     // annoying: should be in initializer list
-    FIELD_MASK(header_) |= 0x5;
+    FIELD_MASK(*ObjHeader::FromObject(this)) |= 0x5;
   }
   int j;
   Node* three;

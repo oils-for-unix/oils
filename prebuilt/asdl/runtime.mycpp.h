@@ -48,8 +48,6 @@ class ColorOutput {
   void WriteRaw(Tuple2<Str*, int>* raw);
   int NumChars();
   Tuple2<Str*, int> GetRaw();
-
-  GC_OBJ(header_);
   mylib::Writer* f;
   int num_chars;
   
@@ -70,9 +68,13 @@ class TextOutput : public ColorOutput {
   virtual format::TextOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+  
+  static constexpr uint32_t field_mask() {
+    return ColorOutput::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(TextOutput));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(TextOutput));
   }
 
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
@@ -87,9 +89,13 @@ class HtmlOutput : public ColorOutput {
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
   virtual void write(Str* s);
+  
+  static constexpr uint32_t field_mask() {
+    return ColorOutput::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(HtmlOutput));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(HtmlOutput));
   }
 
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
@@ -101,9 +107,13 @@ class AnsiOutput : public ColorOutput {
   virtual format::AnsiOutput* NewTempBuffer();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
+  
+  static constexpr uint32_t field_mask() {
+    return ColorOutput::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(AnsiOutput));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(AnsiOutput));
   }
 
   DISALLOW_COPY_AND_ASSIGN(AnsiOutput)
@@ -117,8 +127,6 @@ class _PrettyPrinter {
   bool _PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
   void _PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
-
-  GC_OBJ(header_);
   int max_col;
 
   static constexpr ObjHeader obj_header() {

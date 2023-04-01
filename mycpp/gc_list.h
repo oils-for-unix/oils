@@ -17,7 +17,6 @@
 template <typename T, int N>
 class GlobalList {
  public:
-  ObjHeader header_;
   int len_;
   int capacity_;
   GlobalSlab<T, N>* slab_;
@@ -39,7 +38,7 @@ class List {
                 "An integral number of items should fit in 32 bytes");
 
  public:
-  List() : header_(obj_header()), len_(0), capacity_(0), slab_(nullptr) {
+  List() : len_(0), capacity_(0), slab_(nullptr) {
   }
 
   // Implements L[i]
@@ -87,8 +86,6 @@ class List {
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(List<T>));
   }
-
-  GC_OBJ(header_);
 
   int len_;       // number of entries
   int capacity_;  // max entries before resizing
@@ -417,14 +414,12 @@ List<T>* list(List<T>* other) {
 }
 
 #define GLOBAL_LIST(T, N, name, array)                               \
-  GlobalSlab<T, N> _slab_##name = {                                  \
+  GcGlobal<GlobalSlab<T, N>> _slab_##name = {                        \
       {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal}, array}; \
-  GlobalList<T, N> _list_##name = {                                  \
+  GcGlobal<GlobalList<T, N>> _list_##name = {                        \
       {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal},         \
-      N,                                                             \
-      N,                                                             \
-      &_slab_##name};                                                \
-  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name);
+      {N, N, &_slab_##name.obj}};                                    \
+  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);
 
 template <class T>
 class ListIter {

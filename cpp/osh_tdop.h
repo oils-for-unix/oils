@@ -35,18 +35,16 @@ struct NullInfo {
 class ParserSpec {
  public:
   // No fields
-  ParserSpec() : header_(obj_header()) {
+  ParserSpec() {
   }
   LeftInfo* LookupLed(Id_t id);
   NullInfo* LookupNud(Id_t id);
-
-  DISALLOW_COPY_AND_ASSIGN(ParserSpec)
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(ParserSpec));
   }
 
-  GC_OBJ(header_);
+  DISALLOW_COPY_AND_ASSIGN(ParserSpec)
 };
 
 }  // namespace tdop

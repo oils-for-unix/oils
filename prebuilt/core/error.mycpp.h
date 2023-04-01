@@ -33,8 +33,6 @@ extern int NO_SPID;
 class Usage {
  public:
   Usage(Str* msg, int span_id = NO_SPID);
-
-  GC_OBJ(header_);
   Str* msg;
   int span_id;
 
@@ -50,8 +48,6 @@ class _ErrorWithLocation {
   _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);
   bool HasLocation();
   Str* UserErrorString();
-
-  GC_OBJ(header_);
   syntax_asdl::loc_t* location;
   Str* msg;
   
@@ -71,8 +67,6 @@ class Runtime {
  public:
   Runtime(Str* msg);
   Str* UserErrorString();
-
-  GC_OBJ(header_);
   Str* msg;
 
   static constexpr ObjHeader obj_header() {
@@ -85,9 +79,13 @@ class Runtime {
 class Parse : public _ErrorWithLocation {
  public:
   Parse(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Parse));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Parse));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Parse)
@@ -96,9 +94,13 @@ class Parse : public _ErrorWithLocation {
 class FailGlob : public _ErrorWithLocation {
  public:
   FailGlob(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(FailGlob));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(FailGlob));
   }
 
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
@@ -107,9 +109,13 @@ class FailGlob : public _ErrorWithLocation {
 class RedirectEval : public _ErrorWithLocation {
  public:
   RedirectEval(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(RedirectEval));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(RedirectEval));
   }
 
   DISALLOW_COPY_AND_ASSIGN(RedirectEval)
@@ -121,9 +127,13 @@ class FatalRuntime : public _ErrorWithLocation {
   int ExitStatus();
 
   int exit_status;
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(FatalRuntime));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(FatalRuntime));
   }
 
   DISALLOW_COPY_AND_ASSIGN(FatalRuntime)
@@ -132,9 +142,13 @@ class FatalRuntime : public _ErrorWithLocation {
 class Strict : public FatalRuntime {
  public:
   Strict(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Strict));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Strict));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Strict)
@@ -145,9 +159,13 @@ class ErrExit : public FatalRuntime {
   ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool show_code = false);
 
   bool show_code;
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(ErrExit));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(ErrExit));
   }
 
   DISALLOW_COPY_AND_ASSIGN(ErrExit)
@@ -156,9 +174,13 @@ class ErrExit : public FatalRuntime {
 class Expr : public FatalRuntime {
  public:
   Expr(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Expr));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Expr));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Expr)

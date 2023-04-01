@@ -41,7 +41,7 @@ class StackRoots {
 #if VALIDATE_ROOTS
       RawObject* obj = *(reinterpret_cast<RawObject**>(root));
       if (obj) {
-        RawObject* header = FindObjHeader(obj);
+        RawObject* header = ObjHeader::FromObject(obj);
         log("obj %p header %p", obj, header);
 
         switch (header->heap_tag) {
@@ -85,23 +85,25 @@ class StackRoots {
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* Alloc(Args&&... args) {
+  // Alloc() allocates space for both a header and object and guarantees that
+  // they're adjacent in memory (so that they're at known offsets from one
+  // another). However, this means that the address that the object is
+  // constructed at is offset from the address returned by the memory allocator
+  // (by the size of the header), and therefore may not be sufficiently aligned.
+  // Here we assert that the object will be sufficiently aligned by making the
+  // equivalent assertion that zero padding would be required to align it.
+  // Note: the required padding is given by the following (according to
+  // https://en.wikipedia.org/wiki/Data_structure_alignment):
+  // `padding = -offset & (align - 1)`.
+  static_assert((-sizeof(ObjHeader) & (alignof(T) - 1)) == 0);
   DCHECK(gHeap.is_initialized_);
 
-  void* place = gHeap.Allocate(sizeof(T));
+  void* place = gHeap.Allocate(sizeof(ObjHeader) + sizeof(T));
+  ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
-  // IMPORTANT: save the object ID before calling placement new, which can
-  // invoke Allocate() again!
-  int obj_id = gHeap.UnusedObjectId();
+  header->obj_id = gHeap.UnusedObjectId();
 #endif
-
-  T* obj = new (place) T(std::forward<Args>(args)...);
-
-#if MARK_SWEEP
-  // Hack for now: find the header
-  ObjHeader* header = FindObjHeader(reinterpret_cast<RawObject*>(obj));
-  header->obj_id = obj_id;
-#endif
-  return obj;
+  return new (header->ObjectAddress()) T(std::forward<Args>(args)...);
 }
 
 //
@@ -115,21 +117,21 @@ inline Str* NewStr(int len) {
     return kEmptyString;
   }
 
-  int obj_len = kStrHeaderSize + len + 1;
+  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
 
-  // only allocation is unconditionally returned
-  void* place = gHeap.Allocate(obj_len);
+  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  ObjHeader* header = new (place) ObjHeader(Str::obj_header());
 
-  auto s = new (place) Str();
+  auto s = new (header->ObjectAddress()) Str();
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   s->len_ = len;
 #else
   // reversed in len() to derive string length
-  s->header_.obj_len = kStrHeaderSize + len + 1;
+  header->obj_len = kStrHeaderSize + len + 1;
 #endif
 
 #if MARK_SWEEP
-  s->header_.obj_id = gHeap.UnusedObjectId();
+  header->obj_id = gHeap.UnusedObjectId();
 #endif
   return s;
 }
@@ -139,10 +141,11 @@ inline Str* NewStr(int len) {
 // s->MaybeShrink() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(obj_len);
-  auto s = new (place) Str();
+  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  ObjHeader* header = new (place) ObjHeader(Str::obj_header());
+  auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
-  s->header_.obj_id = gHeap.UnusedObjectId();
+  header->obj_id = gHeap.UnusedObjectId();
 #endif
   return s;
 }
@@ -170,10 +173,11 @@ inline Str* StrFromC(const char* data) {
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Allocate(obj_len);
-  auto slab = new (place) Slab<T>(len);  // placement new
+  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  ObjHeader* header = new (place) ObjHeader(Slab<T>::obj_header(len));
+  auto slab = new (header->ObjectAddress()) Slab<T>(len);
 #if MARK_SWEEP
-  slab->header_.obj_id = gHeap.UnusedObjectId();
+  header->obj_id = gHeap.UnusedObjectId();
 #endif
   return slab;
 }

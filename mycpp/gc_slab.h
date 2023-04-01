@@ -4,7 +4,7 @@
 #include <utility>  // std::is_pointer
 
 #include "mycpp/common.h"  // DISALLOW_COPY_AND_ASSIGN
-#include "mycpp/gc_obj.h"  // GC_OBJ
+#include "mycpp/gc_obj.h"
 
 // Return the size of a resizeable allocation.  Just round up to the nearest
 // power of 2.  (CPython has an interesting policy in listobject.c.)
@@ -29,7 +29,7 @@ template <typename T>
 class Slab {
   // Slabs of pointers are scanned; slabs of ints/bools are opaque.
  public:
-  explicit Slab(unsigned num_items) : header_(obj_header(num_items)) {
+  explicit Slab(unsigned num_items) {
   }
 
   static constexpr ObjHeader obj_header(unsigned num_items) {
@@ -37,7 +37,6 @@ class Slab {
         std::is_pointer<T>() ? HeapTag::Scanned : HeapTag::Opaque, num_items);
   }
 
-  GC_OBJ(header_);
   T items_[1];  // variable length
 
   DISALLOW_COPY_AND_ASSIGN(Slab);
@@ -48,13 +47,12 @@ class GlobalSlab {
   // A template type with the same layout as Slab of length N.  For
   // initializing global constant List.
  public:
-  ObjHeader header_;
   T items_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalSlab)
 };
 
-// The first field is items_
-const int kSlabHeaderSize = offsetof(Slab<int>, items_);
+// XXX(watk): Does this make sense?
+const int kSlabHeaderSize = sizeof(ObjHeader);
 
 #endif  // GC_SLAB_H
