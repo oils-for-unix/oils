@@ -34,7 +34,9 @@ t=foofoo
 
 #### Append to array to undefined variable
 
-# TODO: strict_array could get rid of this?
+# I wonder if Oil should have accumulators:
+# auto y += %(c d) or something
+
 y+=(c d)
 argv.py "${y[@]}"
 ## STDOUT:
@@ -66,7 +68,7 @@ argv.py "${a[@]}"
 ## OK zsh status: 0
 ## OK zsh stdout: ['x', 'y', 'z']
 
-#### typeset s+=(my array)  -- compat_array
+#### typeset s+=(my array)
 typeset s='abc'
 echo $s
 

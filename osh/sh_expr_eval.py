@@ -442,7 +442,7 @@ class ArithEvaluator(object):
     lval = self.EvalArithLhs(node, runtime.NO_SPID)
     val = OldValue(lval, self.mem, self.exec_opts)
 
-    # BASH_LINENO, arr (array name with shopt -s compat_array), etc.
+    # BASH_LINENO, arr (array name without strict_array), etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag_() == lvalue_e.Named:
       named_lval = cast(lvalue__Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
@@ -473,7 +473,7 @@ class ArithEvaluator(object):
     """
     val = self.Eval(node)
 
-    # BASH_LINENO, arr (array name with shopt -s compat_array), etc.
+    # BASH_LINENO, arr (array name without strict_array), etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarSub:
       vsub = cast(simple_var_sub, node)
       if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):

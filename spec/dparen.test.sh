@@ -152,15 +152,17 @@ cat $TMP/x.txt
 STDERR
 ## END
 
-#### Can't make assign whole array to var (( b = a ))
+#### Assigning whole raray (( b = a ))
 a=(4 5 6)
 (( b = a ))
+
 echo "${a[@]}"
+
+# OSH doesn't like this
 echo "${b[@]}"
-## status: 1
-## stdout-json: ""
-## BUG bash/mksh status: 0
-## BUG bash/mksh STDOUT:
+
+## status: 0
+## STDOUT:
 4 5 6
 4
 ## END

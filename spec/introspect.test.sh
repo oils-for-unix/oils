@@ -142,7 +142,6 @@ ____
 
 
 #### ${FUNCNAME} with prefix/suffix operators
-shopt -s compat_array
 
 check() {
   argv.py "${#FUNCNAME}"
@@ -156,7 +155,7 @@ check
 ['heck']
 ## END
 
-#### operators on FUNCNAME not allowed by default
+#### operators on FUNCNAME
 check() {
   argv.py "${FUNCNAME}"
   argv.py "${#FUNCNAME}"
@@ -164,12 +163,8 @@ check() {
   argv.py "${FUNCNAME:1}"
 }
 check
-## status: 1
+## status: 0
 ## STDOUT:
-['check']
-## END
-## OK bash status: 0
-## OK bash STDOUT:
 ['check']
 ['5']
 ['c']

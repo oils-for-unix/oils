@@ -102,18 +102,16 @@ OK
 #### ${array@Q} and ${array[@]@Q}
 array=(x 'y\nz')
 echo ${array[@]@Q}
-shopt -s compat_array
 echo ${array@Q}
-shopt -u compat_array
 echo ${array@Q}
 ## STDOUT:
 'x' 'y\nz'
 'x'
 'x'
 ## END
-## OK osh status: 1
 ## OK osh STDOUT:
 x $'y\\nz'
+x
 x
 ## END
 

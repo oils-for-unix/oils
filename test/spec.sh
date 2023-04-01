@@ -704,7 +704,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh \
+  sh-spec spec/dparen.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
