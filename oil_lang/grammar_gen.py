@@ -10,9 +10,9 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import source
 
+from asdl.front_end import log
 from core import alloc
 from core import optview
-from core.pyerror import log
 from frontend import lexer
 from frontend import lexer_def
 from frontend import reader

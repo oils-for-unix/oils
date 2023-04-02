@@ -9,7 +9,7 @@ See Parser/parser.c in the Python distribution for additional info on
 how this parsing engine works.
 """
 
-from core.pyerror import log
+from asdl.front_end import log
 _ = log
 
 from typing import TYPE_CHECKING, Optional, Any, List

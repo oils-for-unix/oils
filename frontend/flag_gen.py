@@ -8,7 +8,7 @@ import itertools
 import sys
 
 from _devbuild.gen.runtime_asdl import flag_type_e, value_e
-from core.pyerror import log
+from asdl.front_end import log
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 from frontend import flag_spec

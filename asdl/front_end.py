@@ -4,12 +4,21 @@ front_end.py: Lexer and parser for the ASDL schema language.
 from __future__ import print_function
 
 import re
+import sys
+
+from mycpp import mylib
 
 from asdl import ast
 from asdl.ast import (AST, Use, Module, TypeDecl, Constructor, Field, Sum,
                       SimpleSum, Product)
 
-from core.pyerror import log
+if mylib.PYTHON:
+  def log(msg, *args):
+    # type: (str, *Any) -> None
+    if args:
+      msg = msg % args
+    print(msg, file=sys.stderr)
+
 
 _ = log
 

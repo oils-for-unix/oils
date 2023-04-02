@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import unittest
 
-from core.pyerror import log
+from asdl.front_end import log
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.types_asdl import lex_mode_e
 

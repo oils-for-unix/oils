@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import Token, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
 from asdl import runtime
-from core.pyerror import log
+from asdl.front_end import log
 from mycpp import mylib
 from frontend import consts
 from frontend import match

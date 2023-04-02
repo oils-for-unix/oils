@@ -14,7 +14,7 @@ fallback token code OP, but the parser needs the actual token code.
 
 import marshal
 
-from core.pyerror import log
+from asdl.front_end import log
 from mycpp import mylib
 
 from typing import TYPE_CHECKING

@@ -5,7 +5,7 @@
 #import grammar, token, tokenize
 # NOTE: Need these special versions of token/tokenize for BACKQUOTE and such.
 from . import grammar, token, tokenize
-from core.pyerror import log
+from asdl.front_end import log
 
 
 class PythonTokDef(object):

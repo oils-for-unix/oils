@@ -6,23 +6,12 @@ implementations.  This file has fewer deps than pyutil.py.
 """
 from __future__ import print_function
 
-import sys
-
 from core import error
-from mycpp import mylib
 
 from typing import NoReturn, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import loc_t
-
-
-if mylib.PYTHON:
-  def log(msg, *args):
-    # type: (str, *Any) -> None
-    if args:
-      msg = msg % args
-    print(msg, file=sys.stderr)
 
 
 NO_SPID = -1

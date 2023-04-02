@@ -58,7 +58,8 @@ from _devbuild.gen.runtime_asdl import (
 )
 
 from asdl import runtime
-from core.pyerror import e_usage, log
+from asdl.front_end import log
+from core.pyerror import e_usage
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
 
