@@ -14,7 +14,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from core.pyerror import log
+from asdl.front_end import log
 from core import pyos
 from core import vm
 from frontend import flag_spec

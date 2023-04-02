@@ -16,7 +16,7 @@ from core import error
 from core import optview
 from core import state
 from core import ui
-from core.pyerror import log
+from asdl.front_end import log
 from frontend import location
 from osh import word_
 from qsn_ import qsn
