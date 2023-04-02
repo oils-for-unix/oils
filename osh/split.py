@@ -30,7 +30,7 @@ from _devbuild.gen.runtime_asdl import (
     value_e, scope_e, span_e, value__Str, emit_i, char_kind_i, state_i
 )
 from core import error
-from core.pyerror import log
+from asdl.front_end import log
 from core import pyutil
 from frontend import consts
 from mycpp import mylib

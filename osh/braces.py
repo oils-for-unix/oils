@@ -22,7 +22,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
 )
-from core.pyerror import log, p_die
+from asdl.front_end import log
+from core.pyerror import p_die
 from frontend import lexer
 from frontend import match
 from mycpp import mylib

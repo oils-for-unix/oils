@@ -10,7 +10,6 @@ from core import completion
 from core import error
 from core import ui
 from core import vm
-#from core.pyerror import log
 from frontend import flag_spec
 from frontend import args
 from frontend import consts

@@ -10,11 +10,11 @@ from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
+from asdl.front_end import log
 from core import error
 from core.pyerror import e_usage
 from core import process  # W1_OK, W1_ECHILD
 from core import vm
-from core.pyerror import log
 from frontend import flag_spec
 from frontend import typed_args
 
