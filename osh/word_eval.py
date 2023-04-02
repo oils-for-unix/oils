@@ -29,13 +29,14 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.option_asdl import option_i
 from asdl import runtime
+from asdl.front_end import log
 from core import error
 from core import pyos
 from core import pyutil
 from core import state
 from core import ui
 from qsn_ import qsn
-from core.pyerror import log, e_die
+from core.pyerror import e_die
 from frontend import consts
 from frontend import lexer
 from frontend import location
