@@ -21,12 +21,12 @@ import posix_ as posix
 import sys
 
 from asdl import runtime
+from asdl.front_end import log
 from core import error
 from core import shell
 from core import pyos
 from core import pyutil
 from core import shell_native
-from core.pyerror import log
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib

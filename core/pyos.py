@@ -14,8 +14,8 @@ import sys
 import termios  # for read -n
 import time
 
+from asdl.front_end import log
 from core import pyutil
-from core.pyerror import log
 
 import posix_ as posix
 from posix_ import WUNTRACED

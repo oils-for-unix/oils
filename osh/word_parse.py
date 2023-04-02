@@ -71,9 +71,9 @@ from _devbuild.gen.syntax_asdl import (
 
     expr_t, source, ArgList,
 )
+from asdl.front_end import log
 from core import alloc
 from core.pyerror import p_die
-from core.pyerror import log
 from core import pyutil
 from core import ui
 from frontend import consts
