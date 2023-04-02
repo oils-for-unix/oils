@@ -9,8 +9,8 @@ import sys
 
 from _devbuild.gen.types_asdl import lex_mode_e
 
+from asdl.front_end import log
 from core import alloc
-from core.pyerror import log
 from frontend import lexer
 from frontend import match
 

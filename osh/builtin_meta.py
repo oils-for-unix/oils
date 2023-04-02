@@ -8,11 +8,12 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc
 from asdl import runtime
+from asdl.front_end import log
 from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from core.pyerror import e_die_status, e_usage, log
+from core.pyerror import e_die_status, e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
