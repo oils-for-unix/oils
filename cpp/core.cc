@@ -10,6 +10,7 @@
 #include <sys/resource.h>  // getrusage
 #include <sys/select.h>    // select(), FD_ISSET, FD_SET, FD_ZERO
 #include <sys/stat.h>      // stat
+#include <sys/time.h>      // gettimeofday
 #include <sys/times.h>     // tms / times()
 #include <sys/utsname.h>   // uname
 #include <sys/wait.h>      // waitpid()
@@ -177,16 +178,23 @@ Str* OsType() {
 }
 
 Tuple3<double, double, double> Time() {
+  struct timeval now;
+  if (gettimeofday(&now, nullptr) < 0) {
+    throw Alloc<IOError>(errno);  // could be a permission error
+  }
+  double real = now.tv_sec + static_cast<double>(now.tv_usec) / 1e6;
+
   struct rusage ru;
   if (::getrusage(RUSAGE_SELF, &ru) == -1) {
     throw Alloc<IOError>(errno);
   }
+  struct timeval* u = &(ru.ru_utime);
+  struct timeval* s = &(ru.ru_stime);
 
-  time_t t = ::time(nullptr);
-  auto result = Tuple3<double, double, double>(
-      static_cast<double>(t), static_cast<double>(ru.ru_utime.tv_sec),
-      static_cast<double>(ru.ru_stime.tv_sec));
-  return result;
+  double user = u->tv_sec + static_cast<double>(u->tv_usec) / 1e6;
+  double sys = s->tv_sec + static_cast<double>(s->tv_usec) / 1e6;
+
+  return Tuple3<double, double, double>(real, user, sys);
 }
 
 static void PrintClock(clock_t ticks, long ticks_per_sec) {
