@@ -10,6 +10,7 @@ frontend/py.*.py
 frontend/consts.py
 frontend/match.py
 pgen2/grammar.py
+pgen2/pnode.py
 pylib/path_stat.py
 oil_lang/builtin_oil.py
 oil_lang/expr_eval.py

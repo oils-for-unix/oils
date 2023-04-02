@@ -38,4 +38,41 @@ class Grammar {
 
 }  // namespace grammar
 
+namespace pnode {
+
+class PNode {
+ public:
+  PNode(int typ, syntax_asdl::Token* tok, List<PNode*>*)
+      : typ(typ), tok(tok), children(), child_offset(0) {}
+
+  void AddChild(PNode* node) {
+    children.push_back(node);
+  }
+
+  PNode* GetChild(int i) {
+    int j = i;
+    if (j < 0) {
+      j += NumChildren();
+    }
+    return children[child_offset + j];
+  }
+
+  int NumChildren() {
+    return children.size() - child_offset;
+  }
+
+  void Advance(int n) {
+    child_offset += n;
+  }
+
+  int typ;
+  syntax_asdl::Token* tok;
+  std::vector<PNode*> children;
+  int child_offset;
+};
+
+PNode* NewPNode(int typ, syntax_asdl::Token* tok);
+
+}  // namespace pnode
+
 #endif  // CPP_PGEN2_H

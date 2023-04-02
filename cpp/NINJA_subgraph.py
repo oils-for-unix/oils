@@ -154,6 +154,14 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
+      '//cpp/pgen2',
+      srcs = ['cpp/pgen2.cc'],
+      deps = [
+        '//mycpp/runtime',
+        '//frontend/syntax.asdl',
+        ])
+
+  ru.cc_library(
       '//cpp/pylib', 
       srcs = ['cpp/pylib.cc'],
       deps = ['//mycpp/runtime'])

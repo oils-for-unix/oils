@@ -49,6 +49,7 @@ def NinjaGraph(ru):
           '//cpp/libc',
           '//cpp/fanos',
           '//cpp/osh',
+          '//cpp/pgen2',
           '//cpp/pylib',
           '//cpp/stdlib',
 
