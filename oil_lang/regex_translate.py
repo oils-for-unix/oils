@@ -16,7 +16,8 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.id_kind_asdl import Id
 
-from core.pyerror import log, e_die
+from asdl.front_end import log
+from core.pyerror import e_die
 from mycpp.mylib import tagswitch
 from osh import glob_  # for ExtendedRegexEscape
 

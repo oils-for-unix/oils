@@ -12,13 +12,13 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.syntax_asdl import redir_loc
 from asdl import runtime
+from asdl.front_end import log
 from core import dev
 from core import process  # module under test
 from core import pyos
 from core import test_lib
 from core import ui
 from core import util
-from core.pyerror import log
 from core import state
 from osh import builtin_misc, builtin_trap
 from mycpp import mylib

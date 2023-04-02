@@ -9,7 +9,8 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
-from core.pyerror import log, p_die
+from asdl.front_end import log
+from core.pyerror import p_die
 from frontend import consts
 
 from typing import Tuple, List, TYPE_CHECKING

@@ -13,10 +13,11 @@ from _devbuild.gen.syntax_asdl import (
     command_sub, compound_word, loc
 )
 from asdl import runtime
+from asdl.front_end import log
 from core import dev
 from core import error
 from core import process
-from core.pyerror import e_die, e_die_status, log
+from core.pyerror import e_die, e_die_status
 from core import pyos
 from core import ui
 from core import vm

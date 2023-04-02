@@ -32,11 +32,12 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
+from asdl.front_end import log
 from core import alloc
 from core import error
 from core import state
 from core import ui
-from core.pyerror import e_die, e_die_status, e_strict, e_usage, log
+from core.pyerror import e_die, e_die_status, e_strict, e_usage
 from frontend import consts
 from frontend import location
 from frontend import match

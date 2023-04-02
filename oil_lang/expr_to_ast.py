@@ -18,7 +18,8 @@ from _devbuild.gen.syntax_asdl import (
     variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
-from core.pyerror import log, p_die
+from asdl.front_end import log
+from core.pyerror import p_die
 from frontend import lexer
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast

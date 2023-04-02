@@ -37,9 +37,10 @@ from _devbuild.gen.runtime_asdl import (
     value__Str, value__MaybeStrArray, value__AssocArray, value__Obj
 )
 from asdl import runtime
+from asdl.front_end import log
 from core import error
 from core import state
-from core.pyerror import e_die, e_die_status, log
+from core.pyerror import e_die, e_die_status
 from frontend import consts
 from frontend import match
 from frontend import location

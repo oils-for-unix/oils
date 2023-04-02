@@ -9,11 +9,11 @@ import unittest
 #from _devbuild.gen.id_kind_asdl import Kind
 from _devbuild.gen.syntax_asdl import source
 
+from asdl.front_end import log
 from core import alloc
 from core import error
 from core import pyutil
 from core import test_lib
-from core.pyerror import log
 from frontend import reader
 
 

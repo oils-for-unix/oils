@@ -41,10 +41,11 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen import syntax_asdl  # token, etc.
 
 from asdl import runtime
+from asdl.front_end import log
 from core import alloc
 from core import error
 from core import ui
-from core.pyerror import log, p_die
+from core.pyerror import p_die
 from frontend import consts
 from frontend import lexer
 from frontend import match

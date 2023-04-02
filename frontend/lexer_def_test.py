@@ -10,8 +10,8 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id, Id_str, Kind
 from _devbuild.gen.syntax_asdl import SourceLine
 from _devbuild.gen.types_asdl import lex_mode_e
+from asdl.front_end import log
 from core.test_lib import Tok
-from core.pyerror import log
 from core import test_lib
 from frontend import lexer_def
 from frontend import lexer

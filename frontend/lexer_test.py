@@ -7,9 +7,9 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.types_asdl import lex_mode_e
+from asdl.front_end import log
 from core import test_lib
 from core.test_lib import Tok
-from core.pyerror import log
 from frontend.lexer_def import LEXER_DEF
 from frontend import parse_lib
 from frontend import reader
