@@ -17,12 +17,12 @@ import sys
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import value_e, Proc
 from _devbuild.gen.syntax_asdl import proc_sig
+from asdl.front_end import log
 from core import completion  # module under test
 from core import comp_ui
 from core import state
 from core import test_lib
 from core import util
-from core.pyerror import log
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from frontend import parse_lib

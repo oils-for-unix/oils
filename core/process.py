@@ -29,13 +29,14 @@ from _devbuild.gen.syntax_asdl import (
     redir_loc__VarName,
     redir_loc__Fd,
 )
+from asdl.front_end import log
 from core import dev
 from core import pyutil
 from core import pyos
 from core import state
 from core import ui
 from core import util
-from core.pyerror import log, e_die
+from core.pyerror import e_die
 from frontend import location
 from frontend import match
 from osh import cmd_eval

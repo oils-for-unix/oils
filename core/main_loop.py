@@ -15,11 +15,11 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (
     command_t, command, parse_result__Node, parse_result_e
 )
+from asdl.front_end import log
 from core import error
 from core import process
 from core import ui
 from core import util
-from core.pyerror import log
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
