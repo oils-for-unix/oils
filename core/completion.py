@@ -43,9 +43,9 @@ from _devbuild.gen.runtime_asdl import (
     value_e, value__MaybeStrArray, value__Str, value_str, scope_e, Proc
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
+from asdl.front_end import log
 from core import error
 from core.alloc import Arena
-from core.pyerror import log
 from core import pyos
 from core import state
 from core import ui

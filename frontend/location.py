@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.runtime_asdl import lvalue, lvalue__Named
 from asdl import runtime
-from core.pyerror import log
+from asdl.front_end import log
 from mycpp.mylib import tagswitch
 from osh import word_
 

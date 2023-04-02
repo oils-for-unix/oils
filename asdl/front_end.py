@@ -12,6 +12,8 @@ from asdl import ast
 from asdl.ast import (AST, Use, Module, TypeDecl, Constructor, Field, Sum,
                       SimpleSum, Product)
 
+from typing import NoReturn, Any, TYPE_CHECKING
+
 if mylib.PYTHON:
   def log(msg, *args):
     # type: (str, *Any) -> None

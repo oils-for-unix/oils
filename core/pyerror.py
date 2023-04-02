@@ -8,7 +8,7 @@ from __future__ import print_function
 
 from core import error
 
-from typing import NoReturn, Any, TYPE_CHECKING
+from typing import NoReturn, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import loc_t
