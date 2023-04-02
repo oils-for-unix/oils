@@ -12,7 +12,7 @@ from asdl import runtime
 
 from core import dev
 from core import process
-from core.pyerror import log
+from asdl.front_end import log
 unused1 = log
 from core import state
 from core import ui

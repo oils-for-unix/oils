@@ -13,8 +13,6 @@ from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
 
-#from core.pyerror import log
-
 ARG_0 = os.path.basename(sys.argv[0])
 
 

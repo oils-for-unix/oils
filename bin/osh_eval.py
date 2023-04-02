@@ -7,9 +7,9 @@ from __future__ import print_function
 import sys
 
 from asdl import runtime
+from asdl.front_end import log
 from core import error
 from core import shell
-from core.pyerror import log
 from core import pyos
 from core import pyutil
 from frontend import args

@@ -8,7 +8,7 @@ import collections
 import sys
 
 from osh import arith_parse
-from core.pyerror import log
+from asdl.front_end import log
 
 _ = log
 
