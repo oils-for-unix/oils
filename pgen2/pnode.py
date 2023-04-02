@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class PNode(object):
-  __slots__ = ('typ', 'tok', 'children')
+  __slots__ = ('typ', 'tok', 'children', 'child_offset')
 
   def __init__(self, typ, tok, children):
     # type: (int, Optional[Token], Optional[List[PNode]]) -> None
@@ -20,6 +20,7 @@ class PNode(object):
                     # 3-tuple (val, prefix, loc)
                     # NOTE: This is None for the first entry in the stack?
     self.children = children
+    self.child_offset = 0 # type: int
 
   def __repr__(self):
     # type: () -> str
@@ -27,3 +28,27 @@ class PNode(object):
     ch_str = 'with %d children' % len(self.children) \
         if self.children is not None else ''
     return '(PNode %s %s %s)' % (self.typ, tok_str, ch_str)
+
+  def AddChild(self, node):
+    # type: (PNode) -> None
+    self.children.append(node)
+
+  def GetChild(self, i):
+    # type: (int) -> PNode
+    if i < 0:
+      return self.children[i]
+
+    return self.children[self.child_offset + i]
+
+  def NumChildren(self):
+    # type: () -> int
+    return len(self.children) - self.child_offset
+
+  def Advance(self, n):
+    # type: (int) -> None
+    self.child_offset += n
+
+
+def NewPNode(typ, tok):
+    # type: (int, Optional[Token]) -> PNode
+    return PNode(typ, tok, [])

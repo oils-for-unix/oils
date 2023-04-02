@@ -13,7 +13,7 @@ from core.pyerror import log
 _ = log
 
 from typing import TYPE_CHECKING, Optional, Any, List
-from pgen2.pnode import PNode
+from pgen2.pnode import PNode, NewPNode
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token
@@ -108,7 +108,7 @@ class Parser(object):
         each time you call setup() the parser is reset to an initial
         state determined by the (implicit or explicit) start symbol.
         """
-        newnode = PNode(start, None, [])
+        newnode = NewPNode(start, None)
         # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [_StackItem(self.grammar.dfas[start], 0, newnode)]
         self.rootnode = None
@@ -194,15 +194,15 @@ class Parser(object):
         # type: (int, Token, int) -> None
         """Shift a token.  (Internal)"""
         top = self.stack[-1]
-        newnode = PNode(typ, opaque, None)
-        top.node.children.append(newnode)
+        newnode = NewPNode(typ, opaque)
+        top.node.AddChild(newnode)
         self.stack[-1].state = newstate
 
     def push(self, typ, opaque, newdfa, newstate):
         # type: (int, Token, dfa_t, int) -> None
         """Push a nonterminal.  (Internal)"""
         top = self.stack[-1]
-        newnode = PNode(typ, opaque, [])
+        newnode = NewPNode(typ, opaque)
         self.stack[-1].state = newstate
         self.stack.append(_StackItem(newdfa, 0, newnode))
 
@@ -213,6 +213,6 @@ class Parser(object):
         newnode = top.node
         if len(self.stack):
             top2 = self.stack[-1]
-            top2.node.children.append(newnode)
+            top2.node.AddChild(newnode)
         else:
             self.rootnode = newnode
