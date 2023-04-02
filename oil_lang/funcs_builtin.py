@@ -7,8 +7,8 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
+from asdl.front_end import log
 from core import error
-from core.pyerror import log
 from frontend import lexer
 from oil_lang import expr_eval
 
