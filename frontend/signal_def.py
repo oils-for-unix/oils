@@ -9,11 +9,10 @@ import signal
 from typing import List, Dict, Tuple
 
 
-def _MakeSignals():
+def _MakeSignalsOld():
   # type: () -> Dict[str, int]
-  """Piggy-back on CPython to get a list of portable signals.
-
-  When Oil is ported to C, we might want to do something like bash/dash.
+  """
+  Piggy-back on CPython signal module.  This causes portability problems
   """
   names = {}  # type: Dict[str, int]
   for name in dir(signal):
@@ -22,6 +21,53 @@ def _MakeSignals():
       int_val = getattr(signal, name)
       abbrev = name[3:]
       names[abbrev] = int_val
+  return names
+
+
+# POSIX 2018
+# https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
+
+_PORTABLE_SIGNALS = [
+  'SIGABRT',
+  'SIGALRM',
+  'SIGBUS',
+  'SIGCHLD',
+  'SIGCONT',
+  'SIGFPE',
+  'SIGHUP',
+  'SIGILL',
+  'SIGINT',
+  #SIGKILL
+  'SIGPIPE',
+  'SIGQUIT',
+  'SIGSEGV',
+  'SIGSTOP',
+  'SIGTERM',
+  'SIGTSTP',
+  'SIGTTIN',
+  'SIGTTOU',
+  'SIGUSR1',
+  'SIGUSR2',
+  'SIGSYS',
+  'SIGTRAP',
+  'SIGURG',
+  'SIGVTALRM',
+  'SIGXCPU',
+  'SIGXFSZ',
+]
+
+
+def _MakeSignals():
+  # type: () -> Dict[str, int]
+  """
+  Piggy-back on CPython signal module.  This causes portability problems
+  """
+  names = {}  # type: Dict[str, int]
+  for name in _PORTABLE_SIGNALS:
+    int_val = getattr(signal, name)
+    assert name.startswith('SIG'), name
+    abbrev = name[3:]
+    names[abbrev] = int_val
   return names
 
 
