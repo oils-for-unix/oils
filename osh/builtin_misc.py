@@ -270,7 +270,7 @@ class Read(vm._Builtin):
     self.parse_ctx = parse_ctx
     self.cmd_ev = cmd_ev
     self.errfmt = errfmt
-    self.stdin = mylib.Stdin()
+    self.stdin_ = mylib.Stdin()
 
   def _Line(self, arg, var_name):
     # type: (arg_types.read, str) -> int
@@ -387,7 +387,7 @@ class Read(vm._Builtin):
         return 0 if pyos.InputAvailable(STDIN_FILENO) else 1
 
     bits = 0
-    if self.stdin.isatty():
+    if self.stdin_.isatty():
       # -d and -n should be unbuffered
       if arg.d is not None or arg.n >= 0:
         bits |= pyos.TERM_ICANON
