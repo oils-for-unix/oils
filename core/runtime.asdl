@@ -11,10 +11,10 @@ module runtime
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(str* argv, int* arg_spids, ArgList? typed_args)
+    Argv(List[str] argv, List[int] arg_spids, ArgList? typed_args)
   | Assign(int builtin_id,
-           str* argv, int* arg_spids,
-           assign_arg* pairs)
+           List[str] argv, List[int] arg_spids,
+           List[assign_arg] pairs)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -27,9 +27,9 @@ module runtime
 
     # "$@" or "${a[@]}" # never globbed or split (though other shells
     # split them)
-  | Array(str* strs)
+  | Array(List[str] strs)
     # only produced when EXTGLOB_FS flag is passed
-  | ExtGlob(part_value* part_vals)
+  | ExtGlob(List[part_value] part_vals)
 
   # A static word from osh.asdl is evaluted to a dynamic value.  value
   # instances are stored in state.Mem().
@@ -41,7 +41,7 @@ module runtime
     # the arithmetic evaluator.
   | Int(int i)
     # "holes" in the array are represented by None
-  | MaybeStrArray(str* strs)
+  | MaybeStrArray(List[str] strs)
     # d will be a dict
   | AssocArray(Dict[str, str] d)
 
@@ -124,7 +124,7 @@ module runtime
   # We store name_spid separately because ShFunction has a word as a name, but
   # a Proc has a Token.
   Proc = (
-    str name, int name_spid, proc_sig sig, command body, value* defaults,
+    str name, int name_spid, proc_sig sig, command body, List[value] defaults,
     bool dynamic_scope
   )
 
@@ -151,7 +151,7 @@ module runtime
 
   wait_status =
     Proc(int code)
-  | Pipeline(int* codes)
+  | Pipeline(List[int] codes)
     # because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
 
@@ -184,13 +184,13 @@ module runtime
 
   # For dev.Tracer
   trace =
-    External(str* argv) # sync, needs argv (command.Simple or 'command')
-  | CommandSub             # sync
-  | ForkWait               # sync
-  | Fork                   # async, needs argv, & fork
-  | PipelinePart           # async
-  | ProcessSub             # async (other processes can be started)
-  | HereDoc                # async (multiple here docs per process)
+    External(List[str] argv) # sync, needs argv (command.Simple or 'command')
+  | CommandSub               # sync
+  | ForkWait                 # sync
+  | Fork                     # async, needs argv, & fork
+  | PipelinePart             # async
+  | ProcessSub               # async (other processes can be started)
+  | HereDoc                  # async (multiple here docs per process)
 
   # tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ

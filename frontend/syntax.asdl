@@ -134,8 +134,8 @@ module syntax
   # Variants:
   # - Look at left token for $'' c'' vs r'' ''
   # - """ and ''' strings have a boolean set
-  double_quoted = (Token left, word_part* parts, Token right)
-  single_quoted = (Token left, Token* tokens, Token right)
+  double_quoted = (Token left, List[word_part] parts, Token right)
+  single_quoted = (Token left, List[Token] tokens, Token right)
 
   simple_var_sub = (Token left, str var_name)
 
@@ -143,10 +143,12 @@ module syntax
 
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
-  sh_array_literal = (Token left, word* words)
+  sh_array_literal = (Token left, List[word] words)
 
   # Used in both expr and a word_part
-  ArgList = (Token left, expr* positional, named_arg* named, Token right)
+  ArgList = (
+     Token left, List[expr] positional, List[named_arg] named, Token right
+  )
 
   # TODO: every word_part has Token left, Token right, and remove int* spids
   # these are used in the main program for alias expansion
@@ -155,7 +157,7 @@ module syntax
 
   word_part = 
     ShArrayLiteral %sh_array_literal
-  | AssocArrayLiteral(Token left, assoc_pair* pairs)
+  | AssocArrayLiteral(Token left, List[assoc_pair] pairs)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
@@ -169,13 +171,13 @@ module syntax
   | TildeSub(Token token, str? user_name)
   | ArithSub(arith_expr anode)
     # {a,b,c}
-  | BracedTuple(compound_word* words)
+  | BracedTuple(List[compound_word] words)
     # {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     # {a..f} or {a..f..2} or {a..f..-2}
   | BracedRange(id kind, str start, str end, int step)
     # note: optional int may need special handling in ASDL
   # extended globs are parsed statically, unlike globs
-  | ExtGlob(Token op, compound_word* arms)
+  | ExtGlob(Token op, List[compound_word] arms)
 
     # Oil word_part extensions
 
@@ -185,20 +187,20 @@ module syntax
   | FuncCall(Token name, ArgList args)
     # $[d->key], etc.
   | ExprSub(Token left, expr child)
-  attributes (int* spids)
+  attributes (List[int] spids)
 
   # TODO: I think Token left should be copied into every compound_word
   # either that, or CommandParser needs to reliably have GetToken(word_t)
   # Invariant: compound_word always has at least one part (as opposed to
   # rhs_word.Empty)
-  compound_word = (word_part* parts)
+  compound_word = (List[word_part] parts)
 
   # dedent is calculated from the first part
   # TODO: could be string_part
-  string_line = (int dedent, word_part* part)
+  string_line = (int dedent, List[word_part] part)
 
   # min_dedent is calculated from each line using Julia's rules
-  triple_quoted = (int min_dedent, string_line* lines)
+  triple_quoted = (int min_dedent, List[string_line] lines)
 
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
   # The latter is semantically necessary.  (See osh/word_parse.py). 
@@ -217,7 +219,7 @@ module syntax
   | Compound %compound_word
     # For word sequences command.Simple, ShArrayLiteral, for_iter.Words
     # Could be its own type
-  | BracedTree(word_part* parts)
+  | BracedTree(List[word_part] parts)
     # For dynamic parsing of test/[ # the string is already evaluated.
     # TODO: try using Token with source info
   | String(id id, str s, int span_id)
@@ -253,31 +255,34 @@ module syntax
     Word %compound_word
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'
             int here_end_span_id,  # span is whole line (for defunct osh2oil)
-            word_part* stdin_parts # one for each line
+            List[word_part] stdin_parts  # one for each line
            )
 
   redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  assign_pair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, int* spids)
-  env_pair = (str name, rhs_word val, int* spids)
+  assign_pair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, List[int] spids)
+  env_pair = (str name, rhs_word val, List[int] spids)
 
   condition = 
-    Shell(command* commands)  # if false; true; then echo hi; fi
+    Shell(List[command] commands)  # if false; true; then echo hi; fi
   | Oil(expr e)               # if (x > 0) { echo hi }
 
   # Each arm tests one word against multiple words
-  case_arm = (word* pat_list, command* action, int* spids)
-  if_arm = (condition cond, command* action, int* spids)
+  case_arm = (List[word] pat_list, List[command] action, List[int] spids)
+  if_arm = (condition cond, List[command] action, List[int] spids)
 
   for_iter = 
     Args                      # for x; do echo $x; done # implicit "$@"
-  | Words(word* words)        # for x in 'foo' *.py { echo $x }
+  | Words(List[word] words)   # for x in 'foo' *.py { echo $x }
                               # like ShArrayLiteral, but no location for %(
   | Oil(expr e, Token blame)  # for x in (mylist) { echo $x }
 
   # TODO: Make field names consistent: child vs expr, etc.
-  BraceGroup = (Token left, Token? doc_token, command* children, redir* redirects, Token right)
+  BraceGroup = (
+      Token left, Token? doc_token, List[command] children,
+      List[redir] redirects, Token right
+  )
 
   # TODO: every command needs Token left
   # also add Token right_lok (a lok is a token used for the pretty printer ONLY)
@@ -285,61 +290,61 @@ module syntax
   # REMOVE int* spids
 
   # Retain references to lines
-  BlockArg = (BraceGroup brace_group, SourceLine* lines)
+  BlockArg = (BraceGroup brace_group, List[SourceLine] lines)
 
   command = 
     NoOp
     # Note: do_fork is semantic, not syntactic
-  | Simple(word* words, redir* redirects, env_pair* more_env,
+  | Simple(List[word] words, List[redir] redirects, List[env_pair] more_env,
            ArgList? typed_args, BlockArg? block, bool do_fork)
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
-  | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
+  | ExpandedAlias(command child, List[redir] redirects, List[env_pair] more_env)
   | Sentence(command child, Token terminator)
     # Note: Only represents "bare assignment"
-  | ShAssignment(assign_pair* pairs, redir* redirects)
+  | ShAssignment(List[assign_pair] pairs, List[redir] redirects)
   | ControlFlow(Token token, word? arg_word)
     # Note: There are spids for every pipeline operator, parallel to
     # stderr_indices
-  | Pipeline(command* children, bool negated, int* stderr_indices)
-  | AndOr(id* ops, command* children)
+  | Pipeline(List[command] children, bool negated, List[int] stderr_indices)
+  | AndOr(List[id] ops, List[command] children)
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
-  | DoGroup(command* children)
+  | DoGroup(List[command] children)
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(command child, redir* redirects)
-  | DParen(arith_expr child, redir* redirects)
-  | DBracket(bool_expr expr, redir* redirects)
+  | Subshell(command child, List[redir] redirects)
+  | DParen(arith_expr child, List[redir] redirects)
+  | DBracket(bool_expr expr, List[redir] redirects)
     # up to 3 iterations variables
-  | ForEach(str* iter_names, for_iter iterable, command body,
-            redir* redirects)
+  | ForEach(List[str] iter_names, for_iter iterable, command body,
+            List[redir] redirects)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
     # order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
-            command? body, redir* redirects)
-  | WhileUntil(Token keyword, condition cond, command body, redir* redirects)
-  | If(if_arm* arms, command* else_action, redir* redirects)
-  | Case(word to_match, case_arm* arms, redir* redirects)
+            command? body, List[redir] redirects)
+  | WhileUntil(Token keyword, condition cond, command body, List[redir] redirects)
+  | If(List[if_arm] arms, List[command] else_action, List[redir] redirects)
+  | Case(word to_match, List[case_arm] arms, List[redir] redirects)
   | ShFunction(str name, command body)
   | TimeBlock(command pipeline)
-    # Some nodes optimize it out as command*, but we use CommandList for
+    # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
     # 2. ls ; ls & ls  (same line)
     # 3. command_sub # single child that's a CommandList
     # 4. Subshell # single child that's a CommandList
     # Similar to DoGroup, except that has do and done spids.
-  | CommandList(command* children)
+  | CommandList(List[command] children)
 
     # Oil stuff
 
     # For 'x = myexpr'.  There's no type and no comma allowed.
   | BareDecl(Token lhs, expr rhs)
     # var, const
-  | VarDecl(Token? keyword, name_type* lhs, expr rhs)
+  | VarDecl(Token? keyword, List[name_type] lhs, expr rhs)
     # setvar/set, auto.
-  | PlaceMutation(Token? keyword, place_expr* lhs, Token op, expr rhs)
+  | PlaceMutation(Token? keyword, List[place_expr] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc(Token name, proc_sig sig, command body)
@@ -347,27 +352,27 @@ module syntax
   # Tea
 
   | Func(Token name, 
-         param* pos_params, Token? pos_splat,
-         param* named_params, Token? named_splat,
-         type_expr* return_types, command body)
-  | Data(Token name, param* params)
-  | Enum(Token name, variant* variants)
-  | Class(Token name, Token? extends, class_item* items)
-  | Import(single_quoted path, Token? alias, import_name* names)
-  | For(name_type* targets, expr iterable, command body)
+         List[param] pos_params, Token? pos_splat,
+         List[param] named_params, Token? named_splat,
+         List[type_expr] return_types, command body)
+  | Data(Token name, List[param] params)
+  | Enum(Token name, List[variant] variants)
+  | Class(Token name, Token? extends, List[class_item] items)
+  | Import(single_quoted path, Token? alias, List[import_name] names)
+  | For(List[name_type] targets, expr iterable, command body)
   | While(expr test, command body)
   | Break | Continue
   | Return(expr? value)
 
-  attributes (int* spids)
+  attributes (List[int] spids)
 
   # Binary(x expr, y expr) or Nullary %Token
   # In the first case we have a tag, and an anonymous type.
-  variant_type = Anon(param* params) | Ref(Token type_name)
+  variant_type = Anon(List[param] params) | Ref(Token type_name)
   # tags and types are separate in our model of algebraic data types
   variant = (Token tag_name, variant_type? typ)
 
-  class_item = Data(Token keyword, name_type* fields) | Method()
+  class_item = Data(Token keyword, List[name_type] fields) | Method()
 
   import_name = (Token name, Token? alias)
 
@@ -379,7 +384,7 @@ module syntax
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
-  | Closed(UntypedParam* untyped, Token? rest, TypedParam* typed)
+  | Closed(List[UntypedParam] untyped, Token? rest, List[TypedParam] typed)
 
   # prefix is : for out param, @ for proc splat, ... for func splat
   # procs only have types Expr, Block (and Str is implicit)
@@ -397,7 +402,7 @@ module syntax
   glob_part =
     Literal(id id, str s)
   | Operator(id op_id)  # * or ?
-  | CharClass(bool negated, str* strs)
+  | CharClass(bool negated, List[str] strs)
 
   # Char classes are opaque for now.  If we ever need them:
   # - Collating symbols are [. .]
@@ -407,7 +412,7 @@ module syntax
     Literal(Token token)
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
-  | Percent(Token* flags, Token? width, Token? precision, Token type)
+  | Percent(List[Token] flags, Token? width, Token? precision, Token type)
 
   #
   # OIL LANGUAGE
@@ -419,20 +424,20 @@ module syntax
   # type expressions:   Int   Array[Int]   Dict[Str, Any]
   type_expr =
     Simple(Token name)
-  | Compound(Token name, type_expr* params)
+  | Compound(Token name, List[type_expr] params)
 
   # LHS binding in loops, list comprehensions, and var/const
   name_type = (Token name, type_expr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
-  comprehension = (name_type* lhs, expr iter, expr? cond)
+  comprehension = (List[name_type] lhs, expr iter, expr? cond)
 
   # named arguments supplied to call.  token is null for f(; ...named).
   named_arg = (Token? name, expr value)
 
   # Subscripts are lists of expressions
   #   a[:i, n]      (we don't have matrices, but we have data frames)
-  subscript = (expr obj, expr* indices)
+  subscript = (expr obj, List[expr] indices)
 
   # Attributes are obj.attr, d->key, name::scope,
   attribute = (expr obj, Token op, Token attr, expr_context ctx)
@@ -452,7 +457,7 @@ module syntax
     # @(one 'two' "$three")
   | ShArrayLiteral %sh_array_literal
     # @[a b c] @[1 2 3] @[(1+1) (2+2)]
-  | RegexLiteral(Token left, re regex, Token* flags, Token? trans_pref)
+  | RegexLiteral(Token left, re regex, List[Token] flags, Token? trans_pref)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -462,29 +467,29 @@ module syntax
 
   | BlockArg %BlockArg
 
-  | Lambda(name_type* params, expr body)
+  | Lambda(List[name_type] params, expr body)
 
   | Unary(Token op, expr child)
   | Binary(Token op, expr left, expr right)
     # x < 4 < 3 and (x < 4) < 3
-  | Compare(expr left, Token* ops, expr* comparators)
+  | Compare(expr left, List[Token] ops, List[expr] comparators)
   | FuncCall(expr func, ArgList args)
 
     # TODO: Need a representation for method call.  We don't just want
     # Attribute() and then Call()
 
   | IfExp(expr test, expr body, expr orelse)
-  | Tuple(expr* elts, expr_context ctx)
+  | Tuple(List[expr] elts, expr_context ctx)
 
-  | List(expr* elts, expr_context ctx)
-  | Dict(expr* keys, expr* values)
+  | List(List[expr] elts, expr_context ctx)
+  | Dict(List[expr] keys, List[expr] values)
     # For the values in {n1, n2}
   | Implicit
 
-  | ListComp(expr elt, comprehension* generators)
+  | ListComp(expr elt, List[comprehension] generators)
     # not implemented
-  | DictComp(expr key, expr value, comprehension* generators)
-  | GeneratorExp(expr elt, comprehension* generators)
+  | DictComp(expr key, expr value, List[comprehension] generators)
+  | GeneratorExp(expr elt, List[comprehension] generators)
 
     # Ranges are written 1:2, with first class expression syntax. There is no
     # step as in Python. Use range(0, 10, step=2) for that.
@@ -563,9 +568,9 @@ module syntax
   | PosixClass %posix_class
   | PerlClass %perl_class
     # syntax [ $x \n ]
-  | CharClassLiteral(bool negated, class_literal_term* terms)
+  | CharClassLiteral(bool negated, List[class_literal_term] terms)
     # evaluated [ 'abc' \n ]
-  | CharClass(bool negated, char_class_term* terms)
+  | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
   | Splice(Token name, str var_name)
@@ -578,8 +583,8 @@ module syntax
 
     # Compound:
   | Repeat(re child, re_repeat op)
-  | Seq(re* children)
-  | Alt(re* children)
+  | Seq(List[re] children)
+  | Alt(List[re] children)
 
   | Group(re child)
     # TODO: <d+ : month Int> needs Token? type field
