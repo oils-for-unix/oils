@@ -4,7 +4,7 @@
 
 module hnode {
 
-  field = (string name, hnode val)
+  field = (str name, hnode val)
 
   color =
     TypeName
@@ -15,11 +15,11 @@ module hnode {
 
   hnode =
     # null node_type means there's no prefix, e.g. for 'token' type
-    Record(string? node_type, List[field] fields,
-           bool abbrev, string left, string right, List[hnode] unnamed_fields)
+    Record(str? node_type, List[field] fields,
+           bool abbrev, str left, str right, List[hnode] unnamed_fields)
     # TODO: for Dicts, children alternate k1 v1 k2 v2.  Use {}
   | Array(List[hnode] children)
-  | Leaf(string s, color color)
+  | Leaf(str s, color color)
     # TODO: get rid of since Id is now in ASDL
   | External(any obj)
 

@@ -262,6 +262,10 @@ class ASDLParser(object):
     """
     type_name = self._match(TokenKind.Name)
 
+    # Accept Python-like naming!
+    if type_name == 'str':
+      type_name = 'string'
+
     children = []
     if self.cur_token.kind == TokenKind.LBracket:
       self._advance()

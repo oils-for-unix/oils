@@ -51,44 +51,44 @@ module syntax
   source = 
     Interactive
   | Headless
-  | Unused(string comment)     # completion and history never show parse errors?
+  | Unused(str comment)     # completion and history never show parse errors?
   | CFlag
-  | Stdin(string comment)
+  | Stdin(str comment)
 
     # TODO: if it's not the main script, it's sourced, and you could provide
     # a chain of locations back to the sourced script!
-    # MainFile(string path) or SourcedFile(string path, int spid)
-  | MainFile(string path)
-  | SourcedFile(string path, int spid)
+    # MainFile(str path) or SourcedFile(str path, int spid)
+  | MainFile(str path)
+  | SourcedFile(str path, int spid)
 
     # code parsed from a word
     # used for 'eval', 'trap', 'printf', 'complete -W', etc.
-  | ArgvWord(string what, int span_id)
+  | ArgvWord(str what, int span_id)
 
     # code parsed from the value of a variable
     # used for $PS1 $PROMPT_COMMAND
-  | Variable(string var_name, int span_id)
+  | Variable(str var_name, int span_id)
 
     # Point to the original variable reference
   | VarRef(Token orig_tok)
 
     # alias expansion (location of first word)
-  | Alias(string argv0, int argv0_spid)
+  | Alias(str argv0, int argv0_spid)
 
     # 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
     # TODO: use this for eval_unsafe_arith instead of Variable
-  | Reparsed(string what, Token left_token, Token right_token)
+  | Reparsed(str what, Token left_token, Token right_token)
 
     # For #location-str
-  | Synthetic(string s)
+  | Synthetic(str s)
 
-  SourceLine = (int line_num, string content, source src)
+  SourceLine = (int line_num, str content, source src)
 
   # Token TODO:
   # - get rid of redundant span_id
   # - function to compute string val on demand
   # - maybe re-compute length on demand too
-  Token = (id id, int col, int length, int span_id, SourceLine? line, string tval)
+  Token = (id id, int col, int length, int span_id, SourceLine? line, str tval)
 
   # Source location for errors
   # It's possible for word_part and word to have a beginning and end location
@@ -116,7 +116,7 @@ module syntax
     Nullary %Token  # ${x@Q} or ${!prefix@} (which also has prefix_op)
   | Unary(Token op, rhs_word arg_word)  # e.g. ${v:-default}
     # TODO: Implement Oil's ${x|html} and ${x %.3f}
-  | Static(Token tok, string arg)
+  | Static(Token tok, str arg)
   | PatSub(compound_word pat, rhs_word replace, id replace_mode, Token slash_tok)
     # begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
@@ -124,7 +124,7 @@ module syntax
   braced_var_sub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
       Token token,       # location for the name
-      string var_name,   # the name
+      str var_name,   # the name
       Token? prefix_op,  # prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op,
@@ -137,7 +137,7 @@ module syntax
   double_quoted = (Token left, word_part* parts, Token right)
   single_quoted = (Token left, Token* tokens, Token right)
 
-  simple_var_sub = (Token left, string var_name)
+  simple_var_sub = (Token left, str var_name)
 
   command_sub = (Token left_token, command child, Token right)
 
@@ -158,7 +158,7 @@ module syntax
   | AssocArrayLiteral(Token left, assoc_pair* pairs)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
-  | EscapedLiteral(Token token, string ch)
+  | EscapedLiteral(Token token, str ch)
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
   | SimpleVarSub %simple_var_sub
@@ -166,13 +166,13 @@ module syntax
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %command_sub
     # ~ or ~bob
-  | TildeSub(Token token, string? user_name)
+  | TildeSub(Token token, str? user_name)
   | ArithSub(arith_expr anode)
     # {a,b,c}
   | BracedTuple(compound_word* words)
     # {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     # {a..f} or {a..f..2} or {a..f..-2}
-  | BracedRange(id kind, string start, string end, int step)
+  | BracedRange(id kind, str start, str end, int step)
     # note: optional int may need special handling in ASDL
   # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, compound_word* arms)
@@ -180,7 +180,7 @@ module syntax
     # Oil word_part extensions
 
     # @myarray
-  | Splice(Token name, string var_name)
+  | Splice(Token name, str var_name)
     # $strfunc(x) and @arrayfunc(x)
   | FuncCall(Token name, ArgList args)
     # $[d->key], etc.
@@ -220,13 +220,13 @@ module syntax
   | BracedTree(word_part* parts)
     # For dynamic parsing of test/[ # the string is already evaluated.
     # TODO: try using Token with source info
-  | String(id id, string s, int span_id)
+  | String(id id, str s, int span_id)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs_expr =
-    Name(Token left, string name)
-  | IndexedName(Token left, string name, arith_expr index)
-  | UnparsedIndex(Token left, string name, string index)  # for translation
+    Name(Token left, str name)
+  | IndexedName(Token left, str name, arith_expr index)
+  | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
     VarSub %simple_var_sub  # e.g. $(( x ))
@@ -248,7 +248,7 @@ module syntax
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  redir_loc = Fd(int fd) | VarName(string name)
+  redir_loc = Fd(int fd) | VarName(str name)
   redir_param =
     Word %compound_word
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'
@@ -260,7 +260,7 @@ module syntax
 
   assign_op = Equal | PlusEqual
   assign_pair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, int* spids)
-  env_pair = (string name, rhs_word val, int* spids)
+  env_pair = (str name, rhs_word val, int* spids)
 
   condition = 
     Shell(command* commands)  # if false; true; then echo hi; fi
@@ -312,7 +312,7 @@ module syntax
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
     # up to 3 iterations variables
-  | ForEach(string* iter_names, for_iter iterable, command body,
+  | ForEach(str* iter_names, for_iter iterable, command body,
             redir* redirects)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
@@ -322,7 +322,7 @@ module syntax
   | WhileUntil(Token keyword, condition cond, command body, redir* redirects)
   | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
-  | ShFunction(string name, command body)
+  | ShFunction(str name, command body)
   | TimeBlock(command pipeline)
     # Some nodes optimize it out as command*, but we use CommandList for
     # 1. the top level
@@ -395,9 +395,9 @@ module syntax
   #   CharClass(False, ['ch'])  # from Glob_CleanLiterals token
 
   glob_part =
-    Literal(id id, string s)
+    Literal(id id, str s)
   | Operator(id op_id)  # * or ?
-  | CharClass(bool negated, string* strs)
+  | CharClass(bool negated, str* strs)
 
   # Char classes are opaque for now.  If we ever need them:
   # - Collating symbols are [. .]
@@ -512,9 +512,9 @@ module syntax
   #
 
   # e.g. alnum digit
-  posix_class = (Token? negated, string name)
+  posix_class = (Token? negated, str name)
   # e.g. d w s
-  perl_class = (Token? negated, string name)
+  perl_class = (Token? negated, str name)
 
   # Note: .NET has && in character classes, making it a recursive language
 
@@ -568,7 +568,7 @@ module syntax
   | CharClass(bool negated, char_class_term* terms)
 
     # @D
-  | Splice(Token name, string var_name)
+  | Splice(Token name, str var_name)
 
     # $literal ${literal} 'no-backslashes' "other$foo"
   | SimpleVarSub %simple_var_sub
@@ -594,5 +594,5 @@ module syntax
 
   | Primitive(id id)  # . dot etc.
     # String substitutions are evaluated into literals
-  | LiteralChars(string s, int spid)
+  | LiteralChars(str s, int spid)
 }
