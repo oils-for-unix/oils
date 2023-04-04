@@ -202,6 +202,7 @@ _test-tar() {
   local version=${3:-$OIL_VERSION}
 
   local target=_bin/${name}.ovm
+
   #local target=_bin/${name}.ovm-dbg
 
   enter-chroot "$chroot_dir" /bin/sh <<EOF
@@ -219,8 +220,13 @@ fi
 
 echo
 echo "*** Running $target"
-#PYTHONVERBOSE=9 
-$target --version
+
+if test $name = oil; then
+  $target --version
+else
+  _bin/cxx-opt-sh/osh --version
+fi
+
 ./install
 echo
 echo "*** Running osh"

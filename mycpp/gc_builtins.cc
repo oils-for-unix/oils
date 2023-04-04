@@ -3,7 +3,7 @@
 
 #include "_build/detected-cpp-config.h"
 
-#ifdef HAVE_READLINE
+#if HAVE_READLINE
   #include <readline/readline.h>
 #endif
 

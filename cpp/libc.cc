@@ -35,7 +35,14 @@ Str* realpath(Str* path) {
 }
 
 int fnmatch(Str* pat, Str* str) {
+  // TODO: We should detect this at ./configure time, and then maybe flag these
+  // at parse time, not runtime
+#ifdef FNM_EXTMATCH
   int flags = FNM_EXTMATCH;
+#else
+  int flags = 0;
+#endif
+
   int result = ::fnmatch(pat->data_, str->data_, flags);
   switch (result) {
   case 0:

@@ -3,7 +3,7 @@
 #ifndef LEAKY_CORE_H
 #define LEAKY_CORE_H
 
-#include <pwd.h>     // passwd
+#include <pwd.h>  // passwd
 #include <signal.h>
 #include <termios.h>
 
