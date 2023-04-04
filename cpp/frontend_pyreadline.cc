@@ -232,7 +232,7 @@ void Readline::resize_terminal() {
 }
 
 Readline* MaybeGetReadline() {
-#ifdef HAVE_READLINE
+#if HAVE_READLINE
   gReadline = Alloc<Readline>();
   gHeap.RootGlobalVar(gReadline);
   return gReadline;
@@ -242,6 +242,7 @@ Readline* MaybeGetReadline() {
 }
 
 static void readline_cb(char* line) {
+#if HAVE_READLINE
   if (line == nullptr) {
     gReadline->latest_line_ = nullptr;
   } else {
@@ -249,11 +250,13 @@ static void readline_cb(char* line) {
   }
   gReadline->ready_ = true;
   rl_callback_handler_remove();
+#endif
 }
 
 // See the following for some loose documentation on the approach here:
 // https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface-Example
 Str* readline(Str* prompt) {
+#if HAVE_READLINE
   fd_set fds;
   FD_ZERO(&fds);
   rl_callback_handler_install(prompt->data(), readline_cb);
@@ -292,6 +295,7 @@ Str* readline(Str* prompt) {
     gReadline->latest_line_ = nullptr;
     return s;
   }
+#endif
 
   return nullptr;
 }
