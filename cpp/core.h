@@ -4,7 +4,7 @@
 #define LEAKY_CORE_H
 
 #include <pwd.h>     // passwd
-#include <signal.h>  // sighandler_t
+#include <signal.h>
 #include <termios.h>
 
 // For now, we assume that simple int and pointer operations are atomic, rather
@@ -241,7 +241,7 @@ extern SignalSafe* gSignalSafe;
 // Allocate global and return it.
 SignalSafe* InitSignalSafe();
 
-void Sigaction(int sig_num, sighandler_t handler);
+void Sigaction(int sig_num, void (*handler)(int));
 
 void RegisterSignalInterest(int sig_num);
 

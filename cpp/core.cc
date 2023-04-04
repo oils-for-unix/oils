@@ -237,7 +237,7 @@ SignalSafe* InitSignalSafe() {
   return gSignalSafe;
 }
 
-void Sigaction(int sig_num, sighandler_t handler) {
+void Sigaction(int sig_num, void (*handler)(int)) {
   struct sigaction act = {};
   act.sa_handler = handler;
   if (sigaction(sig_num, &act, nullptr) != 0) {
