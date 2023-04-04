@@ -54,6 +54,9 @@ _PORTABLE_SIGNALS = [
   'SIGVTALRM',
   'SIGXCPU',
   'SIGXFSZ',
+
+  # Not part of POSIX, but essential for Oil to work
+  'SIGWINCH',
 ]
 
 
