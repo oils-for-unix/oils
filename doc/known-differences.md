@@ -23,8 +23,9 @@ TODO:
 - `` as comments in sandstorm
   # This relates to comments being EOL or not
 
-- Document when declare / local / readonly/ export are KEYWORDS, and when they
-  are BUILTINS.
+- Pipelines
+  - PIPESTATUS only set when a pipeline is actually run.
+  - zsh-like lastpipe semantics.
 
 -->
 
@@ -35,13 +36,15 @@ TODO:
 In other shells, `printf %d invalid_integer` prints `0` and a warning.  OSH
 gives you a runtime error.
 
-### Code Parsed from Data Can't Have Command Subs unless `shopt -s eval_unsafe_arith`
+<!-- TODO: Probably should be strict_arith -->
+
+### Dynamically parsed command subs disallowed unless `shopt -s eval_unsafe_arith`
 
 In shell, array locations are often dynamically parsed, and the index can have
 command subs, which execute arbitrary code.
 
 For example, if you have `code='a[$(echo 42 | tee PWNED)]'`, shells will parse
-this data and execute it in many sitautions:
+this data and execute it in many situations:
 
     echo $(( code ))  # dynamic parsing and evaluation in bash, mksh, zsh
 
@@ -161,19 +164,19 @@ Static control flow will allow static analysis of shell scripts.
 
 (Test cases are in [spec/loop][]).
 
-### Oil Has More Builtins, Which Shadow External Commands
+### OSH has more builtins, which shadow external commands
 
-For example, `push` is a builtin in Oil, but not in `bash`.  Use `env push` or
-`/path/to/push` if you want to run an external command.
+For example, `append` is a builtin in OSH, but not in `bash`.  Use `env append`
+or `/path/to/append` if you want to run an external command.
 
-(Note that a user-defined function `push` take priority over the builtin
-`push`.
+(Note that a user-defined function `append` takes priority over the builtin
+`append`.)
 
-### Oil Has More Keywords, Which Shadow Builtins, Functions, and Commands
+### OSH has more keywords, which shadow builtins, functions, and commands
 
 In contrast with builtins, **keywords** affect shell parsing.
 
-For example, `func` is a keyword in Oil, but not in `bash`.  To run a command
+For example, `func` is a keyword in OSH, but not in `bash`.  To run a command
 named `func`, use `command func arg1`.
 
 Note that all shells have extensions that cause this issue.  For example, `[[`
@@ -211,7 +214,7 @@ expansion happens, we haven't *evaluated* the brace expansion.  We've only
 
 (mksh agrees with OSH, but zsh agrees with bash.)
 
-### Brackets should be escaped within character classes
+### Brackets should be escaped within Character Classes
 
 Don't use ambiguous syntax for a character class consisting of a single bracket
 character.
@@ -230,34 +233,140 @@ Yes:
 The ambiguous syntax is allowed when we pass globs through to `libc`, but it's
 good practice to be explicit.
 
-### Double quotes within backticks
+## Data Structures
 
-In rare cases, OSH processes backslashes within backticks differently than
-other shells.  However there are **two workarounds** that are compatible with
-every shell.
+### Arrays aren't split inside ${}
 
-No:
+Most shells split the entries of arrays like `"$@"` and `"${a[@]}"` here:
 
-    `echo \"`     # is this a literal quote, or does it start a string?
+    echo ${undef:-"$@"}
 
-Yes:
+In OSH, omit the quotes if you want splitting:
 
-    $(echo \")    # $() can always be used instead of ``.
-                  # There's no downside to the more modern construct.
-    `echo \\"`    # also valid, but $() is more readable
+    echo ${undef:-$@}
 
+I think OSH is more consistent, but it disagrees with other shells.
+
+### Values are tagged with types, not locations (`declare -i -a -A`)
+
+Even though there's a large common subset, OSH and bash have a different model
+for typed data.
+
+- In OSH, **values** are tagged with types, which is how Python and JavaScript
+  work.
+- In bash, **cells** (locations for values) are tagged with types.  Everything
+  is a string, but in certain contexts, strings are treated as integers or as
+  structured data.
+
+In particular,
+
+- The `-i` flag is a no-op in OSH.  See [Shell Idioms > Remove Dynamic
+  Parsing](shell-idioms.html#remove-dynamic-parsing) for alternatives to `-i`.
+- The `-a` and `-A` flags behave differently.  They pertain to the value, not
+  the location.
+
+For example, these two statements are different in bash, but the same in OSH:
+
+    declare -A assoc     # unset cell that will LATER be an assoc array
+    declare -A assoc=()  # empty associative array
+
+In bash, you can tell the difference with `set -u`, but there's no difference
+in OSH.
+
+### Indexed and Associative arrays are distinct
+
+Here is how you can create arrays in OSH, in a bash-compatible way:
+
+    local indexed=(foo bar)
+    local -a indexed=(foo bar)            # -a is redundant
+    echo ${indexed[1]}                    # bar
+
+    local assoc=(['one']=1 ['two']=2)
+    local -A assoc=(['one']=1 ['two']=2)  # -A is redundant
+    echo ${assoc['one']}                  # 1
+
+In bash, the distinction between the two is blurry, with cases like this:
+
+    local -A x=(foo bar)                  # -A disagrees with literal
+    local -a y=(['one']=1 ['two']=2)      # -a disagrees with literal
+
+These are disallowed in OSH.
 
 Notes:
 
-- This is tested in [spec/command-sub][].  (Case #25 fails for OSH, and all
-  shells start to disagree on case #26.)
-- The reason for the disagreement is that OSH doesn't have special cases for a
-  particular number of backslashes.  The rules are consistent for any level of
-  quoting, although incompatible in this edge case.
+- The `=` keyword is useful for gaining an understanding of the data model.
+- See the [Quirks](quirks.html) doc for details on how OSH uses this cleaner
+  model while staying compatible with bash.
 
-## Differences at Runtime
+## Assignment builtins
 
-### Alias Expansion
+The assignment builtins are `export`, `readonly`, `local`, and
+`declare`/`typeset`.  They're parsed in 2 ways:
+
+- Statically: to avoid word splitting in `declare x=$y` when `$y` contains
+  spaces.  bash and other shells behave this way.
+- Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
+
+### `builtin declare x=$y` is a runtime error
+
+This is because the special parsing of `x=$y` depends on the first word
+`declare`.
+
+### Args aren't split or globbed
+
+In bash, you can do unusual things with args to assignment builtins:
+
+    vars='a=b x=y'
+    touch foo=bar.py spam=eggs.py
+
+    declare $vars *.py       # assigns at least 4 variables
+    echo $a       # b
+    echo $x       # y
+    echo $foo     # bar.py
+    echo $spam    # eggs.py
+
+In contrast, OSH doesn't split or glob args to assignment builtins.  This is
+more like the behavior of zsh.
+
+## Pipelines
+
+### Last pipeline part may run in shell process (zsh, bash `shopt -s lastpipe`)
+
+In this pipeline, the builtin `read` is run in the shell process, not a child
+process:
+
+    $ echo hi | read x
+    $ echo x=$x
+    x=hi  # empty in bash unless shopt -s lastpipe
+
+If the last part is an external command, there is no difference:
+
+    $ ls | wc -l
+    42
+
+This is how zsh behaves, and how bash (sometimes) behaves with `shopt -s
+lastpipe`.
+  
+### Pipelines can't be suspended with Ctrl-Z
+
+Because the last part may be the current shell process, the entire pipeline
+can't be suspended.
+
+OSH and zsh share this consequence of the `lastpipe` semantics.
+
+In contrast, bash's `shopt -s lastpipe` is ignored in interactive shells.
+
+### `${PIPESTATUS[@]}` is only set after an actual pipeline
+
+This makes it easier to check compound status codes without worrying about them
+being "clobbered".
+
+Bash will set `${PIPESTATUS[@]}` on every command, regardless of whether its a
+pipeline.
+
+## More Differences at Runtime
+
+### Alias expansion
 
 Almost all "real" aliases should work in OSH.  But these don't work:
 
@@ -292,115 +401,6 @@ These don't:
 - `{ echo one; echo two; }`
 - `for`, `while`, `case`, functions, etc.
 
-### Array Indices Aren't Dynamically Parsed
-
-### Array References Must be Explicit
-
-In bash, `$array` is equivalent to `${array[0]}`, which is very confusing
-(especially when combined with `set -o nounset`).
-
-No:
-
-    array=(1 2 3)
-    echo $array         # Runtime error in OSH
-
-Yes:
-
-    echo ${array[0]}    # explicitly choose the first element
-    echo "${array[@]}"  # explicitly choose the whole array
-
-NOTE: Setting `shopt -s strict_array` further reduces the confusion between
-strings and arrays.  See the [options doc](options.html) for details.
-
-### Arrays aren't split inside ${}
-
-Most shells split the entries of arrays like `"$@"` and `"${a[@]}"` here:
-
-    echo ${undef:-"$@"}
-
-In OSH, omit the quotes if you want splitting:
-
-    echo ${undef:-$@}
-
-I think OSH is more consistent, but it disagrees with other shells.
-
-### Values Are Tagged with Types, Not Locations (`declare -i -a -A`)
-
-Even though there's a large common subset, OSH and bash have a different model
-for typed data.
-
-- In OSH, **values** are tagged with types, which is how Python and JavaScript
-  work.
-- In bash, **cells** (locations for values) are tagged with types.  Everything
-  is a string, but in certain contexts, strings are treated as integers or as
-  structured data.
-
-In particular,
-
-- The `-i` flag is a no-op in OSH.  See [Shell Idioms > Remove Dynamic
-  Parsing](shell-idioms.html#remove-dynamic-parsing) for alternatives to `-i`.
-- The `-a` and `-A` flags behave differently.  They pertain to the value, not
-  the location.
-
-For example, these two statements are different in bash, but the same in OSH:
-
-    declare -A assoc     # unset cell that will LATER be an assoc array
-    declare -A assoc=()  # empty associative array
-
-In bash, you can tell the difference with `set -u`, but there's no difference
-in OSH.
-
-### Indexed and Associative Arrays are Distinct
-
-Here is how you can create arrays in OSH, in a bash-compatible way:
-
-    local indexed=(foo bar)
-    local -a indexed=(foo bar)            # -a is redundant
-    echo ${indexed[1]}                    # bar
-
-    local assoc=(['one']=1 ['two']=2)
-    local -A assoc=(['one']=1 ['two']=2)  # -A is redundant
-    echo ${assoc['one']}                  # 1
-
-In bash, the distinction between the two is blurry, with cases like this:
-
-    local -A x=(foo bar)                  # -A disagrees with literal
-    local -a y=(['one']=1 ['two']=2)      # -a disagrees with literal
-
-These are disallowed in OSH.
-
-Notes:
-
-- The [pp]($help:pp) builtin is useful for gaining an understanding of the
-data model.
-- See the [Quirks](quirks.html) doc for details on how Oil uses this cleaner
-  model while staying compatible with bash.
-
-### Args to Assignment Builtins Aren't Split or Globbed
-
-The assignment builtins are `export`, `readonly`, `local`, and
-`declare`/`typeset`.
-
-In bash, you can do unusual things with them:
-
-    vars='a=b x=y'
-    touch foo=bar.py spam=eggs.py
-
-    declare $vars *.py       # assigns at least 4 variables
-    echo $a       # b
-    echo $x       # y
-    echo $foo     # bar.py
-    echo $spam    # eggs.py
-
-In contrast, OSH disables splitting and globbing within assignment builtins.
-This is more like the behavior of zsh.
-
-On a related note, assignment builtins are both statically and dynamically
-parsed:
-
-- Statically: to avoid splitting `declare x=$y` when `$y` contains spaces.
-- Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
-
 ### Extended globs are more static like `mksh`, and have other differences
 
 That is, in OSH and mksh, something like `echo *.@(cc|h)` is an extended glob.
@@ -426,6 +426,11 @@ The rules for history substitution like `!echo` are simpler.  There are no
 special cases to avoid clashes with `${!indirect}` and so forth.
 
 TODO: Link to the history lexer.
+
+<!--
+TODO: we want to make history more statically parsed.  Should test the ZSH
+parser.
+-->
 
 ## Links
 

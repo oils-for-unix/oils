@@ -188,10 +188,9 @@ X [External Lang] BEGIN   END   when (awk)
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
-                  X old_syntax (-u)      [[   $(( ))  ${x%prefix}   ${a[@]}
-                                         $$
-  [Compatibility] compat_array           ${array} is ${array[0]}
-                  eval_unsafe_arith      Allow dynamically parsed a[$(echo 42)]
+                  X old_syntax (-u)      [[   $(( ))  ( )   ${x%prefix}
+                                         ${a[@]}   $$
+  [Compatibility] eval_unsafe_arith      Allow dynamically parsed a[$(echo 42)]
                   verbose_errexit        Whether to print detailed errors
   [More Options]  _allow_command_sub     To implement strict_errexit, eval_unsafe_arith
                   _allow_process_sub     To implement strict_errexit
