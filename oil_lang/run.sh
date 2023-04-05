@@ -43,15 +43,6 @@ test-parse-osh() {
     | xargs -n 1 -- $0 parse-one
 }
 
-test-parse-osh-cpp() {
-  # We get buffer overflow here?
-  local osh=$OSH_CPP
-
-  ninja $osh
-
-  OIL_GC_ON_EXIT=1 OSH=$osh test-parse-osh
-}
-
 test-run-osh() {
   ### Run programs with OSH
 
@@ -108,6 +99,15 @@ demo() {
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
   run-test-funcs
+}
+
+soil-run-cpp() {
+  local osh=$OSH_CPP
+
+  ninja $osh
+
+  # TODO: replace with run-test-funcs once the rest of oil_lang is translated
+  OIL_GC_ON_EXIT=1 OSH=$osh run-test-func test-parse-osh _test/oil_lang/parse-osh.log
 }
 
 run-for-release() {
