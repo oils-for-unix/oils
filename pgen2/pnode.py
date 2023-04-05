@@ -49,6 +49,11 @@ class PNode(object):
     self.child_offset += n
 
 
-def NewPNode(typ, tok):
-    # type: (int, Optional[Token]) -> PNode
-    return PNode(typ, tok, [])
+class PNodeAllocator(object):
+    def __init__(self):
+        # type: () -> None
+        return
+
+    def NewPNode(self, typ, tok):
+        # type: (int, Optional[Token]) -> PNode
+        return PNode(typ, tok, [])

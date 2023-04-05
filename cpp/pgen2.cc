@@ -6,16 +6,39 @@
 
 namespace pnode {
 
-static std::vector<PNode> pnode_arena;
+PNode::PNode(int typ, syntax_asdl::Token* tok, List<PNode*>*)
+    : typ(typ), tok(tok), children(), child_offset(0) {
+}
 
-PNode* NewPNode(int typ, syntax_asdl::Token* tok) {
-  if (tok == nullptr) {
-    pnode_arena.reserve(1000000);
-    pnode_arena.clear();
+void PNode::AddChild(PNode* node) {
+  children.push_back(node);
+}
+
+PNode* PNode::GetChild(int i) {
+  int j = i;
+  if (j < 0) {
+    j += NumChildren();
   }
-  CHECK(pnode_arena.size() < pnode_arena.capacity());
-  pnode_arena.emplace_back(typ, tok, nullptr);
-  return pnode_arena.data() + (pnode_arena.size() - 1);
+  return children[child_offset + j];
+}
+
+int PNode::NumChildren() {
+  return children.size() - child_offset;
+}
+
+void PNode::Advance(int n) {
+  child_offset += n;
+}
+
+PNodeAllocator::PNodeAllocator() : arena_() {
+  arena_.reserve(100000);
+  arena_.clear();
+}
+
+PNode* PNodeAllocator::NewPNode(int typ, syntax_asdl::Token* tok) {
+  CHECK(arena_.size() < arena_.capacity());
+  arena_.emplace_back(typ, tok, nullptr);
+  return arena_.data() + (arena_.size() - 1);
 }
 
 }  // namespace pnode

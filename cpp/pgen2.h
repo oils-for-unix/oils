@@ -42,28 +42,12 @@ namespace pnode {
 
 class PNode {
  public:
-  PNode(int typ, syntax_asdl::Token* tok, List<PNode*>*)
-      : typ(typ), tok(tok), children(), child_offset(0) {}
+  PNode(int typ, syntax_asdl::Token* tok, List<PNode*>*);
 
-  void AddChild(PNode* node) {
-    children.push_back(node);
-  }
-
-  PNode* GetChild(int i) {
-    int j = i;
-    if (j < 0) {
-      j += NumChildren();
-    }
-    return children[child_offset + j];
-  }
-
-  int NumChildren() {
-    return children.size() - child_offset;
-  }
-
-  void Advance(int n) {
-    child_offset += n;
-  }
+  void AddChild(PNode* node);
+  PNode* GetChild(int i);
+  int NumChildren();
+  void Advance(int n);
 
   int typ;
   syntax_asdl::Token* tok;
@@ -71,7 +55,19 @@ class PNode {
   int child_offset;
 };
 
-PNode* NewPNode(int typ, syntax_asdl::Token* tok);
+class PNodeAllocator {
+ public:
+  PNodeAllocator();
+
+  PNode* NewPNode(int typ, syntax_asdl::Token* tok);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::Class(HeapTag::Opaque, kZeroMask, sizeof(PNodeAllocator));
+  }
+
+ private:
+  std::vector<PNode> arena_;
+};
 
 }  // namespace pnode
 
