@@ -50,10 +50,10 @@ class PNode(object):
 
 
 class PNodeAllocator(object):
-    def __init__(self):
-        # type: () -> None
-        return
+  def __init__(self):
+    # type: () -> None
+    return
 
-    def NewPNode(self, typ, tok):
-        # type: (int, Optional[Token]) -> PNode
-        return PNode(typ, tok, [])
+  def NewPNode(self, typ, tok):
+    # type: (int, Optional[Token]) -> PNode
+    return PNode(typ, tok, [])
