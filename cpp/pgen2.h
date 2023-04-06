@@ -60,13 +60,15 @@ class PNodeAllocator {
   PNodeAllocator();
 
   PNode* NewPNode(int typ, syntax_asdl::Token* tok);
+  void Clear();
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::Class(HeapTag::Opaque, kZeroMask, sizeof(PNodeAllocator));
   }
 
  private:
-  std::vector<PNode> arena_;
+  // We put this on the heap so we can call its destructor from `Clear()`...
+  std::vector<PNode>* arena_;
 };
 
 }  // namespace pnode

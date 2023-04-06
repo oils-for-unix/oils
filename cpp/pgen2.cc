@@ -30,15 +30,20 @@ void PNode::Advance(int n) {
   child_offset += n;
 }
 
-PNodeAllocator::PNodeAllocator() : arena_() {
-  arena_.reserve(100000);
-  arena_.clear();
+PNodeAllocator::PNodeAllocator() : arena_(new std::vector<PNode>()) {
+  arena_->reserve(100000);
+  arena_->clear();
 }
 
 PNode* PNodeAllocator::NewPNode(int typ, syntax_asdl::Token* tok) {
-  CHECK(arena_.size() < arena_.capacity());
-  arena_.emplace_back(typ, tok, nullptr);
-  return arena_.data() + (arena_.size() - 1);
+  CHECK(arena_->size() < arena_->capacity());
+  arena_->emplace_back(typ, tok, nullptr);
+  return arena_->data() + (arena_->size() - 1);
+}
+
+void PNodeAllocator::Clear() {
+  delete arena_;
+  arena_ = nullptr;
 }
 
 }  // namespace pnode

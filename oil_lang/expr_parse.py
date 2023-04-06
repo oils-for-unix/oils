@@ -19,10 +19,11 @@ from mycpp.mylib import tagswitch
 from osh import braces
 from osh import word_
 from pgen2 import parse
+from pgen2.pnode import PNodeAllocator
 
 _ = log
 
-from typing import TYPE_CHECKING, Dict, Tuple, List, cast, Optional
+from typing import TYPE_CHECKING, Any, Dict, Tuple, List, cast, Optional
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
@@ -314,12 +315,13 @@ class ExprParser(object):
     self.tea_keywords = tea_keywords
     # Reused multiple times.
     self.push_parser = parse.Parser(gr)
+    self.pnode_alloc = None # type: Optional[PNodeAllocator]
 
   def Parse(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[PNode, Token]
 
     # Reuse the parser
-    self.push_parser.setup(start_symbol)
+    self.push_parser.setup(start_symbol, self.pnode_alloc)
     try:
       last_token = _PushOilTokens(self.parse_ctx, self.gr, self.push_parser,
                                   lexer, self.tea_keywords)
@@ -337,3 +339,24 @@ class ExprParser(object):
             e.tok)
 
     return self.push_parser.rootnode, last_token
+
+
+class ctx_PNodeAllocator(object):
+
+  def __init__(self, ep=None):
+    # type: (ExprParser) -> None
+    self.expr_parser = ep
+    if not ep:
+      return
+    self.expr_parser.pnode_alloc = PNodeAllocator()
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    if not self.expr_parser:
+      return
+    self.expr_parser.pnode_alloc.Clear()
+    self.expr_parser.pnode_alloc = None

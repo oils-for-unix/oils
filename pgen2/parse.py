@@ -96,8 +96,8 @@ class Parser(object):
         self.stack = [] # type: List[_StackItem]
         self.pnode_alloc = None # type: Optional[PNodeAllocator]
 
-    def setup(self, start):
-        # type: (int) -> None
+    def setup(self, start, pnode_alloc):
+        # type: (int, PNodeAllocator) -> None
         """Prepare for parsing.
 
         This *must* be called before starting to parse.
@@ -109,7 +109,7 @@ class Parser(object):
         each time you call setup() the parser is reset to an initial
         state determined by the (implicit or explicit) start symbol.
         """
-        self.pnode_alloc = PNodeAllocator()
+        self.pnode_alloc = pnode_alloc
         newnode = self.pnode_alloc.NewPNode(start, None)
         # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [_StackItem(self.grammar.dfas[start], 0, newnode)]
