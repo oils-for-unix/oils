@@ -343,11 +343,9 @@ class ExprParser(object):
 
 class ctx_PNodeAllocator(object):
 
-  def __init__(self, ep=None):
+  def __init__(self, ep):
     # type: (ExprParser) -> None
     self.expr_parser = ep
-    if not ep:
-      return
     self.expr_parser.pnode_alloc = PNodeAllocator()
 
   def __enter__(self):
@@ -356,7 +354,5 @@ class ctx_PNodeAllocator(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    if not self.expr_parser:
-      return
     self.expr_parser.pnode_alloc.Clear()
     self.expr_parser.pnode_alloc = None

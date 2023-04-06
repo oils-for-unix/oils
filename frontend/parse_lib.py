@@ -321,12 +321,9 @@ class ParseContext(object):
     # type: () -> expr_parse.ExprParser
     return expr_parse.ExprParser(self, self.oil_grammar, False)
 
-  def _ParseTea(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[PNode, Token]
-    """Helper for Tea parsing."""
-
-    e_parser = expr_parse.ExprParser(self, self.oil_grammar, True)
-    return e_parser.Parse(lexer, start_symbol)
+  def _TeaParser(self):
+    # type: () -> expr_parse.ExprParser
+    return expr_parse.ExprParser(self, self.oil_grammar, True)
 
   def ParseVarDecl(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__VarDecl, Token]
@@ -410,8 +407,9 @@ class ParseContext(object):
   def ParseFunc(self, lexer, out):
     # type: (Lexer, command__Func) -> Token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
-    with ctx_PNodeAllocator():
-      pnode, last_token = self._ParseTea(lexer, grammar_nt.named_func)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.named_func)
 
       if 0:
         self.p_printer.Print(pnode)
@@ -422,8 +420,9 @@ class ParseContext(object):
   def ParseDataType(self, lexer, out):
     # type: (Lexer, command__Data) -> Token
     """ data Point(x Int, y Int) """
-    with ctx_PNodeAllocator():
-      pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_data)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_data)
 
       if 0:
         self.p_printer.Print(pnode)
@@ -434,8 +433,9 @@ class ParseContext(object):
   def ParseEnum(self, lexer, out):
     # type: (Lexer, command__Enum) -> Token
     """ enum cflow { Break, Continue, Return(status Int) } """
-    with ctx_PNodeAllocator():
-      pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_enum)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_enum)
 
       if 0:
         self.p_printer.Print(pnode)
@@ -446,8 +446,9 @@ class ParseContext(object):
   def ParseClass(self, lexer, out):
     # type: (Lexer, command__Class) -> Token
     """ class Lexer { var Token; func Next() { echo } } """
-    with ctx_PNodeAllocator():
-      pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_class)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_class)
 
       if 0:
         self.p_printer.Print(pnode)
@@ -458,8 +459,9 @@ class ParseContext(object):
   def ParseImport(self, lexer, out):
     # type: (Lexer, command__Import) -> Token
     """ use 'foo/bar' as spam, Foo, Z as Y """
-    with ctx_PNodeAllocator():
-      pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_import)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_import)
 
       if 0:
         self.p_printer.Print(pnode)
@@ -474,8 +476,9 @@ class ParseContext(object):
       line_lexer = lexer.LineLexer(self.arena)
       lx = lexer.Lexer(line_lexer, line_reader)
 
-      with ctx_PNodeAllocator():
-        pnode, last_token = self._ParseTea(lx, grammar_nt.tea_module)
+      e_parser = self._TeaParser()
+      with ctx_PNodeAllocator(e_parser):
+        pnode, last_token = e_parser.Parse(lx, grammar_nt.tea_module)
 
         if 1:
           self.p_printer.Print(pnode)
