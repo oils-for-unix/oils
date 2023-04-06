@@ -31,10 +31,16 @@ class PNode(object):
 
   def AddChild(self, node):
     # type: (PNode) -> None
+    """
+    Add `node` as a child.
+    """
     self.children.append(node)
 
   def GetChild(self, i):
     # type: (int) -> PNode
+    """
+    Returns the `i`th uncomsumed child.
+    """
     if i < 0:
       return self.children[i]
 
@@ -42,10 +48,21 @@ class PNode(object):
 
   def NumChildren(self):
     # type: () -> int
+    """
+    Returns the number of unconsumed children.
+    """
     return len(self.children) - self.child_offset
 
   def Advance(self, n):
     # type: (int) -> None
+    """
+    Consumes `n` children. This is equivalent to the slice [n:] on the list of
+    children.  All future calls to GetChild() and NumChildren() will operate on
+    the new list.
+
+    The C++ implementation will use this API to implement slicing of the child
+    list without the GC runtime.
+    """
     self.child_offset += n
 
 
@@ -57,3 +74,7 @@ class PNodeAllocator(object):
   def NewPNode(self, typ, tok):
     # type: (int, Optional[Token]) -> PNode
     return PNode(typ, tok, [])
+
+  def Clear(self):
+    # type: () -> None
+    return
