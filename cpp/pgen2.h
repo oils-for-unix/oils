@@ -30,7 +30,18 @@ class Grammar {
   int start;
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(8, sizeof(Grammar));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Grammar));
+  }
+
+  static constexpr uint32_t field_mask() {
+    return maskbit(offsetof(Grammar, symbol2number)) |
+           maskbit(offsetof(Grammar, number2symbol)) |
+           maskbit(offsetof(Grammar, states)) |
+           maskbit(offsetof(Grammar, dfas)) |
+           maskbit(offsetof(Grammar, labels)) |
+           maskbit(offsetof(Grammar, keywords)) |
+           maskbit(offsetof(Grammar, tokens)) |
+           maskbit(offsetof(Grammar, symbol2label));
   }
 
   DISALLOW_COPY_AND_ASSIGN(Grammar)
@@ -50,9 +61,9 @@ class PNode {
   void Advance(int n);
 
   int typ;
+  int child_offset;
   syntax_asdl::Token* tok;
   std::vector<PNode*> children;
-  int child_offset;
 };
 
 class PNodeAllocator {

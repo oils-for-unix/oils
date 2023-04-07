@@ -7,7 +7,7 @@
 namespace pnode {
 
 PNode::PNode(int typ, syntax_asdl::Token* tok, List<PNode*>*)
-    : typ(typ), tok(tok), children(), child_offset(0) {
+    : typ(typ), child_offset(0), tok(tok), children() {
 }
 
 void PNode::AddChild(PNode* node) {
@@ -31,8 +31,7 @@ void PNode::Advance(int n) {
 }
 
 PNodeAllocator::PNodeAllocator() : arena_(new std::vector<PNode>()) {
-  arena_->reserve(100000);
-  arena_->clear();
+  arena_->reserve(512);
 }
 
 PNode* PNodeAllocator::NewPNode(int typ, syntax_asdl::Token* tok) {

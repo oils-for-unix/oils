@@ -337,7 +337,8 @@ class ParseContext(object):
 
       ast_node = self.tr.MakeVarDecl(pnode)
       ast_node.keyword = kw_token  # VarDecl didn't fill this in
-      return ast_node, last_token
+
+    return ast_node, last_token
 
   def ParsePlaceMutation(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__PlaceMutation, Token]
@@ -349,7 +350,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
       ast_node = self.tr.MakePlaceMutation(pnode)
       ast_node.keyword = kw_token  # VarDecl didn't fill this in
-      return ast_node, last_token
+
+    return ast_node, last_token
 
   def ParseOilArgList(self, lx, out):
     # type: (Lexer, ArgList) -> None
@@ -376,7 +378,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
   
       ast_node = self.tr.Expr(pnode)
-      return ast_node, last_token
+
+    return ast_node, last_token
 
   def ParseOilForExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[List[name_type], expr_t, Token]
@@ -389,7 +392,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       lvalue, iterable = self.tr.OilForExpr(pnode)
-      return lvalue, iterable, last_token
+
+    return lvalue, iterable, last_token
 
   def ParseProc(self, lexer, out):
     # type: (Lexer, command__Proc) -> Token
@@ -402,7 +406,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       out.sig = self.tr.Proc(pnode)
-      return last_token
+
+    return last_token
 
   def ParseFunc(self, lexer, out):
     # type: (Lexer, command__Func) -> Token
@@ -415,7 +420,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       self.tr.NamedFunc(pnode, out)
-      return last_token
+
+    return last_token
 
   def ParseDataType(self, lexer, out):
     # type: (Lexer, command__Data) -> Token
@@ -428,7 +434,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       self.tr.Data(pnode, out)
-      return last_token
+
+    return last_token
 
   def ParseEnum(self, lexer, out):
     # type: (Lexer, command__Enum) -> Token
@@ -441,7 +448,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       self.tr.Enum(pnode, out)
-      return last_token
+
+    return last_token
 
   def ParseClass(self, lexer, out):
     # type: (Lexer, command__Class) -> Token
@@ -454,7 +462,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       self.tr.Class(pnode, out)
-      return last_token
+
+    return last_token
 
   def ParseImport(self, lexer, out):
     # type: (Lexer, command__Import) -> Token
@@ -467,7 +476,8 @@ class ParseContext(object):
         self.p_printer.Print(pnode)
 
       self.tr.Import(pnode, out)
-      return last_token
+
+    return last_token
 
   if mylib.PYTHON:
     def ParseTeaModule(self, line_reader):
@@ -485,7 +495,8 @@ class ParseContext(object):
 
         #out = command.Use()  # TODO: make a node
         #self.tr.TeaModule(pnode, out)
-        return None
+
+      return None
 
 # Another parser instantiation:
 # - For Array Literal in word_parse.py WordParser:

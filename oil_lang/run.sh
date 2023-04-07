@@ -21,7 +21,7 @@ parse-one() {
   echo ---
   # TODO: these tests can be removed once the rest of oil_lang/ is translated
   if test "$OSH" = "$OSH_CPP"; then
-    local prog="$@"
+    local prog="$1"
     local skip=''
     case $prog in
       (*/assign.osh) skip=T ;;
@@ -107,7 +107,7 @@ soil-run-cpp() {
   ninja $osh
 
   # TODO: replace with run-test-funcs once the rest of oil_lang is translated
-  OIL_GC_ON_EXIT=1 OSH=$osh run-test-func test-parse-osh _test/oil_lang/parse-osh.log
+  OIL_GC_ON_EXIT=1 OSH=$osh test-parse-osh
 }
 
 run-for-release() {
