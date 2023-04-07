@@ -252,10 +252,16 @@ test-runtime() {
 
   # Run other tests with all variants
 
+
   unit '' ubsan
 
   unit '' asan
   unit '' gcalways
+
+  # Can't get asan32 to work
+  unit '' asan32
+
+  #unit '' dbg32
 }
 
 #

@@ -799,24 +799,12 @@ TEST test_str_concat() {
     ASSERT(str_equals(result, StrFromC("aac")));
   }
 
-  printf("---------- Done ----------\n");
-
   PASS();
 }
 
-// TODO(Jesse): Might be worth making sure to_int() doesn't accept invalid
-// inputs, but I didn't go down the rat hole of reading the spec for strtol to
-// figure out if what that function considers an invalid input is the same as
-// what Python considers an invalid input.
-//
-// I did at least find out that it doesn't accept hex values (encoded as
-// "0xFFFFFFFF").  I'd assume it also wouldn't accept hex values without the 0x
-// prefix, and setting the base to 16, but I did not verify.
-//
 TEST test_str_to_int() {
-  printf("\n");
-
-  printf("------- to_int -------\n");
+  log("");
+  log("------- to_int -------");
 
   {
     Str* input = StrFromC("0");
@@ -843,19 +831,38 @@ TEST test_str_to_int() {
     ASSERT(result == 100);
   }
   {
-    Str* input = StrFromC("2147483647");  // 0x7FFFFFFF
+    // one less than 0x7FFFFFFF, because that value can be LONG_MAX
+    Str* input = StrFromC("2147483646");
     int result = to_int(input);
     ShowStringInt(input, result);
-    ASSERT(result == INT_MAX);
+    ASSERT(result == 2147483646);
   }
   {
-    Str* input = StrFromC("-2147483648");  // -0x7FFFFFFF - 1
+    // one less than -0x7FFFFFFF - 1, because that value can be LONG_MIN
+    Str* input = StrFromC("-2147483647");
     int result = to_int(input);
     ShowStringInt(input, result);
-    ASSERT(result == INT_MIN);
+    ASSERT(result == -2147483647);
   }
 
-  printf("---------- Done ----------\n");
+  bool caught;
+  if (sizeof(void*) == 4) {
+    caught = false;
+    try {
+      to_int(StrFromC("2147483647"));
+    } catch (ValueError*) {
+      caught = true;
+    }
+    ASSERT(caught);
+
+    caught = false;
+    try {
+      to_int(StrFromC("-2147483648"));
+    } catch (ValueError*) {
+      caught = true;
+    }
+    ASSERT(caught);
+  }
 
   PASS();
 }
@@ -868,8 +875,6 @@ TEST test_str_startswith() {
   ASSERT((StrFromC(" "))->startswith(StrFromC(" ")) == true);
 
   ASSERT((StrFromC("  "))->startswith(StrFromC(" ")) == true);
-
-  printf("---------- Done ----------\n");
 
   PASS();
 }

@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import log, COMPILERS_VARIANTS, COMPILERS_VARIANTS_LEAKY
+from build.ninja_lib import log, COMPILERS_VARIANTS
 
 def DefineTargets(ru):
 
@@ -84,8 +84,7 @@ def DefineTargets(ru):
     ru.cc_binary(
         test_main,
         deps = ['//mycpp/runtime'],
-        # test how C++ will be have on 32-bit platforms too
-        matrix = COMPILERS_VARIANTS + [('cxx', 'opt32')],
+        matrix = COMPILERS_VARIANTS,
         phony_prefix = 'mycpp-unit')
 
   # ASDL schema that examples/parse.py depends on
