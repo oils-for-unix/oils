@@ -39,8 +39,7 @@ const int kUndefinedId = 0;  // Unitialized object ID
 // TODO: ./configure could detect endian-ness, and reorder the fields in
 // ObjHeader.  See mycpp/demo/gc_header.cc.
 struct ObjHeader {
-  unsigned unused : 1;
-  unsigned type_tag : 7;  // TypeTag, ASDL variant / shared variant
+  unsigned type_tag : 8;  // TypeTag, ASDL variant / shared variant
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   // Depending on heap_tag, up to 24 fields or 2**24 = 16 Mi pointers to scan
   unsigned u_mask_npointers : 24;
