@@ -258,10 +258,8 @@ test-runtime() {
   unit '' asan
   unit '' gcalways
 
-  # Can't get asan32 to work
-  unit '' asan32
-
-  #unit '' dbg32
+  # TODO: CI images need gcc-multilib
+  # unit '' gcalways32  # ASAN on 32-bit
 }
 
 #

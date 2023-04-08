@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <errno.h>       // errno, EINTR
 #include <signal.h>      // SIGINT
+#include <stdio.h>       // required for readline/readline.h (man readline)
 #include <sys/select.h>  // select(), FD_ISSET, FD_SET, FD_ZERO
 
 #include "_build/detected-cpp-config.h"

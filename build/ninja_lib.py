@@ -48,10 +48,8 @@ COMPILERS_VARIANTS = [
 
     # Test correctness of 32 bit build
     # Hm both cxx-asan32 and clang-asan32 produce link errors
-    ('cxx', 'asan32'),
-
-    # Test correctness of 32-bit build.
-    #('cxx', 'dbg32'),
+    #('cxx', 'asan32'),
+    ('cxx', 'gcalways32'),
 
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
