@@ -38,8 +38,8 @@ def StrFromC(s):
 def NewDict():
     """Make dictionaries ordered in Python, e.g. for JSON.
   
-  In C++, our Dict implementation should be ordered.
-  """
+    In C++, our Dict implementation should be ordered.
+    """
     return collections_.OrderedDict()
 
 
@@ -47,10 +47,10 @@ def print_stderr(s):
     # type: (str) -> None
     """Print a message to stderr for the user.
 
-  This should be used sparingly, since it doesn't have location info, like
-  ui.ErrorFormatter does.  We use it to print fatal I/O errors that were only
-  caught at the top level.
-  """
+    This should be used sparingly, since it doesn't have location info, like
+    ui.ErrorFormatter does.  We use it to print fatal I/O errors that were only
+    caught at the top level.
+    """
     print(s, file=sys.stderr)
 
 
@@ -122,8 +122,8 @@ def iteritems(d):
 
 def split_once(s, delim):
     # type: (str, str) -> Tuple[str, Optional[str]]
-    """Easier to call than split(s, 1) because of tuple unpacking.
-  """
+    """Easier to call than split(s, 1) because of tuple unpacking."""
+
     parts = s.split(delim, 1)
     if len(parts) == 1:
         no_str = None  # type: Optional[str]
@@ -150,8 +150,8 @@ def octal(i):
 def dict_erase(d, key):
     # type: (Dict[Any, Any], Any) -> None
     """
-  Ensure that a key isn't in the Dict d.  This makes C++ translation easier.
-  """
+    Ensure that a key isn't in the Dict d.  This makes C++ translation easier.
+    """
     try:
         del d[key]
     except KeyError:
@@ -160,8 +160,6 @@ def dict_erase(d, key):
 
 def str_cmp(s1, s2):
     # type: (str, str) -> int
-    """
-  """
     if s1 == s2:
         return 0
     if s1 < s2:
@@ -190,20 +188,20 @@ if 0:
         # type: (str) -> None
         """Write a line.  The name is consistent with JavaScript writeln() and Rust.
 
-    e.g.
-    writeln("x = %d" % x, kStderr)
+        e.g.
+        writeln("x = %d" % x, kStderr)
 
-    TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can use
-    writeln(s) and writeln(s, kStderr)
-    """
+        TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can use
+        writeln(s) and writeln(s, kStderr)
+        """
         posix.write(fd, s)
         posix.write(fd, '\n')
 
     class File(object):
         """Custom file wrapper for Unix I/O like write() read()
     
-    Not C I/O like fwrite() fread().  There should be no flush().
-    """
+        Not C I/O like fwrite() fread().  There should be no flush().
+        """
 
         def __init__(self, fd):
             # type: (int) -> None

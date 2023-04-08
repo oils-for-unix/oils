@@ -8,8 +8,7 @@ import re
 from asdl import ast
 from asdl.ast import (AST, Use, Module, TypeDecl, Constructor, Field, Sum,
                       SimpleSum, Product)
-
-from core.pyerror import log
+from asdl.util import log
 
 _ = log
 

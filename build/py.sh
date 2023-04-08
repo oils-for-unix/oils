@@ -9,6 +9,7 @@
 set -o nounset
 set -o pipefail
 set -o errexit
+shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT

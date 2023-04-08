@@ -17,9 +17,8 @@ import cStringIO
 import re
 import sys
 
+from doctools.util import log
 from lazylex import html
-
-log = html.log
 
 
 def RemoveComments(s):

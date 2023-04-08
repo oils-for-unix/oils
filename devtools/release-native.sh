@@ -8,11 +8,13 @@
 set -o nounset
 set -o pipefail
 set -o errexit
+shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 # adapted from build/ovm-compile.sh
 # and devtools/release.sh
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly OIL_VERSION
 
 gen-oils-sh() {
   PYTHONPATH=. build/ninja_main.py shell
