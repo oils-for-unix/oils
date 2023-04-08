@@ -140,7 +140,7 @@ void MarkSweepHeap::TraceChildren() {
       RawObject* obj = static_cast<RawObject*>(header->ObjectAddress());
       int mask = FIELD_MASK(*header);
 
-      for (int offset = 1; mask; ++offset, mask >>= 1) {
+      for (int offset = 0; mask != 0; ++offset, mask >>= 1) {
         if (mask & 1) {
           RawObject* child = obj + offset;
           if (child) {
