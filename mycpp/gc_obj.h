@@ -129,7 +129,7 @@ const int kFieldMaskBits = 24;
 #endif
 
 // A RawObject* is like a void*. We use it to represent GC managed objects.
-struct RawObject;
+struct RawObject {};
 
 //
 // Compile-time computation of GC field masks.
@@ -172,13 +172,5 @@ class GcGlobalImpl {
 // Refer to `Internal::type` to force Internal to be instantiated.
 template <typename T>
 using GcGlobal = typename GcGlobalImpl<T>::Internal::type;
-
-// The "homogeneous" layout of objects with HeapTag::FixedSize.  LayoutFixed is
-// for casting; it isn't a real type.
-
-struct LayoutFixed {
-  // only the entries denoted in field_mask will be valid
-  RawObject* children_[kFieldMaskBits];
-};
 
 #endif  // MYCPP_GC_OBJ_H

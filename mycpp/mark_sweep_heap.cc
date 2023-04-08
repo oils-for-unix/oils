@@ -137,12 +137,12 @@ void MarkSweepHeap::TraceChildren() {
 
     switch (header->heap_tag) {
     case HeapTag::FixedSize: {
-      auto fixed = reinterpret_cast<LayoutFixed*>(header->ObjectAddress());
+      RawObject* obj = static_cast<RawObject*>(header->ObjectAddress());
       int mask = FIELD_MASK(*header);
 
-      for (int i = 0; i < kFieldMaskBits; ++i) {
-        if (mask & (1 << i)) {
-          RawObject* child = fixed->children_[i];
+      for (int offset = 1; mask; ++offset, mask >>= 1) {
+        if (mask & 1) {
+          RawObject* child = obj + offset;
           if (child) {
             MaybeMarkAndPush(child);
           }
