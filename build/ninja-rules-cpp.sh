@@ -116,8 +116,6 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=address"
       ;;
     (asan32)
-      # Hm clang/asan32 and gcc asan/32 both produces link errors.  TODO: try
-      # upgrading Clang.
       flags="$flags -O0 -g -fsanitize=address -m32"
       ;;
 
@@ -132,6 +130,9 @@ setglobal_compile_flags() {
 
     (gcalways)
       flags="$flags -g -D GC_ALWAYS -fsanitize=address"
+      ;;
+    (gcalways32)
+      flags="$flags -g -D GC_ALWAYS -fsanitize=address -m32"
       ;;
 
     # Just like GCEVERY
@@ -197,7 +198,7 @@ setglobal_link_flags() {
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    asan32)
+    asan32|gcalways32)
       link_flags='-fsanitize=address -m32'
       ;;
     asan|gcalways)
@@ -214,10 +215,12 @@ setglobal_link_flags() {
       ;;
   esac
 
-  # TODO: 32-bit variants can't handle -l readline right now.
-  # This condition is probably wrong.
   case $variant in
-    dbg|opt|asan)
+    # TODO: 32-bit variants can't handle -l readline right now.
+    dbg32|opt32|asan32|gcalways32)
+      ;;
+
+    *)
       if test "$HAVE_READLINE" = 1; then
         link_flags="$link_flags -lreadline"
       fi

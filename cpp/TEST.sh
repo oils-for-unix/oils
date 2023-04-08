@@ -50,20 +50,17 @@ readonly -a LEAKY_TESTS=(
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  # Tests that pass with the garbage collector on.
-  # TODO: Move all tests here
+  # TODO: CI images need gcc-multilib
+  #for variant in ubsan gcalways gcalways32; do
 
-  for variant in ubsan gcalways asan32; do
+  for variant in ubsan gcalways; do
     run-one-test     cpp/obj_layout_test '' $variant
 
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
 
     run-one-test     cpp/qsn_test '' $variant
-  done
 
-  # Other tests
-  for variant in ubsan asan asan32; do
-    run-one-test cpp/frontend_flag_spec_test '' $variant
+    run-one-test     cpp/frontend_flag_spec_test '' $variant
 
     run-one-test     cpp/frontend_match_test '' $variant
 
@@ -97,7 +94,7 @@ coverage() {
 
   run-one-test     cpp/qsn_test $compiler $variant
 
-  run-one-test cpp/frontend_flag_spec_test $compiler $variant
+  run-one-test     cpp/frontend_flag_spec_test $compiler $variant
 
   run-one-test     cpp/frontend_match_test $compiler $variant
 

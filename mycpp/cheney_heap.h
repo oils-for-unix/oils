@@ -6,9 +6,10 @@
 #ifndef CHENEY_HEAP_H
 #define CHENEY_HEAP_H
 
-#include <cassert>  // assert()
-#include <cstdlib>  // malloc
-#include <cstring>  // memcpy
+#include <assert.h>  // assert()
+#include <stdlib.h>  // malloc()
+#include <string.h>  // memcpy()
+
 #include <initializer_list>
 
 #include "mycpp/common.h"
