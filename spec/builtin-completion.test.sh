@@ -410,3 +410,9 @@ status=1
 compgen -W '' -- foo
 echo status=$?
 ## stdout: status=1
+
+#### compgen -A builtin
+compgen -A builtin g
+## STDOUT:
+getopts
+## END

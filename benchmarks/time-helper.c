@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
-  char c;
+  int c;
   while ((c = getopt(argc, argv, "+o:ad:vxeUSM")) != -1) {
     switch (c) {
     case 'o':

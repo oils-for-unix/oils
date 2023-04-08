@@ -301,7 +301,6 @@ install-wedges-py() {
 
 container-wedges() {
   deps/wedge.sh build deps/source.medo/time-helper
-  return
   deps/wedge.sh build deps/source.medo/cmark/
   deps/wedge.sh build deps/source.medo/re2c/
   deps/wedge.sh build deps/source.medo/bloaty/

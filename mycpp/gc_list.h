@@ -413,12 +413,11 @@ List<T>* list(List<T>* other) {
   return result;
 }
 
-#define GLOBAL_LIST(T, N, name, array)                               \
-  GcGlobal<GlobalSlab<T, N>> _slab_##name = {                        \
-      {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal}, array}; \
-  GcGlobal<GlobalList<T, N>> _list_##name = {                        \
-      {kIsHeader, 0, kZeroMask, HeapTag::Global, kIsGlobal},         \
-      {N, N, &_slab_##name.obj}};                                    \
+#define GLOBAL_LIST(T, N, name, array)                                        \
+  GcGlobal<GlobalSlab<T, N>> _slab_##name = {                                 \
+      {0, kZeroMask, HeapTag::Global, kIsGlobal}, array};                     \
+  GcGlobal<GlobalList<T, N>> _list_##name = {                                 \
+      {0, kZeroMask, HeapTag::Global, kIsGlobal}, {N, N, &_slab_##name.obj}}; \
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);
 
 template <class T>

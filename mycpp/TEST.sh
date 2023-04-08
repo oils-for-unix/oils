@@ -258,8 +258,11 @@ test-runtime() {
   unit '' asan
   unit '' gcalways
 
-  # TODO: CI images need gcc-multilib
-  # unit '' gcalways32  # ASAN on 32-bit
+  if can-compile-32-bit; then
+    unit '' gcalways32  # ASAN on 32-bit
+  else
+    log "Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
+  fi
 }
 
 #

@@ -43,8 +43,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (cpp-small)
-      # Cleanup
-      echo 'v-2023-02-28f'
+      # Add Debian packages for -m32 build
+      echo 'v-2023-04-08'
       ;;
     (clang)
       # Rebuild with wedges
