@@ -95,7 +95,9 @@ T* Alloc(Args&&... args) {
   // Note: the required padding is given by the following (according to
   // https://en.wikipedia.org/wiki/Data_structure_alignment):
   // `padding = -offset & (align - 1)`.
-  static_assert((-sizeof(ObjHeader) & (alignof(T) - 1)) == 0);
+  static_assert((-sizeof(ObjHeader) & (alignof(T) - 1)) == 0,
+                "Expected no padding");
+
   DCHECK(gHeap.is_initialized_);
 
   void* place = gHeap.Allocate(sizeof(ObjHeader) + sizeof(T));

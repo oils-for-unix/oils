@@ -162,7 +162,8 @@ class GcGlobalImpl {
   struct Internal {
     using type = GcGlobalImpl<T>;
     static_assert(offsetof(type, obj) - sizeof(ObjHeader) ==
-                  offsetof(type, header));
+                      offsetof(type, header),
+                  "ObjHeader doesn't fit");
   };
 
   DISALLOW_COPY_AND_ASSIGN(GcGlobalImpl);
