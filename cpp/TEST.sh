@@ -50,10 +50,15 @@ readonly -a LEAKY_TESTS=(
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  # TODO: CI images need gcc-multilib
-  #for variant in ubsan gcalways gcalways32; do
+  local variants=(ubsan gcalways)
+  if can-compile-32-bit; then
+    variants+=(gcalways32)
+  else
+    # TODO: CI images need gcc-multilib
+    log "Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
+  fi
 
-  for variant in ubsan gcalways; do
+  for variant in "${variants[@]}"; do
     run-one-test     cpp/obj_layout_test '' $variant
 
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
