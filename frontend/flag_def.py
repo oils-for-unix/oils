@@ -237,6 +237,7 @@ OSH_SPEC.LongFlag('--xtrace-to-debug-file')
 # it can simply by --rcfile /dev/null.
 OSH_SPEC.LongFlag('--rcfile', args.String)
 OSH_SPEC.LongFlag('--rcdir', args.String)
+OSH_SPEC.LongFlag('--norc')
 
 # e.g. to pass data on stdin but pretend that it came from a .hay file
 OSH_SPEC.LongFlag('--location-str', args.String)
