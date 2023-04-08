@@ -37,6 +37,7 @@ def NinjaGraph(ru):
         '//frontend/consts',  # for gVersion
         '//frontend/syntax.asdl',
         '//mycpp/runtime',
+        '//oil_lang/grammar',
         ],
   )
 
@@ -153,7 +154,7 @@ def NinjaGraph(ru):
       matrix = ninja_lib.COMPILERS_VARIANTS)
 
   ru.cc_library(
-      '//cpp/pgen2', 
+      '//cpp/pgen2',
       srcs = ['cpp/pgen2.cc'],
       deps = [
         '//mycpp/runtime',

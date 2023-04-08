@@ -249,6 +249,7 @@ line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
+oil-large        oil_lang/run.sh soil-run-cpp          -
 make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
 test-tar         devtools/release-native.sh test-tar   -
 build-times      build/native.sh measure-build-times   -

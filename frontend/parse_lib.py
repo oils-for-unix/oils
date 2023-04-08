@@ -17,6 +17,7 @@ from frontend import match
 
 from oil_lang import expr_parse
 from oil_lang import expr_to_ast
+from oil_lang.expr_parse import ctx_PNodeAllocator
 from osh import tdop
 from osh import arith_parse
 from osh import cmd_parse
@@ -316,141 +317,166 @@ class ParseContext(object):
     lx = self.MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def _ParseOil(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[PNode, Token]
-    """Helper for Oil expression parsing."""
+  def _OilParser(self):
+    # type: () -> expr_parse.ExprParser
+    return expr_parse.ExprParser(self, self.oil_grammar, False)
 
-    # TODO: maybe pool these ExprParser instances to reduce allocations?
-    e_parser = expr_parse.ExprParser(self, self.oil_grammar, False)
-    return e_parser.Parse(lexer, start_symbol)
-
-  def _ParseTea(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[PNode, Token]
-    """Helper for Tea parsing."""
-
-    e_parser = expr_parse.ExprParser(self, self.oil_grammar, True)
-    return e_parser.Parse(lexer, start_symbol)
+  def _TeaParser(self):
+    # type: () -> expr_parse.ExprParser
+    return expr_parse.ExprParser(self, self.oil_grammar, True)
 
   def ParseVarDecl(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__VarDecl, Token]
     """ var mylist = [1, 2, 3] """
-    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_var_decl)
+    e_parser = self._OilParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_var_decl)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    ast_node = self.tr.MakeVarDecl(pnode)
-    ast_node.keyword = kw_token  # VarDecl didn't fill this in
+      ast_node = self.tr.MakeVarDecl(pnode)
+      ast_node.keyword = kw_token  # VarDecl didn't fill this in
+
     return ast_node, last_token
 
   def ParsePlaceMutation(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__PlaceMutation, Token]
     """ setvar d['a'] += 1 """
-    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_place_mutation)
-    if 0:
-      self.p_printer.Print(pnode)
-    ast_node = self.tr.MakePlaceMutation(pnode)
-    ast_node.keyword = kw_token  # VarDecl didn't fill this in
+    e_parser = self._OilParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_place_mutation)
+      if 0:
+        self.p_printer.Print(pnode)
+      ast_node = self.tr.MakePlaceMutation(pnode)
+      ast_node.keyword = kw_token  # VarDecl didn't fill this in
+
     return ast_node, last_token
 
   def ParseOilArgList(self, lx, out):
     # type: (Lexer, ArgList) -> None
     """ $f(x, y) """
 
-    pnode, last_token = self._ParseOil(lx, grammar_nt.oil_arglist)
+    e_parser = self._OilParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lx, grammar_nt.oil_arglist)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    self.tr.ToArgList(pnode, out)
-    out.right = last_token
+      self.tr.ToArgList(pnode, out)
+      out.right = last_token
 
   def ParseOilExpr(self, lx, start_symbol):
     # type: (Lexer, int) -> Tuple[expr_t, Token]
     """ if (x > 0) { ... }, while, etc. """
 
-    pnode, last_token = self._ParseOil(lx, start_symbol)
-    if 0:
-      self.p_printer.Print(pnode)
+    e_parser = self._OilParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lx, start_symbol)
+      if 0:
+        self.p_printer.Print(pnode)
+  
+      ast_node = self.tr.Expr(pnode)
 
-    ast_node = self.tr.Expr(pnode)
     return ast_node, last_token
 
   def ParseOilForExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[List[name_type], expr_t, Token]
     """ for (x Int, y Int in foo) """
-    pnode, last_token = self._ParseOil(lexer, start_symbol)
+    e_parser = self._OilParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, start_symbol)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    lvalue, iterable = self.tr.OilForExpr(pnode)
+      lvalue, iterable = self.tr.OilForExpr(pnode)
+
     return lvalue, iterable, last_token
 
   def ParseProc(self, lexer, out):
     # type: (Lexer, command__Proc) -> Token
     """ proc f(x, y, @args) { """
-    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_proc)
+    e_parser = self._OilParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_proc)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    out.sig = self.tr.Proc(pnode)
+      out.sig = self.tr.Proc(pnode)
+
     return last_token
 
   def ParseFunc(self, lexer, out):
     # type: (Lexer, command__Func) -> Token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
-    pnode, last_token = self._ParseTea(lexer, grammar_nt.named_func)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.named_func)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    self.tr.NamedFunc(pnode, out)
+      self.tr.NamedFunc(pnode, out)
+
     return last_token
 
   def ParseDataType(self, lexer, out):
     # type: (Lexer, command__Data) -> Token
     """ data Point(x Int, y Int) """
-    pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_data)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_data)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    self.tr.Data(pnode, out)
+      self.tr.Data(pnode, out)
+
     return last_token
 
   def ParseEnum(self, lexer, out):
     # type: (Lexer, command__Enum) -> Token
     """ enum cflow { Break, Continue, Return(status Int) } """
-    pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_enum)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_enum)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    self.tr.Enum(pnode, out)
+      self.tr.Enum(pnode, out)
+
     return last_token
 
   def ParseClass(self, lexer, out):
     # type: (Lexer, command__Class) -> Token
     """ class Lexer { var Token; func Next() { echo } } """
-    pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_class)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_class)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    self.tr.Class(pnode, out)
+      self.tr.Class(pnode, out)
+
     return last_token
 
   def ParseImport(self, lexer, out):
     # type: (Lexer, command__Import) -> Token
     """ use 'foo/bar' as spam, Foo, Z as Y """
-    pnode, last_token = self._ParseTea(lexer, grammar_nt.tea_import)
+    e_parser = self._TeaParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_import)
 
-    if 0:
-      self.p_printer.Print(pnode)
+      if 0:
+        self.p_printer.Print(pnode)
 
-    self.tr.Import(pnode, out)
+      self.tr.Import(pnode, out)
+
     return last_token
 
   if mylib.PYTHON:
@@ -460,13 +486,16 @@ class ParseContext(object):
       line_lexer = lexer.LineLexer(self.arena)
       lx = lexer.Lexer(line_lexer, line_reader)
 
-      pnode, last_token = self._ParseTea(lx, grammar_nt.tea_module)
+      e_parser = self._TeaParser()
+      with ctx_PNodeAllocator(e_parser):
+        pnode, last_token = e_parser.Parse(lx, grammar_nt.tea_module)
 
-      if 1:
-        self.p_printer.Print(pnode)
+        if 1:
+          self.p_printer.Print(pnode)
 
-      #out = command.Use()  # TODO: make a node
-      #self.tr.TeaModule(pnode, out)
+        #out = command.Use()  # TODO: make a node
+        #self.tr.TeaModule(pnode, out)
+
       return None
 
 # Another parser instantiation:

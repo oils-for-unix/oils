@@ -170,11 +170,9 @@ def main(argv):
     with open(nonterm_h, 'w') as out_f:
       gr.dump_nonterminals_cpp(out_f)
 
-    grammar_header_path = os.path.join(out_dir, basename + '_tables.h')
     grammar_cpp_path = os.path.join(out_dir, basename + '_tables.cc')
-    with open(grammar_cpp_path, 'w') as src_f,\
-      open(grammar_header_path, 'w') as header_f:
-      gr.dump_cpp(header_f, src_f)
+    with open(grammar_cpp_path, 'w') as src_f:
+      gr.dump_cpp(src_f)
 
     if 0:
       log('%s -> (oil_lang/grammar_gen) -> %s/%s._nt.h',

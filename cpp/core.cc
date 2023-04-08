@@ -269,6 +269,8 @@ Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {
 
 namespace pyutil {
 
+static grammar::Grammar* gOilGrammar = nullptr;
+
 // TODO: SHARE with pyext
 bool IsValidCharEscape(Str* c) {
   DCHECK(len(c) == 1);
@@ -340,7 +342,13 @@ Str* strerror(IOError_OSError* e) {
 }
 
 grammar::Grammar* LoadOilGrammar(_ResourceLoader*) {
-  return nullptr;
+  if (gOilGrammar != nullptr) {
+    return gOilGrammar;
+  }
+
+  gOilGrammar = Alloc<grammar::Grammar>();
+  gHeap.RootGlobalVar(gOilGrammar);
+  return gOilGrammar;
 }
 
 }  // namespace pyutil

@@ -13,7 +13,7 @@ from core.pyerror import log
 _ = log
 
 from typing import TYPE_CHECKING, Optional, Any, List
-from pgen2.pnode import PNode
+from pgen2.pnode import PNode, PNodeAllocator
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token
@@ -92,9 +92,12 @@ class Parser(object):
         up to the converter function.
         """
         self.grammar = grammar
+        self.rootnode = None  # type: Optional[PNode]
+        self.stack = [] # type: List[_StackItem]
+        self.pnode_alloc = None # type: Optional[PNodeAllocator]
 
-    def setup(self, start):
-        # type: (int) -> None
+    def setup(self, start, pnode_alloc):
+        # type: (int, PNodeAllocator) -> None
         """Prepare for parsing.
 
         This *must* be called before starting to parse.
@@ -106,10 +109,11 @@ class Parser(object):
         each time you call setup() the parser is reset to an initial
         state determined by the (implicit or explicit) start symbol.
         """
-        newnode = PNode(start, None, [])
+        self.pnode_alloc = pnode_alloc
+        newnode = self.pnode_alloc.NewPNode(start, None)
         # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [_StackItem(self.grammar.dfas[start], 0, newnode)]
-        self.rootnode = None  # type: Optional[PNode]
+        self.rootnode = None
 
     def addtoken(self, typ, opaque, ilabel):
         # type: (int, Token, int) -> bool
@@ -139,8 +143,15 @@ class Parser(object):
                     # Pop while we are in an accept-only state
                     state = newstate
                      
-                    # TODO: Does this condition translate?
-                    while states[state] == [(0, state)]:
+                    while True:
+                        # mycpp: rewrite of tuple-in-list comparison
+                        if len(states[state]) != 1:
+                            break
+
+                        s0, s1 = states[state][0]
+                        if s0 != 0 or s1 != state:
+                            break
+
                         self.pop()
                         if len(self.stack) == 0:
                             # Done parsing!
@@ -185,15 +196,15 @@ class Parser(object):
         # type: (int, Token, int) -> None
         """Shift a token.  (Internal)"""
         top = self.stack[-1]
-        newnode = PNode(typ, opaque, None)
-        top.node.children.append(newnode)
+        newnode = self.pnode_alloc.NewPNode(typ, opaque)
+        top.node.AddChild(newnode)
         self.stack[-1].state = newstate
 
     def push(self, typ, opaque, newdfa, newstate):
         # type: (int, Token, dfa_t, int) -> None
         """Push a nonterminal.  (Internal)"""
         top = self.stack[-1]
-        newnode = PNode(typ, opaque, [])
+        newnode = self.pnode_alloc.NewPNode(typ, opaque)
         self.stack[-1].state = newstate
         self.stack.append(_StackItem(newdfa, 0, newnode))
 
@@ -204,6 +215,6 @@ class Parser(object):
         newnode = top.node
         if len(self.stack):
             top2 = self.stack[-1]
-            top2.node.children.append(newnode)
+            top2.node.AddChild(newnode)
         else:
             self.rootnode = newnode

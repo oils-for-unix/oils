@@ -16,7 +16,7 @@ __author__ = "Guido van Rossum <guido@python.org>"
 
 import sys
 
-from . import parse, token, tokenize
+from . import parse, pnode, token, tokenize
 
 
 def log(msg, *args):
@@ -50,7 +50,7 @@ def PushTokens(p, tokens, gr, start_symbol, opmap=token.opmap, debug=False):
     # XXX Move the prefix computation into a wrapper around tokenize.
     # NOTE: It's mainly for lib2to3.
 
-    p.setup(gr.symbol2number[start_symbol])
+    p.setup(gr.symbol2number[start_symbol], pnode.PNodeAllocator())
 
     lineno = 1
     column = 0

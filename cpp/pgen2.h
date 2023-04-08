@@ -3,69 +3,85 @@
 #ifndef CPP_PGEN2_H
 #define CPP_PGEN2_H
 
-#include "_gen/frontend/id_kind.asdl.h"
+#include <vector>
+
 #include "_gen/frontend/syntax.asdl.h"
 #include "mycpp/runtime.h"
 
-// Hacky forward declaration for translated pgen2/pnode.py
-// Note: it's probably better to express PNode in ASDL, like Token.
-namespace pnode {
-class PNode;
-}
-// Hacky stub
 namespace grammar {
-class Grammar;
-}
 
-namespace parse {
+typedef Tuple2<int, int> arc_t;
+typedef Dict<int, int> first_t;
+typedef List<List<arc_t*>*> states_t;
+typedef Tuple2<states_t*, first_t*> dfa_t;
 
-class ParseError {
+class Grammar {
  public:
-  ParseError(Str* msg, int type_, syntax_asdl::Token* tok) {
-  }
+  Grammar();
+
+  Dict<Str*, int>* symbol2number;
+  Dict<int, Str*>* number2symbol;
+  List<List<Tuple2<int, int>*>*>* states;
+  Dict<int, Tuple2<List<List<Tuple2<int, int>*>*>*, Dict<int, int>*>*>* dfas;
+  List<int>* labels;
+  Dict<Str*, int>* keywords;
+  Dict<int, int>* tokens;
+  Dict<Str*, int>* symbol2label;
+  int start;
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(ParseError));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Grammar));
   }
 
   static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(ParseError, msg)) |
-           maskbit(offsetof(ParseError, tok));
+    return maskbit(offsetof(Grammar, symbol2number)) |
+           maskbit(offsetof(Grammar, number2symbol)) |
+           maskbit(offsetof(Grammar, states)) |
+           maskbit(offsetof(Grammar, dfas)) |
+           maskbit(offsetof(Grammar, labels)) |
+           maskbit(offsetof(Grammar, keywords)) |
+           maskbit(offsetof(Grammar, tokens)) |
+           maskbit(offsetof(Grammar, symbol2label));
   }
 
-  Str* msg;
+  DISALLOW_COPY_AND_ASSIGN(Grammar)
+};
+
+}  // namespace grammar
+
+namespace pnode {
+
+class PNode {
+ public:
+  PNode(int typ, syntax_asdl::Token* tok, List<PNode*>*);
+
+  void AddChild(PNode* node);
+  PNode* GetChild(int i);
+  int NumChildren();
+  void Advance(int n);
+
+  int typ;
+  int child_offset;
   syntax_asdl::Token* tok;
-  int type;
+  std::vector<PNode*> children;
 };
 
-class Parser {
+class PNodeAllocator {
  public:
-  // In C, the grammar is a constant, so the grammar arg is ignored.  (We can't
-  // get easily rid of it because the call site has to type check and run in
-  // Python.)
-  explicit Parser(grammar::Grammar* grammar) {
-  }
-  void setup(int start);
-  bool addtoken(int typ, syntax_asdl::Token* opaque, int ilabel);
+  PNodeAllocator();
+
+  PNode* NewPNode(int typ, syntax_asdl::Token* tok);
+  void Clear();
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(Parser));
+    return ObjHeader::Class(HeapTag::Opaque, kZeroMask, sizeof(PNodeAllocator));
   }
 
-  static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(Parser, rootnode));
-  }
-
-  // Probably should delete these
-  // void shift(int typ, syntax_asdl::Token* opaque, int newstate);
-  // void push(int typ, syntax_asdl::Token* opaque, Tuple2<List<List<Tuple2<int,
-  // int>*>*>*, Dict<int, int>*>* newdfa, int newstate);  void pop();
-
-  // grammar::Grammar* grammar;
-  pnode::PNode* rootnode;
-  // List<parse::_StackItem*>* stack;
+ private:
+  // We put this on the heap so we can call its destructor from `Clear()`...
+  std::vector<PNode>* arena_;
 };
 
-}  // namespace parse
+}  // namespace pnode
 
 #endif  // CPP_PGEN2_H
