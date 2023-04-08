@@ -40,7 +40,7 @@ class Point {
 
   static constexpr ObjHeader obj_header() {
     // type_tag is 42
-    return ObjHeader{kIsHeader, 42};
+    return ObjHeader{42};
   }
 };
 

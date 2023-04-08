@@ -28,8 +28,6 @@ const int Slab = 125;
 const int Tuple = 124;
 };  // namespace TypeTag
 
-const int kIsHeader = 1;  // for is_header bit
-
 const unsigned kZeroMask = 0;  // for types with no pointers
 
 const int kMaxObjId = (1 << 30) - 1;  // 30 bit object ID
@@ -41,9 +39,8 @@ const int kUndefinedId = 0;  // Unitialized object ID
 // TODO: ./configure could detect endian-ness, and reorder the fields in
 // ObjHeader.  See mycpp/demo/gc_header.cc.
 struct ObjHeader {
-  unsigned is_header : 1;  // To distinguish from vtable pointer
-                           // Overlaps with RawObject::points_to_header
-  unsigned type_tag : 7;   // TypeTag, ASDL variant / shared variant
+  unsigned unused : 1;
+  unsigned type_tag : 7;  // TypeTag, ASDL variant / shared variant
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   // Depending on heap_tag, up to 24 fields or 2**24 = 16 Mi pointers to scan
   unsigned u_mask_npointers : 24;
@@ -77,40 +74,37 @@ struct ObjHeader {
 
   // Used by hand-written and generated classes
   static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
-    return {kIsHeader, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
-            kUndefinedId};
+    return {TypeTag::OtherClass, field_mask, HeapTag::FixedSize, kUndefinedId};
   }
 
   // Classes with no inheritance (e.g. used by mycpp)
   static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
                                           uint32_t obj_len) {
-    return {kIsHeader, TypeTag::OtherClass, num_pointers, HeapTag::Scanned,
-            kUndefinedId};
+    return {TypeTag::OtherClass, num_pointers, HeapTag::Scanned, kUndefinedId};
   }
 
   // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
   static constexpr ObjHeader Class(uint8_t heap_tag, uint32_t field_mask,
                                    uint32_t obj_len) {
-    return {kIsHeader, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
+    return {TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
   }
 
   // Used by ASDL.
   static constexpr ObjHeader AsdlClass(uint8_t type_tag,
                                        uint32_t num_pointers) {
-    return {kIsHeader, type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
+    return {type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
   }
 
   static constexpr ObjHeader Str() {
-    return {kIsHeader, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
+    return {TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
   }
 
   static constexpr ObjHeader Slab(uint8_t heap_tag, uint32_t num_pointers) {
-    return {kIsHeader, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
+    return {TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
   }
 
   static constexpr ObjHeader Tuple(uint32_t field_mask, uint32_t obj_len) {
-    return {kIsHeader, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
-            kUndefinedId};
+    return {TypeTag::Tuple, field_mask, HeapTag::FixedSize, kUndefinedId};
   }
 };
 
