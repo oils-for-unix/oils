@@ -338,9 +338,8 @@ echo status=$?
 ## OK mksh status: 1
 ## OK mksh stdout-json: ""
 
-#### time block
-# bash and mksh work; dash does't.
-# TODO: osh needs to implement BraceGroup redirect properly.
+#### time with brace group argument
+
 err=_tmp/time-$(basename $SH).txt
 {
   time {
@@ -348,21 +347,36 @@ err=_tmp/time-$(basename $SH).txt
     sleep 0.02
   }
 } 2> $err
-cat $err | grep --only-matching user
-# Just check that we found 'user'.
-# This is fiddly:
-# | sed -n -E -e 's/.*(0m0\.03).*/\1/'
-#
+
+grep --only-matching user $err
+echo result=$?
+
+# Regression: check fractional seconds
+gawk '
+BEGIN { ok = 0 }
+match( $0, /\.([0-9]+)/, m) {
+  if (m[1] > 0) {  # check fractional seconds
+    ok = 1
+  }
+}
+END { if (ok) { print "non-zero" } }
+' $err
+
 ## status: 0
-## stdout: user
+## STDOUT:
+user
+result=0
+non-zero
+## END
 
-# not parsed
-## BUG dash status: 2
-## BUG dash stdout-json: ""
+# time doesn't accept a block?
+## BUG zsh STDOUT:
+result=1
+## END
 
-# time is a builtin in zsh?
-## BUG zsh status: 1
-## BUG zsh stdout-json: ""
+# dash doesn't have time keyword
+## N-I dash status: 2
+## N-I dash stdout-json: ""
 
 #### time pipeline
 time echo hi | wc -c

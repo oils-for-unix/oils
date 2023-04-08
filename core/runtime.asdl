@@ -7,14 +7,14 @@ module runtime
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
-  assign_arg = (string var_name, value? rval, bool plus_eq, int spid)
+  assign_arg = (str var_name, value? rval, bool plus_eq, int spid)
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(string* argv, int* arg_spids, ArgList? typed_args)
+    Argv(List[str] argv, List[int] arg_spids, ArgList? typed_args)
   | Assign(int builtin_id,
-           string* argv, int* arg_spids,
-           assign_arg* pairs)
+           List[str] argv, List[int] arg_spids,
+           List[assign_arg] pairs)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -23,33 +23,33 @@ module runtime
     # - Single or double quoted parts get neither split or globbed.
     # - Bare words like echo or *.py are globbed, but NOT split with IFS.
     # - Unquoted Substitutions are split and globbed.
-    String(string s, bool quoted, bool do_split)
+    String(str s, bool quoted, bool do_split)
 
     # "$@" or "${a[@]}" # never globbed or split (though other shells
     # split them)
-  | Array(string* strs)
+  | Array(List[str] strs)
     # only produced when EXTGLOB_FS flag is passed
-  | ExtGlob(part_value* part_vals)
+  | ExtGlob(List[part_value] part_vals)
 
   # A static word from osh.asdl is evaluted to a dynamic value.  value
   # instances are stored in state.Mem().
   value =
     # An Undef value is different than "no binding" because of dynamic scope.
     Undef
-  | Str(string s)
+  | Str(str s)
     # Important: This is NOT stored in state.Mem now.  It's used only by
     # the arithmetic evaluator.
   | Int(int i)
     # "holes" in the array are represented by None
-  | MaybeStrArray(string* strs)
+  | MaybeStrArray(List[str] strs)
     # d will be a dict
-  | AssocArray(Dict[string, string] d)
+  | AssocArray(Dict[str, str] d)
 
   | Bool(bool b)
   | Float(float f) # For flags only now.  TODO: ASDL needs float type.
 
     # / d+ /
-  | Eggex(re expr, string as_ere)
+  | Eggex(re expr, str as_ere)
 
     # &(echo one; echo two)
   | Block(command body)
@@ -63,10 +63,10 @@ module runtime
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
-  a_index = Str(string s) | Int(int i)
+  a_index = Str(str s) | Int(int i)
 
   # for the place in ${a[0]=a}
-  VTestPlace = (string name, a_index index)
+  VTestPlace = (str name, a_index index)
 
   # evaluation state for braced_var_sub 
   VarSubState = (bool join_array, bool is_type_query)
@@ -101,20 +101,20 @@ module runtime
   # For OSH assignment, evaluated from osh_ast.lhs_expr
   # TODO: Rename this to sh_place?
   lvalue = 
-    Named(string name, int blame_spid)
-  | Indexed(string name, int index, int blame_spid)
-  | Keyed(string name, string key, int blame_spid)
+    Named(str name, int blame_spid)
+  | Indexed(str name, int index, int blame_spid)
+  | Keyed(str name, str key, int blame_spid)
 
     # Oil variants
   | ObjIndex(any obj, any index)
-  | ObjAttr(any obj, string attr)
+  | ObjAttr(any obj, str attr)
 
   redirect_arg =
-    Path(string filename)
+    Path(str filename)
   | CopyFd(int target_fd)
   | MoveFd(int target_fd)  # 3>&1-
   | CloseFd
-  | HereDoc(string body)  # call this String and combine with Path?
+  | HereDoc(str body)  # call this String and combine with Path?
 
   # evaluated version of syntax.redir
   redirect = (id op_id, int op_spid, redir_loc loc, redirect_arg arg)
@@ -124,7 +124,7 @@ module runtime
   # We store name_spid separately because ShFunction has a word as a name, but
   # a Proc has a Token.
   Proc = (
-    string name, int name_spid, proc_sig sig, command body, value* defaults,
+    str name, int name_spid, proc_sig sig, command body, List[value] defaults,
     bool dynamic_scope
   )
 
@@ -151,7 +151,7 @@ module runtime
 
   wait_status =
     Proc(int code)
-  | Pipeline(int* codes)
+  | Pipeline(List[int] codes)
     # because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
 
@@ -184,17 +184,17 @@ module runtime
 
   # For dev.Tracer
   trace =
-    External(string* argv) # sync, needs argv (command.Simple or 'command')
-  | CommandSub             # sync
-  | ForkWait               # sync
-  | Fork                   # async, needs argv, & fork
-  | PipelinePart           # async
-  | ProcessSub             # async (other processes can be started)
-  | HereDoc                # async (multiple here docs per process)
+    External(List[str] argv) # sync, needs argv (command.Simple or 'command')
+  | CommandSub               # sync
+  | ForkWait                 # sync
+  | Fork                     # async, needs argv, & fork
+  | PipelinePart             # async
+  | ProcessSub               # async (other processes can be started)
+  | HereDoc                  # async (multiple here docs per process)
 
   # tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ
 
   # Hay "first word" namespace
-  hay_node = (Dict[string, hay_node] children)
+  hay_node = (Dict[str, hay_node] children)
 }

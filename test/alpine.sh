@@ -116,7 +116,7 @@ add-oil-tar-deps() {
   local chroot_dir=${1:-$CHROOT_OIL_TAR}
   sudo chroot $chroot_dir /bin/sh <<EOF
 apk update
-apk add bash make gcc musl-dev 
+apk add bash make gcc g++ musl-dev 
 EOF
 }
 
@@ -191,7 +191,10 @@ _copy-tar() {
   mkdir -p $dest
   cp -v _release/$name-$version.tar.gz $dest
 }
-copy-tar() { sudo $0 _copy-tar "$@"; }
+
+copy-tar() {
+  sudo $0 _copy-tar "$@"
+}
 
 _test-tar() {
   local chroot_dir=${1:-$CHROOT_OIL_TAR}
@@ -199,6 +202,7 @@ _test-tar() {
   local version=${3:-$OIL_VERSION}
 
   local target=_bin/${name}.ovm
+
   #local target=_bin/${name}.ovm-dbg
 
   enter-chroot "$chroot_dir" /bin/sh <<EOF
@@ -207,11 +211,22 @@ cd src
 tar --extract -z < $name-$version.tar.gz
 cd $name-$version
 ./configure
-time make $target
+
+if test $name = oil; then
+  time make $target
+else
+  time _build/oils.sh
+fi
+
 echo
 echo "*** Running $target"
-#PYTHONVERBOSE=9 
-$target --version
+
+if test $name = oil; then
+  $target --version
+else
+  _bin/cxx-opt-sh/osh --version
+fi
+
 ./install
 echo
 echo "*** Running osh"
@@ -220,7 +235,22 @@ echo status=$?
 echo DONE
 EOF
 }
-test-tar() { sudo $0 _test-tar "$@"; }
+
+test-tar() {
+  sudo $0 _test-tar "$@"
+}
+
+#
+# cpp tarball
+#
+
+copy-cpp-tar() {
+  copy-tar '' oils-for-unix 
+}
+
+test-cpp-tar() {
+  test-tar '' oils-for-unix 
+}
 
 #
 # oil-spec functions

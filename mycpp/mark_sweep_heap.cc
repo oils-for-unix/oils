@@ -67,22 +67,19 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
 
     // This check is ON in release mode
     CHECK(greatest_obj_id_ <= kMaxObjId);
-
   } else {
-    RawObject* dead = to_free_.back();
+    ObjHeader* dead = to_free_.back();
     to_free_.pop_back();
 
-    ObjHeader* header = ObjHeader::FromObject(dead);
-    obj_id_after_allocate_ = header->obj_id;  // reuse the dead object's ID
+    obj_id_after_allocate_ = dead->obj_id;  // reuse the dead object's ID
 
-    free(header);
+    free(dead);
   }
 
   void* result = calloc(num_bytes, 1);
   DCHECK(result != nullptr);
 
-  live_objs_.push_back(static_cast<RawObject*>(
-      reinterpret_cast<ObjHeader*>(result)->ObjectAddress()));
+  live_objs_.push_back(static_cast<ObjHeader*>(result));
 
   num_live_++;
   num_allocated_++;
@@ -177,11 +174,10 @@ void MarkSweepHeap::Sweep() {
   int last_live_index = 0;
   int num_objs = live_objs_.size();
   for (int i = 0; i < num_objs; ++i) {
-    RawObject* obj = live_objs_[i];
+    ObjHeader* obj = live_objs_[i];
     assert(obj);  // malloc() shouldn't have returned nullptr
 
-    ObjHeader* header = ObjHeader::FromObject(obj);
-    bool is_live = mark_set_.IsMarked(header->obj_id);
+    bool is_live = mark_set_.IsMarked(obj->obj_id);
 
     // Compact live_objs_ and populate to_free_.  Note: doing the reverse could
     // be more efficient when many objects are dead.
@@ -306,7 +302,7 @@ void MarkSweepHeap::PrintStats(int fd) {
 
 void MarkSweepHeap::EagerFree() {
   for (auto obj : to_free_) {
-    free(ObjHeader::FromObject(obj));
+    free(obj);
   }
 }
 

@@ -52,7 +52,7 @@ class ColorOutput {
   int num_chars;
   
   static constexpr uint32_t field_mask() {
-    return maskbit_v(offsetof(ColorOutput, f));
+    return maskbit(offsetof(ColorOutput, f));
   }
 
   static constexpr ObjHeader obj_header() {

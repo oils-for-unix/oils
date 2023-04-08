@@ -1191,6 +1191,13 @@ oil_case() {
 
   _oil-should-parse '
   case $foo {
+    # unbalanced is OK
+    *.py) echo "python" ;;
+  }
+  '
+
+  _oil-should-parse '
+  case $foo {
     (*.py) echo "python" ;;
   }
   '
@@ -1207,16 +1214,6 @@ oil_case() {
     (*.py) echo "python" ;;
   }
   '
-
-  # parse_sloppy_case
-
-  _oil-parse-error '
-  case $x {
-    (*.py) echo "python" ;;
-    *.sh) echo "shell" ;;
-  }
-  '
-
 }
 
 oil_for() {

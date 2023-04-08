@@ -177,7 +177,6 @@ _AGGRESSIVE_PARSE_OPTIONS = [
     ('parse_sh_assign', True),    # disallow x=y and PYTHONPATH=y
     ('parse_dparen', True),       # disallow bash's ((
     ('parse_bare_word', True),    # 'case bare' and 'for x in bare'
-    ('parse_sloppy_case', True),  # case patterns must be (*.py), not *.py)
 ]
 
 # No-ops for bash compatibility

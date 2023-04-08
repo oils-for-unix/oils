@@ -1359,10 +1359,6 @@ class CommandParser(object):
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
     if self.c_id == Id.Op_LParen:
       self._Next()
-    else:
-      if not self.parse_opts.parse_sloppy_case():
-        p_die("Expected left paren (parse_sloppy_case)",
-              loc.Word(self.cur_word))
 
     pat_words = []  # type: List[word_t]
     while True:
@@ -1375,14 +1371,6 @@ class CommandParser(object):
         self._Next()
       else:
         break
-
-    if not self.parse_opts.parse_bare_word() and len(pat_words) == 1:
-      # case $x in (foo) should be ('foo') -- otherwise it looks like a
-      # variable name.
-      ok, s, quoted = word_.StaticEval(pat_words[0])
-      if ok and match.IsValidVarName(s) and not quoted:
-        p_die('Constant pattern should be quoted (parse_bare_word)',
-               loc.Word(pat_words[0]))
 
     rparen_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_CasePat)

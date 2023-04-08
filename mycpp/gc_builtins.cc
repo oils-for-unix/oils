@@ -1,9 +1,12 @@
 #include <ctype.h>  // isspace()
 #include <errno.h>  // errno
 
+// man readline says this is required for readline/readline.h
+#include <stdio.h>
+
 #include "_build/detected-cpp-config.h"
 
-#ifdef HAVE_READLINE
+#if HAVE_READLINE
   #include <readline/readline.h>
 #endif
 

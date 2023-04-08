@@ -752,7 +752,7 @@ more-release-deps() {
 
 quick-oil-tarball() {
   # Can't delete _gen/_devbuild because there are source files there we want
-  rm -r -f --verbose _bin _build _release
+  rm -r -f --verbose _bin _build _release || true  # some permissions errors
 
   local in=_release/oil.tar
   local out=_release/oil-$OIL_VERSION.tar.gz
