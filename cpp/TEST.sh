@@ -53,7 +53,7 @@ unit() {
   # Tests that pass with the garbage collector on.
   # TODO: Move all tests here
 
-  for variant in ubsan gcalways; do
+  for variant in ubsan gcalways asan32; do
     run-one-test     cpp/obj_layout_test '' $variant
 
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
@@ -62,7 +62,7 @@ unit() {
   done
 
   # Other tests
-  for variant in ubsan asan; do
+  for variant in ubsan asan asan32; do
     run-one-test cpp/frontend_flag_spec_test '' $variant
 
     run-one-test     cpp/frontend_match_test '' $variant

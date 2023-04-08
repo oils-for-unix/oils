@@ -82,8 +82,25 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
     return false;  // empty string isn't a valid integer
   }
 
+  // Empirically this is 4 4 8 on 32-bit and 4 8 8 on 64-bit
+  // We want the bigger numbers
+#if 0
+  log("sizeof(int) = %d", sizeof(int));
+  log("sizeof(long) = %ld", sizeof(long));
+  log("sizeof(long long) = %ld", sizeof(long long));
+  log("");
+  log("LONG_MAX = %ld", LONG_MAX);
+  log("LLONG_MAX = %lld", LLONG_MAX);
+#endif
+
   char* pos;  // mutated by strtol
+
   long v = strtol(s, &pos, base);
+
+  // The problem with long long is that mycpp deals with C++ int
+  // long long v = strtoll(s, &pos, base);
+
+  // log("v = %ld", v);
 
   switch (v) {
   case LONG_MIN:

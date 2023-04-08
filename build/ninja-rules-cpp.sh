@@ -24,6 +24,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 . build/common.sh  # for $BASE_CXXFLAGS
 
+# for HAVE_READLINE
 if ! . _build/detected-config.sh; then
   die "Can't find _build/detected-config.sh.  Run './configure'"
 fi
@@ -101,6 +102,9 @@ setglobal_compile_flags() {
     (dbg)
       flags="$flags -O0 -g"
       ;;
+    (dbg32)
+      flags="$flags -O0 -g -m32"
+      ;;
 
     (coverage)
       # source-based coverage is more precise than say sanitizer-based
@@ -110,6 +114,11 @@ setglobal_compile_flags() {
 
     (asan)
       flags="$flags -O0 -g -fsanitize=address"
+      ;;
+    (asan32)
+      # Hm clang/asan32 and gcc asan/32 both produces link errors.  TODO: try
+      # upgrading Clang.
+      flags="$flags -O0 -g -fsanitize=address -m32"
       ;;
 
     (tsan)
@@ -178,33 +187,42 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
-    (opt32)
+    dbg32|opt32)
       link_flags='-m32'
       ;;
 
-    (tcmalloc)
+    tcmalloc)
       # Need to tell the dynamic loader where to find tcmalloc
       link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
 
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    (asan|gcalways|gcverbose|rvroot)
+    asan32)
+      link_flags='-fsanitize=address -m32'
+      ;;
+    asan|gcalways)
       link_flags='-fsanitize=address'
       ;;
-    (tsan)
+    tsan)
       link_flags='-fsanitize=thread'
       ;;
-    (ubsan)
+    ubsan)
       link_flags='-fsanitize=undefined'
       ;;
-    (coverage)
+    coverage)
       link_flags='-fprofile-instr-generate -fcoverage-mapping'
       ;;
   esac
 
-  if test "$HAVE_READLINE" = 1; then
-    link_flags="$link_flags -lreadline"
-  fi
+  # TODO: 32-bit variants can't handle -l readline right now.
+  # This condition is probably wrong.
+  case $variant in
+    dbg|opt|asan)
+      if test "$HAVE_READLINE" = 1; then
+        link_flags="$link_flags -lreadline"
+      fi
+      ;;
+  esac
 
   link_flags="$link_flags -Wl,--gc-sections"
 }

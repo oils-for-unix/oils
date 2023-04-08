@@ -305,12 +305,12 @@ tsv-demo() {
 
 repro() {
   test/spec.sh alias -r 0 -p > _tmp/a
-  ninja _bin/clang-dbg/oils-for-unix
-  _bin/clang-dbg/oils-for-unix _tmp/a
+  ninja _bin/clang-dbg/osh
+  _bin/clang-dbg/osh _tmp/a
 }
 
 repro-all() {
-  OSH_CC=$REPO_ROOT/_bin/clang-dbg/oils-for-unix $0 all
+  OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh $0 all
 }
 
 "$@"

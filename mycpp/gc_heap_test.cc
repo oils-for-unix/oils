@@ -86,13 +86,16 @@ TEST offsets_test() {
 
   ASSERT_EQ(offsetof(List<int>, slab_),
             offsetof(GlobalList<int COMMA 1>, slab_));
-  // 0b 0000 0010
-  unsigned list_mask = List<int>::field_mask();
-  ASSERT_EQ_FMT(0x0002, list_mask, "0x%x");
 
-  // in binary: 0b 0000 0000 0000 1110
-  unsigned dict_mask = Dict<int COMMA int>::field_mask();
-  ASSERT_EQ_FMT(0x0000e, dict_mask, "0x%x");
+  if (sizeof(void*) == 8) {
+    // 0b 0000 0010
+    unsigned list_mask = List<int>::field_mask();
+    ASSERT_EQ_FMT(0x0002, list_mask, "0x%x");
+
+    // in binary: 0b 0000 0000 0000 1110
+    unsigned dict_mask = Dict<int COMMA int>::field_mask();
+    ASSERT_EQ_FMT(0x0000e, dict_mask, "0x%x");
+  }
 
   PASS();
 }

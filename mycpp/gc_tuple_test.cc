@@ -2,6 +2,10 @@
 #include "vendor/greatest.h"
 
 TEST tuple_field_masks_test() {
+  if (sizeof(void *) != 8) {
+    PASS();
+  }
+
   auto ss = Tuple2<Str *, Str *>::obj_header();
   ASSERT_EQ_FMT(0b11, FIELD_MASK(ss), "%d");
 

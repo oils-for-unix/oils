@@ -34,7 +34,7 @@ class Point {
 
   int vtag() {
     char* p = reinterpret_cast<char*>(this);
-    ObjHeader* header = reinterpret_cast<ObjHeader*>(p - sizeof(void*));
+    ObjHeader* header = reinterpret_cast<ObjHeader*>(p - sizeof(ObjHeader));
     return header->type_tag;
   }
 
@@ -79,7 +79,7 @@ TEST gc_header_test() {
   log("p = %p", p);
 
   log("p->vtag() = %d", p->vtag());
-  ASSERT_EQ(42, p->vtag());
+  ASSERT_EQ_FMT(42, p->vtag(), "%d");
 
   PASS();
 }

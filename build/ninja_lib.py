@@ -38,14 +38,20 @@ def log(msg, *args):
 
 # Matrix of configurations
 
-COMPILERS_VARIANTS_LEAKY = [
+COMPILERS_VARIANTS = [
     ('cxx', 'dbg'),
     ('cxx', 'opt'),
     ('cxx', 'asan'),
+    ('cxx', 'gcalways'),  # with ASAN
+
     ('cxx', 'ubsan'),
 
-    # -D RET_VAL_ROOTING
-    ('cxx', 'rvroot'),
+    # Test correctness of 32 bit build
+    # Hm both cxx-asan32 and clang-asan32 produce link errors
+    ('cxx', 'asan32'),
+
+    # Test correctness of 32-bit build.
+    #('cxx', 'dbg32'),
 
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
@@ -64,14 +70,9 @@ GC_PERF_VARIANTS = [
     # For tracing allocations, or debugging
     ('cxx', 'uftrace'),
 
-    # Less memory usage (but slower)
-    ('cxx', 'opt32')
-]
-
-
-COMPILERS_VARIANTS = COMPILERS_VARIANTS_LEAKY + [
-    # mainly for unit tests
-    ('cxx', 'gcalways'),
+    # Test performance of 32-bit build.  (It uses less memory usage, but can be
+    # slower.)
+    ('cxx', 'opt32'),
 ]
 
 SMALL_TEST_MATRIX = [
