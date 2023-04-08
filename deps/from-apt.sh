@@ -186,6 +186,10 @@ cpp-small() {
     g++
     ninja-build
 
+    # For 32-bit binaries with -m32
+    gcc-multilib
+    g++-multilib
+
     # For some tests
     gawk
 
