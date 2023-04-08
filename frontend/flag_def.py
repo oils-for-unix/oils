@@ -310,6 +310,7 @@ def _DefineCompletionActions(spec):
   spec.Action('j', 'job')
   spec.Action('u', 'user')
   spec.Action('v', 'variable')
+  spec.Action(None, 'builtin')
   spec.Action(None, 'function')
   spec.Action(None, 'helptopic')  # help
   spec.Action(None, 'setopt')  # set -o

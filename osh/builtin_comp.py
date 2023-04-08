@@ -139,6 +139,9 @@ class SpecBuilder(object):
         # TODO: Where do we get this from?
         a = _FixedWordsAction(['vi-delete'])
 
+      elif name == 'builtin':
+        a = _FixedWordsAction(consts.BUILTIN_NAMES)
+
       elif name == 'command':
         # compgen -A command in bash is SIX things: aliases, builtins,
         # functions, keywords, external commands relative to the current
