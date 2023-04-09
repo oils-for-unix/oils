@@ -26,7 +26,7 @@ This is a supplement to the [main release page](index.html).
   and compare their behavior.
 - [Stateful Tests](test/spec.wwz/stateful/index.html).  Tests that use
   [pexpect]($xref).
-- [OSH in C++](test/spec.wwz/cpp/osh-summary.html).  The progress of Oil's C++
+- [OSH in C++](test/spec.wwz/osh-cpp/compare.html).  The progress of Oil's C++
   translation.
 - [Oil Language](test/spec.wwz/oil-language/oil.html).  The legacy-free
   language.

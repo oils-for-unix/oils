@@ -228,7 +228,8 @@ cpp-spec-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
-spec-cpp         test/spec-cpp.sh soil-run             _tmp/spec/cpp/osh-summary.html
+osh-all          test/spec-cpp.sh osh-all              _tmp/spec/osh-cpp/compare.html
+oil-all          test/spec-cpp.sh oil-all              _tmp/spec/oil-cpp/compare.html
 EOF
 }
 

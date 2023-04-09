@@ -95,7 +95,7 @@ write-suite-manifests() {
   #ls -l _tmp/spec/SUITE-*.txt
 }
 
-run-file() {
+dispatch-one() {
   # Determines what binaries to compare against: compare-py | compare-cpp | release-alpine 
   local compare_mode=${1:-compare-py}
   # Which subdir of _tmp/spec: survey | cpp | oil-language | tea-language
@@ -107,10 +107,10 @@ run-file() {
   local -a prefix
   case $compare_mode in
     # Note: could make these names more consistent
-    (compare-py)     prefix=(test/spec.sh) ;;
-    (compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
-    (release-alpine) prefix=(test/spec-alpine.sh run-file) ;;
-    (*) die "Invalid compare mode $compare_mode" ;;
+    compare-py)     prefix=(test/spec.sh) ;;
+    compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
+    release-alpine) prefix=(test/spec-alpine.sh run-file) ;;
+    *) die "Invalid compare mode $compare_mode" ;;
   esac
 
   local base_dir=_tmp/spec/$spec_subdir
@@ -335,7 +335,7 @@ _all-parallel() {
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs -n 1 -P $MAX_PROCS -- $0 run-file $compare_mode $spec_subdir
+    | xargs -n 1 -P $MAX_PROCS -- $0 dispatch-one $compare_mode $spec_subdir
   set -o errexit
 
   all-tests-to-html $manifest $output_base_dir
