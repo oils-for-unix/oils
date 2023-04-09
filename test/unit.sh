@@ -232,7 +232,7 @@ run-all-and-log() {
 
 print-report() {
   local in_dir=${1:-_tmp/unit}
-  local base_url='../../web'
+  local base_url='../../../web'  # published at test/other.wwz/unit/
 
   html-head --title 'Oil Unit Test Results' \
     "$base_url/table/table-sort.js" \

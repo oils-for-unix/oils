@@ -401,6 +401,12 @@ _link() {
 compress() {
   local root=$PWD/_release/VERSION/
 
+  log "--- test/other"
+  local out="$root/test/other.wwz"
+  pushd _tmp
+  time zip -r -q $out suite-logs unit syscall
+  popd
+
   # This has HTML reports, .profraw files, and logs of stdout, e.g.
   # mycpp-unit/gc_heap_test.log
   # About 1.5 MB
@@ -409,18 +415,6 @@ compress() {
   pushd _test/clang-coverage
   # This also saves the logs
   time zip -r -q $out .
-  popd
-
-  log "--- test/other"
-  local out="$root/test/other.wwz"
-  pushd _tmp/other
-  time zip -r -q $out .  # recursive, quiet
-  popd
-
-  log "--- test/unit"
-  local out="$root/test/unit.wwz"
-  pushd _tmp/unit
-  time zip -r -q $out .  # recursive, quiet
   popd
 
   log "--- test/spec"

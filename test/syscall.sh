@@ -366,16 +366,12 @@ summarize() {
 run-for-release() {
   ### Run the two syscall suites
 
-  # Invoked as one of the "other" tests.  Note: This is different than what
-  # 'toil' runs.  Might want to unify them.
+  # Invoked as one of the "other" tests.  Soil runs by-code and by-input
+  # separately.
 
+  # Note: Only $BASE_DIR/*.txt is included in the release/$VERSION/other.wwz
   by-code
   by-input
-
-  local dest=_tmp/other/syscall/
-  mkdir -p $dest
-
-  cp -v ${BASE_DIR}/by-code.txt ${BASE_DIR}/by-input.txt $dest
 
   echo 'OK'
 }

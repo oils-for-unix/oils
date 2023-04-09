@@ -33,11 +33,11 @@ This is a supplement to the [main release page](index.html).
 
 ### Other Primary Suites
 
-- [Gold Tests](test/other.wwz/gold.txt).  Compare OSH against bash (using
+- [Gold Tests](test/other.wwz/suite-logs/gold.txt).  Compare OSH against bash (using
   implicit assertions, no golden output.)
 - [Wild Tests](test/wild.wwz/).  Parse and translate thousands of shell scripts
   with OSH.
-- [Python Unit Tests](test/unit.wwz/).
+- [Python Unit Tests](test/other.wwz/unit/).
 - [C++ Test Coverage](test/coverage.wwz/unified/html/index.html) measured by
   Clang.
   - [Log Files](test/coverage.wwz/log-files.html)
@@ -47,23 +47,23 @@ This is a supplement to the [main release page](index.html).
 - [Smoosh][] test suite (from [mgree/smoosh][]):
   - [smoosh](test/spec.wwz/survey/smoosh.html)
     | [smoosh-hang](test/spec.wwz/survey/smoosh-hang.html)
-- [parse-errors](test/other.wwz/parse-errors.txt).  A list of all parse errors.
-  - [parse-errors-osh-cpp](test/other.wwz/parse-errors-osh-cpp.txt).
+- [parse-errors](test/other.wwz/suite-logs/parse-errors.txt).  A list of all parse errors.
+  - [parse-errors-osh-cpp](test/other.wwz/suite-logs/parse-errors-osh-cpp.txt).
     With the native binary.
-- [runtime-errors](test/other.wwz/runtime-errors.txt).  A list of shell runtime
+- [runtime-errors](test/other.wwz/suite-logs/runtime-errors.txt).  A list of shell runtime
   errors.
-- [oil-runtime-errors](test/other.wwz/oil-runtime-errors.txt).  Oil language
+- [oil-runtime-errors](test/other.wwz/suite-logs/oil-runtime-errors.txt).  Oil language
   runtime errors.
-- [oil-large](test/other.wwz/oil-large.txt)
-- [tea-large](test/other.wwz/tea-large.txt)
-- [arena](test/other.wwz/arena.txt).  Testing an invariant for the parser.
-- [osh-usage](test/other.wwz/osh-usage.txt).  Misc tests of the `osh` binary.
-- [oshc-deps](test/other.wwz/oshc-deps.txt).  Tests for a subcommand in
+- [oil-large](test/other.wwz/suite-logs/oil-large.txt)
+- [tea-large](test/other.wwz/suite-logs/tea-large.txt)
+- [arena](test/other.wwz/suite-logs/arena.txt).  Testing an invariant for the parser.
+- [osh-usage](test/other.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
+- [oshc-deps](test/other.wwz/suite-logs/oshc-deps.txt).  Tests for a subcommand in
   progress.
 - How many processes does Oil start compared to other shells?
   - [syscall/by-code](test/other.wwz/syscall/by-code.txt)
     | [syscall/by-input](test/other.wwz/syscall/by-input.txt)
-- [ysh-prettify Tests](test/other.wwz/ysh-prettify.txt).  Test OSH to YSH
+- [ysh-prettify Tests](test/other.wwz/suite-logs/ysh-prettify.txt).  Test OSH to YSH
   translation.
 
 [Smoosh]: http://shell.cs.pomona.edu/

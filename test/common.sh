@@ -184,7 +184,7 @@ run-test-func() {
 run-other-suite-for-release() {
   local suite_name=$1
   local func_name=$2
-  local out=${3:-_tmp/other/${suite_name}.txt}
+  local out=${3:-_tmp/suite-logs/${suite_name}.txt}
 
   mkdir -p $(dirname $out)
 
