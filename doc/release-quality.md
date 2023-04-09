@@ -41,6 +41,8 @@ This is a supplement to the [main release page](index.html).
 - [C++ Test Coverage](test/coverage.wwz/unified/html/index.html) measured by
   Clang.
   - [Log Files](test/coverage.wwz/log-files.html)
+- [Process Table](test/other.wwz/process-table/).  Are child processes in the
+  right state for job control?
 
 ### More
 

@@ -63,7 +63,7 @@ report-html-head() {
 print-report() {
   local tsv_out=$1
 
-  local title='Job Control Tests'
+  local title='Process State for Job Control'
   report-html-head "$title"
 
   # Extra style, doesn't go on any element
@@ -134,6 +134,11 @@ EOF
   print-tasks | run-tasks $times_tsv
 
   make-report $times_tsv
+}
+
+run-for-release() {
+  # Same thing as CI -- put output in _tmp/process-table/index.html
+  soil-run
 }
 
 #

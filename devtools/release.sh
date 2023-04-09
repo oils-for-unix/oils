@@ -204,6 +204,7 @@ _release-build() {
 readonly HAVE_ROOT=1
 
 readonly -a OTHER_TESTS=(
+  process-table
   gold 
   ysh-prettify
   parse-errors runtime-errors
@@ -404,7 +405,7 @@ compress() {
   log "--- test/other"
   local out="$root/test/other.wwz"
   pushd _tmp
-  time zip -r -q $out suite-logs unit syscall
+  time zip -r -q $out suite-logs unit syscall process-table
   popd
 
   # This has HTML reports, .profraw files, and logs of stdout, e.g.
