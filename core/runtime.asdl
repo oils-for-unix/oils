@@ -3,11 +3,11 @@
 module runtime
 {
   # import these types from syntax.asdl
-  use frontend syntax { ArgList command re redir_loc Token proc_sig }
+  use frontend syntax { word ArgList command re redir_loc Token proc_sig }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
-  assign_arg = (str var_name, value? rval, bool plus_eq, int spid)
+  assign_arg = (str var_name, value? rval, bool plus_eq, word blame_word)
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =

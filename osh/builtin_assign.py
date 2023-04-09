@@ -11,7 +11,7 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray,
     scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
 )
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, word_t
 
 from core import error
 from core.pyerror import e_usage
@@ -22,8 +22,9 @@ from frontend import location
 from frontend import args
 from mycpp import mylib
 from mycpp.mylib import log
-from osh import sh_expr_eval
 from osh import cmd_eval
+from osh import sh_expr_eval
+from osh import word_
 from qsn_ import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
@@ -245,7 +246,8 @@ class Export(vm._AssignBuiltin):
     if arg.n:
       for pair in cmd_val.pairs:
         if pair.rval is not None:
-          e_usage("doesn't accept RHS with -n", span_id=pair.spid)
+          e_usage("doesn't accept RHS with -n",
+                  span_id=word_.LeftMostSpanForWord(pair.blame_word))
 
         # NOTE: we don't care if it wasn't found, like bash.
         self.mem.ClearFlag(pair.var_name, state.ClearExport)
@@ -256,8 +258,8 @@ class Export(vm._AssignBuiltin):
     return 0
 
 
-def _ReconcileTypes(rval, flag_a, flag_A, span_id):
-  # type: (Optional[value_t], bool, bool, int) -> value_t
+def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
+  # type: (Optional[value_t], bool, bool, word_t) -> value_t
   """Check that -a and -A flags are consistent with RHS.
 
   Special case: () is allowed to mean empty indexed array or empty assoc array
@@ -266,7 +268,8 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
   Shared between NewVar and Readonly.
   """
   if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
-    e_usage("Got -a but RHS isn't an array", span_id=span_id)
+    e_usage("Got -a but RHS isn't an array",
+            span_id=word_.LeftMostSpanForWord(blame_word))
 
   if flag_A and rval:
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
@@ -278,7 +281,8 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
         #return value.MaybeStrArray([])
 
     if rval.tag_() != value_e.AssocArray:
-      e_usage("Got -A but RHS isn't an associative array", span_id=span_id)
+      e_usage("Got -A but RHS isn't an associative array",
+              span_id=word_.LeftMostSpanForWord(blame_word))
 
   return rval
 
@@ -310,7 +314,7 @@ class Readonly(vm._AssignBuiltin):
       else:
         rval = pair.rval
 
-      rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
+      rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
 
       # NOTE:
       # - when rval is None, only flags are changed
@@ -425,7 +429,7 @@ class NewVar(vm._AssignBuiltin):
         assert pair.rval is not None
         rval = cmd_eval.PlusEquals(old_val, pair.rval)
       else:
-        rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
+        rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
 
       self.mem.SetValue(lval, rval, which_scopes, flags=flags)
 

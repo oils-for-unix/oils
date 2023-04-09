@@ -144,8 +144,8 @@ ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
 # /
 # Note: must use < > for grouping because there is no non-capturing group.
 
-def _SplitAssignArg(arg, word_spid):
-  # type: (str, int) -> assign_arg
+def _SplitAssignArg(arg, blame_word):
+  # type: (str, word_t) -> assign_arg
   """Dynamically parse argument to declare, export, etc.
 
   This is a fallback to the static parsing done below.
@@ -155,7 +155,7 @@ def _SplitAssignArg(arg, word_spid):
   m = libc.regex_match(ASSIGN_ARG_RE, arg)
   if m is None:
     e_die("Assignment builtin expected NAME=value, got %r" % arg,
-          loc.Span(word_spid))
+          loc.Word(blame_word))
 
   var_name = m[1]
   # m[2] is used for grouping; ERE doesn't have non-capturing groups
@@ -169,7 +169,7 @@ def _SplitAssignArg(arg, word_spid):
     append = False
 
   #log('ret %s', assign_arg(left, right, append, word_spid))
-  return assign_arg(var_name, val, append, word_spid)
+  return assign_arg(var_name, val, append, blame_word)
 
 
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
@@ -2011,14 +2011,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           with state.ctx_AssignBuiltin(self.mutable_opts):
             right = self.EvalRhsWord(rhs)
 
-          arg2 = assign_arg(var_name, right, append, word_spid)
+          arg2 = assign_arg(var_name, right, append, w)
 
           assign_args.append(arg2)
 
         else:  # e.g. export $dynamic
           argv = self._EvalWordToArgv(w)
           for arg in argv:
-            arg2 = _SplitAssignArg(arg, word_spid)
+            arg2 = _SplitAssignArg(arg, w)
             assign_args.append(arg2)
 
       else:
@@ -2035,7 +2035,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           else:  # e.g. export $dynamic 
             if eval_to_pairs:
-              arg2 = _SplitAssignArg(arg, word_spid)
+              arg2 = _SplitAssignArg(arg, w)
               assign_args.append(arg2)
               started_pairs = True
             else:
