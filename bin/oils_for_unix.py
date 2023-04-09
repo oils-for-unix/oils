@@ -203,17 +203,6 @@ def main(argv):
     log('oil: %s', e.msg)
     return 2
 
-  except RuntimeError as e:
-    if 0:
-      import traceback
-      traceback.print_exc()
-
-    # Oil code shouldn't throw RuntimeError, but the Python interpreter can,
-    # e.g. on stack overflow (or MemoryError).
-    log('FATAL RuntimeError: %s', e.message)
-
-    return 1
-
   except KeyboardInterrupt:
     print('')
     return 130  # 128 + 2
@@ -226,6 +215,9 @@ def main(argv):
     # test this with prlimit --nproc=1 --pid=$$
     print_stderr('osh I/O error (main): %s' % posix.strerror(e.errno))
     return 2  # dash gives status 2
+
+  # We don't catch RuntimeError (including AssertionError/NotImplementedError),
+  # because those are simply bugs, and we want to see a Python stack trace.
 
 
 if __name__ == '__main__':

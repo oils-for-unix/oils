@@ -191,7 +191,7 @@ class SpecBuilder(object):
         a = _FixedWordsAction(['jobs-not-implemented'])
 
       else:
-        raise NotImplementedError(name)
+        raise AssertionError(name)
 
       actions.append(a)
 
