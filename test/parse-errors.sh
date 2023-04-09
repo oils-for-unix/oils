@@ -18,14 +18,16 @@ banner() {
   echo
 }
 
-is-oils-cpp() {
+oils-cpp-bug() {
+  ### TODO: Fix all cases guarded by this condition
+
   case $SH in
     *_bin/*/osh)
-      return 0
+      return 1
       ;;
   esac
 
-  return 1
+  return 0
 }
 
 _error-case() {
@@ -78,11 +80,6 @@ _should-parse-here() { _should-parse "$(cat)"; }
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime
 
-  if is-oils-cpp; then
-    echo 'skipping _runtime-parse-error'
-    return
-  fi
-
   banner "$@"
   echo
   $SH -c "$@"
@@ -108,11 +105,6 @@ _oil-should-parse() {
 _oil-parse-error() {
   ### Assert that a parse error happens with Oil options on
 
-  if is-oils-cpp; then
-    echo 'skipping _oil-parse-error'
-    return
-  fi
-   
   banner "$@"
   echo
   $SH -O oil:all -c "$@"
@@ -402,7 +394,9 @@ other-builtins() {
   _runtime-parse-error 'pushd x y'
   _runtime-parse-error 'pwd -x'
 
-  _runtime-parse-error 'pp x foo a-x'
+  if oils-cpp-bug; then
+    _runtime-parse-error 'pp x foo a-x'
+  fi
 
   _runtime-parse-error 'wait zzz'
   _runtime-parse-error 'wait %jobspec-not-supported'
@@ -461,11 +455,6 @@ cmd-parse() {
   # parse_ignored
   _should-parse 'break >out'
   _oil-parse-error 'break >out'
-
-  if is-oils-cpp; then
-    echo 'Skipping some cmd-parse cases on oils-for-unix'
-    return
-  fi
 
   # Unquoted (
   _error-case '[ ( x ]'
@@ -554,7 +543,9 @@ args-parse-builtin() {
   _runtime-parse-error 'read -n'  # expected argument for -n
   _runtime-parse-error 'read -n x'  # expected integer
 
-  _runtime-parse-error 'set -o errexit +o oops'
+  if oils-cpp-bug; then
+    _runtime-parse-error 'set -o errexit +o oops'
+  fi
 
   # not implemented yet
   #_error-case 'read -t x'  # expected floating point number
@@ -595,11 +586,6 @@ invalid-brace-ranges() {
 oil-language() {
   set +o errexit
 
-  if is-oils-cpp; then
-    echo 'Skipping oil-language'
-    return
-  fi
-
   # Unterminated
   _oil-parse-error 'var x = 1 + '
 
@@ -617,8 +603,11 @@ append-builtin() {
   set +o errexit
 
   # Unterminated
-  _runtime-parse-error 'append'
-  _runtime-parse-error 'append invalid-'
+  if oils-cpp-bug; then
+    _runtime-parse-error 'append'
+    _runtime-parse-error 'append invalid-'
+  fi
+
   #_error-case 'push notarray'  # returns status 1
 }
 
@@ -648,11 +637,6 @@ proc_sig() {
 proc_arg_list() {
   set +o errexit
 
-  if is-oils-cpp; then
-    echo 'Skipping proc_arg_list cases on oils-for-unix'
-    return
-  fi
-
   _should-parse 'json write (x)'
 
   _should-parse 'echo $(json write (x))'  # relies on lexer.PushHint()
@@ -677,13 +661,14 @@ json write (x) {
   echo hi
 }'
 
-  # multiple lines
-  _should-parse 'json write (
-    x,
-    y,
-    z
-  )'
-
+  if oils-cpp-bug; then
+    # multiple lines
+    _should-parse 'json write (
+      x,
+      y,
+      z
+    )'
+  fi
 
   # can't be empty
   _oil-parse-error 'json write ()'
@@ -698,13 +683,12 @@ json write (x) {
 regex_literals() {
   set +o errexit
 
-  if is-oils-cpp; then
-    return
-  fi
-
   _oil-parse-error 'var x = / ! /'
   _oil-should-parse 'var x = / ![a-z] /'
-  _oil-should-parse 'var x = / !d /'
+
+  if oils-cpp-bug; then
+    _oil-should-parse 'var x = / !d /'
+  fi
 
   _oil-parse-error 'var x = / !! /'
 
@@ -755,10 +739,6 @@ oil_expr_more() {
 oil_hay_assign() {
   set +o errexit
 
-  if is-oils-cpp; then
-    return
-  fi
-
   _oil-parse-error '
 name=val
 '
@@ -808,6 +788,7 @@ hay eval :result {
 }
 '
 
+  if oils-cpp-bug; then
   _oil-parse-error '
 hay define TASK
 
@@ -826,6 +807,7 @@ Package libc {
   }
 }
 '
+  fi
 }
 
 
@@ -880,12 +862,6 @@ EOF
   _should-parse 'echo "`echo hi`"'
   _oil-parse-error 'echo "`echo hi`"'
   _oil-parse-error 'const bad = "`echo hi`"'
-
-  # We want these to be tested under OSH, but they won't work under Oil native!
-  if is-oils-cpp; then
-    echo 'Skipping some oil_string_literals cases on oils-for-unix'
-    return
-  fi
 
   _oil-parse-error 'setvar x = "\z"'
 
@@ -975,10 +951,6 @@ parse_dparen() {
   _should-parse "$bad"
   _oil-parse-error "$bad"
 
-  if is-oils-cpp; then
-    echo 'Skipping parse_dparen cases'
-    return
-  fi
   _oil-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
 
   # Accepted workaround: add space
@@ -1015,11 +987,6 @@ parse_at() {
 
 invalid_parens() {
   set +o errexit
-
-  if is-oils-cpp; then
-    echo 'skipping invalid_parens on oils-for-unix'
-    return
-  fi
 
   # compatible extension in both langauges
   local s='write -- $f(x)'
@@ -1058,11 +1025,6 @@ oil_nested_proc() {
   _oil-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
 
   _oil-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
-
-  if is-oils-cpp; then
-    echo 'skipping oil_nested_proc'  # TODO: re-enable with pgen2
-    return
-  fi
 
   # shell nesting is still allowed
   _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
@@ -1120,11 +1082,6 @@ oil_var_decl() {
     '
   fi
 
-  if is-oils-cpp; then
-    echo 'skipping oil_var_decl'  # TODO: re-enable with pgen2
-    return
-  fi
-
   _oil-should-parse '
   var x = 1
   proc p {
@@ -1154,11 +1111,6 @@ oil_place_mutation() {
     setvar c = 42  # ERROR: cannot modify constant
   }
   '
-
-  if is-oils-cpp; then
-    echo 'skipping oil_place_mutation'  # TODO: re-enable with pgen2
-    return
-  fi
 
   _oil-should-parse '
   proc p(x) {
@@ -1219,11 +1171,6 @@ oil_case() {
 oil_for() {
   set +o errexit
 
-  if is-oils-cpp; then
-    echo 'skipping oil_for'
-    return
-  fi
-
   _oil-should-parse '
   for x in (obj) {
     echo $x
@@ -1277,11 +1224,6 @@ oil_for() {
 oil_for_parse_bare_word() {
   set +o errexit
 
-  if is-oils-cpp; then
-    echo 'skipping oil_for'
-    return
-  fi
-
   _oil-parse-error '
   for x in bare {
     echo $x
@@ -1309,11 +1251,6 @@ oil_for_parse_bare_word() {
 
 oil_issue_1118() {
   set +o errexit
-
-  if is-oils-cpp; then
-    echo 'skipping oil_issue_1118'
-    return
-  fi
 
   # Originally pointed at 'for'
   _oil-parse-error '
@@ -1441,16 +1378,6 @@ cases-in-files() {
 
   for t in test/parse-errors/*.sh; do
     banner $t
-
-    if is-oils-cpp; then
-      case $t in
-        */01-bad-func.sh)
-          echo "Skipping file $t for oils-for-unix"
-          continue
-          ;;
-      esac
-    fi
-
 
     $SH $t
 
