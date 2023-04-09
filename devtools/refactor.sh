@@ -176,6 +176,10 @@ spid() {
   egrep -n 'span_id|spid' */*.py | grep -v _test.py | tee _tmp/spid
 }
 
+spid-sig() {
+  egrep -n 'def.*(span_id|spid)' */*.py
+}
+
 # We also want to get rid of 2 instances of 'attributes' in frontend/syntax.asdl
 #
 # - Every node in command_t has a left token

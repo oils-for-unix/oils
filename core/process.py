@@ -22,7 +22,7 @@ from _devbuild.gen.runtime_asdl import (
     redirect_arg__MoveFd, redirect_arg__HereDoc, value, value_e, value__Str,
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
-    loc,
+    loc, loc_t,
     redir_loc,
     redir_loc_e,
     redir_loc_t,
@@ -634,11 +634,12 @@ class ExternalProgram(object):
       exec ls /
       ( ls / )
     """
-    self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_spids[0], environ, True)
+    self._Exec(argv0_path, cmd_val.argv, loc.Span(cmd_val.arg_spids[0]),
+               environ, True)
     assert False, "This line should never execute"  # NO RETURN
 
-  def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
-    # type: (str, List[str], int, Dict[str, str], bool) -> None
+  def _Exec(self, argv0_path, argv, argv0_loc, environ, should_retry):
+    # type: (str, List[str], loc_t, Dict[str, str], bool) -> None
     if len(self.hijack_shebang):
       ok = True
       try:
@@ -672,15 +673,15 @@ class ExternalProgram(object):
       if e.errno == ENOEXEC and should_retry:
         new_argv = ['/bin/sh', argv0_path]
         new_argv.extend(argv[1:])
-        self._Exec('/bin/sh', new_argv, argv0_spid, environ, False)
+        self._Exec('/bin/sh', new_argv, argv0_loc, environ, False)
         # NO RETURN
 
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
 
-      self.errfmt.Print_("Can't execute %r: %s" %
-                         (argv0_path, pyutil.strerror(e)),
-                         blame_loc=loc.Span(argv0_spid))
+      self.errfmt.Print_(
+          "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
+          argv0_loc)
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
