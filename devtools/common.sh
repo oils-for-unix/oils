@@ -34,6 +34,6 @@ typecheck() {
   MYPYPATH='.:pyext' PYTHONPATH='.' mypy_ --py2 "$@"
 }
 
-readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
+readonly MYPY_FLAGS='--strict --no-strict-optional'
 readonly COMMENT_RE='^[ ]*#'
 
