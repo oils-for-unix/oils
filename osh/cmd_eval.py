@@ -38,7 +38,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
-    Token, loc,
+    Token, loc, loc_t,
     IntParamBox,
 )
 from _devbuild.gen.runtime_asdl import (
@@ -1833,8 +1833,8 @@ class CommandEvaluator(object):
           with ctx_ErrTrap(self):
             self._Execute(node)
 
-  def RunProc(self, proc, argv, arg0_spid):
-    # type: (Proc, List[str], int) -> int
+  def RunProc(self, proc, argv, arg0_loc):
+    # type: (Proc, List[str], loc_t) -> int
     """Run a shell "functions".
 
     For SimpleCommand and registered completion hooks.
@@ -1895,7 +1895,7 @@ class CommandEvaluator(object):
           if n_args > n_params:
             self.errfmt.Print_(
                 "proc %r expected %d arguments, but got %d" %
-                (proc.name, n_params, n_args), blame_loc=loc.Span(arg0_spid))
+                (proc.name, n_params, n_args), arg0_loc)
             # This should be status 2 because it's like a usage error.
             return 2
 
@@ -1958,7 +1958,7 @@ class CommandEvaluator(object):
     # type: (Proc, List[str]) -> int
     # TODO: Change this to run Oil procs and funcs too
     try:
-      status = self.RunProc(proc, argv, runtime.NO_SPID)
+      status = self.RunProc(proc, argv, loc.Missing())
     except error.FatalRuntime as e:
       self.errfmt.PrettyPrintError(e)
       status = e.ExitStatus()

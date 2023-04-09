@@ -10,7 +10,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import redirect, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    command_sub, compound_word, loc
+    command_sub, compound_word, loc, loc_t
 )
 from asdl import runtime
 from core import dev
@@ -209,12 +209,15 @@ class ShellExecutor(vm._Executor):
       call_procs: whether to look up procs.
     """
     argv = cmd_val.argv
-    arg0_spid = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
+    if len(cmd_val.arg_spids):
+      arg0_loc = loc.Span(cmd_val.arg_spids[0])  # type: loc_t
+    else:
+      arg0_loc = loc.Missing()
 
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:
       if self.exec_opts.strict_argv():
-        e_die("Command evaluated to an empty argv array", loc.Span(arg0_spid))
+        e_die("Command evaluated to an empty argv array", arg0_loc)
       else:
         return 0  # status 0, or skip it?
 
@@ -224,8 +227,7 @@ class ShellExecutor(vm._Executor):
     if builtin_id != consts.NO_INDEX:
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
-      self.errfmt.Print_("Can't run assignment builtin recursively",
-                         blame_loc=loc.Span(arg0_spid))
+      self.errfmt.Print_("Can't run assignment builtin recursively", arg0_loc)
       return 1
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
@@ -250,11 +252,11 @@ class ShellExecutor(vm._Executor):
             self.errfmt.StderrLine('')
             e_die("Can't run a proc while errexit is disabled. "
                   "Use 'try' or wrap it in a process with $0 myproc",
-                  loc.Span(arg0_spid))
+                  arg0_loc)
 
         with dev.ctx_Tracer(self.tracer, 'proc', argv):
           # NOTE: Functions could call 'exit 42' directly, etc.
-          status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_spid)
+          status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_loc)
         return status
 
     # Notes:
@@ -276,7 +278,7 @@ class ShellExecutor(vm._Executor):
         return self.RunBuiltin(builtin_id, cmd_val)
 
       self.errfmt.Print_('Unknown command %r while running hay' % arg0,
-                         blame_loc=loc.Span(arg0_spid))
+                         arg0_loc)
       return 127
 
     if builtin_id != consts.NO_INDEX:
@@ -292,7 +294,7 @@ class ShellExecutor(vm._Executor):
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)
     if argv0_path is None:
-      self.errfmt.Print_('%r not found' % arg0, blame_loc=loc.Span(arg0_spid))
+      self.errfmt.Print_('%r not found' % arg0, arg0_loc)
       return 127
 
     # Normal case: ls /
