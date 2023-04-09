@@ -6,7 +6,7 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
-from core.pyerror import log
+from mycpp.mylib import log
 from mycpp import mylib
 from oil_lang import regex_translate
 

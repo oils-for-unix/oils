@@ -14,13 +14,14 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import loc
 
 from core import error
-from core.pyerror import e_usage, log
+from core.pyerror import e_usage
 from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import location
 from frontend import args
 from mycpp import mylib
+from mycpp.mylib import log
 from osh import sh_expr_eval
 from osh import cmd_eval
 from qsn_ import qsn

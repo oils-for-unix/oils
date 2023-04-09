@@ -23,7 +23,7 @@ from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
-from core.pyerror import e_usage, e_die, log
+from core.pyerror import e_usage, e_die
 from core import pyos
 from core import pyutil
 from core import optview
@@ -32,7 +32,7 @@ from frontend import consts
 from frontend import location
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch, iteritems, NewDict
+from mycpp.mylib import log, print_stderr, tagswitch, iteritems, NewDict
 from osh import split
 from pylib import os_path
 from pylib import path_stat

@@ -9,7 +9,7 @@ import sys
 from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, flag_type_e, flag_type_t, value, value_t,
 )
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import args
 from mycpp import mylib
 

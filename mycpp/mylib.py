@@ -10,8 +10,7 @@ from pylib import collections_
 try:
     import posix_ as posix
 except ImportError:
-    # Hack for tangled dependencies.  Many tools import core.pyerror.log, which
-    # ends up importing mylib.PYTHON
+    # Hack for tangled dependencies.
     import os
     posix = os
 
@@ -170,7 +169,7 @@ def str_cmp(s1, s2):
 
 def log(msg, *args):
     # type: (str, *Any) -> None
-    """Only for mycpp/examples"""
+    """Print debug output to stderr."""
     if args:
         msg = msg % args
     print(msg, file=sys.stderr)

@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     Token, single_quoted, CharCode, 
     word_part_e, word_part_t,
 )
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import consts
 from osh import string_ops
 from mycpp.mylib import switch

@@ -13,7 +13,7 @@ import types
 from .lib import dis
 from .lib import inspect
 
-from core.pyerror import log
+from .util import log
 
 
 def Disassemble(co):

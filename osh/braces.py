@@ -22,11 +22,11 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
 )
-from core.pyerror import log, p_die
+from core.pyerror import p_die
 from frontend import lexer
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import log, tagswitch
 
 from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:

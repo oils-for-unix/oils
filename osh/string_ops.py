@@ -16,7 +16,8 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import loc, Token
 from core import pyutil
 from core import ui
-from core.pyerror import e_die, e_strict, log
+from core.pyerror import e_die, e_strict
+from mycpp.mylib import log
 from osh import glob_
 
 import libc

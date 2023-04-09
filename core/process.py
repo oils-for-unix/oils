@@ -35,13 +35,13 @@ from core import pyos
 from core import state
 from core import ui
 from core import util
-from core.pyerror import log, e_die
+from core.pyerror import e_die
 from frontend import location
 from frontend import match
 from osh import cmd_eval
 from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch, iteritems, StrFromC
+from mycpp.mylib import log, print_stderr, tagswitch, iteritems, StrFromC
 
 import posix_ as posix
 from posix_ import (

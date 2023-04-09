@@ -45,7 +45,6 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core.alloc import Arena
-from core.pyerror import log
 from core import pyos
 from core import state
 from core import ui
@@ -53,7 +52,7 @@ from core import util
 from frontend import consts
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import print_stderr
+from mycpp.mylib import print_stderr, log
 from pylib import os_path
 from pylib import path_stat
 from osh import word_

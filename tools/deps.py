@@ -7,7 +7,7 @@ import sys
 
 from _devbuild.gen.syntax_asdl import command, command_t
 from asdl import pybase
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import consts
 from osh import word_
 

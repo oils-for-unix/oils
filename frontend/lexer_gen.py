@@ -172,7 +172,7 @@ def TranslateTree(re_tree, f, in_char_class=False):
 
     else:
       if 0:
-        from core.pyerror import log
+        from mycpp.mylib import log
         log('child %s', child)
       raise RuntimeError("I don't understand regex construct: %r" % name)
 

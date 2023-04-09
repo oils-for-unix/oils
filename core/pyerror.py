@@ -17,14 +17,6 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import loc_t
 
 
-if mylib.PYTHON:
-  def log(msg, *args):
-    # type: (str, *Any) -> None
-    if args:
-      msg = msg % args
-    print(msg, file=sys.stderr)
-
-
 NO_SPID = -1
 
 def e_usage(msg, span_id=NO_SPID):

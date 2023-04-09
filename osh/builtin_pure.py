@@ -31,7 +31,7 @@ from core import error
 from core.pyerror import e_usage, e_die
 from core import optview
 from core import state
-from core.pyerror import log
+from mycpp.mylib import log
 from core import ui
 from core import vm
 from frontend import args

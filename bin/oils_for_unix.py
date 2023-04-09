@@ -26,11 +26,10 @@ from core import shell
 from core import pyos
 from core import pyutil
 from core import shell_native
-from core.pyerror import log
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib
-from mycpp.mylib import print_stderr
+from mycpp.mylib import print_stderr, log
 from osh import builtin_misc
 from pylib import os_path
 from tools import tools_main

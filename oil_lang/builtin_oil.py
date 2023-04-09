@@ -19,14 +19,14 @@ from _devbuild.gen.syntax_asdl import (
     loc, sh_lhs_expr, command_e, BraceGroup, 
 )
 from core import error
-from core.pyerror import log, e_usage
+from core.pyerror import e_usage
 from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import args
 from frontend import match
 from frontend import typed_args
-from mycpp.mylib import tagswitch
+from mycpp.mylib import log, tagswitch
 from qsn_ import qsn
 
 import yajl

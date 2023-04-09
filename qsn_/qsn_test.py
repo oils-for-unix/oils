@@ -8,7 +8,7 @@ from __future__ import print_function
 import re
 import unittest
 
-from core.pyerror import log
+from mycpp.mylib import log
 from qsn_ import qsn  # module under test
 
 

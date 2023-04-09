@@ -13,7 +13,7 @@ Also, we don't want to save comment lines.
 
 from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
 from asdl import runtime
-from core.pyerror import log
+from mycpp.mylib import log
 
 from typing import List, Any
 

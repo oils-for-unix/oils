@@ -14,12 +14,12 @@ from core import error
 from core import optview
 #from core import main_loop
 from core import pyutil
-from core.pyerror import log
 from core import state
 from core import ui
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
+from mycpp.mylib import log
 
 _ = log
 

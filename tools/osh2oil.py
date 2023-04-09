@@ -71,12 +71,12 @@ from _devbuild.gen.syntax_asdl import (
     redir, redir_param_e, redir_param__HereDoc,
 )
 from asdl import runtime
-from core.pyerror import log, p_die
+from core.pyerror import p_die
 from frontend import lexer
 from frontend import location
 from osh import word_
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch
+from mycpp.mylib import log, print_stderr, tagswitch
 
 from typing import Dict, cast, TYPE_CHECKING
 if TYPE_CHECKING:

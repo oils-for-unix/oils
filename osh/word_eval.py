@@ -35,11 +35,11 @@ from core import pyutil
 from core import state
 from core import ui
 from qsn_ import qsn
-from core.pyerror import log, e_die
+from core.pyerror import e_die
 from frontend import consts
 from frontend import lexer
 from frontend import location
-from mycpp.mylib import tagswitch, NewDict
+from mycpp.mylib import log, tagswitch, NewDict
 from mycpp import mylib
 from osh import braces
 from osh import glob_

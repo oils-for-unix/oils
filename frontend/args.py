@@ -58,9 +58,9 @@ from _devbuild.gen.runtime_asdl import (
 )
 
 from asdl import runtime
-from core.pyerror import e_usage, log
+from core.pyerror import e_usage
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import log, tagswitch, iteritems
 
 from typing import (
     cast, Tuple, Optional, Dict, List, Any, IO, TYPE_CHECKING

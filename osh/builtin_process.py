@@ -14,7 +14,7 @@ from core import error
 from core.pyerror import e_usage
 from core import process  # W1_OK, W1_ECHILD
 from core import vm
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import typed_args
 

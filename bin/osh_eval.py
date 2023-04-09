@@ -9,12 +9,11 @@ import sys
 from asdl import runtime
 from core import error
 from core import shell
-from core.pyerror import log
 from core import pyos
 from core import pyutil
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
-from mycpp.mylib import print_stderr
+from mycpp.mylib import print_stderr, log
 unused2 = flag_def
 
 from typing import List

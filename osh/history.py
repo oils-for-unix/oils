@@ -8,7 +8,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from core import error
 from core import util
-#from core.pyerror import log
+#from mycpp.mylib import log
 from frontend import match
 from frontend import reader
 from osh import word_

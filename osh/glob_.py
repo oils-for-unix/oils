@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
 from core import pyutil
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import match
 from mycpp.mylib import print_stderr
 

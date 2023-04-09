@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     assoc_pair,
 )
 from asdl import runtime
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import consts
 from frontend import lexer
 from mycpp.mylib import tagswitch, StrFromC

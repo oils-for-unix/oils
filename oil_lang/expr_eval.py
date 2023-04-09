@@ -39,14 +39,14 @@ from _devbuild.gen.runtime_asdl import (
 from asdl import runtime
 from core import error
 from core import state
-from core.pyerror import e_die, e_die_status, log
+from core.pyerror import e_die, e_die_status
 from frontend import consts
 from frontend import match
 from frontend import location
 from oil_lang import objects
 from osh import braces
 from osh import word_compile
-from mycpp.mylib import NewDict, tagswitch
+from mycpp.mylib import log, NewDict, tagswitch
 
 import libc
 

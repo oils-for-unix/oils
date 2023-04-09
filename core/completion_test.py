@@ -22,7 +22,7 @@ from core import comp_ui
 from core import state
 from core import test_lib
 from core import util
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from frontend import parse_lib

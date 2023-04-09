@@ -12,7 +12,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from core.pyerror import e_die_status, e_usage, log
+from core.pyerror import e_die_status, e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
@@ -20,6 +20,7 @@ from frontend import flag_spec
 from frontend import consts
 from frontend import reader
 from frontend import typed_args
+from mycpp.mylib import log
 from osh import cmd_eval
 
 _ = log

@@ -15,7 +15,7 @@ import os
 import sys
 
 from asdl import gen_cpp
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import id_kind_def
 from frontend import builtin_def
 from frontend import option_def

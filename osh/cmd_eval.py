@@ -53,7 +53,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from asdl import runtime
 from core import dev
 from core import error
-from core.pyerror import log, e_die, e_die_status
+from core.pyerror import e_die, e_die_status
 from core import pyos  # Time().  TODO: rename
 from core import state
 from core import ui
@@ -67,7 +67,7 @@ from osh import sh_expr_eval
 from osh import word_
 from osh import word_eval
 from mycpp import mylib
-from mycpp.mylib import switch, tagswitch
+from mycpp.mylib import log, switch, tagswitch
 
 import posix_ as posix
 import libc  # for fnmatch

@@ -20,7 +20,7 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 from asdl import runtime
 from core import alloc
 from core import error
-from core.pyerror import e_die, p_die, log
+from core.pyerror import e_die, p_die
 from core import state
 from core import vm
 from frontend import flag_spec
@@ -29,6 +29,7 @@ from frontend import lexer
 from frontend import match
 from frontend import reader
 from mycpp import mylib
+from mycpp.mylib import log
 from osh import sh_expr_eval
 from osh import word_compile
 from qsn_ import qsn

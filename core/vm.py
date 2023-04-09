@@ -7,7 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     CommandStatus, StatusArray, flow_e, flow_t)
 from _devbuild.gen.syntax_asdl import Token
-from core.pyerror import log
+from mycpp.mylib import log
 from core import pyos
 
 from typing import List, Any, TYPE_CHECKING

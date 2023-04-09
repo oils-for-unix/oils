@@ -23,6 +23,7 @@ from opy.compiler2 import transformer
 # Disabled for now because byterun imports 'six', and that breaks the build.
 from opy.byterun import execfile
 from opy.byterun import ovm
+from opy.util import log
 
 from pgen2 import driver, parse, pgen, grammar
 from pgen2 import token
@@ -30,7 +31,6 @@ from pgen2 import tokenize
 
 from frontend import flag_spec
 from frontend import args
-from core.pyerror import log
 from core import error
 from core import pyutil
 

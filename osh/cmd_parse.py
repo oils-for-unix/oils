@@ -44,11 +44,12 @@ from asdl import runtime
 from core import alloc
 from core import error
 from core import ui
-from core.pyerror import log, p_die
+from core.pyerror import p_die
 from frontend import consts
 from frontend import lexer
 from frontend import match
 from frontend import reader
+from mycpp.mylib import log
 from osh import braces
 from osh import bool_parse
 from osh import word_

@@ -18,8 +18,9 @@ from _devbuild.gen.syntax_asdl import (
     variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
-from core.pyerror import log, p_die
+from core.pyerror import p_die
 from frontend import lexer
+from mycpp.mylib import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:

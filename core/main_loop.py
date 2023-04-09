@@ -19,7 +19,7 @@ from core import error
 from core import process
 from core import ui
 from core import util
-from core.pyerror import log
+from mycpp.mylib import log
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib

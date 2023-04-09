@@ -11,11 +11,11 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import ui
-from core.pyerror import log, p_die
+from core.pyerror import p_die
 from frontend import consts
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import word_
 from pgen2 import parse

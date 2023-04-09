@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
-from core.pyerror import p_die, log
+from core.pyerror import p_die
 from core import state
 from frontend import lexer
 from frontend import reader
@@ -23,6 +23,7 @@ from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
 from mycpp import mylib
+from mycpp.mylib import log
 
 from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:

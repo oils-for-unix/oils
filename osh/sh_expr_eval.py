@@ -36,14 +36,14 @@ from core import alloc
 from core import error
 from core import state
 from core import ui
-from core.pyerror import e_die, e_die_status, e_strict, e_usage, log
+from core.pyerror import e_die, e_die_status, e_strict, e_usage
 from frontend import consts
 from frontend import location
 from frontend import match
 from frontend import reader
 from frontend import parse_lib
 from mycpp import mylib
-from mycpp.mylib import tagswitch, switch, str_cmp
+from mycpp.mylib import log, tagswitch, switch, str_cmp
 from osh import bool_stat
 from osh import word_
 from osh import word_eval

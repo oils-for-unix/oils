@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import source, loc
 from asdl import runtime
 from core import alloc
 from core import error
-from core.pyerror import e_usage, e_die, e_die_status, log
+from core.pyerror import e_usage, e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
@@ -31,7 +31,7 @@ from frontend import location
 from frontend import reader
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import STDIN_FILENO
+from mycpp.mylib import log, STDIN_FILENO
 from osh import word_compile
 from pylib import os_path
 from qsn_ import qsn_native

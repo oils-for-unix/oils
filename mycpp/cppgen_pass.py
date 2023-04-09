@@ -2463,7 +2463,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # A heuristic that works for the Oil import style.
             if '.' in o.id:
-                # from core.pyerror import log => using pyerror::log
+                # from mycpp.mylib import log => using mylib::log
                 translate_import = True
             else:
                 # from core import util => NOT translated

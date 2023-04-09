@@ -18,7 +18,7 @@ from core import pyos
 from core import test_lib
 from core import ui
 from core import util
-from core.pyerror import log
+from mycpp.mylib import log
 from core import state
 from osh import builtin_misc, builtin_trap
 from mycpp import mylib

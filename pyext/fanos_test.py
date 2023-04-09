@@ -15,7 +15,7 @@ import socket
 import sys
 import unittest
 
-from core.pyerror import log
+from mycpp.mylib import log
 
 import fanos  # module under test
 
