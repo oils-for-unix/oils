@@ -154,12 +154,12 @@ arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh soil-run          -
-oil-spec            test/spec.sh oil-all-serial                  _tmp/spec/oil-language/oil.html
-tea-spec            test/spec.sh tea-all-serial                  _tmp/spec/tea-language/tea.html
+oil-spec            test/spec.sh oil-all-serial                  _tmp/spec/oil-py/index.html
+tea-spec            test/spec.sh tea-all-serial                  _tmp/spec/tea/index.html
 oil-large           oil_lang/run.sh soil-run                     -
 tea-large           tea/run.sh soil-run                          -
 link-busybox-ash    test/spec.sh link-busybox-ash                -
-osh-minimal         test/spec.sh osh-minimal                     _tmp/spec/survey/osh-minimal.html
+osh-minimal         test/spec.sh osh-minimal                     _tmp/spec/osh-minimal/index.html
 EOF
 }
 
@@ -287,7 +287,7 @@ py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
-osh-spec          test/spec.sh soil-run-osh              _tmp/spec/survey/osh.html
+osh-spec          test/spec.sh soil-run-osh              _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 oshc-deps         test/oshc-deps.sh soil-run             -

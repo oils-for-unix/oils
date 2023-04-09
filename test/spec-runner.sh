@@ -10,8 +10,11 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source test/common.sh
 source test/spec-common.sh
+source test/tsv-lib.sh  # $TAB
 
 NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 
@@ -34,7 +37,9 @@ _spec-names() {
     name = array[1]
     print name
   }
-  ' | sort  # sort AFTER gawk extracts names
+  ' \
+  | egrep -v 'shell-grammar|blog-other1' \
+  | sort
 
   # Gawk-like extraction in Oil:
   #
@@ -47,35 +52,61 @@ _spec-names() {
   # }
 }
 
+print-tasks() {
+  _spec-names | while read t; do
+
+    local suite
+    local executable
+    case $t in
+      oil-*|hay*)
+        suite=oil
+        executable=oil
+
+        # There are ~45 Oil/Hay tests.  But about half run with bin/osh, and
+        # have with bin/oil.  See test/spec.sh
+        case $t in
+          oil-blocks|oil-builtins|oil-builtin-error|oil-builtin-pp|\
+          oil-builtin-process|oil-builtin-shopt|oil-command-sub|\
+          oil-demo|\
+          oil-expr|oil-expr-arith|oil-expr-compare|\
+          oil-json|oil-multiline|oil-options*|oil-proc|oil-regex|\
+          oil-scope|oil-slice-range|oil-var-sub|oil-word-eval|\
+          oil-xtrace|\
+          hay*)
+            executable=osh
+            ;;
+        esac
+
+        ;;
+      tea-*)
+        suite=tea
+        executable=tea
+        ;;
+      *)
+        suite=osh
+        executable=osh
+        ;;
+    esac
+
+    # TODO: Can also print allowed failures
+    # And shells paths could be a column
+
+    echo "${suite}${TAB}${executable}${TAB}${t}"
+  done
+}
+
 write-suite-manifests() {
   { _spec-names | while read t; do
-      # First filter.
-      case $t in
-        # This was meant for ANTLR.
-        (shell-grammar) continue ;;
-        # Just a demo
-        (blog-other1) continue ;;
-
-        (builtin-completion)
-          if test -n "${IN_NIX_SHELL:-}"; then
-            log 'IN_NIX_SHELL: skipping builtin-completion '
-            continue
-          fi
-          ;;
-      esac
-
-      # A list of both.
       echo $t >& $both
 
-      # Now split into two.
       case $t in
-        (oil-*|hay*)
+        oil-*|hay*)
           echo $t >& $oil
           ;;
-        (tea-*)
+        tea-*)
           echo $t >& $tea
           ;;
-        (*)
+        *)
           echo $t >& $osh
           ;;
       esac
@@ -85,14 +116,6 @@ write-suite-manifests() {
     {oil}>_tmp/spec/SUITE-oil.txt \
     {tea}>_tmp/spec/SUITE-tea.txt \
     {both}>_tmp/spec/SUITE-osh-oil.txt
-
-  #ls -l /proc/$$/fd
-
-  # Used to use this obscure bash syntax.  How do we do this in Oil?  Probably
-  # with 'fopen :both foo.txt' builtin.
-
-  #wc -l _tmp/spec/SUITE-*.txt | sort -n
-  #ls -l _tmp/spec/SUITE-*.txt
 }
 
 dispatch-one() {
@@ -289,7 +312,7 @@ html-summary() {
   local totals=$base_dir/totals-$suite.html
   local tmp=$base_dir/tmp-$suite.html
 
-  local out=$base_dir/$suite.html
+  local out=$base_dir/index.html
 
   # TODO: Do we also need $base_dir/{osh,oil}-details-for-toil.json
   # osh failures, and all failures

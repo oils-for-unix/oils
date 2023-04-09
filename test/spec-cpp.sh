@@ -100,7 +100,7 @@ oil-all() {
   local spec_subdir=oil-cpp 
 
   # $suite $compare_mode
-  test/spec-runner.sh all-parallel oil compare-cpp oil-cpp || true  # OK if it fails
+  test/spec-runner.sh all-parallel oil compare-cpp $spec_subdir || true  # OK if it fails
 
   write-compare-html $spec_subdir
 }
@@ -184,7 +184,7 @@ summary-csv-row() {
 
   if test $# -eq 1; then
     local spec_name=$1
-    local -a tsv_files=(_tmp/spec/$spec_subdir/$spec_name.tsv)
+    local -a tsv_files=( _tmp/spec/$spec_subdir/$spec_name.tsv )
   else
     local spec_name='TOTAL'
     local -a tsv_files=( "$@" )
@@ -230,20 +230,30 @@ END {
 summary-csv() {
   local spec_subdir=$1
 
+  local sh_label
+  local manifest
+
+  case $spec_subdir in
+    osh-cpp)
+      sh_label=osh
+      manifest=_tmp/spec/SUITE-osh.txt
+      ;;
+    oil-cpp)
+      sh_label=oil
+      manifest=_tmp/spec/SUITE-oil.txt
+      ;;
+    *)
+      die "Invalid dir $spec_subdir"
+      ;;
+  esac
+
   # Can't go at the top level because files might not exist!
   cat <<EOF
-ROW_CSS_CLASS,name,name_HREF,osh_py,osh_cpp,delta
+ROW_CSS_CLASS,name,name_HREF,${sh_label}_py,${sh_label}_cpp,delta
 EOF
 
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
   summary-csv-row $spec_subdir _tmp/spec/$spec_subdir/*.tsv
-
-  local manifest
-  case $spec_subdir in
-    osh-cpp) manifest=_tmp/spec/SUITE-osh.txt ;;
-    oil-cpp) manifest=_tmp/spec/SUITE-oil.txt ;;
-    *)       die "Invalid speb subdir $spec_subdir" ;;
-  esac
 
   head -n $NUM_SPEC_TASKS $manifest |
   while read spec_name; do
@@ -268,10 +278,10 @@ html-summary-header() {
   <a href="/">oilshell.org</a>
 </p>
 
-<h1>Passing Spec Tests</h1>
+<h1>Python vs C++</h1>
 
-<p>These numbers measure the progress of Oil's C++ translation.
-Compare with <a href="osh.html">osh.html</a>.
+<p>These numbers measure the progress of the C++ translation.
+Compare with <a href=".">index.html</a>.
 </p>
 
 EOF
@@ -298,6 +308,19 @@ here-schema() {
 write-compare-html() {
   local spec_subdir=$1
 
+  local sh_label
+  case $spec_subdir in
+    osh-cpp)
+      sh_label=osh
+      ;;
+    oil-cpp)
+      sh_label=oil
+      ;;
+    *)
+      die "Invalid dir $spec_subdir"
+      ;;
+  esac
+
   local dir=_tmp/spec/$spec_subdir
   local out=$dir/compare.html
 
@@ -311,8 +334,8 @@ column_name   type
 ROW_CSS_CLASS string
 name          string
 name_HREF     string
-osh_py        integer
-osh_cpp       integer
+${sh_label}_py        integer
+${sh_label}_cpp       integer
 delta         integer
 EOF
 

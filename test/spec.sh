@@ -217,17 +217,17 @@ osh-all() {
   check-survey-shells
 
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel osh compare-py survey
+  test/spec-runner.sh all-parallel osh compare-py osh-py
 }
 
 oil-all() {
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel oil compare-py oil-language
+  test/spec-runner.sh all-parallel oil compare-py oil-py
 }
 
 tea-all() {
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel tea compare-py tea-language
+  test/spec-runner.sh all-parallel tea compare-py tea
 }
 
 check-survey-shells() {
@@ -255,7 +255,7 @@ EOF
 # builtin-bash
 
   # suite compare_mode spec_subdir
-  MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal compare-py survey
+  MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal
 }
 
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
@@ -834,8 +834,8 @@ _one-html() {
   # - Smooth tests be in _tmp/spec/smoosh ?
   # - They could go in the CI
 
-  local spec_subdir='survey'
-  local base_dir=_tmp/spec/$spec_subdir
+  local base_dir=_tmp/spec/smoosh
+  mkdir -p $base_dir
 
   test/spec-runner.sh _test-to-html _tmp/${spec_name}.test.sh \
     > $base_dir/${spec_name}.test.html
@@ -881,6 +881,25 @@ all-and-smoosh() {
 }
 
 #
+# Hay is part of the Oil suite
+#
+
+hay() {
+  sh-spec spec/hay.test.sh --osh-failures-allowed 2 \
+    $OSH_LIST "$@"
+}
+
+hay-isolation() {
+  sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+hay-meta() {
+  sh-spec spec/hay-meta.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+#
 # Oil Language
 #
 
@@ -907,19 +926,9 @@ oil-blocks() {
     $OSH_LIST "$@"
 }
 
-hay() {
-  sh-spec spec/hay.test.sh --osh-failures-allowed 2 \
-    $OSH_LIST "$@"
-}
-
-hay-isolation() {
-  sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
-}
-
-hay-meta() {
-  sh-spec spec/hay-meta.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
+oil-bugs() {
+  sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 1 \
+    $OIL_LIST "$@"
 }
 
 oil-builtins() {
@@ -937,6 +946,12 @@ oil-builtin-describe() {
     $OIL_LIST "$@"
 }
 
+# Related to errexit-oil
+oil-builtin-error() {
+  sh-spec spec/oil-builtin-error.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 oil-builtin-pp() {
   sh-spec spec/oil-builtin-pp.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
@@ -952,38 +967,19 @@ oil-builtin-shopt() {
     $OSH_LIST "$@"
 }
 
+oil-case() {
+  sh-spec spec/oil-case.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
 oil-command-sub() {
-  sh-spec spec/oil-command-sub.test.sh $OSH_LIST "$@"
-}
-
-oil-json() {
-  sh-spec spec/oil-json.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-command-sub.test.sh \
     $OSH_LIST "$@"
 }
 
-# Related to errexit-oil
-oil-builtin-error() {
-  sh-spec spec/oil-builtin-error.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
-}
-
-oil-multiline() {
-  sh-spec spec/oil-multiline.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
-}
-
-oil-options() {
-  sh-spec spec/oil-options.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
-}
-
-oil-options-assign() {
-  sh-spec spec/oil-options-assign.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
-}
-
-oil-word-eval() {
-  sh-spec spec/oil-word-eval.test.sh --osh-failures-allowed 0 \
+oil-demo() {
+  # Using OSH for minimalism
+  sh-spec spec/oil-demo.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
@@ -1007,31 +1003,6 @@ oil-expr-sub() {
     $OIL_LIST "$@"
 }
 
-oil-string() {
-  sh-spec spec/oil-string.test.sh --osh-failures-allowed 0 \
-    $OIL_LIST "$@"
-}
-
-oil-slice-range() {
-  sh-spec spec/oil-slice-range.test.sh --osh-failures-allowed 2 \
-    $OSH_LIST "$@"
-}
-
-oil-regex() {
-  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 4 \
-    $OSH_LIST "$@"
-}
-
-oil-proc() {
-  sh-spec spec/oil-proc.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
-}
-
-oil-case() {
-  sh-spec spec/oil-case.test.sh --osh-failures-allowed 0 \
-    $OIL_LIST "$@"
-}
-
 oil-for() {
   sh-spec spec/oil-for.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
@@ -1047,15 +1018,49 @@ oil-funcs-external() {
     $OIL_LIST "$@"
 }
 
-oil-special-vars() {
-  sh-spec spec/oil-special-vars.test.sh --osh-failures-allowed 0 \
+oil-interactive() {
+  sh-spec spec/oil-interactive.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-demo() {
-  # Using OSH for minimalism
-  sh-spec spec/oil-demo.test.sh --osh-failures-allowed 0 \
+oil-json() {
+  sh-spec spec/oil-json.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
+}
+
+oil-keywords() {
+  sh-spec spec/oil-keywords.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
+oil-multiline() {
+  sh-spec spec/oil-multiline.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-options() {
+  sh-spec spec/oil-options.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-options-assign() {
+  sh-spec spec/oil-options-assign.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-proc() {
+  sh-spec spec/oil-proc.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-regex() {
+  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 4 \
+    $OSH_LIST "$@"
+}
+
+oil-reserved() {
+  sh-spec spec/oil-reserved.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
 }
 
 oil-scope() {
@@ -1063,20 +1068,18 @@ oil-scope() {
     $OSH_LIST "$@"
 }
 
-oil-var-sub() {
-  sh-spec spec/oil-var-sub.test.sh --osh-failures-allowed 4 \
+oil-slice-range() {
+  sh-spec spec/oil-slice-range.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
-oil-xtrace() {
-  sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 0 \
-    $OSH_LIST "$@"
+oil-string() {
+  sh-spec spec/oil-string.test.sh --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
 }
 
-# Use bin/oil
-
-oil-keywords() {
-  sh-spec spec/oil-keywords.test.sh --osh-failures-allowed 0 \
+oil-special-vars() {
+  sh-spec spec/oil-special-vars.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
@@ -1085,9 +1088,24 @@ oil-tuple() {
     $OIL_LIST "$@"
 }
 
-oil-interactive() {
-  sh-spec spec/oil-interactive.test.sh --osh-failures-allowed 0 \
+oil-var-sub() {
+  sh-spec spec/oil-var-sub.test.sh --osh-failures-allowed 4 \
+    $OSH_LIST "$@"
+}
+
+oil-with-sh() {
+  sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 6 \
     $OIL_LIST "$@"
+}
+
+oil-word-eval() {
+  sh-spec spec/oil-word-eval.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
+oil-xtrace() {
+  sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
 }
 
 oil-user-feedback() {
@@ -1095,20 +1113,9 @@ oil-user-feedback() {
     $OIL_LIST "$@"
 }
 
-oil-bugs() {
-  sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 1 \
-    $OIL_LIST "$@"
-}
-
-oil-reserved() {
-  sh-spec spec/oil-reserved.test.sh --osh-failures-allowed 0 \
-    $OIL_LIST "$@"
-}
-
-oil-with-sh() {
-  sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 6 \
-    $OIL_LIST "$@"
-}
+#
+# More OSH
+#
 
 nix-idioms() {
   sh-spec spec/nix-idioms.test.sh --osh-failures-allowed 2 \

@@ -22,14 +22,16 @@ This is a supplement to the [main release page](index.html).
 
 ### Spec Tests
 
-- [OSH Survey](test/spec.wwz/survey/osh.html).  Test OSH with existing shells,
+- [OSH Survey](test/spec.wwz/osh-py/index.html).  Test OSH with existing shells,
   and compare their behavior.
+  - [OSH in C++](test/spec.wwz/osh-cpp/compare.html).  The progress of Oil's
+    C++ translation.
+- [Oil Language](test/spec.wwz/oil-py/index.html).  The legacy-free
+  language.
+  - [Oil in C++](test/spec.wwz/oil-cpp/compare.html).  The progress of Oil's C++
+    translation.
 - [Stateful Tests](test/spec.wwz/stateful/index.html).  Tests that use
   [pexpect]($xref).
-- [OSH in C++](test/spec.wwz/osh-cpp/compare.html).  The progress of Oil's C++
-  translation.
-- [Oil Language](test/spec.wwz/oil-language/oil.html).  The legacy-free
-  language.
 
 ### Other Primary Suites
 
@@ -47,8 +49,8 @@ This is a supplement to the [main release page](index.html).
 ### More
 
 - [Smoosh][] test suite (from [mgree/smoosh][]):
-  - [smoosh](test/spec.wwz/survey/smoosh.html)
-    | [smoosh-hang](test/spec.wwz/survey/smoosh-hang.html)
+  - [smoosh](test/spec.wwz/smoosh/smoosh.html)
+    | [smoosh-hang](test/spec.wwz/smoosh/smoosh-hang.html)
 - [parse-errors](test/other.wwz/suite-logs/parse-errors.txt).  A list of all parse errors.
   - [parse-errors-osh-cpp](test/other.wwz/suite-logs/parse-errors-osh-cpp.txt).
     With the native binary.
