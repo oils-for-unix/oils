@@ -31,6 +31,10 @@ class SpecParams(object):
     if name.startswith('oil-') or name.startswith('hay'):
       suite = 'ysh'
       o = our_shell or 'ysh'
+    elif name.startswith('tea-'):
+      suite = 'tea'
+      # Tea could run from OSH with parse_tea!  Nothing here passes yet.
+      o = our_shell or 'osh'  
     else:
       suite = 'osh'
       o = our_shell or 'osh'

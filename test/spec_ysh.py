@@ -5,6 +5,12 @@ spec_ysh.py
 from __future__ import print_function
 
 def Define(sp):
+  ### Tea Suite
+
+  sp.File('tea-func')
+
+  ### YSH Suite
+
   sp.File('hay', our_shell='osh')
 
   sp.File('hay-isolation', our_shell='osh')
