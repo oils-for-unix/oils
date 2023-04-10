@@ -22,12 +22,14 @@ def log(msg, *args):
 # which should NOT match
 
 OSH_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/osh')  # e.g. $PWD/_bin/cxx-dbg/osh
+YSH_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/ysh')  # e.g. $PWD/_bin/cxx-dbg/ysh
 OIL_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/oil')
 
 def MakeShellPairs(shells):
   shell_pairs = []
 
   saw_osh = False
+  saw_ysh = False
   saw_oil = False
 
   for path in shells:
@@ -43,7 +45,16 @@ def MakeShellPairs(shells):
           label = 'osh_ALT'
       saw_osh = True
 
-    elif label == 'oil':  # TODO: Rename to ysh
+    elif label == 'ysh':
+      if saw_ysh:
+        if YSH_CPP_RE.search(path):
+          label = 'ysh-cpp'
+        else:
+          label = 'ysh_ALT'
+
+      saw_ysh = True
+
+    elif label == 'oil':  # TODO: remove this
       if saw_oil:
         if OIL_CPP_RE.search(path):
           label = 'oil-cpp'

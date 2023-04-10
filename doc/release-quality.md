@@ -28,7 +28,7 @@ This is a supplement to the [main release page](index.html).
     C++ translation.
 - [Oil Language](test/spec.wwz/oil-py/index.html).  The legacy-free
   language.
-  - [Oil in C++](test/spec.wwz/oil-cpp/compare.html).  The progress of Oil's C++
+  - [Oil in C++](test/spec.wwz/ysh-cpp/compare.html).  The progress of Oil's C++
     translation.
 - [Stateful Tests](test/spec.wwz/stateful/index.html).  Tests that use
   [pexpect]($xref).

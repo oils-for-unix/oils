@@ -13,6 +13,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/dev-shell.sh  # PYTHONPATH
 source test/common.sh  # html-head
 source test/spec-common.sh
 source web/table/html.sh
@@ -23,11 +24,11 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 OSH_PY=$REPO_ROOT/bin/osh
+YSH_PY=$REPO_ROOT/bin/ysh
 
 # Run with ASAN binary by default.  Release overrides this
 OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-asan/osh}
-#YSH_CC=${YSH_CC:-$REPO_ROOT/_bin/cxx-asan/ysh}
-
+YSH_CC=${YSH_CC:-$REPO_ROOT/_bin/cxx-asan/ysh}
 
 # Same variable in test/spec-runner.sh
 NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
@@ -48,25 +49,31 @@ run-file() {
   local test_name=$1
   shift
 
+
+  # defines suite our_shell allowed_failures
+  local $(test/spec_params.py vars-for-file $test_name)
+
   local spec_subdir
+  case $suite in
+    osh) spec_subdir='osh-cpp' ;;
+    ysh) spec_subdir='ysh-cpp' ;;
+    *)   die "Invalid suite $suite" ;;
+  esac
+
   local -a shells
-
-  case $test_name in
-    # This logic duplicates ad-hoc functions in test/spec.sh
-    oil-*|hay*) 
-      spec_subdir='oil-cpp'
-
-      # TODO: Make YSH_PY and YSH_CC consistent.  test/spec.sh isn't consistent.
+  case $our_shell in
+    osh)
       shells=( $OSH_PY $OSH_CC )
       ;;
-    *)
-      spec_subdir='osh-cpp'
-      shells=( $OSH_PY $OSH_CC )
+    ysh)
+      shells=( $YSH_PY $YSH_CC )
       ;;
   esac
 
   local base_dir=_tmp/spec/$spec_subdir
   mkdir -p "$base_dir"
+
+  log "Running $test_name with $our_shell in dir $spec_subdir"
 
   # Output TSV so we can compare the data.  2022-01: Try 10 second timeout.
   sh-spec spec/$test_name.test.sh \
@@ -82,7 +89,7 @@ osh-all() {
   # For debugging hangs
   #export MAX_PROCS=1
 
-  ninja _bin/cxx-asan/osh
+  ninja _bin/cxx-asan/{osh,ysh}
 
   test/spec-runner.sh shell-sanity-check $OSH_PY $OSH_CC
 
@@ -94,10 +101,10 @@ osh-all() {
   write-compare-html $spec_subdir
 }
 
-oil-all() {
-  ninja _bin/cxx-asan/osh
+ysh-all() {
+  ninja _bin/cxx-asan/{osh,ysh}
 
-  local spec_subdir=oil-cpp 
+  local spec_subdir=ysh-cpp 
 
   # $suite $compare_mode
   test/spec-runner.sh all-parallel oil compare-cpp $spec_subdir || true  # OK if it fails
@@ -197,9 +204,9 @@ FNR != 1 {
   sh = $2
   result = $3
 
-  if (sh == "osh") {
+  if (sh == "osh" || sh == "ysh") {
     osh[result] += 1
-  } else if (sh == "osh-cpp") {  # bin/osh
+  } else if (sh == "osh-cpp" || sh == "ysh-cpp") {  # bin/osh
     osh_native[result] += 1
   }
 }
@@ -238,8 +245,8 @@ summary-csv() {
       sh_label=osh
       manifest=_tmp/spec/SUITE-osh.txt
       ;;
-    oil-cpp)
-      sh_label=oil
+    ysh-cpp)
+      sh_label=ysh
       manifest=_tmp/spec/SUITE-oil.txt
       ;;
     *)
@@ -313,8 +320,8 @@ write-compare-html() {
     osh-cpp)
       sh_label=osh
       ;;
-    oil-cpp)
-      sh_label=oil
+    ysh-cpp)
+      sh_label=ysh
       ;;
     *)
       die "Invalid dir $spec_subdir"
@@ -330,13 +337,13 @@ write-compare-html() {
   # Note: we could also put "pretty_heading" in the schema
 
   here-schema >$dir/summary.schema.csv <<EOF
-column_name   type
-ROW_CSS_CLASS string
-name          string
-name_HREF     string
-${sh_label}_py        integer
-${sh_label}_cpp       integer
-delta         integer
+column_name     type
+ROW_CSS_CLASS   string
+name            string
+name_HREF       string
+${sh_label}_py  integer
+${sh_label}_cpp integer
+delta           integer
 EOF
 
   { html-summary-header
@@ -344,7 +351,8 @@ EOF
     web/table/csv2html.py --thead-offset 1 $dir/summary.csv
     html-summary-footer
   } > $out
-  echo "Wrote $out"
+
+  log "Comparison: file://$REPO_ROOT/$out"
 }
 
 tsv-demo() {

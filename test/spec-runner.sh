@@ -53,6 +53,18 @@ _spec-names() {
 }
 
 print-tasks() {
+  local mode=${1:-osh}
+
+  cat <<EOF
+#!/usr/bin/env python2
+"""
+spec_$mode.py
+"""
+from __future__ import print_function
+
+def Define(sp):
+EOF
+
   _spec-names | while read t; do
 
     local suite
@@ -75,7 +87,17 @@ print-tasks() {
           hay*)
             executable=osh
             ;;
+          *)
+            ;;
         esac
+        if test $mode = ysh; then
+          if test $executable = osh; then
+            echo "  sp.File('$t', our_shell='osh')"
+          else
+            echo "  sp.File('$t')"
+          fi
+          echo
+        fi
 
         ;;
       tea-*)
@@ -85,13 +107,17 @@ print-tasks() {
       *)
         suite=osh
         executable=osh
+        if test $mode = osh; then
+          echo "  sp.File('$t')"
+          echo
+        fi
         ;;
     esac
 
     # TODO: Can also print allowed failures
     # And shells paths could be a column
 
-    echo "${suite}${TAB}${executable}${TAB}${t}"
+    #echo "${suite}${TAB}${executable}${TAB}${t}"
   done
 }
 
