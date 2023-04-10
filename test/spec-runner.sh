@@ -12,6 +12,7 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+source build/dev-shell.sh
 source test/common.sh
 source test/spec-common.sh
 source test/tsv-lib.sh  # $TAB
@@ -113,49 +114,37 @@ EOF
         fi
         ;;
     esac
-
-    # TODO: Can also print allowed failures
-    # And shells paths could be a column
-
-    #echo "${suite}${TAB}${executable}${TAB}${t}"
   done
 }
 
 write-suite-manifests() {
-  { _spec-names | while read t; do
-      echo $t >& $both
-
-      case $t in
-        oil-*|hay*)
-          echo $t >& $oil
-          ;;
-        tea-*)
-          echo $t >& $tea
-          ;;
-        *)
-          echo $t >& $osh
-          ;;
+  { test/spec_params.py print-table | while read suite _ _ name; do
+      case $suite in
+        osh) echo $name >& $osh ;;
+        ysh) echo $name >& $oil ;;
+        tea) echo $name >& $tea ;;
+        *)   die "Invalid suite $suite" ;;
       esac
-
     done 
   } {osh}>_tmp/spec/SUITE-osh.txt \
     {oil}>_tmp/spec/SUITE-oil.txt \
-    {tea}>_tmp/spec/SUITE-tea.txt \
-    {both}>_tmp/spec/SUITE-osh-oil.txt
+    {tea}>_tmp/spec/SUITE-tea.txt
 }
 
 dispatch-one() {
   # Determines what binaries to compare against: compare-py | compare-cpp | release-alpine 
   local compare_mode=${1:-compare-py}
-  # Which subdir of _tmp/spec: survey | cpp | oil-language | tea-language
-  local spec_subdir=${2:-survey}
+  # Which subdir of _tmp/spec: osh-py oil-py osh-cpp ysh-cpp smoosh tea
+  local spec_subdir=${2:-osh-py}
   local spec_name=$3
 
   log "__ $spec_name"
 
   local -a prefix
   case $compare_mode in
-    # Note: could make these names more consistent
+
+    # TODO: Add test/spec.sh run-file, which should use spec_params.py to get
+    # the 'compare_shells'
     compare-py)     prefix=(test/spec.sh) ;;
     compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
     release-alpine) prefix=(test/spec-alpine.sh run-file) ;;

@@ -79,11 +79,13 @@ def main(argv):
       raise RuntimeError('File %r not found' % name)
 
   elif action == 'print-table':
-    suite = argv[2]
-    assert suite in ('osh', 'ysh', 'tea'), suite
+    # called by write-suite-manifest
+
+    #suite = argv[2]
+    #assert suite in ('osh', 'ysh', 'tea'), suite
     for fi in sp.files:
-      if fi.suite == suite:
-        print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
+      #if fi.suite == suite:
+      print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
 
   else:
     raise RuntimeError('Invalid action %r' % action)
