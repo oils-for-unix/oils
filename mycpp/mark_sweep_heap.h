@@ -1,6 +1,7 @@
 #ifndef MARKSWEEP_HEAP_H
 #define MARKSWEEP_HEAP_H
 
+#include <memory>
 #include <vector>
 
 #include "mycpp/common.h"
@@ -62,6 +63,88 @@ class MarkSet {
   std::vector<uint8_t> bits_;  // bit vector indexed by obj_id
 };
 
+using Cell = uint8_t[32];
+
+struct Block {
+  Cell cells[128];
+};
+
+struct Pool {
+  ~Pool() {
+    log("~Pool()");
+    for (Block* block : blocks_) {
+      delete block;
+    }
+  }
+
+  void* Allocate(int* obj_id) {
+    int cell_id;
+    if (!free_cell_ids_.empty()) {
+      cell_id = free_cell_ids_.back();
+      free_cell_ids_.pop_back();
+      free_[cell_id] = false;
+    } else {
+      cell_id = next_cell_id_++;
+    }
+    *obj_id = cell_id;
+
+    size_t block_idx = cell_id / 128;
+    size_t cell_idx = cell_id % 128;
+    if (block_idx == blocks_.size()) {
+      blocks_.push_back(new Block);
+      free_.resize(blocks_.size() * 128);
+      bytes_allocated_ += sizeof(Block);
+    }
+    DCHECK(block_idx < blocks_.size());
+
+    num_allocated_++;
+
+    uint8_t* addr = blocks_[block_idx]->cells[cell_idx];
+    std::fill(addr, addr + 32, 0);
+    return addr;
+  }
+
+  void Sweep() {
+    for (int cell = 0; cell < next_cell_id_; ++cell) {
+      if (!mark_set.IsMarked(cell)) {
+        if (!free_[cell]) {
+          free_[cell] = true;
+          free_cell_ids_.push_back(cell);
+        }
+      }
+    }
+  }
+
+  void ReInitMarkSet() {
+    mark_set.ReInit(blocks_.size() * 128);
+  }
+
+  void LeakMemory() {
+    blocks_.clear();
+  }
+
+  int num_allocated() {
+    return num_allocated_;
+  }
+
+  int num_live() {
+    return next_cell_id_ - free_cell_ids_.size();
+  }
+
+  int64_t bytes_allocated() {
+    return bytes_allocated_;
+  }
+
+  int num_allocated_ = 0;
+  int64_t bytes_allocated_ = 0;
+
+  std::vector<Block*> blocks_;
+  MarkSet mark_set;
+  int next_cell_id_ = 0;
+  std::vector<int> free_cell_ids_;
+  std::vector<bool> free_;
+};
+
 class MarkSweepHeap {
  public:
   // reserve 32 frames to start
@@ -107,6 +190,10 @@ class MarkSweepHeap {
   void CleanProcessExit();  // do one last GC so ASAN passes
   void FastProcessExit();   // let the OS clean up
 
+  int num_live() {
+    return num_live_ + pool_.num_live();
+  }
+
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
   // Runtime params
@@ -132,6 +219,8 @@ class MarkSweepHeap {
   int num_growths_;
   double max_gc_millis_ = 0.0;
   double total_gc_millis_ = 0.0;
+
+  Pool pool_;
 
   std::vector<RawObject**> roots_;
   std::vector<RawObject*> global_roots_;

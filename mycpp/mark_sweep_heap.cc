@@ -47,7 +47,7 @@ int MarkSweepHeap::MaybeCollect() {
   int result = Collect();
   #else
   int result = -1;
-  if (num_live_ > gc_threshold_) {
+  if (num_live() > gc_threshold_) {
     result = Collect();
   }
   #endif
@@ -59,6 +59,9 @@ int MarkSweepHeap::MaybeCollect() {
 // Allocate and update stats
 void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
+  if (num_bytes <= 32) {
+    return pool_.Allocate(&obj_id_after_allocate_);
+  }
 
   if (to_free_.empty()) {
     // Use higher object IDs
@@ -110,19 +113,19 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   int obj_id = header->obj_id;
-  if (mark_set_.IsMarked(obj_id)) {
+  MarkSet* mark_set = header->in_pool ? &pool_.mark_set : &mark_set_;
+  if (mark_set->IsMarked(obj_id)) {
     return;
   }
+  mark_set->Mark(obj_id);
 
   switch (header->heap_tag) {
-  case HeapTag::Opaque:  // e.g. strings have no children
-    mark_set_.Mark(obj_id);
-    break;
-
   case HeapTag::Scanned:  // these 2 types have children
   case HeapTag::FixedSize:
-    mark_set_.Mark(obj_id);
     gray_stack_.push_back(header);  // Push the header, not the object!
+    break;
+
+  case HeapTag::Opaque:  // e.g. strings have no children
     break;
 
   default:
@@ -171,6 +174,8 @@ void MarkSweepHeap::TraceChildren() {
 }
 
 void MarkSweepHeap::Sweep() {
+  pool_.Sweep();
+
   int last_live_index = 0;
   int num_objs = live_objs_.size();
   for (int i = 0; i < num_objs; ++i) {
@@ -192,7 +197,7 @@ void MarkSweepHeap::Sweep() {
   live_objs_.resize(last_live_index);  // remove dangling objects
 
   num_collections_++;
-  max_survived_ = std::max(max_survived_, num_live_);
+  max_survived_ = std::max(max_survived_, num_live());
 }
 
 int MarkSweepHeap::Collect() {
@@ -209,11 +214,12 @@ int MarkSweepHeap::Collect() {
   if (gc_verbose_) {
     log("");
     log("%2d. GC with %d roots (%d global) and %d live objects",
-        num_collections_, num_roots + num_globals, num_globals, num_live_);
+        num_collections_, num_roots + num_globals, num_globals, num_live());
   }
 
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
+  pool_.ReInitMarkSet();
 
   // Mark roots.
   // Note: It might be nice to get rid of double pointers
@@ -237,7 +243,7 @@ int MarkSweepHeap::Collect() {
   Sweep();
 
   if (gc_verbose_) {
-    log("    %d live after sweep", num_live_);
+    log("    %d live after sweep", num_live());
   }
 
   // We know how many are live.  If the number of objects is close to the
@@ -246,8 +252,8 @@ int MarkSweepHeap::Collect() {
   // -- being at 99% of the threshold and doing FUTILE mark and sweep.
 
   int water_mark = (gc_threshold_ * 3) / 4;
-  if (num_live_ > water_mark) {
-    gc_threshold_ = num_live_ * 2;
+  if (num_live() > water_mark) {
+    gc_threshold_ = num_live() * 2;
     num_growths_++;
     if (gc_verbose_) {
       log("    exceeded %d live objects; gc_threshold set to %d", water_mark,
@@ -274,16 +280,18 @@ int MarkSweepHeap::Collect() {
   }
   #endif
 
-  return num_live_;  // for unit tests only
+  return num_live();  // for unit tests only
 }
 
 void MarkSweepHeap::PrintStats(int fd) {
-  dprintf(fd, "  num live        = %10d\n", num_live_);
-  // max survived_ can be less than num_live_, because leave off the last GC
+  dprintf(fd, "  num live        = %10d\n", num_live());
+  dprintf(fd, "  num live (pool) = %10d\n", pool_.num_live());
+  // max survived_ can be less than num_live(), because leave off the last GC
   dprintf(fd, "  max survived    = %10d\n", max_survived_);
   dprintf(fd, "\n");
-  dprintf(fd, "  num allocated   = %10d\n", num_allocated_);
-  dprintf(fd, "bytes allocated   = %10" PRId64 "\n", bytes_allocated_);
+  dprintf(fd, "  num allocated   = %10d\n", num_allocated_ + pool_.num_allocated_);
+  dprintf(fd, "bytes allocated   = %10" PRId64 "\n",
+          bytes_allocated_ + pool_.bytes_allocated());
   dprintf(fd, "\n");
   dprintf(fd, "  num gc points   = %10d\n", num_gc_points_);
   dprintf(fd, "  num collections = %10d\n", num_collections_);
@@ -315,11 +323,13 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
     if (e && strcmp(e, "1") == 0) {
       Collect();
       EagerFree();
+    } else {
+      pool_.LeakMemory();
     }
   } else {
     // collect by default; OIL_GC_ON_EXIT=0 overrides
     if (e && strcmp(e, "0") == 0) {
-      ;
+      pool_.LeakMemory();
     } else {
       Collect();
       EagerFree();
@@ -344,7 +354,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   }
 
   if (stats_fd != -1) {
-    PrintStats(stats_fd);
+    PrintStats(2);
   }
 }
 

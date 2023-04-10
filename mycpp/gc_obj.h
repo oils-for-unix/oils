@@ -28,6 +28,9 @@ const int Slab = 125;
 const int Tuple = 124;
 };  // namespace TypeTag
 
+const int kNotInPool = 0;
+const int kInPool = 1;
+
 const unsigned kZeroMask = 0;  // for types with no pointers
 
 const int kMaxObjId = (1 << 30) - 1;  // 30 bit object ID
@@ -39,7 +42,8 @@ const int kUndefinedId = 0;  // Unitialized object ID
 // TODO: ./configure could detect endian-ness, and reorder the fields in
 // ObjHeader.  See mycpp/demo/gc_header.cc.
 struct ObjHeader {
-  unsigned type_tag : 8;  // TypeTag, ASDL variant / shared variant
+  unsigned in_pool : 1;
+  unsigned type_tag : 7;  // TypeTag, ASDL variant / shared variant
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   // Depending on heap_tag, up to 24 fields or 2**24 = 16 Mi pointers to scan
   unsigned u_mask_npointers : 24;
@@ -73,37 +77,37 @@ struct ObjHeader {
 
   // Used by hand-written and generated classes
   static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
-    return {TypeTag::OtherClass, field_mask, HeapTag::FixedSize, kUndefinedId};
+    return {kNotInPool, TypeTag::OtherClass, field_mask, HeapTag::FixedSize, kUndefinedId};
   }
 
   // Classes with no inheritance (e.g. used by mycpp)
   static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
                                           uint32_t obj_len) {
-    return {TypeTag::OtherClass, num_pointers, HeapTag::Scanned, kUndefinedId};
+    return {kNotInPool, TypeTag::OtherClass, num_pointers, HeapTag::Scanned, kUndefinedId};
   }
 
   // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
   static constexpr ObjHeader Class(uint8_t heap_tag, uint32_t field_mask,
                                    uint32_t obj_len) {
-    return {TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
+    return {kNotInPool, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
   }
 
   // Used by ASDL.
   static constexpr ObjHeader AsdlClass(uint8_t type_tag,
                                        uint32_t num_pointers) {
-    return {type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
+    return {kNotInPool, type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
   }
 
   static constexpr ObjHeader Str() {
-    return {TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
+    return {kNotInPool, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
   }
 
   static constexpr ObjHeader Slab(uint8_t heap_tag, uint32_t num_pointers) {
-    return {TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
+    return {kNotInPool, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
   }
 
   static constexpr ObjHeader Tuple(uint32_t field_mask, uint32_t obj_len) {
-    return {TypeTag::Tuple, field_mask, HeapTag::FixedSize, kUndefinedId};
+    return {kNotInPool, TypeTag::Tuple, field_mask, HeapTag::FixedSize, kUndefinedId};
   }
 };
 

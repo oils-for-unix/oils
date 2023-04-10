@@ -100,10 +100,13 @@ T* Alloc(Args&&... args) {
 
   DCHECK(gHeap.is_initialized_);
 
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + sizeof(T));
+  constexpr size_t num_bytes = sizeof(ObjHeader) + sizeof(T);
+  void* place = gHeap.Allocate(num_bytes);
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
+  // XXX(watk): Hacky
+  header->in_pool = num_bytes <= 32;
 #endif
   return new (header->ObjectAddress()) T(std::forward<Args>(args)...);
 }
@@ -120,8 +123,8 @@ inline Str* NewStr(int len) {
   }
 
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+  void* place = gHeap.Allocate(num_bytes);
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
 
   auto s = new (header->ObjectAddress()) Str();
@@ -134,6 +137,8 @@ inline Str* NewStr(int len) {
 
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
+  // XXX(watk): Hacky
+  header->in_pool = num_bytes <= 32;
 #endif
   return s;
 }
@@ -143,11 +148,14 @@ inline Str* NewStr(int len) {
 // s->MaybeShrink() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+  void* place = gHeap.Allocate(num_bytes);
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
   auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
+  // XXX(watk): Hacky
+  header->in_pool = num_bytes <= 32;
 #endif
   return s;
 }
@@ -175,11 +183,14 @@ inline Str* StrFromC(const char* data) {
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+  void* place = gHeap.Allocate(num_bytes);
   ObjHeader* header = new (place) ObjHeader(Slab<T>::obj_header(len));
   auto slab = new (header->ObjectAddress()) Slab<T>(len);
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
+  // XXX(watk): Hacky
+  header->in_pool = num_bytes <= 32;
 #endif
   return slab;
 }
