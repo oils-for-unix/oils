@@ -54,15 +54,18 @@ Otherwise:
 - `bin/osh` runs `~/.config/oil/oshrc`
 - `bin/oil` runs `~/.config/oil/oilrc`
 
-Pass --rcfile /dev/null or --norc to disable this behavior. The latter also disables --rcdir.
+Pass --rcfile /dev/null to disable this behavior.
+Pass --norc to disable both --rcfile and --rcdir.
 
-If the --rcdir flag is specified, all files in that folder will be executed on startup.
-Othewise:
+If the --rcdir flag is specified, files in that folder will be executed on
+startup.
+Otherwise:
 
 - `bin/osh` runs everything in `~/.config/oil/oshrc.d/`
 - `bin/oil` runs everything in `~/.config/oil/oilrc.d/`
 
-Pass --rcdir /dev/null or --norc to disable this behavior. The latter also disables --rcfile.
+Pass --rcdir /dev/nullto disable this behavior.
+Pass --norc to disable both --rcfile and --rcdir.
 
 <h4 id="startup">Startup Files</h4>
 
