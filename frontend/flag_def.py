@@ -423,3 +423,21 @@ TEA_MAIN_SPEC.ShortFlag('-n', args.Bool)  # Parse
 TEA_MAIN_SPEC.ShortFlag('-c', args.String)  # Command snippet
 TEA_MAIN_SPEC.LongFlag('--translate', args.Bool)
 
+#
+# JSON
+#
+
+JSON_WRITE_SPEC = FlagSpec('json_write')
+JSON_WRITE_SPEC.LongFlag(
+    '--pretty', args.Bool, default=True,
+    help='Whitespace in output (default true)')
+JSON_WRITE_SPEC.LongFlag(
+    '--indent', args.Int, default=2,
+    help='Indent JSON by this amount')
+
+JSON_READ_SPEC = FlagSpec('json_read')
+# yajl has this option
+JSON_READ_SPEC.LongFlag(
+    '--validate', args.Bool, default=True,
+    help='Validate UTF-8')
+
