@@ -59,9 +59,11 @@ int MarkSweepHeap::MaybeCollect() {
 // Allocate and update stats
 void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
+#if POOL
   if (num_bytes <= 32) {
     return pool_.Allocate(&obj_id_after_allocate_);
   }
+#endif
 
   if (to_free_.empty()) {
     // Use higher object IDs
@@ -309,9 +311,16 @@ void MarkSweepHeap::PrintStats(int fd) {
 }
 
 void MarkSweepHeap::EagerFree() {
+  log("===");
+  log("Eager Free");
+  log("Live objects %d", live_objs_.size());
+
   for (auto obj : to_free_) {
+    log("Eager Free %p", obj);
     free(obj);
   }
+
+  log("Live objects %d", live_objs_.size());
 }
 
 // Cleanup at the end of main() to remain ASAN-safe

@@ -331,6 +331,25 @@ TEST dir_cache_key_test() {
   PASS();
 }
 
+// Test the theory that LeakSanitizer tests for reachability from global
+// variables.
+struct Node {
+  Node* next;
+};
+Node* gNode;
+
+TEST asan_global_leak_test() {
+  // NOT reported as a leak
+  gNode = static_cast<Node*>(malloc(sizeof(Node)));
+  gNode->next = static_cast<Node*>(malloc(sizeof(Node)));
+
+  // Turn this on and ASAN will report a leak!
+  if (0) {
+    free(gNode);
+  }
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -354,6 +373,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(passwd_test);
   RUN_TEST(dir_cache_key_test);
+  RUN_TEST(asan_global_leak_test);
 
   gHeap.CleanProcessExit();
 

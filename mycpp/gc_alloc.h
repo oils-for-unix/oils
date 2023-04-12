@@ -75,6 +75,8 @@ class StackRoots {
   int n_;
 };
 
+#define POOL 1
+
 // Note:
 // - This function causes code bloat due to template expansion on hundreds of
 //   types.  Could switch to a GC_NEW() macro
@@ -105,8 +107,10 @@ T* Alloc(Args&&... args) {
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
+#if POOL
   // XXX(watk): Hacky
   header->in_pool = num_bytes <= 32;
+#endif
 #endif
   return new (header->ObjectAddress()) T(std::forward<Args>(args)...);
 }
