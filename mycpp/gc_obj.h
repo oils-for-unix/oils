@@ -77,19 +77,22 @@ struct ObjHeader {
 
   // Used by hand-written and generated classes
   static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
-    return {kNotInPool, TypeTag::OtherClass, field_mask, HeapTag::FixedSize, kUndefinedId};
+    return {kNotInPool, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
+            kUndefinedId};
   }
 
   // Classes with no inheritance (e.g. used by mycpp)
   static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
                                           uint32_t obj_len) {
-    return {kNotInPool, TypeTag::OtherClass, num_pointers, HeapTag::Scanned, kUndefinedId};
+    return {kNotInPool, TypeTag::OtherClass, num_pointers, HeapTag::Scanned,
+            kUndefinedId};
   }
 
   // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
   static constexpr ObjHeader Class(uint8_t heap_tag, uint32_t field_mask,
                                    uint32_t obj_len) {
-    return {kNotInPool, TypeTag::OtherClass, field_mask, heap_tag, kUndefinedId};
+    return {kNotInPool, TypeTag::OtherClass, field_mask, heap_tag,
+            kUndefinedId};
   }
 
   // Used by ASDL.
@@ -107,7 +110,8 @@ struct ObjHeader {
   }
 
   static constexpr ObjHeader Tuple(uint32_t field_mask, uint32_t obj_len) {
-    return {kNotInPool, TypeTag::Tuple, field_mask, HeapTag::FixedSize, kUndefinedId};
+    return {kNotInPool, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
+            kUndefinedId};
   }
 };
 

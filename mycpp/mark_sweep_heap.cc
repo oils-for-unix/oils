@@ -59,11 +59,9 @@ int MarkSweepHeap::MaybeCollect() {
 // Allocate and update stats
 void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
-#if POOL
-  if (num_bytes <= 32) {
+  if (pool_.CanAllocate(num_bytes)) {
     return pool_.Allocate(&obj_id_after_allocate_);
   }
-#endif
 
   if (to_free_.empty()) {
     // Use higher object IDs
@@ -115,11 +113,19 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   int obj_id = header->obj_id;
-  MarkSet* mark_set = header->in_pool ? &pool_.mark_set : &mark_set_;
-  if (mark_set->IsMarked(obj_id)) {
-    return;
+  #if POOL_ALLOCATOR
+  if (header->in_pool) {
+    if (!pool_.Mark(obj_id)) {
+      return;
+    }
+  } else
+  #endif
+  {
+    if (mark_set_.IsMarked(obj_id)) {
+      return;
+    }
+    mark_set_.Mark(obj_id);
   }
-  mark_set->Mark(obj_id);
 
   switch (header->heap_tag) {
   case HeapTag::Scanned:  // these 2 types have children
@@ -221,7 +227,7 @@ int MarkSweepHeap::Collect() {
 
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
-  pool_.ReInitMarkSet();
+  pool_.PrepareForMarking();
 
   // Mark roots.
   // Note: It might be nice to get rid of double pointers
@@ -287,11 +293,12 @@ int MarkSweepHeap::Collect() {
 
 void MarkSweepHeap::PrintStats(int fd) {
   dprintf(fd, "  num live        = %10d\n", num_live());
-  dprintf(fd, "  num live (pool) = %10d\n", pool_.num_live());
+  // dprintf(fd, "  num live (pool) = %10d\n", pool_.num_live());
   // max survived_ can be less than num_live(), because leave off the last GC
   dprintf(fd, "  max survived    = %10d\n", max_survived_);
   dprintf(fd, "\n");
-  dprintf(fd, "  num allocated   = %10d\n", num_allocated_ + pool_.num_allocated_);
+  dprintf(fd, "  num allocated   = %10d\n",
+          num_allocated_ + pool_.num_allocated());
   dprintf(fd, "bytes allocated   = %10" PRId64 "\n",
           bytes_allocated_ + pool_.bytes_allocated());
   dprintf(fd, "\n");

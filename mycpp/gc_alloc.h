@@ -75,8 +75,6 @@ class StackRoots {
   int n_;
 };
 
-#define POOL 1
-
 // Note:
 // - This function causes code bloat due to template expansion on hundreds of
 //   types.  Could switch to a GC_NEW() macro
@@ -107,10 +105,10 @@ T* Alloc(Args&&... args) {
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
-#if POOL
-  // XXX(watk): Hacky
-  header->in_pool = num_bytes <= 32;
-#endif
+  #if POOL_ALLOCATOR
+  // TODO(watk): Update the Allocate() interface if we use the pool allocator.
+  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
+  #endif
 #endif
   return new (header->ObjectAddress()) T(std::forward<Args>(args)...);
 }
@@ -141,8 +139,7 @@ inline Str* NewStr(int len) {
 
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
-  // XXX(watk): Hacky
-  header->in_pool = num_bytes <= 32;
+  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
 #endif
   return s;
 }
@@ -158,8 +155,7 @@ inline Str* OverAllocatedStr(int len) {
   auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
-  // XXX(watk): Hacky
-  header->in_pool = num_bytes <= 32;
+  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
 #endif
   return s;
 }
@@ -193,8 +189,7 @@ inline Slab<T>* NewSlab(int len) {
   auto slab = new (header->ObjectAddress()) Slab<T>(len);
 #if MARK_SWEEP
   header->obj_id = gHeap.UnusedObjectId();
-  // XXX(watk): Hacky
-  header->in_pool = num_bytes <= 32;
+  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
 #endif
   return slab;
 }
