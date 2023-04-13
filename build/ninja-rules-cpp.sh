@@ -96,7 +96,7 @@ setglobal_compile_flags() {
   case $variant in
     (bumpleak|cheney)
       # Make them optimized builds for now
-      flags="$flags -O2 -g"
+      flags="$flags -O2 -g -D OPTIMIZED"
       ;;
 
     (dbg)
@@ -147,7 +147,7 @@ setglobal_compile_flags() {
       flags="$flags -O2 -g -D OPTIMIZED -m32"
       ;;
     (tcmalloc)
-      flags="$flags -O2 -g -D TCMALLOC"
+      flags="$flags -O2 -g -D TCMALLOC -D OPTIMIZED"
       ;;
 
     (uftrace)

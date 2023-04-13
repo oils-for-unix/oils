@@ -132,9 +132,10 @@ feature is **unimplemented**.
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Data Formats]  json
-                  X ystr
-                  X yson
-                  X ytsv
+                  X ystr                 Upgrade JSON with binary, utf-8
+                  X yson                 Tree-shaped
+                  X ytsv                 Table-shaped
+                  X packle               Graph-shaped
 X [QTT]           rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
