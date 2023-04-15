@@ -194,6 +194,75 @@ TEST cycle_collection_test() {
   PASS();
 }
 
+TEST pool_sanity_check() {
+  Pool<2, 32> p;
+
+  ASSERT_EQ(p.bytes_allocated(), 0);
+  ASSERT_EQ(p.num_allocated(), 0);
+  ASSERT_EQ(p.num_live(), 0);
+  ASSERT_EQ(p.kMaxObjSize, 32);
+
+  int obj_id1 = -1;
+  int obj_id2 = -1;
+  int obj_id3 = -1;
+  p.Allocate(&obj_id1);
+  p.Allocate(&obj_id2);
+  p.Allocate(&obj_id3);
+  ASSERT_EQ(p.num_allocated(), 3);
+  ASSERT_EQ(p.num_live(), 3);
+  // The third allocation should've created a new block.
+  ASSERT_EQ(p.bytes_allocated(), 128);
+  ASSERT(obj_id1 != -1);
+  ASSERT(obj_id2 != -1);
+  ASSERT(obj_id3 != -1);
+
+  PASS();
+}
+
+TEST pool_sweep() {
+  Pool<2, 32> p;
+
+  p.PrepareForMarking();
+  p.Sweep();
+
+  int obj_id;
+  void *addr1 = p.Allocate(&obj_id);
+  void *addr2 = p.Allocate(&obj_id);
+  p.PrepareForMarking();
+  p.Sweep();
+
+  ASSERT_EQ(p.num_live(), 0);
+
+  // Cells are reused after freeing.
+  void *addr3 = p.Allocate(&obj_id);
+  void *addr4 = p.Allocate(&obj_id);
+  ASSERT((addr1 == addr3 && addr2 == addr4) ||
+         (addr1 == addr4 && addr2 == addr3));
+
+  PASS();
+}
+
+TEST pool_sweep_keeps_marked() {
+  Pool<1, 32> p;
+
+  int obj_id1;
+  int obj_id2;
+  p.Allocate(&obj_id1);
+  p.Allocate(&obj_id2);
+  p.PrepareForMarking();
+  p.Mark(obj_id2);
+  p.Sweep();
+  ASSERT_EQ(p.num_live(), 1);
+
+  PASS();
+}
+
+SUITE(pool_alloc) {
+  RUN_TEST(pool_sanity_check);
+  RUN_TEST(pool_sweep);
+  RUN_TEST(pool_sweep_keeps_marked);
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -207,6 +276,8 @@ int main(int argc, char **argv) {
   RUN_TEST(string_collection_test);
   RUN_TEST(list_collection_test);
   RUN_TEST(cycle_collection_test);
+
+  RUN_SUITE(pool_alloc);
 
   gHeap.CleanProcessExit();
 

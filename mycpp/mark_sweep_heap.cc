@@ -57,15 +57,18 @@ int MarkSweepHeap::MaybeCollect() {
 }
 
 // Allocate and update stats
-void* MarkSweepHeap::Allocate(size_t num_bytes) {
+// TODO: Make this interface nicer.
+void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
   // log("Allocate %d", num_bytes);
-  if (pool_.CanAllocate(num_bytes)) {
-    return pool_.Allocate(&obj_id_after_allocate_);
+  if (num_bytes <= pool_.kMaxObjSize) {
+    *in_pool = true;
+    return pool_.Allocate(obj_id);
   }
+  *in_pool = false;
 
   if (to_free_.empty()) {
     // Use higher object IDs
-    obj_id_after_allocate_ = greatest_obj_id_;
+    *obj_id = greatest_obj_id_;
     greatest_obj_id_++;
 
     // This check is ON in release mode
@@ -74,7 +77,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     ObjHeader* dead = to_free_.back();
     to_free_.pop_back();
 
-    obj_id_after_allocate_ = dead->obj_id;  // reuse the dead object's ID
+    *obj_id = dead->obj_id;  // reuse the dead object's ID
 
     free(dead);
   }
@@ -113,14 +116,12 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   int obj_id = header->obj_id;
-  #if POOL_ALLOCATOR
   if (header->in_pool) {
-    if (!pool_.Mark(obj_id)) {
+    if (pool_.IsMarked(obj_id)) {
       return;
     }
-  } else
-  #endif
-  {
+    pool_.Mark(obj_id);
+  } else {
     if (mark_set_.IsMarked(obj_id)) {
       return;
     }
@@ -128,12 +129,12 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   switch (header->heap_tag) {
+  case HeapTag::Opaque:  // e.g. strings have no children
+    break;
+
   case HeapTag::Scanned:  // these 2 types have children
   case HeapTag::FixedSize:
     gray_stack_.push_back(header);  // Push the header, not the object!
-    break;
-
-  case HeapTag::Opaque:  // e.g. strings have no children
     break;
 
   default:
@@ -292,28 +293,29 @@ int MarkSweepHeap::Collect() {
 }
 
 void MarkSweepHeap::PrintStats(int fd) {
-  dprintf(fd, "  num live        = %10d\n", num_live());
-  // dprintf(fd, "  num live (pool) = %10d\n", pool_.num_live());
+  dprintf(fd, "  num live         = %10d\n", num_live());
   // max survived_ can be less than num_live(), because leave off the last GC
-  dprintf(fd, "  max survived    = %10d\n", max_survived_);
+  dprintf(fd, "  max survived     = %10d\n", max_survived_);
   dprintf(fd, "\n");
-  dprintf(fd, "  num allocated   = %10d\n",
+  dprintf(fd, "  num allocated    = %10d\n",
           num_allocated_ + pool_.num_allocated());
-  dprintf(fd, "bytes allocated   = %10" PRId64 "\n",
+  dprintf(fd, "num heap allocated = %10d\n", num_allocated_);
+  dprintf(fd, "num pool allocated = %10d\n", pool_.num_allocated());
+  dprintf(fd, "bytes allocated    = %10" PRId64 "\n",
           bytes_allocated_ + pool_.bytes_allocated());
   dprintf(fd, "\n");
-  dprintf(fd, "  num gc points   = %10d\n", num_gc_points_);
-  dprintf(fd, "  num collections = %10d\n", num_collections_);
+  dprintf(fd, "  num gc points    = %10d\n", num_gc_points_);
+  dprintf(fd, "  num collections  = %10d\n", num_collections_);
   dprintf(fd, "\n");
-  dprintf(fd, "   gc threshold   = %10d\n", gc_threshold_);
-  dprintf(fd, "  num growths     = %10d\n", num_growths_);
+  dprintf(fd, "   gc threshold    = %10d\n", gc_threshold_);
+  dprintf(fd, "  num growths      = %10d\n", num_growths_);
   dprintf(fd, "\n");
-  dprintf(fd, "  max gc millis   = %10.1f\n", max_gc_millis_);
-  dprintf(fd, "total gc millis   = %10.1f\n", total_gc_millis_);
+  dprintf(fd, "  max gc millis    = %10.1f\n", max_gc_millis_);
+  dprintf(fd, "total gc millis    = %10.1f\n", total_gc_millis_);
   dprintf(fd, "\n");
-  dprintf(fd, "roots capacity    = %10d\n",
+  dprintf(fd, "roots capacity     = %10d\n",
           static_cast<int>(roots_.capacity()));
-  dprintf(fd, " objs capacity    = %10d\n",
+  dprintf(fd, " objs capacity     = %10d\n",
           static_cast<int>(live_objs_.capacity()));
 }
 
@@ -340,12 +342,12 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
       Collect();
       EagerFree();
     } else {
-      pool_.LeakMemory();
+      pool_.EnableMemoryLeak();
     }
   } else {
     // collect by default; OIL_GC_ON_EXIT=0 overrides
     if (e && strcmp(e, "0") == 0) {
-      pool_.LeakMemory();
+      pool_.EnableMemoryLeak();
     } else {
       Collect();
       EagerFree();
@@ -370,7 +372,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   }
 
   if (stats_fd != -1) {
-    PrintStats(2);
+    PrintStats(stats_fd);
   }
 }
 

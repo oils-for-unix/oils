@@ -101,14 +101,17 @@ T* Alloc(Args&&... args) {
   DCHECK(gHeap.is_initialized_);
 
   constexpr size_t num_bytes = sizeof(ObjHeader) + sizeof(T);
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
   void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
-  #if POOL_ALLOCATOR
-  // TODO(watk): Update the Allocate() interface if we use the pool allocator.
-  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
-  #endif
+  header->obj_id = obj_id;
+  header->in_pool = in_pool;
 #endif
   return new (header->ObjectAddress()) T(std::forward<Args>(args)...);
 }
@@ -126,7 +129,13 @@ inline Str* NewStr(int len) {
 
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
   void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
 
   auto s = new (header->ObjectAddress()) Str();
@@ -138,8 +147,8 @@ inline Str* NewStr(int len) {
 #endif
 
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
-  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
+  header->obj_id = obj_id;
+  header->in_pool = in_pool;
 #endif
   return s;
 }
@@ -150,12 +159,18 @@ inline Str* NewStr(int len) {
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
   void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
   auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
-  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
+  header->obj_id = obj_id;
+  header->in_pool = in_pool;
 #endif
   return s;
 }
@@ -184,12 +199,18 @@ template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
   void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(Slab<T>::obj_header(len));
   auto slab = new (header->ObjectAddress()) Slab<T>(len);
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
-  header->in_pool = num_bytes <= POOL_ALLOCATOR_CELL_SIZE;
+  header->obj_id = obj_id;
+  header->in_pool = in_pool;
 #endif
   return slab;
 }
