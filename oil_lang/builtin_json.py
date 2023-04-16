@@ -62,7 +62,7 @@ class Json(vm._Builtin):
         e_usage('write got too many args', span_id=arg_r.SpanId())
 
       expr = typed_args.RequiredExpr(cmd_val.typed_args)
-      obj = self.expr_ev.EvalExpr(expr)
+      obj = self.expr_ev.EvalExpr(expr, loc.Missing())
 
       if arg_jw.pretty:
         indent = arg_jw.indent
