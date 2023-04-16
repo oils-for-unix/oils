@@ -66,7 +66,7 @@ if TYPE_CHECKING:
 _ = log
 
 
-def LookupVar(mem, var_name, which_scopes, var_loc=loc.Missing()):
+def LookupVar(mem, var_name, which_scopes, var_loc):
   # type: (Mem, str, scope_t, loc_t) -> Any
   """Convert to a Python object so we can calculate on it natively."""
 
