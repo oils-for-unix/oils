@@ -656,7 +656,7 @@ class CommandEvaluator(object):
       elif case(condition_e.Oil):
         if mylib.PYTHON:
           cond = cast(condition__Oil, UP_cond)
-          obj = self.expr_ev.EvalExpr(cond.e, spid)
+          obj = self.expr_ev.EvalExpr(cond.e, loc.Span(spid))
           b = bool(obj)
 
     return b

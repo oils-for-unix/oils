@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     place_expr_e, place_expr_t, place_expr__Var, attribute, subscript,
 
-    Token, loc,
+    Token, loc, loc_t,
     single_quoted, double_quoted, braced_var_sub, simple_var_sub,
 
     expr_e, expr_t, expr__Var, expr__Const, sh_array_literal, command_sub,
@@ -66,15 +66,15 @@ if TYPE_CHECKING:
 _ = log
 
 
-def LookupVar(mem, var_name, which_scopes, span_id=runtime.NO_SPID):
-  # type: (Mem, str, scope_t, int) -> Any
+def LookupVar(mem, var_name, which_scopes, var_loc=loc.Missing()):
+  # type: (Mem, str, scope_t, loc_t) -> Any
   """Convert to a Python object so we can calculate on it natively."""
 
   # Lookup WITHOUT dynamic scope.
   val = mem.GetValue(var_name, which_scopes=which_scopes)
   if val.tag_() == value_e.Undef:
     # TODO: Location info
-    e_die('Undefined variable %r' % var_name, loc.Span(span_id))
+    e_die('Undefined variable %r' % var_name, var_loc)
 
   UP_val = val
   with tagswitch(val) as case:
@@ -149,9 +149,9 @@ class OilEvaluator(object):
     assert self.shell_ex is not None
     assert self.word_ev is not None
 
-  def LookupVar(self, name, span_id=runtime.NO_SPID):
-    # type: (str, int) -> Any
-    return LookupVar(self.mem, name, scope_e.LocalOrGlobal, span_id=span_id)
+  def LookupVar(self, name, var_loc=loc.Missing()):
+    # type: (str, loc_t) -> Any
+    return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc=var_loc)
 
   def EvalPlusEquals(self, lval, rhs_py):
     # type: (lvalue__Named, Union[int, float]) -> Union[int, float]
@@ -327,16 +327,16 @@ class OilEvaluator(object):
 
     return items
 
-  def EvalExpr(self, node, blame_spid=runtime.NO_SPID):
-    # type: (expr_t, int) -> Any
+  def EvalExpr(self, node, blame_loc=loc.Missing()):
+    # type: (expr_t, loc_t) -> Any
     """Public API for _EvalExpr that ensures that command_sub_errexit is on."""
     try:
       with state.ctx_OilExpr(self.mutable_opts):
         return self._EvalExpr(node)
     except TypeError as e:
-      raise error.Expr('Type error in expression: %s' % str(e), loc.Span(blame_spid))
+      raise error.Expr('Type error in expression: %s' % str(e), blame_loc)
     except (AttributeError, ValueError) as e:
-      raise error.Expr('Expression eval error: %s' % str(e), loc.Span(blame_spid))
+      raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
 
     # Note: IndexError and KeyError are handled in more specific places
 
@@ -454,7 +454,7 @@ class OilEvaluator(object):
       elif case(expr_e.Var):
         node = cast(expr__Var, UP_node)
 
-        return self.LookupVar(node.name.tval, span_id=node.name.span_id)
+        return self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
 
       elif case(expr_e.CommandSub):
         node = cast(command_sub, UP_node)
@@ -1009,7 +1009,7 @@ class OilEvaluator(object):
       elif case(re_e.Splice):
         node = cast(re__Splice, UP_node)
 
-        obj = self.LookupVar(node.name.tval, span_id=node.name.span_id)
+        obj = self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
         if not isinstance(obj, objects.Regex):
           e_die("Can't splice object of type %r into regex" % obj.__class__,
                 node.name)
