@@ -39,9 +39,11 @@ feature is **unimplemented**.
 </h2>
 
 ```oil-help-topics
-                  proc          proc p (x, :out, @rest, e Expr, b Block) { c }
+                  X proc        proc p (x, out Ref, @rest, e Expr, b Block) { c }
+                  X func        func f(x; opt1, opt2) { return (x + 1) }
+                  X oil-return  return (myexpr)
+                  X oil-case    case (x) { *.py { echo 'python' } }
                   oil-if        if (x > 0) { echo }
-                  oil-case      case $x { ('build') do build ;; }
                   oil-while     while (x > 0) { echo }
                   oil-for       for i, item in (mylist) { echo }
                   equal =       = 1 + 2*3
@@ -59,12 +61,16 @@ feature is **unimplemented**.
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   X float-lit   3.14  1.5e-10
+                  num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   str-literal   r'[a-z]\n'  $'line\n'  
                   list-literal  %(one two)  ['one', 'two', 3]
                   dict-literal  {name: 'bob'}
                   block-literal ^(echo $PWD)
                   X expr-lit    ^[1 + 2*3]
+                  X template    ^"$a and $b" for Str::replace()
+                  X to-string   $[myobj]
+                  X to-array    @[myobj]
   [Operators]     concat        s1 ++ s2,  L1 ++ L2
                   oil-equals    ===   !==   ~==   is, is not, in, not in
                   oil-compare   <  <=  >  >=  (numbers only)
@@ -73,6 +79,7 @@ feature is **unimplemented**.
                   oil-bitwise   ~  &  |  ^  <<  >>
                   oil-ternary   '+' if x >= 0 else '-'
                   oil-index     a[3]  s[3]
+                  X oil-attr    mydict.key
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)   s.startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
@@ -91,10 +98,9 @@ feature is **unimplemented**.
 </h2>
 
 ```oil-help-topics
-                  inline-call   $strfunc(x, y) @arrayfunc(z)
                   splice        @myarray @ARGV
                   expr-sub      echo $[42 + a[i]]
-                  X builtin-sub ${.myproc arg1}  @{.otherproc $x $y}
+                  X ystr        y"byte \y00 unicode \u{123456}"
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
 ```
@@ -106,9 +112,11 @@ feature is **unimplemented**.
 ```oil-help-topics
   [Memory]        append                 Add elements to end of array
                   X argparse             getopts replacement, sets OPT
+                  X setref               Builtin to replac ekeyword
                   pp                     Pretty print interpreter state
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
+                  X error                Can be used in both proc and func
   [Shell State]   oil-cd   oil-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
@@ -116,12 +124,18 @@ feature is **unimplemented**.
                   module                 guard against duplicate 'source'
                   use                    change first word lookup
   [I/O]           oil-read               Buffered I/O with --line, --all, --qsn
-                  write                  Like echo, but with --, --sep, --end
+                  X oil-echo             Single arg, no -e -n with simple_echo
+                  write                  Like echo, with --, --sep, --end, ()
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
+                  X dbg                  Only thing that can be used in funcs
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
-  [Data Formats]  json   X qtt
+  [Data Formats]  json
+                  X ystr                 Upgrade JSON with binary, utf-8
+                  X yson                 Tree-shaped
+                  X ytsv                 Table-shaped
+                  X packle               Graph-shaped
 X [QTT]           rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
@@ -234,7 +248,7 @@ Functions:
 
 ```oil-help-topics
   [Collections]   len()
-X [String]        find()   sub()   join() 
+X [String]        find(eggex)   replace(eggex, template)   join() 
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()
   [Arrays]        X index()   append()   extend()

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, scope_e
-from _devbuild.gen.syntax_asdl import sh_lhs_expr
+from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error
 from mycpp.mylib import log
 from frontend import lexer
@@ -126,7 +126,7 @@ class _Shvar_get(object):
 
   def __call__(self, *args):
     name = args[0]
-    return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic)
+    return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing())
 
 
 class _VmEval(object):

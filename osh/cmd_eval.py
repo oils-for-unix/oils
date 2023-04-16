@@ -656,7 +656,7 @@ class CommandEvaluator(object):
       elif case(condition_e.Oil):
         if mylib.PYTHON:
           cond = cast(condition__Oil, UP_cond)
-          obj = self.expr_ev.EvalExpr(cond.e, spid)
+          obj = self.expr_ev.EvalExpr(cond.e, loc.Span(spid))
           b = bool(obj)
 
     return b
@@ -864,7 +864,7 @@ class CommandEvaluator(object):
 
             # Note: there's only one LHS
             vd_lval = location.LName(node.lhs[0].name.tval)  # type: lvalue_t
-            py_val = self.expr_ev.EvalExpr(node.rhs)
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
             val = _PyObjectToVal(py_val)  # type: value_t
 
             self.mem.SetValue(vd_lval, val, scope_e.LocalOnly, 
@@ -873,7 +873,7 @@ class CommandEvaluator(object):
           else:
             self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
 
-            py_val = self.expr_ev.EvalExpr(node.rhs)
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
             vd_lvals = []  # type: List[lvalue_t]
             vals = []  # type: List[value_t]
             if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
@@ -916,7 +916,7 @@ class CommandEvaluator(object):
               raise AssertionError(node.keyword.id)
 
           if node.op.id == Id.Arith_Equal:
-            py_val = self.expr_ev.EvalExpr(node.rhs)
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
 
             lvals_ = []  # type: List[lvalue_t]
             py_vals = []
@@ -961,7 +961,7 @@ class CommandEvaluator(object):
 
             place_expr = cast(place_expr__Var, node.lhs[0])
             pe_lval = location.LName(place_expr.name.tval)
-            py_val = self.expr_ev.EvalExpr(node.rhs)
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
 
             new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
             # This should only be an int or float, so we don't need the logic above
@@ -1040,7 +1040,7 @@ class CommandEvaluator(object):
 
         if mylib.PYTHON:
           self.mem.SetCurrentSpanId(node.keyword.span_id)
-          obj = self.expr_ev.EvalExpr(node.e)
+          obj = self.expr_ev.EvalExpr(node.e, loc.Missing())
 
           if node.keyword.id == Id.Lit_Equals:
             # NOTE: It would be nice to unify this with 'repr', but there isn't a
@@ -1220,7 +1220,7 @@ class CommandEvaluator(object):
 
         if iter_list is None:  # for_expr.Oil
           if mylib.PYTHON:
-            obj = self.expr_ev.EvalExpr(iter_expr)
+            obj = self.expr_ev.EvalExpr(iter_expr, loc.Missing())
 
             # TODO: Once expr_eval.py is statically typed, consolidate this
             # with the shell-style loop.
@@ -1408,7 +1408,7 @@ class CommandEvaluator(object):
             defaults = [None] * len(sig.untyped)
             for i, p in enumerate(sig.untyped):
               if p.default_val:
-                py_val = self.expr_ev.EvalExpr(p.default_val)
+                py_val = self.expr_ev.EvalExpr(p.default_val, loc.Missing())
                 defaults[i] = _PyObjectToVal(py_val)
      
         self.procs[node.name.tval] = Proc(
