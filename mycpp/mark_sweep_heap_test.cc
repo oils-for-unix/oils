@@ -216,19 +216,20 @@ TEST pool_sanity_check() {
   ASSERT(obj_id2 != -1);
   ASSERT(obj_id3 != -1);
 
+  p.Free();
   PASS();
 }
 
 TEST pool_sweep() {
   Pool<2, 32> p;
 
-  p.PrepareForMarking();
+  p.PrepareForGc();
   p.Sweep();
 
   int obj_id;
   void *addr1 = p.Allocate(&obj_id);
   void *addr2 = p.Allocate(&obj_id);
-  p.PrepareForMarking();
+  p.PrepareForGc();
   p.Sweep();
 
   ASSERT_EQ(p.num_live(), 0);
@@ -239,28 +240,30 @@ TEST pool_sweep() {
   ASSERT((addr1 == addr3 && addr2 == addr4) ||
          (addr1 == addr4 && addr2 == addr3));
 
+  p.Free();
   PASS();
 }
 
-TEST pool_sweep_keeps_marked() {
+TEST pool_marked_objs_are_kept_alive() {
   Pool<1, 32> p;
 
   int obj_id1;
   int obj_id2;
   p.Allocate(&obj_id1);
   p.Allocate(&obj_id2);
-  p.PrepareForMarking();
+  p.PrepareForGc();
   p.Mark(obj_id2);
   p.Sweep();
   ASSERT_EQ(p.num_live(), 1);
 
+  p.Free();
   PASS();
 }
 
 SUITE(pool_alloc) {
   RUN_TEST(pool_sanity_check);
   RUN_TEST(pool_sweep);
-  RUN_TEST(pool_sweep_keeps_marked);
+  RUN_TEST(pool_marked_objs_are_kept_alive);
 }
 
 GREATEST_MAIN_DEFS();

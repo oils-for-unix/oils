@@ -228,7 +228,7 @@ int MarkSweepHeap::Collect() {
 
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
-  pool_.PrepareForMarking();
+  pool_.PrepareForGc();
 
   // Mark roots.
   // Note: It might be nice to get rid of double pointers
@@ -320,37 +320,34 @@ void MarkSweepHeap::PrintStats(int fd) {
 }
 
 void MarkSweepHeap::EagerFree() {
-  log("===");
-  log("Eager Free");
-  log("Live objects %d", live_objs_.size());
-
   for (auto obj : to_free_) {
-    log("Eager Free %p", obj);
     free(obj);
   }
-
-  log("Live objects %d", live_objs_.size());
 }
 
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   char* e = getenv("OIL_GC_ON_EXIT");
 
+  auto free_everything = [this](){
+      roots_.clear();
+      global_roots_.clear();
+      Collect();
+      EagerFree();
+      pool_.Free();
+  };
+
   if (fast_exit) {
     // don't collect by default; OIL_GC_ON_EXIT=1 overrides
     if (e && strcmp(e, "1") == 0) {
-      Collect();
-      EagerFree();
-    } else {
-      pool_.EnableMemoryLeak();
+      free_everything();
     }
   } else {
     // collect by default; OIL_GC_ON_EXIT=0 overrides
     if (e && strcmp(e, "0") == 0) {
-      pool_.EnableMemoryLeak();
+      ;
     } else {
-      Collect();
-      EagerFree();
+      free_everything();
     }
   }
 

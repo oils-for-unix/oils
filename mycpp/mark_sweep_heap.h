@@ -1,22 +1,17 @@
 #ifndef MARKSWEEP_HEAP_H
 #define MARKSWEEP_HEAP_H
 
+#include <stdlib.h>
+
 #include <array>
 #include <vector>
 
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 
-#define POOL_ALLOCATOR 1
-#define POOL_ALLOCATOR_CELL_SIZE 32
-
 class MarkSet {
  public:
   MarkSet() : bits_() {
-  }
-
-  void swap(MarkSet* other) {
-    std::swap(other->bits_, bits_);
   }
 
   // ReInit() must be called at the start of MarkObjects().  Allocate() should
@@ -68,8 +63,6 @@ class MarkSet {
   }
 
   std::vector<uint8_t> bits_;  // bit vector indexed by obj_id
-
-  DISALLOW_COPY_AND_ASSIGN(MarkSet);
 };
 
 // A simple Pool allocator for allocating small objects. It maintains an ever
@@ -82,20 +75,12 @@ class Pool {
 
   Pool() = default;
 
-  ~Pool() {
-    if (leak_memory_) return;
-
-    for (Block* block : blocks_) {
-      delete block;
-    }
-  }
-
   void* Allocate(int* obj_id) {
     num_allocated_++;
 
     if (!free_list_) {
       // Allocate a new Block and link every new Cell onto the free list.
-      Block* block = new Block;
+      Block* block = static_cast<Block*>(malloc(sizeof(Block)));
       blocks_.push_back(block);
       bytes_allocated_ += kBlockSize;
       num_free_ += CellsPerBlock;
@@ -119,7 +104,7 @@ class Pool {
     return mem;
   }
 
-  void PrepareForMarking() {
+  void PrepareForGc() {
     DCHECK(!gc_underway_);
     gc_underway_ = true;
     mark_set_.ReInit(blocks_.size() * CellsPerBlock);
@@ -156,8 +141,11 @@ class Pool {
     gc_underway_ = false;
   }
 
-  void EnableMemoryLeak() {
-    leak_memory_ = true;
+  void Free() {
+    for (Block* block : blocks_) {
+      free(block);
+    }
+    blocks_.clear();
   }
 
   int num_allocated() {
@@ -185,12 +173,9 @@ class Pool {
     int id;
     FreeCell* next;
   };
-  static_assert(CellSize >= sizeof(FreeCell));
+  static_assert(CellSize >= sizeof(FreeCell), "CellSize is too small");
 
   static constexpr int kBlockSize = CellSize * CellsPerBlock;
-
-  // Whether to leak blocks_ on destruction.
-  bool leak_memory_ = false;
 
   // Whether a GC is underway for asserting that calls are in order.
   bool gc_underway_ = false;
