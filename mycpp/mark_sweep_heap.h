@@ -275,7 +275,6 @@ class MarkSweepHeap {
   MarkSet mark_set_;
 
   int greatest_obj_id_ = 0;
-  int obj_id_after_allocate_ = 0;
 
  private:
   void DoProcessExit(bool fast_exit);
