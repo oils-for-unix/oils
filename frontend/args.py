@@ -249,19 +249,6 @@ class Reader(object):
     else:
       return loc.Missing()  # TODO: remove this when all have locations
 
-  # TODO: Remove this when no longer used
-  def SpanId(self):
-    # type: () -> int
-    """Deprecated in favour of Location as we move away from int spid"""
-    if self.spids:
-      if self.i == self.n:
-        i = self.n - 1  # if the last arg is missing, point at the one before
-      else:
-        i = self.i
-      return self.spids[i]
-    else:
-      return runtime.NO_SPID  # TODO: remove this when all have spids
-
 
 class _Action(object):
   """What is done when a flag or option is detected."""
