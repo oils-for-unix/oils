@@ -25,7 +25,6 @@ from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.syntax_asdl import loc
 
 from asdl import format as fmt
-from asdl import runtime
 from core import alloc
 from core import error
 from core.pyerror import e_usage, e_die
