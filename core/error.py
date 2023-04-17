@@ -3,25 +3,11 @@ error.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import loc_e
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import loc_t
-
-
-# Break circular dependency.
-#from asdl import runtime
-NO_SPID = -1
-
-class Usage(Exception):
-  """For flag parsing errors in builtins and main()
-  
-  Called by e_usage().  TODO: Should settle on a single interface that can be
-  translated.  Sometimes we use 'raise error.Usage()'
-  """
-  def __init__(self, msg, span_id=NO_SPID):
-    # type: (str, int) -> None
-    self.msg = msg
-    self.span_id = span_id
 
 
 class _ErrorWithLocation(Exception):
@@ -35,12 +21,9 @@ class _ErrorWithLocation(Exception):
     self.msg = msg
     self.location = location
 
+
   def HasLocation(self):
     # type: () -> bool
-    #print('*** %r', self.location)
-
-    # TODO: move log() to mycpp/mylib.py, and put this at the top
-    from _devbuild.gen.syntax_asdl import loc_e
 
     if self.location:
       return self.location.tag_() != loc_e.Missing
@@ -54,6 +37,18 @@ class _ErrorWithLocation(Exception):
   def __repr__(self):
     # type: () -> str
     return '<%s %r>' % (self.msg, self.location)
+
+
+class Usage(_ErrorWithLocation):
+  """For flag parsing errors in builtins and main()
+
+  Called by e_usage().  TODO: Should settle on a single interface that can be
+  translated.  Sometimes we use 'raise error.Usage()'
+  """
+
+  def __init__(self, msg, location):
+    # type: (str, loc_t) -> None
+    _ErrorWithLocation.__init__(self, msg, location)
 
 
 class Runtime(Exception):

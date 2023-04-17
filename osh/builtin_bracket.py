@@ -190,7 +190,7 @@ class Test(vm._Builtin):
     """
     if self.need_right_bracket:  # Preprocess right bracket
       if self.exec_opts.simple_test_builtin():
-        e_usage("should be invoked as 'test' (simple_test_builtin)")
+        e_usage("should be invoked as 'test' (simple_test_builtin)", loc.Missing())
 
       strs = cmd_val.argv
       if not strs or strs[-1] != ']':
@@ -222,7 +222,7 @@ class Test(vm._Builtin):
     n = len(cmd_val.argv) - 1
 
     if self.exec_opts.simple_test_builtin() and n > 3:
-      e_usage("should only have 3 arguments or fewer (simple_test_builtin)")
+      e_usage("should only have 3 arguments or fewer (simple_test_builtin)", loc.Missing())
 
     try:
       if n == 0:

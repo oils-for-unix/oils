@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 NO_SPID = -1
 
-def e_usage(msg, span_id=NO_SPID):
-  # type: (str, int) -> NoReturn
+def e_usage(msg, location):
+  # type: (str, loc_t) -> NoReturn
   """Convenience wrapper for arg parsing / validation errors.
 
   Usually causes a builtin to fail with status 2, but the script can continue
@@ -33,7 +33,7 @@ def e_usage(msg, span_id=NO_SPID):
   - builtins pass Token() or loc::Missing()
   - tool interfaces don't pass any location info
   """
-  raise error.Usage(msg, span_id)
+  raise error.Usage(msg, location)
 
 
 def e_strict(msg, location):

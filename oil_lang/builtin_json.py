@@ -50,7 +50,7 @@ class Json(vm._Builtin):
 
     action, action_spid = arg_r.Peek2()
     if action is None:
-      raise error.Usage(_JSON_ACTION_ERROR)
+      raise error.Usage(_JSON_ACTION_ERROR, loc.Missing())
     arg_r.Next()
 
     if action == 'write':
@@ -59,7 +59,7 @@ class Json(vm._Builtin):
 
 
       if not arg_r.AtEnd():
-        e_usage('write got too many args', span_id=arg_r.SpanId())
+        e_usage('write got too many args', arg_r.Location())
 
       expr = typed_args.RequiredExpr(cmd_val.typed_args)
       obj = self.expr_ev.EvalExpr(expr, loc.Missing())
@@ -88,11 +88,11 @@ class Json(vm._Builtin):
         var_name = var_name[1:]
 
       if not arg_r.AtEnd():
-        e_usage('read got too many args', span_id=arg_r.SpanId())
+        e_usage('read got too many args', arg_r.Location())
 
       if not match.IsValidVarName(var_name):
         raise error.Usage('got invalid variable name %r' % var_name,
-                              span_id=name_spid)
+                              loc.Span(name_spid))
 
       try:
         # Use a global _STDIN, because we get EBADF on a redirect if we use a
@@ -116,6 +116,6 @@ class Json(vm._Builtin):
           location.LName(var_name), value.Obj(obj), scope_e.LocalOnly)
 
     else:
-      raise error.Usage(_JSON_ACTION_ERROR, span_id=action_spid)
+      raise error.Usage(_JSON_ACTION_ERROR, loc.Span(action_spid))
 
     return 0

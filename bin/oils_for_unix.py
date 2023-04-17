@@ -20,6 +20,7 @@ from __future__ import print_function
 import posix_ as posix
 import sys
 
+from _devbuild.gen.syntax_asdl import loc
 from asdl import runtime
 from core import error
 from core import shell
@@ -110,7 +111,7 @@ def AppBundleMain(argv):
     arg_r.Next()
     first_arg = arg_r.Peek()
     if first_arg is None:
-      raise error.Usage('Missing required applet name.')
+      raise error.Usage('Missing required applet name.', loc.Missing())
 
     # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
     if first_arg in ('-h', '--help'):
@@ -183,7 +184,7 @@ def AppBundleMain(argv):
       return 2
 
   else:
-    raise error.Usage("Invalid applet %r" % applet)
+    raise error.Usage("Invalid applet %r" % applet, loc.Missing())
 
 
 def main(argv):

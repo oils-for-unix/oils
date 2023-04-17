@@ -238,7 +238,8 @@ class Export(vm._AssignBuiltin):
     if arg.f:
       e_usage(
           "doesn't accept -f because it's dangerous.  "
-          "(The code can usually be restructured with 'source')")
+          "(The code can usually be restructured with 'source')",
+          loc.Missing())
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, attrs, True, builtin=_EXPORT)
@@ -247,7 +248,7 @@ class Export(vm._AssignBuiltin):
       for pair in cmd_val.pairs:
         if pair.rval is not None:
           e_usage("doesn't accept RHS with -n",
-                  span_id=word_.LeftMostSpanForWord(pair.blame_word))
+                  loc.Span(word_.LeftMostSpanForWord(pair.blame_word)))
 
         # NOTE: we don't care if it wasn't found, like bash.
         self.mem.ClearFlag(pair.var_name, state.ClearExport)
@@ -269,7 +270,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
   """
   if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
     e_usage("Got -a but RHS isn't an array",
-            span_id=word_.LeftMostSpanForWord(blame_word))
+            loc.Span(word_.LeftMostSpanForWord(blame_word)))
 
   if flag_A and rval:
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
@@ -282,7 +283,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
     if rval.tag_() != value_e.AssocArray:
       e_usage("Got -A but RHS isn't an associative array",
-              span_id=word_.LeftMostSpanForWord(blame_word))
+              loc.Span(word_.LeftMostSpanForWord(blame_word)))
 
   return rval
 
@@ -362,7 +363,7 @@ class NewVar(vm._AssignBuiltin):
         status = self._PrintFuncs(names)
       else:
         # Disallow this since it would be incompatible.
-        e_usage('with -f expects function names')
+        e_usage('with -f expects function names', loc.Missing())
       return status
 
     if arg.F:
@@ -515,8 +516,8 @@ class Shift(vm._Builtin):
       try:
         n = int(arg)
       except ValueError:
-        e_usage("Invalid shift argument %r" % arg)
+        e_usage("Invalid shift argument %r" % arg, loc.Missing())
     else:
-      e_usage('got too many arguments')
+      e_usage('got too many arguments', loc.Missing())
 
     return self.mem.Shift(n)

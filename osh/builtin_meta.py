@@ -26,6 +26,7 @@ from osh import cmd_eval
 _ = log
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
+from _devbuild.gen.syntax_asdl import loc
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
   from frontend.parse_lib import ParseContext
@@ -56,7 +57,7 @@ class Eval(vm._Builtin):
     if self.exec_opts.simple_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
       if not arg_r.AtEnd():
-        e_usage('requires exactly 1 argument')
+        e_usage('requires exactly 1 argument', loc.Missing())
     else:
       code_str = ' '.join(arg_r.Rest())
       # code_str could be EMPTY, so just use the first one
@@ -93,7 +94,7 @@ class Source(vm._Builtin):
 
     path = arg_r.Peek()
     if path is None:
-      e_usage('missing required argument')
+      e_usage('missing required argument', loc.Missing())
     arg_r.Next()
 
     resolved = self.search_path.Lookup(path, exec_required=False)
@@ -225,7 +226,7 @@ class RunProc(vm._Builtin):
     argv, spids = arg_r.Rest2()
 
     if len(argv) == 0:
-      raise error.Usage('requires arguments', span_id=runtime.NO_SPID)
+      raise error.Usage('requires arguments', loc.Missing())
 
     name = argv[0]
     if name not in self.procs:
@@ -291,7 +292,7 @@ class Try(vm._Builtin):
       return 0
 
     if arg_r.Peek() is None:
-      e_usage('expects a block or command argv')
+      e_usage('expects a block or command argv', loc.Missing())
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
@@ -333,7 +334,7 @@ class BoolStatus(vm._Builtin):
     _, arg_r = flag_spec.ParseCmdVal('boolstatus', cmd_val)
 
     if arg_r.Peek() is None:
-      e_usage('expected a command to run')
+      e_usage('expected a command to run', loc.Missing())
 
     argv, spids = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
