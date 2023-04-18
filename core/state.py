@@ -543,7 +543,7 @@ def _AnyOptionNum(opt_name):
   # type: (str) -> option_t
   opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
-    e_usage('got invalid option %r' % opt_name)
+    e_usage('got invalid option %r' % opt_name, loc.Missing())
 
   # Note: we relaxed this for Oil so we can do 'shopt --unset errexit' consistently
   #if opt_num not in consts.SHOPT_OPTION_NUMS:
@@ -556,10 +556,10 @@ def _SetOptionNum(opt_name):
   # type: (str) -> option_t
   opt_num = consts.OptionNum(opt_name)
   if opt_num == 0:
-    e_usage('got invalid option %r' % opt_name)
+    e_usage('got invalid option %r' % opt_name, loc.Missing())
 
   if opt_num not in consts.SET_OPTION_NUMS:
-    e_usage("invalid option %r (try shopt)" % opt_name)
+    e_usage("invalid option %r (try shopt)" % opt_name, loc.Missing())
 
   return opt_num
 
@@ -838,7 +838,7 @@ class MutableOpts(object):
         # Minor incompatibility with bash: we validate everything before
         # printing.
         if index == 0:
-          e_usage('got invalid option %r' % opt_name)
+          e_usage('got invalid option %r' % opt_name, loc.Missing())
         opt_nums.append(index)
 
     if len(opt_names) == 0:

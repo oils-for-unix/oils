@@ -173,12 +173,14 @@ py-codegen() {
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # depends on bool_arg_type_e, generates Id_t
-  option-mypy-gen
-  flag-gen-mypy
 
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?
+  # depends on syntax_asdl
   gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev'
+
+  option-mypy-gen
+  flag-gen-mypy
 
   # For tests
   gen-asdl-py 'mycpp/examples/expr.asdl'

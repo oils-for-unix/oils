@@ -1305,6 +1305,7 @@ trap_parse_error() {
   trap "echo )" EXIT
   '
 }
+
 # Note: PROMPT_COMAND and PS1 are hard to trigger in this framework
 
 cases-in-strings() {
@@ -1369,6 +1370,10 @@ cases-in-strings() {
   parse_at
   invalid_parens
   nested_source_argvword
+
+  eval_parse_error
+  # should be status 2?
+  #trap_parse_error
 }
 
 # Cases in their own file

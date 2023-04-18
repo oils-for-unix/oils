@@ -7,7 +7,7 @@ from __future__ import print_function
 import posix_ as posix
 
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import loc, source
 
 from core import alloc
 from core import error
@@ -61,10 +61,10 @@ def OshCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise error.Usage('Missing required subcommand.')
+    raise error.Usage('Missing required subcommand.', loc.Missing())
 
   if action not in SUBCOMMANDS:
-    raise error.Usage('Invalid subcommand %r.' % action)
+    raise error.Usage('Invalid subcommand %r.' % action, loc.Missing())
 
   if action == 'parse-glob':
     # Pretty-print the AST produced by osh/glob_.py

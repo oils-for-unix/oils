@@ -215,7 +215,7 @@ class UnsafeArith(object):
       except error.Parse as e:
         self.errfmt.PrettyPrintError(e)
         # Exception for builtins 'unset' and 'printf'
-        e_usage('got invalid place expression', span_id=span_id)
+        e_usage('got invalid place expression', loc.Span(span_id))
 
     # Note: we parse '1+2', and then it becomes a runtime error because it's
     # not a valid place.  Could be a parse error.

@@ -17,6 +17,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
 source benchmarks/common.sh  # die
+source benchmarks/cachegrind.sh  # with-cachgrind
 source soil/common.sh  # find-dir-html
 source test/tsv-lib.sh  # tsv2html
 source test/common.sh  # die
@@ -131,7 +132,7 @@ cachegrind-task() {
     --field "$script_path" \
     --field $cachegrind_out_path \
     -- \
-    $0 cachegrind $out_dir/$cachegrind_out_path \
+    $0 with-cachegrind $out_dir/$cachegrind_out_path \
     "$sh_path" -n $extra_args "$script_path" || echo FAILED
 }
 
@@ -151,17 +152,6 @@ print-tasks() {
       cat $SORTED | xargs -n 1 -- echo "$fields"
     fi
   done
-}
-
-cachegrind() {
-  ### Run a command under cachegrind, writing to $out_file
-  local out_file=$1
-  shift
-
-  valgrind --tool=cachegrind \
-    --log-file=$out_file \
-    --cachegrind-out-file=/dev/null \
-    -- "$@"
 }
 
 cachegrind-parse-configure-coreutils() {

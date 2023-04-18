@@ -261,7 +261,7 @@ class Rules(object):
     self.n.newline()
 
     # Strip any .opt binariies
-    if variant in ('opt', 'opt32'):
+    if variant in ('opt', 'opt32', 'bumpleak'):
       stripped = out_bin + '.stripped'
       symbols = out_bin + '.symbols'
       self.n.build([stripped, symbols], 'strip', [out_bin])

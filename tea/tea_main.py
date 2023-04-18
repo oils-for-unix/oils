@@ -8,7 +8,7 @@ import sys
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import loc, source
 from frontend import flag_spec
 from frontend import parse_lib
 from frontend import reader
@@ -94,6 +94,6 @@ def Main(arg_r):
       errfmt.PrettyPrintError(e)
       status = 2
   else:
-    e_usage("Tea doesn't run anything yet.  Pass -n to parse.")
+    e_usage("Tea doesn't run anything yet.  Pass -n to parse.", loc.Missing())
 
   return status

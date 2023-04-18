@@ -5,6 +5,7 @@ builtin_comp.py - Completion builtins
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
+from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import value_e, value__MaybeStrArray
 from core import completion
 from core import error
@@ -127,7 +128,7 @@ class SpecBuilder(object):
       func_name = arg.F
       func = cmd_ev.procs.get(func_name)
       if func is None:
-        raise error.Usage('Function %r not found' % func_name)
+        raise error.Usage('Function %r not found' % func_name, loc.Missing())
       actions.append(completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
 
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
@@ -225,7 +226,7 @@ class SpecBuilder(object):
       else_actions.append(completion.FileSystemAction(True, False, False))
 
     if not actions and not else_actions:
-      raise error.Usage('No actions defined in completion: %s' % argv)
+      raise error.Usage('No actions defined in completion: %s' % argv, loc.Missing())
 
     p = completion.DefaultPredicate()  # type: completion._Predicate
     if arg.X is not None:
@@ -403,14 +404,14 @@ class CompAdjust(vm._Builtin):
     for name in var_names:
       # Ironically we could complete these
       if name not in ['cur', 'prev', 'words', 'cword']:
-        raise error.Usage('Invalid output variable name %r' % name)
+        raise error.Usage('Invalid output variable name %r' % name, loc.Missing())
     #print(arg)
 
     # TODO: How does the user test a completion function programmatically?  Set
     # COMP_ARGV?
     val = self.mem.GetValue('COMP_ARGV')
     if val.tag_() != value_e.MaybeStrArray:
-      raise error.Usage("COMP_ARGV should be an array")
+      raise error.Usage("COMP_ARGV should be an array", loc.Missing())
     comp_argv = cast(value__MaybeStrArray, val).strs
 
     # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur

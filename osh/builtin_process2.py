@@ -151,14 +151,14 @@ class Wait(vm._Builtin):
       if job_id.startswith('%'):
         raise error.Usage(
             "doesn't support bash-style jobspecs (got %r)" % job_id,
-            span_id=span_id)
+            loc.Span(span_id))
 
       # Does it look like a PID?
       try:
         pid = int(job_id)
       except ValueError:
         raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                          span_id=span_id)
+                          loc.Span(span_id))
 
       job = self.job_state.JobFromPid(pid)
       if job is None:
@@ -218,4 +218,4 @@ class Umask(vm._Builtin):
       posix.umask(new_mask)
       return 0
 
-    e_usage('umask: unexpected arguments')
+    e_usage('umask: unexpected arguments', loc.Missing())

@@ -131,7 +131,11 @@ oils-for-unix() {
 compare-gcc-clang() {
   ### Run by Soil 'cpp-coverage' task, because it has clang
 
-  local -a targets=(_bin/{clang,cxx}-dbg/oils-for-unix _bin/{clang,cxx}-opt/oils-for-unix.stripped)
+  local -a targets=(
+    _bin/{clang,cxx}-dbg/oils-for-unix
+    _bin/{clang,cxx}-opt/oils-for-unix.stripped
+    _bin/cxx-bumpleak/oils-for-unix.stripped
+    )
   ninja "${targets[@]}"
 
   mkdir -p _tmp/metrics

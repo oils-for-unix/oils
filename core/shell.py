@@ -8,7 +8,7 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.syntax_asdl import source, source_t, IntParamBox
+from _devbuild.gen.syntax_asdl import loc, source, source_t, IntParamBox
 
 from asdl import runtime
 
@@ -271,7 +271,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
   if flag.one_pass_parse and not exec_opts.noexec():
-    raise error.Usage('--one-pass-parse requires noexec (-n)')
+    raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing())
   parse_ctx = parse_lib.ParseContext(
       arena, parse_opts, aliases, oil_grammar,
       one_pass_parse=flag.one_pass_parse)
