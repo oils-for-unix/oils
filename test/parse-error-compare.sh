@@ -17,9 +17,10 @@ show-case() {
   local desc=$1
   local code=$2
 
-  echo '-------------------------'
-  echo "$desc"
+  echo '======================'
+  echo "# $desc"
   echo "$code"
+  echo '----------------------'
   echo
 
   local status
@@ -92,7 +93,7 @@ done
 test-if() {
   ### Same thing for if statements
 
-  show-case 'if missnig semi' '
+  show-case 'if missing semi' '
 if test -f file then
   echo $i
 fi
@@ -122,9 +123,9 @@ esac
 
 all() {
   compgen -A function | egrep '^test-' | while read func; do
-    echo ====
-    echo "$func"
-    echo ====
+    echo "***"
+    echo "*** $func"
+    echo "***"
     echo
 
     $func
