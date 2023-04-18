@@ -188,10 +188,11 @@ class ShellExecutor(vm._Executor):
           arg0 = cmd_val.argv[0]
           # fill in default location.  e.g. osh/state.py raises UsageError without
           # span_id.
-          if e.span_id == runtime.NO_SPID:
-            e.span_id = self.errfmt.CurrentLocation()
+          location = e.location  # type: loc_t
+          if not e.HasLocation():
+            location = loc.Span(self.errfmt.CurrentLocation())
           # e.g. 'type' doesn't accept flag '-x'
-          self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, loc.Span(e.span_id))
+          self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, location)
           status = 2  # consistent error code for usage error
 
     return status

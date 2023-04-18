@@ -47,7 +47,7 @@ class History(vm._Builtin):
     # zsh -c 'history' produces an error.
     readline = self.readline
     if not readline:
-      e_usage("is disabled because Oil wasn't compiled with 'readline'")
+      e_usage("is disabled because Oil wasn't compiled with 'readline'", loc.Missing())
 
     attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
     arg = arg_types.history(attrs.attrs)
@@ -64,7 +64,7 @@ class History(vm._Builtin):
       try:
         readline.remove_history_item(cmd_index)
       except ValueError:
-        e_usage("couldn't find item %d" % arg.d)
+        e_usage("couldn't find item %d" % arg.d, loc.Missing())
 
       return 0
 
@@ -80,10 +80,10 @@ class History(vm._Builtin):
       try:
         num_to_show = int(arg0)
       except ValueError:
-        e_usage('got invalid argument %r' % arg0)
+        e_usage('got invalid argument %r' % arg0, loc.Missing())
       start_index = max(1, num_items + 1 - num_to_show)
     else:
-      e_usage('got many arguments')
+      e_usage('got many arguments', loc.Missing())
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do

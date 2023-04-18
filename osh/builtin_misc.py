@@ -355,12 +355,12 @@ class Read(vm._Builtin):
 
       next_arg, next_spid = arg_r.Peek2()
       if next_arg is not None:
-        raise error.Usage('got extra argument', span_id=next_spid)
+        raise error.Usage('got extra argument', loc.Span(next_spid))
 
       return self._Line(arg, var_name)
 
     if arg.q:
-      e_usage('--qsn can only be used with --line')
+      e_usage('--qsn can only be used with --line', loc.Missing())
 
     if arg.all:  # read --all
       var_name, var_spid = arg_r.Peek2()
@@ -373,12 +373,12 @@ class Read(vm._Builtin):
 
       next_arg, next_spid = arg_r.Peek2()
       if next_arg is not None:
-        raise error.Usage('got extra argument', span_id=next_spid)
+        raise error.Usage('got extra argument', loc.Span(next_spid))
 
       return self._All(var_name)
 
     if arg.q:
-      e_usage('--qsn not implemented yet')
+      e_usage('--qsn not implemented yet', loc.Missing())
 
     if arg.t >= 0.0:
       if arg.t != 0.0:
@@ -666,7 +666,7 @@ class Pushd(vm._Builtin):
     arg_r.Next()
     extra, extra_spid = arg_r.Peek2()
     if extra is not None:
-      e_usage('got too many arguments', span_id=extra_spid)
+      e_usage('got too many arguments', loc.Span(extra_spid))
 
     # TODO: 'cd' uses normpath?  Is that inconsistent?
     dest_dir = os_path.abspath(dir_arg)
@@ -717,7 +717,7 @@ class Popd(vm._Builtin):
 
     extra, extra_spid = arg_r.Peek2()
     if extra is not None:
-      e_usage('got extra argument', span_id=extra_spid)
+      e_usage('got extra argument', loc.Span(extra_spid))
 
     out_errs = []  # type: List[bool]
     _PopDirStack('popd', self.mem, self.dir_stack, self.errfmt, out_errs)

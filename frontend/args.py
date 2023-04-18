@@ -53,6 +53,7 @@ However I don't see these used anywhere!  I only see ':' used.
 """
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import loc, loc_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
 )
@@ -202,7 +203,7 @@ class Reader(object):
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
-      e_usage(error_msg, span_id=self._FirstSpanId())
+      e_usage(error_msg, self._FirstLocation())
     self.Next()
     return arg
 
@@ -211,7 +212,7 @@ class Reader(object):
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
-      e_usage(error_msg, span_id=self._FirstSpanId())
+      e_usage(error_msg, self._FirstLocation())
     spid = self.spids[self.i]
     self.Next()
     return arg, spid
@@ -230,23 +231,23 @@ class Reader(object):
     # type: () -> bool
     return self.i >= self.n  # must be >= and not ==
 
-  def _FirstSpanId(self):
-    # type: () -> int
+  def _FirstLocation(self):
+    # type: () -> loc_t
     if self.spids:
-      return self.spids[0]
+      return loc.Span(self.spids[0])
     else:
-      return runtime.NO_SPID  # TODO: remove this when all have spids
+      return loc.Missing()  # TODO: remove this when all have locations
 
-  def SpanId(self):
-    # type: () -> int
+  def Location(self):
+    # type: () -> loc_t
     if self.spids:
       if self.i == self.n:
         i = self.n - 1  # if the last arg is missing, point at the one before
       else:
         i = self.i
-      return self.spids[i]
+      return loc.Span(self.spids[i])
     else:
-      return runtime.NO_SPID  # TODO: remove this when all have spids
+      return loc.Missing()  # TODO: remove this when all have locations
 
 
 class _Action(object):
@@ -286,8 +287,8 @@ class _ArgAction(_Action):
     self.quit_parsing_flags = quit_parsing_flags
     self.valid = valid
 
-  def _Value(self, arg, span_id):
-    # type: (str, int) -> value_t
+  def _Value(self, arg, location):
+    # type: (str, loc_t) -> value_t
     raise NotImplementedError()
 
   def OnMatch(self, attached_arg, arg_r, out):
@@ -299,10 +300,9 @@ class _ArgAction(_Action):
       arg_r.Next()
       arg = arg_r.Peek()
       if arg is None:
-        e_usage('expected argument to %r' % ('-' + self.name),
-                span_id=arg_r.SpanId())
+        e_usage('expected argument to %r' % ('-' + self.name), arg_r.Location())
 
-    val = self._Value(arg, arg_r.SpanId())
+    val = self._Value(arg, arg_r.Location())
     out.Set(self.name, val)
     return self.quit_parsing_flags
 
@@ -313,19 +313,17 @@ class SetToInt(_ArgAction):
     # repeat defaults for C++ translation
     _ArgAction.__init__(self, name, False, valid=None)
 
-  def _Value(self, arg, span_id):
-    # type: (str, int) -> value_t
+  def _Value(self, arg, location):
+    # type: (str, loc_t) -> value_t
     try:
       i = int(arg)
     except ValueError:
-      e_usage('expected integer after %s, got %r' % ('-' + self.name, arg),
-              span_id=span_id)
+      e_usage('expected integer after %s, got %r' % ('-' + self.name, arg), location)
 
     # So far all our int values are > 0, so use -1 as the 'unset' value
     # corner case: this treats -0 as 0!
     if i < 0:
-      e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg),
-              span_id=span_id)
+      e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg), location)
     return value.Int(i)
 
 
@@ -335,18 +333,16 @@ class SetToFloat(_ArgAction):
     # repeat defaults for C++ translation
     _ArgAction.__init__(self, name, False, valid=None)
 
-  def _Value(self, arg, span_id):
-    # type: (str, int) -> value_t
+  def _Value(self, arg, location):
+    # type: (str, loc_t) -> value_t
     try:
       f = float(arg)
     except ValueError:
-      e_usage('expected number after %r, got %r' % ('-' + self.name, arg),
-              span_id=span_id)
+      e_usage('expected number after %r, got %r' % ('-' + self.name, arg), location)
     # So far all our float values are > 0, so use -1.0 as the 'unset' value
     # corner case: this treats -0.0 as 0.0!
     if f < 0:
-      e_usage('got invalid float for %s: %s' % ('-' + self.name, arg),
-              span_id=span_id)
+      e_usage('got invalid float for %s: %s' % ('-' + self.name, arg), location)
     return value.Float(f)
 
 
@@ -355,12 +351,12 @@ class SetToString(_ArgAction):
     # type: (str, bool, Optional[List[str]]) -> None
     _ArgAction.__init__(self, name, quit_parsing_flags, valid=valid)
 
-  def _Value(self, arg, span_id):
-    # type: (str, int) -> value_t
+  def _Value(self, arg, location):
+    # type: (str, loc_t) -> value_t
     if self.valid is not None and arg not in self.valid:
       e_usage(
           'got invalid argument %r to %r, expected one of: %s' %
-          (arg, ('-' + self.name), '|'.join(self.valid)), span_id=span_id)
+          (arg, ('-' + self.name), '|'.join(self.valid)), location)
     return value.Str(arg)
 
 
@@ -382,7 +378,7 @@ class SetAttachedBool(_Action):
       elif attached_arg in ('1', 'T', 'true', 'Talse'):
         b = True
       else:
-        e_usage('got invalid argument to boolean flag: %r' % attached_arg)
+        e_usage('got invalid argument to boolean flag: %r' % attached_arg, loc.Missing())
     else:
       b = True
 
@@ -444,7 +440,7 @@ class SetNamedOption(_Action):
 
     attr_name = arg  # Note: validation is done elsewhere
     if len(self.names) and attr_name not in self.names:
-      e_usage('Invalid option %r' % arg)
+      e_usage('Invalid option %r' % arg, loc.Missing())
     changes = out.shopt_changes if self.shopt else out.opt_changes
     changes.append((attr_name, b))
     return False
@@ -480,12 +476,12 @@ class SetNamedAction(_Action):
     arg_r.Next()  # always advance
     arg = arg_r.Peek()
     if arg is None:
-      e_usage('Expected argument for action')
+      e_usage('Expected argument for action', loc.Missing())
 
     attr_name = arg
     # Validate the option name against a list of valid names.
     if len(self.names) and attr_name not in self.names:
-      e_usage('Invalid action name %r' % arg)
+      e_usage('Invalid action name %r' % arg, loc.Missing())
     out.actions.append(attr_name)
     return False
 
@@ -517,7 +513,7 @@ def Parse(spec, arg_r):
 
       action = spec.actions_long.get(flag_name)
       if action is None:
-        e_usage('got invalid flag %r' % arg, span_id=arg_r.SpanId())
+        e_usage('got invalid flag %r' % arg, arg_r.Location())
 
       action.OnMatch(suffix, arg_r, out)
       arg_r.Next()
@@ -547,7 +543,7 @@ def Parse(spec, arg_r):
           break
 
         e_usage(
-            "doesn't accept flag %s" % ('-' + ch), span_id=arg_r.SpanId())
+            "doesn't accept flag %s" % ('-' + ch), arg_r.Location())
 
       arg_r.Next()  # next arg
 
@@ -561,7 +557,7 @@ def Parse(spec, arg_r):
           continue
 
         e_usage(
-            "doesn't accept option %s" % ('+' + ch), span_id=arg_r.SpanId())
+            "doesn't accept option %s" % ('+' + ch), arg_r.Location())
 
       arg_r.Next()  # next arg
 
@@ -637,7 +633,7 @@ def ParseMore(spec, arg_r):
     if arg.startswith('--'):
       action = spec.actions_long.get(arg[2:])
       if action is None:
-        e_usage('got invalid flag %r' % arg, span_id=arg_r.SpanId())
+        e_usage('got invalid flag %r' % arg, arg_r.Location())
 
       # TODO: attached_arg could be 'bar' for --foo=bar
       action.OnMatch(None, arg_r, out)
@@ -656,7 +652,7 @@ def ParseMore(spec, arg_r):
         #log('ch %r arg_r %s', ch, arg_r)
         action = spec.actions_short.get(ch)
         if action is None:
-          e_usage('got invalid flag %r' % ('-' + ch), span_id=arg_r.SpanId())
+          e_usage('got invalid flag %r' % ('-' + ch), arg_r.Location())
 
         attached_arg = char0 if ch in spec.plus_flags else None
         quit = action.OnMatch(attached_arg, arg_r, out)

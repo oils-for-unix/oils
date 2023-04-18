@@ -9,6 +9,7 @@ from __future__ import print_function
 from signal import SIGCONT
 
 from _devbuild.gen import arg_types
+from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
 from core import error
 from core.pyerror import e_usage
@@ -90,7 +91,7 @@ class Bg(vm._Builtin):
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
 
-    raise error.Usage("isn't implemented")
+    raise error.Usage("isn't implemented", loc.Missing())
 
 
 class Fork(vm._Builtin):
@@ -105,11 +106,11 @@ class Fork(vm._Builtin):
 
     arg, span_id = arg_r.Peek2()
     if arg is not None:
-      e_usage('got unexpected argument %r' % arg, span_id=span_id)
+      e_usage('got unexpected argument %r' % arg, loc.Span(span_id))
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
-      e_usage('expected a block')
+      e_usage('expected a block', loc.Missing())
 
     return self.shell_ex.RunBackgroundJob(block)
 
@@ -125,10 +126,10 @@ class ForkWait(vm._Builtin):
     _, arg_r = flag_spec.ParseCmdVal('forkwait', cmd_val, accept_typed_args=True)
     arg, span_id = arg_r.Peek2()
     if arg is not None:
-      e_usage('got unexpected argument %r' % arg, span_id=span_id)
+      e_usage('got unexpected argument %r' % arg, loc.Span(span_id))
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
-      e_usage('expected a block')
+      e_usage('expected a block', loc.Missing())
 
     return self.shell_ex.RunSubshell(block)

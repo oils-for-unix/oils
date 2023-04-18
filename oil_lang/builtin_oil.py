@@ -72,7 +72,7 @@ class Pp(_Builtin):
 
         if not match.IsValidVarName(name):
           raise error.Usage('got invalid variable name %r' % name,
-                            span_id=spids[i])
+                            loc.Span(spids[i]))
 
         cell = self.mem.GetCell(name)
         if cell is None:
@@ -120,7 +120,7 @@ class Pp(_Builtin):
       status = 0
 
     else:
-      e_usage('got invalid action %r' % action, span_id=action_spid)
+      e_usage('got invalid action %r' % action, loc.Span(action_spid))
 
     return status
 
@@ -146,7 +146,7 @@ class Append(_Builtin):
 
     if not match.IsValidVarName(var_name):
       raise error.Usage('got invalid variable name %r' % var_name,
-                        span_id=var_spid)
+                        loc.Span(var_spid))
 
     val = self.mem.GetValue(var_name)
 

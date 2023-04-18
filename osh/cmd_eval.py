@@ -336,9 +336,9 @@ class CommandEvaluator(object):
           status = builtin_func.Run(cmd_val)
         except error.Usage as e:  # Copied from RunBuiltin
           arg0 = cmd_val.argv[0]
-          if e.span_id == runtime.NO_SPID:  # fill in default location.
-            e.span_id = self.errfmt.CurrentLocation()
-          self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, loc.Span(e.span_id))
+          if not e.HasLocation():  # fill in default location.
+            e.location = loc.Span(self.errfmt.CurrentLocation())
+          self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
           status = 2  # consistent error code for usage error
 
     return status
