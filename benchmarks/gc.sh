@@ -297,8 +297,12 @@ run-tasks() {
         # Save the GC stats here.  None of the other runtime options are that
         # interesting.
 
-        OIL_GC_STATS_FD=99 \
-          "${instrumented[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
+        if test $mode = 'time'; then
+          OIL_GC_STATS_FD=99 \
+            "${instrumented[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
+        else
+          "${instrumented[@]}" > /dev/null
+        fi
         ;;
       mut+alloc+free+gc+exit)
         # also GC on exit
@@ -403,6 +407,7 @@ measure-cachegrind() {
   build-binaries
 
   local tsv_out=${1:-$BASE_DIR_CACHEGRIND/raw/times.tsv}
+
   mkdir -p $(dirname $tsv_out)
 
   # Make the header

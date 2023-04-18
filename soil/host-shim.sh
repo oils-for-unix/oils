@@ -27,12 +27,12 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (benchmarks)
-      # with py3-libs
-      echo 'v-2023-03-11'
+      # new R-libs version
+      echo 'v-2023-04-18'
       ;;
     (benchmarks2)
-      # new R-libs version
-      echo 'v-2023-03-11'
+      # add valgrind
+      echo 'v-2023-04-18'
       ;;
     (cpp-spec)
       # NEW image
@@ -56,7 +56,7 @@ live-image-tag() {
       ;;
     (other-tests)
       # new R-libs version
-      echo 'v-2023-03-11'
+      echo 'v-2023-04-18'
       ;;
     (dummy)
       # Rebuild with wedges

@@ -216,7 +216,7 @@ benchmarks() {
     # to create _test/index.html
     gawk
 
-    # for stable benchmarks
+    # for stable benchmarks.  TODO: could move osh-parser cachegrind to benchmarks2
     valgrind
 
     # benchmarks compare system shells -- they don't use our spec-bin?  In case
@@ -256,6 +256,9 @@ benchmarks2() {
     # Technically we don't need 'python3' or 'python3.7' -- only the shared
     # lib?
     libpython3.7
+
+    # for stable benchmarks.
+    valgrind
 
     # Analyze uftrace
     r-base-core
