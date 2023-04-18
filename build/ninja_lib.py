@@ -60,6 +60,7 @@ COMPILERS_VARIANTS = [
 
 GC_PERF_VARIANTS = [
     ('cxx', 'bumpleak'),
+    ('cxx', 'bumproot'),
     ('cxx', 'tcmalloc'),
 
     # TODO: should be binary with different files
@@ -261,7 +262,7 @@ class Rules(object):
     self.n.newline()
 
     # Strip any .opt binariies
-    if variant in ('opt', 'opt32', 'bumpleak'):
+    if variant in ('opt', 'opt32', 'bumpleak', 'bumproot'):
       stripped = out_bin + '.stripped'
       symbols = out_bin + '.symbols'
       self.n.build([stripped, symbols], 'strip', [out_bin])

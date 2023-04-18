@@ -59,6 +59,9 @@ void* BumpLeakHeap::Reallocate(void* old_data, size_t num_bytes) {
 
 void BumpLeakHeap::PrintStats(int fd) {
   dprintf(fd, "[BumpLeakHeap]");
+  #ifdef BUMP_ROOT
+  dprintf(fd, "      max roots = %10d\n", max_roots_);
+  #endif
   dprintf(fd, "  num allocated = %10d\n", num_allocated_);
   dprintf(fd, "bytes allocated = %10" PRId64 "\n", bytes_allocated_);
   dprintf(fd, "  mem pos       = %10d\n", mem_pos_);

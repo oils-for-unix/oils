@@ -262,7 +262,7 @@ make-job-wwz() {
   #
   # TODO:
   # - Could move _tmp/{spec,stateful,syscall} etc. to _test
-  # - Create _tmp/benchmarks/{compute,gc,osh-parser,mycpp-examples,...}
+  # - Create _tmp/benchmarks/{compute,gc,gc-cachegrind,osh-parser,mycpp-examples,...}
   #   - would require release/$VERSION/pub/benchmarks.wwz, like we have
   #     pub/metrics.wwz, for consistent links
 
