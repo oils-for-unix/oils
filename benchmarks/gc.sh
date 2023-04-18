@@ -10,6 +10,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source benchmarks/common.sh  # benchmark-html-head
+source benchmarks/cachegrind.sh  # with-cachegrind
 source build/dev-shell.sh  # R_LIBS_USER
 source test/tsv-lib.sh
 
@@ -148,10 +149,41 @@ print-tasks() {
   done
 }
 
+print-cachegrind-tasks() {
+  local -a workloads=(
+    parse.configure-coreutils
+    #parse.configure-cpython
+  )
+
+  local -a shells=(
+    "bash${TAB}-"
+    "_bin/cxx-bumpleak/osh${TAB}mut"
+    "_bin/cxx-opt/osh${TAB}mut+alloc"
+    "_bin/cxx-opt/osh${TAB}mut+alloc+free"
+    "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
+  )
+
+  local id=0
+  for workload in "${workloads[@]}"; do
+    for shell in "${shells[@]}"; do
+      local row_part="$workload${TAB}$shell"
+
+      local join_id="cg-$id"
+      local row="$join_id${TAB}$row_part"
+      echo "$row"
+
+      id=$((id + 1))
+    done
+  done
+  #print-tasks | egrep 'configure-coreutils' | egrep osh
+}
+
+
 readonly BIG_THRESHOLD=$(( 1 * 1000 * 1000 * 1000 ))  # 1 B
 
 run-tasks() {
   local tsv_out=$1
+  local mode=${2:-time}
 
   while read -r join_id task sh_path shell_runtime_opts; do
 
@@ -206,32 +238,46 @@ run-tasks() {
     #set -x
 
     # Wrap in a command that writes one row of a TSV
-    local -a time_argv=(
-      time-tsv -o $tsv_out --append 
-      --rusage
-      --field "$join_id" --field "$task" --field "$sh_path" --field "$shell_runtime_opts"
-      -- "${argv[@]}"
-    )
+    local -a instrumented
+    case $mode in
+      time)
+        instrumented=(
+          time-tsv -o $tsv_out --append 
+            --rusage
+            --field "$join_id" --field "$task" --field "$sh_path"
+            --field "$shell_runtime_opts"
+            -- "${argv[@]}"
+        )
+        ;;
+      cachegrind)
+        instrumented=(
+          with-cachegrind $BASE_DIR/cachegrind-$join_id.txt "${argv[@]}"
+        )
+        ;;
+      *)
+        die "Invalid mode $mode"
+        ;;
+    esac
 
     # Run with the right environment variables
 
     case $shell_runtime_opts in 
       -)
-        "${time_argv[@]}" > /dev/null
+        "${instrumented[@]}" > /dev/null
         ;;
       mut)
         OIL_GC_STATS=1 \
-          "${time_argv[@]}" > /dev/null
+          "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc)
         # disable GC with big threshold
         OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD \
-          "${time_argv[@]}" > /dev/null
+          "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc+free)
         # do a single GC on exit
         OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD OIL_GC_ON_EXIT=1 \
-          "${time_argv[@]}" > /dev/null
+          "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc+free+gc)
         # Default configuration
@@ -240,12 +286,12 @@ run-tasks() {
         # interesting.
 
         OIL_GC_STATS_FD=99 \
-          "${time_argv[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
+          "${instrumented[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
         ;;
       mut+alloc+free+gc+exit)
         # also GC on exit
         OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
-          "${time_argv[@]}" > /dev/null
+          "${instrumented[@]}" > /dev/null
         ;;
 
       # More comparisons:
@@ -335,6 +381,12 @@ measure-all() {
   if command -v pretty-tsv; then
     pretty-tsv $tsv_out
   fi
+}
+
+measure-cachegrind() {
+  local tsv_out=${1:-$BASE_DIR/raw/times-cachegrind.tsv}
+
+  print-cachegrind-tasks | run-tasks $tsv_out cachegrind
 }
 
 print-report() {

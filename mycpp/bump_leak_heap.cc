@@ -13,7 +13,10 @@
 // We need this #ifdef because we don't want the global var in other binaries
 
 #ifdef BUMP_LEAK
-char gMemory[MiB(2000)];  // some benchmarks take more than 1 GiB
+
+// some benchmarks take more than 1 GiB
+// but cachegrind can't work with static data of 2 GiB (get mmap() error)
+char gMemory[MiB(1400)];
 
 // This type is for "layout"; it's not instantiated
 struct LayoutBlock {
