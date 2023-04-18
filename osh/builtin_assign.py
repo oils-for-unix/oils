@@ -24,7 +24,6 @@ from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
-from osh import word_
 from qsn_ import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
@@ -247,8 +246,7 @@ class Export(vm._AssignBuiltin):
     if arg.n:
       for pair in cmd_val.pairs:
         if pair.rval is not None:
-          e_usage("doesn't accept RHS with -n",
-                  loc.Span(word_.LeftMostSpanForWord(pair.blame_word)))
+          e_usage("doesn't accept RHS with -n", loc.Word(pair.blame_word))
 
         # NOTE: we don't care if it wasn't found, like bash.
         self.mem.ClearFlag(pair.var_name, state.ClearExport)
@@ -269,8 +267,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
   Shared between NewVar and Readonly.
   """
   if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
-    e_usage("Got -a but RHS isn't an array",
-            loc.Span(word_.LeftMostSpanForWord(blame_word)))
+    e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
   if flag_A and rval:
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
@@ -282,8 +279,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
         #return value.MaybeStrArray([])
 
     if rval.tag_() != value_e.AssocArray:
-      e_usage("Got -A but RHS isn't an associative array",
-              loc.Span(word_.LeftMostSpanForWord(blame_word)))
+      e_usage("Got -A but RHS isn't an associative array", loc.Word(blame_word))
 
   return rval
 
