@@ -4,7 +4,7 @@
 
 #include "_build/detected-cpp-config.h"
 
-#if HAVE_READLINE
+#ifdef HAVE_READLINE
   #include <readline/readline.h>
 #endif
 

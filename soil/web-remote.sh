@@ -269,7 +269,7 @@ make-job-wwz() {
   zip -q -r $wwz \
     index.html \
     _test \
-    _tmp/{soil,spec,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
+    _tmp/{soil,spec,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     _tmp/uftrace/{index.html,stage2} \
     web/{base,spec-code,spec-tests,spec-cpp,line-counts,benchmarks,wild}.css web/ajax.js \
     web/table/table-sort.{css,js} \
@@ -278,10 +278,9 @@ make-job-wwz() {
 
 deploy-job-results() {
   local prefix=$1
-  shift
+  local job_id=$2
+  shift 2
   # rest of args are more env vars
-
-  local job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
   # writes $job_id.wwz
   make-job-wwz $job_id

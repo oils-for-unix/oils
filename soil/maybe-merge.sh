@@ -83,10 +83,10 @@ all-status-zero() {
 
   for path in "$@"; do
     # There may be a newline on the end, which 'read' stops at.
-    read -r st < $path
+    read -r status unused_job_id < $path
 
-    if test "$st" != '0'; then
-      echo "$path = $st"
+    if test "$status" != '0'; then
+      echo "$path = $status"
       return 1
     fi
   done
