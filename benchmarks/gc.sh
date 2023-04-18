@@ -102,6 +102,7 @@ print-tasks() {
     "zsh$TAB-"
 
     "_bin/cxx-bumpleak/osh${TAB}mut"
+    "_bin/cxx-bumproot/osh${TAB}mut"
     # these have trivial GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
@@ -158,6 +159,7 @@ print-cachegrind-tasks() {
   local -a shells=(
     "bash${TAB}-"
     "_bin/cxx-bumpleak/osh${TAB}mut"
+    "_bin/cxx-bumproot/osh${TAB}mut"
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
@@ -362,7 +364,7 @@ more-variants() {
 }
 
 measure-all() {
-  local -a bin=( _bin/cxx-bumpleak/osh _bin/cxx-opt/osh )
+  local -a bin=( _bin/cxx-{bumpleak,bumproot,opt}/osh )
 
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-tcmalloc/osh )

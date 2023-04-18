@@ -79,6 +79,9 @@ setglobal_compile_flags() {
     (bumpleak)
       flags="$flags -D BUMP_LEAK"
       ;;
+    (bumproot)
+      flags="$flags -D BUMP_LEAK -D BUMP_ROOT"
+      ;;
     (cheney)
       flags="$flags -D CHENEY_GC"
       ;;
@@ -94,7 +97,7 @@ setglobal_compile_flags() {
   esac
 
   case $variant in
-    (bumpleak|cheney)
+    (bumpleak|bumproot|cheney)
       # Make them optimized builds for now
       flags="$flags -O2 -g -D OPTIMIZED"
       ;;

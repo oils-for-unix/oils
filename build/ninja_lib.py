@@ -60,6 +60,7 @@ COMPILERS_VARIANTS = [
 
 GC_PERF_VARIANTS = [
     ('cxx', 'bumpleak'),
+    ('cxx', 'bumproot'),
     ('cxx', 'tcmalloc'),
 
     # TODO: should be binary with different files
