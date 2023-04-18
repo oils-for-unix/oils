@@ -305,8 +305,8 @@ container-wedges() {
   deps/wedge.sh build deps/source.medo/re2c/
   deps/wedge.sh build deps/source.medo/bloaty/
   deps/wedge.sh build deps/source.medo/uftrace/
-  deps/wedge.sh build deps/source.medo/python3/
-  deps/wedge.sh build deps/source.medo/R-libs/
+  #deps/wedge.sh build deps/source.medo/python3/
+  #deps/wedge.sh build deps/source.medo/R-libs/
 }
 
 "$@"

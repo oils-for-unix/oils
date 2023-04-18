@@ -864,8 +864,8 @@ GcReport = function(in_dir, out_dir) {
 }
 
 GcCachegrindReport = function(in_dir, out_dir) {
-  times = read.table(file.path(in_dir, 'raw/times.tsv'), header=T)
-  counts = read.table(file.path(in_dir, 'stage1/cachegrind_stats.tsv'), header=T)
+  times = readTsv(file.path(in_dir, 'raw/times.tsv'))
+  counts = readTsv(file.path(in_dir, 'stage1/cachegrind.tsv'))
 
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -885,8 +885,7 @@ GcCachegrindReport = function(in_dir, out_dir) {
 }
 
 MyCppReport = function(in_dir, out_dir) {
-  # TSV file, not CSV
-  times = read.table(file.path(in_dir, 'benchmark-table.tsv'), header=T)
+  times = readTsv(file.path(in_dir, 'benchmark-table.tsv'))
   print(times)
 
   times %>% filter(status != 0) -> failed
