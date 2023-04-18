@@ -863,6 +863,27 @@ GcReport = function(in_dir, out_dir) {
   WriteTimes(times, 'ex.abuild-print-help')
 }
 
+GcCachegrindReport = function(in_dir, out_dir) {
+  times = read.table(file.path(in_dir, 'raw/times.tsv'), header=T)
+  counts = read.table(file.path(in_dir, 'stage1/cachegrind_stats.tsv'), header=T)
+
+  times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some gc tasks failed')
+  }
+
+  print(times)
+  print(counts)
+
+  counts %>% left_join(times, by = c('join_id')) %>% 
+    select(-c(join_id, status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    arrange(desc(task), shell_runtime_opts) ->
+    counts
+
+  writeTsv(counts, file.path(out_dir, 'counts'))
+}
+
 MyCppReport = function(in_dir, out_dir) {
   # TSV file, not CSV
   times = read.table(file.path(in_dir, 'benchmark-table.tsv'), header=T)
@@ -1231,6 +1252,9 @@ main = function(argv) {
 
   } else if (action == 'gc') {
     GcReport(in_dir, out_dir)
+
+  } else if (action == 'gc-cachegrind') {
+    GcCachegrindReport(in_dir, out_dir)
 
   } else if (action == 'mycpp') {
     MyCppReport(in_dir, out_dir)

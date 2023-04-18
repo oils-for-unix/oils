@@ -16,6 +16,9 @@ source test/tsv-lib.sh
 
 readonly BASE_DIR=_tmp/gc
 
+# duplicated in benchmarks/gc-cachegrind.sh
+readonly BASE_DIR_CACHEGRIND=_tmp/gc-cachegrind
+
 # See benchmarks/gperftools.sh.  I think the Ubuntu package is very old
 
 download-tcmalloc() {
@@ -152,8 +155,14 @@ print-tasks() {
 
 print-cachegrind-tasks() {
   local -a workloads=(
-    parse.configure-coreutils
+    # coreutils is on osh-parser
+    #parse.configure-coreutils
+
     #parse.configure-cpython
+
+    # Faster tasks, like benchmarks/uftrace, which is instrumented
+    parse.abuild
+    ex.compute-fib
   )
 
   local -a shells=(
@@ -170,7 +179,7 @@ print-cachegrind-tasks() {
     for shell in "${shells[@]}"; do
       local row_part="$workload${TAB}$shell"
 
-      local join_id="cg-$id"
+      local join_id="cachegrind-$id"
       local row="$join_id${TAB}$row_part"
       echo "$row"
 
@@ -225,7 +234,15 @@ run-tasks() {
         ;;
 
       ex.compute-fib)
-        argv=( benchmarks/compute/fib.sh 100 44 )
+        # fewer iterations when instrumented
+        local iters
+        if test $mode = time; then
+          iters=100
+        else
+          iters=10
+        fi
+
+        argv=( benchmarks/compute/fib.sh $iters 44 )
         ;;
 
       *)
@@ -239,27 +256,20 @@ run-tasks() {
     #echo + "${argv[@]}"
     #set -x
 
+    if test $mode = cachegrind; then
+      # Add prefix
+      argv=( $0 with-cachegrind $BASE_DIR_CACHEGRIND/raw/$join_id.txt "${argv[@]}" )
+    fi
+
     # Wrap in a command that writes one row of a TSV
-    local -a instrumented
-    case $mode in
-      time)
-        instrumented=(
-          time-tsv -o $tsv_out --append 
-            --rusage
-            --field "$join_id" --field "$task" --field "$sh_path"
-            --field "$shell_runtime_opts"
-            -- "${argv[@]}"
-        )
-        ;;
-      cachegrind)
-        instrumented=(
-          with-cachegrind $BASE_DIR/cachegrind-$join_id.txt "${argv[@]}"
-        )
-        ;;
-      *)
-        die "Invalid mode $mode"
-        ;;
-    esac
+    # Note: for cachegrind, we need the join ID, but the --rusage is meaningless
+    local -a instrumented=(
+      time-tsv -o $tsv_out --append 
+        --rusage
+        --field "$join_id" --field "$task" --field "$sh_path"
+        --field "$shell_runtime_opts"
+        -- "${argv[@]}"
+    )
 
     # Run with the right environment variables
 
@@ -363,13 +373,17 @@ more-variants() {
   fi
 }
 
-measure-all() {
+build-binaries() {
   local -a bin=( _bin/cxx-{bumpleak,bumproot,opt}/osh )
 
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-tcmalloc/osh )
   fi
   ninja "${bin[@]}"
+}
+
+measure-all() {
+  build-binaries
 
   local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
   mkdir -p $(dirname $tsv_out)
@@ -386,9 +400,22 @@ measure-all() {
 }
 
 measure-cachegrind() {
-  local tsv_out=${1:-$BASE_DIR/raw/times-cachegrind.tsv}
+  build-binaries
+
+  local tsv_out=${1:-$BASE_DIR_CACHEGRIND/raw/times.tsv}
+  mkdir -p $(dirname $tsv_out)
+
+  # Make the header
+  time-tsv -o $tsv_out --print-header \
+    --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
   print-cachegrind-tasks | run-tasks $tsv_out cachegrind
+
+  # TODO: join cachegrind columns
+
+  if command -v pretty-tsv; then
+    pretty-tsv $tsv_out
+  fi
 }
 
 print-report() {
@@ -500,6 +527,8 @@ make-report() {
 }
 
 soil-run() {
+  ### Run in soil/benchmarks
+
   measure-all
 
   make-report

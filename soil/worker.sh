@@ -217,6 +217,7 @@ benchmarks2-tasks() {
 dump-versions    soil/worker.sh dump-versions          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 dev-shell-test   build/dev-shell-test.sh soil-run      -
+gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
 uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 EOF
 }
