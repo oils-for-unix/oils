@@ -877,7 +877,8 @@ GcCachegrindReport = function(in_dir, out_dir) {
   print(counts)
 
   counts %>% left_join(times, by = c('join_id')) %>% 
-    select(-c(join_id, status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    mutate(million_irefs = irefs / 1e6) %>%
+    select(c(million_irefs, task, sh_path, shell_runtime_opts)) %>%
     arrange(desc(task), shell_runtime_opts) ->
     counts
 
