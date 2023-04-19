@@ -328,6 +328,27 @@ _record() {
 }
 record() { sudo $0 _record; }
 
+#
+# Soil CI
+#
+
+build-stress-test() {
+
+  # Special _OIL_DEV for -D GC_TIMING
+  _OIL_DEV=1 ./configure --without-readline
+
+  mkdir -p _tmp
+  c++ -D MARK_SWEEP -I . \
+    -O2 -g \
+    -o _tmp/gc_stress_test \
+    mycpp/gc_stress_test.cc \
+    mycpp/mark_sweep_heap.cc \
+    mycpp/gc_builtins.cc \
+    mycpp/gc_mylib.cc \
+    mycpp/gc_str.cc \
+    -lstdc++ 
+}
+
 profile-stress-test() {
   profile-cpp 'gc_stress_test' flat \
     _tmp/gc_stress_test
@@ -345,6 +366,40 @@ print-index() {
   echo '</body>'
 }
 
+# TODO: fetch the tarball from the cpp-small CI task
+
+build-tar() {
+  local tar=${1:-_release/oils-for-unix.tar}
+
+  tar=$PWD/$tar
+
+  local tmp=$BASE_DIR/tar
+  mkdir -p $tmp
+
+  pushd $tmp
+
+  tar --extract < $tar
+  cd oils-for-unix-*  # glob of 1
+
+  ./configure
+
+  # TODO: add bumproot
+  for variant in bumpleak opt; do
+    echo
+
+    time _build/oils.sh '' $variant
+    echo
+
+    _bin/cxx-$variant-sh/osh -c 'echo "hi from $0"'
+  done
+
+  # TODO:
+  # - profile each executable
+  # - add OIL_GC_THRESHOLD=$big to avoid GC
+
+  popd
+}
+
 soil-run() {
   echo 'TODO run benchmarks/gc tasks'
   # But we don't have Ninja
@@ -353,19 +408,7 @@ soil-run() {
   # Can you WAIT for the tarball?
   # You can wait for the cpp-small task that builds it?  Ah hacky hacky
 
-  # Special _OIL_DEV for -D GC_TIMING
-  _OIL_DEV=1 ./configure --without-readline
-
-  mkdir -p _tmp
-  c++ -D MARK_SWEEP -I . \
-    -O2 -g \
-    -o _tmp/gc_stress_test \
-    mycpp/gc_stress_test.cc \
-    mycpp/mark_sweep_heap.cc \
-    mycpp/gc_builtins.cc \
-    mycpp/gc_mylib.cc \
-    mycpp/gc_str.cc \
-    -lstdc++ 
+  build-stress-test
 
   profile-stress-test
 
