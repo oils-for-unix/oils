@@ -65,6 +65,7 @@ class MarkSet {
   std::vector<uint8_t> bits_;  // bit vector indexed by obj_id
 };
 
+#ifdef POOL_ALLOC
 // A simple Pool allocator for allocating small objects. It maintains an ever
 // growing number of Blocks each consisting of a number of fixed size Cells.
 // Memory is handed out one Cell worth at a time.
@@ -190,6 +191,7 @@ class Pool {
 
   DISALLOW_COPY_AND_ASSIGN(Pool<CellsPerBlock COMMA CellSize>);
 };
+#endif  // POOL_ALLOC
 
 class MarkSweepHeap {
  public:
@@ -232,7 +234,11 @@ class MarkSweepHeap {
   void FastProcessExit();   // let the OS clean up
 
   int num_live() {
-    return num_live_ + pool_.num_live();
+    return num_live_
+#ifdef POOL_ALLOC
+           + pool_.num_live()
+#endif
+        ;
   }
 
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
@@ -261,7 +267,9 @@ class MarkSweepHeap {
   double max_gc_millis_ = 0.0;
   double total_gc_millis_ = 0.0;
 
+#ifdef POOL_ALLOC
   Pool<128, 32> pool_;
+#endif
 
   std::vector<RawObject**> roots_;
   std::vector<RawObject*> global_roots_;

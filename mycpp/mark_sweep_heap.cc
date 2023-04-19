@@ -60,11 +60,13 @@ int MarkSweepHeap::MaybeCollect() {
 // TODO: Make this interface nicer.
 void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
   // log("Allocate %d", num_bytes);
+  #ifdef POOL_ALLOC
   if (num_bytes <= pool_.kMaxObjSize) {
     *in_pool = true;
     return pool_.Allocate(obj_id);
   }
   *in_pool = false;
+  #endif
 
   if (to_free_.empty()) {
     // Use higher object IDs
@@ -116,29 +118,32 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   int obj_id = header->obj_id;
+  #ifdef POOL_ALLOC
   if (header->in_pool) {
     if (pool_.IsMarked(obj_id)) {
       return;
     }
     pool_.Mark(obj_id);
-  } else {
+  } else
+  #endif
+  {
     if (mark_set_.IsMarked(obj_id)) {
       return;
     }
     mark_set_.Mark(obj_id);
   }
 
-  switch (header->heap_tag) {
-  case HeapTag::Opaque:  // e.g. strings have no children
-    break;
+    switch (header->heap_tag) {
+    case HeapTag::Opaque:  // e.g. strings have no children
+      break;
 
-  case HeapTag::Scanned:  // these 2 types have children
-  case HeapTag::FixedSize:
-    gray_stack_.push_back(header);  // Push the header, not the object!
-    break;
+    case HeapTag::Scanned:  // these 2 types have children
+    case HeapTag::FixedSize:
+      gray_stack_.push_back(header);  // Push the header, not the object!
+      break;
 
-  default:
-    FAIL(kShouldNotGetHere);
+    default:
+     FAIL(kShouldNotGetHere);
   }
 }
 
@@ -183,7 +188,9 @@ void MarkSweepHeap::TraceChildren() {
 }
 
 void MarkSweepHeap::Sweep() {
+  #ifdef POOL_ALLOC
   pool_.Sweep();
+  #endif
 
   int last_live_index = 0;
   int num_objs = live_objs_.size();
@@ -228,7 +235,9 @@ int MarkSweepHeap::Collect() {
 
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
+  #ifdef POOL_ALLOC
   pool_.PrepareForGc();
+  #endif
 
   // Mark roots.
   // Note: It might be nice to get rid of double pointers
@@ -297,12 +306,20 @@ void MarkSweepHeap::PrintStats(int fd) {
   // max survived_ can be less than num_live(), because leave off the last GC
   dprintf(fd, "  max survived     = %10d\n", max_survived_);
   dprintf(fd, "\n");
+  #ifdef POOL_ALLOC
   dprintf(fd, "  num allocated    = %10d\n",
           num_allocated_ + pool_.num_allocated());
+  #else
+  dprintf(fd, "  num allocated    = %10d\n", num_allocated_);
+  #endif
   dprintf(fd, "num heap allocated = %10d\n", num_allocated_);
+  #ifdef POOL_ALLOC
   dprintf(fd, "num pool allocated = %10d\n", pool_.num_allocated());
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n",
           bytes_allocated_ + pool_.bytes_allocated());
+  #else
+  dprintf(fd, "bytes allocated    = %10" PRId64 "\n", bytes_allocated_);
+  #endif
   dprintf(fd, "\n");
   dprintf(fd, "  num gc points    = %10d\n", num_gc_points_);
   dprintf(fd, "  num collections  = %10d\n", num_collections_);
@@ -329,12 +346,14 @@ void MarkSweepHeap::EagerFree() {
 void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   char* e = getenv("OIL_GC_ON_EXIT");
 
-  auto free_everything = [this](){
-      roots_.clear();
-      global_roots_.clear();
-      Collect();
-      EagerFree();
-      pool_.Free();
+  auto free_everything = [this]() {
+    roots_.clear();
+    global_roots_.clear();
+    Collect();
+    EagerFree();
+  #ifdef POOL_ALLOC
+    pool_.Free();
+  #endif
   };
 
   if (fast_exit) {
