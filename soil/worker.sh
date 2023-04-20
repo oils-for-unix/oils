@@ -122,14 +122,14 @@ raw-vm-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-distro      soil/worker.sh dump-distro     -
-dump-user-host   soil/worker.sh dump-user-host  -
-dump-env         soil/worker.sh dump-env        -
-dump-timezone    soil/worker.sh dump-timezone   -
-dump-locale      soil/worker.sh dump-locale     -
-dump-hardware    soil/worker.sh dump-hardware   -
-perf-install     benchmarks/perf.sh install     -
-perf-profiles    benchmarks/perf.sh soil-run    _tmp/perf/index.html
+dump-distro      soil/worker.sh dump-distro       -
+dump-user-host   soil/worker.sh dump-user-host    -
+dump-env         soil/worker.sh dump-env          -
+dump-timezone    soil/worker.sh dump-timezone     -
+dump-locale      soil/worker.sh dump-locale       -
+dump-hardware    soil/worker.sh dump-hardware     -
+perf-install     benchmarks/perf.sh soil-install  -
+perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
 }
 
