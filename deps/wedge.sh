@@ -55,11 +55,11 @@
 #
 # /home/uke/
 #   tmp-mount/ 
-#     _cache/            # Mounted from oil/_cache
-#       re2c-3.0.tar.xz
-#       re2c-3.0/        # Extract it here
-#       
 #     _build/            # Build into this temp dir
+#       deps-source/
+#         re2c/
+#           re2c-3.0.tar.xz
+#           re2c-3.0/        # Extract it here
 #       wedge/
 #         re2c
 # /wedge/                # Output is mounted to oil/_mount/wedge-out
@@ -102,10 +102,10 @@ source-dir() {
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
 
     # for Python-3.10.4 to override 'python3' package name
-    echo "$REPO_ROOT/_cache/$WEDGE_TARBALL_NAME-$WEDGE_VERSION"
+    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_TARBALL_NAME-$WEDGE_VERSION"
 
   else
-    echo "$REPO_ROOT/_cache/$WEDGE_NAME-$WEDGE_VERSION"
+    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_NAME-$WEDGE_VERSION"
   fi
 }
 
