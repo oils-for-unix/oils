@@ -56,9 +56,28 @@ int MarkSweepHeap::MaybeCollect() {
   return result;
 }
 
+  #if defined(BUMP_SMALL) || defined(BUMP_BIG)
+    #include "mycpp/bump_leak_heap.h"
+
+BumpLeakHeap gBumpLeak;
+  #endif
+
 // Allocate and update stats
 void* MarkSweepHeap::Allocate(size_t num_bytes) {
   // log("Allocate %d", num_bytes);
+
+  // These only work with GC off -- OIL_GC_THRESHOLD=[big]
+  #ifdef BUMP_SMALL
+  if (num_bytes <= 32) {
+    return gBumpLeak.Allocate(num_bytes);
+  }
+  #endif
+
+  #ifdef BUMP_BIG
+  if (num_bytes > 32) {
+    return gBumpLeak.Allocate(num_bytes);
+  }
+  #endif
 
   if (to_free_.empty()) {
     // Use higher object IDs

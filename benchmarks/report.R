@@ -802,6 +802,14 @@ ComputeReport = function(in_dir, out_dir) {
   WriteProvenance(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 
+WriteOneTask = function(times, out_dir, task_name, precision) {
+  times %>%
+    filter(task == task_name) %>%
+    select(-c(task)) -> subset
+
+  writeTsv(subset, file.path(out_dir, task_name), precision)
+}
+
 GcReport = function(in_dir, out_dir) {
   times = read.table(file.path(in_dir, 'raw/times.tsv'), header=T)
   gc_stats = read.table(file.path(in_dir, 'stage1/gc_stats.tsv'), header=T)
@@ -846,21 +854,16 @@ GcReport = function(in_dir, out_dir) {
   writeTsv(times, file.path(out_dir, 'times'), precision)
   writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision)
 
-  WriteTimes = function(times, task_name) {
-    # weird ensym() for "tidy evaluation"
-    times %>%
-      filter(task == task_name) %>%
-      select(-c(task)) -> subset
-    writeTsv(subset, file.path(out_dir, task_name), precision)
-  }
-
+  tasks = c('parse.configure-coreutils',
+            'parse.configure-cpython',
+            'parse.abuild',
+            'ex.compute-fib',
+            'ex.bashcomp-parse-help',
+            'ex.abuild-print-help')
   # Write out separate rows
-  WriteTimes(times, 'parse.configure-coreutils')
-  WriteTimes(times, 'parse.configure-cpython')
-  WriteTimes(times, 'parse.abuild')
-  WriteTimes(times, 'ex.compute-fib')
-  WriteTimes(times, 'ex.bashcomp-parse-help')
-  WriteTimes(times, 'ex.abuild-print-help')
+  for (task in tasks) {
+    WriteOneTask(times, out_dir, task, precision)
+  }
 }
 
 GcCachegrindReport = function(in_dir, out_dir) {
@@ -879,10 +882,14 @@ GcCachegrindReport = function(in_dir, out_dir) {
   counts %>% left_join(times, by = c('join_id')) %>% 
     mutate(million_irefs = irefs / 1e6) %>%
     select(c(million_irefs, task, sh_path, shell_runtime_opts)) %>%
-    arrange(desc(task), shell_runtime_opts) ->
+    arrange(shell_runtime_opts, million_irefs) ->
     counts
 
-  writeTsv(counts, file.path(out_dir, 'counts'))
+  precision = NULL
+  tasks = c('parse.abuild', 'ex.compute-fib')
+  for (task in tasks) {
+    WriteOneTask(counts, out_dir, task, precision)
+  }
 }
 
 MyCppReport = function(in_dir, out_dir) {

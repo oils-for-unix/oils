@@ -101,6 +101,12 @@ setglobal_compile_flags() {
       # Make them optimized builds for now
       flags="$flags -O2 -g -D OPTIMIZED"
       ;;
+    (bumpbig)
+      flags="$flags -O2 -g -D OPTIMIZED -D BUMP_ROOT -D BUMP_BIG"
+      ;;
+    (bumpsmall)
+      flags="$flags -O2 -g -D OPTIMIZED -D BUMP_ROOT -D BUMP_SMALL"
+      ;;
 
     (dbg)
       flags="$flags -O0 -g"
@@ -149,6 +155,7 @@ setglobal_compile_flags() {
     (opt32)
       flags="$flags -O2 -g -D OPTIMIZED -m32"
       ;;
+
     (tcmalloc)
       flags="$flags -O2 -g -D TCMALLOC -D OPTIMIZED"
       ;;

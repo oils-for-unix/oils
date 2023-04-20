@@ -169,6 +169,10 @@ print-cachegrind-tasks() {
     "bash${TAB}-"
     "_bin/cxx-bumpleak/osh${TAB}mut"
     "_bin/cxx-bumproot/osh${TAB}mut"
+
+    "_bin/cxx-bumpsmall/osh${TAB}mut+alloc"
+    "_bin/cxx-bumpbig/osh${TAB}mut+alloc"
+
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
@@ -378,7 +382,7 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-{bumpleak,bumproot,opt}/osh )
+  local -a bin=( _bin/cxx-{bumpleak,bumproot,bumpsmall,bumpbig,opt}/osh )
 
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-tcmalloc/osh )
