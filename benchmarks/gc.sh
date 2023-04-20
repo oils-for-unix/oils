@@ -56,7 +56,7 @@ debug-tcmalloc() {
 
 install-m32() {
   # needed to compile with -m32
-  sudo apt install gcc-multilib g++-multilib
+  sudo apt-get install gcc-multilib g++-multilib
 }
 
 max-rss() {

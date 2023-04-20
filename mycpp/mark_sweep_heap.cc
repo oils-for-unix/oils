@@ -76,7 +76,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     free(dead);
   }
 
-  void* result = calloc(num_bytes, 1);
+  void* result = malloc(num_bytes);
   DCHECK(result != nullptr);
 
   live_objs_.push_back(static_cast<ObjHeader*>(result));

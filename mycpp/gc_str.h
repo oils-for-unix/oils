@@ -88,6 +88,7 @@ constexpr int kStrHeaderSize = offsetof(Str, data_);
 // Note: for SmallStr, we might copy into the VALUE
 inline void Str::MaybeShrink(int str_len) {
   len_ = str_len;
+  data_[len_] = '\0';  // NUL terminate
 }
 
 inline int len(const Str* s) {
