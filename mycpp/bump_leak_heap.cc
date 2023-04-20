@@ -12,7 +12,7 @@
 
 // We need this #ifdef because we don't want the global var in other binaries
 
-#ifdef BUMP_LEAK
+#if defined(BUMP_LEAK) || defined(TAKE_OVER_SMALL) || defined(TAKE_OVER_BIG)
 
 // some benchmarks take more than 1 GiB
 // but cachegrind can't work with static data of 2 GiB (get mmap() error)
@@ -74,6 +74,8 @@ void BumpLeakHeap::CleanProcessExit() {
 void BumpLeakHeap::FastProcessExit() {
   PrintStats(STDERR_FILENO);
 }
+#endif
 
+#ifdef BUMP_LEAK
 BumpLeakHeap gHeap;
 #endif

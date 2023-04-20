@@ -149,6 +149,14 @@ setglobal_compile_flags() {
     (opt32)
       flags="$flags -O2 -g -D OPTIMIZED -m32"
       ;;
+
+    (big)
+      flags="$flags -O2 -g -D OPTIMIZED -D BUMP_ROOT -D TAKE_OVER_BIG"
+      ;;
+    (small)
+      flags="$flags -O2 -g -D OPTIMIZED -D BUMP_ROOT -D TAKE_OVER_SMALL"
+      ;;
+
     (tcmalloc)
       flags="$flags -O2 -g -D TCMALLOC -D OPTIMIZED"
       ;;

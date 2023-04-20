@@ -169,6 +169,10 @@ print-cachegrind-tasks() {
     "bash${TAB}-"
     "_bin/cxx-bumpleak/osh${TAB}mut"
     "_bin/cxx-bumproot/osh${TAB}mut"
+
+    "_bin/cxx-small/osh${TAB}-"
+    "_bin/cxx-big/osh${TAB}-"
+
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
@@ -275,7 +279,20 @@ run-tasks() {
 
     case $shell_runtime_opts in 
       -)
-        "${instrumented[@]}" > /dev/null
+        case $sh_path in
+          _bin/cxx-small/osh|_bin/cxx-big/osh)
+
+            log "***"
+            log "Running $sh_path with GC off"
+            log "***"
+
+            OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD \
+              "${instrumented[@]}" > /dev/null
+            ;;
+          *)
+            "${instrumented[@]}" > /dev/null
+            ;;
+        esac
         ;;
       mut)
         OIL_GC_STATS=1 \
@@ -378,7 +395,7 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-{bumpleak,bumproot,opt}/osh )
+  local -a bin=( _bin/cxx-{bumpleak,bumproot,opt,small,big}/osh )
 
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-tcmalloc/osh )
