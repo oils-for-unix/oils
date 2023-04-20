@@ -231,7 +231,7 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
-  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
+  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
@@ -250,7 +250,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
-  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_spids);
+  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
