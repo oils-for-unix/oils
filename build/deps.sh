@@ -7,7 +7,7 @@
 #
 # Examples:
 #   build/deps.sh fetch
-#   build/deps.sh install
+#   build/deps.sh install-wedges
 #
 # - re2c
 # - cmark
