@@ -45,10 +45,10 @@ class Json(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # skip 'json'
 
-    action, action_spid = arg_r.Peek2()
+    action, action_loc = arg_r.Peek2()
     if action is None:
       raise error.Usage(_JSON_ACTION_ERROR, loc.Missing())
     arg_r.Next()
@@ -83,7 +83,7 @@ class Json(vm._Builtin):
       # TODO:
       # Respect -validate=F
 
-      var_name, name_spid = arg_r.ReadRequired2("expected variable name")
+      var_name, name_loc = arg_r.ReadRequired2("expected variable name")
       if var_name.startswith(':'):
         var_name = var_name[1:]
 
@@ -91,8 +91,7 @@ class Json(vm._Builtin):
         e_usage('read got too many args', arg_r.Location())
 
       if not match.IsValidVarName(var_name):
-        raise error.Usage('got invalid variable name %r' % var_name,
-                              loc.Span(name_spid))
+        raise error.Usage('got invalid variable name %r' % var_name, name_loc)
 
       try:
         # Use a global _STDIN, because we get EBADF on a redirect if we use a
@@ -108,7 +107,7 @@ class Json(vm._Builtin):
 
         obj = yajl.load(_STDIN)
       except ValueError as e:
-        self.errfmt.Print_('json read: %s' % e, blame_loc=loc.Span(action_spid))
+        self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
         return 1
 
       # TODO: use token directly
@@ -116,6 +115,6 @@ class Json(vm._Builtin):
           location.LName(var_name), value.Obj(obj), scope_e.LocalOnly)
 
     else:
-      raise error.Usage(_JSON_ACTION_ERROR, loc.Span(action_spid))
+      raise error.Usage(_JSON_ACTION_ERROR, action_loc)
 
     return 0
