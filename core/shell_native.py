@@ -19,7 +19,7 @@ from core import vm
 from frontend import flag_def  # side effect: flags are defined!
 unused2 = flag_def
 from frontend import parse_lib
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, loc_t
 
 from osh import builtin_assign
 from osh import builtin_bracket
@@ -45,7 +45,8 @@ def MakeBuiltinArgv(argv1):
   argv = ['']  # dummy for argv[0]
   argv.extend(argv1)
   # no location info
-  return cmd_value.Argv(argv, [loc.Missing()] * len(argv), None)
+  missing = loc.Missing()  # type: loc_t
+  return cmd_value.Argv(argv, [missing] * len(argv), None)
 
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):

@@ -6,8 +6,7 @@ args_test.py: Tests for args.py
 import unittest
 
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc
-from asdl import runtime
+from _devbuild.gen.syntax_asdl import loc, loc_t
 from core import error
 from frontend import flag_spec
 from frontend import args  # module under test
@@ -19,7 +18,8 @@ def _MakeBuiltinArgv(argv):
   """
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  return cmd_value.Argv(argv, [loc.Missing()] * len(argv), None)
+  missing = loc.Missing()  # type: loc_t
+  return cmd_value.Argv(argv, [missing] * len(argv), None)
 
 
 def _MakeReader(argv):
