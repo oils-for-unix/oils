@@ -170,8 +170,8 @@ print-cachegrind-tasks() {
     "_bin/cxx-bumpleak/osh${TAB}mut"
     "_bin/cxx-bumproot/osh${TAB}mut"
 
-    "_bin/cxx-small/osh${TAB}-"
-    "_bin/cxx-big/osh${TAB}-"
+    "_bin/cxx-small/osh${TAB}mut"
+    "_bin/cxx-big/osh${TAB}mut"
 
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
@@ -279,6 +279,9 @@ run-tasks() {
 
     case $shell_runtime_opts in 
       -)
+        "${instrumented[@]}" > /dev/null
+        ;;
+      mut)
         case $sh_path in
           _bin/cxx-small/osh|_bin/cxx-big/osh)
 
@@ -290,13 +293,10 @@ run-tasks() {
               "${instrumented[@]}" > /dev/null
             ;;
           *)
-            "${instrumented[@]}" > /dev/null
+            OIL_GC_STATS=1 \
+              "${instrumented[@]}" > /dev/null
             ;;
         esac
-        ;;
-      mut)
-        OIL_GC_STATS=1 \
-          "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc)
         # disable GC with big threshold
