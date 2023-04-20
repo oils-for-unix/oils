@@ -63,8 +63,7 @@ jobs:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          # NOTE: does not publish to status API right now
-          soil/github-actions.sh publish-and-exit raw-vm
+          soil/github-actions.sh publish-and-exit raw-vm T
 
   dummy:
     runs-on: ubuntu-20.04
@@ -345,7 +344,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild']
+    needs: ['dummy', 'benchmarks', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
