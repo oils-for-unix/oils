@@ -263,7 +263,7 @@ class Complete(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
     attrs = flag_spec.ParseMore('complete', arg_r)
@@ -308,7 +308,7 @@ class CompGen(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
     arg = flag_spec.ParseMore('compgen', arg_r)
@@ -365,7 +365,7 @@ class CompOpt(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
     arg = flag_spec.ParseMore('compopt', arg_r)
@@ -395,7 +395,7 @@ class CompAdjust(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
     attrs = flag_spec.ParseMore('compadjust', arg_r)

@@ -93,7 +93,7 @@ class Alias(vm._Builtin):
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
           self.errfmt.Print_('No alias named %r' % name,
-                             blame_loc=loc.Span(cmd_val.arg_spids[i]))
+                             blame_loc=cmd_val.arg_locs[i])
           status = 1
         else:
           print('alias %s=%r' % (name, alias_exp))
@@ -125,7 +125,7 @@ class UnAlias(vm._Builtin):
         mylib.dict_erase(self.aliases, name)
       else:
         self.errfmt.Print_('No alias named %r' % name,
-                           blame_loc=loc.Span(cmd_val.arg_spids[i]))
+                           blame_loc=cmd_val.arg_locs[i])
         status = 1
     return status
 
@@ -170,7 +170,7 @@ class Set(vm._Builtin):
         print(code_str)
       return 0
 
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # skip 'set'
     arg = flag_spec.ParseMore('set', arg_r)
 
@@ -454,14 +454,14 @@ class GetOpts(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
 
     # NOTE: If first char is a colon, error reporting is different.  Alpine
     # might not use that?
     spec_str = arg_r.ReadRequired('requires an argspec')
 
-    var_name, var_spid = arg_r.ReadRequired2(
+    var_name, var_loc = arg_r.ReadRequired2(
         'requires the name of a variable to set')
 
     spec = self.spec_cache.get(spec_str)
@@ -478,7 +478,7 @@ class GetOpts(vm._Builtin):
     else:
       # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
       # except mksh.
-      raise error.Usage('got invalid variable name %r' % var_name, loc.Span(var_spid))
+      raise error.Usage('got invalid variable name %r' % var_name, var_loc)
     return status
 
 
@@ -514,7 +514,6 @@ class Echo(vm._Builtin):
     argv = arg_r.Rest()
 
     backslash_c = False  # \c terminates input
-    #arg0_spid = cmd_val.arg_spids[0]
 
     if arg.e:
       new_argv = []  # type: List[str]
@@ -611,16 +610,16 @@ class Use(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # skip 'use'
 
-    arg, arg_spid = arg_r.Peek2()
+    arg, arg_loc = arg_r.Peek2()
     if arg is None:
       raise error.Usage("expected 'bin' or 'dialect'", loc.Missing())
     arg_r.Next()
 
     if arg == 'dialect':
-      expected, e_spid = arg_r.Peek2()
+      expected, e_loc = arg_r.Peek2()
       if expected is None:
         raise error.Usage('expected dialect name', loc.Missing())
 
@@ -632,12 +631,12 @@ class Use(vm._Builtin):
         else:
           self.errfmt.Print_(
               'Expected dialect %r, got %r' % (expected, actual),
-              blame_loc=loc.Span(e_spid))
+              blame_loc=e_loc)
 
           return 1
       else:
         # Not printing expected value
-        self.errfmt.Print_('Expected dialect %r' % expected, blame_loc=loc.Span(e_spid))
+        self.errfmt.Print_('Expected dialect %r' % expected, blame_loc=e_loc)
         return 1
 
     # 'use bin' can be used for static analysis.  Although could it also
@@ -648,7 +647,7 @@ class Use(vm._Builtin):
         log('bin %s', name)
       return 0
 
-    raise error.Usage("expected 'bin' or 'dialect'", loc.Span(arg_spid))
+    raise error.Usage("expected 'bin' or 'dialect'", arg_loc)
 
 
 class Shvar(vm._Builtin):
@@ -669,14 +668,14 @@ class Shvar(vm._Builtin):
       raise error.Usage('expected a block', loc.Missing())
 
     pairs = []  # type: List[Tuple[str, str]]
-    args, arg_spids = arg_r.Rest2()
+    args, arg_locs = arg_r.Rest2()
     if len(args) == 0:
       raise error.Usage('Expected name=value', loc.Missing())
 
     for i, arg in enumerate(args):
       name, s = mylib.split_once(arg, '=')
       if s is None:
-        raise error.Usage('Expected name=value', loc.Span(arg_spids[i]))
+        raise error.Usage('Expected name=value', arg_locs[i])
       pairs.append((name, s))
 
       # Important fix: shvar PATH='' { } must make all binaries invisible
@@ -773,9 +772,9 @@ if mylib.PYTHON:
     def Run(self, cmd_val):
       # type: (cmd_value__Argv) -> int
 
-      arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+      arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
 
-      hay_name, arg0_spid = arg_r.Peek2()
+      hay_name, arg0_loc = arg_r.Peek2()
       if hay_name == 'haynode':  # haynode package glib { ... }
         arg_r.Next()
         hay_name = None  # don't validate
@@ -794,7 +793,7 @@ if mylib.PYTHON:
 
       # package { ... } is not valid
       if len(arguments) == 0 and lit_block is None:
-        e_usage('expected at least 1 arg, or a literal block { }', loc.Span(arg0_spid))
+        e_usage('expected at least 1 arg, or a literal block { }', arg0_loc)
 
       result['args'] = arguments
 
@@ -809,7 +808,7 @@ if mylib.PYTHON:
           # foo { ... }, not if it's like package foo (myblock)
 
           brace_group = lit_block.brace_group
-          # BraceGroup has spid for {
+          # BraceGroup has location for {
           line = brace_group.left.line
 
           # for the user to pass back to --location-str
@@ -890,12 +889,12 @@ if mylib.PYTHON:
 
     def Run(self, cmd_val):
       # type: (cmd_value__Argv) -> int
-      arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+      arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
       arg_r.Next()  # skip 'hay'
 
-      action, action_spid = arg_r.Peek2()
+      action, action_loc = arg_r.Peek2()
       if action is None:
-        e_usage(_HAY_ACTION_ERROR, loc.Span(action_spid))
+        e_usage(_HAY_ACTION_ERROR, action_loc)
       arg_r.Next()
 
       if action == 'define':
@@ -905,15 +904,15 @@ if mylib.PYTHON:
         # arg = args.Parse(JSON_WRITE_SPEC, arg_r)
         first, _ = arg_r.Peek2()
         if first is None:
-          e_usage('define expected a name', loc.Span(action_spid))
+          e_usage('define expected a name', action_loc)
 
-        names, name_spids = arg_r.Rest2()
+        names, name_locs = arg_r.Rest2()
         for i, name in enumerate(names):
           path = name.split('/')
           for p in path:
             if len(p) == 0:
               e_usage("got invalid path %r.  Parts can't be empty." % name,
-                      loc.Span(name_spids[i]))
+                      name_locs[i])
           self.hay_state.DefinePath(path)
 
       elif action == 'eval':
@@ -952,6 +951,6 @@ if mylib.PYTHON:
         ast_f.write('\n')
 
       else:
-        e_usage(_HAY_ACTION_ERROR, loc.Span(action_spid))
+        e_usage(_HAY_ACTION_ERROR, action_loc)
 
       return 0

@@ -9,7 +9,7 @@ TODO: Move some of osh/word_ here.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc_t, loc_e, loc__Span, loc__WordPart, loc__Word,
+    loc, loc_t, loc_e, loc__Span, loc__WordPart, loc__Word,
     command_e, command_t, command__Simple, command__ShAssignment,
     command__Pipeline, command__AndOr, command__DoGroup, command__Sentence,
     command__Subshell, command__WhileUntil, command__If, command__Case,
@@ -33,7 +33,7 @@ def LName(name):
   Wrapper for lvalue::Named() with location.  TODO: add locations and remove
   this.
   """
-  return lvalue.Named(name, runtime.NO_SPID)
+  return lvalue.Named(name, loc.Missing())
 
 
 def GetSpanId(loc_):

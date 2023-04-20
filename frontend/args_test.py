@@ -6,6 +6,7 @@ args_test.py: Tests for args.py
 import unittest
 
 from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.syntax_asdl import loc
 from asdl import runtime
 from core import error
 from frontend import flag_spec
@@ -18,12 +19,12 @@ def _MakeBuiltinArgv(argv):
   """
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
+  return cmd_value.Argv(argv, [loc.Missing()] * len(argv), None)
 
 
 def _MakeReader(argv):
   cmd_val = _MakeBuiltinArgv(argv)
-  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
   arg_r.Next()
   return arg_r
 
@@ -32,7 +33,7 @@ def _ParseCmdVal(spec, cmd_val):
   # type: (cmd_value__Argv) -> Tuple[args._Attributes, int]
   """For testing only
   """
-  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
   arg_r.Next()  # move past the builtin name
   return args.Parse(spec, arg_r), arg_r.i
 

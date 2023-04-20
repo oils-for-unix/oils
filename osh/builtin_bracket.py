@@ -15,6 +15,7 @@ from core import error
 from core.pyerror import e_usage, p_die
 from core import vm
 from frontend import match
+from frontend import location
 from mycpp.mylib import log
 from osh import sh_expr_eval
 from osh import bool_parse
@@ -62,7 +63,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
     #log('ARGV %s i %d', self.argv, self.i)
     s = self.cmd_val.argv[self.i]
-    left_spid = self.cmd_val.arg_spids[self.i]
+    left_loc = self.cmd_val.arg_locs[self.i]
     self.i += 1
 
     # default is an operand word
@@ -74,9 +75,10 @@ class _StringWordEmitter(word_parse.WordEmitter):
     if id_ == Id.Undefined_Tok:
       id_ = Id.Word_Compound
 
-    # NOTE: We only have the left spid now.  It might be useful to add the
-    # right one.
-    w = word.String(id_, s, left_spid)
+    # TODO: use the location from arg_locs once we've replaced spid -> loc_t in
+    #       word.String. Currently, changing word.String blows up the refactor.
+    spid = location.GetSpanId(left_loc)
+    w = word.String(id_, s, spid)
     return w
 
   def Read(self):
@@ -194,11 +196,11 @@ class Test(vm._Builtin):
 
       strs = cmd_val.argv
       if not strs or strs[-1] != ']':
-        self.errfmt.Print_('missing closing ]', blame_loc=loc.Span(cmd_val.arg_spids[0]))
+        self.errfmt.Print_('missing closing ]', blame_loc=cmd_val.arg_locs[0])
         return 2
       # Remove the right bracket
       cmd_val.argv.pop()
-      cmd_val.arg_spids.pop()
+      cmd_val.arg_locs.pop()
 
     w_parser = _StringWordEmitter(cmd_val)
     w_parser.Read()  # dummy: advance past argv[0]

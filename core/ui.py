@@ -138,10 +138,11 @@ def GetLineSourceString(arena, line, quote_filename=False):
 
     elif case(source_e.ArgvWord):
       src = cast(source__ArgvWord, UP_src)
-      if src.span_id == runtime.NO_SPID:
+      span_id = location.GetSpanId(src.location)
+      if span_id == runtime.NO_SPID:
         s = '[ %s word at ? ]' % src.what
       else:
-        token = arena.GetToken(src.span_id)
+        token = arena.GetToken(span_id)
         line_num = token.line.line_num
         outer_source = GetLineSourceString(arena,
                                            token.line,
@@ -255,9 +256,9 @@ def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
 
 class ctx_Location(object):
 
-  def __init__(self, errfmt, spid):
-    # type: (ErrorFormatter, int) -> None
-    errfmt.spid_stack.append(spid)
+  def __init__(self, errfmt, location):
+    # type: (ErrorFormatter, loc_t) -> None
+    errfmt.loc_stack.append(location)
     self.errfmt = errfmt
 
   def __enter__(self):
@@ -266,7 +267,7 @@ class ctx_Location(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.errfmt.spid_stack.pop()
+    self.errfmt.loc_stack.pop()
 
 
 # TODO:
@@ -290,8 +291,8 @@ class ErrorFormatter(object):
   def __init__(self, arena):
     # type: (Arena) -> None
     self.arena = arena
-    self.last_spid = runtime.NO_SPID  # last resort for location info
-    self.spid_stack = []  # type: List[int]
+    self.last_spid = loc.Missing()  # last resort for location info
+    self.loc_stack = []  # type: List[loc_t]
 
     self.one_line_errexit = False  # root process
 
@@ -305,11 +306,11 @@ class ErrorFormatter(object):
   # like foo.sh:1: (compopt) Not currently executing.
 
   def CurrentLocation(self):
-    # type: () -> int
-    if len(self.spid_stack):
-      return self.spid_stack[-1]
+    # type: () -> loc_t
+    if len(self.loc_stack):
+      return self.loc_stack[-1]
     else:
-      return runtime.NO_SPID
+      return loc.Missing()
 
   def PrefixPrint(self, msg, prefix, blame_loc):
     # type: (str, str, loc_t) -> None

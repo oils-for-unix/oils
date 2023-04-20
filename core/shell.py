@@ -125,7 +125,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
   rc_line_reader = reader.FileLineReader(f, arena)
   rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-  with alloc.ctx_Location(arena, source.SourcedFile(rc_path, runtime.NO_SPID)):
+  with alloc.ctx_Location(arena, source.SourcedFile(rc_path, loc.Missing())):
     # TODO: handle status, e.g. 2 for ParseError
     status = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 

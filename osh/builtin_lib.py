@@ -28,7 +28,7 @@ class Bind(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     self.errfmt.Print_("warning: bind isn't implemented",
-                       blame_loc=loc.Span(cmd_val.arg_spids[0]))
+                       blame_loc=cmd_val.arg_locs[0])
     return 1
 
 

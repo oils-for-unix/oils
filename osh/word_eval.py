@@ -4,7 +4,7 @@ word_eval.py - Evaluator for the word language.
 
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
-    Token, loc,
+    Token, loc, loc_t,
     braced_var_sub, command_sub,
     bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
     suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
@@ -28,7 +28,6 @@ from _devbuild.gen.runtime_asdl import (
     VTestPlace, VarSubState,
 )
 from _devbuild.gen.option_asdl import option_i
-from asdl import runtime
 from core import error
 from core import pyos
 from core import pyutil
@@ -644,10 +643,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(var_index) as case:
               if case(a_index_e.Int):
                 var_index = cast(a_index__Int, UP_var_index)
-                lval = lvalue.Indexed(var_name, var_index.i, runtime.NO_SPID)
+                lval = lvalue.Indexed(var_name, var_index.i, loc.Missing())
               elif case(a_index_e.Str):
                 var_index = cast(a_index__Str, UP_var_index)
-                lval = lvalue.Keyed(var_name, var_index.s, runtime.NO_SPID)
+                lval = lvalue.Keyed(var_name, var_index.s, loc.Missing())
               else: 
                 raise AssertionError()
 
@@ -1080,7 +1079,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     """
     part_vals = []  # type: List[part_value_t]
     self._EvalDoubleQuoted(dq_part.parts, part_vals)
-    return self._ConcatPartVals(part_vals, dq_part.left.span_id)
+    return self._ConcatPartVals(part_vals, dq_part.left)
 
   def _DecayArray(self, val):
     # type: (value__MaybeStrArray) -> value__Str
@@ -1360,8 +1359,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_val = _ValueToPartValue(val, quoted or quoted2)
     part_vals.append(part_val)
 
-  def _ConcatPartVals(self, part_vals, span_id):
-    # type: (List[part_value_t], int) -> str
+  def _ConcatPartVals(self, part_vals, location):
+    # type: (List[part_value_t], loc_t) -> str
     """Helper."""
     strs = []  # type: List[str]
     for part_val in part_vals:
@@ -1375,7 +1374,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           part_val = cast(part_value__Array, UP_part_val)
           if self.exec_opts.strict_array():
             # Examples: echo f > "$@"; local foo="$@"
-            e_die("Illegal array word part (strict_array)", loc.Span(span_id))
+            e_die("Illegal array word part (strict_array)", location)
           else:
             # It appears to not respect IFS
             # TODO: eliminate double join()?
@@ -1398,7 +1397,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_vals = [] # type: List[part_value_t]
     self._EvalBracedVarSub(part, part_vals, False)
     # blame ${ location
-    return self._ConcatPartVals(part_vals, part.left.span_id)
+    return self._ConcatPartVals(part_vals, part.left)
 
   def _EvalSimpleVarSub(self, part, part_vals, quoted):
     # type: (simple_var_sub, List[part_value_t], bool) -> None
@@ -1449,7 +1448,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     """
     part_vals = []  # type: List[part_value_t]
     self._EvalSimpleVarSub(node, part_vals, False)
-    return self._ConcatPartVals(part_vals, node.left.span_id)
+    return self._ConcatPartVals(part_vals, node.left)
 
   def _EvalExtGlob(self, part, part_vals):
     # type: (word_part__ExtGlob, List[part_value_t]) -> None
@@ -1699,10 +1698,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         results = []  # type: List[str]
         n = self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
         if n < 0:
-          span_id = word_.LeftMostSpanForWord(w)
           raise error.FailGlob(
-              'Extended glob %r matched no files' % fnmatch_pat,
-              loc.Span(span_id))
+              'Extended glob %r matched no files' % fnmatch_pat, loc.Word(w))
 
         part_vals.append(part_value.Array(results))
       elif bool(eval_flags & EXTGLOB_NESTED):
@@ -1975,13 +1972,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
     started_pairs = False
 
     flags = [arg0]  # initial flags like -p, and -f -F name1 name2
-    flag_spids = [word_.LeftMostSpanForWord(words[0])]
+    flag_locs = [loc.Word(words[0])]  # type: List[loc_t]
     assign_args = []  # type: List[assign_arg]
 
     n = len(words)
     for i in xrange(1, n):  # skip first word
       w = words[i]
-      word_spid = word_.LeftMostSpanForWord(w)
+      word_loc = loc.Word(w)
 
       if word_.IsVarLike(w):
         started_pairs = True  # Everything from now on is an assign_pair
@@ -1991,7 +1988,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if left_token:  # Detected statically
           if left_token.id != Id.Lit_VarLike:
             # (not guaranteed since started_pairs is set twice)
-            e_die('LHS array not allowed in assignment builtin', loc.Word(w))
+            e_die('LHS array not allowed in assignment builtin', word_loc)
 
           if lexer.IsPlusEquals(left_token):
             var_name = lexer.TokenSliceRight(left_token, -2)
@@ -2026,7 +2023,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         for arg in argv:
           if arg.startswith('-') or arg.startswith('+'):  # e.g. declare -r +r
             flags.append(arg)
-            flag_spids.append(word_spid)
+            flag_locs.append(word_loc)
 
             # Shortcut that relies on -f and -F always meaning "function" for
             # all assignment builtins
@@ -2041,17 +2038,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
               flags.append(arg)
 
-    return cmd_value.Assign(builtin_id, flags, flag_spids, assign_args)
+    return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
 
   def SimpleEvalWordSequence2(self, words, allow_assign):
     # type: (List[compound_word], bool) -> cmd_value_t
     """Simple word evaluation for Oil."""
     strs = []  # type: List[str]
-    spids = []  # type: List[int]
+    locs = []  # type: List[loc_t]
 
     n = 0
     for i, w in enumerate(words):
-      word_spid = word_.LeftMostSpanForWord(w)
+      word_loc = loc.Word(w)
 
       # No globbing in the first arg for command.Simple.
       if i == 0 and allow_assign:
@@ -2065,17 +2062,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         strs.extend(strs0)
         for _ in strs0:
-          spids.append(word_spid)
+          locs.append(word_loc)
         continue
 
       if glob_.LooksLikeStaticGlob(w):
         val = self.EvalWordToString(w)  # respects strict-array
         num_appended = self.globber.Expand(val.s, strs)
         if num_appended < 0:
-          raise error.FailGlob('Pattern %r matched no files' % val.s,
-                               loc.Span(word_spid))
+          raise error.FailGlob('Pattern %r matched no files' % val.s, word_loc)
         for _ in xrange(num_appended):
-          spids.append(word_spid)
+          locs.append(word_loc)
         continue
 
       part_vals = []  # type: List[part_value_t]
@@ -2102,9 +2098,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if len(frame):  # empty array gives empty frame!
           tmp = [s for (s, _, _) in frame]
           strs.append(''.join(tmp))  # no split or glob
-          spids.append(word_spid)
+          locs.append(word_loc)
 
-    return cmd_value.Argv(strs, spids, None)
+    return cmd_value.Argv(strs, locs, None)
 
   def EvalWordSequence2(self, words, allow_assign=False):
     # type: (List[compound_word], bool) -> cmd_value_t
@@ -2135,7 +2131,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     #log('W %s', words)
     strs = []  # type: List[str]
-    spids = []  # type: List[int]
+    locs = []  # type: List[loc_t]
 
     n = 0
     for i, w in enumerate(words):
@@ -2179,17 +2175,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
       for frame in frames:
         self._EvalWordFrame(frame, strs)
 
-      # Fill in spids parallel to strs.
+      # Fill in locations parallel to strs.
       n_next = len(strs)
-      spid = word_.LeftMostSpanForWord(w)
+      word_loc = loc.Word(w)
       for _ in xrange(n_next - n):
-        spids.append(spid)
+        locs.append(word_loc)
       n = n_next
 
     # A non-assignment command.
     # NOTE: Can't look up builtins here like we did for assignment, because
     # functions can override builtins.
-    return cmd_value.Argv(strs, spids, None)
+    return cmd_value.Argv(strs, locs, None)
 
   def EvalWordSequence(self, words):
     # type: (List[compound_word]) -> List[str]

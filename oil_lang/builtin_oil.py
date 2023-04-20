@@ -14,9 +14,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     value_e, value__MaybeStrArray, value__Obj, Proc, cmd_value__Argv
 )
-from _devbuild.gen.syntax_asdl import (
-    loc, command_e, BraceGroup,
-)
+from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from core import error
 from core.pyerror import e_usage
 from core import state
@@ -58,12 +56,12 @@ class Pp(_Builtin):
     # type: (cmd_value__Argv) -> int
     arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val)
 
-    action, action_spid = arg_r.ReadRequired2(
+    action, action_loc = arg_r.ReadRequired2(
         'expected an action (proc, cell, etc.)')
 
     # Actions that print unstable formats start with '.'
     if action == 'cell':
-      argv, spids = arg_r.Rest2()
+      argv, locs = arg_r.Rest2()
 
       status = 0
       for i, name in enumerate(argv):
@@ -72,12 +70,12 @@ class Pp(_Builtin):
 
         if not match.IsValidVarName(name):
           raise error.Usage('got invalid variable name %r' % name,
-                            loc.Span(spids[i]))
+                            locs[i])
 
         cell = self.mem.GetCell(name)
         if cell is None:
           self.errfmt.Print_("Couldn't find a variable named %r" % name,
-                             blame_loc=loc.Span(spids[i]))
+                             blame_loc=locs[i])
           status = 1
         else:
           self.stdout.write('%s = ' % name)
@@ -87,13 +85,13 @@ class Pp(_Builtin):
           self.stdout.write('\n')
 
     elif action == 'proc':
-      names, spids = arg_r.Rest2()
+      names, locs = arg_r.Rest2()
       if len(names):
         for i, name in enumerate(names):
           node = self.procs.get(name)
           if node is None:
             self.errfmt.Print_('Invalid proc %r' % name,
-                    blame_loc=loc.Span(spids[i]))
+                    blame_loc=locs[i])
             return 1
       else:
         names = sorted(self.procs)
@@ -120,7 +118,7 @@ class Pp(_Builtin):
       status = 0
 
     else:
-      e_usage('got invalid action %r' % action, loc.Span(action_spid))
+      e_usage('got invalid action %r' % action, action_loc)
 
     return status
 
@@ -138,15 +136,14 @@ class Append(_Builtin):
     # type: (cmd_value__Argv) -> int
     arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
 
-    var_name, var_spid = arg_r.ReadRequired2(
+    var_name, var_loc = arg_r.ReadRequired2(
         'requires a variable name')
 
     if var_name.startswith(':'):  # optional : sigil
       var_name = var_name[1:]
 
     if not match.IsValidVarName(var_name):
-      raise error.Usage('got invalid variable name %r' % var_name,
-                        loc.Span(var_spid))
+      raise error.Usage('got invalid variable name %r' % var_name, var_loc)
 
     val = self.mem.GetValue(var_name)
 
@@ -166,7 +163,7 @@ class Append(_Builtin):
             val.obj.extend(arg_r.Rest())
             ok = True
     if not ok:
-      self.errfmt.Print_("%r isn't an array" % var_name, blame_loc=loc.Span(var_spid))
+      self.errfmt.Print_("%r isn't an array" % var_name, blame_loc=var_loc)
       return 1
 
     return 0

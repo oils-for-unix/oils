@@ -8,8 +8,6 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 
-from asdl import runtime
-
 from core import dev
 from core import process
 from mycpp.mylib import log
@@ -21,6 +19,7 @@ from core import vm
 from frontend import flag_def  # side effect: flags are defined!
 unused2 = flag_def
 from frontend import parse_lib
+from _devbuild.gen.syntax_asdl import loc
 
 from osh import builtin_assign
 from osh import builtin_bracket
@@ -46,7 +45,7 @@ def MakeBuiltinArgv(argv1):
   argv = ['']  # dummy for argv[0]
   argv.extend(argv1)
   # no location info
-  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
+  return cmd_value.Argv(argv, [loc.Missing()] * len(argv), None)
 
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):

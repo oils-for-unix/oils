@@ -17,7 +17,6 @@ from _devbuild.gen.runtime_asdl import (
     span_e, cmd_value__Argv, value, scope_e
 )
 from _devbuild.gen.syntax_asdl import source, loc
-from asdl import runtime
 from core import alloc
 from core import error
 from core.pyerror import e_usage, e_die, e_die_status
@@ -353,9 +352,9 @@ class Read(vm._Builtin):
           var_name = var_name[1:]
         arg_r.Next()
 
-      next_arg, next_spid = arg_r.Peek2()
+      next_arg, next_loc = arg_r.Peek2()
       if next_arg is not None:
-        raise error.Usage('got extra argument', loc.Span(next_spid))
+        raise error.Usage('got extra argument', next_loc)
 
       return self._Line(arg, var_name)
 
@@ -371,9 +370,9 @@ class Read(vm._Builtin):
           var_name = var_name[1:]
         arg_r.Next()
 
-      next_arg, next_spid = arg_r.Peek2()
+      next_arg, next_loc = arg_r.Peek2()
       if next_arg is not None:
-        raise error.Usage('got extra argument', loc.Span(next_spid))
+        raise error.Usage('got extra argument', next_loc)
 
       return self._All(var_name)
 
@@ -561,7 +560,7 @@ class Cd(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('cd', cmd_val, accept_typed_args=True)
     arg = arg_types.cd(attrs.attrs)
 
-    dest_dir, arg_spid = arg_r.Peek2()
+    dest_dir, arg_loc = arg_r.Peek2()
     if dest_dir is None:
       val = self.mem.GetValue('HOME')
       try:
@@ -599,7 +598,7 @@ class Cd(vm._Builtin):
     err_num = pyos.Chdir(real_dest_dir)
     if err_num != 0:
       self.errfmt.Print_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
-                         blame_loc=loc.Span(arg_spid))
+                         blame_loc=arg_loc)
       return 1
 
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
@@ -656,7 +655,7 @@ class Pushd(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
 
-    dir_arg, dir_arg_spid = arg_r.Peek2()
+    dir_arg, dir_arg_loc = arg_r.Peek2()
     if dir_arg is None:
       # TODO: It's suppose to try another dir before doing this?
       self.errfmt.Print_('pushd: no other directory')
@@ -664,16 +663,16 @@ class Pushd(vm._Builtin):
       return 1
 
     arg_r.Next()
-    extra, extra_spid = arg_r.Peek2()
+    extra, extra_loc = arg_r.Peek2()
     if extra is not None:
-      e_usage('got too many arguments', loc.Span(extra_spid))
+      e_usage('got too many arguments', extra_loc)
 
     # TODO: 'cd' uses normpath?  Is that inconsistent?
     dest_dir = os_path.abspath(dir_arg)
     err_num = pyos.Chdir(dest_dir)
     if err_num != 0:
       self.errfmt.Print_("pushd: %r: %s" % (dest_dir, posix.strerror(err_num)),
-                         blame_loc=loc.Span(dir_arg_spid))
+                         blame_loc=dir_arg_loc)
       return 1
 
     self.dir_stack.Push(dest_dir)
@@ -715,9 +714,9 @@ class Popd(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
 
-    extra, extra_spid = arg_r.Peek2()
+    extra, extra_loc = arg_r.Peek2()
     if extra is not None:
-      e_usage('got extra argument', loc.Span(extra_spid))
+      e_usage('got extra argument', extra_loc)
 
     out_errs = []  # type: List[bool]
     _PopDirStack('popd', self.mem, self.dir_stack, self.errfmt, out_errs)
@@ -809,10 +808,10 @@ class Help(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
     #arg = arg_types.help(attrs.attrs)
 
-    topic, blame_spid = arg_r.Peek2()
+    topic, blame_loc = arg_r.Peek2()
     if topic is None:
       topic = 'help'
-      blame_spid = runtime.NO_SPID
+      blame_loc = loc.Missing()
     else:
       arg_r.Next()
 
@@ -832,7 +831,7 @@ class Help(vm._Builtin):
       # 3. This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
       self.errfmt.Print_('no help topics match %r' % topic,
-                         blame_loc=loc.Span(blame_spid))
+                         blame_loc=blame_loc)
       return 1
 
     print(contents)

@@ -180,7 +180,7 @@ class ShellExecutor(vm._Executor):
 
     with vm.ctx_FlushStdout():
       # note: could be second word, like 'builtin read'
-      with ui.ctx_Location(self.errfmt, cmd_val.arg_spids[0]):
+      with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
         try:
           status = builtin_func.Run(cmd_val)
           assert isinstance(status, int)
@@ -190,7 +190,7 @@ class ShellExecutor(vm._Executor):
           # span_id.
           location = e.location  # type: loc_t
           if not e.HasLocation():
-            location = loc.Span(self.errfmt.CurrentLocation())
+            location = self.errfmt.CurrentLocation()
           # e.g. 'type' doesn't accept flag '-x'
           self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, location)
           status = 2  # consistent error code for usage error
@@ -210,8 +210,8 @@ class ShellExecutor(vm._Executor):
       call_procs: whether to look up procs.
     """
     argv = cmd_val.argv
-    if len(cmd_val.arg_spids):
-      arg0_loc = loc.Span(cmd_val.arg_spids[0])  # type: loc_t
+    if len(cmd_val.arg_locs):
+      arg0_loc = cmd_val.arg_locs[0]
     else:
       arg0_loc = loc.Missing()
 
