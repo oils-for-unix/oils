@@ -208,7 +208,7 @@ class _Attributes {
 
 class Reader {
  public:
-  Reader(List<Str*>* argv, List<int>* spids = nullptr);
+  Reader(List<Str*>* argv, List<syntax_asdl::loc_t*>* locs = nullptr);
   void Next();
   Str* Peek();
   Tuple2<Str*, int> Peek2();
@@ -220,7 +220,7 @@ class Reader {
   int _FirstSpanId();
   int SpanId();
   List<Str*>* argv;
-  List<int>* spids;
+  List<syntax_asdl::loc_t*>* locs;
   int n;
   int i;
 
