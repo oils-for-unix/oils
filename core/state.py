@@ -1836,7 +1836,7 @@ class Mem(object):
         #  lval.name = '__' + lval.name
 
         # Note: location could be a[x]=1 or (( a[ x ] = 1 ))
-        left_spid = lval.blame_spid
+        left_loc = lval.blame_loc
 
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
@@ -1848,7 +1848,7 @@ class Mem(object):
           return
 
         if cell.readonly:
-          e_die("Can't assign to readonly array", loc.Span(left_spid))
+          e_die("Can't assign to readonly array", left_loc)
 
         UP_cell_val = cell.val
         # undef[0]=y is allowed
@@ -1860,7 +1860,7 @@ class Mem(object):
           elif case2(value_e.Str):
             # s=x
             # s[1]=y  # invalid
-            e_die("Can't assign to items in a string", loc.Span(left_spid))
+            e_die("Can't assign to items in a string", left_loc)
 
           elif case2(value_e.MaybeStrArray):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
@@ -1889,7 +1889,7 @@ class Mem(object):
         # AssocArray shouldn because we query IsAssocArray before evaluating
         # sh_lhs_expr.  Could conslidate with s[i] case above
         e_die("Value of type %s can't be indexed" % ui.ValType(cell.val),
-              loc.Span(left_spid))
+              left_loc)
 
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)
@@ -1898,12 +1898,12 @@ class Mem(object):
         assert val.tag_() == value_e.Str, val
         rval = cast(value__Str, val)
 
-        left_spid = lval.blame_spid
+        left_loc = lval.blame_loc
 
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, which_scopes,
                                                    is_setref)
         if cell.readonly:
-          e_die("Can't assign to readonly associative array", loc.Span(left_spid))
+          e_die("Can't assign to readonly associative array", left_loc)
 
         # We already looked it up before making the lvalue
         assert cell.val.tag_() == value_e.AssocArray, cell

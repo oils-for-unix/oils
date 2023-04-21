@@ -465,7 +465,7 @@ class FdState(object):
 
     for r in redirects:
       #log('apply %s', r)
-      with ui.ctx_Location(self.errfmt, r.op_spid):
+      with ui.ctx_Location(self.errfmt, loc.Span(r.op_spid)):
         try:
           self._ApplyRedirect(r)
         except (IOError, OSError) as e:
@@ -634,8 +634,7 @@ class ExternalProgram(object):
       exec ls /
       ( ls / )
     """
-    self._Exec(argv0_path, cmd_val.argv, loc.Span(cmd_val.arg_spids[0]),
-               environ, True)
+    self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_locs[0], environ, True)
     assert False, "This line should never execute"  # NO RETURN
 
   def _Exec(self, argv0_path, argv, argv0_loc, environ, should_retry):

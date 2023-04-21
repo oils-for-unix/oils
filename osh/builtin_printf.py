@@ -13,11 +13,10 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_e, printf_part_t, printf_part__Literal,
-    printf_part__Percent, source, Token, loc
+    printf_part__Percent, source, Token, loc, loc_t, loc_e
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
-from asdl import runtime
 from core import alloc
 from core import error
 from core.pyerror import e_die, p_die
@@ -162,8 +161,8 @@ class Printf(vm._Builtin):
 
     self.shell_start_time = time_.time()  # this object initialized in main()
 
-  def _Format(self, parts, varargs, spids, out):
-    # type: (List[printf_part_t], List[str], List[int], List[str]) -> int
+  def _Format(self, parts, varargs, locs, out):
+    # type: (List[printf_part_t], List[str], List[loc_t], List[str]) -> int
     """Hairy printf formatting logic."""
 
     arg_index = 0
@@ -198,64 +197,64 @@ class Printf(vm._Builtin):
           if part.width:
             if part.width.id in (Id.Format_Num, Id.Format_Zero):
               width_str = lexer.TokenVal(part.width)
-              width_spid = part.width.span_id
+              width_loc = part.width  # type: loc_t
             elif part.width.id == Id.Format_Star:
               if arg_index < num_args:
                 width_str = varargs[arg_index]
-                width_spid = spids[arg_index]
+                width_loc = locs[arg_index]
                 arg_index += 1
               else:
                 width_str = ''  # invalid
-                width_spid = runtime.NO_SPID
+                width_loc = loc.Missing()
             else:
               raise AssertionError()
 
             try:
               width = int(width_str)
             except ValueError:
-              if width_spid == runtime.NO_SPID:
-                width_spid = part.width.span_id
+              if width_loc.tag_() == loc_e.Missing:
+                width_loc = part.width
               self.errfmt.Print_("printf got invalid width %r" % width_str,
-                                 blame_loc=loc.Span(width_spid))
+                                 blame_loc=width_loc)
               return 1
 
           precision = -1  # nonexistent
           if part.precision:
             if part.precision.id == Id.Format_Dot:
               precision_str = '0'
-              precision_spid = part.precision.span_id
+              precision_loc = part.precision  # type: loc_t
             elif part.precision.id in (Id.Format_Num, Id.Format_Zero):
               precision_str = lexer.TokenVal(part.precision)
-              precision_spid = part.precision.span_id
+              precision_loc = part.precision
             elif part.precision.id == Id.Format_Star:
               if arg_index < num_args:
                 precision_str = varargs[arg_index]
-                precision_spid = spids[arg_index]
+                precision_loc = locs[arg_index]
                 arg_index += 1
               else:
                 precision_str = ''
-                precision_spid = runtime.NO_SPID
+                precision_loc = loc.Missing()
             else:
               raise AssertionError()
 
             try:
               precision = int(precision_str)
             except ValueError:
-              if precision_spid == runtime.NO_SPID:
-                precision_spid = part.precision.span_id
+              if precision_loc.tag_() == loc_e.Missing:
+                precision_loc = part.precision
               self.errfmt.Print_(
                   'printf got invalid precision %r' % precision_str,
-                  blame_loc=loc.Span(precision_spid))
+                  blame_loc=precision_loc)
               return 1
 
           if arg_index < num_args:
             s = varargs[arg_index]
-            word_spid = spids[arg_index]
+            word_loc = locs[arg_index]
             arg_index += 1
             has_arg = True
           else:
             s = ''
-            word_spid = runtime.NO_SPID
+            word_loc = loc.Missing()
             has_arg = False
 
           # Note: %s could be lexed into Id.Percent_S.  Although small string
@@ -314,9 +313,9 @@ class Printf(vm._Builtin):
                 d = -1
 
               else:
-                blame_spid = word_spid if has_arg else part.type.span_id
+                blame_loc = word_loc if has_arg else part.type
                 self.errfmt.Print_('printf expected an integer, got %r' % s,
-                                   blame_loc=loc.Span(blame_spid))
+                                   blame_loc=blame_loc)
                 return 1
 
             if part.type.id == Id.Format_Time:
@@ -437,8 +436,8 @@ class Printf(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('printf', cmd_val)
     arg = arg_types.printf(attrs.attrs)
 
-    fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')
-    varargs, spids = arg_r.Rest2()
+    fmt, fmt_loc = arg_r.ReadRequired2('requires a format string')
+    varargs, locs = arg_r.Rest2()
 
     #log('fmt %s', fmt)
     #log('vals %s', vals)
@@ -452,7 +451,7 @@ class Printf(vm._Builtin):
       lexer = self.parse_ctx.MakeLexer(line_reader)
       parser = _FormatStringParser(lexer)
 
-      with alloc.ctx_Location(arena, source.ArgvWord('printf', fmt_spid)):
+      with alloc.ctx_Location(arena, source.ArgvWord('printf', fmt_loc)):
         try:
           parts = parser.Parse()
         except error.Parse as e:
@@ -468,15 +467,15 @@ class Printf(vm._Builtin):
         print()
 
     out = []  # type: List[str]
-    status = self._Format(parts, varargs, spids, out)
+    status = self._Format(parts, varargs, locs, out)
     if status != 0:
       return status  # failure
 
     result = ''.join(out)
     if arg.v is not None:
       # TODO: get the span_id for arg.v!
-      v_spid = runtime.NO_SPID
-      lval = self.unsafe_arith.ParseLValue(arg.v, v_spid)
+      v_loc = loc.Missing()
+      lval = self.unsafe_arith.ParseLValue(arg.v, v_loc)
       state.BuiltinSetValue(self.mem, lval, value.Str(result))
     else:
       mylib.Stdout().write(result)

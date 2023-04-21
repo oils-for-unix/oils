@@ -11,7 +11,7 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray,
     scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
 )
-from _devbuild.gen.syntax_asdl import loc, word_t
+from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
 from core import error
 from core.pyerror import e_usage
@@ -228,7 +228,7 @@ class Export(vm._AssignBuiltin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Assign) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
     attrs = flag_spec.Parse('export_', arg_r)
     arg = arg_types.export_(attrs.attrs)
@@ -292,7 +292,7 @@ class Readonly(vm._AssignBuiltin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Assign) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
     attrs = flag_spec.Parse('readonly', arg_r)
     arg = arg_types.readonly(attrs.attrs)
@@ -344,7 +344,7 @@ class NewVar(vm._AssignBuiltin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Assign) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
     attrs = flag_spec.Parse('new_var', arg_r)
     arg = arg_types.new_var(attrs.attrs)
@@ -448,13 +448,13 @@ class Unset(vm._Builtin):
     self.unsafe_arith = unsafe_arith
     self.errfmt = errfmt
 
-  def _UnsetVar(self, arg, spid, proc_fallback):
-    # type: (str, int, bool) -> bool
+  def _UnsetVar(self, arg, location, proc_fallback):
+    # type: (str, loc_t, bool) -> bool
     """
     Returns:
       bool: whether the 'unset' builtin should succeed with code 0.
     """
-    lval = self.unsafe_arith.ParseLValue(arg, spid)
+    lval = self.unsafe_arith.ParseLValue(arg, location)
 
     #log('lval %s', lval)
     found = False
@@ -464,7 +464,7 @@ class Unset(vm._Builtin):
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
       msg = e.UserErrorString()
-      self.errfmt.Print_(msg, blame_loc=loc.Span(spid))
+      self.errfmt.Print_(msg, blame_loc=location)
       return False
 
     if proc_fallback and not found:
@@ -477,20 +477,20 @@ class Unset(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('unset', cmd_val)
     arg = arg_types.unset(attrs.attrs)
 
-    argv, arg_spids = arg_r.Rest2()
+    argv, arg_locs = arg_r.Rest2()
     for i, name in enumerate(argv):
-      spid = arg_spids[i]
+      location = arg_locs[i]
 
       if arg.f:
         mylib.dict_erase(self.procs, name)
 
       elif arg.v:
-        if not self._UnsetVar(name, spid, False):
+        if not self._UnsetVar(name, location, False):
           return 1
 
       else:
         # proc_fallback: Try to delete var first, then func.
-        if not self._UnsetVar(name, spid, True):
+        if not self._UnsetVar(name, location, True):
           return 1
 
     return 0

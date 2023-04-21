@@ -104,9 +104,9 @@ class Fork(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('fork', cmd_val, accept_typed_args=True)
 
-    arg, span_id = arg_r.Peek2()
+    arg, location = arg_r.Peek2()
     if arg is not None:
-      e_usage('got unexpected argument %r' % arg, loc.Span(span_id))
+      e_usage('got unexpected argument %r' % arg, location)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
@@ -124,9 +124,9 @@ class ForkWait(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('forkwait', cmd_val, accept_typed_args=True)
-    arg, span_id = arg_r.Peek2()
+    arg, location = arg_r.Peek2()
     if arg is not None:
-      e_usage('got unexpected argument %r' % arg, loc.Span(span_id))
+      e_usage('got unexpected argument %r' % arg, location)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:

@@ -20,8 +20,7 @@ from __future__ import print_function
 import posix_ as posix
 import sys
 
-from _devbuild.gen.syntax_asdl import loc
-from asdl import runtime
+from _devbuild.gen.syntax_asdl import loc, loc_t
 from core import error
 from core import shell
 from core import pyos
@@ -96,7 +95,8 @@ def AppBundleMain(argv):
   main_name, ext = os_path.splitext(b)
 
   # TODO: Do we need span IDs here?
-  arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
+  missing = loc.Missing()  # type: loc_t
+  arg_r = args.Reader(argv, locs=[missing] * len(argv))
 
   login_shell = False
 

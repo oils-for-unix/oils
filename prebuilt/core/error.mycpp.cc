@@ -59,12 +59,7 @@ Str* FALSE_STR = str4;
 
 namespace error {  // define
 
-int NO_SPID = -1;
-
-Usage::Usage(Str* msg, int span_id) {
-  this->msg = msg;
-  this->span_id = span_id;
-}
+using syntax_asdl::loc_e;
 
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
@@ -72,7 +67,6 @@ _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
 }
 
 bool _ErrorWithLocation::HasLocation() {
-  using syntax_asdl::loc_e;
   if (this->location) {
     return this->location->tag_() != loc_e::Missing;
   }
@@ -83,6 +77,9 @@ bool _ErrorWithLocation::HasLocation() {
 
 Str* _ErrorWithLocation::UserErrorString() {
   return this->msg;
+}
+
+Usage::Usage(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
 Runtime::Runtime(Str* msg) {
@@ -126,10 +123,10 @@ namespace pyerror {  // define
 
 int NO_SPID = -1;
 
-[[noreturn]] void e_usage(Str* msg, int span_id) {
-  StackRoots _roots({&msg});
+[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
+  StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Usage>(msg, span_id);
+  throw Alloc<error::Usage>(msg, location);
 }
 
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location) {

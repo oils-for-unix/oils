@@ -6,7 +6,6 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value__Block
 from _devbuild.gen.syntax_asdl import source, loc
-from asdl import runtime
 from core import alloc
 from core import error
 from core import main_loop
@@ -38,14 +37,14 @@ class ParseHay(object):
   def Call(self, path):
     # type: (str) -> value_t
 
-    call_spid = runtime.NO_SPID  # TODO: location info
+    call_loc = loc.Missing()  # TODO: location info
 
     # TODO: need to close the file!
     try:
       f = self.fd_state.Open(path)
     except (IOError, OSError) as e:
       msg = posix.strerror(e.errno)
-      raise error.Expr("Couldn't open %r: %s" % (path, msg), loc.Span(call_spid))
+      raise error.Expr("Couldn't open %r: %s" % (path, msg), call_loc)
 
     arena = self.parse_ctx.arena
     line_reader = reader.FileLineReader(f, arena)
@@ -57,7 +56,7 @@ class ParseHay(object):
     c_parser = self.parse_ctx.MakeConfigParser(line_reader)
 
     # TODO: Should there be a separate config file source?
-    src = source.SourcedFile(path, call_spid)
+    src = source.SourcedFile(path, call_loc)
     try:
       with alloc.ctx_Location(arena, src):
         node = main_loop.ParseWholeFile(c_parser)
@@ -85,9 +84,9 @@ class EvalHay(object):
     def Call(self, block):
       # type: (value_t) -> Dict[str, Any]
 
-      call_spid = runtime.NO_SPID
+      call_loc = loc.Missing()
       if block.tag_() != value_e.Block:
-        raise error.Expr('Expected a block, got %s' % block, loc.Span(call_spid))
+        raise error.Expr('Expected a block, got %s' % block, call_loc)
 
       UP_block = block
       block = cast(value__Block, UP_block)
