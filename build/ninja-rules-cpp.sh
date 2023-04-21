@@ -164,6 +164,10 @@ setglobal_compile_flags() {
     *+bumpsmall)
       flags="$flags -D BUMP_ROOT -D BUMP_SMALL"
       ;;
+
+    *+pool)
+      flags="$flags -D POOL_ALLOC"
+      ;;
   esac
 
   # needed to strip unused symbols

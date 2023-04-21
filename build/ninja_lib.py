@@ -48,7 +48,6 @@ COMPILERS_VARIANTS = [
 
     ('cxx', 'ubsan'),
 
-
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
     ('clang', 'opt'),  # for comparisons
@@ -62,6 +61,8 @@ GC_PERF_VARIANTS = [
 
     ('cxx', 'opt+bumpbig'),
     ('cxx', 'opt+bumpsmall'),
+
+    ('cxx', 'opt+pool'),
 
     # TODO: should be binary with different files
     ('cxx', 'opt+cheney'),
