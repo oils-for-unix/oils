@@ -107,6 +107,9 @@ print-tasks() {
     "_bin/cxx-opt+bumpleak/osh${TAB}mut"
     "_bin/cxx-opt+bumproot/osh${TAB}mut"
 
+    "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+bumpbig/osh${TAB}mut+alloc"
+
     # these have trivial GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
