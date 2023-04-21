@@ -50,9 +50,9 @@ readonly -a LEAKY_TESTS=(
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
-  local variants=(ubsan gcalways)
+  local variants=(ubsan asan+gcalways)
   if can-compile-32-bit; then
-    variants+=(gcalways32)
+    variants+=(asan32+gcalways)
   else
     # TODO: CI images need gcc-multilib
     log "Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"

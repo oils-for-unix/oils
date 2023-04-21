@@ -25,9 +25,9 @@ def DefineTargets(ru):
       'mycpp/cheney_heap_test.cc',
       deps = ['//mycpp/cheney_heap'],
       matrix = [
-        ('cxx', 'asan', '-D CHENEY_GC'),
-        ('cxx', 'ubsan', '-D CHENEY_GC'),
-        ('clang', 'coverage', '-D CHENEY_GC'),
+        ('cxx', 'asan+cheney'),
+        ('cxx', 'ubsan+cheney'),
+        ('clang', 'coverage+cheney'),
       ],
       phony_prefix = 'mycpp-unit')
 
@@ -49,9 +49,9 @@ def DefineTargets(ru):
       'mycpp/bump_leak_heap_test.cc',
       deps = ['//mycpp/runtime'],
       matrix = [
-        ('cxx', 'asan', '-D BUMP_LEAK'),
-        ('cxx', 'ubsan', '-D BUMP_LEAK'),
-        ('clang', 'coverage', '-D BUMP_LEAK'),
+        ('cxx', 'asan+bumpleak'),
+        ('cxx', 'ubsan+bumpleak'),
+        ('clang', 'coverage+bumpleak'),
       ],
       phony_prefix = 'mycpp-unit')
 
@@ -202,7 +202,7 @@ def TranslatorSubgraph(ru, translator, ex):
   else:
     # pea just has one variant for now
     example_matrix = [
-        ('cxx', 'gcalways')
+        ('cxx', 'asan+gcalways')
     ]
 
   if translator == 'mycpp':
@@ -365,7 +365,7 @@ def NinjaGraph(ru):
 
       # minimal
       MATRIX = [
-          ('test', 'asan'),  # TODO: gcalways is better!
+          ('test', 'asan'),  # TODO: asan+gcalways is better!
           ('benchmark', 'opt'),
       ]
 

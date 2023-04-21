@@ -100,7 +100,7 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh'
 
-    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh')) {
+    } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
 
     } else {
@@ -124,7 +124,7 @@ ShellLabelFromPath = function(sh_path) {
       # the opt binary is osh-native
       label = 'osh-native'
 
-    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh')) {
+    } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
 
     } else if (endsWith(sh, '_bin/osh')) {  # the app bundle

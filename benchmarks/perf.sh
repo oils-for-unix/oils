@@ -393,7 +393,7 @@ build-tar() {
   ./configure
 
   # TODO: add bumproot
-  for variant in bumpleak opt; do
+  for variant in opt+bumpleak opt; do
     echo
 
     time _build/oils.sh '' $variant

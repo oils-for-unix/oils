@@ -37,7 +37,7 @@ debug-tcmalloc() {
   touch mycpp/marksweep_heap.cc
 
   # No evidence of difference
-  for bin in _bin/cxx-{opt,tcmalloc}/osh; do
+  for bin in _bin/cxx-{opt,opt+tcmalloc}/osh; do
     echo $bin
     ninja $bin
 
@@ -104,8 +104,9 @@ print-tasks() {
     "dash$TAB-"
     "zsh$TAB-"
 
-    "_bin/cxx-bumpleak/osh${TAB}mut"
-    "_bin/cxx-bumproot/osh${TAB}mut"
+    "_bin/cxx-opt+bumpleak/osh${TAB}mut"
+    "_bin/cxx-opt+bumproot/osh${TAB}mut"
+
     # these have trivial GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
@@ -116,9 +117,9 @@ print-tasks() {
 
   if test -n "${TCMALLOC:-}"; then
     shells+=(
-      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc"
-      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc+free"
-      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt+tcmalloc/osh${TAB}mut+alloc"
+      "_bin/cxx-opt+tcmalloc/osh${TAB}mut+alloc+free"
+      "_bin/cxx-opt+tcmalloc/osh${TAB}mut+alloc+free+gc"
     )
   fi
 
@@ -167,11 +168,11 @@ print-cachegrind-tasks() {
 
   local -a shells=(
     "bash${TAB}-"
-    "_bin/cxx-bumpleak/osh${TAB}mut"
-    "_bin/cxx-bumproot/osh${TAB}mut"
+    "_bin/cxx-opt+bumpleak/osh${TAB}mut"
+    "_bin/cxx-opt+bumproot/osh${TAB}mut"
 
-    "_bin/cxx-bumpsmall/osh${TAB}mut+alloc"
-    "_bin/cxx-bumpbig/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+bumpbig/osh${TAB}mut+alloc"
 
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
@@ -314,11 +315,6 @@ run-tasks() {
           "${instrumented[@]}" > /dev/null
         ;;
 
-      # More comparisons:
-      # - tcmalloc,
-      # - 32-bit 
-      # - different GC thresholds
-
       *)
         die "Invalid shell runtime opts $shell_runtime_opts"
         ;;
@@ -382,10 +378,10 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-{bumpleak,bumproot,bumpsmall,bumpbig,opt}/osh )
+  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+bumpbig}/osh )
 
   if test -n "${TCMALLOC:-}"; then
-    bin+=( _bin/cxx-tcmalloc/osh )
+    bin+=( _bin/cxx-opt+tcmalloc/osh )
   fi
   ninja "${bin[@]}"
 }
