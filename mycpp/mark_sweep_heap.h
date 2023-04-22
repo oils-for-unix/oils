@@ -77,14 +77,20 @@ class Pool {
  public:
   static constexpr size_t kMaxObjSize = CellSize;
 
-  Pool() = default;
+  Pool() {
+
+  }
 
   void* Allocate(int* obj_id) {
     num_allocated_++;
 
     if (!free_list_) {
       // Allocate a new Block and add every new Cell to the free list.
-      Block* block = static_cast<Block*>(malloc(sizeof(Block)));
+      // Block* block = static_cast<Block*>(malloc(sizeof(Block)));
+      extern char gMemory[];
+      extern size_t gMemPos;
+      Block* block = reinterpret_cast<Block*>(&(gMemory[gMemPos]));
+      gMemPos += kBlockSize;
       blocks_.push_back(block);
       bytes_allocated_ += kBlockSize;
       num_free_ += CellsPerBlock;
@@ -144,9 +150,9 @@ class Pool {
   }
 
   void Free() {
-    for (Block* block : blocks_) {
-      free(block);
-    }
+    // for (Block* block : blocks_) {
+      // free(block);
+    // }
     blocks_.clear();
   }
 
