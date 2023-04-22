@@ -111,7 +111,9 @@ T* Alloc(Args&&... args) {
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
   header->obj_id = obj_id;
+  #if POOL_ALLOC
   header->in_pool = in_pool;
+  #endif
 #endif
   void* obj = header->ObjectAddress();
   // mycpp doesn't generated constructors that initialize every field
@@ -152,7 +154,9 @@ inline Str* NewStr(int len) {
 
 #if MARK_SWEEP
   header->obj_id = obj_id;
+  #if POOL_ALLOC
   header->in_pool = in_pool;
+  #endif
 #endif
   return s;
 }
@@ -174,7 +178,9 @@ inline Str* OverAllocatedStr(int len) {
   auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
   header->obj_id = obj_id;
+  #if POOL_ALLOC
   header->in_pool = in_pool;
+  #endif
 #endif
   return s;
 }
@@ -218,7 +224,9 @@ inline Slab<T>* NewSlab(int len) {
   auto slab = new (obj) Slab<T>(len);
 #if MARK_SWEEP
   header->obj_id = obj_id;
+  #if POOL_ALLOC
   header->in_pool = in_pool;
+  #endif
 #endif
   return slab;
 }

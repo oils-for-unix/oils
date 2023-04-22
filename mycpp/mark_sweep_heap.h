@@ -68,7 +68,10 @@ class MarkSet {
 #ifdef POOL_ALLOC
 // A simple Pool allocator for allocating small objects. It maintains an ever
 // growing number of Blocks each consisting of a number of fixed size Cells.
-// Memory is handed out one Cell worth at a time.
+// Memory is handed out one Cell at a time.
+// Note: within the context of the Pool allocator we refer to object IDs as cell
+// IDs because in addition to identifying an object they're also used to index
+// into the Cell storage.
 template <int CellsPerBlock, size_t CellSize>
 class Pool {
  public:
@@ -80,12 +83,13 @@ class Pool {
     num_allocated_++;
 
     if (!free_list_) {
-      // Allocate a new Block and link every new Cell onto the free list.
+      // Allocate a new Block and add every new Cell to the free list.
       Block* block = static_cast<Block*>(malloc(sizeof(Block)));
       blocks_.push_back(block);
       bytes_allocated_ += kBlockSize;
       num_free_ += CellsPerBlock;
 
+      // The starting cell_id for Cells in this block.
       int cell_id = (blocks_.size() - 1) * CellsPerBlock;
       for (Cell& cell : block->cells) {
         FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell.data());
@@ -168,8 +172,8 @@ class Pool {
     std::array<Cell, CellsPerBlock> cells;
   };
 
-  // Unoccupied Cells are linked together into a list of FreeCells so they can
-  // be quickly allocated.
+  // Unused/free cells are tracked via a linked list of FreeCells. The FreeCells
+  // are stored in the unused Cells, so it takes no extra memory to track them.
   struct FreeCell {
     int id;
     FreeCell* next;
@@ -178,10 +182,9 @@ class Pool {
 
   static constexpr int kBlockSize = CellSize * CellsPerBlock;
 
-  // Whether a GC is underway for asserting that calls are in order.
+  // Whether a GC is underway, for asserting that calls are in order.
   bool gc_underway_ = false;
 
-  // A list of free cells to be allocated from.
   FreeCell* free_list_ = nullptr;
   int num_free_ = 0;
   int num_allocated_ = 0;
