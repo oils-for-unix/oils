@@ -103,10 +103,7 @@ class Pool {
     free_list_ = free_list_->next;
     num_free_--;
     *obj_id = cell->id;
-
-    char* mem = reinterpret_cast<char*>(cell);
-    std::fill(mem, mem + CellSize, 0);
-    return mem;
+    return cell;
   }
 
   void PrepareForGc() {
