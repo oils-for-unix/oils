@@ -34,31 +34,39 @@ module runtime
   # A static word from osh.asdl is evaluted to a dynamic value.  value
   # instances are stored in state.Mem().
   value =
-    # An Undef value is different than "no binding" because of dynamic scope.
+    # A var bound to Undef is different than no binding because of dynamic scope.
+    # It's also our null value.
     Undef
   | Str(str s)
-    # Important: This is NOT stored in state.Mem now.  It's used only by
-    # the arithmetic evaluator.
-  | Int(int i)
     # "holes" in the array are represented by None
   | MaybeStrArray(List[str] strs)
     # d will be a dict
   | AssocArray(Dict[str, str] d)
 
+    # Important: This is NOT stored in state.Mem now.  It's used only by
+    # the arithmetic evaluator.
+  | Int(int i)
+    # TODO: Use the rest of these types!
   | Bool(bool b)
-  | Float(float f) # For flags only now.  TODO: ASDL needs float type.
+  | Float(float f)
+
+    -- TODO: remove MaybeStrArray in favor of this
+  | List(List[value] items)
+
+    -- TODO: remove AssocArray in favor of this
+  | Dict(Dict[str, value] d)
 
     # / d+ /
   | Eggex(re expr, str as_ere)
 
-    # &(echo one; echo two)
+    # cd { echo 1; echo 2 } and &(echo 1; echo 2)
   | Block(command body)
-    # Is Proc separate?  Or should Block be a "open Proc"?
+    # TODO: more reflection
+    # - Expr for ^[1 + 2] 
+    # - Template for ^"$1 and $2"
+    # - Proc, Func
 
-    # Tea stuff: Func, Data, Enum, Class, and maybe File?
-
-    # A Python-style object.  'any' is not currently type checked.
-    # TODO: Remove this
+    # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
