@@ -55,7 +55,7 @@ def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
   if not accept_typed_args:
     typed_args.DoesNotAccept(cmd_val.typed_args)
 
-  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
@@ -69,7 +69,7 @@ def ParseLikeEcho(spec_name, cmd_val):
 
   typed_args.DoesNotAccept(cmd_val.typed_args)
 
-  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]

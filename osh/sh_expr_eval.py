@@ -27,7 +27,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
     braced_var_sub, simple_var_sub,
-    loc
+    loc, loc_t
 )
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
@@ -195,8 +195,8 @@ class UnsafeArith(object):
 
     self.arena = self.parse_ctx.arena
 
-  def ParseLValue(self, s, span_id):
-    # type: (str, int) -> lvalue_t
+  def ParseLValue(self, s, location):
+    # type: (str, loc_t) -> lvalue_t
     """Parse lvalue/place for 'unset' and 'printf -v' 
 
     It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
@@ -204,30 +204,30 @@ class UnsafeArith(object):
     if not self.parse_ctx.parse_opts.parse_sh_arith():
       # Do something simpler for Oil
       if not match.IsValidVarName(s):
-        e_die('Invalid variable name %r (parse_sh_arith is off)' % s, loc.Span(span_id))
-      return lvalue.Named(s, span_id)
+        e_die('Invalid variable name %r (parse_sh_arith is off)' % s, location)
+      return lvalue.Named(s, location)
 
     a_parser = self.parse_ctx.MakeArithParser(s)
 
-    with alloc.ctx_Location(self.arena, source.ArgvWord('dynamic place', span_id)):
+    with alloc.ctx_Location(self.arena, source.ArgvWord('dynamic place', location)):
       try:
         anode = a_parser.Parse()
       except error.Parse as e:
         self.errfmt.PrettyPrintError(e)
         # Exception for builtins 'unset' and 'printf'
-        e_usage('got invalid place expression', loc.Span(span_id))
+        e_usage('got invalid place expression', location)
 
     # Note: we parse '1+2', and then it becomes a runtime error because it's
     # not a valid place.  Could be a parse error.
 
     if self.exec_opts.eval_unsafe_arith():
-      lval = self.arith_ev.EvalArithLhs(anode, span_id)
+      lval = self.arith_ev.EvalArithLhs(anode)
     else:
       # Prevent attacks like these by default:
       #
       # unset -v 'A["$(echo K; rm *)"]'
       with state.ctx_Option(self.mutable_opts, [option_i._allow_command_sub], False):
-        lval = self.arith_ev.EvalArithLhs(anode, span_id)
+        lval = self.arith_ev.EvalArithLhs(anode)
 
     return lval
 
@@ -439,7 +439,7 @@ class ArithEvaluator(object):
     # type: (arith_expr_t) -> Tuple[int, lvalue_t]
     """ For x = y  and   x += y  and  ++x """
 
-    lval = self.EvalArithLhs(node, runtime.NO_SPID)
+    lval = self.EvalArithLhs(node)
     val = OldValue(lval, self.mem, self.exec_opts)
 
     # BASH_LINENO, arr (array name without strict_array), etc.
@@ -447,9 +447,9 @@ class ArithEvaluator(object):
       named_lval = cast(lvalue__Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
         if val.tag_() == value_e.MaybeStrArray:
-          lval = lvalue.Indexed(named_lval.name, 0, runtime.NO_SPID)
+          lval = lvalue.Indexed(named_lval.name, 0, loc.Missing())
         elif val.tag_() == value_e.AssocArray:
-          lval = lvalue.Keyed(named_lval.name, '0', runtime.NO_SPID)
+          lval = lvalue.Keyed(named_lval.name, '0', loc.Missing())
         val = word_eval.DecayArray(val)
 
     # This error message could be better, but we already have one
@@ -553,7 +553,7 @@ class ArithEvaluator(object):
         if op_id == Id.Arith_Equal:
           # Don't really need a span ID here, because tdop.CheckLhsExpr should
           # have done all the validation.
-          lval = self.EvalArithLhs(node.left, runtime.NO_SPID)
+          lval = self.EvalArithLhs(node.left)
           rhs_int = self.EvalToInt(node.right)
 
           self._Store(lval, rhs_int)
@@ -794,7 +794,7 @@ class ArithEvaluator(object):
         assert node.name is not None
 
         # Note: C++ constructor doesn't take spids directly.  Should we add that?
-        lval1 = lvalue.Named(node.name, node.left.span_id)
+        lval1 = lvalue.Named(node.name, node.left)
         lval = lval1
 
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
@@ -803,11 +803,11 @@ class ArithEvaluator(object):
 
         if self.mem.IsAssocArray(node.name):
           key = self.EvalWordToString(node.index)
-          lval2 = lvalue.Keyed(node.name, key, node.left.span_id)
+          lval2 = lvalue.Keyed(node.name, key, node.left)
           lval = lval2
         else:
           index = self.EvalToInt(node.index)
-          lval3 = lvalue.Indexed(node.name, index, node.left.span_id)
+          lval3 = lvalue.Indexed(node.name, index, node.left)
           lval = lval3
 
       else:
@@ -816,7 +816,7 @@ class ArithEvaluator(object):
     return lval
 
   def _VarNameOrWord(self, anode):
-    # type: (arith_expr_t) -> Tuple[Optional[str], int]
+    # type: (arith_expr_t) -> Tuple[Optional[str], loc_t]
     """
     Returns (var_name, span_id) if the arith node can be interpreted that way
     """
@@ -824,19 +824,18 @@ class ArithEvaluator(object):
     with tagswitch(anode) as case:
       if case(arith_expr_e.VarSub):
         tok = cast(simple_var_sub, UP_anode)
-        return (tok.var_name, tok.left.span_id)
+        return (tok.var_name, tok.left)
 
       elif case(arith_expr_e.Word):
         w = cast(compound_word, UP_anode)
         var_name = self.EvalWordToString(w)
-        span_id = word_.LeftMostSpanForWord(w)
-        return (var_name, span_id)
+        return (var_name, loc.Word(w))
 
     no_str = None  # type: str
-    return (no_str, runtime.NO_SPID)
+    return (no_str, loc.Missing())
 
-  def EvalArithLhs(self, anode, span_id):
-    # type: (arith_expr_t, int) -> lvalue_t
+  def EvalArithLhs(self, anode):
+    # type: (arith_expr_t) -> lvalue_t
     """
     For (( a[x] = 1 )) etc.
     """
@@ -844,26 +843,26 @@ class ArithEvaluator(object):
     if anode.tag_() == arith_expr_e.Binary:
       anode = cast(arith_expr__Binary, UP_anode)
       if anode.op_id == Id.Arith_LBracket:
-        var_name, span_id = self._VarNameOrWord(anode.left)
+        var_name, location = self._VarNameOrWord(anode.left)
 
         # (( 1[2] = 3 )) isn't valid
         if not match.IsValidVarName(var_name):
-          e_die('Invalid variable name %r' % var_name, loc.Span(span_id))
+          e_die('Invalid variable name %r' % var_name, location)
 
         if var_name is not None:
           if self.mem.IsAssocArray(var_name):
             key = self.EvalWordToString(anode.right)
-            return lvalue.Keyed(var_name, key, span_id)
+            return lvalue.Keyed(var_name, key, location)
           else:
             index = self.EvalToInt(anode.right)
-            return lvalue.Indexed(var_name, index, span_id)
+            return lvalue.Indexed(var_name, index, location)
 
-    var_name, span_id = self._VarNameOrWord(anode)
+    var_name, location = self._VarNameOrWord(anode)
     if var_name is not None:
-      return lvalue.Named(var_name, span_id)
+      return lvalue.Named(var_name, location)
 
     # e.g. unset 'x-y'.  status 2 for runtime parse error
-    e_die_status(2, 'Invalid place to modify', loc.Span(span_id))
+    e_die_status(2, 'Invalid place to modify', location)
 
 
 class BoolEvaluator(ArithEvaluator):

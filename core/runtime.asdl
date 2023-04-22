@@ -3,7 +3,7 @@
 module runtime
 {
   # import these types from syntax.asdl
-  use frontend syntax { word ArgList command re redir_loc Token proc_sig }
+  use frontend syntax { word ArgList command re redir_loc Token proc_sig loc }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
@@ -11,9 +11,9 @@ module runtime
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(List[str] argv, List[int] arg_spids, ArgList? typed_args)
+    Argv(List[str] argv, List[loc] arg_locs, ArgList? typed_args)
   | Assign(int builtin_id,
-           List[str] argv, List[int] arg_spids,
+           List[str] argv, List[loc] arg_locs,
            List[assign_arg] pairs)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
@@ -101,9 +101,9 @@ module runtime
   # For OSH assignment, evaluated from osh_ast.lhs_expr
   # TODO: Rename this to sh_place?
   lvalue = 
-    Named(str name, int blame_spid)
-  | Indexed(str name, int index, int blame_spid)
-  | Keyed(str name, str key, int blame_spid)
+    Named(str name, loc blame_loc)
+  | Indexed(str name, int index, loc blame_loc)
+  | Keyed(str name, str key, loc blame_loc)
 
     # Oil variants
   | ObjIndex(any obj, any index)

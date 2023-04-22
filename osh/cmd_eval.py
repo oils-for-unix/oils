@@ -327,17 +327,16 @@ class CommandEvaluator(object):
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
       # This only happens with alternative Oil interpreters.
-      e_die("Assignment builtin %r not configured" % cmd_val.argv[0],
-            loc.Span(cmd_val.arg_spids[0]))
+      e_die("Assignment builtin %r not configured" % cmd_val.argv[0], cmd_val.arg_locs[0])
 
     with vm.ctx_FlushStdout():
-      with ui.ctx_Location(self.errfmt, cmd_val.arg_spids[0]):
+      with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
         try:
           status = builtin_func.Run(cmd_val)
         except error.Usage as e:  # Copied from RunBuiltin
           arg0 = cmd_val.argv[0]
           if not e.HasLocation():  # fill in default location.
-            e.location = loc.Span(self.errfmt.CurrentLocation())
+            e.location = self.errfmt.CurrentLocation()
           self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
           status = 2  # consistent error code for usage error
 

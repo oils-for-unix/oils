@@ -56,6 +56,12 @@ int MarkSweepHeap::MaybeCollect() {
   return result;
 }
 
+  #if defined(BUMP_SMALL) || defined(BUMP_BIG)
+    #include "mycpp/bump_leak_heap.h"
+
+BumpLeakHeap gBumpLeak;
+  #endif
+
 // Allocate and update stats
 // TODO: Make this interface nicer.
 void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
@@ -66,6 +72,19 @@ void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
     return pool_.Allocate(obj_id);
   }
   *in_pool = false;
+  #endif
+
+  // These only work with GC off -- OIL_GC_THRESHOLD=[big]
+  #ifdef BUMP_SMALL
+  if (num_bytes <= 32) {
+    return gBumpLeak.Allocate(num_bytes);
+  }
+  #endif
+
+  #ifdef BUMP_BIG
+  if (num_bytes > 32) {
+    return gBumpLeak.Allocate(num_bytes);
+  }
   #endif
 
   if (to_free_.empty()) {
@@ -84,7 +103,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
     free(dead);
   }
 
-  void* result = calloc(num_bytes, 1);
+  void* result = malloc(num_bytes);
   DCHECK(result != nullptr);
 
   live_objs_.push_back(static_cast<ObjHeader*>(result));

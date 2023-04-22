@@ -151,7 +151,7 @@ unified-report() {
   html-report $out_dir \
     clang-coverage/mycpp/examples \
     clang-coverage/mycpp \
-    clang-coverage/mycpp clang-coverage-D_BUMP_LEAK/mycpp \
+    clang-coverage/mycpp clang-coverage+bumpleak/mycpp \
     clang-coverage/cpp
 }
 

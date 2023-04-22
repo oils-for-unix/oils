@@ -48,10 +48,10 @@ class Exec(vm._Builtin):
     argv0_path = self.search_path.CachedLookup(cmd)
     if argv0_path is None:
       e_die_status(127, 'exec: %r not found' % cmd,
-                   loc.Span(cmd_val.arg_spids[1]))
+                   cmd_val.arg_locs[1])
 
     # shift off 'exec'
-    c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:],
+    c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
                         cmd_val.typed_args)
 
     self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
@@ -95,7 +95,7 @@ class Wait(vm._Builtin):
     attrs, arg_r = flag_spec.ParseCmdVal('wait', cmd_val)
     arg = arg_types.wait(attrs.attrs)
 
-    job_ids, arg_spids = arg_r.Rest2()
+    job_ids, arg_locs = arg_r.Rest2()
 
     if arg.n:
       # Loop until there is one fewer process running, there's nothing to wait
@@ -144,26 +144,26 @@ class Wait(vm._Builtin):
     # code of last one to FINISH.
     status = 1  # error
     for i, job_id in enumerate(job_ids):
-      span_id = arg_spids[i]
+      location = arg_locs[i]
 
       # The % syntax is sort of like ! history sub syntax, with various queries.
       # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
       if job_id.startswith('%'):
         raise error.Usage(
             "doesn't support bash-style jobspecs (got %r)" % job_id,
-            loc.Span(span_id))
+            location)
 
       # Does it look like a PID?
       try:
         pid = int(job_id)
       except ValueError:
         raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                          loc.Span(span_id))
+                          location)
 
       job = self.job_state.JobFromPid(pid)
       if job is None:
         self.errfmt.Print_("%d isn't a child of this shell" % pid,
-                           blame_loc=loc.Span(span_id))
+                           blame_loc=location)
         return 127
 
       wait_status = job.JobWait(self.waiter)

@@ -42,14 +42,11 @@ COMPILERS_VARIANTS = [
     ('cxx', 'dbg'),
     ('cxx', 'opt'),
     ('cxx', 'asan'),
-    ('cxx', 'gcalways'),  # with ASAN
+
+    ('cxx', 'asan+gcalways'),
+    ('cxx', 'asan32+gcalways'),
 
     ('cxx', 'ubsan'),
-
-    # Test correctness of 32 bit build
-    # Hm both cxx-asan32 and clang-asan32 produce link errors
-    #('cxx', 'asan32'),
-    ('cxx', 'gcalways32'),
 
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
@@ -59,12 +56,18 @@ COMPILERS_VARIANTS = [
 ]
 
 GC_PERF_VARIANTS = [
-    ('cxx', 'bumpleak'),
-    ('cxx', 'bumproot'),
-    ('cxx', 'tcmalloc'),
+    ('cxx', 'opt+bumpleak'),
+    ('cxx', 'opt+bumproot'),
+
+    ('cxx', 'opt+bumpbig'),
+    ('cxx', 'opt+bumpsmall'),
+
+    ('cxx', 'opt+pool'),
 
     # TODO: should be binary with different files
-    ('cxx', 'cheney'),
+    ('cxx', 'opt+cheney'),
+
+    ('cxx', 'opt+tcmalloc'),
 
     # For tracing allocations, or debugging
     ('cxx', 'uftrace'),
@@ -261,8 +264,8 @@ class Rules(object):
     self.n.build([out_bin], 'link', objects, variables=v)
     self.n.newline()
 
-    # Strip any .opt binariies
-    if variant in ('opt', 'opt32', 'bumpleak', 'bumproot'):
+    # Strip any .opt binaries
+    if variant.startswith('opt') or variant.startswith('opt32'):
       stripped = out_bin + '.stripped'
       symbols = out_bin + '.symbols'
       self.n.build([stripped, symbols], 'strip', [out_bin])

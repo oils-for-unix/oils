@@ -116,6 +116,23 @@ dump-hardware    soil/worker.sh dump-hardware   -
 EOF
 }
 
+raw-vm-tasks() {
+  # The perf tool depends on a specific version of a kernel, so run it outside
+  # a container.
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+dump-distro      soil/worker.sh dump-distro       -
+dump-user-host   soil/worker.sh dump-user-host    -
+dump-env         soil/worker.sh dump-env          -
+dump-timezone    soil/worker.sh dump-timezone     -
+dump-locale      soil/worker.sh dump-locale       -
+dump-hardware    soil/worker.sh dump-hardware     -
+perf-install     benchmarks/perf.sh soil-install  -
+perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
+EOF
+}
+
 pea-tasks() {
   ### Print tasks for the 'pea' build
 
@@ -437,8 +454,14 @@ run-tasks() {
   # by 'host-shim.sh job-reset'.
   mkdir -p _soil-jobs
 
+  # Hack: Assign job_id and write it to the status file.  Other jobs can poll
+  # for completion of this job and access its resources.
+
+  local job_id
+  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+
   # e.g. _soil-jobs/dummy.status.txt
-  echo $max_status > _soil-jobs/$job_name.status.txt
+  echo "$max_status $job_id" > _soil-jobs/$job_name.status.txt
 }
 
 save-metadata() {
@@ -503,6 +526,7 @@ job-main() {
 }
 
 JOB-dummy() { job-main 'dummy'; }
+JOB-raw-vm() { job-main 'raw-vm'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }

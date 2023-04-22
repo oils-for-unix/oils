@@ -386,7 +386,7 @@ echo_cpp() {
   if test "$have_readline" = 1; then
     echo '#define HAVE_READLINE 1'
   else
-    echo '#define HAVE_READLINE 0'
+    echo '/* #undef HAVE_READLINE */'
   fi
 }
 

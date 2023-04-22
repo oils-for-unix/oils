@@ -55,18 +55,18 @@ class Eval(vm._Builtin):
     _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
 
     if self.exec_opts.simple_eval_builtin():
-      code_str, eval_spid = arg_r.ReadRequired2('requires code string')
+      code_str, eval_loc = arg_r.ReadRequired2('requires code string')
       if not arg_r.AtEnd():
         e_usage('requires exactly 1 argument', loc.Missing())
     else:
       code_str = ' '.join(arg_r.Rest())
       # code_str could be EMPTY, so just use the first one
-      eval_spid = cmd_val.arg_spids[0]
+      eval_loc = cmd_val.arg_locs[0]
 
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    src = source.ArgvWord('eval', eval_spid)
+    src = source.ArgvWord('eval', eval_loc)
     with dev.ctx_Tracer(self.tracer, 'eval', None):
       with alloc.ctx_Location(self.arena, src):
         return main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
@@ -89,7 +89,7 @@ class Source(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    call_spid = cmd_val.arg_spids[0]
+    call_loc = cmd_val.arg_locs[0]
     _, arg_r = flag_spec.ParseCmdVal('source', cmd_val)
 
     path = arg_r.Peek()
@@ -105,7 +105,7 @@ class Source(vm._Builtin):
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:
       self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror(e)),
-                         blame_loc=loc.Span(cmd_val.arg_spids[1]))
+                         blame_loc=cmd_val.arg_locs[1])
       return 1
 
     line_reader = reader.FileLineReader(f, self.arena)
@@ -118,7 +118,7 @@ class Source(vm._Builtin):
       source_argv = arg_r.Rest()
       with state.ctx_Source(self.mem, path, source_argv):
         with state.ctx_ThisDir(self.mem, path):
-          src = source.SourcedFile(path, call_spid)
+          src = source.SourcedFile(path, call_loc)
           with alloc.ctx_Location(self.arena, src):
             try:
               status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
@@ -166,7 +166,7 @@ class Command(vm._Builtin):
       return status
 
     # shift by one
-    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
                              cmd_val.typed_args)
 
     # If we respected do_fork here instead of passing True, the case
@@ -197,16 +197,17 @@ class Builtin(vm._Builtin):
     if to_run == consts.NO_INDEX:
       to_run = consts.LookupSpecialBuiltin(name)
     if to_run == consts.NO_INDEX:
-      span_id = cmd_val.arg_spids[1]
+      location = cmd_val.arg_locs[1]
       if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
         # NOTE: There's a similar restriction for 'command'
         self.errfmt.Print_("Can't run assignment builtin recursively",
-                          blame_loc=loc.Span(span_id))
+                          blame_loc=location)
       else:
-        self.errfmt.Print_("%r isn't a shell builtin" % name, blame_loc=loc.Span(span_id))
+        self.errfmt.Print_("%r isn't a shell builtin" % name,
+                           blame_loc=location)
       return 1
 
-    cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+    cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
                               cmd_val.typed_args)
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
@@ -294,8 +295,8 @@ class Try(vm._Builtin):
     if arg_r.Peek() is None:
       e_usage('expects a block or command argv', loc.Missing())
 
-    argv, spids = arg_r.Rest2()
-    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
+    argv, locs = arg_r.Rest2()
+    cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
 
     #failure_spid = runtime.NO_SPID
     try:
@@ -336,16 +337,15 @@ class BoolStatus(vm._Builtin):
     if arg_r.Peek() is None:
       e_usage('expected a command to run', loc.Missing())
 
-    argv, spids = arg_r.Rest2()
-    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
+    argv, locs = arg_r.Rest2()
+    cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
 
     cmd_st = CommandStatus.CreateNull(alloc_lists=True)
     status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
     if status not in (0, 1):
       e_die_status(
-          status, 'boolstatus expected status 0 or 1, got %d' % status,
-          loc.Span(spids[0]))
+          status, 'boolstatus expected status 0 or 1, got %d' % status, locs[0])
 
     return status
 

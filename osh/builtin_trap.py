@@ -9,7 +9,6 @@ from signal import SIG_DFL, SIGKILL, SIGSTOP, SIGWINCH
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
 from _devbuild.gen.syntax_asdl import loc, source
-from asdl import runtime
 from core import alloc
 from core import dev
 from core import error
@@ -165,7 +164,7 @@ class Trap(vm._Builtin):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     # TODO: the SPID should be passed through argv.
-    src = source.ArgvWord('trap', runtime.NO_SPID)
+    src = source.ArgvWord('trap', loc.Missing())
     with alloc.ctx_Location(self.arena, src):
       try:
         node = main_loop.ParseWholeFile(c_parser)
@@ -200,7 +199,7 @@ class Trap(vm._Builtin):
       return 0
 
     code_str = arg_r.ReadRequired('requires a code string')
-    sig_spec, sig_spid = arg_r.ReadRequired2('requires a signal or hook name')
+    sig_spec, sig_loc = arg_r.ReadRequired2('requires a signal or hook name')
 
     # sig_key is NORMALIZED sig_spec: a signal number string or string hook
     # name.
@@ -218,7 +217,7 @@ class Trap(vm._Builtin):
 
     if sig_key is None:
       self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                         blame_loc=loc.Span(cmd_val.arg_spids[2]))
+                         blame_loc=cmd_val.arg_locs[2])
       return 1
 
     # NOTE: sig_spec isn't validated when removing handlers.
@@ -254,7 +253,7 @@ class Trap(vm._Builtin):
       # For signal handlers, the traps dictionary is used only for debugging.
       if sig_num in (SIGKILL, SIGSTOP):
         self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
-                           blame_loc=loc.Span(sig_spid))
+                           blame_loc=sig_loc)
         # Other shells return 0, but this seems like an obvious error
         return 1
       self.trap_state.AddUserTrap(sig_num, node)

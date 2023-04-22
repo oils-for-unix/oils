@@ -73,87 +73,54 @@ setglobal_compile_flags() {
     flags="$flags $env_flags"
   fi
 
-  # TODO: bumpleak and cheney should really be separate binaries like
-  # oils-for-unix.bumpleak.stripped, and mycpp/examples/strings.mycpp.bumpleak
   case $variant in
-    (bumpleak)
-      flags="$flags -D BUMP_LEAK"
+    *+bumpleak|*+bumproot|*+cheney)
       ;;
-    (bumproot)
-      flags="$flags -D BUMP_LEAK -D BUMP_ROOT"
-      ;;
-    (cheney)
-      flags="$flags -D CHENEY_GC"
-      ;;
-    (*)
-      case $more_cxx_flags in  # make sure we don't already have a -D GC mode
-        (*BUMP_LEAK*|*CHENEY_GC*)
-          ;;
-        (*)
-          flags="$flags -D MARK_SWEEP"
-          ;;
-      esac
+    *)
+      flags="$flags -D MARK_SWEEP"
       ;;
   esac
 
-  case $variant in
-    (bumpleak|bumproot|cheney)
-      # Make them optimized builds for now
-      flags="$flags -O2 -g -D OPTIMIZED"
-      ;;
+  # First half of variant: what affects ALL translation units
 
-    (dbg)
+  case $variant in
+    dbg*)
       flags="$flags -O0 -g"
       ;;
-    (dbg32)
+    dbg32*)
       flags="$flags -O0 -g -m32"
       ;;
 
-    (coverage)
+    asan*)
+      flags="$flags -O0 -g -fsanitize=address"
+      ;;
+    asan32*)
+      flags="$flags -O0 -g -fsanitize=address -m32"
+      ;;
+
+    tsan*)
+      flags="$flags -O0 -g -fsanitize=thread"
+      ;;
+
+    ubsan*)
+      # faster build with -O0
+      flags="$flags -O0 -g -fsanitize=undefined"
+      ;;
+
+    opt*)
+      flags="$flags -O2 -g -D OPTIMIZED"
+      ;;
+    opt32*)
+      flags="$flags -O2 -g -D OPTIMIZED -m32"
+      ;;
+
+    coverage*)
       # source-based coverage is more precise than say sanitizer-based
       # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
       flags="$flags -O0 -g -fprofile-instr-generate -fcoverage-mapping"
       ;;
 
-    (asan)
-      flags="$flags -O0 -g -fsanitize=address"
-      ;;
-    (asan32)
-      flags="$flags -O0 -g -fsanitize=address -m32"
-      ;;
-
-    (tsan)
-      flags="$flags -O0 -g -fsanitize=thread"
-      ;;
-
-    (ubsan)
-      # faster build with -O0
-      flags="$flags -O0 -g -fsanitize=undefined"
-      ;;
-
-    (gcalways)
-      flags="$flags -g -D GC_ALWAYS -fsanitize=address"
-      ;;
-    (gcalways32)
-      flags="$flags -g -D GC_ALWAYS -fsanitize=address -m32"
-      ;;
-
-    # Just like GCEVERY
-    (rvroot)
-      flags="$flags -g -D RET_VAL_ROOTING -D GC_ALWAYS -fsanitize=address"
-      ;;
-
-    (opt)
-      flags="$flags -O2 -g -D OPTIMIZED"
-      ;;
-    (opt32)
-      flags="$flags -O2 -g -D OPTIMIZED -m32"
-      ;;
-    (tcmalloc)
-      flags="$flags -O2 -g -D TCMALLOC -D OPTIMIZED"
-      ;;
-
-    (uftrace)
+    uftrace*)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
       # structure of the code.
       # NewStr(), OverAllocatedStr(), StrFromC() etc. are not inlined
@@ -164,13 +131,42 @@ setglobal_compile_flags() {
       flags="$flags $opt -g -pg"
       ;;
 
-    (alloclog)
-      # debug flags
-      flags="$flags -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
-      ;;
-
     (*)
       die "Invalid variant $variant"
+      ;;
+  esac
+
+  # OPTIONAL second half of variant: for the application
+
+  case $variant in
+    *+gcalways)
+      flags="$flags -D GC_ALWAYS"
+      ;;
+
+    *+cheney)
+      flags="$flags -D CHENEY_GC"
+      ;;
+
+    *+tcmalloc)
+      flags="$flags -D TCMALLOC"
+      ;;
+
+    *+bumpleak)
+      flags="$flags -D BUMP_LEAK"
+      ;;
+    *+bumproot)
+      flags="$flags -D BUMP_LEAK -D BUMP_ROOT"
+      ;;
+
+    *+bumpbig)
+      flags="$flags -D BUMP_ROOT -D BUMP_BIG"
+      ;;
+    *+bumpsmall)
+      flags="$flags -D BUMP_ROOT -D BUMP_SMALL"
+      ;;
+
+    *+pool)
+      flags="$flags -D POOL_ALLOC"
       ;;
   esac
 
@@ -191,8 +187,16 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
-    dbg32|opt32)
+    dbg32*|opt32*)
       link_flags='-m32'
+      ;;
+
+    # Must REPEAT these flags, otherwise we lose sanitizers / coverage
+    asan*)
+      link_flags='-fsanitize=address'
+      ;;
+    asan32*)
+      link_flags='-fsanitize=address -m32'
       ;;
 
     tcmalloc)
@@ -200,27 +204,20 @@ setglobal_link_flags() {
       link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
 
-    # Must REPEAT these flags, otherwise we lose sanitizers / coverage
-    asan32|gcalways32)
-      link_flags='-fsanitize=address -m32'
-      ;;
-    asan|gcalways)
-      link_flags='-fsanitize=address'
-      ;;
     tsan)
       link_flags='-fsanitize=thread'
       ;;
-    ubsan)
+    ubsan*)
       link_flags='-fsanitize=undefined'
       ;;
-    coverage)
+    coverage*)
       link_flags='-fprofile-instr-generate -fcoverage-mapping'
       ;;
   esac
 
   case $variant in
     # TODO: 32-bit variants can't handle -l readline right now.
-    dbg32|opt32|asan32|gcalways32)
+    dbg32*|opt32*|asan32*)
       ;;
 
     *)

@@ -113,7 +113,10 @@ T* Alloc(Args&&... args) {
   header->obj_id = obj_id;
   header->in_pool = in_pool;
 #endif
-  return new (header->ObjectAddress()) T(std::forward<Args>(args)...);
+  void* obj = header->ObjectAddress();
+  // mycpp doesn't generated constructors that initialize every field
+  memset(obj, 0, sizeof(T));
+  return new (obj) T(std::forward<Args>(args)...);
 }
 
 //
@@ -140,6 +143,7 @@ inline Str* NewStr(int len) {
 
   auto s = new (header->ObjectAddress()) Str();
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
+  s->data_[len] = '\0';  // NUL terminate
   s->len_ = len;
 #else
   // reversed in len() to derive string length
@@ -207,7 +211,11 @@ inline Slab<T>* NewSlab(int len) {
   void* place = gHeap.Allocate(num_bytes);
 #endif
   ObjHeader* header = new (place) ObjHeader(Slab<T>::obj_header(len));
-  auto slab = new (header->ObjectAddress()) Slab<T>(len);
+  void* obj = header->ObjectAddress();
+  if (std::is_pointer<T>()) {
+    memset(obj, 0, obj_len);
+  }
+  auto slab = new (obj) Slab<T>(len);
 #if MARK_SWEEP
   header->obj_id = obj_id;
   header->in_pool = in_pool;

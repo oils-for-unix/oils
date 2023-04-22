@@ -329,7 +329,7 @@ did-all-succeed() {
   local max_status=0
   for job_name in "$@"; do
     local status
-    status=$(cat "_soil-jobs/$job_name.status.txt")
+    read status unused_job_id < "_soil-jobs/$job_name.status.txt"
 
     echo "$job_name status: $status"
     if test $status -gt $max_status; then

@@ -50,10 +50,17 @@ readonly BASE_DIR=_tmp/perf
 # - a longer file like configure-coreutils hit garbage collection!  collect()
 # - reference counting functions: visit_decref, visit_reachable
 
-install() {
+install-packages() {
   # linux-tools-generic is the kernel module
   # Apparently you need a package specific to the kernel, not sure why.
-  sudo apt install linux-tools-common linux-tools-$(uname -r) linux-tools-generic
+  sudo apt-get install \
+    linux-tools-common linux-tools-$(uname -r) linux-tools-generic
+}
+
+soil-install() {
+  sudo apt-get update  # seem to need this
+
+  install-packages
 }
 
 debug-symbols() {
@@ -184,8 +191,9 @@ profile-osh-parse() {
   # (_int_malloc in GCC), which is not surprising!
 
   local mode=${1:-graph}
+  local variant=${2:-opt}
 
-  local bin='_bin/cxx-opt/osh'
+  local bin="_bin/cxx-$variant/osh"
   ninja $bin
 
   local file=benchmarks/testdata/configure
@@ -204,8 +212,9 @@ profile-osh-parse() {
 
 profile-fib() {
   local mode=${1:-graph}
+  local variant=${2:-opt}
 
-  local bin='_bin/cxx-opt/osh'
+  local bin="_bin/cxx-$variant/osh"
   ninja $bin
 
   # Same iterations as benchmarks/gc
@@ -216,8 +225,9 @@ profile-fib() {
 
 profile-execute() {
   local mode=${1:-graph}
+  local variant=${2:-opt}
 
-  local bin='_bin/cxx-opt/osh'
+  local bin="_bin/cxx-$variant/osh"
   ninja $bin
 
   local -a cmd=( $bin benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
@@ -327,5 +337,93 @@ _record() {
 }
 record() { sudo $0 _record; }
 
+#
+# Soil CI
+#
+
+build-stress-test() {
+
+  # Special _OIL_DEV for -D GC_TIMING
+  _OIL_DEV=1 ./configure --without-readline
+
+  mkdir -p _tmp
+  c++ -D MARK_SWEEP -I . \
+    -O2 -g \
+    -o _tmp/gc_stress_test \
+    mycpp/gc_stress_test.cc \
+    mycpp/mark_sweep_heap.cc \
+    mycpp/gc_builtins.cc \
+    mycpp/gc_mylib.cc \
+    mycpp/gc_str.cc \
+    -lstdc++ 
+}
+
+profile-stress-test() {
+  profile-cpp 'gc_stress_test' flat \
+    _tmp/gc_stress_test
+}
+
+print-index() {
+  echo '<body style="margin: 0 auto; width: 40em; font-size: large">'
+  echo '<h1>Perf Profiles</h1>'
+
+  for path in $BASE_DIR/*.txt; do
+    local filename=$(basename $path)
+    echo "<a href="$filename">$filename</a> <br/>"
+  done
+
+  echo '</body>'
+}
+
+# TODO: fetch the tarball from the cpp-small CI task
+
+build-tar() {
+  local tar=${1:-_release/oils-for-unix.tar}
+
+  tar=$PWD/$tar
+
+  local tmp=$BASE_DIR/tar
+  mkdir -p $tmp
+
+  pushd $tmp
+
+  tar --extract < $tar
+  cd oils-for-unix-*  # glob of 1
+
+  ./configure
+
+  # TODO: add bumproot
+  for variant in opt+bumpleak opt; do
+    echo
+
+    time _build/oils.sh '' $variant
+    echo
+
+    _bin/cxx-$variant-sh/osh -c 'echo "hi from $0"'
+  done
+
+  # TODO:
+  # - profile each executable
+  # - add OIL_GC_THRESHOLD=$big to avoid GC
+
+  popd
+}
+
+soil-run() {
+  echo 'TODO run benchmarks/gc tasks'
+  # But we don't have Ninja
+  # Fetch the tarball?
+
+  # Can you WAIT for the tarball?
+  # You can wait for the cpp-small task that builds it?  Ah hacky hacky
+
+  build-stress-test
+
+  profile-stress-test
+
+  print-index > $BASE_DIR/index.html
+
+  echo "Wrote $BASE_DIR/index.html"
+}
 
 "$@"

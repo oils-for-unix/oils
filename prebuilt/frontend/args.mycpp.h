@@ -172,7 +172,7 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 namespace pyerror {  // declare
 
 extern int NO_SPID;
-[[noreturn]] void e_usage(Str* msg, int span_id = NO_SPID);
+[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);
@@ -208,19 +208,19 @@ class _Attributes {
 
 class Reader {
  public:
-  Reader(List<Str*>* argv, List<int>* spids = nullptr);
+  Reader(List<Str*>* argv, List<syntax_asdl::loc_t*>* locs = nullptr);
   void Next();
   Str* Peek();
-  Tuple2<Str*, int> Peek2();
+  Tuple2<Str*, syntax_asdl::loc_t*> Peek2();
   Str* ReadRequired(Str* error_msg);
-  Tuple2<Str*, int> ReadRequired2(Str* error_msg);
+  Tuple2<Str*, syntax_asdl::loc_t*> ReadRequired2(Str* error_msg);
   List<Str*>* Rest();
-  Tuple2<List<Str*>*, List<int>*> Rest2();
+  Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*> Rest2();
   bool AtEnd();
-  int _FirstSpanId();
-  int SpanId();
+  syntax_asdl::loc_t* _FirstLocation();
+  syntax_asdl::loc_t* Location();
   List<Str*>* argv;
-  List<int>* spids;
+  List<syntax_asdl::loc_t*>* locs;
   int n;
   int i;
 
@@ -250,7 +250,7 @@ class _Action {
 class _ArgAction : public _Action {
  public:
   _ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
-  virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
   virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   Str* name;
@@ -273,7 +273,7 @@ class _ArgAction : public _Action {
 class SetToInt : public _ArgAction {
  public:
   SetToInt(Str* name);
-  virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -289,7 +289,7 @@ class SetToInt : public _ArgAction {
 class SetToFloat : public _ArgAction {
  public:
   SetToFloat(Str* name);
-  virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -305,7 +305,7 @@ class SetToFloat : public _ArgAction {
 class SetToString : public _ArgAction {
  public:
   SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
-  virtual runtime_asdl::value_t* _Value(Str* arg, int span_id);
+  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();

@@ -15,7 +15,7 @@ unit() {
   #run-one-test 'frontend/syntax_asdl_test' '' asan
 
   run-one-test 'frontend/arg_types_test' '' asan
-  run-one-test 'frontend/arg_types_test' '' gcalways
+  run-one-test 'frontend/arg_types_test' '' asan+gcalways
 }
 
 "$@"

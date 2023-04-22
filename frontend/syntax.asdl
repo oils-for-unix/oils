@@ -59,11 +59,11 @@ module syntax
     # a chain of locations back to the sourced script!
     # MainFile(str path) or SourcedFile(str path, int spid)
   | MainFile(str path)
-  | SourcedFile(str path, int spid)
+  | SourcedFile(str path, loc location)
 
     # code parsed from a word
     # used for 'eval', 'trap', 'printf', 'complete -W', etc.
-  | ArgvWord(str what, int span_id)
+  | ArgvWord(str what, loc location)
 
     # code parsed from the value of a variable
     # used for $PS1 $PROMPT_COMMAND

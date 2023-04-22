@@ -159,10 +159,10 @@ class Reader(object):
   The caller of the flags parser can continue to use it after flag parsing is
   done to get args.
   """
-  def __init__(self, argv, spids=None):
-    # type: (List[str], Optional[List[int]]) -> None
+  def __init__(self, argv, locs=None):
+    # type: (List[str], Optional[List[loc_t]]) -> None
     self.argv = argv
-    self.spids = spids
+    self.locs = locs
     self.n = len(argv)
     self.i = 0
 
@@ -187,16 +187,16 @@ class Reader(object):
       return self.argv[self.i]
 
   def Peek2(self):
-    # type: () -> Tuple[Optional[str], int]
+    # type: () -> Tuple[Optional[str], loc_t]
     """Return the next token, or None if there are no more.
 
     None is your SENTINEL for parsing.
     """
     if self.i >= self.n:
       no_str = None  # type: str
-      return no_str, -1
+      return no_str, loc.Missing()
     else:
-      return self.argv[self.i], self.spids[self.i]
+      return self.argv[self.i], self.locs[self.i]
 
   def ReadRequired(self, error_msg):
     # type: (str) -> str
@@ -208,14 +208,14 @@ class Reader(object):
     return arg
 
   def ReadRequired2(self, error_msg):
-    # type: (str) -> Tuple[str, int]
+    # type: (str) -> Tuple[str, loc_t]
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
       e_usage(error_msg, self._FirstLocation())
-    spid = self.spids[self.i]
+    location = self.locs[self.i]
     self.Next()
-    return arg, spid
+    return arg, location
 
   def Rest(self):
     # type: () -> List[str]
@@ -223,9 +223,9 @@ class Reader(object):
     return self.argv[self.i:]
 
   def Rest2(self):
-    # type: () -> Tuple[List[str], List[int]]
+    # type: () -> Tuple[List[str], List[loc_t]]
     """Return the rest of the arguments."""
-    return self.argv[self.i:], self.spids[self.i:]
+    return self.argv[self.i:], self.locs[self.i:]
 
   def AtEnd(self):
     # type: () -> bool
@@ -233,19 +233,19 @@ class Reader(object):
 
   def _FirstLocation(self):
     # type: () -> loc_t
-    if self.spids:
-      return loc.Span(self.spids[0])
+    if self.locs:
+      return self.locs[0]
     else:
       return loc.Missing()  # TODO: remove this when all have locations
 
   def Location(self):
     # type: () -> loc_t
-    if self.spids:
+    if self.locs:
       if self.i == self.n:
         i = self.n - 1  # if the last arg is missing, point at the one before
       else:
         i = self.i
-      return loc.Span(self.spids[i])
+      return self.locs[i]
     else:
       return loc.Missing()  # TODO: remove this when all have locations
 

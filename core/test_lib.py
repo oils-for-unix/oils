@@ -14,7 +14,7 @@ import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, value, scope_e
-from _devbuild.gen.syntax_asdl import source, SourceLine
+from _devbuild.gen.syntax_asdl import loc, source, SourceLine
 from asdl import pybase
 from core import alloc
 from core import completion
@@ -48,7 +48,7 @@ from mycpp import mylib
 
 
 def MakeBuiltinArgv(argv):
-  return cmd_value.Argv(argv, [0] * len(argv), None)
+  return cmd_value.Argv(argv, [loc.Missing()] * len(argv), None)
 
 
 def Tok(id_, val):

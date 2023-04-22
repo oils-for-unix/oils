@@ -32,13 +32,16 @@ publish-html-assuming-ssh-key() {
   local job_name=$1
   local update_status_api=${2:-}
 
+  local status_file="_soil-jobs/$job_name.status.txt"
+  read -r unused_status job_id < $status_file
+
   if true; then
     # https://docs.github.com/en/actions/reference/environment-variables
 
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-    deploy-job-results 'github-' \
+    deploy-job-results 'github-' $job_id \
       JOB_URL \
       GITHUB_WORKFLOW	\
       GITHUB_RUN_ID \
@@ -51,7 +54,6 @@ publish-html-assuming-ssh-key() {
   fi
 
   if test -n "$update_status_api"; then
-    local status_file="_soil-jobs/$job_name.status.txt"
     scp-status-api "$GITHUB_RUN_ID" "$job_name" "$status_file"
   fi
 

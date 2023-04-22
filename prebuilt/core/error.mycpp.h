@@ -9,8 +9,8 @@
 #include "_gen/frontend/syntax.asdl.h"
 namespace error {  // forward declare
 
-  class Usage;
   class _ErrorWithLocation;
+  class Usage;
   class Runtime;
   class Parse;
   class FailGlob;
@@ -28,20 +28,6 @@ namespace pyerror {  // forward declare
 }  // forward declare namespace pyerror
 
 namespace error {  // declare
-
-extern int NO_SPID;
-class Usage {
- public:
-  Usage(Str* msg, int span_id = NO_SPID);
-  Str* msg;
-  int span_id;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(Usage));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(Usage)
-};
 
 class _ErrorWithLocation {
  public:
@@ -61,6 +47,21 @@ class _ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(_ErrorWithLocation)
+};
+
+class Usage : public _ErrorWithLocation {
+ public:
+  Usage(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Usage));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Usage)
 };
 
 class Runtime {
@@ -193,7 +194,7 @@ class Expr : public FatalRuntime {
 namespace pyerror {  // declare
 
 extern int NO_SPID;
-[[noreturn]] void e_usage(Str* msg, int span_id = NO_SPID);
+[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);

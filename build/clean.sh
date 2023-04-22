@@ -16,7 +16,7 @@ clean-pyc() {
 
 py() {
   rm -f --verbose *.so
-  rm -r -f --verbose _devbuild
+  rm -r -f --verbose _devbuild _cache
 
   # These can be stale after renaming things
   clean-pyc

@@ -18,7 +18,7 @@ TestShellLabels = function() {
   label = ShellLabels(shell_name, shell_hash, 1)
   checkEquals('opt/osh', label)
 
-  shell_name = 'yy/zz/_bin/cxx-bumpleak/osh'
+  shell_name = 'yy/zz/_bin/cxx-opt+bumpleak/osh'
   label = ShellLabels(shell_name, shell_hash, 1)
   checkEquals('bumpleak/osh', label)
 }

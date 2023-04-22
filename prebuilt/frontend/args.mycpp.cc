@@ -170,8 +170,8 @@ namespace qsn {  // forward declare
 
 namespace error {  // forward declare
 
-  class Usage;
   class _ErrorWithLocation;
+  class Usage;
   class Runtime;
   class Parse;
   class FailGlob;
@@ -236,20 +236,6 @@ Str* maybe_qtt_encode(Str* s, int bit8_display);
 
 namespace error {  // declare
 
-extern int NO_SPID;
-class Usage {
- public:
-  Usage(Str* msg, int span_id = NO_SPID);
-  Str* msg;
-  int span_id;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(Usage));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(Usage)
-};
-
 class _ErrorWithLocation {
  public:
   _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);
@@ -268,6 +254,21 @@ class _ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(_ErrorWithLocation)
+};
+
+class Usage : public _ErrorWithLocation {
+ public:
+  Usage(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return _ErrorWithLocation::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Usage));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Usage)
 };
 
 class Runtime {
@@ -1373,12 +1374,7 @@ Str* maybe_qtt_encode(Str* s, int bit8_display) {
 
 namespace error {  // define
 
-int NO_SPID = -1;
-
-Usage::Usage(Str* msg, int span_id) {
-  this->msg = msg;
-  this->span_id = span_id;
-}
+using syntax_asdl::loc_e;
 
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
@@ -1386,7 +1382,6 @@ _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
 }
 
 bool _ErrorWithLocation::HasLocation() {
-  using syntax_asdl::loc_e;
   if (this->location) {
     return this->location->tag_() != loc_e::Missing;
   }
@@ -1397,6 +1392,9 @@ bool _ErrorWithLocation::HasLocation() {
 
 Str* _ErrorWithLocation::UserErrorString() {
   return this->msg;
+}
+
+Usage::Usage(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
 Runtime::Runtime(Str* msg) {
@@ -1440,10 +1438,10 @@ namespace pyerror {  // define
 
 int NO_SPID = -1;
 
-[[noreturn]] void e_usage(Str* msg, int span_id) {
-  StackRoots _roots({&msg});
+[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
+  StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Usage>(msg, span_id);
+  throw Alloc<error::Usage>(msg, location);
 }
 
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location) {
@@ -1474,6 +1472,8 @@ int NO_SPID = -1;
 
 namespace args {  // define
 
+using syntax_asdl::loc;
+using syntax_asdl::loc_t;
 using runtime_asdl::value;
 using runtime_asdl::value_e;
 using runtime_asdl::value_t;
@@ -1514,9 +1514,9 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   this->attrs->set(name, val);
 }
 
-Reader::Reader(List<Str*>* argv, List<int>* spids) {
+Reader::Reader(List<Str*>* argv, List<syntax_asdl::loc_t*>* locs) {
   this->argv = argv;
-  this->spids = spids;
+  this->locs = locs;
   this->n = len(argv);
   this->i = 0;
 }
@@ -1534,16 +1534,16 @@ Str* Reader::Peek() {
   }
 }
 
-Tuple2<Str*, int> Reader::Peek2() {
+Tuple2<Str*, syntax_asdl::loc_t*> Reader::Peek2() {
   Str* no_str = nullptr;
   StackRoots _roots({&no_str});
 
   if (this->i >= this->n) {
     no_str = nullptr;
-    return Tuple2<Str*, int>(no_str, -1);
+    return Tuple2<Str*, syntax_asdl::loc_t*>(no_str, Alloc<loc::Missing>());
   }
   else {
-    return Tuple2<Str*, int>(this->argv->index_(this->i), this->spids->index_(this->i));
+    return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->index_(this->i), this->locs->index_(this->i));
   }
 }
 
@@ -1553,60 +1553,60 @@ Str* Reader::ReadRequired(Str* error_msg) {
 
   arg = this->Peek();
   if (arg == nullptr) {
-    e_usage(error_msg, this->_FirstSpanId());
+    e_usage(error_msg, this->_FirstLocation());
   }
   this->Next();
   return arg;
 }
 
-Tuple2<Str*, int> Reader::ReadRequired2(Str* error_msg) {
+Tuple2<Str*, syntax_asdl::loc_t*> Reader::ReadRequired2(Str* error_msg) {
   Str* arg = nullptr;
-  int spid;
-  StackRoots _roots({&error_msg, &arg});
+  syntax_asdl::loc_t* location = nullptr;
+  StackRoots _roots({&error_msg, &arg, &location});
 
   arg = this->Peek();
   if (arg == nullptr) {
-    e_usage(error_msg, this->_FirstSpanId());
+    e_usage(error_msg, this->_FirstLocation());
   }
-  spid = this->spids->index_(this->i);
+  location = this->locs->index_(this->i);
   this->Next();
-  return Tuple2<Str*, int>(arg, spid);
+  return Tuple2<Str*, syntax_asdl::loc_t*>(arg, location);
 }
 
 List<Str*>* Reader::Rest() {
   return this->argv->slice(this->i);
 }
 
-Tuple2<List<Str*>*, List<int>*> Reader::Rest2() {
-  return Tuple2<List<Str*>*, List<int>*>(this->argv->slice(this->i), this->spids->slice(this->i));
+Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*> Reader::Rest2() {
+  return Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
 }
 
 bool Reader::AtEnd() {
   return this->i >= this->n;
 }
 
-int Reader::_FirstSpanId() {
-  if (this->spids) {
-    return this->spids->index_(0);
+syntax_asdl::loc_t* Reader::_FirstLocation() {
+  if (this->locs) {
+    return this->locs->index_(0);
   }
   else {
-    return runtime::NO_SPID;
+    return Alloc<loc::Missing>();
   }
 }
 
-int Reader::SpanId() {
+syntax_asdl::loc_t* Reader::Location() {
   int i;
-  if (this->spids) {
+  if (this->locs) {
     if (this->i == this->n) {
       i = (this->n - 1);
     }
     else {
       i = this->i;
     }
-    return this->spids->index_(i);
+    return this->locs->index_(i);
   }
   else {
-    return runtime::NO_SPID;
+    return Alloc<loc::Missing>();
   }
 }
 
@@ -1626,8 +1626,8 @@ _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid) {
   this->valid = valid;
 }
 
-runtime_asdl::value_t* _ArgAction::_Value(Str* arg, int span_id) {
-  StackRoots _roots({&arg});
+runtime_asdl::value_t* _ArgAction::_Value(Str* arg, syntax_asdl::loc_t* location) {
+  StackRoots _roots({&arg, &location});
 
   FAIL(kNotImplemented);  // Python NotImplementedError
 }
@@ -1644,10 +1644,10 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str99, this->name)), arg_r->SpanId());
+      e_usage(StrFormat("expected argument to %r", str_concat(str99, this->name)), arg_r->Location());
     }
   }
-  val = this->_Value(arg, arg_r->SpanId());
+  val = this->_Value(arg, arg_r->Location());
   out->Set(this->name, val);
   return this->quit_parsing_flags;
 }
@@ -1655,18 +1655,18 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
 SetToInt::SetToInt(Str* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToInt::_Value(Str* arg, int span_id) {
+runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) {
   int i;
-  StackRoots _roots({&arg});
+  StackRoots _roots({&arg, &location});
 
   try {
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str101, this->name), arg), span_id);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str101, this->name), arg), location);
   }
   if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str103, this->name), arg), span_id);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str103, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -1674,18 +1674,18 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, int span_id) {
 SetToFloat::SetToFloat(Str* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToFloat::_Value(Str* arg, int span_id) {
+runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location) {
   double f;
-  StackRoots _roots({&arg});
+  StackRoots _roots({&arg, &location});
 
   try {
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str105, this->name), arg), span_id);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str105, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str107, this->name), arg), span_id);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str107, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -1693,11 +1693,11 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, int span_id) {
 SetToString::SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid) : _ArgAction(name, quit_parsing_flags, valid) {
 }
 
-runtime_asdl::value_t* SetToString::_Value(Str* arg, int span_id) {
-  StackRoots _roots({&arg});
+runtime_asdl::value_t* SetToString::_Value(Str* arg, syntax_asdl::loc_t* location) {
+  StackRoots _roots({&arg, &location});
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str109, this->name), str110->join(this->valid)), span_id);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str109, this->name), str110->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1719,7 +1719,7 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
         b = true;
       }
       else {
-        e_usage(StrFormat("got invalid argument to boolean flag: %r", attached_arg));
+        e_usage(StrFormat("got invalid argument to boolean flag: %r", attached_arg), Alloc<loc::Missing>());
       }
     }
   }
@@ -1781,7 +1781,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
-    e_usage(StrFormat("Invalid option %r", arg));
+    e_usage(StrFormat("Invalid option %r", arg), Alloc<loc::Missing>());
   }
   changes = this->shopt ? out->shopt_changes : out->opt_changes;
   changes->append((Alloc<Tuple2<Str*, bool>>(attr_name, b)));
@@ -1817,11 +1817,11 @@ bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str123);
+    e_usage(str123, Alloc<loc::Missing>());
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
-    e_usage(StrFormat("Invalid action name %r", arg));
+    e_usage(StrFormat("Invalid action name %r", arg), Alloc<loc::Missing>());
   }
   out->actions->append(attr_name);
   return false;
@@ -1859,7 +1859,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       }
       action = spec->actions_long->get(flag_name);
       if (action == nullptr) {
-        e_usage(StrFormat("got invalid flag %r", arg), arg_r->SpanId());
+        e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
       }
       action->OnMatch(suffix, arg_r, out);
       arg_r->Next();
@@ -1887,7 +1887,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str134, ch)), arg_r->SpanId());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str134, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
@@ -1900,7 +1900,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
               out->Set(ch, Alloc<value::Str>(str136));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str138, ch)), arg_r->SpanId());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str138, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -1972,7 +1972,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
     if (arg->startswith(str141)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
-        e_usage(StrFormat("got invalid flag %r", arg), arg_r->SpanId());
+        e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
       }
       action->OnMatch(nullptr, arg_r, out);
       arg_r->Next();
@@ -1985,7 +1985,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
         StackRoots _for({&ch      });
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str146, ch)), arg_r->SpanId());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str146, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);

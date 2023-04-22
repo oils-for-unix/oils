@@ -85,7 +85,7 @@ TEST test_str_creation() {
 
   Str* s3 = NewStr(1);
   ASSERT_EQ(1, len(s3));
-  ASSERT_EQ(0, memcmp("\0\0", s3->data_, 2));
+  ASSERT_EQ('\0', s3->data_[1]);  // NUL terminated
 
   // Test truncating a string
   //
@@ -95,12 +95,12 @@ TEST test_str_creation() {
 
   Str* s4 = NewStr(7);
   ASSERT_EQ(7, len(s4));
-  ASSERT_EQ(0, memcmp("\0\0\0\0\0\0\0\0", s4->data_, 8));
+  ASSERT_EQ('\0', s4->data_[7]);
 
   // Hm annoying that we have to do a const_cast
-  memcpy(s4->data(), "foo", 3);
-  strcpy(s4->data(), "foo");
+  memcpy(s4->data_, "foo", 3);
   s4->MaybeShrink(3);
+  ASSERT_EQ('\0', s4->data_[3]);
 
   ASSERT_EQ(3, len(s4));
   ASSERT_EQ(0, strcmp("foo", s4->data_));

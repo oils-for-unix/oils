@@ -35,12 +35,20 @@ EOF
 Source code: [oil/benchmarks/gc-cachegrind.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc-cachegrind.sh)
 EOF
 
-  cmark << 'EOF'
-### Cachegrind I Refs
+  cmark <<'EOF'
+#### parse.abuild
 
 EOF
 
-  tsv2html $in_dir/counts.tsv
+  tsv2html $in_dir/parse.abuild.tsv
+
+  cmark <<'EOF'
+#### ex.compute-fib
+
+EOF
+
+  tsv2html $in_dir/ex.compute-fib.tsv
+
 
   cat <<EOF
 
