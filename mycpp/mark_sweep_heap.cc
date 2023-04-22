@@ -14,11 +14,6 @@
 // TODO: Remove this guard when we have separate binaries
 #if MARK_SWEEP
 
-#if POOL_ALLOC
-char gMemory[MiB(1400)];
-size_t gMemPos = 0;
-#endif
-
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
 }
