@@ -85,7 +85,7 @@ install-ubuntu-packages() {
   # pass -y for say gitpod
   sudo apt "$@" install \
     $python2_package gawk libreadline-dev ninja-build cmake \
-    "${PY3_BUILD_DEPS}"
+    "${PY3_BUILD_DEPS[@]}"
   set +x
 
   test/spec.sh install-shells-with-apt
