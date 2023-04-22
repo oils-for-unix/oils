@@ -182,11 +182,17 @@ def ParseJobs(stdin):
     # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
     # A build consists of many jobs.
     meta['git-branch'] = meta.get('TRAVIS_BRANCH') or meta.get('GITHUB_REF') or '?'  # no data for sr.ht
-    meta['pr-number'] = meta.get('GITHUB_PR_NUMBER') or ''
     meta['commit-line'] = meta.get('commit-line') or '?'
     meta['commit-hash'] = meta.get('commit-hash') or '?'
 
     meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
+
+    # ink to the PR if there is one.
+    pr_link_html = ''
+    pr_number = meta.get('GITHUB_PR_NUMBER')
+    if pr_number and pr_number.isdigit():
+      pr_link_html = '<code><a href="https://github.com/oilshell/oil/pull/%s">#%s</a></code>' % (pr_number, pr_number)
+    meta['pr_link_html'] = pr_link_html
 
     # Metadata for "Job"
 
@@ -215,7 +221,7 @@ BUILD_ROW_TEMPLATE = '''\
     <code>%(commit-line)s</code>
   </td>
   <td colspan=1>
-    <code><a href="https://github.com/oilshell/oil/pull/%(pr-number)s">#%(pr-number)s</a></code>
+    %(pr_link_html)s
   </td>
 </tr>
 <tr class="spacer">
