@@ -22,9 +22,6 @@ on:
   #push:
   #  branches-ignore:
   #    - master
-env:
-  # Only set for PR runs.
-  GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
 jobs:
   # Runs on raw VM
   #dummy_orig:

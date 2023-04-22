@@ -48,8 +48,7 @@ publish-html-assuming-ssh-key() {
       GITHUB_RUN_NUMBER \
       GITHUB_JOB \
       GITHUB_ACTION \
-      GITHUB_REF \
-      GITHUB_PR_NUMBER
+      GITHUB_REF
   else
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
