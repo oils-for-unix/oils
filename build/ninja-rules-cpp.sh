@@ -87,15 +87,9 @@ setglobal_compile_flags() {
     dbg*)
       flags="$flags -O0 -g"
       ;;
-    dbg32*)
-      flags="$flags -O0 -g -m32"
-      ;;
 
     asan*)
       flags="$flags -O0 -g -fsanitize=address"
-      ;;
-    asan32*)
-      flags="$flags -O0 -g -fsanitize=address -m32"
       ;;
 
     tsan*)
@@ -109,9 +103,6 @@ setglobal_compile_flags() {
 
     opt*)
       flags="$flags -O2 -g -D OPTIMIZED"
-      ;;
-    opt32*)
-      flags="$flags -O2 -g -D OPTIMIZED -m32"
       ;;
 
     coverage*)
@@ -133,6 +124,13 @@ setglobal_compile_flags() {
 
     (*)
       die "Invalid variant $variant"
+      ;;
+  esac
+
+  # for cxx-dbg32, cxx-opt32+bumpleak, etc.
+  case $variant in
+    *32*)
+      flags="$flags -m32"
       ;;
   esac
 
@@ -185,16 +183,9 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
-    dbg32*|opt32*)
-      link_flags='-m32'
-      ;;
-
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
     asan*)
       link_flags='-fsanitize=address'
-      ;;
-    asan32*)
-      link_flags='-fsanitize=address -m32'
       ;;
 
     tcmalloc)
@@ -215,7 +206,8 @@ setglobal_link_flags() {
 
   case $variant in
     # TODO: 32-bit variants can't handle -l readline right now.
-    dbg32*|opt32*|asan32*)
+    *32*)
+      link_flags="$link_flags -m32"
       ;;
 
     *)
