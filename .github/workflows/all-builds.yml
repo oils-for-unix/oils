@@ -24,7 +24,9 @@ on:
   #    - master
 env:
   # Only set for PR runs.
+  # https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
   GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+  GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
 jobs:
   # Runs on raw VM
   #dummy_orig:

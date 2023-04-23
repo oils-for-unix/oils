@@ -190,6 +190,8 @@ def ParseJobs(stdin):
     github_branch = meta.get('GITHUB_REF') 
     branch_str = github_branch or '?'  # no data for sr.ht
 
+    meta['github-pr-head-ref'] = meta.get('GITHUB_PR_HEAD_REF') or ''
+
     pr_number = meta.get('GITHUB_PR_NUMBER')
     if pr_number and github_branch:
 
@@ -233,8 +235,11 @@ BUILD_ROW_TEMPLATE = '''\
     &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
   </td>
-  <td class="commit-line" colspan=4>
+  <td class="commit-line" colspan=3>
     <code>%(commit-line)s</code>
+  </td>
+  <td colspan=1>
+    <code>%(github-pr-head-ref)s</code>
   </td>
 </tr>
 <tr class="spacer">
