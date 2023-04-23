@@ -206,9 +206,11 @@ def ParseJobs(stdin):
       meta['git-branch-html'] = cgi.escape(branch_str)
 
     github_pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
+    github_pr_head_sha = meta.get('GITHUB_PR_HEAD_SHA') or '?'
+
     if github_pr_head_ref:
       ref_url = 'https://github.com/oilshell/oil/tree/%s' % github_pr_head_ref
-      meta['description-html'] = 'PR from <a href="%s">%s</a> updated' % (ref_url, github_pr_head_ref)
+      meta['description-html'] = 'PR from <a href="%s">%s</a> updated %s' % (ref_url, github_pr_head_ref, github_pr_head_sha)
     else:
       meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
 
