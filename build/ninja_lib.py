@@ -41,6 +41,7 @@ def log(msg, *args):
 COMPILERS_VARIANTS = [
     ('cxx', 'dbg'),
     ('cxx', 'opt'),
+    ('cxx', 'optlto'),
     ('cxx', 'asan'),
 
     ('cxx', 'asan+gcalways'),

@@ -107,6 +107,9 @@ setglobal_compile_flags() {
       flags="$flags -O0 -g -fsanitize=undefined"
       ;;
 
+    optlto*)
+      flags="$flags -O2 -g -flto -D OPTIMIZED"
+      ;;
     opt*)
       flags="$flags -O2 -g -D OPTIMIZED"
       ;;
@@ -187,6 +190,9 @@ setglobal_link_flags() {
   local variant=$1
 
   case $variant in
+    optlto*)
+      link_flags='-flto=auto -fwhole-program'
+      ;;
     dbg32*|opt32*)
       link_flags='-m32'
       ;;
@@ -299,7 +305,11 @@ link() {
 
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  $prefix "$cxx" -o "$out" "$@" $link_flags
+  local cmdline=($prefix "$cxx" -o "$out" "$@" $link_flags)
+  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+    echo "__ ${cmdline[@]}" >&2
+  fi
+  "${cmdline[@]}"
 }
 
 compile_and_link() {

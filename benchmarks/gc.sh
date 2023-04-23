@@ -116,6 +116,7 @@ print-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     # good GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-optlto/osh${TAB}mut+alloc+free+gc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
 
@@ -383,7 +384,7 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+pool}/osh )
+  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+pool}/osh _bin/cxx-optlto/osh)
 
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-opt+tcmalloc/osh )
