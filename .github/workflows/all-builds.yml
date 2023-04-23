@@ -36,7 +36,7 @@ jobs:
   #    REPO_ROOT: ${{ github.workspace }}
   #  steps:
   #    - name: Check out repository code
-  #      uses: actions/checkout@v2
+  #      uses: actions/checkout@v3
 
   #    - name: dummy
   #      run: |
@@ -58,7 +58,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: raw-vm
         run: |
@@ -78,7 +78,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Runs inside container!
       - name: dummy
@@ -99,7 +99,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -120,7 +120,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -141,7 +141,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -162,7 +162,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -183,7 +183,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -204,7 +204,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -225,7 +225,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -246,7 +246,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -267,7 +267,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -288,7 +288,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -309,7 +309,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -330,7 +330,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -354,7 +354,7 @@ jobs:
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: maybe-merge
         env:
