@@ -66,7 +66,7 @@ BumpLeakHeap gBumpLeak;
 // TODO: Make this interface nicer.
 void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
   // log("Allocate %d", num_bytes);
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   if (num_bytes <= pool_.kMaxObjSize) {
     *in_pool = true;
     return pool_.Allocate(obj_id);
@@ -137,7 +137,7 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   int obj_id = header->obj_id;
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   if (header->in_pool) {
     if (pool_.IsMarked(obj_id)) {
       return;
@@ -207,7 +207,7 @@ void MarkSweepHeap::TraceChildren() {
 }
 
 void MarkSweepHeap::Sweep() {
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   pool_.Sweep();
   #endif
 
@@ -254,7 +254,7 @@ int MarkSweepHeap::Collect() {
 
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   pool_.PrepareForGc();
   #endif
 
@@ -325,14 +325,14 @@ void MarkSweepHeap::PrintStats(int fd) {
   // max survived_ can be less than num_live(), because leave off the last GC
   dprintf(fd, "  max survived     = %10d\n", max_survived_);
   dprintf(fd, "\n");
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num allocated    = %10d\n",
           num_allocated_ + pool_.num_allocated());
   #else
   dprintf(fd, "  num allocated    = %10d\n", num_allocated_);
   #endif
   dprintf(fd, "num heap allocated = %10d\n", num_allocated_);
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   dprintf(fd, "num pool allocated = %10d\n", pool_.num_allocated());
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n",
           bytes_allocated_ + pool_.bytes_allocated());
@@ -370,7 +370,7 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
     global_roots_.clear();
     Collect();
     EagerFree();
-  #ifdef POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
     pool_.Free();
   #endif
   };

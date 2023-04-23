@@ -810,6 +810,15 @@ WriteOneTask = function(times, out_dir, task_name, precision) {
   writeTsv(subset, file.path(out_dir, task_name), precision)
 }
 
+SHELL_ORDER = c('dash',
+                'bash',
+                'zsh', 
+                '_bin/cxx-opt+bumpleak/osh',
+                '_bin/cxx-opt+bumproot/osh',
+                '_bin/cxx-opt+bumpsmall/osh',
+                '_bin/cxx-opt/osh',
+                '_bin/cxx-opt+nopool/osh')
+
 GcReport = function(in_dir, out_dir) {
   times = read.table(file.path(in_dir, 'raw/times.tsv'), header=T)
   gc_stats = read.table(file.path(in_dir, 'stage1/gc_stats.tsv'), header=T)
@@ -822,7 +831,7 @@ GcReport = function(in_dir, out_dir) {
 
   # Change units and order columns
   times %>%
-    arrange(task) %>%
+    arrange(task, factor(sh_path, levels = SHELL_ORDER)) %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
@@ -882,7 +891,7 @@ GcCachegrindReport = function(in_dir, out_dir) {
   counts %>% left_join(times, by = c('join_id')) %>% 
     mutate(million_irefs = irefs / 1e6) %>%
     select(c(million_irefs, task, sh_path, shell_runtime_opts)) %>%
-    arrange(shell_runtime_opts, million_irefs) ->
+    arrange(factor(sh_path, levels = SHELL_ORDER)) ->
     counts
 
   precision = NULL

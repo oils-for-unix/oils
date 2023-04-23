@@ -194,7 +194,6 @@ TEST cycle_collection_test() {
   PASS();
 }
 
-#ifdef POOL_ALLOC
 TEST pool_sanity_check() {
   Pool<2, 32> p;
 
@@ -266,7 +265,6 @@ SUITE(pool_alloc) {
   RUN_TEST(pool_sweep);
   RUN_TEST(pool_marked_objs_are_kept_alive);
 }
-#endif // POOL_ALLOC
 
 GREATEST_MAIN_DEFS();
 
@@ -282,9 +280,7 @@ int main(int argc, char **argv) {
   RUN_TEST(list_collection_test);
   RUN_TEST(cycle_collection_test);
 
-#ifdef POOL_ALLOC
   RUN_SUITE(pool_alloc);
-#endif
 
   gHeap.CleanProcessExit();
 

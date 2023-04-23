@@ -158,15 +158,13 @@ setglobal_compile_flags() {
       flags="$flags -D BUMP_LEAK -D BUMP_ROOT"
       ;;
 
-    *+bumpbig)
-      flags="$flags -D BUMP_ROOT -D BUMP_BIG"
-      ;;
     *+bumpsmall)
-      flags="$flags -D BUMP_ROOT -D BUMP_SMALL"
+      # the pool allocator should approximate opt+bumpsmall (which doesn't support GC)
+      flags="$flags -D BUMP_ROOT -D BUMP_SMALL -D NO_POOL_ALLOC"
       ;;
 
-    *+pool)
-      flags="$flags -D POOL_ALLOC"
+    *+nopool)
+      flags="$flags -D NO_POOL_ALLOC"
       ;;
   esac
 

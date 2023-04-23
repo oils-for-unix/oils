@@ -111,7 +111,7 @@ T* Alloc(Args&&... args) {
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
   header->obj_id = obj_id;
-  #if POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   header->in_pool = in_pool;
   #endif
 #endif
@@ -154,7 +154,7 @@ inline Str* NewStr(int len) {
 
 #if MARK_SWEEP
   header->obj_id = obj_id;
-  #if POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   header->in_pool = in_pool;
   #endif
 #endif
@@ -178,7 +178,7 @@ inline Str* OverAllocatedStr(int len) {
   auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
   header->obj_id = obj_id;
-  #if POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   header->in_pool = in_pool;
   #endif
 #endif
@@ -224,7 +224,7 @@ inline Slab<T>* NewSlab(int len) {
   auto slab = new (obj) Slab<T>(len);
 #if MARK_SWEEP
   header->obj_id = obj_id;
-  #if POOL_ALLOC
+  #ifndef NO_POOL_ALLOC
   header->in_pool = in_pool;
   #endif
 #endif

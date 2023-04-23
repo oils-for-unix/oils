@@ -59,10 +59,10 @@ GC_PERF_VARIANTS = [
     ('cxx', 'opt+bumpleak'),
     ('cxx', 'opt+bumproot'),
 
-    ('cxx', 'opt+bumpbig'),
     ('cxx', 'opt+bumpsmall'),
+    ('cxx', 'asan+bumpsmall'),
 
-    ('cxx', 'opt+pool'),
+    ('cxx', 'opt+nopool'),
 
     # TODO: should be binary with different files
     ('cxx', 'opt+cheney'),

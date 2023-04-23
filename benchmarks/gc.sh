@@ -108,8 +108,8 @@ print-tasks() {
     "_bin/cxx-opt+bumproot/osh${TAB}mut"
 
     "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
-    "_bin/cxx-opt+pool/osh${TAB}mut+alloc"
-    "_bin/cxx-opt+pool/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc+free+gc"
 
     # these have trivial GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc"
@@ -176,8 +176,8 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt+bumproot/osh${TAB}mut"
 
     "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
-    "_bin/cxx-opt+pool/osh${TAB}mut+alloc"
-    "_bin/cxx-opt+pool/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc+free+gc"
 
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
@@ -307,7 +307,7 @@ run-tasks() {
         # Save the GC stats here.  None of the other runtime options are that
         # interesting.
 
-        if test $mode = 'time' && test $sh_path != _bin/cxx-opt+pool/osh; then
+        if test $mode = 'time' && test $sh_path != _bin/cxx-opt+nopool/osh; then
           OIL_GC_STATS_FD=99 \
             "${instrumented[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
         else
@@ -383,7 +383,7 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+pool}/osh )
+  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
 
   if test -n "${TCMALLOC:-}"; then
     bin+=( _bin/cxx-opt+tcmalloc/osh )
