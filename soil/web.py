@@ -187,11 +187,11 @@ def ParseJobs(stdin):
 
     meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
 
-    # ink to the PR if there is one.
+    # Link to the PR if there is one.
     pr_link_html = ''
     pr_number = meta.get('GITHUB_PR_NUMBER')
     if pr_number and pr_number.isdigit():
-      pr_link_html = '<code><a href="https://github.com/oilshell/oil/pull/%s">#%s</a></code>' % (pr_number, pr_number)
+      pr_link_html = '<code><a href="https://github.com/oilshell/oil/pull/%s">PR %s</a></code>' % (pr_number, pr_number)
     meta['pr_link_html'] = pr_link_html
 
     # Metadata for "Job"
@@ -216,12 +216,11 @@ BUILD_ROW_TEMPLATE = '''\
     <code>%(git-branch)s</code>
     &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
-  </td>
-  <td class="commit-line" colspan=3>
-    <code>%(commit-line)s</code>
-  </td>
-  <td colspan=1>
+    &nbsp;
     %(pr_link_html)s
+  </td>
+  <td class="commit-line" colspan=4>
+    <code>%(commit-line)s</code>
   </td>
 </tr>
 <tr class="spacer">
