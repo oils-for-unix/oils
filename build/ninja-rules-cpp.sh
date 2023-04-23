@@ -289,7 +289,11 @@ link() {
 
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  $prefix "$cxx" -o "$out" "$@" $link_flags
+  local cmdline=($prefix "$cxx" -o "$out" "$@" $link_flags)
+  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+    echo "__ ${cmdline[@]}" >&2
+  fi
+  "${cmdline[@]}"
 }
 
 compile_and_link() {
