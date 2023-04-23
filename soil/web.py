@@ -218,7 +218,11 @@ def ParseJobs(stdin):
       meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
       meta['commit-hash'] = meta.get('commit-hash') or '?'
 
-    meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
+    commit_hash_short = meta['commit-hash'][-8:]  # last 8 chars
+
+    # TODO: Make a sourcehut link too
+    meta['commit-link-html'] = '<a href="https://github.com/oilshell/oil/commit/%s">%s</a>' % (
+        meta['commit-hash'], commit_hash_short)
 
     # Metadata for "Job"
 
@@ -244,7 +248,7 @@ BUILD_ROW_TEMPLATE = '''\
   <td colspan=2>
     <code>%(git-branch-html)s</code>
     &nbsp;
-    <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
+    <code>%(commit-link-html)s</code>
   </td>
   <td class="commit-line" colspan=4>
     <code>%(description-html)s</code>
@@ -279,6 +283,10 @@ INDEX_TOP = '''
 
     <h1>%(title)s</h1>
 
+    <p style="text-align: right">
+      <a href="raw.html">raw data</a>
+    </p>
+
     <table>
       <thead>
         <tr>
@@ -295,9 +303,6 @@ INDEX_TOP = '''
 INDEX_BOTTOM = '''\
     </table>
 
-    <p>
-      <a href="raw.html">raw data</a>
-    </p>
   </body>
 </html>
 '''

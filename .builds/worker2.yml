@@ -23,39 +23,48 @@ tasks:
       cd oil
       soil/host-shim.sh mount-perms $PWD
 
-  - cpp-small: |
+  - other-tests: |
       cd oil
-      soil/host-shim.sh run-job-uke podman $PWD cpp-small
+      soil/host-shim.sh run-job-uke podman $PWD other-tests
 
-  - publish-cpp-small: |
+  - publish-other-tests: |
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key
 
-  - job-reset-1: |
-      cd oil
-      soil/host-shim.sh job-reset
+  #- cpp-small: |
+  #    cd oil
+  #    soil/host-shim.sh run-job-uke podman $PWD cpp-small
 
-  - cpp-spec: |
-      cd oil
-      soil/host-shim.sh run-job-uke podman $PWD cpp-spec
+  #- publish-cpp-small: |
+  #    cd oil
+  #    soil/sourcehut.sh publish-html-assuming-ssh-key
 
-  # Relies on SSH key, so do it outside the container
-  - publish-cpp-spec: |
-      cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
+  #- job-reset-1: |
+  #    cd oil
+  #    soil/host-shim.sh job-reset
 
-  - job-reset-2: |
-      cd oil
-      soil/host-shim.sh job-reset
+  #- cpp-spec: |
+  #    cd oil
+  #    soil/host-shim.sh run-job-uke podman $PWD cpp-spec
 
-  - benchmarks: |
-      cd oil
-      soil/host-shim.sh run-job-uke podman $PWD benchmarks
+  ## Relies on SSH key, so do it outside the container
+  #- publish-cpp-spec: |
+  #    cd oil
+  #    soil/sourcehut.sh publish-html-assuming-ssh-key
 
-  - publish-benchmarks: |
-      cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
+  #- job-reset-2: |
+  #    cd oil
+  #    soil/host-shim.sh job-reset
+
+  #- benchmarks: |
+  #    cd oil
+  #    soil/host-shim.sh run-job-uke podman $PWD benchmarks
+
+  #- publish-benchmarks: |
+  #    cd oil
+  #    soil/sourcehut.sh publish-html-assuming-ssh-key
   
   - did-all-succeed: |
       cd oil
-      soil/host-shim.sh did-all-succeed cpp-small cpp-spec benchmarks
+      soil/host-shim.sh did-all-succeed other-tests
+      #soil/host-shim.sh did-all-succeed cpp-small cpp-spec benchmarks
