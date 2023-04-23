@@ -1,6 +1,9 @@
 #ifndef MARKSWEEP_HEAP_H
 #define MARKSWEEP_HEAP_H
 
+#include <stdlib.h>
+
+#include <array>
 #include <vector>
 
 #include "mycpp/common.h"
@@ -62,6 +65,134 @@ class MarkSet {
   std::vector<uint8_t> bits_;  // bit vector indexed by obj_id
 };
 
+#ifdef POOL_ALLOC
+// A simple Pool allocator for allocating small objects. It maintains an ever
+// growing number of Blocks each consisting of a number of fixed size Cells.
+// Memory is handed out one Cell at a time.
+// Note: within the context of the Pool allocator we refer to object IDs as cell
+// IDs because in addition to identifying an object they're also used to index
+// into the Cell storage.
+template <int CellsPerBlock, size_t CellSize>
+class Pool {
+ public:
+  static constexpr size_t kMaxObjSize = CellSize;
+
+  Pool() = default;
+
+  void* Allocate(int* obj_id) {
+    num_allocated_++;
+
+    if (!free_list_) {
+      // Allocate a new Block and add every new Cell to the free list.
+      Block* block = static_cast<Block*>(malloc(sizeof(Block)));
+      blocks_.push_back(block);
+      bytes_allocated_ += kBlockSize;
+      num_free_ += CellsPerBlock;
+
+      // The starting cell_id for Cells in this block.
+      int cell_id = (blocks_.size() - 1) * CellsPerBlock;
+      for (Cell& cell : block->cells) {
+        FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell.data());
+        free_cell->id = cell_id++;
+        free_cell->next = free_list_;
+        free_list_ = free_cell;
+      }
+    }
+
+    FreeCell* cell = free_list_;
+    free_list_ = free_list_->next;
+    num_free_--;
+    *obj_id = cell->id;
+    return cell;
+  }
+
+  void PrepareForGc() {
+    DCHECK(!gc_underway_);
+    gc_underway_ = true;
+    mark_set_.ReInit(blocks_.size() * CellsPerBlock);
+  }
+
+  bool IsMarked(int cell_id) {
+    DCHECK(gc_underway_);
+    return mark_set_.IsMarked(cell_id);
+  }
+
+  void Mark(int cell_id) {
+    DCHECK(gc_underway_);
+    mark_set_.Mark(cell_id);
+  }
+
+  void Sweep() {
+    DCHECK(gc_underway_);
+    // Iterate over every Cell linking the free ones into a new free list.
+    num_free_ = 0;
+    free_list_ = nullptr;
+    int cell_id = 0;
+    for (Block* block : blocks_) {
+      for (Cell& cell : block->cells) {
+        if (!mark_set_.IsMarked(cell_id)) {
+          num_free_++;
+          FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell.data());
+          free_cell->id = cell_id;
+          free_cell->next = free_list_;
+          free_list_ = free_cell;
+        }
+        cell_id++;
+      }
+    }
+    gc_underway_ = false;
+  }
+
+  void Free() {
+    for (Block* block : blocks_) {
+      free(block);
+    }
+    blocks_.clear();
+  }
+
+  int num_allocated() {
+    return num_allocated_;
+  }
+
+  int64_t bytes_allocated() {
+    return bytes_allocated_;
+  }
+
+  int num_live() {
+    return blocks_.size() * CellsPerBlock - num_free_;
+  }
+
+ private:
+  using Cell = std::array<uint8_t, CellSize>;
+
+  struct Block {
+    std::array<Cell, CellsPerBlock> cells;
+  };
+
+  // Unused/free cells are tracked via a linked list of FreeCells. The FreeCells
+  // are stored in the unused Cells, so it takes no extra memory to track them.
+  struct FreeCell {
+    int id;
+    FreeCell* next;
+  };
+  static_assert(CellSize >= sizeof(FreeCell), "CellSize is too small");
+
+  static constexpr int kBlockSize = CellSize * CellsPerBlock;
+
+  // Whether a GC is underway, for asserting that calls are in order.
+  bool gc_underway_ = false;
+
+  FreeCell* free_list_ = nullptr;
+  int num_free_ = 0;
+  int num_allocated_ = 0;
+  int64_t bytes_allocated_ = 0;
+  std::vector<Block*> blocks_;
+  MarkSet mark_set_;
+
+  DISALLOW_COPY_AND_ASSIGN(Pool<CellsPerBlock COMMA CellSize>);
+};
+#endif  // POOL_ALLOC
+
 class MarkSweepHeap {
  public:
   // reserve 32 frames to start
@@ -83,12 +214,7 @@ class MarkSweepHeap {
     global_roots_.push_back(reinterpret_cast<RawObject*>(root));
   }
 
-  void* Allocate(size_t num_bytes);
-  int UnusedObjectId() {
-    // Allocate() sets this
-    // log("  unused -> %d", obj_id_after_allocate_);
-    return obj_id_after_allocate_;
-  }
+  void* Allocate(size_t num_bytes, int* obj_id, bool* in_pool);
 
 #if 0
   void* Reallocate(void* p, size_t num_bytes);
@@ -106,6 +232,14 @@ class MarkSweepHeap {
   void EagerFree();         // for remaining ASAN clean
   void CleanProcessExit();  // do one last GC so ASAN passes
   void FastProcessExit();   // let the OS clean up
+
+  int num_live() {
+    return num_live_
+#ifdef POOL_ALLOC
+           + pool_.num_live()
+#endif
+        ;
+  }
 
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
@@ -133,6 +267,10 @@ class MarkSweepHeap {
   double max_gc_millis_ = 0.0;
   double total_gc_millis_ = 0.0;
 
+#ifdef POOL_ALLOC
+  Pool<128, 32> pool_;
+#endif
+
   std::vector<RawObject**> roots_;
   std::vector<RawObject*> global_roots_;
 
@@ -145,7 +283,6 @@ class MarkSweepHeap {
   MarkSet mark_set_;
 
   int greatest_obj_id_ = 0;
-  int obj_id_after_allocate_ = 0;
 
  private:
   void DoProcessExit(bool fast_exit);
