@@ -14,6 +14,12 @@ logs.
 TODO:
 - Use JSON Template to escape HTML
 - Can we publish spec test numbers in JSON?
+
+How to test changes to this file:
+
+  $ soil/web-init.sh deploy-code
+  $ soil/github-actions.sh remote-rewrite-jobs-index github-
+
 """
 from __future__ import print_function
 
@@ -179,11 +185,42 @@ def ParseJobs(stdin):
 
     meta['start_time_str'] = start_time_str
 
-    # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
-    # A build consists of many jobs.
-    meta['git-branch'] = meta.get('TRAVIS_BRANCH') or meta.get('GITHUB_REF') or '?'  # no data for sr.ht
-    meta['commit-line'] = meta.get('commit-line') or '?'
-    meta['commit-hash'] = meta.get('commit-hash') or '?'
+    # Metadata for a "build".  A build consists of many jobs.
+
+    github_branch = meta.get('GITHUB_REF') 
+    branch_str = github_branch or '?'  # no data for sr.ht
+
+    # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
+    pr_number = meta.get('GITHUB_PR_NUMBER')
+    if pr_number and github_branch:
+
+      # pr_number from YAML will be '1577'
+      # branch from Github should be 'ref/pull/1577/merge'
+      to_highlight = 'pull/%s' % pr_number
+      assert to_highlight in github_branch, \
+          "%r doesn't contain %r" % (github_branch, to_highlight)
+
+      linkified = '<code><a href="https://github.com/oilshell/oil/pull/%s">%s</a></code>' % (
+          pr_number, to_highlight)
+      meta['git-branch-html'] = github_branch.replace(to_highlight, linkified)
+    else:
+      meta['git-branch-html'] = cgi.escape(branch_str)
+
+    github_pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
+
+    if github_pr_head_ref:
+      ref_url = 'https://github.com/oilshell/oil/tree/%s' % github_pr_head_ref
+      meta['description-html'] = 'PR from <a href="%s">%s</a> updated' % (
+          ref_url, github_pr_head_ref)
+
+      # Show the user's commit, not the merge commit
+      meta['commit-hash'] = meta.get('GITHUB_PR_HEAD_SHA') or '?'
+
+    else:
+      # From soil/worker.sh save-metadata.  This is intended to be
+      # CI-independent, while the environment variables above are from Github.
+      meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
+      meta['commit-hash'] = meta.get('commit-hash') or '?'
 
     meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
 
@@ -206,12 +243,12 @@ BUILD_ROW_TEMPLATE = '''\
 </tr>
 <tr class="commit-row">
   <td colspan=2>
-    <code>%(git-branch)s</code>
+    <code>%(git-branch-html)s</code>
     &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
   </td>
   <td class="commit-line" colspan=4>
-    <code>%(commit-line)s</code>
+    <code>%(description-html)s</code>
   </td>
 </tr>
 <tr class="spacer">
