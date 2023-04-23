@@ -549,22 +549,27 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   rc_paths = []  # type: List[str]
 
-  # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
-  rc_path = flag.rcfile
-  if rc_path is None:
-    rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
+  if not flag.norc:
+    # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
+    rc_path = flag.rcfile
+    if rc_path is None:
+      rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
+    else:
+      rc_paths.append(rc_path)
+
+    # Load all files in ~/.config/oil/oshrc.d or oilrc.d
+    # This way "installers" can avoid mutating oshrc directly
+
+    rc_dir = flag.rcdir
+    if rc_dir is None:
+      rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
+
+    rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
   else:
-    rc_paths.append(rc_path)
-
-  # Load all files in ~/.config/oil/oshrc.d or oilrc.d
-  # This way "installers" can avoid mutating oshrc directly
-
-  # TODO: Add a flag/parameter to manually pass/disable reading the rc_dir
-  rc_dir = flag.rcdir
-  if rc_dir is None:
-    rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
-
-  rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
+    if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
+      print_stderr('osh warning: --rcfile ignored with --norc')
+    if flag.rcdir is not None:
+      print_stderr('osh warning: --rcdir ignored with --norc')
 
   if flag.headless:
     state.InitInteractive(mem)

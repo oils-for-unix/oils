@@ -48,6 +48,7 @@ class ArgsTest(unittest.TestCase):
     s.LongFlag('--help')
     s.LongFlag('--rcfile', args.String)
     s.LongFlag('--rcdir', args.String)
+    s.LongFlag('--norc')
 
     s.LongFlag('--ast-format', ['text', 'html'])
 
