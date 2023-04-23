@@ -1,5 +1,3 @@
-# pea; cpp-coverage; dummy
-
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
@@ -30,7 +28,7 @@ tasks:
   # Relies on SSH key, so do it outside the container
   - publish-dummy: |
       cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key dummy
   
   - job-reset-1: |
       cd oil
@@ -42,7 +40,7 @@ tasks:
 
   - publish-pea: |
       cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key pea
 
       #  - cpp-coverage: |
       #      cd oil

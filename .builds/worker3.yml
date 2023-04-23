@@ -1,5 +1,3 @@
-# dev-minimal; other-tests
-
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
@@ -30,7 +28,7 @@ tasks:
   # Relies on SSH key, so do it outside the container
   - publish-dev-minimal: |
       cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-minimal
 
   # Outside container
   #- job-reset: |

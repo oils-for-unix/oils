@@ -347,15 +347,8 @@ EOF
 
     echo '<tr>'
     echo "  <td><a href="$wwz/">$wwz</a></td>"
-    if [[ $job_id == *test ]]; then
-      # don't show misleading links
-      echo "  <td>-</td>"
-      echo "  <td>-</td>"
-    else
-      echo "  <td><a href="$prefix.json">JSON</a></td>"
-      echo "  <td><a href="$prefix.tsv">TSV</a></td>"
-    fi
-
+    echo "  <td><a href="$prefix.json">JSON</a></td>"
+    echo "  <td><a href="$prefix.tsv">TSV</a></td>"
     echo '</tr>'
   done
 

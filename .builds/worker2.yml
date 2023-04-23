@@ -1,5 +1,3 @@
-# cpp-small, cpp-spec -- these SHARE the same container
-
 # Debian bullseye has podman
 image: debian/bullseye
 packages:
@@ -29,7 +27,7 @@ tasks:
 
   - publish-other-tests: |
       cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key
+      soil/sourcehut.sh publish-html-assuming-ssh-key other-tests
 
   #- cpp-small: |
   #    cd oil
