@@ -33,7 +33,7 @@ from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
     part_value, part_value_t,
     lvalue,
-    value, value_e, value_t,
+    value, value_e, value_t, value__Bool, value__Int, value__Float,
     value__Str, value__MaybeStrArray, value__AssocArray, value__Obj
 )
 from asdl import runtime
@@ -117,6 +117,34 @@ def Stringify(py_val, word_part=None):
 
   return str(py_val)
 
+
+def _ValueToPyObj(val):
+  # type: (value_t) -> Any
+
+  UP_val = val
+  with tagswitch(val) as case:
+    if case(value_e.Undef):
+      return None
+
+    elif case(value_e.Bool):
+      val = cast(value__Bool, UP_val)
+      return val.b
+
+    elif case(value_e.Int):
+      val = cast(value__Int, UP_val)
+      return val.i
+
+    elif case(value_e.Float):
+      val = cast(value__Float, UP_val)
+      return val.f
+
+    elif case(value_e.Str):
+      val = cast(value__Str, UP_val)
+      return val.s
+
+    else:
+      raise NotImplementedError()
+  
 
 class OilEvaluator(object):
   """Shared between arith and bool evaluators.
@@ -383,7 +411,54 @@ class OilEvaluator(object):
 
     raise ValueError("%r isn't like an integer" % (val,))
     
+  def _EvalConst(self, node):
+    # type: (expr__Const) -> value_t
 
+    # NOTE: This could all be done at PARSE TIME / COMPILE TIME.
+
+    # Remove underscores from 1_000_000.  The lexer is responsible for
+    # validation.
+    c = node.c.tval.replace('_', '')
+
+    id_ = node.c.id
+    if id_ == Id.Expr_DecInt:
+      return value.Int(int(c))
+    if id_ == Id.Expr_BinInt:
+      return value.Int(int(c, 2))
+    if id_ == Id.Expr_OctInt:
+      return value.Int(int(c, 8))
+    if id_ == Id.Expr_HexInt:
+      return value.Int(int(c, 16))
+
+    if id_ == Id.Expr_Float:
+      return value.Float(float(c))
+
+    if id_ == Id.Expr_Null:
+      return value.Undef()
+    if id_ == Id.Expr_True:
+      return value.Bool(True)
+    if id_ == Id.Expr_False:
+      return value.Bool(False)
+
+    if id_ == Id.Expr_Name:
+      # for {name: 'bob'}
+      # Maybe also :Symbol?
+      return value.Str(node.c.tval)
+
+    # These two could be done at COMPILE TIME
+    if id_ == Id.Char_OneChar:
+      return value.Int(consts.LookupCharInt(node.c.tval[1]))  # It's an integer
+    if id_ == Id.Char_UBraced:
+      s = node.c.tval[3:-1]  # \u{123}
+      return value.Int(int(s, 16))
+    if id_ == Id.Char_Pound:
+      # TODO: accept UTF-8 code point instead of single byte
+      byte = node.c.tval[2]  # the a in #'a'
+      return value.Int(ord(byte))  # It's an integer
+
+    # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using
+    # it yet.
+    raise AssertionError(id_)
 
   def _EvalExpr(self, node):
     # type: (expr_t) -> Any
@@ -405,51 +480,7 @@ class OilEvaluator(object):
       if case(expr_e.Const):
         node = cast(expr__Const, UP_node)
 
-        # NOTE: This could all be done at PARSE TIME / COMPILE TIME.
-
-        # Remove underscores from 1_000_000.  The lexer is responsible for
-        # validation.
-        c = node.c.tval.replace('_', '')
-
-        id_ = node.c.id
-        if id_ == Id.Expr_DecInt:
-          return int(c)
-        if id_ == Id.Expr_BinInt:
-          return int(c, 2)
-        if id_ == Id.Expr_OctInt:
-          return int(c, 8)
-        if id_ == Id.Expr_HexInt:
-          return int(c, 16)
-
-        if id_ == Id.Expr_Float:
-          return float(c)
-
-        if id_ == Id.Expr_Null:
-          return None
-        if id_ == Id.Expr_True:
-          return True
-        if id_ == Id.Expr_False:
-          return False
-
-        if id_ == Id.Expr_Name:
-          # for {name: 'bob'}
-          # Maybe also :Symbol?
-          return node.c.tval
-
-        # These two could be done at COMPILE TIME
-        if id_ == Id.Char_OneChar:
-          return consts.LookupCharInt(node.c.tval[1])  # It's an integer
-        if id_ == Id.Char_UBraced:
-          s = node.c.tval[3:-1]  # \u{123}
-          return int(s, 16)
-        if id_ == Id.Char_Pound:
-          # TODO: accept UTF-8 code point instead of single byte
-          byte = node.c.tval[2]  # the a in #'a'
-          return ord(byte)  # It's an integer
-
-        # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using
-        # it yet.
-        raise AssertionError(id_)
+        return _ValueToPyObj(self._EvalConst(node))
 
       elif case(expr_e.Var):
         node = cast(expr__Var, UP_node)
