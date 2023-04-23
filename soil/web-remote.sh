@@ -288,12 +288,12 @@ make-job-wwz() {
 deploy-job-results() {
   local prefix=$1  # e.g. example.com/github-jobs/
   local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
-  local job_id=$3  # e.g. example.com/github-jobs/1234/foo.wwz
+  local job_name=$3  # e.g. example.com/github-jobs/1234/foo.wwz
   shift 2
   # rest of args are more env vars
 
-  # writes $job_id.wwz
-  make-job-wwz $job_id
+  # writes $job_name.wwz
+  make-job-wwz $job_name
 
   # Debug permissions.  When using docker rather than podman, these dirs can be
   # owned by root and we can't write into them.
@@ -302,22 +302,22 @@ deploy-job-results() {
 
   date +%s > _tmp/soil/task-deploy-start-time.txt
 
-  soil/collect_json.py _tmp/soil "$@" > $job_id.json
+  soil/collect_json.py _tmp/soil "$@" > $job_name.json
 
   # So we don't have to unzip it
-  cp _tmp/soil/INDEX.tsv $job_id.tsv
+  cp _tmp/soil/INDEX.tsv $job_name.tsv
 
   local remote_dest_dir="travis-ci.oilshell.org/${prefix}jobs/$subdir"
   my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
 
-  # Copy wwz, tsv, json
-  my-scp $job_id.* "$SOIL_USER_HOST:$remote_dest_dir"
+  # Do JSON last because that's what 'list-json' looks for
+  my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
 
   log ''
   log 'View CI results here:'
   log ''
-  log "http://travis-ci.oilshell.org/${prefix}jobs/"
-  log "http://travis-ci.oilshell.org/${prefix}jobs/$job_id.wwz/"
+  log "http://travis-ci.oilshell.org/${prefix}jobs/$subdir/"
+  log "http://travis-ci.oilshell.org/${prefix}jobs/$subdir/$job_name.wwz/"
   log ''
 }
 
