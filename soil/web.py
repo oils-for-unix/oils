@@ -163,10 +163,6 @@ def ParseJobs(stdin):
 
     meta['pull_time_str'] = _ParsePullTime(meta.get('image-pull-time'))
 
-    # Note: this isn't a Unix timestamp
-    #microseconds = int(meta['TRAVIS_TIMER_START_TIME']) / 1e6
-    #log('ts = %d', microseconds)
-
     start_time = meta.get('task-run-start-time')
     if start_time is None:
       start_time_str = '?'
@@ -226,10 +222,13 @@ def ParseJobs(stdin):
 
     # Metadata for "Job"
 
-    meta['job-name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
-    meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or meta.get('GITHUB_RUN_ID') or '?'
+    meta['job-name'] = meta.get('job-name') or '?'
+
+    # GITHUB_RUN_NUMBER (project-scoped) is shorter than GITHUB_RUN_ID (global
+    # scope)
+    meta['job_num'] = meta.get('JOB_ID') or meta.get('GITHUB_RUN_NUMBER') or '?'
     # For Github, we construct $JOB_URL in soil/github-actions.sh
-    meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
+    meta['job_url'] = meta.get('JOB_URL') or '?'
 
     filename = os.path.basename(json_path)
     basename, _ = os.path.splitext(filename)
@@ -302,10 +301,6 @@ INDEX_BOTTOM = '''\
   </body>
 </html>
 '''
-
-# Sort by descending build number
-def ByTravisBuildNum(row):
-  return int(row.get('TRAVIS_BUILD_NUMBER', 0))
 
 def ByTaskRunStartTime(row):
   return int(row.get('task-run-start-time', 0))
@@ -383,34 +378,6 @@ def main(argv):
       jobs.sort(key=ByTaskRunStartTime, reverse=True)
 
       # First job
-      print(BUILD_ROW_TEMPLATE % jobs[0])
-
-      for job in jobs:
-        print(JOB_ROW_TEMPLATE % job)
-
-    print(INDEX_BOTTOM)
-
-  elif action == 'travis-index':
-    title = 'Recent Jobs (Travis CI)'
-    HtmlHead(title)
-    IndexTop(title)
-
-    rows = list(ParseJobs(sys.stdin))
-
-    rows.sort(key=ByTravisBuildNum, reverse=True)
-    groups = itertools.groupby(rows, key=ByTravisBuildNum)
-    #print(list(groups))
-
-    for build_num, group in groups:
-      #build_num = int(build_num)
-      #log('build %d', build_num)
-
-      jobs = list(group)
-
-      # Sort by start time
-      jobs.sort(key=ByTaskRunStartTime, reverse=True)
-
-      # The first job should have the same branch/commit/commit_line
       print(BUILD_ROW_TEMPLATE % jobs[0])
 
       for job in jobs:
