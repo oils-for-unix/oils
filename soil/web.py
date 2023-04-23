@@ -14,6 +14,12 @@ logs.
 TODO:
 - Use JSON Template to escape HTML
 - Can we publish spec test numbers in JSON?
+
+How to test changes to this file:
+
+  $ soil/web-init.sh deploy-code
+  $ soil/github-actions.sh remote-rewrite-jobs-index github-
+
 """
 from __future__ import print_function
 
@@ -179,20 +185,30 @@ def ParseJobs(stdin):
 
     meta['start_time_str'] = start_time_str
 
-    # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
-    # A build consists of many jobs.
-    meta['git-branch'] = meta.get('TRAVIS_BRANCH') or meta.get('GITHUB_REF') or '?'  # no data for sr.ht
+    # Metadata for a "build".  A build consists of many jobs.
+
+    github_branch = meta.get('GITHUB_REF') 
+    branch_str = github_branch or '?'  # no data for sr.ht
+
+    pr_number = meta.get('GITHUB_PR_NUMBER')
+    if pr_number and github_branch:
+
+      # pr_number from YAML will be '1577'
+      # branch from Github should be 'ref/pull/1577/merge'
+      to_highlight = 'pull/%s' % pr_number
+      assert to_highlight in github_branch, \
+          "%r doesn't contain %r" % (github_branch, to_highlight)
+
+      linkified = '<code><a href="https://github.com/oilshell/oil/pull/%s">%s</a></code>' % (
+          pr_number, to_highlight)
+      meta['git-branch-html'] = github_branch.replace(to_highlight, linkified)
+    else:
+      meta['git-branch-html'] = cgi.escape(branch_str)
+
     meta['commit-line'] = meta.get('commit-line') or '?'
     meta['commit-hash'] = meta.get('commit-hash') or '?'
 
     meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
-
-    # Link to the PR if there is one.
-    pr_link_html = ''
-    pr_number = meta.get('GITHUB_PR_NUMBER')
-    if pr_number and pr_number.isdigit():
-      pr_link_html = '<code><a href="https://github.com/oilshell/oil/pull/%s">PR %s</a></code>' % (pr_number, pr_number)
-    meta['pr_link_html'] = pr_link_html
 
     # Metadata for "Job"
 
@@ -213,11 +229,9 @@ BUILD_ROW_TEMPLATE = '''\
 </tr>
 <tr class="commit-row">
   <td colspan=2>
-    <code>%(git-branch)s</code>
+    <code>%(git-branch-html)s</code>
     &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
-    &nbsp;
-    %(pr_link_html)s
   </td>
   <td class="commit-line" colspan=4>
     <code>%(commit-line)s</code>
