@@ -1,19 +1,38 @@
 #!/usr/bin/env python2
 """
-soil/web.py
+soil/web.py - Dashboard using "Event Sourcing" Paradigm
 
-Each job is assigned an ID.  The job generates:
+Given this state:
 
-- $ID.json  # metadata
-- $ID.tsv   # benchmarks/time.py output.  Success/failure for each task.
-- $ID.wwz   # files
+https://test.oils-for-unix.org/
+  github-jobs/
+    1234/  # $GITHUB_RUN_ID
+      cpp-small.tsv    # benchmarks/time.py output.  Success/failure for each task.
+      cpp-small.json   # metadata when job is DONE
+      cpp-small.state  # for more transient events
 
-This script generates an index.html with a table of metadata and links to the
-logs.
+      (cpp-small.wwz is linked to, but not part of the state.)
+
+This script generates:
+
+https://test.oils-for-unix.org/
+  github-jobs/
+    1234/
+      tmp-$$.index.html  # function of JSON contents
+      tmp-$$.raw.html    # function of dir listing
+      tmp-$$.remove.txt  # function of dir listing (JSON only)
+    commits/
+      tmp-$$.01ab01ab.html  # function of JSON and _tmp/soil/INDEX.tsv
+                            # links to all jobs AND all tasks
+                            # TODO: and all container images
 
 TODO:
 - Use JSON Template to escape HTML
 - Can we publish spec test numbers in JSON?
+
+- What about HTML generated on the WORKER?
+  - foo.wwz/index.html
+  - _tmp/soil/image.html - layers
 
 How to test changes to this file:
 
@@ -32,6 +51,7 @@ import os
 import re
 import sys
 from doctools import html_head
+from test import jsontemplate
 
 
 def log(msg, *args):
@@ -243,73 +263,6 @@ def ParseJobs(stdin):
     yield meta
 
 
-BUILD_ROW_TEMPLATE = '''\
-<tr class="spacer">
-  <td colspan=6></td>
-</tr>
-<tr class="commit-row">
-  <td colspan=2>
-    <code>%(git-branch-html)s</code>
-    &nbsp;
-    <code>%(commit-link-html)s</code>
-  </td>
-  <td class="commit-line" colspan=4>
-    <code>%(description-html)s</code>
-  </td>
-</tr>
-<tr class="spacer">
-  <td colspan=6><td/>
-</tr>
-'''
-
-
-JOB_ROW_TEMPLATE = '''\
-<tr>
-  <td>%(job_num)s</td>
-  <td> <code><a href="%(wwz_path)s/">%(job-name)s</a></code> </td>
-  <td><a href="%(job_url)s">%(start_time_str)s</a></td>
-  <td>%(pull_time_str)s</td>
-  <td>%(run_time_str)s</td>
-  <td>%(status_html)s</td>
-  <!-- todo; spec details
-  <td> </td>
-  -->
-</tr>
-'''
-
-INDEX_TOP = '''
-  <body class="width50">
-    <p id="home-link">
-      <a href="/">travis-ci.oilshell.org</a>
-      | <a href="//oilshell.org/">oilshell.org</a>
-    </p>
-
-    <h1>%(title)s</h1>
-
-    <p style="text-align: right">
-      <a href="raw.html">raw data</a>
-    </p>
-
-    <table>
-      <thead>
-        <tr>
-          <td>Job #</td>
-          <td>Job Name</td>
-          <td>Start Time</td>
-          <td>Pull Time</td>
-          <td>Run Time</td>
-          <td>Status</td>
-        </tr>
-      </thead>
-'''
-
-INDEX_BOTTOM = '''\
-    </table>
-
-  </body>
-</html>
-'''
-
 def ByTaskRunStartTime(row):
   return int(row.get('task-run-start-time', 0))
 
@@ -334,9 +287,78 @@ def HtmlHead(title):
       css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
 
+INDEX_TOP = jsontemplate.Template('''
+  <body class="width50">
+    <p id="home-link">
+      <a href="/">travis-ci.oilshell.org</a>
+      | <a href="//oilshell.org/">oilshell.org</a>
+    </p>
+
+    <h1>{title|html}</h1>
+
+    <p style="text-align: right">
+      <a href="raw.html">raw data</a>
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <td>Job #</td>
+          <td>Job Name</td>
+          <td>Start Time</td>
+          <td>Pull Time</td>
+          <td>Run Time</td>
+          <td>Status</td>
+        </tr>
+      </thead>
+''')
+
+INDEX_BOTTOM = '''\
+    </table>
+
+  </body>
+</html>
+'''
+
+
 def IndexTop(title):
-  d = {'title': cgi.escape(title)}
-  print(INDEX_TOP % d)
+  d = {'title': title}
+  print(INDEX_TOP.expand(d))
+
+
+RUN_ROW_TEMPLATE = jsontemplate.Template('''\
+<tr class="spacer">
+  <td colspan=6></td>
+</tr>
+<tr class="commit-row">
+  <td colspan=2>
+    <code>{git-branch-html}</code>
+    &nbsp;
+    <code>{commit-link-html}</code>
+  </td>
+  <td class="commit-line" colspan=4>
+    <code>{description-html}</code>
+  </td>
+</tr>
+<tr class="spacer">
+  <td colspan=6><td/>
+</tr>
+''')
+
+
+JOB_ROW_TEMPLATE = jsontemplate.Template('''\
+<tr>
+  <td>{job_num}</td>
+  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
+  <td><a href="%(job_url)s">{start_time_str}</a></td>
+  <td>{pull_time_str}</td>
+  <td>{run_time_str}</td>
+  <td>{status_html}</td>
+  <!-- todo; spec details
+  <td> </td>
+  -->
+</tr>
+''')
 
 
 def main(argv):
@@ -363,10 +385,10 @@ def main(argv):
       jobs.sort(key=ByTaskRunStartTime, reverse=True)
 
       # First job
-      print(BUILD_ROW_TEMPLATE % jobs[0])
+      print(RUN_ROW_TEMPLATE.expand(jobs[0]))
 
       for job in jobs:
-        print(JOB_ROW_TEMPLATE % job)
+        print(JOB_ROW_TEMPLATE.expand(job))
 
     print(INDEX_BOTTOM)
 
@@ -386,10 +408,10 @@ def main(argv):
       jobs.sort(key=ByTaskRunStartTime, reverse=True)
 
       # First job
-      print(BUILD_ROW_TEMPLATE % jobs[0])
+      print(RUN_ROW_TEMPLATE.expand(jobs[0]))
 
       for job in jobs:
-        print(JOB_ROW_TEMPLATE % job)
+        print(JOB_ROW_TEMPLATE.expand(job))
 
     print(INDEX_BOTTOM)
 

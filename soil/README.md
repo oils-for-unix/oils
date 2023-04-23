@@ -80,11 +80,55 @@ TODO:
     state
     - github-jobs/tmp-$$.{index,raw}.html - shell script does mv
     - github-jobs/commits/tmp-$$.$HASH.html - shell script does mv
+      - this is based on github-jobs/$RUN/*.tsv -- similar to format-wwz-index
+      - or srht-jobs/*/*.tsv and filtered by commit
     - github-jobs/tmp-$$.remove.txt - shell script does rm
   - status-api/github-jobs/$RUN/$job -- PUT this
 
 - Start job.  TODO: This doesn't exist.
   - github-jobs/index.html should show Started / Pass / Fail
+
+## Web Interface / Security
+
+This one is a pure uploader, which you can borrow from picdir.
+
+    POST https://test.oils-for-unix.org/results
+      ?jobName=dev-minimal
+      &workerHost=github
+
+It does multi-part file upload of wwz, TSV, JSON, and saves the files.  Start
+with basic auth over HTTPS?  See picdir.
+
+
+    POST https://test.oils-for-unix.org/event
+
+      ?eventName=start
+      &workerHost=github
+      &runId=1234
+      &jobName=dev-minimal
+
+      ?eventName=start
+      &workerHost=sourcehut
+      &jobId=345
+      &jobName=dev-minimal
+
+      # whether to update the status-api
+      ?eventName=done
+      &workerHost=github
+      &runId=1234
+      &jobName=dev-minimal
+      &status=124
+      &updateStatusApi=1
+
+This PHP script can just run a shell script synchronously?  Events start and
+done are meant to be quick.
+
+Other events:
+
+- begin pulling container
+- done pulling container
+- done with task, although we want to get rid of this abstraction
+
 
 ## Notes
 

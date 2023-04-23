@@ -10,15 +10,13 @@ import web  # module under test
 
 
 class WebTest(unittest.TestCase):
-  def setUp(self):
-    pass
-
-  def tearDown(self):
-    pass
 
   def testParse(self):
     print(web._ParsePullTime(None))
     print(web._ParsePullTime('real 19.99'))
+
+  def testTemplates(self):
+    print(web.IndexTop('title & other'))
 
 if __name__ == '__main__':
   unittest.main()
