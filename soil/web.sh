@@ -26,8 +26,9 @@ soil-web() {
 # ls *.json has a race: the shell expands files that may no longer exist, and
 # then 'ls' fails!
 list-json() {
-  local dir=$1
-  for name in $dir/*.json; do
+  local dir=$1  # e.g. travis-ci.oilshell.org/github-jobs
+
+  for name in $dir/*/*.json; do
     echo $name
   done
 }
@@ -79,6 +80,21 @@ cleanup-jobs-index() {
     *)
       log 'Expected true or false for dry_run'
   esac
+}
+
+test-cleanup() {
+  # the 999 jobs are the oldest
+
+  soil-web cleanup 2 <<EOF
+travis-ci.oilshell.org/github-jobs/999/one.json
+travis-ci.oilshell.org/github-jobs/999/two.json
+travis-ci.oilshell.org/github-jobs/999/three.json
+travis-ci.oilshell.org/github-jobs/1000/one.json
+travis-ci.oilshell.org/github-jobs/1000/two.json
+travis-ci.oilshell.org/github-jobs/1001/one.json
+travis-ci.oilshell.org/github-jobs/1001/two.json
+travis-ci.oilshell.org/github-jobs/1001/three.json
+EOF
 }
 
 cleanup-status-api() {

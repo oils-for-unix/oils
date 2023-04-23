@@ -41,7 +41,7 @@ publish-html-assuming-ssh-key() {
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-    deploy-job-results 'github-' $job_id \
+    deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_id \
       JOB_URL \
       GITHUB_WORKFLOW	\
       GITHUB_RUN_ID \

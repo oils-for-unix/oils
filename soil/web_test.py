@@ -16,10 +16,9 @@ class WebTest(unittest.TestCase):
   def tearDown(self):
     pass
 
-  def testFoo(self):
+  def testParse(self):
     print(web._ParsePullTime(None))
     print(web._ParsePullTime('real 19.99'))
-
 
 if __name__ == '__main__':
   unittest.main()

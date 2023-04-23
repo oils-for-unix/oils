@@ -36,7 +36,7 @@ publish-html-assuming-ssh-key() {
   job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
   if true; then
-    deploy-job-results 'srht-' $job_id JOB_ID JOB_URL
+    deploy-job-results 'srht-' $JOB_ID $job_id JOB_ID JOB_URL
   else
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi

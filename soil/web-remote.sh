@@ -64,13 +64,20 @@ remote-cleanup-status-api() {
   sshq soil-web/soil/web.sh cleanup-status-api false
 }
 
+my-scp() {
+  scp -o StrictHostKeyChecking=no "$@"
+}
+
+my-ssh() {
+  ssh -o StrictHostKeyChecking=no "$@"
+}
+
 scp-results() {
   # could also use Travis known_hosts addon?
   local prefix=$1  # srht- or ''
   shift
 
-  scp -o StrictHostKeyChecking=no "$@" \
-    "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
+  my-scp "$@" "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 scp-status-api() {
@@ -80,19 +87,21 @@ scp-status-api() {
 
   local remote_path="travis-ci.oilshell.org/status-api/github/$run_id/$job_name"
 
-  ssh -o StrictHostKeyChecking=no \
-    $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
+  my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
 
   # the consumer should check if these are all zero
   # note: the file gets RENAMED
-  scp -o StrictHostKeyChecking=no $file \
-    "$SOIL_USER_HOST:$remote_path"
+  my-scp $file "$SOIL_USER_HOST:$remote_path"
 }
 
 list-remote-results() {
   local prefix=$1
-  ssh -o StrictHostKeyChecking=no \
-    $SOIL_USER_HOST ls "travis-ci.oilshell.org/${prefix}jobs/"
+
+  # Avoid race conditions with ls globbing
+  my-ssh $SOIL_USER_HOST \
+    "shopt -s nullglob
+     cd travis-ci.oilshell.org/${prefix}jobs
+     for i in */*; do echo \$i; done"
 }
 
 # Dummy that doesn't depend on results
@@ -277,8 +286,9 @@ make-job-wwz() {
 }
 
 deploy-job-results() {
-  local prefix=$1
-  local job_id=$2
+  local prefix=$1  # e.g. example.com/github-jobs/
+  local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
+  local job_id=$3  # e.g. example.com/github-jobs/1234/foo.wwz
   shift 2
   # rest of args are more env vars
 
@@ -297,8 +307,11 @@ deploy-job-results() {
   # So we don't have to unzip it
   cp _tmp/soil/INDEX.tsv $job_id.tsv
 
+  local remote_dest_dir="travis-ci.oilshell.org/${prefix}jobs/$subdir"
+  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
+
   # Copy wwz, tsv, json
-  scp-results "$prefix" $job_id.*
+  my-scp $job_id.* "$SOIL_USER_HOST:$remote_dest_dir"
 
   log ''
   log 'View CI results here:'
@@ -330,7 +343,8 @@ format-jobs-index() {
       </thead>
 EOF
   while read wwz; do
-    local job_id=$(basename $wwz .wwz)
+    local prefix=${wwz%'.wwz'}
+
     echo '<tr>'
     echo "  <td><a href="$wwz/">$wwz</a></td>"
     if [[ $job_id == *test ]]; then
@@ -338,8 +352,8 @@ EOF
       echo "  <td>-</td>"
       echo "  <td>-</td>"
     else
-      echo "  <td><a href="$job_id.json">JSON</a></td>"
-      echo "  <td><a href="$job_id.tsv">TSV</a></td>"
+      echo "  <td><a href="$prefix.json">JSON</a></td>"
+      echo "  <td><a href="$prefix.tsv">TSV</a></td>"
     fi
 
     echo '</tr>'

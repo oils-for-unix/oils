@@ -234,9 +234,12 @@ def ParseJobs(stdin):
     # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('JOB_URL') or '?'
 
-    filename = os.path.basename(json_path)
-    basename, _ = os.path.splitext(filename)
-    meta['basename'] = basename
+    prefix, _ = os.path.splitext(json_path)  # x/y/123/myjob
+    last_two_parts = prefix.split('/')[-2:]  # ['123', 'myjob']
+    rel_path = '/'.join(last_two_parts)  # 123/myjob
+
+    meta['wwz_path'] = rel_path + '.wwz'  # 123/myjob.wwz
+
     yield meta
 
 
@@ -263,7 +266,7 @@ BUILD_ROW_TEMPLATE = '''\
 JOB_ROW_TEMPLATE = '''\
 <tr>
   <td>%(job_num)s</td>
-  <td> <code><a href="%(basename)s.wwz/">%(job-name)s</a></code> </td>
+  <td> <code><a href="%(wwz_path)s/">%(job-name)s</a></code> </td>
   <td><a href="%(job_url)s">%(start_time_str)s</a></td>
   <td>%(pull_time_str)s</td>
   <td>%(run_time_str)s</td>
@@ -406,8 +409,16 @@ def main(argv):
     log('%s cleanup: keep %d', sys.argv[0], num_to_keep)
     log('%s cleanup: got %d JSON paths', sys.argv[0], len(prefixes))
 
-    # looks like 2020-03-20, so sort ascending means the oldest are first
-    prefixes.sort()
+    # TODO: Github can be 
+    # - $GITHUB_RUN_NUMBER/$job_name.json, and then sort by $GITHUB_RUN_NUMBER
+    #   - this means that the 'raw-vm' task can look for 'cpp-small' directly
+    # - sourcehut could be $JOB_ID/$job_name.json, and then sort by $JOB_ID
+    #   - this is more flattened, but you can still do use list-json which does */*.json
+
+    # Sort by 999 here
+    # travis-ci.oilshell.org/github-jobs/999/foo.json
+
+    prefixes.sort(key = lambda path: int(path.split('/')[-2]))
 
     prefixes = prefixes[:-num_to_keep]
 
