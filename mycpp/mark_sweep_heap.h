@@ -227,7 +227,6 @@ class MarkSweepHeap {
 
   void PrintStats(int fd);  // public for testing
 
-  void EagerFree();         // for remaining ASAN clean
   void CleanProcessExit();  // do one last GC so ASAN passes
   void FastProcessExit();   // let the OS clean up
 
@@ -283,7 +282,8 @@ class MarkSweepHeap {
   int greatest_obj_id_ = 0;
 
  private:
-  void DoProcessExit(bool fast_exit);
+  void FreeEverything();
+  void MaybePrintStats();
 
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };

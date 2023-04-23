@@ -152,17 +152,17 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
     mark_set_.Mark(obj_id);
   }
 
-    switch (header->heap_tag) {
-    case HeapTag::Opaque:  // e.g. strings have no children
-      break;
+  switch (header->heap_tag) {
+  case HeapTag::Opaque:  // e.g. strings have no children
+    break;
 
-    case HeapTag::Scanned:  // these 2 types have children
-    case HeapTag::FixedSize:
-      gray_stack_.push_back(header);  // Push the header, not the object!
-      break;
+  case HeapTag::Scanned:  // these 2 types have children
+  case HeapTag::FixedSize:
+    gray_stack_.push_back(header);  // Push the header, not the object!
+    break;
 
-    default:
-     FAIL(kShouldNotGetHere);
+  default:
+    FAIL(kShouldNotGetHere);
   }
 }
 
@@ -355,42 +355,10 @@ void MarkSweepHeap::PrintStats(int fd) {
           static_cast<int>(live_objs_.capacity()));
 }
 
-void MarkSweepHeap::EagerFree() {
-  for (auto obj : to_free_) {
-    free(obj);
-  }
-}
-
 // Cleanup at the end of main() to remain ASAN-safe
-void MarkSweepHeap::DoProcessExit(bool fast_exit) {
-  char* e = getenv("OIL_GC_ON_EXIT");
-
-  auto free_everything = [this]() {
-    roots_.clear();
-    global_roots_.clear();
-    Collect();
-    EagerFree();
-  #ifndef NO_POOL_ALLOC
-    pool_.Free();
-  #endif
-  };
-
-  if (fast_exit) {
-    // don't collect by default; OIL_GC_ON_EXIT=1 overrides
-    if (e && strcmp(e, "1") == 0) {
-      free_everything();
-    }
-  } else {
-    // collect by default; OIL_GC_ON_EXIT=0 overrides
-    if (e && strcmp(e, "0") == 0) {
-      ;
-    } else {
-      free_everything();
-    }
-  }
-
+void MarkSweepHeap::MaybePrintStats() {
   int stats_fd = -1;
-  e = getenv("OIL_GC_STATS");
+  char* e = getenv("OIL_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
     stats_fd = STDERR_FILENO;
   } else {
@@ -411,13 +379,40 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   }
 }
 
+void MarkSweepHeap::FreeEverything() {
+  roots_.clear();
+  global_roots_.clear();
+
+  Collect();
+
+  // Collect() told us what to free()
+  for (auto obj : to_free_) {
+    free(obj);
+  }
+  #ifndef NO_POOL_ALLOC
+  pool_.Free();
+  #endif
+}
+
 void MarkSweepHeap::CleanProcessExit() {
-  DoProcessExit(false);  // not fast_exit
+  char* e = getenv("OIL_GC_ON_EXIT");
+  // collect by default; OIL_GC_ON_EXIT=0 overrides
+  if (e && strcmp(e, "0") == 0) {
+    ;
+  } else {
+    FreeEverything();
+  }
+  MaybePrintStats();
 }
 
 // for the main binary
 void MarkSweepHeap::FastProcessExit() {
-  DoProcessExit(true);
+  char* e = getenv("OIL_GC_ON_EXIT");
+  // don't collect by default; OIL_GC_ON_EXIT=1 overrides
+  if (e && strcmp(e, "1") == 0) {
+    FreeEverything();
+  }
+  MaybePrintStats();
 }
 
 MarkSweepHeap gHeap;
