@@ -190,8 +190,6 @@ def ParseJobs(stdin):
     github_branch = meta.get('GITHUB_REF') 
     branch_str = github_branch or '?'  # no data for sr.ht
 
-    meta['github-pr-head-ref'] = meta.get('GITHUB_PR_HEAD_REF') or ''
-
     pr_number = meta.get('GITHUB_PR_NUMBER')
     if pr_number and github_branch:
 
@@ -207,7 +205,13 @@ def ParseJobs(stdin):
     else:
       meta['git-branch-html'] = cgi.escape(branch_str)
 
-    meta['commit-line'] = meta.get('commit-line') or '?'
+    github_pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
+    if github_pr_head_ref:
+      ref_url = 'https://github.com/oilshell/oil/tree/%s' % github_pr_head_ref
+      meta['description-html'] = 'PR from <a href="%s">%s</a> updated' % (ref_url, github_pr_head_ref)
+    else:
+      meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
+
     meta['commit-hash'] = meta.get('commit-hash') or '?'
 
     meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
@@ -235,11 +239,8 @@ BUILD_ROW_TEMPLATE = '''\
     &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
   </td>
-  <td class="commit-line" colspan=3>
-    <code>%(commit-line)s</code>
-  </td>
-  <td colspan=1>
-    <code>%(github-pr-head-ref)s</code>
+  <td class="commit-line" colspan=4>
+    <code>%(description-html)s</code>
   </td>
 </tr>
 <tr class="spacer">
