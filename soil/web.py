@@ -6,7 +6,7 @@ Given this state:
 
 https://test.oils-for-unix.org/
   github-jobs/
-    1234/  # $GITHUB_RUN_ID
+    1234/  # $GITHUB_RUN_NUMBER
       cpp-small.tsv    # benchmarks/time.py output.  Success/failure for each task.
       cpp-small.json   # metadata when job is DONE
       cpp-small.state  # for more transient events
@@ -42,7 +42,6 @@ How to test changes to this file:
 """
 from __future__ import print_function
 
-import cgi
 import csv
 import datetime
 import json
@@ -133,6 +132,74 @@ def _ParsePullTime(time_p_str):
   return '-'  # Not found
 
 
+RUN_ROW_TEMPLATE = jsontemplate.Template('''\
+<tr class="spacer">
+  <td colspan=6></td>
+</tr>
+<tr class="commit-row">
+  <td colspan=2>
+    <code>{git-branch}</code>
+    &nbsp;
+    {.section github-commit-link}
+      <code>
+        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      </code>
+    {.end}
+  </td>
+
+  <td class="commit-line" colspan=4>
+    {.section github-pr}
+      PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
+      from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
+      updated
+    {.end}
+    {.section commit-desc}
+      <code>{@|html}</code>
+    {.end}
+  </td>
+
+</tr>
+<tr class="spacer">
+  <td colspan=6><td/>
+</tr>
+''')
+
+
+JOB_ROW_TEMPLATE = jsontemplate.Template('''\
+<tr>
+  <td>{job_num}</td>
+  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
+  <td><a href="{job_url}">{start_time_str}</a></td>
+  <td>{pull_time_str}</td>
+  <td>{run_time_str}</td>
+
+  <td> <!-- status -->
+  {.section passed}
+    <span class="pass">pass</span>
+  {.end}
+
+  {.section failed}
+    <span class="fail">FAIL</span><br/>
+    <span class="fail-detail">
+    {.section one-failure}
+      task <code>{@}</code>
+    {.end}
+
+    {.section multiple-failures}
+      {num-failures} of {num-tasks} tasks
+    {.end}
+    </span>
+  {.end}
+
+  </td>
+
+  <!-- todo; spec details
+  <td> </td>
+  -->
+</tr>
+''')
+
+
 def ParseJobs(stdin):
   for i, line in enumerate(stdin):
     json_path = line.strip()
@@ -170,14 +237,17 @@ def ParseJobs(stdin):
 
     num_failures = len(failed_tasks)
     if num_failures == 0:
-      s_html = '<span class="pass">pass</span>'
+      meta['passed'] = True
     else:
+      failed = {}
       if num_failures == 1:
-        fail_html = 'task <code>%s</code>' % failed_tasks[0]
+        failed['one-failure'] = failed_tasks[0]
       else:
-        fail_html = '%d of %d tasks' % (num_failures, num_tasks)
-      s_html = '<span class="fail">FAIL</span><br/><span class="fail-detail">%s</span>' % fail_html
-    meta['status_html'] = s_html
+        failed['multiple-failures'] = {
+            'num-failures': num_failures,
+            'num-tasks': num_tasks,
+            }
+      meta['failed'] = failed
 
     meta['run_time_str'] = _MinutesSeconds(total_elapsed)
 
@@ -203,46 +273,32 @@ def ParseJobs(stdin):
 
     # Metadata for a "build".  A build consists of many jobs.
 
-    github_branch = meta.get('GITHUB_REF') 
-    branch_str = github_branch or '?'  # no data for sr.ht
+    meta['git-branch'] = meta.get('GITHUB_REF')  or '?'
 
     # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
+    pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
     pr_number = meta.get('GITHUB_PR_NUMBER')
-    if pr_number and github_branch:
 
-      # pr_number from YAML will be '1577'
-      # branch from Github should be 'ref/pull/1577/merge'
-      to_highlight = 'pull/%s' % pr_number
-      assert to_highlight in github_branch, \
-          "%r doesn't contain %r" % (github_branch, to_highlight)
-
-      linkified = '<code><a href="https://github.com/oilshell/oil/pull/%s">%s</a></code>' % (
-          pr_number, to_highlight)
-      meta['git-branch-html'] = github_branch.replace(to_highlight, linkified)
-    else:
-      meta['git-branch-html'] = cgi.escape(branch_str)
-
-    github_pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
-
-    if github_pr_head_ref:
-      ref_url = 'https://github.com/oilshell/oil/tree/%s' % github_pr_head_ref
-      meta['description-html'] = 'PR from <a href="%s">%s</a> updated' % (
-          ref_url, github_pr_head_ref)
+    if pr_head_ref and pr_number:
+      meta['github-pr'] = {
+          'head-ref': pr_head_ref,
+          'pr-number': pr_number,
+          }
 
       # Show the user's commit, not the merge commit
-      meta['commit-hash'] = meta.get('GITHUB_PR_HEAD_SHA') or '?'
+      commit_hash = meta.get('GITHUB_PR_HEAD_SHA') or '?'
 
     else:
       # From soil/worker.sh save-metadata.  This is intended to be
       # CI-independent, while the environment variables above are from Github.
-      meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
-      meta['commit-hash'] = meta.get('commit-hash') or '?'
-
-    commit_hash_short = meta['commit-hash'][-8:]  # last 8 chars
+      meta['commit-desc'] = meta.get('commit-line', '?')
+      commit_hash = meta.get('commit-hash') or '?'
 
     # TODO: Make a sourcehut link too
-    meta['commit-link-html'] = '<a href="https://github.com/oilshell/oil/commit/%s">%s</a>' % (
-        meta['commit-hash'], commit_hash_short)
+    meta['github-commit-link'] = {
+        'commit-hash': commit_hash,
+        'commit-hash-short': commit_hash[-8:],
+        }
 
     # Metadata for "Job"
 
@@ -277,7 +333,7 @@ def ByCommitHash(row):
 def ByGithub(row):
   # Written in the shell script
   # This is in ISO 8601 format (git log %aI), so we can sort by it.
-  return int(row.get('GITHUB_RUN_ID', 0))
+  return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
 def HtmlHead(title):
@@ -324,41 +380,6 @@ INDEX_BOTTOM = '''\
 def IndexTop(title):
   d = {'title': title}
   print(INDEX_TOP.expand(d))
-
-
-RUN_ROW_TEMPLATE = jsontemplate.Template('''\
-<tr class="spacer">
-  <td colspan=6></td>
-</tr>
-<tr class="commit-row">
-  <td colspan=2>
-    <code>{git-branch-html}</code>
-    &nbsp;
-    <code>{commit-link-html}</code>
-  </td>
-  <td class="commit-line" colspan=4>
-    <code>{description-html}</code>
-  </td>
-</tr>
-<tr class="spacer">
-  <td colspan=6><td/>
-</tr>
-''')
-
-
-JOB_ROW_TEMPLATE = jsontemplate.Template('''\
-<tr>
-  <td>{job_num}</td>
-  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
-  <td><a href="%(job_url)s">{start_time_str}</a></td>
-  <td>{pull_time_str}</td>
-  <td>{run_time_str}</td>
-  <td>{status_html}</td>
-  <!-- todo; spec details
-  <td> </td>
-  -->
-</tr>
-''')
 
 
 def main(argv):
