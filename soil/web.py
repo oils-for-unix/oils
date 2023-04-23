@@ -190,6 +190,7 @@ def ParseJobs(stdin):
     github_branch = meta.get('GITHUB_REF') 
     branch_str = github_branch or '?'  # no data for sr.ht
 
+    # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
     pr_number = meta.get('GITHUB_PR_NUMBER')
     if pr_number and github_branch:
 
@@ -206,15 +207,20 @@ def ParseJobs(stdin):
       meta['git-branch-html'] = cgi.escape(branch_str)
 
     github_pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
-    github_pr_head_sha = meta.get('GITHUB_PR_HEAD_SHA') or '?'
 
     if github_pr_head_ref:
       ref_url = 'https://github.com/oilshell/oil/tree/%s' % github_pr_head_ref
-      meta['description-html'] = 'PR from <a href="%s">%s</a> updated %s' % (ref_url, github_pr_head_ref, github_pr_head_sha)
-    else:
-      meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
+      meta['description-html'] = 'PR from <a href="%s">%s</a> updated' % (
+          ref_url, github_pr_head_ref)
 
-    meta['commit-hash'] = meta.get('commit-hash') or '?'
+      # Show the user's commit, not the merge commit
+      meta['commit-hash'] = meta.get('GITHUB_PR_HEAD_SHA') or '?'
+
+    else:
+      # From soil/worker.sh save-metadata.  This is intended to be
+      # CI-independent, while the environment variables above are from Github.
+      meta['description-html'] = cgi.escape(meta.get('commit-line', '?'))
+      meta['commit-hash'] = meta.get('commit-hash') or '?'
 
     meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
 
