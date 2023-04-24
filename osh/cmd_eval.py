@@ -349,7 +349,7 @@ class CommandEvaluator(object):
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return loc.Span(node.spids[0])
 
-  def _CheckStatus(self, status, cmd_st, node, blame_loc):
+  def _CheckStatus(self, status, cmd_st, node, default_loc):
     # type: (int, CommandStatus, command_t, loc_t) -> None
     """Raises error.ErrExit, maybe with location info attached."""
 
@@ -381,7 +381,7 @@ class CommandEvaluator(object):
           #   ls *Z          # error.FailGlob
           #   sort <(ls /x)  # process sub failure
           desc = 'Command'
-          blame_loc_ = location.LocForCommand(node)
+          blame_loc = location.LocForCommand(node)
 
         elif case(command_e.ShAssignment):
           node = cast(command__ShAssignment, UP_node)
@@ -389,14 +389,14 @@ class CommandEvaluator(object):
           # Note: This happens rarely: when errexit and inherit_errexit are on,
           # but command_sub_errexit is off!
           desc = 'Assignment'
-          blame_loc_ = self._LocForShAssignment(node)
+          blame_loc = self._LocForShAssignment(node)
 
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
           node = cast(command__Subshell, UP_node)
           cmd_st.show_code = True  # not sure about this, e.g. ( exit 42 )
           desc = 'Subshell'
-          blame_loc_ = loc.Span(node.spids[0])
+          blame_loc = loc.Span(node.spids[0])
 
         elif case(command_e.Pipeline):
           node = cast(command__Pipeline, UP_node)
@@ -404,23 +404,23 @@ class CommandEvaluator(object):
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
           desc = 'Pipeline'
-          blame_loc_ = loc.Span(node.spids[0])  # spid of !, or first |
+          blame_loc = loc.Span(node.spids[0])  # spid of !, or first |
 
         else:
           # NOTE: The fallback of CurrentSpanId() fills this in.
           desc = ui.CommandType(node)
-          blame_loc_ = loc.Missing()
+          blame_loc = loc.Missing()
 
       # Override if explicitly passed.
       # Note: this produces better results for process sub
       #   echo <(sort x)
       # and different results for some pipelines:
       #   { ls; false; } | wc -l; echo hi  # Point to | or first { ?
-      if blame_loc.tag_() != loc_e.Missing:
-        blame_loc_ = blame_loc
+      if default_loc.tag_() != loc_e.Missing:
+        blame_loc = default_loc
 
       msg = '%s failed with status %d' % (desc, status)
-      raise error.ErrExit(status, msg, blame_loc_, show_code=cmd_st.show_code)
+      raise error.ErrExit(status, msg, blame_loc, show_code=cmd_st.show_code)
 
   def _EvalRedirect(self, r):
     # type: (redir) -> redirect
