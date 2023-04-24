@@ -20,7 +20,8 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
 source build/dev-shell.sh  # R_LIBS_USER, but also changes python3
-source test/common.sh  # html-head
+source test/common.sh      # html-head
+source devtools/common.sh  # main
 source test/tsv-lib.sh
 
 # for 'import typing' in Python 2. Can't go in build/dev-shell.sh because it
@@ -285,4 +286,4 @@ run-for-release() {
   write-report
 }
 
-"$@"
+main "$@"
