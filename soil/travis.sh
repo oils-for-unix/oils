@@ -31,7 +31,7 @@ set -o pipefail
 set -o errexit
 
 source soil/common.sh
-source soil/web-remote.sh
+source soil/web-worker.sh
 
 #
 # Key Generation: One Time Setup

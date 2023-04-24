@@ -6,7 +6,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source soil/web-remote.sh
+source soil/web-worker.sh
 source test/common.sh
 
 test-format-wwz-index() {

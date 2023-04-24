@@ -25,7 +25,7 @@ publish-html-assuming-ssh-key() {
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-    soil/web-remote.sh deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
+    soil/web-worker.sh deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
       JOB_URL \
       GITHUB_WORKFLOW	\
       GITHUB_RUN_ID \
@@ -37,14 +37,14 @@ publish-html-assuming-ssh-key() {
       GITHUB_PR_HEAD_REF \
       GITHUB_PR_HEAD_SHA
   else
-    soil/web-remote.sh deploy-test-wwz  # dummy data that doesn't depend on the build
+    soil/web-worker.sh deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  time soil/web-remote.sh remote-event-job-done 'github-' $GITHUB_RUN_NUMBER
+  time soil/web-worker.sh remote-event-job-done 'github-' $GITHUB_RUN_NUMBER
 
   if test -n "$update_status_api"; then
-    soil/web-remote.sh scp-status-api "$GITHUB_RUN_ID" "$job_name"
-    soil/web-remote.sh remote-cleanup-status-api
+    soil/web-worker.sh scp-status-api "$GITHUB_RUN_ID" "$job_name"
+    soil/web-worker.sh remote-cleanup-status-api
   fi
 }
 

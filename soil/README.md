@@ -46,14 +46,32 @@ Continuous testing on many platforms.
 
 ## Code
 
-- `soil/worker.sh` runs on each build service node.  For each job, it
-  publishes 3 files to `travis-ci.oilshell.org`:
-  - JSON metadata about the commit and build environment
-  - TSV metadata for each "toil" step
-  - A `.wwz` file (servable zip file) of logs
-- `soil/web.py` runs on `travis-ci.oilshell.org` and reads the metadata from
-  every job to construct an `index.html`.
+Running a job starts at either:
 
+- `.github/workflows/all-builds.yml` for Github Actions
+- `.builds/worker{1,2,3,4}.yml` for sourcehut
+
+The YAML files either:
+
+- Directly invoke `soil/worker.sh` for a raw VM job.
+- Invoke wrappers `soil/github-actions.sh` / `soil/sourcehut.sh`, which in turn
+  uses `soil/host-shim.sh` to run a job in a container.
+  - They wrappers also publish via SSH with `soil/web-worker.sh`
+
+`soil/host-shim.sh` pulls and start an OCI container each node, and then runs
+`soil/worker.sh` inside the container.
+
+`soil/worker.sh` runs the job, and publishes 3 files to `travis-ci.oilshell.org`:
+
+1. JSON metadata about the commit and build environment
+1. TSV metadata for each "toil" step
+1. A `.wwz` file (servable zip file) of logs
+
+`soil/web.sh` is a wrapper around `soil/web.py`, and it runs on the SERVER 
+(`travis-ci.oilshell.org`).  It reads and joins metadata from every job to
+construct `index.html` and `$RUN_NUMBER/index.html`.
+
+The server-side components are deployed by `soil/web-init.sh`.
 
 ## Terminology
 

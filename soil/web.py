@@ -37,12 +37,13 @@ TODO:
 How to test changes to this file:
 
   $ soil/web-init.sh deploy-code
-  $ soil/github-actions.sh remote-rewrite-jobs-index github-
+  $ soil/web-worker.sh remote-rewrite-jobs-index github- ${GITHUB_RUN_NUMBER}
+  $ soil/web-worker.sh remote-rewrite-jobs-index srht- git-${commit_hash}
 
 """
 from __future__ import print_function
 
-from collections import OrderedDict
+import collections
 import csv
 import datetime
 import json
@@ -233,6 +234,11 @@ INDEX_JOB_ROW_T = jsontemplate.Template('''\
 ''')
 
 
+# Must match _tmp/soil/INDEX.tsv
+TaskRow = collections.namedtuple('TaskRow',
+    'status elapsed name script_name func results_url')
+
+
 def ParseJobs(stdin):
   for i, line in enumerate(stdin):
     json_path = line.strip()
@@ -247,38 +253,46 @@ def ParseJobs(stdin):
     tsv_path = json_path[:-5] + '.tsv'
     #log('%s', tsv_path)
 
+    all_tasks = []
     failed_tasks = []
     total_elapsed = 0.0
-    num_tasks = 0
 
     with open(tsv_path) as f:
       reader = csv.reader(f, delimiter='\t')
 
       try:
         for row in reader:
-          status = int(row[0])
-          task_name = row[2]
-          if status != 0:
-            failed_tasks.append(task_name)
+          tmp = TaskRow(*row)  # sequence to named fields
 
-          elapsed = float(row[1])
-          total_elapsed += elapsed
+          # Make a new, typed, immutable tuple.  It would be nicer if this was
+          # YTSV.
+          task = tmp._replace(status=int(tmp.status), elapsed=float(tmp.elapsed))
 
-          num_tasks += 1
+          all_tasks.append(task)
+
+          if task.status != 0:
+            failed_tasks.append(task)
+
+          total_elapsed += task.elapsed
+
       except (IndexError, ValueError) as e:
         raise RuntimeError('Error in %r: %s (%r)' % (tsv_path, e, row))
 
+    # So we can print task tables
+    meta['tasks'] = all_tasks
+
     num_failures = len(failed_tasks)
+
     if num_failures == 0:
       meta['passed'] = True
     else:
       failed = {}
       if num_failures == 1:
-        failed['one-failure'] = failed_tasks[0]
+        failed['one-failure'] = failed_tasks[0].name
       else:
         failed['multiple-failures'] = {
             'num-failures': num_failures,
-            'num-tasks': num_tasks,
+            'num-tasks': len(all_tasks),
             }
       meta['failed'] = failed
 
@@ -388,8 +402,6 @@ RAW_DATA = '''
 '''
 
 INDEX_BOTTOM = '''\
-    </table>
-
   </body>
 </html>
 '''
@@ -452,7 +464,23 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
       #print(INDEX_JOB_ROW_T.expand(job), file=f)
       print(DETAILS_JOB_ROW_T.expand(job), file=f)
 
+  print(' </table>', file=f)
   print(INDEX_BOTTOM, file=f)
+
+
+TASK_ROW_T = jsontemplate.Template('''\
+<tr>
+  <td>
+{name}
+  </td>
+</tr>
+''')
+
+
+def PrintTasks(job, f=sys.stdout):
+  for task in job['tasks']:
+    d = {'name': task.name}
+    print(TASK_ROW_T.expand(d), file=f)
 
 
 def PrintRunHtml(title, jobs, f=sys.stdout):
@@ -471,6 +499,17 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
 
   for job in jobs:
     print(DETAILS_JOB_ROW_T.expand(job), file=f)
+  print(' </table>', file=f)
+
+  print('''
+  <h2>Task Details</h2>
+
+  <table>
+  ''', file=f)
+
+  for job in jobs:
+    PrintTasks(job, f=f)
+  print('</table>', file=f)
 
   print(INDEX_BOTTOM, file=f)
 
@@ -481,7 +520,7 @@ def GroupJobs(jobs, key_func):
   """
   groups = itertools.groupby(jobs, key=key_func)
 
-  d = OrderedDict()
+  d = collections.OrderedDict()
 
   for key, job_iter in groups:
     jobs = list(job_iter)

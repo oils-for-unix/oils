@@ -6,7 +6,7 @@
 # Every CI run has an up-to-date copy.
 #
 # Usage:
-#   soil/web-remote.sh <function name>
+#   soil/web-worker.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -52,8 +52,7 @@ sshq() {
 }
 
 remote-rewrite-jobs-index() {
-  local prefix=$1
-  sshq soil-web/soil/web.sh rewrite-jobs-index "$prefix"
+  sshq soil-web/soil/web.sh rewrite-jobs-index "$@"
 }
 
 remote-cleanup-jobs-index() {
@@ -399,7 +398,7 @@ remote-event-job-done() {
 }
 
 filename=$(basename $0)
-if test $filename = web-remote.sh; then
+if test $filename = web-worker.sh; then
   "$@"
 fi
 
