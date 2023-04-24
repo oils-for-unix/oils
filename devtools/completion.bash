@@ -1,32 +1,36 @@
-# Bash completion for run.sh scripts and running PyUnit unit tests.
+# devtools/completion.bash: bash (and OSH!) completion for TASK FILES.
 #
-# 2 methods are supported:
+# Task are simply shell functions:
 #
-# 1) ./run.sh 'unit' file class.method
+# build-foo() {
+#   rm foo; make foo
+# }
 #
-# 2) pu file class.method
+# run-task "$@"  # dispatch to task; in devtools/run-task.sh
+
+# This script also supports completing unit tests files and
+# TestClass.testMethod names.
 #
-# pu is a dummy script to enable completion to have a "word".  Not sure how else
-# I could do it.
+# $ test/unit.sh unit <TAB>
+# $ test/unit.sh unit frontend/args_test.py <TAB>
 #
 # TODO:
 #
-# There is a bunch of duplicated code between *run.sh) and *_test.py) and
-# _pu_completion.  Could factor it out.
+# - Remove dep on ~/git/oilshell/bash-completion/osh_completion, see below
 #
-# Query the binary for more advanced completions?  (e.g. flag completions)
+# - Query the binary for more advanced completions?  (e.g. flag completions)
+#   Maybe it could a --completions flag.
 #
-# Maybe it could a --completions flag.
-#
-# Most binaries will response with a exit code 1 in that case.  But if it
-# prints a spec, then you could use that to find flags.
-#
-# NOTES: Bash completion is bizarre.
+#   Most binaries will response with a exit code 1 in that case.  But if it
+#   prints a spec, then you could use that to find flags.
+
+# Note: Bash completion is bizarre.
 #
 # - Use -X '!*_test.py' to remove everything EXCEPT *_test.py.  -G for glob
 # does NOT do what you want.  This confusing and bizarrely undocumented.
+
+# Test for default distro completion:
 #
-# Test:
 # bash --norc --noprofile
 # . /etc/bash_completion
 # apt-get <TAB>  -> You see actions.
@@ -139,34 +143,6 @@ _my_default_completion() {
   test -n "$_comp_fallback" && "$_comp_fallback" "$@"
 }
 
-# This could be removed; the only benefit of the "pu" prefix is that it only
-# complete test files.
-_pu_completion() {
-  local cur="${COMP_WORDS[COMP_CWORD]}"
-
-  case "$COMP_CWORD" in
-    # Complete *_test.py files
-    1)
-      # Add "cur" to the glob
-      # Use -o plusdirs to also list directories
-      # NOTE: The compgen command is easy to test at the command line!
-      COMPREPLY=( $(compgen -A file -o plusdirs -X '!*_test.py' -- "$cur") )
-      ;;
-    # Complete Class.testMethod within the foo_test.py file
-    2)
-      local test_file="${COMP_WORDS[1]}"
-      local tests=$(_completion_py pyunit "$test_file")
-      # Show a dummy error result, so we aren't confused by the directory name
-      # completion
-      if test -z "$tests"; then
-        COMPREPLY=( NOTESTS )
-      else
-        COMPREPLY=( $(compgen -W "$tests" -- "$cur") )
-      fi
-      ;;
-  esac
-}
-
 # global that is mutated
 _comp_fallback=''
 
@@ -174,7 +150,7 @@ _comp_fallback=''
 # as a completion function, i.e. -- "$@".
 _maybe_set_comp_fallback() {
   local _distro_script
-  if test -n "$BASH_VERSION"; then 
+  if test -n "$BASH_VERSION"; then
     # running under bash
     _distro_script='/etc/bash_completion'
   else
@@ -208,11 +184,6 @@ _install_completion() {
   # 2) compgen -A file -o plusdirs -X '!*.sh' 
 
   complete -F _my_default_completion -o bashdefault -o filenames -D
-
-  # pu gives filenames.  NOTE: I'm not really using pu, but I guess I should.
-  # Need to put it in bashrc.bash.  It's shorter than putting ./test.sh unit in
-  # every single repo!
-  complete -F _pu_completion -o filenames pu
 }
 
 _install_completion
