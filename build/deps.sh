@@ -34,7 +34,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source deps/from-apt.sh   # PY3_BUILD_DEPS
+source deps/from-apt.sh      # PY3_BUILD_DEPS
+source devtools/run-task.sh  # run-task
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -309,4 +310,4 @@ container-wedges() {
   #deps/wedge.sh build deps/source.medo/R-libs/
 }
 
-"$@"
+run-task "$@"
