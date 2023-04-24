@@ -38,7 +38,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
-    Token, loc, loc_t,
+    Token, loc, loc_t, loc_e,
     IntParamBox,
 )
 from _devbuild.gen.runtime_asdl import (
@@ -344,13 +344,13 @@ class CommandEvaluator(object):
 
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
-  def _SpanIdForShAssignment(self, node):
-    # type: (command__ShAssignment) -> int
+  def _LocForShAssignment(self, node):
+    # type: (command__ShAssignment) -> loc_t
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
-    return node.spids[0]
+    return loc.Span(node.spids[0])
 
-  def _CheckStatus(self, status, cmd_st, node, blame_spid):
-    # type: (int, CommandStatus, command_t, int) -> None
+  def _CheckStatus(self, status, cmd_st, node, default_loc):
+    # type: (int, CommandStatus, command_t, loc_t) -> None
     """Raises error.ErrExit, maybe with location info attached."""
 
     assert status >= 0, status
@@ -381,7 +381,7 @@ class CommandEvaluator(object):
           #   ls *Z          # error.FailGlob
           #   sort <(ls /x)  # process sub failure
           desc = 'Command'
-          span_id = location.SpanForCommand(node)
+          blame_loc = location.LocForCommand(node)
 
         elif case(command_e.ShAssignment):
           node = cast(command__ShAssignment, UP_node)
@@ -389,14 +389,14 @@ class CommandEvaluator(object):
           # Note: This happens rarely: when errexit and inherit_errexit are on,
           # but command_sub_errexit is off!
           desc = 'Assignment'
-          span_id = self._SpanIdForShAssignment(node)
+          blame_loc = self._LocForShAssignment(node)
 
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
           node = cast(command__Subshell, UP_node)
           cmd_st.show_code = True  # not sure about this, e.g. ( exit 42 )
           desc = 'Subshell'
-          span_id = node.spids[0]
+          blame_loc = loc.Span(node.spids[0])
 
         elif case(command_e.Pipeline):
           node = cast(command__Pipeline, UP_node)
@@ -404,24 +404,23 @@ class CommandEvaluator(object):
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
           desc = 'Pipeline'
-          span_id = node.spids[0]  # spid of !, or first |
+          blame_loc = loc.Span(node.spids[0])  # spid of !, or first |
 
         else:
           # NOTE: The fallback of CurrentSpanId() fills this in.
           desc = ui.CommandType(node)
-          span_id = runtime.NO_SPID
+          blame_loc = loc.Missing()
 
       # Override if explicitly passed.
       # Note: this produces better results for process sub
       #   echo <(sort x)
       # and different results for some pipelines:
       #   { ls; false; } | wc -l; echo hi  # Point to | or first { ?
-      if blame_spid != runtime.NO_SPID:
-        span_id = blame_spid
+      if default_loc.tag_() != loc_e.Missing:
+        blame_loc = default_loc
 
       msg = '%s failed with status %d' % (desc, status)
-      raise error.ErrExit(status, msg, loc.Span(span_id),
-                          show_code=cmd_st.show_code)
+      raise error.ErrExit(status, msg, blame_loc, show_code=cmd_st.show_code)
 
   def _EvalRedirect(self, r):
     # type: (redir) -> redirect
@@ -609,7 +608,7 @@ class CommandEvaluator(object):
     if _HasManyStatuses(node):
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
-            node_str, loc.Span(location.SpanForCommand(node)))
+            node_str, location.LocForCommand(node))
 
   def _StrictErrExitList(self, node_list):
     # type: (List[command_t]) -> None
@@ -625,14 +624,14 @@ class CommandEvaluator(object):
 
     if len(node_list) > 1:
       e_die("strict_errexit only allows a single command.  Hint: use 'try'.",
-            loc.Span(location.SpanForCommand(node_list[0])))
+            location.LocForCommand(node_list[0]))
 
     assert len(node_list) > 0
     node = node_list[0]
     if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
-            node_str, loc.Span(location.SpanForCommand(node)))
+            node_str, location.LocForCommand(node))
 
   def _EvalCondition(self, cond, spid):
     # type: (condition_t, int) -> bool
@@ -1029,7 +1028,7 @@ class CommandEvaluator(object):
         # Set a flag in mem?   self.mem.last_status or
         if self.check_command_sub_status:
           last_status = self.mem.LastStatus()
-          self._CheckStatus(last_status, cmd_st, node, runtime.NO_SPID)
+          self._CheckStatus(last_status, cmd_st, node, loc.Missing())
           status = last_status  # A global assignment shouldn't clear $?.
         else:
           status = 0
@@ -1612,7 +1611,7 @@ class CommandEvaluator(object):
     # - ControlFlow: always raises, it has no status.
     if check_errexit:
       #log('cmd_st %s', cmd_st)
-      self._CheckStatus(status, cmd_st, node, errexit_spid)
+      self._CheckStatus(status, cmd_st, node, loc.Span(errexit_spid))
 
     return status
 

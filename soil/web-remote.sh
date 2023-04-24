@@ -64,35 +64,47 @@ remote-cleanup-status-api() {
   sshq soil-web/soil/web.sh cleanup-status-api false
 }
 
+my-scp() {
+  scp -o StrictHostKeyChecking=no "$@"
+}
+
+my-ssh() {
+  ssh -o StrictHostKeyChecking=no "$@"
+}
+
 scp-results() {
   # could also use Travis known_hosts addon?
   local prefix=$1  # srht- or ''
   shift
 
-  scp -o StrictHostKeyChecking=no "$@" \
-    "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
+  my-scp "$@" "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 scp-status-api() {
   local run_id=${1:-TEST2-github-run-id}
   local job_name=$2
-  local file=$3
 
+  local status_file="_soil-jobs/$job_name.status.txt"
   local remote_path="travis-ci.oilshell.org/status-api/github/$run_id/$job_name"
 
-  ssh -o StrictHostKeyChecking=no \
-    $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
+  # We could make this one invocation of something like:
+  # cat $status_file | sshq soil/web.sh PUT $remote_path
+
+  my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
 
   # the consumer should check if these are all zero
   # note: the file gets RENAMED
-  scp -o StrictHostKeyChecking=no $file \
-    "$SOIL_USER_HOST:$remote_path"
+  my-scp $status_file "$SOIL_USER_HOST:$remote_path"
 }
 
 list-remote-results() {
   local prefix=$1
-  ssh -o StrictHostKeyChecking=no \
-    $SOIL_USER_HOST ls "travis-ci.oilshell.org/${prefix}jobs/"
+
+  # Avoid race conditions with ls globbing
+  my-ssh $SOIL_USER_HOST \
+    "shopt -s nullglob
+     cd travis-ci.oilshell.org/${prefix}jobs
+     for i in */*; do echo \$i; done"
 }
 
 # Dummy that doesn't depend on results
@@ -277,13 +289,14 @@ make-job-wwz() {
 }
 
 deploy-job-results() {
-  local prefix=$1
-  local job_id=$2
+  local prefix=$1  # e.g. example.com/github-jobs/
+  local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
+  local job_name=$3  # e.g. example.com/github-jobs/1234/foo.wwz
   shift 2
   # rest of args are more env vars
 
-  # writes $job_id.wwz
-  make-job-wwz $job_id
+  # writes $job_name.wwz
+  make-job-wwz $job_name
 
   # Debug permissions.  When using docker rather than podman, these dirs can be
   # owned by root and we can't write into them.
@@ -292,19 +305,22 @@ deploy-job-results() {
 
   date +%s > _tmp/soil/task-deploy-start-time.txt
 
-  soil/collect_json.py _tmp/soil "$@" > $job_id.json
+  soil/collect_json.py _tmp/soil "$@" > $job_name.json
 
   # So we don't have to unzip it
-  cp _tmp/soil/INDEX.tsv $job_id.tsv
+  cp _tmp/soil/INDEX.tsv $job_name.tsv
 
-  # Copy wwz, tsv, json
-  scp-results "$prefix" $job_id.*
+  local remote_dest_dir="travis-ci.oilshell.org/${prefix}jobs/$subdir"
+  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
+
+  # Do JSON last because that's what 'list-json' looks for
+  my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
 
   log ''
   log 'View CI results here:'
   log ''
-  log "http://travis-ci.oilshell.org/${prefix}jobs/"
-  log "http://travis-ci.oilshell.org/${prefix}jobs/$job_id.wwz/"
+  log "http://travis-ci.oilshell.org/${prefix}jobs/$subdir/"
+  log "http://travis-ci.oilshell.org/${prefix}jobs/$subdir/$job_name.wwz/"
   log ''
 }
 
@@ -330,18 +346,12 @@ format-jobs-index() {
       </thead>
 EOF
   while read wwz; do
-    local job_id=$(basename $wwz .wwz)
+    local prefix=${wwz%'.wwz'}
+
     echo '<tr>'
     echo "  <td><a href="$wwz/">$wwz</a></td>"
-    if [[ $job_id == *test ]]; then
-      # don't show misleading links
-      echo "  <td>-</td>"
-      echo "  <td>-</td>"
-    else
-      echo "  <td><a href="$job_id.json">JSON</a></td>"
-      echo "  <td><a href="$job_id.tsv">TSV</a></td>"
-    fi
-
+    echo "  <td><a href="$prefix.json">JSON</a></td>"
+    echo "  <td><a href="$prefix.tsv">TSV</a></td>"
     echo '</tr>'
   done
 
@@ -371,4 +381,23 @@ write-jobs-raw() {
 
   scp-results "$prefix" _tmp/raw.html
 }
+
+remote-event-job-done() {
+  ### "Client side" handler: a job calls this when it's done
+  local prefix=$1
+
+  log "remote-event-job-done"
+
+  # Deployed code dir
+  sshq soil-web/soil/web.sh event-job-done "$@"
+
+  # This does a remote ls and then an scp.  TODO: do we really need it?
+  # Or change it to write to tmp file and atomically mv.
+  write-jobs-raw $prefix
+}
+
+filename=$(basename $0)
+if test $filename = web-remote.sh; then
+  "$@"
+fi
 

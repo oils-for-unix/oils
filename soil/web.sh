@@ -26,8 +26,9 @@ soil-web() {
 # ls *.json has a race: the shell expands files that may no longer exist, and
 # then 'ls' fails!
 list-json() {
-  local dir=$1
-  for name in $dir/*.json; do
+  local dir=$1  # e.g. travis-ci.oilshell.org/github-jobs
+
+  for name in $dir/*/*.json; do
     echo $name
   done
 }
@@ -48,12 +49,11 @@ rewrite-jobs-index() {
   #
   # https://unix.stackexchange.com/questions/116280/cannot-create-regular-file-filename-file-exists
 
-  local tmp=$$.index.html
-
   # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
   # 2020-03-20__...
 
-  list-json $dir | tail -n -$NUM_JOBS | soil-web ${prefix}index > $tmp
+  local tmp=$$.index.html
+  list-json $dir | tail -n -$NUM_JOBS | soil-web ${prefix}index $tmp
   echo status=${PIPESTATUS[@]}
 
   mv -v $tmp $dir/index.html
@@ -81,6 +81,21 @@ cleanup-jobs-index() {
   esac
 }
 
+test-cleanup() {
+  # the 999 jobs are the oldest
+
+  soil-web cleanup 2 <<EOF
+travis-ci.oilshell.org/github-jobs/999/one.json
+travis-ci.oilshell.org/github-jobs/999/two.json
+travis-ci.oilshell.org/github-jobs/999/three.json
+travis-ci.oilshell.org/github-jobs/1000/one.json
+travis-ci.oilshell.org/github-jobs/1000/two.json
+travis-ci.oilshell.org/github-jobs/1001/one.json
+travis-ci.oilshell.org/github-jobs/1001/two.json
+travis-ci.oilshell.org/github-jobs/1001/three.json
+EOF
+}
+
 cleanup-status-api() {
   ### cleanup the files used for maybe-merge
 
@@ -103,6 +118,16 @@ cleanup-status-api() {
   popd
 }
 
+event-job-done() {
+  ### "Server side" handler
+
+  local prefix=$1  # e.g. github-
+
+  rewrite-jobs-index $prefix
+
+  # note: we could speed jobs up by doing this separately?
+  cleanup-jobs-index $prefix
+}
 
 #
 # Dev Tools

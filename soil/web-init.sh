@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./web-init.sh <function name>
+#   soil/web-init.sh <function name>
+#
+# Examples:
+#   soil/web-init.sh deploy-data  # CSS, JS, etc.
+#   soil/web-init.sh deploy-code  # web.py and its dependencies
 
 set -o nounset
 set -o pipefail

@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 
-#include <array>
 #include <vector>
 
 #include "mycpp/common.h"
@@ -91,7 +90,7 @@ class Pool {
       // The starting cell_id for Cells in this block.
       int cell_id = (blocks_.size() - 1) * CellsPerBlock;
       for (Cell& cell : block->cells) {
-        FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell.data());
+        FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell);
         free_cell->id = cell_id++;
         free_cell->next = free_list_;
         free_list_ = free_cell;
@@ -131,7 +130,7 @@ class Pool {
       for (Cell& cell : block->cells) {
         if (!mark_set_.IsMarked(cell_id)) {
           num_free_++;
-          FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell.data());
+          FreeCell* free_cell = reinterpret_cast<FreeCell*>(cell);
           free_cell->id = cell_id;
           free_cell->next = free_list_;
           free_list_ = free_cell;
@@ -162,10 +161,10 @@ class Pool {
   }
 
  private:
-  using Cell = std::array<uint8_t, CellSize>;
+  using Cell = uint8_t[CellSize];
 
   struct Block {
-    std::array<Cell, CellsPerBlock> cells;
+    Cell cells[CellsPerBlock];
   };
 
   // Unused/free cells are tracked via a linked list of FreeCells. The FreeCells
@@ -227,7 +226,6 @@ class MarkSweepHeap {
 
   void PrintStats(int fd);  // public for testing
 
-  void EagerFree();         // for remaining ASAN clean
   void CleanProcessExit();  // do one last GC so ASAN passes
   void FastProcessExit();   // let the OS clean up
 
@@ -283,7 +281,8 @@ class MarkSweepHeap {
   int greatest_obj_id_ = 0;
 
  private:
-  void DoProcessExit(bool fast_exit);
+  void FreeEverything();
+  void MaybePrintStats();
 
   DISALLOW_COPY_AND_ASSIGN(MarkSweepHeap);
 };

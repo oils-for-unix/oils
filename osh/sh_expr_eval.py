@@ -31,7 +31,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
-from asdl import runtime
 from core import alloc
 from core import error
 from core import state
@@ -45,7 +44,6 @@ from frontend import parse_lib
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch, str_cmp
 from osh import bool_stat
-from osh import word_
 from osh import word_eval
 
 import libc  # for fnmatch
@@ -290,8 +288,8 @@ class ArithEvaluator(object):
     # type: () -> None
     assert self.word_ev is not None
 
-  def _StringToInteger(self, s, span_id=runtime.NO_SPID):
-    # type: (str, int) -> int
+  def _StringToInteger(self, s, location):
+    # type: (str, loc_t) -> int
     """Use bash-like rules to coerce a string to an integer.
 
     Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
@@ -308,14 +306,14 @@ class ArithEvaluator(object):
       try:
         integer = int(s, 16)
       except ValueError:
-        e_strict('Invalid hex constant %r' % s, loc.Span(span_id))
+        e_strict('Invalid hex constant %r' % s, location)
       return integer
 
     if s.startswith('0'):
       try:
         integer = int(s, 8)
       except ValueError:
-        e_strict('Invalid octal constant %r' % s, loc.Span(span_id))
+        e_strict('Invalid octal constant %r' % s, location)
       return integer
 
     if '#' in s:
@@ -323,7 +321,7 @@ class ArithEvaluator(object):
       try:
         base = int(b)
       except ValueError:
-        e_strict('Invalid base for numeric constant %r' % b, loc.Span(span_id))
+        e_strict('Invalid base for numeric constant %r' % b, location)
 
       integer = 0
       for ch in digits:
@@ -338,10 +336,10 @@ class ArithEvaluator(object):
         elif ch.isdigit():
           digit = int(ch)
         else:
-          e_strict('Invalid digits for numeric constant %r' % digits, loc.Span(span_id))
+          e_strict('Invalid digits for numeric constant %r' % digits, location)
 
         if digit >= base:
-          e_strict('Digits %r out of range for base %d' % (digits, base), loc.Span(span_id))
+          e_strict('Digits %r out of range for base %d' % (digits, base), location)
 
         integer = integer * base + digit
       return integer
@@ -364,7 +362,7 @@ class ArithEvaluator(object):
         a_parser = self.parse_ctx.MakeArithParser(s)
 
         # TODO: Fill in the variable name
-        with alloc.ctx_Location(arena, source.Variable(None, span_id)):
+        with alloc.ctx_Location(arena, source.Variable(None, location)):
           try:
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:
@@ -374,7 +372,7 @@ class ArithEvaluator(object):
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.
         if node2.tag_() == arith_expr_e.Word:
-          e_die("Invalid integer constant %r" % s, loc.Span(span_id))
+          e_die("Invalid integer constant %r" % s, location)
 
         if self.exec_opts.eval_unsafe_arith():
           integer = self.EvalToInt(node2)
@@ -390,21 +388,21 @@ class ArithEvaluator(object):
       else:
         if len(s.strip()) == 0 or match.IsValidVarName(s):
           # x42 could evaluate to 0
-          e_strict("Invalid integer constant %r" % s, loc.Span(span_id))
+          e_strict("Invalid integer constant %r" % s, location)
         else:
           # 42x is always fatal!
-          e_die("Invalid integer constant %r" % s, loc.Span(span_id))
+          e_die("Invalid integer constant %r" % s, location)
 
     return integer
 
-  def _ValToIntOrError(self, val, span_id=runtime.NO_SPID):
-    # type: (value_t, int) -> int
+  def _ValToIntOrError(self, val, location):
+    # type: (value_t, loc_t) -> int
     try:
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Undef):  # 'nounset' already handled before got here
           # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-          e_strict('Undefined value in arithmetic context', loc.Span(span_id))
+          e_strict('Undefined value in arithmetic context', location)
 
         elif case(value_e.Int):
           val = cast(value__Int, UP_val)
@@ -412,7 +410,7 @@ class ArithEvaluator(object):
 
         elif case(value_e.Str):
           val = cast(value__Str, UP_val)
-          return self._StringToInteger(val.s, span_id=span_id)  # calls e_strict
+          return self._StringToInteger(val.s, location)  # calls e_strict
 
         elif case(value_e.Obj):
           # Note: this handles var x = 42; echo $(( x > 2 )).
@@ -432,8 +430,8 @@ class ArithEvaluator(object):
     # strict_arith.
     # In bash, (( a )) is like (( a[0] )), but I don't want that.
     # And returning '0' gives different results.
-    e_die("Expected a value convertible to integer, got %s" %
-          ui.ValType(val), loc.Span(span_id))
+    e_die("Expected a value convertible to integer, got %s" % ui.ValType(val),
+          location)
 
   def _EvalLhsAndLookupArith(self, node):
     # type: (arith_expr_t) -> Tuple[int, lvalue_t]
@@ -456,8 +454,8 @@ class ArithEvaluator(object):
     #if val.tag_() == value_e.MaybeStrArray:
     #  e_die("Can't use assignment like ++ or += on arrays")
 
-    span_id = location.SpanForArithExpr(node)
-    i = self._ValToIntOrError(val, span_id=span_id)
+    expr_loc = location.LocForArithExpr(node)
+    i = self._ValToIntOrError(val, expr_loc)
     return i, lval
 
   def _Store(self, lval, new_int):
@@ -480,8 +478,8 @@ class ArithEvaluator(object):
         val = word_eval.DecayArray(val)
 
     # TODO: Can we avoid the runtime cost of adding location info?
-    span_id = location.SpanForArithExpr(node)
-    i = self._ValToIntOrError(val, span_id=span_id)
+    expr_loc = location.LocForArithExpr(node)
+    i = self._ValToIntOrError(val, expr_loc)
     return i
 
   def Eval(self, node):
@@ -685,15 +683,14 @@ class ArithEvaluator(object):
           if rhs == 0:
             # TODO: Could also blame /
             e_die('Divide by zero',
-                  loc.Span(location.SpanForArithExpr(node.right)))
+                  location.LocForArithExpr(node.right))
 
           ret = lhs / rhs
 
         elif op_id == Id.Arith_Percent:
           if rhs == 0:
             # TODO: Could also blame /
-            e_die('Divide by zero',
-                  loc.Span(location.SpanForArithExpr(node.right)))
+            e_die('Divide by zero', location.LocForArithExpr(node.right))
 
           ret = lhs % rhs
 
@@ -883,12 +880,12 @@ class BoolEvaluator(ArithEvaluator):
     # type: (str, Optional[word_t]) -> int
     """Used by both [[ $x -gt 3 ]] and (( $x ))."""
     if blame_word:
-      span_id = word_.LeftMostSpanForWord(blame_word)
+      location = loc.Word(blame_word)  # type: loc_t
     else:
-      span_id = runtime.NO_SPID
+      location = loc.Missing()
 
     try:
-      i = self._StringToInteger(s, span_id=span_id)
+      i = self._StringToInteger(s, location)
     except error.Strict as e:
       if self.always_strict or self.exec_opts.strict_arith():
         raise
