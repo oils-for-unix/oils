@@ -42,6 +42,7 @@ How to test changes to this file:
 """
 from __future__ import print_function
 
+from collections import OrderedDict
 import csv
 import datetime
 import json
@@ -355,11 +356,15 @@ INDEX_TOP = jsontemplate.Template('''
     </p>
 
     <h1>{title|html}</h1>
+''')
 
+RAW_DATA = '''
     <p style="text-align: right">
       <a href="raw.html">raw data</a>
     </p>
+'''
 
+TABLE_TOP = '''
     <table>
       <thead>
         <tr>
@@ -371,7 +376,7 @@ INDEX_TOP = jsontemplate.Template('''
           <td>Status</td>
         </tr>
       </thead>
-''')
+'''
 
 INDEX_BOTTOM = '''\
     </table>
@@ -381,7 +386,7 @@ INDEX_BOTTOM = '''\
 '''
 
 
-def PrintJobHtml(title, groups, f=sys.stdout):
+def PrintIndexHtml(title, groups, f=sys.stdout):
   # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
   # have Ctrl-F5)
   html_head.Write(f, title,
@@ -389,19 +394,58 @@ def PrintJobHtml(title, groups, f=sys.stdout):
 
   d = {'title': title}
   print(INDEX_TOP.expand(d), file=f)
+  print(RAW_DATA, file=f)
 
-  for _, group in groups:
-    jobs = list(group)
-    # Sort by start time
-    jobs.sort(key=ByTaskRunStartTime, reverse=True)
+  # TODO: Don't need this table
+  print(TABLE_TOP, file=f)
 
-    # First job
+  for key, jobs in groups.iteritems():
+    # All jobs have run-level metadata, so just use the first
     print(RUN_ROW_TEMPLATE.expand(jobs[0]), file=f)
 
+    # TODO: Use a different template that's shorter
     for job in jobs:
       print(JOB_ROW_TEMPLATE.expand(job), file=f)
 
   print(INDEX_BOTTOM, file=f)
+
+
+def PrintRunHtml(title, jobs, f=sys.stdout):
+  """Print index for jobs in a single run."""
+
+  # Have to descend an extra level
+  html_head.Write(f, title,
+      css_urls=['../../web/base.css?cache=0', '../../web/soil.css?cache=0'])
+
+  d = {'title': title}
+  print(INDEX_TOP.expand(d), file=f)
+  print(TABLE_TOP, file=f)
+
+  # TODO: no "Details" link
+  print(RUN_ROW_TEMPLATE.expand(jobs[0]), file=f)
+
+  for job in jobs:
+    print(JOB_ROW_TEMPLATE.expand(job), file=f)
+
+  print(INDEX_BOTTOM, file=f)
+
+
+def GroupJobs(jobs, key_func):
+  """
+  Expands groupby result into a simple dict
+  """
+  groups = itertools.groupby(jobs, key=key_func)
+
+  d = OrderedDict()
+
+  for key, job_iter in groups:
+    jobs = list(job_iter)
+
+    jobs.sort(key=ByTaskRunStartTime, reverse=True)
+
+    d[key] = jobs
+
+  return d
 
 
 def main(argv):
@@ -413,41 +457,46 @@ def main(argv):
     run_id = argv[4]  # looks like git-0101abab
 
     assert run_id.startswith('git-'), run_id
+    commit_hash = run_id[4:]
 
-    rows = list(ParseJobs(sys.stdin))
+    jobs = list(ParseJobs(sys.stdin))
 
     # sourcehut doesn't have a build number.
     # - Sort by descnding commit date.  (Minor problem: Committing on a VM with
     #   bad clock can cause commits "in the past")
     # - Group by commit HASH, because 'git rebase' can crate different commits
     #   with the same date.
-    rows.sort(key=ByCommitDate, reverse=True)
-    groups = itertools.groupby(rows, key=ByCommitHash)
+    jobs.sort(key=ByCommitDate, reverse=True)
+    groups = GroupJobs(jobs, ByCommitHash)
 
     title = 'Recent Jobs (sourcehut)'
     with open(index_out, 'w') as f:
-      PrintJobHtml(title, groups, f=f)
+      PrintIndexHtml(title, groups, f=f)
 
+    jobs = groups[commit_hash]
+    title = 'Jobs for commit %s' % commit_hash
     with open(run_index_out, 'w') as f:
-      f.write('index for %s' % run_id)
+      PrintRunHtml(title, jobs, f=f)
 
   elif action == 'github-index':
 
     index_out = argv[2]
     run_index_out = argv[3]
-    run_id = argv[4]
+    run_id = int(argv[4])  # compared as an integer
 
-    rows = list(ParseJobs(sys.stdin))
+    jobs = list(ParseJobs(sys.stdin))
 
-    rows.sort(key=ByGithubRun, reverse=True)  # ordered
-    groups = itertools.groupby(rows, key=ByCommitHash)  # like srht-index
+    jobs.sort(key=ByGithubRun, reverse=True)  # ordered
+    groups = GroupJobs(jobs, ByGithubRun)
 
     title = 'Recent Jobs (Github Actions)'
     with open(index_out, 'w') as f:
-      PrintJobHtml(title, groups, f=f)
+      PrintIndexHtml(title, groups, f=f)
 
+    jobs = groups[run_id]
+    title = 'Jobs for run %d' % run_id
     with open(run_index_out, 'w') as f:
-      f.write('index for %s' % run_id)
+      PrintRunHtml(title, jobs, f=f)
 
   elif action == 'cleanup':
     try:

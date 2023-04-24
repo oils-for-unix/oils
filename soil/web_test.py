@@ -35,12 +35,12 @@ class WebTest(unittest.TestCase):
         }
     print(web.JOB_ROW_TEMPLATE.expand(job))
 
-    rows = [job]
+    jobs = [job]
 
-    rows.sort(key=web.ByGithubRun, reverse=True)
-    groups = itertools.groupby(rows, key=web.ByGithubRun)
+    jobs.sort(key=web.ByGithubRun, reverse=True)
+    groups = web.GroupJobs(jobs, web.ByGithubRun)
 
-    web.PrintJobHtml('title', groups)
+    web.PrintIndexHtml('title', groups)
 
 
 if __name__ == '__main__':
