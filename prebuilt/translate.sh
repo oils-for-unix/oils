@@ -11,7 +11,8 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source mycpp/common.sh  # MYPY_REPO
+source mycpp/common.sh     # MYPY_REPO
+source devtools/common.sh  # main
 source build/ninja-rules-cpp.sh
 
 readonly TEMP_DIR=_build/tmp
@@ -118,4 +119,4 @@ frontend-args() {
     frontend/args.py
 }
 
-"$@"
+main "$@"

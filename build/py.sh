@@ -14,7 +14,8 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
-source build/common.sh  # for log, $CLANGXX
+source build/common.sh     # log, $CLANGXX
+source devtools/common.sh  # main
 # TODO: We could have the user run deps/from-apt.sh directly
 
 if test -z "${IN_NIX_SHELL:-}"; then
@@ -478,9 +479,4 @@ gitpod-minimal() {
   bin/osh -c 'echo hi'
 }
 
-if [ $# -eq 0 ]; then
-  echo "usage: $0 <function name>"
-  exit 1
-fi
-
-"$@"
+main "$@"

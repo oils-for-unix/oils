@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/common.sh
+source devtools/common.sh  # main, typecheck, mypy_
 
 typecheck-files() {
   # The --follow-imports=silent option allows adding type annotations
@@ -55,4 +55,4 @@ soil-run() {
   check-all
 }
 
-"$@"
+main "$@"
