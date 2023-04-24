@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./sourcehut.sh <function name>
+#   soil/sourcehut.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
-
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-
-# Reuse some stuff
-source soil/web-remote.sh
 
 # Relevant docs:
 #
@@ -33,12 +28,24 @@ publish-html-assuming-ssh-key() {
   local job_name=$1
 
   if true; then
-    deploy-job-results 'srht-' $JOB_ID $job_name JOB_ID JOB_URL
+    soil/web-remote.sh deploy-job-results 'srht-' $JOB_ID $job_name JOB_ID JOB_URL
   else
-    deploy-test-wwz  # dummy data that doesn't depend on the build
+    soil/web-remote.sh deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  time soil/web-remote.sh remote-event-job-done 'srht-'
+  local commit_hash
+  # written by save-metadata in soil/worker.sh
+  commit_hash=$(cat _tmp/soil/commit-hash.txt)
+
+  # Note: the directory structure will be overlapping, unlike Github which has
+  # GITHUB_RUN_NUMBER
+  #
+  # srht-jobs/
+  #   1234/foo.wwz  # individual jobs
+  #   1235/bar.wwz
+  #   git-0101abab/index.html  # commit hash
+
+  time soil/web-remote.sh remote-event-job-done 'srht-' "git-$commit_hash"
 }
 
 #

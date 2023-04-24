@@ -136,6 +136,7 @@ RUN_ROW_TEMPLATE = jsontemplate.Template('''\
 <tr class="spacer">
   <td colspan=6></td>
 </tr>
+
 <tr class="commit-row">
   <td colspan=2>
     <code>{git-branch}</code>
@@ -147,7 +148,7 @@ RUN_ROW_TEMPLATE = jsontemplate.Template('''\
     {.end}
   </td>
 
-  <td class="commit-line" colspan=4>
+  <td class="commit-line" colspan=3>
     {.section github-pr}
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
       from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
@@ -156,6 +157,10 @@ RUN_ROW_TEMPLATE = jsontemplate.Template('''\
     {.section commit-desc}
       <code>{@|html}</code>
     {.end}
+  </td>
+
+  <td colspan=1>
+    <a href="{details-url}">Details</a>
   </td>
 
 </tr>
@@ -167,8 +172,10 @@ RUN_ROW_TEMPLATE = jsontemplate.Template('''\
 
 JOB_ROW_TEMPLATE = jsontemplate.Template('''\
 <tr>
+
   <td>{job_num}</td>
   <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
+
   <td><a href="{job_url}">{start_time_str}</a></td>
   <td>{pull_time_str}</td>
   <td>{run_time_str}</td>
@@ -190,12 +197,8 @@ JOB_ROW_TEMPLATE = jsontemplate.Template('''\
     {.end}
     </span>
   {.end}
-
   </td>
 
-  <!-- todo; spec details
-  <td> </td>
-  -->
 </tr>
 ''')
 
@@ -271,7 +274,15 @@ def ParseJobs(stdin):
 
     meta['start_time_str'] = start_time_str
 
-    # Metadata for a "build".  A build consists of many jobs.
+    # Metadata for a "run".  A run is for a single commit, and consists of many
+    # jobs.
+
+    github_run = meta.get('GITHUB_RUN_NUMBER')
+    if github_run:
+      meta['details-url'] = '%s/' % github_run
+    else:
+      # sourcehut
+      meta['details-url'] = 'git-%s/' % meta['commit-hash']
 
     meta['git-branch'] = meta.get('GITHUB_REF')  or '?'
 
@@ -397,7 +408,11 @@ def main(argv):
   action = argv[1]
 
   if action == 'srht-index':
-    out_path = argv[2]
+    index_out = argv[2]
+    run_index_out = argv[3]
+    run_id = argv[4]  # looks like git-0101abab
+
+    assert run_id.startswith('git-'), run_id
 
     rows = list(ParseJobs(sys.stdin))
 
@@ -410,16 +425,17 @@ def main(argv):
     groups = itertools.groupby(rows, key=ByCommitHash)
 
     title = 'Recent Jobs (sourcehut)'
-    with open(out_path, 'w') as f:
+    with open(index_out, 'w') as f:
       PrintJobHtml(title, groups, f=f)
 
-  elif action == 'github-index':
-    # TODO: This can take
-    # - A commit-hash to match
-    # - Another output file
-    # And then it will write the group matching the index
+    with open(run_index_out, 'w') as f:
+      f.write('index for %s' % run_id)
 
-    out_path = argv[2]
+  elif action == 'github-index':
+
+    index_out = argv[2]
+    run_index_out = argv[3]
+    run_id = argv[4]
 
     rows = list(ParseJobs(sys.stdin))
 
@@ -427,8 +443,11 @@ def main(argv):
     groups = itertools.groupby(rows, key=ByCommitHash)  # like srht-index
 
     title = 'Recent Jobs (Github Actions)'
-    with open(out_path, 'w') as f:
+    with open(index_out, 'w') as f:
       PrintJobHtml(title, groups, f=f)
+
+    with open(run_index_out, 'w') as f:
+      f.write('index for %s' % run_id)
 
   elif action == 'cleanup':
     try:

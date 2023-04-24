@@ -29,14 +29,16 @@ class WebTest(unittest.TestCase):
         'pull_time_str': '1:00',
         'run_time_str': '2:00',
 
+        'details-url': '1234/',
+
         'GITHUB_RUN_NUMBER': '1234',
         }
     print(web.JOB_ROW_TEMPLATE.expand(job))
 
     rows = [job]
 
-    rows.sort(key=web.ByGithub, reverse=True)
-    groups = itertools.groupby(rows, key=web.ByGithub)
+    rows.sort(key=web.ByGithubRun, reverse=True)
+    groups = itertools.groupby(rows, key=web.ByGithubRun)
 
     web.PrintJobHtml('title', groups)
 

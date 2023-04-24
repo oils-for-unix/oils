@@ -7,19 +7,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-
-source soil/web-remote.sh
-
-# Relevant docs:
-#
-# https://man.sr.ht/tutorials/getting-started-with-builds.md
-# https://man.sr.ht/builds.sr.ht/#secrets
-# https://man.sr.ht/builds.sr.ht/compatibility.md
-#
-# Basically, it supports up to 4 files called .builds/*.yml.
-# And we need to upload an SSH key as secret via the web UI.
-
 keygen() {
   ssh-keygen -t rsa -b 4096 -C "oilshell github-actions" -f rsa_github_actions
 }
@@ -38,7 +25,7 @@ publish-html-assuming-ssh-key() {
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-    deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
+    soil/web-remote.sh deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
       JOB_URL \
       GITHUB_WORKFLOW	\
       GITHUB_RUN_ID \
@@ -50,14 +37,14 @@ publish-html-assuming-ssh-key() {
       GITHUB_PR_HEAD_REF \
       GITHUB_PR_HEAD_SHA
   else
-    deploy-test-wwz  # dummy data that doesn't depend on the build
+    soil/web-remote.sh deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  time soil/web-remote.sh remote-event-job-done 'github-'
+  time soil/web-remote.sh remote-event-job-done 'github-' $GITHUB_RUN_NUMBER
 
   if test -n "$update_status_api"; then
-    scp-status-api "$GITHUB_RUN_ID" "$job_name"
-    remote-cleanup-status-api
+    soil/web-remote.sh scp-status-api "$GITHUB_RUN_ID" "$job_name"
+    soil/web-remote.sh remote-cleanup-status-api
   fi
 }
 

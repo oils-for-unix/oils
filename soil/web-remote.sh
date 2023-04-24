@@ -6,11 +6,13 @@
 # Every CI run has an up-to-date copy.
 #
 # Usage:
-#   source soil/web-remote.sh <function name>
+#   soil/web-remote.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source soil/common.sh
 source test/tsv-lib.sh  # tsv2html

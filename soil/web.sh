@@ -36,6 +36,7 @@ list-json() {
 rewrite-jobs-index() {
   ### Atomic update of travis-ci.oilshell.org/jobs/
   local prefix=$1
+  local run_id=$2   # pass GITHUB_RUN_NUMBER or commit-hash
 
   local dir=~/travis-ci.oilshell.org/${prefix}jobs
 
@@ -52,11 +53,19 @@ rewrite-jobs-index() {
   # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
   # 2020-03-20__...
 
-  local tmp=$$.index.html
-  list-json $dir | tail -n -$NUM_JOBS | soil-web ${prefix}index $tmp
-  echo status=${PIPESTATUS[@]}
+  local index_tmp=$dir/$$.index.html  # index of every job in every run
+  local run_index_tmp=$dir/$$.runs.html  # only the jobs in this run/commit
 
-  mv -v $tmp $dir/index.html
+  list-json $dir \
+    | tail -n -$NUM_JOBS \
+    | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id
+
+  echo "rewrite index status = ${PIPESTATUS[@]}"
+
+  mv -v $index_tmp $dir/index.html
+
+  mkdir -v -p $dir/$run_id  # this could be a new commit hash, etc.
+  mv -v $run_index_tmp $dir/$run_id/index.html
 }
 
 cleanup-jobs-index() {
@@ -122,8 +131,9 @@ event-job-done() {
   ### "Server side" handler
 
   local prefix=$1  # e.g. github-
+  local run_id=$2
 
-  rewrite-jobs-index $prefix
+  rewrite-jobs-index $prefix $run_id
 
   # note: we could speed jobs up by doing this separately?
   cleanup-jobs-index $prefix
