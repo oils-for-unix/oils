@@ -18,12 +18,12 @@ _list-funcs() {
 
 run-task() {
   if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
-    echo "Usage: $0 <function> [<args>]"
+    echo "Usage: $0 TASK_NAME ARGS..."
     echo
-    echo "For bash completion of available functions, run:"
+    echo "To complete tasks, run:"
     echo "   source devtools/completion.bash"
     echo
-    echo "Available functions:"
+    echo "Tasks:"
     _list-funcs | column
     exit
   fi
