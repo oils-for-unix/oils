@@ -15,7 +15,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh       # log, $CLANGXX
-source devtools/run-task.sh  # main
+source devtools/run-task.sh
 # TODO: We could have the user run deps/from-apt.sh directly
 
 if test -z "${IN_NIX_SHELL:-}"; then
