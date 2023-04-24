@@ -3,16 +3,8 @@ from __future__ import print_function
 """
 completion.py
 """
-
-__author__ = 'Andy Chu'
-
-
 import re
 import sys
-
-
-class Error(Exception):
-  pass
 
 
 # e.g. class FooTest(
@@ -32,10 +24,11 @@ def ParsePythonTest(f):
     if match and current_test is not None:
       print('%s.%s' % (current_test, match.group(1)))
 
+
 # e.g. foo() {
 FUNC_RE = re.compile(r'^\s* (\S+) \(\) \s* \{', re.VERBOSE)
 
-def MaybeParseBashActions(f):
+def ParseShellFunctions(f):
   actions = []
   dispatch = False
   for line in f:
@@ -44,9 +37,7 @@ def MaybeParseBashActions(f):
       actions.append(match.group(1))
     # some line starts with "$@"
     line = line.lstrip()
-    # unfortunately have to hard-code my test framework.  I know it accepts
-    # function names.  Most other bash scripts don't.
-    if line.startswith('"$@"') or line.startswith('taste-main "$@"'):
+    if line.startswith('"$@"') or line.startswith('run-task "$@"'):
       dispatch = True
 
   if dispatch:
@@ -59,22 +50,25 @@ def main(argv):
   try:
     action = argv[1]
   except IndexError:
-    raise Error('Action required')
+    raise RuntimeError('Action required')
 
   try:
     filename = argv[2]
   except IndexError:
-    raise Error('Filename required')
+    raise RuntimeError('Filename required')
 
   try:
     f = open(filename)
   except IOError:
+    # Silent failure
     return 1
 
   if action == 'pyunit':
     ParsePythonTest(f)
+
   elif action == 'bash':
-    MaybeParseBashActions(f)
+    ParseShellFunctions(f)
+
   f.close()
   return 0
 
@@ -82,6 +76,6 @@ def main(argv):
 if __name__ == '__main__':
   try:
     sys.exit(main(sys.argv))
-  except Error, e:
-    print(e.args[0], file=sys.stderr)
+  except RuntimeError, e:
+    print(e.message, file=sys.stderr)
     sys.exit(1)
