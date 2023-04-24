@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/common.sh
+source devtools/run-task.sh  # run-task
 
 change-kind() {
   local kind=$1
@@ -192,4 +192,4 @@ asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
 
-main "$@"
+run-task "$@"

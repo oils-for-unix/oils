@@ -34,15 +34,6 @@ typecheck() {
   MYPYPATH='.:pyext' PYTHONPATH='.' mypy_ --py2 "$@"
 }
 
-main() {
-  if [ $# -eq 0 ]; then
-    echo "usage: $0 <function name>"
-    exit 1
-  fi
-
-  "$@"
-}
-
 readonly MYPY_FLAGS='--strict --no-strict-optional'
 readonly COMMENT_RE='^[ ]*#'
 

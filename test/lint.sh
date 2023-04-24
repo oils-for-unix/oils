@@ -14,7 +14,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
-source devtools/common.sh  # main
+source devtools/run-task.sh  # run-task
 
 get-cpplint() {
   mkdir -p _tmp
@@ -386,4 +386,4 @@ translation() {
 
 }
  
-main "$@"
+run-task "$@"
