@@ -57,7 +57,7 @@ module syntax
 
     # TODO: if it's not the main script, it's sourced, and you could provide
     # a chain of locations back to the sourced script!
-    # MainFile(str path) or SourcedFile(str path, int spid)
+    # MainFile(str path) or SourcedFile(str path, loc location)
   | MainFile(str path)
   | SourcedFile(str path, loc location)
 
@@ -67,13 +67,13 @@ module syntax
 
     # code parsed from the value of a variable
     # used for $PS1 $PROMPT_COMMAND
-  | Variable(str var_name, int span_id)
+  | Variable(str var_name, loc location)
 
     # Point to the original variable reference
   | VarRef(Token orig_tok)
 
     # alias expansion (location of first word)
-  | Alias(str argv0, int argv0_spid)
+  | Alias(str argv0, loc argv0_loc)
 
     # 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
     # TODO: use this for eval_unsafe_arith instead of Variable

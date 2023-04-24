@@ -10,9 +10,8 @@ import time as time_
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
 from _devbuild.gen.syntax_asdl import (
-    command_t, source, compound_word
+    loc, command_t, source, compound_word
 )
-from asdl import runtime
 from core import alloc
 from core import main_loop
 from core import error
@@ -284,7 +283,7 @@ class UserPlugin(object):
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
       # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
-      src = source.Variable(PROMPT_COMMAND, runtime.NO_SPID)
+      src = source.Variable(PROMPT_COMMAND, loc.Missing())
       with alloc.ctx_Location(self.arena, src):
         try:
           node = main_loop.ParseWholeFile(c_parser)

@@ -135,15 +135,15 @@ def SpanForCommand(node):
   return runtime.NO_SPID
 
 
-def SpanForArithExpr(node):
-  # type: (arith_expr_t) -> int
+def LocForArithExpr(node):
+  # type: (arith_expr_t) -> loc_t
   UP_node = node
   with tagswitch(node) as case:
     if case(arith_expr_e.VarSub):
       vsub = cast(simple_var_sub, UP_node)
-      return vsub.left.span_id
+      return vsub.left
     elif case(arith_expr_e.Word):
       w = cast(compound_word, UP_node)
-      return word_.LeftMostSpanForWord(w)
+      return loc.Word(w)
 
-  return runtime.NO_SPID
+  return loc.Missing()

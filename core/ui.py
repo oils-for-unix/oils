@@ -10,12 +10,13 @@ ui.py - User interface constructs.
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, SourceLine, command_t,
-                                       command_str, source_e, source__Stdin,
-                                       source__MainFile, source__SourcedFile,
-                                       source__Alias, source__Reparsed,
-                                       source__Variable, source__VarRef,
-                                       source__ArgvWord, source__Synthetic)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, loc_e, Token, SourceLine,
+                                       command_t, command_str, source_e,
+                                       source__Stdin, source__MainFile,
+                                       source__SourcedFile, source__Alias,
+                                       source__Reparsed, source__Variable,
+                                       source__VarRef, source__ArgvWord,
+                                       source__Synthetic)
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
@@ -158,10 +159,11 @@ def GetLineSourceString(arena, line, quote_filename=False):
       else:
         var_name = repr(src.var_name)
 
-      if src.span_id == runtime.NO_SPID:
+      if src.location.tag_() == loc_e.Missing:
         where = '?'
       else:
-        token = arena.GetToken(src.span_id)
+        span_id = location.GetSpanId(src.location)
+        token = arena.GetToken(span_id)
         line_num = token.line.line_num
         outer_source = GetLineSourceString(arena,
                                            token.line,
