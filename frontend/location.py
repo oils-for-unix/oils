@@ -75,8 +75,8 @@ def GetSpanId(loc_):
   raise AssertionError()
 
 
-def SpanForCommand(node):
-  # type: (command_t) -> int
+def LocForCommand(node):
+  # type: (command_t) -> loc_t
   """
   like word_.LeftMostSpanForWord
   """
@@ -86,53 +86,53 @@ def SpanForCommand(node):
   if tag == command_e.Sentence:
     node = cast(command__Sentence, UP_node)
     #log("node.child %s", node.child)
-    return node.terminator.span_id  # & or ;
+    return node.terminator  # & or ;
 
   if tag == command_e.Simple:
     node = cast(command__Simple, UP_node)
     # It should have either words or redirects, e.g. '> foo'
     if len(node.words):
-      return word_.LeftMostSpanForWord(node.words[0])
+      return loc.Word(node.words[0])
     elif len(node.redirects):
-      return node.redirects[0].op.span_id
+      return node.redirects[0].op
 
   if tag == command_e.ShAssignment:
     node = cast(command__ShAssignment, UP_node)
-    return node.spids[0]
+    return loc.Span(node.spids[0])
 
   if tag == command_e.Pipeline:
     node = cast(command__Pipeline, UP_node)
-    return node.spids[0]  # first |
+    return loc.Span(node.spids[0])  # first |
   if tag == command_e.AndOr:
     node = cast(command__AndOr, UP_node)
-    return node.spids[0]  # first && or ||
+    return loc.Span(node.spids[0])  # first && or ||
   if tag == command_e.DoGroup:
     node = cast(command__DoGroup, UP_node)
-    return node.spids[0]  # do spid
+    return loc.Span(node.spids[0])  # do spid
   if tag == command_e.BraceGroup:
     node = cast(BraceGroup, UP_node)
-    return node.left.span_id  # { spid
+    return node.left  # { spid
   if tag == command_e.Subshell:
     node = cast(command__Subshell, UP_node)
-    return node.spids[0]  # ( spid
+    return loc.Span(node.spids[0])  # ( spid
   if tag == command_e.WhileUntil:
     node = cast(command__WhileUntil, UP_node)
-    return node.spids[0]  # while spid
+    return loc.Span(node.spids[0])  # while spid
   if tag == command_e.If:
     node = cast(command__If, UP_node)
-    return node.arms[0].spids[0]  # if spid is in FIRST arm.
+    return loc.Span(node.arms[0].spids[0])  # if spid is in FIRST arm.
   if tag == command_e.Case:
     node = cast(command__Case, UP_node)
-    return node.spids[0]  # case keyword spid
+    return loc.Span(node.spids[0])  # case keyword spid
   if tag == command_e.TimeBlock:
     node = cast(command__TimeBlock, UP_node)
-    return node.spids[0]  # time keyword spid
+    return loc.Span(node.spids[0])  # time keyword spid
 
   # We never have this case?
   #if node.tag == command_e.CommandList:
   #  pass
 
-  return runtime.NO_SPID
+  return loc.Missing()
 
 
 def LocForArithExpr(node):

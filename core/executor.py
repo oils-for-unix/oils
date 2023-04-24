@@ -382,7 +382,7 @@ class ShellExecutor(vm._Executor):
       child = node.children[i]
 
       # TODO: determine these locations at parse time?
-      pipe_spids.append(location.SpanForCommand(child))
+      pipe_spids.append(location.GetSpanId(location.LocForCommand(child)))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -391,7 +391,7 @@ class ShellExecutor(vm._Executor):
     last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, last_child))
-    pipe_spids.append(location.SpanForCommand(last_child))
+    pipe_spids.append(location.GetSpanId(location.LocForCommand(last_child)))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
       pi.StartPipeline(self.waiter)
