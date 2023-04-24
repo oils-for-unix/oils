@@ -287,13 +287,12 @@ link() {
     prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field link --field $out --"
   fi
 
+  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+    echo "__ $prefix $cxx -o $out $@ $link_flags" >&2
+  fi
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  local cmdline=($prefix "$cxx" -o "$out" "$@" $link_flags)
-  if test -n "${OIL_NINJA_VERBOSE:-}"; then
-    echo "__ ${cmdline[@]}" >&2
-  fi
-  "${cmdline[@]}"
+  $prefix "$cxx" -o "$out" "$@" $link_flags
 }
 
 compile_and_link() {
