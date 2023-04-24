@@ -815,7 +815,7 @@ class CommandParser(object):
 
     # for error message
     first_word_str = None  # type: Optional[str]
-    argv0_spid = word_.LeftMostSpanForWord(words[0])
+    argv0_loc = loc.Word(words[0])
 
     expanded = []  # type: List[str]
     i = 0
@@ -889,7 +889,7 @@ class CommandParser(object):
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.
-    src = source.Alias(first_word_str, argv0_spid)
+    src = source.Alias(first_word_str, argv0_loc)
     with alloc.ctx_Location(arena, src):
       with parse_lib.ctx_Alias(self.parse_ctx.trail):
         try:
