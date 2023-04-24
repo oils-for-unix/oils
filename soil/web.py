@@ -330,17 +330,10 @@ def ByCommitDate(row):
 def ByCommitHash(row):
   return row.get('commit-hash', '?')
 
-def ByGithub(row):
+def ByGithubRun(row):
   # Written in the shell script
   # This is in ISO 8601 format (git log %aI), so we can sort by it.
   return int(row.get('GITHUB_RUN_NUMBER', 0))
-
-
-def HtmlHead(title):
-  # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
-  # have Ctrl-F5)
-  html_head.Write(sys.stdout, title,
-      css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
 
 INDEX_TOP = jsontemplate.Template('''
@@ -377,11 +370,14 @@ INDEX_BOTTOM = '''\
 '''
 
 
-def PrintJobHtml(title, groups):
-  HtmlHead(title)
+def PrintJobHtml(title, groups, f=sys.stdout):
+  # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
+  # have Ctrl-F5)
+  html_head.Write(f, title,
+      css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP.expand(d))
+  print(INDEX_TOP.expand(d), file=f)
 
   for _, group in groups:
     jobs = list(group)
@@ -389,52 +385,50 @@ def PrintJobHtml(title, groups):
     jobs.sort(key=ByTaskRunStartTime, reverse=True)
 
     # First job
-    print(RUN_ROW_TEMPLATE.expand(jobs[0]))
+    print(RUN_ROW_TEMPLATE.expand(jobs[0]), file=f)
 
     for job in jobs:
-      print(JOB_ROW_TEMPLATE.expand(job))
+      print(JOB_ROW_TEMPLATE.expand(job), file=f)
 
-  print(INDEX_BOTTOM)
-
+  print(INDEX_BOTTOM, file=f)
 
 
 def main(argv):
   action = argv[1]
 
   if action == 'srht-index':
+    out_path = argv[2]
+
     rows = list(ParseJobs(sys.stdin))
 
     # sourcehut doesn't have a build number.
-    # - Sort by commit date.  (Minor problem: Committing on a VM with bad clock
-    #   can cause commits "in the past")
-    # - Group by commit hash.  Because 'git rebase' can cause two different
-    # commits with the same date.
+    # - Sort by descnding commit date.  (Minor problem: Committing on a VM with
+    #   bad clock can cause commits "in the past")
+    # - Group by commit HASH, because 'git rebase' can crate different commits
+    #   with the same date.
     rows.sort(key=ByCommitDate, reverse=True)
     groups = itertools.groupby(rows, key=ByCommitHash)
 
     title = 'Recent Jobs (sourcehut)'
-    PrintJobHtml(title, groups)
+    with open(out_path, 'w') as f:
+      PrintJobHtml(title, groups, f=f)
 
   elif action == 'github-index':
     # TODO: This can take
-    #
-    # - $base_dir e.g. example.com/github-jobs/
-    # - a temp prefix like tmp-$$
-    # - commit-hash to match
-    #   - commits/foo
-    # - then it will write:
-    #  - $base_dir/tmp-$$.index.html
-    #  - $base_dir/commits/tmp-$$.HASH.html
-    #
-    # And then the shell script will atomically mv them to the right place
+    # - A commit-hash to match
+    # - Another output file
+    # And then it will write the group matching the index
+
+    out_path = argv[2]
 
     rows = list(ParseJobs(sys.stdin))
 
-    rows.sort(key=ByGithub, reverse=True)
-    groups = itertools.groupby(rows, key=ByGithub)
+    rows.sort(key=ByGithubRun, reverse=True)  # ordered
+    groups = itertools.groupby(rows, key=ByCommitHash)  # like srht-index
 
     title = 'Recent Jobs (Github Actions)'
-    PrintJobHtml(title, groups)
+    with open(out_path, 'w') as f:
+      PrintJobHtml(title, groups, f=f)
 
   elif action == 'cleanup':
     try:

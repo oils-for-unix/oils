@@ -49,12 +49,11 @@ rewrite-jobs-index() {
   #
   # https://unix.stackexchange.com/questions/116280/cannot-create-regular-file-filename-file-exists
 
-  local tmp=$$.index.html
-
   # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
   # 2020-03-20__...
 
-  list-json $dir | tail -n -$NUM_JOBS | soil-web ${prefix}index > $tmp
+  local tmp=$$.index.html
+  list-json $dir | tail -n -$NUM_JOBS | soil-web ${prefix}index $tmp
   echo status=${PIPESTATUS[@]}
 
   mv -v $tmp $dir/index.html
