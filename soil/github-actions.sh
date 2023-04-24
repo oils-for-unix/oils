@@ -53,19 +53,12 @@ publish-html-assuming-ssh-key() {
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
+  time soil/web-remote.sh remote-event-job-done 'github-'
+
   if test -n "$update_status_api"; then
-    local status_file="_soil-jobs/$job_name.status.txt"
-    scp-status-api "$GITHUB_RUN_ID" "$job_name" "$status_file"
+    scp-status-api "$GITHUB_RUN_ID" "$job_name"
+    remote-cleanup-status-api
   fi
-
-  write-jobs-raw 'github-'
-
-  remote-rewrite-jobs-index 'github-'
-
-  # note: we could speed jobs up by doing this separately?
-  remote-cleanup-jobs-index 'github-'
-
-  remote-cleanup-status-api
 }
 
 # Notes on Github secrets:

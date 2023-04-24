@@ -377,64 +377,64 @@ INDEX_BOTTOM = '''\
 '''
 
 
-def IndexTop(title):
+def PrintJobHtml(title, groups):
+  HtmlHead(title)
+
   d = {'title': title}
   print(INDEX_TOP.expand(d))
+
+  for _, group in groups:
+    jobs = list(group)
+    # Sort by start time
+    jobs.sort(key=ByTaskRunStartTime, reverse=True)
+
+    # First job
+    print(RUN_ROW_TEMPLATE.expand(jobs[0]))
+
+    for job in jobs:
+      print(JOB_ROW_TEMPLATE.expand(job))
+
+  print(INDEX_BOTTOM)
+
 
 
 def main(argv):
   action = argv[1]
 
   if action == 'srht-index':
-    title = 'Recent Jobs (sourcehut)'
-    HtmlHead(title)
-    IndexTop(title)
-
     rows = list(ParseJobs(sys.stdin))
 
     # sourcehut doesn't have a build number.
-    # - Sort by commit date.  (Minor problem: Committing on a VM with bad block
+    # - Sort by commit date.  (Minor problem: Committing on a VM with bad clock
     #   can cause commits "in the past")
     # - Group by commit hash.  Because 'git rebase' can cause two different
     # commits with the same date.
     rows.sort(key=ByCommitDate, reverse=True)
     groups = itertools.groupby(rows, key=ByCommitHash)
 
-    for commit_hash, group in groups:
-      jobs = list(group)
-      # Sort by start time
-      jobs.sort(key=ByTaskRunStartTime, reverse=True)
-
-      # First job
-      print(RUN_ROW_TEMPLATE.expand(jobs[0]))
-
-      for job in jobs:
-        print(JOB_ROW_TEMPLATE.expand(job))
-
-    print(INDEX_BOTTOM)
+    title = 'Recent Jobs (sourcehut)'
+    PrintJobHtml(title, groups)
 
   elif action == 'github-index':
-    title = 'Recent Jobs (Github Actions)'
-    HtmlHead(title)
-    IndexTop(title)
+    # TODO: This can take
+    #
+    # - $base_dir e.g. example.com/github-jobs/
+    # - a temp prefix like tmp-$$
+    # - commit-hash to match
+    #   - commits/foo
+    # - then it will write:
+    #  - $base_dir/tmp-$$.index.html
+    #  - $base_dir/commits/tmp-$$.HASH.html
+    #
+    # And then the shell script will atomically mv them to the right place
 
     rows = list(ParseJobs(sys.stdin))
 
     rows.sort(key=ByGithub, reverse=True)
     groups = itertools.groupby(rows, key=ByGithub)
 
-    for commit_hash, group in groups:
-      jobs = list(group)
-      # Sort by start time
-      jobs.sort(key=ByTaskRunStartTime, reverse=True)
-
-      # First job
-      print(RUN_ROW_TEMPLATE.expand(jobs[0]))
-
-      for job in jobs:
-        print(JOB_ROW_TEMPLATE.expand(job))
-
-    print(INDEX_BOTTOM)
+    title = 'Recent Jobs (Github Actions)'
+    PrintJobHtml(title, groups)
 
   elif action == 'cleanup':
     try:

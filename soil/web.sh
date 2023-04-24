@@ -119,6 +119,16 @@ cleanup-status-api() {
   popd
 }
 
+event-job-done() {
+  ### "Server side" handler
+
+  local prefix=$1  # e.g. github-
+
+  rewrite-jobs-index $prefix
+
+  # note: we could speed jobs up by doing this separately?
+  cleanup-jobs-index $prefix
+}
 
 #
 # Dev Tools

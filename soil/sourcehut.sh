@@ -38,12 +38,7 @@ publish-html-assuming-ssh-key() {
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  write-jobs-raw 'srht-'
-
-  remote-rewrite-jobs-index 'srht-'
-
-  # note: we could speed jobs up by doing this separately?
-  remote-cleanup-jobs-index 'srht-'
+  time soil/web-remote.sh remote-event-job-done 'srht-'
 }
 
 #

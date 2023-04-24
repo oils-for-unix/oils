@@ -16,10 +16,11 @@ class WebTest(unittest.TestCase):
     print(web._ParsePullTime('real 19.99'))
 
   def testTemplates(self):
-    print(web.IndexTop('title & other'))
+    print(web.INDEX_TOP.expand({'title': 'title & other'}))
 
     d = {
         'job_num': '123',
+        'job_url': 'https://yo',
         'wwz_path': '123/dev-minimal.wwz',
         'job-name': 'dev-minimal',
         'start_time_str': '2:22',

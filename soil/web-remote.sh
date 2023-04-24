@@ -83,15 +83,18 @@ scp-results() {
 scp-status-api() {
   local run_id=${1:-TEST2-github-run-id}
   local job_name=$2
-  local file=$3
 
+  local status_file="_soil-jobs/$job_name.status.txt"
   local remote_path="travis-ci.oilshell.org/status-api/github/$run_id/$job_name"
+
+  # We could make this one invocation of something like:
+  # cat $status_file | sshq soil/web.sh PUT $remote_path
 
   my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
 
   # the consumer should check if these are all zero
   # note: the file gets RENAMED
-  my-scp $file "$SOIL_USER_HOST:$remote_path"
+  my-scp $status_file "$SOIL_USER_HOST:$remote_path"
 }
 
 list-remote-results() {
@@ -378,4 +381,23 @@ write-jobs-raw() {
 
   scp-results "$prefix" _tmp/raw.html
 }
+
+remote-event-job-done() {
+  ### "Client side" handler: a job calls this when it's done
+  local prefix=$1
+
+  log "remote-event-job-done"
+
+  # Deployed code dir
+  sshq soil-web/soil/web.sh event-job-done "$@"
+
+  # This does a remote ls and then an scp.  TODO: do we really need it?
+  # Or change it to write to tmp file and atomically mv.
+  write-jobs-raw $prefix
+}
+
+filename=$(basename $0)
+if test $filename = web-remote.sh; then
+  "$@"
+fi
 
