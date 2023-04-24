@@ -100,7 +100,7 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh'
 
-    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh')) {
+    } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
 
     } else {
@@ -124,7 +124,7 @@ ShellLabelFromPath = function(sh_path) {
       # the opt binary is osh-native
       label = 'osh-native'
 
-    } else if (endsWith(sh, '_bin/cxx-bumpleak/osh')) {
+    } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
 
     } else if (endsWith(sh, '_bin/osh')) {  # the app bundle
@@ -802,6 +802,23 @@ ComputeReport = function(in_dir, out_dir) {
   WriteProvenance(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 
+WriteOneTask = function(times, out_dir, task_name, precision) {
+  times %>%
+    filter(task == task_name) %>%
+    select(-c(task)) -> subset
+
+  writeTsv(subset, file.path(out_dir, task_name), precision)
+}
+
+SHELL_ORDER = c('dash',
+                'bash',
+                'zsh', 
+                '_bin/cxx-opt+bumpleak/osh',
+                '_bin/cxx-opt+bumproot/osh',
+                '_bin/cxx-opt+bumpsmall/osh',
+                '_bin/cxx-opt/osh',
+                '_bin/cxx-opt+nopool/osh')
+
 GcReport = function(in_dir, out_dir) {
   times = read.table(file.path(in_dir, 'raw/times.tsv'), header=T)
   gc_stats = read.table(file.path(in_dir, 'stage1/gc_stats.tsv'), header=T)
@@ -814,7 +831,7 @@ GcReport = function(in_dir, out_dir) {
 
   # Change units and order columns
   times %>%
-    arrange(task) %>%
+    arrange(task, factor(sh_path, levels = SHELL_ORDER)) %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
@@ -846,21 +863,16 @@ GcReport = function(in_dir, out_dir) {
   writeTsv(times, file.path(out_dir, 'times'), precision)
   writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision)
 
-  WriteTimes = function(times, task_name) {
-    # weird ensym() for "tidy evaluation"
-    times %>%
-      filter(task == task_name) %>%
-      select(-c(task)) -> subset
-    writeTsv(subset, file.path(out_dir, task_name), precision)
-  }
-
+  tasks = c('parse.configure-coreutils',
+            'parse.configure-cpython',
+            'parse.abuild',
+            'ex.compute-fib',
+            'ex.bashcomp-parse-help',
+            'ex.abuild-print-help')
   # Write out separate rows
-  WriteTimes(times, 'parse.configure-coreutils')
-  WriteTimes(times, 'parse.configure-cpython')
-  WriteTimes(times, 'parse.abuild')
-  WriteTimes(times, 'ex.compute-fib')
-  WriteTimes(times, 'ex.bashcomp-parse-help')
-  WriteTimes(times, 'ex.abuild-print-help')
+  for (task in tasks) {
+    WriteOneTask(times, out_dir, task, precision)
+  }
 }
 
 GcCachegrindReport = function(in_dir, out_dir) {
@@ -879,10 +891,14 @@ GcCachegrindReport = function(in_dir, out_dir) {
   counts %>% left_join(times, by = c('join_id')) %>% 
     mutate(million_irefs = irefs / 1e6) %>%
     select(c(million_irefs, task, sh_path, shell_runtime_opts)) %>%
-    arrange(desc(task), shell_runtime_opts) ->
+    arrange(factor(sh_path, levels = SHELL_ORDER)) ->
     counts
 
-  writeTsv(counts, file.path(out_dir, 'counts'))
+  precision = NULL
+  tasks = c('parse.abuild', 'ex.compute-fib')
+  for (task in tasks) {
+    WriteOneTask(counts, out_dir, task, precision)
+  }
 }
 
 MyCppReport = function(in_dir, out_dir) {
@@ -964,7 +980,9 @@ UftraceTaskReport = function(env, task_name, summaries) {
     alloc_sizes
 
   allocs_16_bytes_or_less = alloc_sizes %>% filter(obj_len == 16) %>% select(percent)
+  allocs_24_bytes_or_less = alloc_sizes %>% filter(obj_len == 24) %>% select(percent)
   allocs_32_bytes_or_less = alloc_sizes %>% filter(obj_len == 32) %>% select(percent)
+  allocs_48_bytes_or_less = alloc_sizes %>% filter(obj_len == 48) %>% select(percent)
   allocs_64_bytes_or_less = alloc_sizes %>% filter(obj_len == 64) %>% select(percent)
   Log('Percentage of allocs less than 32 bytes: %.1f', allocs_32_bytes_or_less)
 
@@ -1115,7 +1133,9 @@ UftraceTaskReport = function(env, task_name, summaries) {
                  percent_string_bytes = Percent(total_string_bytes, total_bytes),
 
                  allocs_16_bytes_or_less = sprintf('%.1f%%', allocs_16_bytes_or_less),
+                 allocs_24_bytes_or_less = sprintf('%.1f%%', allocs_24_bytes_or_less),
                  allocs_32_bytes_or_less = sprintf('%.1f%%', allocs_32_bytes_or_less),
+                 allocs_48_bytes_or_less = sprintf('%.1f%%', allocs_48_bytes_or_less),
                  allocs_64_bytes_or_less = sprintf('%.1f%%', allocs_64_bytes_or_less),
 
                  strs_7_bytes_or_less = sprintf('%.1f%%', strs_7_bytes_or_less),

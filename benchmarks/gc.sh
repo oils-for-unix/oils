@@ -37,7 +37,7 @@ debug-tcmalloc() {
   touch mycpp/marksweep_heap.cc
 
   # No evidence of difference
-  for bin in _bin/cxx-{opt,tcmalloc}/osh; do
+  for bin in _bin/cxx-{opt,opt+tcmalloc}/osh; do
     echo $bin
     ninja $bin
 
@@ -104,8 +104,13 @@ print-tasks() {
     "dash$TAB-"
     "zsh$TAB-"
 
-    "_bin/cxx-bumpleak/osh${TAB}mut"
-    "_bin/cxx-bumproot/osh${TAB}mut"
+    "_bin/cxx-opt+bumpleak/osh${TAB}mut"
+    "_bin/cxx-opt+bumproot/osh${TAB}mut"
+
+    "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc+free+gc"
+
     # these have trivial GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
@@ -116,9 +121,9 @@ print-tasks() {
 
   if test -n "${TCMALLOC:-}"; then
     shells+=(
-      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc"
-      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc+free"
-      "_bin/cxx-tcmalloc/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt+tcmalloc/osh${TAB}mut+alloc"
+      "_bin/cxx-opt+tcmalloc/osh${TAB}mut+alloc+free"
+      "_bin/cxx-opt+tcmalloc/osh${TAB}mut+alloc+free+gc"
     )
   fi
 
@@ -167,8 +172,13 @@ print-cachegrind-tasks() {
 
   local -a shells=(
     "bash${TAB}-"
-    "_bin/cxx-bumpleak/osh${TAB}mut"
-    "_bin/cxx-bumproot/osh${TAB}mut"
+    "_bin/cxx-opt+bumpleak/osh${TAB}mut"
+    "_bin/cxx-opt+bumproot/osh${TAB}mut"
+
+    "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc"
+    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc+free+gc"
+
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
@@ -297,7 +307,7 @@ run-tasks() {
         # Save the GC stats here.  None of the other runtime options are that
         # interesting.
 
-        if test $mode = 'time'; then
+        if test $mode = 'time' && test $sh_path != _bin/cxx-opt+nopool/osh; then
           OIL_GC_STATS_FD=99 \
             "${instrumented[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
         else
@@ -309,11 +319,6 @@ run-tasks() {
         OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
           "${instrumented[@]}" > /dev/null
         ;;
-
-      # More comparisons:
-      # - tcmalloc,
-      # - 32-bit 
-      # - different GC thresholds
 
       *)
         die "Invalid shell runtime opts $shell_runtime_opts"
@@ -378,10 +383,10 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-{bumpleak,bumproot,opt}/osh )
+  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
 
   if test -n "${TCMALLOC:-}"; then
-    bin+=( _bin/cxx-tcmalloc/osh )
+    bin+=( _bin/cxx-opt+tcmalloc/osh )
   fi
   ninja "${bin[@]}"
 }

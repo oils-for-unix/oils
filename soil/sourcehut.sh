@@ -30,23 +30,15 @@ keygen() {
 #
 
 publish-html-assuming-ssh-key() {
-
-  # Note: could get job_id from _soil-jobs/ status file
-  local job_id
-  job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+  local job_name=$1
 
   if true; then
-    deploy-job-results 'srht-' $job_id JOB_ID JOB_URL
+    deploy-job-results 'srht-' $JOB_ID $job_name JOB_ID JOB_URL
   else
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  write-jobs-raw 'srht-'
-
-  remote-rewrite-jobs-index 'srht-'
-
-  # note: we could speed jobs up by doing this separately?
-  remote-cleanup-jobs-index 'srht-'
+  time soil/web-remote.sh remote-event-job-done 'srht-'
 }
 
 #

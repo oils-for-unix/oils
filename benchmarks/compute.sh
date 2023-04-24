@@ -407,7 +407,7 @@ soil-run() {
   mkdir -p $BASE_DIR
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a oil_bin=( $OSH_CPP_NINJA_BUILD _bin/cxx-bumpleak/osh)
+  local -a oil_bin=( $OSH_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
   ninja "${oil_bin[@]}"
 
   local single_machine='no-host'

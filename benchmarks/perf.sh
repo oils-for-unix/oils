@@ -191,8 +191,9 @@ profile-osh-parse() {
   # (_int_malloc in GCC), which is not surprising!
 
   local mode=${1:-graph}
+  local variant=${2:-opt}
 
-  local bin='_bin/cxx-opt/osh'
+  local bin="_bin/cxx-$variant/osh"
   ninja $bin
 
   local file=benchmarks/testdata/configure
@@ -211,8 +212,9 @@ profile-osh-parse() {
 
 profile-fib() {
   local mode=${1:-graph}
+  local variant=${2:-opt}
 
-  local bin='_bin/cxx-opt/osh'
+  local bin="_bin/cxx-$variant/osh"
   ninja $bin
 
   # Same iterations as benchmarks/gc
@@ -223,8 +225,9 @@ profile-fib() {
 
 profile-execute() {
   local mode=${1:-graph}
+  local variant=${2:-opt}
 
-  local bin='_bin/cxx-opt/osh'
+  local bin="_bin/cxx-$variant/osh"
   ninja $bin
 
   local -a cmd=( $bin benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
@@ -390,7 +393,7 @@ build-tar() {
   ./configure
 
   # TODO: add bumproot
-  for variant in bumpleak opt; do
+  for variant in opt+bumpleak opt; do
     echo
 
     time _build/oils.sh '' $variant

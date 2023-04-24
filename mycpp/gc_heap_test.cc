@@ -4,7 +4,7 @@
 #include "vendor/greatest.h"
 
 #define ASSERT_NUM_LIVE_OBJS(x) \
-  ASSERT_EQ_FMT((x), static_cast<int>(gHeap.num_live_), "%d");
+  ASSERT_EQ_FMT((x), static_cast<int>(gHeap.num_live()), "%d");
 
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c

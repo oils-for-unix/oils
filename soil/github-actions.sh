@@ -32,39 +32,33 @@ publish-html-assuming-ssh-key() {
   local job_name=$1
   local update_status_api=${2:-}
 
-  local status_file="_soil-jobs/$job_name.status.txt"
-  read -r unused_status job_id < $status_file
-
   if true; then
     # https://docs.github.com/en/actions/reference/environment-variables
 
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-    deploy-job-results 'github-' $job_id \
+    deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
       JOB_URL \
       GITHUB_WORKFLOW	\
       GITHUB_RUN_ID \
       GITHUB_RUN_NUMBER \
       GITHUB_JOB \
       GITHUB_ACTION \
-      GITHUB_REF
+      GITHUB_REF \
+      GITHUB_PR_NUMBER \
+      GITHUB_PR_HEAD_REF \
+      GITHUB_PR_HEAD_SHA
   else
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
+  time soil/web-remote.sh remote-event-job-done 'github-'
+
   if test -n "$update_status_api"; then
-    scp-status-api "$GITHUB_RUN_ID" "$job_name" "$status_file"
+    scp-status-api "$GITHUB_RUN_ID" "$job_name"
+    remote-cleanup-status-api
   fi
-
-  write-jobs-raw 'github-'
-
-  remote-rewrite-jobs-index 'github-'
-
-  # note: we could speed jobs up by doing this separately?
-  remote-cleanup-jobs-index 'github-'
-
-  remote-cleanup-status-api
 }
 
 # Notes on Github secrets:

@@ -100,10 +100,20 @@ T* Alloc(Args&&... args) {
 
   DCHECK(gHeap.is_initialized_);
 
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + sizeof(T));
+  constexpr size_t num_bytes = sizeof(ObjHeader) + sizeof(T);
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
+  void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(T::obj_header());
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
+  header->obj_id = obj_id;
+  #ifndef NO_POOL_ALLOC
+  header->in_pool = in_pool;
+  #endif
 #endif
   void* obj = header->ObjectAddress();
   // mycpp doesn't generated constructors that initialize every field
@@ -123,8 +133,14 @@ inline Str* NewStr(int len) {
   }
 
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
+  void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
 
   auto s = new (header->ObjectAddress()) Str();
@@ -137,7 +153,10 @@ inline Str* NewStr(int len) {
 #endif
 
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
+  header->obj_id = obj_id;
+  #ifndef NO_POOL_ALLOC
+  header->in_pool = in_pool;
+  #endif
 #endif
   return s;
 }
@@ -147,11 +166,21 @@ inline Str* NewStr(int len) {
 // s->MaybeShrink() afterward!
 inline Str* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
+  void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
   auto s = new (header->ObjectAddress()) Str();
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
+  header->obj_id = obj_id;
+  #ifndef NO_POOL_ALLOC
+  header->in_pool = in_pool;
+  #endif
 #endif
   return s;
 }
@@ -179,7 +208,14 @@ inline Str* StrFromC(const char* data) {
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Allocate(sizeof(ObjHeader) + obj_len);
+  const size_t num_bytes = sizeof(ObjHeader) + obj_len;
+#if MARK_SWEEP
+  int obj_id;
+  bool in_pool;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+#else
+  void* place = gHeap.Allocate(num_bytes);
+#endif
   ObjHeader* header = new (place) ObjHeader(Slab<T>::obj_header(len));
   void* obj = header->ObjectAddress();
   if (std::is_pointer<T>()) {
@@ -187,7 +223,10 @@ inline Slab<T>* NewSlab(int len) {
   }
   auto slab = new (obj) Slab<T>(len);
 #if MARK_SWEEP
-  header->obj_id = gHeap.UnusedObjectId();
+  header->obj_id = obj_id;
+  #ifndef NO_POOL_ALLOC
+  header->in_pool = in_pool;
+  #endif
 #endif
   return slab;
 }

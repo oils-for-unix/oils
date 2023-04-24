@@ -1,23 +1,47 @@
 #!/usr/bin/env python2
 """
-soil/web.py
+soil/web.py - Dashboard using "Event Sourcing" Paradigm
 
-Each job is assigned an ID.  The job generates:
+Given this state:
 
-- $ID.json  # metadata
-- $ID.tsv   # benchmarks/time.py output.  Success/failure for each task.
-- $ID.wwz   # files
+https://test.oils-for-unix.org/
+  github-jobs/
+    1234/  # $GITHUB_RUN_NUMBER
+      cpp-small.tsv    # benchmarks/time.py output.  Success/failure for each task.
+      cpp-small.json   # metadata when job is DONE
+      cpp-small.state  # for more transient events
 
-This script generates an index.html with a table of metadata and links to the
-logs.
+      (cpp-small.wwz is linked to, but not part of the state.)
+
+This script generates:
+
+https://test.oils-for-unix.org/
+  github-jobs/
+    1234/
+      tmp-$$.index.html  # function of JSON contents
+      tmp-$$.raw.html    # function of dir listing
+      tmp-$$.remove.txt  # function of dir listing (JSON only)
+    commits/
+      tmp-$$.01ab01ab.html  # function of JSON and _tmp/soil/INDEX.tsv
+                            # links to all jobs AND all tasks
+                            # TODO: and all container images
 
 TODO:
 - Use JSON Template to escape HTML
 - Can we publish spec test numbers in JSON?
+
+- What about HTML generated on the WORKER?
+  - foo.wwz/index.html
+  - _tmp/soil/image.html - layers
+
+How to test changes to this file:
+
+  $ soil/web-init.sh deploy-code
+  $ soil/github-actions.sh remote-rewrite-jobs-index github-
+
 """
 from __future__ import print_function
 
-import cgi
 import csv
 import datetime
 import json
@@ -26,6 +50,7 @@ import os
 import re
 import sys
 from doctools import html_head
+from test import jsontemplate
 
 
 def log(msg, *args):
@@ -107,6 +132,74 @@ def _ParsePullTime(time_p_str):
   return '-'  # Not found
 
 
+RUN_ROW_TEMPLATE = jsontemplate.Template('''\
+<tr class="spacer">
+  <td colspan=6></td>
+</tr>
+<tr class="commit-row">
+  <td colspan=2>
+    <code>{git-branch}</code>
+    &nbsp;
+    {.section github-commit-link}
+      <code>
+        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      </code>
+    {.end}
+  </td>
+
+  <td class="commit-line" colspan=4>
+    {.section github-pr}
+      PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
+      from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
+      updated
+    {.end}
+    {.section commit-desc}
+      <code>{@|html}</code>
+    {.end}
+  </td>
+
+</tr>
+<tr class="spacer">
+  <td colspan=6><td/>
+</tr>
+''')
+
+
+JOB_ROW_TEMPLATE = jsontemplate.Template('''\
+<tr>
+  <td>{job_num}</td>
+  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
+  <td><a href="{job_url}">{start_time_str}</a></td>
+  <td>{pull_time_str}</td>
+  <td>{run_time_str}</td>
+
+  <td> <!-- status -->
+  {.section passed}
+    <span class="pass">pass</span>
+  {.end}
+
+  {.section failed}
+    <span class="fail">FAIL</span><br/>
+    <span class="fail-detail">
+    {.section one-failure}
+      task <code>{@}</code>
+    {.end}
+
+    {.section multiple-failures}
+      {num-failures} of {num-tasks} tasks
+    {.end}
+    </span>
+  {.end}
+
+  </td>
+
+  <!-- todo; spec details
+  <td> </td>
+  -->
+</tr>
+''')
+
+
 def ParseJobs(stdin):
   for i, line in enumerate(stdin):
     json_path = line.strip()
@@ -144,22 +237,21 @@ def ParseJobs(stdin):
 
     num_failures = len(failed_tasks)
     if num_failures == 0:
-      s_html = '<span class="pass">pass</span>'
+      meta['passed'] = True
     else:
+      failed = {}
       if num_failures == 1:
-        fail_html = 'task <code>%s</code>' % failed_tasks[0]
+        failed['one-failure'] = failed_tasks[0]
       else:
-        fail_html = '%d of %d tasks' % (num_failures, num_tasks)
-      s_html = '<span class="fail">FAIL</span><br/><span class="fail-detail">%s</span>' % fail_html
-    meta['status_html'] = s_html
+        failed['multiple-failures'] = {
+            'num-failures': num_failures,
+            'num-tasks': num_tasks,
+            }
+      meta['failed'] = failed
 
     meta['run_time_str'] = _MinutesSeconds(total_elapsed)
 
     meta['pull_time_str'] = _ParsePullTime(meta.get('image-pull-time'))
-
-    # Note: this isn't a Unix timestamp
-    #microseconds = int(meta['TRAVIS_TIMER_START_TIME']) / 1e6
-    #log('ts = %d', microseconds)
 
     start_time = meta.get('task-run-start-time')
     if start_time is None:
@@ -179,96 +271,53 @@ def ParseJobs(stdin):
 
     meta['start_time_str'] = start_time_str
 
-    # Metadata for "Build".  Travis has this concept, but sourcehut doesn't.
-    # A build consists of many jobs.
-    meta['git-branch'] = meta.get('TRAVIS_BRANCH') or meta.get('GITHUB_REF') or '?'  # no data for sr.ht
-    meta['commit-line'] = meta.get('commit-line') or '?'
-    meta['commit-hash'] = meta.get('commit-hash') or '?'
+    # Metadata for a "build".  A build consists of many jobs.
 
-    meta['commit_hash_short'] = meta['commit-hash'][-8:]  # last 8 chars
+    meta['git-branch'] = meta.get('GITHUB_REF')  or '?'
+
+    # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
+    pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
+    pr_number = meta.get('GITHUB_PR_NUMBER')
+
+    if pr_head_ref and pr_number:
+      meta['github-pr'] = {
+          'head-ref': pr_head_ref,
+          'pr-number': pr_number,
+          }
+
+      # Show the user's commit, not the merge commit
+      commit_hash = meta.get('GITHUB_PR_HEAD_SHA') or '?'
+
+    else:
+      # From soil/worker.sh save-metadata.  This is intended to be
+      # CI-independent, while the environment variables above are from Github.
+      meta['commit-desc'] = meta.get('commit-line', '?')
+      commit_hash = meta.get('commit-hash') or '?'
+
+    # TODO: Make a sourcehut link too
+    meta['github-commit-link'] = {
+        'commit-hash': commit_hash,
+        'commit-hash-short': commit_hash[-8:],
+        }
 
     # Metadata for "Job"
 
-    meta['job-name'] = meta.get('job-name') or '?'  # Also TRAVIS_JOB_NAME
-    meta['job_num'] = meta.get('TRAVIS_JOB_NUMBER') or meta.get('JOB_ID') or meta.get('GITHUB_RUN_ID') or '?'
-    # For Github, we construct $JOB_URL in soil/github-actions.sh
-    meta['job_url'] = meta.get('TRAVIS_JOB_WEB_URL') or meta.get('JOB_URL') or '?'
+    meta['job-name'] = meta.get('job-name') or '?'
 
-    filename = os.path.basename(json_path)
-    basename, _ = os.path.splitext(filename)
-    meta['basename'] = basename
+    # GITHUB_RUN_NUMBER (project-scoped) is shorter than GITHUB_RUN_ID (global
+    # scope)
+    meta['job_num'] = meta.get('JOB_ID') or meta.get('GITHUB_RUN_NUMBER') or '?'
+    # For Github, we construct $JOB_URL in soil/github-actions.sh
+    meta['job_url'] = meta.get('JOB_URL') or '?'
+
+    prefix, _ = os.path.splitext(json_path)  # x/y/123/myjob
+    last_two_parts = prefix.split('/')[-2:]  # ['123', 'myjob']
+    rel_path = '/'.join(last_two_parts)  # 123/myjob
+
+    meta['wwz_path'] = rel_path + '.wwz'  # 123/myjob.wwz
+
     yield meta
 
-
-BUILD_ROW_TEMPLATE = '''\
-<tr class="spacer">
-  <td colspan=6></td>
-</tr>
-<tr class="commit-row">
-  <td colspan=2>
-    <code>%(git-branch)s</code>
-    &nbsp;
-    <code><a href="https://github.com/oilshell/oil/commit/%(commit-hash)s">%(commit_hash_short)s</a></code>
-  </td>
-  <td class="commit-line" colspan=4>
-    <code>%(commit-line)s</code>
-  </td>
-</tr>
-<tr class="spacer">
-  <td colspan=6><td/>
-</tr>
-'''
-
-
-JOB_ROW_TEMPLATE = '''\
-<tr>
-  <td>%(job_num)s</td>
-  <td> <code><a href="%(basename)s.wwz/">%(job-name)s</a></code> </td>
-  <td><a href="%(job_url)s">%(start_time_str)s</a></td>
-  <td>%(pull_time_str)s</td>
-  <td>%(run_time_str)s</td>
-  <td>%(status_html)s</td>
-  <!-- todo; spec details
-  <td> </td>
-  -->
-</tr>
-'''
-
-INDEX_TOP = '''
-  <body class="width50">
-    <p id="home-link">
-      <a href="/">travis-ci.oilshell.org</a>
-      | <a href="//oilshell.org/">oilshell.org</a>
-    </p>
-
-    <h1>%(title)s</h1>
-
-    <table>
-      <thead>
-        <tr>
-          <td>Job #</td>
-          <td>Job Name</td>
-          <td>Start Time</td>
-          <td>Pull Time</td>
-          <td>Run Time</td>
-          <td>Status</td>
-        </tr>
-      </thead>
-'''
-
-INDEX_BOTTOM = '''\
-    </table>
-
-    <p>
-      <a href="raw.html">raw data</a>
-    </p>
-  </body>
-</html>
-'''
-
-# Sort by descending build number
-def ByTravisBuildNum(row):
-  return int(row.get('TRAVIS_BUILD_NUMBER', 0))
 
 def ByTaskRunStartTime(row):
   return int(row.get('task-run-start-time', 0))
@@ -281,105 +330,105 @@ def ByCommitDate(row):
 def ByCommitHash(row):
   return row.get('commit-hash', '?')
 
-def ByGithub(row):
+def ByGithubRun(row):
   # Written in the shell script
   # This is in ISO 8601 format (git log %aI), so we can sort by it.
-  return int(row.get('GITHUB_RUN_ID', 0))
+  return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
-def HtmlHead(title):
+INDEX_TOP = jsontemplate.Template('''
+  <body class="width50">
+    <p id="home-link">
+      <a href="/">travis-ci.oilshell.org</a>
+      | <a href="//oilshell.org/">oilshell.org</a>
+    </p>
+
+    <h1>{title|html}</h1>
+
+    <p style="text-align: right">
+      <a href="raw.html">raw data</a>
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <td>Job #</td>
+          <td>Job Name</td>
+          <td>Start Time</td>
+          <td>Pull Time</td>
+          <td>Run Time</td>
+          <td>Status</td>
+        </tr>
+      </thead>
+''')
+
+INDEX_BOTTOM = '''\
+    </table>
+
+  </body>
+</html>
+'''
+
+
+def PrintJobHtml(title, groups, f=sys.stdout):
   # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
   # have Ctrl-F5)
-  html_head.Write(sys.stdout, title,
+  html_head.Write(f, title,
       css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
+  d = {'title': title}
+  print(INDEX_TOP.expand(d), file=f)
 
-def IndexTop(title):
-  d = {'title': cgi.escape(title)}
-  print(INDEX_TOP % d)
+  for _, group in groups:
+    jobs = list(group)
+    # Sort by start time
+    jobs.sort(key=ByTaskRunStartTime, reverse=True)
+
+    # First job
+    print(RUN_ROW_TEMPLATE.expand(jobs[0]), file=f)
+
+    for job in jobs:
+      print(JOB_ROW_TEMPLATE.expand(job), file=f)
+
+  print(INDEX_BOTTOM, file=f)
 
 
 def main(argv):
   action = argv[1]
 
   if action == 'srht-index':
-    title = 'Recent Jobs (sourcehut)'
-    HtmlHead(title)
-    IndexTop(title)
+    out_path = argv[2]
 
     rows = list(ParseJobs(sys.stdin))
 
     # sourcehut doesn't have a build number.
-    # - Sort by commit date.  (Minor problem: Committing on a VM with bad block
-    #   can cause commits "in the past")
-    # - Group by commit hash.  Because 'git rebase' can cause two different
-    # commits with the same date.
+    # - Sort by descnding commit date.  (Minor problem: Committing on a VM with
+    #   bad clock can cause commits "in the past")
+    # - Group by commit HASH, because 'git rebase' can crate different commits
+    #   with the same date.
     rows.sort(key=ByCommitDate, reverse=True)
     groups = itertools.groupby(rows, key=ByCommitHash)
 
-    for commit_hash, group in groups:
-      jobs = list(group)
-      # Sort by start time
-      jobs.sort(key=ByTaskRunStartTime, reverse=True)
-
-      # First job
-      print(BUILD_ROW_TEMPLATE % jobs[0])
-
-      for job in jobs:
-        print(JOB_ROW_TEMPLATE % job)
-
-    print(INDEX_BOTTOM)
+    title = 'Recent Jobs (sourcehut)'
+    with open(out_path, 'w') as f:
+      PrintJobHtml(title, groups, f=f)
 
   elif action == 'github-index':
+    # TODO: This can take
+    # - A commit-hash to match
+    # - Another output file
+    # And then it will write the group matching the index
+
+    out_path = argv[2]
+
+    rows = list(ParseJobs(sys.stdin))
+
+    rows.sort(key=ByGithubRun, reverse=True)  # ordered
+    groups = itertools.groupby(rows, key=ByCommitHash)  # like srht-index
+
     title = 'Recent Jobs (Github Actions)'
-    HtmlHead(title)
-    IndexTop(title)
-
-    rows = list(ParseJobs(sys.stdin))
-
-    rows.sort(key=ByGithub, reverse=True)
-    groups = itertools.groupby(rows, key=ByGithub)
-
-    for commit_hash, group in groups:
-      jobs = list(group)
-      # Sort by start time
-      jobs.sort(key=ByTaskRunStartTime, reverse=True)
-
-      # First job
-      print(BUILD_ROW_TEMPLATE % jobs[0])
-
-      for job in jobs:
-        print(JOB_ROW_TEMPLATE % job)
-
-    print(INDEX_BOTTOM)
-
-  elif action == 'travis-index':
-    title = 'Recent Jobs (Travis CI)'
-    HtmlHead(title)
-    IndexTop(title)
-
-    rows = list(ParseJobs(sys.stdin))
-
-    rows.sort(key=ByTravisBuildNum, reverse=True)
-    groups = itertools.groupby(rows, key=ByTravisBuildNum)
-    #print(list(groups))
-
-    for build_num, group in groups:
-      #build_num = int(build_num)
-      #log('build %d', build_num)
-
-      jobs = list(group)
-
-      # Sort by start time
-      jobs.sort(key=ByTaskRunStartTime, reverse=True)
-
-      # The first job should have the same branch/commit/commit_line
-      print(BUILD_ROW_TEMPLATE % jobs[0])
-
-      for job in jobs:
-        print(JOB_ROW_TEMPLATE % job)
-
-    print(INDEX_BOTTOM)
+    with open(out_path, 'w') as f:
+      PrintJobHtml(title, groups, f=f)
 
   elif action == 'cleanup':
     try:
@@ -397,8 +446,16 @@ def main(argv):
     log('%s cleanup: keep %d', sys.argv[0], num_to_keep)
     log('%s cleanup: got %d JSON paths', sys.argv[0], len(prefixes))
 
-    # looks like 2020-03-20, so sort ascending means the oldest are first
-    prefixes.sort()
+    # TODO: Github can be 
+    # - $GITHUB_RUN_NUMBER/$job_name.json, and then sort by $GITHUB_RUN_NUMBER
+    #   - this means that the 'raw-vm' task can look for 'cpp-small' directly
+    # - sourcehut could be $JOB_ID/$job_name.json, and then sort by $JOB_ID
+    #   - this is more flattened, but you can still do use list-json which does */*.json
+
+    # Sort by 999 here
+    # travis-ci.oilshell.org/github-jobs/999/foo.json
+
+    prefixes.sort(key = lambda path: int(path.split('/')[-2]))
 
     prefixes = prefixes[:-num_to_keep]
 

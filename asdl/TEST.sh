@@ -23,9 +23,8 @@ unit() {
   run-one-test 'asdl/gc_test' '' asan
   echo
 
-  # use-after-free detected
-  # run-one-test 'asdl/gc_test' '' gcalways
-  # echo
+  run-one-test 'asdl/gc_test' '' asan+gcalways
+  echo
 }
 
 #

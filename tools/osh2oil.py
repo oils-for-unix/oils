@@ -624,7 +624,8 @@ class OilPrinter(object):
             self.f.write('for %s in @ARGV ' % node.iter_names[0])
 
             # note: command_t doesn't have .spids
-            self.cursor.SkipUntil(location.SpanForCommand(node.body))
+            self.cursor.SkipUntil(
+              location.GetSpanId(location.LocForCommand(node.body)))
 
           elif case(for_iter_e.Words):
             iterable = cast(for_iter__Words, UP_iterable)

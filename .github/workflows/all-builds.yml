@@ -22,6 +22,12 @@ on:
   #push:
   #  branches-ignore:
   #    - master
+env:
+  # Only set for PR runs.
+  # https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
+  GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+  GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+  GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 jobs:
   # Runs on raw VM
   #dummy_orig:
@@ -30,7 +36,7 @@ jobs:
   #    REPO_ROOT: ${{ github.workspace }}
   #  steps:
   #    - name: Check out repository code
-  #      uses: actions/checkout@v2
+  #      uses: actions/checkout@v3
 
   #    - name: dummy
   #      run: |
@@ -52,7 +58,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: raw-vm
         run: |
@@ -72,7 +78,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Runs inside container!
       - name: dummy
@@ -93,7 +99,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -114,7 +120,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -135,7 +141,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -156,7 +162,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -177,7 +183,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -198,7 +204,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -219,7 +225,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -240,7 +246,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -261,7 +267,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -282,7 +288,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -303,7 +309,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -324,7 +330,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -344,11 +350,11 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
+    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: maybe-merge
         env:

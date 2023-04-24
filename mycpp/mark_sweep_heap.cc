@@ -47,7 +47,7 @@ int MarkSweepHeap::MaybeCollect() {
   int result = Collect();
   #else
   int result = -1;
-  if (num_live_ > gc_threshold_) {
+  if (num_live() > gc_threshold_) {
     result = Collect();
   }
   #endif
@@ -56,13 +56,40 @@ int MarkSweepHeap::MaybeCollect() {
   return result;
 }
 
+  #if defined(BUMP_SMALL) || defined(BUMP_BIG)
+    #include "mycpp/bump_leak_heap.h"
+
+BumpLeakHeap gBumpLeak;
+  #endif
+
 // Allocate and update stats
-void* MarkSweepHeap::Allocate(size_t num_bytes) {
+// TODO: Make this interface nicer.
+void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
   // log("Allocate %d", num_bytes);
+  #ifndef NO_POOL_ALLOC
+  if (num_bytes <= pool_.kMaxObjSize) {
+    *in_pool = true;
+    return pool_.Allocate(obj_id);
+  }
+  *in_pool = false;
+  #endif
+
+  // These only work with GC off -- OIL_GC_THRESHOLD=[big]
+  #ifdef BUMP_SMALL
+  if (num_bytes <= 32) {
+    return gBumpLeak.Allocate(num_bytes);
+  }
+  #endif
+
+  #ifdef BUMP_BIG
+  if (num_bytes > 32) {
+    return gBumpLeak.Allocate(num_bytes);
+  }
+  #endif
 
   if (to_free_.empty()) {
     // Use higher object IDs
-    obj_id_after_allocate_ = greatest_obj_id_;
+    *obj_id = greatest_obj_id_;
     greatest_obj_id_++;
 
     // This check is ON in release mode
@@ -71,7 +98,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes) {
     ObjHeader* dead = to_free_.back();
     to_free_.pop_back();
 
-    obj_id_after_allocate_ = dead->obj_id;  // reuse the dead object's ID
+    *obj_id = dead->obj_id;  // reuse the dead object's ID
 
     free(dead);
   }
@@ -110,18 +137,27 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
   }
 
   int obj_id = header->obj_id;
-  if (mark_set_.IsMarked(obj_id)) {
-    return;
+  #ifndef NO_POOL_ALLOC
+  if (header->in_pool) {
+    if (pool_.IsMarked(obj_id)) {
+      return;
+    }
+    pool_.Mark(obj_id);
+  } else
+  #endif
+  {
+    if (mark_set_.IsMarked(obj_id)) {
+      return;
+    }
+    mark_set_.Mark(obj_id);
   }
 
   switch (header->heap_tag) {
   case HeapTag::Opaque:  // e.g. strings have no children
-    mark_set_.Mark(obj_id);
     break;
 
   case HeapTag::Scanned:  // these 2 types have children
   case HeapTag::FixedSize:
-    mark_set_.Mark(obj_id);
     gray_stack_.push_back(header);  // Push the header, not the object!
     break;
 
@@ -171,6 +207,10 @@ void MarkSweepHeap::TraceChildren() {
 }
 
 void MarkSweepHeap::Sweep() {
+  #ifndef NO_POOL_ALLOC
+  pool_.Sweep();
+  #endif
+
   int last_live_index = 0;
   int num_objs = live_objs_.size();
   for (int i = 0; i < num_objs; ++i) {
@@ -192,7 +232,7 @@ void MarkSweepHeap::Sweep() {
   live_objs_.resize(last_live_index);  // remove dangling objects
 
   num_collections_++;
-  max_survived_ = std::max(max_survived_, num_live_);
+  max_survived_ = std::max(max_survived_, num_live());
 }
 
 int MarkSweepHeap::Collect() {
@@ -209,11 +249,14 @@ int MarkSweepHeap::Collect() {
   if (gc_verbose_) {
     log("");
     log("%2d. GC with %d roots (%d global) and %d live objects",
-        num_collections_, num_roots + num_globals, num_globals, num_live_);
+        num_collections_, num_roots + num_globals, num_globals, num_live());
   }
 
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
+  #ifndef NO_POOL_ALLOC
+  pool_.PrepareForGc();
+  #endif
 
   // Mark roots.
   // Note: It might be nice to get rid of double pointers
@@ -237,7 +280,7 @@ int MarkSweepHeap::Collect() {
   Sweep();
 
   if (gc_verbose_) {
-    log("    %d live after sweep", num_live_);
+    log("    %d live after sweep", num_live());
   }
 
   // We know how many are live.  If the number of objects is close to the
@@ -246,8 +289,8 @@ int MarkSweepHeap::Collect() {
   // -- being at 99% of the threshold and doing FUTILE mark and sweep.
 
   int water_mark = (gc_threshold_ * 3) / 4;
-  if (num_live_ > water_mark) {
-    gc_threshold_ = num_live_ * 2;
+  if (num_live() > water_mark) {
+    gc_threshold_ = num_live() * 2;
     num_growths_++;
     if (gc_verbose_) {
       log("    exceeded %d live objects; gc_threshold set to %d", water_mark,
@@ -274,60 +317,51 @@ int MarkSweepHeap::Collect() {
   }
   #endif
 
-  return num_live_;  // for unit tests only
+  return num_live();  // for unit tests only
 }
 
 void MarkSweepHeap::PrintStats(int fd) {
-  dprintf(fd, "  num live        = %10d\n", num_live_);
-  // max survived_ can be less than num_live_, because leave off the last GC
-  dprintf(fd, "  max survived    = %10d\n", max_survived_);
+  dprintf(fd, "  num live         = %10d\n", num_live());
+  // max survived_ can be less than num_live(), because leave off the last GC
+  dprintf(fd, "  max survived     = %10d\n", max_survived_);
   dprintf(fd, "\n");
-  dprintf(fd, "  num allocated   = %10d\n", num_allocated_);
-  dprintf(fd, "bytes allocated   = %10" PRId64 "\n", bytes_allocated_);
+
+  #ifndef NO_POOL_ALLOC
+  dprintf(fd, "  num allocated    = %10d\n",
+          num_allocated_ + pool_.num_allocated());
+  dprintf(fd, "  num in heap      = %10d\n", num_allocated_);
+  #else
+  dprintf(fd, "  num allocated    = %10d\n", num_allocated_);
+  #endif
+
+  #ifndef NO_POOL_ALLOC
+  dprintf(fd, "  num in pool      = %10d\n", pool_.num_allocated());
+  dprintf(fd, "bytes allocated    = %10" PRId64 "\n",
+          bytes_allocated_ + pool_.bytes_allocated());
+  #else
+  dprintf(fd, "bytes allocated    = %10" PRId64 "\n", bytes_allocated_);
+  #endif
+
   dprintf(fd, "\n");
-  dprintf(fd, "  num gc points   = %10d\n", num_gc_points_);
-  dprintf(fd, "  num collections = %10d\n", num_collections_);
+  dprintf(fd, "  num gc points    = %10d\n", num_gc_points_);
+  dprintf(fd, "  num collections  = %10d\n", num_collections_);
   dprintf(fd, "\n");
-  dprintf(fd, "   gc threshold   = %10d\n", gc_threshold_);
-  dprintf(fd, "  num growths     = %10d\n", num_growths_);
+  dprintf(fd, "   gc threshold    = %10d\n", gc_threshold_);
+  dprintf(fd, "  num growths      = %10d\n", num_growths_);
   dprintf(fd, "\n");
-  dprintf(fd, "  max gc millis   = %10.1f\n", max_gc_millis_);
-  dprintf(fd, "total gc millis   = %10.1f\n", total_gc_millis_);
+  dprintf(fd, "  max gc millis    = %10.1f\n", max_gc_millis_);
+  dprintf(fd, "total gc millis    = %10.1f\n", total_gc_millis_);
   dprintf(fd, "\n");
-  dprintf(fd, "roots capacity    = %10d\n",
+  dprintf(fd, "roots capacity     = %10d\n",
           static_cast<int>(roots_.capacity()));
-  dprintf(fd, " objs capacity    = %10d\n",
+  dprintf(fd, " objs capacity     = %10d\n",
           static_cast<int>(live_objs_.capacity()));
 }
 
-void MarkSweepHeap::EagerFree() {
-  for (auto obj : to_free_) {
-    free(obj);
-  }
-}
-
 // Cleanup at the end of main() to remain ASAN-safe
-void MarkSweepHeap::DoProcessExit(bool fast_exit) {
-  char* e = getenv("OIL_GC_ON_EXIT");
-
-  if (fast_exit) {
-    // don't collect by default; OIL_GC_ON_EXIT=1 overrides
-    if (e && strcmp(e, "1") == 0) {
-      Collect();
-      EagerFree();
-    }
-  } else {
-    // collect by default; OIL_GC_ON_EXIT=0 overrides
-    if (e && strcmp(e, "0") == 0) {
-      ;
-    } else {
-      Collect();
-      EagerFree();
-    }
-  }
-
+void MarkSweepHeap::MaybePrintStats() {
   int stats_fd = -1;
-  e = getenv("OIL_GC_STATS");
+  char* e = getenv("OIL_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
     stats_fd = STDERR_FILENO;
   } else {
@@ -348,13 +382,40 @@ void MarkSweepHeap::DoProcessExit(bool fast_exit) {
   }
 }
 
+void MarkSweepHeap::FreeEverything() {
+  roots_.clear();
+  global_roots_.clear();
+
+  Collect();
+
+  // Collect() told us what to free()
+  for (auto obj : to_free_) {
+    free(obj);
+  }
+  #ifndef NO_POOL_ALLOC
+  pool_.Free();
+  #endif
+}
+
 void MarkSweepHeap::CleanProcessExit() {
-  DoProcessExit(false);  // not fast_exit
+  char* e = getenv("OIL_GC_ON_EXIT");
+  // collect by default; OIL_GC_ON_EXIT=0 overrides
+  if (e && strcmp(e, "0") == 0) {
+    ;
+  } else {
+    FreeEverything();
+  }
+  MaybePrintStats();
 }
 
 // for the main binary
 void MarkSweepHeap::FastProcessExit() {
-  DoProcessExit(true);
+  char* e = getenv("OIL_GC_ON_EXIT");
+  // don't collect by default; OIL_GC_ON_EXIT=1 overrides
+  if (e && strcmp(e, "1") == 0) {
+    FreeEverything();
+  }
+  MaybePrintStats();
 }
 
 MarkSweepHeap gHeap;

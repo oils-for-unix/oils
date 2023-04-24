@@ -99,6 +99,42 @@ status=0
 ## N-I dash/bash/mksh STDOUT:
 ## END
 
+#### shell doesn't load rcfile/rcdir if --norc is given
+case $SH in dash|mksh) exit ;; esac
+
+$SH -c 'echo A'
+
+cat >$TMP/rcfile <<EOF
+echo rcfile
+EOF
+
+mkdir -p $TMP/rcdir
+cat >$TMP/rcdir/file1 <<EOF
+echo rcdir 1
+EOF
+
+cat >$TMP/rcdir/file2 <<EOF
+echo rcdir 2
+EOF
+
+$SH --norc --rcfile $TMP/rcfile -c 'echo C'
+case $SH in bash) exit ;; esac
+
+$SH --norc --rcfile $TMP/rcfile --rcdir $TMP/rcdir -c 'echo D'
+
+## STDOUT:
+A
+C
+D
+## END
+## OK bash STDOUT:
+A
+C
+## END
+## N-I dash/mksh STDOUT:
+## END
+
+
 #### interactive shell runs PROMPT_COMMAND after each command
 export PS1=''  # OSH prints prompt to stdout
 

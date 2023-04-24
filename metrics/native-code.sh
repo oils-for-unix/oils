@@ -134,7 +134,7 @@ compare-gcc-clang() {
   local -a targets=(
     _bin/{clang,cxx}-dbg/oils-for-unix
     _bin/{clang,cxx}-opt/oils-for-unix.stripped
-    _bin/cxx-{bumpleak,bumproot}/oils-for-unix.stripped
+    _bin/cxx-{opt+bumpleak,opt+bumproot}/oils-for-unix.stripped
     )
   ninja "${targets[@]}"
 
