@@ -133,7 +133,7 @@ def _ParsePullTime(time_p_str):
   return '-'  # Not found
 
 
-RUN_ROW_TEMPLATE = jsontemplate.Template('''\
+RUN_ROW_T = jsontemplate.Template('''\
 <tr class="spacer">
   <td colspan=6></td>
 </tr>
@@ -161,7 +161,9 @@ RUN_ROW_TEMPLATE = jsontemplate.Template('''\
   </td>
 
   <td colspan=1>
-    <a href="{details-url}">Details</a>
+    {.section details-url}
+      <a href="{@}">Details</a>
+    {.end}
   </td>
 
 </tr>
@@ -171,7 +173,7 @@ RUN_ROW_TEMPLATE = jsontemplate.Template('''\
 ''')
 
 
-JOB_ROW_TEMPLATE = jsontemplate.Template('''\
+DETAILS_JOB_ROW_T = jsontemplate.Template('''\
 <tr>
 
   <td>{job_num}</td>
@@ -180,6 +182,33 @@ JOB_ROW_TEMPLATE = jsontemplate.Template('''\
   <td><a href="{job_url}">{start_time_str}</a></td>
   <td>{pull_time_str}</td>
   <td>{run_time_str}</td>
+
+  <td> <!-- status -->
+  {.section passed}
+    <span class="pass">pass</span>
+  {.end}
+
+  {.section failed}
+    <span class="fail">FAIL</span><br/>
+    <span class="fail-detail">
+    {.section one-failure}
+      task <code>{@}</code>
+    {.end}
+
+    {.section multiple-failures}
+      {num-failures} of {num-tasks} tasks
+    {.end}
+    </span>
+  {.end}
+  </td>
+
+</tr>
+''')
+
+INDEX_JOB_ROW_T = jsontemplate.Template('''\
+<tr>
+
+  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
 
   <td> <!-- status -->
   {.section passed}
@@ -278,13 +307,6 @@ def ParseJobs(stdin):
     # Metadata for a "run".  A run is for a single commit, and consists of many
     # jobs.
 
-    github_run = meta.get('GITHUB_RUN_NUMBER')
-    if github_run:
-      meta['details-url'] = '%s/' % github_run
-    else:
-      # sourcehut
-      meta['details-url'] = 'git-%s/' % meta['commit-hash']
-
     meta['git-branch'] = meta.get('GITHUB_REF')  or '?'
 
     # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
@@ -348,10 +370,11 @@ def ByGithubRun(row):
   return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
-INDEX_TOP = jsontemplate.Template('''
+INDEX_TOP_T = jsontemplate.Template('''
   <body class="width50">
     <p id="home-link">
-      <a href="/">travis-ci.oilshell.org</a>
+        <a href="..">Up</a>
+      | <a href="/">travis-ci.oilshell.org</a>
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
@@ -364,7 +387,14 @@ RAW_DATA = '''
     </p>
 '''
 
-TABLE_TOP = '''
+INDEX_BOTTOM = '''\
+    </table>
+
+  </body>
+</html>
+'''
+
+DETAILS_TABLE_TOP = '''
     <table>
       <thead>
         <tr>
@@ -378,12 +408,16 @@ TABLE_TOP = '''
       </thead>
 '''
 
-INDEX_BOTTOM = '''\
-    </table>
-
-  </body>
-</html>
+INDEX_TABLE_TOP = '''
+    <table>
+      <thead>
+        <tr>
+          <td>Passing</td>
+          <td>Failing</td>
+        </tr>
+      </thead>
 '''
+
 
 
 def PrintIndexHtml(title, groups, f=sys.stdout):
@@ -393,19 +427,30 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
       css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP.expand(d), file=f)
+  print(INDEX_TOP_T.expand(d), file=f)
+
   print(RAW_DATA, file=f)
 
-  # TODO: Don't need this table
-  print(TABLE_TOP, file=f)
+  #print(INDEX_TABLE_TOP, file=f)
+  print(DETAILS_TABLE_TOP, file=f)
 
   for key, jobs in groups.iteritems():
     # All jobs have run-level metadata, so just use the first
-    print(RUN_ROW_TEMPLATE.expand(jobs[0]), file=f)
 
-    # TODO: Use a different template that's shorter
+    first_job = dict(jobs[0])  # COPY so we don't affect later code
+
+    github_run = first_job.get('GITHUB_RUN_NUMBER')
+    if github_run:
+      first_job['details-url'] = '%s/' % github_run
+    else:
+      # for sourcehut
+      first_job['details-url'] = 'git-%s/' % first_job['commit-hash']
+
+    print(RUN_ROW_T.expand(first_job), file=f)
+
     for job in jobs:
-      print(JOB_ROW_TEMPLATE.expand(job), file=f)
+      #print(INDEX_JOB_ROW_T.expand(job), file=f)
+      print(DETAILS_JOB_ROW_T.expand(job), file=f)
 
   print(INDEX_BOTTOM, file=f)
 
@@ -418,14 +463,14 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
       css_urls=['../../web/base.css?cache=0', '../../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP.expand(d), file=f)
-  print(TABLE_TOP, file=f)
+  print(INDEX_TOP_T.expand(d), file=f)
 
-  # TODO: no "Details" link
-  print(RUN_ROW_TEMPLATE.expand(jobs[0]), file=f)
+  print(DETAILS_TABLE_TOP, file=f)
+
+  print(RUN_ROW_T.expand(jobs[0]), file=f)
 
   for job in jobs:
-    print(JOB_ROW_TEMPLATE.expand(job), file=f)
+    print(DETAILS_JOB_ROW_T.expand(job), file=f)
 
   print(INDEX_BOTTOM, file=f)
 

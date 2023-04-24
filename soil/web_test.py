@@ -17,7 +17,7 @@ class WebTest(unittest.TestCase):
     print(web._ParsePullTime('real 19.99'))
 
   def testTemplates(self):
-    print(web.INDEX_TOP.expand({'title': 'title & other'}))
+    print(web.INDEX_TOP_T.expand({'title': 'title & other'}))
 
     job = {
         'job_num': '123',
@@ -33,7 +33,7 @@ class WebTest(unittest.TestCase):
 
         'GITHUB_RUN_NUMBER': '1234',
         }
-    print(web.JOB_ROW_TEMPLATE.expand(job))
+    print(web.DETAILS_JOB_ROW_T.expand(job))
 
     jobs = [job]
 
