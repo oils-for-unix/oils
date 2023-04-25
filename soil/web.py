@@ -28,8 +28,6 @@ https://test.oils-for-unix.org/
 
 TODO:
 
-- Get rid of foo.wwz/index.html ?   Or just get rid of LINKS to it
-  - maybe consolidate
 - Fix srht- links -- the .wwz path is wrong
 
 How to test changes to this file:
@@ -138,11 +136,15 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 <tr class="commit-row">
   <td>
-    {.section github-commit-link}
-      <code>
-        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
-      </code>
-    {.end}
+    <code>
+      {.section github-commit-link}
+      <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+
+      {.section sourcehut-commit-link}
+      <a href="https://git.sr.ht/~andyc/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+    </code>
   </td>
 
   <td class="commit-line">
@@ -215,6 +217,10 @@ DETAILS_JOB_ROW_T = jsontemplate.Template('''\
 
 
 def ParseJobs(stdin):
+  """
+  Given the output of list-json, open JSON and corresponding TSV, and yield a
+  list of JSON template rows.
+  """
   for i, line in enumerate(stdin):
     json_path = line.strip()
 
@@ -247,7 +253,7 @@ def ParseJobs(stdin):
           status = int(status)
           elapsed = float(elapsed)
 
-          t['elapsed_str'] = '%.2f' % elapsed
+          t['elapsed_str'] = _MinutesSeconds(elapsed)
 
           all_tasks.append(t)
 
@@ -329,26 +335,36 @@ def ParseJobs(stdin):
       meta['commit-desc'] = meta.get('commit-line', '?')
       commit_hash = meta.get('commit-hash') or '?'
 
-    # TODO: Make a sourcehut link too
-    meta['github-commit-link'] = {
+    commit_link = {
         'commit-hash': commit_hash,
-        'commit-hash-short': commit_hash[-8:],
+        'commit-hash-short': commit_hash[:8],
         }
-
-    # Metadata for "Job"
 
     meta['job-name'] = meta.get('job-name') or '?'
 
+    # Metadata for "Job"
+
     # GITHUB_RUN_NUMBER (project-scoped) is shorter than GITHUB_RUN_ID (global
     # scope)
-
     github_run = meta.get('GITHUB_RUN_NUMBER')
+
     if github_run:
       meta['job_num'] = github_run
       meta['index_run_url'] = '%s/' % github_run
+
+      meta['github-commit-link'] = commit_link
+
+      run_url_prefix = ''
     else:
-      meta['job_num'] = meta.get('JOB_ID') 
+      sourcehut_job_id = meta['JOB_ID'] 
+      meta['job_num'] = sourcehut_job_id
       meta['index_run_url'] = 'git-%s/' % meta['commit-hash']
+
+      meta['sourcehut-commit-link'] = commit_link
+
+      # sourcehut doesn't have RUN ID, so we're in
+      # srht-jobs/git-ab01cd/index.html, and need to find srht-jobs/123/foo.wwz
+      run_url_prefix = '../%s/' % sourcehut_job_id
 
     # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('JOB_URL') or '?'
@@ -357,32 +373,15 @@ def ParseJobs(stdin):
     parts = prefix.split('/')
 
     # Paths relative to github-jobs/1234/
-    meta['run_wwz_path'] = parts[-1] + '.wwz'  # myjob.wwz
-    meta['run_tsv_path'] = parts[-1] + '.tsv'  # myjob.tsv
-    meta['run_json_path'] = parts[-1] + '.json'  # myjob.json
+    meta['run_wwz_path'] = run_url_prefix + parts[-1] + '.wwz'  # myjob.wwz
+    meta['run_tsv_path'] = run_url_prefix + parts[-1] + '.tsv'  # myjob.tsv
+    meta['run_json_path'] = run_url_prefix + parts[-1] + '.json'  # myjob.json
 
     # Relative to github-jobs/
     last_two_parts = parts[-2:]  # ['123', 'myjob']
     meta['index_wwz_path'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
 
     yield meta
-
-
-def ByTaskRunStartTime(row):
-  return int(row.get('task-run-start-time', 0))
-
-def ByCommitDate(row):
-  # Written in the shell script
-  # This is in ISO 8601 format (git log %aI), so we can sort by it.
-  return row.get('commit-date', '?')
-
-def ByCommitHash(row):
-  return row.get('commit-hash', '?')
-
-def ByGithubRun(row):
-  # Written in the shell script
-  # This is in ISO 8601 format (git log %aI), so we can sort by it.
-  return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
 INDEX_TOP_T = jsontemplate.Template('''
@@ -436,11 +435,16 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
 
 <tr class="commit-row">
   <td>
-    {.section github-commit-link}
-      <code>
-        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
-      </code>
-    {.end}
+    <code>
+      {.section github-commit-link}
+      <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+
+      {.section sourcehut-commit-link}
+      <a href="https://git.sr.ht/~andyc/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+    </code>
+
     </td>
   </td>
 
@@ -685,6 +689,23 @@ def GroupJobs(jobs, key_func):
     d[key] = jobs
 
   return d
+
+
+def ByTaskRunStartTime(row):
+  return int(row.get('task-run-start-time', 0))
+
+def ByCommitDate(row):
+  # Written in the shell script
+  # This is in ISO 8601 format (git log %aI), so we can sort by it.
+  return row.get('commit-date', '?')
+
+def ByCommitHash(row):
+  return row.get('commit-hash', '?')
+
+def ByGithubRun(row):
+  # Written in the shell script
+  # This is in ISO 8601 format (git log %aI), so we can sort by it.
+  return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
 def main(argv):
