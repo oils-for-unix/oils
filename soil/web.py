@@ -27,7 +27,13 @@ https://test.oils-for-unix.org/
                             # TODO: and all container images
 
 TODO:
-- Use JSON Template to escape HTML
+
+- Fix srht- links -- the .wwz path is wrong
+- Get rid of foo.wwz/index.html ?   Or just get rid of LINKS to it
+  - maybe consolidate
+- Link to image-layers.wwz from the tasks table
+
+
 - Can we publish spec test numbers in JSON?
 
 - What about HTML generated on the WORKER?
@@ -134,7 +140,9 @@ def _ParsePullTime(time_p_str):
   return '-'  # Not found
 
 
-DETAILS_RUN_ROW_T = jsontemplate.Template('''\
+DETAILS_RUN_T = jsontemplate.Template('''\
+
+<table>
 <tr class="spacer">
   <td colspan=6></td>
 </tr>
@@ -167,6 +175,8 @@ DETAILS_RUN_ROW_T = jsontemplate.Template('''\
 <tr class="spacer">
   <td colspan=6><td/>
 </tr>
+
+</table>
 ''')
 
 
@@ -386,8 +396,6 @@ INDEX_BOTTOM = '''\
 '''
 
 DETAILS_TABLE_TOP = '''
-
-<table>
   <thead>
     <tr>
       <td>Job #</td>
@@ -457,18 +465,21 @@ INDEX_JOBS_T = jsontemplate.Template('''\
   <td>
   </td>
   <td colspan=2>
-    <a href="{details-url}">All Task Details</a>
+    <a href="{details-url}">All Jobs and Tasks</a>
   </td>
 </tr>
 
 {.section jobs-passed}
   <tr>
-    <td>
-      Passed:
+    <td class="pass">
+      Passed
     </td>
     <td colspan=2>
       {.repeated section @}
-        <code><a href="{index_wwz_path}/">{job-name}</a></code>
+        <code class="pass">{job-name}</code>
+        <!--
+        <span class="pass"> &#x2713; </span>
+        -->
       {.alternates with}
         &nbsp; &nbsp;
       {.end}
@@ -479,14 +490,27 @@ INDEX_JOBS_T = jsontemplate.Template('''\
 {.section jobs-failed}
   <tr>
     <td class="fail">
-      Failed:
+      Failed
     </td>
     <td colspan=2>
       {.repeated section @}
+        <span class="fail"> &#x2717; </span>
         <code><a href="{index_wwz_path}/">{job-name}</a></code>
-        <span class="fail"> &#x2715; </span>
+
+        <span class="fail-detail">
+        {.section failed}
+          {.section one-failure}
+            - task <code>{@}</code>
+          {.end}
+
+          {.section multiple-failures}
+            - {num-failures} of {num-tasks} tasks
+          {.end}
+        {.end}
+        </span>
+
       {.alternates with}
-        &nbsp; &nbsp;
+        <br />
       {.end}
     </td>
   </tr>
@@ -631,9 +655,10 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
   d = {'title': title}
   print(INDEX_TOP_T.expand(d), file=f)
 
-  print(DETAILS_TABLE_TOP, file=f)
+  print(DETAILS_RUN_T.expand(jobs[0]), file=f)
 
-  print(DETAILS_RUN_ROW_T.expand(jobs[0]), file=f)
+  print(' <table>', file=f)
+  print(DETAILS_TABLE_TOP, file=f)
 
   for job in jobs:
     print(DETAILS_JOB_ROW_T.expand(job), file=f)
