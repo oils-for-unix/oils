@@ -133,23 +133,19 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 <table>
 <tr class="spacer">
-  <td colspan=5></td>
+  <td></td>
 </tr>
 
 <tr class="commit-row">
-  <td colspan=2>
+  <td>
     {.section github-commit-link}
       <code>
         <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
       </code>
     {.end}
-    {.section git-branch}
-      <br/>
-      <code>{@}</code>
-    {.end}
   </td>
 
-  <td class="commit-line" colspan=4>
+  <td class="commit-line">
     {.section github-pr}
       <i>
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
@@ -160,11 +156,16 @@ DETAILS_RUN_T = jsontemplate.Template('''\
     {.section commit-desc}
       {@|html}
     {.end}
+
+    {.section git-branch}
+      <br/>
+      <div style="text-align: right; font-family: monospace">{@}</div>
+    {.end}
   </td>
 
 </tr>
 <tr class="spacer">
-  <td colspan=5><td/>
+  <td><td/>
 </tr>
 
 </table>
@@ -307,7 +308,7 @@ def ParseJobs(stdin):
     # Metadata for a "run".  A run is for a single commit, and consists of many
     # jobs.
 
-    meta['git-branch'] = meta.get('GITHUB_REF')  or '?'
+    meta['git-branch'] = meta.get('GITHUB_REF')
 
     # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
     pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
@@ -347,7 +348,7 @@ def ParseJobs(stdin):
       meta['index_run_url'] = '%s/' % github_run
     else:
       meta['job_num'] = meta.get('JOB_ID') 
-      meta['index_run_url'] = 'git-%s/' % first_job['commit-hash']
+      meta['index_run_url'] = 'git-%s/' % meta['commit-hash']
 
     # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('JOB_URL') or '?'
@@ -440,10 +441,6 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
         <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
       </code>
     {.end}
-    {.section git-branch}
-      <br/>
-      <code>{@}</code>
-    {.end}
     </td>
   </td>
 
@@ -456,6 +453,11 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
     {.end}
     {.section commit-desc}
       {@|html}
+    {.end}
+
+    {.section git-branch}
+      <br/>
+      <div style="text-align: right; font-family: monospace">{@}</div>
     {.end}
   </td>
 
