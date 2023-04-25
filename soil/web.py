@@ -1,34 +1,31 @@
 #!/usr/bin/env python2
 """
-soil/web.py - Dashboard using "Event Sourcing" Paradigm
+soil/web.py - Dashboard that uses the "Event Sourcing" Paradigm
 
-Given this state:
+Given state like this:
 
 https://test.oils-for-unix.org/
   github-jobs/
     1234/  # $GITHUB_RUN_NUMBER
       cpp-small.tsv    # benchmarks/time.py output.  Success/failure for each task.
       cpp-small.json   # metadata when job is DONE
-      cpp-small.state  # for more transient events
 
       (cpp-small.wwz is linked to, but not part of the state.)
+
+      (cpp-small.state  # maybe for more transient events)
 
 This script generates:
 
 https://test.oils-for-unix.org/
   github-jobs/
-    tmp-$$.index.html  # jobs for all runs all runs
+    tmp-$$.index.html  # jobs for all runs
     1234/
-      tmp-$$.index.html  # jobs and task for a given run
-      tmp-$$.remove.txt  # TODO: function of dir listing (JSON only)
+      tmp-$$.index.html  # jobs and tasks for a given run
+      tmp-$$.remove.txt  # TODO: consolidate 'cleanup', to make it faster
 
     # For sourcehut
     git-0101abab/
       tmp-$$.index.html
-
-TODO:
-
-- Fix srht- links -- the .wwz path is wrong
 
 How to test changes to this file:
 
@@ -174,45 +171,62 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 ''')
 
 
-DETAILS_JOB_ROW_T = jsontemplate.Template('''\
-<tr>
+DETAILS_TABLE_T = jsontemplate.Template('''\
+<table class="col1-right col3-right col4-right col5-right col6-right">
 
-  <td>{job_num}</td>
+  <thead>
+    <tr>
+      <td>ID</td>
+      <td>Job Name</td>
+      <td>Start Time</td>
+      <td>Pull Time</td>
+      <td>Run Time</td>
+      <td>Status</td>
+    </tr>
+  </thead>
 
-  <!-- internal link -->
-  <td> <code><a href="#job-{job-name}">{job-name}</a></code> </td>
+  {.repeated section jobs}
+    <tr>
 
-  <td><a href="{job_url}">{start_time_str}</a></td>
-  <td>
-    {.section pull_time_str}
-      <a href="{run_wwz_path}/_tmp/soil/image.html">{@}</a>
-    {.or}
-      -
-    {.end}
-  </td>
+      <td>{job_num}</td>
 
-  <td>{run_time_str}</td>
+      <!-- internal link -->
+      <td> <code><a href="#job-{job-name}">{job-name}</a></code> </td>
 
-  <td> <!-- status -->
-  {.section passed}
-    <span class="pass">pass</span>
+      <td><a href="{job_url}">{start_time_str}</a></td>
+      <td>
+        {.section pull_time_str}
+          <a href="{run_wwz_path}/_tmp/soil/image.html">{@}</a>
+        {.or}
+          -
+        {.end}
+      </td>
+
+      <td>{run_time_str}</td>
+
+      <td> <!-- status -->
+      {.section passed}
+        <span class="pass">pass</span>
+      {.end}
+
+      {.section failed}
+        <span class="fail">FAIL</span><br/>
+        <span class="fail-detail">
+        {.section one-failure}
+          task <code>{@}</code>
+        {.end}
+
+        {.section multiple-failures}
+          {num-failures} of {num-tasks} tasks
+        {.end}
+        </span>
+      {.end}
+      </td>
+
+    </tr>
   {.end}
 
-  {.section failed}
-    <span class="fail">FAIL</span><br/>
-    <span class="fail-detail">
-    {.section one-failure}
-      task <code>{@}</code>
-    {.end}
-
-    {.section multiple-failures}
-      {num-failures} of {num-tasks} tasks
-    {.end}
-    </span>
-  {.end}
-  </td>
-
-</tr>
+</table>
 ''')
 
 
@@ -384,7 +398,7 @@ def ParseJobs(stdin):
     yield meta
 
 
-INDEX_TOP_T = jsontemplate.Template('''
+HTML_BODY_TOP_T = jsontemplate.Template('''
   <body class="width50">
     <p id="home-link">
         <a href="..">Up</a>
@@ -395,30 +409,12 @@ INDEX_TOP_T = jsontemplate.Template('''
     <h1>{title|html}</h1>
 ''')
 
-INDEX_BOTTOM = '''\
+HTML_BODY_BOTTOM = '''\
   </body>
 </html>
 '''
 
-DETAILS_TABLE_TOP = '''
-  <thead>
-    <tr>
-      <td>ID</td>
-      <td>Job Name</td>
-      <td>Start Time</td>
-      <td>Pull Time</td>
-      <td>Run Time</td>
-      <td>Status</td>
-    </tr>
-  </thead>
-'''
-
-INDEX_TABLE_TOP = '''
-
-<style>
-  td { text-align: left; }
-</style>
-
+INDEX_HEADER = '''\
 <table>
   <thead>
     <tr>
@@ -540,9 +536,9 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
       css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP_T.expand(d), file=f)
+  print(HTML_BODY_TOP_T.expand(d), file=f)
 
-  print(INDEX_TABLE_TOP, file=f)
+  print(INDEX_HEADER, file=f)
 
   for key, jobs in groups.iteritems():
     # All jobs have run-level metadata, so just use the first
@@ -564,8 +560,7 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
     print(INDEX_JOBS_T.expand(summary), file=f)
 
   print(' </table>', file=f)
-
-  print(INDEX_BOTTOM, file=f)
+  print(HTML_BODY_BOTTOM, file=f)
 
 
 TASK_TABLE_T = jsontemplate.Template('''\
@@ -605,9 +600,9 @@ TASK_TABLE_T = jsontemplate.Template('''\
 
 <tr style="font-weight: bold">
   <td>Task</td>
+  <td>Results</td>
   <td>Elapsed</td>
   <td>Status</td>
-  <td>Results</td>
 </tr>
 
   {.repeated section tasks}
@@ -615,6 +610,13 @@ TASK_TABLE_T = jsontemplate.Template('''\
     <td>
       <a href="{run_wwz_path}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
        <code>{script_name} {func}</code>
+    </td>
+
+    <td>
+      {.section results_url}
+      <a href="{run_wwz_path}/{@}">Results</a>
+      {.or}
+      {.end}
     </td>
 
     <td>{elapsed_str}</td>
@@ -625,13 +627,6 @@ TASK_TABLE_T = jsontemplate.Template('''\
     {.section failed}
       <td class="fail">status: {status}</td>
     {.end}
-
-    <td>
-      {.section results_url}
-      <a href="{run_wwz_path}/{@}">Results</a>
-      {.or}
-      {.end}
-    </td>
 
   </tr>
   {.end}
@@ -655,22 +650,16 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
       css_urls=['../../web/base.css?cache=0', '../../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP_T.expand(d), file=f)
+  print(HTML_BODY_TOP_T.expand(d), file=f)
 
   print(DETAILS_RUN_T.expand(jobs[0]), file=f)
 
-  print(' <table class="col1-right col3-right col4-right col5-right col6-right">', file=f)
+  d2 = {'jobs': jobs}
+  print(DETAILS_TABLE_T.expand(d2), file=f)
 
-  print(DETAILS_TABLE_TOP, file=f)
+  print(TASK_TABLE_T.expand(d2), file=f)
 
-  for job in jobs:
-    print(DETAILS_JOB_ROW_T.expand(job), file=f)
-
-  print(' </table>', file=f)
-
-  print(TASK_TABLE_T.expand({'jobs': jobs}), file=f)
-
-  print(INDEX_BOTTOM, file=f)
+  print(HTML_BODY_BOTTOM, file=f)
 
 
 def GroupJobs(jobs, key_func):
