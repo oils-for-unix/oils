@@ -206,7 +206,11 @@ def InitCommandEvaluator(
       builtin_i.echo: builtin_pure.Echo(exec_opts),
       builtin_i.shift: builtin_assign.Shift(mem),
 
-      builtin_i.history: builtin_lib.History(readline, mylib.Stdout()),
+      builtin_i.history: builtin_lib.History(
+        readline,
+        "_tmp/builtin_test_history.txt",
+        mylib.Stdout(),
+      ),
 
       builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_i.compadjust: builtin_comp.CompAdjust(mem),

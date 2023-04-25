@@ -35,10 +35,13 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline, f):
-    # type: (Optional[Readline], mylib.Writer) -> None
+  def __init__(self, readline, history_filename, f):
+    # type: (Optional[Readline], str, mylib.Writer) -> None
     self.readline = readline
     self.f = f  # this hook is for unit testing only
+
+    # TODO: we should be reading this from $HISTFILE (like bash) and not
+    self.history_filename = history_filename
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -55,6 +58,10 @@ class History(vm._Builtin):
     # Clear all history
     if arg.c:
       readline.clear_history()
+      return 0
+
+    if arg.a:
+      readline.write_history_file(self.history_filename)
       return 0
 
     # Delete history entry by id number

@@ -17,17 +17,24 @@ from osh import builtin_lib  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
+  TEST_PATH = '_tmp/builtin_test_history.txt'
+
+
+  def _readHistFile(self):
+     # type: (self) -> str
+     with open(BuiltinTest.TEST_PATH, 'r') as hist_file:
+        return hist_file.read()
+
 
   def testHistoryBuiltin(self):
-     test_path = '_tmp/builtin_test_history.txt'
-     with open(test_path, 'w') as f:
-       f.write("""
+     with open(BuiltinTest.TEST_PATH, 'w') as f:
+       f.write("""\
 echo hello
 ls one/
 ls two/
 echo bye
 """)
-     readline.read_history_file(test_path)
+     readline.read_history_file(BuiltinTest.TEST_PATH)
 
      # Show all
      f = cStringIO.StringIO()
@@ -47,14 +54,13 @@ echo bye
     3  ls two/
     4  echo bye
 """)
-
     
      # Delete single history item.
      # This functionlity is *silent*
-     # so call history again after 
+     # so call history again after
      # this to feed the test assertion
     
-     _TestHistory(['history', '-d', '4' ])
+     _TestHistory(['history', '-d', '4'])
 
      # Call history
      out = _TestHistory(['history'])
@@ -66,10 +72,31 @@ echo bye
     3  ls two/
 """)
 
+     # Append current history to history file.
+     # This functionality is *silent*, so we
+     # need to read the history file to test
+     # the assertion.
+
+     # No change to history file before `history -a`
+     self.assertEqual(self._readHistFile(), """\
+echo hello
+ls one/
+ls two/
+echo bye
+""")
+
+     _TestHistory(['history', '-a'])
+
+     # After history -a, the history file will have changed
+     self.assertEqual(self._readHistFile(), """\
+echo hello
+ls one/
+ls two/
+""")
 
      # Clear history
      # This functionlity is *silent*
-     # so call history again after 
+     # so call history again after
      # this to feed the test assertion
 
      _TestHistory(['history', '-c'])
@@ -83,7 +110,7 @@ echo bye
 
 def _TestHistory(argv):
    f = cStringIO.StringIO()
-   b = builtin_lib.History(readline, f)
+   b = builtin_lib.History(readline, BuiltinTest.TEST_PATH, f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
    b.Run(cmd_val)
    return f.getvalue()
