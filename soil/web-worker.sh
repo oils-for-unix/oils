@@ -141,10 +141,10 @@ EOF
   cat <<EOF
   <li>
     <a href="_tmp/soil/INDEX.tsv">_tmp/soil/INDEX.tsv</a>, also copied to
-    <a href="$job_id.tsv">$job_id.tsv</a>.
+    <a href="../$job_id.tsv">../$job_id.tsv</a>.
   </li>
   <li>
-    <a href="$job_id.json">$job_id.json</a>
+    <a href="../$job_id.json">../$job_id.json</a>
   </li>
 EOF
 

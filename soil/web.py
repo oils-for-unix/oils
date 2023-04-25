@@ -133,17 +133,19 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 <table>
 <tr class="spacer">
-  <td colspan=6></td>
+  <td colspan=5></td>
 </tr>
 
 <tr class="commit-row">
   <td colspan=2>
-    <code>{git-branch}</code>
-    &nbsp;
     {.section github-commit-link}
       <code>
         <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
       </code>
+    {.end}
+    {.section git-branch}
+      <br/>
+      <code>{@}</code>
     {.end}
   </td>
 
@@ -162,7 +164,7 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 </tr>
 <tr class="spacer">
-  <td colspan=6><td/>
+  <td colspan=5><td/>
 </tr>
 
 </table>
@@ -420,7 +422,6 @@ INDEX_TABLE_TOP = '''
 <table>
   <thead>
     <tr>
-      <td colspan=1> Branch </td>
       <td colspan=1> Commit </td>
       <td colspan=1> Description </td>
     </tr>
@@ -429,19 +430,21 @@ INDEX_TABLE_TOP = '''
 
 INDEX_RUN_ROW_T = jsontemplate.Template('''\
 <tr class="spacer">
-  <td colspan=3></td>
+  <td colspan=2></td>
 </tr>
 
 <tr class="commit-row">
-  <td>
-    <code>{git-branch}</code>
-  </td>
   <td>
     {.section github-commit-link}
       <code>
         <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
       </code>
     {.end}
+    {.section git-branch}
+      <br/>
+      <code>{@}</code>
+    {.end}
+    </td>
   </td>
 
   <td class="commit-line">
@@ -458,7 +461,7 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
 
 </tr>
 <tr class="spacer">
-  <td colspan=3><td/>
+  <td colspan=2><td/>
 </tr>
 ''')
 
@@ -466,7 +469,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
 <tr>
   <td>
   </td>
-  <td colspan=2>
+  <td>
     <a href="{index_run_url}">All Jobs and Tasks</a>
   </td>
 </tr>
@@ -476,7 +479,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
     <td class="pass">
       Passed
     </td>
-    <td colspan=2>
+    <td>
       {.repeated section @}
         <code class="pass">{job-name}</code>
         <!--
@@ -494,7 +497,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
     <td class="fail">
       Failed
     </td>
-    <td colspan=2>
+    <td>
       {.repeated section @}
         <span class="fail"> &#x2717; </span>
         <code><a href="{index_run_url}#job-{job-name}">{job-name}</a></code>
@@ -598,7 +601,7 @@ TASK_TABLE_T = jsontemplate.Template('''\
   <td>Task</td>
   <td>Elapsed</td>
   <td>Status</td>
-  <td>Details</td>
+  <td>Results</td>
 </tr>
 
   {.repeated section tasks}
@@ -621,7 +624,6 @@ TASK_TABLE_T = jsontemplate.Template('''\
       {.section results_url}
       <a href="{run_wwz_path}/{@}">Results</a>
       {.or}
-        -
       {.end}
     </td>
 
