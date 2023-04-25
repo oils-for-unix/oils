@@ -134,7 +134,7 @@ def _ParsePullTime(time_p_str):
   return '-'  # Not found
 
 
-RUN_ROW_T = jsontemplate.Template('''\
+DETAILS_RUN_ROW_T = jsontemplate.Template('''\
 <tr class="spacer">
   <td colspan=6></td>
 </tr>
@@ -150,20 +150,16 @@ RUN_ROW_T = jsontemplate.Template('''\
     {.end}
   </td>
 
-  <td class="commit-line" colspan=3>
+  <td class="commit-line" colspan=4>
     {.section github-pr}
+      <i>
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
       from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
       updated
+      </i>
     {.end}
     {.section commit-desc}
-      <code>{@|html}</code>
-    {.end}
-  </td>
-
-  <td colspan=1>
-    {.section details-url}
-      <a href="{@}">Details</a>
+      {@|html}
     {.end}
   </td>
 
@@ -178,38 +174,13 @@ DETAILS_JOB_ROW_T = jsontemplate.Template('''\
 <tr>
 
   <td>{job_num}</td>
-  <td> <code><a href="{index_wwz_path}/">{job-name}</a></code> </td>
+
+  <!-- internal link -->
+  <td> <code><a href="#job-{job-name}">{job-name}</a></code> </td>
 
   <td><a href="{job_url}">{start_time_str}</a></td>
   <td>{pull_time_str}</td>
   <td>{run_time_str}</td>
-
-  <td> <!-- status -->
-  {.section passed}
-    <span class="pass">pass</span>
-  {.end}
-
-  {.section failed}
-    <span class="fail">FAIL</span><br/>
-    <span class="fail-detail">
-    {.section one-failure}
-      task <code>{@}</code>
-    {.end}
-
-    {.section multiple-failures}
-      {num-failures} of {num-tasks} tasks
-    {.end}
-    </span>
-  {.end}
-  </td>
-
-</tr>
-''')
-
-INDEX_JOB_ROW_T = jsontemplate.Template('''\
-<tr>
-
-  <td> <code><a href="{index_wwz_path}/">{job-name}</a></code> </td>
 
   <td> <!-- status -->
   {.section passed}
@@ -429,15 +400,102 @@ DETAILS_TABLE_TOP = '''
 '''
 
 INDEX_TABLE_TOP = '''
+
+<style>
+  td { text-align: left; }
+</style>
+
     <table>
       <thead>
         <tr>
-          <td>Passing</td>
-          <td>Failing</td>
+          <td colspan=1> Branch </td>
+          <td colspan=1> Commit </td>
+          <td colspan=1> Description </td>
         </tr>
       </thead>
 '''
 
+INDEX_RUN_ROW_T = jsontemplate.Template('''\
+<tr class="spacer">
+  <td colspan=3></td>
+</tr>
+
+<tr class="commit-row">
+  <td>
+    <code>{git-branch}</code>
+  </td>
+  <td>
+    {.section github-commit-link}
+      <code>
+        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      </code>
+    {.end}
+  </td>
+
+  <td class="commit-line">
+    {.section github-pr}
+      <i>
+      PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
+      from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
+      updated
+      </i>
+    {.end}
+    {.section commit-desc}
+      {@|html}
+    {.end}
+  </td>
+
+</tr>
+<tr class="spacer">
+  <td colspan=3><td/>
+</tr>
+''')
+
+INDEX_JOBS_T = jsontemplate.Template('''\
+<tr>
+  <td>
+  </td>
+  <td colspan=2>
+    <a href="{details-url}">All Task Details</a>
+  </td>
+</tr>
+
+{.section jobs-passed}
+  <tr>
+    <td>
+      Passed:
+    </td>
+    <td colspan=2>
+      {.repeated section @}
+        <code><a href="{index_wwz_path}/">{job-name}</a></code>
+      {.alternates with}
+        &nbsp; &nbsp;
+      {.end}
+    </td>
+  </tr>
+{.end}
+
+{.section jobs-failed}
+  <tr>
+    <td class="fail">
+      Failed:
+    </td>
+    <td colspan=2>
+      {.repeated section @}
+        <code><a href="{index_wwz_path}/">{job-name}</a></code>
+        <span class="fail"> &#x2715; </span>
+      {.alternates with}
+        &nbsp; &nbsp;
+      {.end}
+    </td>
+  </tr>
+{.end}
+
+<tr class="spacer">
+  <td colspan=3> &nbsp; </td>
+</tr>
+
+''')
 
 def PrintIndexHtml(title, groups, f=sys.stdout):
   # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
@@ -450,26 +508,34 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
 
   print(RAW_DATA, file=f)
 
-  #print(INDEX_TABLE_TOP, file=f)
-  print(DETAILS_TABLE_TOP, file=f)
+  print(INDEX_TABLE_TOP, file=f)
 
   for key, jobs in groups.iteritems():
     # All jobs have run-level metadata, so just use the first
 
-    first_job = dict(jobs[0])  # COPY so we don't affect later code
+    print(INDEX_RUN_ROW_T.expand(jobs[0]), file=f)
 
+    first_job = jobs[0]
     github_run = first_job.get('GITHUB_RUN_NUMBER')
     if github_run:
-      first_job['details-url'] = '%s/' % github_run
+      details_url = '%s/' % github_run
     else:
       # for sourcehut
-      first_job['details-url'] = 'git-%s/' % first_job['commit-hash']
+      details_url = 'git-%s/' % first_job['commit-hash']
 
-    print(RUN_ROW_T.expand(first_job), file=f)
+    summary = {
+        'jobs-passed': [],
+        'jobs-failed': [],
+        'details-url': details_url,
+        }
 
     for job in jobs:
-      #print(INDEX_JOB_ROW_T.expand(job), file=f)
-      print(DETAILS_JOB_ROW_T.expand(job), file=f)
+      if job.get('passed'):
+        summary['jobs-passed'].append(job)
+      else:
+        summary['jobs-failed'].append(job)
+
+    print(INDEX_JOBS_T.expand(summary), file=f)
 
   print(' </table>', file=f)
 
@@ -483,6 +549,12 @@ TASK_TABLE_T = jsontemplate.Template('''\
 <table>
 
 {.repeated section jobs}
+
+<tr> <!-- link here -->
+  <td colspan=4>
+    <a name="job-{job-name}"></a>
+  </td>
+</tr>
 
 <tr>
   <td colspan=4 style="text-align: left; background-color: #EEE; font-weight: bold">
@@ -500,7 +572,7 @@ TASK_TABLE_T = jsontemplate.Template('''\
   {.repeated section tasks}
   <tr>
     <td>
-      <a href="{run_wwz_path}/_tmp/soil/logs/$task.txt">{name}</a> <br/>
+      <a href="{run_wwz_path}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
        <code>{script_name} {func}</code>
     </td>
 
@@ -510,7 +582,7 @@ TASK_TABLE_T = jsontemplate.Template('''\
       <td>{status}</td>
     {.end}
     {.section failed}
-      <td class="fail">status: status</td>
+      <td class="fail">status: {status}</td>
     {.end}
 
     <td>
@@ -524,8 +596,8 @@ TASK_TABLE_T = jsontemplate.Template('''\
   </tr>
   {.end}
 
-<tr> <!-- spacer -->
-  <td colspan=4>&nbsp;</td>
+<tr class="spacer">
+  <td colspan=4> &nbsp; </td>
 </tr>
 
 {.end}
@@ -551,7 +623,7 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
 
   print(DETAILS_TABLE_TOP, file=f)
 
-  print(RUN_ROW_T.expand(jobs[0]), file=f)
+  print(DETAILS_RUN_ROW_T.expand(jobs[0]), file=f)
 
   for job in jobs:
     print(DETAILS_JOB_ROW_T.expand(job), file=f)
