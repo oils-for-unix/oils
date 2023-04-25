@@ -1120,7 +1120,7 @@ class ctx_Call(object):
 
   def __init__(self, mem, mutable_opts, proc, argv):
     # type: (Mem, MutableOpts, Proc, List[str]) -> None
-    mem.PushCall(proc.name, proc.name_spid, argv)
+    mem.PushCall(proc.name, proc.name_loc, argv)
     mutable_opts.PushDynamicScope(proc.dynamic_scope)
     # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
     # 'if p' should be allowed.
@@ -1441,13 +1441,14 @@ class Mem(object):
   # Call Stack
   #
 
-  def PushCall(self, func_name, def_spid, argv):
-    # type: (str, int, List[str]) -> None
+  def PushCall(self, func_name, def_loc, argv):
+    # type: (str, loc_t, List[str]) -> None
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
     frame = NewDict()  # type: Dict[str, cell]
     self.var_stack.append(frame)
 
+    def_spid = location.GetSpanId(def_loc)
     token = self.arena.GetToken(def_spid)
     source_str = ui.GetLineSourceString(self.arena, token.line)
 
