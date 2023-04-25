@@ -13,7 +13,6 @@ from soil import web  # module under test
 class WebTest(unittest.TestCase):
 
   def testParse(self):
-    print(web._ParsePullTime(None))
     print(web._ParsePullTime('real 19.99'))
 
   def testTemplates(self):
@@ -23,7 +22,9 @@ class WebTest(unittest.TestCase):
         'job_num': '123',
         'job_url': 'https://yo',
         'git-branch': 'soil-staging',
-        'index_wwz_path': '123/dev-minimal.wwz',
+        'run_wwz_path': 'dev-minimal.wwz',
+        'index_run_url': '123/',
+
         'job-name': 'dev-minimal',
         'start_time_str': '2:22',
         'pull_time_str': '1:00',

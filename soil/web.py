@@ -342,10 +342,10 @@ def ParseJobs(stdin):
     github_run = meta.get('GITHUB_RUN_NUMBER')
     if github_run:
       meta['job_num'] = github_run
-      meta['run_index_url'] = '%s/' % github_run
+      meta['index_run_url'] = '%s/' % github_run
     else:
       meta['job_num'] = meta.get('JOB_ID') 
-      meta['run_index_url'] = 'git-%s/' % first_job['commit-hash']
+      meta['index_run_url'] = 'git-%s/' % first_job['commit-hash']
 
     # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('JOB_URL') or '?'
@@ -353,15 +353,14 @@ def ParseJobs(stdin):
     prefix, _ = os.path.splitext(json_path)  # x/y/123/myjob
     parts = prefix.split('/')
 
+    # Paths relative to github-jobs/1234/
     meta['run_wwz_path'] = parts[-1] + '.wwz'  # myjob.wwz
     meta['run_tsv_path'] = parts[-1] + '.tsv'  # myjob.tsv
     meta['run_json_path'] = parts[-1] + '.json'  # myjob.json
 
-    # Two relative paths
+    # Relative to github-jobs/
     last_two_parts = parts[-2:]  # ['123', 'myjob']
     meta['index_wwz_path'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
-
-    meta['index_run_url'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
 
     yield meta
 
@@ -468,7 +467,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
   <td>
   </td>
   <td colspan=2>
-    <a href="{details-url}">All Jobs and Tasks</a>
+    <a href="{index_run_url}">All Jobs and Tasks</a>
   </td>
 </tr>
 
@@ -498,7 +497,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
     <td colspan=2>
       {.repeated section @}
         <span class="fail"> &#x2717; </span>
-        <code><a href="{run_index_url}#job-{job-name}">{job-name}</a></code>
+        <code><a href="{index_run_url}#job-{job-name}">{job-name}</a></code>
 
         <span class="fail-detail">
         {.section failed}
@@ -544,7 +543,7 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
     summary = {
         'jobs-passed': [],
         'jobs-failed': [],
-        'details-url': jobs[0]['run_index_url'],
+        'index_run_url': jobs[0]['index_run_url'],
         }
 
     for job in jobs:
@@ -575,16 +574,19 @@ TASK_TABLE_T = jsontemplate.Template('''\
   </td>
 </tr>
 
-<tr style="text-align: left; background-color: #EEE; font-weight: bold">
-  <td>
-    {job-name}
-  </td>
+<tr style="background-color: #EEE">
   <td colspan=3>
+    <b>{job-name}</b>
+    &nbsp;
+    &nbsp;
+    &nbsp;
     <a href="{run_wwz_path}/">wwz</a>
     &nbsp;
     <a href="{run_tsv_path}">TSV</a>
     &nbsp;
     <a href="{run_json_path}">JSON</a>
+  <td>
+    <a href="">Up</a>
   </td>
 </tr>
 
