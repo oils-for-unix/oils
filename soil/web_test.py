@@ -23,7 +23,7 @@ class WebTest(unittest.TestCase):
         'job_num': '123',
         'job_url': 'https://yo',
         'git-branch': 'soil-staging',
-        'wwz_path': '123/dev-minimal.wwz',
+        'index_wwz_path': '123/dev-minimal.wwz',
         'job-name': 'dev-minimal',
         'start_time_str': '2:22',
         'pull_time_str': '1:00',

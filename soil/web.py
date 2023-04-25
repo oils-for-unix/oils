@@ -386,17 +386,18 @@ INDEX_BOTTOM = '''\
 '''
 
 DETAILS_TABLE_TOP = '''
-    <table>
-      <thead>
-        <tr>
-          <td>Job #</td>
-          <td>Job Name</td>
-          <td>Start Time</td>
-          <td>Pull Time</td>
-          <td>Run Time</td>
-          <td>Status</td>
-        </tr>
-      </thead>
+
+<table>
+  <thead>
+    <tr>
+      <td>Job #</td>
+      <td>Job Name</td>
+      <td>Start Time</td>
+      <td>Pull Time</td>
+      <td>Run Time</td>
+      <td>Status</td>
+    </tr>
+  </thead>
 '''
 
 INDEX_TABLE_TOP = '''
@@ -405,14 +406,14 @@ INDEX_TABLE_TOP = '''
   td { text-align: left; }
 </style>
 
-    <table>
-      <thead>
-        <tr>
-          <td colspan=1> Branch </td>
-          <td colspan=1> Commit </td>
-          <td colspan=1> Description </td>
-        </tr>
-      </thead>
+<table>
+  <thead>
+    <tr>
+      <td colspan=1> Branch </td>
+      <td colspan=1> Commit </td>
+      <td colspan=1> Description </td>
+    </tr>
+  </thead>
 '''
 
 INDEX_RUN_ROW_T = jsontemplate.Template('''\
@@ -546,7 +547,16 @@ TASK_TABLE_T = jsontemplate.Template('''\
 
 <h2>All Tasks</h2>
 
-<table>
+<!-- elapsed and status -->
+
+<style>
+#tasks td:nth-child(2), td:nth-child(3) {
+  text-align: right;
+}
+</style>
+
+
+<table id="tasks">
 
 {.repeated section jobs}
 
@@ -560,6 +570,10 @@ TASK_TABLE_T = jsontemplate.Template('''\
   <td colspan=4 style="text-align: left; background-color: #EEE; font-weight: bold">
     {job-name}
   </td>
+</tr>
+
+<tr class="spacer">
+  <td colspan=4> &nbsp; </td>
 </tr>
 
 <tr style="font-weight: bold">
@@ -604,10 +618,6 @@ TASK_TABLE_T = jsontemplate.Template('''\
 
 </table>
 
-&nbsp; &nbsp;
-
-<hr/>
-
 ''')
 
 
@@ -631,7 +641,6 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
   print(' </table>', file=f)
 
   print(TASK_TABLE_T.expand({'jobs': jobs}), file=f)
-
 
   print(INDEX_BOTTOM, file=f)
 
