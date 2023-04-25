@@ -16,7 +16,7 @@ class WebTest(unittest.TestCase):
     print(web._ParsePullTime('real 19.99'))
 
   def testTemplates(self):
-    print(web.INDEX_TOP_T.expand({'title': 'title & other'}))
+    print(web.HTML_BODY_TOP_T.expand({'title': 'title & other'}))
 
     job = {
         'job_num': '123',
@@ -33,8 +33,11 @@ class WebTest(unittest.TestCase):
         'details-url': '1234/',
 
         'GITHUB_RUN_NUMBER': '1234',
+
+        'run_tsv_path': 'tsv',
+        'run_json_path': 'json',
+        'run_wwz_path': 'wwz',
         }
-    print(web.DETAILS_JOB_ROW_T.expand(job))
 
     jobs = [job]
 
@@ -42,6 +45,8 @@ class WebTest(unittest.TestCase):
     groups = web.GroupJobs(jobs, web.ByGithubRun)
 
     web.PrintIndexHtml('title', groups)
+
+    web.PrintRunHtml('title', jobs)
 
 
 if __name__ == '__main__':
