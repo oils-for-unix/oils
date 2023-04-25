@@ -325,64 +325,6 @@ deploy-job-results() {
   log ''
 }
 
-format-jobs-index() {
-  soil-html-head 'Recent Jobs (raw data)'
-
-  cat <<EOF
-  <body class="width40">
-    <p id="home-link">
-      <a href="/">travis-ci.oilshell.org</a>
-      | <a href="//oilshell.org/">oilshell.org</a>
-    </p>
-
-    <h1>Recent Jobs (raw data)</h1>
-
-    <table>
-      <thead>
-        <tr>
-          <td>Job Archive</td>
-          <td>JSON</td>
-          <td>TSV</td>
-        </tr>
-      </thead>
-EOF
-  while read wwz; do
-    local prefix=${wwz%'.wwz'}
-
-    echo '<tr>'
-    echo "  <td><a href="$wwz/">$wwz</a></td>"
-    echo "  <td><a href="$prefix.json">JSON</a></td>"
-    echo "  <td><a href="$prefix.tsv">TSV</a></td>"
-    echo '</tr>'
-  done
-
-  cat <<EOF
-    </table>
-  </body>
-</html>
-EOF
-}
-
-write-jobs-raw() {
-  ### Rewrite travis-ci.oilshell.org/jobs/raw.html
-  local prefix=$1
-  
-  log "Listing remote .wwz"
-  list-remote-results "$prefix" > _tmp/listing.txt
-  ls -l _tmp/listing.txt
-
-  # Pass all .wwz files in reverse order.
-  # Empty list is OK.
-  { egrep 'wwz$' _tmp/listing.txt || true; } \
-    | sort --reverse \
-    | format-jobs-index \
-    > _tmp/raw.html
-
-  log "Copying raw.html"
-
-  scp-results "$prefix" _tmp/raw.html
-}
-
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
   local prefix=$1
@@ -391,10 +333,6 @@ remote-event-job-done() {
 
   # Deployed code dir
   sshq soil-web/soil/web.sh event-job-done "$@"
-
-  # This does a remote ls and then an scp.  TODO: do we really need it?
-  # Or change it to write to tmp file and atomically mv.
-  write-jobs-raw $prefix
 }
 
 filename=$(basename $0)

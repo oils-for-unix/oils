@@ -19,7 +19,6 @@ https://test.oils-for-unix.org/
   github-jobs/
     1234/
       tmp-$$.index.html  # function of JSON contents
-      tmp-$$.raw.html    # function of dir listing
       tmp-$$.remove.txt  # function of dir listing (JSON only)
     commits/
       tmp-$$.01ab01ab.html  # function of JSON and _tmp/soil/INDEX.tsv
@@ -28,17 +27,9 @@ https://test.oils-for-unix.org/
 
 TODO:
 
-- Fix srht- links -- the .wwz path is wrong
 - Get rid of foo.wwz/index.html ?   Or just get rid of LINKS to it
   - maybe consolidate
-- Link to image-layers.wwz from the tasks table
-
-
-- Can we publish spec test numbers in JSON?
-
-- What about HTML generated on the WORKER?
-  - foo.wwz/index.html
-  - _tmp/soil/image.html - layers
+- Fix srht- links -- the .wwz path is wrong
 
 How to test changes to this file:
 
@@ -127,9 +118,6 @@ def _ParsePullTime(time_p_str):
 
   Return the real time as a string, or - if we don't know it.
   """
-  if time_p_str is None:
-    return '-'
-
   for line in time_p_str.splitlines():
     m = LINE_RE.match(line)
     if m:
@@ -189,7 +177,14 @@ DETAILS_JOB_ROW_T = jsontemplate.Template('''\
   <td> <code><a href="#job-{job-name}">{job-name}</a></code> </td>
 
   <td><a href="{job_url}">{start_time_str}</a></td>
-  <td>{pull_time_str}</td>
+  <td>
+    {.section pull_time_str}
+      <a href="{run_wwz_path}/_tmp/soil/image.html">{@}</a>
+    {.or}
+      -
+    {.end}
+  </td>
+
   <td>{run_time_str}</td>
 
   <td> <!-- status -->
@@ -284,7 +279,9 @@ def ParseJobs(stdin):
 
     meta['run_time_str'] = _MinutesSeconds(total_elapsed)
 
-    meta['pull_time_str'] = _ParsePullTime(meta.get('image-pull-time'))
+    pull_time = meta.get('image-pull-time')
+    if pull_time is not None:
+      meta['pull_time_str'] = _ParsePullTime(pull_time)
 
     start_time = meta.get('task-run-start-time')
     if start_time is None:
@@ -340,7 +337,15 @@ def ParseJobs(stdin):
 
     # GITHUB_RUN_NUMBER (project-scoped) is shorter than GITHUB_RUN_ID (global
     # scope)
-    meta['job_num'] = meta.get('JOB_ID') or meta.get('GITHUB_RUN_NUMBER') or '?'
+
+    github_run = meta.get('GITHUB_RUN_NUMBER')
+    if github_run:
+      meta['job_num'] = github_run
+      meta['run_index_url'] = '%s/' % github_run
+    else:
+      meta['job_num'] = meta.get('JOB_ID') 
+      meta['run_index_url'] = 'git-%s/' % first_job['commit-hash']
+
     # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('JOB_URL') or '?'
 
@@ -348,10 +353,14 @@ def ParseJobs(stdin):
     parts = prefix.split('/')
 
     meta['run_wwz_path'] = parts[-1] + '.wwz'  # myjob.wwz
+    meta['run_tsv_path'] = parts[-1] + '.tsv'  # myjob.tsv
+    meta['run_json_path'] = parts[-1] + '.json'  # myjob.json
 
     # Two relative paths
     last_two_parts = parts[-2:]  # ['123', 'myjob']
     meta['index_wwz_path'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
+
+    meta['index_run_url'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
 
     yield meta
 
@@ -384,12 +393,6 @@ INDEX_TOP_T = jsontemplate.Template('''
     <h1>{title|html}</h1>
 ''')
 
-RAW_DATA = '''
-    <p style="text-align: right">
-      <a href="raw.html">raw data</a>
-    </p>
-'''
-
 INDEX_BOTTOM = '''\
   </body>
 </html>
@@ -398,7 +401,7 @@ INDEX_BOTTOM = '''\
 DETAILS_TABLE_TOP = '''
   <thead>
     <tr>
-      <td>Job #</td>
+      <td>ID</td>
       <td>Job Name</td>
       <td>Start Time</td>
       <td>Pull Time</td>
@@ -446,7 +449,6 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
       <i>
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
       from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
-      updated
       </i>
     {.end}
     {.section commit-desc}
@@ -495,7 +497,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
     <td colspan=2>
       {.repeated section @}
         <span class="fail"> &#x2717; </span>
-        <code><a href="{index_wwz_path}/">{job-name}</a></code>
+        <code><a href="{run_index_url}#job-{job-name}">{job-name}</a></code>
 
         <span class="fail-detail">
         {.section failed}
@@ -531,8 +533,6 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
   d = {'title': title}
   print(INDEX_TOP_T.expand(d), file=f)
 
-  print(RAW_DATA, file=f)
-
   print(INDEX_TABLE_TOP, file=f)
 
   for key, jobs in groups.iteritems():
@@ -540,18 +540,10 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
 
     print(INDEX_RUN_ROW_T.expand(jobs[0]), file=f)
 
-    first_job = jobs[0]
-    github_run = first_job.get('GITHUB_RUN_NUMBER')
-    if github_run:
-      details_url = '%s/' % github_run
-    else:
-      # for sourcehut
-      details_url = 'git-%s/' % first_job['commit-hash']
-
     summary = {
         'jobs-passed': [],
         'jobs-failed': [],
-        'details-url': details_url,
+        'details-url': jobs[0]['run_index_url'],
         }
 
     for job in jobs:
@@ -571,16 +563,8 @@ TASK_TABLE_T = jsontemplate.Template('''\
 
 <h2>All Tasks</h2>
 
-<!-- elapsed and status -->
-
-<style>
-#tasks td:nth-child(2), td:nth-child(3) {
-  text-align: right;
-}
-</style>
-
-
-<table id="tasks">
+<!-- right justify elapsed and status -->
+<table class="col2-right col3-right col4-right">
 
 {.repeated section jobs}
 
@@ -590,9 +574,16 @@ TASK_TABLE_T = jsontemplate.Template('''\
   </td>
 </tr>
 
-<tr>
-  <td colspan=4 style="text-align: left; background-color: #EEE; font-weight: bold">
+<tr style="text-align: left; background-color: #EEE; font-weight: bold">
+  <td>
     {job-name}
+  </td>
+  <td colspan=3>
+    <a href="{run_wwz_path}/">wwz</a>
+    &nbsp;
+    <a href="{run_tsv_path}">TSV</a>
+    &nbsp;
+    <a href="{run_json_path}">JSON</a>
   </td>
 </tr>
 
@@ -657,7 +648,8 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
 
   print(DETAILS_RUN_T.expand(jobs[0]), file=f)
 
-  print(' <table>', file=f)
+  print(' <table class="col1-right col3-right col4-right col5-right col6-right">', file=f)
+
   print(DETAILS_TABLE_TOP, file=f)
 
   for job in jobs:
