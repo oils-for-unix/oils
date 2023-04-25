@@ -22,7 +22,7 @@ from _devbuild.gen.runtime_asdl import (
     redirect_arg__MoveFd, redirect_arg__HereDoc, value, value_e, value__Str,
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
-    loc, loc_t,
+    loc_t,
     redir_loc,
     redir_loc_e,
     redir_loc_t,
@@ -368,7 +368,7 @@ class FdState(object):
         except OSError as e:
           self.errfmt.Print_("Can't open %r: %s" %
                              (arg.filename, pyutil.strerror(e)),
-                             blame_loc=loc.Span(r.op_spid))
+                             blame_loc=r.op_loc)
           raise  # redirect failed
 
         new_fd = self._PushDup(open_fd, r.loc)
@@ -465,7 +465,7 @@ class FdState(object):
 
     for r in redirects:
       #log('apply %s', r)
-      with ui.ctx_Location(self.errfmt, loc.Span(r.op_spid)):
+      with ui.ctx_Location(self.errfmt, r.op_loc):
         try:
           self._ApplyRedirect(r)
         except (IOError, OSError) as e:

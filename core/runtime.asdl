@@ -80,7 +80,7 @@ module runtime
   VarSubState = (bool join_array, bool is_type_query)
 
   # A cell is a wrapper for a value.
-  # TODO: add spid for declaration for 'assigning const' error
+  # TODO: add location for declaration for 'assigning const' error
 
   # Invariant: if exported or nameref is set, the val should be Str or Undef.
   # This is enforced in mem.SetValue but isn't expressed in the schema.
@@ -125,21 +125,21 @@ module runtime
   | HereDoc(str body)  # call this String and combine with Path?
 
   # evaluated version of syntax.redir
-  redirect = (id op_id, int op_spid, redir_loc loc, redirect_arg arg)
+  redirect = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
 
   # What command.ShFunction and command.Proc evaluate to
   # For ShFunction, this is trivial.  For Proc, we evaluate default args.
-  # We store name_spid separately because ShFunction has a word as a name, but
+  # We store name_loc separately because ShFunction has a word as a name, but
   # a Proc has a Token.
   Proc = (
-    str name, int name_spid, proc_sig sig, command body, List[value] defaults,
+    str name, loc name_loc, proc_sig sig, command body, List[value] defaults,
     bool dynamic_scope
   )
 
   # An exit status with location info.  For process sub.
   StatusArray = (
     List[int]? codes,  # init to null, rarely allocated
-    List[int]? spids   # init to null, rarely allocated
+    List[loc]? locs    # init to null, rarely allocated
   )
 
   CommandStatus = (
@@ -154,7 +154,7 @@ module runtime
     # for pipeline
     bool pipe_negated,
     List[int]? pipe_status,  # init to null, rarely allocated
-    List[int]? pipe_spids,   # init to null, rarely allocated
+    List[loc]? pipe_locs,    # init to null, rarely allocated
   )
 
   wait_status =

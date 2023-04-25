@@ -52,19 +52,19 @@ class _ProcessSubFrame(object):
 
     self.to_wait = None  # type: List[process.Process]
     self.to_close = None  # type: List[int]  # file descriptors
-    self.span_ids = None  # type: List[int]
+    self.locs = None  # type: List[loc_t]
 
-  def Append(self, p, fd, span_id):
-    # type: (process.Process, int, int) -> None
+  def Append(self, p, fd, status_loc):
+    # type: (process.Process, int, loc_t) -> None
 
     if self.to_wait is None:
       self.to_wait = [p]
       self.to_close = [fd]
-      self.span_ids = [span_id]
+      self.locs = [status_loc]
     else:
       self.to_wait.append(p)
       self.to_close.append(fd)
-      self.span_ids.append(span_id)
+      self.locs.append(status_loc)
 
   def MaybeWaitOnProcessSubs(self, waiter, status_array):
     # type: (process.Waiter, StatusArray) -> None
@@ -77,15 +77,15 @@ class _ProcessSubFrame(object):
       posix.close(fd)
 
     codes = []  # type: List[int]
-    spids = []  # type: List[int]
+    locs = []  # type: List[loc_t]
     for i, p in enumerate(self.to_wait):
       #log('waiting for %s', p)
       st = p.Wait(waiter)
       codes.append(st)
-      spids.append(self.span_ids[i])
+      locs.append(self.locs[i])
 
     status_array.codes = codes
-    status_array.spids = spids
+    status_array.locs = locs
 
 
 class ShellExecutor(vm._Executor):
@@ -374,7 +374,7 @@ class ShellExecutor(vm._Executor):
     self.job_state.AddPipeline(pi)
 
     # initialized with CommandStatus.CreateNull()
-    pipe_spids = []  # type: List[int]
+    pipe_locs = []  # type: List[loc_t]
 
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
@@ -382,7 +382,7 @@ class ShellExecutor(vm._Executor):
       child = node.children[i]
 
       # TODO: determine these locations at parse time?
-      pipe_spids.append(location.GetSpanId(location.LocForCommand(child)))
+      pipe_locs.append(location.LocForCommand(child))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -391,7 +391,7 @@ class ShellExecutor(vm._Executor):
     last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, last_child))
-    pipe_spids.append(location.GetSpanId(location.LocForCommand(last_child)))
+    pipe_locs.append(location.LocForCommand(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
       pi.StartPipeline(self.waiter)
@@ -399,7 +399,7 @@ class ShellExecutor(vm._Executor):
       status_out.pipe_status = pi.RunLastPart(self.waiter, self.fd_state)
       self.fg_pipeline = None # clear in case we didn't end up forking
 
-    status_out.pipe_spids = pipe_spids
+    status_out.pipe_locs = pipe_locs
 
   def RunSubshell(self, node):
     # type: (command_t) -> int
@@ -536,9 +536,11 @@ class ShellExecutor(vm._Executor):
       shopt -s process_sub_fail
       _process_sub_status
     """
+    cs_loc = loc.WordPart(cs_part)
+
     if not self.exec_opts._allow_process_sub():
       e_die("Process subs not allowed here because status wouldn't be checked (strict_errexit)",
-            loc.WordPart(cs_part))
+            cs_loc)
 
     p = self._MakeProcess(cs_part.child)
 
@@ -577,17 +579,15 @@ class ShellExecutor(vm._Executor):
     # Note: bash never waits() on the process, but zsh does.  The calling
     # program needs to read() before we can wait, e.g.
     #   diff <(sort left.txt) <(sort right.txt)
-        
-    span_id = cs_part.left_token.span_id
 
     # After forking, close the end of the pipe we're not using.
     if op_id == Id.Left_ProcSubIn:
       posix.close(w)  # cat < <(head foo.txt)
-      ps_frame.Append(p, r, span_id)  # close later
+      ps_frame.Append(p, r, cs_loc)  # close later
     elif op_id == Id.Left_ProcSubOut:
       posix.close(r)
       #log('Left_ProcSubOut closed %d', r)
-      ps_frame.Append(p, w, span_id)  # close later
+      ps_frame.Append(p, w, cs_loc)  # close later
     else:
       raise AssertionError()
 

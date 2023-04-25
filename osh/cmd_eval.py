@@ -425,7 +425,7 @@ class CommandEvaluator(object):
   def _EvalRedirect(self, r):
     # type: (redir) -> redirect
 
-    result = redirect(r.op.id, r.op.span_id, r.loc, None)
+    result = redirect(r.op.id, r.op, r.loc, None)
 
     arg = r.arg
     UP_arg = arg
@@ -1387,7 +1387,7 @@ class CommandEvaluator(object):
           e_die("Function %s was already defined (redefine_proc)" % node.name,
               loc.Span(node.spids[1]))
         self.procs[node.name] = Proc(
-            node.name, node.spids[1], proc_sig.Open(), node.body, [], True)
+            node.name, loc.Span(node.spids[1]), proc_sig.Open(), node.body, [], True)
 
         status = 0
 
@@ -1410,7 +1410,7 @@ class CommandEvaluator(object):
                 defaults[i] = _PyObjectToVal(py_val)
      
         self.procs[node.name.tval] = Proc(
-            node.name.tval, node.name.span_id, node.sig, node.body, defaults,
+            node.name.tval, node.name, node.sig, node.body, defaults,
             False)  # no dynamic scope
 
         status = 0
@@ -1522,7 +1522,7 @@ class CommandEvaluator(object):
     cmd_st = CommandStatus.CreateNull()
     process_sub_st = StatusArray.CreateNull()
 
-    errexit_spid = runtime.NO_SPID
+    errexit_loc = loc.Missing()  # type: loc_t
     check_errexit = True
 
     with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):
@@ -1569,7 +1569,7 @@ class CommandEvaluator(object):
               for i, st in enumerate(pipe_status):
                 if st != 0:
                   status = st
-                  errexit_spid = cmd_st.pipe_spids[i]
+                  errexit_loc = cmd_st.pipe_locs[i]
             else:
               # The status is that of last command, period.
               status = pipe_status[-1]
@@ -1596,7 +1596,7 @@ class CommandEvaluator(object):
         for i, st in enumerate(codes):
           if st != 0:
             status = st
-            errexit_spid = process_sub_st.spids[i]
+            errexit_loc = process_sub_st.locs[i]
 
     self.mem.SetLastStatus(status)
 
@@ -1611,7 +1611,7 @@ class CommandEvaluator(object):
     # - ControlFlow: always raises, it has no status.
     if check_errexit:
       #log('cmd_st %s', cmd_st)
-      self._CheckStatus(status, cmd_st, node, loc.Span(errexit_spid))
+      self._CheckStatus(status, cmd_st, node, errexit_loc)
 
     return status
 
