@@ -17,13 +17,14 @@ This script generates:
 
 https://test.oils-for-unix.org/
   github-jobs/
+    tmp-$$.index.html  # jobs for all runs all runs
     1234/
-      tmp-$$.index.html  # function of JSON contents
-      tmp-$$.remove.txt  # function of dir listing (JSON only)
-    commits/
-      tmp-$$.01ab01ab.html  # function of JSON and _tmp/soil/INDEX.tsv
-                            # links to all jobs AND all tasks
-                            # TODO: and all container images
+      tmp-$$.index.html  # jobs and task for a given run
+      tmp-$$.remove.txt  # TODO: function of dir listing (JSON only)
+
+    # For sourcehut
+    git-0101abab/
+      tmp-$$.index.html
 
 TODO:
 

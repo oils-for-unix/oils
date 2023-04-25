@@ -2,8 +2,8 @@
 #
 # Functions to invoke soil/web remotely.
 # 
-# soil/web is deployed manually, and then this runs at HEAD in the repo.
-# Every CI run has an up-to-date copy.
+# soil/web is deployed manually, and then this runs at HEAD in the repo.  Every
+# CI run has an up-to-date copy.
 #
 # Usage:
 #   soil/web-worker.sh <function name>
@@ -73,14 +73,6 @@ my-ssh() {
   ssh -o StrictHostKeyChecking=no "$@"
 }
 
-scp-results() {
-  # could also use Travis known_hosts addon?
-  local prefix=$1  # srht- or ''
-  shift
-
-  my-scp "$@" "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
-}
-
 scp-status-api() {
   local run_id=${1:-TEST2-github-run-id}
   local job_name=$2
@@ -98,14 +90,12 @@ scp-status-api() {
   my-scp $status_file "$SOIL_USER_HOST:$remote_path"
 }
 
-list-remote-results() {
-  local prefix=$1
+scp-results() {
+  # could also use Travis known_hosts addon?
+  local prefix=$1  # srht- or ''
+  shift
 
-  # Avoid race conditions with ls globbing
-  my-ssh $SOIL_USER_HOST \
-    "shopt -s nullglob
-     cd travis-ci.oilshell.org/${prefix}jobs
-     for i in */*; do echo \$i; done"
+  my-scp "$@" "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
 }
 
 # Dummy that doesn't depend on results
@@ -134,7 +124,7 @@ format-wwz-index() {
   local job_id=$1
   local tsv=${2:-_tmp/soil/INDEX.tsv}
 
-  soil-html-head "CI job $job_id"
+  soil-html-head "$job_id.wwz"
 
   cat <<EOF
   <body class="width40">
@@ -144,66 +134,29 @@ format-wwz-index() {
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
-    <h1>CI job <code>$job_id</code></h1>
+    <h1>$job_id.wwz</h1>
+EOF
+
+  echo '<ul>'
+  cat <<EOF
+  <li>
+    <a href="_tmp/soil/INDEX.tsv">_tmp/soil/INDEX.tsv</a>, also copied to
+    <a href="$job_id.tsv">$job_id.tsv</a>.
+  </li>
+  <li>
+    <a href="$job_id.json">$job_id.json</a>
+  </li>
 EOF
 
   if test -f _tmp/soil/image.html; then
-    cat <<EOF
-    <p>
+    echo '
+    <li>
       <a href="_tmp/soil/image.html">Container Image Stats</a>
-    </p>
-EOF
+    </li>
+    '
   fi
 
-  cat <<EOF
-    <table>
-      <thead>
-        <tr>
-          <td>Task</td>
-          <td>Elapsed</td>
-          <td>Status</td>
-          <td>Details</td>
-        </tr>
-      </thead>
-EOF
-  cat $tsv | while read status elapsed task script action result_html; do
-    echo "<tr>"
-    echo "  <td>
-               <a href=\"_tmp/soil/logs/$task.txt\">$task</a> <br/>
-               <code>$script $action</code>
-            </td>
-         "
-
-    printf -v elapsed_str '%.2f' $elapsed
-    echo "  <td>$elapsed_str</td>"
-
-    case $status in
-      (0)  # exit code 0 is success
-        echo "  <td>$status</td>"
-        ;;
-      (*)  # everything else is a failure
-        # Add extra text to make red stand out.
-        echo "  <td class=\"fail\">status: $status</td>"
-        ;;
-    esac
-
-    case $result_html in
-      (-)
-        echo "  <td>-</td>"
-        ;;
-      (*)
-        echo "  <td><a href=$result_html>Results</a></td>"
-        ;;
-    esac
-
-    echo "</tr>"
-    echo
-  done
-  cat <<EOF
-    </table>
-  </body>
-</html>
-EOF
+  echo '</ul>'
 }
 
 format-image-stats() {
@@ -265,8 +218,7 @@ make-job-wwz() {
     format-image-stats _tmp/soil > _tmp/soil/image.html
   fi
 
-  local index=_tmp/soil/INDEX.tsv 
-  format-wwz-index $job_id $index > index.html
+  format-wwz-index $job_id > index.html
 
   # _tmp/soil: Logs are in _tmp, see soil/worker.sh
   # web/ : spec test HTML references this.
@@ -336,7 +288,6 @@ remote-event-job-done() {
 }
 
 filename=$(basename $0)
-if test $filename = web-worker.sh; then
+if test $filename = 'web-worker.sh'; then
   "$@"
 fi
-
