@@ -19,28 +19,28 @@ source test/tsv-lib.sh  # tsv2html
 source web/table/html.sh  # table-sort-{begin,end}
 
 # ~/
-#   soil-web/
+#   soil-web/   # executable files
 #    doctools/
 #      html_head.py
 #    soil/
 #      web.py
 #      web.sh
-#   travis-ci.oilshell.org/
+#   travis-ci.oilshell.org/  # served over HTTP
 #     index.html
 #     web/
 #       base.css
 #       soil.css
-#     jobs/
-#       index.html   # rewritten on every job
-#       1581.1.wwz   # build 1581 has multiple jobs
-#       1581.2.wwz
-#       1581.3.wwz
-#     builds/
-#       src/
-#         oil-48ab99c.tar.xz  # named after commits?  Or jobs?
-#         oil-58a669c.tar.xz
-#       x86_64_musl/   # binaries
-#         linux
+#     github-jobs/
+#       index.html
+#       3619/  # $GITHUB_RUN_NUMBER
+#         dev-minimal.wwz
+#         cpp-small.wwz
+#     srht-jobs/
+#       index.html
+#       22/  # $JOB_ID
+#         dev-minimal.wwz
+#       23   # $JOB_ID
+#         cpp-small.wwz
 
 sshq() {
   # Don't need commands module as I said here!

@@ -178,7 +178,7 @@ DETAILS_JOB_ROW_T = jsontemplate.Template('''\
 <tr>
 
   <td>{job_num}</td>
-  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
+  <td> <code><a href="{index_wwz_path}/">{job-name}</a></code> </td>
 
   <td><a href="{job_url}">{start_time_str}</a></td>
   <td>{pull_time_str}</td>
@@ -209,7 +209,7 @@ DETAILS_JOB_ROW_T = jsontemplate.Template('''\
 INDEX_JOB_ROW_T = jsontemplate.Template('''\
 <tr>
 
-  <td> <code><a href="{wwz_path}/">{job-name}</a></code> </td>
+  <td> <code><a href="{index_wwz_path}/">{job-name}</a></code> </td>
 
   <td> <!-- status -->
   {.section passed}
@@ -232,11 +232,6 @@ INDEX_JOB_ROW_T = jsontemplate.Template('''\
 
 </tr>
 ''')
-
-
-# Must match _tmp/soil/INDEX.tsv
-TaskRow = collections.namedtuple('TaskRow',
-    'status elapsed name script_name func results_url')
 
 
 def ParseJobs(stdin):
@@ -262,18 +257,28 @@ def ParseJobs(stdin):
 
       try:
         for row in reader:
-          tmp = TaskRow(*row)  # sequence to named fields
+          t = {}
+          # Unpack, matching _tmp/soil/INDEX.tsv
+          ( status, elapsed,
+            t['name'], t['script_name'], t['func'], results_url) = row
 
-          # Make a new, typed, immutable tuple.  It would be nicer if this was
-          # YTSV.
-          task = tmp._replace(status=int(tmp.status), elapsed=float(tmp.elapsed))
+          t['results_url'] = None if results_url == '-' else results_url
 
-          all_tasks.append(task)
+          status = int(status)
+          elapsed = float(elapsed)
 
-          if task.status != 0:
-            failed_tasks.append(task)
+          t['elapsed_str'] = '%.2f' % elapsed
 
-          total_elapsed += task.elapsed
+          all_tasks.append(t)
+
+          t['status'] = status
+          if status == 0:
+            t['passed'] = True
+          else:
+            t['failed'] = True
+            failed_tasks.append(t)
+
+          total_elapsed += elapsed
 
       except (IndexError, ValueError) as e:
         raise RuntimeError('Error in %r: %s (%r)' % (tsv_path, e, row))
@@ -288,7 +293,7 @@ def ParseJobs(stdin):
     else:
       failed = {}
       if num_failures == 1:
-        failed['one-failure'] = failed_tasks[0].name
+        failed['one-failure'] = failed_tasks[0]['name']
       else:
         failed['multiple-failures'] = {
             'num-failures': num_failures,
@@ -359,10 +364,13 @@ def ParseJobs(stdin):
     meta['job_url'] = meta.get('JOB_URL') or '?'
 
     prefix, _ = os.path.splitext(json_path)  # x/y/123/myjob
-    last_two_parts = prefix.split('/')[-2:]  # ['123', 'myjob']
-    rel_path = '/'.join(last_two_parts)  # 123/myjob
+    parts = prefix.split('/')
 
-    meta['wwz_path'] = rel_path + '.wwz'  # 123/myjob.wwz
+    meta['run_wwz_path'] = parts[-1] + '.wwz'  # myjob.wwz
+
+    # Two relative paths
+    last_two_parts = parts[-2:]  # ['123', 'myjob']
+    meta['index_wwz_path'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
 
     yield meta
 
@@ -431,7 +439,6 @@ INDEX_TABLE_TOP = '''
 '''
 
 
-
 def PrintIndexHtml(title, groups, f=sys.stdout):
   # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
   # have Ctrl-F5)
@@ -465,22 +472,71 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
       print(DETAILS_JOB_ROW_T.expand(job), file=f)
 
   print(' </table>', file=f)
+
   print(INDEX_BOTTOM, file=f)
 
 
-TASK_ROW_T = jsontemplate.Template('''\
+TASK_TABLE_T = jsontemplate.Template('''\
+
+<h2>All Tasks</h2>
+
+<table>
+
+{.repeated section jobs}
+
 <tr>
-  <td>
-{name}
+  <td colspan=4 style="text-align: left; background-color: #EEE; font-weight: bold">
+    {job-name}
   </td>
 </tr>
+
+<tr style="font-weight: bold">
+  <td>Task</td>
+  <td>Elapsed</td>
+  <td>Status</td>
+  <td>Details</td>
+</tr>
+
+  {.repeated section tasks}
+  <tr>
+    <td>
+      <a href="{run_wwz_path}/_tmp/soil/logs/$task.txt">{name}</a> <br/>
+       <code>{script_name} {func}</code>
+    </td>
+
+    <td>{elapsed_str}</td>
+
+    {.section passed}
+      <td>{status}</td>
+    {.end}
+    {.section failed}
+      <td class="fail">status: status</td>
+    {.end}
+
+    <td>
+      {.section results_url}
+      <a href="{run_wwz_path}/{@}">Results</a>
+      {.or}
+        -
+      {.end}
+    </td>
+
+  </tr>
+  {.end}
+
+<tr> <!-- spacer -->
+  <td colspan=4>&nbsp;</td>
+</tr>
+
+{.end}
+
+</table>
+
+&nbsp; &nbsp;
+
+<hr/>
+
 ''')
-
-
-def PrintTasks(job, f=sys.stdout):
-  for task in job['tasks']:
-    d = {'name': task.name}
-    print(TASK_ROW_T.expand(d), file=f)
 
 
 def PrintRunHtml(title, jobs, f=sys.stdout):
@@ -499,17 +555,11 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
 
   for job in jobs:
     print(DETAILS_JOB_ROW_T.expand(job), file=f)
+
   print(' </table>', file=f)
 
-  print('''
-  <h2>Task Details</h2>
+  print(TASK_TABLE_T.expand({'jobs': jobs}), file=f)
 
-  <table>
-  ''', file=f)
-
-  for job in jobs:
-    PrintTasks(job, f=f)
-  print('</table>', file=f)
 
   print(INDEX_BOTTOM, file=f)
 
@@ -579,6 +629,7 @@ def main(argv):
 
     jobs = groups[run_id]
     title = 'Jobs for run %d' % run_id
+
     with open(run_index_out, 'w') as f:
       PrintRunHtml(title, jobs, f=f)
 

@@ -144,23 +144,35 @@ event-job-done() {
 #
 
 sync-testdata() {
+
+  local dest=_tmp/github-jobs/
+
   rsync --archive --verbose \
-    $SOIL_USER@$SOIL_HOST:$SOIL_HOST/jobs/ _tmp/jobs/
+    $SOIL_USER@$SOIL_HOST:$SOIL_HOST/github-jobs/ $dest
+
+  # 2023-04: 3.2 GB of files!  Probably can reduce this
+
+  du --si -s $dest
+}
+
+copy-web() {
+  ### for relative URLs to work
+
+  cp -r -v web/ _tmp/
 }
 
 local-test() {
   ### Used the sync'd testdata
-  local dir=${1:-_tmp/jobs}
-  local out='_tmp/jobs.html'
+  local dir=${1:-_tmp/github-jobs}
 
-  list-json $dir | index > $out
-  echo "Wrote $out"
-}
+  local index=$dir/index.html
 
-smoke-test() {
-  ### Run on remote machine
-  local dir=${1:-_tmp/jobs}
-  list-json $dir | soil-web srht-index 
+  local run_id=3722
+  local run_index=$dir/$run_id/index.html
+
+  list-json $dir | soil-web github-index $index $run_index $run_id
+
+  echo "Wrote $index and $run_index"
 }
 
 "$@"
