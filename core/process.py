@@ -246,7 +246,7 @@ class FdState(object):
     ok = True
     try:
       new_fd = SaveFd(fd)
-    except IOError as e:
+    except (IOError, OSError) as e:
       ok = False
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
@@ -275,7 +275,7 @@ class FdState(object):
       try:
         # F_DUPFD: GREATER than range
         new_fd = fcntl_.fcntl(fd1, F_DUPFD, _SHELL_MIN_FD)  # type: int
-      except IOError as e:
+      except (IOError, OSError) as e:
         if e.errno == EBADF:
           self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
           return NO_FD
@@ -295,7 +295,7 @@ class FdState(object):
       # Check the validity of fd1 before _PushSave(fd2)
       try:
         fcntl_.fcntl(fd1, F_GETFD)
-      except IOError as e:
+      except (IOError, OSError) as e:
         self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
         raise
 
@@ -304,7 +304,7 @@ class FdState(object):
       #log('==== dup2 %s %s\n' % (fd1, fd2))
       try:
         posix.dup2(fd1, fd2)
-      except OSError as e:
+      except (IOError, OSError) as e:
         # bash/dash give this error too, e.g. for 'echo hi 1>&3'
         self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
 
@@ -380,7 +380,7 @@ class FdState(object):
         # NOTE: 0666 is affected by umask, all shells use it.
         try:
           open_fd = posix.open(arg.filename, mode, 0o666)
-        except OSError as e:
+        except (IOError, OSError) as e:
           self.errfmt.Print_("Can't open %r: %s" %
                              (arg.filename, pyutil.strerror(e)),
                              blame_loc=r.op_loc)
@@ -513,13 +513,13 @@ class FdState(object):
         #log('Close %d', orig)
         try:
           posix.close(rf.orig_fd)
-        except OSError as e:
+        except (IOError, OSError) as e:
           log('Error closing descriptor %d: %s', rf.orig_fd, pyutil.strerror(e))
           raise
       else:
         try:
           posix.dup2(rf.saved_fd, rf.orig_fd)
-        except OSError as e:
+        except (IOError, OSError) as e:
           log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
               pyutil.strerror(e))
           #log('fd state:')
@@ -604,7 +604,7 @@ class SetProcessGroup(ChildStateChange):
     # type: () -> None
     try:
       posix.setpgid(0, self.group_id)
-    except OSError as e:
+    except (IOError, OSError) as e:
       print_stderr(
           'osh: child failed to set process group for PID %d to %d: %s' %
           (posix.getpid(), self.group_id, pyutil.strerror(e)))
@@ -613,7 +613,7 @@ class SetProcessGroup(ChildStateChange):
     # type: (Process) -> None
     try:
       posix.setpgid(proc.pid, self.group_id)
-    except OSError as e:
+    except (IOError, OSError) as e:
       print_stderr(
           'osh: parent failed to set process group for PID %d to %d: %s' %
           (proc.pid, self.group_id, pyutil.strerror(e)))
@@ -681,7 +681,7 @@ class ExternalProgram(object):
 
     try:
       posix.execve(argv0_path, argv, environ)
-    except OSError as e:
+    except (IOError, OSError) as e:
       # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
       if e.errno == ENOEXEC and should_retry:
         new_argv = ['/bin/sh', argv0_path]
@@ -1335,7 +1335,7 @@ def _GetTtyFd():
   """
   try:
     return posix.open("/dev/tty", O_NONBLOCK | O_NOCTTY | O_RDWR, 0o666)
-  except OSError as e:
+  except (IOError, OSError) as e:
     return -1
 
 
@@ -1381,7 +1381,7 @@ class JobState(object):
       try:
         posix.setpgid(self.shell_pid, self.shell_pid)
         self.shell_pgrp = self.shell_pid
-      except OSError as e:
+      except (IOError, OSError) as e:
         self.shell_tty_fd = -1
 
     if self.shell_tty_fd != -1:
@@ -1390,7 +1390,7 @@ class JobState(object):
       # If stdio is a TTY, put the shell's process group in the foreground.
       try:
         posix.tcsetpgrp(self.shell_tty_fd, self.shell_pgrp)
-      except OSError as e:
+      except (IOError, OSError) as e:
         # We probably aren't in the session leader's process group. Disable job
         # control.
         self.shell_tty_fd = -1
@@ -1425,7 +1425,7 @@ class JobState(object):
 
     try:
       posix.tcsetpgrp(self.shell_tty_fd, pgrp)
-    except OSError as e:
+    except (IOError, OSError) as e:
       e_die('osh: Failed to move process group %d to foreground: %s' %
             (pgrp, pyutil.strerror(e)))
 

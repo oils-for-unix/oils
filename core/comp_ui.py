@@ -512,7 +512,7 @@ class NiceDisplay(_IDisplay):
     if self.signal_safe.PollSigWinch():  # is our value dirty?
       try:
         self.term_width = libc.get_terminal_width()
-      except IOError:
+      except (IOError, OSError):
         # This shouldn't raise IOError because we did it at startup!  Under
         # rare circumstances stdin can change, e.g. if you do exec <&
         # input.txt.  So we have a fallback.
@@ -531,7 +531,7 @@ def InitReadline(readline, history_filename, root_comp, display, debug_f):
 
   try:
     readline.read_history_file(history_filename)
-  except IOError:
+  except (IOError, OSError):
     pass
 
   readline.parse_and_bind('tab: complete')

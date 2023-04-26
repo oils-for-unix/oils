@@ -991,7 +991,7 @@ def _GetWorkingDir():
   """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
   try:
     return posix.getcwd()
-  except OSError as e:
+  except (IOError, OSError) as e:
     e_die("Can't determine working directory: %s" % pyutil.strerror(e))
 
 

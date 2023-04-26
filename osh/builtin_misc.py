@@ -817,7 +817,7 @@ class Help(vm._Builtin):
 
     try:
       contents = self.loader.Get('_devbuild/help/%s' % topic)
-    except IOError:
+    except (IOError, OSError):
       # Notes:
       # 1. bash suggests:
       # man -k zzz

@@ -2711,13 +2711,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write_ind('try ')
         self.accept(o.body)
         caught = False
-        for t, v, handler in zip(o.types, o.vars, o.handlers):
 
-            # Heuristic
-            if isinstance(t, MemberExpr):
+        for t, v, handler in zip(o.types, o.vars, o.handlers):
+            c_type = None
+
+            if isinstance(t, NameExpr):
+                if t.name in ('IOError', 'OSError'):
+                    self.report_error(handler,
+                        'Use except (IOError, OSError) rather than catching just one')
+                c_type = '%s*' % t.name
+            
+
+            elif isinstance(t, MemberExpr):
+                # Heuristic
                 c_type = '%s::%s*' % (t.expr.name, t.name)
+
             elif isinstance(t, TupleExpr):
-                c_type = None
                 if len(t.items) == 2:
                     e1 = t.items[0]
                     e2 = t.items[1]
@@ -2727,10 +2736,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         if names == ['IOError', 'OSError']:
                             c_type = 'IOError_OSError*'  # Base class in mylib
 
-                if c_type is None:
-                    c_type = 'MultipleExceptions'  # Causes compile error
             else:
-                c_type = '%s*' % t.name
+                raise AssertionError()
+
+            if c_type is None:
+                c_type = 'INVALID_TRY_EXCEPT'  # Causes compile error
 
             if v:
                 self.write_ind('catch (%s %s) ', c_type, v.name)
