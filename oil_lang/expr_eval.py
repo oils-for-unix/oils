@@ -50,6 +50,7 @@ from mycpp.mylib import log, NewDict, tagswitch
 
 import libc
 
+from types import NoneType
 from typing import cast, Any, Union, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -116,6 +117,32 @@ def Stringify(py_val, word_part=None):
         loc.WordPart(word_part))
 
   return str(py_val)
+
+
+# XXX this function should be removed once _EvalExpr is completeley refactored.
+# Until then we'll need this as a bit of scaffolding to allow us to refactor one
+# kind of expression at a time while still being able to type-check and run
+# tests.
+def _PyObjToValue(val):
+  # type: (Any) -> value_t
+
+  if isinstance(val, NoneType):
+    return value.Undef()
+
+  elif isinstance(val, int):
+    return value.Int(val)
+
+  elif isinstance(val, float):
+    return value.Float(val)
+
+  elif isinstance(val, bool):
+    return value.Bool(val)
+
+  elif isinstance(val, str):
+    return value.Str(val)
+
+  else:
+    raise NotImplementedError()
 
 
 def _ValueToPyObj(val):
@@ -512,14 +539,51 @@ class OilEvaluator(object):
     return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
   def _EvalUnary(self, node):
-    # type: (expr__Unary) -> Any # XXX
-    child = self._EvalExpr(node.child)
+    # type: (expr__Unary) -> value_t
+    child = _PyObjToValue(self._EvalExpr(node.child)) # XXX
     if node.op.id == Id.Arith_Minus:
-      return -child
+      UP_child = child
+      with tagswitch(child) as case:
+        if case(value_e.Bool):
+          child = cast(value__Bool, UP_child)
+          return value.Int(-child.b) # gets promoted...
+
+        elif case(value_e.Int):
+          child = cast(value__Int, UP_child)
+          return value.Int(-child.i)
+
+        elif case(value_e.Float):
+          child = cast(value__Float, UP_child)
+          return value.Float(-child.f)
+
     if node.op.id == Id.Arith_Tilde:
-      return ~child
+      UP_child = child
+      with tagswitch(child) as case:
+        if case(value_e.Bool):
+          child = cast(value__Bool, UP_child)
+          return value.Int(~child.b) # gets promoted...
+
+        elif case(value_e.Int):
+          child = cast(value__Int, UP_child)
+          return value.Int(~child.i)
+
     if node.op.id == Id.Expr_Not:
-      return not child
+      UP_child = child
+      with tagswitch(child) as case:
+        if case(value_e.Undef):
+          return value.Bool(True) # "not None"
+
+        elif case(value_e.Bool):
+          child = cast(value__Bool, UP_child)
+          return value.Bool(not child.b)
+
+        elif case(value_e.Int):
+          child = cast(value__Int, UP_child)
+          return value.Bool(not child.i)
+
+        elif case(value_e.Float):
+          child = cast(value__Float, UP_child)
+          return value.Bool(not child.f)
 
     raise NotImplementedError(node.op.id)
 
@@ -826,7 +890,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.Unary):
         node = cast(expr__Unary, UP_node)
-        return self._EvalUnary(node)
+        return _ValueToPyObj(self._EvalUnary(node))
 
       elif case(expr_e.Binary):
         node = cast(expr__Binary, UP_node)
