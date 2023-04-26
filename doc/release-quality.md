@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oil 0.14.2 Quality
+Oil 0.15.0 Quality
 =================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
