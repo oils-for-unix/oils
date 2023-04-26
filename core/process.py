@@ -90,6 +90,21 @@ STYLE_LONG = 1
 STYLE_PID_ONLY = 2
 
 
+class ctx_FileCloser(object):
+
+  def __init__(self, f):
+    # type: (mylib.LineReader) -> None
+    self.f = f
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.f.close()
+
+
 def InitInteractiveShell():
   # type: () -> None
   """Called when initializing an interactive shell."""
@@ -640,13 +655,14 @@ class ExternalProgram(object):
   def _Exec(self, argv0_path, argv, argv0_loc, environ, should_retry):
     # type: (str, List[str], loc_t, Dict[str, str], bool) -> None
     if len(self.hijack_shebang):
-      ok = True
+      opened = True
       try:
         f = self.fd_state.Open(argv0_path)
       except (IOError, OSError) as e:
-        ok = False
-      if ok:
-        try:
+        opened = False
+
+      if opened:
+        with ctx_FileCloser(f):
           # Test if the shebang looks like a shell.  TODO: The file might be
           # binary with no newlines, so read 80 bytes instead of readline().
 
@@ -662,8 +678,6 @@ class ExternalProgram(object):
           else:
             #self.debug_f.log('Not hijacking %s (%r)', argv, line)
             pass
-        finally:  # TODO: use context manager
-          f.close()
 
     try:
       posix.execve(argv0_path, argv, environ)

@@ -12,6 +12,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
+from core import process
 from core.pyerror import e_die_status, e_usage
 from core import pyutil  # strerror
 from core import state
@@ -100,7 +101,7 @@ class Source(vm._Builtin):
     resolved = self.search_path.Lookup(path, exec_required=False)
     if resolved is None:
       resolved = path
-    # TODO: need to close the file!
+
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:
@@ -114,22 +115,23 @@ class Source(vm._Builtin):
     # A sourced module CAN have a new arguments array, but it always shares
     # the same variable scope as the caller.  The caller could be at either a
     # global or a local scope.
-    with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
-      source_argv = arg_r.Rest()
-      with state.ctx_Source(self.mem, path, source_argv):
-        with state.ctx_ThisDir(self.mem, path):
-          src = source.SourcedFile(path, call_loc)
-          with alloc.ctx_Location(self.arena, src):
-            try:
-              status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
-                                       cmd_flags=cmd_eval.RaiseControlFlow)
-            except vm.ControlFlow as e:
-              if e.IsReturn():
-                status = e.StatusCode()
-              else:
-                raise
-            finally:
-              f.close()
+
+    # TODO: I wonder if we compose the enter/exit methods more easily.
+    with process.ctx_FileCloser(f):
+      with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
+        source_argv = arg_r.Rest()
+        with state.ctx_Source(self.mem, path, source_argv):
+          with state.ctx_ThisDir(self.mem, path):
+            src = source.SourcedFile(path, call_loc)
+            with alloc.ctx_Location(self.arena, src):
+              try:
+                status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
+                                         cmd_flags=cmd_eval.RaiseControlFlow)
+              except vm.ControlFlow as e:
+                if e.IsReturn():
+                  status = e.StatusCode()
+                else:
+                  raise
 
     return status
 
