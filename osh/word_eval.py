@@ -1128,7 +1128,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     else:  # no bracket op
       var_name = vtest_place.name
-      if (var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and
+      if (len(var_name) and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and
           not vsub_state.is_type_query):
         if ShouldArrayDecay(var_name, self.exec_opts,
                             not (part.prefix_op or part.suffix_op)):
@@ -1917,7 +1917,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
     # Add it back and don't bother globbing.
-    if not args and any_quoted:
+    if len(args) == 0 and any_quoted:
       argv.append('')
       return
 

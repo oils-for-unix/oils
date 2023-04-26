@@ -107,7 +107,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 
   for span_type, end_index in spans:
     if span_type == span_e.Black:
-      if join_next and parts:
+      if join_next and len(parts):
         parts[-1].write(s[start_index:end_index])
         join_next = False
       else:
