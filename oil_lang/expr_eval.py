@@ -50,7 +50,6 @@ from mycpp.mylib import log, NewDict, tagswitch
 
 import libc
 
-from types import NoneType
 from typing import cast, Any, Union, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -126,7 +125,7 @@ def Stringify(py_val, word_part=None):
 def _PyObjToValue(val):
   # type: (Any) -> value_t
 
-  if isinstance(val, NoneType):
+  if val is None:
     return value.Undef()
 
   elif isinstance(val, int):
