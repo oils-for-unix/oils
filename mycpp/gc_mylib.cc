@@ -78,10 +78,10 @@ LineReader* gStdin;
 LineReader* open(Str* path) {
   // TODO: Don't use C I/O; use POSIX I/O!
   FILE* f = fopen(path->data_, "r");
-
   if (f == nullptr) {
     throw Alloc<IOError>(errno);
   }
+
   return Alloc<CFileLineReader>(f);
 }
 

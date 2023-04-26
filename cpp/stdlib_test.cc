@@ -53,6 +53,10 @@ TEST open_test() {
   }
   ASSERT(caught);
 
+  // Can open a directory
+  int fd = posix::open(StrFromC("."), 0, 0666);
+  ASSERT(fd > 0);
+
   PASS();
 }
 
