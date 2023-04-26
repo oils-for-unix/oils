@@ -142,6 +142,11 @@ def _ValueToPyObj(val):
       val = cast(value__Str, UP_val)
       return val.s
 
+    elif case(value_e.MaybeStrArray):
+      val = cast(value__MaybeStrArray, UP_val)
+      # XXX type checker is somehow OK with this (holes)?
+      return objects.StrArray(val.strs)
+
     else:
       raise NotImplementedError()
   
@@ -459,6 +464,314 @@ class OilEvaluator(object):
     # yet.
     raise AssertionError(id_)
 
+  def _EvalCommandSub(self, node):
+    # type: (command_sub) -> value_t
+
+    id_ = node.left_token.id
+    # &(echo block literal)
+    if id_ == Id.Left_CaretParen:
+      return value.Str('TODO: value.Block')
+    else:
+      stdout = self.shell_ex.RunCommandSub(node)
+      if id_ == Id.Left_AtParen:  # @(seq 3)
+        strs = self.splitter.SplitForWordEval(stdout)
+        return value.MaybeStrArray(strs)
+      else:
+        return value.Str(stdout)
+
+  def _EvalShArrayLiteral(self, node):
+    # type: (sh_array_literal) -> value_t
+    words = braces.BraceExpandWords(node.words)
+    strs = self.word_ev.EvalWordSequence(words)
+    #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+    return value.MaybeStrArray(strs)
+
+  def _EvalDoubleQuoted(self, node):
+    # type: (double_quoted) -> value_t
+
+    # In an ideal world, I would *statically* disallow:
+    # - "$@" and "${array[@]}"
+    # - backticks like `echo hi`
+    # - $(( 1+2 )) and $[] -- although useful for refactoring
+    #   - not sure: ${x%%} -- could disallow this
+    #     - these enters the ArgDQ state: "${a:-foo bar}" ?
+    # But that would complicate the parser/evaluator.  So just rely on
+    # strict_array to disallow the bad parts.
+    return value.Str(self.word_ev.EvalDoubleQuotedToString(node))
+
+  def _EvalSingleQuoted(self, node):
+    # type: (single_quoted) -> value_t
+    return value.Str(word_compile.EvalSingleQuoted(node))
+
+  def _EvalBracedVarSub(self, node):
+    # type: (braced_var_sub) -> value_t
+    return value.Str(self.word_ev.EvalBracedVarSubToString(node))
+
+  def _EvalSimpleVarSub(self, node):
+    # type: (simple_var_sub) -> value_t
+    return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
+
+  def _EvalUnary(self, node):
+    # type: (expr__Unary) -> Any # XXX
+    child = self._EvalExpr(node.child)
+    if node.op.id == Id.Arith_Minus:
+      return -child
+    if node.op.id == Id.Arith_Tilde:
+      return ~child
+    if node.op.id == Id.Expr_Not:
+      return not child
+
+    raise NotImplementedError(node.op.id)
+
+  def _EvalBinary(self, node):
+    # type: (expr__Binary) -> Any # XXX
+
+    left = self._EvalExpr(node.left)
+    right = self._EvalExpr(node.right)
+
+    if node.op.id == Id.Arith_Plus:
+      return self._ToNumber(left) + self._ToNumber(right)
+    if node.op.id == Id.Arith_Minus:
+      return self._ToNumber(left) - self._ToNumber(right)
+    if node.op.id == Id.Arith_Star:
+      return self._ToNumber(left) * self._ToNumber(right)
+
+    if node.op.id == Id.Arith_Slash:
+      # NOTE: does not depend on from __future__ import division
+      try:
+        result = float(self._ToNumber(left)) / self._ToNumber(right)  # floating point division
+      except ZeroDivisionError:
+        raise error.Expr('divide by zero', node.op)
+
+      return result
+
+    if node.op.id == Id.Expr_DSlash:
+      return self._ToInteger(left) // self._ToInteger(right)  # integer divison
+    if node.op.id == Id.Arith_Percent:
+      return self._ToInteger(left) % self._ToInteger(right)
+
+    if node.op.id == Id.Arith_DStar:  # Exponentiation
+      return self._ToInteger(left) ** self._ToInteger(right)
+
+    if node.op.id == Id.Arith_DPlus:
+      # list or string concatenation
+      # dicts can have duplicates, so don't mess with that
+
+      if not isinstance(left, (str, list)):
+        raise ValueError('Use ++ on strings or lists, got %r' % type(left))
+      if not isinstance(right, (str, list)):
+        raise ValueError('Use ++ on strings or lists, got %r' % type(right))
+
+      return left + right  # type: ignore
+
+    # Bitwise
+    if node.op.id == Id.Arith_Amp:
+      return left & right
+    if node.op.id == Id.Arith_Pipe:
+      return left | right
+    if node.op.id == Id.Arith_Caret:
+      return left ^ right
+    if node.op.id == Id.Arith_DGreat:
+      return left >> right
+    if node.op.id == Id.Arith_DLess:
+      return left << right
+
+    # Logical
+    if node.op.id == Id.Expr_And:
+      return left and right
+    if node.op.id == Id.Expr_Or:
+      return left or right
+
+    raise NotImplementedError(node.op.id)
+
+  def _EvalRange(self, node):
+    # type: (expr__Range) -> Any # XXX
+
+    lower = self._EvalExpr(node.lower)
+    upper = self._EvalExpr(node.upper)
+    return xrange(lower, upper)
+
+  def _EvalSlice(self, node):
+    # type: (expr__Slice) -> Any # XXX
+
+    lower = self._EvalExpr(node.lower) if node.lower else None
+    upper = self._EvalExpr(node.upper) if node.upper else None
+    return slice(lower, upper)
+
+  def _EvalCompare(self, node):
+    # type: (expr__Compare) -> Any # XXX
+
+    left = self._EvalExpr(node.left)
+    result = True  # Implicit and
+    for op, right_expr in zip(node.ops, node.comparators):
+
+      right = self._EvalExpr(right_expr)
+
+      if op.id == Id.Arith_Less:
+        result = self._ToNumber(left) < self._ToNumber(right)
+      elif op.id == Id.Arith_Great:
+        result = self._ToNumber(left) > self._ToNumber(right)
+      elif op.id == Id.Arith_LessEqual:
+        result = self._ToNumber(left) <= self._ToNumber(right)
+      elif op.id == Id.Arith_GreatEqual:
+        result = self._ToNumber(left) >= self._ToNumber(right)
+
+      elif op.id == Id.Expr_TEqual:
+        result = left == right
+      elif op.id == Id.Expr_NotDEqual:
+        result = left != right
+
+      elif op.id == Id.Expr_In:
+        result = left in right
+      elif op.id == Id.Node_NotIn:
+        result = left not in right
+
+      elif op.id == Id.Expr_Is:
+        result = left is right
+      elif op.id == Id.Node_IsNot:
+        result = left is not right
+
+      elif op.id == Id.Expr_DTilde:
+        # no extglob in Oil language; use eggex
+        return libc.fnmatch(right, left)
+      elif op.id == Id.Expr_NotDTilde:
+        return not libc.fnmatch(right, left)
+
+      elif op.id == Id.Expr_TildeDEqual:
+        # Approximate equality
+        if not isinstance(left, str):
+          e_die('~== expects a string on the left', op)
+
+        left = left.strip()
+        if isinstance(right, str):
+          return left == right
+
+        if isinstance(right, bool):  # Python quirk: must come BEFORE int
+          left = left.lower()
+          if left in ('true', '1'):
+            left2 = True
+          elif left in ('false', '0'):
+            left2 = False
+          else:
+            return False
+
+          log('left %r left2 %r', left, left2)
+          return left2 == right
+
+        if isinstance(right, int):
+          if not left.isdigit():
+            return False
+          return int(left) == right
+
+        e_die('~== expects Str, Int, or Bool on the right', op)
+
+      else:
+        try:
+          if op.id == Id.Arith_Tilde:
+            result = self._EvalMatch(left, right, True)
+
+          elif op.id == Id.Expr_NotTilde:
+            result = not self._EvalMatch(left, right, False)
+
+          else:
+            raise AssertionError(op)
+        except RuntimeError as e:
+          # Status 2 indicates a regex parse error.  This is fatal in OSH but
+          # not in bash, which treats [[ like a command with an exit code.
+          e_die_status(2, 'Invalid regex %r' % right, op)
+
+      if not result:
+        return result
+
+      left = right
+
+    return result
+
+  def _EvalIfExp(self, node):
+    # type: (expr__IfExp) -> Any # XXX
+    b = self._EvalExpr(node.test)
+    if b:
+      return self._EvalExpr(node.body)
+    else:
+      return self._EvalExpr(node.orelse)
+
+  def _EvalList(self, node):
+    # type: (expr__List) -> Any # XXX
+    return [self._EvalExpr(e) for e in node.elts]
+
+  def _EvalTuple(self, node):
+    # type: (expr__Tuple) -> Any # XXX
+    return tuple(self._EvalExpr(e) for e in node.elts)
+
+  def _EvalDict(self, node):
+    # type: (expr__Dict) -> Any # XXX
+    # NOTE: some keys are expr.Const
+    keys = [self._EvalExpr(e) for e in node.keys]
+
+    values = []
+    for i, value_expr in enumerate(node.values):
+      if value_expr.tag_() == expr_e.Implicit:
+        v = self.LookupVar(keys[i], loc.Missing())  # {name}
+      else:
+        v = self._EvalExpr(value_expr)
+      values.append(v)
+
+    d = NewDict()
+    for k, v in zip(keys, values):
+      d[k] = v
+    return d
+
+  def _EvalFuncCall(self, node):
+    # type: (expr__FuncCall) -> Any # XXX
+    func = self._EvalExpr(node.func)
+    pos_args, named_args = self.EvalArgList(node.args)
+    ret = func(*pos_args, **named_args)
+    return ret
+
+  def _EvalSubscript(self, node):
+    # type: (subscript) -> Any # XXX
+    obj = self._EvalExpr(node.obj)
+    index = self._EvalIndices(node.indices)
+    try:
+      result = obj[index]
+    except KeyError:
+      # TODO: expr.Subscript has no error location
+      raise error.Expr('dict entry not found', loc.Missing())
+    except IndexError:
+      # TODO: expr.Subscript has no error location
+      raise error.Expr('index out of range', loc.Missing())
+
+    return result
+
+  def _EvalAttribute(self, node):
+    # type: (attribute) -> Any # XXX
+    o = self._EvalExpr(node.obj)
+    id_ = node.op.id
+    if id_ == Id.Expr_Dot:
+      # Used for .startswith()
+      name = node.attr.tval
+      return getattr(o, name)
+
+    if id_ == Id.Expr_RArrow:  # d->key is like d['key']
+      name = node.attr.tval
+      try:
+        result = o[name]
+      except KeyError:
+        raise error.Expr('dict entry not found', node.op)
+
+      return result
+
+    if id_ == Id.Expr_DColon:  # StaticName::member
+      raise NotImplementedError(id_)
+
+      # TODO: We should prevent virtual lookup here?  This is a pure static
+      # namespace lookup?
+      # But Python doesn't any hook for this.
+      # Maybe we can just check that it's a module?  And modules don't lookup
+      # in a supertype or __class__, etc.
+
+    raise AssertionError(id_)
+
   def _EvalExpr(self, node):
     # type: (expr_t) -> Any
     """
@@ -489,263 +802,63 @@ class OilEvaluator(object):
       elif case(expr_e.CommandSub):
         node = cast(command_sub, UP_node)
 
-        id_ = node.left_token.id
-        # &(echo block literal)
-        if id_ == Id.Left_CaretParen:
-          return 'TODO: value.Block'
-        else:
-          stdout = self.shell_ex.RunCommandSub(node)
-          if id_ == Id.Left_AtParen:  # @(seq 3)
-            strs = self.splitter.SplitForWordEval(stdout)
-            return strs
-          else:
-            return stdout
+        return _ValueToPyObj(self._EvalCommandSub(node))
 
       elif case(expr_e.ShArrayLiteral):
         node = cast(sh_array_literal, UP_node)
-
-        words = braces.BraceExpandWords(node.words)
-        strs = self.word_ev.EvalWordSequence(words)
-        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-        # TODO: unify with value_t
-        return objects.StrArray(strs)
+        return _ValueToPyObj(self._EvalShArrayLiteral(node))
 
       elif case(expr_e.DoubleQuoted):
         node = cast(double_quoted, UP_node)
-
-        # In an ideal world, I would *statically* disallow:
-        # - "$@" and "${array[@]}"
-        # - backticks like `echo hi`  
-        # - $(( 1+2 )) and $[] -- although useful for refactoring
-        #   - not sure: ${x%%} -- could disallow this
-        #     - these enters the ArgDQ state: "${a:-foo bar}" ?
-        # But that would complicate the parser/evaluator.  So just rely on
-        # strict_array to disallow the bad parts.
-        return self.word_ev.EvalDoubleQuotedToString(node)
+        return _ValueToPyObj(self._EvalDoubleQuoted(node))
 
       elif case(expr_e.SingleQuoted):
         node = cast(single_quoted, UP_node)
-        return word_compile.EvalSingleQuoted(node)
+        return _ValueToPyObj(self._EvalSingleQuoted(node))
 
       elif case(expr_e.BracedVarSub):
         node = cast(braced_var_sub, UP_node)
-        return self.word_ev.EvalBracedVarSubToString(node)
+        return _ValueToPyObj(self._EvalBracedVarSub(node))
 
       elif case(expr_e.SimpleVarSub):
         node = cast(simple_var_sub, UP_node)
-        return self.word_ev.EvalSimpleVarSubToString(node)
+        return _ValueToPyObj(self._EvalSimpleVarSub(node))
 
       elif case(expr_e.Unary):
         node = cast(expr__Unary, UP_node)
-
-        child = self._EvalExpr(node.child)
-        if node.op.id == Id.Arith_Minus:
-          return -child
-        if node.op.id == Id.Arith_Tilde:
-          return ~child
-        if node.op.id == Id.Expr_Not:
-          return not child
-
-        raise NotImplementedError(node.op.id)
+        return self._EvalUnary(node)
 
       elif case(expr_e.Binary):
         node = cast(expr__Binary, UP_node)
-
-        left = self._EvalExpr(node.left)
-        right = self._EvalExpr(node.right)
-
-        if node.op.id == Id.Arith_Plus:
-          return self._ToNumber(left) + self._ToNumber(right)
-        if node.op.id == Id.Arith_Minus:
-          return self._ToNumber(left) - self._ToNumber(right)
-        if node.op.id == Id.Arith_Star:
-          return self._ToNumber(left) * self._ToNumber(right)
-
-        if node.op.id == Id.Arith_Slash:
-          # NOTE: does not depend on from __future__ import division
-          try:
-            result = float(self._ToNumber(left)) / self._ToNumber(right)  # floating point division
-          except ZeroDivisionError:
-            raise error.Expr('divide by zero', node.op)
-
-          return result
-
-        if node.op.id == Id.Expr_DSlash:
-          return self._ToInteger(left) // self._ToInteger(right)  # integer divison
-        if node.op.id == Id.Arith_Percent:
-          return self._ToInteger(left) % self._ToInteger(right)
-
-        if node.op.id == Id.Arith_DStar:  # Exponentiation
-          return self._ToInteger(left) ** self._ToInteger(right)
-
-        if node.op.id == Id.Arith_DPlus:
-          # list or string concatenation
-          # dicts can have duplicates, so don't mess with that
-
-          if not isinstance(left, (str, list)):
-            raise ValueError('Use ++ on strings or lists, got %r' % type(left))
-          if not isinstance(right, (str, list)):
-            raise ValueError('Use ++ on strings or lists, got %r' % type(right))
-
-          return left + right  # type: ignore
-
-        # Bitwise
-        if node.op.id == Id.Arith_Amp:
-          return left & right
-        if node.op.id == Id.Arith_Pipe:
-          return left | right
-        if node.op.id == Id.Arith_Caret:
-          return left ^ right
-        if node.op.id == Id.Arith_DGreat:
-          return left >> right
-        if node.op.id == Id.Arith_DLess:
-          return left << right
-
-        # Logical
-        if node.op.id == Id.Expr_And:
-          return left and right
-        if node.op.id == Id.Expr_Or:
-          return left or right
-
-        raise NotImplementedError(node.op.id)
+        return self._EvalBinary(node)
 
       elif case(expr_e.Range):  # 1:10  or  1:10:2
         node = cast(expr__Range, UP_node)
-
-        lower = self._EvalExpr(node.lower)
-        upper = self._EvalExpr(node.upper)
-        return xrange(lower, upper)
+        return self._EvalRange(node)
 
       elif case(expr_e.Slice):  # a[:0]
         node = cast(expr__Slice, UP_node)
-
-        lower = self._EvalExpr(node.lower) if node.lower else None
-        upper = self._EvalExpr(node.upper) if node.upper else None
-        return slice(lower, upper)
+        return self._EvalSlice(node)
 
       elif case(expr_e.Compare):
         node = cast(expr__Compare, UP_node)
-
-        left = self._EvalExpr(node.left)
-        result = True  # Implicit and
-        for op, right_expr in zip(node.ops, node.comparators):
-
-          right = self._EvalExpr(right_expr)
-
-          if op.id == Id.Arith_Less:
-            result = self._ToNumber(left) < self._ToNumber(right)
-          elif op.id == Id.Arith_Great:
-            result = self._ToNumber(left) > self._ToNumber(right)
-          elif op.id == Id.Arith_LessEqual:
-            result = self._ToNumber(left) <= self._ToNumber(right)
-          elif op.id == Id.Arith_GreatEqual:
-            result = self._ToNumber(left) >= self._ToNumber(right)
-
-          elif op.id == Id.Expr_TEqual:
-            result = left == right
-          elif op.id == Id.Expr_NotDEqual:
-            result = left != right
-
-          elif op.id == Id.Expr_In:
-            result = left in right
-          elif op.id == Id.Node_NotIn:
-            result = left not in right
-
-          elif op.id == Id.Expr_Is:
-            result = left is right
-          elif op.id == Id.Node_IsNot:
-            result = left is not right
-
-          elif op.id == Id.Expr_DTilde:
-            # no extglob in Oil language; use eggex
-            return libc.fnmatch(right, left)
-          elif op.id == Id.Expr_NotDTilde:
-            return not libc.fnmatch(right, left)
-
-          elif op.id == Id.Expr_TildeDEqual:
-            # Approximate equality
-            if not isinstance(left, str):
-              e_die('~== expects a string on the left', op)
-
-            left = left.strip()
-            if isinstance(right, str):
-              return left == right
-
-            if isinstance(right, bool):  # Python quirk: must come BEFORE int
-              left = left.lower()
-              if left in ('true', '1'):
-                left2 = True
-              elif left in ('false', '0'):
-                left2 = False
-              else:
-                return False
-
-              log('left %r left2 %r', left, left2)
-              return left2 == right
-
-            if isinstance(right, int):
-              if not left.isdigit():
-                return False
-              return int(left) == right
-
-            e_die('~== expects Str, Int, or Bool on the right', op)
-
-          else:
-            try:
-              if op.id == Id.Arith_Tilde:
-                result = self._EvalMatch(left, right, True)
-
-              elif op.id == Id.Expr_NotTilde:
-                result = not self._EvalMatch(left, right, False)
-
-              else:
-                raise AssertionError(op)
-            except RuntimeError as e:
-              # Status 2 indicates a regex parse error.  This is fatal in OSH but
-              # not in bash, which treats [[ like a command with an exit code.
-              e_die_status(2, 'Invalid regex %r' % right, op)
-
-          if not result:
-            return result
-
-          left = right
-        return result
+        return self._EvalCompare(node)
    
       elif case(expr_e.IfExp):
         node = cast(expr__IfExp, UP_node)
-
-        b = self._EvalExpr(node.test)
-        if b:
-          return self._EvalExpr(node.body)
-        else:
-          return self._EvalExpr(node.orelse)
+        return self._EvalIfExp(node)
 
       elif case(expr_e.List):
         node = cast(expr__List, UP_node)
-        return [self._EvalExpr(e) for e in node.elts]
+        return self._EvalList(node)
 
       elif case(expr_e.Tuple):
         node = cast(expr__Tuple, UP_node)
-        return tuple(self._EvalExpr(e) for e in node.elts)
+        return self._EvalTuple(node)
 
       elif case(expr_e.Dict):
         node = cast(expr__Dict, UP_node)
-
-        # NOTE: some keys are expr.Const
-        keys = [self._EvalExpr(e) for e in node.keys]
-
-        values = []
-        for i, value_expr in enumerate(node.values):
-          if value_expr.tag_() == expr_e.Implicit:
-            v = self.LookupVar(keys[i], loc.Missing())  # {name}
-          else:
-            v = self._EvalExpr(value_expr)
-          values.append(v)
-
-        d = NewDict()
-        for k, v in zip(keys, values):
-          d[k] = v
-        return d
+        return self._EvalDict(node)
 
       elif case(expr_e.ListComp):
         e_die_status(2, 'List comprehension reserved but not implemented')
@@ -799,59 +912,17 @@ class OilEvaluator(object):
 
       elif case(expr_e.FuncCall):
         node = cast(expr__FuncCall, UP_node)
-
-        func = self._EvalExpr(node.func)
-        pos_args, named_args = self.EvalArgList(node.args)
-        ret = func(*pos_args, **named_args)
-        return ret
+        return self._EvalFuncCall(node)
 
       elif case(expr_e.Subscript):
         node = cast(subscript, UP_node)
-
-        obj = self._EvalExpr(node.obj)
-        index = self._EvalIndices(node.indices)
-        try:
-          result = obj[index]
-        except KeyError:
-          # TODO: expr.Subscript has no error location
-          raise error.Expr('dict entry not found', loc.Missing())
-        except IndexError:
-          # TODO: expr.Subscript has no error location
-          raise error.Expr('index out of range', loc.Missing())
-
-        return result
+        return self._EvalSubscript(node)
 
       # Note: This is only for the obj.method() case.  We will probably change
       # the AST and get rid of getattr().
       elif case(expr_e.Attribute):  # obj.attr 
         node = cast(attribute, UP_node)
-
-        o = self._EvalExpr(node.obj)
-        id_ = node.op.id
-        if id_ == Id.Expr_Dot:
-          # Used for .startswith()
-          name = node.attr.tval
-          return getattr(o, name)
-
-        if id_ == Id.Expr_RArrow:  # d->key is like d['key']
-          name = node.attr.tval
-          try:
-            result = o[name]
-          except KeyError:
-            raise error.Expr('dict entry not found', node.op)
-
-          return result
-
-        if id_ == Id.Expr_DColon:  # StaticName::member
-          raise NotImplementedError(id_)
-
-          # TODO: We should prevent virtual lookup here?  This is a pure static
-          # namespace lookup?
-          # But Python doesn't any hook for this.
-          # Maybe we can just check that it's a module?  And modules don't lookup
-          # in a supertype or __class__, etc.
-
-        raise AssertionError(id_)
+        return self._EvalAttribute(node)
 
       elif case(expr_e.RegexLiteral):
         node = cast(expr__RegexLiteral, UP_node)
