@@ -88,8 +88,11 @@ This is a supplement to the [main release page](index.html).
   shells use at startup?
 - [mycpp](benchmarks.wwz/mycpp-examples/).  Compares Python and generated C++
   on small examples.
-- [Memory Management Overhead](benchmarks.wwz/gc/).  How much time do we spend
-  managing memory, compared with the shell interpreter?
+- Memory Management Overhead.  How much time do we spend managing memory,
+compared with the shell interpreter?
+  - [benchmarks/gc](benchmarks.wwz/gc/).  Stats from the OS and our GC runtime.
+  - [benchmarks/gc-cachegrind](benchmarks.wwz/gc-cachegrind/).  Stable
+    measurements.
 
 ## Metrics
 

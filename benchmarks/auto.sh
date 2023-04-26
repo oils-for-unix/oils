@@ -96,6 +96,7 @@ all() {
     # Only run on one machine
     benchmarks/mycpp.sh soil-run
     benchmarks/gc.sh soil-run
+    benchmarks/gc-cachegrind.sh soil-run
 
     benchmarks/osh-parser.sh measure-cachegrind \
       _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_CPP_BENCHMARK_DATA
