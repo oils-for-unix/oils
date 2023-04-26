@@ -24,3 +24,11 @@ if d:
 b = True if s else False
 b = True if mylist else False
 b = True if d else False
+
+
+if not mylist:
+  print('List')
+
+other_list = []  # type: List[str]
+if not mylist and not other_list:
+  print('List')

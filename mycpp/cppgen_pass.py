@@ -14,7 +14,7 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, Block, NameExpr, IndexExpr,
                         MemberExpr, TupleExpr, ExpressionStmt, AssignmentStmt,
-                        IfStmt, StrExpr, SliceExpr, FuncDef, UnaryExpr,
+                        IfStmt, StrExpr, SliceExpr, FuncDef, UnaryExpr, OpExpr,
                         ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
                         ListComprehension)
 
@@ -128,11 +128,24 @@ def IsStr(t):
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
-def _CheckConditionType(t):
+def _CheckCondition(node, types):
     """
-  strings, lists, and dicts shouldn't be used in boolean contexts, because that
-  doesn't translate to C++.
-  """
+    strings, lists, and dicts shouldn't be used in boolean contexts, because that
+    doesn't translate to C++.
+    """
+    #log('NODE %s', node)
+
+    if isinstance(node, UnaryExpr) and node.op == 'not':
+        return _CheckCondition(node.expr, types)
+
+    if isinstance(node, OpExpr):
+        #log('OpExpr node %s %s', node, dir(node))
+
+        # if x > 0 and not mylist, etc.
+        return _CheckCondition(node.left, types) and _CheckCondition(node.right, types)
+
+    t = types[node]
+
     if isinstance(t, Instance):
         type_name = t.type.fullname
         if type_name == 'builtins.str':
@@ -1120,9 +1133,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError('Stride not supported')
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
-        cond_type = self.types[o.cond]
-
-        if not _CheckConditionType(cond_type):
+        if not _CheckCondition(o.cond, self.types):
             self.report_error(
                 o,
                 "Use len(mystr), len(mylist) or len(mydict) in conditional expr"
@@ -2616,24 +2627,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Not sure why this wouldn't be true
         assert len(o.expr) == 1, o.expr
 
-        # Omit anything that looks like if __name__ == ...
         cond = o.expr[0]
 
-        if isinstance(cond, UnaryExpr) and cond.op == 'not':
-            # check 'if not mylist'
-            cond_expr = cond.expr
-        else:
-            # TODO: if x > 0 and mylist
-            #       if x > 0 and not mylist , etc.
-            cond_expr = cond
-
-        cond_type = self.types[cond_expr]
-
-        if not _CheckConditionType(cond_type):
+        if not _CheckCondition(cond, self.types):
             self.report_error(
                 o, "Use len(mystr), len(mylist) or len(mydict) in conditional")
             return
 
+        # Omit anything that looks like if __name__ == ...
         if (isinstance(cond, ComparisonExpr)
                 and isinstance(cond.operands[0], NameExpr)
                 and cond.operands[0].name == '__name__'):

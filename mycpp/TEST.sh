@@ -218,7 +218,7 @@ test-invalid-examples() {
 
     case $ex in 
       */invalid_condition.py)
-        expected_status=6
+        expected_status=8
         ;;
       */invalid_default_args.py)
         expected_status=4
