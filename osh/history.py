@@ -168,7 +168,7 @@ class Evaluator(object):
         out = None
         for i in xrange(history_len, 1, -1):
           cmd = self.readline.get_history_item(i)
-          if len(prefix) and cmd.startswith(prefix):
+          if prefix is not None and cmd.startswith(prefix):
             out = cmd
           if len(substring) and substring in cmd:
             out = cmd

@@ -1126,7 +1126,7 @@ class RootCompleter(CompletionAction):
 
         else:
           base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
-          if not user_spec and len(alias_first):
+          if not user_spec and alias_first is not None:
             base_opts, user_spec = self.comp_lookup.GetSpecForName(alias_first)
             if user_spec:
               # Pass the aliased command to the user-defined function, and use

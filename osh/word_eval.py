@@ -1128,7 +1128,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     else:  # no bracket op
       var_name = vtest_place.name
-      if (len(var_name) and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and
+      if (var_name is not None and 
+          val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and
           not vsub_state.is_type_query):
         if ShouldArrayDecay(var_name, self.exec_opts,
                             not (part.prefix_op or part.suffix_op)):
@@ -1207,7 +1208,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # suffix ops are applied.  If we take the length with a prefix op, the
     # distinction is ignored.
 
-    var_name = None  # type: str
+    var_name = None  # type: Optional[str]  # used throughout the function
     vtest_place = VTestPlace(var_name, None)  # For ${foo=default}
     vsub_state = VarSubState.CreateNull()  # for $*, ${a[*]}, etc.
 
@@ -1234,7 +1235,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           return  # EARLY RETURN
 
       var_name = part.var_name
-      vtest_place.name = var_name
+      vtest_place.name = var_name  # for _ApplyTestOp
 
       # TODO: LINENO can use its own span_id!
       val = self.mem.GetValue(var_name)

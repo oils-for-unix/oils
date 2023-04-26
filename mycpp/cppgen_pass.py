@@ -142,7 +142,8 @@ def _CheckCondition(node, types):
         #log('OpExpr node %s %s', node, dir(node))
 
         # if x > 0 and not mylist, etc.
-        return _CheckCondition(node.left, types) and _CheckCondition(node.right, types)
+        return _CheckCondition(node.left, types) and _CheckCondition(
+            node.right, types)
 
     t = types[node]
 
@@ -1136,7 +1137,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if not _CheckCondition(o.cond, self.types):
             self.report_error(
                 o,
-                "Use len(mystr), len(mylist) or len(mydict) in conditional expr"
+                "Use explicit len(obj) or 'obj is not None' for mystr, mylist, mydict"
             )
             return
 
@@ -2631,7 +2632,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if not _CheckCondition(cond, self.types):
             self.report_error(
-                o, "Use len(mystr), len(mylist) or len(mydict) in conditional")
+                o,
+                "Use explicit len(obj) or 'obj is not None' for mystr, mylist, mydict"
+            )
             return
 
         # Omit anything that looks like if __name__ == ...
