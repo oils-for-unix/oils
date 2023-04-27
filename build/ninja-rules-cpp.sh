@@ -97,8 +97,10 @@ setglobal_compile_flags() {
       ;;
 
     ubsan*)
-      # faster build with -O0
-      flags="$flags -O0 -g -fsanitize=undefined"
+      # Extra flag to make it fatal
+      # https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html
+
+      flags="$flags -O0 -g -fsanitize=undefined -fno-sanitize-recover=null"
       ;;
 
     opt*)

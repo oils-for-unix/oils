@@ -9,6 +9,7 @@ import os
 from mycpp.mylib import log, print_stderr
 
 from typing import List
+#import posix_ as posix
 
 
 def Close(fd):
@@ -20,9 +21,9 @@ def Close(fd):
 
 def Pop(fd):
   # type: (int) -> None
-  #log('Close %d', orig)
+
   try:
-    #posix.close(rf.orig_fd)
+    #posix.close(fd)
     Close(fd)
   except (IOError, OSError) as e:
     #log('Error closing descriptor %d: %s', rf.orig_fd, pyutil.strerror(e))
@@ -46,6 +47,8 @@ def run_tests():
   try:
     return AppBundleMain(argv)
 
+  except ValueError as e:
+    return 2
   #except error.Usage as e:
   #  #builtin.Help(['oil-usage'], util.GetResourceLoader())
   #  log('oil: %s', e.msg)

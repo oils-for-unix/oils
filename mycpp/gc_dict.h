@@ -254,8 +254,12 @@ void Dict<K, V>::clear() {
     entry_->items_[i] = kEmptyEntry;
   }
 
-  memset(keys_->items_, 0, len_ * sizeof(K));    // zero for GC scan
-  memset(values_->items_, 0, len_ * sizeof(V));  // zero for GC scan
+  if (keys_ ) {
+    memset(keys_->items_, 0, len_ * sizeof(K));    // zero for GC scan
+  }
+  if (values_) {
+    memset(values_->items_, 0, len_ * sizeof(V));  // zero for GC scan
+  }
   len_ = 0;
 }
 
