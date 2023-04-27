@@ -334,7 +334,9 @@ void List<T>::remove(T x) {
 
 template <typename T>
 void List<T>::clear() {
-  memset(slab_->items_, 0, len_ * sizeof(T));  // zero for GC scan
+  if (slab_) {
+    memset(slab_->items_, 0, len_ * sizeof(T));  // zero for GC scan
+  }
   len_ = 0;
 }
 

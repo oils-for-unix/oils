@@ -342,6 +342,10 @@ TEST list_methods_test() {
   ASSERT_EQ(0, len(ints));
   ASSERT_EQ(0, ints->slab_->items_[0]);  // make sure it's zero'd
 
+  // Clear empty list
+  auto empty = NewList<int*>();
+  empty->clear();
+
   PASS();
 }
 
