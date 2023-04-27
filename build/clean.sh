@@ -5,7 +5,9 @@
 
 set -o nounset
 set -o pipefail
-set -o errexit
+
+# Ignore errors caused by not being root
+# set -o errexit
 
 # To test building stdlib.
 clean-pyc() {
