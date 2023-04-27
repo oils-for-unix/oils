@@ -1,5 +1,5 @@
 """
-core/shell_native.py -- Subset of core/shell.py that we translate to C++.
+core/shell_native.py
 
 TODO: consolidate with core/shell.py.
 """

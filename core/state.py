@@ -750,7 +750,7 @@ class MutableOpts(object):
   def SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
-    _ = _SetOptionNum(opt_name)  # validate it
+    unused = _SetOptionNum(opt_name)  # validate it
     self._SetOldOption(opt_name, b)
 
     UP_val = self.mem.GetValue('SHELLOPTS')

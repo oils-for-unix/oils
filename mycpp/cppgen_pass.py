@@ -32,7 +32,14 @@ class UnsupportedException(Exception):
 
 
 def _SkipAssignment(var_name):
-    """Skip _ = log and unused = log"""
+    """
+    Skip at the top level:
+      _ = log 
+      unused1 = log
+
+    Always skip:
+      x, _ = mytuple  # no second var
+    """
     return var_name == '_' or var_name.startswith('unused')
 
 
@@ -1366,8 +1373,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 return
 
         if isinstance(lval, NameExpr):
-            if _SkipAssignment(lval.name):
-                return
 
             lval_type = self.types[lval]
             #c_type = GetCType(lval_type, local=self.indent != 0)
@@ -2717,10 +2722,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if isinstance(t, NameExpr):
                 if t.name in ('IOError', 'OSError'):
-                    self.report_error(handler,
-                        'Use except (IOError, OSError) rather than catching just one')
+                    self.report_error(
+                        handler,
+                        'Use except (IOError, OSError) rather than catching just one'
+                    )
                 c_type = '%s*' % t.name
-            
 
             elif isinstance(t, MemberExpr):
                 # Heuristic

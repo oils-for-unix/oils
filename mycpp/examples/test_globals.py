@@ -9,6 +9,9 @@ import os
 from mycpp import mylib
 from mycpp.mylib import log
 
+_ = log  # this assignment is ignored
+unused = log  # this too
+
 from typing import List
 
 
@@ -37,6 +40,12 @@ def f():
   gFoo.Print()
 
 
+def g(x):
+  # type: (int) -> int
+  print("g %d" % x)
+  return x
+
+
 def run_tests():
   # type: () -> None
 
@@ -46,6 +55,13 @@ def run_tests():
 
     new_obj = MyClass(42)
     new_obj.Print()
+
+  for j in xrange(3):
+    # _ = g(j)  # hm doesn't work
+
+    # This satisfies lint, the type checker, and is translated correctly by
+    # mycpp
+    unused = g(j)
 
 
 def run_benchmarks():
