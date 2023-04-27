@@ -277,7 +277,7 @@ class FdState(object):
         new_fd = fcntl_.fcntl(fd1, F_DUPFD, _SHELL_MIN_FD)  # type: int
       except (IOError, OSError) as e:
         if e.errno == EBADF:
-          self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
+          print_stderr('F_DUPFD fd %d: %s' % (fd1, pyutil.strerror(e)))
           return NO_FD
         else:
           raise  # this redirect failed
@@ -296,7 +296,7 @@ class FdState(object):
       try:
         fcntl_.fcntl(fd1, F_GETFD)
       except (IOError, OSError) as e:
-        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
+        print_stderr('F_GETFD fd %d: %s' % (fd1, pyutil.strerror(e)))
         raise
 
       need_restore = self._PushSave(fd2)
@@ -306,7 +306,7 @@ class FdState(object):
         posix.dup2(fd1, fd2)
       except (IOError, OSError) as e:
         # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
+        print_stderr('dup2(%d, %d): %s' % (fd1, fd2, pyutil.strerror(e)))
 
         # Restore and return error
         if need_restore:
