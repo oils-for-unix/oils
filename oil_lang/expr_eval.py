@@ -128,14 +128,14 @@ def _PyObjToValue(val):
   if val is None:
     return value.Undef()
 
+  elif isinstance(val, bool):
+    return value.Bool(val)
+
   elif isinstance(val, int):
     return value.Int(val)
 
   elif isinstance(val, float):
     return value.Float(val)
-
-  elif isinstance(val, bool):
-    return value.Bool(val)
 
   elif isinstance(val, str):
     return value.Str(val)
@@ -543,11 +543,7 @@ class OilEvaluator(object):
     if node.op.id == Id.Arith_Minus:
       UP_child = child
       with tagswitch(child) as case:
-        if case(value_e.Bool):
-          child = cast(value__Bool, UP_child)
-          return value.Int(-child.b) # gets promoted...
-
-        elif case(value_e.Int):
+        if case(value_e.Int):
           child = cast(value__Int, UP_child)
           return value.Int(-child.i)
 
@@ -555,34 +551,31 @@ class OilEvaluator(object):
           child = cast(value__Float, UP_child)
           return value.Float(-child.f)
 
+        else:
+          # TODO: want location of operand
+          raise error.InvalidType('Expected Int or Float', loc.Missing())
+
     if node.op.id == Id.Arith_Tilde:
       UP_child = child
       with tagswitch(child) as case:
-        if case(value_e.Bool):
-          child = cast(value__Bool, UP_child)
-          return value.Int(~child.b) # gets promoted...
-
-        elif case(value_e.Int):
+        if case(value_e.Int):
           child = cast(value__Int, UP_child)
           return value.Int(~child.i)
+
+        else:
+          # TODO: want location of operand
+          raise error.InvalidType('Expected Int', loc.Missing())
 
     if node.op.id == Id.Expr_Not:
       UP_child = child
       with tagswitch(child) as case:
-        if case(value_e.Undef):
-          return value.Bool(True) # "not None"
-
-        elif case(value_e.Bool):
+        if case(value_e.Bool):
           child = cast(value__Bool, UP_child)
           return value.Bool(not child.b)
 
-        elif case(value_e.Int):
-          child = cast(value__Int, UP_child)
-          return value.Bool(not child.i)
-
-        elif case(value_e.Float):
-          child = cast(value__Float, UP_child)
-          return value.Bool(not child.f)
+        else:
+          # TODO: want location of operand
+          raise error.InvalidType('Expected Bool', loc.Missing())
 
     raise NotImplementedError(node.op.id)
 
