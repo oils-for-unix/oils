@@ -121,6 +121,34 @@ command command -v seq
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 127
 
+#### history -a
+case $SH in dash|mksh|zsh) exit 0 ;; esac
+
+rm -f tmp
+
+echo '
+history -c
+
+HISTFILE=tmp
+echo 1
+history -a
+echo 2
+' | $SH -i 
+
+cat tmp
+
+## STDOUT:
+1
+2
+^D
+HISTFILE=tmp
+echo 1
+history -a
+## END
+## N-I dash/mksh/zsh STDOUT:
+## END
+
+
 #### history usage
 history
 echo status=$?

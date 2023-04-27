@@ -407,7 +407,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # Interactive, depend on readline
   builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
-  builtins[builtin_i.history] = builtin_lib.History(readline, history_filename, mylib.Stdout())
+  builtins[builtin_i.history] = builtin_lib.History(readline, mem, mylib.Stdout())
 
   #
   # Initialize Evaluators

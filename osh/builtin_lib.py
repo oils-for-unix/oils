@@ -5,13 +5,15 @@ builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
+from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import loc
+from core import state
 from core import vm
 from core.pyerror import e_usage
 from frontend import flag_spec
 from mycpp import mylib
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from frontend.py_readline import Readline
@@ -35,13 +37,13 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline, history_filename, f):
-    # type: (Optional[Readline], str, mylib.Writer) -> None
+  def __init__(self, readline, mem, f):
+    # type: (Optional[Readline], state.Mem, mylib.Writer) -> None
     self.readline = readline
     self.f = f  # this hook is for unit testing only
 
     # TODO: we should be reading this from $HISTFILE (like bash) and not
-    self.history_filename = history_filename
+    self.mem = mem
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -61,7 +63,15 @@ class History(vm._Builtin):
       return 0
 
     if arg.a:
-      readline.write_history_file(self.history_filename)
+      UP_val = self.mem.GetValue('HISTFILE')
+      if UP_val.tag_() == value_e.Str:
+        val = cast(value__Str, UP_val)
+        history_filename = val.s
+      else:
+        # Either abort here, or use the default HISTFILE value
+        raise AssertionError()
+
+      readline.write_history_file(history_filename)
       return 0
 
     # Delete history entry by id number
