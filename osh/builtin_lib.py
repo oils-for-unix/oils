@@ -7,6 +7,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import loc
+from core import error
 from core import state
 from core import vm
 from core.pyerror import e_usage
@@ -42,8 +43,18 @@ class History(vm._Builtin):
     self.readline = readline
     self.f = f  # this hook is for unit testing only
 
-    # TODO: we should be reading this from $HISTFILE (like bash) and not
     self.mem = mem
+
+  def GetHistoryFilename(self):
+    # TODO: In non-strict mode we should try to cast the HISTFILE value to a
+    # string following bash's rules
+
+    UP_val = self.mem.GetValue('HISTFILE')
+    if UP_val.tag_() == value_e.Str:
+      val = cast(value__Str, UP_val)
+      return val.s
+    else:
+      raise error.ErrExit(1, "$HISTFILE is not a string, it should be." + str(UP_val), loc.Missing())
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -63,15 +74,11 @@ class History(vm._Builtin):
       return 0
 
     if arg.a:
-      UP_val = self.mem.GetValue('HISTFILE')
-      if UP_val.tag_() == value_e.Str:
-        val = cast(value__Str, UP_val)
-        history_filename = val.s
-      else:
-        # Either abort here, or use the default HISTFILE value
-        raise AssertionError()
+      readline.write_history_file(self.GetHistoryFilename())
+      return 0
 
-      readline.write_history_file(history_filename)
+    if arg.r:
+      readline.read_history_file(self.GetHistoryFilename())
       return 0
 
     # Delete history entry by id number

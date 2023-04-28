@@ -162,6 +162,7 @@ HELP_SPEC = FlagSpec('help')
 
 HISTORY_SPEC = FlagSpec('history')
 HISTORY_SPEC.ShortFlag('-a')
+HISTORY_SPEC.ShortFlag('-r')
 HISTORY_SPEC.ShortFlag('-c')
 HISTORY_SPEC.ShortFlag('-d', args.Int)
 
