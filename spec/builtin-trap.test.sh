@@ -305,26 +305,33 @@ after=0
 
 #### traps are cleared in subshell (started with &)
 
-# bash is FLAKY on CI for some reason.  dash/mksh are enough for us to test
-# against.
-case $SH in bash) exit ;; esac
+# Test with SIGURG because the default handler is SIG_IGN
+#
+# If we use SIGUSR1, I think the shell reverts to killing the process
 
-trap 'echo USR1' USR1
+# https://man7.org/linux/man-pages/man7/signal.7.html
 
-kill -USR1 $$
+trap 'echo SIGURG' URG
+
+kill -URG $$
 
 # Hm trap doesn't happen here
 { echo begin child; sleep 0.1; echo end child; } &
-kill -USR1 $!
+kill -URG $!
 wait
+echo "wait status $?"
 
-echo done
+# In the CI, mksh sometimes gives:
+#
+# USR1
+# begin child
+# done
+# 
+# leaving off 'end child'.  This seems like a BUG to me?
 
 ## STDOUT:
-USR1
+SIGURG
 begin child
 end child
-done
-## END
-## BUG bash STDOUT:
+wait status 0
 ## END

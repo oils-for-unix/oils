@@ -22,7 +22,9 @@ dump-timezone() {
   # On my machine
   #  /usr/share/zoneinfo/America/Los_Angeles
 
-  file '/etc/localtime'
+  if command -v file; then
+    file '/etc/localtime'
+  fi
   echo
   read md5 _ <<< $(md5sum /etc/localtime)
   log "md5 = $md5"
