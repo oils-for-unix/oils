@@ -9,6 +9,7 @@ import time
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import loc, source, source_t, IntParamBox
+from _devbuild.gen.runtime_asdl import value, scope_e
 
 from asdl import runtime
 
@@ -36,6 +37,7 @@ _ = flag_def
 from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
+from frontend import location
 
 from oil_lang import expr_eval
 from oil_lang import builtin_json
@@ -383,7 +385,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   home_dir = pyos.GetMyHomeDir()
   assert home_dir is not None
 
+  # init the HISTFILE variable to our default history file
   history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
+  mem.SetValue(location.LName('HISTFILE'), value.Str(history_filename), scope_e.GlobalOnly)
 
   #
   # Initialize builtins that don't depend on evaluators
