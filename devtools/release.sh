@@ -79,6 +79,7 @@ make-release-branch() {
 auto-machine1() {
   local resume=${1:-}  # workaround for spec test flakiness bug
   local resume2=${2:-}  # skip past metrics and wild tests
+  local resume3=${3:-}  # skip past metrics and wild tests
 
   sudo -k; sudo true  # clear and re-cache credentials
 
@@ -87,6 +88,10 @@ auto-machine1() {
     # _test-release-build -> _spec-release
     $0 build-and-test
   fi 
+
+  if test -z "$resume2"; then
+    _spec-release
+  fi
 
   if test -z "$resume2"; then
     $0 metrics  # this can catch bugs
@@ -252,23 +257,6 @@ _spec-release() {
   # Eventually we should run spec tests against the oils-for-unix tarball here
 }
 
-_test-release-build() {
-  # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
-  # etc.
-
-  if test -n "$HAVE_ROOT"; then
-    # TODO: Factor out test/alpine.sh to test/chroot.sh
-    test/alpine.sh copy-tar '' oil
-    test/alpine.sh test-tar '' oil
-  fi
-
-  test/spec.sh smoke  # Initial smoke test, slightly redundant.
-
-  run-other-tests
-
-  _spec-release
-}
-
 spec-all() {
   ### Run all spec tests
 
@@ -329,7 +317,18 @@ build-and-test() {
 
   # App bundle
   _release-build
-  _test-release-build  # Note: spec tests run here
+
+  # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
+  # etc.
+  if test -n "$HAVE_ROOT"; then
+    # TODO: Factor out test/alpine.sh to test/chroot.sh
+    test/alpine.sh copy-tar '' oil
+    test/alpine.sh test-tar '' oil
+  fi
+
+  test/spec.sh smoke  # Initial smoke test, slightly redundant.
+
+  run-other-tests
 }
 
 _install() {

@@ -247,9 +247,15 @@ myfunc() {
   set +x
 } 2>err.txt
 
-# SORT for determinism
-sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | 
-  LC_ALL=C sort >&2
+do_sort=1
+
+if test -n $do_sort; then
+  # SORT for determinism
+  sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt | 
+    LC_ALL=C sort >&2
+else
+  cat err.txt
+fi
 
 ## STDOUT:
 2
