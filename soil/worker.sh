@@ -22,9 +22,12 @@ dump-timezone() {
   # On my machine
   #  /usr/share/zoneinfo/America/Los_Angeles
 
+  file '/etc/localtime'
+  echo
   read md5 _ <<< $(md5sum /etc/localtime)
   log "md5 = $md5"
   find /usr/share/zoneinfo -type f | xargs md5sum | grep $md5
+  echo
 }
 
 dump-versions() {
@@ -38,6 +41,7 @@ dump-versions() {
 
   which python3
   python3 -V
+  set +x
 }
 
 dump-locale() {
@@ -47,6 +51,7 @@ dump-locale() {
 
   # show all locales
   locale -a
+  set +x
 }
 
 dump-hardware() {
@@ -91,6 +96,26 @@ dump-user-host() {
   echo
 }
 
+dump-os-info() {
+  dump-user-host
+  echo
+
+  dump-distro
+  echo
+
+  dump-versions
+  echo
+
+  dump-locale
+  echo
+
+  dump-timezone
+  echo
+
+  dump-hardware
+  echo
+}
+
 py-all-and-ninja() {
   ### baseline for most tasks
 
@@ -107,12 +132,8 @@ dummy-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-distro      soil/worker.sh dump-distro     -
-dump-user-host   soil/worker.sh dump-user-host  -
+dump-os-info     soil/worker.sh dump-os-info    -
 dump-env         soil/worker.sh dump-env        -
-dump-timezone    soil/worker.sh dump-timezone   -
-dump-locale      soil/worker.sh dump-locale     -
-dump-hardware    soil/worker.sh dump-hardware   -
 EOF
 }
 
@@ -122,12 +143,8 @@ raw-vm-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-distro      soil/worker.sh dump-distro       -
-dump-user-host   soil/worker.sh dump-user-host    -
+dump-os-info     soil/worker.sh dump-os-info      -
 dump-env         soil/worker.sh dump-env          -
-dump-timezone    soil/worker.sh dump-timezone     -
-dump-locale      soil/worker.sh dump-locale       -
-dump-hardware    soil/worker.sh dump-hardware     -
 perf-install     benchmarks/perf.sh soil-install  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
@@ -144,8 +161,8 @@ pea-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-user-host      soil/worker.sh dump-user-host     -
-dump-locale         soil/worker.sh dump-locale        -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-source           build/py.sh py-source             -
 check-types         pea/TEST.sh check-types           -
 run-tests           pea/TEST.sh run-tests             -
@@ -160,7 +177,8 @@ dev-minimal-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-user-host      soil/worker.sh dump-user-host                -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
@@ -184,8 +202,8 @@ interactive-tasks() {
   ### Print tasks for the 'interactive' build
 
   cat <<EOF
-dump-user-host      soil/worker.sh dump-user-host                -
-dump-hardware       soil/worker.sh dump-hardware                 -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-all-and-ninja    soil/worker.sh py-all-and-ninja              -
 process-table       test/process-table.sh soil-run               _tmp/process-table/index.html
 stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
@@ -197,7 +215,8 @@ wild-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-user-host      soil/worker.sh dump-user-host                -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 build-py            build/py.sh all                              -
 wild                test/wild.sh soil-run                        _tmp/wild-www/index.html
 EOF
@@ -215,7 +234,8 @@ benchmarks-tasks() {
   # (task_name, script, action, result_html)
 
   cat <<EOF
-dump-versions    soil/worker.sh dump-versions          -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 id-test          benchmarks/id-test.sh soil-run        -
 native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/index.html
@@ -231,7 +251,8 @@ EOF
 benchmarks2-tasks() {
   # Note: id-test doesn't run in 'other-tests' because 'gawk' isn't in that image
   cat <<EOF
-dump-versions    soil/worker.sh dump-versions          -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 dev-shell-test   build/dev-shell-test.sh soil-run      -
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
@@ -243,7 +264,8 @@ cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
   cat <<EOF
-dump-versions    soil/worker.sh dump-versions          -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 osh-all          test/spec-cpp.sh osh-all              _tmp/spec/osh-cpp/compare.html
@@ -257,8 +279,8 @@ cpp-small-tasks() {
   # it's OK for now.
 
   cat <<EOF
-dump-versions    soil/worker.sh dump-versions          -
-dump-hardware    soil/worker.sh dump-hardware          -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 build-minimal    build/py.sh minimal                   -
 ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
@@ -279,7 +301,8 @@ cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
   cat <<EOF
-dump-hardware           soil/worker.sh dump-hardware                    -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 build-minimal           build/py.sh minimal                             -
 ninja-config            soil/worker.sh ninja-config                     -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
@@ -300,7 +323,8 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-locale       soil/worker.sh dump-locale             -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
@@ -319,6 +343,8 @@ EOF
 # Reuse ovm-tarball container
 app-tests-tasks() {
   cat <<EOF
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 py-all            build/py.sh all                         -
 yajl              build/py.sh yajl-release                -
 ble-clone         test/ble.sh clone                       -
@@ -333,8 +359,8 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-dump-distro            soil/worker.sh dump-distro                 -
-dump-locale            soil/worker.sh dump-locale                 -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
 build-minimal          build/py.sh minimal                        -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -
@@ -362,9 +388,9 @@ tests-todo() {
 # Redefinition for quicker cloud debugging
 maybe-merge-tasks() {
   cat <<EOF
-dump-env            soil/worker.sh dump-env           -
-dump-user-host      soil/worker.sh dump-user-host     -
-maybe-merge         soil/maybe-merge.sh soil-run      -
+dump-os-info     soil/worker.sh dump-os-info      -
+dump-env         soil/worker.sh dump-env          -
+maybe-merge      soil/maybe-merge.sh soil-run     -
 EOF
 }
 
