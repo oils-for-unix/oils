@@ -132,22 +132,73 @@ history -c
 HISTFILE=tmp
 echo 1
 history -a
+cat tmp
+
 echo 2
-' | $SH -i 
 
 cat tmp
+' | $SH -i
+
+# match osh's behaviour of echoing ^D for EDF
+case $SH in bash) echo '^D' ;; esac
 
 ## STDOUT:
 1
-2
-^D
 HISTFILE=tmp
 echo 1
 history -a
+2
+HISTFILE=tmp
+echo 1
+history -a
+^D
 ## END
 ## N-I dash/mksh/zsh STDOUT:
 ## END
 
+#### history -r
+case $SH in dash|mksh|zsh) exit 0 ;; esac
+
+rm -f tmp
+echo 'foo' > tmp
+
+echo '
+history -c
+
+HISTFILE=tmp
+history -r
+history
+' | $SH -i
+
+# match osh's behaviour of echoing ^D for EDF
+case $SH in bash) echo '^D' ;; esac
+
+## STDOUT:
+    1  HISTFILE=tmp
+    2  history -r
+    3  foo
+    4  history
+^D
+## END
+## N-I dash/mksh/zsh STDOUT:
+## END
+
+#### HISTFILE is defined initially
+case $SH in zsh) exit 0 ;; esac
+
+echo '
+if test -n $HISTFILE; then echo exists; fi
+' | $SH -i
+
+# match osh's behaviour of echoing ^D for EDF
+case $SH in bash|mksh|dash) echo '^D' ;; esac
+
+## STDOUT:
+exists
+^D
+## END
+## N-I zsh STDOUT:
+## END
 
 #### history usage
 history
