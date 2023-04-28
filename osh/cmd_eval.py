@@ -1395,8 +1395,9 @@ class CommandEvaluator(object):
       elif case(command_e.Proc):
         node = cast(command__Proc, UP_node)
 
-        if node.name.tval in self.procs and not self.exec_opts.redefine_proc():
-          e_die("Proc %s was already defined (redefine_proc)" % node.name.tval,
+        proc_name = lexer.TokenVal(node.name)
+        if proc_name in self.procs and not self.exec_opts.redefine_proc():
+          e_die("Proc %s was already defined (redefine_proc)" % proc_name,
                 node.name)
 
         defaults = None  # type: List[value_t]
@@ -1410,8 +1411,8 @@ class CommandEvaluator(object):
                 py_val = self.expr_ev.EvalExpr(p.default_val, loc.Missing())
                 defaults[i] = _PyObjectToVal(py_val)
      
-        self.procs[node.name.tval] = Proc(
-            node.name.tval, node.name, node.sig, node.body, defaults,
+        self.procs[proc_name] = Proc(
+            proc_name, node.name, node.sig, node.body, defaults,
             False)  # no dynamic scope
 
         status = 0
@@ -1907,7 +1908,7 @@ class CommandEvaluator(object):
           status = e.StatusCode()
         else:
           # break/continue used in the wrong place.
-          e_die('Unexpected %r (in function call)' % e.token.tval, e.token)
+          e_die('Unexpected %r (in function call)' % lexer.TokenVal(e.token), e.token)
       except error.FatalRuntime as e:
         # Dump the stack before unwinding it
         self.dumper.MaybeRecord(self, e)

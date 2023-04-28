@@ -1816,6 +1816,8 @@ class CommandParser(object):
     node = command.Proc.CreateNull(alloc_lists=True)
 
     keyword_tok = _KeywordToken(self.cur_word)
+    node.keyword = keyword_tok
+
     with ctx_VarChecker(self.var_checker, keyword_tok):
       self.w_parser.ParseProc(node)
       if node.sig.tag_() == proc_sig_e.Closed:  # Register params

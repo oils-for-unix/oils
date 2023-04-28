@@ -347,7 +347,7 @@ module syntax
   | PlaceMutation(Token? keyword, List[place_expr] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
-  | Proc(Token name, proc_sig sig, command body)
+  | Proc(Token keyword, Token name, proc_sig sig, command body)
 
   # Tea
 
