@@ -305,7 +305,8 @@ py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
-osh-spec          test/spec.sh soil-run-osh              _tmp/spec/osh-py/index.html
+osh-spec          test/spec.sh osh-all-serial            _tmp/spec/osh-py/index.html
+interactive-spec  test/spec.sh interactive-all-serial    _tmp/spec/interactive-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 oshc-deps         test/oshc-deps.sh soil-run             -

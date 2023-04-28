@@ -22,6 +22,7 @@ class SpecParams(object):
 
   def File(self,
       name,  # e.g. alias, oil-blocks
+      suite=None,
       compare_shells='',  # e.g. 'bash' or 'bash dash mksh zsh'
       our_shell='',  # osh or ysh
       allowed_failures=0):
@@ -36,7 +37,7 @@ class SpecParams(object):
       # Tea could run from OSH with parse_tea!  Nothing here passes yet.
       o = our_shell or 'osh'  
     else:
-      suite = 'osh'
+      suite = suite or 'osh'
       o = our_shell or 'osh'
 
     # Note: Can also select bash 4.4 vs. bash 5.2 here

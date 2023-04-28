@@ -123,12 +123,14 @@ write-suite-manifests() {
         osh) echo $name >& $osh ;;
         ysh) echo $name >& $oil ;;
         tea) echo $name >& $tea ;;
+        interactive) echo $name >& $interactive ;;
         *)   die "Invalid suite $suite" ;;
       esac
     done 
   } {osh}>_tmp/spec/SUITE-osh.txt \
     {oil}>_tmp/spec/SUITE-oil.txt \
-    {tea}>_tmp/spec/SUITE-tea.txt
+    {tea}>_tmp/spec/SUITE-tea.txt \
+    {interactive}>_tmp/spec/SUITE-interactive.txt
 }
 
 dispatch-one() {

@@ -189,6 +189,10 @@ osh-minimal-version-text() {
   osh-version-text
 }
 
+interactive-version-text() {
+  osh-version-text
+}
+
 #
 # Misc
 #
@@ -219,6 +223,13 @@ osh-all() {
 
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel osh compare-py osh-py
+}
+
+interactive-all() {
+  check-survey-shells
+
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel interactive compare-py interactive-py
 }
 
 oil-all() {
@@ -262,6 +273,7 @@ EOF
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
 oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
+interactive-all-serial() { MAX_PROCS=1 $0 interactive-all "$@"; }
 
 soil-run-osh() {
   osh-all-serial

@@ -5,6 +5,21 @@ spec_osh.py
 from __future__ import print_function
 
 def Define(sp):
+  # Isolate it in its own test suite because of job control issue
+  sp.File('interactive', suite='interactive')
+
+  # Also uses $SH -i quite a bit
+  sp.File('sh-options', suite='interactive')
+  sp.File('sh-usage', suite='interactive')
+
+  # one cases uses -i
+  sp.File('var-num', suite='interactive')
+
+
+  #
+  # suite osh
+  #
+
   sp.File('alias')
 
   sp.File('append')
@@ -113,8 +128,6 @@ def Define(sp):
 
   sp.File('if_')
 
-  sp.File('interactive')
-
   sp.File('introspect')
 
   sp.File('let')
@@ -151,10 +164,6 @@ def Define(sp):
 
   sp.File('sh-func')
 
-  sp.File('sh-options')
-
-  sp.File('sh-usage')
-
   sp.File('smoke')
 
   sp.File('strict-options')
@@ -170,8 +179,6 @@ def Define(sp):
   sp.File('toysh-posix')
 
   sp.File('type-compat')
-
-  sp.File('var-num')
 
   sp.File('var-op-bash')
 
