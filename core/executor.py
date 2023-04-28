@@ -154,9 +154,9 @@ class ShellExecutor(vm._Executor):
       # - continue | less
       # - ( return )
       # NOTE: This could be done at parse time too.
-      if node.token.id != Id.ControlFlow_Exit:
+      if node.keyword.id != Id.ControlFlow_Exit:
         e_die('Invalid control flow %r in pipeline / subshell / background' %
-              lexer.TokenVal(node.token), node.token)
+              lexer.TokenVal(node.keyword), node.keyword)
 
     # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
     # only really matters when executing 'exit 42', because the child shell

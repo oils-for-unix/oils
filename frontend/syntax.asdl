@@ -303,7 +303,7 @@ module syntax
   | Sentence(command child, Token terminator)
     # Note: Only represents "bare assignment"
   | ShAssignment(List[assign_pair] pairs, List[redir] redirects)
-  | ControlFlow(Token token, word? arg_word)
+  | ControlFlow(Token keyword, word? arg_word)
     # Note: There are spids for every pipeline operator, parallel to
     # stderr_indices
   | Pipeline(List[command] children, bool negated, List[int] stderr_indices)

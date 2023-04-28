@@ -60,6 +60,7 @@ from core import ui
 from core import util
 from core import vm
 from frontend import consts
+from frontend import lexer
 from frontend import location
 from oil_lang import objects
 from osh import braces
@@ -1057,7 +1058,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.ControlFlow):
         node = cast(command__ControlFlow, UP_node)
-        tok = node.token
+        tok = node.keyword
 
         if node.arg_word:  # Evaluate the argument
           str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1075,7 +1076,7 @@ class CommandEvaluator(object):
               arg = int(str_val.s)
             except ValueError:
               e_die('%r expected a number, got %r' %
-                    (node.token.tval, str_val.s), loc.Word(node.arg_word))
+                    (lexer.TokenVal(node.keyword), str_val.s), loc.Word(node.arg_word))
         else:
           if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()
