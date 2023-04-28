@@ -241,7 +241,7 @@ namespace grammar {
           src_f.write('  labels = NewList<int>(\n')
           src_f.write('    std::initializer_list<int>{\n')
           src_f.write('      ')
-          src_f.write(',\n      '.join(map(str, self.labels)))
+          src_f.write(',\n      '.join([str(label) for label in self.labels]))
           src_f.write('\n')
           src_f.write('    }\n')
           src_f.write('  );\n')
