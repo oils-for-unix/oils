@@ -169,26 +169,43 @@ revert() {
 # Things we want to get rid of
 #
 
-# 117 tval, 95 outside tests
-tval() {
-  #grep -n -w tval */*.py | grep -v _test.py | tee _tmp/tval
-  grep -n -w tval */*_eval.py | grep -v _test.py | tee _tmp/tval
+show-usages() {
+  local out=$1
+  shift
+  "$@" | grep -v _test.py | tee $out
+  echo
+  wc -l $out
 }
 
-# 869 spid, 855 outside tests.  Wow!
-spid() {
-  egrep -n 'span_id|spid' */*.py | grep -v _test.py | tee _tmp/spid
+# 2023-04: 87 left
+tval-all() {
+  show-usages _tmp/tval-all \
+    grep -n -w tval */*.py
 }
 
+# 2023-04: 26 left
+tval-eval() {
+  show-usages _tmp/tval-all \
+    grep -n -w tval */*_eval.py
+}
+
+# 2023-04: 518 left, many are in osh2oil
+spid-all() {
+  show-usages _tmp/spid-all \
+    egrep -n 'span_id|spid' */*.py
+}
+
+# 2023-04: 14 left
 spid-sig() {
-  egrep -n 'def.*(span_id|spid)' */*.py
+  show-usages _tmp/spid-sig \
+    egrep -n 'def.*(span_id|spid)' */*.py
 }
 
 # We also want to get rid of 2 instances of 'attributes' in frontend/syntax.asdl
 #
-# - Every node in command_t has a left token
-# - Every node in word_par_t has a left AND a right -- so we can look up the
-#   right most span for a word
+# - Every variant of command_t has a left token
+# - Every variant of word_part_t has a left AND a right -- so we can look up
+#   the right most span for a word
 
 asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl

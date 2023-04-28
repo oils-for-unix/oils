@@ -1058,7 +1058,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.ControlFlow):
         node = cast(command__ControlFlow, UP_node)
-        tok = node.keyword
+        keyword = node.keyword
 
         if node.arg_word:  # Evaluate the argument
           str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1076,35 +1076,35 @@ class CommandEvaluator(object):
               arg = int(str_val.s)
             except ValueError:
               e_die('%r expected a number, got %r' %
-                    (lexer.TokenVal(node.keyword), str_val.s), loc.Word(node.arg_word))
+                    (lexer.TokenVal(keyword), str_val.s), loc.Word(node.arg_word))
         else:
-          if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
+          if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()
           else:
             arg = 1  # break or continue 1 level by default
 
-        self.tracer.OnControlFlow(tok.tval, arg)
+        self.tracer.OnControlFlow(keyword.tval, arg)
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
         ok = True
-        if (tok.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
+        if (keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
             self.loop_level == 0):
           ok = False
 
         if ok:
-          if tok.id == Id.ControlFlow_Exit:
+          if keyword.id == Id.ControlFlow_Exit:
             raise util.UserExit(arg)  # handled differently than other control flow
           else:
-            raise vm.ControlFlow(tok, arg)
+            raise vm.ControlFlow(keyword, arg)
         else:
           msg = 'Invalid control flow at top level'
           if self.exec_opts.strict_control_flow():
-            e_die(msg, tok)
+            e_die(msg, keyword)
           else:
             # Only print warnings, never fatal.
             # Bash oddly only exits 1 for 'return', but no other shell does.
-            self.errfmt.PrefixPrint(msg, 'warning: ', tok)
+            self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
             status = 0
 
       # Note CommandList and DoGroup have no redirects, but BraceGroup does.
