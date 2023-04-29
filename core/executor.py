@@ -304,7 +304,9 @@ class ShellExecutor(vm._Executor):
       p = process.Process(thunk, self.job_state, self.tracer)
       if self.job_state.JobControlEnabled():
         if self.fg_pipeline is not None:
-          change = process.SetPgid(posix.getpgid(self.fg_pipeline.pids[0]))
+          first_pid = self.fg_pipeline.pids[0]
+          assert first_pid == posix.getpgid(first_pid), "Expected pipeline leader"
+          change = process.SetPgid(first_pid)
           self.fg_pipeline = None  # clear to avoid confusion in subshells
         else:
           change = process.SetPgid(process.OWN_LEADER)
@@ -443,6 +445,9 @@ class ShellExecutor(vm._Executor):
 
     p = self._MakeProcess(node,
                           inherit_errexit=self.exec_opts.inherit_errexit())
+
+    # TODO: I think we can remove this, because a CommandSub just remains part
+    # of the shell's process group
     if self.job_state.JobControlEnabled():
       p.AddStateChange(process.SetPgid(posix.getpgid(0)))
 
