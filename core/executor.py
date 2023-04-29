@@ -445,11 +445,8 @@ class ShellExecutor(vm._Executor):
 
     p = self._MakeProcess(node,
                           inherit_errexit=self.exec_opts.inherit_errexit())
-
-    # TODO: I think we can remove this, because a CommandSub just remains part
-    # of the shell's process group
-    if self.job_state.JobControlEnabled():
-      p.AddStateChange(process.SetPgid(posix.getpgid(0)))
+    # Shell quirk: Command subs remain part of the shell's process group, so we
+    # don't use p.AddStateChange(process.SetPgid(...))
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
