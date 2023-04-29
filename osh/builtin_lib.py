@@ -41,9 +41,8 @@ class History(vm._Builtin):
   def __init__(self, readline, mem, f):
     # type: (Optional[Readline], state.Mem, mylib.Writer) -> None
     self.readline = readline
-    self.f = f  # this hook is for unit testing only
-
     self.mem = mem
+    self.f = f  # this hook is for unit testing only
 
   def GetHistoryFilename(self):
     # type: () -> str

@@ -19,17 +19,16 @@ from osh import builtin_lib  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
-  TEST_PATH = '_tmp/builtin_test_history.txt'
-
   def testHistoryBuiltin(self):
-     with open(BuiltinTest.TEST_PATH, 'w') as f:
+     test_path = '_tmp/builtin_test_history.txt'
+     with open(test_path, 'w') as f:
        f.write("""\
 echo hello
 ls one/
 ls two/
 echo bye
 """)
-     readline.read_history_file(BuiltinTest.TEST_PATH)
+     readline.read_history_file(test_path)
 
      # Show all
      f = cStringIO.StringIO()
