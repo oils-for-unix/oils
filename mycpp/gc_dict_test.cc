@@ -16,6 +16,10 @@ TEST test_dict_init() {
 
 TEST test_dict() {
   Dict<int, Str*>* d = NewDict<int, Str*>();
+
+  // Regression: clear empty dict
+  d->clear();
+
   d->set(1, StrFromC("foo"));
   log("d[1] = %s", d->index_(1)->data_);
 

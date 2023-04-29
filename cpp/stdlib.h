@@ -77,9 +77,10 @@ inline Tuple2<int, int> pipe() {
   return Tuple2<int, int>(fd[0], fd[1]);
 }
 
-inline int close(int fd) {
-  // TODO: handle errno.  Although I'm not sure if it happens!
-  return ::close(fd);
+inline void close(int fd) {
+  if (::close(fd) < 0) {
+    throw Alloc<OSError>(errno);
+  }
 }
 
 void putenv(Str* name, Str* value);

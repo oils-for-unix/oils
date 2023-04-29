@@ -218,13 +218,16 @@ test-invalid-examples() {
 
     case $ex in 
       */invalid_condition.py)
-        expected_status=6
+        expected_status=8
         ;;
       */invalid_default_args.py)
         expected_status=4
         ;;
       */invalid_try_else.py)
         expected_status=3
+        ;;
+      */invalid_except.py)
+        expected_status=2
         ;;
     esac
 
@@ -240,22 +243,27 @@ test-runtime() {
 
   # Special test
 
-  for variant in asan+bumpleak ubsan+bumpleak; do
-    local bin=_bin/cxx-$variant/mycpp/bump_leak_heap_test
+  # TODO: Switch when the CI supports it
+  # We also want to change test/cpp-unit.sh all-tests
+
+  local ubsan_compiler=cxx
+  #local ubsan_compiler=clang
+
+  for config in cxx-asan+bumpleak $ubsan_compiler-ubsan+bumpleak; do
+    local bin=_bin/$config/mycpp/bump_leak_heap_test
     ninja $bin
     run-test-bin $bin
   done
 
-  for variant in asan+cheney ubsan+cheney; do
-    local bin=_bin/cxx-$variant/mycpp/cheney_heap_test
+  for config in cxx-asan+cheney $ubsan_compiler-ubsan+cheney; do
+    local bin=_bin/$config/mycpp/cheney_heap_test
     ninja $bin
     run-test-bin $bin
   done
 
   # Run other tests with all variants
 
-
-  unit '' ubsan
+  unit $ubsan_compiler ubsan
 
   unit '' asan
   unit '' asan+gcalways

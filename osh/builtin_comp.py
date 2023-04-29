@@ -11,11 +11,13 @@ from core import completion
 from core import error
 from core import ui
 from core import vm
-#from mycpp.mylib import log
+from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
 from core import state
+
+_ = log
 
 from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -225,8 +227,10 @@ class SpecBuilder(object):
     if base_opts.get('dirnames', False):
       else_actions.append(completion.FileSystemAction(True, False, False))
 
-    if not actions and not else_actions:
-      raise error.Usage('No actions defined in completion: %s' % argv, loc.Missing())
+    if len(actions) == 0 and len(else_actions) == 0:
+      raise error.Usage(
+          'No actions defined in completion: %s' % ' '.join(argv),
+          loc.Missing())
 
     p = completion.DefaultPredicate()  # type: completion._Predicate
     if arg.X is not None:
@@ -269,7 +273,6 @@ class Complete(vm._Builtin):
     attrs = flag_spec.ParseMore('complete', arg_r)
     arg = arg_types.complete(attrs.attrs)
     # TODO: process arg.opt_changes
-    #log('arg %s', arg)
 
     commands = arg_r.Rest()
 

@@ -74,7 +74,7 @@ module runtime
   a_index = Str(str s) | Int(int i)
 
   # for the place in ${a[0]=a}
-  VTestPlace = (str name, a_index index)
+  VTestPlace = (str? name, a_index? index)
 
   # evaluation state for braced_var_sub 
   VarSubState = (bool join_array, bool is_type_query)

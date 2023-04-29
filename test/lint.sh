@@ -368,22 +368,18 @@ base-classes() {
 translation() {
   set +o errexit
 
-  build/translate.sh oils-cpp-xmanifest \
+  metrics/source-code.sh osh-files \
     | xargs egrep -n 'IndexError|KeyError'
   local status=$?
 
-  #if test $status -eq 0; then
-  #  die "Shouldn't have matched"
-  #fi
-
   echo
 
-  # See what we have to translate to 'with' in Python
-  # 36 different occurrences.  OK it's doable.
-  build/translate.sh oils-cpp-xmanifest \
+  # 4 occurrences
+  # source builtin, core/process.py, etc.
+
+  metrics/source-code.sh osh-files \
     | xargs egrep -n 'finally:'
     #| xargs egrep -n -A 1 'finally:'
-
 }
  
 run-task "$@"

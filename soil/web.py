@@ -1,44 +1,31 @@
 #!/usr/bin/env python2
 """
-soil/web.py - Dashboard using "Event Sourcing" Paradigm
+soil/web.py - Dashboard that uses the "Event Sourcing" Paradigm
 
-Given this state:
+Given state like this:
 
 https://test.oils-for-unix.org/
   github-jobs/
     1234/  # $GITHUB_RUN_NUMBER
       cpp-small.tsv    # benchmarks/time.py output.  Success/failure for each task.
       cpp-small.json   # metadata when job is DONE
-      cpp-small.state  # for more transient events
 
       (cpp-small.wwz is linked to, but not part of the state.)
+
+      (cpp-small.state  # maybe for more transient events)
 
 This script generates:
 
 https://test.oils-for-unix.org/
   github-jobs/
+    tmp-$$.index.html  # jobs for all runs
     1234/
-      tmp-$$.index.html  # function of JSON contents
-      tmp-$$.raw.html    # function of dir listing
-      tmp-$$.remove.txt  # function of dir listing (JSON only)
-    commits/
-      tmp-$$.01ab01ab.html  # function of JSON and _tmp/soil/INDEX.tsv
-                            # links to all jobs AND all tasks
-                            # TODO: and all container images
+      tmp-$$.index.html  # jobs and tasks for a given run
+      tmp-$$.remove.txt  # TODO: consolidate 'cleanup', to make it faster
 
-TODO:
-
-- Fix srht- links -- the .wwz path is wrong
-- Get rid of foo.wwz/index.html ?   Or just get rid of LINKS to it
-  - maybe consolidate
-- Link to image-layers.wwz from the tasks table
-
-
-- Can we publish spec test numbers in JSON?
-
-- What about HTML generated on the WORKER?
-  - foo.wwz/index.html
-  - _tmp/soil/image.html - layers
+    # For sourcehut
+    git-0101abab/
+      tmp-$$.index.html
 
 How to test changes to this file:
 
@@ -127,9 +114,6 @@ def _ParsePullTime(time_p_str):
 
   Return the real time as a string, or - if we don't know it.
   """
-  if time_p_str is None:
-    return '-'
-
   for line in time_p_str.splitlines():
     m = LINE_RE.match(line)
     if m:
@@ -144,21 +128,23 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 <table>
 <tr class="spacer">
-  <td colspan=6></td>
+  <td></td>
 </tr>
 
 <tr class="commit-row">
-  <td colspan=2>
-    <code>{git-branch}</code>
-    &nbsp;
-    {.section github-commit-link}
-      <code>
-        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
-      </code>
-    {.end}
+  <td>
+    <code>
+      {.section github-commit-link}
+      <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+
+      {.section sourcehut-commit-link}
+      <a href="https://git.sr.ht/~andyc/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+    </code>
   </td>
 
-  <td class="commit-line" colspan=4>
+  <td class="commit-line">
     {.section github-pr}
       <i>
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
@@ -169,53 +155,86 @@ DETAILS_RUN_T = jsontemplate.Template('''\
     {.section commit-desc}
       {@|html}
     {.end}
+
+    {.section git-branch}
+      <br/>
+      <div style="text-align: right; font-family: monospace">{@}</div>
+    {.end}
   </td>
 
 </tr>
 <tr class="spacer">
-  <td colspan=6><td/>
+  <td><td/>
 </tr>
 
 </table>
 ''')
 
 
-DETAILS_JOB_ROW_T = jsontemplate.Template('''\
-<tr>
+DETAILS_TABLE_T = jsontemplate.Template('''\
+<table class="col1-right col3-right col4-right col5-right col6-right">
 
-  <td>{job_num}</td>
+  <thead>
+    <tr>
+      <td>ID</td>
+      <td>Job Name</td>
+      <td>Start Time</td>
+      <td>Pull Time</td>
+      <td>Run Time</td>
+      <td>Status</td>
+    </tr>
+  </thead>
 
-  <!-- internal link -->
-  <td> <code><a href="#job-{job-name}">{job-name}</a></code> </td>
+  {.repeated section jobs}
+    <tr>
 
-  <td><a href="{job_url}">{start_time_str}</a></td>
-  <td>{pull_time_str}</td>
-  <td>{run_time_str}</td>
+      <td>{job_num}</td>
 
-  <td> <!-- status -->
-  {.section passed}
-    <span class="pass">pass</span>
+      <!-- internal link -->
+      <td> <code><a href="#job-{job-name}">{job-name}</a></code> </td>
+
+      <td><a href="{job_url}">{start_time_str}</a></td>
+      <td>
+        {.section pull_time_str}
+          <a href="{run_wwz_path}/_tmp/soil/image.html">{@}</a>
+        {.or}
+          -
+        {.end}
+      </td>
+
+      <td>{run_time_str}</td>
+
+      <td> <!-- status -->
+      {.section passed}
+        <span class="pass">pass</span>
+      {.end}
+
+      {.section failed}
+        <span class="fail">FAIL</span><br/>
+        <span class="fail-detail">
+        {.section one-failure}
+          task <code>{@}</code>
+        {.end}
+
+        {.section multiple-failures}
+          {num-failures} of {num-tasks} tasks
+        {.end}
+        </span>
+      {.end}
+      </td>
+
+    </tr>
   {.end}
 
-  {.section failed}
-    <span class="fail">FAIL</span><br/>
-    <span class="fail-detail">
-    {.section one-failure}
-      task <code>{@}</code>
-    {.end}
-
-    {.section multiple-failures}
-      {num-failures} of {num-tasks} tasks
-    {.end}
-    </span>
-  {.end}
-  </td>
-
-</tr>
+</table>
 ''')
 
 
 def ParseJobs(stdin):
+  """
+  Given the output of list-json, open JSON and corresponding TSV, and yield a
+  list of JSON template rows.
+  """
   for i, line in enumerate(stdin):
     json_path = line.strip()
 
@@ -248,7 +267,7 @@ def ParseJobs(stdin):
           status = int(status)
           elapsed = float(elapsed)
 
-          t['elapsed_str'] = '%.2f' % elapsed
+          t['elapsed_str'] = _MinutesSeconds(elapsed)
 
           all_tasks.append(t)
 
@@ -284,7 +303,9 @@ def ParseJobs(stdin):
 
     meta['run_time_str'] = _MinutesSeconds(total_elapsed)
 
-    meta['pull_time_str'] = _ParsePullTime(meta.get('image-pull-time'))
+    pull_time = meta.get('image-pull-time')
+    if pull_time is not None:
+      meta['pull_time_str'] = _ParsePullTime(pull_time)
 
     start_time = meta.get('task-run-start-time')
     if start_time is None:
@@ -307,7 +328,7 @@ def ParseJobs(stdin):
     # Metadata for a "run".  A run is for a single commit, and consists of many
     # jobs.
 
-    meta['git-branch'] = meta.get('GITHUB_REF')  or '?'
+    meta['git-branch'] = meta.get('GITHUB_REF')
 
     # Show the branch ref/heads/soil-staging or ref/pull/1577/merge (linkified)
     pr_head_ref = meta.get('GITHUB_PR_HEAD_REF')
@@ -328,52 +349,56 @@ def ParseJobs(stdin):
       meta['commit-desc'] = meta.get('commit-line', '?')
       commit_hash = meta.get('commit-hash') or '?'
 
-    # TODO: Make a sourcehut link too
-    meta['github-commit-link'] = {
+    commit_link = {
         'commit-hash': commit_hash,
-        'commit-hash-short': commit_hash[-8:],
+        'commit-hash-short': commit_hash[:8],
         }
-
-    # Metadata for "Job"
 
     meta['job-name'] = meta.get('job-name') or '?'
 
+    # Metadata for "Job"
+
     # GITHUB_RUN_NUMBER (project-scoped) is shorter than GITHUB_RUN_ID (global
     # scope)
-    meta['job_num'] = meta.get('JOB_ID') or meta.get('GITHUB_RUN_NUMBER') or '?'
+    github_run = meta.get('GITHUB_RUN_NUMBER')
+
+    if github_run:
+      meta['job_num'] = github_run
+      meta['index_run_url'] = '%s/' % github_run
+
+      meta['github-commit-link'] = commit_link
+
+      run_url_prefix = ''
+    else:
+      sourcehut_job_id = meta['JOB_ID'] 
+      meta['job_num'] = sourcehut_job_id
+      meta['index_run_url'] = 'git-%s/' % meta['commit-hash']
+
+      meta['sourcehut-commit-link'] = commit_link
+
+      # sourcehut doesn't have RUN ID, so we're in
+      # srht-jobs/git-ab01cd/index.html, and need to find srht-jobs/123/foo.wwz
+      run_url_prefix = '../%s/' % sourcehut_job_id
+
     # For Github, we construct $JOB_URL in soil/github-actions.sh
     meta['job_url'] = meta.get('JOB_URL') or '?'
 
     prefix, _ = os.path.splitext(json_path)  # x/y/123/myjob
     parts = prefix.split('/')
 
-    meta['run_wwz_path'] = parts[-1] + '.wwz'  # myjob.wwz
+    # Paths relative to github-jobs/1234/
+    meta['run_wwz_path'] = run_url_prefix + parts[-1] + '.wwz'  # myjob.wwz
+    meta['run_tsv_path'] = run_url_prefix + parts[-1] + '.tsv'  # myjob.tsv
+    meta['run_json_path'] = run_url_prefix + parts[-1] + '.json'  # myjob.json
 
-    # Two relative paths
+    # Relative to github-jobs/
     last_two_parts = parts[-2:]  # ['123', 'myjob']
     meta['index_wwz_path'] = '/'.join(last_two_parts) + '.wwz'  # 123/myjob.wwz
 
     yield meta
 
 
-def ByTaskRunStartTime(row):
-  return int(row.get('task-run-start-time', 0))
-
-def ByCommitDate(row):
-  # Written in the shell script
-  # This is in ISO 8601 format (git log %aI), so we can sort by it.
-  return row.get('commit-date', '?')
-
-def ByCommitHash(row):
-  return row.get('commit-hash', '?')
-
-def ByGithubRun(row):
-  # Written in the shell script
-  # This is in ISO 8601 format (git log %aI), so we can sort by it.
-  return int(row.get('GITHUB_RUN_NUMBER', 0))
-
-
-INDEX_TOP_T = jsontemplate.Template('''
+HTML_BODY_TOP_T = jsontemplate.Template('''
   <body class="width50">
     <p id="home-link">
         <a href="..">Up</a>
@@ -384,40 +409,15 @@ INDEX_TOP_T = jsontemplate.Template('''
     <h1>{title|html}</h1>
 ''')
 
-RAW_DATA = '''
-    <p style="text-align: right">
-      <a href="raw.html">raw data</a>
-    </p>
-'''
-
-INDEX_BOTTOM = '''\
+HTML_BODY_BOTTOM = '''\
   </body>
 </html>
 '''
 
-DETAILS_TABLE_TOP = '''
-  <thead>
-    <tr>
-      <td>Job #</td>
-      <td>Job Name</td>
-      <td>Start Time</td>
-      <td>Pull Time</td>
-      <td>Run Time</td>
-      <td>Status</td>
-    </tr>
-  </thead>
-'''
-
-INDEX_TABLE_TOP = '''
-
-<style>
-  td { text-align: left; }
-</style>
-
+INDEX_HEADER = '''\
 <table>
   <thead>
     <tr>
-      <td colspan=1> Branch </td>
       <td colspan=1> Commit </td>
       <td colspan=1> Description </td>
     </tr>
@@ -426,19 +426,22 @@ INDEX_TABLE_TOP = '''
 
 INDEX_RUN_ROW_T = jsontemplate.Template('''\
 <tr class="spacer">
-  <td colspan=3></td>
+  <td colspan=2></td>
 </tr>
 
 <tr class="commit-row">
   <td>
-    <code>{git-branch}</code>
-  </td>
-  <td>
-    {.section github-commit-link}
-      <code>
-        <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
-      </code>
-    {.end}
+    <code>
+      {.section github-commit-link}
+      <a href="https://github.com/oilshell/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+
+      {.section sourcehut-commit-link}
+      <a href="https://git.sr.ht/~andyc/oil/commit/{commit-hash}">{commit-hash-short}</a>
+      {.end}
+    </code>
+
+    </td>
   </td>
 
   <td class="commit-line">
@@ -446,17 +449,21 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
       <i>
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
       from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
-      updated
       </i>
     {.end}
     {.section commit-desc}
       {@|html}
     {.end}
+
+    {.section git-branch}
+      <br/>
+      <div style="text-align: right; font-family: monospace">{@}</div>
+    {.end}
   </td>
 
 </tr>
 <tr class="spacer">
-  <td colspan=3><td/>
+  <td colspan=2><td/>
 </tr>
 ''')
 
@@ -464,8 +471,8 @@ INDEX_JOBS_T = jsontemplate.Template('''\
 <tr>
   <td>
   </td>
-  <td colspan=2>
-    <a href="{details-url}">All Jobs and Tasks</a>
+  <td>
+    <a href="{index_run_url}">All Jobs and Tasks</a>
   </td>
 </tr>
 
@@ -474,7 +481,7 @@ INDEX_JOBS_T = jsontemplate.Template('''\
     <td class="pass">
       Passed
     </td>
-    <td colspan=2>
+    <td>
       {.repeated section @}
         <code class="pass">{job-name}</code>
         <!--
@@ -492,10 +499,10 @@ INDEX_JOBS_T = jsontemplate.Template('''\
     <td class="fail">
       Failed
     </td>
-    <td colspan=2>
+    <td>
       {.repeated section @}
         <span class="fail"> &#x2717; </span>
-        <code><a href="{index_wwz_path}/">{job-name}</a></code>
+        <code><a href="{index_run_url}#job-{job-name}">{job-name}</a></code>
 
         <span class="fail-detail">
         {.section failed}
@@ -529,29 +536,19 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
       css_urls=['../web/base.css?cache=0', '../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP_T.expand(d), file=f)
+  print(HTML_BODY_TOP_T.expand(d), file=f)
 
-  print(RAW_DATA, file=f)
-
-  print(INDEX_TABLE_TOP, file=f)
+  print(INDEX_HEADER, file=f)
 
   for key, jobs in groups.iteritems():
     # All jobs have run-level metadata, so just use the first
 
     print(INDEX_RUN_ROW_T.expand(jobs[0]), file=f)
 
-    first_job = jobs[0]
-    github_run = first_job.get('GITHUB_RUN_NUMBER')
-    if github_run:
-      details_url = '%s/' % github_run
-    else:
-      # for sourcehut
-      details_url = 'git-%s/' % first_job['commit-hash']
-
     summary = {
         'jobs-passed': [],
         'jobs-failed': [],
-        'details-url': details_url,
+        'index_run_url': jobs[0]['index_run_url'],
         }
 
     for job in jobs:
@@ -563,24 +560,15 @@ def PrintIndexHtml(title, groups, f=sys.stdout):
     print(INDEX_JOBS_T.expand(summary), file=f)
 
   print(' </table>', file=f)
-
-  print(INDEX_BOTTOM, file=f)
+  print(HTML_BODY_BOTTOM, file=f)
 
 
 TASK_TABLE_T = jsontemplate.Template('''\
 
 <h2>All Tasks</h2>
 
-<!-- elapsed and status -->
-
-<style>
-#tasks td:nth-child(2), td:nth-child(3) {
-  text-align: right;
-}
-</style>
-
-
-<table id="tasks">
+<!-- right justify elapsed and status -->
+<table class="col2-right col3-right col4-right">
 
 {.repeated section jobs}
 
@@ -590,9 +578,19 @@ TASK_TABLE_T = jsontemplate.Template('''\
   </td>
 </tr>
 
-<tr>
-  <td colspan=4 style="text-align: left; background-color: #EEE; font-weight: bold">
-    {job-name}
+<tr style="background-color: #EEE">
+  <td colspan=3>
+    <b>{job-name}</b>
+    &nbsp;
+    &nbsp;
+    &nbsp;
+    <a href="{run_wwz_path}/">wwz</a>
+    &nbsp;
+    <a href="{run_tsv_path}">TSV</a>
+    &nbsp;
+    <a href="{run_json_path}">JSON</a>
+  <td>
+    <a href="">Up</a>
   </td>
 </tr>
 
@@ -602,9 +600,9 @@ TASK_TABLE_T = jsontemplate.Template('''\
 
 <tr style="font-weight: bold">
   <td>Task</td>
+  <td>Results</td>
   <td>Elapsed</td>
   <td>Status</td>
-  <td>Details</td>
 </tr>
 
   {.repeated section tasks}
@@ -612,6 +610,13 @@ TASK_TABLE_T = jsontemplate.Template('''\
     <td>
       <a href="{run_wwz_path}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
        <code>{script_name} {func}</code>
+    </td>
+
+    <td>
+      {.section results_url}
+      <a href="{run_wwz_path}/{@}">Results</a>
+      {.or}
+      {.end}
     </td>
 
     <td>{elapsed_str}</td>
@@ -622,14 +627,6 @@ TASK_TABLE_T = jsontemplate.Template('''\
     {.section failed}
       <td class="fail">status: {status}</td>
     {.end}
-
-    <td>
-      {.section results_url}
-      <a href="{run_wwz_path}/{@}">Results</a>
-      {.or}
-        -
-      {.end}
-    </td>
 
   </tr>
   {.end}
@@ -653,21 +650,16 @@ def PrintRunHtml(title, jobs, f=sys.stdout):
       css_urls=['../../web/base.css?cache=0', '../../web/soil.css?cache=0'])
 
   d = {'title': title}
-  print(INDEX_TOP_T.expand(d), file=f)
+  print(HTML_BODY_TOP_T.expand(d), file=f)
 
   print(DETAILS_RUN_T.expand(jobs[0]), file=f)
 
-  print(' <table>', file=f)
-  print(DETAILS_TABLE_TOP, file=f)
+  d2 = {'jobs': jobs}
+  print(DETAILS_TABLE_T.expand(d2), file=f)
 
-  for job in jobs:
-    print(DETAILS_JOB_ROW_T.expand(job), file=f)
+  print(TASK_TABLE_T.expand(d2), file=f)
 
-  print(' </table>', file=f)
-
-  print(TASK_TABLE_T.expand({'jobs': jobs}), file=f)
-
-  print(INDEX_BOTTOM, file=f)
+  print(HTML_BODY_BOTTOM, file=f)
 
 
 def GroupJobs(jobs, key_func):
@@ -686,6 +678,23 @@ def GroupJobs(jobs, key_func):
     d[key] = jobs
 
   return d
+
+
+def ByTaskRunStartTime(row):
+  return int(row.get('task-run-start-time', 0))
+
+def ByCommitDate(row):
+  # Written in the shell script
+  # This is in ISO 8601 format (git log %aI), so we can sort by it.
+  return row.get('commit-date', '?')
+
+def ByCommitHash(row):
+  return row.get('commit-hash', '?')
+
+def ByGithubRun(row):
+  # Written in the shell script
+  # This is in ISO 8601 format (git log %aI), so we can sort by it.
+  return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
 def main(argv):

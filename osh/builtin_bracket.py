@@ -195,7 +195,7 @@ class Test(vm._Builtin):
         e_usage("should be invoked as 'test' (simple_test_builtin)", loc.Missing())
 
       strs = cmd_val.argv
-      if not strs or strs[-1] != ']':
+      if len(strs) == 0 or strs[-1] != ']':
         self.errfmt.Print_('missing closing ]', blame_loc=cmd_val.arg_locs[0])
         return 2
       # Remove the right bracket

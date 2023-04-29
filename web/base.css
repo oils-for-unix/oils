@@ -57,3 +57,20 @@ ol { padding-left: 1.2em; }
 #why-sponsor a:hover { text-decoration: underline }
 #why-sponsor a { color: darkgreen; }
 
+
+/* 
+ * Usage: <table class="col3-right col5-right">
+ *
+ * colgroup/col doesn't work for right-justifying columns
+ */
+
+.col1-right td:nth-child(1),
+.col2-right td:nth-child(2),
+.col3-right td:nth-child(3),
+.col4-right td:nth-child(4),
+.col5-right td:nth-child(5),
+.col6-right td:nth-child(6),
+.col6-right td:nth-child(7),
+.col6-right td:nth-child(8) {
+  text-align: right
+}

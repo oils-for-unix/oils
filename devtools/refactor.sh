@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
+# Junk drawer for refactoring.  Also see test/lint.sh
+#
 # Usage:
-#   ./refactor.sh <function name>
+#   devtools/refactor.sh <function name>
 
 set -o nounset
 set -o pipefail

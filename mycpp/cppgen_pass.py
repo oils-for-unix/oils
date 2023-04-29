@@ -14,7 +14,7 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, Block, NameExpr, IndexExpr,
                         MemberExpr, TupleExpr, ExpressionStmt, AssignmentStmt,
-                        IfStmt, StrExpr, SliceExpr, FuncDef, UnaryExpr,
+                        IfStmt, StrExpr, SliceExpr, FuncDef, UnaryExpr, OpExpr,
                         ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
                         ListComprehension)
 
@@ -32,7 +32,14 @@ class UnsupportedException(Exception):
 
 
 def _SkipAssignment(var_name):
-    """Skip _ = log and unused = log"""
+    """
+    Skip at the top level:
+      _ = log 
+      unused1 = log
+
+    Always skip:
+      x, _ = mytuple  # no second var
+    """
     return var_name == '_' or var_name.startswith('unused')
 
 
@@ -128,11 +135,25 @@ def IsStr(t):
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
-def _CheckConditionType(t):
+def _CheckCondition(node, types):
     """
-  strings, lists, and dicts shouldn't be used in boolean contexts, because that
-  doesn't translate to C++.
-  """
+    strings, lists, and dicts shouldn't be used in boolean contexts, because that
+    doesn't translate to C++.
+    """
+    #log('NODE %s', node)
+
+    if isinstance(node, UnaryExpr) and node.op == 'not':
+        return _CheckCondition(node.expr, types)
+
+    if isinstance(node, OpExpr):
+        #log('OpExpr node %s %s', node, dir(node))
+
+        # if x > 0 and not mylist, etc.
+        return _CheckCondition(node.left, types) and _CheckCondition(
+            node.right, types)
+
+    t = types[node]
+
     if isinstance(t, Instance):
         type_name = t.type.fullname
         if type_name == 'builtins.str':
@@ -1120,12 +1141,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError('Stride not supported')
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
-        cond_type = self.types[o.cond]
-
-        if not _CheckConditionType(cond_type):
+        if not _CheckCondition(o.cond, self.types):
             self.report_error(
                 o,
-                "Use len(mystr), len(mylist) or len(mydict) in conditional expr"
+                "Use explicit len(obj) or 'obj is not None' for mystr, mylist, mydict"
             )
             return
 
@@ -1354,8 +1373,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 return
 
         if isinstance(lval, NameExpr):
-            if _SkipAssignment(lval.name):
-                return
 
             lval_type = self.types[lval]
             #c_type = GetCType(lval_type, local=self.indent != 0)
@@ -2616,24 +2633,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Not sure why this wouldn't be true
         assert len(o.expr) == 1, o.expr
 
-        # Omit anything that looks like if __name__ == ...
         cond = o.expr[0]
 
-        if isinstance(cond, UnaryExpr) and cond.op == 'not':
-            # check 'if not mylist'
-            cond_expr = cond.expr
-        else:
-            # TODO: if x > 0 and mylist
-            #       if x > 0 and not mylist , etc.
-            cond_expr = cond
-
-        cond_type = self.types[cond_expr]
-
-        if not _CheckConditionType(cond_type):
+        if not _CheckCondition(cond, self.types):
             self.report_error(
-                o, "Use len(mystr), len(mylist) or len(mydict) in conditional")
+                o,
+                "Use explicit len(obj) or 'obj is not None' for mystr, mylist, mydict"
+            )
             return
 
+        # Omit anything that looks like if __name__ == ...
         if (isinstance(cond, ComparisonExpr)
                 and isinstance(cond.operands[0], NameExpr)
                 and cond.operands[0].name == '__name__'):
@@ -2707,13 +2716,23 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write_ind('try ')
         self.accept(o.body)
         caught = False
-        for t, v, handler in zip(o.types, o.vars, o.handlers):
 
-            # Heuristic
-            if isinstance(t, MemberExpr):
+        for t, v, handler in zip(o.types, o.vars, o.handlers):
+            c_type = None
+
+            if isinstance(t, NameExpr):
+                if t.name in ('IOError', 'OSError'):
+                    self.report_error(
+                        handler,
+                        'Use except (IOError, OSError) rather than catching just one'
+                    )
+                c_type = '%s*' % t.name
+
+            elif isinstance(t, MemberExpr):
+                # Heuristic
                 c_type = '%s::%s*' % (t.expr.name, t.name)
+
             elif isinstance(t, TupleExpr):
-                c_type = None
                 if len(t.items) == 2:
                     e1 = t.items[0]
                     e2 = t.items[1]
@@ -2723,10 +2742,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         if names == ['IOError', 'OSError']:
                             c_type = 'IOError_OSError*'  # Base class in mylib
 
-                if c_type is None:
-                    c_type = 'MultipleExceptions'  # Causes compile error
             else:
-                c_type = '%s*' % t.name
+                raise AssertionError()
+
+            if c_type is None:
+                c_type = 'INVALID_TRY_EXCEPT'  # Causes compile error
 
             if v:
                 self.write_ind('catch (%s %s) ', c_type, v.name)

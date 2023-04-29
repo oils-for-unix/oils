@@ -68,10 +68,19 @@ void putenv(Str* name, Str* value) {
 }
 
 mylib::LineReader* fdopen(int fd, Str* c_mode) {
-  FILE* f = ::fdopen(fd, c_mode->data_);
+  // CPython checks if it's a directory first
+  struct stat buf;
+  if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
+    throw Alloc<OSError>(EISDIR);
+  }
 
-  // TODO: raise exception
-  assert(f);
+  // CPython does some fcntl() stuff with mode == 'a', which we don't support
+  DCHECK(c_mode->data_[0] != 'a');
+
+  FILE* f = ::fdopen(fd, c_mode->data_);
+  if (f == nullptr) {
+    throw Alloc<OSError>(errno);
+  }
 
   return Alloc<mylib::CFileLineReader>(f);
 }

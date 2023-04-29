@@ -27,6 +27,7 @@ def DefineTargets(ru):
       matrix = [
         ('cxx', 'asan+cheney'),
         ('cxx', 'ubsan+cheney'),
+        ('clang', 'ubsan+cheney'),
         ('clang', 'coverage+cheney'),
       ],
       phony_prefix = 'mycpp-unit')
@@ -51,6 +52,7 @@ def DefineTargets(ru):
       matrix = [
         ('cxx', 'asan+bumpleak'),
         ('cxx', 'ubsan+bumpleak'),
+        ('clang', 'ubsan+bumpleak'),
         ('clang', 'coverage+bumpleak'),
       ],
       phony_prefix = 'mycpp-unit')

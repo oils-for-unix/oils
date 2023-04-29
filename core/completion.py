@@ -443,7 +443,7 @@ class FileSystemAction(CompletionAction):
 
     try:
       names = posix.listdir(to_list)
-    except OSError as e:
+    except (IOError, OSError) as e:
       return  # nothing
 
     for name in names:
@@ -638,7 +638,7 @@ class ExternalCommandAction(CompletionAction):
     for d in path_dirs:
       try:
         key = pyos.MakeDirCacheKey(d)
-      except OSError as e:
+      except (IOError, OSError) as e:
         # There could be a directory that doesn't exist in the $PATH.
         continue
 
@@ -1126,7 +1126,7 @@ class RootCompleter(CompletionAction):
 
         else:
           base_opts, user_spec = self.comp_lookup.GetSpecForName(first)
-          if not user_spec and alias_first:
+          if not user_spec and alias_first is not None:
             base_opts, user_spec = self.comp_lookup.GetSpecForName(alias_first)
             if user_spec:
               # Pass the aliased command to the user-defined function, and use

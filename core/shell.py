@@ -28,12 +28,12 @@ from core import state
 from core import ui
 from core import util
 from mycpp.mylib import log
-unused = log
+unused1 = log
 from core import vm
 
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
-_ = flag_def
+unused2 = flag_def
 from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
@@ -322,7 +322,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # a pipe.
     try:
       debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))  # type: util._DebugFile
-    except OSError as e:
+    except (IOError, OSError) as e:
       print_stderr("osh: Couldn't open %r: %s" %
                    (debug_path, posix.strerror(e.errno)))
       return 2
@@ -634,7 +634,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       if flag.completion_display == 'nice':
         try:
           term_width = libc.get_terminal_width()
-        except IOError:  # stdin not a terminal
+        except (IOError, OSError):  # stdin not a terminal
           pass
 
       if term_width != 0:
@@ -687,7 +687,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     if readline:
       try:
         readline.write_history_file(history_filename)
-      except IOError:
+      except (IOError, OSError):
         pass
 
     return status

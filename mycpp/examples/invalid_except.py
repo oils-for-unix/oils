@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-invalid_try_else.py
+invalid_except.py
 """
 from __future__ import print_function
 
@@ -12,17 +12,14 @@ def f():
 
   try:
     print('hi')
-  except ValueError:
-    pass
-  else:
-    print('else')
+  except IOError:
+    print('bad')
 
   try:
     print('hi')
-  except ValueError:
-    pass
-  else:
-    print('else')
+  except OSError as e:
+    print('bad')
+
 
 def run_tests():
   # type: () -> None
@@ -31,7 +28,5 @@ def run_tests():
 
   try:
     print('hi')
-  except ValueError:
+  except (IOError, OSError) as e:
     pass
-  else:
-    print('else')

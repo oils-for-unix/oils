@@ -471,6 +471,7 @@ compress-benchmarks() {
     ovm-build/{stage1,stage2,index.html} \
     compute/{raw,stage1,stage2,index.html} \
     gc/{raw,stage2,index.html} \
+    gc-cachegrind/{raw,stage2,index.html} \
     mycpp-examples/{raw,stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 

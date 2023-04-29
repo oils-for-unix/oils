@@ -156,3 +156,11 @@ class Expr(FatalRuntime):
     # Caught: try sets _status register to 3
     # Uncaught: shell exits with status 3
     FatalRuntime.__init__(self, 3, msg, location)
+
+
+class InvalidType(Expr):
+  """ e.g. ~ on a bool or float, 'not' on an int """
+
+  def __init__(self, msg, location):
+    # type: (str, loc_t) -> None
+    Expr.__init__(self, msg, location)

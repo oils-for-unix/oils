@@ -750,7 +750,7 @@ class MutableOpts(object):
   def SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
-    _ = _SetOptionNum(opt_name)  # validate it
+    unused = _SetOptionNum(opt_name)  # validate it
     self._SetOldOption(opt_name, b)
 
     UP_val = self.mem.GetValue('SHELLOPTS')
@@ -991,7 +991,7 @@ def _GetWorkingDir():
   """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
   try:
     return posix.getcwd()
-  except OSError as e:
+  except (IOError, OSError) as e:
     e_die("Can't determine working directory: %s" % pyutil.strerror(e))
 
 
