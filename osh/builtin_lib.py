@@ -55,7 +55,7 @@ class History(vm._Builtin):
       val = cast(value__Str, UP_val)
       return val.s
     else:
-      raise error.ErrExit(1, "$HISTFILE is not a string, it should be." + str(UP_val), loc.Missing())
+      raise error.ErrExit(1, "$HISTFILE is not a string, it should be.", loc.Missing())
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
