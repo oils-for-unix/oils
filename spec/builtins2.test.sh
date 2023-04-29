@@ -200,6 +200,22 @@ exists
 ## N-I zsh STDOUT:
 ## END
 
+#### HISTFILE must be a string
+case $SH in bash|mksh|dash|zsh) exit 0 ;; esac
+
+echo '
+HISTFILE=(a b c)
+history -r
+echo $?
+' | $SH -i
+
+## STDOUT:
+1
+^D
+## END
+## N-I bash/mksh/dash/zsh STDOUT:
+## END
+
 #### history usage
 history
 echo status=$?
