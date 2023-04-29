@@ -7,7 +7,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import loc
-from core import error
+from core.pyerror import e_die_status, e_strict
 from core import state
 from core import vm
 from core.pyerror import e_usage
@@ -54,7 +54,14 @@ class History(vm._Builtin):
       val = cast(value__Str, UP_val)
       return val.s
     else:
-      raise error.ErrExit(1, "$HISTFILE is not a string, it should be.", loc.Missing())
+      # TODO: can we recover line information here?
+      #       might be useful to show where HISTFILE was set
+      e_strict("$HISTFILE should only ever be a string", loc.Missing())
+
+      # TODO: support bash-like behaviour here where we try to convert $HISTFILE
+      # to a string in anyway possible
+      e_die_status(1, "Conversion of non-string value, $HISTFILE, to a string is not implemented",
+                   loc.Missing())
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
