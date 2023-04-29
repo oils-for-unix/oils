@@ -291,8 +291,21 @@ smoke() {
 }
 
 interactive() {
+  local -a shells
+
+  # Weird spec test stoppages:
+
+  # Don't happen with other shells
+  #shells=( "${REF_SHELLS[@]}" )
+
+  # Doesn't happen with OSH alone
+  #shells=( $OSH_LIST )
+
+  # Happens deterministically with all of them !!!
+  shells=( "${REF_SHELLS[@]}" $OSH_LIST )
+
   sh-spec spec/interactive.test.sh --osh-failures-allowed 0 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+    "${shells[@]}"
 }
 
 prompt() {

@@ -3,7 +3,7 @@ error.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_e
+from _devbuild.gen.syntax_asdl import loc_e, loc
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -17,18 +17,19 @@ class _ErrorWithLocation(Exception):
   """
   def __init__(self, msg, location):
     # type: (str, loc_t) -> None
-    #Exception.__init__(self)
+
     self.msg = msg
-    self.location = location
+
+    # Ensure that the location field is always populated
+    if location is None:
+      self.location = loc.Missing()  # type: loc_t
+    else:
+      self.location = location
 
 
   def HasLocation(self):
     # type: () -> bool
-
-    if self.location:
-      return self.location.tag_() != loc_e.Missing
-    else:
-      return False
+    return self.location.tag_() != loc_e.Missing
 
   def UserErrorString(self):
     # type: () -> str
