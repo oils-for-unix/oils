@@ -11,17 +11,18 @@ import unittest
 import readline
 
 from core import test_lib
+from core import state
+from core import alloc
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from osh import builtin_lib  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
-
   def testHistoryBuiltin(self):
      test_path = '_tmp/builtin_test_history.txt'
      with open(test_path, 'w') as f:
-       f.write("""
+       f.write("""\
 echo hello
 ls one/
 ls two/
@@ -47,14 +48,13 @@ echo bye
     3  ls two/
     4  echo bye
 """)
-
     
      # Delete single history item.
      # This functionlity is *silent*
-     # so call history again after 
+     # so call history again after
      # this to feed the test assertion
     
-     _TestHistory(['history', '-d', '4' ])
+     _TestHistory(['history', '-d', '4'])
 
      # Call history
      out = _TestHistory(['history'])
@@ -66,10 +66,9 @@ echo bye
     3  ls two/
 """)
 
-
      # Clear history
      # This functionlity is *silent*
-     # so call history again after 
+     # so call history again after
      # this to feed the test assertion
 
      _TestHistory(['history', '-c'])
@@ -83,7 +82,9 @@ echo bye
 
 def _TestHistory(argv):
    f = cStringIO.StringIO()
-   b = builtin_lib.History(readline, f)
+   arena = alloc.Arena()
+   mem = state.Mem('', [], arena, [])
+   b = builtin_lib.History(readline, mem, f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
    b.Run(cmd_val)
    return f.getvalue()

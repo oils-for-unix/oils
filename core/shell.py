@@ -378,6 +378,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   dir_stack = state.DirStack()
 
+  # Find common directories, these are consumed by some builtins and then much
+  # later used while setting up an interactive shell.
+  home_dir = pyos.GetMyHomeDir()
+  assert home_dir is not None
+
+  # init the HISTFILE variable to our default history file
+  history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
+  state.SetGlobalString(mem, 'HISTFILE', history_filename)
+
   #
   # Initialize builtins that don't depend on evaluators
   #
@@ -400,7 +409,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # Interactive, depend on readline
   builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
-  builtins[builtin_i.history] = builtin_lib.History(readline, mylib.Stdout())
+  builtins[builtin_i.history] = builtin_lib.History(readline, mem, mylib.Stdout())
 
   #
   # Initialize Evaluators
@@ -544,9 +553,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
 
-  home_dir = pyos.GetMyHomeDir()
-  assert home_dir is not None
-
   rc_paths = []  # type: List[str]
 
   if not flag.norc:
@@ -602,7 +608,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     return status
 
-  history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
   if exec_opts.interactive():
     state.InitInteractive(mem)
     # bash: 'set -o emacs' is the default only in the interactive shell
