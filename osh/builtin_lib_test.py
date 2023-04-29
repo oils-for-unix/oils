@@ -10,8 +10,6 @@ import unittest
 # unit testing
 import readline
 
-from _devbuild.gen.syntax_asdl import loc
-
 from core import test_lib
 from core import state
 from core import alloc
