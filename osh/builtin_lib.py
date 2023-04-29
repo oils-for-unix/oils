@@ -46,6 +46,7 @@ class History(vm._Builtin):
     self.mem = mem
 
   def GetHistoryFilename(self):
+    # type: () -> str
     # TODO: In non-strict mode we should try to cast the HISTFILE value to a
     # string following bash's rules
 
