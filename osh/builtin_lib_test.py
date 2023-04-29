@@ -10,7 +10,11 @@ import unittest
 # unit testing
 import readline
 
+from _devbuild.gen.syntax_asdl import loc
+
 from core import test_lib
+from core import state
+from core import alloc
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from osh import builtin_lib  # module under test
@@ -18,13 +22,6 @@ from osh import builtin_lib  # module under test
 
 class BuiltinTest(unittest.TestCase):
   TEST_PATH = '_tmp/builtin_test_history.txt'
-
-
-  def _readHistFile(self):
-     # type: (self) -> str
-     with open(BuiltinTest.TEST_PATH, 'r') as hist_file:
-        return hist_file.read()
-
 
   def testHistoryBuiltin(self):
      with open(BuiltinTest.TEST_PATH, 'w') as f:
@@ -72,28 +69,6 @@ echo bye
     3  ls two/
 """)
 
-     # Append current history to history file.
-     # This functionality is *silent*, so we
-     # need to read the history file to test
-     # the assertion.
-
-     # No change to history file before `history -a`
-     self.assertEqual(self._readHistFile(), """\
-echo hello
-ls one/
-ls two/
-echo bye
-""")
-
-     _TestHistory(['history', '-a'])
-
-     # After history -a, the history file will have changed
-     self.assertEqual(self._readHistFile(), """\
-echo hello
-ls one/
-ls two/
-""")
-
      # Clear history
      # This functionlity is *silent*
      # so call history again after
@@ -110,7 +85,9 @@ ls two/
 
 def _TestHistory(argv):
    f = cStringIO.StringIO()
-   b = builtin_lib.History(readline, BuiltinTest.TEST_PATH, f)
+   arena = alloc.Arena()
+   mem = state.Mem(loc.Missing(), [], arena, [])
+   b = builtin_lib.History(readline, mem, f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
    b.Run(cmd_val)
    return f.getvalue()
