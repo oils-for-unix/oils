@@ -36,7 +36,6 @@ unused2 = flag_def
 from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
-from frontend import location
 
 from oil_lang import expr_eval
 from oil_lang import builtin_json
