@@ -173,15 +173,15 @@ class FdState(object):
   inherit our state.
   """
 
-  def __init__(self, errfmt, job_state, mem, tracer, waiter):
+  def __init__(self, errfmt, job_list, mem, tracer, waiter):
     # type: (ErrorFormatter, JobList, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
     """
     Args:
       errfmt: for errors
-      job_state: For keeping track of _HereDocWriterThunk
+      job_list: For keeping track of _HereDocWriterThunk
     """
     self.errfmt = errfmt
-    self.job_state = job_state
+    self.job_list = job_list
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
     self.mem = mem
@@ -454,7 +454,7 @@ class FdState(object):
         #start_process = False
 
         if start_process:
-          here_proc = Process(thunk, self.job_state, self.tracer)
+          here_proc = Process(thunk, self.job_list, self.tracer)
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
@@ -906,17 +906,17 @@ class Process(Job):
   It provides an API to manipulate file descriptor state in parent and child.
   """
 
-  def __init__(self, thunk, job_state, tracer):
+  def __init__(self, thunk, job_list, tracer):
     # type: (Thunk, JobList, dev.Tracer) -> None
     """
     Args:
       thunk: Thunk instance
-      job_state: for process bookkeeping
+      job_list: for process bookkeeping
     """
     Job.__init__(self)
     assert isinstance(thunk, Thunk), thunk
     self.thunk = thunk
-    self.job_state = job_state
+    self.job_list = job_list
     self.tracer = tracer
 
     # For pipelines
@@ -1026,7 +1026,7 @@ class Process(Job):
       st.ApplyFromParent(self)
 
     # Program invariant: We keep track of every child process!
-    self.job_state.AddChildProcess(pid, self)
+    self.job_list.AddChildProcess(pid, self)
 
     return pid
 
@@ -1063,7 +1063,7 @@ class Process(Job):
     # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     self.status = 128 + stop_sig
     self.state = job_state_e.Stopped
-    self.job_state.MaybeTakeTerminal()
+    self.job_list.MaybeTakeTerminal()
 
   def WhenDone(self, pid, status):
     # type: (int, int) -> None
@@ -1076,7 +1076,7 @@ class Process(Job):
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
     else:
-      self.job_state.MaybeTakeTerminal()
+      self.job_list.MaybeTakeTerminal()
 
   def RunProcess(self, waiter, why):
     # type: (Waiter, trace_t) -> int
@@ -1086,7 +1086,7 @@ class Process(Job):
     if self.parent_pipeline is None:
       # QUESTION: Can the PGID of a single process just be the PID?  i.e. avoid
       # calling getpgid()?
-      self.job_state.MaybeGiveTerminal(posix.getpgid(self.pid))
+      self.job_list.MaybeGiveTerminal(posix.getpgid(self.pid))
     return self.Wait(waiter)
 
 
@@ -1116,10 +1116,10 @@ class Pipeline(Job):
   foo | bar | read v
   """
 
-  def __init__(self, sigpipe_status_ok, job_state):
+  def __init__(self, sigpipe_status_ok, job_list):
     # type: (bool, JobList) -> None
     Job.__init__(self)
-    self.job_state = job_state
+    self.job_list = job_list
     self.procs = []  # type: List[Process]
     self.pids = []  # type: List[int]  # pids in order
     self.pipe_status = []  # type: List[int]  # status in order
@@ -1200,7 +1200,7 @@ class Pipeline(Job):
     # control, our children should remain in our inherited process group.
     # the pipelines's group ID.
     pgid = INVALID_PGID
-    if self.job_state.JobControlEnabled():
+    if self.job_list.JobControlEnabled():
       pgid = OWN_LEADER  # first process in pipeline is the leader
 
     for i, proc in enumerate(self.procs):
@@ -1271,7 +1271,7 @@ class Pipeline(Job):
     """
     assert len(self.pids) == len(self.procs)
 
-    self.job_state.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
+    self.job_list.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
     # may or may not fork:
@@ -1322,7 +1322,7 @@ class Pipeline(Job):
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
-      self.job_state.MaybeTakeTerminal()
+      self.job_list.MaybeTakeTerminal()
 
 
 def _JobStateStr(i):
@@ -1343,10 +1343,10 @@ def _GetTtyFd():
 
 class ctx_TerminalControl(object):
 
-  def __init__(self, job_state):
+  def __init__(self, job_list):
     # type: (JobList) -> None
 
-    self.job_state = job_state
+    self.job_list = job_list
 
   def __enter__(self):
     # type: () -> None
@@ -1356,7 +1356,7 @@ class ctx_TerminalControl(object):
     # type: (Any, Any, Any) -> None
 
     # TODO: can we raise internally?
-    self.job_state.MaybeReturnTerminal()
+    self.job_list.MaybeReturnTerminal()
 
 
 class JobList(object):
@@ -1429,7 +1429,7 @@ class JobList(object):
   #
   # Do we need the last PID?  I don't know why bash prints that.  Probably so
   # you can do wait $!
-  # wait -n waits for any node to go from job_state.Running to job_state.Done?
+  # wait -n waits for any node to go from job_state_e.Running to job_state_e.Done?
   #
   # And it needs a flag for CURRENT, for the implicit arg to 'fg'.
   # job_id is just an integer.  This is sort of lame.
@@ -1637,9 +1637,9 @@ class Waiter(object):
   process OR a background process!  So you have to distinguish between them.
   """
 
-  def __init__(self, job_state, exec_opts, signal_safe, tracer):
+  def __init__(self, job_list, exec_opts, signal_safe, tracer):
     # type: (JobList, optview.Exec, pyos.SignalSafe, dev.Tracer) -> None
-    self.job_state = job_state
+    self.job_list = job_list
     self.exec_opts = exec_opts
     self.signal_safe = signal_safe
     self.tracer = tracer
@@ -1699,13 +1699,13 @@ class Waiter(object):
     # Then it is reparented under this process, so we might receive
     # notification of its exit, even though we didn't start it.  We can't have
     # any knowledge of such processes, so print a warning.
-    if pid not in self.job_state.child_procs:
+    if pid not in self.job_list.child_procs:
       print_stderr("osh: PID %d stopped, but osh didn't start it" % pid)
       return W1_OK
 
-    proc = self.job_state.child_procs[pid]
+    proc = self.job_list.child_procs[pid]
     if 0:
-      self.job_state.DebugPrint()
+      self.job_list.DebugPrint()
 
     if WIFSIGNALED(status):
       term_sig = WTERMSIG(status)
@@ -1715,13 +1715,13 @@ class Waiter(object):
       if term_sig == SIGINT:
         print('')
 
-      self.job_state.WhenDone(pid)
+      self.job_list.WhenDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFEXITED(status):
       status = WEXITSTATUS(status)
       #log('exit status: %s', status)
-      self.job_state.WhenDone(pid)
+      self.job_list.WhenDone(pid)
       proc.WhenDone(pid, status)
 
     elif WIFSTOPPED(status):
@@ -1730,7 +1730,7 @@ class Waiter(object):
 
       print_stderr('')
       print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
-      self.job_state.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
+      self.job_list.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped(stop_sig)
 
     else:

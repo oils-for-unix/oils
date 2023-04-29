@@ -234,7 +234,7 @@ def AddProcess(
     shell_ex,  # type: vm._Executor
     ext_prog,  # type: process.ExternalProgram
     fd_state,  # type: process.FdState
-    job_state,  # type: process.JobList
+    job_list,  # type: process.JobList
     waiter,  # type: process.Waiter
     tracer,  # type: dev.Tracer
     search_path,  # type: state.SearchPath
@@ -246,12 +246,12 @@ def AddProcess(
   b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
                                             search_path, errfmt)
   b[builtin_i.umask] = builtin_process.Umask()
-  b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, tracer,
+  b[builtin_i.wait] = builtin_process.Wait(waiter, job_list, mem, tracer,
                                            errfmt)
 
-  b[builtin_i.jobs] = builtin_process.Jobs(job_state)
-  b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
-  b[builtin_i.bg] = builtin_process.Bg(job_state)
+  b[builtin_i.jobs] = builtin_process.Jobs(job_list)
+  b[builtin_i.fg] = builtin_process.Fg(job_list, waiter)
+  b[builtin_i.bg] = builtin_process.Bg(job_list)
 
   b[builtin_i.fork] = builtin_process.Fork(shell_ex)
   b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
@@ -421,8 +421,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
 
-  job_state = process.JobList()
-  fd_state = process.FdState(errfmt, job_state, mem, None, None)
+  job_list = process.JobList()
+  fd_state = process.FdState(errfmt, job_list, mem, None, None)
 
   my_pid = posix.getpid()
 
@@ -456,7 +456,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   signal_safe = pyos.InitSignalSafe()
   trap_state = builtin_trap.TrapState(signal_safe)
 
-  waiter = process.Waiter(job_state, exec_opts, signal_safe, tracer)
+  waiter = process.Waiter(job_list, exec_opts, signal_safe, tracer)
   fd_state.waiter = waiter
 
   cmd_deps.debug_f = debug_f
@@ -515,14 +515,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
-      ext_prog, waiter, tracer, job_state, fd_state, trap_state, errfmt)
+      ext_prog, waiter, tracer, job_list, fd_state, trap_state, errfmt)
 
   AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
                        search_path, errfmt)
   AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx,
                      errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state,
-                          job_state, waiter, tracer, search_path, errfmt)
+                          job_list, waiter, tracer, search_path, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 
@@ -770,7 +770,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     process.InitInteractiveShell()
-    job_state.InitJobControl()
+    job_list.InitJobControl()
 
     # NOTE: rc files loaded AFTER _InitDefaultCompletions.
     for rc_path in rc_paths:
@@ -796,7 +796,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     # Return the TTY to the original owner before exiting.
     try:
-      job_state.MaybeReturnTerminal()
+      job_list.MaybeReturnTerminal()
     except error.FatalRuntime as e:
       # Don't abort the shell on error, just print a message.
       errfmt.PrettyPrintError(e)

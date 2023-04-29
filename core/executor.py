@@ -104,7 +104,7 @@ class ShellExecutor(vm._Executor):
       ext_prog,  # type: process.ExternalProgram
       waiter,  # type: process.Waiter
       tracer,  # type: dev.Tracer
-      job_state,  # type: process.JobList
+      job_list,  # type: process.JobList
       fd_state,  # type: process.FdState
       trap_state,  # type: builtin_trap.TrapState
       errfmt  # type: ui.ErrorFormatter
@@ -122,7 +122,7 @@ class ShellExecutor(vm._Executor):
     self.waiter = waiter
     self.tracer = tracer
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
-    self.job_state = job_state
+    self.job_list = job_list
     self.fd_state = fd_state
     self.trap_state = trap_state
     self.errfmt = errfmt
@@ -168,7 +168,7 @@ class ShellExecutor(vm._Executor):
     #   and get this check for "free".
     thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
                                     inherit_errexit=inherit_errexit)
-    p = process.Process(thunk, self.job_state, self.tracer)
+    p = process.Process(thunk, self.job_list, self.tracer)
     return p
 
   def RunBuiltin(self, builtin_id, cmd_val):
@@ -301,8 +301,8 @@ class ShellExecutor(vm._Executor):
     # Normal case: ls /
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
-      p = process.Process(thunk, self.job_state, self.tracer)
-      if self.job_state.JobControlEnabled():
+      p = process.Process(thunk, self.job_list, self.tracer)
+      if self.job_list.JobControlEnabled():
         if self.fg_pipeline is not None:
           first_pid = self.fg_pipeline.pids[0]
           assert first_pid == posix.getpgid(first_pid), "Expected pipeline leader"
@@ -345,7 +345,7 @@ class ShellExecutor(vm._Executor):
 
     if UP_node.tag_() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
-      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
+      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_list)
       for child in node.children:
         p = self._MakeProcess(child)
         p.Init_ParentPipeline(pi)
@@ -355,7 +355,7 @@ class ShellExecutor(vm._Executor):
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
-      self.job_state.AddJob(pi)  # show in 'jobs' list
+      self.job_list.AddJob(pi)  # show in 'jobs' list
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -363,19 +363,19 @@ class ShellExecutor(vm._Executor):
       # If we haven't called Register yet, then we won't know who to notify.
 
       p = self._MakeProcess(node)
-      if self.job_state.JobControlEnabled():
+      if self.job_list.JobControlEnabled():
         p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
       pid = p.StartProcess(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
-      self.job_state.AddJob(p)  # show in 'jobs' list
+      self.job_list.AddJob(p)  # show in 'jobs' list
     return 0
 
   def RunPipeline(self, node, status_out):
     # type: (command__Pipeline, CommandStatus) -> None
 
-    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_state)
-    self.job_state.AddPipeline(pi)
+    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_list)
+    self.job_list.AddPipeline(pi)
 
     # initialized with CommandStatus.CreateNull()
     pipe_locs = []  # type: List[loc_t]
@@ -408,7 +408,7 @@ class ShellExecutor(vm._Executor):
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    if self.job_state.JobControlEnabled():
+    if self.job_list.JobControlEnabled():
       p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     return p.RunProcess(self.waiter, trace.ForkWait())
@@ -572,7 +572,7 @@ class ShellExecutor(vm._Executor):
 
     p.AddStateChange(redir)
 
-    if self.job_state.JobControlEnabled():
+    if self.job_list.JobControlEnabled():
       p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     # Fork, letting the child inherit the pipe file descriptors.

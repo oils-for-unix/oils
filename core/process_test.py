@@ -48,16 +48,16 @@ class ProcessTest(unittest.TestCase):
 
     state.InitMem(mem, {}, '0.1')
 
-    self.job_state = process.JobList()
+    self.job_list = process.JobList()
 
     signal_safe = pyos.InitSignalSafe()
     self.trap_state = builtin_trap.TrapState(signal_safe)
 
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
     self.waiter = process.Waiter(
-        self.job_state, exec_opts, self.trap_state, self.tracer)
+        self.job_list, exec_opts, self.trap_state, self.tracer)
     errfmt = ui.ErrorFormatter(self.arena)
-    self.fd_state = process.FdState(errfmt, self.job_state, None, self.tracer, None)
+    self.fd_state = process.FdState(errfmt, self.job_list, None, self.tracer, None)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
                                             util.NullDebugFile())
 
@@ -72,7 +72,7 @@ class ProcessTest(unittest.TestCase):
     if not argv0_path:
       argv0_path = argv[0]  # fallback that tests failure case
     return Process(ExternalThunk(self.ext_prog, argv0_path, arg_vec, {}),
-                   self.job_state, self.tracer)
+                   self.job_list, self.tracer)
 
   def testStdinRedirect(self):
     PATH = '_tmp/one-two.txt'
@@ -128,7 +128,7 @@ class ProcessTest(unittest.TestCase):
     cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena, ext_prog=self.ext_prog)
     print('BEFORE', os.listdir('/dev/fd'))
 
-    p = process.Pipeline(False, self.job_state)
+    p = process.Pipeline(False, self.job_list)
     p.Add(self._ExtProc(['ls']))
     p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
     p.Add(self._ExtProc(['sort']))
@@ -145,7 +145,7 @@ class ProcessTest(unittest.TestCase):
     cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena, ext_prog=self.ext_prog)
 
     Banner('ls | cut -d . -f 1 | head')
-    p = process.Pipeline(False, self.job_state)
+    p = process.Pipeline(False, self.job_list)
     p.Add(self._ExtProc(['ls']))
     p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
@@ -164,10 +164,10 @@ class ProcessTest(unittest.TestCase):
     thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
     thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state)
 
-    p = process.Pipeline(False, self.job_state)
-    p.Add(Process(thunk1, self.job_state, self.tracer))
-    p.Add(Process(thunk2, self.job_state, self.tracer))
-    p.Add(Process(thunk3, self.job_state, self.tracer))
+    p = process.Pipeline(False, self.job_list)
+    p.Add(Process(thunk1, self.job_list, self.tracer))
+    p.Add(Process(thunk2, self.job_list, self.tracer))
+    p.Add(Process(thunk3, self.job_list, self.tracer))
 
     last_thunk = (cmd_ev, _CommandNode('cat', self.arena))
     p.AddLast(last_thunk)
