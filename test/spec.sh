@@ -297,6 +297,9 @@ interactive() {
   # Don't happen with other shells
   #shells=( "${REF_SHELLS[@]}" )
 
+  # Also happens with osh-cpp
+  #OSH_LIST=$REPO_ROOT/_bin/cxx-dbg/osh
+
   # Doesn't happen with OSH alone
   #shells=( $OSH_LIST )
 

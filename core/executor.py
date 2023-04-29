@@ -302,11 +302,13 @@ class ShellExecutor(vm._Executor):
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state, self.tracer)
-      if self.fg_pipeline is not None:
-        p.AddStateChange(process.SetProcessGroup(posix.getpgid(self.fg_pipeline.pids[0])))
-        self.fg_pipeline = None # clear to avoid confusion in subshells
-      elif self.job_state.JobControlEnabled():
-        p.AddStateChange(process.SetProcessGroup(0))
+      if self.job_state.JobControlEnabled():
+        if self.fg_pipeline is not None:
+          change = process.SetProcessGroup(posix.getpgid(self.fg_pipeline.pids[0]))
+          self.fg_pipeline = None  # clear to avoid confusion in subshells
+        else:
+          change = process.SetProcessGroup(0)  # process is its own leader
+        p.AddStateChange(change)
 
       status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
 
