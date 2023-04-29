@@ -304,7 +304,7 @@ interactive() {
   shells=( "${REF_SHELLS[@]}" $OSH_LIST )
 
   sh-spec spec/interactive.test.sh --osh-failures-allowed 0 \
-    "${shells[@]}"
+    "${shells[@]}" "$@"
 }
 
 prompt() {
