@@ -25,7 +25,6 @@ from core import error
 from core import shell
 from core import pyos
 from core import pyutil
-from core import shell_native
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib
@@ -117,7 +116,7 @@ def AppBundleMain(argv):
     if first_arg in ('-h', '--help'):
       errfmt = None  # type: ui.ErrorFormatter
       help_builtin = builtin_misc.Help(loader, errfmt)
-      help_builtin.Run(shell_native.MakeBuiltinArgv(['bundle-usage']))
+      help_builtin.Run(shell.MakeBuiltinArgv(['bundle-usage']))
       return 0
 
     if first_arg in ('-V', '--version'):

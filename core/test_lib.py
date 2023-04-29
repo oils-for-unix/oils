@@ -183,7 +183,7 @@ def InitCommandEvaluator(
   # No 'readline' in the tests.
 
   errfmt = ui.ErrorFormatter(arena)
-  job_state = process.JobState()
+  job_state = process.JobList()
   fd_state = process.FdState(errfmt, job_state, None, None, None)
   aliases = {} if aliases is None else aliases
   procs = {}

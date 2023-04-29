@@ -104,7 +104,7 @@ class ShellExecutor(vm._Executor):
       ext_prog,  # type: process.ExternalProgram
       waiter,  # type: process.Waiter
       tracer,  # type: dev.Tracer
-      job_state,  # type: process.JobState
+      job_state,  # type: process.JobList
       fd_state,  # type: process.FdState
       trap_state,  # type: builtin_trap.TrapState
       errfmt  # type: ui.ErrorFormatter

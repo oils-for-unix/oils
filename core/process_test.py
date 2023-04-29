@@ -48,7 +48,7 @@ class ProcessTest(unittest.TestCase):
 
     state.InitMem(mem, {}, '0.1')
 
-    self.job_state = process.JobState()
+    self.job_state = process.JobList()
 
     signal_safe = pyos.InitSignalSafe()
     self.trap_state = builtin_trap.TrapState(signal_safe)

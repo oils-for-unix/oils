@@ -174,7 +174,7 @@ class FdState(object):
   """
 
   def __init__(self, errfmt, job_state, mem, tracer, waiter):
-    # type: (ErrorFormatter, JobState, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
+    # type: (ErrorFormatter, JobList, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
     """
     Args:
       errfmt: for errors
@@ -907,7 +907,7 @@ class Process(Job):
   """
 
   def __init__(self, thunk, job_state, tracer):
-    # type: (Thunk, JobState, dev.Tracer) -> None
+    # type: (Thunk, JobList, dev.Tracer) -> None
     """
     Args:
       thunk: Thunk instance
@@ -1117,7 +1117,7 @@ class Pipeline(Job):
   """
 
   def __init__(self, sigpipe_status_ok, job_state):
-    # type: (bool, JobState) -> None
+    # type: (bool, JobList) -> None
     Job.__init__(self)
     self.job_state = job_state
     self.procs = []  # type: List[Process]
@@ -1341,7 +1341,25 @@ def _GetTtyFd():
     return -1
 
 
-class JobState(object):
+class ctx_TerminalControl(object):
+
+  def __init__(self, job_state):
+    # type: (JobList) -> None
+
+    self.job_state = job_state
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+
+    # TODO: can we raise internally?
+    self.job_state.MaybeReturnTerminal()
+
+
+class JobList(object):
   """Global list of jobs, used by a few builtins."""
 
   def __init__(self):
@@ -1620,7 +1638,7 @@ class Waiter(object):
   """
 
   def __init__(self, job_state, exec_opts, signal_safe, tracer):
-    # type: (JobState, optview.Exec, pyos.SignalSafe, dev.Tracer) -> None
+    # type: (JobList, optview.Exec, pyos.SignalSafe, dev.Tracer) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
     self.signal_safe = signal_safe
