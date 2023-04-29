@@ -139,7 +139,7 @@ echo 2
 cat tmp
 ' | $SH -i
 
-# match osh's behaviour of echoing ^D for EDF
+# match osh's behaviour of echoing ^D for EOF
 case $SH in bash) echo '^D' ;; esac
 
 ## STDOUT:
@@ -170,7 +170,7 @@ history -r
 history
 ' | $SH -i
 
-# match osh's behaviour of echoing ^D for EDF
+# match osh's behaviour of echoing ^D for EOF
 case $SH in bash) echo '^D' ;; esac
 
 ## STDOUT:
@@ -190,7 +190,7 @@ echo '
 if test -n $HISTFILE; then echo exists; fi
 ' | $SH -i
 
-# match osh's behaviour of echoing ^D for EDF
+# match osh's behaviour of echoing ^D for EOF
 case $SH in bash|mksh|dash) echo '^D' ;; esac
 
 ## STDOUT:
