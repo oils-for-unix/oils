@@ -550,7 +550,7 @@ class ChildStateChange(object):
 
   def ApplyFromParent(self, proc):
     # type: (Process) -> None
-    """Noop for all state changes other than SetProcessGroup for mycpp."""
+    """Noop for all state changes other than SetPgid for mycpp."""
     pass
 
 
@@ -594,29 +594,33 @@ class StdoutToPipe(ChildStateChange):
     #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
 
 
-class SetProcessGroup(ChildStateChange):
+INVALID_PGID = -1
+# argument to setpgid() that means the process is its own leader
+OWN_LEADER = 0
 
-  def __init__(self, group_id):
+class SetPgid(ChildStateChange):
+
+  def __init__(self, pgid):
     # type: (int) -> None
-    self.group_id = group_id
+    self.pgid = pgid
 
   def Apply(self):
     # type: () -> None
     try:
-      posix.setpgid(0, self.group_id)
+      posix.setpgid(0, self.pgid)
     except (IOError, OSError) as e:
       print_stderr(
           'osh: child failed to set process group for PID %d to %d: %s' %
-          (posix.getpid(), self.group_id, pyutil.strerror(e)))
+          (posix.getpid(), self.pgid, pyutil.strerror(e)))
 
   def ApplyFromParent(self, proc):
     # type: (Process) -> None
     try:
-      posix.setpgid(proc.pid, self.group_id)
+      posix.setpgid(proc.pid, self.pgid)
     except (IOError, OSError) as e:
       print_stderr(
           'osh: parent failed to set process group for PID %d to %d: %s' %
-          (proc.pid, self.group_id, pyutil.strerror(e)))
+          (proc.pid, self.pgid, pyutil.strerror(e)))
 
 
 class ExternalProgram(object):
@@ -969,8 +973,6 @@ class Process(Job):
     # type: (trace_t) -> int
     """
     Start this process with fork(), handling redirects.
-    If job control is enabled and pgrp is positive, the process will be placed
-    in the provided group.
     """
     pid = posix.fork()
     if pid < 0:
@@ -1018,7 +1020,7 @@ class Process(Job):
     # Class invariant: after the process is started, it stores its PID.
     self.pid = pid
 
-    # SetProcessGroup needs to be applied from the child and the parent to avoid
+    # SetPgid needs to be applied from the child and the parent to avoid
     # racing in calls to tcsetpgrp() in the parent. See APUE sec. 9.2.
     for st in self.state_changes:
       st.ApplyFromParent(self)
@@ -1197,19 +1199,19 @@ class Pipeline(Job):
     # If we are creating a pipeline in a subshell or we aren't running with job
     # control, our children should remain in our inherited process group.
     # the pipelines's group ID.
-    group_id = -1
+    pgid = INVALID_PGID
     if self.job_state.JobControlEnabled():
-      group_id = 0  # first process will create a group
+      pgid = OWN_LEADER  # first process in pipeline is the leader
 
     for i, proc in enumerate(self.procs):
-      if group_id != -1:
-        proc.AddStateChange(SetProcessGroup(group_id))
+      if pgid != INVALID_PGID:
+        proc.AddStateChange(SetPgid(pgid))
 
       pid = proc.StartProcess(trace.PipelinePart())
-      if i == 0 and group_id != -1:
+      if i == 0 and pgid != INVALID_PGID:
         # Mimick bash and use the PID of the first process as the group for the
         # whole pipeline.
-        group_id = pid
+        pgid = pid
 
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
@@ -1359,43 +1361,43 @@ class JobState(object):
 
     # The main shell's PID and group ID.
     self.shell_pid = -1
-    self.shell_pgrp = -1
+    self.shell_pgid = -1
 
     # The fd of the controlling tty. Set to -1 when job control is disabled.
     self.shell_tty_fd = -1
 
     # For giving the terminal back to our parent before exiting (if not a login
     # shell).
-    self.original_tty_pgrp = -1
+    self.original_tty_pgid = -1
 
   def InitJobControl(self):
     # type: () -> None
     self.shell_pid = posix.getpid()
-    orig_shell_pgrp = posix.getpgid(0)
-    self.shell_pgrp = orig_shell_pgrp
+    orig_shell_pgid = posix.getpgid(0)
+    self.shell_pgid = orig_shell_pgid
     self.shell_tty_fd = _GetTtyFd()
 
     # If we aren't the leader of our process group, create a group and mark
     # ourselves as the leader.
-    if self.shell_pgrp != self.shell_pid:
+    if self.shell_pgid != self.shell_pid:
       try:
         posix.setpgid(self.shell_pid, self.shell_pid)
-        self.shell_pgrp = self.shell_pid
+        self.shell_pgid = self.shell_pid
       except (IOError, OSError) as e:
         self.shell_tty_fd = -1
 
     if self.shell_tty_fd != -1:
-      self.original_tty_pgrp = posix.tcgetpgrp(self.shell_tty_fd)
+      self.original_tty_pgid = posix.tcgetpgrp(self.shell_tty_fd)
 
       # If stdio is a TTY, put the shell's process group in the foreground.
       try:
-        posix.tcsetpgrp(self.shell_tty_fd, self.shell_pgrp)
+        posix.tcsetpgrp(self.shell_tty_fd, self.shell_pgid)
       except (IOError, OSError) as e:
         # We probably aren't in the session leader's process group. Disable job
         # control.
         self.shell_tty_fd = -1
-        self.shell_pgrp = orig_shell_pgrp
-        posix.setpgid(self.shell_pid, self.shell_pgrp)
+        self.shell_pgid = orig_shell_pgid
+        posix.setpgid(self.shell_pid, self.shell_pgid)
 
   def JobControlEnabled(self):
     # type: () -> bool
@@ -1416,7 +1418,7 @@ class JobState(object):
   #
   # [job_id, flag, pgid, job_state, node]
 
-  def MaybeGiveTerminal(self, pgrp):
+  def MaybeGiveTerminal(self, pgid):
     # type: (int) -> None
     """If stdio is a TTY, move the given process group to the foreground."""
     if not self.JobControlEnabled():
@@ -1424,20 +1426,20 @@ class JobState(object):
       return
 
     try:
-      posix.tcsetpgrp(self.shell_tty_fd, pgrp)
+      posix.tcsetpgrp(self.shell_tty_fd, pgid)
     except (IOError, OSError) as e:
       e_die('osh: Failed to move process group %d to foreground: %s' %
-            (pgrp, pyutil.strerror(e)))
+            (pgid, pyutil.strerror(e)))
 
   def MaybeTakeTerminal(self):
     # type: () -> None
     """If stdio is a TTY, return the main shell's process group to the foreground."""
-    self.MaybeGiveTerminal(self.shell_pgrp)
+    self.MaybeGiveTerminal(self.shell_pgid)
 
   def MaybeReturnTerminal(self):
     # type: () -> None
     """Called before the shell exits."""
-    self.MaybeGiveTerminal(self.original_tty_pgrp)
+    self.MaybeGiveTerminal(self.original_tty_pgid)
 
   def WhenStopped(self, pid):
     # type: (int) -> None

@@ -73,9 +73,9 @@ class Fg(vm._Builtin):
     # Put the job's process group back into the foreground. GiveTerminal() must
     # be called before sending SIGCONT or else the process might immediately get
     # suspsended again if it tries to read/write on the terminal.
-    pgrp = posix.getpgid(pid)
-    self.job_state.MaybeGiveTerminal(pgrp)
-    posix.killpg(pgrp, SIGCONT)
+    pgid = posix.getpgid(pid)
+    self.job_state.MaybeGiveTerminal(pgid)
+    posix.killpg(pgid, SIGCONT)
     return self.job_state.WhenContinued(pid, self.waiter)
 
 

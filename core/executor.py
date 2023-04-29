@@ -304,10 +304,10 @@ class ShellExecutor(vm._Executor):
       p = process.Process(thunk, self.job_state, self.tracer)
       if self.job_state.JobControlEnabled():
         if self.fg_pipeline is not None:
-          change = process.SetProcessGroup(posix.getpgid(self.fg_pipeline.pids[0]))
+          change = process.SetPgid(posix.getpgid(self.fg_pipeline.pids[0]))
           self.fg_pipeline = None  # clear to avoid confusion in subshells
         else:
-          change = process.SetProcessGroup(0)  # process is its own leader
+          change = process.SetPgid(process.OWN_LEADER)
         p.AddStateChange(change)
 
       status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
@@ -362,7 +362,7 @@ class ShellExecutor(vm._Executor):
 
       p = self._MakeProcess(node)
       if self.job_state.JobControlEnabled():
-        p.AddStateChange(process.SetProcessGroup(0))
+        p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
       pid = p.StartProcess(trace.Fork())
       self.mem.last_bg_pid = pid  # for $!
@@ -407,7 +407,7 @@ class ShellExecutor(vm._Executor):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
     if self.job_state.JobControlEnabled():
-      p.AddStateChange(process.SetProcessGroup(0))
+      p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     return p.RunProcess(self.waiter, trace.ForkWait())
 
@@ -444,7 +444,7 @@ class ShellExecutor(vm._Executor):
     p = self._MakeProcess(node,
                           inherit_errexit=self.exec_opts.inherit_errexit())
     if self.job_state.JobControlEnabled():
-      p.AddStateChange(process.SetProcessGroup(posix.getpgid(0)))
+      p.AddStateChange(process.SetPgid(posix.getpgid(0)))
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
@@ -571,7 +571,7 @@ class ShellExecutor(vm._Executor):
     p.AddStateChange(redir)
 
     if self.job_state.JobControlEnabled():
-      p.AddStateChange(process.SetProcessGroup(0))
+      p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     # Fork, letting the child inherit the pipe file descriptors.
     p.StartProcess(trace.ProcessSub())
