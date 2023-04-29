@@ -173,14 +173,15 @@ class FdState(object):
   inherit our state.
   """
 
-  def __init__(self, errfmt, job_list, mem, tracer, waiter):
-    # type: (ErrorFormatter, JobList, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
+  def __init__(self, errfmt, job_control, job_list, mem, tracer, waiter):
+    # type: (ErrorFormatter, JobControl, JobList, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
     """
     Args:
       errfmt: for errors
       job_list: For keeping track of _HereDocWriterThunk
     """
     self.errfmt = errfmt
+    self.job_control = job_control
     self.job_list = job_list
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
@@ -454,7 +455,7 @@ class FdState(object):
         #start_process = False
 
         if start_process:
-          here_proc = Process(thunk, self.job_list, self.tracer)
+          here_proc = Process(thunk, self.job_control, self.job_list, self.tracer)
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
@@ -906,8 +907,8 @@ class Process(Job):
   It provides an API to manipulate file descriptor state in parent and child.
   """
 
-  def __init__(self, thunk, job_list, tracer):
-    # type: (Thunk, JobList, dev.Tracer) -> None
+  def __init__(self, thunk, job_control, job_list, tracer):
+    # type: (Thunk, JobControl, JobList, dev.Tracer) -> None
     """
     Args:
       thunk: Thunk instance
@@ -916,6 +917,7 @@ class Process(Job):
     Job.__init__(self)
     assert isinstance(thunk, Thunk), thunk
     self.thunk = thunk
+    self.job_control = job_control
     self.job_list = job_list
     self.tracer = tracer
 
@@ -1063,7 +1065,7 @@ class Process(Job):
     # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     self.status = 128 + stop_sig
     self.state = job_state_e.Stopped
-    self.job_list.MaybeTakeTerminal()
+    self.job_control.MaybeTakeTerminal()
 
   def WhenDone(self, pid, status):
     # type: (int, int) -> None
@@ -1076,7 +1078,7 @@ class Process(Job):
     if self.parent_pipeline:
       self.parent_pipeline.WhenDone(pid, status)
     else:
-      self.job_list.MaybeTakeTerminal()
+      self.job_control.MaybeTakeTerminal()
 
   def RunProcess(self, waiter, why):
     # type: (Waiter, trace_t) -> int
@@ -1086,7 +1088,7 @@ class Process(Job):
     if self.parent_pipeline is None:
       # QUESTION: Can the PGID of a single process just be the PID?  i.e. avoid
       # calling getpgid()?
-      self.job_list.MaybeGiveTerminal(posix.getpgid(self.pid))
+      self.job_control.MaybeGiveTerminal(posix.getpgid(self.pid))
     return self.Wait(waiter)
 
 
@@ -1116,9 +1118,10 @@ class Pipeline(Job):
   foo | bar | read v
   """
 
-  def __init__(self, sigpipe_status_ok, job_list):
-    # type: (bool, JobList) -> None
+  def __init__(self, sigpipe_status_ok, job_control, job_list):
+    # type: (bool, JobControl, JobList) -> None
     Job.__init__(self)
+    self.job_control = job_control
     self.job_list = job_list
     self.procs = []  # type: List[Process]
     self.pids = []  # type: List[int]  # pids in order
@@ -1200,7 +1203,7 @@ class Pipeline(Job):
     # control, our children should remain in our inherited process group.
     # the pipelines's group ID.
     pgid = INVALID_PGID
-    if self.job_list.JobControlEnabled():
+    if self.job_control.Enabled():
       pgid = OWN_LEADER  # first process in pipeline is the leader
 
     for i, proc in enumerate(self.procs):
@@ -1271,7 +1274,7 @@ class Pipeline(Job):
     """
     assert len(self.pids) == len(self.procs)
 
-    self.job_list.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
+    self.job_control.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
 
     # Run the last part of the pipeline IN PARALLEL with other processes.  It
     # may or may not fork:
@@ -1322,7 +1325,7 @@ class Pipeline(Job):
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
-      self.job_list.MaybeTakeTerminal()
+      self.job_control.MaybeTakeTerminal()
 
 
 def _JobStateStr(i):
@@ -1343,10 +1346,9 @@ def _GetTtyFd():
 
 class ctx_TerminalControl(object):
 
-  def __init__(self, job_list):
-    # type: (JobList) -> None
-
-    self.job_list = job_list
+  def __init__(self, job_control):
+    # type: (JobControl) -> None
+    self.job_control = job_control
 
   def __enter__(self):
     # type: () -> None
@@ -1356,26 +1358,14 @@ class ctx_TerminalControl(object):
     # type: (Any, Any, Any) -> None
 
     # TODO: can we raise internally?
-    self.job_list.MaybeReturnTerminal()
+    self.job_control.MaybeReturnTerminal()
 
 
-class JobList(object):
-  """Global list of jobs, used by a few builtins."""
+class JobControl(object):
+  """Interface to setpgid(), tcsetpgrp(), etc."""
 
   def __init__(self):
     # type: () -> None
-
-    # pid -> Job instance
-    # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict!
-    # This is for display in 'jobs' builtin and for %+ %1 lookup.
-    self.jobs = {}  # type: Dict[int, Job]
-
-    # pid -> Process.  This is for STOP notification.
-    self.child_procs = {}  # type: Dict[int, Process]
-    self.debug_pipelines = []  # type: List[Pipeline]
-
-    self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
-    self.job_id = 1  # Strictly increasing
 
     # The main shell's PID and group ID.
     self.shell_pid = -1
@@ -1417,7 +1407,7 @@ class JobList(object):
         self.shell_pgid = orig_shell_pgid
         posix.setpgid(self.shell_pid, self.shell_pgid)
 
-  def JobControlEnabled(self):
+  def Enabled(self):
     # type: () -> bool
     curr_pid = posix.getpid()
     # Only the main shell should bother with job control functions.
@@ -1439,7 +1429,7 @@ class JobList(object):
   def MaybeGiveTerminal(self, pgid):
     # type: (int) -> None
     """If stdio is a TTY, move the given process group to the foreground."""
-    if not self.JobControlEnabled():
+    if not self.Enabled():
       # Only call tcsetpgrp when job control is enabled.
       return
 
@@ -1458,6 +1448,25 @@ class JobList(object):
     # type: () -> None
     """Called before the shell exits."""
     self.MaybeGiveTerminal(self.original_tty_pgid)
+
+
+class JobList(object):
+  """Global list of jobs, used by a few builtins."""
+
+  def __init__(self):
+    # type: () -> None
+
+    # pid -> Job instance
+    # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict!
+    # This is for display in 'jobs' builtin and for %+ %1 lookup.
+    self.jobs = {}  # type: Dict[int, Job]
+
+    # pid -> Process.  This is for STOP notification.
+    self.child_procs = {}  # type: Dict[int, Process]
+    self.debug_pipelines = []  # type: List[Pipeline]
+
+    self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
+    self.job_id = 1  # Strictly increasing
 
   def WhenStopped(self, pid):
     # type: (int) -> None

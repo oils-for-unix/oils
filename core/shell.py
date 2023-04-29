@@ -234,6 +234,7 @@ def AddProcess(
     shell_ex,  # type: vm._Executor
     ext_prog,  # type: process.ExternalProgram
     fd_state,  # type: process.FdState
+    job_control,  # type: process.JobControl
     job_list,  # type: process.JobList
     waiter,  # type: process.Waiter
     tracer,  # type: dev.Tracer
@@ -250,7 +251,7 @@ def AddProcess(
                                            errfmt)
 
   b[builtin_i.jobs] = builtin_process.Jobs(job_list)
-  b[builtin_i.fg] = builtin_process.Fg(job_list, waiter)
+  b[builtin_i.fg] = builtin_process.Fg(job_control, job_list, waiter)
   b[builtin_i.bg] = builtin_process.Bg(job_list)
 
   b[builtin_i.fork] = builtin_process.Fork(shell_ex)
@@ -421,8 +422,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
 
+  job_control = process.JobControl()
   job_list = process.JobList()
-  fd_state = process.FdState(errfmt, job_list, mem, None, None)
+  fd_state = process.FdState(errfmt, job_control, job_list, mem, None, None)
 
   my_pid = posix.getpid()
 
@@ -515,14 +517,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
-      ext_prog, waiter, tracer, job_list, fd_state, trap_state, errfmt)
+      ext_prog, waiter, tracer, job_control, job_list, fd_state, trap_state, errfmt)
 
   AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
-                       search_path, errfmt)
+         search_path, errfmt)
   AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx,
-                     errfmt)
+        errfmt)
   AddProcess(builtins, mem, shell_ex, ext_prog, fd_state,
-                          job_list, waiter, tracer, search_path, errfmt)
+             job_control, job_list, waiter, tracer, search_path, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 
@@ -770,7 +772,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
     process.InitInteractiveShell()
-    job_list.InitJobControl()
+    job_control.InitJobControl()
 
     # NOTE: rc files loaded AFTER _InitDefaultCompletions.
     for rc_path in rc_paths:
@@ -796,7 +798,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     # Return the TTY to the original owner before exiting.
     try:
-      job_list.MaybeReturnTerminal()
+      job_control.MaybeReturnTerminal()
     except error.FatalRuntime as e:
       # Don't abort the shell on error, just print a message.
       errfmt.PrettyPrintError(e)

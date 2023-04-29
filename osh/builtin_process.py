@@ -26,7 +26,7 @@ import posix_ as posix
 
 from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
-  from core.process import JobList, Waiter, ExternalProgram, FdState
+  from core.process import Waiter, ExternalProgram, FdState
   from core.state import Mem, SearchPath
   from core.ui import ErrorFormatter
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 class Jobs(vm._Builtin):
   """List jobs."""
   def __init__(self, job_list):
-    # type: (JobList) -> None
+    # type: (process.JobList) -> None
     self.job_list = job_list
 
   def Run(self, cmd_val):
@@ -60,8 +60,9 @@ class Jobs(vm._Builtin):
 
 class Fg(vm._Builtin):
   """Put a job in the foreground"""
-  def __init__(self, job_list, waiter):
-    # type: (JobList, Waiter) -> None
+  def __init__(self, job_control, job_list, waiter):
+    # type: (process.JobControl, process.JobList, Waiter) -> None
+    self.job_control = job_control
     self.job_list = job_list
     self.waiter = waiter
 
@@ -79,7 +80,7 @@ class Fg(vm._Builtin):
     # be called before sending SIGCONT or else the process might immediately get
     # suspsended again if it tries to read/write on the terminal.
     pgid = posix.getpgid(pid)
-    self.job_list.MaybeGiveTerminal(pgid)
+    self.job_control.MaybeGiveTerminal(pgid)
     posix.killpg(pgid, SIGCONT)
     return self.job_list.WhenContinued(pid, self.waiter)
 
@@ -87,7 +88,7 @@ class Fg(vm._Builtin):
 class Bg(vm._Builtin):
   """Put a job in the background"""
   def __init__(self, job_list):
-    # type: (JobList) -> None
+    # type: (process.JobList) -> None
     self.job_list = job_list
 
   def Run(self, cmd_val):
@@ -195,7 +196,7 @@ class Wait(vm._Builtin):
       option is given.
   """
   def __init__(self, waiter, job_list, mem, tracer, errfmt):
-    # type: (Waiter, JobList, Mem, dev.Tracer, ErrorFormatter) -> None
+    # type: (Waiter, process.JobList, Mem, dev.Tracer, ErrorFormatter) -> None
     self.waiter = waiter
     self.job_list = job_list
     self.mem = mem

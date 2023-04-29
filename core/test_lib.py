@@ -183,8 +183,9 @@ def InitCommandEvaluator(
   # No 'readline' in the tests.
 
   errfmt = ui.ErrorFormatter(arena)
+  job_control = process.JobControl()
   job_list = process.JobList()
-  fd_state = process.FdState(errfmt, job_list, None, None, None)
+  fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
   aliases = {} if aliases is None else aliases
   procs = {}
 
@@ -250,7 +251,8 @@ def InitCommandEvaluator(
   hay_state = state.Hay()
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
-      ext_prog, waiter, tracer, job_list, fd_state, trap_state, errfmt)
+      ext_prog, waiter, tracer, job_control, job_list, fd_state, trap_state,
+      errfmt)
 
   assert cmd_ev.mutable_opts is not None, cmd_ev
   prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)

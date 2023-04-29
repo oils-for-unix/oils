@@ -104,6 +104,7 @@ class ShellExecutor(vm._Executor):
       ext_prog,  # type: process.ExternalProgram
       waiter,  # type: process.Waiter
       tracer,  # type: dev.Tracer
+      job_control,  # type: process.JobControl
       job_list,  # type: process.JobList
       fd_state,  # type: process.FdState
       trap_state,  # type: builtin_trap.TrapState
@@ -121,6 +122,7 @@ class ShellExecutor(vm._Executor):
     self.ext_prog = ext_prog
     self.waiter = waiter
     self.tracer = tracer
+    self.job_control = job_control
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_list = job_list
     self.fd_state = fd_state
@@ -168,7 +170,7 @@ class ShellExecutor(vm._Executor):
     #   and get this check for "free".
     thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
                                     inherit_errexit=inherit_errexit)
-    p = process.Process(thunk, self.job_list, self.tracer)
+    p = process.Process(thunk, self.job_control, self.job_list, self.tracer)
     return p
 
   def RunBuiltin(self, builtin_id, cmd_val):
@@ -301,8 +303,8 @@ class ShellExecutor(vm._Executor):
     # Normal case: ls /
     if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
-      p = process.Process(thunk, self.job_list, self.tracer)
-      if self.job_list.JobControlEnabled():
+      p = process.Process(thunk, self.job_control, self.job_list, self.tracer)
+      if self.job_control.Enabled():
         if self.fg_pipeline is not None:
           first_pid = self.fg_pipeline.pids[0]
           assert first_pid == posix.getpgid(first_pid), "Expected pipeline leader"
@@ -345,7 +347,8 @@ class ShellExecutor(vm._Executor):
 
     if UP_node.tag_() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
-      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_list)
+      pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
+                            self.job_control, self.job_list)
       for child in node.children:
         p = self._MakeProcess(child)
         p.Init_ParentPipeline(pi)
@@ -363,7 +366,7 @@ class ShellExecutor(vm._Executor):
       # If we haven't called Register yet, then we won't know who to notify.
 
       p = self._MakeProcess(node)
-      if self.job_list.JobControlEnabled():
+      if self.job_control.Enabled():
         p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
       pid = p.StartProcess(trace.Fork())
@@ -374,7 +377,8 @@ class ShellExecutor(vm._Executor):
   def RunPipeline(self, node, status_out):
     # type: (command__Pipeline, CommandStatus) -> None
 
-    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_list)
+    pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_control,
+                          self.job_list)
     self.job_list.AddPipeline(pi)
 
     # initialized with CommandStatus.CreateNull()
@@ -408,7 +412,7 @@ class ShellExecutor(vm._Executor):
   def RunSubshell(self, node):
     # type: (command_t) -> int
     p = self._MakeProcess(node)
-    if self.job_list.JobControlEnabled():
+    if self.job_control.Enabled():
       p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     return p.RunProcess(self.waiter, trace.ForkWait())
@@ -572,7 +576,7 @@ class ShellExecutor(vm._Executor):
 
     p.AddStateChange(redir)
 
-    if self.job_list.JobControlEnabled():
+    if self.job_control.Enabled():
       p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     # Fork, letting the child inherit the pipe file descriptors.
