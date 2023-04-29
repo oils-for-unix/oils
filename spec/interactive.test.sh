@@ -11,10 +11,6 @@ $SH --rcfile $TMP/oshrc -i -c 'echo hello'
 ## STDOUT:
 one
 ## END
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
 
 #### fatal errors continue
 # NOTE: tried here doc, but sys.stdin.isatty() fails.  Could we fake it?
@@ -27,10 +23,6 @@ exit 42
 ## STDOUT:
 one
 ## END
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
 
 #### interactive shell loads rcfile (when combined with -c)
 $SH -c 'echo 1'
@@ -43,14 +35,8 @@ $SH --rcfile $TMP/rcfile -i -c 'echo 2'
 RCFILE
 2
 ## END
-## N-I dash/mksh STDOUT:
-1
-## END
-## N-I dash status: 2
-## N-I mksh status: 1
 
 #### interactive shell loads files in rcdir (when combined with -c)
-case $SH in dash|bash|mksh) exit ;; esac
 
 $SH -c 'echo A'
 
@@ -83,11 +69,14 @@ rcdir 1
 rcdir 2
 C
 ## END
-## N-I dash/mksh/bash STDOUT:
+
+## N-I bash status: 2
+## N-I bash STDOUT:
+A
 ## END
 
 #### nonexistent --rcdir is ignored
-case $SH in dash|bash|mksh) exit ;; esac
+case $SH in bash) exit ;; esac
 
 $SH --rcdir $TMP/__does-not-exist -i -c 'echo hi'
 echo status=$?
@@ -96,11 +85,10 @@ echo status=$?
 hi
 status=0
 ## END
-## N-I dash/bash/mksh STDOUT:
+## N-I bash STDOUT:
 ## END
 
 #### shell doesn't load rcfile/rcdir if --norc is given
-case $SH in dash|mksh) exit ;; esac
 
 $SH -c 'echo A'
 
@@ -131,8 +119,6 @@ D
 A
 C
 ## END
-## N-I dash/mksh STDOUT:
-## END
 
 
 #### interactive shell runs PROMPT_COMMAND after each command
@@ -159,7 +145,6 @@ two
 PROMPT
 ^D
 ## END
-## N-I dash/mksh stdout-json: ""
 
 
 #### parse error in PROMPT_COMMAND
@@ -183,7 +168,6 @@ one
 two
 ^D
 ## END
-## N-I dash/mksh stdout-json: ""
 
 #### runtime error in PROMPT_COMMAND
 export PS1=''  # OSH prints prompt to stdout
@@ -206,7 +190,6 @@ one
 two
 ^D
 ## END
-## N-I dash/mksh stdout-json: ""
 
 #### Error message with bad oshrc file (currently ignored)
 cd $TMP
@@ -224,19 +207,10 @@ status=0
 bad_oshrc:
 ## END
 
-## N-I dash/mksh status: 1
-## N-I dash STDOUT:
-status=2
-## END
-## N-I mksh STDOUT:
-status=1
-## END
 
 #### PROMPT_COMMAND can see $?, like bash
 
 # bug fix #853
-
-case $SH in (dash|mksh) exit ;; esac
 
 export PS1=''  # OSH prints prompt to stdout
 
@@ -262,7 +236,6 @@ ok
 last_status=0
 ^D
 ## END
-## N-I dash/mksh stdout-json: ""
 
 #### PROMPT_COMMAND that writes to BASH_REMATCH
 export PS1=''
@@ -299,4 +272,3 @@ clo c l o
 ---
 ^D
 ## END
-## N-I dash/mksh stdout-json: ""

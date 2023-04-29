@@ -295,7 +295,7 @@ interactive() {
   # Weird spec test stoppages:
 
   # Don't happen with other shells
-  #shells=( "${REF_SHELLS[@]}" )
+  #shells=( bash )
 
   # Also happens with osh-cpp
   #OSH_LIST=$REPO_ROOT/_bin/cxx-dbg/osh
@@ -304,7 +304,7 @@ interactive() {
   #shells=( $OSH_LIST )
 
   # Happens deterministically with all of them !!!
-  shells=( "${REF_SHELLS[@]}" $OSH_LIST )
+  shells=( bash $OSH_LIST )
 
   sh-spec spec/interactive.test.sh --osh-failures-allowed 0 \
     "${shells[@]}" "$@"
