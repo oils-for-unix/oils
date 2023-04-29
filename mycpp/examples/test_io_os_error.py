@@ -8,7 +8,7 @@ from __future__ import print_function
 import os
 from mycpp.mylib import log, print_stderr
 
-from typing import List
+from typing import List, Any
 #import posix_ as posix
 
 
@@ -39,9 +39,11 @@ def AppBundleMain(argv):
   return 0
 
 
-def run_tests():
+def TestRethrow():
   # type: () -> int
-
+  """
+  This is fine, the problem was throwing an exceptinon in a DESTRUCTOR
+  """
   argv = []  # type: List[str]
 
   try:
@@ -69,9 +71,56 @@ def run_tests():
     return 2  # dash gives status 2
 
 
+class ctx_TerminalControl(object):
+
+  def __init__(self):
+    # type: () -> None
+
+    log('TerminalControl init')
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    log('TerminalControl exit')
+
+    TestRethrow()
+
+    # https://akrzemi1.wordpress.com/2011/09/21/destructors-that-throw/
+
+    # Quote: Until any exception gets out from the destructor we can throw at
+    # will inside, even from other destructors, and this does not account for
+    # double-exception situation or "throwing from destructor during stack
+    # unwinding." Let's illustrate it with an example.
+    log('Throw and Catch within destructor seems OK')
+
+
+def TestDestructor():
+  # type: () -> None
+
+  with ctx_TerminalControl():
+    log('hi')
+
+
+def run_tests():
+  # type: () -> int
+
+  TestRethrow()
+
+  log('')
+  log('TestDestructor')
+  log('')
+
+  TestDestructor()
+
+  return 0
+
+
 def run_benchmarks():
   # type: () -> None
-  pass
+  raise NotImplementedError()
 
 
 if __name__ == '__main__':
