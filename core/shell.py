@@ -387,7 +387,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # init the HISTFILE variable to our default history file
   history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
-  mem.SetValue(location.LName('HISTFILE'), value.Str(history_filename), scope_e.GlobalOnly)
+  state.SetGlobalString(mem, 'HISTFILE', history_filename)
 
   #
   # Initialize builtins that don't depend on evaluators
