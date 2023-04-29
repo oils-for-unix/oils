@@ -86,7 +86,7 @@ echo bye
 def _TestHistory(argv):
    f = cStringIO.StringIO()
    arena = alloc.Arena()
-   mem = state.Mem(loc.Missing(), [], arena, [])
+   mem = state.Mem('', [], arena, [])
    b = builtin_lib.History(readline, mem, f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
    b.Run(cmd_val)

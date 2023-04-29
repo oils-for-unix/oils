@@ -208,7 +208,7 @@ def InitCommandEvaluator(
 
       builtin_i.history: builtin_lib.History(
         readline,
-        "_tmp/builtin_test_history.txt",
+        mem,
         mylib.Stdout(),
       ),
 
