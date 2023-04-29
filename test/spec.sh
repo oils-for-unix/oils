@@ -261,7 +261,6 @@ osh-minimal() {
   cat >_tmp/spec/SUITE-osh-minimal.txt <<EOF
 smoke
 oil-json
-interactive
 EOF
 # this fails because the 'help' builtin doesn't have its data
 # builtin-bash
