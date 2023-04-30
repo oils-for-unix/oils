@@ -240,7 +240,7 @@ class ASDLParser(object):
       # Additional validation
       if generate is not None:
         for g in generate:
-          if g not in ['integers', 'bit_set', 'no_namespace_suffix']:
+          if g not in ['integers', 'bit_set', 'no_namespace_suffix', 'no_legacy__']:
             raise ASDLSyntaxError('Invalid code gen option %r' % g,
                                   self.cur_token.lineno)
 

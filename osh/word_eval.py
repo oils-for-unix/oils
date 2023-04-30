@@ -24,7 +24,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_t,
     AssignArg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
-    a_index, a_index_e, a_index__Int, a_index__Str,
+    a_index, a_index_e,
     VTestPlace, VarSubState,
 )
 from _devbuild.gen.option_asdl import option_i
@@ -628,10 +628,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             with tagswitch(var_index) as case:
               if case(a_index_e.Int):
-                var_index = cast(a_index__Int, UP_var_index)
+                var_index = cast(a_index.Int, UP_var_index)
                 lval = lvalue.Indexed(var_name, var_index.i, loc.Missing())
               elif case(a_index_e.Str):
-                var_index = cast(a_index__Str, UP_var_index)
+                var_index = cast(a_index.Str, UP_var_index)
                 lval = lvalue.Keyed(var_name, var_index.s, loc.Missing())
               else: 
                 raise AssertionError()

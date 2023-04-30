@@ -298,9 +298,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       self.Emit('  L.append(field(%r, %s))' % (field.name, out_val_name), depth)
 
-  def _GenClass(self, ast_node, attributes, class_name, base_classes, depth,
-                tag_num):
-    """Used for Constructor and Product."""
+  def _GenClass(self, ast_node, attributes, class_name, base_classes,
+                tag_num, class_ns=''):
+    """Used for both Sum variants ("constructors") and Product types.
+
+    Args:
+      class_ns: for variants like value.Str
+    """
     self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
     self.Emit('  _type_tag = %d' % tag_num)
 
@@ -352,8 +356,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     if len(all_fields) and not self.py_init_n:
       self.Emit('  @staticmethod')
       self.Emit('  def CreateNull(alloc_lists=False):')
-      self.Emit('    # type: () -> %s' % class_name)
-      self.Emit('    return %s(%s)' % (class_name, ', '.join(default_vals)))
+      self.Emit('    # type: () -> %s%s' % (class_ns, class_name))
+      self.Emit('    return %s%s(%s)' % (class_ns, class_name, ', '.join(default_vals)))
       self.Emit('')
 
     if not self.pretty_print_methods:
@@ -509,6 +513,26 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     depth = self.current_depth
     self.Emit('')
 
+    if 'no_legacy__' in sum.generate:
+      # Class that's just a NAMESPACE, e.g. for value.Str
+      self.Emit('class %s(object):' % sum_name, depth)
+
+      self.Indent()
+
+      for i, variant in enumerate(sum.types):
+        if variant.shared_type:
+          # Don't generate a class.
+          pass
+        else:
+          # Use fully-qualified name, so we can have osh_cmd.Simple and
+          # oil_cmd.Simple.
+          fq_name = variant.name
+          self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
+                         i + 1, class_ns=sum_name + '.')
+
+      self.Dedent()
+      return
+
     for i, variant in enumerate(sum.types):
       if variant.shared_type:
         # Don't generate a class.
@@ -518,7 +542,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # oil_cmd.Simple.
         fq_name = '%s__%s' % (sum_name, variant.name)
         self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                       depth, i + 1)
+                       i + 1)
 
     # Emit a namespace
     self.Emit('class %s(object):' % sum_name, depth)
@@ -550,4 +574,4 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       bases = self._product_bases[name]
       if not bases:
         bases = ('pybase.CompoundObj',)
-      self._GenClass(ast_node, attributes, name, bases, depth, tag_num)
+      self._GenClass(ast_node, attributes, name, bases, tag_num)
