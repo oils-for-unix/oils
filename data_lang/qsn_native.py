@@ -1,7 +1,7 @@
 """
 qsn_native.py -- Depends on Oil's C code and generated code.
 
-In contrast, qsn_/qsn.py is pure Python, and has a reference decoder
+data_langIn contrast, data_lang/qsn.py is pure Python, and has a reference decoder
 py_decode().
 """
 from __future__ import print_function

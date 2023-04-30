@@ -69,7 +69,7 @@ EOF
 }
 
 readonly -a ASDL_FILES=(
-  $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,qsn_/qsn}.py \
+  $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,data_lang/qsn}.py \
 )
 
 asdl-runtime() {

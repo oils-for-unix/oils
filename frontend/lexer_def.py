@@ -593,7 +593,7 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
   C('\\\0', Id.Unknown_Tok),
 ]
 
-# Should match the pure Python decoder in qsn_/qsn.py
+# Should match the pure Python decoder in data_lang/qsn.py
 LEXER_DEF[lex_mode_e.QSN] = [
   R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
   _X_CHAR_2,       # \xff

@@ -6,7 +6,7 @@
 # - Those with terminal escape sequences
 #
 # Usage:
-#   qsn/demo.sh <function name>
+#   data_lang/demo.sh <function name>
 
 set -o nounset
 set -o pipefail

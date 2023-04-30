@@ -24,7 +24,7 @@ from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
-from qsn_ import qsn
+from data_lang import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:

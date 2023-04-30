@@ -20,7 +20,7 @@ from _devbuild.gen.hnode_asdl import (hnode_e, hnode_t, hnode__Record,
                                       hnode__Array, hnode__Leaf,
                                       hnode__External, color_e, color_t)
 from core import ansi
-from qsn_ import qsn
+from data_lang import qsn
 from pylib import cgi
 from mycpp import mylib
 

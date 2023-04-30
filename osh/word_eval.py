@@ -33,7 +33,7 @@ from core import pyos
 from core import pyutil
 from core import state
 from core import ui
-from qsn_ import qsn
+from data_lang import qsn
 from core.pyerror import e_die
 from frontend import consts
 from frontend import lexer

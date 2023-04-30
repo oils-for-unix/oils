@@ -14,7 +14,7 @@ from mycpp.mylib import log
 from frontend import consts
 from osh import string_ops
 from mycpp.mylib import switch
-from qsn_ import qsn_native  # IsWhitespace
+from data_lang import qsn_native  # IsWhitespace
 
 from typing import List, Optional, cast
 

@@ -107,8 +107,8 @@ Str* repr(void* obj) {
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
-    $REPO_ROOT/qsn_/qsn.py \
     $REPO_ROOT/core/ansi.py \
+    $REPO_ROOT/data_lang/qsn.py \
     examples/parse.py 
 } 
 

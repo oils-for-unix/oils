@@ -19,7 +19,7 @@ from core import ui
 from mycpp.mylib import log
 from frontend import location
 from osh import word_
-from qsn_ import qsn
+from data_lang import qsn
 from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems

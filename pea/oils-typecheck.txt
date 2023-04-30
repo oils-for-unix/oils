@@ -28,6 +28,8 @@ core/state.py
 core/ui.py
 core/util.py
 core/vm.py
+data_lang/qsn.py
+data_lang/qsn_native.py
 frontend/args.py
 frontend/builtin_def.py
 frontend/consts.py
@@ -84,7 +86,5 @@ pgen2/pnode.py
 pylib/cgi.py
 pylib/os_path.py
 pylib/path_stat.py
-qsn_/qsn.py
-qsn_/qsn_native.py
 tea/tea_main.py
 tools/osh2oil.py

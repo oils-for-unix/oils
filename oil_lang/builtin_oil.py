@@ -23,7 +23,7 @@ from frontend import flag_spec
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, Stdout
-from qsn_ import qsn
+from data_lang import qsn
 
 from typing import Dict, TYPE_CHECKING, cast
 if TYPE_CHECKING:

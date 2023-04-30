@@ -33,7 +33,7 @@ from mycpp import mylib
 from mycpp.mylib import log, STDIN_FILENO
 from osh import word_compile
 from pylib import os_path
-from qsn_ import qsn_native
+from data_lang import qsn_native
 
 import libc
 import posix_ as posix

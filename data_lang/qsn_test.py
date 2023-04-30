@@ -9,7 +9,7 @@ import re
 import unittest
 
 from mycpp.mylib import log
-from qsn_ import qsn  # module under test
+from data_lang import qsn  # module under test
 
 
 class QStrTest(unittest.TestCase):

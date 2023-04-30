@@ -31,7 +31,7 @@ from mycpp import mylib
 from mycpp.mylib import log
 from osh import sh_expr_eval
 from osh import word_compile
-from qsn_ import qsn
+from data_lang import qsn
 
 import posix_ as posix
 

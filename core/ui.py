@@ -24,7 +24,7 @@ from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, StrFromC
-from qsn_ import qsn
+from data_lang import qsn
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:

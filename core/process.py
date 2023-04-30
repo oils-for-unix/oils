@@ -39,7 +39,7 @@ from core.pyerror import e_die
 from frontend import location
 from frontend import match
 from osh import cmd_eval
-from qsn_ import qsn
+from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems, StrFromC
 
