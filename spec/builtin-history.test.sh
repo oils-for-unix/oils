@@ -71,7 +71,7 @@ exists
 
 echo '
 HISTFILE=(a b c)
-history -r
+history -a
 echo $?
 ' | $SH -i
 
