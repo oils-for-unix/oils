@@ -87,7 +87,7 @@ class History(vm._Builtin):
     if arg.r:
       history_filename = self.GetHistoryFilename()
       if not path_stat.exists(history_filename):
-        self.errfmt.Print_("The file '%s' ($HISTFILE) does not exist" % history_filename, loc.Missing())
+        self.errfmt.Print_("HISTFILE %r doesn't exist" % history_filename, loc.Missing())
         return 1
 
       readline.read_history_file(history_filename)
