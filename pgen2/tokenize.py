@@ -136,7 +136,7 @@ for t in ("'''", '"""',
           "br'''", 'br"""', "Br'''", 'Br"""',
           "bR'''", 'bR"""', "BR'''", 'BR"""',):
     triple_quoted[t] = t
-single_quoted = {}
+SingleQuoted = {}
 for t in ("'", '"',
           "r'", 'r"', "R'", 'R"',
           "u'", 'u"', "U'", 'U"',
@@ -145,7 +145,7 @@ for t in ("'", '"',
           "uR'", 'uR"', "UR'", 'UR"',
           "br'", 'br"', "Br'", 'Br"',
           "bR'", 'bR"', "BR'", 'BR"', ):
-    single_quoted[t] = t
+    SingleQuoted[t] = t
 
 tabsize = 8
 
@@ -501,9 +501,9 @@ def generate_tokens(readline):
                         contstr = line[start:]
                         contline = line
                         break
-                elif initial in single_quoted or \
-                    token[:2] in single_quoted or \
-                    token[:3] in single_quoted:
+                elif initial in SingleQuoted or \
+                    token[:2] in SingleQuoted or \
+                    token[:3] in SingleQuoted:
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
                         endprog = (endprogs[initial] or endprogs[token[1]] or

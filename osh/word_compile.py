@@ -7,7 +7,7 @@ values at runtime.
 """
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    Token, single_quoted, CharCode, 
+    Token, SingleQuoted, CharCode, 
     word_part_e, word_part_t,
 )
 from mycpp.mylib import log
@@ -117,7 +117,7 @@ def EvalCStringToken(tok):
 
 
 def EvalSingleQuoted(part):
-  # type: (single_quoted) -> str
+  # type: (SingleQuoted) -> str
   if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
       Id.Left_TSingleQuote, Id.Left_RTSingleQuote):
 

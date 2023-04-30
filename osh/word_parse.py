@@ -52,8 +52,8 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox, Token, loc,
-    double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
-    sh_array_literal, AssocPair,
+    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, command_sub,
+    ShArrayLiteral, AssocPair,
 
     arith_expr_t, bracket_op, bracket_op_t,
 
@@ -335,7 +335,7 @@ class WordParser(WordEmitter):
     return op
 
   def _ParseVarOf(self):
-    # type: () -> braced_var_sub
+    # type: () -> BracedVarSub
     """
     VarOf     = NAME Subscript?
               | NUMBER      # no subscript allowed, none of these are arrays
@@ -352,14 +352,14 @@ class WordParser(WordEmitter):
     else:
       bracket_op = None
 
-    part = braced_var_sub.CreateNull()
+    part = BracedVarSub.CreateNull()
     part.token = name_token
     part.var_name = lexer.TokenVal(name_token)
     part.bracket_op = bracket_op
     return part
 
   def _ParseVarExpr(self, arg_lex_mode, allow_query=False):
-    # type: (lex_mode_t, bool) -> braced_var_sub
+    # type: (lex_mode_t, bool) -> BracedVarSub
     """
     Start parsing at the op -- we already skipped past the name.
     """
@@ -455,14 +455,14 @@ class WordParser(WordEmitter):
     return part
 
   def ReadBracedVarSub(self, left_token):
-    # type: (Token) -> Tuple[braced_var_sub, Token]
+    # type: (Token) -> Tuple[BracedVarSub, Token]
     """   For Oil expressions like var x = ${x:-"default"}.  """
     part = self._ReadBracedVarSub(left_token, d_quoted=False)
     last_token = self.cur_token
     return part, last_token
 
   def _ReadBracedVarSub(self, left_token, d_quoted):
-    # type: (Token, bool) -> braced_var_sub
+    # type: (Token, bool) -> BracedVarSub
     """For the ${} expression language.
 
     NAME        = [a-zA-Z_][a-zA-Z0-9_]*
@@ -576,7 +576,7 @@ class WordParser(WordEmitter):
 
     elif ty == Id.VSub_Dot:
       # Note: this will become a new builtin_sub type, so this method must
-      # return word_part_t rather than braced_var_sub.  I don't think that
+      # return word_part_t rather than BracedVarSub.  I don't think that
       # should cause problems.
       p_die('TODO: ${.myproc builtin sub}', self.cur_token)
 
@@ -593,13 +593,13 @@ class WordParser(WordEmitter):
     return part
 
   def _ReadSingleQuoted(self, left_token, lex_mode):
-    # type: (Token, lex_mode_t) -> single_quoted
+    # type: (Token, lex_mode_t) -> SingleQuoted
     """Interal method to read a word_part."""
     tokens = []  # type: List[Token]
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
     right_quote = self.cur_token
-    node = single_quoted(left_token, tokens, right_quote)
+    node = SingleQuoted(left_token, tokens, right_quote)
     return node
 
   def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_oil_expr):
@@ -866,7 +866,7 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.VSub:
         tok = self.cur_token
-        part = simple_var_sub(tok, lexer.TokenSliceLeft(tok, 1))
+        part = SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
         out_parts.append(part)
         # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
         # later.
@@ -906,7 +906,7 @@ class WordParser(WordEmitter):
     # Return nothing, since we appended to 'out_parts'
 
   def _ReadDoubleQuoted(self, left_token):
-    # type: (Token) -> double_quoted
+    # type: (Token) -> DoubleQuoted
     """Helper function for "hello $name"
 
     Args:
@@ -919,7 +919,7 @@ class WordParser(WordEmitter):
     self._ReadLikeDQ(left_token, False, parts)
 
     right_quote = self.cur_token
-    return double_quoted(left_token, parts, right_quote)
+    return DoubleQuoted(left_token, parts, right_quote)
 
   def ReadDoubleQuoted(self, left_token, parts):
     # type: (Token, List[word_part_t]) -> Token
@@ -1351,7 +1351,7 @@ class WordParser(WordEmitter):
     if len(words) == 0:  # a=() is empty indexed array
       # Needed for type safety, doh
       no_words = []  # type: List[word_t]
-      node = sh_array_literal(left_token, no_words)
+      node = ShArrayLiteral(left_token, no_words)
       return node
  
     pairs = []  # type: List[AssocPair]
@@ -1377,7 +1377,7 @@ class WordParser(WordEmitter):
     # Brace detection for arrays but NOT associative arrays
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
-    node = sh_array_literal(left_token, words3)
+    node = ShArrayLiteral(left_token, words3)
     return node
 
   def _ParseInlineCallArgs(self, arg_list):
@@ -1529,7 +1529,7 @@ class WordParser(WordEmitter):
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
 
-        part = simple_var_sub(vsub_token, lexer.TokenSliceLeft(vsub_token, 1))  # type: word_part_t
+        part = SimpleVarSub(vsub_token, lexer.TokenSliceLeft(vsub_token, 1))  # type: word_part_t
         if self.token_type == Id.VSub_DollarName:
           # Look ahead for $strfunc(x)
           #   $f(x) or --name=$f(x) is allowed
@@ -1761,7 +1761,7 @@ class WordParser(WordEmitter):
           'Unhandled: %s (%s)' % (self.cur_token, self.token_kind))
 
   def ParseVarRef(self):
-    # type: () -> braced_var_sub
+    # type: () -> BracedVarSub
     """DYNAMIC parsing of what's inside ${!ref}
 
     # Same as VarOf production

@@ -194,7 +194,7 @@ class Constructor(_CompoundAST):
   def __init__(self, name, shared_type=None, fields=None):
     _CompoundAST.__init__(self, fields)
     self.name = name
-    self.shared_type = shared_type  # for DoubleQuoted %double_quoted
+    self.shared_type = shared_type  # for DoubleQuoted %DoubleQuoted
 
   def Print(self, f, indent):
     ind = indent * '  '

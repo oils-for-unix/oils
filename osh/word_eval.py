@@ -5,11 +5,11 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token, loc, loc_t,
-    braced_var_sub, command_sub,
+    BracedVarSub, command_sub,
     bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
     suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
     suffix_op__Unary, suffix_op__Static,
-    sh_array_literal, single_quoted, double_quoted, simple_var_sub,
+    ShArrayLiteral, SingleQuoted, DoubleQuoted, SimpleVarSub,
     word_e, word_t, CompoundWord,
     rhs_word, rhs_word_e, rhs_word_t,
     word_part_e, word_part__ArithSub, word_part__EscapedLiteral,
@@ -308,7 +308,7 @@ def _PerformSlice(val,  # type: value_t
                   begin,  # type: int
                   length,  # type: int
                   has_length,  # type: bool
-                  part,  # type: braced_var_sub
+                  part,  # type: BracedVarSub
                   arg0_val, # type: value__Str
                   ):
   # type: (...) -> value_t
@@ -868,7 +868,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _Slice(self, val, op, var_name, part):
-    # type: (value_t, suffix_op__Slice, Optional[str], braced_var_sub) -> value_t
+    # type: (value_t, suffix_op__Slice, Optional[str], BracedVarSub) -> value_t
 
     if op.begin:
       begin = self.arith_ev.EvalToInt(op.begin)
@@ -961,7 +961,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return result, quoted2
 
   def _WholeArray(self, val, part, quoted, vsub_state):
-    # type: (value_t, braced_var_sub, bool, VarSubState) -> value_t
+    # type: (value_t, BracedVarSub, bool, VarSubState) -> value_t
     bracket_op = cast(bracket_op__WholeArray, part.bracket_op)
     op_id = bracket_op.op_id
 
@@ -1000,7 +1000,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _ArrayIndex(self, val, part, vtest_place):
-    # type: (value_t, braced_var_sub, VTestPlace) -> value_t
+    # type: (value_t, BracedVarSub, VTestPlace) -> value_t
     """Process a numeric array index like ${a[i+1]}"""
     bracket_op = cast(bracket_op__ArrayIndex, part.bracket_op)
     anode = bracket_op.expr
@@ -1072,7 +1072,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       self._EvalWordPart(p, part_vals, QUOTED)
 
   def EvalDoubleQuotedToString(self, dq_part):
-    # type: (double_quoted) -> str
+    # type: (DoubleQuoted) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"
@@ -1110,7 +1110,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       return value.MaybeStrArray([])
 
   def _EvalBracketOp(self, val, part, quoted, vsub_state, vtest_place):
-    # type: (value_t, braced_var_sub, bool, VarSubState, VTestPlace) -> value_t
+    # type: (value_t, BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
 
     if part.bracket_op:
       bracket_op = part.bracket_op
@@ -1142,7 +1142,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _VarRefValue(self, part, quoted, vsub_state, vtest_place):
-    # type: (braced_var_sub, bool, VarSubState, VTestPlace) -> value_t
+    # type: (BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
     """Duplicates some logic from _EvalBracedVarSub, but returns a value_t."""
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
@@ -1168,7 +1168,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _EvalBracedVarSub(self, part, part_vals, quoted):
-    # type: (braced_var_sub, List[part_value_t], bool) -> None
+    # type: (BracedVarSub, List[part_value_t], bool) -> None
     """
     Args:
       part_vals: output param to append to.
@@ -1390,7 +1390,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return ''.join(strs)
 
   def EvalBracedVarSubToString(self, part):
-    # type: (braced_var_sub) -> str
+    # type: (BracedVarSub) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"
@@ -1401,7 +1401,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return self._ConcatPartVals(part_vals, part.left)
 
   def _EvalSimpleVarSub(self, part, part_vals, quoted):
-    # type: (simple_var_sub, List[part_value_t], bool) -> None
+    # type: (SimpleVarSub, List[part_value_t], bool) -> None
 
     # TODO: use name
     token = part.left
@@ -1442,7 +1442,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_vals.append(v)
 
   def EvalSimpleVarSubToString(self, node):
-    # type: (simple_var_sub) -> str
+    # type: (SimpleVarSub) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"
@@ -1523,7 +1523,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_part = part
     with tagswitch(part) as case:
       if case(word_part_e.ShArrayLiteral):
-        part = cast(sh_array_literal, UP_part)
+        part = cast(ShArrayLiteral, UP_part)
         e_die("Unexpected array literal", loc.WordPart(part))
       elif case(word_part_e.AssocArrayLiteral):
         part = cast(word_part__AssocArrayLiteral, UP_part)
@@ -1542,13 +1542,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(v)
 
       elif case(word_part_e.SingleQuoted):
-        part = cast(single_quoted, UP_part)
+        part = cast(SingleQuoted, UP_part)
         s = word_compile.EvalSingleQuoted(part)
         v = part_value.String(s, True, False)
         part_vals.append(v)
 
       elif case(word_part_e.DoubleQuoted):
-        part = cast(double_quoted, UP_part)
+        part = cast(DoubleQuoted, UP_part)
         self._EvalDoubleQuoted(part.parts, part_vals)
 
       elif case(word_part_e.CommandSub):
@@ -1566,11 +1566,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(sv)
 
       elif case(word_part_e.SimpleVarSub):
-        part = cast(simple_var_sub, UP_part)
+        part = cast(SimpleVarSub, UP_part)
         self._EvalSimpleVarSub(part, part_vals, quoted)
 
       elif case(word_part_e.BracedVarSub):
-        part = cast(braced_var_sub, UP_part)
+        part = cast(BracedVarSub, UP_part)
         self._EvalBracedVarSub(part, part_vals, quoted)
 
       elif case(word_part_e.TildeSub):
@@ -1843,7 +1843,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
       # don't look like assignments.
       if tag == word_part_e.ShArrayLiteral:
-        part0 = cast(sh_array_literal, UP_part0)
+        part0 = cast(ShArrayLiteral, UP_part0)
         array_words = part0.words
         words = braces.BraceExpandWords(array_words)
         strs = self.EvalWordSequence(words)

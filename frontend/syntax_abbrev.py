@@ -42,8 +42,8 @@ def _CompoundWord(obj):
   return p_node
 
 
-def _double_quoted(obj):
-  # type: (double_quoted) -> hnode_t
+def _DoubleQuoted(obj):
+  # type: (DoubleQuoted) -> hnode_t
   if obj.left.id != Id.Left_DoubleQuote:
     return None  # Fall back on obj._AbbreviatedTree()
 
@@ -55,8 +55,8 @@ def _double_quoted(obj):
   return p_node
 
 
-def _single_quoted(obj):
-  # type: (single_quoted) -> hnode_t
+def _SingleQuoted(obj):
+  # type: (SingleQuoted) -> hnode_t
 
   # Only abbreviate 'foo', not $'foo\n' or r'foo'
   if obj.left.id != Id.Left_SingleQuote:
@@ -70,8 +70,8 @@ def _single_quoted(obj):
   return p_node
 
 
-def _simple_var_sub(obj):
-  # type: (simple_var_sub) -> hnode_t
+def _SimpleVarSub(obj):
+  # type: (SimpleVarSub) -> hnode_t
   p_node = runtime.NewRecord('$')
   p_node.abbrev = True
 
@@ -85,8 +85,8 @@ def _simple_var_sub(obj):
   return p_node
 
 
-def _braced_var_sub(obj):
-  # type: (braced_var_sub) -> hnode_t
+def _BracedVarSub(obj):
+  # type: (BracedVarSub) -> hnode_t
   p_node = runtime.NewRecord('${')
   if obj.prefix_op or obj.bracket_op or obj.suffix_op:
     return None  # we have other fields to display; don't abbreviate

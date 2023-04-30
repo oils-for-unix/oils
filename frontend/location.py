@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
     command__TimeBlock,
     BraceGroup,
 
-    arith_expr_e, arith_expr_t, CompoundWord, simple_var_sub, Token,
+    arith_expr_e, arith_expr_t, CompoundWord, SimpleVarSub, Token,
 )
 from _devbuild.gen.runtime_asdl import lvalue, lvalue__Named
 from asdl import runtime
@@ -140,7 +140,7 @@ def LocForArithExpr(node):
   UP_node = node
   with tagswitch(node) as case:
     if case(arith_expr_e.VarSub):
-      vsub = cast(simple_var_sub, UP_node)
+      vsub = cast(SimpleVarSub, UP_node)
       return vsub.left
     elif case(arith_expr_e.Word):
       w = cast(CompoundWord, UP_node)

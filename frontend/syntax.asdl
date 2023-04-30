@@ -121,7 +121,7 @@ module syntax
     # begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 
-  braced_var_sub = (
+  BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
       Token token,       # location for the name
       str var_name,   # the name
@@ -134,16 +134,16 @@ module syntax
   # Variants:
   # - Look at left token ID for $'' c'' vs r'' '' e.g. Id.Left_DollarSingleQuote
   # - And """ and ''' e.g. Id.Left_TDoubleQuote
-  double_quoted = (Token left, List[word_part] parts, Token right)
-  single_quoted = (Token left, List[Token] tokens, Token right)
+  DoubleQuoted = (Token left, List[word_part] parts, Token right)
+  SingleQuoted = (Token left, List[Token] tokens, Token right)
 
-  simple_var_sub = (Token left, str var_name)
+  SimpleVarSub = (Token left, str var_name)
 
   command_sub = (Token left_token, command child, Token right)
 
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
-  sh_array_literal = (Token left, List[word] words)
+  ShArrayLiteral = (Token left, List[word] words)
 
   # Used in both expr and a word_part
   ArgList = (
@@ -156,15 +156,15 @@ module syntax
   AssocPair = (CompoundWord key, CompoundWord value)
 
   word_part = 
-    ShArrayLiteral %sh_array_literal
+    ShArrayLiteral %ShArrayLiteral
   | AssocArrayLiteral(Token left, List[AssocPair] pairs)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
-  | SingleQuoted %single_quoted
-  | DoubleQuoted %double_quoted
-  | SimpleVarSub %simple_var_sub
-  | BracedVarSub %braced_var_sub
+  | SingleQuoted %SingleQuoted
+  | DoubleQuoted %DoubleQuoted
+  | SimpleVarSub %SimpleVarSub
+  | BracedVarSub %BracedVarSub
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %command_sub
     # ~ or ~bob
@@ -224,7 +224,7 @@ module syntax
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %simple_var_sub  # e.g. $(( x ))
+    VarSub %SimpleVarSub  # e.g. $(( x ))
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -351,7 +351,7 @@ module syntax
   | Data(Token name, List[Param] params)
   | Enum(Token name, List[Variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)
-  | Import(single_quoted path, Token? alias, List[ImportName] names)
+  | Import(SingleQuoted path, Token? alias, List[ImportName] names)
   | For(List[NameType] targets, expr iterable, command body)
   | While(expr test, command body)
   | Break | Continue
@@ -361,13 +361,16 @@ module syntax
 
   # Binary(x expr, y expr) or Nullary %Token
   # In the first case we have a tag, and an anonymous type.
-  variant_type = Anon(List[Param] params)
-               | Ref(Token type_name)
+  variant_type =
+    Anon(List[Param] params)
+  | Ref(Token type_name)
+
   # tags and types are separate in our model of algebraic data types
   Variant = (Token tag_name, variant_type? typ)
 
-  class_item = Data(Token keyword, List[NameType] fields)
-             | Method()
+  class_item =
+    Data(Token keyword, List[NameType] fields)
+  | Method()
 
   ImportName = (Token name, Token? alias)
 
@@ -450,15 +453,15 @@ module syntax
     # Python uses Num(object n), which doesn't respect our "LST" invariant.
   | Const(Token c)
     # @(one 'two' "$three")
-  | ShArrayLiteral %sh_array_literal
+  | ShArrayLiteral %ShArrayLiteral
     # @[a b c] @[1 2 3] @[(1+1) (2+2)]
   | RegexLiteral(Token left, re regex, List[Token] flags, Token? trans_pref)
 
-  | SimpleVarSub %simple_var_sub
-  | BracedVarSub %braced_var_sub
+  | SimpleVarSub %SimpleVarSub
+  | BracedVarSub %BracedVarSub
   | CommandSub %command_sub
-  | SingleQuoted %single_quoted
-  | DoubleQuoted %double_quoted
+  | SingleQuoted %SingleQuoted
+  | DoubleQuoted %DoubleQuoted
 
   | BlockArg %BlockArg
 
@@ -526,10 +529,10 @@ module syntax
   | Range(Token start, Token end)
   | CharLiteral(Token tok)
 
-  | SimpleVarSub %simple_var_sub
-  | BracedVarSub %braced_var_sub
-  | SingleQuoted %single_quoted
-  | DoubleQuoted %double_quoted
+  | SimpleVarSub %SimpleVarSub
+  | BracedVarSub %BracedVarSub
+  | SingleQuoted %SingleQuoted
+  | DoubleQuoted %DoubleQuoted
 
   # Char Sets and Ranges both use Char Codes
   # with u_braced == true : \u{ff}
@@ -571,10 +574,10 @@ module syntax
   | Splice(Token name, str var_name)
 
     # $literal ${literal} 'no-backslashes' "other$foo"
-  | SimpleVarSub %simple_var_sub
-  | BracedVarSub %braced_var_sub
-  | SingleQuoted %single_quoted
-  | DoubleQuoted %double_quoted
+  | SimpleVarSub %SimpleVarSub
+  | BracedVarSub %BracedVarSub
+  | SingleQuoted %SingleQuoted
+  | DoubleQuoted %DoubleQuoted
 
     # Compound:
   | Repeat(re child, re_repeat op)

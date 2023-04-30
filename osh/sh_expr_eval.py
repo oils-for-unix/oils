@@ -26,7 +26,7 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord, Token,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
-    braced_var_sub, simple_var_sub,
+    BracedVarSub, SimpleVarSub,
     loc, loc_t
 )
 from _devbuild.gen.option_asdl import option_i
@@ -230,7 +230,7 @@ class UnsafeArith(object):
     return lval
 
   def ParseVarRef(self, ref_str, blame_tok):
-    # type: (str, Token) -> braced_var_sub
+    # type: (str, Token) -> BracedVarSub
     """Parse and evaluate value for ${!ref}
 
     This supports:
@@ -473,7 +473,7 @@ class ArithEvaluator(object):
 
     # BASH_LINENO, arr (array name without strict_array), etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarSub:
-      vsub = cast(simple_var_sub, node)
+      vsub = cast(SimpleVarSub, node)
       if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
         val = word_eval.DecayArray(val)
 
@@ -505,7 +505,7 @@ class ArithEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
-        vsub = cast(simple_var_sub, UP_node)
+        vsub = cast(SimpleVarSub, UP_node)
         val = self.mem.GetValue(vsub.var_name)
         if val.tag_() == value_e.Undef and self.exec_opts.nounset():
           e_die('Undefined variable %r' % vsub.var_name, vsub.left)
@@ -820,7 +820,7 @@ class ArithEvaluator(object):
     UP_anode = anode
     with tagswitch(anode) as case:
       if case(arith_expr_e.VarSub):
-        tok = cast(simple_var_sub, UP_anode)
+        tok = cast(SimpleVarSub, UP_anode)
         return (tok.var_name, tok.left)
 
       elif case(arith_expr_e.Word):

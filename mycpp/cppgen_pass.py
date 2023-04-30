@@ -76,11 +76,11 @@ def _GetCastKind(module_path, cast_to_type):
     # Hack for Id.Expr_CastedDummy in expr_to_ast.py
     if 'expr_to_ast.py' in module_path:
         for name in (
-                'sh_array_literal',
+                'ShArrayLiteral',
                 'command_sub',
-                'braced_var_sub',
-                'double_quoted',
-                'single_quoted',
+                'BracedVarSub',
+                'DoubleQuoted',
+                'SingleQuoted',
                 # Another kind of hack, not because of CastDummy
                 'place_expr_t',
         ):
@@ -700,8 +700,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(tag)
             return
 
-        #    return cast(sh_array_literal, tok)
-        # -> return static_cast<sh_array_literal*>(tok)
+        #    return cast(ShArrayLiteral, tok)
+        # -> return static_cast<ShArrayLiteral*>(tok)
 
         # TODO: Consolidate this with AssignmentExpr logic.
 

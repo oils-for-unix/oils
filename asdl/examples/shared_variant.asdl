@@ -5,13 +5,13 @@ module shared_variant {
   -- Testing out this unused syntax
   prod_with_attrs = (string a, string b) attributes (int* spid)
 
-  double_quoted = (int left, string* tokens) 
+  DoubleQuoted = (int left, string* tokens) 
 
   expr =
     Binary(expr left, expr right)
-    -- Use the existing TYPE double_quoted, but create a new TAG
+    -- Use the existing TYPE DoubleQuoted, but create a new TAG
     -- expr_e.DoubleQuoted.
-  | DoubleQuoted %double_quoted
+  | DoubleQuoted %DoubleQuoted
   attributes (int* spids)
 
   Token = (int id, string val)
@@ -25,9 +25,9 @@ module shared_variant {
 
   word_part =
     Literal(string s)
-  | DoubleQuoted %double_quoted
+  | DoubleQuoted %DoubleQuoted
   -- Comment out to test build-time error
-  -- | ErrorIsDuplicate %double_quoted
+  -- | ErrorIsDuplicate %DoubleQuoted
 
   -- Make sure we didn't break these variants
   cflow = Break | Continue | Return(int val)

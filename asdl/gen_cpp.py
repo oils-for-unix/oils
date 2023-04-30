@@ -244,7 +244,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for i, variant in enumerate(sum.types):
       if variant.shared_type:  # Copied from gen_python.py
         tag_num = self._shared_type_tags[variant.shared_type]
-        # e.g. double_quoted may have base types expr_t, word_part_t
+        # e.g. DoubleQuoted may have base types expr_t, word_part_t
         base_class = sum_name + '_t'
         bases = self._product_bases[variant.shared_type]
         if base_class in bases:

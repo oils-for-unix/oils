@@ -1765,8 +1765,8 @@ class Mem(object):
           # Note on how to implement declare -n ref='a[42]'
           # 1. Call _ResolveNameOnly()
           # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
-          #    braced_var_sub
-          # 3. Turn braced_var_sub into an lvalue, and call
+          #    BracedVarSub
+          # 3. Turn BracedVarSub into an lvalue, and call
           #    self.unsafe_arith.SetValue() wrapper with ref_trail
           cell, name_map, cell_name = self._ResolveNameOrRef(lval.name,
                                                              which_scopes,
@@ -2066,7 +2066,7 @@ class Mem(object):
 
     # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
     # fix this:
-    # 1. Call self.unsafe_arith.ParseVarRef() -> braced_var_sub
+    # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
     # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
     #    We still need a ref_trail to detect cycles.
     cell, _, _ = self._ResolveNameOrRef(name, which_scopes, False)

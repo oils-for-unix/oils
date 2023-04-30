@@ -4,7 +4,7 @@ expr_parse.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc, Token, double_quoted, single_quoted, command_sub, sh_array_literal,
+    loc, Token, DoubleQuoted, SingleQuoted, command_sub, ShArrayLiteral,
     CompoundWord, word_part_t, word_e
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
@@ -202,7 +202,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
       typ = Id.Expr_CastedDummy
 
-      lit_part = sh_array_literal(left_tok, words3)
+      lit_part = ShArrayLiteral(left_tok, words3)
       opaque = cast(Token, lit_part)  # HACK for expr_to_ast
       done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
@@ -249,7 +249,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
       parts = []  # type: List[word_part_t]
       last_token = w_parser.ReadDoubleQuoted(left_token, parts)
-      expr_dq_part = double_quoted(left_token, parts, last_token)
+      expr_dq_part = DoubleQuoted(left_token, parts, last_token)
 
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, expr_dq_part)  # HACK for expr_to_ast
@@ -292,7 +292,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
       last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
                                              True)
 
-      sq_part = single_quoted(left_token, tokens, last_token)
+      sq_part = SingleQuoted(left_token, tokens, last_token)
 
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, sq_part)  # HACK for expr_to_ast

@@ -65,7 +65,7 @@ from _devbuild.gen.syntax_asdl import (
     word_e, word_t,
     word_part_e, word_part_t, word_part__EscapedLiteral,
     CompoundWord,
-    simple_var_sub, braced_var_sub, command_sub, double_quoted, single_quoted,
+    SimpleVarSub, BracedVarSub, command_sub, DoubleQuoted, SingleQuoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
     condition_e, condition__Shell,
     Redir, redir_param_e, redir_param__HereDoc,
@@ -232,7 +232,7 @@ def _GetRhsStyle(w):
             return word_style_e.Unquoted
 
           elif case(word_part_e.DoubleQuoted):
-            part0 = cast(double_quoted, UP_part0)
+            part0 = cast(DoubleQuoted, UP_part0)
 
             # TODO: remove quotes in single part like "$(hostname)" -> $(hostname)
             return word_style_e.DQ
@@ -879,7 +879,7 @@ class OilPrinter(object):
 
         if (len(node.parts) == 1 and
             node.parts[0].tag_() == word_part_e.DoubleQuoted):
-          dq_part = cast(double_quoted, node.parts[0])
+          dq_part = cast(DoubleQuoted, node.parts[0])
 
           # NOTE: In double quoted case, this is the begin and end quote.
           # Do we need a HereDoc part?
@@ -894,7 +894,7 @@ class OilPrinter(object):
           if len(dq_part.parts) == 1:
             part0 = dq_part.parts[0]
             if part0.tag_() == word_part_e.SimpleVarSub:
-              vsub_part = cast(simple_var_sub, dq_part.parts[0])
+              vsub_part = cast(SimpleVarSub, dq_part.parts[0])
               if vsub_part.left.id == Id.VSub_At:
                 # NOTE: This is off for double quoted part.  Hack to subtract 1.
                 self.cursor.PrintUntil(left_spid)
@@ -993,7 +993,7 @@ class OilPrinter(object):
           self.cursor.PrintUntil(spid + 1)
 
       elif case(word_part_e.SingleQuoted):
-        node = cast(single_quoted, UP_node)
+        node = cast(SingleQuoted, UP_node)
 
         # TODO:
         # '\n' is '\\n'
@@ -1005,12 +1005,12 @@ class OilPrinter(object):
           self.cursor.PrintUntil(last_spid + 1)
 
       elif case(word_part_e.DoubleQuoted):
-        node = cast(double_quoted, UP_node)
+        node = cast(DoubleQuoted, UP_node)
         for part in node.parts:
           self.DoWordPart(part, local_symbols, quoted=True)
 
       elif case(word_part_e.SimpleVarSub):
-        node = cast(simple_var_sub, UP_node)
+        node = cast(SimpleVarSub, UP_node)
 
         spid = node.left.span_id
         op_id = node.left.id
@@ -1054,7 +1054,7 @@ class OilPrinter(object):
           pass
 
       elif case(word_part_e.BracedVarSub):
-        node = cast(braced_var_sub, UP_node)
+        node = cast(BracedVarSub, UP_node)
 
         left_spid = node.left.span_id
         right_spid = node.right.span_id

@@ -9,9 +9,9 @@ from _devbuild.gen.syntax_asdl import (
     place_expr_e, place_expr_t, place_expr__Var, Attribute, Subscript,
 
     Token, loc, loc_t,
-    single_quoted, double_quoted, braced_var_sub, simple_var_sub,
+    SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub,
 
-    expr_e, expr_t, expr__Var, expr__Const, sh_array_literal, command_sub,
+    expr_e, expr_t, expr__Var, expr__Const, ShArrayLiteral, command_sub,
     expr__RegexLiteral, expr__Unary, expr__Binary, expr__Compare,
     expr__FuncCall, expr__IfExp, expr__Tuple, expr__List, expr__Dict,
     expr__Range, expr__Slice,
@@ -506,14 +506,14 @@ class OilEvaluator(object):
         return value.Str(stdout)
 
   def _EvalShArrayLiteral(self, node):
-    # type: (sh_array_literal) -> value_t
+    # type: (ShArrayLiteral) -> value_t
     words = braces.BraceExpandWords(node.words)
     strs = self.word_ev.EvalWordSequence(words)
     #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
     return value.MaybeStrArray(strs)
 
   def _EvalDoubleQuoted(self, node):
-    # type: (double_quoted) -> value_t
+    # type: (DoubleQuoted) -> value_t
 
     # In an ideal world, I would *statically* disallow:
     # - "$@" and "${array[@]}"
@@ -526,15 +526,15 @@ class OilEvaluator(object):
     return value.Str(self.word_ev.EvalDoubleQuotedToString(node))
 
   def _EvalSingleQuoted(self, node):
-    # type: (single_quoted) -> value_t
+    # type: (SingleQuoted) -> value_t
     return value.Str(word_compile.EvalSingleQuoted(node))
 
   def _EvalBracedVarSub(self, node):
-    # type: (braced_var_sub) -> value_t
+    # type: (BracedVarSub) -> value_t
     return value.Str(self.word_ev.EvalBracedVarSubToString(node))
 
   def _EvalSimpleVarSub(self, node):
-    # type: (simple_var_sub) -> value_t
+    # type: (SimpleVarSub) -> value_t
     return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
   def _EvalUnary(self, node):
@@ -861,23 +861,23 @@ class OilEvaluator(object):
         return _ValueToPyObj(self._EvalCommandSub(node))
 
       elif case(expr_e.ShArrayLiteral):
-        node = cast(sh_array_literal, UP_node)
+        node = cast(ShArrayLiteral, UP_node)
         return _ValueToPyObj(self._EvalShArrayLiteral(node))
 
       elif case(expr_e.DoubleQuoted):
-        node = cast(double_quoted, UP_node)
+        node = cast(DoubleQuoted, UP_node)
         return _ValueToPyObj(self._EvalDoubleQuoted(node))
 
       elif case(expr_e.SingleQuoted):
-        node = cast(single_quoted, UP_node)
+        node = cast(SingleQuoted, UP_node)
         return _ValueToPyObj(self._EvalSingleQuoted(node))
 
       elif case(expr_e.BracedVarSub):
-        node = cast(braced_var_sub, UP_node)
+        node = cast(BracedVarSub, UP_node)
         return _ValueToPyObj(self._EvalBracedVarSub(node))
 
       elif case(expr_e.SimpleVarSub):
-        node = cast(simple_var_sub, UP_node)
+        node = cast(SimpleVarSub, UP_node)
         return _ValueToPyObj(self._EvalSimpleVarSub(node))
 
       elif case(expr_e.Unary):
@@ -1025,25 +1025,25 @@ class OilEvaluator(object):
         return
 
       elif case(class_literal_term_e.SingleQuoted):
-        term = cast(single_quoted, UP_term)
+        term = cast(SingleQuoted, UP_term)
 
         s = word_compile.EvalSingleQuoted(term)
         spid = term.left.span_id
 
       elif case(class_literal_term_e.DoubleQuoted):
-        term = cast(double_quoted, UP_term)
+        term = cast(DoubleQuoted, UP_term)
 
         s = self.word_ev.EvalDoubleQuotedToString(term)
         spid = term.left.span_id
 
       elif case(class_literal_term_e.BracedVarSub):
-        term = cast(braced_var_sub, UP_term)
+        term = cast(BracedVarSub, UP_term)
 
         s = self.word_ev.EvalBracedVarSubToString(term)
         spid = term.left.span_id
 
       elif case(class_literal_term_e.SimpleVarSub):
-        term = cast(simple_var_sub, UP_term)
+        term = cast(SimpleVarSub, UP_term)
 
         s = self.word_ev.EvalSimpleVarSubToString(term)
         spid = term.left.span_id
@@ -1140,25 +1140,25 @@ class OilEvaluator(object):
         return re.LiteralChars(s, node.span_id)
 
       elif case(re_e.SingleQuoted):
-        node = cast(single_quoted, UP_node)
+        node = cast(SingleQuoted, UP_node)
 
         s = word_compile.EvalSingleQuoted(node)
         return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.DoubleQuoted):
-        node = cast(double_quoted, UP_node)
+        node = cast(DoubleQuoted, UP_node)
 
         s = self.word_ev.EvalDoubleQuotedToString(node)
         return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.BracedVarSub):
-        node = cast(braced_var_sub, UP_node)
+        node = cast(BracedVarSub, UP_node)
 
         s = self.word_ev.EvalBracedVarSubToString(node)
         return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.SimpleVarSub):
-        node = cast(simple_var_sub, UP_node)
+        node = cast(SimpleVarSub, UP_node)
 
         s = self.word_ev.EvalSimpleVarSubToString(node)
         return re.LiteralChars(s, node.left.span_id)

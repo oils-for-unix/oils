@@ -5,8 +5,8 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.syntax_asdl import (
     Token, CompoundWord, 
-    double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
-    sh_array_literal,
+    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, command_sub,
+    ShArrayLiteral,
     word_part, word_part_t, word_part_e,
     word_part__AssocArrayLiteral,
     word_part__EscapedLiteral,
@@ -87,13 +87,13 @@ def _EvalWordPart(part):
       return True, s, True
 
     elif case(word_part_e.SingleQuoted):
-      part = cast(single_quoted, UP_part)
+      part = cast(SingleQuoted, UP_part)
       tmp = [t.tval for t in part.tokens]  # on its own line for mycpp
       s = ''.join(tmp)
       return True, s, True
 
     elif case(word_part_e.DoubleQuoted):
-      part = cast(double_quoted, UP_part)
+      part = cast(DoubleQuoted, UP_part)
       strs = []  # type: List[str]
       for p in part.parts:
         ok, s, _ = _EvalWordPart(p)
@@ -142,7 +142,7 @@ def LeftMostSpanForPart(part):
   UP_part = part
   with tagswitch(part) as case:
     if case(word_part_e.ShArrayLiteral):
-      part = cast(sh_array_literal, UP_part)
+      part = cast(ShArrayLiteral, UP_part)
       return part.left.span_id  # ( location
 
     elif case(word_part_e.AssocArrayLiteral):
@@ -158,19 +158,19 @@ def LeftMostSpanForPart(part):
       return part.token.span_id
 
     elif case(word_part_e.SingleQuoted):
-      part = cast(single_quoted, UP_part)
+      part = cast(SingleQuoted, UP_part)
       return part.left.span_id  # single quote location
 
     elif case(word_part_e.DoubleQuoted):
-      part = cast(double_quoted, UP_part)
+      part = cast(DoubleQuoted, UP_part)
       return part.left.span_id  # double quote location
 
     elif case(word_part_e.SimpleVarSub):
-      part = cast(simple_var_sub, UP_part)
+      part = cast(SimpleVarSub, UP_part)
       return part.left.span_id
 
     elif case(word_part_e.BracedVarSub):
-      part = cast(braced_var_sub, UP_part)
+      part = cast(BracedVarSub, UP_part)
       return part.left.span_id
 
     elif case(word_part_e.CommandSub):
@@ -217,7 +217,7 @@ def _RightMostSpanForPart(part):
   UP_part = part
   with tagswitch(part) as case:
     if case(word_part_e.ShArrayLiteral):
-      part = cast(sh_array_literal, UP_part)
+      part = cast(ShArrayLiteral, UP_part)
       # TODO: Return )
       return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
@@ -231,20 +231,20 @@ def _RightMostSpanForPart(part):
       return part.token.span_id
 
     elif case(word_part_e.SingleQuoted):
-      part = cast(single_quoted, UP_part)
+      part = cast(SingleQuoted, UP_part)
       return part.right.span_id  # right '
 
     elif case(word_part_e.DoubleQuoted):
-      part = cast(double_quoted, UP_part)
+      part = cast(DoubleQuoted, UP_part)
       return part.right.span_id  # right "
 
     elif case(word_part_e.SimpleVarSub):
-      part = cast(simple_var_sub, UP_part)
+      part = cast(SimpleVarSub, UP_part)
       # left and right are the same for $myvar
       return part.left.span_id
 
     elif case(word_part_e.BracedVarSub):
-      part = cast(braced_var_sub, UP_part)
+      part = cast(BracedVarSub, UP_part)
       spid = part.right.span_id
       assert spid != runtime.NO_SPID
       return spid
