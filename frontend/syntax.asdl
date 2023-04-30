@@ -147,7 +147,7 @@ module syntax
 
   # Used in both expr and a word_part
   ArgList = (
-     Token left, List[expr] positional, List[named_arg] named, Token right
+     Token left, List[expr] positional, List[NamedArg] named, Token right
   )
 
   # TODO: every word_part has Token left, Token right, and remove int* spids
@@ -342,7 +342,7 @@ module syntax
     # For 'x = myexpr'.  There's no type and no comma allowed.
   | BareDecl(Token lhs, expr rhs)
     # var, const
-  | VarDecl(Token? keyword, List[name_type] lhs, expr rhs)
+  | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
     # setvar/set, auto.
   | PlaceMutation(Token? keyword, List[place_expr] lhs, Token op, expr rhs)
     # = keyword
@@ -359,7 +359,7 @@ module syntax
   | Enum(Token name, List[variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)
   | Import(single_quoted path, Token? alias, List[import_name] names)
-  | For(List[name_type] targets, expr iterable, command body)
+  | For(List[NameType] targets, expr iterable, command body)
   | While(expr test, command body)
   | Break | Continue
   | Return(expr? value)
@@ -372,7 +372,7 @@ module syntax
   # tags and types are separate in our model of algebraic data types
   variant = (Token tag_name, variant_type? typ)
 
-  class_item = Data(Token keyword, List[name_type] fields) | Method()
+  class_item = Data(Token keyword, List[NameType] fields) | Method()
 
   import_name = (Token name, Token? alias)
 
@@ -427,26 +427,26 @@ module syntax
   | Compound(Token name, List[type_expr] params)
 
   # LHS binding in loops, list comprehensions, and var/const
-  name_type = (Token name, type_expr? typ)
+  NameType = (Token name, type_expr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
-  comprehension = (List[name_type] lhs, expr iter, expr? cond)
+  Comprehension = (List[NameType] lhs, expr iter, expr? cond)
 
   # named arguments supplied to call.  token is null for f(; ...named).
-  named_arg = (Token? name, expr value)
+  NamedArg = (Token? name, expr value)
 
   # Subscripts are lists of expressions
   #   a[:i, n]      (we don't have matrices, but we have data frames)
-  subscript = (expr obj, List[expr] indices)
+  Subscript = (expr obj, List[expr] indices)
 
   # Attributes are obj.attr, d->key, name::scope,
-  attribute = (expr obj, Token op, Token attr, expr_context ctx)
+  Attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
   # Places that can be mutated.
   place_expr = 
     Var(Token name)  # TODO: could be Var %Token
-  | Subscript %subscript
-  | Attribute %attribute
+  | Subscript %Subscript
+  | Attribute %Attribute
 
   expr =
     # a variable name to evaluate
@@ -467,7 +467,7 @@ module syntax
 
   | BlockArg %BlockArg
 
-  | Lambda(List[name_type] params, expr body)
+  | Lambda(List[NameType] params, expr body)
 
   | Unary(Token op, expr child)
   | Binary(Token op, expr left, expr right)
@@ -486,10 +486,10 @@ module syntax
     # For the values in {n1, n2}
   | Implicit
 
-  | ListComp(expr elt, List[comprehension] generators)
+  | ListComp(expr elt, List[Comprehension] generators)
     # not implemented
-  | DictComp(expr key, expr value, List[comprehension] generators)
-  | GeneratorExp(expr elt, List[comprehension] generators)
+  | DictComp(expr key, expr value, List[Comprehension] generators)
+  | GeneratorExp(expr elt, List[Comprehension] generators)
 
     # Ranges are written 1:2, with first class expression syntax. There is no
     # step as in Python. Use range(0, 10, step=2) for that.
@@ -500,8 +500,8 @@ module syntax
     #   a[3:]   a[:i]
   | Slice(expr? lower, expr? upper)
 
-  | Subscript %subscript
-  | Attribute %attribute
+  | Subscript %Subscript
+  | Attribute %Attribute
 
     # Ellipsis is like 'Starred' within Python, which are valid on the LHS in
     # Python for unpacking, and # within list literals for splicing.
@@ -517,15 +517,15 @@ module syntax
   #
 
   # e.g. alnum digit
-  posix_class = (Token? negated, str name)
+  PosixClass = (Token? negated, str name)
   # e.g. d w s
-  perl_class = (Token? negated, str name)
+  PerlClass = (Token? negated, str name)
 
   # Note: .NET has && in character classes, making it a recursive language
 
   class_literal_term = 
-    PosixClass %posix_class
-  | PerlClass %perl_class
+    PosixClass %PosixClass
+  | PerlClass %PerlClass
     # [a-z]   ~[a-z]   TODO: Doesn't respect LST invariant
 
   | Range(Token start, Token end)
@@ -544,8 +544,8 @@ module syntax
 
   # evaluated version of class_literal_term (could be in runtime.asdl)
   char_class_term =
-    PosixClass %posix_class
-  | PerlClass %perl_class
+    PosixClass %PosixClass
+  | PerlClass %PerlClass
 
   | Range(CharCode start, CharCode end)
 
@@ -565,8 +565,8 @@ module syntax
   re = 
     # e.g.  .  ^  $  %begin  \u123
     Token %Token
-  | PosixClass %posix_class
-  | PerlClass %perl_class
+  | PosixClass %PosixClass
+  | PerlClass %PerlClass
     # syntax [ $x \n ]
   | CharClassLiteral(bool negated, List[class_literal_term] terms)
     # evaluated [ 'abc' \n ]

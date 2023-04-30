@@ -11,10 +11,10 @@ from _devbuild.gen.syntax_asdl import (
     command, command_t,
     expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
-    posix_class, perl_class,
-    name_type, place_expr, place_expr_e, place_expr_t, type_expr_t,
-    comprehension, subscript, attribute, proc_sig, proc_sig_t, param,
-    named_arg, ArgList, TypedParam, UntypedParam,
+    PosixClass, PerlClass,
+    NameType, place_expr, place_expr_e, place_expr_t, type_expr_t,
+    Comprehension, Subscript, Attribute, proc_sig, proc_sig_t, param,
+    NamedArg, ArgList, TypedParam, UntypedParam,
     variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
@@ -148,11 +148,11 @@ class Transformer(object):
       for i in xrange(0, n, 2):  # was children[::2]
         a = p_args.GetChild(i)
         indices.append(self._Subscript(a))
-      return subscript(base, indices)
+      return Subscript(base, indices)
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
       attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
-      return attribute(base, op_tok, attr, expr_context_e.Store)
+      return Attribute(base, op_tok, attr, expr_context_e.Store)
 
     raise AssertionError(Id_str(op_tok.id))
 
@@ -321,12 +321,12 @@ class Transformer(object):
     raise NotImplementedError(Id_str(id_))
 
   def _NameTypeList(self, p_node):
-    # type: (PNode) -> List[name_type]
+    # type: (PNode) -> List[NameType]
     """
     name_type_list: name_type (',' name_type)*
     """
     assert p_node.typ == grammar_nt.name_type_list
-    results = []  # type: List[name_type]
+    results = []  # type: List[NameType]
 
     n = p_node.NumChildren()
     for i in xrange(0, n, 2):  # was children[::2]
@@ -337,12 +337,12 @@ class Transformer(object):
       else:
         typ = None
 
-      node = name_type(p.GetChild(0).tok, typ)
+      node = NameType(p.GetChild(0).tok, typ)
       results.append(node)
     return results
 
   def _CompFor(self, p_node):
-    # type: (PNode) -> comprehension
+    # type: (PNode) -> Comprehension
     """
     comp_for: 'for' exprlist 'in' or_test ['if' or_test]
     """
@@ -354,7 +354,7 @@ class Transformer(object):
     else:
       cond = None
 
-    return comprehension(lhs, iterable, cond)
+    return Comprehension(lhs, iterable, cond)
 
   def _CompareChain(self, parent):
     # type: (PNode) -> expr_t
@@ -562,7 +562,7 @@ class Transformer(object):
           i += 1
         if node.tag_() == expr_e.Attribute:
           # Support a.startswith(b) but not obj.field
-          attr_node = cast(attribute, node)
+          attr_node = cast(Attribute, node)
           if attr_node.op.id == Id.Expr_Dot:
             p_die("obj.field isn't valid, but obj.method() is",
                   attr_node.op)
@@ -698,7 +698,7 @@ class Transformer(object):
     return command.PlaceMutation(None, place_list, op_tok, rhs)
 
   def OilForExpr(self, pnode):
-    # type: (PNode) -> Tuple[List[name_type], expr_t]
+    # type: (PNode) -> Tuple[List[NameType], expr_t]
     typ = pnode.typ
 
     if typ == grammar_nt.oil_for:
@@ -739,7 +739,7 @@ class Transformer(object):
         spread_expr = self.Expr(p_node.GetChild(1))
         if do_named:
           # Implicit spread with name = None
-          named.append(named_arg(None, spread_expr))
+          named.append(NamedArg(None, spread_expr))
         else:
           positional.append(expr.Spread(spread_expr, expr_context_e.Store))
         return
@@ -754,7 +754,7 @@ class Transformer(object):
       raise AssertionError()
 
     if n == 3:
-      n1 = named_arg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
+      n1 = NamedArg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
       named.append(n1)
       return
 
@@ -1295,11 +1295,11 @@ class Transformer(object):
       return tok
 
     if tok_str in POSIX_CLASSES:
-      return posix_class(negated_tok, tok_str)
+      return PosixClass(negated_tok, tok_str)
 
     perl = PERL_CLASSES.get(tok_str)
     if perl is not None:
-      return perl_class(negated_tok, perl)
+      return PerlClass(negated_tok, perl)
 
     if tok_str[0].isupper():  # e.g. HexDigit
       return re.Splice(tok, lexer.TokenSliceLeft(tok, 1))
@@ -1328,11 +1328,11 @@ class Transformer(object):
 
     # digit, word, but not d, w, etc.
     if tok_str in POSIX_CLASSES:
-      return posix_class(negated_tok, tok_str)
+      return PosixClass(negated_tok, tok_str)
 
     perl = PERL_CLASSES.get(tok_str)
     if perl is not None:
-      return perl_class(negated_tok, perl)
+      return PerlClass(negated_tok, perl)
     p_die("%r isn't a character class" % tok_str, tok)
 
   def _ReAtom(self, p_atom):

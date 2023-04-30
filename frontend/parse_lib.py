@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, compound_word, expr_t, word_t, redir, ArgList, name_type,
+    Token, compound_word, expr_t, word_t, redir, ArgList, NameType,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -383,7 +383,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParseOilForExpr(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[List[name_type], expr_t, Token]
+    # type: (Lexer, int) -> Tuple[List[NameType], expr_t, Token]
     """ for (x Int, y Int in foo) """
     e_parser = self._OilParser()
     with ctx_PNodeAllocator(e_parser):

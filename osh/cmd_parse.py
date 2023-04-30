@@ -31,7 +31,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e, word_part_t,
     rhs_word, rhs_word_t,
 
-    assign_pair, env_pair, assign_op_e, name_type,
+    assign_pair, env_pair, assign_op_e, NameType,
 
     SourceLine,
     source, parse_result, parse_result_t,
@@ -2053,7 +2053,7 @@ class CommandParser(object):
               self._Next()  # Somehow this is necessary
               # TODO: Use BareDecl here.  Well, do that when we treat it as const
               # or lazy.
-              return command.VarDecl(None, [name_type(tok, None)], enode)
+              return command.VarDecl(None, [NameType(tok, None)], enode)
             else:
               self._Next()
               self._Peek()

@@ -7,7 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import (
     char_class_term_e, char_class_term_t,
     char_class_term__Range,
-    posix_class, perl_class, CharCode,
+    PosixClass, PerlClass, CharCode,
 
     re_e, re__CharClass, re__Primitive, re__LiteralChars, re__Seq, re__Alt,
     re__Repeat, re__Group, re_repeat_e, re_repeat__Op, re_repeat__Num,
@@ -133,7 +133,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       _CharCodeToEre(term, parts, special_char_flags)
 
     elif case(char_class_term_e.PerlClass):
-      term = cast(perl_class, UP_term)
+      term = cast(PerlClass, UP_term)
       n = term.name
       chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
       if term.negated:
@@ -143,7 +143,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       parts.append(pat)
 
     elif case(char_class_term_e.PosixClass):
-      term = cast(posix_class, UP_term)
+      term = cast(PosixClass, UP_term)
       n = term.name  # looks like 'digit'
       if term.negated:
         e_die("POSIX classes can't be negated in ERE", term.negated)
@@ -255,7 +255,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.PerlClass:
-    node = cast(perl_class, UP_node)
+    node = cast(PerlClass, UP_node)
     n = node.name
     chars = PERL_CLASS[node.name]  # looks like [:digit:]
     if node.negated:
@@ -266,7 +266,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.PosixClass:
-    node = cast(posix_class, UP_node)
+    node = cast(PosixClass, UP_node)
     n = node.name  # looks like 'digit'
     if node.negated:
       pat = '[^[:%s:]]' % n

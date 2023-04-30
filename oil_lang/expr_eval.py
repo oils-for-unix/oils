@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    place_expr_e, place_expr_t, place_expr__Var, attribute, subscript,
+    place_expr_e, place_expr_t, place_expr__Var, Attribute, Subscript,
 
     Token, loc, loc_t,
     single_quoted, double_quoted, braced_var_sub, simple_var_sub,
@@ -24,7 +24,7 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term__Range,
     class_literal_term__CharLiteral,
     char_class_term, char_class_term_t,
-    posix_class, perl_class,
+    PosixClass, PerlClass,
     CharCode,
 
     word_part_t, word_part__ExprSub, word_part__FuncCall, word_part__Splice,
@@ -310,14 +310,14 @@ class OilEvaluator(object):
         return location.LName(place.name.tval)
 
       elif case(place_expr_e.Subscript):
-        place = cast(subscript, UP_place)
+        place = cast(Subscript, UP_place)
 
         obj = self.EvalExpr(place.obj, loc.Missing())
         index = self._EvalIndices(place.indices)
         return lvalue.ObjIndex(obj, index)
 
       elif case(place_expr_e.Attribute):
-        place = cast(attribute, UP_place)
+        place = cast(Attribute, UP_place)
 
         obj = self.EvalExpr(place.obj, loc.Missing())
         if place.op.id == Id.Expr_RArrow:
@@ -785,7 +785,7 @@ class OilEvaluator(object):
     return ret
 
   def _EvalSubscript(self, node):
-    # type: (subscript) -> Any # XXX
+    # type: (Subscript) -> Any # XXX
     obj = self._EvalExpr(node.obj)
     index = self._EvalIndices(node.indices)
     try:
@@ -800,7 +800,7 @@ class OilEvaluator(object):
     return result
 
   def _EvalAttribute(self, node):
-    # type: (attribute) -> Any # XXX
+    # type: (Attribute) -> Any # XXX
     o = self._EvalExpr(node.obj)
     id_ = node.op.id
     if id_ == Id.Expr_Dot:
@@ -971,13 +971,13 @@ class OilEvaluator(object):
         return self._EvalFuncCall(node)
 
       elif case(expr_e.Subscript):
-        node = cast(subscript, UP_node)
+        node = cast(Subscript, UP_node)
         return self._EvalSubscript(node)
 
       # Note: This is only for the obj.method() case.  We will probably change
       # the AST and get rid of getattr().
       elif case(expr_e.Attribute):  # obj.attr 
-        node = cast(attribute, UP_node)
+        node = cast(Attribute, UP_node)
         return self._EvalAttribute(node)
 
       elif case(expr_e.RegexLiteral):
@@ -1015,12 +1015,12 @@ class OilEvaluator(object):
         return
 
       elif case(class_literal_term_e.PosixClass):
-        term = cast(posix_class, UP_term)
+        term = cast(PosixClass, UP_term)
         out.append(term)
         return
 
       elif case(class_literal_term_e.PerlClass):
-        term = cast(perl_class, UP_term)
+        term = cast(PerlClass, UP_term)
         out.append(term)
         return
 
