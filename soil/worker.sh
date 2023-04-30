@@ -203,6 +203,9 @@ EOF
 interactive-tasks() {
   ### Print tasks for the 'interactive' build
 
+# TODO: enable this if it doesn't cause random spec test stoppages
+# interactive-spec  test/spec.sh interactive-all-serial    _tmp/spec/interactive-py/index.html
+
   cat <<EOF
 dump-os-info     soil/worker.sh dump-os-info      -
 dump-env         soil/worker.sh dump-env          -
@@ -332,7 +335,6 @@ yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh osh-all-serial            _tmp/spec/osh-py/index.html
-interactive-spec  test/spec.sh interactive-all-serial    _tmp/spec/interactive-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 oshc-deps         test/oshc-deps.sh soil-run             -

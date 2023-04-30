@@ -123,14 +123,16 @@ write-suite-manifests() {
         osh) echo $name >& $osh ;;
         ysh) echo $name >& $oil ;;
         tea) echo $name >& $tea ;;
-        interactive) echo $name >& $interactive ;;
         *)   die "Invalid suite $suite" ;;
       esac
     done 
   } {osh}>_tmp/spec/SUITE-osh.txt \
     {oil}>_tmp/spec/SUITE-oil.txt \
-    {tea}>_tmp/spec/SUITE-tea.txt \
-    {interactive}>_tmp/spec/SUITE-interactive.txt
+    {tea}>_tmp/spec/SUITE-tea.txt 
+
+  # These are kind of pseudo-suites, not the main 3
+  test/spec_params.py print-tagged interactive > _tmp/spec/SUITE-interactive.txt
+  test/spec_params.py print-tagged dev-minimal > _tmp/spec/SUITE-osh-minimal.txt
 }
 
 dispatch-one() {
@@ -207,7 +209,7 @@ EOF
   # specify variable names.  You have to destructure it yourself.
   # - Lack of string interpolation is very annoying
 
-  head -n $NUM_SPEC_TASKS $manifest | awk -v totals=$totals -v base_dir=$base_dir '
+  head -n $NUM_SPEC_TASKS $manifest | sort | awk -v totals=$totals -v base_dir=$base_dir '
   # Awk problem: getline errors are ignored by default!
   function error(path) {
     print "Error reading line from file: " path > "/dev/stderr"

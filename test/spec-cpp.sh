@@ -262,7 +262,7 @@ EOF
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
   summary-csv-row $spec_subdir _tmp/spec/$spec_subdir/*.tsv
 
-  head -n $NUM_SPEC_TASKS $manifest |
+  head -n $NUM_SPEC_TASKS $manifest | sort |
   while read spec_name; do
     summary-csv-row $spec_subdir $spec_name
   done 

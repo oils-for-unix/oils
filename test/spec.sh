@@ -214,6 +214,14 @@ trace-var-sub() {
   head $out/*.cover
 }
 
+check-survey-shells() {
+  ### Make sure bash, zsh, OSH, etc. exist
+
+  # Note: yash isn't here, but it is used in a couple tests
+
+  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
+}
+
 #
 # Run All tests
 #
@@ -242,14 +250,6 @@ tea-all() {
   test/spec-runner.sh all-parallel tea compare-py tea
 }
 
-check-survey-shells() {
-  ### Make sure bash, zsh, OSH, etc. exist
-
-  # Note: yash isn't here, but it is used in a couple tests
-
-  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
-}
-
 osh-minimal() {
   ### Some tests that work on the minimal build.  Run by Soil.
 
@@ -257,22 +257,15 @@ osh-minimal() {
   # file
   check-survey-shells
 
-  # oil-json: for testing yajl
-  cat >_tmp/spec/SUITE-osh-minimal.txt <<EOF
-smoke
-oil-json
-EOF
-# this fails because the 'help' builtin doesn't have its data
-# builtin-bash
-
   # suite compare_mode spec_subdir
-  MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal
+  test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal
 }
 
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
 oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 interactive-all-serial() { MAX_PROCS=1 $0 interactive-all "$@"; }
+osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
 soil-run-osh() {
   osh-all-serial

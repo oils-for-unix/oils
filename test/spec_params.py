@@ -12,39 +12,61 @@ import sys
 from test import spec_osh
 from test import spec_ysh
 
-File = collections.namedtuple('File', 'name suite compare_shells our_shell allowed_failures')
+File = collections.namedtuple('File',
+    'name suite tags compare_shells our_shell allowed_failures')
 
 
 class SpecParams(object):
+  """
+  There are 3 suites:
 
+    osh, ysh, tea
+
+  The suites are a bit historical, because we compare them over time in the
+  release notes.
+
+  We also have tags:
+
+    interactive  # cases that use $SH -i should also run under a 'docker -t'
+    osh-minimal  # smoke test for dev-minimal
+    smoosh       # currently not run in CI, but we should
+
+  There are also tests from 'toysh', but they're currently part of 'osh'.
+  """
   def __init__(self):
     self.files = []
 
   def File(self,
       name,  # e.g. alias, oil-blocks
       suite=None,
+      tags=None,
       compare_shells='',  # e.g. 'bash' or 'bash dash mksh zsh'
       our_shell='',  # osh or ysh
       allowed_failures=0):
 
+    assert suite is not None
+
     # our_shell may be bin/osh, _bin/cxx-asan/osh, _bin/cxx-gclaways/osh, an
     # optimized release tarball version, etc.
     if name.startswith('oil-') or name.startswith('hay'):
-      suite = 'ysh'
       o = our_shell or 'ysh'
     elif name.startswith('tea-'):
-      suite = 'tea'
       # Tea could run from OSH with parse_tea!  Nothing here passes yet.
       o = our_shell or 'osh'  
     else:
-      suite = suite or 'osh'
       o = our_shell or 'osh'
 
     # Note: Can also select bash 4.4 vs. bash 5.2 here
     c = compare_shells.split() if compare_shells else []
 
-    fi = File(name, suite, c, o, allowed_failures)
+    fi = File(name, suite, tags or [], c, o, allowed_failures)
     self.files.append(fi)
+
+  def OshFile(self, name, *args, **kwargs):
+    self.File(name, suite='osh', **kwargs)
+
+  def YshFile(self, name, **kwargs):
+    self.File(name, suite='ysh', **kwargs)
 
 
 def main(argv):
@@ -57,6 +79,10 @@ def main(argv):
     sp.File('append', compare_shells='bash dash mksh zsh', allowed_failures=5)
     sp.File('oil-blocks')
     sp.File('oil-builtins', our_shell='osh')
+
+
+  # Not part of OSH or YSH
+  sp.File('tea-func', suite='tea')
 
   spec_osh.Define(sp)
   spec_ysh.Define(sp)
@@ -84,13 +110,31 @@ def main(argv):
       raise RuntimeError('File %r not found' % name)
 
   elif action == 'print-table':
-    # called by write-suite-manifest
+    # called by test/spec-runner.sh write-suite-manifest
+
+    # TODO:
+    # SUITE-{osh,ysh,tea} for CI, let's restore that
+    #
+    # SUITE-osh-interactive for 'interactive' job with docker -t
+
+    # SUITE-osh-minimal too
+
+    # SUITE-osh-noninteractive for release?  Not sure about this
+    # Or at least we want to separate the interactive from non-interactive ones
 
     #suite = argv[2]
     #assert suite in ('osh', 'ysh', 'tea'), suite
     for fi in sp.files:
       #if fi.suite == suite:
       print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
+
+  elif action == 'print-tagged':
+    tag = argv[2]
+
+    for fi in sp.files:
+      if tag in fi.tags:
+        #print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
+        print(fi.name)
 
   else:
     raise RuntimeError('Invalid action %r' % action)

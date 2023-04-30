@@ -6,207 +6,205 @@ from __future__ import print_function
 
 def Define(sp):
   # Isolate it in its own test suite because of job control issue
-  sp.File('interactive', suite='interactive')
+  sp.OshFile('interactive', tags=['interactive', 'dev-minimal'])
 
   # Also uses $SH -i quite a bit
-  sp.File('sh-options', suite='interactive')
-  sp.File('sh-usage', suite='interactive')
+  sp.OshFile('sh-options', tags=['interactive'])
+  sp.OshFile('sh-usage', tags=['interactive'])
 
   # one cases uses -i
-  sp.File('var-num', suite='interactive')
+  sp.OshFile('var-num', tags=['interactive'])
 
+  sp.OshFile('builtin-history', tags=['interactive'])
+
+  sp.OshFile('smoke', tags=['dev-minimal'])
 
   #
   # suite osh
   #
 
-  sp.File('alias')
+  sp.OshFile('alias')
 
-  sp.File('append')
+  sp.OshFile('append')
 
-  sp.File('arith')
+  sp.OshFile('arith')
 
-  sp.File('arith-context')
+  sp.OshFile('arith-context')
 
-  sp.File('array')
+  sp.OshFile('array')
 
-  sp.File('array-compat')
+  sp.OshFile('array-compat')
 
-  sp.File('assign')
+  sp.OshFile('assign')
 
-  sp.File('assign-deferred')
+  sp.OshFile('assign-deferred')
 
-  sp.File('assign-dialects')
+  sp.OshFile('assign-dialects')
 
-  sp.File('assign-extended')
+  sp.OshFile('assign-extended')
 
-  sp.File('assoc')
+  sp.OshFile('assoc')
 
-  sp.File('assoc-zsh')
+  sp.OshFile('assoc-zsh')
 
-  sp.File('background')
+  sp.OshFile('background')
 
-  sp.File('ble-features')
+  sp.OshFile('ble-features')
 
-  sp.File('ble-idioms')
+  sp.OshFile('ble-idioms')
 
-  sp.File('blog1')
+  sp.OshFile('blog1')
 
-  sp.File('blog2')
+  sp.OshFile('blog2')
 
-  sp.File('brace-expansion')
+  sp.OshFile('brace-expansion')
 
-  sp.File('bugs')
+  sp.OshFile('bugs')
 
-  sp.File('builtin-bash')
+  sp.OshFile('builtin-bash')
 
-  sp.File('builtin-bracket')
+  sp.OshFile('builtin-bracket')
 
-  sp.File('builtin-completion')
+  sp.OshFile('builtin-completion')
 
-  sp.File('builtin-dirs')
+  sp.OshFile('builtin-dirs')
 
-  sp.File('builtin-eval-source')
+  sp.OshFile('builtin-eval-source')
 
-  sp.File('builtin-getopts')
+  sp.OshFile('builtin-getopts')
 
-  sp.File('builtin-history')
+  sp.OshFile('builtin-io')
 
-  sp.File('builtin-io')
+  sp.OshFile('builtin-printf')
 
-  sp.File('builtin-printf')
+  sp.OshFile('builtins')
 
-  sp.File('builtins')
+  sp.OshFile('builtins2')
 
-  sp.File('builtins2')
+  sp.OshFile('builtin-special')
 
-  sp.File('builtin-special')
+  sp.OshFile('builtin-times')
 
-  sp.File('builtin-times')
+  sp.OshFile('builtin-trap')
 
-  sp.File('builtin-trap')
+  sp.OshFile('builtin-trap-bash')
 
-  sp.File('builtin-trap-bash')
+  sp.OshFile('builtin-vars')
 
-  sp.File('builtin-vars')
+  sp.OshFile('case_')
 
-  sp.File('case_')
+  sp.OshFile('command_')
 
-  sp.File('command_')
+  sp.OshFile('command-parsing')
 
-  sp.File('command-parsing')
+  sp.OshFile('command-sub')
 
-  sp.File('command-sub')
+  sp.OshFile('comments')
 
-  sp.File('comments')
+  sp.OshFile('dbracket')
 
-  sp.File('dbracket')
+  sp.OshFile('dparen')
 
-  sp.File('dparen')
+  sp.OshFile('empty-bodies')
 
-  sp.File('empty-bodies')
+  sp.OshFile('errexit')
 
-  sp.File('errexit')
+  sp.OshFile('errexit-oil')
 
-  sp.File('errexit-oil')
+  sp.OshFile('exit-status')
 
-  sp.File('exit-status')
+  sp.OshFile('explore-parsing')
 
-  sp.File('explore-parsing')
+  sp.OshFile('extglob-files')
 
-  sp.File('extglob-files')
+  sp.OshFile('extglob-match')
 
-  sp.File('extglob-match')
+  sp.OshFile('fatal-errors')
 
-  sp.File('fatal-errors')
+  sp.OshFile('for-expr')
 
-  sp.File('for-expr')
+  sp.OshFile('func-parsing')
 
-  sp.File('func-parsing')
+  sp.OshFile('glob')
 
-  sp.File('glob')
+  sp.OshFile('here-doc')
 
-  sp.File('here-doc')
+  sp.OshFile('if_')
 
-  sp.File('if_')
+  sp.OshFile('introspect')
 
-  sp.File('introspect')
+  sp.OshFile('let')
 
-  sp.File('let')
+  sp.OshFile('loop')
 
-  sp.File('loop')
+  sp.OshFile('nameref')
 
-  sp.File('nameref')
+  sp.OshFile('nix-idioms')
 
-  sp.File('nix-idioms')
+  sp.OshFile('nocasematch-match')
 
-  sp.File('nocasematch-match')
+  sp.OshFile('nul-bytes')
 
-  sp.File('nul-bytes')
+  sp.OshFile('osh-only')
 
-  sp.File('osh-only')
+  sp.OshFile('parse-errors')
 
-  sp.File('parse-errors')
+  sp.OshFile('pipeline')
 
-  sp.File('pipeline')
+  sp.OshFile('posix')
 
-  sp.File('posix')
+  sp.OshFile('process-sub')
 
-  sp.File('process-sub')
+  sp.OshFile('prompt')
 
-  sp.File('prompt')
+  sp.OshFile('quote')
 
-  sp.File('quote')
+  sp.OshFile('redirect')
 
-  sp.File('redirect')
+  sp.OshFile('regex')
 
-  sp.File('regex')
+  sp.OshFile('serialize')
 
-  sp.File('serialize')
+  sp.OshFile('sh-func')
 
-  sp.File('sh-func')
+  sp.OshFile('strict-options')
 
-  sp.File('smoke')
+  sp.OshFile('subshell')
 
-  sp.File('strict-options')
+  sp.OshFile('tilde')
 
-  sp.File('subshell')
+  sp.OshFile('TODO-deprecate')
 
-  sp.File('tilde')
+  sp.OshFile('toysh')
 
-  sp.File('TODO-deprecate')
+  sp.OshFile('toysh-posix')
 
-  sp.File('toysh')
+  sp.OshFile('type-compat')
 
-  sp.File('toysh-posix')
+  sp.OshFile('var-op-bash')
 
-  sp.File('type-compat')
+  sp.OshFile('var-op-len')
 
-  sp.File('var-op-bash')
+  sp.OshFile('var-op-patsub')
 
-  sp.File('var-op-len')
+  sp.OshFile('var-op-slice')
 
-  sp.File('var-op-patsub')
+  sp.OshFile('var-op-strip')
 
-  sp.File('var-op-slice')
+  sp.OshFile('var-op-test')
 
-  sp.File('var-op-strip')
+  sp.OshFile('var-ref')
 
-  sp.File('var-op-test')
+  sp.OshFile('vars-bash')
 
-  sp.File('var-ref')
+  sp.OshFile('vars-special')
 
-  sp.File('vars-bash')
+  sp.OshFile('var-sub')
 
-  sp.File('vars-special')
+  sp.OshFile('var-sub-quote')
 
-  sp.File('var-sub')
+  sp.OshFile('word-eval')
 
-  sp.File('var-sub-quote')
+  sp.OshFile('word-split')
 
-  sp.File('word-eval')
-
-  sp.File('word-split')
-
-  sp.File('xtrace')
-
+  sp.OshFile('xtrace')
