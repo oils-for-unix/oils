@@ -64,7 +64,7 @@ from _devbuild.gen.syntax_asdl import (
     rhs_word_e, rhs_word_t,
     word_e, word_t,
     word_part_e, word_part_t, word_part__EscapedLiteral,
-    compound_word,
+    CompoundWord,
     simple_var_sub, braced_var_sub, command_sub, double_quoted, single_quoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
     condition_e, condition__Shell,
@@ -199,7 +199,7 @@ def _GetRhsStyle(w):
       return word_style_e.SQ
 
     elif case(rhs_word_e.Compound):
-      w = cast(compound_word, UP_w)
+      w = cast(CompoundWord, UP_w)
       if len(w.parts) == 0:
         raise AssertionError(w)
 
@@ -825,7 +825,7 @@ class OilPrinter(object):
         self.f.write("''")
 
       elif case(rhs_word_e.Compound):
-        node = cast(compound_word, UP_node)
+        node = cast(CompoundWord, UP_node)
 
         # TODO: This is wrong!
         style = _GetRhsStyle(node)
@@ -868,7 +868,7 @@ class OilPrinter(object):
 
     with tagswitch(node) as case:
       if case(word_e.Compound):
-        node = cast(compound_word, UP_node)
+        node = cast(CompoundWord, UP_node)
 
         # UNQUOTE simple var subs
 

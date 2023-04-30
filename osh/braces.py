@@ -17,7 +17,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, compound_word, 
+    Token, CompoundWord, 
     word, word_e, word_t, word__BracedTree,
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
@@ -187,7 +187,7 @@ class _StackFrame(object):
 
 
 def _BraceDetect(w):
-  # type: (compound_word) -> Optional[word__BracedTree]
+  # type: (CompoundWord) -> Optional[word__BracedTree]
   """Return a new word if the input word looks like a brace expansion.
 
   e.g. {a,b} or {1..10..2} (TODO)
@@ -242,7 +242,7 @@ def _BraceDetect(w):
         # ?  We're forcing braces right now but not commas.
         if len(stack):
           stack[-1].saw_comma = True
-          stack[-1].alt_part.words.append(compound_word(cur_parts))
+          stack[-1].alt_part.words.append(CompoundWord(cur_parts))
           cur_parts = []  # clear
           append = False
 
@@ -278,7 +278,7 @@ def _BraceDetect(w):
           if not stack[-1].saw_comma:  # {foo} is not a real alternative
             return None  # early return
 
-          stack[-1].alt_part.words.append(compound_word(cur_parts))
+          stack[-1].alt_part.words.append(CompoundWord(cur_parts))
 
           frame = stack.pop()
           cur_parts = frame.cur_parts
@@ -298,7 +298,7 @@ def _BraceDetect(w):
 
 
 def BraceDetectAll(words):
-  # type: (List[compound_word]) -> List[word_t]
+  # type: (List[CompoundWord]) -> List[word_t]
   """Return a new list of words, possibly with BracedTree instances."""
   out = []  # type: List[word_t]
   for w in words:
@@ -492,8 +492,8 @@ def _BraceExpand(parts):
 
 
 def BraceExpandWords(words):
-  # type: (List[word_t]) -> List[compound_word]
-  out = []  # type: List[compound_word]
+  # type: (List[word_t]) -> List[CompoundWord]
+  out = []  # type: List[CompoundWord]
   for w in words:
     UP_w = w
     with tagswitch(w) as case:
@@ -504,10 +504,10 @@ def BraceExpandWords(words):
         # ahead of time
         parts_list = _BraceExpand(w.parts)
         for p in parts_list:
-          out.append(compound_word(p))
+          out.append(CompoundWord(p))
 
       elif case(word_e.Compound):
-        w = cast(compound_word, UP_w)
+        w = cast(CompoundWord, UP_w)
         out.append(w)
 
       else:

@@ -5,7 +5,7 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     loc, arith_expr, arith_expr_e, arith_expr_t, arith_expr__Binary, word_t,
-    compound_word, simple_var_sub
+    CompoundWord, simple_var_sub
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.pyerror import p_die
@@ -82,7 +82,7 @@ def NullConstant(p, w, bp):
     return simple_var_sub(name_tok, lexer.TokenVal(name_tok))
 
   # Id.Word_Compound in the spec ensures this cast is valid
-  return cast(compound_word, w)
+  return cast(CompoundWord, w)
 
 
 def NullParen(p, t, bp):

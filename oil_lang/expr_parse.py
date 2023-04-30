@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     loc, Token, double_quoted, single_quoted, command_sub, sh_array_literal,
-    compound_word, word_part_t, word_e
+    CompoundWord, word_part_t, word_e
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -175,7 +175,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
       # Blame the opening token
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
-      words = []  # type: List[compound_word]
+      words = []  # type: List[CompoundWord]
       close_tok = None  # type: Optional[Token]
       done = False
       while not done:
@@ -192,7 +192,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
               p_die('Unexpected token in array literal', loc.Word(w))
 
           elif case(word_e.Compound):
-            words.append(cast(compound_word, w))
+            words.append(cast(CompoundWord, w))
 
           else:
             raise AssertionError()

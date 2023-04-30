@@ -21,7 +21,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     assign_op_e,
-    compound_word,
+    CompoundWord,
     command_e, command_t,
     command__AndOr, command__Case, command__CommandList, command__ControlFlow,
     command__DBracket, command__DoGroup, command__DParen,
@@ -432,7 +432,7 @@ class CommandEvaluator(object):
     UP_arg = arg
     with tagswitch(arg) as case:
       if case(redir_param_e.Word):
-        arg_word = cast(compound_word, UP_arg)
+        arg_word = cast(CompoundWord, UP_arg)
 
         # note: needed for redirect like 'echo foo > x$LINENO'
         self.mem.SetCurrentSpanId(r.op.span_id)
@@ -489,7 +489,7 @@ class CommandEvaluator(object):
 
       elif case(redir_param_e.HereDoc):
         arg = cast(redir_param__HereDoc, UP_arg)
-        w = compound_word(arg.stdin_parts)  # HACK: Wrap it in a word to eval
+        w = CompoundWord(arg.stdin_parts)  # HACK: Wrap it in a word to eval
         val = self.word_ev.EvalWordToString(w)
         assert val.tag_() == value_e.Str, val
         result.arg = redirect_arg.HereDoc(val.s)

@@ -30,7 +30,7 @@ import posix_ as posix
 
 from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import assign_op_t, compound_word
+  from _devbuild.gen.syntax_asdl import assign_op_t, CompoundWord
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
   from core import alloc
   from core.error import _ErrorWithLocation
@@ -266,8 +266,8 @@ class Tracer(object):
     self.ind = 0  # changed by process, proc, source, eval
     self.indents = ['']  # "pooled" to avoid allocations
 
-    # PS4 value -> compound_word.  PS4 is scoped.
-    self.parse_cache = {}  # type: Dict[str, compound_word]
+    # PS4 value -> CompoundWord.  PS4 is scoped.
+    self.parse_cache = {}  # type: Dict[str, CompoundWord]
 
     # Mutate objects to save allocations
     self.val_indent = value.Str('')

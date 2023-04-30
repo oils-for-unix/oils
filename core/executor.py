@@ -10,7 +10,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    command_sub, compound_word, loc, loc_t
+    command_sub, CompoundWord, loc, loc_t
 )
 from asdl import runtime
 from core import dev
@@ -442,7 +442,7 @@ class ShellExecutor(vm._Executor):
         # note: cmd_eval.py _Dispatch works around lack of spid
         # TODO: change to 'internal cat' (issue 1013)
         tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
-        cat_word = compound_word([tok])
+        cat_word = CompoundWord([tok])
         # MUTATE the command.Simple node.  This will only be done the first
         # time in the parent process.
         simple.words.append(cat_word)

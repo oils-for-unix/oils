@@ -37,7 +37,7 @@ import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    compound_word, word_part_e, word_t, redir_param_e, Token
+    CompoundWord, word_part_e, word_t, redir_param_e, Token
 )
 from _devbuild.gen.runtime_asdl import (
     value_e, value__MaybeStrArray, value__Str, value_str, scope_e, Proc
@@ -377,7 +377,7 @@ class DynamicWordsAction(CompletionAction):
   def __init__(self,
                word_ev,  # type: AbstractWordEvaluator
                splitter,  # type: SplitContext
-               arg_word,  # type: compound_word
+               arg_word,  # type: CompoundWord
                errfmt,  # type: ui.ErrorFormatter
                ):
     # type: (...) -> None
@@ -818,7 +818,7 @@ def IsDummy(t):
 
 
 def WordEndsWithCompDummy(w):
-  # type: (compound_word) -> bool
+  # type: (CompoundWord) -> bool
   last_part = w.parts[-1]
   UP_part = last_part
   if last_part.tag_() == word_part_e.Literal:
@@ -1017,7 +1017,7 @@ class RootCompleter(CompletionAction):
           consts.RedirArgType(r.op.id) == redir_arg_type_e.Path):
         arg_word = r.arg
         UP_word = arg_word
-        arg_word = cast(compound_word, UP_word)
+        arg_word = cast(CompoundWord, UP_word)
         if WordEndsWithCompDummy(arg_word):
           debug_f.writeln('Completing redirect arg')
 

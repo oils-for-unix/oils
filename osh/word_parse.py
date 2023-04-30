@@ -60,7 +60,7 @@ from _devbuild.gen.syntax_asdl import (
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
     rhs_word, rhs_word_e, rhs_word_t,
-    word_e, word_t, compound_word,
+    word_e, word_t, CompoundWord,
     word_part, word_part_e, word_part_t,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
@@ -204,8 +204,8 @@ class WordParser(WordEmitter):
     return w
 
   def _ReadVarOpArg2(self, arg_lex_mode, eof_type, empty_ok=False):
-    # type: (lex_mode_t, Id_t, bool) -> compound_word
-    """Return a compound_word.
+    # type: (lex_mode_t, Id_t, bool) -> CompoundWord
+    """Return a CompoundWord.
 
     Helper function for _ReadVarOpArg and used directly by _ReadPatSubVarOp.
     """
@@ -390,7 +390,7 @@ class WordParser(WordEmitter):
         if case(rhs_word_e.Empty):
           pass
         elif case(rhs_word_e.Compound):
-          arg_word = cast(compound_word, UP_arg_word)
+          arg_word = cast(CompoundWord, UP_arg_word)
           # This handles ${x|html} and ${x %.3f} now
           # However I think ${x %.3f} should be statically parsed?  It can enter
           # the printf lexer modes.
@@ -768,14 +768,14 @@ class WordParser(WordEmitter):
     # type: () -> word_part__ExtGlob
     """
     Grammar:
-      Item         = compound_word | EPSILON  # important: @(foo|) is allowed
+      Item         = CompoundWord | EPSILON  # important: @(foo|) is allowed
       LEFT         = '@(' | '*(' | '+(' | '?(' | '!('
       RIGHT        = ')'
       ExtGlob      = LEFT (Item '|')* Item RIGHT  # ITEM may be empty
       Compound includes ExtGlob
     """
     left_token = self.cur_token
-    arms = []  # type: List[compound_word]
+    arms = []  # type: List[CompoundWord]
     spids = []  # type: List[int]
     spids.append(left_token.span_id)
 
@@ -789,13 +789,13 @@ class WordParser(WordEmitter):
 
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
-          arms.append(compound_word([]))
+          arms.append(CompoundWord([]))
         spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
         if not read_word:
-          arms.append(compound_word([]))
+          arms.append(CompoundWord([]))
         read_word = False
         self._Next(lex_mode_e.ExtGlob)
 
@@ -1327,7 +1327,7 @@ class WordParser(WordEmitter):
 
     # MUST use a new word parser (with same lexer).
     w_parser = self.parse_ctx.MakeWordParser(self.lexer, self.line_reader)
-    words = []  # type: List[compound_word]
+    words = []  # type: List[CompoundWord]
     done = False
     while not done:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -1343,7 +1343,7 @@ class WordParser(WordEmitter):
             p_die('Unexpected token in array literal', loc.Word(w))
 
         elif case(word_e.Compound):
-          words.append(cast(compound_word, w))
+          words.append(cast(CompoundWord, w))
 
         else:
           raise AssertionError()
@@ -1478,11 +1478,11 @@ class WordParser(WordEmitter):
     return done
 
   def _ReadCompoundWord(self, lex_mode):
-    # type: (lex_mode_t) -> compound_word
+    # type: (lex_mode_t) -> CompoundWord
     return self._ReadCompoundWord3(lex_mode, Id.Undefined_Tok, True)
 
   def _ReadCompoundWord3(self, lex_mode, eof_type, empty_ok):
-    # type: (lex_mode_t, Id_t, bool) -> compound_word
+    # type: (lex_mode_t, Id_t, bool) -> CompoundWord
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -1491,7 +1491,7 @@ class WordParser(WordEmitter):
     could be an operator delimiting a compound word.  Can we change lexer modes
     and remove this special case?
     """
-    w = compound_word([])
+    w = CompoundWord([])
     num_parts = 0
     brace_count = 0
     done = False
@@ -1853,13 +1853,13 @@ class WordParser(WordEmitter):
     # Returns nothing
 
   def ReadForPlugin(self):
-    # type: () -> compound_word
+    # type: () -> CompoundWord
     """For $PS1, $PS4, etc.
 
     This is just like reading a here doc line.  "\n" is allowed, as well as the
     typical substitutions ${x} $(echo hi) $((1 + 2)).
     """
-    w = compound_word([])
+    w = CompoundWord([])
     self._ReadLikeDQ(None, False, w.parts)
     return w
 

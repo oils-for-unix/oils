@@ -28,11 +28,11 @@
 #   type_expr = Atom %Token | ...
 #   printf_part ...
 #
-#   # Simplify compound_word reference
-#   bool_expr = WordTest %compound_word | ...
+#   # Simplify CompoundWord reference
+#   bool_expr = WordTest %CompoundWord | ...
 #
 #   # There can't be any raw Token here
-#   seq_word = Compound %compound_word | BracedTree(...)
+#   seq_word = Compound %CompoundWord | BracedTree(...)
 
 # Conventions:
 # - 'Token left' and 'Token right' are generally for location info, but their
@@ -98,7 +98,7 @@ module syntax
   | Span(int span_id)
   | Token %Token
   | WordPart(word_part p)
-    # Note: is it possible to only have compound_word?
+    # Note: is it possible to only have CompoundWord?
   | Word(word w)
   | Arith(arith_expr a)
     # e.g. for errexit blaming
@@ -117,7 +117,7 @@ module syntax
   | Unary(Token op, rhs_word arg_word)  # e.g. ${v:-default}
     # TODO: Implement Oil's ${x|html} and ${x %.3f}
   | Static(Token tok, str arg)
-  | PatSub(compound_word pat, rhs_word replace, id replace_mode, Token slash_tok)
+  | PatSub(CompoundWord pat, rhs_word replace, id replace_mode, Token slash_tok)
     # begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 
@@ -153,7 +153,7 @@ module syntax
   # TODO: every word_part has Token left, Token right, and remove int* spids
   # these are used in the main program for alias expansion
 
-  AssocPair = (compound_word key, compound_word value)
+  AssocPair = (CompoundWord key, CompoundWord value)
 
   word_part = 
     ShArrayLiteral %sh_array_literal
@@ -171,13 +171,13 @@ module syntax
   | TildeSub(Token token, str? user_name)
   | ArithSub(arith_expr anode)
     # {a,b,c}
-  | BracedTuple(List[compound_word] words)
+  | BracedTuple(List[CompoundWord] words)
     # {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     # {a..f} or {a..f..2} or {a..f..-2}
   | BracedRange(id kind, str start, str end, int step)
     # note: optional int may need special handling in ASDL
   # extended globs are parsed statically, unlike globs
-  | ExtGlob(Token op, List[compound_word] arms)
+  | ExtGlob(Token op, List[CompoundWord] arms)
 
     # Oil word_part extensions
 
@@ -189,18 +189,18 @@ module syntax
   | ExprSub(Token left, expr child)
   attributes (List[int] spids)
 
-  # TODO: I think Token left should be copied into every compound_word
+  # TODO: I think Token left should be copied into every CompoundWord
   # either that, or CommandParser needs to reliably have GetToken(word_t)
-  # Invariant: compound_word always has at least one part (as opposed to
+  # Invariant: CompoundWord always has at least one part (as opposed to
   # rhs_word.Empty)
-  compound_word = (List[word_part] parts)
+  CompoundWord = (List[word_part] parts)
 
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
   # The latter is semantically necessary.  (See osh/word_parse.py). 
   # At runtime: RHS of 'declare x='.
   rhs_word =
     Empty
-  | Compound %compound_word
+  | Compound %CompoundWord
 
   word = 
     # Returns from WordParser, but not generally stored in LST
@@ -209,7 +209,7 @@ module syntax
     # We could model this with another variant type but it incurs runtime
     # overhead and seems like overkill.  Note that DoubleQuoted can't
     # contain a SingleQuoted, etc. either.
-  | Compound %compound_word
+  | Compound %CompoundWord
     # For word sequences command.Simple, ShArrayLiteral, for_iter.Words
     # Could be its own type
   | BracedTree(List[word_part] parts)
@@ -225,7 +225,7 @@ module syntax
 
   arith_expr =
     VarSub %simple_var_sub  # e.g. $(( x ))
-  | Word %compound_word     # e.g. $(( 123'456'$y ))
+  | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
   | BinaryAssign(id op_id, arith_expr left, arith_expr right)
@@ -245,7 +245,7 @@ module syntax
 
   redir_loc = Fd(int fd) | VarName(str name)
   redir_param =
-    Word %compound_word
+    Word %CompoundWord
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'
             int here_end_span_id,  # span is whole line (for defunct osh2oil)
             List[word_part] stdin_parts  # one for each line

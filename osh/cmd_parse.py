@@ -27,7 +27,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr, sh_lhs_expr_t,
     Redir, redir_param, redir_param__HereDoc,
     redir_loc, redir_loc_t,
-    word_e, word_t, compound_word, Token,
+    word_e, word_t, CompoundWord, Token,
     word_part_e, word_part_t,
     rhs_word, rhs_word_t,
 
@@ -38,7 +38,6 @@ from _devbuild.gen.syntax_asdl import (
 
     proc_sig_e, proc_sig__Closed,
 )
-from _devbuild.gen import syntax_asdl  # token, etc.
 
 from asdl import runtime
 from core import alloc
@@ -71,7 +70,7 @@ def _KeywordSpid(w):
   # type: (word_t) -> int
   """
   TODO: Can be we optimize this?
-  Assume that 'while', 'case', etc. are a specific type of compound_word.
+  Assume that 'while', 'case', etc. are a specific type of CompoundWord.
 
   I tested turning LeftMostSpanForWord in a no-op and couldn't observe the
   difference on a ~500 ms parse of testdata/osh-runtime/abuild.  So maybe this
@@ -87,7 +86,7 @@ def _KeywordToken(UP_w):
   In C++, this casts without checking, so BE CAREFUL to call it in the right context.
   """
   assert UP_w.tag_() == word_e.Compound, UP_w
-  w = cast(compound_word, UP_w)
+  w = cast(CompoundWord, UP_w)
 
   part = w.parts[0]
   assert part.tag_() == word_part_e.Literal, part
@@ -259,7 +258,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     rhs = rhs_word.Empty()  # type: rhs_word_t
   else:
     # tmp2 is for intersection of C++/MyPy type systems
-    tmp2 = compound_word(w.parts[part_offset:])
+    tmp2 = CompoundWord(w.parts[part_offset:])
     word_.TildeDetectAssign(tmp2)
     rhs = tmp2
 
@@ -288,21 +287,21 @@ def _AppendMoreEnv(preparsed_list, more_env):
     if part_offset == n:
       val = rhs_word.Empty()  # type: rhs_word_t
     else:
-      val = compound_word(w.parts[part_offset:])
+      val = CompoundWord(w.parts[part_offset:])
 
     pair = EnvPair(var_name, val, [left_token.span_id])
     more_env.append(pair)
 
 
 if TYPE_CHECKING:
-  PreParsedItem = Tuple[Token, Optional[Token], int, compound_word]
+  PreParsedItem = Tuple[Token, Optional[Token], int, CompoundWord]
   PreParsedList = List[PreParsedItem]
 
 def _SplitSimpleCommandPrefix(words):
-  # type: (List[compound_word]) -> Tuple[PreParsedList, List[compound_word]]
+  # type: (List[CompoundWord]) -> Tuple[PreParsedList, List[CompoundWord]]
   """Second pass of SimpleCommand parsing: look for assignment words."""
   preparsed_list = []  # type: PreParsedList
-  suffix_words = []  # type: List[compound_word]
+  suffix_words = []  # type: List[CompoundWord]
 
   done_prefix = False
   for w in words:
@@ -322,7 +321,7 @@ def _SplitSimpleCommandPrefix(words):
 
 def _MakeSimpleCommand(
     preparsed_list,  # type: PreParsedList
-    suffix_words,    # type: List[compound_word]
+    suffix_words,    # type: List[CompoundWord]
     redirects,       # type: List[Redir]
     typed_args,      # type: Optional[ArgList]
     block,           # type: Optional[BlockArg]
@@ -657,7 +656,7 @@ class CommandParser(object):
 
     # We should never get Empty, Token, etc.
     assert arg_word.tag_() == word_e.Compound, arg_word
-    return Redir(op_tok, where, cast(compound_word, arg_word))
+    return Redir(op_tok, where, cast(CompoundWord, arg_word))
 
   def _ParseRedirectList(self):
     # type: () -> List[Redir]
@@ -681,10 +680,10 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[Redir], List[compound_word], Optional[ArgList], Optional[BlockArg]]
+    # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[BlockArg]]
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[Redir]
-    words = []  # type: List[compound_word]
+    words = []  # type: List[CompoundWord]
     typed_args = None  # type: Optional[ArgList]
     block = None  # type: Optional[BlockArg]
 
@@ -723,7 +722,7 @@ class CommandParser(object):
             # We're DONE!!!
             break
 
-        w = cast(compound_word, self.cur_word)  # Kind.Word ensures this
+        w = cast(CompoundWord, self.cur_word)  # Kind.Word ensures this
         words.append(w)
         if i == 0:
           ok, word_str, quoted = word_.StaticEval(w)
@@ -765,7 +764,7 @@ class CommandParser(object):
     return redirects, words, typed_args, block
 
   def _MaybeExpandAliases(self, words):
-    # type: (List[compound_word]) -> Optional[command_t]
+    # type: (List[CompoundWord]) -> Optional[command_t]
     """Try to expand aliases.
 
     Args:
@@ -1131,7 +1130,7 @@ class CommandParser(object):
     return node
 
   def ParseForWords(self):
-    # type: () -> Tuple[List[compound_word], int]
+    # type: () -> Tuple[List[CompoundWord], int]
     """
     for_words        : WORD* for_sep
                      ;
@@ -1139,7 +1138,7 @@ class CommandParser(object):
                      | NEWLINES
                      ;
     """
-    words = []  # type: List[compound_word]
+    words = []  # type: List[CompoundWord]
     # The span_id of any semi-colon, so we can remove it.
     semi_spid = runtime.NO_SPID
 
@@ -1161,7 +1160,7 @@ class CommandParser(object):
         # TODO: Can we also show a pointer to the 'for' keyword?
         p_die('Invalid word in for loop', loc.Word(self.cur_word))
 
-      w2 = cast(compound_word, self.cur_word)
+      w2 = cast(CompoundWord, self.cur_word)
       words.append(w2)
       self._Next()
     return words, semi_spid
@@ -1211,7 +1210,7 @@ class CommandParser(object):
       # - 'x y' is also accepted but not idiomatic.
       UP_w = w
       if w.tag_() == word_e.Compound:
-        w = cast(compound_word, UP_w)
+        w = cast(CompoundWord, UP_w)
         if word_.LiteralId(w.parts[-1]) == Id.Lit_Comma:
           w.parts.pop()
 
@@ -1729,7 +1728,7 @@ class CommandParser(object):
     """
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    word0 = cast(compound_word, self.cur_word)  # caller ensures validity
+    word0 = cast(CompoundWord, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(word0)
     if len(name) == 0:  # example: foo$x is invalid
       p_die('Invalid function name', loc.Word(word0))
@@ -1783,7 +1782,7 @@ class CommandParser(object):
     self._Next()  # skip past 'function'
     self._Peek()
 
-    cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
+    cur_word = cast(CompoundWord, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
     if len(name) == 0:  # example: foo$x is invalid
       p_die('Invalid KSH-style function name', loc.Word(cur_word))
@@ -2021,7 +2020,7 @@ class CommandParser(object):
       return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Word:
-      cur_word = cast(compound_word, self.cur_word)  # ensured by Kind.Word
+      cur_word = cast(CompoundWord, self.cur_word)  # ensured by Kind.Word
 
       # NOTE: At the top level, only Token and Compound are possible.
       # Can this be modelled better in the type system, removing asserts?

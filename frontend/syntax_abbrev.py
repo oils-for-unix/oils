@@ -30,8 +30,8 @@ def _Token(obj):
   return p_node
 
 
-def _compound_word(obj):
-  # type: (compound_word) -> hnode_t
+def _CompoundWord(obj):
+  # type: (CompoundWord) -> hnode_t
   p_node = runtime.NewRecord('')  # don't show node type
   p_node.abbrev = True
   p_node.left = '{'

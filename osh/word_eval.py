@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
     suffix_op__Unary, suffix_op__Static,
     sh_array_literal, single_quoted, double_quoted, simple_var_sub,
-    word_e, word_t, compound_word,
+    word_e, word_t, CompoundWord,
     rhs_word, rhs_word_e, rhs_word_t,
     word_part_e, word_part__ArithSub, word_part__EscapedLiteral,
     word_part__AssocArrayLiteral, word_part__ExprSub, word_part__ExtGlob,
@@ -1470,7 +1470,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     part_vals.append(part_value.String(')', False, False))  # closing )
 
   def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
-    # type: (List[part_value_t], compound_word, List[str], List[str]) -> None
+    # type: (List[part_value_t], CompoundWord, List[str], List[str]) -> None
     """Translate a flattened WORD with an ExtGlob part to string patterns.
     
     We need both glob and fnmatch patterns.  _EvalExtGlob does the flattening.
@@ -1650,14 +1650,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(part_value.String('', quoted, not quoted))
 
       elif case(rhs_word_e.Compound):
-        w = cast(compound_word, UP_w)
+        w = cast(CompoundWord, UP_w)
         self._EvalWordToParts(w, part_vals, eval_flags=eval_flags)
 
       else:
         raise AssertionError()
 
   def _EvalWordToParts(self, w, part_vals, eval_flags=0):
-    # type: (compound_word, List[part_value_t], int) -> None
+    # type: (CompoundWord, List[part_value_t], int) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
     Returns:
@@ -1713,7 +1713,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       part_vals.extend(word_part_vals)
 
   def _PartValsToString(self, part_vals, w, eval_flags, strs):
-    # type: (List[part_value_t], compound_word, int, List[str]) -> None
+    # type: (List[part_value_t], CompoundWord, int, List[str]) -> None
     """Helper for EvalWordToString, similar to _ConcatPartVals() above.
 
     Note: arg 'w' could just be a span ID
@@ -1773,7 +1773,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     Flags can contain a quoting algorithm.
     """
     assert UP_w.tag_() == word_e.Compound, UP_w
-    w = cast(compound_word, UP_w)
+    w = cast(CompoundWord, UP_w)
 
     part_vals = []  # type: List[part_value_t]
     for p in w.parts:
@@ -1791,7 +1791,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       return value.Str(''), False
 
     assert UP_w.tag_() == rhs_word_e.Compound, UP_w
-    w = cast(compound_word, UP_w)
+    w = cast(CompoundWord, UP_w)
 
     has_extglob = False
     part_vals = []  # type: List[part_value_t]
@@ -1806,7 +1806,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return value.Str(''.join(strs)), has_extglob
 
   def EvalForPlugin(self, w):
-    # type: (compound_word) -> value__Str
+    # type: (CompoundWord) -> value__Str
     """Wrapper around EvalWordToString that prevents errors.
     
     Runtime errors like $(( 1 / 0 )) and mutating $? like $(exit 42) are
@@ -1834,7 +1834,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       return value.Str('')
 
     assert UP_w.tag_() == word_e.Compound, UP_w
-    w = cast(compound_word, UP_w)
+    w = cast(CompoundWord, UP_w)
 
     if len(w.parts) == 1:
       part0 = w.parts[0]
@@ -1934,7 +1934,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         argv.append(glob_.GlobUnescape(a))
 
   def _EvalWordToArgv(self, w):
-    # type: (compound_word) -> List[str]
+    # type: (CompoundWord) -> List[str]
     """Helper for _EvalAssignBuiltin.
 
     Splitting and globbing are disabled for assignment builtins.
@@ -1954,7 +1954,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (builtin_t, str, List[compound_word]) -> cmd_value__Assign
+    # type: (builtin_t, str, List[CompoundWord]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
 
@@ -2002,7 +2002,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             rhs = rhs_word.Empty()  # type: rhs_word_t
           else:
             # tmp is for intersection of C++/MyPy type systems
-            tmp = compound_word(w.parts[part_offset:])
+            tmp = CompoundWord(w.parts[part_offset:])
             word_.TildeDetectAssign(tmp)
             rhs = tmp
 
@@ -2042,7 +2042,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return cmd_value.Assign(builtin_id, flags, flag_locs, AssignArgs)
 
   def SimpleEvalWordSequence2(self, words, allow_assign):
-    # type: (List[compound_word], bool) -> cmd_value_t
+    # type: (List[CompoundWord], bool) -> cmd_value_t
     """Simple word evaluation for Oil."""
     strs = []  # type: List[str]
     locs = []  # type: List[loc_t]
@@ -2104,7 +2104,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return cmd_value.Argv(strs, locs, None)
 
   def EvalWordSequence2(self, words, allow_assign=False):
-    # type: (List[compound_word], bool) -> cmd_value_t
+    # type: (List[CompoundWord], bool) -> cmd_value_t
     """Turns a list of Words into a list of strings.
 
     Unlike the EvalWord*() methods, it does globbing.
@@ -2189,7 +2189,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return cmd_value.Argv(strs, locs, None)
 
   def EvalWordSequence(self, words):
-    # type: (List[compound_word]) -> List[str]
+    # type: (List[CompoundWord]) -> List[str]
     """For arrays and for loops.  They don't allow assignment builtins."""
     UP_cmd_val = self.EvalWordSequence2(words)
 

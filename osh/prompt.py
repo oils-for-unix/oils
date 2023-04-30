@@ -10,7 +10,7 @@ import time as time_
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
 from _devbuild.gen.syntax_asdl import (
-    loc, command_t, source, compound_word
+    loc, command_t, source, CompoundWord
 )
 from core import alloc
 from core import main_loop
@@ -104,7 +104,7 @@ class Evaluator(object):
     # These caches should reduce memory pressure a bit.  We don't want to
     # reparse the prompt twice every time you hit enter.
     self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id_t, str]]]
-    self.parse_cache = {}  # type: Dict[str, compound_word]
+    self.parse_cache = {}  # type: Dict[str, CompoundWord]
  
   def CheckCircularDeps(self):
     # type: () -> None

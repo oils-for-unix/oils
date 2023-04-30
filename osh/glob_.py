@@ -6,7 +6,7 @@ import libc
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    compound_word, Token, word_part_e,
+    CompoundWord, Token, word_part_e,
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
@@ -57,7 +57,7 @@ def LooksLikeGlob(s):
 
 
 def LooksLikeStaticGlob(w):
-  # type: (compound_word) -> bool
+  # type: (CompoundWord) -> bool
   """Like LooksLikeGlob, but for static words."""
 
   left_bracket = False

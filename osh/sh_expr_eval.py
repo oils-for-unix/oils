@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
     bool_expr_e, bool_expr_t, bool_expr__WordTest, bool_expr__LogicalNot,
     bool_expr__LogicalAnd, bool_expr__LogicalOr, bool_expr__Unary,
     bool_expr__Binary,
-    compound_word, Token,
+    CompoundWord, Token,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
     braced_var_sub, simple_var_sub,
@@ -512,7 +512,7 @@ class ArithEvaluator(object):
         return val
 
       elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
-        w = cast(compound_word, UP_node)
+        w = cast(CompoundWord, UP_node)
         return self.word_ev.EvalWordToString(w)
 
       elif case(arith_expr_e.UnaryAssign):  # a++
@@ -768,7 +768,7 @@ class ArithEvaluator(object):
     """
     UP_node = node
     if node.tag_() == arith_expr_e.Word:  # $(( $x )) $(( ${x}${y} )), etc.
-      w = cast(compound_word, UP_node)
+      w = cast(CompoundWord, UP_node)
       val = self.word_ev.EvalWordToString(w)
       return val.s
     else:
@@ -824,7 +824,7 @@ class ArithEvaluator(object):
         return (tok.var_name, tok.left)
 
       elif case(arith_expr_e.Word):
-        w = cast(compound_word, UP_anode)
+        w = cast(CompoundWord, UP_anode)
         var_name = self.EvalWordToString(w)
         return (var_name, loc.Word(w))
 
