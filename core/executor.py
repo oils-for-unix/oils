@@ -10,7 +10,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    command_sub, CompoundWord, loc, loc_t
+    CommandSub, CompoundWord, loc, loc_t
 )
 from asdl import runtime
 from core import dev
@@ -418,7 +418,7 @@ class ShellExecutor(vm._Executor):
     return p.RunProcess(self.waiter, trace.ForkWait())
 
   def RunCommandSub(self, cs_part):
-    # type: (command_sub) -> str
+    # type: (CommandSub) -> str
 
     if not self.exec_opts._allow_command_sub():
       # _allow_command_sub is used in two places.  Only one of them turns off _allow_process_sub
@@ -501,7 +501,7 @@ class ShellExecutor(vm._Executor):
     return ''.join(chunks).rstrip('\n')
 
   def RunProcessSub(self, cs_part):
-    # type: (command_sub) -> str
+    # type: (CommandSub) -> str
     """Process sub creates a forks a process connected to a pipe.
 
     The pipe is typically passed to another process via a /dev/fd/$FD path.

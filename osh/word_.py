@@ -5,7 +5,7 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.syntax_asdl import (
     Token, CompoundWord, 
-    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, command_sub,
+    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral,
     word_part, word_part_t, word_part_e,
     word_part__AssocArrayLiteral,
@@ -174,7 +174,7 @@ def LeftMostSpanForPart(part):
       return part.left.span_id
 
     elif case(word_part_e.CommandSub):
-      part = cast(command_sub, UP_part)
+      part = cast(CommandSub, UP_part)
       return part.left_token.span_id
 
     elif case(word_part_e.TildeSub):
@@ -250,7 +250,7 @@ def _RightMostSpanForPart(part):
       return spid
 
     elif case(word_part_e.CommandSub):
-      part = cast(command_sub, UP_part)
+      part = cast(CommandSub, UP_part)
       return part.right.span_id
 
     elif case(word_part_e.TildeSub):

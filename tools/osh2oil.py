@@ -65,7 +65,7 @@ from _devbuild.gen.syntax_asdl import (
     word_e, word_t,
     word_part_e, word_part_t, word_part__EscapedLiteral,
     CompoundWord,
-    SimpleVarSub, BracedVarSub, command_sub, DoubleQuoted, SingleQuoted,
+    SimpleVarSub, BracedVarSub, CommandSub, DoubleQuoted, SingleQuoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
     condition_e, condition__Shell,
     Redir, redir_param_e, redir_param__HereDoc,
@@ -1084,7 +1084,7 @@ class OilPrinter(object):
         self.cursor.PrintUntil(right_spid + 1)
 
       elif case(word_part_e.CommandSub):
-        node = cast(command_sub, UP_node)
+        node = cast(CommandSub, UP_node)
 
         left_spid = node.left_token.span_id
         right_spid = node.right.span_id

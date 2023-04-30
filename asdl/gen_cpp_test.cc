@@ -91,7 +91,7 @@ TEST misc_test() {
   PASS();
 }
 
-using shared_variant_asdl::double_quoted;
+using shared_variant_asdl::DoubleQuoted;
 using shared_variant_asdl::word_part_e;
 using shared_variant_asdl::word_part_t;
 
@@ -101,7 +101,7 @@ using shared_variant_asdl::tok_t;
 using shared_variant_asdl::Token;
 
 TEST shared_variant_test() {
-  auto* dq = Alloc<double_quoted>(0, Alloc<List<Str*>>());
+  auto* dq = Alloc<DoubleQuoted>(0, Alloc<List<Str*>>());
 
   word_part_t* wp = nullptr;
   wp = dq;  // assign to base type

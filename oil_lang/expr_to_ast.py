@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, loc, loc_t,
-    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, command_sub,
+    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral,
     command, command_t,
     expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
@@ -586,7 +586,7 @@ class Transformer(object):
         return cast(ShArrayLiteral, pnode.GetChild(1).tok)
 
       elif typ == grammar_nt.sh_command_sub:
-        return cast(command_sub, pnode.GetChild(1).tok)
+        return cast(CommandSub, pnode.GetChild(1).tok)
 
       elif typ == grammar_nt.braced_var_sub:
         return cast(BracedVarSub, pnode.GetChild(1).tok)

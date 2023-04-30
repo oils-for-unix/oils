@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     Token, loc, loc_t,
     SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub,
 
-    expr_e, expr_t, expr__Var, expr__Const, ShArrayLiteral, command_sub,
+    expr_e, expr_t, expr__Var, expr__Const, ShArrayLiteral, CommandSub,
     expr__RegexLiteral, expr__Unary, expr__Binary, expr__Compare,
     expr__FuncCall, expr__IfExp, expr__Tuple, expr__List, expr__Dict,
     expr__Range, expr__Slice,
@@ -491,7 +491,7 @@ class OilEvaluator(object):
     raise AssertionError(id_)
 
   def _EvalCommandSub(self, node):
-    # type: (command_sub) -> value_t
+    # type: (CommandSub) -> value_t
 
     id_ = node.left_token.id
     # &(echo block literal)
@@ -856,7 +856,7 @@ class OilEvaluator(object):
         return self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
 
       elif case(expr_e.CommandSub):
-        node = cast(command_sub, UP_node)
+        node = cast(CommandSub, UP_node)
 
         return _ValueToPyObj(self._EvalCommandSub(node))
 

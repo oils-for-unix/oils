@@ -77,7 +77,7 @@ def _GetCastKind(module_path, cast_to_type):
     if 'expr_to_ast.py' in module_path:
         for name in (
                 'ShArrayLiteral',
-                'command_sub',
+                'CommandSub',
                 'BracedVarSub',
                 'DoubleQuoted',
                 'SingleQuoted',

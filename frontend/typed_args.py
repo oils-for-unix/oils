@@ -5,7 +5,7 @@ typed_args.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc, ArgList, BlockArg, command_t, expr_e, expr_t, command_sub
+    loc, ArgList, BlockArg, command_t, expr_e, expr_t, CommandSub
 )
 from core.pyerror import e_usage
 from mycpp.mylib import tagswitch
@@ -65,7 +65,7 @@ def GetOneBlock(arg_list):
 
       # TODO: we need an expr_ev for cd /tmp (myblock)
       elif case(expr_e.CommandSub):  # cd /tmp (^(echo hi))
-        arg = cast(command_sub, UP_arg)
+        arg = cast(CommandSub, UP_arg)
         return arg.child
 
       else:

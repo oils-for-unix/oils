@@ -4,7 +4,7 @@ expr_parse.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc, Token, DoubleQuoted, SingleQuoted, command_sub, ShArrayLiteral,
+    loc, Token, DoubleQuoted, SingleQuoted, CommandSub, ShArrayLiteral,
     CompoundWord, word_part_t, word_e
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
@@ -50,7 +50,7 @@ if mylib.PYTHON:
         if isinstance(pnode.tok, Token):
           v = pnode.tok.tval
         else:
-          # e.g. command_sub for x = $(echo hi)
+          # e.g. CommandSub for x = $(echo hi)
           v = repr(pnode.tok)
       else:
         v = '-'
@@ -227,7 +227,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
       # A little gross: Copied from osh/word_parse.py
       right_token = c_parser.w_parser.cur_token
 
-      cs_part = command_sub(left_token, node, right_token)
+      cs_part = CommandSub(left_token, node, right_token)
 
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, cs_part)  # HACK for expr_to_ast

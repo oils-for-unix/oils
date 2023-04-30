@@ -52,7 +52,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox, Token, loc,
-    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, command_sub,
+    DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral, AssocPair,
 
     arith_expr_t, bracket_op, bracket_op_t,
@@ -931,7 +931,7 @@ class WordParser(WordEmitter):
     return self.cur_token
 
   def _ReadCommandSub(self, left_id, d_quoted=False):
-    # type: (Id_t, bool) -> command_sub
+    # type: (Id_t, bool) -> CommandSub
     """
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
@@ -1031,7 +1031,7 @@ class WordParser(WordEmitter):
     else:
       raise AssertionError(left_id)
 
-    return command_sub(left_token, node, right_token)
+    return CommandSub(left_token, node, right_token)
 
   def _ReadExprSub(self, lex_mode):
     # type: (lex_mode_t) -> word_part__ExprSub

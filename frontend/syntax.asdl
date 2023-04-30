@@ -139,7 +139,7 @@ module syntax
 
   SimpleVarSub = (Token left, str var_name)
 
-  command_sub = (Token left_token, command child, Token right)
+  CommandSub = (Token left_token, command child, Token right)
 
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
@@ -166,7 +166,7 @@ module syntax
   | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
     # For command sub and process sub: $(...)  <(...)  >(...)
-  | CommandSub %command_sub
+  | CommandSub %CommandSub
     # ~ or ~bob
   | TildeSub(Token token, str? user_name)
   | ArithSub(arith_expr anode)
@@ -325,7 +325,7 @@ module syntax
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
     # 2. ls ; ls & ls  (same line)
-    # 3. command_sub # single child that's a CommandList
+    # 3. CommandSub # single child that's a CommandList
     # 4. Subshell # single child that's a CommandList
     # Similar to DoGroup, except that has do and done spids.
   | CommandList(List[command] children)
@@ -459,7 +459,7 @@ module syntax
 
   | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
-  | CommandSub %command_sub
+  | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
 

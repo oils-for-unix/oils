@@ -16,7 +16,7 @@ if TYPE_CHECKING:
       cmd_value__Argv, cmd_value__Assign, RedirValue
   )
   from _devbuild.gen.syntax_asdl import (
-      command_t, command__Pipeline, command_sub
+      command_t, command__Pipeline, CommandSub
   )
   from osh import sh_expr_eval
   from osh.sh_expr_eval import ArithEvaluator
@@ -181,11 +181,11 @@ class _Executor(object):
     return 0
 
   def RunCommandSub(self, cs_part):
-    # type: (command_sub) -> str
+    # type: (CommandSub) -> str
     return ''
 
   def RunProcessSub(self, cs_part):
-    # type: (command_sub) -> str
+    # type: (CommandSub) -> str
     return ''
 
   def PushRedirects(self, redirects):

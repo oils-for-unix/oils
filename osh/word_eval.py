@@ -5,7 +5,7 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token, loc, loc_t,
-    BracedVarSub, command_sub,
+    BracedVarSub, CommandSub,
     bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
     suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
     suffix_op__Unary, suffix_op__Static,
@@ -488,27 +488,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
     raise NotImplementedError()
 
   def _EvalCommandSub(self, cs_part, quoted):
-    # type: (command_sub, bool) -> part_value_t
-    """Abstract since it has a side effect.
-
-    Args:
-      part: command_sub
-
-    Returns:
-       part_value
-    """
+    # type: (CommandSub, bool) -> part_value_t
+    """Abstract since it has a side effect."""
     raise NotImplementedError()
 
   def _EvalProcessSub(self, cs_part):
-    # type: (command_sub) -> part_value_t
-    """Abstract since it has a side effect.
-
-    Args:
-      part: command_sub
-
-    Returns:
-       part_value
-    """
+    # type: (CommandSub) -> part_value_t
+    """Abstract since it has a side effect."""
     raise NotImplementedError()
 
   def _EvalVarNum(self, var_num):
@@ -1552,7 +1538,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self._EvalDoubleQuoted(part.parts, part_vals)
 
       elif case(word_part_e.CommandSub):
-        part = cast(command_sub, UP_part)
+        part = cast(CommandSub, UP_part)
         id_ = part.left_token.id
         if id_ in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_Backtick):
           sv = self._EvalCommandSub(part, quoted)  # type: part_value_t
@@ -2214,7 +2200,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
     assert self.prompt_ev is not None
 
   def _EvalCommandSub(self, cs_part, quoted):
-    # type: (command_sub, bool) -> part_value_t
+    # type: (CommandSub, bool) -> part_value_t
     stdout = self.shell_ex.RunCommandSub(cs_part)
     if cs_part.left_token.id == Id.Left_AtParen:
       strs = self.splitter.SplitForWordEval(stdout)
@@ -2223,7 +2209,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
       return part_value.String(stdout, quoted, not quoted)
 
   def _EvalProcessSub(self, cs_part):
-    # type: (command_sub) -> part_value__String
+    # type: (CommandSub) -> part_value__String
     dev_path = self.shell_ex.RunProcessSub(cs_part)
     # pretend it's quoted; no split or glob
     return part_value.String(dev_path, True, False)
@@ -2251,13 +2237,13 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
     assert self.expr_ev is not None
 
   def _EvalCommandSub(self, cs_part, quoted):
-    # type: (command_sub, bool) -> part_value_t
+    # type: (CommandSub, bool) -> part_value_t
     if cs_part.left_token.id == Id.Left_AtParen:
       return part_value.Array([_DUMMY])
     else:
       return part_value.String(_DUMMY, quoted, not quoted)
 
   def _EvalProcessSub(self, cs_part):
-    # type: (command_sub) -> part_value__String
+    # type: (CommandSub) -> part_value__String
     # pretend it's quoted; no split or glob
     return part_value.String('__NO_PROCESS_SUB__', True, False)
