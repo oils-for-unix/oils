@@ -5,19 +5,43 @@ spec_osh.py
 from __future__ import print_function
 
 def Define(sp):
-  # Isolate it in its own test suite because of job control issue
-  sp.OshFile('interactive', tags=['interactive', 'dev-minimal'])
+  # tag 'interactive' - use $SH -i, so we also run with docker -t
+  # tag 'dev-minimal' - we run in dev-minimal CI job, build/py.sh minimal
+  #                   - NOTE: this whole concept should go away?
 
-  # Also uses $SH -i quite a bit
-  sp.OshFile('sh-options', tags=['interactive'])
-  sp.OshFile('sh-usage', tags=['interactive'])
+  sp.OshFile(
+      'interactive',
+      compare_shells = 'bash',  # dash / mksh don't implemented --rcfile etc.
+      tags = ['interactive', 'dev-minimal'])
 
-  # one cases uses -i
-  sp.OshFile('var-num', tags=['interactive'])
+  # Uses $SH -i quite a bit
+  sp.OshFile(
+      'sh-options',
+      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
+      failures_allowed = 2,
+      tags  =['interactive'])
 
-  sp.OshFile('builtin-history', tags=['interactive'])
+  sp.OshFile(
+      'sh-usage',
+      compare_shells = 'bash dash mksh zsh',
+      tags = ['interactive'])
 
-  sp.OshFile('smoke', tags=['dev-minimal'])
+  # one cases uses $SH -i
+  sp.OshFile(
+      'var-num',
+      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
+      tags = ['interactive'])
+
+  sp.OshFile(
+      'builtin-history',
+      compare_shells = 'bash',
+      failures_allowed = 1,
+      tags = ['interactive'])
+
+  sp.OshFile(
+      'smoke',
+      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
+      tags = ['dev-minimal'])
 
   #
   # suite osh

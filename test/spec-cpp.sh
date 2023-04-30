@@ -50,7 +50,7 @@ run-file() {
   shift
 
 
-  # defines suite our_shell allowed_failures
+  # defines: suite allowed_failures our_shell compare_shells
   local $(test/spec_params.py vars-for-file $test_name)
 
   local spec_subdir

@@ -271,6 +271,22 @@ soil-run-osh() {
   osh-all-serial
 }
 
+run-file() {
+  local spec_name=$1
+  shift
+
+  # defines: suite failures_allowed our_shell compare_shells
+  local $(test/spec_params.py vars-for-file $spec_name)
+
+  # space-separated list
+  local other_shell_list=$(test/spec_params.py other-shells-for-file $spec_name)
+
+  #local -p
+
+  sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
+    $other_shell_list $OSH_LIST "$@"
+}
+
 #
 # Individual tests.
 #
@@ -279,28 +295,11 @@ soil-run-osh() {
 #
 
 smoke() {
-  sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file smoke "$@"
 }
 
 interactive() {
-  local -a shells
-
-  # Weird spec test stoppages:
-
-  # Don't happen with other shells
-  #shells=( bash )
-
-  # Also happens with osh-cpp
-  #OSH_LIST=$REPO_ROOT/_bin/cxx-dbg/osh
-
-  # Doesn't happen with OSH alone
-  #shells=( $OSH_LIST )
-
-  # Happens deterministically with all of them !!!
-  shells=( bash $OSH_LIST )
-
-  sh-spec spec/interactive.test.sh --osh-failures-allowed 0 \
-    "${shells[@]}" "$@"
+  run-file interactive "$@"
 }
 
 prompt() {
@@ -444,8 +443,7 @@ builtins2() {
 }
 
 builtin-history() {
-  sh-spec spec/builtin-history.test.sh --osh-failures-allowed 1 \
-    $BASH $OSH_LIST "$@"
+  run-file builtin-history "$@"
 }
 
 # dash and mksh don't implement 'dirs'
@@ -631,8 +629,7 @@ var-sub() {
 }
 
 var-num() {
-  sh-spec spec/var-num.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file var-num "$@"
 }
 
 var-sub-quote() {
@@ -641,13 +638,11 @@ var-sub-quote() {
 }
 
 sh-usage() {
-  sh-spec spec/sh-usage.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file sh-usage "$@"
 }
 
 sh-options() {
-  sh-spec spec/sh-options.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file sh-options "$@"
 }
 
 xtrace() {

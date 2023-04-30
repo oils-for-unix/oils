@@ -13,7 +13,7 @@ from test import spec_osh
 from test import spec_ysh
 
 File = collections.namedtuple('File',
-    'name suite tags compare_shells our_shell allowed_failures')
+    'name suite tags compare_shells our_shell failures_allowed')
 
 
 class SpecParams(object):
@@ -42,7 +42,7 @@ class SpecParams(object):
       tags=None,
       compare_shells='',  # e.g. 'bash' or 'bash dash mksh zsh'
       our_shell='',  # osh or ysh
-      allowed_failures=0):
+      failures_allowed=0):
 
     assert suite is not None
 
@@ -57,9 +57,10 @@ class SpecParams(object):
       o = our_shell or 'osh'
 
     # Note: Can also select bash 4.4 vs. bash 5.2 here
+    # could also default to 'bash dash mksh' ?
     c = compare_shells.split() if compare_shells else []
 
-    fi = File(name, suite, tags or [], c, o, allowed_failures)
+    fi = File(name, suite, tags or [], c, o, failures_allowed)
     self.files.append(fi)
 
   def OshFile(self, name, *args, **kwargs):
@@ -76,7 +77,7 @@ def main(argv):
   # Example of what we want to generate
   if 0:
     sp.File('alias', compare_shells='bash')
-    sp.File('append', compare_shells='bash dash mksh zsh', allowed_failures=5)
+    sp.File('append', compare_shells='bash dash mksh zsh', failures_allowed=5)
     sp.File('oil-blocks')
     sp.File('oil-builtins', our_shell='osh')
 
@@ -93,18 +94,21 @@ def main(argv):
     name = argv[2]
     for fi in sp.files:
       if name == fi.name:
-        # TODO: Could print a shell string to evaluate
-        #print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
+        # Hack:    Print shell code to evaluate
+        # Example: local $(spec_params.py vars-for-file oil-blocks)
+        print('suite=%s failures_allowed=%d our_shell=%s' %
+              (fi.suite, fi.failures_allowed, fi.our_shell))
+        break
+    else:
+      raise RuntimeError('File %r not found' % name)
 
-        # Meant for local $(spec_params.py vars-for-file oil-blocks)
-        print('suite=%s our_shell=%s allowed_failures=%d' %
-              (fi.suite, fi.our_shell, fi.allowed_failures))
+  elif action == 'other-shells-for-file':
+    name = argv[2]
 
-        # TODO: print the list of shells, space separated
-        #
-        # Could flatten this table for parallel execution?
-        #print(fi.compare_shells)
-
+    # Example: local other_shell_list=$(spec_params.py other-shells-for-file oil-blocks)
+    for fi in sp.files:
+      if name == fi.name:
+        print(' '.join(fi.compare_shells))
         break
     else:
       raise RuntimeError('File %r not found' % name)
@@ -126,14 +130,14 @@ def main(argv):
     #assert suite in ('osh', 'ysh', 'tea'), suite
     for fi in sp.files:
       #if fi.suite == suite:
-      print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
+      print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.failures_allowed, fi.name))
 
   elif action == 'print-tagged':
     tag = argv[2]
 
     for fi in sp.files:
       if tag in fi.tags:
-        #print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.allowed_failures, fi.name))
+        #print('%s\t%s\t%d\t%s' % (fi.suite, fi.our_shell, fi.failures_allowed, fi.name))
         print(fi.name)
 
   else:
