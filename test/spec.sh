@@ -446,8 +446,13 @@ builtin-printf() {
 }
 
 builtins2() {
-  sh-spec spec/builtins2.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtins2.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+}
+
+builtin-history() {
+  sh-spec spec/builtin-history.test.sh --osh-failures-allowed 1 \
+    $BASH $OSH_LIST "$@"
 }
 
 # dash and mksh don't implement 'dirs'

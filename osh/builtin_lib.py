@@ -13,6 +13,7 @@ from core import vm
 from core.pyerror import e_usage
 from frontend import flag_spec
 from mycpp import mylib
+from pylib import path_stat
 
 from typing import Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -38,10 +39,11 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline, mem, f):
-    # type: (Optional[Readline], state.Mem, mylib.Writer) -> None
+  def __init__(self, readline, mem, errfmt, f):
+    # type: (Optional[Readline], state.Mem, ErrorFormatter, mylib.Writer) -> None
     self.readline = readline
     self.mem = mem
+    self.errfmt = errfmt
     self.f = f  # this hook is for unit testing only
 
   def GetHistoryFilename(self):
@@ -83,7 +85,12 @@ class History(vm._Builtin):
       return 0
 
     if arg.r:
-      readline.read_history_file(self.GetHistoryFilename())
+      history_filename = self.GetHistoryFilename()
+      if not path_stat.exists(history_filename):
+        self.errfmt.Print_("HISTFILE %r doesn't exist" % history_filename, loc.Missing())
+        return 1
+
+      readline.read_history_file(history_filename)
       return 0
 
     # Delete history entry by id number
