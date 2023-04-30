@@ -13,9 +13,9 @@ from _devbuild.gen.syntax_asdl import (
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     PosixClass, PerlClass,
     NameType, place_expr, place_expr_e, place_expr_t, type_expr_t,
-    Comprehension, Subscript, Attribute, proc_sig, proc_sig_t, param,
+    Comprehension, Subscript, Attribute, proc_sig, proc_sig_t, Param,
     NamedArg, ArgList, TypedParam, UntypedParam,
-    variant, variant_type, variant_type_t,
+    Variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
 from core.pyerror import p_die
@@ -869,7 +869,7 @@ class Transformer(object):
     return proc_sig.Closed(untyped, rest, typed)
 
   def _FuncParam(self, pnode):
-    # type: (PNode) -> param
+    # type: (PNode) -> Param
     """
     func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
     """
@@ -886,16 +886,16 @@ class Transformer(object):
       elif n > 2 and pnode.GetChild(2).tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
         default_val = self.Expr(pnode.GetChild(3))
       prefix_tok = None  # type: Token
-      return param(prefix_tok, tok0, type_, default_val)
+      return Param(prefix_tok, tok0, type_, default_val)
 
     raise AssertionError(Id_str(tok0.id))
 
   def _FuncParams(self, p_node):
-    # type: (PNode) -> Tuple[List[param], Optional[Token]]
+    # type: (PNode) -> Tuple[List[Param], Optional[Token]]
     """
     func_params: [func_param] (',' func_param)* [',' '...' Expr_Name]
     """
-    params = []  # type: List[param]
+    params = []  # type: List[Param]
     splat = None  # type: Optional[Token]
 
     n = p_node.NumChildren()
@@ -1053,11 +1053,11 @@ class Transformer(object):
     self.TeaFunc(pnode.GetChild(1), out)
 
   def _DataParams(self, p_node):
-    # type: (PNode) -> List[param]
+    # type: (PNode) -> List[Param]
     """
     data_params: (func_param ',')* [ func_param [','] ]
     """
-    params = []  # type: List[param]
+    params = []  # type: List[Param]
 
     n = p_node.NumChildren()
     for i in xrange(0, n, 2):
@@ -1092,7 +1092,7 @@ class Transformer(object):
       return variant_type.Anon(self._DataParams(pnode.GetChild(1)))
 
   def _Variant(self, pnode):
-    # type: (PNode) -> variant
+    # type: (PNode) -> Variant
     """
     variant: Expr_Name [ variant_type ]
     """
@@ -1100,7 +1100,7 @@ class Transformer(object):
     t = None  # type: variant_type_t
     if pnode.NumChildren() == 2:
       t = self._VariantType(pnode.GetChild(1))
-    return variant(pnode.GetChild(0).tok, t)
+    return Variant(pnode.GetChild(0).tok, t)
 
   def Enum(self, pnode, out):
     # type: (PNode, command__Enum) -> None

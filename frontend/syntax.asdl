@@ -352,13 +352,13 @@ module syntax
   # Tea
 
   | Func(Token name, 
-         List[param] pos_params, Token? pos_splat,
-         List[param] named_params, Token? named_splat,
+         List[Param] pos_params, Token? pos_splat,
+         List[Param] named_params, Token? named_splat,
          List[type_expr] return_types, command body)
-  | Data(Token name, List[param] params)
-  | Enum(Token name, List[variant] variants)
+  | Data(Token name, List[Param] params)
+  | Enum(Token name, List[Variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)
-  | Import(single_quoted path, Token? alias, List[import_name] names)
+  | Import(single_quoted path, Token? alias, List[ImportName] names)
   | For(List[NameType] targets, expr iterable, command body)
   | While(expr test, command body)
   | Break | Continue
@@ -368,13 +368,15 @@ module syntax
 
   # Binary(x expr, y expr) or Nullary %Token
   # In the first case we have a tag, and an anonymous type.
-  variant_type = Anon(List[param] params) | Ref(Token type_name)
+  variant_type = Anon(List[Param] params)
+               | Ref(Token type_name)
   # tags and types are separate in our model of algebraic data types
-  variant = (Token tag_name, variant_type? typ)
+  Variant = (Token tag_name, variant_type? typ)
 
-  class_item = Data(Token keyword, List[NameType] fields) | Method()
+  class_item = Data(Token keyword, List[NameType] fields)
+             | Method()
 
-  import_name = (Token name, Token? alias)
+  ImportName = (Token name, Token? alias)
 
   # ref is always ':' or empty
   UntypedParam = (Token? ref, Token name, expr? default_val)
@@ -388,7 +390,7 @@ module syntax
 
   # prefix is : for out param, @ for proc splat, ... for func splat
   # procs only have types Expr, Block (and Str is implicit)
-  param = (Token? prefix, Token name, type_expr? type, expr? default_val)
+  Param = (Token? prefix, Token name, type_expr? type, expr? default_val)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
