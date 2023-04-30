@@ -16,11 +16,10 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    scope_e, scope_t, hay_node
+    scope_e, scope_t, HayNode, Cell
 )
 from _devbuild.gen.syntax_asdl import loc, loc_t
 from _devbuild.gen.types_asdl import opt_group_i
-from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
 from core.pyerror import e_usage, e_die
@@ -45,7 +44,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.option_asdl import option_t
-  from _devbuild.gen.runtime_asdl import cell, Proc
+  from _devbuild.gen.runtime_asdl import Proc
   from core import alloc
   from osh import sh_expr_eval
 
@@ -362,8 +361,8 @@ class Hay(object):
 
   def __init__(self):
     # type: () -> None
-    ch = NewDict()  # type: Dict[str, hay_node]
-    self.root_defs = hay_node(ch)
+    ch = NewDict()  # type: Dict[str, HayNode]
+    self.root_defs = HayNode(ch)
     self.cur_defs = self.root_defs  # Same as ClearDefs()
     self.def_stack = [self.root_defs]
 
@@ -424,16 +423,16 @@ class Hay(object):
     current = self.root_defs
     for name in path:
       if name not in current.children:
-        ch = NewDict()  # type: Dict[str, hay_node]
-        current.children[name] = hay_node(ch)
+        ch = NewDict()  # type: Dict[str, HayNode]
+        current.children[name] = HayNode(ch)
       current = current.children[name]
 
   def Reset(self):
     # type: () -> None
 
     # reset definitions
-    ch = NewDict()  # type: Dict[str, hay_node]
-    self.root_defs = hay_node(ch)
+    ch = NewDict()  # type: Dict[str, HayNode]
+    self.root_defs = HayNode(ch)
     self.cur_defs = self.root_defs
 
     # reset output
@@ -895,7 +894,7 @@ class _ArgFrame(object):
 
 if mylib.PYTHON:
   def _DumpVarFrame(frame):
-    # type: (Dict[str, cell]) -> Any
+    # type: (Dict[str, Cell]) -> Any
     """Dump the stack frame as reasonably compact and readable JSON."""
 
     vars_json = {}
@@ -1273,7 +1272,7 @@ class Mem(object):
 
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
-    frame = NewDict()  # type: Dict[str, cell]
+    frame = NewDict()  # type: Dict[str, Cell]
     self.var_stack = [frame]
 
     self.arena = arena
@@ -1445,7 +1444,7 @@ class Mem(object):
     # type: (str, loc_t, List[str]) -> None
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
-    frame = NewDict()  # type: Dict[str, cell]
+    frame = NewDict()  # type: Dict[str, Cell]
     self.var_stack.append(frame)
 
     def_spid = location.GetSpanId(def_loc)
@@ -1496,7 +1495,7 @@ class Mem(object):
     Also for PS4 evaluation with more variables.
     """
     # We don't want the 'read' builtin to write to this frame!
-    frame = NewDict()  # type: Dict[str, cell]
+    frame = NewDict()  # type: Dict[str, Cell]
     self.var_stack.append(frame)
     self._PushDebugStack(None, None, None)
 
@@ -1506,7 +1505,7 @@ class Mem(object):
     self.var_stack.pop()
 
   def TopNamespace(self):
-    # type: () -> Dict[str, runtime_asdl.cell]
+    # type: () -> Dict[str, Cell]
     """For eval_to_dict()."""
     return self.var_stack[-1]
 
@@ -1598,7 +1597,7 @@ class Mem(object):
   #
 
   def _ResolveNameOnly(self, name, which_scopes):
-    # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell]]
+    # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """Helper for getting and setting variable.
 
     Returns:
@@ -1612,7 +1611,7 @@ class Mem(object):
         if name in name_map:
           cell = name_map[name]
           return cell, name_map
-      no_cell = None  # type: Optional[runtime_asdl.cell]
+      no_cell = None  # type: Optional[Cell]
       return no_cell, self.var_stack[0]  # set in global name_map
 
     if which_scopes == scope_e.LocalOnly:
@@ -1642,7 +1641,7 @@ class Mem(object):
     raise AssertionError()
 
   def _ResolveNameOrRef(self, name, which_scopes, is_setref, ref_trail=None):
-    # type: (str, scope_t, bool, Optional[List[str]]) -> Tuple[Optional[cell], Dict[str, cell], str]
+    # type: (str, scope_t, bool, Optional[List[str]]) -> Tuple[Optional[Cell], Dict[str, Cell], str]
     """Look up a cell and namespace, but respect the nameref flag.
 
     Resolving namerefs does RECURSIVE calls.
@@ -1805,10 +1804,10 @@ class Mem(object):
             # set -o nounset; local foo; echo $foo  # It's still undefined!
             val = value.Undef()  # export foo, readonly foo
 
-          cell = runtime_asdl.cell(bool(flags & SetExport),
-                                   bool(flags & SetReadOnly),
-                                   bool(flags & SetNameref),
-                                   val)
+          cell = Cell(bool(flags & SetExport),
+                      bool(flags & SetReadOnly),
+                      bool(flags & SetNameref),
+                      val)
           name_map[cell_name] = cell
 
         # Maintain invariant that only strings and undefined cells can be
@@ -1916,7 +1915,7 @@ class Mem(object):
         raise AssertionError(lval.tag_())
 
   def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
-    # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
+    # type: (Dict[str, Cell], lvalue__Indexed, value__Str, int) -> None
     """Fill 'name_map' with a new indexed array entry."""
     no_str = None  # type: Optional[str]
     items = [no_str] * lval.index
@@ -1925,7 +1924,7 @@ class Mem(object):
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = bool(flags & SetReadOnly)
-    name_map[lval.name] = runtime_asdl.cell(False, readonly, False, new_value)
+    name_map[lval.name] = Cell(False, readonly, False, new_value)
 
   def InternalSetGlobal(self, name, new_val):
     # type: (str, value_t) -> None
@@ -2077,7 +2076,7 @@ class Mem(object):
     return value.Undef()
 
   def GetCell(self, name, which_scopes=scope_e.Shopt):
-    # type: (str, scope_t) -> cell
+    # type: (str, scope_t) -> Cell
     """Get both the value and flags.
 
     Usages:
@@ -2278,9 +2277,9 @@ class Mem(object):
     return result
 
   def GetAllCells(self, which_scopes):
-    # type: (scope_t) -> Dict[str, cell]
+    # type: (scope_t) -> Dict[str, Cell]
     """Get all variables and their values, for 'set' builtin. """
-    result = {}  # type: Dict[str, cell]
+    result = {}  # type: Dict[str, Cell]
 
     if which_scopes == scope_e.Dynamic:
       scopes = self.var_stack

@@ -7,14 +7,14 @@ module runtime
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
-  assign_arg = (str var_name, value? rval, bool plus_eq, word blame_word)
+  AssignArg = (str var_name, value? rval, bool plus_eq, word blame_word)
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(List[str] argv, List[loc] arg_locs, ArgList? typed_args)
   | Assign(int builtin_id,
            List[str] argv, List[loc] arg_locs,
-           List[assign_arg] pairs)
+           List[AssignArg] pairs)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -79,12 +79,12 @@ module runtime
   # evaluation state for braced_var_sub 
   VarSubState = (bool join_array, bool is_type_query)
 
-  # A cell is a wrapper for a value.
+  # A Cell is a wrapper for a value.
   # TODO: add location for declaration for 'assigning const' error
 
   # Invariant: if exported or nameref is set, the val should be Str or Undef.
   # This is enforced in mem.SetValue but isn't expressed in the schema.
-  cell = (bool exported, bool readonly, bool nameref, value val)
+  Cell = (bool exported, bool readonly, bool nameref, value val)
 
   # Where scopes are used
   # Parent: for the 'setref' keyword
@@ -204,5 +204,5 @@ module runtime
   word_style = Expr | Unquoted | DQ | SQ
 
   # Hay "first word" namespace
-  hay_node = (Dict[str, hay_node] children)
+  HayNode = (Dict[str, HayNode] children)
 }

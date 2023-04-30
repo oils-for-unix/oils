@@ -11,9 +11,9 @@ echo status=$?
 pp cell nonexistent
 echo status=$?
 ## STDOUT:
-x = (cell exported:F readonly:F nameref:F val:(value.Str s:42))
+x = (Cell exported:F readonly:F nameref:F val:(value.Str s:42))
 status=0
-x = (cell exported:F readonly:F nameref:F val:(value.Str s:42))
+x = (Cell exported:F readonly:F nameref:F val:(value.Str s:42))
 status=0
 status=1
 ## END
@@ -23,7 +23,7 @@ declare -a array
 array[3]=42
 pp cell array
 ## STDOUT:
-array = (cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[_ _ _ 42]))
+array = (Cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[_ _ _ 42]))
 ## END
 
 

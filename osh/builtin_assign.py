@@ -9,7 +9,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
     value__AssocArray,
-    scope_e, cmd_value__Argv, cmd_value__Assign, assign_arg,
+    scope_e, cmd_value__Argv, cmd_value__Assign, AssignArg,
 )
 from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
@@ -196,7 +196,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
 
 def _ExportReadonly(mem, pair, flags):
-  # type: (Mem, assign_arg, int) -> None
+  # type: (Mem, AssignArg, int) -> None
   """ For 'export' and 'readonly' to respect += and flags.
 
   Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it

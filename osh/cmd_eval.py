@@ -79,7 +79,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.option_asdl import builtin_t
   from _devbuild.gen.runtime_asdl import (
-      cmd_value_t, cell, lvalue_t,
+      cmd_value_t, Cell, lvalue_t,
   )
   from _devbuild.gen.syntax_asdl import (
       redir, env_pair, proc_sig__Closed,
@@ -1917,7 +1917,7 @@ class CommandEvaluator(object):
     return status
 
   def EvalBlock(self, block):
-    # type: (command_t) -> Dict[str, cell]
+    # type: (command_t) -> Dict[str, Cell]
     """
     Returns a namespace.  For config files.
 
@@ -1929,7 +1929,7 @@ class CommandEvaluator(object):
 
     """
     status = 0
-    namespace_ = None  # type: Dict[str, cell]
+    namespace_ = None  # type: Dict[str, Cell]
     try:
       self._Execute(block)  # can raise FatalRuntimeError, etc.
     except vm.ControlFlow as e:  # A block is more like a function.

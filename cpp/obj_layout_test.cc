@@ -1,4 +1,4 @@
-#include "_gen/core/runtime.asdl.h"  // cell, etc
+#include "_gen/core/runtime.asdl.h"  // Cell, etc
 #include "_gen/frontend/syntax.asdl.h"
 #include "vendor/greatest.h"
 
@@ -12,7 +12,7 @@ TEST sizeof_syntax() {
   log("alignof(Token*) = %d", alignof(syntax_asdl::Token *));
 
   // Reordered to be 16 bytes
-  log("sizeof(cell) = %d", sizeof(runtime_asdl::cell));
+  log("sizeof(runtime_asdl::Cell) = %d", sizeof(runtime_asdl::Cell));
 
   // 24 bytes: std::vector
   log("sizeof(List<int>) = %d", sizeof(List<int>));

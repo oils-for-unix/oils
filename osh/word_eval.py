@@ -22,7 +22,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__AssocArray,
     value__MaybeStrArray, value__Obj,
     lvalue, lvalue_t,
-    assign_arg, 
+    AssignArg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     a_index, a_index_e, a_index__Int, a_index__Str,
     VTestPlace, VarSubState,
@@ -144,7 +144,7 @@ ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
 # Note: must use < > for grouping because there is no non-capturing group.
 
 def _SplitAssignArg(arg, blame_word):
-  # type: (str, word_t) -> assign_arg
+  # type: (str, word_t) -> AssignArg
   """Dynamically parse argument to declare, export, etc.
 
   This is a fallback to the static parsing done below.
@@ -167,8 +167,8 @@ def _SplitAssignArg(arg, blame_word):
     val = None  # no operator
     append = False
 
-  #log('ret %s', assign_arg(left, right, append, word_spid))
-  return assign_arg(var_name, val, append, blame_word)
+  #log('ret %s', AssignArg(left, right, append, word_spid))
+  return AssignArg(var_name, val, append, blame_word)
 
 
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
@@ -1974,7 +1974,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     flags = [arg0]  # initial flags like -p, and -f -F name1 name2
     flag_locs = [loc.Word(words[0])]  # type: List[loc_t]
-    assign_args = []  # type: List[assign_arg]
+    AssignArgs = []  # type: List[AssignArg]
 
     n = len(words)
     for i in xrange(1, n):  # skip first word
@@ -2009,15 +2009,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
           with state.ctx_AssignBuiltin(self.mutable_opts):
             right = self.EvalRhsWord(rhs)
 
-          arg2 = assign_arg(var_name, right, append, w)
+          arg2 = AssignArg(var_name, right, append, w)
 
-          assign_args.append(arg2)
+          AssignArgs.append(arg2)
 
         else:  # e.g. export $dynamic
           argv = self._EvalWordToArgv(w)
           for arg in argv:
             arg2 = _SplitAssignArg(arg, w)
-            assign_args.append(arg2)
+            AssignArgs.append(arg2)
 
       else:
         argv = self._EvalWordToArgv(w)
@@ -2034,12 +2034,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
           else:  # e.g. export $dynamic 
             if eval_to_pairs:
               arg2 = _SplitAssignArg(arg, w)
-              assign_args.append(arg2)
+              AssignArgs.append(arg2)
               started_pairs = True
             else:
               flags.append(arg)
 
-    return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
+    return cmd_value.Assign(builtin_id, flags, flag_locs, AssignArgs)
 
   def SimpleEvalWordSequence2(self, words, allow_assign):
     # type: (List[compound_word], bool) -> cmd_value_t

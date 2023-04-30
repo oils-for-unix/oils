@@ -119,10 +119,10 @@ languages, Zephyr ASDL, and a statically-typed subset of Python.
     frontend/         # Input and lexing common to OSH and YSH
     osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
     oil_lang/         # Oil parser and evaluator
+    data_lang/        # Languages based on JSON
     core/             # Other code shared between Oil and OSH
     pyext/            # Python extension modules, e.g. libc.c
     pylib/            # Borrowed from the Python standard library.
-    qsn_/             # QSN serialization format
     tools/            # User-facing tools, e.g. the osh2oil translator
 
 ### DSLs / Code Generators
