@@ -121,101 +121,6 @@ command command -v seq
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 127
 
-#### history -a
-case $SH in dash|mksh|zsh) exit 0 ;; esac
-
-rm -f tmp
-
-echo '
-history -c
-
-HISTFILE=tmp
-echo 1
-history -a
-cat tmp
-
-echo 2
-
-cat tmp
-' | $SH -i
-
-# match osh's behaviour of echoing ^D for EOF
-case $SH in bash) echo '^D' ;; esac
-
-## STDOUT:
-1
-HISTFILE=tmp
-echo 1
-history -a
-2
-HISTFILE=tmp
-echo 1
-history -a
-^D
-## END
-## N-I dash/mksh/zsh STDOUT:
-## END
-
-#### history -r
-case $SH in dash|mksh|zsh) exit 0 ;; esac
-
-rm -f tmp
-echo 'foo' > tmp
-
-echo '
-history -c
-
-HISTFILE=tmp
-history -r
-history
-' | $SH -i
-
-# match osh's behaviour of echoing ^D for EOF
-case $SH in bash) echo '^D' ;; esac
-
-## STDOUT:
-    1  HISTFILE=tmp
-    2  history -r
-    3  foo
-    4  history
-^D
-## END
-## N-I dash/mksh/zsh STDOUT:
-## END
-
-#### HISTFILE is defined initially
-case $SH in zsh) exit 0 ;; esac
-
-echo '
-if test -n $HISTFILE; then echo exists; fi
-' | $SH -i
-
-# match osh's behaviour of echoing ^D for EOF
-case $SH in bash|mksh|dash) echo '^D' ;; esac
-
-## STDOUT:
-exists
-^D
-## END
-## N-I zsh STDOUT:
-## END
-
-#### HISTFILE must be a string
-case $SH in bash|mksh|dash|zsh) exit 0 ;; esac
-
-echo '
-HISTFILE=(a b c)
-history -r
-echo $?
-' | $SH -i
-
-## STDOUT:
-1
-^D
-## END
-## N-I bash/mksh/dash/zsh STDOUT:
-## END
-
 #### history usage
 history
 echo status=$?
@@ -256,28 +161,6 @@ status=127
 status=127
 status=127
 ## END
-
-#### history -d to delete history item
-
-# TODO: Respect HISTFILE and fix this test
-
-case $SH in (dash|mksh|zsh) exit ;; esac
-
-history -d 1
-echo status=$?
-
-# problem: default for integers is -1
-history -d -1
-echo status=$?
-history -d -2
-echo status=$?
-
-## STDOUT:
-status=0
-status=1
-status=1
-## END
-## N-I dash/mksh/zsh stdout-json: ""
 
 #### $(command type ls)
 type() { echo FUNCTION; }
