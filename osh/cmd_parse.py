@@ -1118,16 +1118,16 @@ class CommandParser(object):
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
     self._Eat(Id.KW_Do)
-    do_spid = _KeywordSpid(self.cur_word)  # Must come AFTER _Eat
+    do_kw = _KeywordToken(self.cur_word)  # Must come AFTER _Eat
 
-    c_list = self._ParseCommandList()  # could be any thing
+    c_list = self._ParseCommandList()  # could be anything
 
     self._Eat(Id.KW_Done)
-    done_spid = _KeywordSpid(self.cur_word)  # after _Eat
+    done_kw = _KeywordToken(self.cur_word)  # after _Eat
 
-    node = command.DoGroup(c_list.children)
-    node.spids.append(do_spid)
-    node.spids.append(done_spid)
+    node = command.DoGroup(do_kw, c_list.children, done_kw)
+    node.spids.append(do_kw.span_id)
+    node.spids.append(done_kw.span_id)
     return node
 
   def ParseForWords(self):
@@ -1166,13 +1166,14 @@ class CommandParser(object):
       self._Next()
     return words, semi_spid
 
-  def _ParseForExprLoop(self, for_spid):
-    # type: (int) -> command__ForExpr
+  def _ParseForExprLoop(self, for_kw):
+    # type: (Token) -> command__ForExpr
     """
     for (( init; cond; update )) for_sep? do_group
     """
     node = self.w_parser.ReadForExpression()
-    node.spids.append(for_spid)
+    node.keyword = for_kw
+    node.spids.append(for_kw.span_id)
 
     self._Next()
 
@@ -1195,10 +1196,11 @@ class CommandParser(object):
       node.body = self.ParseDoGroup()
     return node
 
-  def _ParseForEachLoop(self, for_spid):
-    # type: (int) -> command__ForEach
+  def _ParseForEachLoop(self, for_kw):
+    # type: (Token) -> command__ForEach
     node = command.ForEach.CreateNull(alloc_lists=True)
-    node.spids.append(for_spid)  # for $LINENO and error fallback
+    node.keyword = for_kw
+    node.spids.append(for_kw.span_id)  # for $LINENO and error fallback
 
     num_iter_names = 0
     while True:
@@ -1270,7 +1272,7 @@ class CommandParser(object):
 
         # Now that we know there are words, do an extra check
         if num_iter_names > 2:
-          p_die('Expected at most 2 loop variables', loc.Span(for_spid))
+          p_die('Expected at most 2 loop variables', for_kw)
 
     elif self.c_id == Id.KW_Do:
       node.iterable = for_iter.Args()  # implicitly loop over "$@"
@@ -1299,7 +1301,7 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
-    for_spid = _KeywordSpid(self.cur_word)
+    for_kw = _KeywordToken(self.cur_word)
     self._Eat(Id.KW_For)
 
     self._Peek()
@@ -1309,12 +1311,12 @@ class CommandParser(object):
               loc.Word(self.cur_word))
 
       # for (( i = 0; i < 10; i++)
-      n1 = self._ParseForExprLoop(for_spid)
+      n1 = self._ParseForExprLoop(for_kw)
       n1.redirects = self._ParseRedirectList()
       return n1
     else:
       # for x in a b; do echo hi; done
-      n2 = self._ParseForEachLoop(for_spid)
+      n2 = self._ParseForEachLoop(for_kw)
       n2.redirects = self._ParseRedirectList()
       return n2
 

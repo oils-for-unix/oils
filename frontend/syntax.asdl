@@ -309,7 +309,7 @@ module syntax
   | Pipeline(List[command] children, bool negated, List[int] stderr_indices)
   | AndOr(List[id] ops, List[command] children)
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
-  | DoGroup(List[command] children)
+  | DoGroup(Token left, List[command] children, Token right)
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
@@ -317,13 +317,13 @@ module syntax
   | DParen(arith_expr child, List[redir] redirects)
   | DBracket(bool_expr expr, List[redir] redirects)
     # up to 3 iterations variables
-  | ForEach(List[str] iter_names, for_iter iterable, command body,
-            List[redir] redirects)
+  | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
+            command body, List[redir] redirects)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
     # order.
-  | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
-            command? body, List[redir] redirects)
+  | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
+            arith_expr? update, command? body, List[redir] redirects)
   | WhileUntil(Token keyword, condition cond, command body, List[redir] redirects)
   | If(List[if_arm] arms, List[command] else_action, List[redir] redirects)
   | Case(word to_match, List[case_arm] arms, List[redir] redirects)
