@@ -243,25 +243,19 @@ run-job-uke() {
 
   local image_id
   case $job_name in
-    (app-tests)
-      # Hack to reuse this container, e.g. for 'build/py.sh all'
-      image_id='ovm-tarball'
-      # allocate pseudo TTY, otherwise fails on opening /dev/tty 
-      flags=( -t )
-      ;;
-    (cpp-coverage)
+    cpp-coverage)
       image_id='clang'
       ;;
-    (interactive)
-      # missing mksh
-      # image_id='benchmarks2'
-
-      # has mksh, but missing C++ stuff
-      # image_id='dev-minimal'
-
+    app-tests)
+      # Hack to reuse this container, e.g. for 'build/py.sh all'
+      image_id='ovm-tarball'
+      # allocate pseudo TTY, ble.sh needs it or it fails on opening /dev/tty 
+      flags=( -t )
+      ;;
+    interactive)
       image_id='benchmarks'
-
       # pseudo TTY for job control tests (group-session)
+      # and to run 'interactive-osh' with job control enabled
       flags=( -t )
       ;;
     (*)
