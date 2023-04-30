@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
 
     word_e, word_t, word_str, word__BracedTree, word__String,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
-    assoc_pair,
+    AssocPair,
 )
 from asdl import runtime
 from mycpp.mylib import log
@@ -559,7 +559,7 @@ def DetectShAssignment(w):
 
 
 def DetectAssocPair(w):
-  # type: (compound_word) -> Optional[assoc_pair]
+  # type: (compound_word) -> Optional[AssocPair]
   """
   Like DetectShAssignment, but for A=(['k']=v ['k2']=v)
 
@@ -580,7 +580,7 @@ def DetectAssocPair(w):
       value = compound_word(parts[i+1:])  # $a$b from
 
       # Type-annotated intermediate value for mycpp translation
-      return assoc_pair(key, value)
+      return AssocPair(key, value)
 
   return None
 

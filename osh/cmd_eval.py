@@ -44,7 +44,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray,
-    redirect, redirect_arg, scope_e,
+    RedirValue, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
     CommandStatus, StatusArray, Proc, flow_e
 )
@@ -82,7 +82,7 @@ if TYPE_CHECKING:
       cmd_value_t, Cell, lvalue_t,
   )
   from _devbuild.gen.syntax_asdl import (
-      redir, env_pair, proc_sig__Closed,
+      Redir, EnvPair, proc_sig__Closed,
   )
   from core.alloc import Arena
   from core import optview
@@ -424,9 +424,9 @@ class CommandEvaluator(object):
       raise error.ErrExit(status, msg, blame_loc, show_code=cmd_st.show_code)
 
   def _EvalRedirect(self, r):
-    # type: (redir) -> redirect
+    # type: (Redir) -> RedirValue
 
-    result = redirect(r.op.id, r.op, r.loc, None)
+    result = RedirValue(r.op.id, r.op, r.loc, None)
 
     arg = r.arg
     UP_arg = arg
@@ -501,7 +501,7 @@ class CommandEvaluator(object):
     raise AssertionError('for -Wreturn-type in C++')
 
   def _EvalRedirects(self, node):
-    # type: (command_t) -> List[redirect]
+    # type: (command_t) -> List[RedirValue]
     """Evaluate redirect nodes to concrete objects.
 
     We have to do this every time, because you could have something like:
@@ -567,7 +567,7 @@ class CommandEvaluator(object):
         # command_e.BareDecl
         redirects = []
 
-    result = []  # type: List[redirect]
+    result = []  # type: List[RedirValue]
     for redir in redirects:
       result.append(self._EvalRedirect(redir))
 
@@ -592,7 +592,7 @@ class CommandEvaluator(object):
         raise AssertionError()
 
   def _EvalTempEnv(self, more_env, flags):
-    # type: (List[env_pair], int) -> None
+    # type: (List[EnvPair], int) -> None
     """For FOO=1 cmd."""
     for e_pair in more_env:
       val = self.word_ev.EvalRhsWord(e_pair.val)

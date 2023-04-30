@@ -153,11 +153,11 @@ module syntax
   # TODO: every word_part has Token left, Token right, and remove int* spids
   # these are used in the main program for alias expansion
 
-  assoc_pair = (compound_word key, compound_word value)
+  AssocPair = (compound_word key, compound_word value)
 
   word_part = 
     ShArrayLiteral %sh_array_literal
-  | AssocArrayLiteral(Token left, List[assoc_pair] pairs)
+  | AssocArrayLiteral(Token left, List[AssocPair] pairs)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
@@ -258,11 +258,11 @@ module syntax
             List[word_part] stdin_parts  # one for each line
            )
 
-  redir = (Token op, redir_loc loc, redir_param arg)
+  Redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  assign_pair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, List[int] spids)
-  env_pair = (str name, rhs_word val, List[int] spids)
+  AssignPair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, List[int] spids)
+  EnvPair = (str name, rhs_word val, List[int] spids)
 
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
@@ -281,7 +281,7 @@ module syntax
   # TODO: Make field names consistent: child vs expr, etc.
   BraceGroup = (
       Token left, Token? doc_token, List[command] children,
-      List[redir] redirects, Token right
+      List[Redir] redirects, Token right
   )
 
   # TODO: every command needs Token left
@@ -295,14 +295,14 @@ module syntax
   command = 
     NoOp
     # Note: do_fork is semantic, not syntactic
-  | Simple(List[word] words, List[redir] redirects, List[env_pair] more_env,
+  | Simple(List[word] words, List[Redir] redirects, List[EnvPair] more_env,
            ArgList? typed_args, BlockArg? block, bool do_fork)
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
-  | ExpandedAlias(command child, List[redir] redirects, List[env_pair] more_env)
+  | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
   | Sentence(command child, Token terminator)
     # Note: Only represents "bare assignment"
-  | ShAssignment(List[assign_pair] pairs, List[redir] redirects)
+  | ShAssignment(List[AssignPair] pairs, List[Redir] redirects)
   | ControlFlow(Token keyword, word? arg_word)
     # Note: There are spids for every pipeline operator, parallel to
     # stderr_indices
@@ -313,20 +313,20 @@ module syntax
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(command child, List[redir] redirects)
-  | DParen(arith_expr child, List[redir] redirects)
-  | DBracket(bool_expr expr, List[redir] redirects)
+  | Subshell(command child, List[Redir] redirects)
+  | DParen(arith_expr child, List[Redir] redirects)
+  | DBracket(bool_expr expr, List[Redir] redirects)
     # up to 3 iterations variables
   | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
-            command body, List[redir] redirects)
+            command body, List[Redir] redirects)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
     # order.
   | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
-            arith_expr? update, command? body, List[redir] redirects)
-  | WhileUntil(Token keyword, condition cond, command body, List[redir] redirects)
-  | If(List[if_arm] arms, List[command] else_action, List[redir] redirects)
-  | Case(word to_match, List[case_arm] arms, List[redir] redirects)
+            arith_expr? update, command? body, List[Redir] redirects)
+  | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
+  | If(List[if_arm] arms, List[command] else_action, List[Redir] redirects)
+  | Case(word to_match, List[case_arm] arms, List[Redir] redirects)
   | ShFunction(str name, command body)
   | TimeBlock(command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for

@@ -7,7 +7,7 @@ from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.runtime_asdl import redirect, trace
+from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
     command_sub, compound_word, loc, loc_t
@@ -610,7 +610,7 @@ class ShellExecutor(vm._Executor):
       raise AssertionError()
 
   def PushRedirects(self, redirects):
-    # type: (List[redirect]) -> bool
+    # type: (List[RedirValue]) -> bool
     return self.fd_state.Push(redirects)
 
   def PopRedirects(self):

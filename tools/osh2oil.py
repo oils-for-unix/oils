@@ -68,7 +68,7 @@ from _devbuild.gen.syntax_asdl import (
     simple_var_sub, braced_var_sub, command_sub, double_quoted, single_quoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
     condition_e, condition__Shell,
-    redir, redir_param_e, redir_param__HereDoc,
+    Redir, redir_param_e, redir_param__HereDoc,
 )
 from asdl import runtime
 from core.pyerror import p_die
@@ -268,7 +268,7 @@ class OilPrinter(object):
     self.cursor.PrintUntil(self.arena.LastSpanId())
 
   def DoRedirect(self, node, local_symbols):
-    # type: (redir, Dict[str, bool]) -> None
+    # type: (Redir, Dict[str, bool]) -> None
     """
     Currently Unused
     TODO: It would be nice to change here docs to <<< '''

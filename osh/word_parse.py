@@ -53,7 +53,7 @@ from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox, Token, loc,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
-    sh_array_literal, assoc_pair,
+    sh_array_literal, AssocPair,
 
     arith_expr_t, bracket_op, bracket_op_t,
 
@@ -1354,7 +1354,7 @@ class WordParser(WordEmitter):
       node = sh_array_literal(left_token, no_words)
       return node
  
-    pairs = []  # type: List[assoc_pair]
+    pairs = []  # type: List[AssocPair]
     # If the first one is a key/value pair, then the rest are assumed to be.
     pair = word_.DetectAssocPair(words[0])
     if pair:

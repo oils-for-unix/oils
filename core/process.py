@@ -18,7 +18,7 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t, job_state_str, wait_status, wait_status_t,
-    redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
+    RedirValue, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc, value, value_e, value__Str,
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
@@ -355,7 +355,7 @@ class FdState(object):
     self.cur_frame.need_wait.append(proc)
 
   def _ApplyRedirect(self, r):
-    # type: (redirect) -> None
+    # type: (RedirValue) -> None
     arg = r.arg
     UP_arg = arg
     with tagswitch(arg) as case:
@@ -471,7 +471,7 @@ class FdState(object):
           posix.close(write_fd)
 
   def Push(self, redirects):
-    # type: (List[redirect]) -> bool
+    # type: (List[RedirValue]) -> bool
     """Apply a group of redirects and remember to undo them."""
 
     #log('> fd_state.Push %s', redirects)

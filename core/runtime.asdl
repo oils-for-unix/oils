@@ -124,8 +124,8 @@ module runtime
   | CloseFd
   | HereDoc(str body)  # call this String and combine with Path?
 
-  # evaluated version of syntax.redir
-  redirect = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
+  # Evaluated version of syntax.Redir
+  RedirValue = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
 
   # What command.ShFunction and command.Proc evaluate to
   # For ShFunction, this is trivial.  For Proc, we evaluate default args.

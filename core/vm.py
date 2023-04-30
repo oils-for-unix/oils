@@ -13,7 +13,7 @@ from core import pyos
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
-      cmd_value__Argv, cmd_value__Assign, redirect
+      cmd_value__Argv, cmd_value__Assign, RedirValue
   )
   from _devbuild.gen.syntax_asdl import (
       command_t, command__Pipeline, command_sub
@@ -189,7 +189,7 @@ class _Executor(object):
     return ''
 
   def PushRedirects(self, redirects):
-    # type: (List[redirect]) -> bool
+    # type: (List[RedirValue]) -> bool
     return True
 
   def PopRedirects(self):

@@ -25,13 +25,13 @@ from _devbuild.gen.syntax_asdl import (
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
-    redir, redir_param, redir_param__HereDoc,
+    Redir, redir_param, redir_param__HereDoc,
     redir_loc, redir_loc_t,
     word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
     rhs_word, rhs_word_t,
 
-    assign_pair, env_pair, assign_op_e, NameType,
+    AssignPair, EnvPair, assign_op_e, NameType,
 
     SourceLine,
     source, parse_result, parse_result_t,
@@ -95,7 +95,7 @@ def _KeywordToken(UP_w):
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
-                   h,  # type: redir
+                   h,  # type: Redir
                    delimiter,  # type: str
                    ):
   # type: (...) -> Tuple[List[Tuple[SourceLine, int]], Tuple[SourceLine, int]]
@@ -160,7 +160,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[SourceLine, int]]
 
 
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
-  # type: (ParseContext, redir, _Reader, Arena) -> None
+  # type: (ParseContext, Redir, _Reader, Arena) -> None
   """Fill in attributes of a pending here doc node."""
   h = cast(redir_param__HereDoc, r.arg)
   # "If any character in word is quoted, the delimiter shall be formed by
@@ -190,8 +190,8 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
-  # type: (ParseContext, PreParsedItem, Arena) -> assign_pair
-  """Create an assign_pair from a 4-tuples from DetectShAssignment."""
+  # type: (ParseContext, PreParsedItem, Arena) -> AssignPair
+  """Create an AssignPair from a 4-tuples from DetectShAssignment."""
 
   left_token, close_token, part_offset, w = preparsed
 
@@ -263,12 +263,12 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     word_.TildeDetectAssign(tmp2)
     rhs = tmp2
 
-  pair = syntax_asdl.assign_pair(lhs, op, rhs, [left_token.span_id])
+  pair = AssignPair(lhs, op, rhs, [left_token.span_id])
   return pair
 
 
 def _AppendMoreEnv(preparsed_list, more_env):
-  # type: (PreParsedList, List[env_pair]) -> None
+  # type: (PreParsedList, List[EnvPair]) -> None
   """Helper to modify a SimpleCommand node.
 
   Args:
@@ -290,7 +290,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     else:
       val = compound_word(w.parts[part_offset:])
 
-    pair = syntax_asdl.env_pair(var_name, val, [left_token.span_id])
+    pair = EnvPair(var_name, val, [left_token.span_id])
     more_env.append(pair)
 
 
@@ -323,7 +323,7 @@ def _SplitSimpleCommandPrefix(words):
 def _MakeSimpleCommand(
     preparsed_list,  # type: PreParsedList
     suffix_words,    # type: List[compound_word]
-    redirects,       # type: List[redir]
+    redirects,       # type: List[Redir]
     typed_args,      # type: Optional[ArgList]
     block,           # type: Optional[BlockArg]
     ):
@@ -352,7 +352,7 @@ def _MakeSimpleCommand(
   words2 = braces.BraceDetectAll(suffix_words)
   words3 = word_.TildeDetectAll(words2)
 
-  more_env = []  # type: List[env_pair]
+  more_env = []  # type: List[EnvPair]
   _AppendMoreEnv(preparsed_list, more_env)
   # do_fork by default
   node = command.Simple(words3, redirects, more_env, typed_args, block, True)
@@ -515,7 +515,7 @@ class CommandParser(object):
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
 
-    self.pending_here_docs = []  # type: List[redir]  # should have HereLiteral arg
+    self.pending_here_docs = []  # type: List[Redir]  # should have HereLiteral arg
 
   def ResetInputObjects(self):
     # type: () -> None
@@ -601,7 +601,7 @@ class CommandParser(object):
     return False
 
   def ParseRedirect(self):
-    # type: () -> redir
+    # type: () -> Redir
     self._Peek()
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
@@ -638,7 +638,7 @@ class CommandParser(object):
       arg.here_begin = self.cur_word
       arg.stdin_parts = []
 
-      r = redir(op_tok, where, arg)
+      r = Redir(op_tok, where, arg)
 
       self.pending_here_docs.append(r)  # will be filled on next newline.
 
@@ -657,15 +657,15 @@ class CommandParser(object):
 
     # We should never get Empty, Token, etc.
     assert arg_word.tag_() == word_e.Compound, arg_word
-    return redir(op_tok, where, cast(compound_word, arg_word))
+    return Redir(op_tok, where, cast(compound_word, arg_word))
 
   def _ParseRedirectList(self):
-    # type: () -> List[redir]
+    # type: () -> List[Redir]
     """Try parsing any redirects at the cursor.
 
     This is used for blocks only, not commands.
     """
-    redirects = []  # type: List[redir]
+    redirects = []  # type: List[Redir]
     while True:
       self._Peek()
 
@@ -681,9 +681,9 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir], List[compound_word], Optional[ArgList], Optional[BlockArg]]
+    # type: () -> Tuple[List[Redir], List[compound_word], Optional[ArgList], Optional[BlockArg]]
     """First pass: Split into redirects and words."""
-    redirects = []  # type: List[redir]
+    redirects = []  # type: List[Redir]
     words = []  # type: List[compound_word]
     typed_args = None  # type: Optional[ArgList]
     block = None  # type: Optional[BlockArg]
@@ -1020,7 +1020,7 @@ class CommandParser(object):
         p_die("Unexpected typed args", loc.Span(typed_spid))
 
       # ShAssignment: No suffix words like ONE=1 a[x]=1 TWO=2
-      pairs = []  # type: List[assign_pair]
+      pairs = []  # type: List[AssignPair]
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
@@ -1060,7 +1060,7 @@ class CommandParser(object):
       expanded_node = self._MaybeExpandAliases(suffix_words)
       if expanded_node:
         # Attach env bindings and redirects to the expanded node.
-        more_env = []  # type: List[env_pair]
+        more_env = []  # type: List[EnvPair]
         _AppendMoreEnv(preparsed_list, more_env)
         exp = command.ExpandedAlias(expanded_node, redirects, more_env)
         return exp

@@ -8,7 +8,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    redirect, redirect_arg, cmd_value, trace
+    RedirValue, redirect_arg, cmd_value, trace
 )
 from _devbuild.gen.syntax_asdl import loc, redir_loc
 from asdl import runtime
@@ -84,7 +84,7 @@ class ProcessTest(unittest.TestCase):
 
     # Should get the first line twice, because Pop() closes it!
 
-    r = redirect(Id.Redir_Less, runtime.NO_SPID, redir_loc.Fd(0),
+    r = RedirValue(Id.Redir_Less, runtime.NO_SPID, redir_loc.Fd(0),
                  redirect_arg.Path(PATH))
 
     class CommandEvaluator(object):
