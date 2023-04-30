@@ -13,6 +13,7 @@ import readline
 from core import test_lib
 from core import state
 from core import alloc
+from core import ui
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from osh import builtin_lib  # module under test
@@ -84,7 +85,8 @@ def _TestHistory(argv):
    f = cStringIO.StringIO()
    arena = alloc.Arena()
    mem = state.Mem('', [], arena, [])
-   b = builtin_lib.History(readline, mem, f)
+   errfmt = ui.ErrorFormatter(arena)
+   b = builtin_lib.History(readline, mem, errfmt, f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
    b.Run(cmd_val)
    return f.getvalue()

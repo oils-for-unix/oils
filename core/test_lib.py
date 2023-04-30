@@ -210,6 +210,7 @@ def InitCommandEvaluator(
       builtin_i.history: builtin_lib.History(
         readline,
         mem,
+        errfmt,
         mylib.Stdout(),
       ),
 

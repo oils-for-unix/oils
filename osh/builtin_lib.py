@@ -39,10 +39,11 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline, mem, f):
-    # type: (Optional[Readline], state.Mem, mylib.Writer) -> None
+  def __init__(self, readline, mem, errfmt, f):
+    # type: (Optional[Readline], state.Mem, ErrorFormatter, mylib.Writer) -> None
     self.readline = readline
     self.mem = mem
+    self.errfmt = errfmt
     self.f = f  # this hook is for unit testing only
 
   def GetHistoryFilename(self):
@@ -85,9 +86,9 @@ class History(vm._Builtin):
 
     if arg.r:
       history_filename = self.GetHistoryFilename()
-      history_file_exists = path_stat.exists(history_filename)
-      if not history_file_exists:
-        raise error.ErrExit(1, "The file '%s' ($HISTFILE) does not exist" % history_filename, loc.Missing())
+      if not path_stat.exists(history_filename):
+        self.errfmt.Print_("The file '%s' ($HISTFILE) does not exist" % history_filename, loc.Missing())
+        return 1
 
       readline.read_history_file(history_filename)
       return 0
