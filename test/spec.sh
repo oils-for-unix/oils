@@ -261,8 +261,17 @@ tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
 interactive-osh() {
+  # Note: without MAX_PROCS=1, I observed at least 2 instances of hanging (for
+  # 30 minutes)
+  #
+  # TODO:
+  # - better diagnostics from those hanging instances
+  #   - note: worked OK (failed to hang) one time in soil/host-shim.sh local-test-uke
+  # - I suspect job control, we need to test it more throoughly, by simulating
+  #   the kernel in Python unit tests
+
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel interactive osh-only interactive-osh
+  MAX_PROCS=1 test/spec-runner.sh all-parallel interactive osh-only interactive-osh
 }
 
 interactive-bash() {
