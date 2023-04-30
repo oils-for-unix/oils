@@ -132,8 +132,8 @@ module syntax
   )
 
   # Variants:
-  # - Look at left token for $'' c'' vs r'' ''
-  # - """ and ''' strings have a boolean set
+  # - Look at left token ID for $'' c'' vs r'' '' e.g. Id.Left_DollarSingleQuote
+  # - And """ and ''' e.g. Id.Left_TDoubleQuote
   double_quoted = (Token left, List[word_part] parts, Token right)
   single_quoted = (Token left, List[Token] tokens, Token right)
 
@@ -194,13 +194,6 @@ module syntax
   # Invariant: compound_word always has at least one part (as opposed to
   # rhs_word.Empty)
   compound_word = (List[word_part] parts)
-
-  # dedent is calculated from the first part
-  # TODO: could be string_part
-  string_line = (int dedent, List[word_part] part)
-
-  # min_dedent is calculated from each line using Julia's rules
-  triple_quoted = (int min_dedent, List[string_line] lines)
 
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
   # The latter is semantically necessary.  (See osh/word_parse.py). 
@@ -269,8 +262,8 @@ module syntax
   | Oil(expr e)               # if (x > 0) { echo hi }
 
   # Each arm tests one word against multiple words
-  case_arm = (List[word] pat_list, List[command] action, List[int] spids)
-  if_arm = (condition cond, List[command] action, List[int] spids)
+  CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
+  IfArm = (condition cond, List[command] action, List[int] spids)
 
   for_iter = 
     Args                      # for x; do echo $x; done # implicit "$@"
@@ -325,8 +318,8 @@ module syntax
   | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
             arith_expr? update, command? body, List[Redir] redirects)
   | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
-  | If(List[if_arm] arms, List[command] else_action, List[Redir] redirects)
-  | Case(word to_match, List[case_arm] arms, List[Redir] redirects)
+  | If(List[IfArm] arms, List[command] else_action, List[Redir] redirects)
+  | Case(word to_match, List[CaseArm] arms, List[Redir] redirects)
   | ShFunction(str name, command body)
   | TimeBlock(command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for

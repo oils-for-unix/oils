@@ -22,7 +22,7 @@ from _devbuild.gen.syntax_asdl import (
     command__Subshell, command__DBracket, command__DParen,
     command__CommandList, command__Proc,
     ArgList, BraceGroup, BlockArg,
-    case_arm,
+    CaseArm, IfArm,
 
     sh_lhs_expr, sh_lhs_expr_t,
     Redir, redir_param, redir_param__HereDoc,
@@ -1352,7 +1352,7 @@ class CommandParser(object):
     return node
 
   def ParseCaseItem(self):
-    # type: () -> case_arm
+    # type: () -> CaseArm
     """
     case_item: '('? pattern ('|' pattern)* ')'
                newline_ok command_term? trailer? ;
@@ -1400,11 +1400,11 @@ class CommandParser(object):
     self._NewlineOk()
 
     spids = [left_spid, rparen_spid, dsemi_spid, last_spid]
-    arm = syntax_asdl.case_arm(pat_words, action_children, spids)
+    arm = CaseArm(pat_words, action_children, spids)
     return arm
 
   def ParseCaseList(self, arms):
-    # type: (List[case_arm]) -> None
+    # type: (List[CaseArm]) -> None
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
@@ -1503,7 +1503,7 @@ class CommandParser(object):
       body = self.ParseBraceGroup()
       self._Peek()
 
-      arm = syntax_asdl.if_arm(cond, body.children, [elif_spid])
+      arm = IfArm(cond, body.children, [elif_spid])
       arms.append(arm)
 
     self._Peek()
@@ -1541,7 +1541,7 @@ class CommandParser(object):
     body1 = self.ParseBraceGroup()
     # Every arm has 1 spid, unlike shell-style
     # TODO: We could get the spids from the brace group.
-    arm = syntax_asdl.if_arm(cond, body1.children, [if_spid])
+    arm = IfArm(cond, body1.children, [if_spid])
 
     if_node.arms.append(arm)
 
@@ -1573,7 +1573,7 @@ class CommandParser(object):
       self._Eat(Id.KW_Then)
 
       body = self._ParseCommandList()
-      arm = syntax_asdl.if_arm(cond, body.children, [elif_spid, then_spid])
+      arm = IfArm(cond, body.children, [elif_spid, then_spid])
 
       arms.append(arm)
 
@@ -1616,7 +1616,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Then)
     body = self._ParseCommandList()
 
-    arm = syntax_asdl.if_arm(cond, body.children, [if_spid, then_spid])
+    arm = IfArm(cond, body.children, [if_spid, then_spid])
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
