@@ -30,16 +30,17 @@ from _devbuild.gen.syntax_asdl import (
     redir_loc__Fd,
 )
 from core import dev
+from core import error
+from core.error import e_die
 from core import pyutil
 from core import pyos
 from core import state
 from core import ui
 from core import util
-from core.error import e_die
+from data_lang import qsn
 from frontend import location
 from frontend import match
 from osh import cmd_eval
-from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems, StrFromC
 
@@ -1346,9 +1347,11 @@ def _GetTtyFd():
 
 class ctx_TerminalControl(object):
 
-  def __init__(self, job_control):
-    # type: (JobControl) -> None
+  def __init__(self, job_control, errfmt):
+    # type: (JobControl, ui.ErrorFormatter) -> None
+    job_control.InitJobControl()
     self.job_control = job_control
+    self.errfmt = errfmt
 
   def __enter__(self):
     # type: () -> None
@@ -1357,8 +1360,12 @@ class ctx_TerminalControl(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
 
-    # TODO: can we raise internally?
-    self.job_control.MaybeReturnTerminal()
+    # Return the TTY to the original owner before exiting.
+    try:
+      self.job_control.MaybeReturnTerminal()
+    except error.FatalRuntime as e:
+      # Don't abort the shell on error, just print a message.
+      self.errfmt.PrettyPrintError(e)
 
 
 class JobControl(object):

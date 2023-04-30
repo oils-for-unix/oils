@@ -771,37 +771,34 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    process.InitInteractiveShell()
-    job_control.InitJobControl()
+    process.InitInteractiveShell()  # Set signal handlers
 
-    # NOTE: rc files loaded AFTER _InitDefaultCompletions.
-    for rc_path in rc_paths:
-      with state.ctx_ThisDir(mem, rc_path):
-        try:
-          SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
-        except util.UserExit as e:
-          return e.status
+    # The interactive shell leads a process group which controls the terminal.
+    # It MUST give up the termianl afterward, otherwise we get SIGTTIN /
+    # SIGTTOU bugs.
+    with process.ctx_TerminalControl(job_control, errfmt):
 
-    assert line_reader is not None
-    line_reader.Reset()  # After sourcing startup file, render $PS1
+      # NOTE: rc files loaded AFTER _InitDefaultCompletions.
+      for rc_path in rc_paths:
+        with state.ctx_ThisDir(mem, rc_path):
+          try:
+            SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt)
+          except util.UserExit as e:
+            return e.status
 
-    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
-    try:
-      status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
-                                     prompt_plugin, errfmt)
-    except util.UserExit as e:
-      status = e.status
+      assert line_reader is not None
+      line_reader.Reset()  # After sourcing startup file, render $PS1
 
-    mut_status = IntParamBox(status)
-    cmd_ev.MaybeRunExitTrap(mut_status)
-    status = mut_status.i
+      prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
+      try:
+        status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
+                                       prompt_plugin, errfmt)
+      except util.UserExit as e:
+        status = e.status
 
-    # Return the TTY to the original owner before exiting.
-    try:
-      job_control.MaybeReturnTerminal()
-    except error.FatalRuntime as e:
-      # Don't abort the shell on error, just print a message.
-      errfmt.PrettyPrintError(e)
+      mut_status = IntParamBox(status)
+      cmd_ev.MaybeRunExitTrap(mut_status)
+      status = mut_status.i
 
     if readline:
       try:
