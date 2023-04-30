@@ -105,7 +105,7 @@ class Pp(_Builtin):
 
         # TODO: not just command__ShFunction, but command__Proc!
         doc = ''
-        if body.tag_() == command_e.BraceGroup:
+        if body.tag() == command_e.BraceGroup:
           bgroup = cast(BraceGroup, body)
           if bgroup.doc_token:
             token = bgroup.doc_token

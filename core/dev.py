@@ -287,7 +287,7 @@ class Tracer(object):
     # type: (str) -> str
     """The prefix of each line."""
     val = self.mem.GetValue('PS4')
-    if val.tag_() == value_e.Str:
+    if val.tag() == value_e.Str:
       ps4 = cast(value__Str, val).s
     else:
       ps4 = ''

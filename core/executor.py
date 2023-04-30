@@ -149,7 +149,7 @@ class ShellExecutor(vm._Executor):
     Assume we will run the node in another process.  Return a process.
     """
     UP_node = node
-    if node.tag_() == command_e.ControlFlow:
+    if node.tag() == command_e.ControlFlow:
       node = cast(command__ControlFlow, UP_node)
       # Pipeline or subshells with control flow are invalid, e.g.:
       # - break | less
@@ -345,7 +345,7 @@ class ShellExecutor(vm._Executor):
     #  makes bookkeeping somewhat simpler."
     UP_node = node
 
-    if UP_node.tag_() == command_e.Pipeline:
+    if UP_node.tag() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
       pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
                             self.job_control, self.job_list)
@@ -432,7 +432,7 @@ class ShellExecutor(vm._Executor):
     node = cs_part.child
 
     # Hack for weird $(<file) construct
-    if node.tag_() == command_e.Simple:
+    if node.tag() == command_e.Simple:
       simple = cast(command__Simple, node)
       # Detect '< file'
       if (len(simple.words) == 0 and

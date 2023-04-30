@@ -28,7 +28,7 @@ using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode_e;
 
 void PrintTag(arith_expr_t* a) {
-  switch (a->tag_()) {
+  switch (a->tag()) {
   case arith_expr_e::Const:
     log("Const");
     break;
@@ -46,14 +46,14 @@ TEST misc_test() {
   log("sizeof *c = %d", sizeof *c);  // 16 bytes
 
   ASSERT_EQ_FMT(42, c->i, "%d");
-  log("c->tag = %d", c->tag_());
+  log("c->tag = %d", c->tag());
   PrintTag(c);
 
   auto v = Alloc<arith_expr__Var>(StrFromC("foo"));
   log("sizeof *v = %d", sizeof *v);  // 24 bytes
 
   ASSERT(str_equals(StrFromC("foo"), v->name));
-  log("v->tag = %d", v->tag_());
+  log("v->tag = %d", v->tag());
   PrintTag(v);
 
   auto u = Alloc<arith_expr__Unary>(StrFromC("-"), v);
@@ -70,9 +70,9 @@ TEST misc_test() {
   log("p->negated = %d", p->negated);
 
 #if 0
-  if (t->tag_() == hnode_e::Leaf) {
+  if (t->tag() == hnode_e::Leaf) {
     hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);
-    log("%s", hnode_str(t2->tag_()));
+    log("%s", hnode_str(t2->tag()));
     log("%s", color_str(t2->color));
     log("%s", t2->s->data_);
   }
@@ -106,17 +106,17 @@ TEST shared_variant_test() {
   word_part_t* wp = nullptr;
   wp = dq;  // assign to base type
 
-  log("wp->tag_() %d", wp->tag_());
+  log("wp->tag() %d", wp->tag());
 
   auto* token = Alloc<Token>(0, StrFromC("hi"));
   tok_t* tok = nullptr;
   tok = token;
 
-  log("tok->tag_() for Token = %d", tok->tag_());
+  log("tok->tag() for Token = %d", tok->tag());
 
   auto* eof = Alloc<tok::Eof>();
   tok = eof;
-  log("tok->tag_() for Eof = %d", tok->tag_());
+  log("tok->tag() for Eof = %d", tok->tag());
 
   PASS();
 }
@@ -136,7 +136,7 @@ TEST pretty_print_test() {
   log("sizeof b = %d", sizeof b);
   log("");
   hnode_t* t1 = b->PrettyTree();
-  ASSERT_EQ(hnode_e::Record, t1->tag_());
+  ASSERT_EQ(hnode_e::Record, t1->tag());
 
   auto f = mylib::Stdout();
   auto ast_f = Alloc<format::TextOutput>(f);
@@ -145,7 +145,7 @@ TEST pretty_print_test() {
   // typed_arith.asdl
   auto c = Alloc<arith_expr__Const>(42);
   hnode_t* t2 = c->PrettyTree();
-  ASSERT_EQ(hnode_e::Record, t2->tag_());
+  ASSERT_EQ(hnode_e::Record, t2->tag());
 
   PASS();
 }
@@ -202,14 +202,14 @@ List<int>* g_list = NewList<int>({i0, 8, 9});
 TEST literal_test() {
   // Interesting, initializer list part of the constructor "runs".  Otherwise
   // this doesn't work.
-  log("g_ft.tag_() = %d", g_ft.obj.tag_());
+  log("g_ft.tag() = %d", g_ft.obj.tag());
   auto ft = Alloc<flag_type::Bool>();
-  ASSERT_EQ(g_ft.obj.tag_(), ft->tag_());
+  ASSERT_EQ(g_ft.obj.tag(), ft->tag());
 
-  log("g_ret.tag_() = %d", g_ret.obj.tag_());
+  log("g_ret.tag() = %d", g_ret.obj.tag());
   log("g_ret.status = %d", g_ret.obj.status);
   auto ret = Alloc<cflow__Return>(5);
-  ASSERT_EQ(g_ret.obj.tag_(), ret->tag_());
+  ASSERT_EQ(g_ret.obj.tag(), ret->tag());
   ASSERT_EQ(g_ret.obj.status, ret->status);
 
 #if 0

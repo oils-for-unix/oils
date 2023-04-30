@@ -554,7 +554,7 @@ class ShellFuncAction(CompletionAction):
     # Read the response.  (The name 'COMP_REPLY' would be more consistent with others.)
     val = self.cmd_ev.mem.GetValue('COMPREPLY', scope_e.GlobalOnly)
 
-    if val.tag_() == value_e.Undef:
+    if val.tag() == value_e.Undef:
       # We set it above, so this error would only happen if the user unset it.
       # Not changing it means there were no completions.
       # TODO: This writes over the command line; it would be better to use an
@@ -563,8 +563,8 @@ class ShellFuncAction(CompletionAction):
                    self.func.name)
       return
 
-    if val.tag_() != value_e.MaybeStrArray:
-      print_stderr('ERROR: COMPREPLY should be an array, got %s' % value_str(val.tag_()))
+    if val.tag() != value_e.MaybeStrArray:
+      print_stderr('ERROR: COMPREPLY should be an array, got %s' % value_str(val.tag()))
       return
 
     # TODO: Print structured value_t in C++.  This line is wrong:
@@ -626,7 +626,7 @@ class ExternalCommandAction(CompletionAction):
     - When PATH is changed, we can remove old entries.
     """
     val = self.mem.GetValue('PATH')
-    if val.tag_() != value_e.Str:
+    if val.tag() != value_e.Str:
       # No matches if not a string
       return
 
@@ -821,7 +821,7 @@ def WordEndsWithCompDummy(w):
   # type: (CompoundWord) -> bool
   last_part = w.parts[-1]
   UP_part = last_part
-  if last_part.tag_() == word_part_e.Literal:
+  if last_part.tag() == word_part_e.Literal:
     last_part = cast(Token, UP_part)
     return last_part.id == Id.Lit_CompDummy
   else:
@@ -990,8 +990,8 @@ class RootCompleter(CompletionAction):
       # EXACTLY what we want.
       parts = trail.words[-1].parts
       if (len(parts) == 2 and
-          parts[0].tag_() == word_part_e.Literal and
-          parts[1].tag_() == word_part_e.Literal and
+          parts[0].tag() == word_part_e.Literal and
+          parts[1].tag() == word_part_e.Literal and
           cast(Token, parts[0]).id == Id.Lit_TildeLike and
           cast(Token, parts[1]).id == Id.Lit_CompDummy):
         t2 = cast(Token, parts[0])
@@ -1013,7 +1013,7 @@ class RootCompleter(CompletionAction):
       r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       # TODO: Don't complete <<< 'h'
-      if (r.arg.tag_() == redir_param_e.Word and
+      if (r.arg.tag() == redir_param_e.Word and
           consts.RedirArgType(r.op.id) == redir_arg_type_e.Path):
         arg_word = r.arg
         UP_word = arg_word
@@ -1026,7 +1026,7 @@ class RootCompleter(CompletionAction):
           except error.FatalRuntime as e:
             debug_f.writeln('Error evaluating redirect word: %s' % e)
             return
-          if val.tag_() != value_e.Str:
+          if val.tag() != value_e.Str:
             debug_f.writeln("Didn't get a string from redir arg")
             return
 
@@ -1087,7 +1087,7 @@ class RootCompleter(CompletionAction):
           except error.FatalRuntime:
             # Why would it fail?
             continue
-          if val.tag_() == value_e.Str:
+          if val.tag() == value_e.Str:
             partial_argv.append(val.s)
           else:
             pass

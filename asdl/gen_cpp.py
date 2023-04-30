@@ -347,7 +347,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('  %s_t() {' % sum_name)
     Emit('  }')
     Emit(' public:')
-    Emit('  int tag_() const {')
+    Emit('  int tag() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
     Emit('    return ObjHeader::FromObject(this)->type_tag;')
     Emit('  }')
@@ -707,7 +707,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     for func_name in PRETTY_METHODS:
       self.Emit('')
       self.Emit('hnode_t* %s_t::%s() {' % (sum_name, func_name))
-      self.Emit('  switch (this->tag_()) {', depth)
+      self.Emit('  switch (this->tag()) {', depth)
 
       for variant in sum.types:
         if variant.shared_type:

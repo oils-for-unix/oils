@@ -55,9 +55,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   tmp_a = flag.get('a')
   tmp_A = flag.get('A')
 
-  flag_g = cast(value__Bool, tmp_g).b if tmp_g and tmp_g.tag_() == value_e.Bool else False
-  flag_a = cast(value__Bool, tmp_a).b if tmp_a and tmp_a.tag_() == value_e.Bool else False
-  flag_A = cast(value__Bool, tmp_A).b if tmp_A and tmp_A.tag_() == value_e.Bool else False
+  flag_g = cast(value__Bool, tmp_g).b if tmp_g and tmp_g.tag() == value_e.Bool else False
+  flag_a = cast(value__Bool, tmp_a).b if tmp_a and tmp_a.tag() == value_e.Bool else False
+  flag_A = cast(value__Bool, tmp_A).b if tmp_A and tmp_A.tag() == value_e.Bool else False
 
   tmp_n = flag.get('n')
   tmp_r = flag.get('r')
@@ -68,9 +68,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   # SUBTLE: export -n vs. declare -n.  flag vs. OPTION.
   # flags are value.Bool, while options are Undef or Str.
   # '+', '-', or None
-  flag_n = cast(value__Str, tmp_n).s if tmp_n and tmp_n.tag_() == value_e.Str else None  # type: Optional[str]
-  flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag_() == value_e.Str else None  # type: Optional[str]
-  flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag_() == value_e.Str else None  # type: Optional[str]
+  flag_n = cast(value__Str, tmp_n).s if tmp_n and tmp_n.tag() == value_e.Str else None  # type: Optional[str]
+  flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag() == value_e.Str else None  # type: Optional[str]
+  flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag() == value_e.Str else None  # type: Optional[str]
 
   if cmd_val.builtin_id == builtin_i.local:
     if flag_g and not mem.IsGlobalScope():
@@ -91,7 +91,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     cells = {}
     for pair in cmd_val.pairs:
       name = pair.var_name
-      if pair.rval and pair.rval.tag_() == value_e.Str:
+      if pair.rval and pair.rval.tag() == value_e.Str:
         # Invalid: declare -p foo=bar
         # Add a sentinel so we skip it, but know to exit with status 1.
         s = cast(value__Str, pair.rval).s
@@ -109,7 +109,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     val = cell.val
     #log('name %r %s', name, val)
 
-    if val.tag_() == value_e.Undef: continue
+    if val.tag() == value_e.Undef: continue
     if builtin == _READONLY and not cell.readonly: continue
     if builtin == _EXPORT and not cell.exported: continue
 
@@ -120,8 +120,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     if flag_x == '-' and not cell.exported: continue
     if flag_x == '+' and cell.exported: continue
 
-    if flag_a and val.tag_() != value_e.MaybeStrArray: continue
-    if flag_A and val.tag_() != value_e.AssocArray: continue
+    if flag_a and val.tag() != value_e.MaybeStrArray: continue
+    if flag_A and val.tag() != value_e.AssocArray: continue
 
     decl = []  # type: List[str]
     if print_flags:
@@ -129,9 +129,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
       if cell.nameref: flags.append('n')
       if cell.readonly: flags.append('r')
       if cell.exported: flags.append('x')
-      if val.tag_() == value_e.MaybeStrArray:
+      if val.tag() == value_e.MaybeStrArray:
         flags.append('a')
-      elif val.tag_() == value_e.AssocArray:
+      elif val.tag() == value_e.AssocArray:
         flags.append('A')
       if len(flags) == 0: flags.append('-')
 
@@ -139,11 +139,11 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     else:
       decl.append(name)
 
-    if val.tag_() == value_e.Str:
+    if val.tag() == value_e.Str:
       str_val = cast(value__Str, val)
       decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
 
-    elif val.tag_() == value_e.MaybeStrArray:
+    elif val.tag() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
 
       # mycpp rewrite: None in array_val.strs
@@ -172,7 +172,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
           body.append(qsn.maybe_shell_encode(element))
         decl.extend(["=(", ''.join(body), ")"])
 
-    elif val.tag_() == value_e.AssocArray:
+    elif val.tag() == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
       body = []
       for key in sorted(assoc_val.d):
@@ -266,19 +266,19 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
   Shared between NewVar and Readonly.
   """
-  if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
+  if flag_a and rval is not None and rval.tag() != value_e.MaybeStrArray:
     e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
   if flag_A and rval:
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
     # associative array.
-    if rval.tag_() == value_e.MaybeStrArray:
+    if rval.tag() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, rval)
       if len(array_val.strs) == 0:
         return value.AssocArray({})
         #return value.MaybeStrArray([])
 
-    if rval.tag_() != value_e.AssocArray:
+    if rval.tag() != value_e.AssocArray:
       e_usage("Got -A but RHS isn't an associative array", loc.Word(blame_word))
 
   return rval
@@ -412,10 +412,10 @@ class NewVar(vm._AssignBuiltin):
       if rval is None and (arg.a or arg.A):
         old_val = self.mem.GetValue(pair.var_name)
         if arg.a:
-          if old_val.tag_() != value_e.MaybeStrArray:
+          if old_val.tag() != value_e.MaybeStrArray:
             rval = value.MaybeStrArray([])
         elif arg.A:
-          if old_val.tag_() != value_e.AssocArray:
+          if old_val.tag() != value_e.AssocArray:
             rval = value.AssocArray({})
 
       lval = location.LName(pair.var_name)

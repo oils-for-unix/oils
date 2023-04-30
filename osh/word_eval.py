@@ -91,14 +91,14 @@ def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
 def DecayArray(val):
   # type: (value_t) -> value_t
   """Resolve ${array} to ${array[0]}."""
-  if val.tag_() == value_e.MaybeStrArray:
+  if val.tag() == value_e.MaybeStrArray:
     array_val = cast(value__MaybeStrArray, val)
     s = array_val.strs[0] if len(array_val.strs) else None
-  elif val.tag_() == value_e.AssocArray:
+  elif val.tag() == value_e.AssocArray:
     assoc_val = cast(value__AssocArray, val)
     s = assoc_val.d['0'] if '0' in assoc_val.d else None
   else:
-    raise AssertionError(val.tag_())
+    raise AssertionError(val.tag())
 
   if s is None:
     return value.Undef()
@@ -219,7 +219,7 @@ def _ValueToPartValue(val, quoted):
 
     else:
       # Undef should be caught by _EmptyStrOrError().
-      raise AssertionError(val.tag_())
+      raise AssertionError(val.tag())
 
   raise AssertionError('for -Wreturn-type in C++')
 
@@ -379,7 +379,7 @@ def _PerformSlice(val,  # type: value_t
       e_die("Can't slice associative arrays", loc.WordPart(part))
 
     else:
-      raise NotImplementedError(val.tag_())
+      raise NotImplementedError(val.tag())
 
   return result
 
@@ -439,7 +439,7 @@ class TildeEvaluator(object):
       # First look up the HOME var, then ask the OS.  This is what bash does.
       val = self.mem.GetValue('HOME')
       UP_val = val
-      if val.tag_() == value_e.Str:
+      if val.tag() == value_e.Str:
         val = cast(value__Str, UP_val)
         return val.s
       result = pyos.GetMyHomeDir()
@@ -585,7 +585,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val = cast(value__AssocArray, UP_val)
         is_falsey = len(val.d) == 0
       else:
-        raise NotImplementedError(val.tag_())
+        raise NotImplementedError(val.tag())
 
     if tok.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
@@ -753,11 +753,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
         e_die('Indirect expansion of assoc array')
 
       else:
-        raise NotImplementedError(val.tag_())
+        raise NotImplementedError(val.tag())
 
   def _ApplyUnarySuffixOp(self, val, op):
     # type: (value_t, suffix_op__Unary) -> value_t
-    assert val.tag_() != value_e.Undef
+    assert val.tag() != value_e.Undef
 
     op_kind = consts.GetKind(op.op.id)
 
@@ -766,7 +766,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # Detect has_extglob so that DoUnarySuffixOp doesn't use the fast
       # shortcut for constant strings.
       arg_val, has_extglob = self.EvalWordToPattern(op.arg_word)
-      assert arg_val.tag_() == value_e.Str
+      assert arg_val.tag() == value_e.Str
 
       UP_val = val
       with tagswitch(val) as case:
@@ -793,7 +793,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           new_val = value.MaybeStrArray(strs)
 
         else:
-          raise AssertionError(val.tag_())
+          raise AssertionError(val.tag())
 
     else:
       raise AssertionError(Kind_str(op_kind))
@@ -813,7 +813,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if op.replace:
       replace_val = self.EvalRhsWord(op.replace)
       # Can't have an array, so must be a string
-      assert replace_val.tag_() == value_e.Str, replace_val
+      assert replace_val.tag() == value_e.Str, replace_val
       replace_str = cast(value__Str, replace_val).s
     else:
       replace_str = ''
@@ -850,7 +850,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val = value.MaybeStrArray(strs)
 
       else:
-        raise AssertionError(val.tag_())
+        raise AssertionError(val.tag())
     return val
 
   def _Slice(self, val, op, var_name, part):
@@ -1026,7 +1026,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           val = value.Str(s)
 
       else:
-        raise AssertionError(val.tag_())
+        raise AssertionError(val.tag())
 
     return val
 
@@ -1070,14 +1070,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _DecayArray(self, val):
     # type: (value__MaybeStrArray) -> value__Str
     """Decay $* to a string."""
-    assert val.tag_() == value_e.MaybeStrArray, val
+    assert val.tag() == value_e.MaybeStrArray, val
     sep = self.splitter.GetJoinChar()
     tmp = [s for s in val.strs if s is not None]
     return value.Str(sep.join(tmp))
 
   def _EmptyStrOrError(self, val, token):
     # type: (value_t, Token) -> value_t
-    if val.tag_() != value_e.Undef:
+    if val.tag() != value_e.Undef:
       return val
 
     if not self.exec_opts.nounset():
@@ -1110,12 +1110,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
           val = self._ArrayIndex(val, part, vtest_place)
 
         else:
-          raise AssertionError(bracket_op.tag_())
+          raise AssertionError(bracket_op.tag())
 
     else:  # no bracket op
       var_name = vtest_place.name
       if (var_name is not None and 
-          val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and
+          val.tag() in (value_e.MaybeStrArray, value_e.AssocArray) and
           not vsub_state.is_type_query):
         if ShouldArrayDecay(var_name, self.exec_opts,
                             not (part.prefix_op or part.suffix_op)):
@@ -1205,7 +1205,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if (part.prefix_op is not None and 
           part.bracket_op is None and
           part.suffix_op is not None and
-          part.suffix_op.tag_() == suffix_op_e.Nullary):
+          part.suffix_op.tag() == suffix_op_e.Nullary):
         suffix_op_ = cast(Token, part.suffix_op)
         # ${!x@} but not ${!x@P}
         if consts.GetKind(suffix_op_.id) == Kind.VOp3:
@@ -1238,7 +1238,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # ${array[@]@Q}
     # TODO: An IR for ${} might simplify these lengthy conditions
     suffix_op = part.suffix_op
-    if (suffix_op and suffix_op.tag_() == suffix_op_e.Nullary and 
+    if (suffix_op and suffix_op.tag() == suffix_op_e.Nullary and 
         cast(Token, suffix_op).id == Id.VOp0_a):
       vsub_state.is_type_query = True
 
@@ -1248,7 +1248,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
     suffix_is_test = False
     UP_op = suffix_op
-    if suffix_op is not None and suffix_op.tag_() == suffix_op_e.Unary:
+    if suffix_op is not None and suffix_op.tag() == suffix_op_e.Unary:
       suffix_op = cast(suffix_op__Unary, UP_op)
       if consts.GetKind(suffix_op.op.id) == Kind.VTest:
         suffix_is_test = True
@@ -1264,7 +1264,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return  # EARLY EXIT: nothing else can come after length
 
       elif part.prefix_op.id == Id.VSub_Bang:
-        if part.bracket_op and part.bracket_op.tag_() == bracket_op_e.WholeArray:
+        if part.bracket_op and part.bracket_op.tag() == bracket_op_e.WholeArray:
           if suffix_is_test:
             # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
             # it's fatal.
@@ -1334,7 +1334,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # After applying suffixes, process join_array here.
     UP_val = val
-    if val.tag_() == value_e.MaybeStrArray:
+    if val.tag() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
       if vsub_state.join_array:
         val = self._DecayArray(array_val)
@@ -1399,7 +1399,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if token.id == Id.VSub_DollarName:
       # TODO: Special case for LINENO
       val = self.mem.GetValue(var_name)
-      if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
+      if val.tag() in (value_e.MaybeStrArray, value_e.AssocArray):
         if ShouldArrayDecay(var_name, self.exec_opts):
           # for $BASH_SOURCE, etc.
           val = DecayArray(val)
@@ -1417,7 +1417,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     #log('SIMPLE %s', part)
     val = self._EmptyStrOrError(val, token)
     UP_val = val
-    if val.tag_() == value_e.MaybeStrArray:
+    if val.tag() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
       if vsub_state.join_array:
         val = self._DecayArray(array_val)
@@ -1624,7 +1624,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           part_vals.append(part_val)
 
       else:
-        raise AssertionError(part.tag_())
+        raise AssertionError(part.tag())
 
   def _EvalRhsWordToParts(self, w, part_vals, eval_flags=0):
     # type: (rhs_word_t, List[part_value_t], int) -> None
@@ -1661,7 +1661,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     word_part_vals = []  # type: List[part_value_t]
     has_extglob = False
     for p in w.parts:
-      if p.tag_() == word_part_e.ExtGlob:
+      if p.tag() == word_part_e.ExtGlob:
         has_extglob = True
       self._EvalWordPart(p, word_part_vals, eval_flags)
 
@@ -1758,7 +1758,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     Flags can contain a quoting algorithm.
     """
-    assert UP_w.tag_() == word_e.Compound, UP_w
+    assert UP_w.tag() == word_e.Compound, UP_w
     w = cast(CompoundWord, UP_w)
 
     part_vals = []  # type: List[part_value_t]
@@ -1773,10 +1773,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def EvalWordToPattern(self, UP_w):
     # type: (rhs_word_t) -> Tuple[value__Str, bool]
     """Like EvalWordToString, but returns whether we got ExtGlob."""
-    if UP_w.tag_() == rhs_word_e.Empty:
+    if UP_w.tag() == rhs_word_e.Empty:
       return value.Str(''), False
 
-    assert UP_w.tag_() == rhs_word_e.Compound, UP_w
+    assert UP_w.tag() == rhs_word_e.Compound, UP_w
     w = cast(CompoundWord, UP_w)
 
     has_extglob = False
@@ -1784,7 +1784,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     for p in w.parts:
       # this doesn't use eval_flags, which is slightly confusing
       self._EvalWordPart(p, part_vals, 0)
-      if p.tag_() == word_part_e.ExtGlob:
+      if p.tag() == word_part_e.ExtGlob:
         has_extglob = True
 
     strs = []  # type: List[str]
@@ -1816,16 +1816,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (rhs_word_t) -> value_t
     """Used for RHS of assignment.  There is no splitting.
     """
-    if UP_w.tag_() == rhs_word_e.Empty:
+    if UP_w.tag() == rhs_word_e.Empty:
       return value.Str('')
 
-    assert UP_w.tag_() == word_e.Compound, UP_w
+    assert UP_w.tag() == word_e.Compound, UP_w
     w = cast(CompoundWord, UP_w)
 
     if len(w.parts) == 1:
       part0 = w.parts[0]
       UP_part0 = part0
-      tag = part0.tag_()
+      tag = part0.tag()
       # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
       # don't look like assignments.
       if tag == word_part_e.ShArrayLiteral:
@@ -2138,7 +2138,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if allow_assign and i == 0 and len(part_vals) == 1:
         val0 = part_vals[0]
         UP_val0 = val0
-        if val0.tag_() == part_value_e.String:
+        if val0.tag() == part_value_e.String:
           val0 = cast(part_value__String, UP_val0)
           if not val0.quoted:
             builtin_id = consts.LookupAssignBuiltin(val0.s)
@@ -2179,7 +2179,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     """For arrays and for loops.  They don't allow assignment builtins."""
     UP_cmd_val = self.EvalWordSequence2(words)
 
-    assert UP_cmd_val.tag_() == cmd_value_e.Argv
+    assert UP_cmd_val.tag() == cmd_value_e.Argv
     cmd_val = cast(cmd_value__Argv, UP_cmd_val)
     return cmd_val.argv
 

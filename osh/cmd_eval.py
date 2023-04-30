@@ -161,7 +161,7 @@ def _HasManyStatuses(node):
     shopt --unset _allow_command_sub _allow_process_sub
   """
   # Sentence check is for   if false;   versus   if false
-  if node.tag_() == command_e.Sentence:
+  if node.tag() == command_e.Sentence:
     node1 = cast(command__Sentence, node)
     return _HasManyStatuses(node1.child)
 
@@ -195,8 +195,8 @@ def PlusEquals(old_val, val):
   UP_old_val = old_val
   UP_val = val
 
-  old_tag = old_val.tag_()
-  tag = val.tag_()
+  old_tag = old_val.tag()
+  tag = val.tag()
 
   if old_tag == value_e.Undef and tag == value_e.Str:
     pass  # val is RHS
@@ -417,7 +417,7 @@ class CommandEvaluator(object):
       #   echo <(sort x)
       # and different results for some pipelines:
       #   { ls; false; } | wc -l; echo hi  # Point to | or first { ?
-      if default_loc.tag_() != loc_e.Missing:
+      if default_loc.tag() != loc_e.Missing:
         blame_loc = default_loc
 
       msg = '%s failed with status %d' % (desc, status)
@@ -479,7 +479,7 @@ class CommandEvaluator(object):
 
         elif redir_type == redir_arg_type_e.Here:  # here word
           val = self.word_ev.EvalWordToString(arg_word)
-          assert val.tag_() == value_e.Str, val
+          assert val.tag() == value_e.Str, val
           # NOTE: bash and mksh both add \n
           result.arg = redirect_arg.HereDoc(val.s + '\n')
           return result
@@ -491,7 +491,7 @@ class CommandEvaluator(object):
         arg = cast(redir_param__HereDoc, UP_arg)
         w = CompoundWord(arg.stdin_parts)  # HACK: Wrap it in a word to eval
         val = self.word_ev.EvalWordToString(w)
-        assert val.tag_() == value_e.Str, val
+        assert val.tag() == value_e.Str, val
         result.arg = redirect_arg.HereDoc(val.s)
         return result
 
@@ -709,7 +709,7 @@ class CommandEvaluator(object):
         cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
         UP_cmd_val = cmd_val
-        if UP_cmd_val.tag_() == cmd_value_e.Argv:
+        if UP_cmd_val.tag() == cmd_value_e.Argv:
           cmd_val = cast(cmd_value__Argv, UP_cmd_val)
 
           if len(cmd_val.argv):  # it can be empty in rare cases
@@ -753,7 +753,7 @@ class CommandEvaluator(object):
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
           is_other_special = False  # TODO: There are other special builtins too!
-          if cmd_val.tag_() == cmd_value_e.Assign or is_other_special:
+          if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
             # Special builtins have their temp env persisted.
             self._EvalTempEnv(node.more_env, 0)
             status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
@@ -936,7 +936,7 @@ class CommandEvaluator(object):
 
             # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
             for UP_lval_, py_val in zip(lvals_, py_vals):
-              tag = UP_lval_.tag_()
+              tag = UP_lval_.tag()
               if tag == lvalue_e.ObjIndex:
                 lval_ = cast(lvalue__ObjIndex, UP_lval_)
                 lval_.obj[lval_.index] = py_val
@@ -1403,7 +1403,7 @@ class CommandEvaluator(object):
         defaults = None  # type: List[value_t]
         if mylib.PYTHON:
           UP_sig = node.sig
-          if UP_sig.tag_() == proc_sig_e.Closed:
+          if UP_sig.tag() == proc_sig_e.Closed:
             sig = cast(proc_sig__Closed, UP_sig)
             defaults = [None] * len(sig.untyped)
             for i, p in enumerate(sig.untyped):
@@ -1476,7 +1476,7 @@ class CommandEvaluator(object):
         libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
 
       else:
-        raise NotImplementedError(node.tag_())
+        raise NotImplementedError(node.tag())
 
     # Return to caller.  Note the only case that didn't set it was Pipeline,
     # which set cmd_st.pipe_status.
@@ -1581,9 +1581,9 @@ class CommandEvaluator(object):
 
           if 0:
             from _devbuild.gen.syntax_asdl import command_str
-            if status == 1 and node.tag_() == command_e.Simple:
+            if status == 1 and node.tag() == command_e.Simple:
               log('node %s', node)
-            log('node %s status %d PIPE %s', command_str(node.tag_()), status, pipe_status)
+            log('node %s status %d PIPE %s', command_str(node.tag()), status, pipe_status)
 
         else:
           # I/O error when applying redirects, e.g. bad file descriptor.
@@ -1840,7 +1840,7 @@ class CommandEvaluator(object):
     For SimpleCommand and registered completion hooks.
     """
     sig = proc.sig
-    if sig.tag_() == proc_sig_e.Closed:
+    if sig.tag() == proc_sig_e.Closed:
       # We're binding named params.  User should use @rest.  No 'shift'.
       proc_argv = []  # type: List[str]
     else:
@@ -1850,7 +1850,7 @@ class CommandEvaluator(object):
       n_args = len(argv)
       UP_sig = sig
 
-      if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed ()
+      if UP_sig.tag() == proc_sig_e.Closed:  # proc is-closed ()
         sig = cast(proc_sig__Closed, UP_sig)
         for i, p in enumerate(sig.untyped):
           is_out_param = p.ref is not None

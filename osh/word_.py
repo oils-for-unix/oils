@@ -38,7 +38,7 @@ def LiteralId(p):
   Id.KW_For, or Id.RBrace, etc.
   """
   UP_part = p
-  if p.tag_() == word_part_e.Literal:
+  if p.tag() == word_part_e.Literal:
     return cast(Token, UP_part).id
   else:
     return Id.Undefined_Tok  # unequal to any other Id
@@ -111,7 +111,7 @@ def _EvalWordPart(part):
       return False, '', False
 
     else:
-      raise AssertionError(part.tag_())
+      raise AssertionError(part.tag())
 
 
 def StaticEval(UP_w):
@@ -120,7 +120,7 @@ def StaticEval(UP_w):
   quoted = False
 
   # e.g. for ( instead of for (( is a token word
-  if UP_w.tag_() != word_e.Compound:
+  if UP_w.tag() != word_e.Compound:
     return False, '', quoted
 
   w = cast(CompoundWord, UP_w)
@@ -209,7 +209,7 @@ def LeftMostSpanForPart(part):
       return part.left.span_id  # $[
 
     else:
-      raise AssertionError(part.tag_())
+      raise AssertionError(part.tag())
 
 
 def _RightMostSpanForPart(part):
@@ -266,7 +266,7 @@ def _RightMostSpanForPart(part):
 
     # TODO: Do Splice and FuncCall need it?
     else:
-      raise AssertionError(part.tag_())
+      raise AssertionError(part.tag())
 
 
 def LeftMostSpanForWord(w):
@@ -295,7 +295,7 @@ def LeftMostSpanForWord(w):
       return w.span_id  # See _StringWordEmitter in osh/builtin_bracket.py
 
     else:
-      raise AssertionError(w.tag_())
+      raise AssertionError(w.tag())
 
   raise AssertionError('for -Wreturn-type in C++')
 
@@ -319,7 +319,7 @@ def RightMostSpanForWord(w):
       return tok.span_id
 
     else:
-      raise AssertionError(w.tag_())
+      raise AssertionError(w.tag())
 
   raise AssertionError('for -Wreturn-type in C++')
 
@@ -364,7 +364,7 @@ def TildeDetect(UP_w):
     is changed.  But note that we CANNOT know this during lexing.
   """
   # BracedTree can't be tilde expanded
-  if UP_w.tag_() != word_e.Compound:
+  if UP_w.tag() != word_e.Compound:
     return None
 
   w = cast(CompoundWord, UP_w)
@@ -448,7 +448,7 @@ def HasArrayPart(w):
   # type: (CompoundWord) -> bool
   """Used in cmd_parse."""
   for part in w.parts:
-    if part.tag_() == word_part_e.ShArrayLiteral:
+    if part.tag() == word_part_e.ShArrayLiteral:
       return True
   return False
 
@@ -479,7 +479,7 @@ def LooksLikeArithVar(UP_w):
   ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
   confused between array assigments foo=(1 2) and function calls foo(1, 2).
   """
-  if UP_w.tag_() != word_e.Compound:
+  if UP_w.tag() != word_e.Compound:
     return None
 
   w = cast(CompoundWord, UP_w)
@@ -613,14 +613,14 @@ def LiteralToken(UP_w):
   """
   # We're casting here because this function is called by the CommandParser for
   # var, setvar, '...', etc.  It's easier to cast in one place.
-  assert UP_w.tag_() == word_e.Compound
+  assert UP_w.tag() == word_e.Compound
   w = cast(CompoundWord, UP_w)
 
   if len(w.parts) != 1:
     return None
 
   part0 = w.parts[0]
-  if part0.tag_() == word_part_e.Literal:
+  if part0.tag() == word_part_e.Literal:
     return cast(Token, part0)
 
   return None
@@ -632,7 +632,7 @@ def LiteralToken(UP_w):
 
 def ArithId(w):
   # type: (word_t) -> Id_t
-  if w.tag_() == word_e.Token:
+  if w.tag() == word_e.Token:
     tok = cast(Token, w)
     return tok.id
 
@@ -674,7 +674,7 @@ def BoolId(w):
 
     else:
       # I think Empty never happens in this context?
-      raise AssertionError(w.tag_())
+      raise AssertionError(w.tag())
 
 
 def CommandId(w):
@@ -710,13 +710,13 @@ def CommandId(w):
       return Id.Word_Compound
 
     else:
-      raise AssertionError(w.tag_())
+      raise AssertionError(w.tag())
 
 
 def CommandKind(w):
   # type: (word_t) -> Kind_t
   """The CommandKind is for coarse-grained decisions in the CommandParser."""
-  if w.tag_() == word_e.Token:
+  if w.tag() == word_e.Token:
     tok = cast(Token, w)
     return consts.GetKind(tok.id)
 
@@ -768,14 +768,14 @@ def Pretty(w):
   # type: (word_t) -> str
   """Return a string to display to the user."""
   UP_w = w
-  if w.tag_() == word_e.String:
+  if w.tag() == word_e.String:
     w = cast(word__String, UP_w)
     if w.id == Id.Eof_Real:
       return 'EOF'
     else:
       return repr(w.s)
   else:
-    return StrFromC(word_str(w.tag_()))  # tag name
+    return StrFromC(word_str(w.tag()))  # tag name
 
 
 class ctx_EmitDocToken(object):

@@ -90,7 +90,7 @@ class SearchPath(object):
     # the splitting.
     val = self.mem.GetValue('PATH')
     UP_val = val
-    if val.tag_() == value_e.Str:
+    if val.tag() == value_e.Str:
       val = cast(value__Str, UP_val)
       path_list = val.s.split(':')
     else:
@@ -580,7 +580,7 @@ class MutableOpts(object):
 
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetValue('SHELLOPTS')
-    if UP_shellopts.tag_() == value_e.Str:  # Always true in Oil, see Init above
+    if UP_shellopts.tag() == value_e.Str:  # Always true in Oil, see Init above
       shellopts = cast(value__Str, UP_shellopts)
       self._InitOptionsFromEnv(shellopts.s)
 
@@ -753,7 +753,7 @@ class MutableOpts(object):
     self._SetOldOption(opt_name, b)
 
     UP_val = self.mem.GetValue('SHELLOPTS')
-    assert UP_val.tag_() == value_e.Str, UP_val
+    assert UP_val.tag() == value_e.Str, UP_val
     val = cast(value__Str, UP_val)
     shellopts = val.s
 
@@ -1063,7 +1063,7 @@ def _InitVarsFromEnv(mem, environ):
   # interface?  self.syscall.getcwd() etc.
 
   val = mem.GetValue('SHELLOPTS')
-  if val.tag_() == value_e.Undef:
+  if val.tag() == value_e.Undef:
     SetGlobalString(mem, 'SHELLOPTS', '')
   # Now make it readonly
   mem.SetValue(
@@ -1072,7 +1072,7 @@ def _InitVarsFromEnv(mem, environ):
   # Usually we inherit PWD from the parent shell.  When it's not set, we may
   # compute it.
   val = mem.GetValue('PWD')
-  if val.tag_() == value_e.Undef:
+  if val.tag() == value_e.Undef:
     SetGlobalString(mem, 'PWD', _GetWorkingDir())
   # Now mark it exported, no matter what.  This is one of few variables
   # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
@@ -1080,7 +1080,7 @@ def _InitVarsFromEnv(mem, environ):
       location.LName('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
   val = mem.GetValue('PATH')
-  if val.tag_() == value_e.Undef:
+  if val.tag() == value_e.Undef:
     # Setting PATH to these two dirs match what zsh and mksh do.  bash and dash
     # add {,/usr/,/usr/local}/{bin,sbin}
     SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
@@ -1100,7 +1100,7 @@ def InitMem(mem, environ, version_str):
   # it can't be modified by users.
   val = mem.GetValue('PWD')
   # should be true since it's exported
-  assert val.tag_() == value_e.Str, val
+  assert val.tag() == value_e.Str, val
   pwd = cast(value__Str, val).s
   mem.SetPwd(pwd)
 
@@ -1110,7 +1110,7 @@ def InitInteractive(mem):
   """Initialization that's only done in the interactive/headless shell."""
 
   # Same default PS1 as bash
-  if mem.GetValue('PS1').tag_() == value_e.Undef:
+  if mem.GetValue('PS1').tag() == value_e.Undef:
     SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
 
 
@@ -1185,7 +1185,7 @@ class ctx_Shvar(object):
   def _Pop(self):
     # type: () -> None
     for lval, old_val in self.restore:
-      if old_val.tag_() == value_e.Undef:
+      if old_val.tag() == value_e.Undef:
         self.mem.Unset(lval, scope_e.LocalOnly)
       else:
         self.mem.SetValue(lval, old_val, scope_e.LocalOnly)
@@ -1671,7 +1671,7 @@ class Mem(object):
 
       else:
         # SetValue() protects the invariant that nameref is Undef or Str
-        raise AssertionError(val.tag_())
+        raise AssertionError(val.tag())
 
     # TODO: Respect eval_unsafe_arith here (issue 881).  See how it's done in
     # 'printf -v' with MakeArithParser
@@ -1709,7 +1709,7 @@ class Mem(object):
     """
     cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(), False)
     if cell:
-      if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
+      if cell.val.tag() == value_e.AssocArray:  # foo=([key]=value)
         return True
     return False
 
@@ -1814,7 +1814,7 @@ class Mem(object):
         # exported.
         assert cell.val is not None, cell
 
-        if cell.val.tag_() not in (value_e.Undef, value_e.Str):
+        if cell.val.tag() not in (value_e.Undef, value_e.Str):
           if cell.exported:
             e_die("Only strings can be exported")  # TODO: error context
           if cell.nameref:
@@ -1828,7 +1828,7 @@ class Mem(object):
         assert val is not None, val
 
         # TODO: relax this for Oil
-        assert val.tag_() == value_e.Str, val
+        assert val.tag() == value_e.Str, val
         rval = cast(value__Str, val)
 
         # 'setref' array[index] not implemented here yet
@@ -1895,7 +1895,7 @@ class Mem(object):
         lval = cast(lvalue__Keyed, UP_lval)
         # There is no syntax 'declare A["x"]'
         assert val is not None, val
-        assert val.tag_() == value_e.Str, val
+        assert val.tag() == value_e.Str, val
         rval = cast(value__Str, val)
 
         left_loc = lval.blame_loc
@@ -1906,13 +1906,13 @@ class Mem(object):
           e_die("Can't assign to readonly associative array", left_loc)
 
         # We already looked it up before making the lvalue
-        assert cell.val.tag_() == value_e.AssocArray, cell
+        assert cell.val.tag() == value_e.AssocArray, cell
         cell_val2 = cast(value__AssocArray, cell.val)
 
         cell_val2.d[lval.key] = rval.s
 
       else:
-        raise AssertionError(lval.tag_())
+        raise AssertionError(lval.tag())
 
   def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
     # type: (Dict[str, Cell], lvalue__Indexed, value__Str, int) -> None
@@ -2142,7 +2142,7 @@ class Mem(object):
 
         val = cell.val
         UP_val = val
-        if val.tag_() != value_e.MaybeStrArray:
+        if val.tag() != value_e.MaybeStrArray:
           raise error.Runtime("%r isn't an array" % var_name)
 
         val = cast(value__MaybeStrArray, UP_val)
@@ -2175,7 +2175,7 @@ class Mem(object):
         UP_val = val
 
         # note: never happens because of mem.IsAssocArray test for lvalue.Keyed
-        #if val.tag_() != value_e.AssocArray:
+        #if val.tag() != value_e.AssocArray:
         #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
         val = cast(value__AssocArray, UP_val)
@@ -2234,7 +2234,7 @@ class Mem(object):
       for name, cell in iteritems(scope):
         # TODO: Disallow exporting at assignment time.  If an exported Str is
         # changed to MaybeStrArray, also clear its 'exported' flag.
-        if cell.exported and cell.val.tag_() == value_e.Str:
+        if cell.exported and cell.val.tag() == value_e.Str:
           val = cast(value__Str, cell.val)
           exported[name] = val.s
     return exported
@@ -2271,7 +2271,7 @@ class Mem(object):
       for name, cell in iteritems(scope):
         # TODO: Show other types?
         val = cell.val
-        if val.tag_() == value_e.Str:
+        if val.tag() == value_e.Str:
           str_val = cast(value__Str, val)
           result[name] = str_val.s
     return result
@@ -2439,7 +2439,7 @@ def GetInteger(mem, name):
   For OPTIND variable used in getopts builtin.  TODO: it could be value.Int() ?
   """
   val = mem.GetValue(name)
-  if val.tag_() != value_e.Str:
+  if val.tag() != value_e.Str:
     raise error.Runtime(
         '$%s should be a string, got %s' % (name, ui.ValType(val)))
   s = cast(value__Str, val).s

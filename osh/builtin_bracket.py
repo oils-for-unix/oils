@@ -109,7 +109,7 @@ class _WordEvaluator(word_eval.StringWordEvaluator):
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a
     # different tree.
-    assert w.tag_() == word_e.String
+    assert w.tag() == word_e.String
     string_word = cast(word__String, w)
     return value.Str(string_word.s)
 

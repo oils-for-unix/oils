@@ -274,7 +274,7 @@ class WordParser(WordEmitter):
     replace_mode = Id.Undefined_Tok
     # Check for / # % modifier on pattern.
     UP_first_part = pat.parts[0]
-    if UP_first_part.tag_() == word_part_e.Literal:
+    if UP_first_part.tag() == word_part_e.Literal:
       lit_id = cast(Token, UP_first_part).id
       if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)

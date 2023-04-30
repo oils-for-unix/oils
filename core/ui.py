@@ -40,7 +40,7 @@ def ValType(val):
   """For displaying type errors in the UI."""
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
-  return StrFromC(value_str(val.tag_()))
+  return StrFromC(value_str(val.tag()))
 
 
 def CommandType(cmd):
@@ -48,7 +48,7 @@ def CommandType(cmd):
   """For displaying commands in the UI."""
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
-  return StrFromC(command_str(cmd.tag_()))
+  return StrFromC(command_str(cmd.tag()))
 
 
 def PrettyId(id_):
@@ -159,7 +159,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
       else:
         var_name = repr(src.var_name)
 
-      if src.location.tag_() == loc_e.Missing:
+      if src.location.tag() == loc_e.Missing:
         where = '?'
       else:
         span_id = location.GetSpanId(src.location)
@@ -229,7 +229,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
   if show_code:
     UP_src = src
     # LValue/backticks is the only case where we don't print this
-    if src.tag_() == source_e.Reparsed:
+    if src.tag() == source_e.Reparsed:
       src = cast(source__Reparsed, UP_src)
       span2 = src.left_token
       line_num = span2.line.line_num

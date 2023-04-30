@@ -29,7 +29,7 @@ class _ErrorWithLocation(Exception):
 
   def HasLocation(self):
     # type: () -> bool
-    return self.location.tag_() != loc_e.Missing
+    return self.location.tag() != loc_e.Missing
 
   def UserErrorString(self):
     # type: () -> str

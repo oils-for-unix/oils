@@ -692,7 +692,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 log('typ %s', typ)
 
             self.accept(obj)
-            self.write('->tag_() == ')
+            self.write('->tag() == ')
             assert isinstance(typ, NameExpr), typ
 
             # source__CFlag -> source_e::CFlag
@@ -1876,7 +1876,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write_ind('switch (')
         self.accept(expr.args[0])
-        self.write('->tag_()) {\n')
+        self.write('->tag()) {\n')
 
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]

@@ -94,7 +94,7 @@ def GetLiteralBlock(arg_list):
 
   elif n == 1:
     arg = arg_list.positional[0]
-    if arg.tag_() == expr_e.BlockArg:
+    if arg.tag() == expr_e.BlockArg:
       return cast(BlockArg, arg)
     else:
       return None

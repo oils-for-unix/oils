@@ -278,7 +278,7 @@ class OilPrinter(object):
     op_id = node.op.id
     self.cursor.PrintUntil(op_spid)
 
-    if node.arg.tag_() == redir_param_e.HereDoc:
+    if node.arg.tag() == redir_param_e.HereDoc:
       here_doc = cast(redir_param__HereDoc, node.arg)
 
       here_begin = here_doc.here_begin
@@ -368,13 +368,13 @@ class OilPrinter(object):
       # statements.
       if local_symbols is not None:
         lhs0 = node.pairs[0].lhs
-        #if lhs0.tag_() == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
+        #if lhs0.tag() == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
         #  defined_locally = True
 
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
       # TODO: Avoid translating these
-      has_array_index = [pair.lhs.tag_() == sh_lhs_expr_e.UnparsedIndex for pair in node.pairs]
+      has_array_index = [pair.lhs.tag() == sh_lhs_expr_e.UnparsedIndex for pair in node.pairs]
 
       # need semantic analysis.
       # Would be nice to assume that it's a local though.
@@ -407,7 +407,7 @@ class OilPrinter(object):
           self.f.write(' = ')
 
           # TODO: This should be translated from Empty.
-          if pair.rhs.tag_() == rhs_word_e.Empty:
+          if pair.rhs.tag() == rhs_word_e.Empty:
             self.f.write("''")  # local i -> var i = ''
           else:
             self.DoRhsWord(pair.rhs, local_symbols)
@@ -577,7 +577,7 @@ class OilPrinter(object):
         self.f.write(node.name)
         self.cursor.SkipUntil(node.spids[2])
 
-        if node.body.tag_() == command_e.BraceGroup:
+        if node.body.tag() == command_e.BraceGroup:
           # Don't add "do" like a standalone brace group.  Just use {}.
           for child in cast(BraceGroup, node.body).children:
             self.DoCommand(child, new_local_symbols)
@@ -656,10 +656,10 @@ class OilPrinter(object):
           self.f.write('while not')
           self.cursor.SkipUntil(kw_spid + 1)
 
-        if node.cond.tag_() == condition_e.Shell:
+        if node.cond.tag() == condition_e.Shell:
           commands = cast(condition__Shell, node.cond).commands
           # Skip the semi-colon in the condition, which is ususally a Sentence
-          if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
+          if len(commands) == 1 and commands[0].tag() == command_e.Sentence:
             sentence = cast(command__Sentence, commands[0])
             self.DoCommand(sentence.child, local_symbols)
             semi_spid = sentence.terminator.span_id
@@ -684,9 +684,9 @@ class OilPrinter(object):
             self.f.write('} ')
 
           cond = arm.cond
-          if cond.tag_() == condition_e.Shell:
+          if cond.tag() == condition_e.Shell:
             commands = cast(condition__Shell, cond).commands
-            if len(commands) == 1 and commands[0].tag_() == command_e.Sentence:
+            if len(commands) == 1 and commands[0].tag() == command_e.Sentence:
               sentence = cast(command__Sentence, commands[0])
               self.DoCommand(sentence, local_symbols)
 
@@ -878,7 +878,7 @@ class OilPrinter(object):
         # "${foo}" -> $foo
 
         if (len(node.parts) == 1 and
-            node.parts[0].tag_() == word_part_e.DoubleQuoted):
+            node.parts[0].tag() == word_part_e.DoubleQuoted):
           dq_part = cast(DoubleQuoted, node.parts[0])
 
           # NOTE: In double quoted case, this is the begin and end quote.
@@ -893,7 +893,7 @@ class OilPrinter(object):
 
           if len(dq_part.parts) == 1:
             part0 = dq_part.parts[0]
-            if part0.tag_() == word_part_e.SimpleVarSub:
+            if part0.tag() == word_part_e.SimpleVarSub:
               vsub_part = cast(SimpleVarSub, dq_part.parts[0])
               if vsub_part.left.id == Id.VSub_At:
                 # NOTE: This is off for double quoted part.  Hack to subtract 1.
@@ -919,7 +919,7 @@ class OilPrinter(object):
             #
             # $((1 + 2)) -> $(1 + 2) -- this is OK unquoted
 
-            elif part0.tag_() == word_part_e.BracedVarSub:
+            elif part0.tag() == word_part_e.BracedVarSub:
               # Skip over quote
               self.cursor.PrintUntil(left_spid)
               self.cursor.SkipUntil(left_spid + 1)
@@ -927,7 +927,7 @@ class OilPrinter(object):
               self.cursor.SkipUntil(right_spid + 1)
               return
 
-            elif part0.tag_() == word_part_e.CommandSub:
+            elif part0.tag() == word_part_e.CommandSub:
               self.cursor.PrintUntil(left_spid)
               self.cursor.SkipUntil(left_spid + 1)
               self.DoWordPart(part0, local_symbols)

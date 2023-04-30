@@ -181,7 +181,7 @@ class Evaluator(object):
 
         elif ch == 'W':
           val = self.mem.GetValue('PWD')
-          if val.tag_() == value_e.Str:
+          if val.tag() == value_e.Str:
             str_val = cast(value__Str, val)
             r = os_path.basename(str_val.s)
           else:
@@ -210,7 +210,7 @@ class Evaluator(object):
   def EvalPrompt(self, UP_val):
     # type: (value_t) -> str
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
-    if UP_val.tag_() != value_e.Str:
+    if UP_val.tag() != value_e.Str:
       return ''  # e.g. if the user does 'unset PS1'
 
     val = cast(value__Str, UP_val)
@@ -271,7 +271,7 @@ class UserPlugin(object):
   def Run(self):
     # type: () -> None
     val = self.mem.GetValue(PROMPT_COMMAND)
-    if val.tag_() != value_e.Str:
+    if val.tag() != value_e.Str:
       return
 
     # PROMPT_COMMAND almost never changes, so we try to cache its parsing.

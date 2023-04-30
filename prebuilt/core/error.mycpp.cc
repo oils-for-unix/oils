@@ -60,19 +60,20 @@ Str* FALSE_STR = str4;
 namespace error {  // define
 
 using syntax_asdl::loc_e;
+using syntax_asdl::loc;
 
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
-  this->location = location;
+  if (location == nullptr) {
+    this->location = Alloc<loc::Missing>();
+  }
+  else {
+    this->location = location;
+  }
 }
 
 bool _ErrorWithLocation::HasLocation() {
-  if (this->location) {
-    return this->location->tag_() != loc_e::Missing;
-  }
-  else {
-    return false;
-  }
+  return this->location->tag() != loc_e::Missing;
 }
 
 Str* _ErrorWithLocation::UserErrorString() {
@@ -115,6 +116,9 @@ ErrExit::ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool s
 }
 
 Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
+}
+
+InvalidType::InvalidType(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
 }  // define namespace error

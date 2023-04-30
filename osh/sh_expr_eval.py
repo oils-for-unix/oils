@@ -111,7 +111,7 @@ def OldValue(lval, mem, exec_opts):
       raise AssertionError()
 
   val = mem.GetValue(var_name)
-  if exec_opts and exec_opts.nounset() and val.tag_() == value_e.Undef:
+  if exec_opts and exec_opts.nounset() and val.tag() == value_e.Undef:
     e_die('Undefined variable %r' % var_name)  # TODO: location info
 
   UP_val = val
@@ -371,7 +371,7 @@ class ArithEvaluator(object):
 
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.
-        if node2.tag_() == arith_expr_e.Word:
+        if node2.tag() == arith_expr_e.Word:
           e_die("Invalid integer constant %r" % s, location)
 
         if self.exec_opts.eval_unsafe_arith():
@@ -441,17 +441,17 @@ class ArithEvaluator(object):
     val = OldValue(lval, self.mem, self.exec_opts)
 
     # BASH_LINENO, arr (array name without strict_array), etc.
-    if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag_() == lvalue_e.Named:
+    if val.tag() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag() == lvalue_e.Named:
       named_lval = cast(lvalue__Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
-        if val.tag_() == value_e.MaybeStrArray:
+        if val.tag() == value_e.MaybeStrArray:
           lval = lvalue.Indexed(named_lval.name, 0, loc.Missing())
-        elif val.tag_() == value_e.AssocArray:
+        elif val.tag() == value_e.AssocArray:
           lval = lvalue.Keyed(named_lval.name, '0', loc.Missing())
         val = word_eval.DecayArray(val)
 
     # This error message could be better, but we already have one
-    #if val.tag_() == value_e.MaybeStrArray:
+    #if val.tag() == value_e.MaybeStrArray:
     #  e_die("Can't use assignment like ++ or += on arrays")
 
     expr_loc = location.LocForArithExpr(node)
@@ -472,7 +472,7 @@ class ArithEvaluator(object):
     val = self.Eval(node)
 
     # BASH_LINENO, arr (array name without strict_array), etc.
-    if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarSub:
+    if val.tag() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag() == arith_expr_e.VarSub:
       vsub = cast(SimpleVarSub, node)
       if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
         val = word_eval.DecayArray(val)
@@ -507,7 +507,7 @@ class ArithEvaluator(object):
       if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
         vsub = cast(SimpleVarSub, UP_node)
         val = self.mem.GetValue(vsub.var_name)
-        if val.tag_() == value_e.Undef and self.exec_opts.nounset():
+        if val.tag() == value_e.Undef and self.exec_opts.nounset():
           e_die('Undefined variable %r' % vsub.var_name, vsub.left)
         return val
 
@@ -745,7 +745,7 @@ class ArithEvaluator(object):
           return self.Eval(node.false_expr)
 
       else:
-        raise AssertionError(node.tag_())
+        raise AssertionError(node.tag())
 
     raise AssertionError('for -Wreturn-type in C++')
 
@@ -767,7 +767,7 @@ class ArithEvaluator(object):
     a[$x] a["$x"] a["x"] a['x']
     """
     UP_node = node
-    if node.tag_() == arith_expr_e.Word:  # $(( $x )) $(( ${x}${y} )), etc.
+    if node.tag() == arith_expr_e.Word:  # $(( $x )) $(( ${x}${y} )), etc.
       w = cast(CompoundWord, UP_node)
       val = self.word_ev.EvalWordToString(w)
       return val.s
@@ -808,7 +808,7 @@ class ArithEvaluator(object):
           lval = lval3
 
       else:
-        raise AssertionError(node.tag_())
+        raise AssertionError(node.tag())
 
     return lval
 
@@ -837,7 +837,7 @@ class ArithEvaluator(object):
     For (( a[x] = 1 )) etc.
     """
     UP_anode = anode
-    if anode.tag_() == arith_expr_e.Binary:
+    if anode.tag() == arith_expr_e.Binary:
       anode = cast(arith_expr__Binary, UP_anode)
       if anode.op_id == Id.Arith_LBracket:
         var_name, location = self._VarNameOrWord(anode.left)
@@ -961,7 +961,7 @@ class BoolEvaluator(ArithEvaluator):
 
           if op_id == Id.BoolUnary_v:
             val = self.mem.GetValue(s)
-            return val.tag_() != value_e.Undef
+            return val.tag() != value_e.Undef
 
           e_die("%s isn't implemented" % ui.PrettyId(op_id))  # implicit location
 
@@ -1050,4 +1050,4 @@ class BoolEvaluator(ArithEvaluator):
 
           raise AssertionError(op_id)  # should never happen
 
-    raise AssertionError(node.tag_())
+    raise AssertionError(node.tag())

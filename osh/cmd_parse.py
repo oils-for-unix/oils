@@ -85,11 +85,11 @@ def _KeywordToken(UP_w):
 
   In C++, this casts without checking, so BE CAREFUL to call it in the right context.
   """
-  assert UP_w.tag_() == word_e.Compound, UP_w
+  assert UP_w.tag() == word_e.Compound, UP_w
   w = cast(CompoundWord, UP_w)
 
   part = w.parts[0]
-  assert part.tag_() == word_part_e.Literal, part
+  assert part.tag() == word_part_e.Literal, part
   return cast(Token, part)
 
 
@@ -547,7 +547,7 @@ class CommandParser(object):
 
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
-      if w.tag_() == word_e.Token:
+      if w.tag() == word_e.Token:
         tok = cast(Token, w)
         if tok.id == Id.Op_Newline:
           for h in self.pending_here_docs:
@@ -655,7 +655,7 @@ class CommandParser(object):
     self._Next()
 
     # We should never get Empty, Token, etc.
-    assert arg_word.tag_() == word_e.Compound, arg_word
+    assert arg_word.tag() == word_e.Compound, arg_word
     return Redir(op_tok, where, cast(CompoundWord, arg_word))
 
   def _ParseRedirectList(self):
@@ -995,7 +995,7 @@ class CommandParser(object):
 
     # Disallow =a because it's confusing
     part0 = words[0].parts[0]
-    if part0.tag_() == word_part_e.Literal:
+    if part0.tag() == word_part_e.Literal:
       tok = cast(Token, part0)
       if tok.id == Id.Lit_Equals:
         p_die("=word isn't allowed.  Hint: either quote it or add a space after =\n"
@@ -1156,7 +1156,7 @@ class CommandParser(object):
       elif self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
         break
 
-      if self.cur_word.tag_() != word_e.Compound:
+      if self.cur_word.tag() != word_e.Compound:
         # TODO: Can we also show a pointer to the 'for' keyword?
         p_die('Invalid word in for loop', loc.Word(self.cur_word))
 
@@ -1209,7 +1209,7 @@ class CommandParser(object):
       # - 'x, y' is accepted, but not 'x,y' or 'x ,y'
       # - 'x y' is also accepted but not idiomatic.
       UP_w = w
-      if w.tag_() == word_e.Compound:
+      if w.tag() == word_e.Compound:
         w = cast(CompoundWord, UP_w)
         if word_.LiteralId(w.parts[-1]) == Id.Lit_Comma:
           w.parts.pop()
@@ -1735,7 +1735,7 @@ class CommandParser(object):
 
     part0 = word0.parts[0]
     # If we got a non-empty string from ShFunctionName, this should be true.
-    assert part0.tag_() == word_part_e.Literal
+    assert part0.tag() == word_part_e.Literal
     blame_tok = cast(Token, part0)  # for ctx_VarChecker
 
     self._Next()  # move past function name
@@ -1821,7 +1821,7 @@ class CommandParser(object):
 
     with ctx_VarChecker(self.var_checker, keyword_tok):
       self.w_parser.ParseProc(node)
-      if node.sig.tag_() == proc_sig_e.Closed:  # Register params
+      if node.sig.tag() == proc_sig_e.Closed:  # Register params
         sig = cast(proc_sig__Closed, node.sig)
 
         # Treat params as variables.
@@ -2040,7 +2040,7 @@ class CommandParser(object):
       parts = cur_word.parts
       if self.parse_opts.parse_equals() and len(parts) == 1:
         part0 = parts[0]
-        if part0.tag_() == word_part_e.Literal:
+        if part0.tag() == word_part_e.Literal:
           tok = cast(Token, part0)
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.tval) and

@@ -469,7 +469,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     depth = self.current_depth
 
     # To imitate C++ API
-    self.Emit('def tag_(self):')
+    self.Emit('def tag(self):')
     self.Emit('  # type: () -> int')
     self.Emit('  return self._type_tag')
 
@@ -492,7 +492,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
           else:
             subtype_name = '%s__%s' % (sum_name, variant.name)
 
-          self.Emit('if self.tag_() == %s_e.%s:' % (sum_name, variant.name),
+          self.Emit('if self.tag() == %s_e.%s:' % (sum_name, variant.name),
                     depth)
           self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
           self.Emit('  return self.%s()' % abbrev, depth)

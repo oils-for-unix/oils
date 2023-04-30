@@ -95,7 +95,7 @@ def AsdlEqual(left, right):
     return True
 
   if isinstance(left, pybase.CompoundObj):
-    if left.tag_() != right.tag_():
+    if left.tag() != right.tag():
       return False
 
     field_names = left.__slots__  # hack for now

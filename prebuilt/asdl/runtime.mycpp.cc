@@ -515,7 +515,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
       val = field->val;
       ind1 = str_repeat(str22, (indent + INDENT));
       UP_val = val;
-      tag = val->tag_();
+      tag = val->tag();
       if (tag == hnode_e::Array) {
         hnode__Array* val = static_cast<hnode__Array*>(UP_val);
         name_str = StrFormat("%s%s: [", ind1, name);
@@ -574,7 +574,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
     return ;
   }
   UP_node = node;
-  tag = node->tag_();
+  tag = node->tag();
   if (tag == hnode_e::Leaf) {
     hnode__Leaf* node = static_cast<hnode__Leaf*>(UP_node);
     f->PushColor(node->color);
@@ -653,7 +653,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
   StackRoots _roots({&node, &f, &UP_node});
 
   UP_node = node;
-  tag = node->tag_();
+  tag = node->tag();
   if (tag == hnode_e::Leaf) {
     hnode__Leaf* node = static_cast<hnode__Leaf*>(UP_node);
     f->PushColor(node->color);

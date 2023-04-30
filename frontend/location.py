@@ -81,7 +81,7 @@ def LocForCommand(node):
   like word_.LeftMostSpanForWord
   """
   UP_node = node # type: command_t
-  tag = node.tag_()
+  tag = node.tag()
 
   if tag == command_e.Sentence:
     node = cast(command__Sentence, UP_node)

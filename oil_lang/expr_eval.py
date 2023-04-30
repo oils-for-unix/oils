@@ -72,7 +72,7 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
 
   # Lookup WITHOUT dynamic scope.
   val = mem.GetValue(var_name, which_scopes=which_scopes)
-  if val.tag_() == value_e.Undef:
+  if val.tag() == value_e.Undef:
     # TODO: Location info
     e_die('Undefined variable %r' % var_name, var_loc)
 
@@ -275,7 +275,7 @@ class OilEvaluator(object):
     for arg in args.positional:
       UP_arg = arg
 
-      if arg.tag_() == expr_e.Spread:
+      if arg.tag() == expr_e.Spread:
         arg = cast(expr__Spread, UP_arg)
         # assume it returns a list
         pos_args.extend(self.EvalExpr(arg.child, loc.Missing()))
@@ -340,7 +340,7 @@ class OilEvaluator(object):
     func_name = part.name.tval[1:]
 
     fn_val = self.mem.GetValue(func_name)  # type: value_t
-    if fn_val.tag_() != value_e.Obj:
+    if fn_val.tag() != value_e.Obj:
       e_die("Expected function named %r, got %r " % (func_name, fn_val))
     assert isinstance(fn_val, value__Obj)
 
@@ -766,7 +766,7 @@ class OilEvaluator(object):
 
     values = []
     for i, value_expr in enumerate(node.values):
-      if value_expr.tag_() == expr_e.Implicit:
+      if value_expr.tag() == expr_e.Implicit:
         v = self.LookupVar(keys[i], loc.Missing())  # {name}
       else:
         v = self._EvalExpr(value_expr)

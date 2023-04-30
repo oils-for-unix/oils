@@ -176,7 +176,7 @@ def RemoveLeadingSpaceDQ(parts):
 
   # The first token may have a newline
   UP_first = parts[0]
-  if UP_first.tag_() == word_part_e.Literal:
+  if UP_first.tag() == word_part_e.Literal:
     first = cast(Token, UP_first)
     #log('T %s', first_part)
     if qsn_native.IsWhitespace(first.tval):
@@ -188,7 +188,7 @@ def RemoveLeadingSpaceDQ(parts):
 
   UP_last = parts[-1]
   to_strip = None  # type: Optional[str]
-  if UP_last.tag_() == word_part_e.Literal:
+  if UP_last.tag() == word_part_e.Literal:
     last = cast(Token, UP_last)
     if IsLeadingSpace(last.tval):
       to_strip = last.tval
@@ -197,7 +197,7 @@ def RemoveLeadingSpaceDQ(parts):
   if to_strip is not None:
     n = len(to_strip)
     for UP_p in parts:
-      if UP_p.tag_() != word_part_e.Literal:
+      if UP_p.tag() != word_part_e.Literal:
         line_ended = False
         continue
 

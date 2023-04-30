@@ -138,19 +138,19 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
 
   for name in sorted(defaults):
     val = defaults[name]
-    if val.tag_() == value_e.Bool:
+    if val.tag() == value_e.Bool:
       typ = 'Bool'
       v = '{.b = %s}' % ('true' if val.b else 'false')
-    elif val.tag_() == value_e.Int:
+    elif val.tag() == value_e.Int:
       typ = 'Int'
       v = '{.i = -1}'
-    elif val.tag_() == value_e.Float:
+    elif val.tag() == value_e.Float:
       typ = 'Float'
       v = '{.f = -1.0}'
-    elif val.tag_() == value_e.Undef:
+    elif val.tag() == value_e.Undef:
       typ = 'Str'  # default for string
       v = '{}'
-    elif val.tag_() == value_e.Str:
+    elif val.tag() == value_e.Str:
       # NOTE: 'osh' FlagSpecAndMore_ has default='nice' and default='abbrev-text'
       typ = 'Str'
       v = '{.s = %s}' % CString(val.s)
@@ -218,7 +218,7 @@ namespace arg_types {
           # TODO: This code is ugly and inefficient!  Generate something
           # better.  At least get rid of 'new' everywhere?
           init_vals.append('''\
-attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
+attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           ? nullptr
           : static_cast<value__Str*>(attrs->index_(StrFromC("%s")))->s''' % (
               field_name, field_name))
@@ -230,14 +230,14 @@ attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
 
         elif case(flag_type_e.Int):
           init_vals.append('''\
-attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
+attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           ? -1
           : static_cast<value__Int*>(attrs->index_(StrFromC("%s")))->i''' % (field_name, field_name))
           field_decls.append('int %s;' % field_name)
 
         elif case(flag_type_e.Float):
           init_vals.append('''\
-attrs->index_(StrFromC("%s"))->tag_() == value_e::Undef
+attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           ? -1
           : static_cast<value__Float*>(attrs->index_(StrFromC("%s")))->f''' % (field_name, field_name))
           field_decls.append('float %s;' % field_name)
@@ -487,17 +487,17 @@ class %s(object):
           elif case(flag_type_e.Str):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
+            print('    self.%s = None if %s.tag() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
 
           elif case(flag_type_e.Int):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = -1 if %s.tag_() == value_e.Undef else cast(value__Int, %s).i  # type: int' % (field_name, tmp, tmp))
+            print('    self.%s = -1 if %s.tag() == value_e.Undef else cast(value__Int, %s).i  # type: int' % (field_name, tmp, tmp))
 
           elif case(flag_type_e.Float):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = -1.0 if %s.tag_() == value_e.Undef else cast(value__Float, %s).f  # type: float' % (field_name, tmp, tmp))
+            print('    self.%s = -1.0 if %s.tag() == value_e.Undef else cast(value__Float, %s).f  # type: float' % (field_name, tmp, tmp))
           else:
             raise AssertionError(typ)
 

@@ -106,7 +106,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
   """
 
   UP_term = term
-  tag = term.tag_()
+  tag = term.tag()
 
   with tagswitch(term) as case:
     if case(char_class_term_e.Range):
@@ -162,7 +162,7 @@ def AsPosixEre(node, parts):
   Appends to a list of parts that you have to join.
   """
   UP_node = node
-  tag = node.tag_()
+  tag = node.tag()
 
   if tag == re_e.Primitive:
     node = cast(re__Primitive, UP_node)
@@ -206,7 +206,7 @@ def AsPosixEre(node, parts):
   if tag == re_e.Repeat:
     node = cast(re__Repeat, UP_node)
     # 'foo' or "foo" or $x or ${x} evaluated to too many chars
-    if node.child.tag_() == re_e.LiteralChars:
+    if node.child.tag() == re_e.LiteralChars:
       child = cast(re__LiteralChars, node.child)
       if len(child.s) > 1:
         # Note: Other regex dialects have non-capturing groups since we don't
@@ -216,7 +216,7 @@ def AsPosixEre(node, parts):
 
     AsPosixEre(node.child, parts)
     op = node.op
-    op_tag = op.tag_()
+    op_tag = op.tag()
     UP_op = op
 
     if op_tag == re_repeat_e.Op:

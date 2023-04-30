@@ -624,7 +624,7 @@ class Use(vm._Builtin):
         raise error.Usage('expected dialect name', loc.Missing())
 
       UP_actual = self.mem.GetValue('_DIALECT', scope_e.Dynamic)
-      if UP_actual.tag_() == value_e.Str:
+      if UP_actual.tag() == value_e.Str:
         actual = cast(value__Str, UP_actual).s
         if actual == expected:
           return 0  # OK
@@ -863,7 +863,7 @@ if mylib.PYTHON:
                 val = cast(value__Obj, UP_val)
                 obj = val.obj
               else:
-                e_die("Can't serialize value of type %d" % val.tag_())
+                e_die("Can't serialize value of type %d" % val.tag())
             attrs[name] = obj
 
           result['attrs'] = attrs

@@ -323,7 +323,7 @@ class _PrettyPrinter(object):
 
         ind1 = ' ' * (indent + INDENT)
         UP_val = val  # for mycpp
-        tag = val.tag_()
+        tag = val.tag()
         if tag == hnode_e.Array:
           val = cast(hnode__Array, UP_val)
 
@@ -380,7 +380,7 @@ class _PrettyPrinter(object):
       return
 
     UP_node = node  # for mycpp
-    tag = node.tag_()
+    tag = node.tag()
     if tag == hnode_e.Leaf:
       node = cast(hnode__Leaf, UP_node)
       f.PushColor(node.color)
@@ -449,7 +449,7 @@ def _TrySingleLine(node, f, max_chars):
       If False, you can't use the value of f.
   """
   UP_node = node  # for mycpp
-  tag = node.tag_()
+  tag = node.tag()
   if tag == hnode_e.Leaf:
     node = cast(hnode__Leaf, UP_node)
     f.PushColor(node.color)

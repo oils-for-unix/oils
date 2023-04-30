@@ -57,49 +57,49 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.Unary, node.tag_())
+    self.assertEqual(bool_expr_e.Unary, node.tag())
 
     p = _MakeParser('foo == bar')
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.Binary, node.tag_())
+    self.assertEqual(bool_expr_e.Binary, node.tag())
 
   def testParseNegatedFactor(self):
     p = _MakeParser('foo')
     node = p.ParseNegatedFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.WordTest, node.tag_())
+    self.assertEqual(bool_expr_e.WordTest, node.tag())
 
     p = _MakeParser('! foo')
     node = p.ParseNegatedFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.LogicalNot, node.tag_())
+    self.assertEqual(bool_expr_e.LogicalNot, node.tag())
 
   def testParseTerm(self):
     p = _MakeParser('foo && ! bar')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(bool_expr_e.LogicalAnd, node.tag_())
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag())
 
     # TODO: This is an entire expression I guess
     p = _MakeParser('foo && ! bar && baz')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(bool_expr_e.LogicalAnd, node.tag_())
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag())
 
     p = _MakeParser('-z foo && -z bar')
     node = p.ParseTerm()
     print(node)
-    self.assertEqual(bool_expr_e.LogicalAnd, node.tag_())
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag())
 
   def testParseExpr(self):
     p = _MakeParser('foo || ! bar')
     node = p.ParseExpr()
     print(node)
-    self.assertEqual(bool_expr_e.LogicalOr, node.tag_())
+    self.assertEqual(bool_expr_e.LogicalOr, node.tag())
 
     p = _MakeParser('a == b')
     print(p.ParseExpr())
@@ -109,13 +109,13 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.Binary, node.tag_())
+    self.assertEqual(bool_expr_e.Binary, node.tag())
 
   def testParseParenthesized(self):
     p = _MakeParser('zoo && ( foo == bar )')
     node = p.ParseExpr()
     print(node)
-    self.assertEqual(bool_expr_e.LogicalAnd, node.tag_())
+    self.assertEqual(bool_expr_e.LogicalAnd, node.tag())
 
 
 if __name__ == '__main__':

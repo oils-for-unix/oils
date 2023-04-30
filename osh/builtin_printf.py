@@ -172,7 +172,7 @@ class Printf(vm._Builtin):
     while True:  # loop over arguments
       for part in parts:  # loop over parsed format string
         UP_part = part
-        if part.tag_() == printf_part_e.Literal:
+        if part.tag() == printf_part_e.Literal:
           part = cast(printf_part__Literal, UP_part)
           token = part.token
           if token.id == Id.Format_EscapedPercent:
@@ -181,7 +181,7 @@ class Printf(vm._Builtin):
             s = word_compile.EvalCStringToken(token)
           out.append(s)
 
-        elif part.tag_() == printf_part_e.Percent:
+        elif part.tag() == printf_part_e.Percent:
           # Note: This case is very long, but hard to refactor because of the
           # error cases and "recycling" of args!  (arg_index, return 1, etc.)
           part = cast(printf_part__Percent, UP_part)
@@ -212,7 +212,7 @@ class Printf(vm._Builtin):
             try:
               width = int(width_str)
             except ValueError:
-              if width_loc.tag_() == loc_e.Missing:
+              if width_loc.tag() == loc_e.Missing:
                 width_loc = part.width
               self.errfmt.Print_("printf got invalid width %r" % width_str,
                                  blame_loc=width_loc)
@@ -240,7 +240,7 @@ class Printf(vm._Builtin):
             try:
               precision = int(precision_str)
             except ValueError:
-              if precision_loc.tag_() == loc_e.Missing:
+              if precision_loc.tag() == loc_e.Missing:
                 precision_loc = part.precision
               self.errfmt.Print_(
                   'printf got invalid precision %r' % precision_str,
@@ -333,7 +333,7 @@ class Printf(vm._Builtin):
               # global state.
 
               tzcell = self.mem.GetCell('TZ')
-              if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
+              if tzcell and tzcell.exported and tzcell.val.tag() == value_e.Str:
                 tzval = cast(value__Str, tzcell.val)
                 posix.putenv('TZ', tzval.s)
 

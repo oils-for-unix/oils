@@ -62,7 +62,7 @@ def LooksLikeStaticGlob(w):
 
   left_bracket = False
   for part in w.parts:
-    if part.tag_() == word_part_e.Literal:
+    if part.tag() == word_part_e.Literal:
       id_ = cast(Token, part).id
       if id_ in (Id.Lit_Star, Id.Lit_QMark):
         return True
@@ -249,7 +249,7 @@ def _GenerateERE(parts):
   out = []  # type: List[str]
 
   for part in parts:
-    tag = part.tag_()
+    tag = part.tag()
     UP_part = part
 
     if tag == glob_part_e.Literal:

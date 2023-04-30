@@ -198,7 +198,7 @@ class BoolParser(object):
       w = self.cur_word
       # e.g. [[ -f < ]].  But [[ -f '<' ]] is OK
 
-      tag = w.tag_()
+      tag = w.tag()
       if tag != word_e.Compound and tag != word_e.String:
         p_die('Invalid argument to unary operator', loc.Word(w))
       self._Next()

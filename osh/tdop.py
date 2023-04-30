@@ -33,7 +33,7 @@ def IsIndexable(node):
 
   We also allow $a[i] and foo$x[i] (formerly parse_dynamic_arith)
   """
-  tag = node.tag_()
+  tag = node.tag()
   with tagswitch(node) as case:
     if case(arith_expr_e.VarSub, arith_expr_e.Word):
       return True
@@ -51,7 +51,7 @@ def CheckLhsExpr(node, blame_word):
     a[0][0] = y
   """
   UP_node = node
-  if node.tag_() == arith_expr_e.Binary:
+  if node.tag() == arith_expr_e.Binary:
     node = cast(arith_expr__Binary, UP_node)
     if node.op_id == Id.Arith_LBracket and IsIndexable(node.left):
       return

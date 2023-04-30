@@ -560,7 +560,7 @@ class Transformer(object):
         while i < n and ISNONTERMINAL(pnode.GetChild(i).typ):
           node = self._Trailer(node, pnode.GetChild(i))
           i += 1
-        if node.tag_() == expr_e.Attribute:
+        if node.tag() == expr_e.Attribute:
           # Support a.startswith(b) but not obj.field
           attr_node = cast(Attribute, node)
           if attr_node.op.id == Id.Expr_Dot:
@@ -655,7 +655,7 @@ class Transformer(object):
       p = p_node.GetChild(i)
       e = self.Expr(p)
       UP_e = e
-      tag = e.tag_()
+      tag = e.tag()
       if tag == expr_e.Var:  # COMPATIBILITY hack
         e = cast(expr__Var, UP_e)
         places.append(place_expr.Var(e.name))

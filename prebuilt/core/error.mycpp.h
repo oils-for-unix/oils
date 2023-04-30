@@ -19,6 +19,7 @@ namespace error {  // forward declare
   class Strict;
   class ErrExit;
   class Expr;
+  class InvalidType;
 
 }  // forward declare namespace error
 
@@ -185,6 +186,21 @@ class Expr : public FatalRuntime {
   }
 
   DISALLOW_COPY_AND_ASSIGN(Expr)
+};
+
+class InvalidType : public Expr {
+ public:
+  InvalidType(Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return Expr::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(InvalidType)
 };
 
 

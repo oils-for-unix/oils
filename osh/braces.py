@@ -223,7 +223,7 @@ def _BraceDetect(w):
   for i, part in enumerate(w.parts):
     append = True
     UP_part = part
-    if part.tag_() == word_part_e.Literal:
+    if part.tag() == word_part_e.Literal:
       part = cast(Token, UP_part)
       id_ = part.id
       if id_ == Id.Lit_LBrace:
@@ -261,7 +261,7 @@ def _BraceDetect(w):
           # It must be ONE part.  For example, -1..-100..-2 is initially
           # lexed as a single Lit_Chars token.
           part2 = cur_parts[0]
-          if part2.tag_() == word_part_e.Literal:
+          if part2.tag() == word_part_e.Literal:
             tok = cast(Token, part2)
             if tok.id == Id.Lit_Chars:
               range_part = _RangePartDetect(tok)
@@ -467,7 +467,7 @@ def _BraceExpand(parts):
   num_alts = 0
   first_alt_index = -1
   for i, part in enumerate(parts):
-    tag = part.tag_()
+    tag = part.tag()
     if tag in (word_part_e.BracedTuple, word_part_e.BracedRange):
       num_alts += 1
       if num_alts == 1:
@@ -511,6 +511,6 @@ def BraceExpandWords(words):
         out.append(w)
 
       else:
-        raise AssertionError(w.tag_())
+        raise AssertionError(w.tag())
 
   return out

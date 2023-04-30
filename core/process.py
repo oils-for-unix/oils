@@ -233,7 +233,7 @@ class FdState(object):
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int
     val = self.mem.GetValue(fd_name)
-    if val.tag_() == value_e.Str:
+    if val.tag() == value_e.Str:
       try:
         return int(cast(value__Str, val).s)
       except ValueError:
@@ -271,7 +271,7 @@ class FdState(object):
     Returns whether F_DUPFD/dup2 succeeded, and the new descriptor.
     """
     UP_loc = blame_loc
-    if blame_loc.tag_() == redir_loc_e.VarName:
+    if blame_loc.tag() == redir_loc_e.VarName:
       fd2_name = cast(redir_loc__VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
@@ -285,7 +285,7 @@ class FdState(object):
 
       self._WriteFdToMem(fd2_name, new_fd)
 
-    elif blame_loc.tag_() == redir_loc_e.Fd:
+    elif blame_loc.tag() == redir_loc_e.Fd:
       fd2 = cast(redir_loc__Fd, UP_loc).fd
 
       if fd1 == fd2:
@@ -330,13 +330,13 @@ class FdState(object):
     # exec {fd}>&- means close the named descriptor
 
     UP_loc = blame_loc
-    if blame_loc.tag_() == redir_loc_e.VarName:
+    if blame_loc.tag() == redir_loc_e.VarName:
       fd_name = cast(redir_loc__VarName, UP_loc).name
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD:
         return False
 
-    elif blame_loc.tag_() == redir_loc_e.Fd:
+    elif blame_loc.tag() == redir_loc_e.Fd:
       fd = cast(redir_loc__Fd, UP_loc).fd
 
     else:
@@ -425,7 +425,7 @@ class FdState(object):
           posix.close(arg.target_fd)
 
           UP_loc = r.loc
-          if r.loc.tag_() == redir_loc_e.Fd:
+          if r.loc.tag() == redir_loc_e.Fd:
             fd = cast(redir_loc__Fd, UP_loc).fd
           else:
             fd = NO_FD

@@ -85,7 +85,7 @@ class EvalHay(object):
       # type: (value_t) -> Dict[str, Any]
 
       call_loc = loc.Missing()
-      if block.tag_() != value_e.Block:
+      if block.tag() != value_e.Block:
         raise error.Expr('Expected a block, got %s' % block, call_loc)
 
       UP_block = block

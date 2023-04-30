@@ -52,7 +52,7 @@ class History(vm._Builtin):
     # string following bash's rules
 
     UP_val = self.mem.GetValue('HISTFILE')
-    if UP_val.tag_() == value_e.Str:
+    if UP_val.tag() == value_e.Str:
       val = cast(value__Str, UP_val)
       return val.s
     else:

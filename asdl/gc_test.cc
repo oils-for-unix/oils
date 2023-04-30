@@ -31,7 +31,7 @@ TEST pretty_print_test() {
   // TODO: GC_ALWAYS and make it pass.
   for (int i = 0; i < 2; ++i) {
     hnode_t* t1 = b->PrettyTree();
-    ASSERT_EQ(hnode_e::Record, t1->tag_());
+    ASSERT_EQ(hnode_e::Record, t1->tag());
 
     auto f = mylib::Stdout();
     auto ast_f = Alloc<format::TextOutput>(f);

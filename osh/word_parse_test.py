@@ -296,7 +296,7 @@ class WordParserTest(unittest.TestCase):
     w = _assertReadWord(self, '${var//pat}')  # no replacement
     op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
-    self.assertEqual(rhs_word_e.Empty, op.replace.tag_())
+    self.assertEqual(rhs_word_e.Empty, op.replace.tag())
     self.assertEqual(Id.Lit_Slash, op.replace_mode)
 
     # replace with slash
@@ -514,11 +514,11 @@ class WordParserTest(unittest.TestCase):
   def testReadArithWord(self):
     w = _assertReadWord(self, '$(( (1+2) ))')
     child = w.parts[0].anode
-    self.assertEqual(arith_expr_e.Binary, child.tag_())
+    self.assertEqual(arith_expr_e.Binary, child.tag())
 
     w = _assertReadWord(self, '$(( (1+2) ))')
     child = w.parts[0].anode
-    self.assertEqual(arith_expr_e.Binary, child.tag_())
+    self.assertEqual(arith_expr_e.Binary, child.tag())
 
   def testReadArith(self):
     CASES = [
@@ -586,7 +586,7 @@ ls bar
     assertWord(w, Id.Lit_Chars, 'foo')
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual(word_e.Token, w.tag_())
+    self.assertEqual(word_e.Token, w.tag())
     self.assertEqual(Id.Op_Newline, w.id)
     self.assertEqual(None, w.tval)
 
@@ -597,12 +597,12 @@ ls bar
     assertWord(w, Id.Lit_Chars, 'bar')
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual(word_e.Token, w.tag_())
+    self.assertEqual(word_e.Token, w.tag())
     self.assertEqual(Id.Op_Newline, w.id)
     self.assertEqual(None, w.tval)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    self.assertEqual(word_e.Token, w.tag_())
+    self.assertEqual(word_e.Token, w.tag())
     self.assertEqual(Id.Eof_Real, w.id)
     self.assertEqual('', w.tval)
 

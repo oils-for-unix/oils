@@ -164,8 +164,8 @@ class ArithAstTest(unittest.TestCase):
     #n.CheckUnassigned()
 
     arith_expr_e = typed_arith_asdl.arith_expr_e
-    self.assertEqual(arith_expr_e.Const, c.tag_())
-    self.assertEqual(arith_expr_e.Binary, n.tag_())
+    self.assertEqual(arith_expr_e.Const, c.tag())
+    self.assertEqual(arith_expr_e.Binary, n.tag())
 
 
 if __name__ == '__main__':
