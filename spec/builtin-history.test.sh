@@ -65,6 +65,22 @@ exists
 ^D
 ## END
 
+#### HISTFILE must point to a file
+
+echo '
+HISTFILE=_tmp/does-not-exist
+history -r
+echo $?
+' | $SH -i
+
+# match osh's behaviour of echoing ^D for EOF
+case $SH in bash) echo '^D' ;; esac
+
+## STDOUT:
+1
+^D
+## END
+
 #### HISTFILE must be a string
 
 # TODO: we should support bash's behaviour here

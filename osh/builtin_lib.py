@@ -13,6 +13,7 @@ from core import vm
 from core.pyerror import e_usage
 from frontend import flag_spec
 from mycpp import mylib
+from pylib import path_stat
 
 from typing import Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -83,7 +84,12 @@ class History(vm._Builtin):
       return 0
 
     if arg.r:
-      readline.read_history_file(self.GetHistoryFilename())
+      history_filename = self.GetHistoryFilename()
+      history_file_exists = path_stat.exists(history_filename)
+      if not history_file_exists:
+        raise error.ErrExit(1, "The file '%s' ($HISTFILE) does not exist" % history_filename, loc.Missing())
+
+      readline.read_history_file(history_filename)
       return 0
 
     # Delete history entry by id number
