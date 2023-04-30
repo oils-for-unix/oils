@@ -22,7 +22,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
-from core.pyerror import e_usage, e_die
+from core.error import e_usage, e_die
 from core import pyos
 from core import pyutil
 from core import optview

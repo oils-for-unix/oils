@@ -23,11 +23,6 @@ namespace error {  // forward declare
 
 }  // forward declare namespace error
 
-namespace pyerror {  // forward declare
-
-
-}  // forward declare namespace pyerror
-
 namespace error {  // declare
 
 class _ErrorWithLocation {
@@ -203,13 +198,6 @@ class InvalidType : public Expr {
   DISALLOW_COPY_AND_ASSIGN(InvalidType)
 };
 
-
-
-}  // declare namespace error
-
-namespace pyerror {  // declare
-
-extern int NO_SPID;
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
@@ -217,6 +205,6 @@ extern int NO_SPID;
 [[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location = nullptr);
 
 
-}  // declare namespace pyerror
+}  // declare namespace error
 
 #endif  // CORE_ERROR_MYCPP_H

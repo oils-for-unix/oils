@@ -71,7 +71,7 @@ from _devbuild.gen.syntax_asdl import (
     Redir, redir_param_e, redir_param__HereDoc,
 )
 from asdl import runtime
-from core.pyerror import p_die
+from core.error import p_die
 from frontend import lexer
 from frontend import location
 from osh import word_

@@ -27,7 +27,7 @@ from _devbuild.gen.syntax_asdl import loc
 from asdl import format as fmt
 from core import alloc
 from core import error
-from core.pyerror import e_usage, e_die
+from core.error import e_usage, e_die
 from core import optview
 from core import state
 from mycpp.mylib import log

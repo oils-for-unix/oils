@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     Variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
-from core.pyerror import p_die
+from core.error import p_die
 from frontend import lexer
 from mycpp.mylib import log
 

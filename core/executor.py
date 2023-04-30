@@ -16,7 +16,7 @@ from asdl import runtime
 from core import dev
 from core import error
 from core import process
-from core.pyerror import e_die, e_die_status
+from core.error import e_die, e_die_status
 from core import pyos
 from core import ui
 from core import vm

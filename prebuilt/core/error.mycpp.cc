@@ -121,41 +121,35 @@ Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, locati
 InvalidType::InvalidType(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-}  // define namespace error
-
-namespace pyerror {  // define
-
-int NO_SPID = -1;
-
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Usage>(msg, location);
+  throw Alloc<Usage>(msg, location);
 }
 
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Strict>(msg, location);
+  throw Alloc<Strict>(msg, location);
 }
 
 [[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Parse>(msg, location);
+  throw Alloc<Parse>(msg, location);
 }
 
 [[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::FatalRuntime>(1, msg, location);
+  throw Alloc<FatalRuntime>(1, msg, location);
 }
 
 [[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::FatalRuntime>(status, msg, location);
+  throw Alloc<FatalRuntime>(status, msg, location);
 }
 
-}  // define namespace pyerror
+}  // define namespace error
 

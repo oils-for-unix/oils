@@ -39,7 +39,7 @@ from _devbuild.gen.runtime_asdl import (
 from asdl import runtime
 from core import error
 from core import state
-from core.pyerror import e_die, e_die_status
+from core.error import e_die, e_die_status
 from frontend import consts
 from frontend import match
 from frontend import location

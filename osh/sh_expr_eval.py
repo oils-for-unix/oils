@@ -35,7 +35,7 @@ from core import alloc
 from core import error
 from core import state
 from core import ui
-from core.pyerror import e_die, e_die_status, e_strict, e_usage
+from core.error import e_die, e_die_status, e_strict, e_usage
 from frontend import consts
 from frontend import location
 from frontend import match

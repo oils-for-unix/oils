@@ -25,11 +25,6 @@ namespace format {  // forward declare
 
 }  // forward declare namespace format
 
-namespace pyerror {  // forward declare
-
-
-}  // forward declare namespace pyerror
-
 namespace args {  // forward declare
 
   class _Attributes;
@@ -168,18 +163,6 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
 
 }  // declare namespace format
-
-namespace pyerror {  // declare
-
-extern int NO_SPID;
-[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);
-[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location = nullptr);
-
-
-}  // declare namespace pyerror
 
 namespace args {  // declare
 

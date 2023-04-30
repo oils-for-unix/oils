@@ -21,67 +21,87 @@ readonly DIR=_build/NINJA
 # In git
 readonly FILTER_DIR='prebuilt/dynamic-deps'
 
+make-egrep() {
+  # match chars until # or space, and line must be non-empty
+  gawk '
+  match($0, /([^# ]*)/, m) {
+    contents = m[0]
+    if (contents) {  # skip empty lines
+      print(contents)
+    }
+  }
+  '
+}
+
 write-filters() {
-  ### Write files with the egrep -f format
+  ### Write filename filters in the egrep -f format
 
-  # We could just manually edit these files in build/app-deps, but they are
-  # easier to see here.
+  # For ./NINJA-config.sh to use.
+  # This style lets us add comments.
 
-  # py-tool filter can be used for Ninja 'depfile' dependencies
-
-  # vendor/typing.py isn't imported normally
-  cat >$FILTER_DIR/filter-py-tool.txt <<'EOF'
+  # For asdl.asdl_main and other tools
+  make-egrep >$FILTER_DIR/filter-py-tool.txt <<'EOF'
 __init__.py
-typing.py
+typing.py  # vendor/typing.py isn't imported normally
 EOF
 
+  # Don't typecheck these files.
 
-  # typecheck and translate filters used for EXPLICIT Ninja dependencies --
-  # they are inputs to the tool
-
-  # mylib.py causes a bunch of errors
-
-  # tools_main.py and readlink.py have just 1 error
-
-  cat >$FILTER_DIR/filter-typecheck.txt <<'EOF'
+  make-egrep >$FILTER_DIR/filter-typecheck.txt <<'EOF'
 __init__.py
 typing.py
-mycpp/mylib.py
+
+# TODO: oil_lang/ needs to be statically typed
 oil_lang/builtin_json.py
 oil_lang/funcs_builtin.py
+
+# OrderedDict is polymorphic
 pylib/collections_.py
+
+# lots of polymorphic stuff etc.
+mycpp/mylib.py
+
+# TODO: move or remove these
 tools/deps.py
 tools/tools_main.py
 tools/readlink.py
 EOF
 
-  # On top of the typecheck filter, exclude these from translation
+  # On top of the typecheck filter, exclude these from translation.  They are
+  # not inputs to mycpp.
 
-  # Note: renaming files to pyoptview, pyconsts.py, pymatch.py, py_path_stat.py
-  # etc. would make this filter cleaner.
-
-  # TODO: Remove pyerror.py and change pattern back to core/py.*
-
-  cat >$FILTER_DIR/filter-translate.txt <<'EOF'
+  make-egrep >$FILTER_DIR/filter-translate.txt <<'EOF'
+# generated code shouldn't be translated
 _devbuild/
 _gen/
+
+# definitions that are used by */*_gen.py
 .*_def\.py
 .*_spec\.py
-asdl/py.*
-core/pyos.py
-core/pyutil.py
-core/optview.py
-frontend/py.*.py
-frontend/consts.py
-frontend/match.py
+
+asdl/py.*           # pybase.py ported by hand to C++
+
+core/py.*           # pyos.py, pyutil.py ported by hand to C++
+core/optview\.py     # core/optview_gen.py
+
+frontend/py.*\.py    # py_readline.py ported by hand to C++
+frontend/consts.py  # frontend/consts_gen.py
+frontend/match.py   # frontend/lexer_gen.py
+
 pgen2/grammar.py
 pgen2/pnode.py
+
+# should be py_path_stat.py, because it's ported by hand to C++
 pylib/path_stat.py
+
 oil_lang/builtin_json.py
 oil_lang/expr_eval.py
 oil_lang/objects.py
+
+# should be py_bool_stat.py, because it's ported by hand to C++
 osh/bool_stat.py
-tea/.*
+
+tea/
 EOF
 
   wc -l $FILTER_DIR/filter-*

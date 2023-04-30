@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from mycpp import mylib
 
-from core.pyerror import p_die
+from core.error import p_die
 
 from typing import Optional, Tuple, List, Union, IO, TYPE_CHECKING
 if TYPE_CHECKING:

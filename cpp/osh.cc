@@ -11,7 +11,7 @@
 #include "prebuilt/core/error.mycpp.h"
 
 using id_kind_asdl::Id;  // used below
-using pyerror::e_die;
+using error::e_die;
 using syntax_asdl::loc;
 
 namespace arith_parse {

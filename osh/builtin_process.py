@@ -15,7 +15,7 @@ from _devbuild.gen.runtime_asdl import (
     wait_status__Proc, wait_status_e)
 from core import dev
 from core import error
-from core.pyerror import e_usage, e_die_status
+from core.error import e_usage, e_die_status
 from core import process  # W1_OK, W1_ECHILD
 from core import vm
 from mycpp.mylib import log, tagswitch, print_stderr

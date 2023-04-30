@@ -7,7 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import (
     loc, ArgList, BlockArg, command_t, expr_e, expr_t, CommandSub
 )
-from core.pyerror import e_usage
+from core.error import e_usage
 from mycpp.mylib import tagswitch
 
 from typing import Optional, cast, TYPE_CHECKING

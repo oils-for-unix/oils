@@ -410,6 +410,11 @@ class InvalidType : public Expr {
   DISALLOW_COPY_AND_ASSIGN(InvalidType)
 };
 
+[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);
+[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location = nullptr);
 
 
 }  // declare namespace error
@@ -1452,43 +1457,37 @@ Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, locati
 InvalidType::InvalidType(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-}  // define namespace error
-
-namespace pyerror {  // define
-
-int NO_SPID = -1;
-
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Usage>(msg, location);
+  throw Alloc<Usage>(msg, location);
 }
 
 [[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Strict>(msg, location);
+  throw Alloc<Strict>(msg, location);
 }
 
 [[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::Parse>(msg, location);
+  throw Alloc<Parse>(msg, location);
 }
 
 [[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::FatalRuntime>(1, msg, location);
+  throw Alloc<FatalRuntime>(1, msg, location);
 }
 
 [[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location) {
   StackRoots _roots({&msg, &location});
 
-  throw Alloc<error::FatalRuntime>(status, msg, location);
+  throw Alloc<FatalRuntime>(status, msg, location);
 }
 
-}  // define namespace pyerror
+}  // define namespace error
 
 namespace args {  // define
 
@@ -1501,7 +1500,7 @@ using runtime_asdl::value__Bool;
 using runtime_asdl::value__Int;
 using runtime_asdl::value__Float;
 using runtime_asdl::value__Str;
-using pyerror::e_usage;
+using error::e_usage;
 int String = 1;
 int Int = 2;
 int Float = 3;

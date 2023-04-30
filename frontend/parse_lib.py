@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
-from core.pyerror import p_die
+from core.error import p_die
 from core import state
 from frontend import lexer
 from frontend import reader

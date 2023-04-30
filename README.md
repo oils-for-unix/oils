@@ -290,10 +290,4 @@ These files are for `oil-native` (in progress):
 
 ## Python Files Not Translated to C++
 
-    mycpp/
-      mylib.py  # statically typed equivalents of Python's data structures
-    pylib/      # copied from Python stdlib
-    core/
-      py{error,os,util}.py  # too complicated to translate
-    */*_def.py  # abstract definitions
-    */*_gen.py  # code generators
+See `build/dynamic-deps.sh`.

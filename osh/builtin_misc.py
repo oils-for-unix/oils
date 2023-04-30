@@ -19,7 +19,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import error
-from core.pyerror import e_usage, e_die, e_die_status
+from core.error import e_usage, e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state

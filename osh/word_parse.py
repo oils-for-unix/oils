@@ -72,7 +72,7 @@ from _devbuild.gen.syntax_asdl import (
     expr_t, source, ArgList,
 )
 from core import alloc
-from core.pyerror import p_die
+from core.error import p_die
 from mycpp.mylib import log
 from core import pyutil
 from core import ui

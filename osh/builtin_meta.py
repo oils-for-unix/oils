@@ -13,7 +13,7 @@ from core import dev
 from core import error
 from core import main_loop
 from core import process
-from core.pyerror import e_die_status, e_usage
+from core.error import e_die_status, e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm

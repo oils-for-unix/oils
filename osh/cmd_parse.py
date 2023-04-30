@@ -43,7 +43,7 @@ from asdl import runtime
 from core import alloc
 from core import error
 from core import ui
-from core.pyerror import p_die
+from core.error import p_die
 from frontend import consts
 from frontend import lexer
 from frontend import match

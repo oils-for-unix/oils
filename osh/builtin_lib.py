@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import state
 from core import vm
-from core.pyerror import e_usage
+from core.error import e_usage
 from frontend import flag_spec
 from mycpp import mylib
 from pylib import path_stat

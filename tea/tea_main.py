@@ -15,7 +15,7 @@ from frontend import reader
 from core import alloc
 from core import error
 from core import optview
-from core.pyerror import e_usage
+from core.error import e_usage
 from core import pyutil
 from core import state
 from core import ui

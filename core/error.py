@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import loc_t
 
@@ -165,3 +165,63 @@ class InvalidType(Expr):
   def __init__(self, msg, location):
     # type: (str, loc_t) -> None
     Expr.__init__(self, msg, location)
+
+
+def e_usage(msg, location):
+  # type: (str, loc_t) -> NoReturn
+  """Convenience wrapper for arg parsing / validation errors.
+
+  Usually causes a builtin to fail with status 2, but the script can continue
+  if 'set +o errexit'.  Main programs like bin/oil also use this.
+
+  Caught by
+
+  - RunAssignBuiltin and RunBuiltin, with optional LOCATION INFO
+  - various main() programs, without location info
+
+  Probably should separate these two cases?
+
+  - builtins pass Token() or loc::Missing()
+  - tool interfaces don't pass any location info
+  """
+  raise Usage(msg, location)
+
+
+def e_strict(msg, location):
+  # type: (str, loc_t) -> NoReturn
+  """Convenience wrapper for strictness errors.
+
+  Like e_die(), except the script MAY continue executing after these errors.
+
+  TODO: This could have a level too?
+  """
+  raise Strict(msg, location)
+
+
+def p_die(msg, location):
+  # type: (str, loc_t) -> NoReturn
+  """Convenience wrapper for parse errors.
+
+  Exits with status 2.  See core/main_loop.py.
+  """
+  raise Parse(msg, location)
+
+
+def e_die(msg, location=None):
+  # type: (str, loc_t) -> NoReturn
+  """Convenience wrapper for fatal runtime errors.
+
+  Usually exits with status 1.  See osh/cmd_eval.py.
+  """
+  raise FatalRuntime(1, msg, location)
+
+
+def e_die_status(status, msg, location=None):
+  # type: (int, str, loc_t) -> NoReturn
+  """Wrapper for C++ semantics
+  
+  To avoid confusing e_die(int span_id) and e_die(int status)!
+
+  Note that it doesn't take positional args, so you should use % formatting.
+  """
+  raise FatalRuntime(status, msg, location)

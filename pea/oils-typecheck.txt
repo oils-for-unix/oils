@@ -20,7 +20,6 @@ core/executor.py
 core/main_loop.py
 core/optview.py
 core/process.py
-core/pyerror.py
 core/pyos.py
 core/pyutil.py
 core/shell.py
@@ -46,6 +45,7 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
+mycpp/mylib.py
 oil_lang/builtin_oil.py
 oil_lang/expr_eval.py
 oil_lang/expr_parse.py

@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord, SimpleVarSub
 )
 from _devbuild.gen.types_asdl import lex_mode_e
-from core.pyerror import p_die
+from core.error import p_die
 from core import ui
 from frontend import lexer
 from mycpp import mylib

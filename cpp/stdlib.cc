@@ -17,7 +17,7 @@
 // To avoid circular dependency with e_die()
 #include "prebuilt/core/error.mycpp.h"
 
-using pyerror::e_die;
+using error::e_die;
 
 namespace fcntl_ {
 

@@ -59,7 +59,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 
 from asdl import runtime
-from core.pyerror import e_usage
+from core.error import e_usage
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, iteritems
 

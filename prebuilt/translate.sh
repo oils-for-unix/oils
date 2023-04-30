@@ -94,8 +94,7 @@ core-error() {
     CORE_ERROR_MYCPP_H \
     '#include "_gen/frontend/syntax.asdl.h"' \
     --to-header core.error \
-    --to-header core.pyerror \
-    core/error.py core/pyerror.py 
+    core/error.py
 }
 
 frontend-args() {
@@ -113,9 +112,8 @@ frontend-args() {
     --to-header asdl.runtime \
     --to-header asdl.format \
     --to-header frontend.args \
-    --to-header core.pyerror \
     "${ASDL_FILES[@]}" \
-    core/error.py core/pyerror.py \
+    core/error.py \
     frontend/args.py
 }
 

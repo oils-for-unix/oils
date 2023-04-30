@@ -34,7 +34,7 @@ from core import pyutil
 from core import state
 from core import ui
 from data_lang import qsn
-from core.pyerror import e_die
+from core.error import e_die
 from frontend import consts
 from frontend import lexer
 from frontend import location

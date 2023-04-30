@@ -19,7 +19,7 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 from core import alloc
 from core import error
-from core.pyerror import e_die, p_die
+from core.error import e_die, p_die
 from core import state
 from core import vm
 from frontend import flag_spec
