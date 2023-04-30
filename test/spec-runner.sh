@@ -150,8 +150,16 @@ dispatch-one() {
     # TODO: Add test/spec.sh run-file, which should use spec_params.py to get
     # the 'compare_shells'
     compare-py)     prefix=(test/spec.sh) ;;
+
     compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
+
+    # For interactive comparison
+    osh-only)       prefix=(test/spec.sh run-file-with-osh) ;;
+    bash-only)      prefix=(test/spec.sh run-file-with-bash) ;;
+    osh-bash)       prefix=(test/spec.sh run-file-with-osh-bash) ;;
+
     release-alpine) prefix=(test/spec-alpine.sh run-file) ;;
+
     *) die "Invalid compare mode $compare_mode" ;;
   esac
 

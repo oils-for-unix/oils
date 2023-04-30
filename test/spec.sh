@@ -233,13 +233,6 @@ osh-all() {
   test/spec-runner.sh all-parallel osh compare-py osh-py
 }
 
-interactive-all() {
-  check-survey-shells
-
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel interactive compare-py interactive-py
-}
-
 oil-all() {
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel oil compare-py oil-py
@@ -261,15 +254,33 @@ osh-minimal() {
   test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal
 }
 
+
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
 oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
-interactive-all-serial() { MAX_PROCS=1 $0 interactive-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
-soil-run-osh() {
-  osh-all-serial
+interactive-osh() {
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel interactive osh-only interactive-osh
 }
+
+interactive-bash() {
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel interactive bash-only interactive-bash
+}
+
+
+interactive-osh-bash() {
+  ### Triggers the "Stopped" bug with osh and bash!
+
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel interactive osh-bash interactive-osh-bash
+}
+
+#
+# run-file variants
+# 
 
 run-file() {
   local spec_name=$1
@@ -286,6 +297,32 @@ run-file() {
   sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
     $other_shell_list $OSH_LIST "$@"
 }
+
+run-file-with-osh-bash() {
+  local spec_name=$1
+  shift
+
+  # defines: suite failures_allowed our_shell compare_shells
+  local $(test/spec_params.py vars-for-file $spec_name)
+
+  sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
+    bash $OSH_LIST "$@"
+}
+
+_run-file-with-one() {
+  local shell=$1
+  local spec_name=$2
+  shift 2
+
+  # defines: suite failures_allowed our_shell compare_shells
+  local $(test/spec_params.py vars-for-file $spec_name)
+
+  sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
+    $shell "$@"
+}
+
+run-file-with-osh() { _run-file-with-one $REPO_ROOT/bin/osh "$@"; }
+run-file-with-bash() { _run-file-with-one bash "$@"; }
 
 #
 # Individual tests.

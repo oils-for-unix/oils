@@ -203,15 +203,16 @@ EOF
 interactive-tasks() {
   ### Print tasks for the 'interactive' build
 
-# TODO: enable this if it doesn't cause random spec test stoppages
-# interactive-spec  test/spec.sh interactive-all-serial    _tmp/spec/interactive-py/index.html
+  # TODO: also run interactive suite with osh-cpp
+  # TODO: This is hanging?  But it works on my machine
+# interactive-osh  test/spec.sh interactive-osh     _tmp/spec/interactive-osh/index.html
 
   cat <<EOF
 dump-os-info     soil/worker.sh dump-os-info      -
 dump-env         soil/worker.sh dump-env          -
-py-all-and-ninja    soil/worker.sh py-all-and-ninja              -
-process-table       test/process-table.sh soil-run               _tmp/process-table/index.html
-stateful            test/stateful.sh soil-run                    _tmp/spec/stateful/index.html
+py-all-and-ninja soil/worker.sh py-all-and-ninja  -
+process-table    test/process-table.sh soil-run   _tmp/process-table/index.html
+stateful         test/stateful.sh soil-run        _tmp/spec/stateful/index.html
 EOF
 }
 

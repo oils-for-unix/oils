@@ -41,32 +41,30 @@ class SpecParams(object):
       suite=None,
       tags=None,
       compare_shells='',  # e.g. 'bash' or 'bash dash mksh zsh'
-      our_shell='',  # osh or ysh
+      our_shell=None,  # osh or ysh
       failures_allowed=0):
 
     assert suite is not None
 
     # our_shell may be bin/osh, _bin/cxx-asan/osh, _bin/cxx-gclaways/osh, an
     # optimized release tarball version, etc.
-    if name.startswith('oil-') or name.startswith('hay'):
-      o = our_shell or 'ysh'
-    elif name.startswith('tea-'):
-      # Tea could run from OSH with parse_tea!  Nothing here passes yet.
-      o = our_shell or 'osh'  
-    else:
-      o = our_shell or 'osh'
+    assert our_shell is not None
 
     # Note: Can also select bash 4.4 vs. bash 5.2 here
     # could also default to 'bash dash mksh' ?
     c = compare_shells.split() if compare_shells else []
 
-    fi = File(name, suite, tags or [], c, o, failures_allowed)
+    fi = File(name, suite, tags or [], c, our_shell, failures_allowed)
     self.files.append(fi)
 
   def OshFile(self, name, *args, **kwargs):
+    if 'our_shell' not in kwargs:
+      kwargs['our_shell'] = 'osh'
     self.File(name, suite='osh', **kwargs)
 
   def YshFile(self, name, **kwargs):
+    if 'our_shell' not in kwargs:
+      kwargs['our_shell'] = 'ysh'
     self.File(name, suite='ysh', **kwargs)
 
 
@@ -83,7 +81,8 @@ def main(argv):
 
 
   # Not part of OSH or YSH
-  sp.File('tea-func', suite='tea')
+  # Tea could run from OSH with parse_tea!  Nothing here passes yet.
+  sp.File('tea-func', suite='tea', our_shell='osh')
 
   spec_osh.Define(sp)
   spec_ysh.Define(sp)

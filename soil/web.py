@@ -149,7 +149,6 @@ DETAILS_RUN_T = jsontemplate.Template('''\
       <i>
       PR <a href="https://github.com/oilshell/oil/pull/{pr-number}">#{pr-number}</a>
       from <a href="https://github.com/oilshell/oil/tree/{head-ref}">{head-ref}</a>
-      updated
       </i>
     {.end}
     {.section commit-desc}
