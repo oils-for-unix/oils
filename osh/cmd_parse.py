@@ -13,7 +13,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    loc,
+    loc, loc_t,
     condition, condition_t,
     for_iter,
     command, command_t,
@@ -1241,10 +1241,12 @@ class CommandParser(object):
 
     in_spid = runtime.NO_SPID
     semi_spid = runtime.NO_SPID
+    dangling_do = None  # type: Optional[loc_t]
 
     self._Peek()
     if self.c_id == Id.KW_In:
       in_spid = word_.LeftMostSpanForWord(self.cur_word)  # for translation only
+
 
       self._Next()  # skip in
       if self.w_parser.LookPastSpace() == Id.Op_LParen:
@@ -1272,6 +1274,16 @@ class CommandParser(object):
         if num_iter_names > 2:
           p_die('Expected at most 2 loop variables', loc.Span(for_spid))
 
+        # check for dangling "do" word (might be indicative of a syntax error)
+        if len(iter_words) > 0:
+          last_word = iter_words[-1]
+          if len(last_word.parts) == 1:
+            UP_last_word_part = last_word.parts[0]
+            if UP_last_word_part.tag_() == word_part_e.Literal:
+              last_word_part = cast(Token, UP_last_word_part)
+              if last_word_part.id == Id.KW_Do:
+                dangling_do = loc.Word(last_word_part)
+
     elif self.c_id == Id.KW_Do:
       node.iterable = for_iter.Args()  # implicitly loop over "$@"
       # do not advance
@@ -1287,6 +1299,11 @@ class CommandParser(object):
     if self.c_id == Id.Lit_LBrace:  # parse_opts.parse_brace() must be on
       node.body = self.ParseBraceGroup()
     else:
+      if self.c_id != Id.KW_Do and dangling_do:
+        # calling self.ParseDoGroup will fail, we can produce a better error
+        # message if we know the last item in the iterable list is "do"
+        p_die('Expected a semi-colon or newline before the "do".', dangling_do)
+
       node.body = self.ParseDoGroup()
 
     node.spids.append(in_spid)
