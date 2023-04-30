@@ -70,6 +70,8 @@ def Define(sp):
 
   sp.File('builtin-getopts')
 
+  sp.File('builtin-history')
+
   sp.File('builtin-io')
 
   sp.File('builtin-printf')
