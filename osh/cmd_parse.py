@@ -1125,7 +1125,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Done)
     done_kw = _KeywordToken(self.cur_word)  # after _Eat
 
-    node = command.DoGroup(do_kw, done_kw, c_list.children)
+    node = command.DoGroup(do_kw, c_list.children, done_kw)
     node.spids.append(do_kw.span_id)
     node.spids.append(done_kw.span_id)
     return node

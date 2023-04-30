@@ -309,7 +309,7 @@ module syntax
   | Pipeline(List[command] children, bool negated, List[int] stderr_indices)
   | AndOr(List[id] ops, List[command] children)
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
-  | DoGroup(Token left, Token right, List[command] children)
+  | DoGroup(Token left, List[command] children, Token right)
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
