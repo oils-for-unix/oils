@@ -22,11 +22,7 @@ from _devbuild.gen.runtime_asdl import (
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
     loc_t,
-    redir_loc,
-    redir_loc_e,
-    redir_loc_t,
-    redir_loc__VarName,
-    redir_loc__Fd,
+    redir_loc, redir_loc_e, redir_loc_t,
 )
 from core import dev
 from core import error
@@ -272,7 +268,7 @@ class FdState(object):
     """
     UP_loc = blame_loc
     if blame_loc.tag() == redir_loc_e.VarName:
-      fd2_name = cast(redir_loc__VarName, UP_loc).name
+      fd2_name = cast(redir_loc.VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
         new_fd = fcntl_.fcntl(fd1, F_DUPFD, _SHELL_MIN_FD)  # type: int
@@ -286,7 +282,7 @@ class FdState(object):
       self._WriteFdToMem(fd2_name, new_fd)
 
     elif blame_loc.tag() == redir_loc_e.Fd:
-      fd2 = cast(redir_loc__Fd, UP_loc).fd
+      fd2 = cast(redir_loc.Fd, UP_loc).fd
 
       if fd1 == fd2:
         # The user could have asked for it to be open on descrptor 3, but open()
@@ -331,13 +327,13 @@ class FdState(object):
 
     UP_loc = blame_loc
     if blame_loc.tag() == redir_loc_e.VarName:
-      fd_name = cast(redir_loc__VarName, UP_loc).name
+      fd_name = cast(redir_loc.VarName, UP_loc).name
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD:
         return False
 
     elif blame_loc.tag() == redir_loc_e.Fd:
-      fd = cast(redir_loc__Fd, UP_loc).fd
+      fd = cast(redir_loc.Fd, UP_loc).fd
 
     else:
       raise AssertionError()
@@ -426,7 +422,7 @@ class FdState(object):
 
           UP_loc = r.loc
           if r.loc.tag() == redir_loc_e.Fd:
-            fd = cast(redir_loc__Fd, UP_loc).fd
+            fd = cast(redir_loc.Fd, UP_loc).fd
           else:
             fd = NO_FD
 

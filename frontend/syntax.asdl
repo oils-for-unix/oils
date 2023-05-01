@@ -248,7 +248,10 @@ module syntax
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  redir_loc = Fd(int fd) | VarName(str name)
+  redir_loc =
+    Fd(int fd) | VarName(str name)
+    generate [no_legacy__]
+
   redir_param =
     Word %CompoundWord
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'

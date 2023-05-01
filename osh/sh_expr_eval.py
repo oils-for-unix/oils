@@ -33,14 +33,14 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from core import alloc
 from core import error
+from core.error import e_die, e_die_status, e_strict, e_usage
 from core import state
 from core import ui
-from core.error import e_die, e_die_status, e_strict, e_usage
 from frontend import consts
 from frontend import location
 from frontend import match
-from frontend import reader
 from frontend import parse_lib
+from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch, str_cmp
 from osh import bool_stat
@@ -52,7 +52,6 @@ from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview
-  from core.state import Mem
 
 _ = log
 
@@ -76,7 +75,7 @@ _ = log
 
 
 def OldValue(lval, mem, exec_opts):
-  # type: (lvalue_t, Mem, Optional[optview.Exec]) -> value_t
+  # type: (lvalue_t, state.Mem, Optional[optview.Exec]) -> value_t
   """Look up for augmented assignment.
 
   For s+=val and (( i += 1 ))
@@ -276,7 +275,7 @@ class ArithEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt):
-    # type: (Mem, optview.Exec, state.MutableOpts, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
+    # type: (state.Mem, optview.Exec, state.MutableOpts, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
     self.word_ev = None  # type: word_eval.StringWordEvaluator
     self.mem = mem
     self.exec_opts = exec_opts
@@ -872,7 +871,7 @@ class BoolEvaluator(ArithEvaluator):
   """
 
   def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt, always_strict=False):
-    # type: (Mem, optview.Exec, Optional[state.MutableOpts], Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
+    # type: (state.Mem, optview.Exec, Optional[state.MutableOpts], Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
     ArithEvaluator.__init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt)
     self.always_strict = always_strict
 
