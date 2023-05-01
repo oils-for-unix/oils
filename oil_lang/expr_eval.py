@@ -658,7 +658,7 @@ class OilEvaluator(object):
               if right.i == 0:
                 raise ZeroDivisionError()
 
-              return value.Int(left.i / right.i)
+              return value.Float(left.i / float(right.i))
             else:
               raise NotImplementedError(op)
 
