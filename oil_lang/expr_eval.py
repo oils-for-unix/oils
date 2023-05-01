@@ -4,7 +4,7 @@ expr_eval.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
     place_expr_e, place_expr_t, place_expr__Var, Attribute, Subscript,
 
@@ -33,8 +33,9 @@ from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
     part_value, part_value_t,
     lvalue,
-    value, value_e, value_t, value__Bool, value__Int, value__Float,
-    value__Str, value__MaybeStrArray, value__AssocArray, value__Obj
+    value, value_e, value_t, value__AssocArray, value__Bool, value__Dict,
+    value__Int, value__Float, value__List, value__MaybeStrArray, value__Str,
+    value__Obj,
 )
 from asdl import runtime
 from core import error
@@ -140,6 +141,12 @@ def _PyObjToValue(val):
   elif isinstance(val, str):
     return value.Str(val)
 
+  elif isinstance(val, list):
+    return value.List(val)
+
+  elif isinstance(val, dict):
+    return value.Dict(val)
+
   else:
     raise NotImplementedError()
 
@@ -172,6 +179,18 @@ def _ValueToPyObj(val):
       val = cast(value__MaybeStrArray, UP_val)
       # XXX type checker is somehow OK with this (holes)?
       return objects.StrArray(val.strs)
+
+    elif case(value_e.List):
+      val = cast(value__List, UP_val)
+      return val.items
+
+    elif case(value_e.AssocArray):
+      val = cast(value__AssocArray, UP_val)
+      return val.d
+
+    elif case(value_e.Dict):
+      val = cast(value__Dict, UP_val)
+      return val.d
 
     else:
       raise NotImplementedError()
@@ -441,6 +460,41 @@ class OilEvaluator(object):
         raise ValueError("%r doesn't look like an integer" % val)
 
     raise ValueError("%r isn't like an integer" % (val,))
+
+  def _ValueToInteger(self, val):
+    # type: (value_t) -> int
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Int):
+        val = cast(value__Int, UP_val)
+        return val.i
+
+      elif case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        if match.LooksLikeInteger(val.s):
+          return int(val.s)
+        else:
+          raise ValueError("%r doesn't look like an integer" % val.s)
+
+    raise error.InvalidType('Expected Int', loc.Missing())
+
+  def _MaybeConvertStr(self, val):
+    # type: (value_t) -> value_t
+    """
+    If val is a number-looking string, it will be converted to the appropriate
+    type. Otherwise val is returned untouched.
+    """ 
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        if match.LooksLikeInteger(val.s):
+          return value.Int(int(val.s))
+
+        if match.LooksLikeFloat(val.s):
+          return value.Float(float(val.s))
+
+    return val
     
   def _EvalConst(self, node):
     # type: (expr__Const) -> value_t
@@ -579,64 +633,243 @@ class OilEvaluator(object):
 
     raise NotImplementedError(node.op.id)
 
+  def _ArithNumeric(self, left, right, op):
+    # type: (value_t, value_t, Id_t) -> value_t
+    left = self._MaybeConvertStr(left)
+    right = self._MaybeConvertStr(right)
+    UP_left = left
+    UP_right = right
+
+    with tagswitch(left) as lcase:
+      if lcase(value_e.Int):
+        left = cast(value__Int, UP_left)
+
+        with tagswitch(right) as rcase:
+          if rcase(value_e.Int):
+            right = cast(value__Int, UP_right)
+
+            if op == Id.Arith_Plus:
+              return value.Int(left.i + right.i)
+            elif op == Id.Arith_Minus:
+              return value.Int(left.i - right.i)
+            elif op == Id.Arith_Star:
+              return value.Int(left.i * right.i)
+            elif op == Id.Arith_Slash:
+              if right.i == 0:
+                raise ZeroDivisionError()
+
+              return value.Float(left.i / float(right.i))
+            else:
+              raise NotImplementedError(op)
+
+          elif rcase(value_e.Float):
+            right = cast(value__Float, UP_right)
+            if op == Id.Arith_Plus:
+              return value.Float(left.i + right.f)
+            elif op == Id.Arith_Minus:
+              return value.Float(left.i - right.f)
+            elif op == Id.Arith_Star:
+              return value.Float(left.i * right.f)
+            elif op == Id.Arith_Slash:
+              if right.f == 0.0:
+                raise ZeroDivisionError()
+
+              return value.Float(left.i / right.f)
+            else:
+              raise NotImplementedError(op)
+
+          else:
+            raise error.InvalidType('Expected Int or Float', loc.Missing())
+
+      elif lcase(value_e.Float):
+        left = cast(value__Float, UP_left)
+
+        with tagswitch(right) as rcase:
+          if rcase(value_e.Int):
+            right = cast(value__Int, UP_right)
+            if op == Id.Arith_Plus:
+              return value.Float(left.f + right.i)
+            elif op == Id.Arith_Minus:
+              return value.Float(left.f - right.i)
+            elif op == Id.Arith_Star:
+              return value.Float(left.f * right.i)
+            elif op == Id.Arith_Slash:
+              if right.i == 0:
+                raise ZeroDivisionError()
+
+              return value.Float(left.f / right.i)
+            else:
+              raise NotImplementedError(op)
+
+          elif rcase(value_e.Float):
+            right = cast(value__Float, UP_right)
+            if op == Id.Arith_Plus:
+              return value.Float(left.f + right.f)
+            elif op == Id.Arith_Minus:
+              return value.Float(left.f - right.f)
+            elif op == Id.Arith_Star:
+              return value.Float(left.f * right.f)
+            elif op == Id.Arith_Slash:
+              if right.f == 0.0:
+                raise ZeroDivisionError()
+
+              return value.Float(left.f / right.f)
+            else:
+              raise NotImplementedError(op)
+
+          else:
+            raise error.InvalidType('Expected Int or Float', loc.Missing())
+
+      else:
+          raise error.InvalidType('Expected Int or Float', loc.Missing())
+
+  def _ArithDivideInt(self, left, right):
+    # type: (value_t, value_t) -> value__Int
+    left_i = self._ValueToInteger(left)
+    right_i = self._ValueToInteger(right)
+    if right_i == 0:
+      raise ZeroDivisionError()
+
+    return value.Int(left_i // right_i)
+
+  def _ArithModulus(self, left, right):
+    # type: (value_t, value_t) -> value__Int
+    left_i = self._ValueToInteger(left)
+    right_i = self._ValueToInteger(right)
+    if right_i == 0:
+      raise ZeroDivisionError()
+
+    return value.Int(left_i % right_i)
+
+  def _ArithExponentiate(self, left, right):
+    # type: (value_t, value_t) -> value__Int
+    left_i = self._ValueToInteger(left)
+    right_i = self._ValueToInteger(right)
+    return value.Int(left_i ** right_i)
+
+  def _ArithBitwise(self, left, right, op):
+    # type: (value_t, value_t, Id_t) -> value__Int
+    left_i = self._ValueToInteger(left)
+    right_i = self._ValueToInteger(right)
+
+    if op == Id.Arith_Amp:
+      return value.Int(left_i & right_i)
+    elif op == Id.Arith_Pipe:
+      return value.Int(left_i | right_i)
+    elif op == Id.Arith_Caret:
+      return value.Int(left_i ^ right_i)
+    elif op == Id.Arith_DGreat:
+      return value.Int(left_i >> right_i)
+    elif op == Id.Arith_DLess:
+      return value.Int(left_i << right_i)
+
+    raise NotImplementedError()
+
+  def _ArithLogical(self, left, right, op):
+    # type: (value_t, value_t, Id_t) -> value__Bool
+    UP_left = left
+    UP_right = right
+
+    with tagswitch(left) as lcase:
+      if lcase(value_e.Bool):
+        left = cast(value__Bool, UP_left)
+
+        with tagswitch(right) as rcase:
+          if rcase(value_e.Bool):
+            right = cast(value__Bool, UP_right)
+
+            if op == Id.Expr_And:
+              return value.Bool(left.b and right.b)
+            elif op == Id.Expr_Or:
+              return value.Bool(left.b or right.b)
+
+          else:
+            raise error.InvalidType('Expected Bool', loc.Missing())
+
+      else:
+        raise error.InvalidType('Expected Bool', loc.Missing())
+
+      raise NotImplementedError()
+
+  def _Concat(self, left, right):
+    # type: (value_t, value_t) -> value_t
+    UP_left = left
+    UP_right = right
+
+    with tagswitch(left) as lcase:
+      if lcase(value_e.List):
+        left = cast(value__List, UP_left)
+
+        with tagswitch(right) as rcase:
+          if rcase(value_e.List):
+            right = cast(value__List, UP_right)
+            return value.List(left.items + right.items)
+
+          else:
+            raise error.InvalidType('Expected List', loc.Missing())
+
+      if lcase(value_e.Str):
+        left = cast(value__Str, UP_left)
+        with tagswitch(right) as rcase:
+          if rcase(value_e.Str):
+            right = cast(value__Str, UP_right)
+            return value.Str(left.s + right.s)
+
+          else:
+            raise error.InvalidType('Expected String', loc.Missing())
+
+      if lcase(value_e.MaybeStrArray):
+        left = cast(value__MaybeStrArray, UP_left)
+        with tagswitch(right) as rcase:
+          if rcase(value_e.MaybeStrArray):
+            right = cast(value__MaybeStrArray, UP_right)
+            return value.MaybeStrArray(left.strs + right.strs)
+
+          else:
+            raise error.InvalidType('Expected MaybeStrArray', loc.Missing())
+
+      else:
+        raise error.InvalidType('Expected List or String', loc.Missing())
+
   def _EvalBinary(self, node):
-    # type: (expr__Binary) -> Any # XXX
+    # type: (expr__Binary) -> value_t
 
-    left = self._EvalExpr(node.left)
-    right = self._EvalExpr(node.right)
+    left = _PyObjToValue(self._EvalExpr(node.left))
+    right = _PyObjToValue(self._EvalExpr(node.right))
 
-    if node.op.id == Id.Arith_Plus:
-      return self._ToNumber(left) + self._ToNumber(right)
-    if node.op.id == Id.Arith_Minus:
-      return self._ToNumber(left) - self._ToNumber(right)
-    if node.op.id == Id.Arith_Star:
-      return self._ToNumber(left) * self._ToNumber(right)
-
-    if node.op.id == Id.Arith_Slash:
-      # NOTE: does not depend on from __future__ import division
+    if node.op.id == Id.Arith_Plus \
+        or node.op.id == Id.Arith_Minus \
+        or node.op.id == Id.Arith_Star \
+        or node.op.id == Id.Arith_Slash:
       try:
-        result = float(self._ToNumber(left)) / self._ToNumber(right)  # floating point division
+        return self._ArithNumeric(left, right, node.op.id)
       except ZeroDivisionError:
         raise error.Expr('divide by zero', node.op)
 
-      return result
-
     if node.op.id == Id.Expr_DSlash:
-      return self._ToInteger(left) // self._ToInteger(right)  # integer divison
+      return self._ArithDivideInt(left, right)
     if node.op.id == Id.Arith_Percent:
-      return self._ToInteger(left) % self._ToInteger(right)
+      return self._ArithModulus(left, right)
 
     if node.op.id == Id.Arith_DStar:  # Exponentiation
-      return self._ToInteger(left) ** self._ToInteger(right)
+      return self._ArithExponentiate(left, right)
 
     if node.op.id == Id.Arith_DPlus:
       # list or string concatenation
       # dicts can have duplicates, so don't mess with that
-
-      if not isinstance(left, (str, list)):
-        raise ValueError('Use ++ on strings or lists, got %r' % type(left))
-      if not isinstance(right, (str, list)):
-        raise ValueError('Use ++ on strings or lists, got %r' % type(right))
-
-      return left + right  # type: ignore
+      return self._Concat(left, right)
 
     # Bitwise
-    if node.op.id == Id.Arith_Amp:
-      return left & right
-    if node.op.id == Id.Arith_Pipe:
-      return left | right
-    if node.op.id == Id.Arith_Caret:
-      return left ^ right
-    if node.op.id == Id.Arith_DGreat:
-      return left >> right
-    if node.op.id == Id.Arith_DLess:
-      return left << right
+    if node.op.id == Id.Arith_Amp \
+        or node.op.id == Id.Arith_Pipe \
+        or node.op.id == Id.Arith_Caret \
+        or node.op.id == Id.Arith_DGreat \
+        or node.op.id == Id.Arith_DLess:
+      return self._ArithBitwise(left, right, node.op.id)
 
     # Logical
-    if node.op.id == Id.Expr_And:
-      return left and right
-    if node.op.id == Id.Expr_Or:
-      return left or right
+    if node.op.id == Id.Expr_And or node.op.id == Id.Expr_Or:
+      return self._ArithLogical(left, right, node.op.id)
 
     raise NotImplementedError(node.op.id)
 
@@ -886,7 +1119,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.Binary):
         node = cast(expr__Binary, UP_node)
-        return self._EvalBinary(node)
+        return _ValueToPyObj(self._EvalBinary(node))
 
       elif case(expr_e.Range):  # 1:10  or  1:10:2
         node = cast(expr__Range, UP_node)
