@@ -5,14 +5,11 @@ regex_translate.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    char_class_term_e, char_class_term_t,
-    char_class_term__Range,
-    PosixClass, PerlClass, CharCode,
-
-    re_e, re__CharClass, re__Primitive, re__LiteralChars, re__Seq, re__Alt,
-    re__Repeat, re__Group, re_repeat_e, re_repeat__Op, re_repeat__Num,
-    re_repeat__Range,
     loc,
+    PosixClass, PerlClass, CharCode,
+    char_class_term, char_class_term_e, char_class_term_t,
+    re, re_e,
+    re_repeat, re_repeat_e,
 )
 from _devbuild.gen.id_kind_asdl import Id
 
@@ -110,7 +107,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
 
   with tagswitch(term) as case:
     if case(char_class_term_e.Range):
-      term = cast(char_class_term__Range, UP_term)
+      term = cast(char_class_term.Range, UP_term)
 
       # Create our own flags
       range_no_special = [0]
@@ -165,7 +162,7 @@ def AsPosixEre(node, parts):
   tag = node.tag()
 
   if tag == re_e.Primitive:
-    node = cast(re__Primitive, UP_node)
+    node = cast(re.Primitive, UP_node)
     if node.id == Id.Re_Dot:
       parts.append('.')
     elif node.id == Id.Re_Start:
@@ -177,7 +174,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.LiteralChars:
-    node = cast(re__LiteralChars, UP_node)
+    node = cast(re.LiteralChars, UP_node)
     # The bash [[ x =~ "." ]] construct also has to do this
 
     # TODO: What about \0 and unicode escapes?
@@ -190,13 +187,13 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.Seq:
-    node = cast(re__Seq, UP_node)
+    node = cast(re.Seq, UP_node)
     for c in node.children:
       AsPosixEre(c, parts)
     return
 
   if tag == re_e.Alt:
-    node = cast(re__Alt, UP_node)
+    node = cast(re.Alt, UP_node)
     for i, c in enumerate(node.children):
       if i != 0:
         parts.append('|')
@@ -204,10 +201,10 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.Repeat:
-    node = cast(re__Repeat, UP_node)
+    node = cast(re.Repeat, UP_node)
     # 'foo' or "foo" or $x or ${x} evaluated to too many chars
     if node.child.tag() == re_e.LiteralChars:
-      child = cast(re__LiteralChars, node.child)
+      child = cast(re.LiteralChars, node.child)
       if len(child.s) > 1:
         # Note: Other regex dialects have non-capturing groups since we don't
         # need this.
@@ -220,7 +217,7 @@ def AsPosixEre(node, parts):
     UP_op = op
 
     if op_tag == re_repeat_e.Op:
-      op = cast(re_repeat__Op, UP_op)
+      op = cast(re_repeat.Op, UP_op)
       op_id = op.op.id
       if op_id == Id.Arith_Plus:
         parts.append('+')
@@ -233,12 +230,12 @@ def AsPosixEre(node, parts):
       return
 
     if op_tag == re_repeat_e.Num:
-      op = cast(re_repeat__Num, UP_op)
+      op = cast(re_repeat.Num, UP_op)
       parts.append('{%s}' % op.times.tval)
       return
 
     if op_tag == re_repeat_e.Range:
-      op = cast(re_repeat__Range, UP_op)
+      op = cast(re_repeat.Range, UP_op)
       lower = op.lower.tval if op.lower else ''
       upper = op.upper.tval if op.upper else ''
       parts.append('{%s,%s}' % (lower, upper))
@@ -248,7 +245,7 @@ def AsPosixEre(node, parts):
 
   # Special case for familiarity: () is acceptable as a group in ERE
   if tag in (re_e.Group, re_e.Capture):
-    node = cast(re__Group, UP_node)
+    node = cast(re.Group, UP_node)
     parts.append('(')
     AsPosixEre(node.child, parts)
     parts.append(')')
@@ -276,7 +273,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.CharClass:
-    node = cast(re__CharClass, UP_node)
+    node = cast(re.CharClass, UP_node)
 
     # HYPHEN CARET RBRACKET BACKSLASH
     special_char_flags = [0]

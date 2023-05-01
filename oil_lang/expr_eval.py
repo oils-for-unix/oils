@@ -6,7 +6,8 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
-    place_expr_e, place_expr_t, place_expr__Var, Attribute, Subscript,
+    place_expr, place_expr_e, place_expr_t,
+    Attribute, Subscript,
 
     Token, loc, loc_t,
     SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub,
@@ -17,15 +18,11 @@ from _devbuild.gen.syntax_asdl import (
     expr__Range, expr__Slice,
     expr__Spread,
 
-    re, re_e, re_t, re__Splice, re__Seq, re__Alt, re__Repeat, re__Group,
-    re__Capture, re__CharClassLiteral,
+    re, re_e, re_t, 
 
-    class_literal_term_e, class_literal_term_t,
-    class_literal_term__Range,
-    class_literal_term__CharLiteral,
+    class_literal_term, class_literal_term_e, class_literal_term_t,
     char_class_term, char_class_term_t,
-    PosixClass, PerlClass,
-    CharCode,
+    PosixClass, PerlClass, CharCode,
 
     word_part_t, word_part__ExprSub, word_part__FuncCall, word_part__Splice,
 )
@@ -324,7 +321,7 @@ class OilEvaluator(object):
     UP_place = place
     with tagswitch(place) as case:
       if case(place_expr_e.Var):
-        place = cast(place_expr__Var, UP_place)
+        place = cast(place_expr.Var, UP_place)
 
         return location.LName(place.name.tval)
 
@@ -1232,7 +1229,7 @@ class OilEvaluator(object):
     with tagswitch(term) as case:
 
       if case(class_literal_term_e.CharLiteral):
-        term = cast(class_literal_term__CharLiteral, UP_term)
+        term = cast(class_literal_term.CharLiteral, UP_term)
 
         # What about \0?
         # At runtime, ERE should disallow it.  But we can also disallow it here.
@@ -1240,7 +1237,7 @@ class OilEvaluator(object):
         return
 
       elif case(class_literal_term_e.Range):
-        term = cast(class_literal_term__Range, UP_term)
+        term = cast(class_literal_term.Range, UP_term)
 
         cp_start = word_compile.EvalCharLiteralForRegex(term.start)
         cp_end = word_compile.EvalCharLiteralForRegex(term.end)
@@ -1308,29 +1305,29 @@ class OilEvaluator(object):
 
     with tagswitch(node) as case:
       if case(re_e.Seq):
-        node = cast(re__Seq, UP_node)
+        node = cast(re.Seq, UP_node)
         new_children = [self._EvalRegex(child) for child in node.children]
         return re.Seq(new_children)
 
       elif case(re_e.Alt):
-        node = cast(re__Alt, UP_node)
+        node = cast(re.Alt, UP_node)
         new_children = [self._EvalRegex(child) for child in node.children]
         return re.Alt(new_children)
 
       elif case(re_e.Repeat):
-        node = cast(re__Repeat, UP_node)
+        node = cast(re.Repeat, UP_node)
         return re.Repeat(self._EvalRegex(node.child), node.op)
 
       elif case(re_e.Group):
-        node = cast(re__Group, UP_node)
+        node = cast(re.Group, UP_node)
         return re.Group(self._EvalRegex(node.child))
 
       elif case(re_e.Capture):  # Identical to Group
-        node = cast(re__Capture, UP_node)
+        node = cast(re.Capture, UP_node)
         return re.Capture(self._EvalRegex(node.child), node.var_name)
 
       elif case(re_e.CharClassLiteral):
-        node = cast(re__CharClassLiteral, UP_node)
+        node = cast(re.CharClassLiteral, UP_node)
 
         new_terms = []  # type: List[char_class_term_t]
         for t in node.terms:
@@ -1397,7 +1394,7 @@ class OilEvaluator(object):
         return re.LiteralChars(s, node.left.span_id)
 
       elif case(re_e.Splice):
-        node = cast(re__Splice, UP_node)
+        node = cast(re.Splice, UP_node)
 
         obj = self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
         if not isinstance(obj, objects.Regex):

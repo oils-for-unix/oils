@@ -67,7 +67,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command__ForExpr, command__Proc, command__Import,
     command__PlaceMutation, command__VarDecl,
 
-    place_expr_e, place_expr__Var,
+    place_expr, place_expr_e,
 
     expr_t, source, ArgList,
 )
@@ -1084,7 +1084,7 @@ class WordParser(WordEmitter):
       UP_place = place
       with tagswitch(place) as case:
         if case(place_expr_e.Var):
-          place = cast(place_expr__Var, UP_place)
+          place = cast(place_expr.Var, UP_place)
           var_checker.Check(kw_token.id, place.name)
         # TODO: Do indices as well
 

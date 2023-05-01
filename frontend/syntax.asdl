@@ -445,6 +445,7 @@ module syntax
     Var(Token name)  # TODO: could be Var %Token
   | Subscript %Subscript
   | Attribute %Attribute
+  generate [no_legacy__]
 
   expr =
     # a variable name to evaluate
@@ -533,6 +534,7 @@ module syntax
   | BracedVarSub %BracedVarSub
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
+  generate [no_legacy__]
 
   # Char Sets and Ranges both use Char Codes
   # with u_braced == true : \u{ff}
@@ -549,6 +551,7 @@ module syntax
 
     # For [ \x00 \\ ]
   | CharCode %CharCode
+  generate [no_legacy__]
 
   # NOTE: modifier is unused now, can represent L or P
   re_repeat =
@@ -559,6 +562,7 @@ module syntax
   # Haven't implemented the modifier, e.g. x{+ P}
   # | Num(Token times, id modifier)
   # | Range(Token? lower, Token? upper, id modifier)
+  generate [no_legacy__]
 
   re = 
     # e.g.  .  ^  $  %begin  \u123
@@ -598,4 +602,5 @@ module syntax
   | Primitive(id id)  # . dot etc.
     # String substitutions are evaluated into literals
   | LiteralChars(str s, int spid)
+  generate [no_legacy__]
 }

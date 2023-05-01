@@ -28,7 +28,8 @@ osh-files() {
   # - code generators
   # - test library
 
-  ls bin/oil.py {osh,core,data_lang,frontend}/*.py pyext/*.c */*.pyi "${ASDL_FILES[@]}" \
+  ls bin/oils_for_unix.py {osh,core,data_lang,frontend}/*.py pyext/*.c */*.pyi \
+    "${ASDL_FILES[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
 }
 

@@ -34,7 +34,7 @@ from _devbuild.gen.syntax_asdl import (
     condition_e, condition_t, condition__Shell, condition__Oil,
     BraceGroup, ArgList,
     expr_t,
-    place_expr__Var,
+    place_expr,
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
@@ -958,8 +958,8 @@ class CommandEvaluator(object):
             # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
             # transformer and not the grammar.  We should do that too.
 
-            place_expr = cast(place_expr__Var, node.lhs[0])
-            pe_lval = location.LName(place_expr.name.tval)
+            place = cast(place_expr.Var, node.lhs[0])
+            pe_lval = location.LName(place.name.tval)
             py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
 
             new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
