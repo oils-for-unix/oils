@@ -202,7 +202,7 @@ using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Array;
 using hnode_asdl::hnode__External;
 using hnode_asdl::hnode__Leaf;
-using hnode_asdl::field;
+using hnode_asdl::Field;
 using hnode_asdl::color_e;
 
 """)
@@ -265,7 +265,7 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
       f.write("""
 from asdl import runtime  # For runtime.NO_SPID
 from asdl.runtime import NewRecord, NewLeaf
-from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
+from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
 
 """)
 

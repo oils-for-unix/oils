@@ -20,25 +20,24 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
-    assign_op_e,
-    CompoundWord,
+    IntParamBox,
+    loc, loc_t, loc_e, Token, CompoundWord,
     command, command_e, command_t,
     condition, condition_e, condition_t,
     BraceGroup, ArgList,
-    expr_t,
-    place_expr,
+    assign_op_e,
+    expr_t, place_expr,
     proc_sig, proc_sig_e,
     redir_param, redir_param_e,
     for_iter, for_iter_e,
-    Token, loc, loc_t, loc_e,
-    IntParamBox,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e,
     value, value_e, value_t,
     cmd_value, cmd_value_e,
-    RedirValue, redirect_arg, scope_e,
-    CommandStatus, StatusArray, Proc, flow_e
+    RedirValue, redirect_arg,
+    flow_e, scope_e,
+    CommandStatus, StatusArray, Proc,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -70,9 +69,7 @@ from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.option_asdl import builtin_t
-  from _devbuild.gen.runtime_asdl import (
-      cmd_value_t, Cell, lvalue_t,
-  )
+  from _devbuild.gen.runtime_asdl import cmd_value_t, Cell, lvalue_t
   from _devbuild.gen.syntax_asdl import Redir, EnvPair
   from core.alloc import Arena
   from core import optview

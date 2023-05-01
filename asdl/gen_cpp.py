@@ -523,7 +523,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('    %s->children->append(%s);' %
                 (out_val_name, child_code_str))
       self.Emit('  }')
-      self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' %
+      self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name))
       self.Emit('}')
 
@@ -533,7 +533,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('if (this->%s) {  // Optional' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
       self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
-      self.Emit('  L->append(Alloc<field>(StrFromC("%s"), %s));' %
+      self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name))
       self.Emit('}')
 
@@ -570,7 +570,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('    %s->children->append(%s);' % (out_val_name, k_code_str))
       self.Emit('    %s->children->append(%s);' % (out_val_name, v_code_str))
       self.Emit('  }')
-      self.Emit('  L->append(Alloc<field>(StrFromC ("%s"), %s));' %
+      self.Emit('  L->append(Alloc<Field>(StrFromC ("%s"), %s));' %
                 (field.name, out_val_name))
       self.Emit('}')
 
@@ -584,7 +584,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('hnode_t* %s = %s;' % (out_val_name, code_str), depth)
 
       self.Emit(
-          'L->append(Alloc<field>(StrFromC("%s"), %s));' %
+          'L->append(Alloc<Field>(StrFromC("%s"), %s));' %
           (field.name, out_val_name), depth)
 
   def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
@@ -603,7 +603,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         '  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
         pretty_cls_name)
     if all_fields:
-      self.Emit('  List<field*>* L = out_node->fields;')
+      self.Emit('  List<Field*>* L = out_node->fields;')
       self.Emit('')
 
     # Use the runtime type to be more like asdl/format.py
@@ -629,7 +629,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         '  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
         pretty_cls_name)
     if ast_node.fields:
-      self.Emit('  List<field*>* L = out_node->fields;')
+      self.Emit('  List<Field*>* L = out_node->fields;')
 
     # NO attributes in abbreviated version
     for local_id, field in enumerate(ast_node.fields):

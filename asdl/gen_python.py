@@ -256,7 +256,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
       child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
-      self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
+      self.Emit('    L.append(Field(%r, %s))' % (field.name, out_val_name))
 
     elif field.typ.IsOptional():
       typ = field.typ.children[0]
@@ -264,7 +264,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('  if self.%s is not None:  # Optional' % field.name)
       child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
-      self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
+      self.Emit('    L.append(Field(%r, %s))' % (field.name, out_val_name))
 
     elif field.typ.IsDict():
       k = 'k%d' % counter
@@ -286,7 +286,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    for %s, %s in self.%s.iteritems():' % (k, v, field.name))
       self.Emit('      %s.children.append(%s)' % (out_val_name, k_code_str))
       self.Emit('      %s.children.append(%s)' % (out_val_name, v_code_str))
-      self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
+      self.Emit('    L.append(Field(%r, %s))' % (field.name, out_val_name))
 
     else:
       var_name = 'self.%s' % field.name
@@ -296,7 +296,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('  assert self.%s is not None' % field.name)
       self.Emit('  %s = %s' % (out_val_name, code_str), depth)
 
-      self.Emit('  L.append(field(%r, %s))' % (field.name, out_val_name), depth)
+      self.Emit('  L.append(Field(%r, %s))' % (field.name, out_val_name), depth)
 
   def _GenClass(self, ast_node, attributes, class_name, base_classes,
                 tag_num, class_ns=''):

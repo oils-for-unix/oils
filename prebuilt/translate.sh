@@ -117,4 +117,10 @@ frontend-args() {
     frontend/args.py
 }
 
+all() {
+  asdl-runtime
+  core-error
+  frontend-args
+}
+
 run-task "$@"

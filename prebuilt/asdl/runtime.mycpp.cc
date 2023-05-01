@@ -176,7 +176,7 @@ int NO_SPID = -1;
 hnode_asdl::hnode__Record* NewRecord(Str* node_type) {
   StackRoots _roots({&node_type});
 
-  return Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
+  return Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
@@ -508,8 +508,8 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
     f->write(node->node_type);
     f->PopColor();
     f->write(str21);
-    for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
-      hnode_asdl::field* field = it.Value();
+    for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
+      hnode_asdl::Field* field = it.Value();
       StackRoots _for({&field    });
       name = field->name;
       val = field->val;
@@ -632,8 +632,8 @@ bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, 
     f->PushColor(color_e::TypeName);
     f->write(node->node_type);
     f->PopColor();
-    for (ListIter<hnode_asdl::field*> it(node->fields); !it.Done(); it.Next()) {
-      hnode_asdl::field* field = it.Value();
+    for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
+      hnode_asdl::Field* field = it.Value();
       StackRoots _for({&field    });
       f->write(StrFormat(" %s:", field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {

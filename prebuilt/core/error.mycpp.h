@@ -25,6 +25,7 @@ namespace error {  // forward declare
 
 namespace error {  // declare
 
+using syntax_asdl::loc;
 class _ErrorWithLocation {
  public:
   _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);

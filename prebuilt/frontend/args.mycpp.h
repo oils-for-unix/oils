@@ -166,6 +166,7 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
 namespace args {  // declare
 
+using syntax_asdl::loc;
 extern int String;
 extern int Int;
 extern int Float;

@@ -13,33 +13,29 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    loc,
-    condition, condition_t,
+    loc, SourceLine, source,
+    parse_result, parse_result_t,
+
+    command, command_t, condition, condition_t,
     for_iter,
-    command, command_t,
     ArgList, BraceGroup, BlockArg,
     CaseArm, IfArm,
 
-    sh_lhs_expr, sh_lhs_expr_t,
     Redir, redir_param,
     redir_loc, redir_loc_t,
     word_e, word_t, CompoundWord, Token,
     word_part_e, word_part_t,
     rhs_word, rhs_word_t,
 
+    sh_lhs_expr, sh_lhs_expr_t,
     AssignPair, EnvPair, assign_op_e, NameType,
-
-    SourceLine,
-    source, parse_result, parse_result_t,
-
     proc_sig, proc_sig_e, 
 )
-
 from asdl import runtime
 from core import alloc
 from core import error
-from core import ui
 from core.error import p_die
+from core import ui
 from frontend import consts
 from frontend import lexer
 from frontend import match

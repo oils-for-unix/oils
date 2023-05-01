@@ -14,8 +14,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
-    part_value, part_value_e, part_value_t,
     value, value_e, value_t,
+    part_value, part_value_e, part_value_t,
     lvalue, lvalue_t,
     cmd_value, cmd_value_e, cmd_value_t,
     AssignArg, 
