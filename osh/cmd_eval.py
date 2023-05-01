@@ -42,7 +42,7 @@ from _devbuild.gen.syntax_asdl import (
     IntParamBox,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
+    lvalue, lvalue_e,
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     RedirValue, redirect_arg, scope_e,
     cmd_value_e, cmd_value__Argv, cmd_value__Assign,
@@ -936,12 +936,12 @@ class CommandEvaluator(object):
             for UP_lval_, py_val in zip(lvals_, py_vals):
               tag = UP_lval_.tag()
               if tag == lvalue_e.ObjIndex:
-                lval_ = cast(lvalue__ObjIndex, UP_lval_)
+                lval_ = cast(lvalue.ObjIndex, UP_lval_)
                 lval_.obj[lval_.index] = py_val
                 if node.keyword.id == Id.KW_SetRef:
                   e_die('setref obj[index] not implemented')
               elif tag == lvalue_e.ObjAttr:
-                lval_ = cast(lvalue__ObjAttr, UP_lval_)
+                lval_ = cast(lvalue.ObjAttr, UP_lval_)
                 setattr(lval_.obj, lval_.attr, py_val)
                 if node.keyword.id == Id.KW_SetRef:
                   e_die('setref obj.attr not implemented')

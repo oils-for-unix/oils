@@ -12,7 +12,7 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     scope_t,
-    lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    lvalue, lvalue_e, lvalue_t,
     value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
     value__AssocArray, value__Obj,
 )
@@ -93,13 +93,13 @@ def OldValue(lval, mem, exec_opts):
   UP_lval = lval
   with tagswitch(lval) as case:
     if case(lvalue_e.Named):  # (( i++ ))
-      lval = cast(lvalue__Named, UP_lval)
+      lval = cast(lvalue.Named, UP_lval)
       var_name = lval.name
     elif case(lvalue_e.Indexed):  # (( a[i]++ ))
-      lval = cast(lvalue__Indexed, UP_lval)
+      lval = cast(lvalue.Indexed, UP_lval)
       var_name = lval.name
     elif case(lvalue_e.Keyed):  # (( A['K']++ )) ?  I think this works
-      lval = cast(lvalue__Keyed, UP_lval)
+      lval = cast(lvalue.Keyed, UP_lval)
       var_name = lval.name
     else:
       raise AssertionError()
@@ -114,7 +114,7 @@ def OldValue(lval, mem, exec_opts):
       return val
 
     elif case(lvalue_e.Indexed):
-      lval = cast(lvalue__Indexed, UP_lval)
+      lval = cast(lvalue.Indexed, UP_lval)
 
       array_val = None  # type: value__MaybeStrArray
       with tagswitch(val) as case2:
@@ -136,7 +136,7 @@ def OldValue(lval, mem, exec_opts):
         val = value.Str(s)
 
     elif case(lvalue_e.Keyed):
-      lval = cast(lvalue__Keyed, UP_lval)
+      lval = cast(lvalue.Keyed, UP_lval)
 
       assoc_val = None  # type: value__AssocArray
       with tagswitch(val) as case2:
@@ -436,7 +436,7 @@ class ArithEvaluator(object):
 
     # BASH_LINENO, arr (array name without strict_array), etc.
     if val.tag() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag() == lvalue_e.Named:
-      named_lval = cast(lvalue__Named, lval)
+      named_lval = cast(lvalue.Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
         if val.tag() == value_e.MaybeStrArray:
           lval = lvalue.Indexed(named_lval.name, 0, loc.Missing())

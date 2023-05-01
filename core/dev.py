@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    lvalue, lvalue_e,
     cmd_value__Assign, scope_e, trace, trace_e, trace_t 
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
@@ -535,13 +535,13 @@ class Tracer(object):
     UP_lval = lval
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):
-        lval = cast(lvalue__Named, UP_lval)
+        lval = cast(lvalue.Named, UP_lval)
         left = lval.name
       elif case(lvalue_e.Indexed):
-        lval = cast(lvalue__Indexed, UP_lval)
+        lval = cast(lvalue.Indexed, UP_lval)
         left = '%s[%d]' % (lval.name, lval.index)
       elif case(lvalue_e.Keyed):
-        lval = cast(lvalue__Keyed, UP_lval)
+        lval = cast(lvalue.Keyed, UP_lval)
         left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
     buf.write(left)
 

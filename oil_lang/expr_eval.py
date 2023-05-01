@@ -51,9 +51,7 @@ import libc
 from typing import cast, Any, Union, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import (
-      lvalue_t, lvalue__Named, # lvalue__ObjIndex, lvalue__ObjAttr,
-  )
+  from _devbuild.gen.runtime_asdl import lvalue, lvalue_t
   from _devbuild.gen.syntax_asdl import ArgList
   from core.vm import _Executor
   from core.ui import ErrorFormatter
@@ -229,7 +227,7 @@ class OilEvaluator(object):
     return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
   def EvalPlusEquals(self, lval, rhs_py):
-    # type: (lvalue__Named, Union[int, float]) -> Union[int, float]
+    # type: (lvalue.Named, Union[int, float]) -> Union[int, float]
     lhs_py = self.LookupVar(lval.name, loc.Missing())
 
     if not isinstance(lhs_py, (int, float)):

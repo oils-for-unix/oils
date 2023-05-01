@@ -30,6 +30,7 @@ module runtime
   | Array(List[str] strs)
     # only produced when EXTGLOB_FS flag is passed
   | ExtGlob(List[part_value] part_vals)
+  generate [no_legacy__]
 
   # A static word from osh.asdl is evaluted to a dynamic value.  value
   # instances are stored in state.Mem().
@@ -117,6 +118,7 @@ module runtime
     # Oil variants
   | ObjIndex(any obj, any index)
   | ObjAttr(any obj, str attr)
+  generate [no_legacy__]
 
   redirect_arg =
     Path(str filename)

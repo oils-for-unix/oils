@@ -15,7 +15,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    lvalue,lvalue_e, lvalue_t,
     scope_e, scope_t, HayNode, Cell
 )
 from _devbuild.gen.syntax_asdl import loc, loc_t
@@ -1747,7 +1747,7 @@ class Mem(object):
     UP_lval = lval
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):
-        lval = cast(lvalue__Named, UP_lval)
+        lval = cast(lvalue.Named, UP_lval)
         assert lval.name is not None
 
         if keyword_id == Id.KW_SetRef:
@@ -1821,7 +1821,7 @@ class Mem(object):
             e_die("nameref must be a string")
 
       elif case(lvalue_e.Indexed):
-        lval = cast(lvalue__Indexed, UP_lval)
+        lval = cast(lvalue.Indexed, UP_lval)
         assert isinstance(lval.index, int), lval
 
         # There is no syntax 'declare a[x]'
@@ -1892,7 +1892,7 @@ class Mem(object):
               left_loc)
 
       elif case(lvalue_e.Keyed):
-        lval = cast(lvalue__Keyed, UP_lval)
+        lval = cast(lvalue.Keyed, UP_lval)
         # There is no syntax 'declare A["x"]'
         assert val is not None, val
         assert val.tag() == value_e.Str, val
@@ -1915,7 +1915,7 @@ class Mem(object):
         raise AssertionError(lval.tag())
 
   def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
-    # type: (Dict[str, Cell], lvalue__Indexed, value__Str, int) -> None
+    # type: (Dict[str, Cell], lvalue.Indexed, value__Str, int) -> None
     """Fill 'name_map' with a new indexed array entry."""
     no_str = None  # type: Optional[str]
     items = [no_str] * lval.index
@@ -2102,13 +2102,13 @@ class Mem(object):
 
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):  # unset x
-        lval = cast(lvalue__Named, UP_lval)
+        lval = cast(lvalue.Named, UP_lval)
         var_name = lval.name
       elif case(lvalue_e.Indexed):  # unset 'a[1]'
-        lval = cast(lvalue__Indexed, UP_lval)
+        lval = cast(lvalue.Indexed, UP_lval)
         var_name = lval.name
       elif case(lvalue_e.Keyed):  # unset 'A["K"]'
-        lval = cast(lvalue__Keyed, UP_lval)
+        lval = cast(lvalue.Keyed, UP_lval)
         var_name = lval.name
       else:
         raise AssertionError()
@@ -2136,7 +2136,7 @@ class Mem(object):
         assert not cell.nameref, cell
 
       elif case(lvalue_e.Indexed):  # unset 'a[1]'
-        lval = cast(lvalue__Indexed, UP_lval)
+        lval = cast(lvalue.Indexed, UP_lval)
         # Note: Setting an entry to None and shifting entries are pretty
         # much the same in shell.
 
@@ -2169,7 +2169,7 @@ class Mem(object):
           pass
 
       elif case(lvalue_e.Keyed):  # unset 'A["K"]'
-        lval = cast(lvalue__Keyed, UP_lval)
+        lval = cast(lvalue.Keyed, UP_lval)
 
         val = cell.val
         UP_val = val

@@ -9,7 +9,7 @@ TODO: Move some of osh/word_ here.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc, loc_t, loc_e, loc__Span, loc__WordPart, loc__Word,
+    loc, loc_t, loc_e,
     command_e, command_t, command__Simple, command__ShAssignment,
     command__Pipeline, command__AndOr, command__DoGroup, command__Sentence,
     command__Subshell, command__WhileUntil, command__If, command__Case,
@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
 
     arith_expr_e, arith_expr_t, CompoundWord, SimpleVarSub, Token,
 )
-from _devbuild.gen.runtime_asdl import lvalue, lvalue__Named
+from _devbuild.gen.runtime_asdl import lvalue
 from asdl import runtime
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
@@ -28,9 +28,9 @@ from typing import cast, TYPE_CHECKING
 
 
 def LName(name):
-  # type: (str) -> lvalue__Named
+  # type: (str) -> lvalue.Named
   """
-  Wrapper for lvalue::Named() with location.  TODO: add locations and remove
+  Wrapper for lvalue.Named() with location.  TODO: add locations and remove
   this.
   """
   return lvalue.Named(name, loc.Missing())
@@ -52,18 +52,18 @@ def GetSpanId(loc_):
         return runtime.NO_SPID
 
     elif case(loc_e.Span):
-      loc_ = cast(loc__Span, UP_location)
+      loc_ = cast(loc.Span, UP_location)
       return loc_.span_id
 
     elif case(loc_e.WordPart):
-      loc_ = cast(loc__WordPart, UP_location)
+      loc_ = cast(loc.WordPart, UP_location)
       if loc_.p:
         return word_.LeftMostSpanForPart(loc_.p)
       else:
         return runtime.NO_SPID
 
     elif case(loc_e.Word):
-      loc_ = cast(loc__Word, UP_location)
+      loc_ = cast(loc.Word, UP_location)
       if loc_.w:
         return word_.LeftMostSpanForWord(loc_.w)
       else:

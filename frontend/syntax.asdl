@@ -106,6 +106,7 @@ module syntax
   | Arith(arith_expr a)
     # e.g. for errexit blaming
   | Command(command c)
+  generate [no_legacy__]
 
   #
   # Shell language

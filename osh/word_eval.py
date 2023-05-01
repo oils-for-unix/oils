@@ -16,8 +16,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__FuncCall, word_part__Splice, word_part__TildeSub,
 )
 from _devbuild.gen.runtime_asdl import (
-    part_value, part_value_e, part_value_t, part_value__String,
-    part_value__Array, part_value__ExtGlob,
+    part_value, part_value_e, part_value_t,
     value, value_e, value_t, value__Str, value__AssocArray,
     value__MaybeStrArray, value__Obj,
     lvalue, lvalue_t,
@@ -255,11 +254,11 @@ def _MakeWordFrames(part_vals):
 
     with tagswitch(p) as case:
       if case(part_value_e.String):
-        p = cast(part_value__String, UP_p)
+        p = cast(part_value.String, UP_p)
         current.append((p.s, p.quoted, p.do_split))
 
       elif case(part_value_e.Array):
-        p = cast(part_value__Array, UP_p)
+        p = cast(part_value.Array, UP_p)
 
         is_first = True
         for s in p.strs:
@@ -291,10 +290,10 @@ def _DecayPartValuesToString(part_vals, join_char):
     UP_p = p
     with tagswitch(p) as case:
       if case(part_value_e.String):
-        p = cast(part_value__String, UP_p)
+        p = cast(part_value.String, UP_p)
         out.append(p.s)
       elif case(part_value_e.Array):
-        p = cast(part_value__Array, UP_p)
+        p = cast(part_value.Array, UP_p)
         # TODO: Eliminate double join for speed?
         tmp = [s for s in p.strs if s is not None]
         out.append(join_char.join(tmp))
@@ -1347,11 +1346,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_part_val = part_val
       with tagswitch(part_val) as case:
         if case(part_value_e.String):
-          part_val = cast(part_value__String, UP_part_val)
+          part_val = cast(part_value.String, UP_part_val)
           s = part_val.s
 
         elif case(part_value_e.Array):
-          part_val = cast(part_value__Array, UP_part_val)
+          part_val = cast(part_value.Array, UP_part_val)
           if self.exec_opts.strict_array():
             # Examples: echo f > "$@"; local foo="$@"
             e_die("Illegal array word part (strict_array)", location)
@@ -1458,7 +1457,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_part_val = part_val
       with tagswitch(part_val) as case:
         if case(part_value_e.String):
-          part_val = cast(part_value__String, UP_part_val)
+          part_val = cast(part_value.String, UP_part_val)
           if part_val.quoted and not self.exec_opts.noglob():
             s = glob_.GlobEscape(part_val.s)
           else:
@@ -1473,7 +1472,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 loc.Word(w))
 
         elif case(part_value_e.ExtGlob):
-          part_val = cast(part_value__ExtGlob, UP_part_val)
+          part_val = cast(part_value.ExtGlob, UP_part_val)
           # keep appending fnmatch_parts, but repplace glob_parts with '*'
           self._TranslateExtGlob(part_val.part_vals, w, [], fnmatch_parts)
           glob_parts.append('*')
@@ -1701,7 +1700,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_part_val = part_val
       with tagswitch(part_val) as case:
         if case(part_value_e.String):
-          part_val = cast(part_value__String, UP_part_val)
+          part_val = cast(part_value.String, UP_part_val)
           s = part_val.s
           if part_val.quoted:
             if eval_flags & QUOTE_FNMATCH:
@@ -1712,7 +1711,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           strs.append(s)
 
         elif case(part_value_e.Array):
-          part_val = cast(part_value__Array, UP_part_val)
+          part_val = cast(part_value.Array, UP_part_val)
           if self.exec_opts.strict_array():
             # Examples: echo f > "$@"; local foo="$@"
 
@@ -1733,7 +1732,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             strs.append(s)
 
         elif case(part_value_e.ExtGlob):
-          part_val = cast(part_value__ExtGlob, UP_part_val)
+          part_val = cast(part_value.ExtGlob, UP_part_val)
 
           # Extended globs are only allowed where we expect them!
           if not bool(eval_flags & QUOTE_FNMATCH):
@@ -2132,7 +2131,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val0 = part_vals[0]
         UP_val0 = val0
         if val0.tag() == part_value_e.String:
-          val0 = cast(part_value__String, UP_val0)
+          val0 = cast(part_value.String, UP_val0)
           if not val0.quoted:
             builtin_id = consts.LookupAssignBuiltin(val0.s)
             if builtin_id != consts.NO_INDEX:
@@ -2202,7 +2201,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
       return part_value.String(stdout, quoted, not quoted)
 
   def _EvalProcessSub(self, cs_part):
-    # type: (CommandSub) -> part_value__String
+    # type: (CommandSub) -> part_value.String
     dev_path = self.shell_ex.RunProcessSub(cs_part)
     # pretend it's quoted; no split or glob
     return part_value.String(dev_path, True, False)
@@ -2237,6 +2236,6 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
       return part_value.String(_DUMMY, quoted, not quoted)
 
   def _EvalProcessSub(self, cs_part):
-    # type: (CommandSub) -> part_value__String
+    # type: (CommandSub) -> part_value.String
     # pretend it's quoted; no split or glob
     return part_value.String('__NO_PROCESS_SUB__', True, False)
