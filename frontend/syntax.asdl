@@ -114,6 +114,7 @@ module syntax
   bracket_op = 
     WholeArray(id op_id)  # * or @
   | ArrayIndex(arith_expr expr)
+  generate [no_legacy__]
 
   suffix_op = 
     Nullary %Token  # ${x@Q} or ${!prefix@} (which also has prefix_op)
@@ -123,6 +124,7 @@ module syntax
   | PatSub(CompoundWord pat, rhs_word replace, id replace_mode, Token slash_tok)
     # begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
+  generate [no_legacy__]
 
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok

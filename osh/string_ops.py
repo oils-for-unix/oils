@@ -13,7 +13,7 @@ Oil:
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import loc, Token
+from _devbuild.gen.syntax_asdl import loc, Token, suffix_op
 from core import pyutil
 from core import ui
 from core.error import e_die, e_strict
@@ -22,9 +22,7 @@ from osh import glob_
 
 import libc
 
-from typing import List, Tuple, TYPE_CHECKING
-if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import suffix_op__PatSub
+from typing import List, Tuple
 
 _ = log
 
@@ -410,7 +408,7 @@ class GlobReplacer(object):
     return '<_GlobReplacer regex %r r %r>' % (self.regex, self.replace_str)
 
   def Replace(self, s, op):
-    # type: (str, suffix_op__PatSub) -> str
+    # type: (str, suffix_op.PatSub) -> str
 
     regex = '(%s)' % self.regex  # make it a group
 

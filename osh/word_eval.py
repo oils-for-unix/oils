@@ -6,9 +6,8 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token, loc, loc_t,
     BracedVarSub, CommandSub,
-    bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
-    suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
-    suffix_op__Unary, suffix_op__Static,
+    bracket_op, bracket_op_e,
+    suffix_op, suffix_op_e,
     ShArrayLiteral, SingleQuoted, DoubleQuoted, SimpleVarSub,
     word_e, word_t, CompoundWord,
     rhs_word, rhs_word_e, rhs_word_t,
@@ -531,7 +530,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _ApplyTestOp(self,
                    val,  # type: value_t
-                   op,  # type: suffix_op__Unary
+                   op,  # type: suffix_op.Unary
                    quoted,  # type: bool
                    part_vals,  # type: Optional[List[part_value_t]]
                    vtest_place,  # type: VTestPlace
@@ -756,7 +755,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         raise NotImplementedError(val.tag())
 
   def _ApplyUnarySuffixOp(self, val, op):
-    # type: (value_t, suffix_op__Unary) -> value_t
+    # type: (value_t, suffix_op.Unary) -> value_t
     assert val.tag() != value_e.Undef
 
     op_kind = consts.GetKind(op.op.id)
@@ -801,7 +800,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return new_val
 
   def _PatSub(self, val, op):
-    # type: (value_t, suffix_op__PatSub) -> value_t
+    # type: (value_t, suffix_op.PatSub) -> value_t
 
     pat_val, has_extglob = self.EvalWordToPattern(op.pat)
     # Extended globs aren't supported because we only translate * ? etc. to
@@ -854,7 +853,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _Slice(self, val, op, var_name, part):
-    # type: (value_t, suffix_op__Slice, Optional[str], BracedVarSub) -> value_t
+    # type: (value_t, suffix_op.Slice, Optional[str], BracedVarSub) -> value_t
 
     if op.begin:
       begin = self.arith_ev.EvalToInt(op.begin)
@@ -948,8 +947,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _WholeArray(self, val, part, quoted, vsub_state):
     # type: (value_t, BracedVarSub, bool, VarSubState) -> value_t
-    bracket_op = cast(bracket_op__WholeArray, part.bracket_op)
-    op_id = bracket_op.op_id
+    op_id = cast(bracket_op.WholeArray, part.bracket_op).op_id
 
     if op_id == Id.Lit_At:
       vsub_state.join_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
@@ -988,8 +986,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _ArrayIndex(self, val, part, vtest_place):
     # type: (value_t, BracedVarSub, VTestPlace) -> value_t
     """Process a numeric array index like ${a[i+1]}"""
-    bracket_op = cast(bracket_op__ArrayIndex, part.bracket_op)
-    anode = bracket_op.expr
+    anode = cast(bracket_op.ArrayIndex, part.bracket_op).expr
 
     UP_val = val
     with tagswitch(val) as case2:
@@ -1099,18 +1096,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (value_t, BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
 
     if part.bracket_op:
-      bracket_op = part.bracket_op
-      UP_bracket_op = bracket_op
-      with tagswitch(bracket_op) as case:
+      with tagswitch(part.bracket_op) as case:
         if case(bracket_op_e.WholeArray):
           val = self._WholeArray(val, part, quoted, vsub_state)
 
         elif case(bracket_op_e.ArrayIndex):
-          bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
           val = self._ArrayIndex(val, part, vtest_place)
 
         else:
-          raise AssertionError(bracket_op.tag())
+          raise AssertionError(part.bracket_op.tag())
 
     else:  # no bracket op
       var_name = vtest_place.name
@@ -1206,14 +1200,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
           part.bracket_op is None and
           part.suffix_op is not None and
           part.suffix_op.tag() == suffix_op_e.Nullary):
-        suffix_op_ = cast(Token, part.suffix_op)
+        nullary_op = cast(Token, part.suffix_op)
         # ${!x@} but not ${!x@P}
-        if consts.GetKind(suffix_op_.id) == Kind.VOp3:
+        if consts.GetKind(nullary_op.id) == Kind.VOp3:
           names = self.mem.VarNamesStartingWith(part.var_name)
           names.sort()
 
-          suffix_op_ = cast(Token, part.suffix_op)
-          if quoted and suffix_op_.id == Id.VOp3_At:
+          if quoted and nullary_op.id == Id.VOp3_At:
             part_vals.append(part_value.Array(names))
           else:
             sep = self.splitter.GetJoinChar()
@@ -1237,9 +1230,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
     # ${array[@]@Q}
     # TODO: An IR for ${} might simplify these lengthy conditions
-    suffix_op = part.suffix_op
-    if (suffix_op and suffix_op.tag() == suffix_op_e.Nullary and 
-        cast(Token, suffix_op).id == Id.VOp0_a):
+    suffix_op_ = part.suffix_op
+    if (suffix_op_ and suffix_op_.tag() == suffix_op_e.Nullary and 
+        cast(Token, suffix_op_).id == Id.VOp0_a):
       vsub_state.is_type_query = True
 
     # 2. Bracket Op
@@ -1247,10 +1240,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
     suffix_is_test = False
-    UP_op = suffix_op
-    if suffix_op is not None and suffix_op.tag() == suffix_op_e.Unary:
-      suffix_op = cast(suffix_op__Unary, UP_op)
-      if consts.GetKind(suffix_op.op.id) == Kind.VTest:
+    UP_op = suffix_op_
+    if suffix_op_ is not None and suffix_op_.tag() == suffix_op_e.Unary:
+      suffix_op_ = cast(suffix_op.Unary, UP_op)
+      if consts.GetKind(suffix_op_.op.id) == Kind.VTest:
         suffix_is_test = True
 
     if part.prefix_op:
@@ -1268,7 +1261,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if suffix_is_test:
             # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
             # it's fatal.
-            op_tok = cast(suffix_op__Unary, UP_op).op
+            op_tok = cast(suffix_op.Unary, UP_op).op
             e_die('Test operation not allowed with ${!array[@]}', op_tok)
 
           # ${!array[@]} to get indices/keys
@@ -1296,16 +1289,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val = self._EmptyStrOrError(val, part.token)
 
     quoted2 = False  # another bit for @Q
-    if suffix_op:
-      op = suffix_op  # could get rid of this alias
+    if suffix_op_:
+      op = suffix_op_  # could get rid of this alias
 
-      with tagswitch(suffix_op) as case:
+      with tagswitch(suffix_op_) as case:
         if case(suffix_op_e.Nullary):
           op = cast(Token, UP_op)
           val, quoted2 = self._Nullary(val, op, var_name)
 
         elif case(suffix_op_e.Unary):
-          op = cast(suffix_op__Unary, UP_op)
+          op = cast(suffix_op.Unary, UP_op)
           if consts.GetKind(op.op.id) == Kind.VTest:
             if self._ApplyTestOp(val, op, quoted, part_vals, vtest_place,
                                  part.token):
@@ -1318,15 +1311,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
             val = self._ApplyUnarySuffixOp(val, op)
 
         elif case(suffix_op_e.PatSub):  # PatSub, vectorized
-          op = cast(suffix_op__PatSub, UP_op)
+          op = cast(suffix_op.PatSub, UP_op)
           val = self._PatSub(val, op)
 
         elif case(suffix_op_e.Slice):
-          op = cast(suffix_op__Slice, UP_op)
+          op = cast(suffix_op.Slice, UP_op)
           val = self._Slice(val, op, var_name, part)
 
         elif case(suffix_op_e.Static):
-          op = cast(suffix_op__Static, UP_op)
+          op = cast(suffix_op.Static, UP_op)
           e_die('Not implemented', op.tok)
 
         else:

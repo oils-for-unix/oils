@@ -2515,7 +2515,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                     # Hack for default args.  Without this limitation, we write
                     # 'using' of names that aren't declared yet.
-                    if self.decl and name in ('Id', 'scope_e', 'lex_mode_e'):
+                    # suffix_op is needed for string_ops.py, for some reason
+                    if self.decl and name in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op'):
                         self.f.write(using_str)
 
             else:

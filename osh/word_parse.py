@@ -54,11 +54,9 @@ from _devbuild.gen.syntax_asdl import (
     BoolParamBox, Token, loc,
     DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral, AssocPair,
-
-    arith_expr_t, bracket_op, bracket_op_t,
-
-    suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
-
+    arith_expr_t,
+    bracket_op, bracket_op_t,
+    suffix_op, suffix_op_t,
     rhs_word, rhs_word_e, rhs_word_t,
     word_e, word_t, CompoundWord,
     word_part, word_part_e, word_part_t,
@@ -222,7 +220,7 @@ class WordParser(WordEmitter):
     return w
 
   def _ReadSliceVarOp(self):
-    # type: () -> suffix_op__Slice
+    # type: () -> suffix_op.Slice
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
     self._Next(lex_mode_e.Arith)
     self._Peek()
@@ -249,7 +247,7 @@ class WordParser(WordEmitter):
     raise AssertionError()  # for MyPy
 
   def _ReadPatSubVarOp(self):
-    # type: () -> suffix_op__PatSub
+    # type: () -> suffix_op.PatSub
     """
     Match     = ('/' | '#' | '%') WORD
     VarSub    = ...
