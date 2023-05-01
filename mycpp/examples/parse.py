@@ -13,11 +13,7 @@ from typing import Tuple, Optional, cast
 # PYTHONPATH=$REPO_ROOT/mycpp
 from mycpp.mylib import log, tagswitch
 from mycpp import mylib
-from _devbuild.gen.expr_asdl import (
-    expr,
-    expr_e,  # for translation only?
-    expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
-)
+from _devbuild.gen.expr_asdl import expr, expr_e, expr_t, tok_e, tok_t
 
 # PYTHONPATH=$REPO_ROOT
 from asdl import format as fmt
@@ -100,12 +96,12 @@ class Parser(object):
 
     #log('ParseFactor')
     if self.tok_type == tok_e.Var:
-      n1 = expr__Var(self.tok_val)
+      n1 = expr.Var(self.tok_val)
       self.Next()
       return n1
 
     if self.tok_type == tok_e.Const:
-      n2 = expr__Const(int(self.tok_val))
+      n2 = expr.Const(int(self.tok_val))
       self.Next()
       return n2
 
@@ -129,7 +125,7 @@ class Parser(object):
       op = self.tok_val
       self.Next()
       n2 = self.ParseFactor()
-      node = expr__Binary(op, node, n2)
+      node = expr.Binary(op, node, n2)
     return node
 
   def ParseExpr(self):
@@ -142,7 +138,7 @@ class Parser(object):
       op = self.tok_val
       self.Next()
       n2 = self.ParseTerm()
-      node = expr__Binary(op, node, n2)
+      node = expr.Binary(op, node, n2)
     return node
 
   def Parse(self):
@@ -174,12 +170,12 @@ def TestParse():
       ' ',
       ' $$ ',
   ]
-  for expr in CASES:
-    lex = Lexer(expr)
+  for expr_ in CASES:
+    lex = Lexer(expr_)
     p = Parser(lex)
     log('')
     log('--')
-    log('%s =>', expr)
+    log('%s =>', expr_)
 
     node = None  # type: Optional[expr_t]
     try:
@@ -199,11 +195,11 @@ def TestParse():
     UP_node = node
     with tagswitch(UP_node) as case:
       if case(expr_e.Const):
-        node = cast(expr__Const, UP_node)
+        node = cast(expr.Const, UP_node)
         log('Const %d', node.i)
 
       elif case(expr_e.Var):
-        node = cast(expr__Var, UP_node)
+        node = cast(expr.Var, UP_node)
         log('Var %s', node.name)
 
       else:

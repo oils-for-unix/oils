@@ -10,8 +10,6 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t,
     scope_e, cmd_value, AssignArg,
 )
-# TODO: we shouldn't need this import for translation
-from _devbuild.gen.runtime_asdl import lvalue  # noqa: F401
 from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
 from core import error

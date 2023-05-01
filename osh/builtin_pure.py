@@ -29,6 +29,7 @@ from core import state
 from mycpp.mylib import log
 from core import ui
 from core import vm
+from data_lang import qsn
 from frontend import args
 from frontend import consts
 from frontend import flag_spec
@@ -36,7 +37,6 @@ from frontend import lexer
 from frontend import location
 from frontend import match
 from frontend import typed_args
-from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import iteritems, tagswitch, NewDict, print_stderr
 from osh import word_compile

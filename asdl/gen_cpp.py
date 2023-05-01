@@ -187,25 +187,25 @@ def _HNodeExpr(abbrev, typ, var_name):
     type_name = typ.name
 
     if type_name == 'bool':
-      code_str = "Alloc<hnode__Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
+      code_str = "Alloc<hnode::Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
 
     elif type_name == 'int':
-      code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
+      code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
 
     elif type_name == 'float':
-      code_str = 'Alloc<hnode__Leaf>(str(%s), color_e::OtherConst)' % var_name
+      code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
 
     elif type_name == 'string':
       code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
 
     elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-      code_str = 'Alloc<hnode__External>(%s)' % var_name
+      code_str = 'Alloc<hnode::External>(%s)' % var_name
 
     elif type_name == 'id':  # was meta.UserType
-      code_str = 'Alloc<hnode__Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
+      code_str = 'Alloc<hnode::Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
 
     elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-      code_str = 'Alloc<hnode__Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
+      code_str = 'Alloc<hnode::Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
           type_name, var_name)
 
     else:
@@ -513,7 +513,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
       self.Emit('if (this->%s != nullptr) {  // List' % (field.name))
       self.Emit(
-          '  hnode__Array* %s = Alloc<hnode__Array>(Alloc<List<hnode_t*>>());' %
+          '  hnode::Array* %s = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());' %
           out_val_name)
       c_item_type = _GetCppType(item_type)
       self.Emit('  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {' %
@@ -557,10 +557,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('if (this->%s) {  // Dict' % field.name)
       # TODO: m can be a global constant!
       self.Emit(
-          '  auto m = Alloc<hnode__Leaf>(StrFromC("Dict"), color_e::OtherConst);'
+          '  auto m = Alloc<hnode::Leaf>(StrFromC("Dict"), color_e::OtherConst);'
       )
       self.Emit(
-          '  hnode__Array* %s = Alloc<hnode__Array>(NewList<hnode_t*>({m}));' %
+          '  hnode::Array* %s = Alloc<hnode::Array>(NewList<hnode_t*>({m}));' %
           out_val_name)
       self.Emit(
           '  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' %
@@ -600,7 +600,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('')
     self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
     self.Emit(
-        '  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
+        '  hnode::Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
         pretty_cls_name)
     if all_fields:
       self.Emit('  List<Field*>* L = out_node->fields;')
@@ -626,7 +626,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('')
     self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
     self.Emit(
-        '  hnode__Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
+        '  hnode::Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
         pretty_cls_name)
     if ast_node.fields:
       self.Emit('  List<Field*>* L = out_node->fields;')

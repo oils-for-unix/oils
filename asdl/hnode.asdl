@@ -22,6 +22,7 @@ module hnode {
   | Leaf(str s, color color)
     # TODO: get rid of since Id is now in ASDL
   | External(any obj)
+  generate [no_legacy__]
 
   # Idea for bit flags for CreateNull().  NOT part of pretty printing / hnode.
   # We just use a single param alloc_lists=True now

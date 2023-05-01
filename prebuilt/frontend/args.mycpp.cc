@@ -422,26 +422,25 @@ class InvalidType : public Expr {
 
 namespace runtime {  // define
 
-using hnode_asdl::hnode__Record;
-using hnode_asdl::hnode__Leaf;
+using hnode_asdl::hnode;
 using hnode_asdl::color_t;
 using hnode_asdl::color_e;
 int NO_SPID = -1;
 
-hnode_asdl::hnode__Record* NewRecord(Str* node_type) {
+hnode::Record* NewRecord(Str* node_type) {
   StackRoots _roots({&node_type});
 
-  return Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
+  return Alloc<hnode::Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
-hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
+hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
   StackRoots _roots({&s});
 
   if (s == nullptr) {
-    return Alloc<hnode__Leaf>(str2, color_e::OtherConst);
+    return Alloc<hnode::Leaf>(str2, color_e::OtherConst);
   }
   else {
-    return Alloc<hnode__Leaf>(s, e_color);
+    return Alloc<hnode::Leaf>(s, e_color);
   }
 }
 Str* TRUE_STR = str3;
@@ -451,12 +450,9 @@ Str* FALSE_STR = str4;
 
 namespace format {  // define
 
+using hnode_asdl::hnode;
 using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
-using hnode_asdl::hnode__Record;
-using hnode_asdl::hnode__Array;
-using hnode_asdl::hnode__Leaf;
-using hnode_asdl::hnode__External;
 using hnode_asdl::color_e;
 using hnode_asdl::color_t;
 
@@ -723,7 +719,7 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
   return all_fit;
 }
 
-void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent) {
+void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent) {
   Str* ind = nullptr;
   Str* prefix = nullptr;
   int prefix_len;
@@ -772,7 +768,7 @@ void _PrettyPrinter::_PrintRecord(hnode_asdl::hnode__Record* node, format::Color
       UP_val = val;
       tag = val->tag();
       if (tag == hnode_e::Array) {
-        hnode__Array* val = static_cast<hnode__Array*>(UP_val);
+        hnode::Array* val = static_cast<hnode::Array*>(UP_val);
         name_str = StrFormat("%s%s: [", ind1, name);
         f->write(name_str);
         prefix_len = len(name_str);
@@ -831,14 +827,14 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
   UP_node = node;
   tag = node->tag();
   if (tag == hnode_e::Leaf) {
-    hnode__Leaf* node = static_cast<hnode__Leaf*>(UP_node);
+    hnode::Leaf* node = static_cast<hnode::Leaf*>(UP_node);
     f->PushColor(node->color);
     f->write(qsn::maybe_encode(node->s));
     f->PopColor();
   }
   else {
     if (tag == hnode_e::External) {
-      hnode__External* node = static_cast<hnode__External*>(UP_node);
+      hnode::External* node = static_cast<hnode::External*>(UP_node);
       f->PushColor(color_e::External);
       // if not PYTHON
       {
@@ -849,7 +845,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
     }
     else {
       if (tag == hnode_e::Record) {
-        hnode__Record* node = static_cast<hnode__Record*>(UP_node);
+        hnode::Record* node = static_cast<hnode::Record*>(UP_node);
         this->_PrintRecord(node, f, indent);
       }
       else {
@@ -859,7 +855,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
   }
 }
 
-bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars) {
+bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars) {
   int i;
   StackRoots _roots({&node, &f});
 
@@ -910,14 +906,14 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
   UP_node = node;
   tag = node->tag();
   if (tag == hnode_e::Leaf) {
-    hnode__Leaf* node = static_cast<hnode__Leaf*>(UP_node);
+    hnode::Leaf* node = static_cast<hnode::Leaf*>(UP_node);
     f->PushColor(node->color);
     f->write(qsn::maybe_encode(node->s));
     f->PopColor();
   }
   else {
     if (tag == hnode_e::External) {
-      hnode__External* node = static_cast<hnode__External*>(UP_node);
+      hnode::External* node = static_cast<hnode::External*>(UP_node);
       f->PushColor(color_e::External);
       // if not PYTHON
       {
@@ -928,7 +924,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
     }
     else {
       if (tag == hnode_e::Array) {
-        hnode__Array* node = static_cast<hnode__Array*>(UP_node);
+        hnode::Array* node = static_cast<hnode::Array*>(UP_node);
         f->write(str36);
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
@@ -945,7 +941,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
       }
       else {
         if (tag == hnode_e::Record) {
-          hnode__Record* node = static_cast<hnode__Record*>(UP_node);
+          hnode::Record* node = static_cast<hnode::Record*>(UP_node);
           return _TrySingleLineObj(node, f, max_chars);
         }
         else {

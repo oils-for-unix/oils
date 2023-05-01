@@ -198,10 +198,7 @@ tags_to_types = \\
         f.write("""\
 
 // Generated code uses these types
-using hnode_asdl::hnode__Record;
-using hnode_asdl::hnode__Array;
-using hnode_asdl::hnode__External;
-using hnode_asdl::hnode__Leaf;
+using hnode_asdl::hnode;
 using hnode_asdl::Field;
 using hnode_asdl::color_e;
 

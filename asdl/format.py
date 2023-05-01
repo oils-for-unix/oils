@@ -16,9 +16,9 @@ Places where we try a single line:
 """
 from typing import Tuple, List
 
-from _devbuild.gen.hnode_asdl import (hnode_e, hnode_t, hnode__Record,
-                                      hnode__Array, hnode__Leaf,
-                                      hnode__External, color_e, color_t)
+from _devbuild.gen.hnode_asdl import (
+    hnode, hnode_e, hnode_t, color_e, color_t
+)
 from core import ansi
 from data_lang import qsn
 from pylib import cgi
@@ -287,7 +287,7 @@ class _PrettyPrinter(object):
     return all_fit
 
   def _PrintRecord(self, node, f, indent):
-    # type: (hnode__Record, ColorOutput, int) -> None
+    # type: (hnode.Record, ColorOutput, int) -> None
     """Print a CompoundObj in abbreviated or normal form."""
     ind = ' ' * indent
 
@@ -325,7 +325,7 @@ class _PrettyPrinter(object):
         UP_val = val  # for mycpp
         tag = val.tag()
         if tag == hnode_e.Array:
-          val = cast(hnode__Array, UP_val)
+          val = cast(hnode.Array, UP_val)
 
           name_str = '%s%s: [' % (ind1, name)
           f.write(name_str)
@@ -382,13 +382,13 @@ class _PrettyPrinter(object):
     UP_node = node  # for mycpp
     tag = node.tag()
     if tag == hnode_e.Leaf:
-      node = cast(hnode__Leaf, UP_node)
+      node = cast(hnode.Leaf, UP_node)
       f.PushColor(node.color)
       f.write(qsn.maybe_encode(node.s))
       f.PopColor()
 
     elif tag == hnode_e.External:
-      node = cast(hnode__External, UP_node)
+      node = cast(hnode.External, UP_node)
       f.PushColor(color_e.External)
       if mylib.PYTHON:
         f.write(repr(node.obj))
@@ -397,7 +397,7 @@ class _PrettyPrinter(object):
       f.PopColor()
 
     elif tag == hnode_e.Record:
-      node = cast(hnode__Record, UP_node)
+      node = cast(hnode.Record, UP_node)
       self._PrintRecord(node, f, indent)
 
     else:
@@ -405,7 +405,7 @@ class _PrettyPrinter(object):
 
 
 def _TrySingleLineObj(node, f, max_chars):
-  # type: (hnode__Record, ColorOutput, int) -> bool
+  # type: (hnode.Record, ColorOutput, int) -> bool
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
@@ -451,13 +451,13 @@ def _TrySingleLine(node, f, max_chars):
   UP_node = node  # for mycpp
   tag = node.tag()
   if tag == hnode_e.Leaf:
-    node = cast(hnode__Leaf, UP_node)
+    node = cast(hnode.Leaf, UP_node)
     f.PushColor(node.color)
     f.write(qsn.maybe_encode(node.s))
     f.PopColor()
 
   elif tag == hnode_e.External:
-    node = cast(hnode__External, UP_node)
+    node = cast(hnode.External, UP_node)
 
     f.PushColor(color_e.External)
     if mylib.PYTHON:
@@ -467,7 +467,7 @@ def _TrySingleLine(node, f, max_chars):
     f.PopColor()
 
   elif tag == hnode_e.Array:
-    node = cast(hnode__Array, UP_node)
+    node = cast(hnode.Array, UP_node)
 
     # Can we fit the WHOLE array on the line?
     f.write('[')
@@ -479,7 +479,7 @@ def _TrySingleLine(node, f, max_chars):
     f.write(']')
 
   elif tag == hnode_e.Record:
-    node = cast(hnode__Record, UP_node)
+    node = cast(hnode.Record, UP_node)
 
     return _TrySingleLineObj(node, f, max_chars)
 

@@ -16,8 +16,6 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     span_e, cmd_value, value, scope_e
 )
-# TODO: we shouldn't need this import for translation
-from _devbuild.gen.runtime_asdl import lvalue  # noqa: F401
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import error
@@ -27,6 +25,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import vm
+from data_lang import qsn_native
 from frontend import flag_spec
 from frontend import location
 from frontend import reader
@@ -35,7 +34,6 @@ from mycpp import mylib
 from mycpp.mylib import log, STDIN_FILENO
 from osh import word_compile
 from pylib import os_path
-from data_lang import qsn_native
 
 import libc
 import posix_ as posix

@@ -2,7 +2,7 @@
 #include "_gen/core/runtime.asdl.h"
 #include "vendor/greatest.h"
 
-using runtime_asdl::value__Bool;
+using runtime_asdl::value;
 
 TEST opaque_test() {
   // struct for command -v is HeapTag::Opaque
@@ -10,7 +10,7 @@ TEST opaque_test() {
   auto attrs = NewDict<Str*, runtime_asdl::value_t*>();
   StackRoots _r({&attrs});
 
-  auto b = Alloc<value__Bool>(true);
+  auto b = Alloc<value::Bool>(true);
   attrs->set(StrFromC("v"), b);
 
   for (int i = 0; i < 10; ++i) {
@@ -31,7 +31,7 @@ TEST pointer_test() {
   auto attrs = NewDict<Str*, runtime_asdl::value_t*>();
   StackRoots _r({&attrs});
 
-  auto s = Alloc<value__Str>(StrFromC("hi %s"));
+  auto s = Alloc<value::Str>(StrFromC("hi %s"));
   attrs->set(StrFromC("v"), s);
 
   for (int i = 0; i < 10; ++i) {

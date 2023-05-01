@@ -3,10 +3,10 @@ typed_arith_abbrev.py - Abbreviations for pretty-printing typed_arith.asdl.
 """
 
 from asdl import runtime
-from _devbuild.gen.hnode_asdl import hnode__Record
+from _devbuild.gen.hnode_asdl import hnode
 
 def _arith_expr__Unary(obj):
-  # type: (arith_expr__Unary) -> hnode__Record
+  # type: (arith_expr__Unary) -> hnode.Record
 
   p_node = runtime.NewRecord('U')
   p_node.abbrev = True
@@ -17,7 +17,7 @@ def _arith_expr__Unary(obj):
 
 
 def _arith_expr__Binary(obj):
-  # type: (arith_expr__Binary) -> Optional[hnode__Record]
+  # type: (arith_expr__Binary) -> Optional[hnode.Record]
 
   if obj.op == '=':  # test for fallback
     return None
@@ -32,7 +32,7 @@ def _arith_expr__Binary(obj):
 
 
 def _arith_expr__Const(obj):
-  # type: (arith_expr__Const) -> hnode__Record
+  # type: (arith_expr__Const) -> hnode.Record
   p_node = runtime.NewRecord('')
   p_node.abbrev = True
   n = runtime.NewLeaf(str(obj.i), color_e.OtherConst)
@@ -41,7 +41,7 @@ def _arith_expr__Const(obj):
 
 
 def _arith_expr__Var(obj):
-  # type: (arith_expr__Var) -> hnode__Record
+  # type: (arith_expr__Var) -> hnode.Record
   p_node = runtime.NewRecord('$')
   p_node.abbrev = True
   n = runtime.NewLeaf(str(obj.name), color_e.StringConst)

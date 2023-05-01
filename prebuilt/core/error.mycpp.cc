@@ -19,9 +19,10 @@ namespace runtime {  // forward declare
 
 namespace runtime {  // declare
 
+using hnode_asdl::hnode;
 extern int NO_SPID;
-hnode_asdl::hnode__Record* NewRecord(Str* node_type);
-hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
+hnode::Record* NewRecord(Str* node_type);
+hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
 extern Str* TRUE_STR;
 extern Str* FALSE_STR;
 
@@ -30,26 +31,25 @@ extern Str* FALSE_STR;
 
 namespace runtime {  // define
 
-using hnode_asdl::hnode__Record;
-using hnode_asdl::hnode__Leaf;
+using hnode_asdl::hnode;
 using hnode_asdl::color_t;
 using hnode_asdl::color_e;
 int NO_SPID = -1;
 
-hnode_asdl::hnode__Record* NewRecord(Str* node_type) {
+hnode::Record* NewRecord(Str* node_type) {
   StackRoots _roots({&node_type});
 
-  return Alloc<hnode__Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
+  return Alloc<hnode::Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
-hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
+hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
   StackRoots _roots({&s});
 
   if (s == nullptr) {
-    return Alloc<hnode__Leaf>(str2, color_e::OtherConst);
+    return Alloc<hnode::Leaf>(str2, color_e::OtherConst);
   }
   else {
-    return Alloc<hnode__Leaf>(s, e_color);
+    return Alloc<hnode::Leaf>(s, e_color);
   }
 }
 Str* TRUE_STR = str3;

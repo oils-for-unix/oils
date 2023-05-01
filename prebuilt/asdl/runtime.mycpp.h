@@ -24,9 +24,10 @@ namespace format {  // forward declare
 
 namespace runtime {  // declare
 
+using hnode_asdl::hnode;
 extern int NO_SPID;
-hnode_asdl::hnode__Record* NewRecord(Str* node_type);
-hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
+hnode::Record* NewRecord(Str* node_type);
+hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
 extern Str* TRUE_STR;
 extern Str* FALSE_STR;
 
@@ -35,6 +36,7 @@ extern Str* FALSE_STR;
 
 namespace format {  // declare
 
+using hnode_asdl::hnode;
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f);
 class ColorOutput {
  public:
@@ -125,7 +127,7 @@ class _PrettyPrinter {
   _PrettyPrinter(int max_col);
   bool _PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
   bool _PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
-  void _PrintRecord(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int indent);
+  void _PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
   int max_col;
 
@@ -136,7 +138,7 @@ class _PrettyPrinter {
   DISALLOW_COPY_AND_ASSIGN(_PrettyPrinter)
 };
 
-bool _TrySingleLineObj(hnode_asdl::hnode__Record* node, format::ColorOutput* f, int max_chars);
+bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
