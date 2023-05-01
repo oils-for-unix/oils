@@ -15,7 +15,6 @@ module runtime
   | Assign(int builtin_id,
            List[str] argv, List[loc] arg_locs,
            List[AssignArg] pairs)
-  generate [no_legacy__]
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -31,7 +30,6 @@ module runtime
   | Array(List[str] strs)
     # only produced when EXTGLOB_FS flag is passed
   | ExtGlob(List[part_value] part_vals)
-  generate [no_legacy__]
 
   # A static word from osh.asdl is evaluted to a dynamic value.  value
   # instances are stored in state.Mem().
@@ -70,12 +68,10 @@ module runtime
 
     # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)
-  generate [no_legacy__]
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
   a_index = Str(str s) | Int(int i)
-            generate [no_legacy__]
 
   # for the place in ${a[0]=a}
   VTestPlace = (str? name, a_index? index)
@@ -120,7 +116,6 @@ module runtime
     # Oil variants
   | ObjIndex(any obj, any index)
   | ObjAttr(any obj, str attr)
-  generate [no_legacy__]
 
   redirect_arg =
     Path(str filename)
@@ -128,7 +123,6 @@ module runtime
   | MoveFd(int target_fd)  # 3>&1-
   | CloseFd
   | HereDoc(str body)  # call this String and combine with Path?
-  generate [no_legacy__]
 
   # Evaluated version of syntax.Redir
   RedirValue = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
@@ -168,7 +162,6 @@ module runtime
   | Pipeline(List[int] codes)
     # because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
-  generate [no_legacy__]
 
   flow = Nothing | Break | Raise
 
@@ -206,7 +199,6 @@ module runtime
   | PipelinePart             # async
   | ProcessSub               # async (other processes can be started)
   | HereDoc                  # async (multiple here docs per process)
-  generate [no_legacy__]
 
   # tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ

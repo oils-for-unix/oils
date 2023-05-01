@@ -45,9 +45,7 @@ module syntax
   IntParamBox = (int i)
 
   # core/main_loop.py
-  parse_result =
-    EmptyLine | Eof | Node(command cmd)
-    generate [no_legacy__]
+  parse_result = EmptyLine | Eof | Node(command cmd)
  
   # 'source' represents the location of a line / token.
   source = 
@@ -83,7 +81,6 @@ module syntax
 
     # For #location-str
   | Synthetic(str s)
-  generate [no_legacy__]
 
   SourceLine = (int line_num, str content, source src)
 
@@ -106,7 +103,6 @@ module syntax
   | Arith(arith_expr a)
     # e.g. for errexit blaming
   | Command(command c)
-  generate [no_legacy__]
 
   #
   # Shell language
@@ -115,7 +111,6 @@ module syntax
   bracket_op = 
     WholeArray(id op_id)  # * or @
   | ArrayIndex(arith_expr expr)
-  generate [no_legacy__]
 
   suffix_op = 
     Nullary %Token  # ${x@Q} or ${!prefix@} (which also has prefix_op)
@@ -125,7 +120,6 @@ module syntax
   | PatSub(CompoundWord pat, rhs_word replace, id replace_mode, Token slash_tok)
     # begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
-  generate [no_legacy__]
 
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
@@ -194,7 +188,6 @@ module syntax
     # $[d->key], etc.
   | ExprSub(Token left, expr child)
   attributes (List[int] spids)
-  generate [no_legacy__]
 
   # TODO: I think Token left should be copied into every CompoundWord
   # either that, or CommandParser needs to reliably have GetToken(word_t)
@@ -205,9 +198,7 @@ module syntax
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
   # The latter is semantically necessary.  (See osh/word_parse.py). 
   # At runtime: RHS of 'declare x='.
-  rhs_word =
-    Empty | Compound %CompoundWord
-    generate [no_legacy__]
+  rhs_word = Empty | Compound %CompoundWord
 
   word = 
     # Returns from WordParser, but not generally stored in LST
@@ -223,14 +214,12 @@ module syntax
     # For dynamic parsing of test/[ # the string is already evaluated.
     # TODO: try using Token with source info
   | String(id id, str s, int span_id)
-  generate [no_legacy__]
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs_expr =
     Name(Token left, str name)
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
-  generate [no_legacy__]
 
   arith_expr =
     VarSub %SimpleVarSub  # e.g. $(( x ))
@@ -243,7 +232,6 @@ module syntax
     # TODO: op should be token, e.g. for divide by zero
   | Binary(id op_id, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
-  generate [no_legacy__]
 
   bool_expr =
     WordTest(word w)  # e.g. [[ myword ]]
@@ -252,11 +240,9 @@ module syntax
   | LogicalNot(bool_expr child)
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
-  generate [no_legacy__]
 
   redir_loc =
     Fd(int fd) | VarName(str name)
-    generate [no_legacy__]
 
   redir_param =
     Word %CompoundWord
@@ -264,7 +250,6 @@ module syntax
             int here_end_span_id,  # span is whole line (for defunct osh2oil)
             List[word_part] stdin_parts  # one for each line
            )
-  generate [no_legacy__]
 
   Redir = (Token op, redir_loc loc, redir_param arg)
 
@@ -275,7 +260,6 @@ module syntax
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
   | Oil(expr e)               # if (x > 0) { echo hi }
-  generate [no_legacy__]
 
   # Each arm tests one word against multiple words
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
@@ -286,7 +270,6 @@ module syntax
   | Words(List[word] words)   # for x in 'foo' *.py { echo $x }
                               # like ShArrayLiteral, but no location for %(
   | Oil(expr e, Token blame)  # for x in (mylist) { echo $x }
-  generate [no_legacy__]
 
   # TODO: Make field names consistent: child vs expr, etc.
   BraceGroup = (
@@ -374,14 +357,12 @@ module syntax
   | Break | Continue
   | Return(expr? value)
   attributes (List[int] spids)
-  generate [no_legacy__]
 
   # Binary(x expr, y expr) or Nullary %Token
   # In the first case we have a tag, and an anonymous type.
   variant_type =
     Anon(List[Param] params)
   | Ref(Token type_name)
-  generate [no_legacy__]
 
   # tags and types are separate in our model of algebraic data types
   Variant = (Token tag_name, variant_type? typ)
@@ -389,7 +370,6 @@ module syntax
   class_item =
     Data(Token keyword, List[NameType] fields)
   | Method()
-  generate [no_legacy__]
 
   ImportName = (Token name, Token? alias)
 
@@ -402,7 +382,6 @@ module syntax
   proc_sig =
     Open
   | Closed(List[UntypedParam] untyped, Token? rest, List[TypedParam] typed)
-  generate [no_legacy__]
 
   # prefix is : for out param, @ for proc splat, ... for func splat
   # procs only have types Expr, Block (and Str is implicit)
@@ -421,7 +400,6 @@ module syntax
     Literal(id id, str s)
   | Operator(id op_id)  # * or ?
   | CharClass(bool negated, List[str] strs)
-  generate [no_legacy__]
 
   # Char classes are opaque for now.  If we ever need them:
   # - Collating symbols are [. .]
@@ -432,7 +410,6 @@ module syntax
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)
-  generate [no_legacy__]
 
   #
   # OIL LANGUAGE
@@ -467,7 +444,6 @@ module syntax
     Var(Token name)  # TODO: could be Var %Token
   | Subscript %Subscript
   | Attribute %Attribute
-  generate [no_legacy__]
 
   expr =
     # a variable name to evaluate
@@ -532,7 +508,6 @@ module syntax
     # In Oil, "spreading" will be @[1 ...array2] [b, ...list2] and
     # {k: v, ...dict2}.  We don't need two different symbols.
   | Spread(expr child, expr_context ctx)
-  generate [no_legacy__]
 
   #
   # Regex Language (Eggex)
@@ -557,7 +532,6 @@ module syntax
   | BracedVarSub %BracedVarSub
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
-  generate [no_legacy__]
 
   # Char Sets and Ranges both use Char Codes
   # with u_braced == true : \u{ff}
@@ -574,7 +548,6 @@ module syntax
 
     # For [ \x00 \\ ]
   | CharCode %CharCode
-  generate [no_legacy__]
 
   # NOTE: modifier is unused now, can represent L or P
   re_repeat =
@@ -585,7 +558,6 @@ module syntax
   # Haven't implemented the modifier, e.g. x{+ P}
   # | Num(Token times, id modifier)
   # | Range(Token? lower, Token? upper, id modifier)
-  generate [no_legacy__]
 
   re = 
     # e.g.  .  ^  $  %begin  \u123
@@ -625,5 +597,4 @@ module syntax
   | Primitive(id id)  # . dot etc.
     # String substitutions are evaluated into literals
   | LiteralChars(str s, int spid)
-  generate [no_legacy__]
 }

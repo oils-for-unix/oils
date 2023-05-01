@@ -513,25 +513,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     depth = self.current_depth
     self.Emit('')
 
-    if 'no_legacy__' in sum.generate:
-      # Class that's just a NAMESPACE, e.g. for value.Str
-      self.Emit('class %s(object):' % sum_name, depth)
+    # Class that's just a NAMESPACE, e.g. for value.Str
+    self.Emit('class %s(object):' % sum_name, depth)
 
-      self.Indent()
-
-      for i, variant in enumerate(sum.types):
-        if variant.shared_type:
-          # Don't generate a class.
-          pass
-        else:
-          # Use fully-qualified name, so we can have osh_cmd.Simple and
-          # oil_cmd.Simple.
-          fq_name = variant.name
-          self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                         i + 1, class_ns=sum_name + '.')
-
-      self.Dedent()
-      return
+    self.Indent()
 
     for i, variant in enumerate(sum.types):
       if variant.shared_type:
@@ -540,23 +525,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       else:
         # Use fully-qualified name, so we can have osh_cmd.Simple and
         # oil_cmd.Simple.
-        fq_name = '%s__%s' % (sum_name, variant.name)
+        fq_name = variant.name
         self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                       i + 1)
+                       i + 1, class_ns=sum_name + '.')
 
-    # Emit a namespace
-    self.Emit('class %s(object):' % sum_name, depth)
-    # Put everything in a namespace of the base class, so we can instantiate
-    # with oil_cmd.Simple()
-    for i, variant in enumerate(sum.types):
-      if variant.shared_type:
-        # No class for this namespace
-        pass
-      else:
-        # e.g. op_id.Plus = op_id__Plus.
-        fq_name = '%s__%s' % (sum_name, variant.name)
-        self.Emit('  %s = %s' % (variant.name, fq_name), depth)
-    self.Emit('', depth)
+    self.Dedent()
+    self.Emit('')
 
   def VisitProduct(self, product, name, depth):
     self._shared_type_tags[name] = self._product_counter

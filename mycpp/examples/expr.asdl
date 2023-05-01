@@ -13,5 +13,4 @@ expr =
     Const(int i)
   | Var(string name) 
   | Binary(string op, expr left, expr right)
-  generate [no_legacy__]
 }
