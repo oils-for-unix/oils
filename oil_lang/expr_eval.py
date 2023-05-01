@@ -488,11 +488,11 @@ class OilEvaluator(object):
     with tagswitch(val) as case:
       if case(value_e.Str):
         val = cast(value__Str, UP_val)
-        if match.LooksLikeFloat(val.s):
-          return value.Float(float(val.s))
-
         if match.LooksLikeInteger(val.s):
           return value.Int(int(val.s))
+
+        if match.LooksLikeFloat(val.s):
+          return value.Float(float(val.s))
 
     return val
     
