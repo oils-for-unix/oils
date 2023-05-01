@@ -13,17 +13,16 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (
-    command_t, command, parse_result__Node, parse_result_e
+    command, command_t, parse_result, parse_result_e
 )
 from core import error
 from core import process
 from core import ui
 from core import util
-from mycpp.mylib import log
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch
+from mycpp.mylib import log, print_stderr, tagswitch
 
 import fanos
 import posix_ as posix
@@ -220,7 +219,7 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
             done = True
             quit = True
           elif case(parse_result_e.Node):
-            result = cast(parse_result__Node, UP_result)
+            result = cast(parse_result.Node, UP_result)
             node = result.cmd
           else:
             raise AssertionError()

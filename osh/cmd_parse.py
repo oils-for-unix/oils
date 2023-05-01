@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     CaseArm, IfArm,
 
     sh_lhs_expr, sh_lhs_expr_t,
-    Redir, redir_param, redir_param__HereDoc,
+    Redir, redir_param,
     redir_loc, redir_loc_t,
     word_e, word_t, CompoundWord, Token,
     word_part_e, word_part_t,
@@ -161,7 +161,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[SourceLine, int]]
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
   # type: (ParseContext, Redir, _Reader, Arena) -> None
   """Fill in attributes of a pending here doc node."""
-  h = cast(redir_param__HereDoc, r.arg)
+  h = cast(redir_param.HereDoc, r.arg)
   # "If any character in word is quoted, the delimiter shall be formed by
   # performing quote removal on word, and the here-document lines shall not
   # be expanded. Otherwise, the delimiter shall be the word itself."
@@ -2417,6 +2417,6 @@ class CommandParser(object):
     # osh -c 'cat <<EOF'
     if len(self.pending_here_docs):
       node = self.pending_here_docs[0]  # Just show the first one?
-      h = cast(redir_param__HereDoc, node.arg)
+      h = cast(redir_param.HereDoc, node.arg)
       p_die('Unterminated here doc began here', loc.Word(h.here_begin))
 

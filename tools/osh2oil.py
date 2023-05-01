@@ -51,7 +51,10 @@ TOOL ysh-format:
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e, word_style_t
 from _devbuild.gen.syntax_asdl import (
-    Token, loc,
+    loc,
+    CompoundWord, Token, 
+    SimpleVarSub, BracedVarSub, CommandSub, DoubleQuoted, SingleQuoted,
+
     command_e, command__ShAssignment, command__Simple, command__Sentence, 
     command__Pipeline, command__AndOr, command__DoGroup,
     command__Subshell, command__DBracket, command__DParen,
@@ -60,15 +63,15 @@ from _devbuild.gen.syntax_asdl import (
     command__CommandList,
     BraceGroup,
 
-    for_iter_e, for_iter__Words,
+    for_iter, for_iter_e,
     rhs_word_e, rhs_word_t,
     word_e, word_t,
+    condition, condition_e,
+    redir_param, redir_param_e,
+    Redir,
+
     word_part_e, word_part_t, word_part__EscapedLiteral,
-    CompoundWord,
-    SimpleVarSub, BracedVarSub, CommandSub, DoubleQuoted, SingleQuoted,
     sh_lhs_expr_e, sh_lhs_expr__Name,
-    condition_e, condition__Shell,
-    Redir, redir_param_e, redir_param__HereDoc,
 )
 from asdl import runtime
 from core.error import p_die
@@ -279,7 +282,7 @@ class OilPrinter(object):
     self.cursor.PrintUntil(op_spid)
 
     if node.arg.tag() == redir_param_e.HereDoc:
-      here_doc = cast(redir_param__HereDoc, node.arg)
+      here_doc = cast(redir_param.HereDoc, node.arg)
 
       here_begin = here_doc.here_begin
       ok, delimiter, delim_quoted = word_.StaticEval(here_begin)
@@ -628,7 +631,7 @@ class OilPrinter(object):
               location.GetSpanId(location.LocForCommand(node.body)))
 
           elif case(for_iter_e.Words):
-            iterable = cast(for_iter__Words, UP_iterable)
+            iterable = cast(for_iter.Words, UP_iterable)
 
             self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
             self.f.write('[')
@@ -657,7 +660,7 @@ class OilPrinter(object):
           self.cursor.SkipUntil(kw_spid + 1)
 
         if node.cond.tag() == condition_e.Shell:
-          commands = cast(condition__Shell, node.cond).commands
+          commands = cast(condition.Shell, node.cond).commands
           # Skip the semi-colon in the condition, which is ususally a Sentence
           if len(commands) == 1 and commands[0].tag() == command_e.Sentence:
             sentence = cast(command__Sentence, commands[0])
@@ -685,7 +688,7 @@ class OilPrinter(object):
 
           cond = arm.cond
           if cond.tag() == condition_e.Shell:
-            commands = cast(condition__Shell, cond).commands
+            commands = cast(condition.Shell, cond).commands
             if len(commands) == 1 and commands[0].tag() == command_e.Sentence:
               sentence = cast(command__Sentence, commands[0])
               self.DoCommand(sentence, local_symbols)

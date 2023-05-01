@@ -10,13 +10,12 @@ ui.py - User interface constructs.
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.syntax_asdl import (loc, loc_t, loc_e, Token, SourceLine,
-                                       command_t, command_str, source_e,
-                                       source__Stdin, source__MainFile,
-                                       source__SourcedFile, source__Alias,
-                                       source__Reparsed, source__Variable,
-                                       source__VarRef, source__ArgvWord,
-                                       source__Synthetic)
+from _devbuild.gen.syntax_asdl import (
+    Token, SourceLine, 
+    loc, loc_e, loc_t, 
+    command_t, command_str,
+    source, source_e,
+)
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
@@ -120,25 +119,25 @@ def GetLineSourceString(arena, line, quote_filename=False):
     elif case(source_e.CFlag):
       s = '[ -c flag ]'
     elif case(source_e.Stdin):
-      src = cast(source__Stdin, UP_src)
+      src = cast(source.Stdin, UP_src)
       s = '[ stdin%s ]' % src.comment
 
     elif case(source_e.MainFile):
-      src = cast(source__MainFile, UP_src)
+      src = cast(source.MainFile, UP_src)
       # This will quote a file called '[ -c flag ]' to disambiguate it!
       # also handles characters that are unprintable in a terminal.
       s = src.path
       if quote_filename:
         s = qsn.maybe_encode(s)
     elif case(source_e.SourcedFile):
-      src = cast(source__SourcedFile, UP_src)
+      src = cast(source.SourcedFile, UP_src)
       # ditto
       s = src.path
       if quote_filename:
         s = qsn.maybe_encode(s)
 
     elif case(source_e.ArgvWord):
-      src = cast(source__ArgvWord, UP_src)
+      src = cast(source.ArgvWord, UP_src)
       span_id = location.GetSpanId(src.location)
       if span_id == runtime.NO_SPID:
         s = '[ %s word at ? ]' % src.what
@@ -152,7 +151,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
       # Note: _PrintCodeExcerpt called above
 
     elif case(source_e.Variable):
-      src = cast(source__Variable, UP_src)
+      src = cast(source.Variable, UP_src)
 
       if src.var_name is None:
         var_name = '?'
@@ -173,7 +172,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
       s = '[ var %s at %s ]' % (var_name, where)
 
     elif case(source_e.VarRef):
-      src = cast(source__VarRef, UP_src)
+      src = cast(source.VarRef, UP_src)
 
       orig_tok = src.orig_tok
       line_num = orig_tok.line.line_num
@@ -186,11 +185,11 @@ def GetLineSourceString(arena, line, quote_filename=False):
       s = '[ contents of var %r at %s ]' % (var_name, where)
 
     elif case(source_e.Alias):
-      src = cast(source__Alias, UP_src)
+      src = cast(source.Alias, UP_src)
       s = '[ expansion of alias %r ]' % src.argv0
 
     elif case(source_e.Reparsed):
-      src = cast(source__Reparsed, UP_src)
+      src = cast(source.Reparsed, UP_src)
       span2 = src.left_token
       outer_source = GetLineSourceString(arena,
                                          span2.line,
@@ -198,7 +197,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
       s = '[ %s in %s ]' % (src.what, outer_source)
 
     elif case(source_e.Synthetic):
-      src = cast(source__Synthetic, UP_src)
+      src = cast(source.Synthetic, UP_src)
       s = '-- %s' % src.s  # use -- to say it came from a flag
 
     else:
@@ -230,7 +229,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
     UP_src = src
     # LValue/backticks is the only case where we don't print this
     if src.tag() == source_e.Reparsed:
-      src = cast(source__Reparsed, UP_src)
+      src = cast(source.Reparsed, UP_src)
       span2 = src.left_token
       line_num = span2.line.line_num
 

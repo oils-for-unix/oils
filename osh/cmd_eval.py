@@ -31,13 +31,13 @@ from _devbuild.gen.syntax_asdl import (
     command__Sentence, command__ShAssignment, command__ShFunction,
     command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
     command__WhileUntil,
-    condition_e, condition_t, condition__Shell, condition__Oil,
+    condition, condition_e, condition_t,
     BraceGroup, ArgList,
     expr_t,
     place_expr,
     proc_sig, proc_sig_e,
-    redir_param_e, redir_param__HereDoc, proc_sig,
-    for_iter_e, for_iter__Words, for_iter__Oil,
+    redir_param, redir_param_e,
+    for_iter, for_iter_e,
     Token, loc, loc_t, loc_e,
     IntParamBox,
 )
@@ -486,7 +486,7 @@ class CommandEvaluator(object):
           raise AssertionError('Unknown redirect op')
 
       elif case(redir_param_e.HereDoc):
-        arg = cast(redir_param__HereDoc, UP_arg)
+        arg = cast(redir_param.HereDoc, UP_arg)
         w = CompoundWord(arg.stdin_parts)  # HACK: Wrap it in a word to eval
         val = self.word_ev.EvalWordToString(w)
         assert val.tag() == value_e.Str, val
@@ -643,7 +643,7 @@ class CommandEvaluator(object):
     UP_cond = cond
     with tagswitch(cond) as case:
       if case(condition_e.Shell):
-        cond = cast(condition__Shell, UP_cond)
+        cond = cast(condition.Shell, UP_cond)
         self._StrictErrExitList(cond.commands)
         with state.ctx_ErrExit(self.mutable_opts, False, spid):
           cond_status = self._ExecuteList(cond.commands)
@@ -652,7 +652,7 @@ class CommandEvaluator(object):
 
       elif case(condition_e.Oil):
         if mylib.PYTHON:
-          cond = cast(condition__Oil, UP_cond)
+          cond = cast(condition.Oil, UP_cond)
           obj = self.expr_ev.EvalExpr(cond.e, loc.Span(spid))
           b = bool(obj)
 
@@ -1204,12 +1204,12 @@ class CommandEvaluator(object):
             iter_list = self.mem.GetArgv()
 
           elif case(for_iter_e.Words):
-            iterable = cast(for_iter__Words, UP_iterable)
+            iterable = cast(for_iter.Words, UP_iterable)
             words = braces.BraceExpandWords(iterable.words)
             iter_list = self.word_ev.EvalWordSequence(words)
 
           elif case(for_iter_e.Oil):
-            iterable = cast(for_iter__Oil, UP_iterable)
+            iterable = cast(for_iter.Oil, UP_iterable)
             iter_expr = iterable.e
             iter_expr_blame = iterable.blame
 

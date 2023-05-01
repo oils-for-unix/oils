@@ -45,7 +45,9 @@ module syntax
   IntParamBox = (int i)
 
   # core/main_loop.py
-  parse_result = EmptyLine | Eof | Node(command cmd)
+  parse_result =
+    EmptyLine | Eof | Node(command cmd)
+    generate [no_legacy__]
  
   # 'source' represents the location of a line / token.
   source = 
@@ -81,6 +83,7 @@ module syntax
 
     # For #location-str
   | Synthetic(str s)
+  generate [no_legacy__]
 
   SourceLine = (int line_num, str content, source src)
 
@@ -199,8 +202,8 @@ module syntax
   # The latter is semantically necessary.  (See osh/word_parse.py). 
   # At runtime: RHS of 'declare x='.
   rhs_word =
-    Empty
-  | Compound %CompoundWord
+    Empty | Compound %CompoundWord
+    generate [no_legacy__]
 
   word = 
     # Returns from WordParser, but not generally stored in LST
@@ -250,6 +253,7 @@ module syntax
             int here_end_span_id,  # span is whole line (for defunct osh2oil)
             List[word_part] stdin_parts  # one for each line
            )
+  generate [no_legacy__]
 
   Redir = (Token op, redir_loc loc, redir_param arg)
 
@@ -260,6 +264,7 @@ module syntax
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
   | Oil(expr e)               # if (x > 0) { echo hi }
+  generate [no_legacy__]
 
   # Each arm tests one word against multiple words
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
@@ -270,6 +275,7 @@ module syntax
   | Words(List[word] words)   # for x in 'foo' *.py { echo $x }
                               # like ShArrayLiteral, but no location for %(
   | Oil(expr e, Token blame)  # for x in (mylist) { echo $x }
+  generate [no_legacy__]
 
   # TODO: Make field names consistent: child vs expr, etc.
   BraceGroup = (
