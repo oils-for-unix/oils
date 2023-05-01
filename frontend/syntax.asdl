@@ -364,6 +364,7 @@ module syntax
   variant_type =
     Anon(List[Param] params)
   | Ref(Token type_name)
+  generate [no_legacy__]
 
   # tags and types are separate in our model of algebraic data types
   Variant = (Token tag_name, variant_type? typ)
@@ -371,6 +372,7 @@ module syntax
   class_item =
     Data(Token keyword, List[NameType] fields)
   | Method()
+  generate [no_legacy__]
 
   ImportName = (Token name, Token? alias)
 
@@ -383,6 +385,7 @@ module syntax
   proc_sig =
     Open
   | Closed(List[UntypedParam] untyped, Token? rest, List[TypedParam] typed)
+  generate [no_legacy__]
 
   # prefix is : for out param, @ for proc splat, ... for func splat
   # procs only have types Expr, Block (and Str is implicit)
@@ -401,6 +404,7 @@ module syntax
     Literal(id id, str s)
   | Operator(id op_id)  # * or ?
   | CharClass(bool negated, List[str] strs)
+  generate [no_legacy__]
 
   # Char classes are opaque for now.  If we ever need them:
   # - Collating symbols are [. .]
@@ -411,6 +415,7 @@ module syntax
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)
+  generate [no_legacy__]
 
   #
   # OIL LANGUAGE

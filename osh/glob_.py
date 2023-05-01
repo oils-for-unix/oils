@@ -7,13 +7,11 @@ import libc
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     CompoundWord, Token, word_part_e,
-    glob_part_e, glob_part, glob_part_t,
-    glob_part__Literal, glob_part__Operator, glob_part__CharClass,
+    glob_part, glob_part_e, glob_part_t,
 )
 from core import pyutil
-from mycpp.mylib import log
 from frontend import match
-from mycpp.mylib import print_stderr
+from mycpp.mylib import log, print_stderr
 
 from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -253,7 +251,7 @@ def _GenerateERE(parts):
     UP_part = part
 
     if tag == glob_part_e.Literal:
-      part = cast(glob_part__Literal, UP_part)
+      part = cast(glob_part.Literal, UP_part)
       if part.id == Id.Glob_EscapedChar:
         assert len(part.s) == 2, part.s
         # The user could have escaped a char that doesn't need regex escaping,
@@ -292,7 +290,7 @@ def _GenerateERE(parts):
         raise AssertionError(part.id)
 
     elif tag == glob_part_e.Operator:
-      part = cast(glob_part__Operator, UP_part)
+      part = cast(glob_part.Operator, UP_part)
       if part.op_id == Id.Glob_QMark:
         out.append('.')
       elif part.op_id == Id.Glob_Star:
@@ -301,7 +299,7 @@ def _GenerateERE(parts):
         raise AssertionError()
 
     elif tag == glob_part_e.CharClass:
-      part = cast(glob_part__CharClass, UP_part)
+      part = cast(glob_part.CharClass, UP_part)
       out.append('[')
       if part.negated:
         out.append('^')

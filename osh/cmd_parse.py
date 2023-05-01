@@ -36,7 +36,7 @@ from _devbuild.gen.syntax_asdl import (
     SourceLine,
     source, parse_result, parse_result_t,
 
-    proc_sig_e, proc_sig__Closed,
+    proc_sig, proc_sig_e, 
 )
 
 from asdl import runtime
@@ -1822,7 +1822,7 @@ class CommandParser(object):
     with ctx_VarChecker(self.var_checker, keyword_tok):
       self.w_parser.ParseProc(node)
       if node.sig.tag() == proc_sig_e.Closed:  # Register params
-        sig = cast(proc_sig__Closed, node.sig)
+        sig = cast(proc_sig.Closed, node.sig)
 
         # Treat params as variables.
         for param in sig.untyped:

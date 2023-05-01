@@ -11,8 +11,7 @@ from signal import SIGCONT
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import (
-    cmd_value, cmd_value__Argv, wait_status__Cancelled, wait_status__Pipeline,
-    wait_status__Proc, wait_status_e)
+    cmd_value, cmd_value__Argv, wait_status, wait_status_e)
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
@@ -284,20 +283,22 @@ class Wait(vm._Builtin):
                            blame_loc=location)
         return 127
 
-      wait_status = job.JobWait(self.waiter)
-
-      UP_wait_status = wait_status
-      with tagswitch(wait_status) as case:
+      wait_st = job.JobWait(self.waiter)
+      UP_wait_st = wait_st
+      with tagswitch(wait_st) as case:
         if case(wait_status_e.Proc):
-          wait_status = cast(wait_status__Proc, UP_wait_status)
-          status = wait_status.code
+          wait_st = cast(wait_status.Proc, UP_wait_st)
+          status = wait_st.code
+
         elif case(wait_status_e.Pipeline):
-          wait_status = cast(wait_status__Pipeline, UP_wait_status)
+          wait_st = cast(wait_status.Pipeline, UP_wait_st)
           # TODO: handle PIPESTATUS?  Is this right?
-          status = wait_status.codes[-1]
+          status = wait_st.codes[-1]
+
         elif case(wait_status_e.Cancelled):
-          wait_status = cast(wait_status__Cancelled, UP_wait_status)
-          status = 128 + wait_status.sig_num
+          wait_st = cast(wait_status.Cancelled, UP_wait_st)
+          status = 128 + wait_st.sig_num
+
         else:
           raise AssertionError()
 

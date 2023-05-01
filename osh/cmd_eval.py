@@ -35,7 +35,7 @@ from _devbuild.gen.syntax_asdl import (
     BraceGroup, ArgList,
     expr_t,
     place_expr,
-    proc_sig_e, proc_sig__Closed,
+    proc_sig, proc_sig_e,
     redir_param_e, redir_param__HereDoc, proc_sig,
     for_iter_e, for_iter__Words, for_iter__Oil,
     Token, loc, loc_t, loc_e,
@@ -81,9 +81,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
       cmd_value_t, Cell, lvalue_t,
   )
-  from _devbuild.gen.syntax_asdl import (
-      Redir, EnvPair, proc_sig__Closed,
-  )
+  from _devbuild.gen.syntax_asdl import Redir, EnvPair
   from core.alloc import Arena
   from core import optview
   from core.vm import _Executor, _AssignBuiltin
@@ -1404,7 +1402,7 @@ class CommandEvaluator(object):
         if mylib.PYTHON:
           UP_sig = node.sig
           if UP_sig.tag() == proc_sig_e.Closed:
-            sig = cast(proc_sig__Closed, UP_sig)
+            sig = cast(proc_sig.Closed, UP_sig)
             defaults = [None] * len(sig.untyped)
             for i, p in enumerate(sig.untyped):
               if p.default_val:
@@ -1851,7 +1849,7 @@ class CommandEvaluator(object):
       UP_sig = sig
 
       if UP_sig.tag() == proc_sig_e.Closed:  # proc is-closed ()
-        sig = cast(proc_sig__Closed, UP_sig)
+        sig = cast(proc_sig.Closed, UP_sig)
         for i, p in enumerate(sig.untyped):
           is_out_param = p.ref is not None
 

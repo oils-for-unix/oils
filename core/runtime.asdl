@@ -164,6 +164,7 @@ module runtime
   | Pipeline(List[int] codes)
     # because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
+  generate [no_legacy__]
 
   flow = Nothing | Break | Raise
 

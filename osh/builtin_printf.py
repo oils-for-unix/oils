@@ -12,8 +12,9 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, value_e, value__Str, value
 )
 from _devbuild.gen.syntax_asdl import (
-    printf_part, printf_part_e, printf_part_t, printf_part__Literal,
-    printf_part__Percent, source, Token, loc, loc_t, loc_e
+    source, Token,
+    loc, loc_e, loc_t, 
+    printf_part, printf_part_e, printf_part_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
@@ -173,7 +174,7 @@ class Printf(vm._Builtin):
       for part in parts:  # loop over parsed format string
         UP_part = part
         if part.tag() == printf_part_e.Literal:
-          part = cast(printf_part__Literal, UP_part)
+          part = cast(printf_part.Literal, UP_part)
           token = part.token
           if token.id == Id.Format_EscapedPercent:
             s = '%'
@@ -184,7 +185,7 @@ class Printf(vm._Builtin):
         elif part.tag() == printf_part_e.Percent:
           # Note: This case is very long, but hard to refactor because of the
           # error cases and "recycling" of args!  (arg_index, return 1, etc.)
-          part = cast(printf_part__Percent, UP_part)
+          part = cast(printf_part.Percent, UP_part)
 
           # TODO: These calculations are independent of the data, so could be
           # cached
