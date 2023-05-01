@@ -6,25 +6,18 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
+    Token, loc, loc_t,
+    word_part, word_part_t,
+    SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub, ShArrayLiteral,
+    CommandSub,
+
+    expr, expr_e, expr_t,
     place_expr, place_expr_e, place_expr_t,
     Attribute, Subscript,
-
-    Token, loc, loc_t,
-    SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub,
-
-    expr_e, expr_t, expr__Var, expr__Const, ShArrayLiteral, CommandSub,
-    expr__RegexLiteral, expr__Unary, expr__Binary, expr__Compare,
-    expr__FuncCall, expr__IfExp, expr__Tuple, expr__List, expr__Dict,
-    expr__Range, expr__Slice,
-    expr__Spread,
-
     re, re_e, re_t, 
-
     class_literal_term, class_literal_term_e, class_literal_term_t,
     char_class_term, char_class_term_t,
     PosixClass, PerlClass, CharCode,
-
-    word_part, word_part_t,
 )
 from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
@@ -36,8 +29,8 @@ from _devbuild.gen.runtime_asdl import (
 )
 from asdl import runtime
 from core import error
-from core import state
 from core.error import e_die, e_die_status
+from core import state
 from frontend import consts
 from frontend import match
 from frontend import location
@@ -246,7 +239,7 @@ class OilEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(expr_e.Var):
-        node = cast(expr__Var, UP_node)
+        node = cast(expr.Var, UP_node)
         return location.LName(node.name.tval)
       else:
         # TODO:
@@ -290,7 +283,7 @@ class OilEvaluator(object):
       UP_arg = arg
 
       if arg.tag() == expr_e.Spread:
-        arg = cast(expr__Spread, UP_arg)
+        arg = cast(expr.Spread, UP_arg)
         # assume it returns a list
         pos_args.extend(self.EvalExpr(arg.child, loc.Missing()))
       else:
@@ -492,7 +485,7 @@ class OilEvaluator(object):
     return val
     
   def _EvalConst(self, node):
-    # type: (expr__Const) -> value_t
+    # type: (expr.Const) -> value_t
 
     # Remove underscores from 1_000_000.  The lexer is responsible for
     # validation.  TODO: Do this at PARSE TIME / COMPILE TIME.
@@ -587,7 +580,7 @@ class OilEvaluator(object):
     return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
   def _EvalUnary(self, node):
-    # type: (expr__Unary) -> value_t
+    # type: (expr.Unary) -> value_t
     child = _PyObjToValue(self._EvalExpr(node.child)) # XXX
     if node.op.id == Id.Arith_Minus:
       UP_child = child
@@ -827,7 +820,7 @@ class OilEvaluator(object):
         raise error.InvalidType('Expected List or String', loc.Missing())
 
   def _EvalBinary(self, node):
-    # type: (expr__Binary) -> value_t
+    # type: (expr.Binary) -> value_t
 
     left = _PyObjToValue(self._EvalExpr(node.left))
     right = _PyObjToValue(self._EvalExpr(node.right))
@@ -869,21 +862,21 @@ class OilEvaluator(object):
     raise NotImplementedError(node.op.id)
 
   def _EvalRange(self, node):
-    # type: (expr__Range) -> Any # XXX
+    # type: (expr.Range) -> Any # XXX
 
     lower = self._EvalExpr(node.lower)
     upper = self._EvalExpr(node.upper)
     return xrange(lower, upper)
 
   def _EvalSlice(self, node):
-    # type: (expr__Slice) -> Any # XXX
+    # type: (expr.Slice) -> Any # XXX
 
     lower = self._EvalExpr(node.lower) if node.lower else None
     upper = self._EvalExpr(node.upper) if node.upper else None
     return slice(lower, upper)
 
   def _EvalCompare(self, node):
-    # type: (expr__Compare) -> Any # XXX
+    # type: (expr.Compare) -> Any # XXX
 
     left = self._EvalExpr(node.left)
     result = True  # Implicit and
@@ -972,7 +965,7 @@ class OilEvaluator(object):
     return result
 
   def _EvalIfExp(self, node):
-    # type: (expr__IfExp) -> Any # XXX
+    # type: (expr.IfExp) -> Any # XXX
     b = self._EvalExpr(node.test)
     if b:
       return self._EvalExpr(node.body)
@@ -980,15 +973,15 @@ class OilEvaluator(object):
       return self._EvalExpr(node.orelse)
 
   def _EvalList(self, node):
-    # type: (expr__List) -> Any # XXX
+    # type: (expr.List) -> Any # XXX
     return [self._EvalExpr(e) for e in node.elts]
 
   def _EvalTuple(self, node):
-    # type: (expr__Tuple) -> Any # XXX
+    # type: (expr.Tuple) -> Any # XXX
     return tuple(self._EvalExpr(e) for e in node.elts)
 
   def _EvalDict(self, node):
-    # type: (expr__Dict) -> Any # XXX
+    # type: (expr.Dict) -> Any # XXX
     # NOTE: some keys are expr.Const
     keys = [self._EvalExpr(e) for e in node.keys]
 
@@ -1006,7 +999,7 @@ class OilEvaluator(object):
     return d
 
   def _EvalFuncCall(self, node):
-    # type: (expr__FuncCall) -> Any # XXX
+    # type: (expr.FuncCall) -> Any # XXX
     func = self._EvalExpr(node.func)
     pos_args, named_args = self.EvalArgList(node.args)
     ret = func(*pos_args, **named_args)
@@ -1074,12 +1067,12 @@ class OilEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(expr_e.Const):
-        node = cast(expr__Const, UP_node)
+        node = cast(expr.Const, UP_node)
 
         return _ValueToPyObj(self._EvalConst(node))
 
       elif case(expr_e.Var):
-        node = cast(expr__Var, UP_node)
+        node = cast(expr.Var, UP_node)
 
         return self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
 
@@ -1109,39 +1102,39 @@ class OilEvaluator(object):
         return _ValueToPyObj(self._EvalSimpleVarSub(node))
 
       elif case(expr_e.Unary):
-        node = cast(expr__Unary, UP_node)
+        node = cast(expr.Unary, UP_node)
         return _ValueToPyObj(self._EvalUnary(node))
 
       elif case(expr_e.Binary):
-        node = cast(expr__Binary, UP_node)
+        node = cast(expr.Binary, UP_node)
         return _ValueToPyObj(self._EvalBinary(node))
 
       elif case(expr_e.Range):  # 1:10  or  1:10:2
-        node = cast(expr__Range, UP_node)
+        node = cast(expr.Range, UP_node)
         return self._EvalRange(node)
 
       elif case(expr_e.Slice):  # a[:0]
-        node = cast(expr__Slice, UP_node)
+        node = cast(expr.Slice, UP_node)
         return self._EvalSlice(node)
 
       elif case(expr_e.Compare):
-        node = cast(expr__Compare, UP_node)
+        node = cast(expr.Compare, UP_node)
         return self._EvalCompare(node)
    
       elif case(expr_e.IfExp):
-        node = cast(expr__IfExp, UP_node)
+        node = cast(expr.IfExp, UP_node)
         return self._EvalIfExp(node)
 
       elif case(expr_e.List):
-        node = cast(expr__List, UP_node)
+        node = cast(expr.List, UP_node)
         return self._EvalList(node)
 
       elif case(expr_e.Tuple):
-        node = cast(expr__Tuple, UP_node)
+        node = cast(expr.Tuple, UP_node)
         return self._EvalTuple(node)
 
       elif case(expr_e.Dict):
-        node = cast(expr__Dict, UP_node)
+        node = cast(expr.Dict, UP_node)
         return self._EvalDict(node)
 
       elif case(expr_e.ListComp):
@@ -1195,7 +1188,7 @@ class OilEvaluator(object):
         e_die_status(2, 'Lambda reserved but not implemented')
 
       elif case(expr_e.FuncCall):
-        node = cast(expr__FuncCall, UP_node)
+        node = cast(expr.FuncCall, UP_node)
         return self._EvalFuncCall(node)
 
       elif case(expr_e.Subscript):
@@ -1209,7 +1202,7 @@ class OilEvaluator(object):
         return self._EvalAttribute(node)
 
       elif case(expr_e.RegexLiteral):
-        node = cast(expr__RegexLiteral, UP_node)
+        node = cast(expr.RegexLiteral, UP_node)
 
         # TODO: Should this just be an object that ~ calls?
         return objects.Regex(self.EvalRegex(node.regex))

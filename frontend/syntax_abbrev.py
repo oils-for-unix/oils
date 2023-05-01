@@ -114,7 +114,7 @@ def _command__Simple(obj):
 
 
 def _expr__Var(obj):
-  # type: (expr__Var) -> hnode_t
+  # type: (expr.Var) -> hnode_t
   p_node = runtime.NewRecord('Var')
   p_node.abbrev = True
 
@@ -125,7 +125,7 @@ def _expr__Var(obj):
 
 
 def _expr__Const(obj):
-  # type: (expr__Const) -> hnode_t
+  # type: (expr.Const) -> hnode_t
   p_node = runtime.NewRecord('Const')
   p_node.abbrev = True
 

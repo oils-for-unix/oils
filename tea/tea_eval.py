@@ -120,7 +120,7 @@ class TeaEvaluator(object):
     return return_val
 
   def RunLambda(self, lambda_node, args, kwargs):
-    # type: (expr__Lambda, Tuple[Any, ...], Dict[str, Any]) -> Any
+    # type: (expr.Lambda, Tuple[Any, ...], Dict[str, Any]) -> Any
     """ Run a lambda like |x| x+1 """
 
     self.mem.PushTemp()

@@ -674,7 +674,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 ret_type_name = ret_type.type.name
 
-                # HACK: Const is the callee; expr__Const is the return type
+                # HACK: Const is the callee; expr.Const is the return type
                 if (ret_type_name == callee_name
                         or ret_type_name.endswith('__' + callee_name)):
                     return True

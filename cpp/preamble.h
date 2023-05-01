@@ -29,5 +29,6 @@
 #include "cpp/translation_stubs.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
 
-// TODO: Why do we need this?
+// TODO: Why do we need these?
 using runtime_asdl::cmd_value;
+using syntax_asdl::expr;

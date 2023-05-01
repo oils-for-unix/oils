@@ -371,7 +371,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._GenClass(variant, sum.attributes, class_name, [super_name], depth,
                        tag)
 
-    # Allow expr::Const in addition to expr__Const.
+    # Allow expr::Const in addition to expr.Const.
     Emit('ASDL_NAMES %(sum_name)s {')
     for variant in sum.types:
       if not variant.shared_type:

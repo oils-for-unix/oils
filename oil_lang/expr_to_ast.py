@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
     DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral,
     command, command_t,
-    expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
+    expr, expr_e, expr_t, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     PosixClass, PerlClass,
     NameType, place_expr, place_expr_e, place_expr_t, type_expr_t,
@@ -196,7 +196,7 @@ class Transformer(object):
     return key, value
 
   def _Dict(self, p_node):
-    # type: (PNode) -> expr__Dict
+    # type: (PNode) -> expr.Dict
     """
     dict: dict_pair (',' dict_pair)* [',']
 
@@ -657,7 +657,7 @@ class Transformer(object):
       UP_e = e
       tag = e.tag()
       if tag == expr_e.Var:  # COMPATIBILITY hack
-        e = cast(expr__Var, UP_e)
+        e = cast(expr.Var, UP_e)
         places.append(place_expr.Var(e.name))
       elif tag in (
           place_expr_e.Var, place_expr_e.Subscript, place_expr_e.Attribute):
