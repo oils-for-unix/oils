@@ -8,12 +8,6 @@ from _devbuild.gen.syntax_asdl import (
     DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral,
     word_part, word_part_t, word_part_e,
-    word_part__AssocArrayLiteral,
-    word_part__EscapedLiteral,
-    word_part__TildeSub,
-    word_part__ArithSub, word_part__ExtGlob,
-    word_part__Splice, word_part__FuncCall, word_part__ExprSub,
-
     word, word_e, word_t, word_str,
     sh_lhs_expr, sh_lhs_expr_e, sh_lhs_expr_t,
     AssocPair,
@@ -79,7 +73,7 @@ def _EvalWordPart(part):
       return True, tok.tval, False
 
     elif case(word_part_e.EscapedLiteral):
-      part = cast(word_part__EscapedLiteral, UP_part)
+      part = cast(word_part.EscapedLiteral, UP_part)
       val = part.token.tval
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
@@ -146,7 +140,7 @@ def LeftMostSpanForPart(part):
       return part.left.span_id  # ( location
 
     elif case(word_part_e.AssocArrayLiteral):
-      part = cast(word_part__AssocArrayLiteral, UP_part)
+      part = cast(word_part.AssocArrayLiteral, UP_part)
       return part.left.span_id  # ( location
 
     elif case(word_part_e.Literal):
@@ -154,7 +148,7 @@ def LeftMostSpanForPart(part):
       return tok.span_id
 
     elif case(word_part_e.EscapedLiteral):
-      part = cast(word_part__EscapedLiteral, UP_part)
+      part = cast(word_part.EscapedLiteral, UP_part)
       return part.token.span_id
 
     elif case(word_part_e.SingleQuoted):
@@ -178,16 +172,16 @@ def LeftMostSpanForPart(part):
       return part.left_token.span_id
 
     elif case(word_part_e.TildeSub):
-      part = cast(word_part__TildeSub, UP_part)
+      part = cast(word_part.TildeSub, UP_part)
       return part.token.span_id
 
     elif case(word_part_e.ArithSub):
-      part = cast(word_part__ArithSub, UP_part)
+      part = cast(word_part.ArithSub, UP_part)
       # begin, end
       return part.spids[0]
 
     elif case(word_part_e.ExtGlob):
-      part = cast(word_part__ExtGlob, UP_part)
+      part = cast(word_part.ExtGlob, UP_part)
       # This is the smae as part.op.span_id, but we want to be consistent with
       # left/right.  Not sure I want to add a right token just for the spid.
       return part.spids[0]
@@ -197,15 +191,15 @@ def LeftMostSpanForPart(part):
       return runtime.NO_SPID
 
     elif case(word_part_e.Splice):
-      part = cast(word_part__Splice, UP_part)
+      part = cast(word_part.Splice, UP_part)
       return part.name.span_id
 
     elif case(word_part_e.FuncCall):
-      part = cast(word_part__FuncCall, UP_part)
+      part = cast(word_part.FuncCall, UP_part)
       return part.name.span_id  # @f(x) or $f(x)
 
     elif case(word_part_e.ExprSub):
-      part = cast(word_part__ExprSub, UP_part)
+      part = cast(word_part.ExprSub, UP_part)
       return part.left.span_id  # $[
 
     else:
@@ -227,7 +221,7 @@ def _RightMostSpanForPart(part):
       return tok.span_id
 
     elif case(word_part_e.EscapedLiteral):
-      part = cast(word_part__EscapedLiteral, UP_part)
+      part = cast(word_part.EscapedLiteral, UP_part)
       return part.token.span_id
 
     elif case(word_part_e.SingleQuoted):
@@ -257,11 +251,11 @@ def _RightMostSpanForPart(part):
       return runtime.NO_SPID
 
     elif case(word_part_e.ArithSub):
-      part = cast(word_part__ArithSub, UP_part)
+      part = cast(word_part.ArithSub, UP_part)
       return part.spids[1]
 
     elif case(word_part_e.ExtGlob):
-      part = cast(word_part__ExtGlob, UP_part)
+      part = cast(word_part.ExtGlob, UP_part)
       return part.spids[1]
 
     # TODO: Do Splice and FuncCall need it?
@@ -326,7 +320,7 @@ def RightMostSpanForWord(w):
 
 
 def _MakeTildeSub(tok):
-  # type: (Token) -> word_part__TildeSub
+  # type: (Token) -> word_part.TildeSub
   if tok.length == 1:
     user_name = None  # type: Optional[str]
   else:

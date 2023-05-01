@@ -70,7 +70,7 @@ from _devbuild.gen.syntax_asdl import (
     redir_param, redir_param_e,
     Redir,
 
-    word_part_e, word_part_t, word_part__EscapedLiteral,
+    word_part, word_part_e, word_part_t,
     sh_lhs_expr, sh_lhs_expr_e,
 )
 from asdl import runtime
@@ -966,7 +966,7 @@ class OilPrinter(object):
         pass
 
       elif case(word_part_e.EscapedLiteral):
-        node = cast(word_part__EscapedLiteral, UP_node)
+        node = cast(word_part.EscapedLiteral, UP_node)
         if quoted:
           pass
         else:

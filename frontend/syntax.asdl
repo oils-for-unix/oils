@@ -194,6 +194,7 @@ module syntax
     # $[d->key], etc.
   | ExprSub(Token left, expr child)
   attributes (List[int] spids)
+  generate [no_legacy__]
 
   # TODO: I think Token left should be copied into every CompoundWord
   # either that, or CommandParser needs to reliably have GetToken(word_t)

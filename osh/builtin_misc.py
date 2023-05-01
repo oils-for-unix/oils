@@ -16,6 +16,8 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     span_e, cmd_value__Argv, value, scope_e
 )
+# TODO: we shouldn't need this import for translation
+from _devbuild.gen.runtime_asdl import lvalue  # noqa: F401
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import error

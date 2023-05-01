@@ -201,6 +201,11 @@ spid-sig() {
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
+legacy-asdl-types() {
+  show-usages _tmp/legacy-asdl \
+    egrep -n '[a-zA-Z]__[a-zA-Z]' */*.py
+}
+
 # We also want to get rid of 2 instances of 'attributes' in frontend/syntax.asdl
 #
 # - Every variant of command_t has a left token

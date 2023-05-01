@@ -20,7 +20,6 @@ from _devbuild.gen.syntax_asdl import (
     Token, CompoundWord, 
     word, word_e, word_t,
     word_part, word_part_e, word_part_t,
-    word_part__BracedTuple, word_part__BracedRange,
 )
 from core.error import p_die
 from frontend import lexer
@@ -87,7 +86,7 @@ class _RangeParser(object):
     return step
 
   def _ParseRange(self, range_kind):
-    # type: (Id_t) -> word_part__BracedRange
+    # type: (Id_t) -> word_part.BracedRange
     start = self.token_val
     self._Next()  # past Char
 
@@ -103,7 +102,7 @@ class _RangeParser(object):
     return part
 
   def Parse(self):
-    # type: () -> word_part__BracedRange
+    # type: () -> word_part.BracedRange
     self._Next()
     if self.token_type == Id.Range_Int:
       part = self._ParseRange(self.token_type)
@@ -338,7 +337,7 @@ def _IntToString(i, width):
 
 
 def _RangeStrings(part):
-  # type: (word_part__BracedRange) -> List[str]
+  # type: (word_part.BracedRange) -> List[str]
 
   if part.kind == Id.Range_Int:
     nums = []  # type: List[str]
@@ -414,7 +413,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
   UP_part = expand_part
   with tagswitch(expand_part) as case:
     if case(word_part_e.BracedTuple):
-      expand_part = cast(word_part__BracedTuple, UP_part)
+      expand_part = cast(word_part.BracedTuple, UP_part)
       # Call _BraceExpand on each of the inner words too!
       expanded_alts = []  # type: List[List[word_part_t]]
       for w in expand_part.words:
@@ -429,7 +428,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
           out.append(out_parts)
 
     elif case(word_part_e.BracedRange):
-      expand_part = cast(word_part__BracedRange, UP_part)
+      expand_part = cast(word_part.BracedRange, UP_part)
       # Not mutually recursive with _BraceExpand
       strs = _RangeStrings(expand_part)
 

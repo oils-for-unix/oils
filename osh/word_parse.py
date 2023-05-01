@@ -60,7 +60,6 @@ from _devbuild.gen.syntax_asdl import (
     rhs_word, rhs_word_e, rhs_word_t,
     word_e, word_t, CompoundWord,
     word_part, word_part_e, word_part_t,
-    word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
     command, command__ForExpr, command__Proc, command__Import,
     command__PlaceMutation, command__VarDecl,
@@ -763,7 +762,7 @@ class WordParser(WordEmitter):
     raise AssertionError(self.cur_token)
 
   def _ReadExtGlob(self):
-    # type: () -> word_part__ExtGlob
+    # type: () -> word_part.ExtGlob
     """
     Grammar:
       Item         = CompoundWord | EPSILON  # important: @(foo|) is allowed
@@ -1032,7 +1031,7 @@ class WordParser(WordEmitter):
     return CommandSub(left_token, node, right_token)
 
   def _ReadExprSub(self, lex_mode):
-    # type: (lex_mode_t) -> word_part__ExprSub
+    # type: (lex_mode_t) -> word_part.ExprSub
     """  $[d->key]  $[obj.method()]  etc.  """
     left_token = self.cur_token
     self._Next(lex_mode_e.Expr)
@@ -1171,7 +1170,7 @@ class WordParser(WordEmitter):
     return anode
 
   def _ReadArithSub(self):
-    # type: () -> word_part__ArithSub
+    # type: () -> word_part.ArithSub
     """
     Read an arith substitution, which contains an arith expression, e.g.
     $((a + 1)).

@@ -266,7 +266,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
       part, last_token = w_parser.ReadBracedVarSub(left_token)
 
-      # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
+      # It's casted word_part.BracedVarSub -> dummy -> expr__BracedVarSub!
       typ = Id.Expr_CastedDummy
       opaque = cast(Token, part)  # HACK for expr_to_ast
       done = p.addtoken(typ, opaque, gr.tokens[typ])

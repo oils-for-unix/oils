@@ -11,9 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     ShArrayLiteral, SingleQuoted, DoubleQuoted, SimpleVarSub,
     word_e, word_t, CompoundWord,
     rhs_word, rhs_word_e, rhs_word_t,
-    word_part_e, word_part__ArithSub, word_part__EscapedLiteral,
-    word_part__AssocArrayLiteral, word_part__ExprSub, word_part__ExtGlob,
-    word_part__FuncCall, word_part__Splice, word_part__TildeSub,
+    word_part, word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
     part_value, part_value_e, part_value_t,
@@ -430,7 +428,7 @@ class TildeEvaluator(object):
     self.exec_opts = exec_opts
 
   def Eval(self, part):
-    # type: (word_part__TildeSub) -> str
+    # type: (word_part.TildeSub) -> str
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
 
     if part.user_name is None:
@@ -1430,7 +1428,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return self._ConcatPartVals(part_vals, node.left)
 
   def _EvalExtGlob(self, part, part_vals):
-    # type: (word_part__ExtGlob, List[part_value_t]) -> None
+    # type: (word_part.ExtGlob, List[part_value_t]) -> None
     """Evaluate @($x|'foo'|$(hostname)) and flatten it"""
     op = part.op
     if op.id == Id.ExtGlob_Comma:
@@ -1504,7 +1502,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part = cast(ShArrayLiteral, UP_part)
         e_die("Unexpected array literal", loc.WordPart(part))
       elif case(word_part_e.AssocArrayLiteral):
-        part = cast(word_part__AssocArrayLiteral, UP_part)
+        part = cast(word_part.AssocArrayLiteral, UP_part)
         e_die("Unexpected associative array literal", loc.WordPart(part))
 
       elif case(word_part_e.Literal):
@@ -1515,7 +1513,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(v)
 
       elif case(word_part_e.EscapedLiteral):
-        part = cast(word_part__EscapedLiteral, UP_part)
+        part = cast(word_part.EscapedLiteral, UP_part)
         v = part_value.String(part.ch, True, False)
         part_vals.append(v)
 
@@ -1552,7 +1550,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self._EvalBracedVarSub(part, part_vals, quoted)
 
       elif case(word_part_e.TildeSub):
-        part = cast(word_part__TildeSub, UP_part)
+        part = cast(word_part.TildeSub, UP_part)
         # We never parse a quoted string into a TildeSub.
         assert not quoted
         s = self.tilde_ev.Eval(part)
@@ -1560,13 +1558,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(v)
 
       elif case(word_part_e.ArithSub):
-        part = cast(word_part__ArithSub, UP_part)
+        part = cast(word_part.ArithSub, UP_part)
         num = self.arith_ev.EvalToInt(part.anode)
         v = part_value.String(str(num), quoted, not quoted)
         part_vals.append(v)
 
       elif case(word_part_e.ExtGlob):
-        part = cast(word_part__ExtGlob, UP_part)
+        part = cast(word_part.ExtGlob, UP_part)
         #if not self.exec_opts.extglob():
         #  die()  # disallow at runtime?  Don't just decay
 
@@ -1577,7 +1575,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(part_value.ExtGlob(part_vals2))
 
       elif case(word_part_e.Splice):
-        part = cast(word_part__Splice, UP_part)
+        part = cast(word_part.Splice, UP_part)
         val = self.mem.GetValue(part.var_name)
 
         UP_val = val
@@ -1604,13 +1602,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(part_value.Array(items))
 
       elif case(word_part_e.FuncCall):
-        part = cast(word_part__FuncCall, UP_part)
+        part = cast(word_part.FuncCall, UP_part)
         if mylib.PYTHON:
           part_val = self.expr_ev.EvalInlineFunc(part)
           part_vals.append(part_val)
 
       elif case(word_part_e.ExprSub):
-        part = cast(word_part__ExprSub, UP_part)
+        part = cast(word_part.ExprSub, UP_part)
         if mylib.PYTHON:
           part_val = self.expr_ev.EvalExprSub(part)
           part_vals.append(part_val)
@@ -1828,7 +1826,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return value.MaybeStrArray(strs)
 
       if tag == word_part_e.AssocArrayLiteral:
-        part0 = cast(word_part__AssocArrayLiteral, UP_part0)
+        part0 = cast(word_part.AssocArrayLiteral, UP_part0)
         d = NewDict()  # type: Dict[str, str]
         n = len(part0.pairs)
         for pair in part0.pairs:

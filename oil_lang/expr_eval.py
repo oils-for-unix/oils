@@ -24,7 +24,7 @@ from _devbuild.gen.syntax_asdl import (
     char_class_term, char_class_term_t,
     PosixClass, PerlClass, CharCode,
 
-    word_part_t, word_part__ExprSub, word_part__FuncCall, word_part__Splice,
+    word_part, word_part_t,
 )
 from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
@@ -344,13 +344,13 @@ class OilEvaluator(object):
         raise NotImplementedError(place)
 
   def EvalExprSub(self, part):
-    # type: (word_part__ExprSub) -> part_value_t
+    # type: (word_part.ExprSub) -> part_value_t
     py_val = self.EvalExpr(part.child, loc.Missing())
     s = Stringify(py_val, word_part=part)
     return part_value.String(s, False, False)
 
   def EvalInlineFunc(self, part):
-    # type: (word_part__FuncCall) -> part_value_t
+    # type: (word_part.FuncCall) -> part_value_t
     func_name = part.name.tval[1:]
 
     fn_val = self.mem.GetValue(func_name)  # type: value_t
@@ -391,7 +391,7 @@ class OilEvaluator(object):
     return part_val
 
   def SpliceValue(self, val, part):
-    # type: (value__Obj, word_part__Splice) -> List[Any]
+    # type: (value__Obj, word_part.Splice) -> List[Any]
     try:
       items = [Stringify(item, word_part=part) for item in val.obj]
     except TypeError as e:  # TypeError if it isn't iterable

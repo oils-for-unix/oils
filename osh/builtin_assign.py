@@ -11,6 +11,8 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray,
     scope_e, cmd_value__Argv, cmd_value__Assign, AssignArg,
 )
+# TODO: we shouldn't need this import for translation
+from _devbuild.gen.runtime_asdl import lvalue  # noqa: F401
 from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
 from core import error
