@@ -14,8 +14,8 @@ import cStringIO
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue,lvalue_e, lvalue_t,
+    value, value_e, value_t,
+    lvalue, lvalue_e, lvalue_t,
     scope_e, scope_t, HayNode, Cell
 )
 from _devbuild.gen.syntax_asdl import loc, loc_t
@@ -91,7 +91,7 @@ class SearchPath(object):
     val = self.mem.GetValue('PATH')
     UP_val = val
     if val.tag() == value_e.Str:
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       path_list = val.s.split(':')
     else:
       path_list = []  # treat as empty path
@@ -581,7 +581,7 @@ class MutableOpts(object):
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetValue('SHELLOPTS')
     if UP_shellopts.tag() == value_e.Str:  # Always true in Oil, see Init above
-      shellopts = cast(value__Str, UP_shellopts)
+      shellopts = cast(value.Str, UP_shellopts)
       self._InitOptionsFromEnv(shellopts.s)
 
   def _InitOptionsFromEnv(self, shellopts):
@@ -754,7 +754,7 @@ class MutableOpts(object):
 
     UP_val = self.mem.GetValue('SHELLOPTS')
     assert UP_val.tag() == value_e.Str, UP_val
-    val = cast(value__Str, UP_val)
+    val = cast(value.Str, UP_val)
     shellopts = val.s
 
     # Now check if SHELLOPTS needs to be updated.  It may be exported.
@@ -917,17 +917,17 @@ if mylib.PYTHON:
           cell_json['type'] = 'Undef'
 
         elif case(value_e.Str):
-          val = cast(value__Str, cell.val)
+          val = cast(value.Str, cell.val)
           cell_json['type'] = 'Str'
           cell_json['value'] = val.s
 
         elif case(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, cell.val)
+          val = cast(value.MaybeStrArray, cell.val)
           cell_json['type'] = 'MaybeStrArray'
           cell_json['value'] = val.strs
 
         elif case(value_e.AssocArray):
-          val = cast(value__AssocArray, cell.val)
+          val = cast(value.AssocArray, cell.val)
           cell_json['type'] = 'AssocArray'
           cell_json['value'] = val.d
 
@@ -1101,7 +1101,7 @@ def InitMem(mem, environ, version_str):
   val = mem.GetValue('PWD')
   # should be true since it's exported
   assert val.tag() == value_e.Str, val
-  pwd = cast(value__Str, val).s
+  pwd = cast(value.Str, val).s
   mem.SetPwd(pwd)
 
 
@@ -1544,7 +1544,7 @@ class Mem(object):
       return 1  # silent error
 
   def GetArg0(self):
-    # type: () -> value__Str
+    # type: () -> value.Str
     """Like GetArgNum(0) but with a more specific type."""
     return value.Str(self.dollar0)
 
@@ -1666,7 +1666,7 @@ class Mem(object):
           return cell, name_map, name  # fallback
 
       elif case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         new_name = val.s
 
       else:
@@ -1829,7 +1829,7 @@ class Mem(object):
 
         # TODO: relax this for Oil
         assert val.tag() == value_e.Str, val
-        rval = cast(value__Str, val)
+        rval = cast(value.Str, val)
 
         # 'setref' array[index] not implemented here yet
         #if keyword_id == Id.KW_SetRef:
@@ -1863,7 +1863,7 @@ class Mem(object):
             e_die("Can't assign to items in a string", left_loc)
 
           elif case2(value_e.MaybeStrArray):
-            cell_val = cast(value__MaybeStrArray, UP_cell_val)
+            cell_val = cast(value.MaybeStrArray, UP_cell_val)
             strs = cell_val.strs
 
             n = len(strs)
@@ -1896,7 +1896,7 @@ class Mem(object):
         # There is no syntax 'declare A["x"]'
         assert val is not None, val
         assert val.tag() == value_e.Str, val
-        rval = cast(value__Str, val)
+        rval = cast(value.Str, val)
 
         left_loc = lval.blame_loc
 
@@ -1907,7 +1907,7 @@ class Mem(object):
 
         # We already looked it up before making the lvalue
         assert cell.val.tag() == value_e.AssocArray, cell
-        cell_val2 = cast(value__AssocArray, cell.val)
+        cell_val2 = cast(value.AssocArray, cell.val)
 
         cell_val2.d[lval.key] = rval.s
 
@@ -1915,7 +1915,7 @@ class Mem(object):
         raise AssertionError(lval.tag())
 
   def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
-    # type: (Dict[str, Cell], lvalue.Indexed, value__Str, int) -> None
+    # type: (Dict[str, Cell], lvalue.Indexed, value.Str, int) -> None
     """Fill 'name_map' with a new indexed array entry."""
     no_str = None  # type: Optional[str]
     items = [no_str] * lval.index
@@ -2145,7 +2145,7 @@ class Mem(object):
         if val.tag() != value_e.MaybeStrArray:
           raise error.Runtime("%r isn't an array" % var_name)
 
-        val = cast(value__MaybeStrArray, UP_val)
+        val = cast(value.MaybeStrArray, UP_val)
         strs = val.strs
 
         n = len(strs)
@@ -2178,7 +2178,7 @@ class Mem(object):
         #if val.tag() != value_e.AssocArray:
         #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
-        val = cast(value__AssocArray, UP_val)
+        val = cast(value.AssocArray, UP_val)
         mylib.dict_erase(val.d, lval.key)
 
       else:
@@ -2235,7 +2235,7 @@ class Mem(object):
         # TODO: Disallow exporting at assignment time.  If an exported Str is
         # changed to MaybeStrArray, also clear its 'exported' flag.
         if cell.exported and cell.val.tag() == value_e.Str:
-          val = cast(value__Str, cell.val)
+          val = cast(value.Str, cell.val)
           exported[name] = val.s
     return exported
 
@@ -2272,7 +2272,7 @@ class Mem(object):
         # TODO: Show other types?
         val = cell.val
         if val.tag() == value_e.Str:
-          str_val = cast(value__Str, val)
+          str_val = cast(value.Str, val)
           result[name] = str_val.s
     return result
 
@@ -2416,7 +2416,7 @@ def GetString(mem, name):
     if case(value_e.Undef):
       raise error.Runtime("$%s isn't defined" % name)
     elif case(value_e.Str):
-      return cast(value__Str, UP_val).s
+      return cast(value.Str, UP_val).s
     else:
       # User would have to 'unset HOME' to get rid of exported flag
       raise error.Runtime("$%s should be a string" % name)
@@ -2442,7 +2442,7 @@ def GetInteger(mem, name):
   if val.tag() != value_e.Str:
     raise error.Runtime(
         '$%s should be a string, got %s' % (name, ui.ValType(val)))
-  s = cast(value__Str, val).s
+  s = cast(value.Str, val).s
   try:
     i = int(s)
   except ValueError:

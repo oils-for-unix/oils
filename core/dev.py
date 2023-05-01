@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
+    value, value_e,
     lvalue, lvalue_e,
     cmd_value, scope_e, trace, trace_e, trace_t 
 )
@@ -192,11 +192,11 @@ def _PrintShValue(val, buf):
   UP_val = val
   with tagswitch(val) as case:
     if case(value_e.Str):
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       result = qsn.maybe_shell_encode(val.s)
 
     elif case(value_e.MaybeStrArray):
-      val = cast(value__MaybeStrArray, UP_val)
+      val = cast(value.MaybeStrArray, UP_val)
       parts = ['(']
       for s in val.strs:
         parts.append(qsn.maybe_shell_encode(s))
@@ -204,7 +204,7 @@ def _PrintShValue(val, buf):
       result = ' '.join(parts)
 
     elif case(value_e.AssocArray):
-      val = cast(value__AssocArray, UP_val)
+      val = cast(value.AssocArray, UP_val)
       parts = ['(']
       for k, v in iteritems(val.d):
         parts.append('[%s]=%s' % (
@@ -288,7 +288,7 @@ class Tracer(object):
     """The prefix of each line."""
     val = self.mem.GetValue('PS4')
     if val.tag() == value_e.Str:
-      ps4 = cast(value__Str, val).s
+      ps4 = cast(value.Str, val).s
     else:
       ps4 = ''
 

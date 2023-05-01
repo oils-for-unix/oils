@@ -351,7 +351,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     self.Emit('')
 
-    pretty_cls_name = class_name.replace('__', '.')  # used below
+    pretty_cls_name = '%s%s' % (class_ns, class_name)
 
     if len(all_fields) and not self.py_init_n:
       self.Emit('  @staticmethod')

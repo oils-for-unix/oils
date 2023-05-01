@@ -8,7 +8,7 @@ from __future__ import print_function
 import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
+from _devbuild.gen.runtime_asdl import value, value_e, value_t
 from _devbuild.gen.syntax_asdl import (
     loc, command_t, source, CompoundWord
 )
@@ -114,14 +114,14 @@ class Evaluator(object):
     # type: (List[Tuple[Id_t, str]]) -> str
     ret = []  # type: List[str]
     non_printing = 0
-    for id_, value in tokens:
+    for id_, s in tokens:
       # BadBacklash means they should have escaped with \\.  TODO: Make it an error.
       # 'echo -e' has a similar issue.
       if id_ in (Id.PS_Literals, Id.PS_BadBackslash):
-        ret.append(value)
+        ret.append(s)
 
       elif id_ == Id.PS_Octal3:
-        i = int(value[1:], 8)
+        i = int(s[1:], 8)
         ret.append(chr(i % 256))
 
       elif id_ == Id.PS_LBrace:
@@ -136,7 +136,7 @@ class Evaluator(object):
         ret.append('\x02')
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
-        ch = value[1]
+        ch = s[1]
         if ch == '$':  # So the user can tell if they're root or not.
           r = self.cache.Get('$')
 
@@ -163,7 +163,7 @@ class Evaluator(object):
 
         elif ch == 'D':  # \D{%H:%M} is the only one with a suffix
           now = time_.time()
-          fmt = value[3:-1]  # \D{%H:%M}
+          fmt = s[3:-1]  # \D{%H:%M}
           if len(fmt) == 0:
             # In bash y.tab.c uses %X when string is empty
             # This doesn't seem to match exactly, but meh for now.
@@ -182,7 +182,7 @@ class Evaluator(object):
         elif ch == 'W':
           val = self.mem.GetValue('PWD')
           if val.tag() == value_e.Str:
-            str_val = cast(value__Str, val)
+            str_val = cast(value.Str, val)
             r = os_path.basename(str_val.s)
           else:
             r = '<Error: PWD is not a string> '
@@ -199,7 +199,7 @@ class Evaluator(object):
         ret.append(r.replace('$', '\\$'))
 
       else:
-        raise AssertionError('Invalid token %r %r' % (id_, value))
+        raise AssertionError('Invalid token %r %r' % (id_, s))
 
     # mismatched brackets, see https://github.com/oilshell/oil/pull/256
     if non_printing != 0:
@@ -213,7 +213,7 @@ class Evaluator(object):
     if UP_val.tag() != value_e.Str:
       return ''  # e.g. if the user does 'unset PS1'
 
-    val = cast(value__Str, UP_val)
+    val = cast(value.Str, UP_val)
 
     # Parse backslash escapes (cached)
     tokens = self.tokens_cache.get(val.s)
@@ -276,7 +276,7 @@ class UserPlugin(object):
 
     # PROMPT_COMMAND almost never changes, so we try to cache its parsing.
     # This avoids memory allocations.
-    prompt_cmd = cast(value__Str, val).s
+    prompt_cmd = cast(value.Str, val).s
     node = self.parse_cache.get(prompt_cmd)
     if node is None:
       line_reader = reader.StringLineReader(prompt_cmd, self.arena)

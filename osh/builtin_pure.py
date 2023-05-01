@@ -16,11 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (
-    scope_e,
-    value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
-    value__Obj
-)
+from _devbuild.gen.runtime_asdl import scope_e, value, value_e
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.syntax_asdl import loc
 
@@ -625,7 +621,7 @@ class Use(vm._Builtin):
 
       UP_actual = self.mem.GetValue('_DIALECT', scope_e.Dynamic)
       if UP_actual.tag() == value_e.Str:
-        actual = cast(value__Str, UP_actual).s
+        actual = cast(value.Str, UP_actual).s
         if actual == expected:
           return 0  # OK
         else:
@@ -851,16 +847,16 @@ if mylib.PYTHON:
             with tagswitch(val) as case:
               # similar to LookupVar in oil_lang/expr_eval.py
               if case(value_e.Str):
-                val = cast(value__Str, UP_val)
+                val = cast(value.Str, UP_val)
                 obj = val.s  # type: Any
               elif case(value_e.MaybeStrArray):
-                val = cast(value__MaybeStrArray, UP_val)
+                val = cast(value.MaybeStrArray, UP_val)
                 obj = val.strs
               elif case(value_e.AssocArray):
-                val = cast(value__AssocArray, UP_val)
+                val = cast(value.AssocArray, UP_val)
                 obj = val.d
               elif case(value_e.Obj):
-                val = cast(value__Obj, UP_val)
+                val = cast(value.Obj, UP_val)
                 obj = val.obj
               else:
                 e_die("Can't serialize value of type %d" % val.tag())

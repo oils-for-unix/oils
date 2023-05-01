@@ -6,13 +6,11 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
-    Token, loc, loc_t,
-    word_part, word_part_t,
+    loc, loc_t, Token, word_part, word_part_t,
     SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub, ShArrayLiteral,
     CommandSub,
 
-    expr, expr_e, expr_t,
-    place_expr, place_expr_e, place_expr_t,
+    expr, expr_e, expr_t, place_expr, place_expr_e, place_expr_t,
     Attribute, Subscript,
     re, re_e, re_t, 
     class_literal_term, class_literal_term_e, class_literal_term_t,
@@ -23,9 +21,7 @@ from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
     part_value, part_value_t,
     lvalue,
-    value, value_e, value_t, value__AssocArray, value__Bool, value__Dict,
-    value__Int, value__Float, value__List, value__MaybeStrArray, value__Str,
-    value__Obj,
+    value, value_e, value_t,
 )
 from asdl import runtime
 from core import error
@@ -68,19 +64,19 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
   UP_val = val
   with tagswitch(val) as case:
     if case(value_e.Str):
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       return val.s
 
     elif case(value_e.MaybeStrArray):
-      val = cast(value__MaybeStrArray, UP_val)
+      val = cast(value.MaybeStrArray, UP_val)
       return val.strs  # node: has None
 
     elif case(value_e.AssocArray):
-      val = cast(value__AssocArray, UP_val)
+      val = cast(value.AssocArray, UP_val)
       return val.d
 
     elif case(value_e.Obj):
-      val = cast(value__Obj, UP_val)
+      val = cast(value.Obj, UP_val)
       return val.obj
 
     else:
@@ -148,36 +144,36 @@ def _ValueToPyObj(val):
       return None
 
     elif case(value_e.Bool):
-      val = cast(value__Bool, UP_val)
+      val = cast(value.Bool, UP_val)
       return val.b
 
     elif case(value_e.Int):
-      val = cast(value__Int, UP_val)
+      val = cast(value.Int, UP_val)
       return val.i
 
     elif case(value_e.Float):
-      val = cast(value__Float, UP_val)
+      val = cast(value.Float, UP_val)
       return val.f
 
     elif case(value_e.Str):
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       return val.s
 
     elif case(value_e.MaybeStrArray):
-      val = cast(value__MaybeStrArray, UP_val)
+      val = cast(value.MaybeStrArray, UP_val)
       # XXX type checker is somehow OK with this (holes)?
       return objects.StrArray(val.strs)
 
     elif case(value_e.List):
-      val = cast(value__List, UP_val)
+      val = cast(value.List, UP_val)
       return val.items
 
     elif case(value_e.AssocArray):
-      val = cast(value__AssocArray, UP_val)
+      val = cast(value.AssocArray, UP_val)
       return val.d
 
     elif case(value_e.Dict):
-      val = cast(value__Dict, UP_val)
+      val = cast(value.Dict, UP_val)
       return val.d
 
     else:
@@ -349,7 +345,7 @@ class OilEvaluator(object):
     fn_val = self.mem.GetValue(func_name)  # type: value_t
     if fn_val.tag() != value_e.Obj:
       e_die("Expected function named %r, got %r " % (func_name, fn_val))
-    assert isinstance(fn_val, value__Obj)
+    assert isinstance(fn_val, value.Obj)
 
     func = fn_val.obj
     pos_args, named_args = self.EvalArgList(part.args)
@@ -384,7 +380,7 @@ class OilEvaluator(object):
     return part_val
 
   def SpliceValue(self, val, part):
-    # type: (value__Obj, word_part.Splice) -> List[Any]
+    # type: (value.Obj, word_part.Splice) -> List[Any]
     try:
       items = [Stringify(item, word_part=part) for item in val.obj]
     except TypeError as e:  # TypeError if it isn't iterable
@@ -454,11 +450,11 @@ class OilEvaluator(object):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Int):
-        val = cast(value__Int, UP_val)
+        val = cast(value.Int, UP_val)
         return val.i
 
       elif case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         if match.LooksLikeInteger(val.s):
           return int(val.s)
         else:
@@ -475,7 +471,7 @@ class OilEvaluator(object):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         if match.LooksLikeInteger(val.s):
           return value.Int(int(val.s))
 
@@ -586,11 +582,11 @@ class OilEvaluator(object):
       UP_child = child
       with tagswitch(child) as case:
         if case(value_e.Int):
-          child = cast(value__Int, UP_child)
+          child = cast(value.Int, UP_child)
           return value.Int(-child.i)
 
         elif case(value_e.Float):
-          child = cast(value__Float, UP_child)
+          child = cast(value.Float, UP_child)
           return value.Float(-child.f)
 
         else:
@@ -601,7 +597,7 @@ class OilEvaluator(object):
       UP_child = child
       with tagswitch(child) as case:
         if case(value_e.Int):
-          child = cast(value__Int, UP_child)
+          child = cast(value.Int, UP_child)
           return value.Int(~child.i)
 
         else:
@@ -612,7 +608,7 @@ class OilEvaluator(object):
       UP_child = child
       with tagswitch(child) as case:
         if case(value_e.Bool):
-          child = cast(value__Bool, UP_child)
+          child = cast(value.Bool, UP_child)
           return value.Bool(not child.b)
 
         else:
@@ -630,11 +626,11 @@ class OilEvaluator(object):
 
     with tagswitch(left) as lcase:
       if lcase(value_e.Int):
-        left = cast(value__Int, UP_left)
+        left = cast(value.Int, UP_left)
 
         with tagswitch(right) as rcase:
           if rcase(value_e.Int):
-            right = cast(value__Int, UP_right)
+            right = cast(value.Int, UP_right)
 
             if op == Id.Arith_Plus:
               return value.Int(left.i + right.i)
@@ -651,7 +647,7 @@ class OilEvaluator(object):
               raise NotImplementedError(op)
 
           elif rcase(value_e.Float):
-            right = cast(value__Float, UP_right)
+            right = cast(value.Float, UP_right)
             if op == Id.Arith_Plus:
               return value.Float(left.i + right.f)
             elif op == Id.Arith_Minus:
@@ -670,11 +666,11 @@ class OilEvaluator(object):
             raise error.InvalidType('Expected Int or Float', loc.Missing())
 
       elif lcase(value_e.Float):
-        left = cast(value__Float, UP_left)
+        left = cast(value.Float, UP_left)
 
         with tagswitch(right) as rcase:
           if rcase(value_e.Int):
-            right = cast(value__Int, UP_right)
+            right = cast(value.Int, UP_right)
             if op == Id.Arith_Plus:
               return value.Float(left.f + right.i)
             elif op == Id.Arith_Minus:
@@ -690,7 +686,7 @@ class OilEvaluator(object):
               raise NotImplementedError(op)
 
           elif rcase(value_e.Float):
-            right = cast(value__Float, UP_right)
+            right = cast(value.Float, UP_right)
             if op == Id.Arith_Plus:
               return value.Float(left.f + right.f)
             elif op == Id.Arith_Minus:
@@ -712,7 +708,7 @@ class OilEvaluator(object):
           raise error.InvalidType('Expected Int or Float', loc.Missing())
 
   def _ArithDivideInt(self, left, right):
-    # type: (value_t, value_t) -> value__Int
+    # type: (value_t, value_t) -> value.Int
     left_i = self._ValueToInteger(left)
     right_i = self._ValueToInteger(right)
     if right_i == 0:
@@ -721,7 +717,7 @@ class OilEvaluator(object):
     return value.Int(left_i // right_i)
 
   def _ArithModulus(self, left, right):
-    # type: (value_t, value_t) -> value__Int
+    # type: (value_t, value_t) -> value.Int
     left_i = self._ValueToInteger(left)
     right_i = self._ValueToInteger(right)
     if right_i == 0:
@@ -730,13 +726,13 @@ class OilEvaluator(object):
     return value.Int(left_i % right_i)
 
   def _ArithExponentiate(self, left, right):
-    # type: (value_t, value_t) -> value__Int
+    # type: (value_t, value_t) -> value.Int
     left_i = self._ValueToInteger(left)
     right_i = self._ValueToInteger(right)
     return value.Int(left_i ** right_i)
 
   def _ArithBitwise(self, left, right, op):
-    # type: (value_t, value_t, Id_t) -> value__Int
+    # type: (value_t, value_t, Id_t) -> value.Int
     left_i = self._ValueToInteger(left)
     right_i = self._ValueToInteger(right)
 
@@ -754,17 +750,17 @@ class OilEvaluator(object):
     raise NotImplementedError()
 
   def _ArithLogical(self, left, right, op):
-    # type: (value_t, value_t, Id_t) -> value__Bool
+    # type: (value_t, value_t, Id_t) -> value.Bool
     UP_left = left
     UP_right = right
 
     with tagswitch(left) as lcase:
       if lcase(value_e.Bool):
-        left = cast(value__Bool, UP_left)
+        left = cast(value.Bool, UP_left)
 
         with tagswitch(right) as rcase:
           if rcase(value_e.Bool):
-            right = cast(value__Bool, UP_right)
+            right = cast(value.Bool, UP_right)
 
             if op == Id.Expr_And:
               return value.Bool(left.b and right.b)
@@ -786,31 +782,31 @@ class OilEvaluator(object):
 
     with tagswitch(left) as lcase:
       if lcase(value_e.List):
-        left = cast(value__List, UP_left)
+        left = cast(value.List, UP_left)
 
         with tagswitch(right) as rcase:
           if rcase(value_e.List):
-            right = cast(value__List, UP_right)
+            right = cast(value.List, UP_right)
             return value.List(left.items + right.items)
 
           else:
             raise error.InvalidType('Expected List', loc.Missing())
 
       if lcase(value_e.Str):
-        left = cast(value__Str, UP_left)
+        left = cast(value.Str, UP_left)
         with tagswitch(right) as rcase:
           if rcase(value_e.Str):
-            right = cast(value__Str, UP_right)
+            right = cast(value.Str, UP_right)
             return value.Str(left.s + right.s)
 
           else:
             raise error.InvalidType('Expected String', loc.Missing())
 
       if lcase(value_e.MaybeStrArray):
-        left = cast(value__MaybeStrArray, UP_left)
+        left = cast(value.MaybeStrArray, UP_left)
         with tagswitch(right) as rcase:
           if rcase(value_e.MaybeStrArray):
-            right = cast(value__MaybeStrArray, UP_right)
+            right = cast(value.MaybeStrArray, UP_right)
             return value.MaybeStrArray(left.strs + right.strs)
 
           else:

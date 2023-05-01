@@ -8,12 +8,9 @@ import time as time_  # avoid name conflict
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
-from _devbuild.gen.runtime_asdl import (
-    cmd_value, value, value_e, value__Str,
-)
+from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
 from _devbuild.gen.syntax_asdl import (
-    source, Token,
-    loc, loc_e, loc_t, 
+    loc, loc_e, loc_t, source, Token,
     printf_part, printf_part_e, printf_part_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
@@ -335,7 +332,7 @@ class Printf(vm._Builtin):
 
               tzcell = self.mem.GetCell('TZ')
               if tzcell and tzcell.exported and tzcell.val.tag() == value_e.Str:
-                tzval = cast(value__Str, tzcell.val)
+                tzval = cast(value.Str, tzcell.val)
                 posix.putenv('TZ', tzval.s)
 
               time_.tzset()

@@ -13,8 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     scope_t,
     lvalue, lvalue_e, lvalue_t,
-    value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
-    value__AssocArray, value__Obj,
+    value, value_e, value_t,
 )
 from _devbuild.gen.syntax_asdl import (
     word_t, CompoundWord, Token,
@@ -116,12 +115,12 @@ def OldValue(lval, mem, exec_opts):
     elif case(lvalue_e.Indexed):
       lval = cast(lvalue.Indexed, UP_lval)
 
-      array_val = None  # type: value__MaybeStrArray
+      array_val = None  # type: value.MaybeStrArray
       with tagswitch(val) as case2:
         if case2(value_e.Undef):
           array_val = value.MaybeStrArray([])
         elif case2(value_e.MaybeStrArray):
-          tmp = cast(value__MaybeStrArray, UP_val)
+          tmp = cast(value.MaybeStrArray, UP_val)
           # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
           array_val = tmp
         else:
@@ -138,13 +137,13 @@ def OldValue(lval, mem, exec_opts):
     elif case(lvalue_e.Keyed):
       lval = cast(lvalue.Keyed, UP_lval)
 
-      assoc_val = None  # type: value__AssocArray
+      assoc_val = None  # type: value.AssocArray
       with tagswitch(val) as case2:
         if case2(value_e.Undef):
           # This never happens, because undef[x]+= is assumed to
           raise AssertionError()
         elif case2(value_e.AssocArray):
-          tmp2 = cast(value__AssocArray, UP_val)
+          tmp2 = cast(value.AssocArray, UP_val)
           # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
           assoc_val = tmp2
         else:
@@ -399,17 +398,17 @@ class ArithEvaluator(object):
           e_strict('Undefined value in arithmetic context', location)
 
         elif case(value_e.Int):
-          val = cast(value__Int, UP_val)
+          val = cast(value.Int, UP_val)
           return val.i
 
         elif case(value_e.Str):
-          val = cast(value__Str, UP_val)
+          val = cast(value.Str, UP_val)
           return self._StringToInteger(val.s, location)  # calls e_strict
 
         elif case(value_e.Obj):
           # Note: this handles var x = 42; echo $(( x > 2 )).
           if mylib.PYTHON:
-            val = cast(value__Obj, UP_val)
+            val = cast(value.Obj, UP_val)
             if isinstance(val.obj, int):
               return val.obj
           raise AssertionError()  # not in C++
@@ -637,12 +636,12 @@ class ArithEvaluator(object):
           UP_left = left
           with tagswitch(left) as case:
             if case(value_e.MaybeStrArray):
-              array_val = cast(value__MaybeStrArray, UP_left)
+              array_val = cast(value.MaybeStrArray, UP_left)
               index = self.EvalToInt(node.right)
               s = word_eval.GetArrayItem(array_val.strs, index)
 
             elif case(value_e.AssocArray):
-              left = cast(value__AssocArray, UP_left)
+              left = cast(value.AssocArray, UP_left)
               key = self.EvalWordToString(node.right)
               s = left.d.get(key)
 

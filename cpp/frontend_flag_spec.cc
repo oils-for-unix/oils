@@ -13,8 +13,7 @@ namespace flag_spec {
 using arg_types::kFlagSpecs;
 using arg_types::kFlagSpecsAndMore;
 using runtime_asdl::flag_type_e;
-using runtime_asdl::value__Bool;
-using runtime_asdl::value__Undef;
+using runtime_asdl::value;
 using runtime_asdl::value_t;
 
 void _CreateStrList(const char** in, List<Str*>* out) {
@@ -41,20 +40,20 @@ void _CreateDefaults(DefaultPair_c* in,
     value_t* val;
     switch (pair->typ) {
     case flag_type_e::Bool:
-      val = Alloc<value__Bool>(pair->val.b);
+      val = Alloc<value::Bool>(pair->val.b);
       break;
     case flag_type_e::Int:
-      val = Alloc<value__Int>(pair->val.i);
+      val = Alloc<value::Int>(pair->val.i);
       break;
     case flag_type_e::Float:
-      val = Alloc<value__Float>(pair->val.f);
+      val = Alloc<value::Float>(pair->val.f);
       break;
     case flag_type_e::Str: {
       const char* s = pair->val.s;
       if (s == nullptr) {
-        val = Alloc<value__Undef>();
+        val = Alloc<value::Undef>();
       } else {
-        val = Alloc<value__Str>(StrFromC(s));
+        val = Alloc<value::Str>(StrFromC(s));
       }
     } break;
     default:
@@ -242,14 +241,14 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 
 // With optional arg
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val,
+    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
     bool accept_typed_args) {
   // TODO: disallow typed args!
   return ParseCmdVal(spec_name, cmd_val);
 }
 
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
+    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val) {
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 

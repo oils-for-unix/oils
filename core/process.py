@@ -18,7 +18,7 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t, job_state_str, wait_status, wait_status_t,
-    RedirValue, redirect_arg, redirect_arg_e, value, value_e, value__Str,
+    RedirValue, redirect_arg, redirect_arg_e, value, value_e,
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
     loc_t,
@@ -231,7 +231,7 @@ class FdState(object):
     val = self.mem.GetValue(fd_name)
     if val.tag() == value_e.Str:
       try:
-        return int(cast(value__Str, val).s)
+        return int(cast(value.Str, val).s)
       except ValueError:
         return NO_FD
     return NO_FD

@@ -35,9 +35,9 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e,
-    value, value_e, value_t, value__Str, value__MaybeStrArray,
-    RedirValue, redirect_arg, scope_e,
+    value, value_e, value_t,
     cmd_value, cmd_value_e,
+    RedirValue, redirect_arg, scope_e,
     CommandStatus, StatusArray, Proc, flow_e
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
@@ -194,8 +194,8 @@ def PlusEquals(old_val, val):
     pass  # val is RHS
 
   elif old_tag == value_e.Str and tag == value_e.Str:
-    old_val = cast(value__Str, UP_old_val)
-    str_to_append = cast(value__Str, UP_val)
+    old_val = cast(value.Str, UP_old_val)
+    str_to_append = cast(value.Str, UP_val)
     val = value.Str(old_val.s + str_to_append.s)
 
   elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
@@ -206,8 +206,8 @@ def PlusEquals(old_val, val):
 
   elif (old_tag == value_e.MaybeStrArray and
         tag == value_e.MaybeStrArray):
-    old_val = cast(value__MaybeStrArray, UP_old_val)
-    to_append = cast(value__MaybeStrArray, UP_val)
+    old_val = cast(value.MaybeStrArray, UP_old_val)
+    to_append = cast(value.MaybeStrArray, UP_val)
 
     # TODO: MUTATE the existing value for efficiency?
     strs = []  # type: List[str]

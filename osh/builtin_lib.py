@@ -5,7 +5,7 @@ builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import value_e, value__Str
+from _devbuild.gen.runtime_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import state
@@ -53,7 +53,7 @@ class History(vm._Builtin):
 
     UP_val = self.mem.GetValue('HISTFILE')
     if UP_val.tag() == value_e.Str:
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       return val.s
     else:
       # TODO: support bash-like behaviour here where we try to convert $HISTFILE

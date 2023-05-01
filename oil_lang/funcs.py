@@ -4,7 +4,7 @@ funcs.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value__Block
+from _devbuild.gen.runtime_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import error
@@ -89,7 +89,7 @@ class EvalHay(object):
         raise error.Expr('Expected a block, got %s' % block, call_loc)
 
       UP_block = block
-      block = cast(value__Block, UP_block)
+      block = cast(value.Block, UP_block)
 
       with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
         unused = self.cmd_ev.EvalBlock(block.body)

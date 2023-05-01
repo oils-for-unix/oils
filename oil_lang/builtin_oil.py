@@ -12,7 +12,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
-    value_e, value__MaybeStrArray, value__Obj, Proc, cmd_value
+    value, value_e, Proc, cmd_value
 )
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from core import error
@@ -152,13 +152,13 @@ class Append(_Builtin):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
+        val = cast(value.MaybeStrArray, UP_val)
         val.strs.extend(arg_r.Rest())
         ok = True
       elif case(value_e.Obj):
         # shouldn't be necessary once the array types are consolidated
         if mylib.PYTHON:
-          val = cast(value__Obj, UP_val)
+          val = cast(value.Obj, UP_val)
           if isinstance(val.obj, list):
             val.obj.extend(arg_r.Rest())
             ok = True

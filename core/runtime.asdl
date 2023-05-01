@@ -70,6 +70,7 @@ module runtime
 
     # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)
+  generate [no_legacy__]
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.

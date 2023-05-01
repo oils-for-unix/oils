@@ -179,11 +179,8 @@ def Cpp(specs, header_f, cc_f):
 #include "cpp/frontend_flag_spec.h"  // for FlagSpec_c
 #include "mycpp/gc_mylib.h"
 
+using runtime_asdl::value;
 using runtime_asdl::value_e;
-using runtime_asdl::value__Bool;
-using runtime_asdl::value__Int;
-using runtime_asdl::value__Float;
-using runtime_asdl::value__Str;
 
 namespace arg_types {
 """)
@@ -208,7 +205,7 @@ namespace arg_types {
 
       with switch(typ) as case:
         if case(flag_type_e.Bool):
-          init_vals.append('static_cast<value__Bool*>(attrs->index_(StrFromC("%s")))->b' % field_name)
+          init_vals.append('static_cast<value::Bool*>(attrs->index_(StrFromC("%s")))->b' % field_name)
           field_decls.append('bool %s;' % field_name)
 
           # Bug that test should find
@@ -220,7 +217,7 @@ namespace arg_types {
           init_vals.append('''\
 attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           ? nullptr
-          : static_cast<value__Str*>(attrs->index_(StrFromC("%s")))->s''' % (
+          : static_cast<value::Str*>(attrs->index_(StrFromC("%s")))->s''' % (
               field_name, field_name))
 
           field_decls.append('Str* %s;' % field_name)
@@ -232,14 +229,14 @@ attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           init_vals.append('''\
 attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           ? -1
-          : static_cast<value__Int*>(attrs->index_(StrFromC("%s")))->i''' % (field_name, field_name))
+          : static_cast<value::Int*>(attrs->index_(StrFromC("%s")))->i''' % (field_name, field_name))
           field_decls.append('int %s;' % field_name)
 
         elif case(flag_type_e.Float):
           init_vals.append('''\
 attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
           ? -1
-          : static_cast<value__Float*>(attrs->index_(StrFromC("%s")))->f''' % (field_name, field_name))
+          : static_cast<value::Float*>(attrs->index_(StrFromC("%s")))->f''' % (field_name, field_name))
           field_decls.append('float %s;' % field_name)
 
         else:
@@ -456,9 +453,7 @@ def main(argv):
   elif action == 'mypy':
     print("""
 from frontend.args import _Attributes
-from _devbuild.gen.runtime_asdl import (
-   value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
-)
+from _devbuild.gen.runtime_asdl import value, value_e, value_t
 from typing import cast, Dict, Optional
 """)
     for spec_name in sorted(specs):
@@ -481,23 +476,23 @@ class %s(object):
 
         with switch(typ) as case:
           if case(flag_type_e.Bool):
-            print('    self.%s = cast(value__Bool, attrs[%r]).b  # type: bool' % (
+            print('    self.%s = cast(value.Bool, attrs[%r]).b  # type: bool' % (
               field_name, field_name))
 
           elif case(flag_type_e.Str):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = None if %s.tag() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
+            print('    self.%s = None if %s.tag() == value_e.Undef else cast(value.Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
 
           elif case(flag_type_e.Int):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = -1 if %s.tag() == value_e.Undef else cast(value__Int, %s).i  # type: int' % (field_name, tmp, tmp))
+            print('    self.%s = -1 if %s.tag() == value_e.Undef else cast(value.Int, %s).i  # type: int' % (field_name, tmp, tmp))
 
           elif case(flag_type_e.Float):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = -1.0 if %s.tag() == value_e.Undef else cast(value__Float, %s).f  # type: float' % (field_name, tmp, tmp))
+            print('    self.%s = -1.0 if %s.tag() == value_e.Undef else cast(value.Float, %s).f  # type: float' % (field_name, tmp, tmp))
           else:
             raise AssertionError(typ)
 

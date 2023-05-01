@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.runtime_asdl import value_e, value__MaybeStrArray
+from _devbuild.gen.runtime_asdl import value, value_e
 from core import completion
 from core import error
 from core import ui
@@ -415,7 +415,7 @@ class CompAdjust(vm._Builtin):
     val = self.mem.GetValue('COMP_ARGV')
     if val.tag() != value_e.MaybeStrArray:
       raise error.Usage("COMP_ARGV should be an array", loc.Missing())
-    comp_argv = cast(value__MaybeStrArray, val).strs
+    comp_argv = cast(value.MaybeStrArray, val).strs
 
     # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
     # "outside" of words.

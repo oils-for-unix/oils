@@ -7,8 +7,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
-    value__AssocArray,
+    value, value_e, value_t,
     scope_e, cmd_value, AssignArg,
 )
 # TODO: we shouldn't need this import for translation
@@ -57,9 +56,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   tmp_a = flag.get('a')
   tmp_A = flag.get('A')
 
-  flag_g = cast(value__Bool, tmp_g).b if tmp_g and tmp_g.tag() == value_e.Bool else False
-  flag_a = cast(value__Bool, tmp_a).b if tmp_a and tmp_a.tag() == value_e.Bool else False
-  flag_A = cast(value__Bool, tmp_A).b if tmp_A and tmp_A.tag() == value_e.Bool else False
+  flag_g = cast(value.Bool, tmp_g).b if tmp_g and tmp_g.tag() == value_e.Bool else False
+  flag_a = cast(value.Bool, tmp_a).b if tmp_a and tmp_a.tag() == value_e.Bool else False
+  flag_A = cast(value.Bool, tmp_A).b if tmp_A and tmp_A.tag() == value_e.Bool else False
 
   tmp_n = flag.get('n')
   tmp_r = flag.get('r')
@@ -70,9 +69,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   # SUBTLE: export -n vs. declare -n.  flag vs. OPTION.
   # flags are value.Bool, while options are Undef or Str.
   # '+', '-', or None
-  flag_n = cast(value__Str, tmp_n).s if tmp_n and tmp_n.tag() == value_e.Str else None  # type: Optional[str]
-  flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag() == value_e.Str else None  # type: Optional[str]
-  flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag() == value_e.Str else None  # type: Optional[str]
+  flag_n = cast(value.Str, tmp_n).s if tmp_n and tmp_n.tag() == value_e.Str else None  # type: Optional[str]
+  flag_r = cast(value.Str, tmp_r).s if tmp_r and tmp_r.tag() == value_e.Str else None  # type: Optional[str]
+  flag_x = cast(value.Str, tmp_x).s if tmp_x and tmp_x.tag() == value_e.Str else None  # type: Optional[str]
 
   if cmd_val.builtin_id == builtin_i.local:
     if flag_g and not mem.IsGlobalScope():
@@ -96,7 +95,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
       if pair.rval and pair.rval.tag() == value_e.Str:
         # Invalid: declare -p foo=bar
         # Add a sentinel so we skip it, but know to exit with status 1.
-        s = cast(value__Str, pair.rval).s
+        s = cast(value.Str, pair.rval).s
         invalid = "%s=%s" % (name, s)
         names.append(invalid)
         cells[invalid] = None
@@ -142,11 +141,11 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
       decl.append(name)
 
     if val.tag() == value_e.Str:
-      str_val = cast(value__Str, val)
+      str_val = cast(value.Str, val)
       decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
 
     elif val.tag() == value_e.MaybeStrArray:
-      array_val = cast(value__MaybeStrArray, val)
+      array_val = cast(value.MaybeStrArray, val)
 
       # mycpp rewrite: None in array_val.strs
       has_holes = False
@@ -175,7 +174,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         decl.extend(["=(", ''.join(body), ")"])
 
     elif val.tag() == value_e.AssocArray:
-      assoc_val = cast(value__AssocArray, val)
+      assoc_val = cast(value.AssocArray, val)
       body = []
       for key in sorted(assoc_val.d):
         if len(body) > 0: body.append(" ")
@@ -275,7 +274,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
     # associative array.
     if rval.tag() == value_e.MaybeStrArray:
-      array_val = cast(value__MaybeStrArray, rval)
+      array_val = cast(value.MaybeStrArray, rval)
       if len(array_val.strs) == 0:
         return value.AssocArray({})
         #return value.MaybeStrArray([])

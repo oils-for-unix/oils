@@ -27,7 +27,7 @@ with SPLIT_REGEX = / digit+ / {
 """
 
 from _devbuild.gen.runtime_asdl import (
-    value_e, scope_e, span_e, value__Str, emit_i, char_kind_i, state_i
+    value, value_e, scope_e, span_e, emit_i, char_kind_i, state_i
 )
 from core import error
 from mycpp.mylib import log
@@ -111,7 +111,7 @@ class SplitContext(object):
         if case(value_e.Undef):
           ifs = DEFAULT_IFS
         elif case(value_e.Str):
-          val = cast(value__Str, UP_val)
+          val = cast(value.Str, UP_val)
           ifs = val.s
         else:
           # TODO: Raise proper error
@@ -159,7 +159,7 @@ class SplitContext(object):
       if case(value_e.Undef):
         return ' '
       elif case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         if len(val.s):
           return val.s[0]
         else:

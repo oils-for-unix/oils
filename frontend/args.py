@@ -54,9 +54,7 @@ However I don't see these used anywhere!  I only see ':' used.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc, loc_t
-from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
-)
+from _devbuild.gen.runtime_asdl import value, value_e, value_t
 
 from asdl import runtime
 from core.error import e_usage
@@ -114,13 +112,13 @@ class _Attributes(object):
         if case(value_e.Undef):
           py_val = None  # type: Any
         elif case(value_e.Bool):
-          py_val = cast(value__Bool, val).b
+          py_val = cast(value.Bool, val).b
         elif case(value_e.Int):
-          py_val = cast(value__Int, val).i
+          py_val = cast(value.Int, val).i
         elif case(value_e.Float):
-          py_val = cast(value__Float, val).f
+          py_val = cast(value.Float, val).f
         elif case(value_e.Str):
-          py_val = cast(value__Str, val).s
+          py_val = cast(value.Str, val).s
         else:
           raise AssertionError(val)
 

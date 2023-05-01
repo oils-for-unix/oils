@@ -144,15 +144,15 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name);
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val);
+    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
 
 // With optional arg
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val,
+    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
     bool accept_typed_args);
 
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val);
+    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
 
 args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r);
 

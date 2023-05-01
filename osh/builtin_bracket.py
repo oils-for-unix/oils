@@ -27,7 +27,7 @@ _ = log
 from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value, value__Str
+  from _devbuild.gen.runtime_asdl import cmd_value
   from _devbuild.gen.syntax_asdl import bool_expr_t
   from _devbuild.gen.types_asdl import lex_mode_t
   from core.ui import ErrorFormatter
@@ -104,7 +104,7 @@ class _WordEvaluator(word_eval.StringWordEvaluator):
     word_eval.StringWordEvaluator.__init__(self)
 
   def EvalWordToString(self, w, eval_flags=0):
-    # type: (word_t, int) -> value__Str
+    # type: (word_t, int) -> value.Str
     # do_fnmatch: for the [[ == ]] semantics which we don't have!
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a

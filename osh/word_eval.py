@@ -15,11 +15,10 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.runtime_asdl import (
     part_value, part_value_e, part_value_t,
-    value, value_e, value_t, value__Str, value__AssocArray,
-    value__MaybeStrArray, value__Obj,
+    value, value_e, value_t,
     lvalue, lvalue_t,
-    AssignArg, 
     cmd_value, cmd_value_e, cmd_value_t,
+    AssignArg, 
     a_index, a_index_e,
     VTestPlace, VarSubState,
 )
@@ -88,10 +87,10 @@ def DecayArray(val):
   # type: (value_t) -> value_t
   """Resolve ${array} to ${array[0]}."""
   if val.tag() == value_e.MaybeStrArray:
-    array_val = cast(value__MaybeStrArray, val)
+    array_val = cast(value.MaybeStrArray, val)
     s = array_val.strs[0] if len(array_val.strs) else None
   elif val.tag() == value_e.AssocArray:
-    assoc_val = cast(value__AssocArray, val)
+    assoc_val = cast(value.AssocArray, val)
     s = assoc_val.d['0'] if '0' in assoc_val.d else None
   else:
     raise AssertionError(val.tag())
@@ -192,21 +191,21 @@ def _ValueToPartValue(val, quoted):
       return part_value.String('', quoted, not quoted)
 
     elif case(value_e.Str):
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       return part_value.String(val.s, quoted, not quoted)
 
     elif case(value_e.MaybeStrArray):
-      val = cast(value__MaybeStrArray, UP_val)
+      val = cast(value.MaybeStrArray, UP_val)
       return part_value.Array(val.strs)
 
     elif case(value_e.AssocArray):
-      val = cast(value__AssocArray, UP_val)
+      val = cast(value.AssocArray, UP_val)
       # TODO: Is this correct?
       return part_value.Array(val.d.values())
 
     elif case(value_e.Obj):
       if mylib.PYTHON:
-        val = cast(value__Obj, UP_val)
+        val = cast(value.Obj, UP_val)
         from oil_lang import expr_eval
         s = expr_eval.Stringify(val.obj)
         return part_value.String(s, quoted, not quoted)
@@ -305,13 +304,13 @@ def _PerformSlice(val,  # type: value_t
                   length,  # type: int
                   has_length,  # type: bool
                   part,  # type: BracedVarSub
-                  arg0_val, # type: value__Str
+                  arg0_val, # type: value.Str
                   ):
   # type: (...) -> value_t
   UP_val = val
   with tagswitch(val) as case:
     if case(value_e.Str):  # Slice UTF-8 characters in a string.
-      val = cast(value__Str, UP_val)
+      val = cast(value.Str, UP_val)
       s = val.s
       n = len(s)
 
@@ -339,7 +338,7 @@ def _PerformSlice(val,  # type: value_t
       result = value.Str(substr)  # type: value_t
 
     elif case(value_e.MaybeStrArray):  # Slice array entries.
-      val = cast(value__MaybeStrArray, UP_val)
+      val = cast(value.MaybeStrArray, UP_val)
       # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
       # strings.
       if has_length and length < 0:
@@ -389,7 +388,7 @@ class StringWordEvaluator(object):
     pass
 
   def EvalWordToString(self, w, eval_flags=0):
-    # type: (word_t, int) -> value__Str
+    # type: (word_t, int) -> value.Str
     raise NotImplementedError()
 
 
@@ -436,7 +435,7 @@ class TildeEvaluator(object):
       val = self.mem.GetValue('HOME')
       UP_val = val
       if val.tag() == value_e.Str:
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         return val.s
       result = pyos.GetMyHomeDir()
     else:
@@ -568,17 +567,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if case(value_e.Undef):
         is_falsey = True
       elif case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
                       Id.VTest_ColonQMark, Id.VTest_ColonPlus):
           is_falsey = len(val.s) == 0
         else:
           is_falsey = False
       elif case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
+        val = cast(value.MaybeStrArray, UP_val)
         is_falsey = len(val.strs) == 0
       elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, UP_val)
+        val = cast(value.AssocArray, UP_val)
         is_falsey = len(val.d) == 0
       else:
         raise NotImplementedError(val.tag())
@@ -659,7 +658,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         # NOTE: Whether bash counts bytes or chars is affected by LANG
         # environment variables.
         # Should we respect that, or another way to select?  set -o
@@ -683,7 +682,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             return value.Str('-1')
 
       elif case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
+        val = cast(value.MaybeStrArray, UP_val)
         # There can be empty placeholder values in the array.
         length = 0
         for s in val.strs:
@@ -691,7 +690,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             length += 1
 
       elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, UP_val)
+        val = cast(value.AssocArray, UP_val)
         length = len(val.d)
 
       else:
@@ -706,7 +705,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, UP_val)
+        val = cast(value.MaybeStrArray, UP_val)
         # translation issue: tuple indices not supported in list comprehensions
         #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
         indices = []  # type: List[str]
@@ -716,7 +715,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return value.MaybeStrArray(indices)
 
       elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, UP_val)
+        val = cast(value.AssocArray, UP_val)
         assert val.d is not None  # for MyPy, so it's not Optional[]
 
         # BUG: Keys aren't ordered according to insertion!
@@ -738,7 +737,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return value.Undef()  # ${!undef} is just weird bash behavior
 
       elif case(value_e.Str):
-        val = cast(value__Str, UP_val)
+        val = cast(value.Str, UP_val)
         bvs_part = self.unsafe_arith.ParseVarRef(val.s, blame_tok)
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
@@ -767,13 +766,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Str):
-          val = cast(value__Str, UP_val)
+          val = cast(value.Str, UP_val)
           s = string_ops.DoUnarySuffixOp(val.s, op.op, arg_val.s, has_extglob)
           #log('%r %r -> %r', val.s, arg_val.s, s)
           new_val = value.Str(s) # type: value_t
 
         elif case(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
+          val = cast(value.MaybeStrArray, UP_val)
           # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
           strs = []  # type: List[str]
           for s in val.strs:
@@ -782,7 +781,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           new_val = value.MaybeStrArray(strs)
 
         elif case(value_e.AssocArray):
-          val = cast(value__AssocArray, UP_val)
+          val = cast(value.AssocArray, UP_val)
           strs = []
           for s in val.d.values():
             strs.append(string_ops.DoUnarySuffixOp(s, op.op, arg_val.s, has_extglob))
@@ -810,7 +809,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       replace_val = self.EvalRhsWord(op.replace)
       # Can't have an array, so must be a string
       assert replace_val.tag() == value_e.Str, replace_val
-      replace_str = cast(value__Str, replace_val).s
+      replace_str = cast(value.Str, replace_val).s
     else:
       replace_str = ''
 
@@ -826,12 +825,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     with tagswitch(val) as case2:
       if case2(value_e.Str):
-        str_val = cast(value__Str, val)
+        str_val = cast(value.Str, val)
         s = replacer.Replace(str_val.s, op)
         val = value.Str(s)
 
       elif case2(value_e.MaybeStrArray):
-        array_val = cast(value__MaybeStrArray, val)
+        array_val = cast(value.MaybeStrArray, val)
         strs = []  # type: List[str]
         for s in array_val.strs:
           if s is not None:
@@ -839,7 +838,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val = value.MaybeStrArray(strs)
 
       elif case2(value_e.AssocArray):
-        assoc_val = cast(value__AssocArray, val)
+        assoc_val = cast(value.AssocArray, val)
         strs = []
         for s in assoc_val.d.values():
           strs.append(replacer.Replace(s, op))
@@ -866,7 +865,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       length = self.arith_ev.EvalToInt(op.length)
 
     try:
-      arg0_val = None  # type: value__Str
+      arg0_val = None  # type: value.Str
       if var_name is None: # $* or $@
         arg0_val = self.mem.GetArg0()
       val = _PerformSlice(val, begin, length, has_length, part, arg0_val)
@@ -885,7 +884,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _Nullary(self, val, op, var_name):
-    # type: (value_t, Token, Optional[str]) -> Tuple[value__Str, bool]
+    # type: (value_t, Token, Optional[str]) -> Tuple[value.Str, bool]
 
     UP_val = val
     quoted2 = False
@@ -893,7 +892,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if op_id == Id.VOp0_P:
       with tagswitch(val) as case:
         if case(value_e.Str):
-          str_val = cast(value__Str, UP_val)
+          str_val = cast(value.Str, UP_val)
           prompt = self.prompt_ev.EvalPrompt(str_val)
           # readline gets rid of these, so we should too.
           p = prompt.replace('\x01', '').replace('\x02', '')
@@ -904,12 +903,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
     elif op_id == Id.VOp0_Q:
       with tagswitch(val) as case:
         if case(value_e.Str):
-          str_val = cast(value__Str, UP_val)
+          str_val = cast(value.Str, UP_val)
           result = value.Str(qsn.maybe_shell_encode(str_val.s))
           # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
           quoted2 = True
         elif case(value_e.MaybeStrArray):
-          array_val = cast(value__MaybeStrArray, UP_val)
+          array_val = cast(value.MaybeStrArray, UP_val)
           tmp = [qsn.maybe_shell_encode(s) for s in array_val.strs]
           result = value.Str(' '.join(tmp))
         else:
@@ -953,10 +952,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if case2(value_e.Undef):
           val = self._EmptyMaybeStrArrayOrError(part.token)
         elif case2(value_e.Str):
-          val = cast(value__Str, UP_val)
+          val = cast(value.Str, UP_val)
           e_die("Can't index string with @", loc.WordPart(part))
         elif case2(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
+          val = cast(value.MaybeStrArray, UP_val)
           # TODO: Is this a no-op?  Just leave 'val' alone.
           val = value.MaybeStrArray(val.strs)
 
@@ -967,10 +966,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if case2(value_e.Undef):
           val = self._EmptyMaybeStrArrayOrError(part.token)
         elif case2(value_e.Str):
-          val = cast(value__Str, UP_val)
+          val = cast(value.Str, UP_val)
           e_die("Can't index string with *", loc.WordPart(part))
         elif case2(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
+          val = cast(value.MaybeStrArray, UP_val)
           # TODO: Is this a no-op?  Just leave 'val' alone.
           # ${a[*]} or "${a[*]}" :  vsub_state.join_array is always true
           val = value.MaybeStrArray(val.strs)
@@ -997,7 +996,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
               part.token)
 
       elif case2(value_e.MaybeStrArray):
-        array_val = cast(value__MaybeStrArray, UP_val)
+        array_val = cast(value.MaybeStrArray, UP_val)
         index = self.arith_ev.EvalToInt(anode)
         vtest_place.index = a_index.Int(index)
 
@@ -1009,7 +1008,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           val = value.Str(s)
 
       elif case2(value_e.AssocArray):
-        assoc_val = cast(value__AssocArray, UP_val)
+        assoc_val = cast(value.AssocArray, UP_val)
         key = self.arith_ev.EvalWordToString(anode)
         vtest_place.index = a_index.Str(key)  # out param
         s = assoc_val.d.get(key)
@@ -1062,7 +1061,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return self._ConcatPartVals(part_vals, dq_part.left)
 
   def _DecayArray(self, val):
-    # type: (value__MaybeStrArray) -> value__Str
+    # type: (value.MaybeStrArray) -> value.Str
     """Decay $* to a string."""
     assert val.tag() == value_e.MaybeStrArray, val
     sep = self.splitter.GetJoinChar()
@@ -1325,7 +1324,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # After applying suffixes, process join_array here.
     UP_val = val
     if val.tag() == value_e.MaybeStrArray:
-      array_val = cast(value__MaybeStrArray, UP_val)
+      array_val = cast(value.MaybeStrArray, UP_val)
       if vsub_state.join_array:
         val = self._DecayArray(array_val)
       else:
@@ -1408,7 +1407,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     val = self._EmptyStrOrError(val, token)
     UP_val = val
     if val.tag() == value_e.MaybeStrArray:
-      array_val = cast(value__MaybeStrArray, UP_val)
+      array_val = cast(value.MaybeStrArray, UP_val)
       if vsub_state.join_array:
         val = self._DecayArray(array_val)
       else:
@@ -1581,17 +1580,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_val = val
         with tagswitch(val) as case2:
           if case2(value_e.MaybeStrArray):
-            val = cast(value__MaybeStrArray, UP_val)
+            val = cast(value.MaybeStrArray, UP_val)
             items = val.strs
           elif case2(value_e.AssocArray):
-            val = cast(value__AssocArray, UP_val)
+            val = cast(value.AssocArray, UP_val)
             items = val.d.keys()
 
           # TODO: Get rid of this case!  Need to DEFER a lot of oil spec
           # tests though.
           elif case2(value_e.Obj):
             if mylib.PYTHON:
-              val = cast(value__Obj, UP_val)
+              val = cast(value.Obj, UP_val)
               items = self.expr_ev.SpliceValue(val, part)
             else:
               raise AssertionError()
@@ -1743,7 +1742,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           raise AssertionError()
 
   def EvalWordToString(self, UP_w, eval_flags=0):
-    # type: (word_t, int) -> value__Str
+    # type: (word_t, int) -> value.Str
     """Given a word, return a string.
 
     Flags can contain a quoting algorithm.
@@ -1761,7 +1760,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return value.Str(''.join(strs))
 
   def EvalWordToPattern(self, UP_w):
-    # type: (rhs_word_t) -> Tuple[value__Str, bool]
+    # type: (rhs_word_t) -> Tuple[value.Str, bool]
     """Like EvalWordToString, but returns whether we got ExtGlob."""
     if UP_w.tag() == rhs_word_e.Empty:
       return value.Str(''), False
@@ -1782,7 +1781,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return value.Str(''.join(strs)), has_extglob
 
   def EvalForPlugin(self, w):
-    # type: (CompoundWord) -> value__Str
+    # type: (CompoundWord) -> value.Str
     """Wrapper around EvalWordToString that prevents errors.
     
     Runtime errors like $(( 1 / 0 )) and mutating $? like $(exit 42) are

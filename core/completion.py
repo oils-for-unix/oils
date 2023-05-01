@@ -40,7 +40,7 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord, word_part_e, word_t, redir_param_e, Token
 )
 from _devbuild.gen.runtime_asdl import (
-    value_e, value__MaybeStrArray, value__Str, value_str, scope_e, Proc
+    value, value_e, value_str, scope_e, Proc
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
@@ -570,7 +570,7 @@ class ShellFuncAction(CompletionAction):
     # TODO: Print structured value_t in C++.  This line is wrong:
     # self.debug('COMPREPLY %s' % val)
 
-    array_val = cast(value__MaybeStrArray, val)
+    array_val = cast(value.MaybeStrArray, val)
     for s in array_val.strs:
       yield s
 
@@ -630,7 +630,7 @@ class ExternalCommandAction(CompletionAction):
       # No matches if not a string
       return
 
-    val_s = cast(value__Str, val)
+    val_s = cast(value.Str, val)
     path_dirs = val_s.s.split(':')
     #log('path: %s', path_dirs)
 
