@@ -71,7 +71,7 @@ from _devbuild.gen.syntax_asdl import (
     Redir,
 
     word_part_e, word_part_t, word_part__EscapedLiteral,
-    sh_lhs_expr_e, sh_lhs_expr__Name,
+    sh_lhs_expr, sh_lhs_expr_e,
 )
 from asdl import runtime
 from core.error import p_die
@@ -398,7 +398,7 @@ class OilPrinter(object):
       UP_lhs = lhs
       with tagswitch(lhs) as case:
         if case(sh_lhs_expr_e.Name):
-          lhs = cast(sh_lhs_expr__Name, UP_lhs)
+          lhs = cast(sh_lhs_expr.Name, UP_lhs)
 
           left_spid = pair.spids[0]
           self.cursor.PrintUntil(left_spid)

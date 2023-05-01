@@ -221,12 +221,14 @@ module syntax
     # For dynamic parsing of test/[ # the string is already evaluated.
     # TODO: try using Token with source info
   | String(id id, str s, int span_id)
+  generate [no_legacy__]
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs_expr =
     Name(Token left, str name)
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
+  generate [no_legacy__]
 
   arith_expr =
     VarSub %SimpleVarSub  # e.g. $(( x ))
@@ -239,6 +241,7 @@ module syntax
     # TODO: op should be token, e.g. for divide by zero
   | Binary(id op_id, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
+  generate [no_legacy__]
 
   bool_expr =
     WordTest(word w)  # e.g. [[ myword ]]
@@ -247,6 +250,7 @@ module syntax
   | LogicalNot(bool_expr child)
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
+  generate [no_legacy__]
 
   redir_loc =
     Fd(int fd) | VarName(str name)

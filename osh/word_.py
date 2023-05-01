@@ -14,8 +14,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
-    word_e, word_t, word_str, word__BracedTree, word__String,
-    sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
+    word, word_e, word_t, word_str,
+    sh_lhs_expr, sh_lhs_expr_e, sh_lhs_expr_t,
     AssocPair,
 )
 from asdl import runtime
@@ -286,12 +286,12 @@ def LeftMostSpanForWord(w):
       return tok.span_id
 
     elif case(word_e.BracedTree):
-      w = cast(word__BracedTree, UP_w)
+      w = cast(word.BracedTree, UP_w)
       # This should always have one part?
       return LeftMostSpanForPart(w.parts[0])
 
     elif case(word_e.String):
-      w = cast(word__String, UP_w)
+      w = cast(word.String, UP_w)
       return w.span_id  # See _StringWordEmitter in osh/builtin_bracket.py
 
     else:
@@ -645,7 +645,7 @@ def BoolId(w):
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.String):  # for test/[
-      w = cast(word__String, UP_w)
+      w = cast(word.String, UP_w)
       return w.id
 
     elif case(word_e.Token):
@@ -745,10 +745,10 @@ def SpanForLhsExpr(node):
   UP_node = node
   with tagswitch(node) as case:
     if case(sh_lhs_expr_e.Name):
-      node = cast(sh_lhs_expr__Name, UP_node)
+      node = cast(sh_lhs_expr.Name, UP_node)
       return node.left.span_id
     elif case(sh_lhs_expr_e.IndexedName):
-      node = cast(sh_lhs_expr__IndexedName, UP_node)
+      node = cast(sh_lhs_expr.IndexedName, UP_node)
       return node.left.span_id
     else:
       # Should not see UnparsedIndex
@@ -769,7 +769,7 @@ def Pretty(w):
   """Return a string to display to the user."""
   UP_w = w
   if w.tag() == word_e.String:
-    w = cast(word__String, UP_w)
+    w = cast(word.String, UP_w)
     if w.id == Id.Eof_Real:
       return 'EOF'
     else:

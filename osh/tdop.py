@@ -4,7 +4,7 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    loc, arith_expr, arith_expr_e, arith_expr_t, arith_expr__Binary, word_t,
+    loc, arith_expr, arith_expr_e, arith_expr_t, word_t,
     CompoundWord, SimpleVarSub
 )
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -52,7 +52,7 @@ def CheckLhsExpr(node, blame_word):
   """
   UP_node = node
   if node.tag() == arith_expr_e.Binary:
-    node = cast(arith_expr__Binary, UP_node)
+    node = cast(arith_expr.Binary, UP_node)
     if node.op_id == Id.Arith_LBracket and IsIndexable(node.left):
       return
     # But a[0][0] = 1 is NOT valid.

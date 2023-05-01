@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import (
-    loc, word, word_e, word_t, word__String, bool_expr,
+    loc, word, word_e, word_t, bool_expr,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -28,7 +28,7 @@ from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, value__Str
-  from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
+  from _devbuild.gen.syntax_asdl import bool_expr_t
   from _devbuild.gen.types_asdl import lex_mode_t
   from core.ui import ErrorFormatter
   from core import optview
@@ -49,7 +49,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.n = len(cmd_val.argv)
 
   def ReadWord(self, unused_lex_mode):
-    # type: (lex_mode_t) -> word__String
+    # type: (lex_mode_t) -> word.String
     """Interface for bool_parse.py.
 
     TODO: This should probably be word_t
@@ -82,7 +82,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
     return w
 
   def Read(self):
-    # type: () -> word__String
+    # type: () -> word.String
     """Interface used for special cases below."""
     return self.ReadWord(lex_mode_e.ShCommand)
 
@@ -110,7 +110,7 @@ class _WordEvaluator(word_eval.StringWordEvaluator):
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a
     # different tree.
     assert w.tag() == word_e.String
-    string_word = cast(word__String, w)
+    string_word = cast(word.String, w)
     return value.Str(string_word.s)
 
 

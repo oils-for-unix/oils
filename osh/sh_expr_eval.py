@@ -17,17 +17,12 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray, value__Obj,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, arith_expr_t,
-    arith_expr__Unary, arith_expr__Binary, arith_expr__UnaryAssign,
-    arith_expr__BinaryAssign, arith_expr__TernaryOp,
-    bool_expr_e, bool_expr_t, bool_expr__WordTest, bool_expr__LogicalNot,
-    bool_expr__LogicalAnd, bool_expr__LogicalOr, bool_expr__Unary,
-    bool_expr__Binary,
-    CompoundWord, Token,
-    sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
-    source, word_t,
+    word_t, CompoundWord, Token,
+    loc, loc_t, source,
+    arith_expr, arith_expr_e, arith_expr_t,
+    bool_expr, bool_expr_e, bool_expr_t,
+    sh_lhs_expr, sh_lhs_expr_e, sh_lhs_expr_t,
     BracedVarSub, SimpleVarSub,
-    loc, loc_t
 )
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
@@ -515,7 +510,7 @@ class ArithEvaluator(object):
         return self.word_ev.EvalWordToString(w)
 
       elif case(arith_expr_e.UnaryAssign):  # a++
-        node = cast(arith_expr__UnaryAssign, UP_node)
+        node = cast(arith_expr.UnaryAssign, UP_node)
 
         op_id = node.op_id
         old_int, lval = self._EvalLhsAndLookupArith(node.child)
@@ -544,7 +539,7 @@ class ArithEvaluator(object):
         return value.Int(ret)
 
       elif case(arith_expr_e.BinaryAssign):  # a=1, a+=5, a[1]+=5
-        node = cast(arith_expr__BinaryAssign, UP_node)
+        node = cast(arith_expr.BinaryAssign, UP_node)
         op_id = node.op_id
 
         if op_id == Id.Arith_Equal:
@@ -593,7 +588,7 @@ class ArithEvaluator(object):
         return value.Int(new_int)
 
       elif case(arith_expr_e.Unary):
-        node = cast(arith_expr__Unary, UP_node)
+        node = cast(arith_expr.Unary, UP_node)
         op_id = node.op_id
 
         i = self.EvalToInt(node.child)
@@ -613,7 +608,7 @@ class ArithEvaluator(object):
         return value.Int(ret)
 
       elif case(arith_expr_e.Binary):
-        node = cast(arith_expr__Binary, UP_node)
+        node = cast(arith_expr.Binary, UP_node)
         op_id = node.op_id
 
         # Short-circuit evaluation for || and &&.
@@ -735,7 +730,7 @@ class ArithEvaluator(object):
         return value.Int(ret)
 
       elif case(arith_expr_e.TernaryOp):
-        node = cast(arith_expr__TernaryOp, UP_node)
+        node = cast(arith_expr.TernaryOp, UP_node)
 
         cond = self.EvalToInt(node.cond)
         if cond:  # nonzero
@@ -786,7 +781,7 @@ class ArithEvaluator(object):
     lval = None  # type: lvalue_t
     with tagswitch(node) as case:
       if case(sh_lhs_expr_e.Name):  # a=x
-        node = cast(sh_lhs_expr__Name, UP_node)
+        node = cast(sh_lhs_expr.Name, UP_node)
         assert node.name is not None
 
         # Note: C++ constructor doesn't take spids directly.  Should we add that?
@@ -794,7 +789,7 @@ class ArithEvaluator(object):
         lval = lval1
 
       elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
-        node = cast(sh_lhs_expr__IndexedName, UP_node)
+        node = cast(sh_lhs_expr.IndexedName, UP_node)
         assert node.name is not None
 
         if self.mem.IsAssocArray(node.name):
@@ -837,7 +832,7 @@ class ArithEvaluator(object):
     """
     UP_anode = anode
     if anode.tag() == arith_expr_e.Binary:
-      anode = cast(arith_expr__Binary, UP_anode)
+      anode = cast(arith_expr.Binary, UP_anode)
       if anode.op_id == Id.Arith_LBracket:
         var_name, location = self._VarNameOrWord(anode.left)
 
@@ -903,17 +898,17 @@ class BoolEvaluator(ArithEvaluator):
     UP_node = node
     with tagswitch(node) as case:
       if case(bool_expr_e.WordTest):
-        node = cast(bool_expr__WordTest, UP_node)
+        node = cast(bool_expr.WordTest, UP_node)
         s = self._EvalCompoundWord(node.w)
         return bool(s)
 
       elif case(bool_expr_e.LogicalNot):
-        node = cast(bool_expr__LogicalNot, UP_node)
+        node = cast(bool_expr.LogicalNot, UP_node)
         b = self.EvalB(node.child)
         return not b
 
       elif case(bool_expr_e.LogicalAnd):
-        node = cast(bool_expr__LogicalAnd, UP_node)
+        node = cast(bool_expr.LogicalAnd, UP_node)
         # Short-circuit evaluation
         if self.EvalB(node.left):
           return self.EvalB(node.right)
@@ -921,14 +916,14 @@ class BoolEvaluator(ArithEvaluator):
           return False
 
       elif case(bool_expr_e.LogicalOr):
-        node = cast(bool_expr__LogicalOr, UP_node)
+        node = cast(bool_expr.LogicalOr, UP_node)
         if self.EvalB(node.left):
           return True
         else:
           return self.EvalB(node.right)
 
       elif case(bool_expr_e.Unary):
-        node = cast(bool_expr__Unary, UP_node)
+        node = cast(bool_expr.Unary, UP_node)
         op_id = node.op_id
         s = self._EvalCompoundWord(node.child)
 
@@ -967,7 +962,7 @@ class BoolEvaluator(ArithEvaluator):
         raise AssertionError(arg_type)
 
       elif case(bool_expr_e.Binary):
-        node = cast(bool_expr__Binary, UP_node)
+        node = cast(bool_expr.Binary, UP_node)
 
         op_id = node.op_id
         # Whether to glob escape

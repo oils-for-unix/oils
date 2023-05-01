@@ -18,7 +18,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     Token, CompoundWord, 
-    word, word_e, word_t, word__BracedTree,
+    word, word_e, word_t,
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
 )
@@ -187,7 +187,7 @@ class _StackFrame(object):
 
 
 def _BraceDetect(w):
-  # type: (CompoundWord) -> Optional[word__BracedTree]
+  # type: (CompoundWord) -> Optional[word.BracedTree]
   """Return a new word if the input word looks like a brace expansion.
 
   e.g. {a,b} or {1..10..2} (TODO)
@@ -498,7 +498,7 @@ def BraceExpandWords(words):
     UP_w = w
     with tagswitch(w) as case:
       if case(word_e.BracedTree):
-        w = cast(word__BracedTree, UP_w)
+        w = cast(word.BracedTree, UP_w)
         # Note: for the case of {1..100000}, this is a flat list of Token.
         # Would be nice to optimize, but we don't really know the structure
         # ahead of time
