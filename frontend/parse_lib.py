@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, CompoundWord, expr_t, word_t, Redir, ArgList, NameType,
+    Token, CompoundWord, expr_t, word_t, Redir, ArgList, NameType, command
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -27,10 +27,6 @@ from mycpp.mylib import log
 
 from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import (
-      command__VarDecl, command__PlaceMutation, command__Proc, command__Func,
-      command__Data, command__Enum, command__Class, command__Import
-  )
   from core.alloc import Arena
   from core.util import _DebugFile
   from core import optview
@@ -327,7 +323,7 @@ class ParseContext(object):
     return expr_parse.ExprParser(self, self.oil_grammar, True)
 
   def ParseVarDecl(self, kw_token, lexer):
-    # type: (Token, Lexer) -> Tuple[command__VarDecl, Token]
+    # type: (Token, Lexer) -> Tuple[command.VarDecl, Token]
     """ var mylist = [1, 2, 3] """
     e_parser = self._OilParser()
     with ctx_PNodeAllocator(e_parser):
@@ -342,7 +338,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParsePlaceMutation(self, kw_token, lexer):
-    # type: (Token, Lexer) -> Tuple[command__PlaceMutation, Token]
+    # type: (Token, Lexer) -> Tuple[command.PlaceMutation, Token]
     """ setvar d['a'] += 1 """
     e_parser = self._OilParser()
     with ctx_PNodeAllocator(e_parser):
@@ -397,7 +393,7 @@ class ParseContext(object):
     return lvalue, iterable, last_token
 
   def ParseProc(self, lexer, out):
-    # type: (Lexer, command__Proc) -> Token
+    # type: (Lexer, command.Proc) -> Token
     """ proc f(x, y, @args) { """
     e_parser = self._OilParser()
     with ctx_PNodeAllocator(e_parser):
@@ -411,7 +407,7 @@ class ParseContext(object):
     return last_token
 
   def ParseFunc(self, lexer, out):
-    # type: (Lexer, command__Func) -> Token
+    # type: (Lexer, command.Func) -> Token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
     e_parser = self._TeaParser()
     with ctx_PNodeAllocator(e_parser):
@@ -425,7 +421,7 @@ class ParseContext(object):
     return last_token
 
   def ParseDataType(self, lexer, out):
-    # type: (Lexer, command__Data) -> Token
+    # type: (Lexer, command.Data) -> Token
     """ data Point(x Int, y Int) """
     e_parser = self._TeaParser()
     with ctx_PNodeAllocator(e_parser):
@@ -439,7 +435,7 @@ class ParseContext(object):
     return last_token
 
   def ParseEnum(self, lexer, out):
-    # type: (Lexer, command__Enum) -> Token
+    # type: (Lexer, command.Enum) -> Token
     """ enum cflow { Break, Continue, Return(status Int) } """
     e_parser = self._TeaParser()
     with ctx_PNodeAllocator(e_parser):
@@ -453,7 +449,7 @@ class ParseContext(object):
     return last_token
 
   def ParseClass(self, lexer, out):
-    # type: (Lexer, command__Class) -> Token
+    # type: (Lexer, command.Class) -> Token
     """ class Lexer { var Token; func Next() { echo } } """
     e_parser = self._TeaParser()
     with ctx_PNodeAllocator(e_parser):
@@ -467,7 +463,7 @@ class ParseContext(object):
     return last_token
 
   def ParseImport(self, lexer, out):
-    # type: (Lexer, command__Import) -> Token
+    # type: (Lexer, command.Import) -> Token
     """ use 'foo/bar' as spam, Foo, Z as Y """
     e_parser = self._TeaParser()
     with ctx_PNodeAllocator(e_parser):

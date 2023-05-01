@@ -97,7 +97,7 @@ def _BracedVarSub(obj):
 
 
 def _command__Simple(obj):
-  # type: (command__Simple) -> hnode_t
+  # type: (command.Simple) -> hnode_t
   p_node = runtime.NewRecord('C')
   if (obj.redirects or
       obj.more_env or

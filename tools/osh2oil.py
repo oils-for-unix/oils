@@ -54,24 +54,17 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     CompoundWord, Token, 
     SimpleVarSub, BracedVarSub, CommandSub, DoubleQuoted, SingleQuoted,
+    word_e, word_t,
+    word_part, word_part_e, word_part_t,
+    rhs_word_e, rhs_word_t,
+    sh_lhs_expr, sh_lhs_expr_e,
 
-    command_e, command__ShAssignment, command__Simple, command__Sentence, 
-    command__Pipeline, command__AndOr, command__DoGroup,
-    command__Subshell, command__DBracket, command__DParen,
-    command__ForEach, command__WhileUntil, command__If, command__Case,
-    command__ShFunction, command__TimeBlock,
-    command__CommandList,
+    command, command_e,
     BraceGroup,
 
     for_iter, for_iter_e,
-    rhs_word_e, rhs_word_t,
-    word_e, word_t,
     condition, condition_e,
-    redir_param, redir_param_e,
-    Redir,
-
-    word_part, word_part_e, word_part_t,
-    sh_lhs_expr, sh_lhs_expr_e,
+    redir_param, redir_param_e, Redir,
 )
 from asdl import runtime
 from core.error import p_die
@@ -340,7 +333,7 @@ class OilPrinter(object):
     # '''
 
   def DoShAssignment(self, node, at_top_level, local_symbols):
-    # type: (command__ShAssignment, bool, Dict[str, bool]) -> None
+    # type: (command.ShAssignment, bool, Dict[str, bool]) -> None
     """
     local_symbols:
       - Add every 'local' declaration to it
@@ -432,7 +425,7 @@ class OilPrinter(object):
 
     with tagswitch(node) as case:
       if case(command_e.CommandList):
-        node = cast(command__CommandList, UP_node)
+        node = cast(command.CommandList, UP_node)
 
         # TODO: How to distinguish between echo hi; echo bye; and on separate
         # lines
@@ -440,7 +433,7 @@ class OilPrinter(object):
           self.DoCommand(child, local_symbols, at_top_level=at_top_level)
 
       elif case(command_e.Simple):
-        node = cast(command__Simple, UP_node)
+        node = cast(command.Simple, UP_node)
 
         # How to preserve spaces between words?  Do you want to do it?
         # Well you need to test this:
@@ -503,24 +496,24 @@ class OilPrinter(object):
         # - . -> source, etc.
 
       elif case(command_e.ShAssignment):
-        node = cast(command__ShAssignment, UP_node)
+        node = cast(command.ShAssignment, UP_node)
 
         self.DoShAssignment(node, at_top_level, local_symbols)
 
       elif case(command_e.Pipeline):
-        node = cast(command__Pipeline, UP_node)
+        node = cast(command.Pipeline, UP_node)
 
         for child in node.children:
           self.DoCommand(child, local_symbols)
 
       elif case(command_e.AndOr):
-        node = cast(command__AndOr, UP_node)
+        node = cast(command.AndOr, UP_node)
 
         for child in node.children:
           self.DoCommand(child, local_symbols)
 
       elif case(command_e.Sentence):
-        node = cast(command__Sentence, UP_node)
+        node = cast(command.Sentence, UP_node)
 
         # 'ls &' to 'fork ls'
         # Keep ; the same.
@@ -542,7 +535,7 @@ class OilPrinter(object):
           self.DoCommand(child, local_symbols)
 
       elif case(command_e.Subshell):
-        node = cast(command__Subshell, UP_node)
+        node = cast(command.Subshell, UP_node)
 
         # (echo hi) -> shell echo hi
         # (echo hi; echo bye) -> shell {echo hi; echo bye}
@@ -565,7 +558,7 @@ class OilPrinter(object):
         self.f.write('}')
 
       elif case(command_e.ShFunction):
-        node = cast(command__ShFunction, UP_node)
+        node = cast(command.ShFunction, UP_node)
 
         # TODO: skip name
         #self.f.write('proc %s' % node.name)
@@ -593,7 +586,7 @@ class OilPrinter(object):
           #self.DoCommand(node.body)
 
       elif case(command_e.DoGroup):
-        node = cast(command__DoGroup, UP_node)
+        node = cast(command.DoGroup, UP_node)
 
         do_spid = node.spids[0]
         done_spid = node.spids[1]
@@ -610,7 +603,7 @@ class OilPrinter(object):
         self.f.write('}')
 
       elif case(command_e.ForEach):
-        node = cast(command__ForEach, UP_node)
+        node = cast(command.ForEach, UP_node)
 
         # Need to preserve spaces between words, because there can be line
         # wrapping.
@@ -650,7 +643,7 @@ class OilPrinter(object):
         self.DoCommand(node.body, local_symbols)
 
       elif case(command_e.WhileUntil):
-        node = cast(command__WhileUntil, UP_node)
+        node = cast(command.WhileUntil, UP_node)
 
         # Skip 'until', and replace it with 'while not'
         if node.keyword.id == Id.KW_Until:
@@ -663,7 +656,7 @@ class OilPrinter(object):
           commands = cast(condition.Shell, node.cond).commands
           # Skip the semi-colon in the condition, which is ususally a Sentence
           if len(commands) == 1 and commands[0].tag() == command_e.Sentence:
-            sentence = cast(command__Sentence, commands[0])
+            sentence = cast(command.Sentence, commands[0])
             self.DoCommand(sentence.child, local_symbols)
             semi_spid = sentence.terminator.span_id
             self.cursor.SkipUntil(semi_spid + 1)
@@ -671,7 +664,7 @@ class OilPrinter(object):
         self.DoCommand(node.body, local_symbols)
 
       elif case(command_e.If):
-        node = cast(command__If, UP_node)
+        node = cast(command.If, UP_node)
 
         else_spid = node.spids[0]
         fi_spid = node.spids[1]
@@ -690,7 +683,7 @@ class OilPrinter(object):
           if cond.tag() == condition_e.Shell:
             commands = cast(condition.Shell, cond).commands
             if len(commands) == 1 and commands[0].tag() == command_e.Sentence:
-              sentence = cast(command__Sentence, commands[0])
+              sentence = cast(command.Sentence, commands[0])
               self.DoCommand(sentence, local_symbols)
 
               # Remove semi-colon
@@ -724,7 +717,7 @@ class OilPrinter(object):
         self.f.write('}')
 
       elif case(command_e.Case):
-        node = cast(command__Case, UP_node)
+        node = cast(command.Case, UP_node)
 
         case_spid = node.spids[0]
         in_spid = node.spids[1]
@@ -788,17 +781,17 @@ class OilPrinter(object):
         self.f.write('}')  # strmatch $var {
 
       elif case(command_e.TimeBlock):
-        node = cast(command__TimeBlock, UP_node)
+        node = cast(command.TimeBlock, UP_node)
 
         self.DoCommand(node.pipeline, local_symbols)
 
       elif case(command_e.DParen):
-        node = cast(command__DParen, UP_node)
+        node = cast(command.DParen, UP_node)
         # TODO: arith expressions can words with command subs
         pass
 
       elif case(command_e.DBracket):
-        node = cast(command__DBracket, UP_node)
+        node = cast(command.DBracket, UP_node)
 
         # TODO: bool_expr_t can have words with command subs
         pass

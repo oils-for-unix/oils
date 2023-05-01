@@ -5,16 +5,17 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    CommandStatus, StatusArray, flow_e, flow_t)
+    CommandStatus, StatusArray, flow_e, flow_t
+)
 from _devbuild.gen.syntax_asdl import Token
-from mycpp.mylib import log
 from core import pyos
+from mycpp.mylib import log
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
   from _devbuild.gen.syntax_asdl import (
-      command_t, command__Pipeline, CommandSub
+      command, command_t, CommandSub
   )
   from osh import sh_expr_eval
   from osh.sh_expr_eval import ArithEvaluator
@@ -171,7 +172,7 @@ class _Executor(object):
     return 0
 
   def RunPipeline(self, node, status_out):
-    # type: (command__Pipeline, CommandStatus) -> None
+    # type: (command.Pipeline, CommandStatus) -> None
     pass
 
   def RunSubshell(self, node):

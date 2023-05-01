@@ -10,13 +10,10 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     loc, loc_t, loc_e,
-    command_e, command_t, command__Simple, command__ShAssignment,
-    command__Pipeline, command__AndOr, command__DoGroup, command__Sentence,
-    command__Subshell, command__WhileUntil, command__If, command__Case,
-    command__TimeBlock,
+    CompoundWord, SimpleVarSub, Token,
+    command, command_e, command_t,
     BraceGroup,
-
-    arith_expr_e, arith_expr_t, CompoundWord, SimpleVarSub, Token,
+    arith_expr_e, arith_expr_t,
 )
 from _devbuild.gen.runtime_asdl import lvalue
 from asdl import runtime
@@ -84,12 +81,12 @@ def LocForCommand(node):
   tag = node.tag()
 
   if tag == command_e.Sentence:
-    node = cast(command__Sentence, UP_node)
+    node = cast(command.Sentence, UP_node)
     #log("node.child %s", node.child)
     return node.terminator  # & or ;
 
   if tag == command_e.Simple:
-    node = cast(command__Simple, UP_node)
+    node = cast(command.Simple, UP_node)
     # It should have either words or redirects, e.g. '> foo'
     if len(node.words):
       return loc.Word(node.words[0])
@@ -97,35 +94,35 @@ def LocForCommand(node):
       return node.redirects[0].op
 
   if tag == command_e.ShAssignment:
-    node = cast(command__ShAssignment, UP_node)
+    node = cast(command.ShAssignment, UP_node)
     return loc.Span(node.spids[0])
 
   if tag == command_e.Pipeline:
-    node = cast(command__Pipeline, UP_node)
+    node = cast(command.Pipeline, UP_node)
     return loc.Span(node.spids[0])  # first |
   if tag == command_e.AndOr:
-    node = cast(command__AndOr, UP_node)
+    node = cast(command.AndOr, UP_node)
     return loc.Span(node.spids[0])  # first && or ||
   if tag == command_e.DoGroup:
-    node = cast(command__DoGroup, UP_node)
+    node = cast(command.DoGroup, UP_node)
     return loc.Span(node.spids[0])  # do spid
   if tag == command_e.BraceGroup:
     node = cast(BraceGroup, UP_node)
     return node.left  # { spid
   if tag == command_e.Subshell:
-    node = cast(command__Subshell, UP_node)
+    node = cast(command.Subshell, UP_node)
     return loc.Span(node.spids[0])  # ( spid
   if tag == command_e.WhileUntil:
-    node = cast(command__WhileUntil, UP_node)
+    node = cast(command.WhileUntil, UP_node)
     return loc.Span(node.spids[0])  # while spid
   if tag == command_e.If:
-    node = cast(command__If, UP_node)
+    node = cast(command.If, UP_node)
     return loc.Span(node.arms[0].spids[0])  # if spid is in FIRST arm.
   if tag == command_e.Case:
-    node = cast(command__Case, UP_node)
+    node = cast(command.Case, UP_node)
     return loc.Span(node.spids[0])  # case keyword spid
   if tag == command_e.TimeBlock:
-    node = cast(command__TimeBlock, UP_node)
+    node = cast(command.TimeBlock, UP_node)
     return loc.Span(node.spids[0])  # time keyword spid
 
   # We never have this case?

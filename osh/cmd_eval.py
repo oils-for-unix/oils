@@ -22,15 +22,7 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     assign_op_e,
     CompoundWord,
-    command_e, command_t,
-    command__AndOr, command__Case, command__CommandList, command__ControlFlow,
-    command__DBracket, command__DoGroup, command__DParen,
-    command__ExpandedAlias, command__Expr, command__ForEach, command__ForExpr,
-    command__If, command__NoOp,
-    command__Pipeline, command__PlaceMutation, command__Proc,
-    command__Sentence, command__ShAssignment, command__ShFunction,
-    command__Simple, command__Subshell, command__TimeBlock, command__VarDecl,
-    command__WhileUntil,
+    command, command_e, command_t,
     condition, condition_e, condition_t,
     BraceGroup, ArgList,
     expr_t,
@@ -160,7 +152,7 @@ def _HasManyStatuses(node):
   """
   # Sentence check is for   if false;   versus   if false
   if node.tag() == command_e.Sentence:
-    node1 = cast(command__Sentence, node)
+    node1 = cast(command.Sentence, node)
     return _HasManyStatuses(node1.child)
 
   UP_node = node
@@ -169,7 +161,7 @@ def _HasManyStatuses(node):
       return False
 
     elif case(command_e.Pipeline):
-      node = cast(command__Pipeline, UP_node)
+      node = cast(command.Pipeline, UP_node)
       if len(node.children) == 1:
         # '! false' is a pipeline that we want to ALLOW
         # '! ( echo subshell )' is DISALLWOED
@@ -344,7 +336,7 @@ class CommandEvaluator(object):
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
   def _LocForShAssignment(self, node):
-    # type: (command__ShAssignment) -> loc_t
+    # type: (command.ShAssignment) -> loc_t
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return loc.Span(node.spids[0])
 
@@ -371,7 +363,7 @@ class CommandEvaluator(object):
       UP_node = node
       with tagswitch(node) as case:
         if case(command_e.Simple):
-          node = cast(command__Simple, UP_node)
+          node = cast(command.Simple, UP_node)
           # It would be nice to print "Command 'ls'" failed.  But it's complex
           # because we could be here for several reasons:
           #
@@ -383,7 +375,7 @@ class CommandEvaluator(object):
           blame_loc = location.LocForCommand(node)
 
         elif case(command_e.ShAssignment):
-          node = cast(command__ShAssignment, UP_node)
+          node = cast(command.ShAssignment, UP_node)
           cmd_st.show_code = True  # leaf
           # Note: This happens rarely: when errexit and inherit_errexit are on,
           # but command_sub_errexit is off!
@@ -392,13 +384,13 @@ class CommandEvaluator(object):
 
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
-          node = cast(command__Subshell, UP_node)
+          node = cast(command.Subshell, UP_node)
           cmd_st.show_code = True  # not sure about this, e.g. ( exit 42 )
           desc = 'Subshell'
           blame_loc = loc.Span(node.spids[0])
 
         elif case(command_e.Pipeline):
-          node = cast(command__Pipeline, UP_node)
+          node = cast(command.Pipeline, UP_node)
           cmd_st.show_code = True  # not sure about this
           # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
@@ -520,40 +512,40 @@ class CommandEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(command_e.Simple):
-        node = cast(command__Simple, UP_node)
+        node = cast(command.Simple, UP_node)
         redirects = node.redirects
       elif case(command_e.ExpandedAlias):
-        node = cast(command__ExpandedAlias, UP_node)
+        node = cast(command.ExpandedAlias, UP_node)
         redirects = node.redirects
       elif case(command_e.ShAssignment):
-        node = cast(command__ShAssignment, UP_node)
+        node = cast(command.ShAssignment, UP_node)
         redirects = node.redirects
       elif case(command_e.BraceGroup):
         node = cast(BraceGroup, UP_node)
         redirects = node.redirects
       elif case(command_e.Subshell):
-        node = cast(command__Subshell, UP_node)
+        node = cast(command.Subshell, UP_node)
         redirects = node.redirects
       elif case(command_e.DParen):
-        node = cast(command__DParen, UP_node)
+        node = cast(command.DParen, UP_node)
         redirects = node.redirects
       elif case(command_e.DBracket):
-        node = cast(command__DBracket, UP_node)
+        node = cast(command.DBracket, UP_node)
         redirects = node.redirects
       elif case(command_e.ForEach):
-        node = cast(command__ForEach, UP_node)
+        node = cast(command.ForEach, UP_node)
         redirects = node.redirects
       elif case(command_e.ForExpr):
-        node = cast(command__ForExpr, UP_node)
+        node = cast(command.ForExpr, UP_node)
         redirects = node.redirects
       elif case(command_e.WhileUntil):
-        node = cast(command__WhileUntil, UP_node)
+        node = cast(command.WhileUntil, UP_node)
         redirects = node.redirects
       elif case(command_e.If):
-        node = cast(command__If, UP_node)
+        node = cast(command.If, UP_node)
         redirects = node.redirects
       elif case(command_e.Case):
-        node = cast(command__Case, UP_node)
+        node = cast(command.Case, UP_node)
         redirects = node.redirects
       else:
         # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
@@ -670,7 +662,7 @@ class CommandEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(command_e.Simple):
-        node = cast(command__Simple, UP_node)
+        node = cast(command.Simple, UP_node)
 
         cmd_st.check_errexit = True
 
@@ -763,7 +755,7 @@ class CommandEvaluator(object):
           status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
 
       elif case(command_e.ExpandedAlias):
-        node = cast(command__ExpandedAlias, UP_node)
+        node = cast(command.ExpandedAlias, UP_node)
         # Expanded aliases need redirects and env bindings from the calling
         # context, as well as redirects in the expansion!
 
@@ -778,7 +770,7 @@ class CommandEvaluator(object):
           status = self._Execute(node.child)
 
       elif case(command_e.Sentence):
-        node = cast(command__Sentence, UP_node)
+        node = cast(command.Sentence, UP_node)
         # Don't check_errexit since this isn't a real node!
         if node.terminator.id == Id.Op_Semi:
           status = self._Execute(node.child)
@@ -786,7 +778,7 @@ class CommandEvaluator(object):
           status = self.shell_ex.RunBackgroundJob(node.child)
 
       elif case(command_e.Pipeline):
-        node = cast(command__Pipeline, UP_node)
+        node = cast(command.Pipeline, UP_node)
         cmd_st.check_errexit = True
         if len(node.stderr_indices):
           e_die("|& isn't supported", loc.Span(node.spids[0]))
@@ -821,12 +813,12 @@ class CommandEvaluator(object):
           self.shell_ex.RunPipeline(node, cmd_st)
 
       elif case(command_e.Subshell):
-        node = cast(command__Subshell, UP_node)
+        node = cast(command.Subshell, UP_node)
         cmd_st.check_errexit = True
         status = self.shell_ex.RunSubshell(node.child)
 
       elif case(command_e.DBracket):
-        node = cast(command__DBracket, UP_node)
+        node = cast(command.DBracket, UP_node)
         left_spid = node.spids[0]
         self.mem.SetCurrentSpanId(left_spid)
         self._MaybeRunDebugTrap()
@@ -839,7 +831,7 @@ class CommandEvaluator(object):
         status = 0 if result else 1
 
       elif case(command_e.DParen):
-        node = cast(command__DParen, UP_node)
+        node = cast(command.DParen, UP_node)
         left_spid = node.spids[0]
         self.mem.SetCurrentSpanId(left_spid)
         self._MaybeRunDebugTrap()
@@ -852,7 +844,7 @@ class CommandEvaluator(object):
         status = 1 if i == 0 else 0
 
       elif case(command_e.VarDecl):
-        node = cast(command__VarDecl, UP_node)
+        node = cast(command.VarDecl, UP_node)
 
         if mylib.PYTHON:
           # x = 'foo' in Hay blocks
@@ -898,7 +890,7 @@ class CommandEvaluator(object):
       elif case(command_e.PlaceMutation):
 
         if mylib.PYTHON:  # DISABLED because it relies on CPytho now
-          node = cast(command__PlaceMutation, UP_node)
+          node = cast(command.PlaceMutation, UP_node)
           self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
 
           with switch(node.keyword.id) as case2:
@@ -973,7 +965,7 @@ class CommandEvaluator(object):
         status = 0  # TODO: what should status be?
 
       elif case(command_e.ShAssignment):  # Only unqualified assignment
-        node = cast(command__ShAssignment, UP_node)
+        node = cast(command.ShAssignment, UP_node)
 
         # x=y is 'neutered' inside 'proc'
         which_scopes = self.mem.ScopesForWriting()
@@ -1033,7 +1025,7 @@ class CommandEvaluator(object):
           status = 0
 
       elif case(command_e.Expr):
-        node = cast(command__Expr, UP_node)
+        node = cast(command.Expr, UP_node)
 
         if mylib.PYTHON:
           self.mem.SetCurrentSpanId(node.keyword.span_id)
@@ -1055,7 +1047,7 @@ class CommandEvaluator(object):
         status = 0
 
       elif case(command_e.ControlFlow):
-        node = cast(command__ControlFlow, UP_node)
+        node = cast(command.ControlFlow, UP_node)
         keyword = node.keyword
 
         if node.arg_word:  # Evaluate the argument
@@ -1108,12 +1100,12 @@ class CommandEvaluator(object):
       # Note CommandList and DoGroup have no redirects, but BraceGroup does.
       # DoGroup has 'do' and 'done' spids for translation.
       elif case(command_e.CommandList):
-        node = cast(command__CommandList, UP_node)
+        node = cast(command.CommandList, UP_node)
         status = self._ExecuteList(node.children)
         cmd_st.check_errexit = False
 
       elif case(command_e.DoGroup):
-        node = cast(command__DoGroup, UP_node)
+        node = cast(command.DoGroup, UP_node)
         status = self._ExecuteList(node.children)
         cmd_st.check_errexit = False  # not real statements
 
@@ -1123,7 +1115,7 @@ class CommandEvaluator(object):
         cmd_st.check_errexit = False
 
       elif case(command_e.AndOr):
-        node = cast(command__AndOr, UP_node)
+        node = cast(command.AndOr, UP_node)
         # NOTE: && and || have EQUAL precedence in command mode.  See case #13
         # in dbracket.test.sh.
 
@@ -1163,7 +1155,7 @@ class CommandEvaluator(object):
           i += 1
 
       elif case(command_e.WhileUntil):
-        node = cast(command__WhileUntil, UP_node)
+        node = cast(command.WhileUntil, UP_node)
         status = 0
 
         with ctx_LoopLevel(self):
@@ -1186,7 +1178,7 @@ class CommandEvaluator(object):
                 raise
 
       elif case(command_e.ForEach):
-        node = cast(command__ForEach, UP_node)
+        node = cast(command.ForEach, UP_node)
         self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
 
         # for the 2 kinds of shell loop
@@ -1343,7 +1335,7 @@ class CommandEvaluator(object):
               index += 1
 
       elif case(command_e.ForExpr):
-        node = cast(command__ForExpr, UP_node)
+        node = cast(command.ForExpr, UP_node)
 
         self.mem.SetCurrentSpanId(node.spids[0])
         #self._MaybeRunDebugTrap()
@@ -1380,7 +1372,7 @@ class CommandEvaluator(object):
               self.arith_ev.Eval(update)
 
       elif case(command_e.ShFunction):
-        node = cast(command__ShFunction, UP_node)
+        node = cast(command.ShFunction, UP_node)
         # name_spid is node.spids[1].  Dynamic scope.
         if node.name in self.procs and not self.exec_opts.redefine_proc():
           e_die("Function %s was already defined (redefine_proc)" % node.name,
@@ -1391,7 +1383,7 @@ class CommandEvaluator(object):
         status = 0
 
       elif case(command_e.Proc):
-        node = cast(command__Proc, UP_node)
+        node = cast(command.Proc, UP_node)
 
         proc_name = lexer.TokenVal(node.name)
         if proc_name in self.procs and not self.exec_opts.redefine_proc():
@@ -1416,7 +1408,7 @@ class CommandEvaluator(object):
         status = 0
 
       elif case(command_e.If):
-        node = cast(command__If, UP_node)
+        node = cast(command.If, UP_node)
         done = False
         for if_arm in node.arms:
           b = self._EvalCondition(if_arm.cond, if_arm.spids[0])
@@ -1429,11 +1421,11 @@ class CommandEvaluator(object):
           status = self._ExecuteList(node.else_action)
 
       elif case(command_e.NoOp):
-        node = cast(command__NoOp, UP_node)
+        node = cast(command.NoOp, UP_node)
         status = 0  # make it true
 
       elif case(command_e.Case):
-        node = cast(command__Case, UP_node)
+        node = cast(command.Case, UP_node)
         str_val = self.word_ev.EvalWordToString(node.to_match)
         to_match = str_val.s
 
@@ -1459,7 +1451,7 @@ class CommandEvaluator(object):
             break
 
       elif case(command_e.TimeBlock):
-        node = cast(command__TimeBlock, UP_node)
+        node = cast(command.TimeBlock, UP_node)
         # TODO:
         # - When do we need RUSAGE_CHILDREN?
         # - Respect TIMEFORMAT environment variable.
@@ -1639,24 +1631,24 @@ class CommandEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(command_e.Simple):
-        node = cast(command__Simple, UP_node)
+        node = cast(command.Simple, UP_node)
         node.do_fork = False
         if 0:
           log('Simple optimized')
 
       elif case(command_e.Pipeline):
-        node = cast(command__Pipeline, UP_node)
+        node = cast(command.Pipeline, UP_node)
         if not node.negated:
           #log ('pipe')
           self._NoForkLast(node.children[-1])
 
       elif case(command_e.Sentence):
-        node = cast(command__Sentence, UP_node)
+        node = cast(command.Sentence, UP_node)
         self._NoForkLast(node.child)
 
       elif case(command_e.CommandList):
         # Subshells start with CommandList, even if there's only one.
-        node = cast(command__CommandList, UP_node)
+        node = cast(command.CommandList, UP_node)
         self._NoForkLast(node.children[-1])
 
       elif case(command_e.BraceGroup):
@@ -1672,7 +1664,7 @@ class CommandEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(command_e.Subshell):
-        node = cast(command__Subshell, UP_node)
+        node = cast(command.Subshell, UP_node)
         if len(node.redirects) == 0:
           # Note: technically we could optimize this into BraceGroup with
           # redirects.  Some shells appear to do that.

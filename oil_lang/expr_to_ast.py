@@ -24,11 +24,6 @@ from mycpp.mylib import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import (
-      command__VarDecl, command__PlaceMutation, command__Func, command__Data,
-      command__Enum, command__Class, command__Import,
-      command__CommandList,
-  )
   from pgen2.grammar import Grammar
   from pgen2.pnode import PNode
 
@@ -670,7 +665,7 @@ class Transformer(object):
     return places
 
   def MakeVarDecl(self, p_node):
-    # type: (PNode) -> command__VarDecl
+    # type: (PNode) -> command.VarDecl
     """
     oil_var_decl: name_type_list '=' testlist end_stmt
     """
@@ -685,7 +680,7 @@ class Transformer(object):
     return command.VarDecl(None, lhs, rhs)
 
   def MakePlaceMutation(self, p_node):
-    # type: (PNode) -> command__PlaceMutation
+    # type: (PNode) -> command.PlaceMutation
     """
     oil_place_mutation: place_list (augassign | '=') testlist end_stmt
     """
@@ -990,7 +985,7 @@ class Transformer(object):
     return result
 
   def _Suite(self, pnode):
-    # type: (PNode) -> command__CommandList
+    # type: (PNode) -> command.CommandList
     """
     suite: '{' [Op_Newline] [func_items] '}'
     """
@@ -1011,7 +1006,7 @@ class Transformer(object):
     return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
   def TeaFunc(self, pnode, out):
-    # type: (PNode, command__Func) -> None
+    # type: (PNode, command.Func) -> None
     """
     tea_func: (
       '(' [func_params] [';' func_params] ')' [type_expr_list]
@@ -1043,7 +1038,7 @@ class Transformer(object):
     out.body = self._Suite(pnode.GetChild(pos))
 
   def NamedFunc(self, pnode, out):
-    # type: (PNode, command__Func) -> None
+    # type: (PNode, command.Func) -> None
     """
     named_func: Expr_Name tea_func
     """
@@ -1066,7 +1061,7 @@ class Transformer(object):
     return params
 
   def Data(self, pnode, out):
-    # type: (PNode, command__Data) -> None
+    # type: (PNode, command.Data) -> None
     """
     tea_data: Expr_Name '(' [data_params] ')'
     """
@@ -1103,7 +1098,7 @@ class Transformer(object):
     return Variant(pnode.GetChild(0).tok, t)
 
   def Enum(self, pnode, out):
-    # type: (PNode, command__Enum) -> None
+    # type: (PNode, command.Enum) -> None
     """
     tea_enum: Expr_Name '{' [Op_Newline] (variant variant_end)* [ variant [variant_end] ] '}'
     """
@@ -1123,7 +1118,7 @@ class Transformer(object):
       out.variants.append(self._Variant(p_node))
 
   def Class(self, pnode, out):
-    # type: (PNode, command__Class) -> None
+    # type: (PNode, command.Class) -> None
     """
     tea_class: Expr_Name [':' Expr_Name ] '{' class_items '}'
     """
@@ -1139,7 +1134,7 @@ class Transformer(object):
     #  out.variants.append(self._Variant(p_node))
 
   def Import(self, pnode, out):
-    # type: (PNode, command__Import) -> None
+    # type: (PNode, command.Import) -> None
     """
     tea_import: (
       sq_string ['as' Expr_Name]

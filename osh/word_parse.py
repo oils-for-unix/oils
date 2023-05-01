@@ -51,7 +51,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    BoolParamBox, Token, loc,
+    BoolParamBox, Token, loc, source,
     DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
     ShArrayLiteral, AssocPair,
     arith_expr_t,
@@ -60,13 +60,9 @@ from _devbuild.gen.syntax_asdl import (
     rhs_word, rhs_word_e, rhs_word_t,
     word_e, word_t, CompoundWord,
     word_part, word_part_e, word_part_t,
-
-    command, command__ForExpr, command__Proc, command__Import,
-    command__PlaceMutation, command__VarDecl,
-
+    command,
     place_expr, place_expr_e,
-
-    expr_t, source, ArgList,
+    expr_t, ArgList,
 )
 from core import alloc
 from core.error import p_die
@@ -1041,7 +1037,7 @@ class WordParser(WordEmitter):
     return node
 
   def ParseVarDecl(self, kw_token):
-    # type: (Token) -> command__VarDecl
+    # type: (Token) -> command.VarDecl
     """
     oil_var_decl: name_type_list '=' testlist end_stmt
 
@@ -1064,7 +1060,7 @@ class WordParser(WordEmitter):
     return enode
 
   def ParsePlaceMutation(self, kw_token, var_checker):
-    # type: (Token, VarChecker) -> command__PlaceMutation
+    # type: (Token, VarChecker) -> command.PlaceMutation
     """
     setvar a[i] = 1
     setvar i += 1
@@ -1118,7 +1114,7 @@ class WordParser(WordEmitter):
     return enode
 
   def ParseProc(self, node):
-    # type: (command__Proc) -> None
+    # type: (command.Proc) -> None
 
     # proc name-with-hyphens() must be accepted
     self._Next(lex_mode_e.ShCommand) 
@@ -1139,7 +1135,7 @@ class WordParser(WordEmitter):
     self._Next(lex_mode_e.ShCommand)  # TODO: Do we need this?
 
   def ParseImport(self, node):
-    # type: (command__Import) -> None
+    # type: (command.Import) -> None
     last_token = self.parse_ctx.ParseImport(self.lexer, node)
     self.buffered_word = last_token
 
@@ -1242,7 +1238,7 @@ class WordParser(WordEmitter):
         break
 
   def ReadForExpression(self):
-    # type: () -> command__ForExpr
+    # type: () -> command.ForExpr
     """Read ((i=0; i<5; ++i)) -- part of command context."""
     self._NextNonSpace()  # skip over ((
 

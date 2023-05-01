@@ -9,8 +9,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    CommandSub, CompoundWord, loc, loc_t
+    command, command_e, CommandSub, CompoundWord, loc, loc_t,
 )
 from asdl import runtime
 from core import dev
@@ -150,7 +149,7 @@ class ShellExecutor(vm._Executor):
     """
     UP_node = node
     if node.tag() == command_e.ControlFlow:
-      node = cast(command__ControlFlow, UP_node)
+      node = cast(command.ControlFlow, UP_node)
       # Pipeline or subshells with control flow are invalid, e.g.:
       # - break | less
       # - continue | less
@@ -346,7 +345,7 @@ class ShellExecutor(vm._Executor):
     UP_node = node
 
     if UP_node.tag() == command_e.Pipeline:
-      node = cast(command__Pipeline, UP_node)
+      node = cast(command.Pipeline, UP_node)
       pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
                             self.job_control, self.job_list)
       for child in node.children:
@@ -375,7 +374,7 @@ class ShellExecutor(vm._Executor):
     return 0
 
   def RunPipeline(self, node, status_out):
-    # type: (command__Pipeline, CommandStatus) -> None
+    # type: (command.Pipeline, CommandStatus) -> None
 
     pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(), self.job_control,
                           self.job_list)
@@ -433,7 +432,7 @@ class ShellExecutor(vm._Executor):
 
     # Hack for weird $(<file) construct
     if node.tag() == command_e.Simple:
-      simple = cast(command__Simple, node)
+      simple = cast(command.Simple, node)
       # Detect '< file'
       if (len(simple.words) == 0 and
           len(simple.redirects) == 1 and

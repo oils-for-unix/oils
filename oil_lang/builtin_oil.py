@@ -103,7 +103,7 @@ class Pp(_Builtin):
         #log('Proc %s', proc)
         body = proc.body
 
-        # TODO: not just command__ShFunction, but command__Proc!
+        # TODO: not just command.ShFunction, but command.Proc!
         doc = ''
         if body.tag() == command_e.BraceGroup:
           bgroup = cast(BraceGroup, body)

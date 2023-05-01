@@ -373,8 +373,8 @@ module syntax
   | While(expr test, command body)
   | Break | Continue
   | Return(expr? value)
-
   attributes (List[int] spids)
+  generate [no_legacy__]
 
   # Binary(x expr, y expr) or Nullary %Token
   # In the first case we have a tag, and an anonymous type.

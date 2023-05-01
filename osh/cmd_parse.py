@@ -17,10 +17,6 @@ from _devbuild.gen.syntax_asdl import (
     condition, condition_t,
     for_iter,
     command, command_t,
-    command__Simple, command__DoGroup, command__ForExpr, command__ForEach,
-    command__WhileUntil, command__Case, command__If, command__ShFunction,
-    command__Subshell, command__DBracket, command__DParen,
-    command__CommandList, command__Proc,
     ArgList, BraceGroup, BlockArg,
     CaseArm, IfArm,
 
@@ -326,7 +322,7 @@ def _MakeSimpleCommand(
     typed_args,      # type: Optional[ArgList]
     block,           # type: Optional[BlockArg]
     ):
-  # type: (...) -> command__Simple
+  # type: (...) -> command.Simple
   """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -1110,7 +1106,7 @@ class CommandParser(object):
     return BraceGroup(left, doc_token, c_list.children, [], right) # no redirects yet
 
   def ParseDoGroup(self):
-    # type: () -> command__DoGroup
+    # type: () -> command.DoGroup
     """
     Used by ForEach, ForExpr, While, Until.  Should this be a Do node?
 
@@ -1166,7 +1162,7 @@ class CommandParser(object):
     return words, semi_spid
 
   def _ParseForExprLoop(self, for_kw):
-    # type: (Token) -> command__ForExpr
+    # type: (Token) -> command.ForExpr
     """
     for (( init; cond; update )) for_sep? do_group
     """
@@ -1196,7 +1192,7 @@ class CommandParser(object):
     return node
 
   def _ParseForEachLoop(self, for_kw):
-    # type: (Token) -> command__ForEach
+    # type: (Token) -> command.ForEach
     node = command.ForEach.CreateNull(alloc_lists=True)
     node.keyword = for_kw
     node.spids.append(for_kw.span_id)  # for $LINENO and error fallback
@@ -1320,7 +1316,7 @@ class CommandParser(object):
       return n2
 
   def ParseWhileUntil(self, keyword):
-    # type: (Token) -> command__WhileUntil
+    # type: (Token) -> command.WhileUntil
     """
     while_clause     : While command_list do_group ;
     until_clause     : Until command_list do_group ;
@@ -1424,7 +1420,7 @@ class CommandParser(object):
       # Now look for DSEMI or ESAC
 
   def ParseCase(self):
-    # type: () -> command__Case
+    # type: () -> command.Case
     """
     case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
     """
@@ -1472,7 +1468,7 @@ class CommandParser(object):
     return case_node
 
   def _ParseOilElifElse(self, if_node):
-    # type: (command__If) -> None
+    # type: (command.If) -> None
     """
     if test -f foo {
       echo foo
@@ -1517,7 +1513,7 @@ class CommandParser(object):
     if_node.spids.append(else_spid)
 
   def _ParseOilIf(self, if_spid, cond):
-    # type: (int, condition_t) -> command__If
+    # type: (int, condition_t) -> command.If
     """
     if test -f foo {
                  # ^ we parsed up to here
@@ -1554,7 +1550,7 @@ class CommandParser(object):
     return if_node
 
   def _ParseElifElse(self, if_node):
-    # type: (command__If) -> None
+    # type: (command.If) -> None
     """
     else_part: (Elif command_list Then command_list)* Else command_list ;
     """
@@ -1587,7 +1583,7 @@ class CommandParser(object):
     if_node.spids.append(else_spid)
 
   def ParseIf(self):
-    # type: () -> command__If
+    # type: () -> command.If
     """
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
@@ -1712,7 +1708,7 @@ class CommandParser(object):
     assert False  # for MyPy
 
   def ParseFunctionDef(self):
-    # type: () -> command__ShFunction
+    # type: () -> command.ShFunction
     """
     function_header : fname '(' ')'
     function_def    : function_header newline_ok function_body ;
@@ -1772,7 +1768,7 @@ class CommandParser(object):
       return None
 
   def ParseKshFunctionDef(self):
-    # type: () -> command__ShFunction
+    # type: () -> command.ShFunction
     """
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
@@ -1813,7 +1809,7 @@ class CommandParser(object):
     return func
 
   def ParseOilProc(self):
-    # type: () -> command__Proc
+    # type: () -> command.Proc
     node = command.Proc.CreateNull(alloc_lists=True)
 
     keyword_tok = _KeywordToken(self.cur_word)
@@ -1845,12 +1841,12 @@ class CommandParser(object):
   def ParseCoproc(self):
     # type: () -> command_t
     """
-    TODO: command__Coproc?
+    TODO: command.Coproc?
     """
     raise NotImplementedError()
 
   def ParseSubshell(self):
-    # type: () -> command__Subshell
+    # type: () -> command.Subshell
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip past (
 
@@ -1875,7 +1871,7 @@ class CommandParser(object):
     return node
 
   def ParseDBracket(self):
-    # type: () -> command__DBracket
+    # type: () -> command.DBracket
     """
     Pass the underlying word parser off to the boolean expression parser.
     """
@@ -1896,7 +1892,7 @@ class CommandParser(object):
     return node
 
   def ParseDParen(self):
-    # type: () -> command__DParen
+    # type: () -> command.DParen
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip ((
@@ -2256,7 +2252,7 @@ class CommandParser(object):
       return children[0]
 
   def _ParseCommandTerm(self):
-    # type: () -> command__CommandList
+    # type: () -> command.CommandList
     """"
     command_term     : and_or (trailer and_or)* ;
     trailer          : sync_op newline_ok
@@ -2340,7 +2336,7 @@ class CommandParser(object):
     return command.CommandList(children)
 
   def _ParseCommandList(self):
-    # type: () -> command__CommandList
+    # type: () -> command.CommandList
     """
     command_list     : newline_ok command_term trailer? ;
 

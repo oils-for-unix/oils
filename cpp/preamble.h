@@ -31,4 +31,5 @@
 
 // TODO: Why do we need these?
 using runtime_asdl::cmd_value;
+using syntax_asdl::command;
 using syntax_asdl::expr;
