@@ -45,7 +45,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e,
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     RedirValue, redirect_arg, scope_e,
-    cmd_value_e, cmd_value__Argv, cmd_value__Assign,
+    cmd_value, cmd_value_e,
     CommandStatus, StatusArray, Proc, flow_e
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
@@ -321,7 +321,7 @@ class CommandEvaluator(object):
     assert self.word_ev is not None
 
   def _RunAssignBuiltin(self, cmd_val):
-    # type: (cmd_value__Assign) -> int
+    # type: (cmd_value.Assign) -> int
     """Run an assignment builtin.  Except blocks copied from RunBuiltin."""
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
@@ -577,12 +577,12 @@ class CommandEvaluator(object):
     UP_cmd_val = cmd_val
     with tagswitch(UP_cmd_val) as case:
       if case(cmd_value_e.Argv):
-        cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+        cmd_val = cast(cmd_value.Argv, UP_cmd_val)
         self.tracer.OnSimpleCommand(cmd_val.argv)
         return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, do_fork)
 
       elif case(cmd_value_e.Assign):
-        cmd_val = cast(cmd_value__Assign, UP_cmd_val)
+        cmd_val = cast(cmd_value.Assign, UP_cmd_val)
         self.tracer.OnAssignBuiltin(cmd_val)
         return self._RunAssignBuiltin(cmd_val)
 
@@ -708,7 +708,7 @@ class CommandEvaluator(object):
 
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag() == cmd_value_e.Argv:
-          cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+          cmd_val = cast(cmd_value.Argv, UP_cmd_val)
 
           if len(cmd_val.argv):  # it can be empty in rare cases
             self.mem.SetLastArgument(cmd_val.argv[-1])
@@ -741,7 +741,7 @@ class CommandEvaluator(object):
         else:
           if node.block:
             e_die("ShAssignment builtins don't accept blocks", node.block.brace_group.left)
-          cmd_val = cast(cmd_value__Assign, UP_cmd_val)
+          cmd_val = cast(cmd_value.Assign, UP_cmd_val)
 
           # Could reset $_ after assignment, but then we'd have to do it for
           # all Oil constructs too.  It's easier to let it persist.  Other

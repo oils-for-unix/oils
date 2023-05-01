@@ -2519,7 +2519,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     if self.decl and name in (
                         'Id', 'scope_e', 'lex_mode_e',
                         'suffix_op', 'lvalue', 'part_value', 'loc', 'word',
-                        'word_part'):
+                        'word_part', 'cmd_value'):
                         self.f.write(using_str)
 
             else:

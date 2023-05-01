@@ -12,9 +12,7 @@ from core import pyos
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import (
-      cmd_value__Argv, cmd_value__Assign, RedirValue
-  )
+  from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
   from _devbuild.gen.syntax_asdl import (
       command_t, command__Pipeline, CommandSub
   )
@@ -158,14 +156,14 @@ class _Executor(object):
     pass
 
   def RunBuiltin(self, builtin_id, cmd_val):
-    # type: (int, cmd_value__Argv) -> int
+    # type: (int, cmd_value.Argv) -> int
     """
     The 'builtin' builtin in osh/builtin_meta.py needs this.
     """
     return 0
 
   def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
+    # type: (cmd_value.Argv, CommandStatus, bool, bool) -> int
     return 0
 
   def RunBackgroundJob(self, node):
@@ -219,14 +217,14 @@ class _AssignBuiltin(object):
     pass
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Assign) -> int
+    # type: (cmd_value.Assign) -> int
     raise NotImplementedError()
 
 
 class _Builtin(object):
   """All builtins except 'command' obey this interface.
 
-  Assignment builtins use cmd_value__Assign; others use cmd_value__Argv.
+  Assignment builtins use cmd_value.Assign; others use cmd_value.Argv.
   """
 
   def __init__(self):
@@ -235,7 +233,7 @@ class _Builtin(object):
     pass
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     raise NotImplementedError()
 
 

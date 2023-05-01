@@ -12,7 +12,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
-    value_e, value__MaybeStrArray, value__Obj, Proc, cmd_value__Argv
+    value_e, value__MaybeStrArray, value__Obj, Proc, cmd_value
 )
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from core import error
@@ -53,7 +53,7 @@ class Pp(_Builtin):
     self.stdout = Stdout()
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val)
 
     action, action_loc = arg_r.ReadRequired2(
@@ -133,7 +133,7 @@ class Append(_Builtin):
     _Builtin.__init__(self, mem, errfmt)
     
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
 
     var_name, var_loc = arg_r.ReadRequired2(
@@ -192,7 +192,7 @@ class ArgParse(_Builtin):
     _Builtin.__init__(self, mem, errfmt)
     
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     return 0
 
 
@@ -208,7 +208,7 @@ class Describe(_Builtin):
     _Builtin.__init__(self, mem, errfmt)
     
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     return 0
 
 
@@ -226,7 +226,7 @@ class Write(_Builtin):
     self.stdout = Stdout()
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('write', cmd_val)
     arg = arg_types.write(attrs.attrs)
     #print(arg)

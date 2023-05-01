@@ -7,7 +7,7 @@ from __future__ import print_function
 from signal import SIG_DFL, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value__Argv
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import loc, source
 from core import alloc
 from core import dev
@@ -175,7 +175,7 @@ class Trap(vm._Builtin):
     return node
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('trap', cmd_val)
     arg = arg_types.trap(attrs.attrs)
 

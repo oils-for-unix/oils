@@ -30,7 +30,7 @@ def _MakeReader(argv):
 
 
 def _ParseCmdVal(spec, cmd_val):
-  # type: (cmd_value__Argv) -> Tuple[args._Attributes, int]
+  # type: (cmd_value.Argv) -> Tuple[args._Attributes, int]
   """For testing only
   """
   arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)

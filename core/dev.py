@@ -7,7 +7,7 @@ from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue, lvalue_e,
-    cmd_value__Assign, scope_e, trace, trace_e, trace_t 
+    cmd_value, scope_e, trace, trace_e, trace_t 
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -505,7 +505,7 @@ class Tracer(object):
     self.f.write(buf.getvalue())
 
   def OnAssignBuiltin(self, cmd_val):
-    # type: (cmd_value__Assign) -> None
+    # type: (cmd_value.Assign) -> None
     buf = self._ShTraceBegin()
     if not buf:
       return

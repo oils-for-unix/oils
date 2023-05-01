@@ -9,7 +9,7 @@ import time as time_  # avoid name conflict
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, value_e, value__Str, value
+    cmd_value, value, value_e, value__Str,
 )
 from _devbuild.gen.syntax_asdl import (
     source, Token,
@@ -430,7 +430,7 @@ class Printf(vm._Builtin):
     return 0
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     """
     printf: printf [-v var] format [argument ...]
     """

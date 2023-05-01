@@ -10,8 +10,7 @@ from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.runtime_asdl import (
-    cmd_value, cmd_value__Argv, wait_status, wait_status_e)
+from _devbuild.gen.runtime_asdl import cmd_value, wait_status, wait_status_e
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
@@ -37,7 +36,7 @@ class Jobs(vm._Builtin):
     self.job_list = job_list
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     attrs, arg_r = flag_spec.ParseCmdVal('jobs', cmd_val)
     arg = arg_types.jobs(attrs.attrs)
@@ -66,7 +65,7 @@ class Fg(vm._Builtin):
     self.waiter = waiter
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     pid = self.job_list.GetLastStopped()
     if pid == -1:
@@ -91,7 +90,7 @@ class Bg(vm._Builtin):
     self.job_list = job_list
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
@@ -106,7 +105,7 @@ class Fork(vm._Builtin):
     self.shell_ex = shell_ex
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('fork', cmd_val, accept_typed_args=True)
 
     arg, location = arg_r.Peek2()
@@ -127,7 +126,7 @@ class ForkWait(vm._Builtin):
     self.shell_ex = shell_ex
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('forkwait', cmd_val, accept_typed_args=True)
     arg, location = arg_r.Peek2()
     if arg is not None:
@@ -151,7 +150,7 @@ class Exec(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('exec', cmd_val)
 
     # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
@@ -203,12 +202,12 @@ class Wait(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     with dev.ctx_Tracer(self.tracer, 'wait', cmd_val.argv):
       return self._Run(cmd_val)
 
   def _Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('wait', cmd_val)
     arg = arg_types.wait(attrs.attrs)
 
@@ -313,7 +312,7 @@ class Umask(vm._Builtin):
     pass
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     argv = cmd_val.argv[1:]
     if len(argv) == 0:

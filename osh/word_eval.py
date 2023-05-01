@@ -19,7 +19,7 @@ from _devbuild.gen.runtime_asdl import (
     value__MaybeStrArray, value__Obj,
     lvalue, lvalue_t,
     AssignArg, 
-    cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
+    cmd_value, cmd_value_e, cmd_value_t,
     a_index, a_index_e,
     VTestPlace, VarSubState,
 )
@@ -1930,7 +1930,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (builtin_t, str, List[CompoundWord]) -> cmd_value__Assign
+    # type: (builtin_t, str, List[CompoundWord]) -> cmd_value.Assign
     """
     Handles both static and dynamic assignment, e.g.
 
@@ -2170,7 +2170,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_cmd_val = self.EvalWordSequence2(words)
 
     assert UP_cmd_val.tag() == cmd_value_e.Argv
-    cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+    cmd_val = cast(cmd_value.Argv, UP_cmd_val)
     return cmd_val.argv
 
 

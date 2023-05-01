@@ -14,7 +14,7 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
-    span_e, cmd_value__Argv, value, scope_e
+    span_e, cmd_value, value, scope_e
 )
 # TODO: we shouldn't need this import for translation
 from _devbuild.gen.runtime_asdl import lvalue  # noqa: F401
@@ -65,7 +65,7 @@ class Times(vm._Builtin):
     vm._Builtin.__init__(self)
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     pyos.PrintTimes()
     return 0
 
@@ -329,7 +329,7 @@ class Read(vm._Builtin):
     return 0
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     try:
       status = self._Run(cmd_val)
     except pyos.ReadError as e:  # different paths for read -d, etc.
@@ -339,7 +339,7 @@ class Read(vm._Builtin):
     return status
 
   def _Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val)
     arg = arg_types.read(attrs.attrs)
     names = arg_r.Rest()
@@ -499,7 +499,7 @@ class MapFile(vm._Builtin):
     self.cmd_ev = cmd_ev
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('mapfile', cmd_val)
     arg = arg_types.mapfile(attrs.attrs)
 
@@ -558,7 +558,7 @@ class Cd(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('cd', cmd_val, accept_typed_args=True)
     arg = arg_types.cd(attrs.attrs)
 
@@ -654,7 +654,7 @@ class Pushd(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
 
     dir_arg, dir_arg_loc = arg_r.Peek2()
@@ -713,7 +713,7 @@ class Popd(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
 
     extra, extra_loc = arg_r.Peek2()
@@ -737,7 +737,7 @@ class Dirs(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('dirs', cmd_val)
     arg = arg_types.dirs(attrs.attrs)
 
@@ -770,7 +770,7 @@ class Pwd(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('pwd', cmd_val)
     arg = arg_types.pwd(attrs.attrs)
 
@@ -805,7 +805,7 @@ class Help(vm._Builtin):
     return groups
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
     #arg = arg_types.help(attrs.attrs)
@@ -851,7 +851,7 @@ class Cat(vm._Builtin):
     vm._Builtin.__init__(self)
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     chunks = []  # type: List[str]
     while True:
       n, err_num = pyos.Read(0, 4096, chunks)

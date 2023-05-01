@@ -30,7 +30,7 @@ import posix_ as posix
 from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
-      cmd_value__Argv, CommandStatus, StatusArray, Proc
+      cmd_value, CommandStatus, StatusArray, Proc
   )
   from _devbuild.gen.syntax_asdl import command_t
   from core import optview
@@ -174,7 +174,7 @@ class ShellExecutor(vm._Executor):
     return p
 
   def RunBuiltin(self, builtin_id, cmd_val):
-    # type: (int, cmd_value__Argv) -> int
+    # type: (int, cmd_value.Argv) -> int
     """Run a builtin.  Also called by the 'builtin' builtin."""
     self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
 
@@ -200,7 +200,7 @@ class ShellExecutor(vm._Executor):
     return status
 
   def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-    # type: (cmd_value__Argv, CommandStatus, bool, bool) -> int
+    # type: (cmd_value.Argv, CommandStatus, bool, bool) -> int
     """Run builtins, functions, external commands
 
     Possible variations:

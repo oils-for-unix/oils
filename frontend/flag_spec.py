@@ -7,11 +7,11 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, flag_type_e, flag_type_t, value, value_t,
+    cmd_value, flag_type_e, flag_type_t, value, value_t,
 )
-from mycpp.mylib import log
 from frontend import args
 from mycpp import mylib
+from mycpp.mylib import log
 
 from typing import Union, List, Tuple, Dict, Any, Optional
 
@@ -48,7 +48,7 @@ def Parse(spec_name, arg_r):
 
 
 def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
-  # type: (str, cmd_value__Argv, bool) -> Tuple[args._Attributes, args.Reader]
+  # type: (str, cmd_value.Argv, bool) -> Tuple[args._Attributes, args.Reader]
 
   from frontend import typed_args  # break circular dependency
 
@@ -63,7 +63,7 @@ def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
 
 
 def ParseLikeEcho(spec_name, cmd_val):
-  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
+  # type: (str, cmd_value.Argv) -> Tuple[args._Attributes, args.Reader]
 
   from frontend import typed_args  # break circular dependency
 

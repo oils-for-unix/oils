@@ -61,7 +61,7 @@ from posix_ import (
 from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from _devbuild.gen.runtime_asdl import cmd_value
   from _devbuild.gen.syntax_asdl import command_t
   from core import optview
   from core.state import Mem
@@ -642,7 +642,7 @@ class ExternalProgram(object):
     self.debug_f = debug_f
 
   def Exec(self, argv0_path, cmd_val, environ):
-    # type: (str, cmd_value__Argv, Dict[str, str]) -> None
+    # type: (str, cmd_value.Argv, Dict[str, str]) -> None
     """Execute a program and exit this process.
 
     Called by:
@@ -744,7 +744,7 @@ class ExternalThunk(Thunk):
   """An external executable."""
 
   def __init__(self, ext_prog, argv0_path, cmd_val, environ):
-    # type: (ExternalProgram, str, cmd_value__Argv, Dict[str, str]) -> None
+    # type: (ExternalProgram, str, cmd_value.Argv, Dict[str, str]) -> None
     self.ext_prog = ext_prog
     self.argv0_path = argv0_path
     self.cmd_val = cmd_val

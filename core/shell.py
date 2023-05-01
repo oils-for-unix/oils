@@ -72,13 +72,13 @@ import posix_ as posix
 from typing import List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
+  from _devbuild.gen.runtime_asdl import cmd_value, Proc
   from core import optview
   from frontend.py_readline import Readline
 
 
 def MakeBuiltinArgv(argv1):
-  # type: (List[str]) -> cmd_value__Argv
+  # type: (List[str]) -> cmd_value.Argv
   argv = ['']  # dummy for argv[0]
   argv.extend(argv1)
   # no location info

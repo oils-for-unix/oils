@@ -9,7 +9,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
     value__AssocArray,
-    scope_e, cmd_value__Argv, cmd_value__Assign, AssignArg,
+    scope_e, cmd_value, AssignArg,
 )
 # TODO: we shouldn't need this import for translation
 from _devbuild.gen.runtime_asdl import lvalue  # noqa: F401
@@ -44,7 +44,7 @@ _EXPORT = 2
 
 
 def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
-  # type: (Mem, cmd_value__Assign, _Attributes, bool, int) -> int
+  # type: (Mem, cmd_value.Assign, _Attributes, bool, int) -> int
   """
   Args:
     print_flags: whether to print flags
@@ -229,7 +229,7 @@ class Export(vm._AssignBuiltin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Assign) -> int
+    # type: (cmd_value.Assign) -> int
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
     attrs = flag_spec.Parse('export_', arg_r)
@@ -293,7 +293,7 @@ class Readonly(vm._AssignBuiltin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Assign) -> int
+    # type: (cmd_value.Assign) -> int
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
     attrs = flag_spec.Parse('readonly', arg_r)
@@ -345,7 +345,7 @@ class NewVar(vm._AssignBuiltin):
     return status
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Assign) -> int
+    # type: (cmd_value.Assign) -> int
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
     attrs = flag_spec.Parse('new_var', arg_r)
@@ -475,7 +475,7 @@ class Unset(vm._Builtin):
     return True
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('unset', cmd_val)
     arg = arg_types.unset(attrs.attrs)
 
@@ -505,7 +505,7 @@ class Shift(vm._Builtin):
     self.mem = mem
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       n = 1

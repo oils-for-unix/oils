@@ -29,7 +29,7 @@ _ = log
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 from _devbuild.gen.syntax_asdl import loc
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
+  from _devbuild.gen.runtime_asdl import cmd_value, Proc
   from frontend.parse_lib import ParseContext
   from core import optview
   from core import process
@@ -50,7 +50,7 @@ class Eval(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     # There are no flags, but we need it to respect --
     _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
@@ -89,7 +89,7 @@ class Source(vm._Builtin):
     self.mem = cmd_ev.mem
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     call_loc = cmd_val.arg_locs[0]
     _, arg_r = flag_spec.ParseCmdVal('source', cmd_val)
 
@@ -149,7 +149,7 @@ class Command(vm._Builtin):
     self.search_path = search_path
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     # accept_typed_args=True because we invoke other builtins
     attrs, arg_r = flag_spec.ParseCmdVal('command', cmd_val,
@@ -187,7 +187,7 @@ class Builtin(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     if len(cmd_val.argv) == 1:
       return 0  # this could be an error in strict mode?
@@ -223,7 +223,7 @@ class RunProc(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('runproc', cmd_val,
                                      accept_typed_args=True)
     argv, spids = arg_r.Rest2()
@@ -277,7 +277,7 @@ class Try(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('try_', cmd_val, accept_typed_args=True)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
@@ -332,7 +332,7 @@ class BoolStatus(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     _, arg_r = flag_spec.ParseCmdVal('boolstatus', cmd_val)
 
@@ -394,7 +394,7 @@ class Type(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('type', cmd_val)
     arg = arg_types.type(attrs.attrs)
 

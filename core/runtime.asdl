@@ -15,6 +15,7 @@ module runtime
   | Assign(int builtin_id,
            List[str] argv, List[loc] arg_locs,
            List[AssignArg] pairs)
+  generate [no_legacy__]
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.

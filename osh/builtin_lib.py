@@ -17,7 +17,7 @@ from pylib import path_stat
 
 from typing import Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from _devbuild.gen.runtime_asdl import cmd_value
   from frontend.py_readline import Readline
   from core.ui import ErrorFormatter
 
@@ -30,7 +30,7 @@ class Bind(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     self.errfmt.Print_("warning: bind isn't implemented",
                        blame_loc=cmd_val.arg_locs[0])
     return 1
@@ -64,7 +64,7 @@ class History(vm._Builtin):
       raise error.Strict("$HISTFILE should only ever be a string", loc.Missing())
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.

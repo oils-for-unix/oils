@@ -27,7 +27,7 @@ _ = log
 from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, value__Str
+  from _devbuild.gen.runtime_asdl import cmd_value, value__Str
   from _devbuild.gen.syntax_asdl import bool_expr_t
   from _devbuild.gen.types_asdl import lex_mode_t
   from core.ui import ErrorFormatter
@@ -43,7 +43,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
   [[ case.
   """
   def __init__(self, cmd_val):
-    # type: (cmd_value__Argv) -> None
+    # type: (cmd_value.Argv) -> None
     self.cmd_val = cmd_val
     self.i = 0
     self.n = len(cmd_val.argv)
@@ -185,7 +185,7 @@ class Test(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     """The test/[ builtin.
 
     The only difference between test and [ is that [ needs a matching ].

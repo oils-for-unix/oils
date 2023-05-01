@@ -47,7 +47,7 @@ from osh import word_compile
 
 from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from _devbuild.gen.runtime_asdl import cmd_value
   from core.state import MutableOpts, Mem, SearchPath
   from osh.cmd_eval import CommandEvaluator
 
@@ -61,7 +61,7 @@ class Boolean(vm._Builtin):
     self.status = status
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     # These ignore regular args, but shouldn't accept typed args.
     typed_args.DoesNotAccept(cmd_val.typed_args)
@@ -75,7 +75,7 @@ class Alias(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('alias', cmd_val)
     argv = arg_r.Rest()
 
@@ -112,7 +112,7 @@ class UnAlias(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('unalias', cmd_val)
     argv = arg_r.Rest()
 
@@ -149,7 +149,7 @@ class Set(vm._Builtin):
     self.mem = mem
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
 
     # TODO:
     # - How to integrate this with auto-completion?  Have to handle '+'.
@@ -201,7 +201,7 @@ class Shopt(vm._Builtin):
     self.cmd_ev = cmd_ev
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('shopt', cmd_val,
                                          accept_typed_args=True)
 
@@ -278,7 +278,7 @@ class Hash(vm._Builtin):
     self.search_path = search_path
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('hash', cmd_val)
     arg = arg_types.hash(attrs.attrs)
 
@@ -453,7 +453,7 @@ class GetOpts(vm._Builtin):
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()
 
@@ -506,7 +506,7 @@ class Echo(vm._Builtin):
     self.f = mylib.Stdout()
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     argv = cmd_val.argv[1:]
     attrs, arg_r = flag_spec.ParseLikeEcho('echo', cmd_val)
 
@@ -579,7 +579,7 @@ class Module(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('module', cmd_val)
     name, _ = arg_r.ReadRequired2('requires a name')
     #log('modules %s', self.modules)
@@ -609,7 +609,7 @@ class Use(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # skip 'use'
 
@@ -658,7 +658,7 @@ class Shvar(vm._Builtin):
     self.cmd_ev = cmd_ev  # To run blocks
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('shvar', cmd_val, accept_typed_args=True)
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
@@ -695,7 +695,7 @@ class PushRegisters(vm._Builtin):
     self.cmd_ev = cmd_ev  # To run blocks
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('push-registers', cmd_val,
                                      accept_typed_args=True)
 
@@ -727,7 +727,7 @@ class Fopen(vm._Builtin):
     self.cmd_ev = cmd_ev  # To run blocks
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('fopen', cmd_val,
                                      accept_typed_args=True)
 
@@ -770,7 +770,7 @@ if mylib.PYTHON:
       self.arena = cmd_ev.arena  # To extract code strings
 
     def Run(self, cmd_val):
-      # type: (cmd_value__Argv) -> int
+      # type: (cmd_value.Argv) -> int
 
       arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
 
@@ -888,7 +888,7 @@ if mylib.PYTHON:
       self.cmd_ev = cmd_ev  # To run blocks
 
     def Run(self, cmd_val):
-      # type: (cmd_value__Argv) -> int
+      # type: (cmd_value.Argv) -> int
       arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
       arg_r.Next()  # skip 'hay'
 

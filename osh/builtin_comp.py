@@ -21,7 +21,7 @@ _ = log
 
 from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, Proc
+  from _devbuild.gen.runtime_asdl import cmd_value, Proc
   from core.completion import Lookup, OptionState, Api, UserSpec
   from core.ui import ErrorFormatter
   from core.state import Mem
@@ -266,7 +266,7 @@ class Complete(vm._Builtin):
     self.comp_lookup = comp_lookup
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
@@ -310,7 +310,7 @@ class CompGen(vm._Builtin):
     self.spec_builder = spec_builder
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
@@ -367,7 +367,7 @@ class CompOpt(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
@@ -397,7 +397,7 @@ class CompAdjust(vm._Builtin):
     self.mem = mem
 
   def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
+    # type: (cmd_value.Argv) -> int
     arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
     arg_r.Next()
 
