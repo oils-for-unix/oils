@@ -7,7 +7,7 @@ from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue_e, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    cmd_value__Assign, scope_e, trace_e, trace_t, trace__External
+    cmd_value__Assign, scope_e, trace, trace_e, trace_t 
 )
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -372,7 +372,7 @@ class Tracer(object):
     with tagswitch(why) as case:
       # Synchronous cases
       if case(trace_e.External):
-        why = cast(trace__External, UP_why)
+        why = cast(trace.External, UP_why)
         buf.write('command %d:' % pid)
         _PrintArgv(why.argv, buf)
 

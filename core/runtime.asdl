@@ -124,6 +124,7 @@ module runtime
   | MoveFd(int target_fd)  # 3>&1-
   | CloseFd
   | HereDoc(str body)  # call this String and combine with Path?
+  generate [no_legacy__]
 
   # Evaluated version of syntax.Redir
   RedirValue = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
@@ -200,6 +201,7 @@ module runtime
   | PipelinePart             # async
   | ProcessSub               # async (other processes can be started)
   | HereDoc                  # async (multiple here docs per process)
+  generate [no_legacy__]
 
   # tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ

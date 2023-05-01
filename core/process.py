@@ -18,8 +18,7 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t, job_state_str, wait_status, wait_status_t,
-    RedirValue, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
-    redirect_arg__MoveFd, redirect_arg__HereDoc, value, value_e, value__Str,
+    RedirValue, redirect_arg, redirect_arg_e, value, value_e, value__Str,
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
     loc_t,
@@ -362,7 +361,7 @@ class FdState(object):
     with tagswitch(arg) as case:
 
       if case(redirect_arg_e.Path):
-        arg = cast(redirect_arg__Path, UP_arg)
+        arg = cast(redirect_arg.Path, UP_arg)
 
         if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
           # NOTE: This is different than >| because it respects noclobber, but
@@ -406,7 +405,7 @@ class FdState(object):
           self._PushDup(new_fd, redir_loc.Fd(2))
 
       elif case(redirect_arg_e.CopyFd):  # e.g. echo hi 1>&2
-        arg = cast(redirect_arg__CopyFd, UP_arg)
+        arg = cast(redirect_arg.CopyFd, UP_arg)
 
         if r.op_id == Id.Redir_GreatAnd:  # 1>&2
           self._PushDup(arg.target_fd, r.loc)
@@ -420,7 +419,7 @@ class FdState(object):
           raise NotImplementedError()
 
       elif case(redirect_arg_e.MoveFd):  # e.g. echo hi 5>&6-
-        arg = cast(redirect_arg__MoveFd, UP_arg)
+        arg = cast(redirect_arg.MoveFd, UP_arg)
         new_fd = self._PushDup(arg.target_fd, r.loc)
         if new_fd != NO_FD:
           posix.close(arg.target_fd)
@@ -437,7 +436,7 @@ class FdState(object):
         self._PushCloseFd(r.loc)
 
       elif case(redirect_arg_e.HereDoc):
-        arg = cast(redirect_arg__HereDoc, UP_arg)
+        arg = cast(redirect_arg.HereDoc, UP_arg)
 
         # NOTE: Do these descriptors have to be moved out of the range 0-9?
         read_fd, write_fd = posix.pipe()
