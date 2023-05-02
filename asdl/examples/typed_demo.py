@@ -8,18 +8,10 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen import typed_demo_asdl
-
-op_id_e = typed_demo_asdl.op_id_e
-
-cflow = typed_demo_asdl.cflow
-cflow_e = typed_demo_asdl.cflow_e
-cflow__Return = typed_demo_asdl.cflow__Return
-source_location = typed_demo_asdl.source_location
-
-word = typed_demo_asdl.word
-bool_expr = typed_demo_asdl.bool_expr
-bool_expr_e = typed_demo_asdl.bool_expr_e
+from _devbuild.gen.typed_demo_asdl import (
+    cflow, cflow_e, op_id_e, source_location, word, bool_expr, bool_expr_e,
+    Dicts
+)
 
 from typing import List, cast
 
@@ -65,7 +57,7 @@ def main(argv):
       #reveal_type(n)
       #n2 = cast(cflow.Return, n)
 
-      n2 = cast(cflow__Return, n)
+      n2 = cast(cflow.Return, n)
       #reveal_type(n2)
 
       print('status = %s' % n2.status)
@@ -85,7 +77,7 @@ def main(argv):
   #b4 = bool_expr.LogicalBinary(op_id_e.Star, b1, 'a')
 
   # default should be None to avoid allocation?
-  m = typed_demo_asdl.Dicts.CreateNull(alloc_lists=True)
+  m = Dicts.CreateNull(alloc_lists=True)
 
   # assert m.ss is None, m.ss
   # assert m.ib is None, m.ib
