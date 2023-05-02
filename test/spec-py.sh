@@ -74,4 +74,17 @@ interactive-osh-bash() {
   test/spec-runner.sh all-parallel interactive osh-bash interactive-osh-bash
 }
 
+all-and-smoosh() {
+  ### Published with each release
+
+  # Note: MAX_PROCS=1 prevents [#oil-dev > Random Spec Test Stoppages]
+  # Still need to fix that bug
+  MAX_PROCS=1 osh-all
+  oil-all
+
+  # These aren't all green/yellow yet, and are slow.
+  test/spec.sh smoosh-html
+  test/spec.sh smoosh-hang-html
+}
+
 run-task "$@"

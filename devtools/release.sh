@@ -84,13 +84,11 @@ auto-machine1() {
   sudo -k; sudo true  # clear and re-cache credentials
 
   if test -z "$resume"; then
-    # Note: spec tests run here
-    # _test-release-build -> _spec-release
     $0 build-and-test
   fi 
 
   if test -z "$resume2"; then
-    _spec-release
+    _spec-sanity-check
   fi
 
   if test -z "$resume2"; then
@@ -195,13 +193,14 @@ test-oil-tar() {
 }
 
 _release-build() {
-  # NOTE: deps/from-tar.sh {configre,build}-python is assumed
+  # NOTE: deps/from-tar.sh {configure,build}-python is assumed
 
   # Build the oil tar
   $0 oil
 
   test-oil-tar
 
+  # For _spec-sanity-check
   ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
   ln -s -f --no-target-directory -v oil.ovm $OIL_RELEASE_BINARY
 }
@@ -247,14 +246,13 @@ EOF
   tea/run.sh run-for-release
 }
 
-_spec-release() {
-  # Just test the release build (as opposed to Oil under CPython, which comes
-  # later.)
-  export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
-  test/spec.sh osh-all
-  test/spec.sh oil-all
+_spec-sanity-check() {
+  # Quick early test for _bin/osh and _bin/oil
 
-  # Eventually we should run spec tests against the oils-for-unix tarball here
+  # Note: MAX_PROCS=1 prevents [#oil-dev > Random Spec Test Stoppages]
+  # Still need to fix that bug
+  MAX_PROCS=1 NUM_SPEC_TASKS=2 OSH_LIST="$OSH_RELEASE_BINARY" test/spec-py.sh osh-all
+  MAX_PROCS=1 NUM_SPEC_TASKS=2 OIL_LIST="$OIL_RELEASE_BINARY" test/spec-py.sh oil-all
 }
 
 spec-all() {
@@ -268,7 +266,7 @@ spec-all() {
   # 8/2019: Added smoosh
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
   export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
-  test/spec.sh all-and-smoosh
+  test/spec-py.sh all-and-smoosh
 
   # Build $OSH_CPP_BENCHMARK_DATA
   _build-oils-benchmark-data

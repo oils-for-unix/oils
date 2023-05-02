@@ -707,17 +707,6 @@ html-demo() {
   echo "Wrote $out"
 }
 
-all-and-smoosh() {
-  ### Run everything that we can publish
-
-  osh-all
-  oil-all
-
-  # These aren't all green/yellow yet, and are slow.
-  smoosh-html
-  smoosh-hang-html
-}
-
 #
 # Hay is part of the Oil suite
 #
