@@ -462,7 +462,7 @@ class OilEvaluator(object):
 
     raise error.InvalidType('Expected Int', loc.Missing())
 
-  def _MaybeConvertStr(self, val):
+  def _ValueToNumber(self, val):
     # type: (value_t) -> value_t
     """
     If val is a number-looking string, it will be converted to the appropriate
@@ -619,8 +619,8 @@ class OilEvaluator(object):
 
   def _ArithNumeric(self, left, right, op):
     # type: (value_t, value_t, Id_t) -> value_t
-    left = self._MaybeConvertStr(left)
-    right = self._MaybeConvertStr(right)
+    left = self._ValueToNumber(left)
+    right = self._ValueToNumber(right)
     UP_left = left
     UP_right = right
 
@@ -821,10 +821,8 @@ class OilEvaluator(object):
     left = _PyObjToValue(self._EvalExpr(node.left))
     right = _PyObjToValue(self._EvalExpr(node.right))
 
-    if node.op.id == Id.Arith_Plus \
-        or node.op.id == Id.Arith_Minus \
-        or node.op.id == Id.Arith_Star \
-        or node.op.id == Id.Arith_Slash:
+    if node.op.id in \
+      (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
       try:
         return self._ArithNumeric(left, right, node.op.id)
       except ZeroDivisionError:
@@ -844,15 +842,12 @@ class OilEvaluator(object):
       return self._Concat(left, right)
 
     # Bitwise
-    if node.op.id == Id.Arith_Amp \
-        or node.op.id == Id.Arith_Pipe \
-        or node.op.id == Id.Arith_Caret \
-        or node.op.id == Id.Arith_DGreat \
-        or node.op.id == Id.Arith_DLess:
+    if node.op.id in \
+      (Id.Arith_Amp, Id.Arith_Pipe, Id.Arith_Caret, Id.Arith_DGreat, Id.Arith_DLess):
       return self._ArithBitwise(left, right, node.op.id)
 
     # Logical
-    if node.op.id == Id.Expr_And or node.op.id == Id.Expr_Or:
+    if node.op.id in (Id.Expr_And, Id.Expr_Or):
       return self._ArithLogical(left, right, node.op.id)
 
     raise NotImplementedError(node.op.id)
