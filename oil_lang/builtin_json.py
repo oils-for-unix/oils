@@ -5,6 +5,7 @@ from _devbuild.gen.runtime_asdl import value, scope_e, cmd_value
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core.error import e_usage
+from core import pyos
 from core import state
 from core import vm
 from frontend import flag_spec
@@ -13,6 +14,7 @@ from frontend import location
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
+from osh import builtin_misc
 
 import sys
 import yajl
@@ -36,23 +38,6 @@ class Json(vm._Builtin):
     self.mem = mem
     self.expr_ev = expr_ev
     self.errfmt = errfmt
-
-    # file object passed to yajl.load()
-    #
-    # 2023-05: This was first a local, then a global.  I changed it to be a
-    # member.
-
-    # I can no longer reproduce this bug with a local, but we're going to
-    # remove yajl anyway so it doesn't matter.
-
-    # Local var bug: we get EBADF on a redirect.  A Py_DECREF closes the file,
-    # which we don't want, because the redirect is responsible for freeing it.
-    #
-    # https://github.com/oilshell/oil/issues/675
-    self.stdin_f = posix.fdopen(0)
-
-    # Doesn't work!
-    #self.stdin_f = mylib.Stdin()
 
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
@@ -105,7 +90,13 @@ class Json(vm._Builtin):
         raise error.Usage('got invalid variable name %r' % var_name, name_loc)
 
       try:
-        obj = yajl.load(self.stdin_f)
+        contents = builtin_misc.ReadAll()
+      except pyos.ReadError as e:  # different paths for read -d, etc.
+        self.errfmt.PrintMessage("read error: %s" % posix.strerror(e.err_num))
+        return 1
+
+      try:
+        obj = yajl.loads(contents)
       except ValueError as e:
         self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
         return 1

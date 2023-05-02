@@ -236,7 +236,7 @@ def _ReadLineSlowly(cmd_ev):
   return pyutil.ChArrayToString(ch_array)
 
 
-def _ReadAll():
+def ReadAll():
   # type: () -> str
   """Read all of stdin.
 
@@ -318,7 +318,7 @@ class Read(vm._Builtin):
 
   def _All(self, var_name):
     # type: (str) -> int
-    contents = _ReadAll()
+    contents = ReadAll()
 
     # No error conditions?
 
@@ -331,7 +331,7 @@ class Read(vm._Builtin):
     try:
       status = self._Run(cmd_val)
     except pyos.ReadError as e:  # different paths for read -d, etc.
-      # location defaults to 'read'
+      # TODO: need location info
       self.errfmt.PrintMessage("read error: %s" % posix.strerror(e.err_num))
       status = 1
     return status
