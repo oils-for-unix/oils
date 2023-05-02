@@ -263,7 +263,11 @@ module syntax
 
   # Each arm tests one word against multiple words
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
-  IfArm = (Token keyword, condition cond, Token? then_kw, List[command] action, List[int] spids)
+
+  # Each if arm starts with either an "if" or "elif" keyword
+  # In YSH, the then keyword is not used (replaced by braces {})
+  IfArm = (Token keyword, condition cond, Token? then_kw, List[command] action,
+  	   List[int] spids)
 
   for_iter =
     Args                      # for x; do echo $x; done # implicit "$@"
