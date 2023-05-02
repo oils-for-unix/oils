@@ -1292,8 +1292,8 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
-    for_kw = _KeywordToken(self.cur_word)
     self._Eat(Id.KW_For)
+    for_kw = _KeywordToken(self.cur_word)
 
     self._Peek()
     if self.c_id == Id.Op_DLeftParen:
@@ -1478,7 +1478,7 @@ class CommandParser(object):
     arms = if_node.arms
 
     while self.c_id == Id.KW_Elif:
-      elif_spid = word_.LeftMostSpanForWord(self.cur_word)
+      elif_kw = _KeywordToken(self.cur_word)
       self._Next()  # skip elif
       if (self.parse_opts.parse_paren() and
           self.w_parser.LookPastSpace() == Id.Op_LParen):
@@ -1494,7 +1494,7 @@ class CommandParser(object):
       body = self.ParseBraceGroup()
       self._Peek()
 
-      arm = IfArm(cond, body.children, [elif_spid])
+      arm = IfArm(elif_kw, cond, None, body.children, [elif_kw.span_id])
       arms.append(arm)
 
     self._Peek()
@@ -1508,8 +1508,8 @@ class CommandParser(object):
 
     if_node.spids.append(else_spid)
 
-  def _ParseOilIf(self, if_spid, cond):
-    # type: (int, condition_t) -> command.If
+  def _ParseOilIf(self, if_kw, cond):
+    # type: (Token, condition_t) -> command.If
     """
     if test -f foo {
                  # ^ we parsed up to here
@@ -1528,11 +1528,12 @@ class CommandParser(object):
     Lit_RBrace?  Maybe this is pre-parsing step in teh WordParser?
     """
     if_node = command.If.CreateNull(alloc_lists=True)
+    if_node.if_kw = if_kw
 
     body1 = self.ParseBraceGroup()
     # Every arm has 1 spid, unlike shell-style
     # TODO: We could get the spids from the brace group.
-    arm = IfArm(cond, body1.children, [if_spid])
+    arm = IfArm(if_kw, cond, None, body1.children, [if_kw.span_id])
 
     if_node.arms.append(arm)
 
@@ -1554,28 +1555,31 @@ class CommandParser(object):
 
     self._Peek()
     while self.c_id == Id.KW_Elif:
-      elif_spid = word_.LeftMostSpanForWord(self.cur_word)
+      elif_kw = _KeywordToken(self.cur_word)
 
       self._Next()  # skip elif
       commands = self._ParseCommandList()
       cond = condition.Shell(commands.children)
 
-      then_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Eat(Id.KW_Then)
+      then_kw = _KeywordToken(self.cur_word)
 
       body = self._ParseCommandList()
-      arm = IfArm(cond, body.children, [elif_spid, then_spid])
+      arm = IfArm(elif_kw, cond, then_kw, body.children, [elif_kw.span_id, then_kw.span_id])
 
       arms.append(arm)
 
     if self.c_id == Id.KW_Else:
-      else_spid = word_.LeftMostSpanForWord(self.cur_word)
+      else_kw = _KeywordToken(self.cur_word)
+      else_spid = else_kw.span_id
       self._Next()
       body = self._ParseCommandList()
       if_node.else_action = body.children
     else:
+      else_kw = None
       else_spid = runtime.NO_SPID
 
+    if_node.else_kw = else_kw
     if_node.spids.append(else_spid)
 
   def ParseIf(self):
@@ -1583,8 +1587,9 @@ class CommandParser(object):
     """
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
-    if_spid = _KeywordSpid(self.cur_word)
+    if_kw = _KeywordToken(self.cur_word)
     if_node = command.If.CreateNull(alloc_lists=True)
+    if_node.if_kw = if_kw
     self._Next()  # skip if
 
     # Remove ambiguity with if cd / {
@@ -1601,13 +1606,13 @@ class CommandParser(object):
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       # if foo {
-      return self._ParseOilIf(if_spid, cond)
+      return self._ParseOilIf(if_kw, cond)
 
-    then_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
+    then_kw = _KeywordToken(self.cur_word)
     body = self._ParseCommandList()
 
-    arm = IfArm(cond, body.children, [if_spid, then_spid])
+    arm = IfArm(if_kw, cond, then_kw, body.children, [if_kw.span_id, then_kw.span_id])
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
@@ -1615,10 +1620,11 @@ class CommandParser(object):
     else:
       if_node.spids.append(runtime.NO_SPID)  # no else spid
 
-    fi_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Fi)
+    fi_kw = _KeywordToken(self.cur_word)
 
-    if_node.spids.append(fi_spid)
+    if_node.fi_kw = fi_kw
+    if_node.spids.append(fi_kw.span_id)
     return if_node
 
   def ParseTime(self):

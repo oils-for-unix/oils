@@ -263,9 +263,13 @@ module syntax
 
   # Each arm tests one word against multiple words
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
-  IfArm = (condition cond, List[command] action, List[int] spids)
 
-  for_iter = 
+  # Each if arm starts with either an "if" or "elif" keyword
+  # In YSH, the then keyword is not used (replaced by braces {})
+  IfArm = (Token keyword, condition cond, Token? then_kw, List[command] action,
+  	   List[int] spids)
+
+  for_iter =
     Args                      # for x; do echo $x; done # implicit "$@"
   | Words(List[word] words)   # for x in 'foo' *.py { echo $x }
                               # like ShArrayLiteral, but no location for %(
@@ -285,7 +289,7 @@ module syntax
   # Retain references to lines
   BlockArg = (BraceGroup brace_group, List[SourceLine] lines)
 
-  command = 
+  command =
     NoOp
     # Note: do_fork is semantic, not syntactic
   | Simple(List[word] words, List[Redir] redirects, List[EnvPair] more_env,
@@ -318,7 +322,8 @@ module syntax
   | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
             arith_expr? update, command? body, List[Redir] redirects)
   | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
-  | If(List[IfArm] arms, List[command] else_action, List[Redir] redirects)
+  | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
+       Token? fi_kw, List[Redir] redirects)
   | Case(word to_match, List[CaseArm] arms, List[Redir] redirects)
   | ShFunction(str name, command body)
   | TimeBlock(command pipeline)
