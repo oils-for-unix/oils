@@ -1528,6 +1528,7 @@ class CommandParser(object):
     Lit_RBrace?  Maybe this is pre-parsing step in teh WordParser?
     """
     if_node = command.If.CreateNull(alloc_lists=True)
+    if_node.if_kw = if_kw
 
     body1 = self.ParseBraceGroup()
     # Every arm has 1 spid, unlike shell-style
