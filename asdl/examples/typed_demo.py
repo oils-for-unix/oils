@@ -9,8 +9,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.typed_demo_asdl import (
-    cflow, cflow_e, op_id_e, source_location, word, bool_expr, bool_expr_e,
-    Dicts
+    cflow, cflow_e, op_id_e, source_location, word, bool_expr, Dicts
 )
 
 from typing import List, cast
