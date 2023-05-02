@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
-    loc, loc_t, Token, word_part, word_part_t,
+    loc, loc_t, re, re_t, Token, word_part, word_part_t,
     SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub, ShArrayLiteral,
     CommandSub,
 
@@ -30,7 +30,7 @@ from core import state
 from frontend import consts
 from frontend import match
 from frontend import location
-from oil_lang import objects
+from oil_lang import objects, regex_translate
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, tagswitch
@@ -126,10 +126,17 @@ def _PyObjToValue(val):
     return value.Str(val)
 
   elif isinstance(val, list):
-    return value.List(val)
+    return value.List([_PyObjToValue(elem) for elem in val])
 
   elif isinstance(val, dict):
-    return value.Dict(val)
+      return value.Dict({k: _PyObjToValue(v) for k, v in val.items()})
+
+  elif isinstance(val, objects.Regex):
+    eggex = value.Eggex(val.regex, '')
+    if val.as_ere is not None:
+      eggex.as_ere = val.as_ere
+
+    return eggex
 
   else:
     raise NotImplementedError()
@@ -176,9 +183,155 @@ def _ValueToPyObj(val):
       val = cast(value.Dict, UP_val)
       return val.d
 
+    elif case(value_e.Eggex):
+      val = cast(value.Eggex, UP_val)
+      return objects.Regex(val.expr)
+
     else:
       raise NotImplementedError()
+
+
+def _ValuesEqual(left, right):
+  # type: (value_t, value_t) -> bool
+  if left.tag() != right.tag():
+    return False
+
+  UP_left = left
+  UP_right = right
+  with tagswitch(left) as case:
+    if case(value_e.Undef):
+      return True
+
+    elif case(value_e.Bool):
+      left = cast(value.Bool, UP_left)
+      right = cast(value.Bool, UP_right)
+      return left.b == right.b
+
+    elif case(value_e.Int):
+      left = cast(value.Int, UP_left)
+      right = cast(value.Int, UP_right)
+      return left.i == right.i
+
+    elif case(value_e.Float):
+      left = cast(value.Float, UP_left)
+      right = cast(value.Float, UP_right)
+      return left.f == right.f
+
+    elif case(value_e.Str):
+      left = cast(value.Str, UP_left)
+      right = cast(value.Str, UP_right)
+      return left.s == right.s
+
+    elif case(value_e.MaybeStrArray):
+      left = cast(value.MaybeStrArray, UP_left)
+      right = cast(value.MaybeStrArray, UP_right)
+      if len(left.strs) != len(right.strs):
+        return False
+
+      for i in xrange(0, len(left.strs)):
+        if left.strs[i] != right.strs[i]:
+          return False
+
+      return True
+
+    elif case(value_e.List):
+      left = cast(value.List, UP_left)
+      right = cast(value.List, UP_right)
+      if len(left.items) != len(right.items):
+        return False
+
+      for i in xrange(0, len(left.items)):
+        if not _ValuesEqual(left.items[i], right.items[i]):
+          return False
+
+      return True
+
+    elif case(value_e.AssocArray):
+      left = cast(value.Dict, UP_left)
+      right = cast(value.Dict, UP_right)
+      if len(left.d) != len(right.d):
+        return False
+
+      for k in left.d.keys():
+        if not k in right.d or right.d[k] != left.d[k]:
+          return False
+
+      return True
+
+    elif case(value_e.Dict):
+      left = cast(value.Dict, UP_left)
+      right = cast(value.Dict, UP_right)
+      if len(left.d) != len(right.d):
+        return False
+
+      for k in left.d.keys():
+        if not k in right.d or not _ValuesEqual(right.d[k], left.d[k]):
+          return False
+
+      return True
+
+  raise NotImplementedError()
+
+
+def _ValueContains(needle, haystack):
+  # type: (value_t, value_t) -> bool
+  """ haystack must be a collection type. """
+
+  UP_needle = needle
+  UP_haystack = haystack
+  with tagswitch(haystack) as case:
+    if case(value_e.List):
+      haystack = cast(value.List, UP_haystack)
+      for item in haystack.items:
+        if _ValuesEqual(item, needle):
+          return True
+
+      return False
+
+    elif case(value_e.MaybeStrArray):
+      haystack = cast(value.MaybeStrArray, UP_haystack)
+      if needle.tag() != value_e.Str:
+        raise error.InvalidType('Expected Str', loc.Missing())
+
+      needle = cast(value.Str, UP_needle)
+      for s in haystack.strs:
+        if s == needle.s:
+          return True
+
+      return False
+
+    elif case(value_e.Dict):
+      haystack = cast(value.Dict, UP_haystack)
+      if needle.tag() != value_e.Str:
+        raise error.InvalidType('Expected Str', loc.Missing())
+
+      needle = cast(value.Str, UP_needle)
+      return needle.s in haystack.d
+
+    elif case(value_e.AssocArray):
+      haystack = cast(value.AssocArray, UP_haystack)
+      if needle.tag() != value_e.Str:
+        raise error.InvalidType('Expected Str', loc.Missing())
+
+      needle = cast(value.Str, UP_needle)
+      return needle.s in haystack.d
+
+    else:
+      raise error.InvalidType('Expected List or Dict', loc.Missing())
+
+  return False
   
+
+def AsPosixEre(eggex):
+  # type: (value.Eggex) -> str
+  if len(eggex.as_ere):
+    return eggex.as_ere
+
+  parts = [] # type: List[str]
+  regex_translate.AsPosixEre(eggex.expr, parts)
+  eggex.as_ere = ''.join(parts)
+  return eggex.as_ere
+
 
 class OilEvaluator(object):
   """Shared between arith and bool evaluators.
@@ -244,24 +397,37 @@ class OilEvaluator(object):
 
   # Copied from BoolEvaluator
   def _EvalMatch(self, left, right, set_match_result):
-    # type: (str, Any, bool) -> bool
+    # type: (value_t, value_t, bool) -> bool
     """
     Args:
       set_match_result: Whether to assign
     """
-    if isinstance(right, str):
-      pass
-    elif isinstance(right, objects.Regex):
-      right = right.AsPosixEre()
-    else:
-      raise RuntimeError(
-          "RHS of ~ should be string or Regex (got %s)" % right.__class__.__name__)
+    UP_right = right
+    right_s = None # type: str
+    with tagswitch(right) as case:
+      if case(value_e.Str):
+        right = cast(value.Str, UP_right)
+        right_s = right.s
+        pass
+      elif case(value_e.Eggex):
+        right = cast(value.Eggex, UP_right)
+        right_s = AsPosixEre(right)
+      else:
+        raise RuntimeError(
+            "RHS of ~ should be string or Regex (got %s)" % right.__class__.__name__)
     
+    UP_left = left
+    with tagswitch(left) as case:
+      if case(value_e.Str):
+        left = cast(value.Str, UP_left)
+      else:
+        raise error.InvalidType('LHS must be a string', loc.Missing())
+
     # TODO:
     # - libc_regex_match should populate _start() and _end() too (out params?)
     # - What is the ordering for named captures?  See demo/ere*.sh
 
-    matches = libc.regex_match(right, left)
+    matches = libc.regex_match(right_s, left.s)
     if matches:
       if set_match_result:
         self.mem.SetMatches(matches)
@@ -866,70 +1032,145 @@ class OilEvaluator(object):
     upper = self._EvalExpr(node.upper) if node.upper else None
     return slice(lower, upper)
 
-  def _EvalCompare(self, node):
-    # type: (expr.Compare) -> Any # XXX
+  def _CompareNumeric(self, left, right, op):
+    # type: (value_t, value_t, Id_t) -> bool
+    left = self._ValueToNumber(left)
+    right = self._ValueToNumber(right)
+    UP_left = left
+    UP_right = right
 
-    left = self._EvalExpr(node.left)
+    if left.tag() != right.tag():
+      raise error.InvalidType('Mismatched types', loc.Missing())
+
+    with tagswitch(left) as case:
+      if case(value_e.Int):
+        left = cast(value.Int, UP_left)
+        right = cast(value.Int, UP_right)
+        if op == Id.Arith_Less:
+          return left.i < right.i
+        elif op == Id.Arith_Great:
+          return left.i > right.i
+        elif op == Id.Arith_LessEqual:
+          return left.i <= right.i
+        elif op == Id.Arith_GreatEqual:
+          return left.i >= right.i
+
+      elif case(value_e.Float):
+        left = cast(value.Float, UP_left)
+        right = cast(value.Float, UP_right)
+        if op == Id.Arith_Less:
+          return left.f < right.f
+        elif op == Id.Arith_Great:
+          return left.f > right.f
+        elif op == Id.Arith_LessEqual:
+          return left.f <= right.f
+        elif op == Id.Arith_GreatEqual:
+          return left.f >= right.f
+
+      raise error.InvalidType('Expected Int or Float operands', loc.Missing())
+
+  def _EvalCompare(self, node):
+    # type: (expr.Compare) -> value_t
+
+    left = _PyObjToValue(self._EvalExpr(node.left))
     result = True  # Implicit and
     for op, right_expr in zip(node.ops, node.comparators):
 
-      right = self._EvalExpr(right_expr)
+      right = _PyObjToValue(self._EvalExpr(right_expr))
 
-      if op.id == Id.Arith_Less:
-        result = self._ToNumber(left) < self._ToNumber(right)
-      elif op.id == Id.Arith_Great:
-        result = self._ToNumber(left) > self._ToNumber(right)
-      elif op.id == Id.Arith_LessEqual:
-        result = self._ToNumber(left) <= self._ToNumber(right)
-      elif op.id == Id.Arith_GreatEqual:
-        result = self._ToNumber(left) >= self._ToNumber(right)
+      if op.id in \
+        (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual):
+        result = self._CompareNumeric(left, right, op.id)
 
       elif op.id == Id.Expr_TEqual:
-        result = left == right
+        if left.tag() != right.tag():
+          result = False
+        else:
+          result = _ValuesEqual(left, right)
       elif op.id == Id.Expr_NotDEqual:
-        result = left != right
+        if left.tag() != right.tag():
+          result = True
+        else:
+          result = not _ValuesEqual(left, right)
 
       elif op.id == Id.Expr_In:
-        result = left in right
+        result = _ValueContains(left, right)
       elif op.id == Id.Node_NotIn:
-        result = left not in right
+        result = not _ValueContains(left, right)
 
       elif op.id == Id.Expr_Is:
+        if left.tag() != right.tag():
+          raise error.InvalidType('Mismatched types', op)
+
         result = left is right
       elif op.id == Id.Node_IsNot:
+        if left.tag() != right.tag():
+          raise error.InvalidType('Mismatched types', op)
+
         result = left is not right
 
       elif op.id == Id.Expr_DTilde:
         # no extglob in Oil language; use eggex
-        return libc.fnmatch(right, left)
+        if left.tag() != value_e.Str:
+          raise error.InvalidType('LHS must be Str', op)
+
+        if right.tag() != value_e.Str:
+          raise error.InvalidType('RHS must be Str', op)
+
+        UP_left = left
+        UP_right = right
+        left = cast(value.Str, UP_left)
+        right = cast(value.Str, UP_right)
+        return value.Bool(libc.fnmatch(right.s, left.s))
+
       elif op.id == Id.Expr_NotDTilde:
-        return not libc.fnmatch(right, left)
+        if left.tag() != value_e.Str:
+          raise error.InvalidType('LHS must be Str', op)
+
+        if right.tag() != value_e.Str:
+          raise error.InvalidType('RHS must be Str', op)
+
+        UP_left = left
+        UP_right = right
+        left = cast(value.Str, UP_left)
+        right = cast(value.Str, UP_right)
+        return value.Bool(not libc.fnmatch(right.s, left.s))
 
       elif op.id == Id.Expr_TildeDEqual:
         # Approximate equality
-        if not isinstance(left, str):
+        UP_left = left
+        if left.tag() != value_e.Str:
           e_die('~== expects a string on the left', op)
 
-        left = left.strip()
-        if isinstance(right, str):
-          return left == right
+        left = cast(value.Str, UP_left)
+        left2 = left.s.strip()
 
-        if isinstance(right, bool):  # Python quirk: must come BEFORE int
-          left = left.lower()
-          if left in ('true', '1'):
-            left2 = True
-          elif left in ('false', '0'):
-            left2 = False
-          else:
-            return False
+        UP_right = right
+        with tagswitch(right) as case:
+          if right.tag() == value_e.Str:
+            right = cast(value.Str, UP_right)
+            return value.Bool(left2 == right.s)
 
-          log('left %r left2 %r', left, left2)
-          return left2 == right
+          elif case(value_e.Bool):
+            right = cast(value.Bool, UP_right)
+            left2 = left2.lower()
+            lb = False
+            if left2 in ('true', '1'):
+              lb = True
+            elif left2 in ('false', '0'):
+              lb = False
+            else:
+              return value.Bool(False)
 
-        if isinstance(right, int):
-          if not left.isdigit():
-            return False
-          return int(left) == right
+            log('left %r left2 %r', left, left2)
+            return value.Bool(lb == right.b)
+
+          elif case(value_e.Int):
+            right = cast(value.Int, UP_right)
+            if not left2.isdigit():
+              return value.Bool(False)
+
+            return value.Bool(int(left2) == right.i)
 
         e_die('~== expects Str, Int, or Bool on the right', op)
 
@@ -949,11 +1190,11 @@ class OilEvaluator(object):
           e_die_status(2, 'Invalid regex %r' % right, op)
 
       if not result:
-        return result
+        return value.Bool(result)
 
       left = right
 
-    return result
+    return value.Bool(result)
 
   def _EvalIfExp(self, node):
     # type: (expr.IfExp) -> Any # XXX
@@ -1110,7 +1351,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.Compare):
         node = cast(expr.Compare, UP_node)
-        return self._EvalCompare(node)
+        return _ValueToPyObj(self._EvalCompare(node))
    
       elif case(expr_e.IfExp):
         node = cast(expr.IfExp, UP_node)
@@ -1196,7 +1437,7 @@ class OilEvaluator(object):
         node = cast(expr.RegexLiteral, UP_node)
 
         # TODO: Should this just be an object that ~ calls?
-        return objects.Regex(self.EvalRegex(node.regex))
+        return _ValueToPyObj(value.Eggex(self.EvalRegex(node.regex), ''))
 
       else:
         raise NotImplementedError(node.__class__.__name__)
