@@ -332,7 +332,7 @@ build-and-test() {
 }
 
 _install() {
-  test/spec.sh install-shells-with-apt
+  test/spec-bin.sh install-shells-with-apt
 
   # A subset of build/py.sh ubuntu-deps.  (Do we need build-essential?)
   sudo apt install python-dev

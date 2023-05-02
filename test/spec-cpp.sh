@@ -13,15 +13,15 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source build/dev-shell.sh  # PYTHONPATH
+source devtools/run-task.sh
 source test/common.sh  # html-head
 source test/spec-common.sh
 source web/table/html.sh
 
 shopt -s failglob  # to debug TSV expansion failure below
-
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-readonly REPO_ROOT
 
 OSH_PY=$REPO_ROOT/bin/osh
 YSH_PY=$REPO_ROOT/bin/ysh
@@ -370,4 +370,4 @@ repro-all() {
   OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh $0 all
 }
 
-"$@"
+run-task "$@"

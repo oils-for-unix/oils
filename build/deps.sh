@@ -89,7 +89,7 @@ install-ubuntu-packages() {
     "${PY3_BUILD_DEPS[@]}"
   set +x
 
-  test/spec.sh install-shells-with-apt
+  test/spec-bin.sh install-shells-with-apt
 }
 
 download-to() {

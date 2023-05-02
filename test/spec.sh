@@ -8,6 +8,8 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source test/common.sh
 source test/spec-common.sh
 source devtools/run-task.sh
@@ -16,181 +18,23 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.
 fi
 
-REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
-readonly REPO_ROOT
-
-# TODO: Get rid of this indirection.
+# TODO: Just use 'dash bash' and $PATH
 readonly DASH=dash
 readonly BASH=bash
 readonly MKSH=mksh
 readonly ZSH=zsh
 readonly BUSYBOX_ASH=ash
 
-# Usage: callers can override OSH_LIST to test on more than one version.
-#
-# Example:
-# OSH_LIST='bin/osh _bin/osh' test/spec.sh all
-
-readonly OSH_CPYTHON="$REPO_ROOT/bin/osh"
-readonly OSH_OVM=${OSH_OVM:-$REPO_ROOT/_bin/osh}
-
-OSH_LIST=${OSH_LIST:-}  # A space-separated list.
-
-if test -z "$OSH_LIST"; then
-  # By default, run with both, unless $OSH_OVM isn't available.
-  if test -e $OSH_OVM; then
-    # TODO: Does it make sense to copy the binary to an unrelated to directory,
-    # like /tmp?  /tmp/{oil.ovm,osh}.
-    OSH_LIST="$OSH_CPYTHON $OSH_OVM"
-  else
-    OSH_LIST="$OSH_CPYTHON"
-  fi
-fi
-
-readonly OIL_CPYTHON="$REPO_ROOT/bin/oil"
-readonly OIL_OVM=${OIL_OVM:-$REPO_ROOT/_bin/oil}
-
-OIL_LIST=${OIL_LIST:-}  # A space-separated list.
-
-if test -z "$OIL_LIST"; then
-  # By default, run with both, unless $OIL_OVM isn't available.
-  if test -e $OIL_OVM; then
-    OIL_LIST="$OIL_CPYTHON $OIL_OVM"
-  else
-    OIL_LIST="$OIL_CPYTHON"
-  fi
-fi
-
 # ash and dash are similar, so not including ash by default.  zsh is not quite
 # POSIX.
 readonly REF_SHELLS=($DASH $BASH $MKSH)
 
-#
-# Setup (TODO: Delete this once test/spec-bin.sh binaries are deployed)
-#
+check-survey-shells() {
+  ### Make sure bash, zsh, OSH, etc. exist
 
-link-busybox-ash() {
-  ### Non-hermetic ash only used for benchmarks / Soil dev-minimal
+  # Note: yash isn't here, but it is used in a couple tests
 
-  # Could delete this at some point
-  mkdir -p _tmp/shells
-  ln -s -f --verbose "$(which busybox)" _tmp/shells/ash
-}
-
-# dash and bash should be there by default on Ubuntu.
-install-shells-with-apt() {
-  ### Non-hermetic shells; test/spec-bin.sh replaces this for most purposes
-
-  set -x  # show what needs sudo
-  sudo apt install busybox-static mksh zsh
-  set +x
-  link-busybox-ash
-}
-
-maybe-show() {
-  local path=$1
-  if test -f $path; then
-    echo "--- $path ---"
-    cat $path
-    echo
-  fi
-}
-
-oil-version-text() {
-  date-and-git-info
-
-  for bin in $OIL_LIST; do
-    echo ---
-    echo "\$ $bin --version"
-    $bin --version
-    echo
-  done
-
-  maybe-show /etc/alpine-release
-  maybe-show /etc/debian_version
-  maybe-show /etc/lsb-release
-}
-
-tea-version-text() {
-  oil-version-text
-}
-
-# This has to be in test/spec because it uses $OSH_LIST, etc.
-osh-version-text() {
-
-  local -a osh_list
-  if test $# -eq 0; then
-    osh_list=( $OSH_LIST )  # word splitting
-  else
-    osh_list=( "$@" )  # explicit arguments
-  fi
-
-  date-and-git-info
-
-  for bin in "${osh_list[@]}"; do
-    echo ---
-    echo "\$ $bin --version"
-    $bin --version
-    echo
-  done
-
-  # $BASH and $ZSH should exist
-
-  echo ---
-  bash --version | head -n 1
-  ls -l $(type -p bash)
-  echo
-
-  echo ---
-  zsh --version | head -n 1
-  ls -l $(type -p zsh)
-  echo
-
-  # No -v or -V or --version.  TODO: Only use hermetic version on release.
-
-  echo ---
-  local my_dash
-  my_dash=$(type -p dash)
-  if test -f $my_dash; then
-    ls -l $my_dash
-  else
-    dpkg -s dash | egrep '^Package|Version'
-  fi
-  echo
-
-  echo ---
-  local my_mksh
-  my_mksh=$(type -p mksh)
-  if test -f $my_mksh; then
-    ls -l $my_mksh
-  else
-    dpkg -s mksh | egrep '^Package|Version'
-  fi
-  echo
-
-  echo ---
-  local my_busybox
-  my_busybox=$(type -p busybox)
-  if test -f $my_busybox; then
-    { $my_busybox || true; } | head -n 1
-    ls -l $my_busybox
-  else
-    # Need || true because of pipefail
-    { busybox || true; } | head -n 1
-  fi
-  echo
-
-  maybe-show /etc/debian_version
-  maybe-show /etc/lsb-release
-  maybe-show /etc/alpine-release
-}
-
-osh-minimal-version-text() {
-  osh-version-text
-}
-
-interactive-version-text() {
-  osh-version-text
+  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
 }
 
 #
@@ -212,79 +56,6 @@ trace-var-sub() {
 
   ls -l $out
   head $out/*.cover
-}
-
-check-survey-shells() {
-  ### Make sure bash, zsh, OSH, etc. exist
-
-  # Note: yash isn't here, but it is used in a couple tests
-
-  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
-}
-
-#
-# Run All tests
-#
-
-osh-all() {
-  check-survey-shells
-
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel osh compare-py osh-py
-}
-
-oil-all() {
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel oil compare-py oil-py
-}
-
-tea-all() {
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel tea compare-py tea
-}
-
-osh-minimal() {
-  ### Some tests that work on the minimal build.  Run by Soil.
-
-  # depends on link-busybox-ash, then source dev-shell.sh at the top of this
-  # file
-  check-survey-shells
-
-  # suite compare_mode spec_subdir
-  test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal
-}
-
-
-osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
-oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
-tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
-osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
-
-interactive-osh() {
-  # Note: without MAX_PROCS=1, I observed at least 2 instances of hanging (for
-  # 30 minutes)
-  #
-  # TODO:
-  # - better diagnostics from those hanging instances
-  #   - note: worked OK (failed to hang) one time in soil/host-shim.sh local-test-uke
-  # - I suspect job control, we need to test it more throoughly, by simulating
-  #   the kernel in Python unit tests
-
-  # $suite $compare_mode $spec_subdir
-  MAX_PROCS=1 test/spec-runner.sh all-parallel interactive osh-only interactive-osh
-}
-
-interactive-bash() {
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel interactive bash-only interactive-bash
-}
-
-
-interactive-osh-bash() {
-  ### Triggers the "Stopped" bug with osh and bash!
-
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel interactive osh-bash interactive-osh-bash
 }
 
 #
@@ -1217,18 +988,6 @@ tea-func() {
   # all of these were broken by the new grammar!
   sh-spec spec/tea-func.test.sh --osh-failures-allowed 15 \
     $OSH_LIST "$@"
-}
-
-
-#
-# Convenience for fixing specific bugs
-#
-
-one-off() {
-  set +o errexit
-
-  test/spec.sh array -r 16-17
-  test/spec.sh builtin-vars -r 39-40
 }
 
 run-task "$@"

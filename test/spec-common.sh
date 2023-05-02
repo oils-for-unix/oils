@@ -46,3 +46,39 @@ sh-spec() {
   #    --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \
 }
 
+
+# Usage: callers can override OSH_LIST to test on more than one version.
+#
+# Example:
+# OSH_LIST='bin/osh _bin/osh' test/spec-py.sh osh-all
+
+readonly OSH_CPYTHON="$REPO_ROOT/bin/osh"
+readonly OSH_OVM=${OSH_OVM:-$REPO_ROOT/_bin/osh}
+
+OSH_LIST=${OSH_LIST:-}  # A space-separated list.
+
+if test -z "$OSH_LIST"; then
+  # By default, run with both, unless $OSH_OVM isn't available.
+  if test -e $OSH_OVM; then
+    # TODO: Does it make sense to copy the binary to an unrelated to directory,
+    # like /tmp?  /tmp/{oil.ovm,osh}.
+    OSH_LIST="$OSH_CPYTHON $OSH_OVM"
+  else
+    OSH_LIST="$OSH_CPYTHON"
+  fi
+fi
+
+readonly OIL_CPYTHON="$REPO_ROOT/bin/oil"
+readonly OIL_OVM=${OIL_OVM:-$REPO_ROOT/_bin/oil}
+
+OIL_LIST=${OIL_LIST:-}  # A space-separated list.
+
+if test -z "$OIL_LIST"; then
+  # By default, run with both, unless $OIL_OVM isn't available.
+  if test -e $OIL_OVM; then
+    OIL_LIST="$OIL_CPYTHON $OIL_OVM"
+  else
+    OIL_LIST="$OIL_CPYTHON"
+  fi
+fi
+

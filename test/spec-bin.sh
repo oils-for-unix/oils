@@ -22,14 +22,40 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/spec-common.sh
-
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-readonly REPO_ROOT
+
+source devtools/run-task.sh
+source test/spec-common.sh
 
 # This dir is a sibling to the repo to make it easier to use containers
 readonly TAR_DIR=$REPO_ROOT/_cache/spec-bin
 readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS/spec-bin
+
+#
+# "Non-hermetic"
+#
+
+link-busybox-ash() {
+  ### Non-hermetic ash only used for benchmarks / Soil dev-minimal
+
+  # Could delete this at some point
+  mkdir -p _tmp/shells
+  ln -s -f --verbose "$(which busybox)" _tmp/shells/ash
+}
+
+# dash and bash should be there by default on Ubuntu.
+install-shells-with-apt() {
+  ### Non-hermetic shells; test/spec-bin.sh replaces this for most purposes
+
+  set -x  # show what needs sudo
+  sudo apt install busybox-static mksh zsh
+  set +x
+  link-busybox-ash
+}
+
+#
+# Our own hermetic copies
+#
 
 # The authoritative versions!
 download() {
@@ -241,4 +267,4 @@ all-steps() {
   fi
 }
 
-"$@"
+run-task "$@"
