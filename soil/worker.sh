@@ -209,6 +209,7 @@ interactive-tasks() {
 dump-os-info     soil/worker.sh dump-os-info      -
 dump-env         soil/worker.sh dump-env          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja  -
+nohup            test/nohup.sh soil-run           -
 interactive-osh  test/spec-py.sh interactive-osh  _tmp/spec/interactive-osh/index.html
 process-table    test/process-table.sh soil-run   _tmp/process-table/index.html
 stateful         test/stateful.sh soil-run        _tmp/spec/stateful/index.html
@@ -402,6 +403,7 @@ run-tasks() {
   ### Run the tasks on stdin and write _tmp/soil/INDEX.tsv.
   local job_name=$1
   local out_dir=$2  # should already exist
+  local tty=$3
 
   mkdir -p $out_dir/logs
 
@@ -433,23 +435,40 @@ run-tasks() {
 
     local log_path=$out_dir/logs/$task_name.txt 
 
-    local -a timeout
-    if test $script = 'test/process-table.sh'; then
-      # Workaround for weird interaction, see test/proces-table.sh
-      # timeout-issue
-      timeout=()
-    else
-      # 15 minutes per task
-      # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
-      # TODO: should have a configurable timeout
-      timeout=(timeout 900)
-    fi
+    # 15 minutes per task
+    # One of the longest tasks is test/spec-cpp, which takes around 420 seconds
+    # TODO: should have a configurable timeout
+    local -a timeout=(timeout 900)
+    local stdin_tty=''
 
+    case $script in
+      test/process-table.sh)
+        # Workaround for weird interaction, see
+        # $ test/process-table.sh timeout-issue
+        timeout=()
+        ;;
+      test/nohup.sh)
+        # Only run test/nohup.sh with TTY.  For some reason build/py.sh all hangs
+        # with $tty?
+        stdin_tty=$tty
+        ;;
+    esac
+
+    local -a argv=(
+      time-tsv -o $tsv --append
+        --field $task_name --field $script --field $action
+        --field $result_html -- 
+        "${timeout[@]}" "$script" "$action"
+    )
+
+    # Run task and save status
     set +o errexit
-    time-tsv -o $tsv --append \
-      --field $task_name --field $script --field $action \
-      --field $result_html -- \
-      "${timeout[@]}" "$script" "$action" >$log_path 2>&1
+    if test -n "$stdin_tty"; then
+      # explicitly connect TTY, e.g. for soil/interactive
+      "${argv[@]}" > $log_path 2>&1 < $stdin_tty
+    else
+      "${argv[@]}" > $log_path 2>&1
+    fi
     status=$?
     set -o errexit
 
@@ -457,7 +476,7 @@ run-tasks() {
       max_status=$status
     fi
 
-    # show the last line
+    # Show the last line
     echo
     tsv-row status elapsed task script action result_html
     tail -n 1 $tsv
@@ -553,7 +572,23 @@ job-main() {
 
   save-metadata $job_name $out_dir
 
-  ${job_name}-tasks | run-tasks $job_name $out_dir
+  local captured
+
+  set +o errexit
+  captured=$(tty)
+  status=$?
+  set -o errexit
+
+  if test $status -eq 0; then
+    echo "TTY = $captured"
+    local tty=$captured
+  else
+    echo "captured = $captured"
+    local tty=''  # clear the output
+  fi
+  echo
+
+  ${job_name}-tasks | run-tasks $job_name $out_dir "$tty"
 }
 
 JOB-dummy() { job-main 'dummy'; }

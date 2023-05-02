@@ -17,17 +17,17 @@ class UiTest(unittest.TestCase):
   def testErrorFormatter(self):
     arena = test_lib.MakeArena('')
     line_id = arena.AddLine('[line one]', 1)
-    span_id = arena.NewTokenId(-1, 0, 2, line_id, '')
-    spid1 = arena.NewTokenId(-1, 2, 2, line_id, '')
+    spid1 = arena.NewTokenId(-1, 0, 2, line_id, '')
+    spid2 = arena.NewTokenId(-1, 2, 2, line_id, '')
 
     errfmt = ui.ErrorFormatter(arena)
 
     # no location info
     errfmt.Print_('hello')
 
-    with ui.ctx_Location(errfmt, span_id):
+    with ui.ctx_Location(errfmt, loc.Span(spid1)):
       errfmt.Print_('zero')
-      errfmt.Print_('zero', blame_loc=loc.Span(spid1))
+      errfmt.Print_('zero', blame_loc=loc.Span(spid2))
 
 
 if __name__ == '__main__':

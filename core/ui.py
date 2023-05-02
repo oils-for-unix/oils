@@ -318,18 +318,26 @@ class ErrorFormatter(object):
     """Print a hard-coded message with a prefix, and quote code."""
     _PrintWithLocation(prefix, msg, blame_loc, self.arena, show_code=True)
 
+  def _FallbackLocation(self, blame_loc):
+    # type: (Optional[loc_t]) -> loc_t
+    if blame_loc is None:
+      return self.CurrentLocation()
+    if blame_loc.tag() == loc_e.Missing:
+      blame_loc = self.CurrentLocation()
+    return blame_loc
+
   def Print_(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
-    if not blame_loc:
-      blame_loc = loc.Missing()
-    _PrintWithLocation('', msg, blame_loc, self.arena, show_code=True)
+    """Print message and quote code."""
+    _PrintWithLocation(
+        '', msg, self._FallbackLocation(blame_loc), self.arena, show_code=True)
 
   def PrintMessage(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
-    if not blame_loc:
-      blame_loc = loc.Missing()
-    _PrintWithLocation('', msg, blame_loc, self.arena, show_code=False)
+    _PrintWithLocation(
+        '', msg, self._FallbackLocation(blame_loc), self.arena,
+        show_code=False)
 
   def StderrLine(self, msg):
     # type: (str) -> None

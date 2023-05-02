@@ -5,6 +5,7 @@ from _devbuild.gen.runtime_asdl import value, scope_e, cmd_value
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core.error import e_usage
+from core import pyos
 from core import state
 from core import vm
 from frontend import flag_spec
@@ -12,6 +13,7 @@ from frontend import args
 from frontend import location
 from frontend import match
 from frontend import typed_args
+from osh import builtin_misc
 
 import sys
 import yajl
@@ -23,11 +25,6 @@ if TYPE_CHECKING:
   from oil_lang import expr_eval
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
-
-# global file object that can be passed to yajl.load(), and that also can be
-# used with redirects.  See comment below.
-_STDIN = posix.fdopen(0)
-
 
 class Json(vm._Builtin):
   """JSON read and write
@@ -54,7 +51,6 @@ class Json(vm._Builtin):
     if action == 'write':
       attrs = flag_spec.Parse('json_write', arg_r)
       arg_jw = arg_types.json_write(attrs.attrs)
-
 
       if not arg_r.AtEnd():
         e_usage('write got too many args', arg_r.Location())
@@ -92,18 +88,14 @@ class Json(vm._Builtin):
         raise error.Usage('got invalid variable name %r' % var_name, name_loc)
 
       try:
-        # Use a global _STDIN, because we get EBADF on a redirect if we use a
-        # local.  A Py_DECREF closes the file, which we don't want, because the
-        # redirect is responsible for freeing it.
-        #
-        # https://github.com/oilshell/oil/issues/675
-        #
-        # TODO: write a better binding like yajl.readfd()
-        #
-        # It should use streaming like here:
-        # https://lloyd.github.io/yajl/
+        contents = builtin_misc.ReadAll()
+      except pyos.ReadError as e:  # different paths for read -d, etc.
+        # don't quote code since YSH errexit will likely quote
+        self.errfmt.PrintMessage("read error: %s" % posix.strerror(e.err_num))
+        return 1
 
-        obj = yajl.load(_STDIN)
+      try:
+        obj = yajl.loads(contents)
       except ValueError as e:
         self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
         return 1
