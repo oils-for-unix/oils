@@ -12,6 +12,7 @@ from frontend import args
 from frontend import location
 from frontend import match
 from frontend import typed_args
+from mycpp import mylib
 
 import sys
 import yajl
@@ -24,11 +25,6 @@ if TYPE_CHECKING:
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
-# global file object that can be passed to yajl.load(), and that also can be
-# used with redirects.  See comment below.
-_STDIN = posix.fdopen(0)
-
-
 class Json(vm._Builtin):
   """JSON read and write
 
@@ -40,6 +36,23 @@ class Json(vm._Builtin):
     self.mem = mem
     self.expr_ev = expr_ev
     self.errfmt = errfmt
+
+    # file object passed to yajl.load()
+    #
+    # 2023-05: This was first a local, then a global.  I changed it to be a
+    # member.
+
+    # I can no longer reproduce this bug with a local, but we're going to
+    # remove yajl anyway so it doesn't matter.
+
+    # Local var bug: we get EBADF on a redirect.  A Py_DECREF closes the file,
+    # which we don't want, because the redirect is responsible for freeing it.
+    #
+    # https://github.com/oilshell/oil/issues/675
+    self.stdin_f = posix.fdopen(0)
+
+    # Doesn't work!
+    #self.stdin_f = mylib.Stdin()
 
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
@@ -92,18 +105,7 @@ class Json(vm._Builtin):
         raise error.Usage('got invalid variable name %r' % var_name, name_loc)
 
       try:
-        # Use a global _STDIN, because we get EBADF on a redirect if we use a
-        # local.  A Py_DECREF closes the file, which we don't want, because the
-        # redirect is responsible for freeing it.
-        #
-        # https://github.com/oilshell/oil/issues/675
-        #
-        # TODO: write a better binding like yajl.readfd()
-        #
-        # It should use streaming like here:
-        # https://lloyd.github.io/yajl/
-
-        obj = yajl.load(_STDIN)
+        obj = yajl.load(self.stdin_f)
       except ValueError as e:
         self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
         return 1
