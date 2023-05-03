@@ -1427,9 +1427,9 @@ release-oils-for-unix() {
   _build/oils.sh '' '' SKIP_REBUILD
   popd
 
-  local out=_tmp/other/parse-errors-osh-cpp.txt
+  local suite_name=parse-errors-osh-cpp
   SH=$dir/_bin/cxx-opt-sh/osh \
-    run-other-suite-for-release parse-errors all $out
+    run-other-suite-for-release $suite_name all
 }
 
 run-for-release() {
