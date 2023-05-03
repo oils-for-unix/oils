@@ -27,7 +27,13 @@ run-shell() {
   echo "  => $sh returned $?"
   set -o errexit
 
-  cat nohup.out
+  if test -f nohup.out; then
+    cat nohup.out
+  else
+    # happens in CI ?  I thought we run with docker -t.
+    echo "nohup.out doesn't exist"
+  fi
+
   echo
 
 }
