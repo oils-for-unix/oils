@@ -15,109 +15,6 @@ readonly REPO_ROOT
 source soil/common.sh
 source test/tsv-lib.sh
 
-dump-timezone() {
-
-  # On Travis:
-  #  /usr/share/zoneinfo/UTC
-  # On my machine
-  #  /usr/share/zoneinfo/America/Los_Angeles
-
-  if command -v file; then
-    file '/etc/localtime'
-  fi
-  echo
-  read md5 _ <<< $(md5sum /etc/localtime)
-  log "md5 = $md5"
-  find /usr/share/zoneinfo -type f | xargs md5sum | grep $md5
-  echo
-}
-
-dump-versions() {
-  set +o errexit
-
-  source build/dev-shell.sh  # python3 may be here
-
-  set -x
-  which python2
-  python2 -V
-
-  which python3
-  python3 -V
-  set +x
-}
-
-dump-locale() {
-  set -x
-  # show our locale
-  locale
-
-  # show all locales
-  locale -a
-  set +x
-}
-
-dump-hardware() {
-  egrep '^(processor|model name)' /proc/cpuinfo
-  echo
-
-  egrep '^Mem' /proc/meminfo
-  echo
-
-  df -h
-  echo
-}
-
-dump-distro() {
-  local path=/etc/lsb-release
-  if test -f $path; then
-    cat $path
-  else
-    echo "$path doesn't exist"
-  fi
-  echo
-
-  apt-cache policy r-base-core
-}
-
-dump-user-host() {
-  echo -n 'whoami = '
-  whoami
-  echo
-
-  echo "PWD = $PWD"
-  echo
-
-  echo -n 'hostname = '
-  hostname
-  echo
-
-  uname -a
-  echo
-
-  who
-  echo
-}
-
-dump-os-info() {
-  dump-user-host
-  echo
-
-  dump-distro
-  echo
-
-  dump-versions
-  echo
-
-  dump-locale
-  echo
-
-  dump-timezone
-  echo
-
-  dump-hardware
-  echo
-}
-
 py-all-and-ninja() {
   ### baseline for most tasks
 
@@ -134,8 +31,8 @@ dummy-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info    -
-dump-env         soil/worker.sh dump-env        -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 EOF
 }
 
@@ -145,8 +42,8 @@ raw-vm-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info         -
+dump-env         soil/diagnose.sh dump-env        -
 perf-install     benchmarks/perf.sh soil-install  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
@@ -163,12 +60,12 @@ pea-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
-py-source           build/py.sh py-source             -
-check-types         pea/TEST.sh check-types           -
-run-tests           pea/TEST.sh run-tests             -
-parse-all           pea/TEST.sh parse-all             -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
+py-source        build/py.sh py-source       -
+check-types      pea/TEST.sh check-types     -
+run-tests        pea/TEST.sh run-tests       -
+parse-all        pea/TEST.sh parse-all       -
 EOF
 }
 
@@ -179,8 +76,8 @@ dev-minimal-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
@@ -206,8 +103,8 @@ interactive-tasks() {
   # TODO: also run interactive suite with osh-cpp
 
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info         -
+dump-env         soil/diagnose.sh dump-env        -
 py-all-and-ninja soil/worker.sh py-all-and-ninja  -
 nohup            test/nohup.sh soil-run           -
 interactive-osh  test/spec-py.sh interactive-osh  _tmp/spec/interactive-osh/index.html
@@ -221,18 +118,10 @@ wild-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
-build-py            build/py.sh all                              -
-wild                test/wild.sh soil-run                        _tmp/wild-www/index.html
-EOF
-}
-
-# Redefinition for quicker cloud debugging
-DISABLED_dev-minimal-tasks() {
-  cat <<EOF
-build-minimal       build/py.sh minimal           -
-interactive         test/interactive.sh soil      -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
+build-py         build/py.sh all             -
+wild             test/wild.sh soil-run       _tmp/wild-www/index.html
 EOF
 }
 
@@ -240,8 +129,8 @@ benchmarks-tasks() {
   # (task_name, script, action, result_html)
 
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 id-test          benchmarks/id-test.sh soil-run        -
 native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/index.html
@@ -257,8 +146,8 @@ EOF
 benchmarks2-tasks() {
   # Note: id-test doesn't run in 'other-tests' because 'gawk' isn't in that image
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 dev-shell-test   build/dev-shell-test.sh soil-run      -
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
@@ -270,8 +159,8 @@ cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 osh-all          test/spec-cpp.sh osh-all              _tmp/spec/osh-cpp/compare.html
@@ -285,8 +174,8 @@ cpp-small-tasks() {
   # it's OK for now.
 
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 build-minimal    build/py.sh minimal                   -
 ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
@@ -307,8 +196,8 @@ cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 build-minimal           build/py.sh minimal                             -
 ninja-config            soil/worker.sh ninja-config                     -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
@@ -329,8 +218,8 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
@@ -348,13 +237,13 @@ EOF
 # Reuse ovm-tarball container
 app-tests-tasks() {
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
-py-all            build/py.sh all                         -
-yajl              build/py.sh yajl-release                -
-ble-clone         test/ble.sh clone                       -
-ble-build         test/ble.sh build                       -
-ble-test          test/ble.sh run-tests                   -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
+py-all           build/py.sh all             -
+yajl             build/py.sh yajl-release    -
+ble-clone        test/ble.sh clone           -
+ble-build        test/ble.sh build           -
+ble-test         test/ble.sh run-tests       -
 EOF
 }
 
@@ -364,8 +253,8 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 build-minimal          build/py.sh minimal                        -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -
@@ -393,8 +282,8 @@ tests-todo() {
 # Redefinition for quicker cloud debugging
 maybe-merge-tasks() {
   cat <<EOF
-dump-os-info     soil/worker.sh dump-os-info      -
-dump-env         soil/worker.sh dump-env          -
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
 maybe-merge      soil/maybe-merge.sh soil-run     -
 EOF
 }
