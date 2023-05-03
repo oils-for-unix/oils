@@ -34,7 +34,10 @@ cpp() {
 }
 
 all() {
-  rm -r -f --verbose _tmp _deps
+  rm -r -f --verbose _tmp 
+  # TODO: the _deps dir should be obsolete, after removing devtools/release.sh
+  # dep-benchmarks
+
   py
   cpp
 }

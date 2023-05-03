@@ -86,8 +86,9 @@ ensure-smooth-build() {
 # benchmark-data repo to make reports.
 auto-machine1() {
   local resume=${1:-}  # workaround for spec test flakiness bug
-  local resume2=${2:-}  # skip past metrics and wild tests
+  local resume2=${2:-}  # skip past spec sanity check
   local resume3=${3:-}  # skip past metrics and wild tests
+  local resume4=${4:-}  # skip past full spec tests
 
   ensure-smooth-build
 
@@ -96,7 +97,7 @@ auto-machine1() {
   fi 
 
   if test -z "$resume2"; then
-    _spec-sanity-check
+    _spec-sanity-check  # just run a few spec tests
   fi
 
   if test -z "$resume3"; then
@@ -104,7 +105,10 @@ auto-machine1() {
     test/wild.sh all
   fi
 
-  $0 spec-all  # spec tests run here again
+  if test -z "$resume4"; then
+    $0 spec-all  # full spec test run
+  fi
+
   $0 benchmark-run do_machine1
 }
 
@@ -731,8 +735,8 @@ dep-benchmarks() {
   benchmarks/ovm-build.sh extract-other
 
   # For ovm-build benchmark.
-  build/codegen.sh download-clang
-  build/codegen.sh extract-clang
+  deps/from-binary.sh download-clang
+  deps/from-binary.sh extract-clang
 }
 
 more-release-deps() {

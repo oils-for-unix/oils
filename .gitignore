@@ -29,10 +29,7 @@ tags
 # Our own temp dirs
 _bin/
 _build/
-_cache/  # might be obsolete
 _chroot/
-_clone/
-_deps/
 _devbuild/
 _gen
 _release/
@@ -40,6 +37,10 @@ _soil-jobs/
 _test/
 _tmp/
 !opy/_regtest/src/_devbuild/
+
+# TODO: should get rid of these in favor of wedges
+_cache/
+_deps/
 
 # Our Python extensions.  We need these at the top level to statically link
 # "import libc" in the "OVM tarball".
