@@ -91,7 +91,7 @@ auto-machine1() {
     _spec-sanity-check
   fi
 
-  if test -z "$resume2"; then
+  if test -z "$resume3"; then
     $0 metrics  # this can catch bugs
     test/wild.sh all
   fi
@@ -272,7 +272,8 @@ spec-all() {
   _build-oils-benchmark-data
 
   # Collect and publish stats about the C++ translation.
-  OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
+  OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh osh-all
+  YSH_CC="$YSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh ysh-all
 }
 
 spec-cpp() {

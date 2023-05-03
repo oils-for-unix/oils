@@ -747,13 +747,9 @@ static struct PyMethodDef readline_methods[] = {
      METH_VARARGS, doc_set_completion_display_matches_hook},
     {"set_startup_hook", set_startup_hook,
      METH_VARARGS, doc_set_startup_hook},
-#ifdef HAVE_RL_PRE_INPUT_HOOK
     {"set_pre_input_hook", set_pre_input_hook,
      METH_VARARGS, doc_set_pre_input_hook},
-#endif
-#ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
-#endif
     {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
     {0, 0}
 };
