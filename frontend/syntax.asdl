@@ -1,17 +1,20 @@
 # Data types for the Oil AST, aka "Lossless Syntax Tree".
 #
 # Invariant: the source text can be reconstructed byte-for-byte from this
-# tree.
+# tree.  The test/arena.sh file partially verifies this.
 #
 # Exceptions:
 # - <<- here docs with leading tabs, since we don't want those for
 #   conversion.  We don't want files with mixed tabs and spaces.
 # - Distinguishing between function styles wasn't necessary:
-#   - foo() { } vs function foo { } # ksh 
+#   - foo() { } vs function foo { }  # ksh style
 
 # We usually try to preserve the physical order of the source in the ASDL
-# fields.  Exception:
-# - order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
+# fields.  One exception is the order of redirects:
+#
+#     echo >out.txt hi   
+#     # versus
+#     echo hi >out.txt
 
 # Unrepresented:
 # - let arithmetic (rarely used)
@@ -19,24 +22,20 @@
 # - select block
 # - case fallthrough ;& and ;;&
 
-# Refactorings:
+# Possible refactorings:
 #
-#   # Makes sense for DoubleQuoted and TripleQuoted
-#   string_part = ...  # subset of word_part
-#
-#   # Simplify many %Token references:
+#   # More %Token as first class variants:
 #   type_expr = Atom %Token | ...
-#   printf_part ...
+#   printf_part = Literal %Token | ...
 #
-#   # Simplify CompoundWord reference
+#   # %CompoundWord as first class variant:
 #   bool_expr = WordTest %CompoundWord | ...
 #
-#   # There can't be any raw Token here
-#   seq_word = Compound %CompoundWord | BracedTree(...)
-
-# Conventions:
-# - 'Token left' and 'Token right' are generally for location info, but their
-#   Id_t can also be used for execution
+#   # Can DoubleQuoted have a subset of parts compared with CompoundWord?
+#   string_part = ...  # subset of word_part
+#
+#   - Distinguish word_t with BracedTree vs. those without?  seq_word_t?
+#   - Remove command.NoOp ?
 
 module syntax
 {
