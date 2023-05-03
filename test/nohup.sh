@@ -62,6 +62,12 @@ soil-run() {
   # Can't use run-test-funcs because it "steals" input from stdin
   # run-test-funcs
 
+  pwd
+  ls -l -d .
+  ls -l
+  echo
+
+
   for t in test-echo test-read test-json-read; do
     echo 
     echo "*** Running $t"

@@ -13,7 +13,6 @@ from frontend import args
 from frontend import location
 from frontend import match
 from frontend import typed_args
-from mycpp import mylib
 from osh import builtin_misc
 
 import sys

@@ -209,7 +209,7 @@ interactive-tasks() {
 dump-os-info     soil/worker.sh dump-os-info      -
 dump-env         soil/worker.sh dump-env          -
 py-all-and-ninja soil/worker.sh py-all-and-ninja  -
-nohup            test/nohup.sh soil-run
+nohup            test/nohup.sh soil-run           -
 interactive-osh  test/spec-py.sh interactive-osh  _tmp/spec/interactive-osh/index.html
 process-table    test/process-table.sh soil-run   _tmp/process-table/index.html
 stateful         test/stateful.sh soil-run        _tmp/spec/stateful/index.html
