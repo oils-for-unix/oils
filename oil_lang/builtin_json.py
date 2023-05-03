@@ -53,7 +53,6 @@ class Json(vm._Builtin):
       attrs = flag_spec.Parse('json_write', arg_r)
       arg_jw = arg_types.json_write(attrs.attrs)
 
-
       if not arg_r.AtEnd():
         e_usage('write got too many args', arg_r.Location())
 

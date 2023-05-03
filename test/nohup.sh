@@ -14,6 +14,7 @@ set -o pipefail
 set -o errexit
 
 source devtools/run-task.sh
+source test/common.sh  # run-test-funcs
 
 run-shell() {
   local sh=$1
@@ -55,6 +56,20 @@ test-json-read() {
   rm -v nohup.out || true
 
   run-shell bin/osh -c 'json read :x'
+}
+
+soil-run() {
+  # Can't use run-test-funcs because it "steals" input from stdin
+  # run-test-funcs
+
+  for t in test-echo test-read test-json-read; do
+    echo 
+    echo "*** Running $t"
+    echo
+
+    $0 $t
+
+  done
 }
 
 run-task "$@"
