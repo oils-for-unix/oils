@@ -8,6 +8,8 @@ set -o pipefail
 set -o errexit
 
 keygen() {
+  # rsa_github_actions is private, and sent to Github to log into the server
+  # rsa_github_actions.pub is public, and put in authorized_keys on the server
   ssh-keygen -t rsa -b 4096 -C "oilshell github-actions" -f rsa_github_actions
 }
 

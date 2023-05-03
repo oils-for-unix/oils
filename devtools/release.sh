@@ -74,6 +74,14 @@ make-release-branch() {
   git push -u origin $name
 }
 
+ensure-smooth-build() {
+  # Stray files can mess up the unit tests
+  devtools/git.sh error-if-untracked
+
+  sudo -k; sudo true  # clear and re-cache credentials
+
+}
+
 # For redoing a release.  This is everything until you have to 'git pull' the
 # benchmark-data repo to make reports.
 auto-machine1() {
@@ -81,7 +89,7 @@ auto-machine1() {
   local resume2=${2:-}  # skip past metrics and wild tests
   local resume3=${3:-}  # skip past metrics and wild tests
 
-  sudo -k; sudo true  # clear and re-cache credentials
+  ensure-smooth-build
 
   if test -z "$resume"; then
     $0 build-and-test
@@ -102,7 +110,7 @@ auto-machine1() {
 
 # Note: needs dep-benchmarks to run
 auto-machine2() {
-  sudo -k; sudo true  # clear and re-cache credentials
+  ensure-smooth-build
 
   # Note: this can't be done until we sync the oils-for-unix source from
   # machine 1.

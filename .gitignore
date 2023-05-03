@@ -1,46 +1,56 @@
-.gdbinit
+# Vim
 *.swp
+
+# Emacs temp files
+*~
+
+# Python
 *.pyc
+__pycache__
+.mypy_cache/
+# Python build support
+build/temp.*
+
+# R
+.RData
+.Rhistory
+Rplots.pdf
+
+# Ninja
+build.ninja
+.ninja_*
+
+# GDB
+.gdbinit
+
 tags
 .vagrant
-.mypy_cache/
+
+# Our own temp dirs
 _bin/
 _build/
-_cache/
+_cache/  # might be obsolete
 _chroot/
 _clone/
 _deps/
 _devbuild/
 _gen
 _release/
+_soil-jobs/
 _test/
 _tmp/
 !opy/_regtest/src/_devbuild/
 
-build.ninja
-.ninja_*
-
+# Our Python extensions.  We need these at the top level to statically link
+# "import libc" in the "OVM tarball".
 fanos.so
 fastlex.so
 libc.so
 line_input.so
 posix_.so
 yajl.so
-# Python build support
-build/temp.*
 
-# my own automation
+# my own stuff
 local.sh  
-
 NOTES*.txt
 TODO*.txt
-# uftrace creates this
-uftrace.data
-
-# pgen-specific stuff, this is probably temporary
-pgen-native/*.o
-pgen-native/parser
-
-# emacs temp files
-*~
-make.sh

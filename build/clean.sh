@@ -34,7 +34,7 @@ cpp() {
 }
 
 all() {
-  rm -r -f --verbose _tmp
+  rm -r -f --verbose _tmp _deps
   py
   cpp
 }

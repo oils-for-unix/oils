@@ -52,4 +52,26 @@ fetch-staging-and-master() {
   git fetch origin soil-staging:soil-staging master:master
 }
 
+# https://stackoverflow.com/questions/11021287/git-detect-if-there-are-untracked-files-quickly
+
+untracked() {
+  local count
+  git ls-files --other --directory --exclude-standard
+}
+
+error-if-untracked() {
+  local count
+  count=$(untracked | tee _tmp/untracked | wc -l)
+  if test $count -ne 0; then
+    echo 'Clean up untracked files first:'
+    echo
+
+    cat _tmp/untracked
+    return 1
+  fi
+
+  echo 'OK: no untracked files'
+  return 0
+}
+
 "$@"
