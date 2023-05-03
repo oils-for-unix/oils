@@ -91,6 +91,7 @@ class Json(vm._Builtin):
       try:
         contents = builtin_misc.ReadAll()
       except pyos.ReadError as e:  # different paths for read -d, etc.
+        # don't quote code since YSH errexit will likely quote
         self.errfmt.PrintMessage("read error: %s" % posix.strerror(e.err_num))
         return 1
 

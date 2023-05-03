@@ -331,7 +331,7 @@ class Read(vm._Builtin):
     try:
       status = self._Run(cmd_val)
     except pyos.ReadError as e:  # different paths for read -d, etc.
-      # TODO: need location info
+      # don't quote code since YSH errexit will likely quote
       self.errfmt.PrintMessage("read error: %s" % posix.strerror(e.err_num))
       status = 1
     return status
