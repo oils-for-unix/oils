@@ -66,9 +66,13 @@ extract-for-benchmarks() {
 
   # For benchmarks
   pushd oils-for-unix-$OIL_VERSION
+
+  # Remove binaries left over from old attempts
+  rm -v _bin/cxx-{dbg,opt}-sh/* || true
+
   ./configure
-  _build/oils.sh '' dbg SKIP_REBUILD
-  _build/oils.sh '' opt SKIP_REBUILD
+  _build/oils.sh '' dbg
+  _build/oils.sh '' opt
   popd
 
   git add oils-for-unix-$OIL_VERSION
