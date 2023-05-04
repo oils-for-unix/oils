@@ -444,7 +444,7 @@ test-posix-func() {
   proc f
   {
     echo "hi"
-  }' \
+  }'
 
   # No nested functinos
   return
