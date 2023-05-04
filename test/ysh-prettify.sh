@@ -426,7 +426,7 @@ test-posix-func() {
   check-osh2ysh '
   f() (
     echo hi
-  }' \
+  )' \
   '
   proc f (
     echo hi
@@ -444,7 +444,7 @@ test-posix-func() {
   proc f
   {
     echo "hi"
-  }'
+  }' \
 
   # No nested functinos
   return
