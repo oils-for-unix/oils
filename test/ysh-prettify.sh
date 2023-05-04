@@ -420,6 +420,18 @@ test-posix-func() {
     echo "hi"
   }'
 
+  # Non-brace function bodies
+  # TODO: Bail in this case
+  check-osh2ysh '
+  f() (
+    echo hi
+  }' \
+  '
+  proc f (
+    echo hi
+  )' \
+  INVALID
+
   return
 
   # TODO: Move the brace
