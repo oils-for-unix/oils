@@ -1734,7 +1734,7 @@ class CommandParser(object):
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
     """
-    left_tok = _KeywordToken(self.cur_word)
+    left_spid = _KeywordSpid(self.cur_word)
 
     word0 = cast(CompoundWord, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(word0)
@@ -1770,12 +1770,11 @@ class CommandParser(object):
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
 
-      func.left = left_tok
-      func.name_loc = left_tok
+      func.name_loc = loc.Word(word0)
 
       # matches ParseKshFunctionDef below
-      func.spids.append(left_tok.span_id)
-      func.spids.append(left_tok.span_id)  # name_spid is same as left_spid in this case
+      func.spids.append(left_spid)
+      func.spids.append(left_spid)  # name span id is same as left_spid in this case
       func.spids.append(after_name_spid)
       return func
     else:
@@ -1818,7 +1817,7 @@ class CommandParser(object):
     with ctx_VarChecker(self.var_checker, keyword_tok):
       func.body = self.ParseCompoundCommand()
 
-    func.left = keyword_tok
+    func.keyword = keyword_tok
     func.name_loc = name_loc
 
     # matches ParseFunctionDef above

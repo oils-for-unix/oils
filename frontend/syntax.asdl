@@ -324,7 +324,9 @@ module syntax
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
        Token? fi_kw, List[Redir] redirects)
   | Case(word to_match, List[CaseArm] arms, List[Redir] redirects)
-  | ShFunction(Token left, loc name_loc, str name, command body)
+    # The keyword is optional in the case of bash-style functions
+    # (ie. "foo() { ... }") which do not have one.
+  | ShFunction(Token? keyword, loc name_loc, str name, command body)
   | TimeBlock(Token keyword, command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
