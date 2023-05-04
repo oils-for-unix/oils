@@ -309,9 +309,9 @@ module syntax
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(command child, List[Redir] redirects)
-  | DParen(arith_expr child, List[Redir] redirects)
-  | DBracket(bool_expr expr, List[Redir] redirects)
+  | Subshell(Token left, command child, Token right, List[Redir] redirects)
+  | DParen(Token left, arith_expr child, Token right, List[Redir] redirects)
+  | DBracket(Token left, bool_expr expr, Token right, List[Redir] redirects)
     # up to 3 iterations variables
   | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
             command body, List[Redir] redirects)
@@ -324,8 +324,8 @@ module syntax
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
        Token? fi_kw, List[Redir] redirects)
   | Case(word to_match, List[CaseArm] arms, List[Redir] redirects)
-  | ShFunction(str name, command body)
-  | TimeBlock(command pipeline)
+  | ShFunction(Token left, loc name_loc, str name, command body)
+  | TimeBlock(Token keyword, command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
     # 2. ls ; ls & ls  (same line)

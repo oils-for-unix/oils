@@ -85,6 +85,16 @@ def _KeywordToken(UP_w):
   return cast(Token, part)
 
 
+def _DelimToken(word, arena):
+    # type: (word_t, Arena) -> Token
+    """
+    TODO: get token directly
+    For cases where we'd want to use `word_.LeftMostSpanForWord` but also want
+    to produce a Token.
+    """
+    return arena.GetToken(word_.LeftMostSpanForWord(word))
+
+
 def _ReadHereLines(line_reader,  # type: _Reader
                    h,  # type: Redir
                    delimiter,  # type: str
@@ -1074,7 +1084,7 @@ class CommandParser(object):
     The doc comment can only occur if there's a newline.
     """
     # TODO: get token directly
-    left = self.arena.GetToken(_KeywordSpid(self.cur_word))
+    left = _DelimToken(self.cur_word, self.arena)
     self._Eat(Id.Lit_LBrace)
 
     doc_token = None  # type: Token
@@ -1634,11 +1644,11 @@ class CommandParser(object):
 
     According to bash help.
     """
-    time_spid = _KeywordSpid(self.cur_word)
+    time_kw = _KeywordToken(self.cur_word)
     self._Next()  # skip time
     pipeline = self.ParsePipeline()
-    node = command.TimeBlock(pipeline)
-    node.spids.append(time_spid)
+    node = command.TimeBlock(time_kw, pipeline)
+    node.spids.append(time_kw.span_id)
     return node
 
   def ParseCompoundCommand(self):
@@ -1724,7 +1734,7 @@ class CommandParser(object):
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
     """
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left_tok = _KeywordToken(self.cur_word)
 
     word0 = cast(CompoundWord, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(word0)
@@ -1760,9 +1770,12 @@ class CommandParser(object):
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
 
+      func.left = left_tok
+      func.name_loc = left_tok
+
       # matches ParseKshFunctionDef below
-      func.spids.append(left_spid)
-      func.spids.append(left_spid)  # name_spid is same as left_spid in this case
+      func.spids.append(left_tok.span_id)
+      func.spids.append(left_tok.span_id)  # name_spid is same as left_spid in this case
       func.spids.append(after_name_spid)
       return func
     else:
@@ -1785,6 +1798,7 @@ class CommandParser(object):
     if len(name) == 0:  # example: foo$x is invalid
       p_die('Invalid KSH-style function name', loc.Word(cur_word))
 
+    name_loc = loc.Word(self.cur_word)
     name_spid = word_.LeftMostSpanForWord(self.cur_word)
     after_name_spid = name_spid + 1
     self._Next()  # skip past 'function name
@@ -1803,6 +1817,9 @@ class CommandParser(object):
     func.name = name
     with ctx_VarChecker(self.var_checker, keyword_tok):
       func.body = self.ParseCompoundCommand()
+
+    func.left = keyword_tok
+    func.name_loc = name_loc
 
     # matches ParseFunctionDef above
     func.spids.append(left_spid)
@@ -1849,7 +1866,7 @@ class CommandParser(object):
 
   def ParseSubshell(self):
     # type: () -> command.Subshell
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left = _DelimToken(self.cur_word, self.arena)
     self._Next()  # skip past (
 
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
@@ -1863,13 +1880,13 @@ class CommandParser(object):
     else:
       child = c_list
 
-    node = command.Subshell(child, None)  # no redirects yet
-
-    right_spid = word_.LeftMostSpanForWord(self.cur_word)
+    right = _DelimToken(self.cur_word, self.arena)
     self._Eat(Id.Right_Subshell)
 
-    node.spids.append(left_spid)
-    node.spids.append(right_spid)
+    node = command.Subshell(left, child, right, None)  # no redirects yet
+
+    node.spids.append(left.span_id)
+    node.spids.append(right.span_id)
     return node
 
   def ParseDBracket(self):
@@ -1877,7 +1894,7 @@ class CommandParser(object):
     """
     Pass the underlying word parser off to the boolean expression parser.
     """
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left = _DelimToken(self.cur_word, self.arena)
     # TODO: Test interactive.  Without closing ]], you should get > prompt
     # (PS2)
 
@@ -1886,27 +1903,27 @@ class CommandParser(object):
     bnode = b_parser.Parse()  # May raise
 
     self._Peek()
-    right_spid = word_.LeftMostSpanForWord(self.cur_word)
+    right = _DelimToken(self.cur_word, self.arena)
 
-    node = command.DBracket(bnode, None)  # no redirects yet
-    node.spids.append(left_spid)
-    node.spids.append(right_spid)
+    node = command.DBracket(left, bnode, right, None)  # no redirects yet
+    node.spids.append(left.span_id)
+    node.spids.append(right.span_id)
     return node
 
   def ParseDParen(self):
     # type: () -> command.DParen
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left = _DelimToken(self.cur_word, self.arena)
 
     self._Next()  # skip ((
     anode = self.w_parser.ReadDParen()
     assert anode is not None
 
     self._Peek()
-    right_spid = word_.LeftMostSpanForWord(self.cur_word)
+    right = _DelimToken(self.cur_word, self.arena)
 
-    node = command.DParen(anode, None)  # no redirects yet
-    node.spids.append(left_spid)
-    node.spids.append(right_spid)
+    node = command.DParen(left, anode, right, None)  # no redirects yet
+    node.spids.append(left.span_id)
+    node.spids.append(right.span_id)
     return node
 
   def ParseCommand(self):
