@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
+source devtools/run-task.sh
 source test/common.sh
 
 readonly TEMP_DIR=_tmp
@@ -420,6 +421,18 @@ test-posix-func() {
     echo "hi"
   }'
 
+  # Non-brace function bodies
+  # TODO: Bail in this case
+  check-osh2ysh '
+  f() (
+    echo hi
+  )' \
+  '
+  proc f (
+    echo hi
+  )' \
+  INVALID
+
   return
 
   # TODO: Move the brace
@@ -619,4 +632,4 @@ match $var {
 '
 }
 
-"$@"
+run-task "$@"

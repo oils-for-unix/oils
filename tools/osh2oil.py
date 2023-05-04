@@ -48,7 +48,7 @@ TOOL ysh-format:
   fix indentation and spacing, like clang-format
 """
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.runtime_asdl import word_style_e, word_style_t
 from _devbuild.gen.syntax_asdl import (
     loc,
@@ -128,17 +128,18 @@ def PrintArena(arena):
   cursor.PrintUntil(arena.LastSpanId())
 
 
-def PrintSpans(arena):
+def PrintTokens(arena):
   # type: (alloc.Arena) -> None
-  """Just to see spans."""
+  """Debugging tool to see tokens."""
+
   if len(arena.tokens) == 1:  # Special case for line_id == -1
-    print('Empty file with EOF span on invalid line:')
+    print('Empty file with EOF token on invalid line:')
     print('%s' % arena.tokens[0])
     return
 
-  for i, span in enumerate(arena.tokens):
-    piece = span.line.content[span.col : span.col + span.length]
-    print('%5d %r' % (i, piece))
+  for i, tok in enumerate(arena.tokens):
+    piece = tok.line.content[tok.col : tok.col + tok.length]
+    print('%5d %-20s %r' % (i, Id_str(tok.id), piece))
   print_stderr('(%d tokens)' % len(arena.tokens))
 
 
