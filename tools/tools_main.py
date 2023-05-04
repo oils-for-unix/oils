@@ -27,7 +27,7 @@ from typing import List, Dict
 
 # TODO: Hook up to completion.
 SUBCOMMANDS = [
-    'translate', 'arena', 'spans', 'format', 'deps', 'undefined-vars',
+    'translate', 'arena', 'tokens', 'format', 'deps', 'undefined-vars',
     'parse-glob', 'parse-printf',
 ]
 
@@ -139,8 +139,8 @@ def OshCommandMain(argv):
   elif action == 'arena':  # for debugging
     osh2oil.PrintArena(arena)
 
-  elif action == 'spans':  # for debugging
-    osh2oil.PrintSpans(arena)
+  elif action == 'tokens':  # for debugging
+    osh2oil.PrintTokens(arena)
 
   elif action == 'format':
     # TODO: autoformat code
