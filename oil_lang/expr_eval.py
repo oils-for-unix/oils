@@ -1436,7 +1436,7 @@ class OilEvaluator(object):
         node = cast(expr.RegexLiteral, UP_node)
 
         # TODO: Should this just be an object that ~ calls?
-        return _ValueToPyObj(value.Eggex(self.EvalRegex(node.regex), ''))
+        return _ValueToPyObj(value.Eggex(self.EvalRegex(node.regex), None))
 
       else:
         raise NotImplementedError(node.__class__.__name__)
