@@ -1916,8 +1916,8 @@ class CommandParser(object):
     anode = self.w_parser.ReadDParen()
     assert anode is not None
 
-    self._Peek()
     right = _OperatorToken(self.cur_word)
+    self._Peek()
 
     node = command.DParen(left, anode, right, None)  # no redirects yet
     node.spids.append(left.span_id)
