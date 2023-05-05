@@ -85,14 +85,13 @@ def _KeywordToken(UP_w):
   return cast(Token, part)
 
 
-def _DelimToken(word, arena):
-    # type: (word_t, Arena) -> Token
-    """
-    TODO: get token directly
-    For cases where we'd want to use `word_.LeftMostSpanForWord` but also want
-    to produce a Token.
-    """
-    return arena.GetToken(word_.LeftMostSpanForWord(word))
+def _OperatorToken(word):
+  # type: (word_t) -> Token
+  """
+  Extract the token from a word which is known to be an Operator (currently word_e.Token).
+  """
+  assert word.tag() == word_e.Token, word
+  return cast(Token, word)
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
@@ -1084,7 +1083,7 @@ class CommandParser(object):
     The doc comment can only occur if there's a newline.
     """
     # TODO: get token directly
-    left = _DelimToken(self.cur_word, self.arena)
+    left = self.arena.GetToken(word_.LeftMostSpanForWord(self.cur_word))
     self._Eat(Id.Lit_LBrace)
 
     doc_token = None  # type: Token
@@ -1865,7 +1864,7 @@ class CommandParser(object):
 
   def ParseSubshell(self):
     # type: () -> command.Subshell
-    left = _DelimToken(self.cur_word, self.arena)
+    left = _OperatorToken(self.cur_word)
     self._Next()  # skip past (
 
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
@@ -1879,7 +1878,7 @@ class CommandParser(object):
     else:
       child = c_list
 
-    right = _DelimToken(self.cur_word, self.arena)
+    right = _OperatorToken(self.cur_word)
     self._Eat(Id.Right_Subshell)
 
     node = command.Subshell(left, child, right, None)  # no redirects yet
@@ -1893,7 +1892,7 @@ class CommandParser(object):
     """
     Pass the underlying word parser off to the boolean expression parser.
     """
-    left = _DelimToken(self.cur_word, self.arena)
+    left = _KeywordToken(self.cur_word)
     # TODO: Test interactive.  Without closing ]], you should get > prompt
     # (PS2)
 
@@ -1901,8 +1900,8 @@ class CommandParser(object):
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
 
+    right = _KeywordToken(self.cur_word)
     self._Peek()
-    right = _DelimToken(self.cur_word, self.arena)
 
     node = command.DBracket(left, bnode, right, None)  # no redirects yet
     node.spids.append(left.span_id)
@@ -1911,14 +1910,14 @@ class CommandParser(object):
 
   def ParseDParen(self):
     # type: () -> command.DParen
-    left = _DelimToken(self.cur_word, self.arena)
+    left = _OperatorToken(self.cur_word)
 
     self._Next()  # skip ((
     anode = self.w_parser.ReadDParen()
     assert anode is not None
 
     self._Peek()
-    right = _DelimToken(self.cur_word, self.arena)
+    right = _OperatorToken(self.cur_word)
 
     node = command.DParen(left, anode, right, None)  # no redirects yet
     node.spids.append(left.span_id)
