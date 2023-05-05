@@ -33,14 +33,15 @@ BINARY_OP: -gt, -ot, ==, etc.
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    loc, word_t, word_e, bool_expr, bool_expr_t)
+    loc, word_t, word_e, bool_expr, bool_expr_t, Token
+)
 from core import ui
 from core.error import p_die
 from frontend import consts
 from mycpp.mylib import log
 from osh import word_
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.word_parse import WordEmitter
 
@@ -108,7 +109,7 @@ class BoolParser(object):
     return w
 
   def Parse(self):
-    # type: () -> bool_expr_t
+    # type: () -> Tuple[bool_expr_t, Token]
     self._Next()
 
     node = self.ParseExpr()
@@ -117,7 +118,11 @@ class BoolParser(object):
       # NOTE: This might be better as unexpected token, since ]] doesn't always
       # make sense.
       p_die('Expected ]]', loc.Word(self.cur_word))
-    return node
+
+    # Extract the ']]' keyword and return it's token for location tracking
+    right = word_.WordAsKeywordToken(self.cur_word)
+
+    return node, right
 
   def _TestAtEnd(self):
     # type: () -> bool

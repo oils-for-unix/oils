@@ -620,6 +620,32 @@ def LiteralToken(UP_w):
   return None
 
 
+def WordAsKeywordToken(UP_w):
+  # type: (word_t) -> Token
+  """
+  Given a word that IS A keyword, return the single token at the start.
+
+  In C++, this casts without checking, so BE CAREFUL to call it in the right context.
+  """
+  assert UP_w.tag() == word_e.Compound, UP_w
+  w = cast(CompoundWord, UP_w)
+
+  part = w.parts[0]
+  assert part.tag() == word_part_e.Literal, part
+  return cast(Token, part)
+
+
+def WordAsOperatorToken(word):
+  # type: (word_t) -> Token
+  """
+  For a word that IS an operator (word.Token), return that token.
+
+  This must only be called on a word which is known to be an operator (word.Token).
+  """
+  assert word.tag() == word_e.Token, word
+  return cast(Token, word)
+
+
 #
 # Polymorphic between Token and Compound
 #
