@@ -620,7 +620,7 @@ def LiteralToken(UP_w):
   return None
 
 
-def WordAsKeywordToken(UP_w):
+def AsKeywordToken(UP_w):
   # type: (word_t) -> Token
   """
   Given a word that IS A keyword, return the single token at the start.
@@ -632,10 +632,12 @@ def WordAsKeywordToken(UP_w):
 
   part = w.parts[0]
   assert part.tag() == word_part_e.Literal, part
-  return cast(Token, part)
+  tok = cast(Token, part)
+  assert consts.GetKind(tok.id) == Kind.KW, tok
+  return tok
 
 
-def WordAsOperatorToken(word):
+def AsOperatorToken(word):
   # type: (word_t) -> Token
   """
   For a word that IS an operator (word.Token), return that token.

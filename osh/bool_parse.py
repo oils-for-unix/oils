@@ -120,7 +120,8 @@ class BoolParser(object):
       p_die('Expected ]]', loc.Word(self.cur_word))
 
     # Extract the ']]' keyword and return it's token for location tracking
-    right = word_.WordAsKeywordToken(self.cur_word)
+    right = word_.LiteralToken(self.cur_word)
+    assert right is not None
 
     return node, right
 
