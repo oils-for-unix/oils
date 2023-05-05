@@ -1203,11 +1203,14 @@ class WordParser(WordEmitter):
     return node
 
   def ReadDParen(self):
-    # type: () -> arith_expr_t
+    # type: () -> Tuple[arith_expr_t, Token]
     """Read ((1+ 2))  -- command context.
 
     We're using the word parser because it's very similar to _ReadArithExpr
     above.
+
+    This also returns the terminating `Op_DRightParen` token for use as location
+    tracking.
     """
     # The second one needs to be disambiguated in stuff like stuff like:
     # TODO: Be consistent with ReadForExpression below and use lex_mode_e.Arith?
@@ -1221,12 +1224,13 @@ class WordParser(WordEmitter):
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     self._Peek()
+    right = self.cur_token
     if self.token_type != Id.Op_DRightParen:
       p_die('Expected second ) to end arith statement', self.cur_token)
 
     self._Next(lex_mode_e.ShCommand)
 
-    return anode
+    return anode, right
 
   def _NextNonSpace(self):
     # type: () -> None

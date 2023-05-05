@@ -71,20 +71,6 @@ def _KeywordSpid(w):
   return word_.LeftMostSpanForWord(w)
 
 
-def _KeywordToken(UP_w):
-  # type: (word_t) -> Token
-  """Given a word that IS A keyword, return the single token at the start.
-
-  In C++, this casts without checking, so BE CAREFUL to call it in the right context.
-  """
-  assert UP_w.tag() == word_e.Compound, UP_w
-  w = cast(CompoundWord, UP_w)
-
-  part = w.parts[0]
-  assert part.tag() == word_part_e.Literal, part
-  return cast(Token, part)
-
-
 def _ReadHereLines(line_reader,  # type: _Reader
                    h,  # type: Redir
                    delimiter,  # type: str
@@ -550,7 +536,7 @@ class CommandParser(object):
 
       self.c_kind = word_.CommandKind(self.cur_word)
       self.c_id = word_.CommandId(self.cur_word)
-      # Note: could use the equivalent of _KeywordSpid here, or _KeywordToken
+      # Note: could use the equivalent of _KeywordSpid here, or word_.AsKeywordToken
 
       self.next_lex_mode = lex_mode_e.Undefined
 
@@ -1109,12 +1095,12 @@ class CommandParser(object):
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
     self._Eat(Id.KW_Do)
-    do_kw = _KeywordToken(self.cur_word)  # Must come AFTER _Eat
+    do_kw = word_.AsKeywordToken(self.cur_word)  # Must come AFTER _Eat
 
     c_list = self._ParseCommandList()  # could be anything
 
     self._Eat(Id.KW_Done)
-    done_kw = _KeywordToken(self.cur_word)  # after _Eat
+    done_kw = word_.AsKeywordToken(self.cur_word)  # after _Eat
 
     node = command.DoGroup(do_kw, c_list.children, done_kw)
     node.spids.append(do_kw.span_id)
@@ -1293,7 +1279,7 @@ class CommandParser(object):
                | For '((' ... TODO
     """
     self._Eat(Id.KW_For)
-    for_kw = _KeywordToken(self.cur_word)
+    for_kw = word_.AsKeywordToken(self.cur_word)
 
     self._Peek()
     if self.c_id == Id.Op_DLeftParen:
@@ -1478,7 +1464,7 @@ class CommandParser(object):
     arms = if_node.arms
 
     while self.c_id == Id.KW_Elif:
-      elif_kw = _KeywordToken(self.cur_word)
+      elif_kw = word_.AsKeywordToken(self.cur_word)
       self._Next()  # skip elif
       if (self.parse_opts.parse_paren() and
           self.w_parser.LookPastSpace() == Id.Op_LParen):
@@ -1555,14 +1541,14 @@ class CommandParser(object):
 
     self._Peek()
     while self.c_id == Id.KW_Elif:
-      elif_kw = _KeywordToken(self.cur_word)
+      elif_kw = word_.AsKeywordToken(self.cur_word)
 
       self._Next()  # skip elif
       commands = self._ParseCommandList()
       cond = condition.Shell(commands.children)
 
       self._Eat(Id.KW_Then)
-      then_kw = _KeywordToken(self.cur_word)
+      then_kw = word_.AsKeywordToken(self.cur_word)
 
       body = self._ParseCommandList()
       arm = IfArm(elif_kw, cond, then_kw, body.children, [elif_kw.span_id, then_kw.span_id])
@@ -1570,7 +1556,7 @@ class CommandParser(object):
       arms.append(arm)
 
     if self.c_id == Id.KW_Else:
-      else_kw = _KeywordToken(self.cur_word)
+      else_kw = word_.AsKeywordToken(self.cur_word)
       else_spid = else_kw.span_id
       self._Next()
       body = self._ParseCommandList()
@@ -1587,7 +1573,7 @@ class CommandParser(object):
     """
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
-    if_kw = _KeywordToken(self.cur_word)
+    if_kw = word_.AsKeywordToken(self.cur_word)
     if_node = command.If.CreateNull(alloc_lists=True)
     if_node.if_kw = if_kw
     self._Next()  # skip if
@@ -1609,7 +1595,7 @@ class CommandParser(object):
       return self._ParseOilIf(if_kw, cond)
 
     self._Eat(Id.KW_Then)
-    then_kw = _KeywordToken(self.cur_word)
+    then_kw = word_.AsKeywordToken(self.cur_word)
     body = self._ParseCommandList()
 
     arm = IfArm(if_kw, cond, then_kw, body.children, [if_kw.span_id, then_kw.span_id])
@@ -1621,7 +1607,7 @@ class CommandParser(object):
       if_node.spids.append(runtime.NO_SPID)  # no else spid
 
     self._Eat(Id.KW_Fi)
-    fi_kw = _KeywordToken(self.cur_word)
+    fi_kw = word_.AsKeywordToken(self.cur_word)
 
     if_node.fi_kw = fi_kw
     if_node.spids.append(fi_kw.span_id)
@@ -1634,11 +1620,11 @@ class CommandParser(object):
 
     According to bash help.
     """
-    time_spid = _KeywordSpid(self.cur_word)
+    time_kw = word_.AsKeywordToken(self.cur_word)
     self._Next()  # skip time
     pipeline = self.ParsePipeline()
-    node = command.TimeBlock(pipeline)
-    node.spids.append(time_spid)
+    node = command.TimeBlock(time_kw, pipeline)
+    node.spids.append(time_kw.span_id)
     return node
 
   def ParseCompoundCommand(self):
@@ -1674,7 +1660,7 @@ class CommandParser(object):
       # redirects, but Oil for doesn't.
       return self.ParseFor()
     if self.c_id in (Id.KW_While, Id.KW_Until):
-      keyword = _KeywordToken(self.cur_word)
+      keyword = word_.AsKeywordToken(self.cur_word)
       n3 = self.ParseWhileUntil(keyword)
       n3.redirects = self._ParseRedirectList()
       return n3
@@ -1724,7 +1710,7 @@ class CommandParser(object):
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
     """
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left_spid = _KeywordSpid(self.cur_word)
 
     word0 = cast(CompoundWord, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(word0)
@@ -1760,9 +1746,11 @@ class CommandParser(object):
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
 
+      func.name_loc = loc.Word(word0)
+
       # matches ParseKshFunctionDef below
       func.spids.append(left_spid)
-      func.spids.append(left_spid)  # name_spid is same as left_spid in this case
+      func.spids.append(left_spid)  # name span id is same as left_spid in this case
       func.spids.append(after_name_spid)
       return func
     else:
@@ -1774,7 +1762,7 @@ class CommandParser(object):
     """
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
-    keyword_tok = _KeywordToken(self.cur_word)
+    keyword_tok = word_.AsKeywordToken(self.cur_word)
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip past 'function'
@@ -1785,6 +1773,7 @@ class CommandParser(object):
     if len(name) == 0:  # example: foo$x is invalid
       p_die('Invalid KSH-style function name', loc.Word(cur_word))
 
+    name_loc = loc.Word(self.cur_word)
     name_spid = word_.LeftMostSpanForWord(self.cur_word)
     after_name_spid = name_spid + 1
     self._Next()  # skip past 'function name
@@ -1804,6 +1793,9 @@ class CommandParser(object):
     with ctx_VarChecker(self.var_checker, keyword_tok):
       func.body = self.ParseCompoundCommand()
 
+    func.keyword = keyword_tok
+    func.name_loc = name_loc
+
     # matches ParseFunctionDef above
     func.spids.append(left_spid)
     func.spids.append(name_spid)
@@ -1814,7 +1806,7 @@ class CommandParser(object):
     # type: () -> command.Proc
     node = command.Proc.CreateNull(alloc_lists=True)
 
-    keyword_tok = _KeywordToken(self.cur_word)
+    keyword_tok = word_.AsKeywordToken(self.cur_word)
     node.keyword = keyword_tok
 
     with ctx_VarChecker(self.var_checker, keyword_tok):
@@ -1849,7 +1841,7 @@ class CommandParser(object):
 
   def ParseSubshell(self):
     # type: () -> command.Subshell
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left = word_.AsOperatorToken(self.cur_word)
     self._Next()  # skip past (
 
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
@@ -1863,13 +1855,13 @@ class CommandParser(object):
     else:
       child = c_list
 
-    node = command.Subshell(child, None)  # no redirects yet
-
-    right_spid = word_.LeftMostSpanForWord(self.cur_word)
+    right = word_.AsOperatorToken(self.cur_word)
     self._Eat(Id.Right_Subshell)
 
-    node.spids.append(left_spid)
-    node.spids.append(right_spid)
+    node = command.Subshell(left, child, right, None)  # no redirects yet
+
+    node.spids.append(left.span_id)
+    node.spids.append(right.span_id)
     return node
 
   def ParseDBracket(self):
@@ -1877,35 +1869,43 @@ class CommandParser(object):
     """
     Pass the underlying word parser off to the boolean expression parser.
     """
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left = word_.AsKeywordToken(self.cur_word)
     # TODO: Test interactive.  Without closing ]], you should get > prompt
     # (PS2)
 
     self._Next()  # skip [[
     b_parser = bool_parse.BoolParser(self.w_parser)
-    bnode = b_parser.Parse()  # May raise
+    bnode, right = b_parser.Parse()  # May raise
 
     self._Peek()
+    # Similar to the scenario with ParseDParen, we must get the span id following
+    # the ']]' token.
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    node = command.DBracket(bnode, None)  # no redirects yet
-    node.spids.append(left_spid)
+    node = command.DBracket(left, bnode, right, None)  # no redirects yet
+    node.spids.append(left.span_id)
     node.spids.append(right_spid)
     return node
 
   def ParseDParen(self):
     # type: () -> command.DParen
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left = word_.AsOperatorToken(self.cur_word)
 
     self._Next()  # skip ((
-    anode = self.w_parser.ReadDParen()
+    anode, right = self.w_parser.ReadDParen()
     assert anode is not None
 
     self._Peek()
+    # The right span id must lie directly after the Op_DRightParen token for
+    # `Tracer` to print properly.
+    # (( a = 42 )) <...>
+    #              ^^^^^-- span id points here
+    # NOTE: we have a simular situation in ParseDBracket
+    # TODO: fix `Tracer.PrintSourceCode` so we don't need this span id
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    node = command.DParen(anode, None)  # no redirects yet
-    node.spids.append(left_spid)
+    node = command.DParen(left, anode, right, None)  # no redirects yet
+    node.spids.append(left.span_id)
     node.spids.append(right_spid)
     return node
 
@@ -1967,7 +1967,8 @@ class CommandParser(object):
       return n9
 
     if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):  # = 42 + 1
-      keyword = _KeywordToken(self.cur_word)
+      keyword = word_.LiteralToken(self.cur_word)
+      assert keyword is not None
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
       return command.Expr(keyword, enode)
