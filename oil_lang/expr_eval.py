@@ -132,7 +132,7 @@ def _PyObjToValue(val):
       return value.Dict({k: _PyObjToValue(v) for k, v in val.items()})
 
   elif isinstance(val, objects.Regex):
-    eggex = value.Eggex(val.regex, '')
+    eggex = value.Eggex(val.regex, None)
     if val.as_ere is not None:
       eggex.as_ere = val.as_ere
 
@@ -253,7 +253,7 @@ def _ValuesEqual(left, right):
         return False
 
       for k in left.d.keys():
-        if not k in right.d or right.d[k] != left.d[k]:
+        if k not in right.d or right.d[k] != left.d[k]:
           return False
 
       return True
@@ -265,7 +265,7 @@ def _ValuesEqual(left, right):
         return False
 
       for k in left.d.keys():
-        if not k in right.d or not _ValuesEqual(right.d[k], left.d[k]):
+        if k not in right.d or not _ValuesEqual(right.d[k], left.d[k]):
           return False
 
       return True
@@ -324,7 +324,7 @@ def _ValueContains(needle, haystack):
 
 def AsPosixEre(eggex):
   # type: (value.Eggex) -> str
-  if len(eggex.as_ere):
+  if eggex.as_ere is not None:
     return eggex.as_ere
 
   parts = [] # type: List[str]
@@ -408,7 +408,6 @@ class OilEvaluator(object):
       if case(value_e.Str):
         right = cast(value.Str, UP_right)
         right_s = right.s
-        pass
       elif case(value_e.Eggex):
         right = cast(value.Eggex, UP_right)
         right_s = AsPosixEre(right)
