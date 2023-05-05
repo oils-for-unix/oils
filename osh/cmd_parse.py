@@ -1900,8 +1900,8 @@ class CommandParser(object):
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
 
-    right = _KeywordToken(self.cur_word)
     self._Peek()
+    right = self.arena.GetToken(word_.LeftMostSpanForWord(self.cur_word))
 
     node = command.DBracket(left, bnode, right, None)  # no redirects yet
     node.spids.append(left.span_id)
