@@ -1154,9 +1154,9 @@ class OilEvaluator(object):
             right = cast(value.Bool, UP_right)
             left2 = left2.lower()
             lb = False
-            if left2 in ('true', '1'):
+            if left2 in ('true'):
               lb = True
-            elif left2 in ('false', '0'):
+            elif left2 in ('false'):
               lb = False
             else:
               return value.Bool(False)

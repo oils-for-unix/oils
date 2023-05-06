@@ -67,15 +67,10 @@ if (' true ' ~== false) {
 const matrix = [
   ' TRue ' ~== true,  # case insentiive
   ' FALse ' ~== false,
-
-  # Note this is the opposite of exit codes :-(
-  # Maybe we should encourage 'if try' instead of 'if'
-  ' 1 ' ~== true,
-  ' 0 ' ~== false,
 ]
 
 # = matrix
-if (matrix === [true, true, true, true]) {
+if (matrix === [true, true]) {
   echo 'bool matrix'
 }
 
