@@ -57,7 +57,7 @@ module runtime
   | Dict(Dict[str, value] d)
 
     # / d+ /
-  | Eggex(re expr, str as_ere)
+  | Eggex(re expr, str? as_ere)
 
     # cd { echo 1; echo 2 } and &(echo 1; echo 2)
   | Block(command body)

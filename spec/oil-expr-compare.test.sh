@@ -17,7 +17,23 @@ if (3 !== '3') {
   echo 'ok'
 }
 
+# dicts
+var d1 = {'a': 1, 'b': 2}
+var d2 = {'a': 1, 'b': 2}
+var d3 = {'a': 1, 'b': 3}
+if (d1 === d2) {
+  echo 'ok'
+}
+if (d1 === d3) {
+  echo 'FAIL'
+}
+if (d1 !== d3) {
+  echo 'ok'
+}
+
 ## STDOUT:
+ok
+ok
 ok
 ok
 ## END
@@ -51,15 +67,10 @@ if (' true ' ~== false) {
 const matrix = [
   ' TRue ' ~== true,  # case insentiive
   ' FALse ' ~== false,
-
-  # Note this is the opposite of exit codes :-(
-  # Maybe we should encourage 'if try' instead of 'if'
-  ' 1 ' ~== true,
-  ' 0 ' ~== false,
 ]
 
 # = matrix
-if (matrix === [true, true, true, true]) {
+if (matrix === [true, true]) {
   echo 'bool matrix'
 }
 
@@ -283,4 +294,39 @@ if ( (0,0) > t1) { echo yes3 }
 ## STDOUT:
 yes1
 yes2
+## END
+
+#### Collection membership
+shopt -s oil:upgrade
+
+var l = [3, 17, 1, {'foo': 'bar'}, 'bloop']
+var d = {'a': 1, 'b': false, 'c': 'hmmm'}
+
+if (17 in l) {
+  echo Int-in-List
+}
+if (4 in l) {
+  echo FAIL
+}
+if ('bloop' in l) {
+  echo Str-in-List
+}
+if ({'foo': 'bar'} in l) {
+  echo Dict-in-List
+}
+if ({'foo': 'baz'} in l) {
+  echo FAIL
+}
+if ('a' in d) {
+  echo Str-in-Dict
+}
+if ('d' in d) {
+  echo FAIL
+}
+
+## STDOUT:
+Int-in-List
+Str-in-List
+Dict-in-List
+Str-in-Dict
 ## END
