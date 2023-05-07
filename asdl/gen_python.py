@@ -523,11 +523,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # Don't generate a class.
         pass
       else:
-        # Use fully-qualified name, so we can have osh_cmd.Simple and
-        # oil_cmd.Simple.
-        fq_name = variant.name
-        self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                       i + 1, class_ns=sum_name + '.')
+        num_fields = len(variant.fields)
+        if 'zero_arg_singleton' in sum.generate and num_fields == 0:
+          log(' variant %s has %d args', variant, len(variant.fields))
+        else:
+          # Use fully-qualified name, so we can have osh_cmd.Simple and
+          # oil_cmd.Simple.
+          fq_name = variant.name
+          self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
+                         i + 1, class_ns=sum_name + '.')
 
     self.Dedent()
     self.Emit('')
