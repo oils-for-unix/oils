@@ -1443,7 +1443,7 @@ class CommandParser(object):
       # TODO: should it return a list of nodes, and extend?
       self._Peek()
     else:
-        esac_kw = word_.AsKeywordToken(self.cur_word)
+      esac_kw = word_.AsKeywordToken(self.cur_word)
 
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:

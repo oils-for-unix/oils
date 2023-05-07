@@ -302,7 +302,7 @@ module syntax
   | ControlFlow(Token keyword, word? arg_word)
     # Note: There are spids for every pipeline operator, parallel to
     # stderr_indices
-  | Pipeline(Token pipline_op, List[command] children, bool negated, List[int] stderr_indices)
+  | Pipeline(Token pipeline_op, List[command] children, bool negated, List[int] stderr_indices)
   | AndOr(Token op, List[id] ops, List[Token] op_toks, List[command] children)
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
   | DoGroup(Token left, List[command] children, Token right)
