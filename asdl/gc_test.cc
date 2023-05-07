@@ -87,6 +87,51 @@ TEST hnode_test() {
   PASS();
 }
 
+
+// use struct instead of namespace so 'using' works consistently
+#define ASDL_NAMES struct
+
+class loc_t { 
+};
+
+class loc__Missing : public loc_t {
+ public:
+  loc__Missing() { }
+
+  hnode_t* PrettyTree();
+
+  static constexpr ObjHeader obj_header() {
+    //return ObjHeader::AsdlClass(static_cast<uint16_t>(loc_e::Missing), 0);
+    return ObjHeader::AsdlClass(42, 0);
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(loc__Missing)
+};
+
+GcGlobal<loc__Missing> gMissing = {
+  {kNotInPool, TypeTag::AsdlGlobal, kZeroMask, HeapTag::Global, kIsGlobal}};
+
+ASDL_NAMES loc {
+  //typedef loc__Missing Missing;
+  static constexpr loc__Missing* Missing = &gMissing.obj;
+};
+
+// using loc::Missing;
+
+
+TEST no_args_variant_test() {
+  printf("hi\n");
+
+  //auto m = Alloc<loc::Missing>();
+
+  // loc.Missing in Python -> loc::Missing
+  auto m = loc::Missing;
+
+  ASSERT(loc::Missing == m);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -100,6 +145,7 @@ int main(int argc, char** argv) {
   // gHeap.Collect();
 
   RUN_TEST(pretty_print_test);
+  RUN_TEST(no_args_variant_test);
 
   gHeap.CleanProcessExit();
 
