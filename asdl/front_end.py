@@ -113,6 +113,29 @@ def _SumIsSimple(variant_list):
   return True
 
 
+_CODE_GEN_OPTIONS = [
+    'no_namespace_suffix',  # Id.Foo instead of Id_e.Foo
+
+    'integers',  # integer builtin_i instead of strongly typed builtin_e
+
+    'bit_set',  # not implemented: 1 << n instead of n
+
+    # TODO:
+    'zero_arg_singleton',  # migrate to this option, then delete it
+
+    # make this configurable, or make it a key-value pair
+    'common_synthetic_field:left_tok',
+
+    # Put this type and all types it references in the unique "first class
+    # variant" namespace, and generate type reflection.
+    'reflect_all_types',
+
+    # Squeeze and Freeze, with the number of bits as a option Hm the headers
+    # here still need type reflection.  Probably OK.
+    'mirror_all_types:16',
+    ]
+
+
 class ASDLParser(object):
   """Parser for ASDL files.
 
@@ -240,7 +263,7 @@ class ASDLParser(object):
       # Additional validation
       if generate is not None:
         for g in generate:
-          if g not in ['integers', 'bit_set', 'no_namespace_suffix', 'no_legacy__']:
+          if g not in _CODE_GEN_OPTIONS:
             raise ASDLSyntaxError('Invalid code gen option %r' % g,
                                   self.cur_token.lineno)
 
