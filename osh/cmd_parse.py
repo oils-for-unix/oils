@@ -1001,9 +1001,10 @@ class CommandParser(object):
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
-      assign = command.ShAssignment(pairs, redirects)
-      left_spid = word_.LeftMostSpanForWord(words[0])
-      assign.spids.append(left_spid)  # no keyword spid to skip past
+      # TODO: get token directly
+      left_tok = self.arena.GetToken(word_.LeftMostSpanForWord(words[0]))
+      assign = command.ShAssignment(left_tok, pairs, redirects)
+      assign.spids.append(left_tok.span_id)  # no keyword spid to skip past
       return assign
 
     kind, kw_token = word_.KeywordToken(suffix_words[0])
@@ -1381,16 +1382,18 @@ class CommandParser(object):
     return arm
 
   def ParseCaseList(self, arms):
-    # type: (List[CaseArm]) -> None
+    # type: (List[CaseArm]) -> Optional[Token]
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
+
+    Returns the terminating `esac` keyword (if present) for location tracking.
     """
     self._Peek()
 
     while True:
       # case item begins with a command word or (
       if self.c_id == Id.KW_Esac:
-        break
+        return word_.AsKeywordToken(self.cur_word)
       if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:
         break
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
@@ -1401,6 +1404,8 @@ class CommandParser(object):
       self._Peek()
       # Now look for DSEMI or ESAC
 
+    return None
+
   def ParseCase(self):
     # type: () -> command.Case
     """
@@ -1408,7 +1413,7 @@ class CommandParser(object):
     """
     case_node = command.Case.CreateNull(alloc_lists=True)
 
-    case_spid = _KeywordSpid(self.cur_word)
+    case_kw = word_.AsKeywordToken(self.cur_word)
     self._Next()  # skip case
 
     self._Peek()
@@ -1422,21 +1427,24 @@ class CommandParser(object):
     case_node.to_match = to_match
     self._Next()
 
+    in_kw = None  # type: Token
+
     self._NewlineOk()
-    in_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       self._Next()
     else:
       self._Eat(Id.KW_In)
+      in_kw = word_.AsKeywordToken(self.cur_word)
     self._NewlineOk()
 
     if self.c_id != Id.KW_Esac:  # empty case list
-      self.ParseCaseList(case_node.arms)
+      esac_kw = self.ParseCaseList(case_node.arms)
       # TODO: should it return a list of nodes, and extend?
       self._Peek()
+    else:
+      esac_kw = word_.AsKeywordToken(self.cur_word)
 
-    esac_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:
       self._Next()
@@ -1444,9 +1452,13 @@ class CommandParser(object):
       self._Eat(Id.KW_Esac)
     self._Next()
 
-    case_node.spids.append(case_spid)
-    case_node.spids.append(in_spid)
-    case_node.spids.append(esac_spid)
+    case_node.case_kw = case_kw
+    case_node.in_kw = in_kw
+    case_node.esac_kw = esac_kw
+
+    case_node.spids.append(case_kw.span_id)
+    case_node.spids.append(in_kw.span_id if in_kw else runtime.NO_SPID)
+    case_node.spids.append(esac_kw.span_id if esac_kw else runtime.NO_SPID)
     return case_node
 
   def _ParseOilElifElse(self, if_node):
@@ -2163,13 +2175,11 @@ class CommandParser(object):
     if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
       return child
 
-    ops = []  # type: List[int]
-    op_spids = []  # type: List[int]
+    ops = []  # type: List[Token]
     children = [child]
 
     while True:
-      ops.append(self.c_id)
-      op_spids.append(word_.LeftMostSpanForWord(self.cur_word))
+      ops.append(word_.AsOperatorToken(self.cur_word))
 
       self._Next()  # skip past || &&
       self._NewlineOk()
@@ -2183,7 +2193,9 @@ class CommandParser(object):
         break
 
     node = command.AndOr(ops, children)
-    node.spids = op_spids
+    for token in ops:
+        # we cannot use a list comprehension as those are not supported by mycpp
+        node.spids.append(token.span_id)
     return node
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.

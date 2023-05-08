@@ -298,12 +298,12 @@ module syntax
   | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
   | Sentence(command child, Token terminator)
     # Note: Only represents "bare assignment"
-  | ShAssignment(List[AssignPair] pairs, List[Redir] redirects)
+  | ShAssignment(Token var, List[AssignPair] pairs, List[Redir] redirects)
   | ControlFlow(Token keyword, word? arg_word)
     # Note: There are spids for every pipeline operator, parallel to
     # stderr_indices
   | Pipeline(List[command] children, bool negated, List[int] stderr_indices)
-  | AndOr(List[id] ops, List[command] children)
+  | AndOr(List[Token] ops, List[command] children)
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
   | DoGroup(Token left, List[command] children, Token right)
     # A brace group is a compound command, with redirects.
@@ -323,7 +323,8 @@ module syntax
   | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
        Token? fi_kw, List[Redir] redirects)
-  | Case(word to_match, List[CaseArm] arms, List[Redir] redirects)
+  | Case(Token case_kw, word to_match, Token? in_kw, List[CaseArm] arms,
+         Token? esac_kw, List[Redir] redirects)
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
   | ShFunction(Token? keyword, loc name_loc, str name, command body)
