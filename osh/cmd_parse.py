@@ -1458,7 +1458,7 @@ class CommandParser(object):
 
     case_node.spids.append(case_kw.span_id)
     case_node.spids.append(in_kw.span_id if in_kw else runtime.NO_SPID)
-    case_node.spids.append(esac_kw.span_id if in_kw else runtime.NO_SPID)
+    case_node.spids.append(esac_kw.span_id if esac_kw else runtime.NO_SPID)
     return case_node
 
   def _ParseOilElifElse(self, if_node):
