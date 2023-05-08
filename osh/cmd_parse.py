@@ -2402,7 +2402,7 @@ class CommandParser(object):
     self._NewlineOk()
 
     if self.c_kind == Kind.Eof:  # e.g. $()
-      return command.NoOp()
+      return command.NoOp
 
     c_list = self._ParseCommandTerm()
     if len(c_list.children) == 1:

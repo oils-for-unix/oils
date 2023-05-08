@@ -954,9 +954,9 @@ class Transformer(object):
           self._Suite(node.GetChild(4))
         )
     elif node.tok.id == Id.Expr_Break:
-      return command.Break()
+      return command.Break
     elif node.tok.id == Id.Expr_Continue:
-      return command.Continue()
+      return command.Continue
     elif node.tok.id == Id.Expr_Return:
       # 'return' [testlist]
       if node.NumChildren() == 1:
@@ -965,7 +965,7 @@ class Transformer(object):
         return command.Return(self.Expr(node.GetChild(1)))
     elif node.tok.id == Id.Expr_Name:
       # TODO: turn echo 'hi' into AST
-      return command.NoOp()
+      return command.NoOp
     else:
       raise NotImplementedError(Id_str(node.tok.id))
 
