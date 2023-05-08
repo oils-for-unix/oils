@@ -1128,7 +1128,7 @@ class CommandEvaluator(object):
         while i < n:
           #log('i %d status %d', i, status)
           child = node.children[i]
-          op_id = node.ops[i-1]
+          op_id = node.ops[i-1].id
 
           #log('child %s op_id %s', child, op_id)
 

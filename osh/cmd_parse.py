@@ -2092,11 +2092,11 @@ class CommandParser(object):
     negated = False
 
     # For blaming failures
-    pipeline_op = None  # type: Token
+    pipeline_spid = runtime.NO_SPID
 
     self._Peek()
     if self.c_id == Id.KW_Bang:
-      pipeline_op = word_.AsKeywordToken(self.cur_word)
+      pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
       negated = True
       self._Next()
 
@@ -2109,8 +2109,8 @@ class CommandParser(object):
     if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
       if negated:
         no_stderrs = []  # type: List[int]
-        node = command.Pipeline(pipeline_op, children, negated, no_stderrs)
-        node.spids.append(pipeline_op.span_id if pipeline_op else runtime.NO_SPID)
+        node = command.Pipeline(children, negated, no_stderrs)
+        node.spids.append(pipeline_spid)
         return node
       else:
         return child
@@ -2124,8 +2124,8 @@ class CommandParser(object):
 
     while True:
       # Set it to the first | if it isn't already set.
-      if not pipeline_op:
-        pipeline_op = word_.AsOperatorToken(self.cur_word)
+      if pipeline_spid == runtime.NO_SPID:
+        pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
 
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
       self._NewlineOk()
@@ -2141,10 +2141,8 @@ class CommandParser(object):
         stderr_indices.append(pipe_index)
       pipe_index += 1
 
-    assert pipeline_op, "pipeline_op should have been assigned to"
-
-    node = command.Pipeline(pipeline_op, children, negated, stderr_indices)
-    node.spids.append(pipeline_op.span_id)
+    node = command.Pipeline(children, negated, stderr_indices)
+    node.spids.append(pipeline_spid)
     return node
 
   def ParseAndOr(self):
@@ -2177,15 +2175,11 @@ class CommandParser(object):
     if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
       return child
 
-    ops = []  # type: List[int]
-    op_toks = []  # type: List[Token]
-    op_spids = []  # type: List[int]
+    ops = []  # type: List[Token]
     children = [child]
 
     while True:
-      ops.append(self.c_id)
-      op_toks.append(word_.AsOperatorToken(self.cur_word))
-      op_spids.append(word_.LeftMostSpanForWord(self.cur_word))
+      ops.append(word_.AsOperatorToken(self.cur_word))
 
       self._Next()  # skip past || &&
       self._NewlineOk()
@@ -2198,9 +2192,10 @@ class CommandParser(object):
       if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
         break
 
-    assert len(op_toks) >= 1, "There must be at least 1 operator token"
-    node = command.AndOr(op_toks[0], ops, op_toks, children)
-    node.spids = op_spids
+    node = command.AndOr(ops, children)
+    for token in ops:
+        # we cannot use a list comprehension as those are not supported by mycpp
+        node.spids.append(token.span_id)
     return node
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
