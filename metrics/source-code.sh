@@ -49,7 +49,7 @@ for path in sys.argv[1:]:
   with open(path) as f:
     for line in f:
       line = line.strip()
-      if not line or line.startswith("--"):
+      if not line or line.startswith("#"):
         continue
       num_lines += 1
 
