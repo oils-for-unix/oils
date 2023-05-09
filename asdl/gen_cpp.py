@@ -726,7 +726,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         if not variant.shared_type and len(variant.fields) == 0:
           variant_name = variant.name
           self.Emit('GcGlobal<%s__%s> g%s = ' % (sum_name, variant_name, variant_name))
-          self.Emit('  {{kNotInPool, TypeTag::AsdlGlobal, kZeroMask, HeapTag::Global, kIsGlobal}};')
+          self.Emit('  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};' % (sum_name, variant_name))
           self.Emit('')
 
     for variant in sum.types:

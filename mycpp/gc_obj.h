@@ -26,7 +26,6 @@ const int OtherClass = 127;  // non-ASDL class
 const int Str = 126;         // asserted in dynamic StrFormat()
 const int Slab = 125;
 const int Tuple = 124;
-const int AsdlGlobal = 123;
 };  // namespace TypeTag
 
 const int kNotInPool = 0;
