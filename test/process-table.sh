@@ -52,7 +52,7 @@ run-tasks() {
 report-html-head() {
   local title=$1
 
-  local base_url='../../web'
+  local base_url='../../../web'
 
   html-head --title "$title" \
     "$base_url/table/table-sort.js" \
@@ -102,7 +102,9 @@ make-report() {
   # TODO: Add ROW_CSS_CLASS when status != 0
   add-css-class < $times_tsv > $BASE_DIR/index.tsv
 
-  local html=$BASE_DIR/index.html
+  local html=$BASE_DIR/www/index.html
+  mkdir -p $(dirname $html)
+
   print-report $BASE_DIR/index.tsv > $html
 
   echo "Wrote $html"

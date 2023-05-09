@@ -108,7 +108,7 @@ dump-env         soil/diagnose.sh dump-env        -
 py-all-and-ninja soil/worker.sh py-all-and-ninja  -
 nohup            test/nohup.sh soil-run           -
 interactive-osh  test/spec-py.sh interactive-osh  _tmp/spec/interactive-osh/index.html
-process-table    test/process-table.sh soil-run   _tmp/process-table/index.html
+process-table    test/process-table.sh soil-run   _tmp/process-table/www/index.html
 stateful         test/stateful.sh soil-run        _tmp/spec/stateful/index.html
 EOF
 }
