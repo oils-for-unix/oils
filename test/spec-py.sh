@@ -48,8 +48,10 @@ tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
 interactive-osh() {
+  # Doesn't seem to triggger "Stopped" bug, but it hangs in the CI unless serial
+
   # pass '1' to make it serial.  default is N-1 CPUS in test/spec-common.sh
-  local max_procs=${1:-}
+  local max_procs=${1:-1}
 
   # Note: without MAX_PROCS=1, I observed at least 2 instances of hanging (for
   # 30 minutes)
@@ -65,6 +67,8 @@ interactive-osh() {
 }
 
 interactive-bash() {
+  # Triggers the "Stopped" bug with bash alone, unless max_procs=1
+
   # pass '1' to make it serial.  default is N-1 CPUS in test/spec-common.sh
   local max_procs=${1:-}
 
@@ -74,7 +78,7 @@ interactive-bash() {
 
 
 interactive-osh-bash() {
-  ### Triggers the "Stopped" bug with osh and bash!
+  # Triggers the "Stopped" bug with osh and bash!
 
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel interactive osh-bash interactive-osh-bash
