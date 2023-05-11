@@ -48,6 +48,9 @@ tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
 interactive-osh() {
+  # pass '1' to make it serial.  default is N-1 CPUS in test/spec-common.sh
+  local max_procs=${1:-}
+
   # Note: without MAX_PROCS=1, I observed at least 2 instances of hanging (for
   # 30 minutes)
   #
@@ -58,12 +61,15 @@ interactive-osh() {
   #   the kernel in Python unit tests
 
   # $suite $compare_mode $spec_subdir
-  MAX_PROCS=1 test/spec-runner.sh all-parallel interactive osh-only interactive-osh
+  MAX_PROCS=$max_procs test/spec-runner.sh all-parallel interactive osh-only interactive-osh
 }
 
 interactive-bash() {
+  # pass '1' to make it serial.  default is N-1 CPUS in test/spec-common.sh
+  local max_procs=${1:-}
+
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel interactive bash-only interactive-bash
+  MAX_PROCS=$max_procs test/spec-runner.sh all-parallel interactive bash-only interactive-bash
 }
 
 
