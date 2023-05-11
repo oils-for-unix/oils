@@ -1436,7 +1436,8 @@ class JobControl(object):
       return
 
     try:
-      posix.tcsetpgrp(self.shell_tty_fd, pgid)
+      while posix.tcgetpgrp(self.shell_tty_fd) != pgid:
+        posix.tcsetpgrp(self.shell_tty_fd, pgid)
     except (IOError, OSError) as e:
       e_die('osh: Failed to move process group %d to foreground: %s' %
             (pgid, pyutil.strerror(e)))
@@ -1722,12 +1723,12 @@ class Waiter(object):
       term_sig = WTERMSIG(status)
       status = 128 + term_sig
 
+      self.job_list.WhenDone(pid)
+      proc.WhenDone(pid, status)
+
       # Print newline after Ctrl-C.
       if term_sig == SIGINT:
         print('')
-
-      self.job_list.WhenDone(pid)
-      proc.WhenDone(pid, status)
 
     elif WIFEXITED(status):
       status = WEXITSTATUS(status)
@@ -1739,10 +1740,10 @@ class Waiter(object):
       #status = WEXITSTATUS(status)
       stop_sig = WSTOPSIG(status)
 
-      print_stderr('')
-      print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
       self.job_list.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped(stop_sig)
+      print_stderr('')
+      print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
 
     else:
       raise AssertionError(status)
