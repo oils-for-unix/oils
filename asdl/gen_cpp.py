@@ -327,6 +327,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def VisitCompoundSum(self, sum, sum_name, depth):
     #log('%d variants in %s', len(sum.types), sum_name)
 
+    zero_arg_singleton = 'zero_arg_singleton' in sum.generate
+
     # Must fit in 7 bit Obj::type_tag
     assert len(sum.types) < 64, 'sum type %r has too many variants' % sum_name
 
@@ -368,20 +370,39 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         super_name = '%s_t' % sum_name
         tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name, variant.name)
         class_name = '%s__%s' % (sum_name, variant.name)
+        singleton = zero_arg_singleton and len(variant.fields) == 0
+
+        # NOTE: We disable attribute initialization (really only spids) for
+        # singleton variants because those variants must be statically
+        # initialized. The `spids` attribute is an array which is initialized
+        # during construction for each variant on the gc heap. When the program
+        # initializes (pre main, ie. _start) we cannot use the gc heap as it has
+        # yet to initialize. As we do not use the `spids` array on singleton
+        # variants, we can safely "initialize" `spids` to a nullptr.
         self._GenClass(variant, sum.attributes, class_name, [super_name], depth,
-                       tag)
+                       tag, not singleton)
+
+    # Generate `extern` declarations for zero arg singleton globals
+    if zero_arg_singleton:
+      for variant in sum.types:
+        if not variant.shared_type and len(variant.fields) == 0:
+          variant_name = variant.name
+          Emit('extern GcGlobal<%(sum_name)s__%(variant_name)s> g%(variant_name)s;')
 
     # Allow expr::Const in addition to expr.Const.
     Emit('ASDL_NAMES %(sum_name)s {')
     for variant in sum.types:
       if not variant.shared_type:
         variant_name = variant.name
-        Emit('  typedef %(sum_name)s__%(variant_name)s %(variant_name)s;')
+        if zero_arg_singleton and len(variant.fields) == 0:
+          Emit('  static constexpr %(sum_name)s__%(variant_name)s* %(variant_name)s = &g%(variant_name)s.obj;')
+        else:
+          Emit('  typedef %(sum_name)s__%(variant_name)s %(variant_name)s;')
     Emit('};')
     Emit('')
 
   def _GenClass(self, ast_node, attributes, class_name, base_classes, depth,
-                tag):
+                tag, init_attributes):
     """For Product and Constructor."""
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
@@ -418,8 +439,14 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       if f in attributes:
         # spids are initialized separately
+
+        if init_attributes:
+          value = _DefaultValue(f.typ, conditional=False)
+        else:
+          value = 'nullptr'
+
         inits.append('%s(%s)' %
-                     (f.name, _DefaultValue(f.typ, conditional=False)))
+                     (f.name, value))
       else:
         inits.append('%s(%s)' % (f.name, f.name))
 
@@ -486,7 +513,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       bases = self._product_bases[name]
       #if not bases:
       #  bases = ['Obj']
-      self._GenClass(ast_node, attributes, name, bases, depth, tag_num)
+      self._GenClass(ast_node, attributes, name, bases, depth, tag_num, True)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
@@ -692,6 +719,15 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
   def VisitCompoundSum(self, sum, sum_name, depth):
     self._EmitStrFunction(sum, sum_name, depth)
+
+    # Generate definitions for the for zero arg singleton globals
+    if 'zero_arg_singleton' in sum.generate:
+      for variant in sum.types:
+        if not variant.shared_type and len(variant.fields) == 0:
+          variant_name = variant.name
+          self.Emit('GcGlobal<%s__%s> g%s = ' % (sum_name, variant_name, variant_name))
+          self.Emit('  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};' % (sum_name, variant_name))
+          self.Emit('')
 
     for variant in sum.types:
       if variant.shared_type:

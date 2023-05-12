@@ -364,6 +364,7 @@ module syntax
   | Break | Continue
   | Return(expr? value)
   attributes (List[int] spids)
+  generate [zero_arg_singleton]
 
   # Binary(x expr, y expr) or Nullary %Token
   # In the first case we have a tag, and an anonymous type.

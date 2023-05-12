@@ -22,7 +22,7 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     IntParamBox,
     loc, loc_t, loc_e, Token, CompoundWord,
-    command, command_e, command_t,
+    command, command_e, command_t, command__NoOp,
     condition, condition_e, condition_t,
     BraceGroup, ArgList,
     assign_op_e,
@@ -1418,7 +1418,7 @@ class CommandEvaluator(object):
           status = self._ExecuteList(node.else_action)
 
       elif case(command_e.NoOp):
-        node = cast(command.NoOp, UP_node)
+        node = cast(command__NoOp, UP_node)
         status = 0  # make it true
 
       elif case(command_e.Case):

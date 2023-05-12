@@ -513,6 +513,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     depth = self.current_depth
     self.Emit('')
 
+    # Declare any zero argument singleton classes outside of the main
+    # "namespace" class.
+    if 'zero_arg_singleton' in sum.generate:
+      for i, variant in enumerate(sum.types):
+        # NOTE: Don't generate a class for shared types.
+        if not variant.shared_type and len(variant.fields) == 0:
+          # We must use the old-style nameing here, ie. command__NoOp, in order
+          # to support zero field variants as constants.
+          class_name = '%s__%s' % (sum_name, variant.name)
+          self._GenClass(variant, sum.attributes, class_name, (sum_name + '_t',),
+                         i + 1)
+
     # Class that's just a NAMESPACE, e.g. for value.Str
     self.Emit('class %s(object):' % sum_name, depth)
 
@@ -522,6 +534,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       if variant.shared_type:
         # Don't generate a class.
         pass
+      elif 'zero_arg_singleton' in sum.generate and len(variant.fields) == 0:
+        self.Emit('%s = %s__%s()' % (variant.name, sum_name, variant.name))
+        self.Emit('')
       else:
         # Use fully-qualified name, so we can have osh_cmd.Simple and
         # oil_cmd.Simple.
