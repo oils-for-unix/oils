@@ -272,3 +272,14 @@ status=1
 status=1
 ## END
 ## OK bash stdout-json: "\nstatus=0\n\nstatus=0\n"
+
+
+#### Empty command sub $() (command::NoOp)
+
+# IMPORTANT: catch assert() failure in child process!!!
+shopt -s command_sub_errexit
+
+echo -$()- ".$()."
+## STDOUT:
+-- ..
+## END
