@@ -9,9 +9,9 @@ from _devbuild.gen.id_kind_asdl import Id
 from core import error
 from core import util
 #from mycpp.mylib import log
+from frontend import location
 from frontend import match
 from frontend import reader
-from osh import word_
 
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -106,8 +106,8 @@ class Evaluator(object):
               w = words[1]
             except IndexError:
               raise util.HistoryError("No first word in %r" % prev)
-            spid1 = word_.LeftMostSpanForWord(w)
-            spid2 = word_.RightMostSpanForWord(w)
+            spid1 = location.OfWordLeft(w)
+            spid2 = location.OfWordRight(w)
 
           elif ch == '$':
             try:
@@ -115,8 +115,8 @@ class Evaluator(object):
             except IndexError:
               raise util.HistoryError("No last word in %r" % prev)
 
-            spid1 = word_.LeftMostSpanForWord(w)
-            spid2 = word_.RightMostSpanForWord(w)
+            spid1 = location.OfWordLeft(w)
+            spid2 = location.OfWordRight(w)
 
           elif ch == '*':
             try:
@@ -125,8 +125,8 @@ class Evaluator(object):
             except IndexError:
               raise util.HistoryError("Couldn't find words in %r" % prev)
 
-            spid1 = word_.LeftMostSpanForWord(w1)
-            spid2 = word_.RightMostSpanForWord(w2)
+            spid1 = location.OfWordLeft(w1)
+            spid2 = location.OfWordRight(w2)
 
           else:
             raise AssertionError(ch)

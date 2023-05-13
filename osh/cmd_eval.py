@@ -56,7 +56,6 @@ from frontend import location
 from oil_lang import objects
 from osh import braces
 from osh import sh_expr_eval
-from osh import word_
 from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch
@@ -668,7 +667,7 @@ class CommandEvaluator(object):
         # Note that for '> $LINENO' the span_id is set in _EvalRedirect.
         # TODO: Can we avoid setting this so many times?  See issue #567.
         if len(node.words):
-          span_id = word_.LeftMostSpanForWord(node.words[0])
+          span_id = location.OfWordLeft(node.words[0])
           # Special case for __cat < file: leave it at the redirect.
           if span_id != runtime.NO_SPID:
             self.mem.SetCurrentSpanId(span_id)

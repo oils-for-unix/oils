@@ -20,6 +20,7 @@ from core import error
 from core import test_lib
 from core.test_lib import Tok
 from frontend import lexer
+from frontend import location
 from osh import word_
 
 
@@ -60,7 +61,7 @@ def _assertSpanForWord(test, word_str):
   arena = test_lib.MakeArena('word_parse_test.py')
   w_parser = test_lib.InitWordParser(word_str, arena=arena)
   w = _assertReadWordWithArena(test, w_parser)
-  span_id = word_.LeftMostSpanForWord(w)
+  span_id = location.OfWordLeft(w)
 
   print(word_str)
   print(span_id)

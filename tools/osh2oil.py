@@ -286,13 +286,13 @@ class OilPrinter(object):
       # Turn everything into <<<.  We just change the quotes
       self.f.write('<<<')
 
-      #here_begin_spid2 = word_.RightMostSpanForWord(node.here_begin)
+      #here_begin_spid2 = location.OfWordRight(node.here_begin)
       if delim_quoted:
         self.f.write(" '''")
       else:
         self.f.write(' """')
 
-      delim_end_spid = word_.RightMostSpanForWord(here_begin)
+      delim_end_spid = location.OfWordRight(here_begin)
       self.cursor.SkipUntil(delim_end_spid + 1)
 
       #self.cursor.SkipUntil(here_begin_spid + 1)
@@ -450,7 +450,7 @@ class OilPrinter(object):
         if len(node.words):
           first_word = node.words[0]
           ok, val, quoted = word_.StaticEval(first_word)
-          word0_spid = word_.LeftMostSpanForWord(first_word)
+          word0_spid = location.OfWordLeft(first_word)
           if ok and not quoted:
             if val == '[':
               last_word = node.words[-1]
@@ -466,7 +466,7 @@ class OilPrinter(object):
                   self.DoWordInCommand(w, local_symbols)
 
                 # Now omit ]
-                last_spid = word_.LeftMostSpanForWord(last_word)
+                last_spid = location.OfWordLeft(last_word)
                 self.cursor.PrintUntil(last_spid - 1)  # Get the space before
                 self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
                 return
@@ -947,7 +947,7 @@ class OilPrinter(object):
   def DoWordPart(self, node, local_symbols, quoted=False):
     # type: (word_part_t, Dict[str, bool], bool) -> None
 
-    span_id = word_.LeftMostSpanForPart(node)
+    span_id = location.OfWordPartLeft(node)
     if span_id != runtime.NO_SPID:
       span = self.arena.GetToken(span_id)
       self.cursor.PrintUntil(span_id)

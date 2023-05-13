@@ -38,6 +38,7 @@ from core.error import p_die
 from core import ui
 from frontend import consts
 from frontend import lexer
+from frontend import location
 from frontend import match
 from frontend import reader
 from mycpp.mylib import log
@@ -68,7 +69,7 @@ def _KeywordSpid(w):
   difference on a ~500 ms parse of testdata/osh-runtime/abuild.  So maybe this
   doesn't make sense.
   """
-  return word_.LeftMostSpanForWord(w)
+  return location.OfWordLeft(w)
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
@@ -837,8 +838,8 @@ class CommandParser(object):
 
     # We are expanding an alias, so copy the rest of the words and re-parse.
     if i < n:
-      left_spid = word_.LeftMostSpanForWord(words[i])
-      right_spid = word_.RightMostSpanForWord(words[-1])
+      left_spid = location.OfWordLeft(words[i])
+      right_spid = location.OfWordRight(words[-1])
 
       left_tok = self.arena.GetToken(left_spid)
       right_tok = self.arena.GetToken(right_spid)
@@ -1002,7 +1003,7 @@ class CommandParser(object):
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
       # TODO: get token directly
-      left_tok = self.arena.GetToken(word_.LeftMostSpanForWord(words[0]))
+      left_tok = self.arena.GetToken(location.OfWordLeft(words[0]))
       assign = command.ShAssignment(left_tok, pairs, redirects)
       assign.spids.append(left_tok.span_id)  # no keyword spid to skip past
       return assign
@@ -1080,7 +1081,7 @@ class CommandParser(object):
     self._Eat(Id.Lit_RBrace)
 
     # TODO: get token directly
-    right = self.arena.GetToken(word_.LeftMostSpanForWord(self.cur_word))
+    right = self.arena.GetToken(location.OfWordLeft(self.cur_word))
 
     # Note(andychu): Related ASDL bug #1216.  Choosing the Python [] behavior
     # would allow us to revert this back to None, which was changed in
@@ -1224,7 +1225,7 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.KW_In:
-      in_spid = word_.LeftMostSpanForWord(self.cur_word)  # for translation only
+      in_spid = location.OfWordLeft(self.cur_word)  # for translation only
 
       self._Next()  # skip in
       if self.w_parser.LookPastSpace() == Id.Op_LParen:
@@ -1337,7 +1338,7 @@ class CommandParser(object):
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left_spid = location.OfWordLeft(self.cur_word)
     if self.c_id == Id.Op_LParen:
       self._Next()
 
@@ -1353,7 +1354,7 @@ class CommandParser(object):
       else:
         break
 
-    rparen_spid = word_.LeftMostSpanForWord(self.cur_word)
+    rparen_spid = location.OfWordLeft(self.cur_word)
     self._Eat(Id.Right_CasePat)
     self._NewlineOk()
 
@@ -1367,9 +1368,9 @@ class CommandParser(object):
     last_spid = runtime.NO_SPID
     self._Peek()
     if self.c_id == Id.KW_Esac:
-      last_spid = word_.LeftMostSpanForWord(self.cur_word)
+      last_spid = location.OfWordLeft(self.cur_word)
     elif self.c_id == Id.Op_DSemi:
-      dsemi_spid = word_.LeftMostSpanForWord(self.cur_word)
+      dsemi_spid = location.OfWordLeft(self.cur_word)
       self._Next()
     else:
       # Happens on EOF
@@ -1497,7 +1498,7 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.KW_Else:
-      else_spid = word_.LeftMostSpanForWord(self.cur_word)
+      else_spid = location.OfWordLeft(self.cur_word)
       self._Next()
       body = self.ParseBraceGroup()
       if_node.else_action = body.children
@@ -1749,7 +1750,7 @@ class CommandParser(object):
       # would just be 'f'
       self._Next()
 
-      after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
+      after_name_spid = location.OfWordLeft(self.cur_word) + 1
 
       self._NewlineOk()
 
@@ -1775,7 +1776,7 @@ class CommandParser(object):
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
     keyword_tok = word_.AsKeywordToken(self.cur_word)
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left_spid = location.OfWordLeft(self.cur_word)
 
     self._Next()  # skip past 'function'
     self._Peek()
@@ -1786,7 +1787,7 @@ class CommandParser(object):
       p_die('Invalid KSH-style function name', loc.Word(cur_word))
 
     name_loc = loc.Word(self.cur_word)
-    name_spid = word_.LeftMostSpanForWord(self.cur_word)
+    name_spid = location.OfWordLeft(self.cur_word)
     after_name_spid = name_spid + 1
     self._Next()  # skip past 'function name
 
@@ -1796,7 +1797,7 @@ class CommandParser(object):
       self._Next()
       self._Eat(Id.Right_ShFunction)
       # Change it: after )
-      after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
+      after_name_spid = location.OfWordLeft(self.cur_word) + 1
 
     self._NewlineOk()
 
@@ -1892,7 +1893,7 @@ class CommandParser(object):
     self._Peek()
     # Similar to the scenario with ParseDParen, we must get the span id following
     # the ']]' token.
-    right_spid = word_.LeftMostSpanForWord(self.cur_word)
+    right_spid = location.OfWordLeft(self.cur_word)
 
     node = command.DBracket(left, bnode, right, None)  # no redirects yet
     node.spids.append(left.span_id)
@@ -1914,7 +1915,7 @@ class CommandParser(object):
     #              ^^^^^-- span id points here
     # NOTE: we have a simular situation in ParseDBracket
     # TODO: fix `Tracer.PrintSourceCode` so we don't need this span id
-    right_spid = word_.LeftMostSpanForWord(self.cur_word)
+    right_spid = location.OfWordLeft(self.cur_word)
 
     node = command.DParen(left, anode, right, None)  # no redirects yet
     node.spids.append(left.span_id)
@@ -2096,7 +2097,7 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.KW_Bang:
-      pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
+      pipeline_spid = location.OfWordLeft(self.cur_word)
       negated = True
       self._Next()
 
@@ -2125,7 +2126,7 @@ class CommandParser(object):
     while True:
       # Set it to the first | if it isn't already set.
       if pipeline_spid == runtime.NO_SPID:
-        pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
+        pipeline_spid = location.OfWordLeft(self.cur_word)
 
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
       self._NewlineOk()

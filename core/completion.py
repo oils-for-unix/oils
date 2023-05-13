@@ -50,6 +50,7 @@ from core import state
 from core import ui
 from core import util
 from frontend import consts
+from frontend import location
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
@@ -1030,7 +1031,7 @@ class RootCompleter(CompletionAction):
             debug_f.writeln("Didn't get a string from redir arg")
             return
 
-          span_id = word_.LeftMostSpanForWord(arg_word)
+          span_id = location.OfWordLeft(arg_word)
           span = arena.GetToken(span_id)
 
           self.comp_ui_state.display_pos = span.col
@@ -1119,7 +1120,7 @@ class RootCompleter(CompletionAction):
           # echo $(gr   and
           # echo `gr
 
-          span_id = word_.LeftMostSpanForWord(trail.words[0])
+          span_id = location.OfWordLeft(trail.words[0])
           span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
           self.debug_f.writeln('** DISPLAY_POS = %d' % self.comp_ui_state.display_pos)
@@ -1136,7 +1137,7 @@ class RootCompleter(CompletionAction):
             base_opts, user_spec = self.comp_lookup.GetFallback()
 
           # Display since the beginning
-          span_id = word_.LeftMostSpanForWord(trail.words[-1])
+          span_id = location.OfWordLeft(trail.words[-1])
           span = arena.GetToken(span_id)
           self.comp_ui_state.display_pos = span.col
           if mylib.PYTHON:
