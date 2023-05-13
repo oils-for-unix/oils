@@ -622,7 +622,7 @@ class OilPrinter(object):
 
             # note: command_t doesn't have .spids
             self.cursor.SkipUntil(
-              location.GetSpanId(location.LocForCommand(node.body)))
+              location.GetSpanId(location.OfCommand(node.body)))
 
           elif case(for_iter_e.Words):
             iterable = cast(for_iter.Words, UP_iterable)

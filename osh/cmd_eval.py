@@ -331,7 +331,7 @@ class CommandEvaluator(object):
 
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
-  def _LocForShAssignment(self, node):
+  def _ShAssignLoc(self, node):
     # type: (command.ShAssignment) -> loc_t
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return loc.Span(node.spids[0])
@@ -368,7 +368,7 @@ class CommandEvaluator(object):
           #   ls *Z          # error.FailGlob
           #   sort <(ls /x)  # process sub failure
           desc = 'Command'
-          blame_loc = location.LocForCommand(node)
+          blame_loc = location.OfCommand(node)
 
         elif case(command_e.ShAssignment):
           node = cast(command.ShAssignment, UP_node)
@@ -376,7 +376,7 @@ class CommandEvaluator(object):
           # Note: This happens rarely: when errexit and inherit_errexit are on,
           # but command_sub_errexit is off!
           desc = 'Assignment'
-          blame_loc = self._LocForShAssignment(node)
+          blame_loc = self._ShAssignLoc(node)
 
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
@@ -595,7 +595,7 @@ class CommandEvaluator(object):
     if _HasManyStatuses(node):
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
-            node_str, location.LocForCommand(node))
+            node_str, location.OfCommand(node))
 
   def _StrictErrExitList(self, node_list):
     # type: (List[command_t]) -> None
@@ -611,14 +611,14 @@ class CommandEvaluator(object):
 
     if len(node_list) > 1:
       e_die("strict_errexit only allows a single command.  Hint: use 'try'.",
-            location.LocForCommand(node_list[0]))
+            location.OfCommand(node_list[0]))
 
     assert len(node_list) > 0
     node = node_list[0]
     if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
-            node_str, location.LocForCommand(node))
+            node_str, location.OfCommand(node))
 
   def _EvalCondition(self, cond, spid):
     # type: (condition_t, int) -> bool

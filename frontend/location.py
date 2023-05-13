@@ -72,7 +72,7 @@ def GetSpanId(loc_):
   raise AssertionError()
 
 
-def LocForCommand(node):
+def OfCommand(node):
   # type: (command_t) -> loc_t
   """
   """
@@ -131,7 +131,7 @@ def LocForCommand(node):
   return loc.Missing
 
 
-def LocForArithExpr(node):
+def OfArithExpr(node):
   # type: (arith_expr_t) -> loc_t
   UP_node = node
   with tagswitch(node) as case:

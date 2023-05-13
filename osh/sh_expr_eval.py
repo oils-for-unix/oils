@@ -447,7 +447,7 @@ class ArithEvaluator(object):
     #if val.tag() == value_e.MaybeStrArray:
     #  e_die("Can't use assignment like ++ or += on arrays")
 
-    expr_loc = location.LocForArithExpr(node)
+    expr_loc = location.OfArithExpr(node)
     i = self._ValToIntOrError(val, expr_loc)
     return i, lval
 
@@ -471,7 +471,7 @@ class ArithEvaluator(object):
         val = word_eval.DecayArray(val)
 
     # TODO: Can we avoid the runtime cost of adding location info?
-    expr_loc = location.LocForArithExpr(node)
+    expr_loc = location.OfArithExpr(node)
     i = self._ValToIntOrError(val, expr_loc)
     return i
 
@@ -676,14 +676,14 @@ class ArithEvaluator(object):
           if rhs == 0:
             # TODO: Could also blame /
             e_die('Divide by zero',
-                  location.LocForArithExpr(node.right))
+                  location.OfArithExpr(node.right))
 
           ret = lhs / rhs
 
         elif op_id == Id.Arith_Percent:
           if rhs == 0:
             # TODO: Could also blame /
-            e_die('Divide by zero', location.LocForArithExpr(node.right))
+            e_die('Divide by zero', location.OfArithExpr(node.right))
 
           ret = lhs % rhs
 
