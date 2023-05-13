@@ -94,6 +94,6 @@ def Main(arg_r):
       errfmt.PrettyPrintError(e)
       status = 2
   else:
-    e_usage("Tea doesn't run anything yet.  Pass -n to parse.", loc.Missing())
+    e_usage("Tea doesn't run anything yet.  Pass -n to parse.", loc.Missing)
 
   return status

@@ -203,7 +203,7 @@ class Printf(vm._Builtin):
                 arg_index += 1
               else:
                 width_str = ''  # invalid
-                width_loc = loc.Missing()
+                width_loc = loc.Missing
             else:
               raise AssertionError()
 
@@ -231,7 +231,7 @@ class Printf(vm._Builtin):
                 arg_index += 1
               else:
                 precision_str = ''
-                precision_loc = loc.Missing()
+                precision_loc = loc.Missing
             else:
               raise AssertionError()
 
@@ -252,7 +252,7 @@ class Printf(vm._Builtin):
             has_arg = True
           else:
             s = ''
-            word_loc = loc.Missing()
+            word_loc = loc.Missing
             has_arg = False
 
           # Note: %s could be lexed into Id.Percent_S.  Although small string
@@ -472,7 +472,7 @@ class Printf(vm._Builtin):
     result = ''.join(out)
     if arg.v is not None:
       # TODO: get the span_id for arg.v!
-      v_loc = loc.Missing()
+      v_loc = loc.Missing
       lval = self.unsafe_arith.ParseLValue(arg.v, v_loc)
       state.BuiltinSetValue(self.mem, lval, value.Str(result))
     else:

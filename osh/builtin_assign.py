@@ -237,7 +237,7 @@ class Export(vm._AssignBuiltin):
       e_usage(
           "doesn't accept -f because it's dangerous.  "
           "(The code can usually be restructured with 'source')",
-          loc.Missing())
+          loc.Missing)
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, attrs, True, builtin=_EXPORT)
@@ -358,7 +358,7 @@ class NewVar(vm._AssignBuiltin):
         status = self._PrintFuncs(names)
       else:
         # Disallow this since it would be incompatible.
-        e_usage('with -f expects function names', loc.Missing())
+        e_usage('with -f expects function names', loc.Missing)
       return status
 
     if arg.F:
@@ -511,8 +511,8 @@ class Shift(vm._Builtin):
       try:
         n = int(arg)
       except ValueError:
-        e_usage("Invalid shift argument %r" % arg, loc.Missing())
+        e_usage("Invalid shift argument %r" % arg, loc.Missing)
     else:
-      e_usage('got too many arguments', loc.Missing())
+      e_usage('got too many arguments', loc.Missing)
 
     return self.mem.Shift(n)

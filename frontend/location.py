@@ -30,7 +30,7 @@ def LName(name):
   Wrapper for lvalue.Named() with location.  TODO: add locations and remove
   this.
   """
-  return lvalue.Named(name, loc.Missing())
+  return lvalue.Named(name, loc.Missing)
 
 
 def GetSpanId(loc_):
@@ -129,7 +129,7 @@ def LocForCommand(node):
   #if node.tag == command_e.CommandList:
   #  pass
 
-  return loc.Missing()
+  return loc.Missing
 
 
 def LocForArithExpr(node):
@@ -143,4 +143,4 @@ def LocForArithExpr(node):
       w = cast(CompoundWord, UP_node)
       return loc.Word(w)
 
-  return loc.Missing()
+  return loc.Missing

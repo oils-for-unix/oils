@@ -291,7 +291,7 @@ def _ValueContains(needle, haystack):
     elif case(value_e.MaybeStrArray):
       haystack = cast(value.MaybeStrArray, UP_haystack)
       if needle.tag() != value_e.Str:
-        raise error.InvalidType('Expected Str', loc.Missing())
+        raise error.InvalidType('Expected Str', loc.Missing)
 
       needle = cast(value.Str, UP_needle)
       for s in haystack.strs:
@@ -303,7 +303,7 @@ def _ValueContains(needle, haystack):
     elif case(value_e.Dict):
       haystack = cast(value.Dict, UP_haystack)
       if needle.tag() != value_e.Str:
-        raise error.InvalidType('Expected Str', loc.Missing())
+        raise error.InvalidType('Expected Str', loc.Missing)
 
       needle = cast(value.Str, UP_needle)
       return needle.s in haystack.d
@@ -311,13 +311,13 @@ def _ValueContains(needle, haystack):
     elif case(value_e.AssocArray):
       haystack = cast(value.AssocArray, UP_haystack)
       if needle.tag() != value_e.Str:
-        raise error.InvalidType('Expected Str', loc.Missing())
+        raise error.InvalidType('Expected Str', loc.Missing)
 
       needle = cast(value.Str, UP_needle)
       return needle.s in haystack.d
 
     else:
-      raise error.InvalidType('Expected List or Dict', loc.Missing())
+      raise error.InvalidType('Expected List or Dict', loc.Missing)
 
   return False
   
@@ -370,7 +370,7 @@ class OilEvaluator(object):
 
   def EvalPlusEquals(self, lval, rhs_py):
     # type: (lvalue.Named, Union[int, float]) -> Union[int, float]
-    lhs_py = self.LookupVar(lval.name, loc.Missing())
+    lhs_py = self.LookupVar(lval.name, loc.Missing)
 
     if not isinstance(lhs_py, (int, float)):
       # TODO: Could point at the variable name
@@ -420,7 +420,7 @@ class OilEvaluator(object):
       if case(value_e.Str):
         left = cast(value.Str, UP_left)
       else:
-        raise error.InvalidType('LHS must be a string', loc.Missing())
+        raise error.InvalidType('LHS must be a string', loc.Missing)
 
     # TODO:
     # - libc_regex_match should populate _start() and _end() too (out params?)
@@ -446,26 +446,26 @@ class OilEvaluator(object):
       if arg.tag() == expr_e.Spread:
         arg = cast(expr.Spread, UP_arg)
         # assume it returns a list
-        pos_args.extend(self.EvalExpr(arg.child, loc.Missing()))
+        pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
       else:
-        pos_args.append(self.EvalExpr(arg, loc.Missing()))
+        pos_args.append(self.EvalExpr(arg, loc.Missing))
 
     kwargs = {}
     for named in args.named:
       if named.name:
-        kwargs[named.name.tval] = self.EvalExpr(named.value, loc.Missing())
+        kwargs[named.name.tval] = self.EvalExpr(named.value, loc.Missing)
       else:
         # ...named
-        kwargs.update(self.EvalExpr(named.value, loc.Missing()))
+        kwargs.update(self.EvalExpr(named.value, loc.Missing))
     return pos_args, kwargs
 
   def _EvalIndices(self, indices):
     # type: (List[expr_t]) -> Any
     if len(indices) == 1:
-      return self.EvalExpr(indices[0], loc.Missing())
+      return self.EvalExpr(indices[0], loc.Missing)
     else:
       # e.g. mydict[a,b]
-      return tuple(self.EvalExpr(ind, loc.Missing()) for ind in indices)
+      return tuple(self.EvalExpr(ind, loc.Missing) for ind in indices)
 
   def EvalPlaceExpr(self, place):
     # type: (place_expr_t) -> lvalue_t
@@ -480,14 +480,14 @@ class OilEvaluator(object):
       elif case(place_expr_e.Subscript):
         place = cast(Subscript, UP_place)
 
-        obj = self.EvalExpr(place.obj, loc.Missing())
+        obj = self.EvalExpr(place.obj, loc.Missing)
         index = self._EvalIndices(place.indices)
         return lvalue.ObjIndex(obj, index)
 
       elif case(place_expr_e.Attribute):
         place = cast(Attribute, UP_place)
 
-        obj = self.EvalExpr(place.obj, loc.Missing())
+        obj = self.EvalExpr(place.obj, loc.Missing)
         if place.op.id == Id.Expr_RArrow:
           index = place.attr.tval
           return lvalue.ObjIndex(obj, index)
@@ -499,7 +499,7 @@ class OilEvaluator(object):
 
   def EvalExprSub(self, part):
     # type: (word_part.ExprSub) -> part_value_t
-    py_val = self.EvalExpr(part.child, loc.Missing())
+    py_val = self.EvalExpr(part.child, loc.Missing)
     s = Stringify(py_val, word_part=part)
     return part_value.String(s, False, False)
 
@@ -538,9 +538,9 @@ class OilEvaluator(object):
     except TypeError as e:
       # TODO: Add location info.  Right now we blame the variable name for
       # 'var' and 'setvar', etc.
-      raise error.Expr('Type error in expression: %s' % str(e), loc.Missing())
+      raise error.Expr('Type error in expression: %s' % str(e), loc.Missing)
     except (AttributeError, ValueError) as e:
-      raise error.Expr('Expression eval error: %s' % str(e), loc.Missing())
+      raise error.Expr('Expression eval error: %s' % str(e), loc.Missing)
 
     return part_val
 
@@ -625,7 +625,7 @@ class OilEvaluator(object):
         else:
           raise ValueError("%r doesn't look like an integer" % val.s)
 
-    raise error.InvalidType('Expected Int', loc.Missing())
+    raise error.InvalidType('Expected Int', loc.Missing)
 
   def _ValueToNumber(self, val):
     # type: (value_t) -> value_t
@@ -756,7 +756,7 @@ class OilEvaluator(object):
 
         else:
           # TODO: want location of operand
-          raise error.InvalidType('Expected Int or Float', loc.Missing())
+          raise error.InvalidType('Expected Int or Float', loc.Missing)
 
     if node.op.id == Id.Arith_Tilde:
       UP_child = child
@@ -767,7 +767,7 @@ class OilEvaluator(object):
 
         else:
           # TODO: want location of operand
-          raise error.InvalidType('Expected Int', loc.Missing())
+          raise error.InvalidType('Expected Int', loc.Missing)
 
     if node.op.id == Id.Expr_Not:
       UP_child = child
@@ -778,7 +778,7 @@ class OilEvaluator(object):
 
         else:
           # TODO: want location of operand
-          raise error.InvalidType('Expected Bool', loc.Missing())
+          raise error.InvalidType('Expected Bool', loc.Missing)
 
     raise NotImplementedError(node.op.id)
 
@@ -828,7 +828,7 @@ class OilEvaluator(object):
               raise NotImplementedError(op)
 
           else:
-            raise error.InvalidType('Expected Int or Float', loc.Missing())
+            raise error.InvalidType('Expected Int or Float', loc.Missing)
 
       elif lcase(value_e.Float):
         left = cast(value.Float, UP_left)
@@ -867,10 +867,10 @@ class OilEvaluator(object):
               raise NotImplementedError(op)
 
           else:
-            raise error.InvalidType('Expected Int or Float', loc.Missing())
+            raise error.InvalidType('Expected Int or Float', loc.Missing)
 
       else:
-          raise error.InvalidType('Expected Int or Float', loc.Missing())
+          raise error.InvalidType('Expected Int or Float', loc.Missing)
 
   def _ArithDivideInt(self, left, right):
     # type: (value_t, value_t) -> value.Int
@@ -933,10 +933,10 @@ class OilEvaluator(object):
               return value.Bool(left.b or right.b)
 
           else:
-            raise error.InvalidType('Expected Bool', loc.Missing())
+            raise error.InvalidType('Expected Bool', loc.Missing)
 
       else:
-        raise error.InvalidType('Expected Bool', loc.Missing())
+        raise error.InvalidType('Expected Bool', loc.Missing)
 
       raise NotImplementedError()
 
@@ -955,7 +955,7 @@ class OilEvaluator(object):
             return value.List(left.items + right.items)
 
           else:
-            raise error.InvalidType('Expected List', loc.Missing())
+            raise error.InvalidType('Expected List', loc.Missing)
 
       if lcase(value_e.Str):
         left = cast(value.Str, UP_left)
@@ -965,7 +965,7 @@ class OilEvaluator(object):
             return value.Str(left.s + right.s)
 
           else:
-            raise error.InvalidType('Expected String', loc.Missing())
+            raise error.InvalidType('Expected String', loc.Missing)
 
       if lcase(value_e.MaybeStrArray):
         left = cast(value.MaybeStrArray, UP_left)
@@ -975,10 +975,10 @@ class OilEvaluator(object):
             return value.MaybeStrArray(left.strs + right.strs)
 
           else:
-            raise error.InvalidType('Expected MaybeStrArray', loc.Missing())
+            raise error.InvalidType('Expected MaybeStrArray', loc.Missing)
 
       else:
-        raise error.InvalidType('Expected List or String', loc.Missing())
+        raise error.InvalidType('Expected List or String', loc.Missing)
 
   def _EvalBinary(self, node):
     # type: (expr.Binary) -> value_t
@@ -1039,7 +1039,7 @@ class OilEvaluator(object):
     UP_right = right
 
     if left.tag() != right.tag():
-      raise error.InvalidType('Mismatched types', loc.Missing())
+      raise error.InvalidType('Mismatched types', loc.Missing)
 
     with tagswitch(left) as case:
       if case(value_e.Int):
@@ -1066,7 +1066,7 @@ class OilEvaluator(object):
         elif op == Id.Arith_GreatEqual:
           return left.f >= right.f
 
-      raise error.InvalidType('Expected Int or Float operands', loc.Missing())
+      raise error.InvalidType('Expected Int or Float operands', loc.Missing)
 
   def _EvalCompare(self, node):
     # type: (expr.Compare) -> value_t
@@ -1219,7 +1219,7 @@ class OilEvaluator(object):
     values = []
     for i, value_expr in enumerate(node.values):
       if value_expr.tag() == expr_e.Implicit:
-        v = self.LookupVar(keys[i], loc.Missing())  # {name}
+        v = self.LookupVar(keys[i], loc.Missing)  # {name}
       else:
         v = self._EvalExpr(value_expr)
       values.append(v)
@@ -1244,10 +1244,10 @@ class OilEvaluator(object):
       result = obj[index]
     except KeyError:
       # TODO: expr.Subscript has no error location
-      raise error.Expr('dict entry not found', loc.Missing())
+      raise error.Expr('dict entry not found', loc.Missing)
     except IndexError:
       # TODO: expr.Subscript has no error location
-      raise error.Expr('index out of range', loc.Missing())
+      raise error.Expr('index out of range', loc.Missing)
 
     return result
 

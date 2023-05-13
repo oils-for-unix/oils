@@ -102,6 +102,7 @@ module syntax
   | Arith(arith_expr a)
     # e.g. for errexit blaming
   | Command(command c)
+  generate [zero_arg_singleton]
 
   #
   # Shell language

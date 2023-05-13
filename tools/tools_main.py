@@ -61,10 +61,10 @@ def OshCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise error.Usage('Missing required subcommand.', loc.Missing())
+    raise error.Usage('Missing required subcommand.', loc.Missing)
 
   if action not in SUBCOMMANDS:
-    raise error.Usage('Invalid subcommand %r.' % action, loc.Missing())
+    raise error.Usage('Invalid subcommand %r.' % action, loc.Missing)
 
   if action == 'parse-glob':
     # Pretty-print the AST produced by osh/glob_.py

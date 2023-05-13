@@ -22,7 +22,7 @@ class _ErrorWithLocation(Exception):
 
     # Ensure that the location field is always populated
     if location is None:
-      self.location = loc.Missing()  # type: loc_t
+      self.location = loc.Missing  # type: loc_t
     else:
       self.location = location
 

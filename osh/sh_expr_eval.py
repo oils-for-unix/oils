@@ -438,9 +438,9 @@ class ArithEvaluator(object):
       named_lval = cast(lvalue.Named, lval)
       if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
         if val.tag() == value_e.MaybeStrArray:
-          lval = lvalue.Indexed(named_lval.name, 0, loc.Missing())
+          lval = lvalue.Indexed(named_lval.name, 0, loc.Missing)
         elif val.tag() == value_e.AssocArray:
-          lval = lvalue.Keyed(named_lval.name, '0', loc.Missing())
+          lval = lvalue.Keyed(named_lval.name, '0', loc.Missing)
         val = word_eval.DecayArray(val)
 
     # This error message could be better, but we already have one
@@ -822,7 +822,7 @@ class ArithEvaluator(object):
         return (var_name, loc.Word(w))
 
     no_str = None  # type: str
-    return (no_str, loc.Missing())
+    return (no_str, loc.Missing)
 
   def EvalArithLhs(self, anode):
     # type: (arith_expr_t) -> lvalue_t
@@ -875,7 +875,7 @@ class BoolEvaluator(ArithEvaluator):
     if blame_word:
       location = loc.Word(blame_word)  # type: loc_t
     else:
-      location = loc.Missing()
+      location = loc.Missing
 
     try:
       i = self._StringToInteger(s, location)

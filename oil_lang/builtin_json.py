@@ -45,7 +45,7 @@ class Json(vm._Builtin):
 
     action, action_loc = arg_r.Peek2()
     if action is None:
-      raise error.Usage(_JSON_ACTION_ERROR, loc.Missing())
+      raise error.Usage(_JSON_ACTION_ERROR, loc.Missing)
     arg_r.Next()
 
     if action == 'write':
@@ -56,7 +56,7 @@ class Json(vm._Builtin):
         e_usage('write got too many args', arg_r.Location())
 
       expr = typed_args.RequiredExpr(cmd_val.typed_args)
-      obj = self.expr_ev.EvalExpr(expr, loc.Missing())
+      obj = self.expr_ev.EvalExpr(expr, loc.Missing)
 
       if arg_jw.pretty:
         indent = arg_jw.indent

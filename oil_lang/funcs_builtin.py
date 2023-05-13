@@ -126,7 +126,7 @@ class _Shvar_get(object):
 
   def __call__(self, *args):
     name = args[0]
-    return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing())
+    return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing)
 
 
 class _VmEval(object):

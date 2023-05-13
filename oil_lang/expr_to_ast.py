@@ -660,7 +660,7 @@ class Transformer(object):
       else:
         # This blame mechanism seems to work.  Otherwise we don't have a method
         # to blame an arbitrary expr_t.
-        blame = cast(loc_t, p.tok) if p.tok else loc.Missing()  # type: loc_t
+        blame = cast(loc_t, p.tok) if p.tok else loc.Missing  # type: loc_t
         p_die("Can't assign to this expression", blame)
     return places
 

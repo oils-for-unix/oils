@@ -130,7 +130,7 @@ class SpecBuilder(object):
       func_name = arg.F
       func = cmd_ev.procs.get(func_name)
       if func is None:
-        raise error.Usage('Function %r not found' % func_name, loc.Missing())
+        raise error.Usage('Function %r not found' % func_name, loc.Missing)
       actions.append(completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
 
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
@@ -230,7 +230,7 @@ class SpecBuilder(object):
     if len(actions) == 0 and len(else_actions) == 0:
       raise error.Usage(
           'No actions defined in completion: %s' % ' '.join(argv),
-          loc.Missing())
+          loc.Missing)
 
     p = completion.DefaultPredicate()  # type: completion._Predicate
     if arg.X is not None:
@@ -407,14 +407,14 @@ class CompAdjust(vm._Builtin):
     for name in var_names:
       # Ironically we could complete these
       if name not in ['cur', 'prev', 'words', 'cword']:
-        raise error.Usage('Invalid output variable name %r' % name, loc.Missing())
+        raise error.Usage('Invalid output variable name %r' % name, loc.Missing)
     #print(arg)
 
     # TODO: How does the user test a completion function programmatically?  Set
     # COMP_ARGV?
     val = self.mem.GetValue('COMP_ARGV')
     if val.tag() != value_e.MaybeStrArray:
-      raise error.Usage("COMP_ARGV should be an array", loc.Missing())
+      raise error.Usage("COMP_ARGV should be an array", loc.Missing)
     comp_argv = cast(value.MaybeStrArray, val).strs
 
     # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
