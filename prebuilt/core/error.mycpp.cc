@@ -65,7 +65,7 @@ using syntax_asdl::loc;
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
   if (location == nullptr) {
-    this->location = Alloc<loc::Missing>();
+    this->location = loc::Missing;
   }
   else {
     this->location = location;
