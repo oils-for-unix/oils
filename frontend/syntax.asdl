@@ -292,7 +292,10 @@ module syntax
   command =
     NoOp
     # Note: do_fork is semantic, not syntactic
-  | Simple(List[word] words, List[Redir] redirects, List[EnvPair] more_env,
+  | Simple(
+           # Token left,
+           List[EnvPair] more_env,
+           List[word] words, List[Redir] redirects,
            ArgList? typed_args, BlockArg? block, bool do_fork)
     # This doesn't technically belong in the LST, but it's convenient for
     # execution

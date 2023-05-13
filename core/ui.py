@@ -138,6 +138,8 @@ def GetLineSourceString(arena, line, quote_filename=False):
 
     elif case(source_e.ArgvWord):
       src = cast(source.ArgvWord, UP_src)
+
+      # TODO: check loc.Missing; otherwise get Token from loc_t, then line
       span_id = location.GetSpanId(src.location)
       if span_id == runtime.NO_SPID:
         s = '[ %s word at ? ]' % src.what

@@ -75,6 +75,7 @@ def GetSpanId(loc_):
 def OfCommand(node):
   # type: (command_t) -> loc_t
   """
+  Used in pipe_locs, for _CheckStatus(), _StrictErrExit, etc.
   """
   UP_node = node # type: command_t
   tag = node.tag()
@@ -88,41 +89,45 @@ def OfCommand(node):
     node = cast(command.Simple, UP_node)
     # It should have either words or redirects, e.g. '> foo'
     if len(node.words):
+      # TODO: need token
       return loc.Word(node.words[0])
     elif len(node.redirects):
       return node.redirects[0].op
 
   if tag == command_e.ShAssignment:
     node = cast(command.ShAssignment, UP_node)
-    return loc.Span(node.spids[0])
+    return node.var
 
+  # TODO: need tokens
   if tag == command_e.Pipeline:
     node = cast(command.Pipeline, UP_node)
     return loc.Span(node.spids[0])  # first |
   if tag == command_e.AndOr:
     node = cast(command.AndOr, UP_node)
     return loc.Span(node.spids[0])  # first && or ||
+
   if tag == command_e.DoGroup:
     node = cast(command.DoGroup, UP_node)
-    return loc.Span(node.spids[0])  # do spid
+    return node.left  # 'do' token
   if tag == command_e.BraceGroup:
     node = cast(BraceGroup, UP_node)
-    return node.left  # { spid
+    return node.left  # { token
   if tag == command_e.Subshell:
     node = cast(command.Subshell, UP_node)
-    return loc.Span(node.spids[0])  # ( spid
+    return node.left  # ( token
+
   if tag == command_e.WhileUntil:
     node = cast(command.WhileUntil, UP_node)
-    return loc.Span(node.spids[0])  # while spid
+    return node.keyword  # while
   if tag == command_e.If:
     node = cast(command.If, UP_node)
-    return loc.Span(node.arms[0].spids[0])  # if spid is in FIRST arm.
+    return node.if_kw
   if tag == command_e.Case:
     node = cast(command.Case, UP_node)
-    return loc.Span(node.spids[0])  # case keyword spid
+    return node.case_kw
   if tag == command_e.TimeBlock:
     node = cast(command.TimeBlock, UP_node)
-    return loc.Span(node.spids[0])  # time keyword spid
+    return node.keyword
 
   # We never have this case?
   #if node.tag == command_e.CommandList:
