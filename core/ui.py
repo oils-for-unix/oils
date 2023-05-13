@@ -292,7 +292,7 @@ class ErrorFormatter(object):
   def __init__(self, arena):
     # type: (Arena) -> None
     self.arena = arena
-    self.last_spid = loc.Missing()  # last resort for location info
+    self.last_spid = loc.Missing  # last resort for location info
     self.loc_stack = []  # type: List[loc_t]
 
     self.one_line_errexit = False  # root process
@@ -311,7 +311,7 @@ class ErrorFormatter(object):
     if len(self.loc_stack):
       return self.loc_stack[-1]
     else:
-      return loc.Missing()
+      return loc.Missing
 
   def PrefixPrint(self, msg, prefix, blame_loc):
     # type: (str, str, loc_t) -> None

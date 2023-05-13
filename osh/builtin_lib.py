@@ -61,7 +61,7 @@ class History(vm._Builtin):
 
       # TODO: can we recover line information here?
       #       might be useful to show where HISTFILE was set
-      raise error.Strict("$HISTFILE should only ever be a string", loc.Missing())
+      raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
@@ -70,7 +70,7 @@ class History(vm._Builtin):
     # zsh -c 'history' produces an error.
     readline = self.readline
     if not readline:
-      e_usage("is disabled because Oil wasn't compiled with 'readline'", loc.Missing())
+      e_usage("is disabled because Oil wasn't compiled with 'readline'", loc.Missing)
 
     attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
     arg = arg_types.history(attrs.attrs)
@@ -87,7 +87,7 @@ class History(vm._Builtin):
     if arg.r:
       history_filename = self.GetHistoryFilename()
       if not path_stat.exists(history_filename):
-        self.errfmt.Print_("HISTFILE %r doesn't exist" % history_filename, loc.Missing())
+        self.errfmt.Print_("HISTFILE %r doesn't exist" % history_filename, loc.Missing)
         return 1
 
       readline.read_history_file(history_filename)
@@ -100,7 +100,7 @@ class History(vm._Builtin):
       try:
         readline.remove_history_item(cmd_index)
       except ValueError:
-        e_usage("couldn't find item %d" % arg.d, loc.Missing())
+        e_usage("couldn't find item %d" % arg.d, loc.Missing)
 
       return 0
 
@@ -116,10 +116,10 @@ class History(vm._Builtin):
       try:
         num_to_show = int(arg0)
       except ValueError:
-        e_usage('got invalid argument %r' % arg0, loc.Missing())
+        e_usage('got invalid argument %r' % arg0, loc.Missing)
       start_index = max(1, num_items + 1 - num_to_show)
     else:
-      e_usage('got many arguments', loc.Missing())
+      e_usage('got many arguments', loc.Missing)
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do

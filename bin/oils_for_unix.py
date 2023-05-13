@@ -94,7 +94,7 @@ def AppBundleMain(argv):
   main_name, ext = os_path.splitext(b)
 
   # TODO: Do we need span IDs here?
-  missing = loc.Missing()  # type: loc_t
+  missing = loc.Missing  # type: loc_t
   arg_r = args.Reader(argv, locs=[missing] * len(argv))
 
   login_shell = False
@@ -110,7 +110,7 @@ def AppBundleMain(argv):
     arg_r.Next()
     first_arg = arg_r.Peek()
     if first_arg is None:
-      raise error.Usage('Missing required applet name.', loc.Missing())
+      raise error.Usage('Missing required applet name.', loc.Missing)
 
     # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
     if first_arg in ('-h', '--help'):
@@ -183,7 +183,7 @@ def AppBundleMain(argv):
       return 2
 
   else:
-    raise error.Usage("Invalid applet %r" % applet, loc.Missing())
+    raise error.Usage("Invalid applet %r" % applet, loc.Missing)
 
 
 def main(argv):

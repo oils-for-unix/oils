@@ -359,7 +359,7 @@ class Read(vm._Builtin):
       return self._Line(arg, var_name)
 
     if arg.q:
-      e_usage('--qsn can only be used with --line', loc.Missing())
+      e_usage('--qsn can only be used with --line', loc.Missing)
 
     if arg.all:  # read --all
       var_name, var_spid = arg_r.Peek2()
@@ -377,7 +377,7 @@ class Read(vm._Builtin):
       return self._All(var_name)
 
     if arg.q:
-      e_usage('--qsn not implemented yet', loc.Missing())
+      e_usage('--qsn not implemented yet', loc.Missing)
 
     if arg.t >= 0.0:
       if arg.t != 0.0:
@@ -811,7 +811,7 @@ class Help(vm._Builtin):
     topic, blame_loc = arg_r.Peek2()
     if topic is None:
       topic = 'help'
-      blame_loc = loc.Missing()
+      blame_loc = loc.Missing
     else:
       arg_r.Next()
 

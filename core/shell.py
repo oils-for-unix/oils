@@ -82,7 +82,7 @@ def MakeBuiltinArgv(argv1):
   argv = ['']  # dummy for argv[0]
   argv.extend(argv1)
   # no location info
-  missing = loc.Missing()  # type: loc_t
+  missing = loc.Missing  # type: loc_t
   return cmd_value.Argv(argv, [missing] * len(argv), None)
 
 
@@ -137,7 +137,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
   rc_line_reader = reader.FileLineReader(f, arena)
   rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-  with alloc.ctx_Location(arena, source.SourcedFile(rc_path, loc.Missing())):
+  with alloc.ctx_Location(arena, source.SourcedFile(rc_path, loc.Missing)):
     # TODO: handle status, e.g. 2 for ParseError
     status = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
@@ -391,7 +391,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   oil_grammar = pyutil.LoadOilGrammar(loader)
 
   if flag.one_pass_parse and not exec_opts.noexec():
-    raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing())
+    raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
   parse_ctx = parse_lib.ParseContext(
       arena, parse_opts, aliases, oil_grammar,
       one_pass_parse=flag.one_pass_parse)

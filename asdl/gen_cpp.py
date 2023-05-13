@@ -395,7 +395,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       if not variant.shared_type:
         variant_name = variant.name
         if zero_arg_singleton and len(variant.fields) == 0:
-          Emit('  static constexpr %(sum_name)s__%(variant_name)s* %(variant_name)s = &g%(variant_name)s.obj;')
+          Emit('  static %(sum_name)s__%(variant_name)s* %(variant_name)s;')
         else:
           Emit('  typedef %(sum_name)s__%(variant_name)s %(variant_name)s;')
     Emit('};')
@@ -725,9 +725,11 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       for variant in sum.types:
         if not variant.shared_type and len(variant.fields) == 0:
           variant_name = variant.name
+          self.Emit('')
+          self.Emit('%s__%s* %s::%s = &g%s.obj;' % (sum_name, variant_name, sum_name, variant_name, variant_name))
+          self.Emit('')
           self.Emit('GcGlobal<%s__%s> g%s = ' % (sum_name, variant_name, variant_name))
           self.Emit('  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};' % (sum_name, variant_name))
-          self.Emit('')
 
     for variant in sum.types:
       if variant.shared_type:

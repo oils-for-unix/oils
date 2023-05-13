@@ -283,7 +283,7 @@ class UserPlugin(object):
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
       # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
-      src = source.Variable(PROMPT_COMMAND, loc.Missing())
+      src = source.Variable(PROMPT_COMMAND, loc.Missing)
       with alloc.ctx_Location(self.arena, src):
         try:
           node = main_loop.ParseWholeFile(c_parser)

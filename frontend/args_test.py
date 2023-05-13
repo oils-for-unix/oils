@@ -18,7 +18,7 @@ def _MakeBuiltinArgv(argv):
   """
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  missing = loc.Missing()  # type: loc_t
+  missing = loc.Missing  # type: loc_t
   return cmd_value.Argv(argv, [missing] * len(argv), None)
 
 

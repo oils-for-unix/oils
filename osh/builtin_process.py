@@ -95,7 +95,7 @@ class Bg(vm._Builtin):
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
 
-    raise error.Usage("isn't implemented", loc.Missing())
+    raise error.Usage("isn't implemented", loc.Missing)
 
 
 class Fork(vm._Builtin):
@@ -114,7 +114,7 @@ class Fork(vm._Builtin):
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
-      e_usage('expected a block', loc.Missing())
+      e_usage('expected a block', loc.Missing)
 
     return self.shell_ex.RunBackgroundJob(block)
 
@@ -134,7 +134,7 @@ class ForkWait(vm._Builtin):
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
-      e_usage('expected a block', loc.Missing())
+      e_usage('expected a block', loc.Missing)
 
     return self.shell_ex.RunSubshell(block)
 
@@ -336,4 +336,4 @@ class Umask(vm._Builtin):
       posix.umask(new_mask)
       return 0
 
-    e_usage('umask: unexpected arguments', loc.Missing())
+    e_usage('umask: unexpected arguments', loc.Missing)

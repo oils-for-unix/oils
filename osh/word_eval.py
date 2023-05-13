@@ -624,10 +624,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(var_index) as case:
               if case(a_index_e.Int):
                 var_index = cast(a_index.Int, UP_var_index)
-                lval = lvalue.Indexed(var_name, var_index.i, loc.Missing())
+                lval = lvalue.Indexed(var_name, var_index.i, loc.Missing)
               elif case(a_index_e.Str):
                 var_index = cast(a_index.Str, UP_var_index)
-                lval = lvalue.Keyed(var_name, var_index.s, loc.Missing())
+                lval = lvalue.Keyed(var_name, var_index.s, loc.Missing)
               else: 
                 raise AssertionError()
 
@@ -1904,7 +1904,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if n < 0:
           # TODO: location info, with span IDs carried through the frame
           raise error.FailGlob('Pattern %r matched no files' % a,
-                               loc.Missing())
+                               loc.Missing)
       else:
         argv.append(glob_.GlobUnescape(a))
 

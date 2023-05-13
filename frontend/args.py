@@ -192,7 +192,7 @@ class Reader(object):
     """
     if self.i >= self.n:
       no_str = None  # type: str
-      return no_str, loc.Missing()
+      return no_str, loc.Missing
     else:
       return self.argv[self.i], self.locs[self.i]
 
@@ -234,7 +234,7 @@ class Reader(object):
     if self.locs:
       return self.locs[0]
     else:
-      return loc.Missing()  # TODO: remove this when all have locations
+      return loc.Missing  # TODO: remove this when all have locations
 
   def Location(self):
     # type: () -> loc_t
@@ -245,7 +245,7 @@ class Reader(object):
         i = self.i
       return self.locs[i]
     else:
-      return loc.Missing()  # TODO: remove this when all have locations
+      return loc.Missing  # TODO: remove this when all have locations
 
 
 class _Action(object):
@@ -376,7 +376,7 @@ class SetAttachedBool(_Action):
       elif attached_arg in ('1', 'T', 'true', 'Talse'):
         b = True
       else:
-        e_usage('got invalid argument to boolean flag: %r' % attached_arg, loc.Missing())
+        e_usage('got invalid argument to boolean flag: %r' % attached_arg, loc.Missing)
     else:
       b = True
 
@@ -438,7 +438,7 @@ class SetNamedOption(_Action):
 
     attr_name = arg  # Note: validation is done elsewhere
     if len(self.names) and attr_name not in self.names:
-      e_usage('Invalid option %r' % arg, loc.Missing())
+      e_usage('Invalid option %r' % arg, loc.Missing)
     changes = out.shopt_changes if self.shopt else out.opt_changes
     changes.append((attr_name, b))
     return False
@@ -474,12 +474,12 @@ class SetNamedAction(_Action):
     arg_r.Next()  # always advance
     arg = arg_r.Peek()
     if arg is None:
-      e_usage('Expected argument for action', loc.Missing())
+      e_usage('Expected argument for action', loc.Missing)
 
     attr_name = arg
     # Validate the option name against a list of valid names.
     if len(self.names) and attr_name not in self.names:
-      e_usage('Invalid action name %r' % arg, loc.Missing())
+      e_usage('Invalid action name %r' % arg, loc.Missing)
     out.actions.append(attr_name)
     return False
 

@@ -104,7 +104,7 @@ def DoUnaryOp(op_id, s):
     return st.st_gid == posix.getegid()
 
   # implicit location
-  e_die("%s isn't implemented" % ui.PrettyId(op_id), loc.Missing())
+  e_die("%s isn't implemented" % ui.PrettyId(op_id), loc.Missing)
 
 
 def DoBinaryOp(op_id, s1, s2):

@@ -22,7 +22,7 @@ def DoesNotAccept(arg_list):
 def RequiredExpr(arg_list):
   # type: (Optional[ArgList]) -> Optional[expr_t]
   if arg_list is None:
-    e_usage('Expected an expression', loc.Missing())
+    e_usage('Expected an expression', loc.Missing)
 
   n = len(arg_list.positional)
   if n == 0:

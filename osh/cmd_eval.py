@@ -397,7 +397,7 @@ class CommandEvaluator(object):
         else:
           # NOTE: The fallback of CurrentSpanId() fills this in.
           desc = ui.CommandType(node)
-          blame_loc = loc.Missing()
+          blame_loc = loc.Missing
 
       # Override if explicitly passed.
       # Note: this produces better results for process sub
@@ -850,7 +850,7 @@ class CommandEvaluator(object):
 
             # Note: there's only one LHS
             vd_lval = location.LName(node.lhs[0].name.tval)  # type: lvalue_t
-            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
             val = _PyObjectToVal(py_val)  # type: value_t
 
             self.mem.SetValue(vd_lval, val, scope_e.LocalOnly, 
@@ -859,7 +859,7 @@ class CommandEvaluator(object):
           else:
             self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
 
-            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
             vd_lvals = []  # type: List[lvalue_t]
             vals = []  # type: List[value_t]
             if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
@@ -902,7 +902,7 @@ class CommandEvaluator(object):
               raise AssertionError(node.keyword.id)
 
           if node.op.id == Id.Arith_Equal:
-            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
             lvals_ = []  # type: List[lvalue_t]
             py_vals = []
@@ -947,7 +947,7 @@ class CommandEvaluator(object):
 
             place = cast(place_expr.Var, node.lhs[0])
             pe_lval = location.LName(place.name.tval)
-            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing())
+            py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
             new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
             # This should only be an int or float, so we don't need the logic above
@@ -1016,7 +1016,7 @@ class CommandEvaluator(object):
         # Set a flag in mem?   self.mem.last_status or
         if self.check_command_sub_status:
           last_status = self.mem.LastStatus()
-          self._CheckStatus(last_status, cmd_st, node, loc.Missing())
+          self._CheckStatus(last_status, cmd_st, node, loc.Missing)
           status = last_status  # A global assignment shouldn't clear $?.
         else:
           status = 0
@@ -1026,7 +1026,7 @@ class CommandEvaluator(object):
 
         if mylib.PYTHON:
           self.mem.SetCurrentSpanId(node.keyword.span_id)
-          obj = self.expr_ev.EvalExpr(node.e, loc.Missing())
+          obj = self.expr_ev.EvalExpr(node.e, loc.Missing)
 
           if node.keyword.id == Id.Lit_Equals:
             # NOTE: It would be nice to unify this with 'repr', but there isn't a
@@ -1206,7 +1206,7 @@ class CommandEvaluator(object):
 
         if iter_list is None:  # for_expr.Oil
           if mylib.PYTHON:
-            obj = self.expr_ev.EvalExpr(iter_expr, loc.Missing())
+            obj = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
 
             # TODO: Once expr_eval.py is statically typed, consolidate this
             # with the shell-style loop.
@@ -1395,7 +1395,7 @@ class CommandEvaluator(object):
             defaults = [None] * len(sig.untyped)
             for i, p in enumerate(sig.untyped):
               if p.default_val:
-                py_val = self.expr_ev.EvalExpr(p.default_val, loc.Missing())
+                py_val = self.expr_ev.EvalExpr(p.default_val, loc.Missing)
                 defaults[i] = _PyObjectToVal(py_val)
      
         self.procs[proc_name] = Proc(
@@ -1511,7 +1511,7 @@ class CommandEvaluator(object):
     cmd_st = CommandStatus.CreateNull()
     process_sub_st = StatusArray.CreateNull()
 
-    errexit_loc = loc.Missing()  # type: loc_t
+    errexit_loc = loc.Missing  # type: loc_t
     check_errexit = True
 
     with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):
@@ -1945,7 +1945,7 @@ class CommandEvaluator(object):
     # type: (Proc, List[str]) -> int
     # TODO: Change this to run Oil procs and funcs too
     try:
-      status = self.RunProc(proc, argv, loc.Missing())
+      status = self.RunProc(proc, argv, loc.Missing)
     except error.FatalRuntime as e:
       self.errfmt.PrettyPrintError(e)
       status = e.ExitStatus()

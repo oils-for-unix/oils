@@ -214,7 +214,7 @@ class ShellExecutor(vm._Executor):
     if len(cmd_val.arg_locs):
       arg0_loc = cmd_val.arg_locs[0]
     else:
-      arg0_loc = loc.Missing()
+      arg0_loc = loc.Missing
 
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:

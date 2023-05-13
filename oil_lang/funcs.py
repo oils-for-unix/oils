@@ -37,7 +37,7 @@ class ParseHay(object):
   def Call(self, path):
     # type: (str) -> value_t
 
-    call_loc = loc.Missing()  # TODO: location info
+    call_loc = loc.Missing  # TODO: location info
 
     # TODO: need to close the file!
     try:
@@ -84,7 +84,7 @@ class EvalHay(object):
     def Call(self, block):
       # type: (value_t) -> Dict[str, Any]
 
-      call_loc = loc.Missing()
+      call_loc = loc.Missing
       if block.tag() != value_e.Block:
         raise error.Expr('Expected a block, got %s' % block, call_loc)
 

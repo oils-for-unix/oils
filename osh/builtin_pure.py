@@ -113,7 +113,7 @@ class UnAlias(vm._Builtin):
     argv = arg_r.Rest()
 
     if len(argv) == 0:
-      e_usage('requires an argument', loc.Missing())
+      e_usage('requires an argument', loc.Missing)
 
     status = 0
     for i, name in enumerate(argv):
@@ -253,7 +253,7 @@ class Shopt(vm._Builtin):
         index = consts.OptionNum(opt_name)
         if index == 0:
           # TODO: compute span_id
-          e_usage('got invalid option %r' % opt_name, loc.Missing())
+          e_usage('got invalid option %r' % opt_name, loc.Missing)
         opt_nums.append(index)
 
       with state.ctx_Option(self.mutable_opts, opt_nums, b):
@@ -281,7 +281,7 @@ class Hash(vm._Builtin):
     rest = arg_r.Rest()
     if arg.r:
       if len(rest):
-        e_usage('got extra arguments after -r', loc.Missing())
+        e_usage('got extra arguments after -r', loc.Missing)
       self.search_path.ClearCache()
       return 0
 
@@ -549,7 +549,7 @@ class Echo(vm._Builtin):
       else:
         # TODO: span_id could be more accurate
         e_usage(
-            "takes at most one arg when simple_echo is on (hint: add quotes)", loc.Missing())
+            "takes at most one arg when simple_echo is on (hint: add quotes)", loc.Missing)
     else:
       #log('echo argv %s', argv)
       for i, a in enumerate(argv):
@@ -611,13 +611,13 @@ class Use(vm._Builtin):
 
     arg, arg_loc = arg_r.Peek2()
     if arg is None:
-      raise error.Usage("expected 'bin' or 'dialect'", loc.Missing())
+      raise error.Usage("expected 'bin' or 'dialect'", loc.Missing)
     arg_r.Next()
 
     if arg == 'dialect':
       expected, e_loc = arg_r.Peek2()
       if expected is None:
-        raise error.Usage('expected dialect name', loc.Missing())
+        raise error.Usage('expected dialect name', loc.Missing)
 
       UP_actual = self.mem.GetValue('_DIALECT', scope_e.Dynamic)
       if UP_actual.tag() == value_e.Str:
@@ -661,12 +661,12 @@ class Shvar(vm._Builtin):
     if not block:
       # TODO: I think shvar LANG=C should just mutate
       # But should there be a whitelist?
-      raise error.Usage('expected a block', loc.Missing())
+      raise error.Usage('expected a block', loc.Missing)
 
     pairs = []  # type: List[Tuple[str, str]]
     args, arg_locs = arg_r.Rest2()
     if len(args) == 0:
-      raise error.Usage('Expected name=value', loc.Missing())
+      raise error.Usage('Expected name=value', loc.Missing)
 
     for i, arg in enumerate(args):
       name, s = mylib.split_once(arg, '=')
@@ -697,7 +697,7 @@ class PushRegisters(vm._Builtin):
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if not block:
-      raise error.Usage('expected a block', loc.Missing())
+      raise error.Usage('expected a block', loc.Missing)
 
     with state.ctx_Registers(self.mem):
       unused = self.cmd_ev.EvalBlock(block)
@@ -729,7 +729,7 @@ class Fopen(vm._Builtin):
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if not block:
-      raise error.Usage('expected a block', loc.Missing())
+      raise error.Usage('expected a block', loc.Missing)
 
     unused = self.cmd_ev.EvalBlock(block)
     return 0
@@ -795,7 +795,7 @@ if mylib.PYTHON:
 
       if node_type.isupper():  # TASK build { ... }
         if lit_block is None:
-          e_usage('command node requires a literal block argument', loc.Missing())
+          e_usage('command node requires a literal block argument', loc.Missing)
 
         if 0:  # self.hay_state.to_expr ?
           result['expr'] = lit_block  # UNEVALUATED block
@@ -925,7 +925,7 @@ if mylib.PYTHON:
 
         block = typed_args.GetOneBlock(cmd_val.typed_args)
         if not block:  # 'package foo' is OK
-          e_usage('eval expected a block', loc.Missing())
+          e_usage('eval expected a block', loc.Missing)
 
         with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
           # Note: we want all haynode invocations in the block to appear as

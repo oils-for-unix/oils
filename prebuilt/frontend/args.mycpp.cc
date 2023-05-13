@@ -1398,7 +1398,7 @@ using syntax_asdl::loc;
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
   if (location == nullptr) {
-    this->location = Alloc<loc::Missing>();
+    this->location = loc::Missing;
   }
   else {
     this->location = location;
@@ -1552,7 +1552,7 @@ Tuple2<Str*, syntax_asdl::loc_t*> Reader::Peek2() {
 
   if (this->i >= this->n) {
     no_str = nullptr;
-    return Tuple2<Str*, syntax_asdl::loc_t*>(no_str, Alloc<loc::Missing>());
+    return Tuple2<Str*, syntax_asdl::loc_t*>(no_str, loc::Missing);
   }
   else {
     return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->index_(this->i), this->locs->index_(this->i));
@@ -1602,7 +1602,7 @@ syntax_asdl::loc_t* Reader::_FirstLocation() {
     return this->locs->index_(0);
   }
   else {
-    return Alloc<loc::Missing>();
+    return loc::Missing;
   }
 }
 
@@ -1618,7 +1618,7 @@ syntax_asdl::loc_t* Reader::Location() {
     return this->locs->index_(i);
   }
   else {
-    return Alloc<loc::Missing>();
+    return loc::Missing;
   }
 }
 
@@ -1731,7 +1731,7 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
         b = true;
       }
       else {
-        e_usage(StrFormat("got invalid argument to boolean flag: %r", attached_arg), Alloc<loc::Missing>());
+        e_usage(StrFormat("got invalid argument to boolean flag: %r", attached_arg), loc::Missing);
       }
     }
   }
@@ -1793,7 +1793,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
-    e_usage(StrFormat("Invalid option %r", arg), Alloc<loc::Missing>());
+    e_usage(StrFormat("Invalid option %r", arg), loc::Missing);
   }
   changes = this->shopt ? out->shopt_changes : out->opt_changes;
   changes->append((Alloc<Tuple2<Str*, bool>>(attr_name, b)));
@@ -1829,11 +1829,11 @@ bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str123, Alloc<loc::Missing>());
+    e_usage(str123, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
-    e_usage(StrFormat("Invalid action name %r", arg), Alloc<loc::Missing>());
+    e_usage(StrFormat("Invalid action name %r", arg), loc::Missing);
   }
   out->actions->append(attr_name);
   return false;
