@@ -507,18 +507,21 @@ class CommandParser(object):
 
   def _Next(self):
     # type: () -> None
-    """Called when we don't need to look at the current token anymore.
+    """Call this when you no longer need the current token.
 
-    A subsequent call to _Peek() will read the next token and store its Id and Kind.
+    This method is lazy.  A subsequent call to _Peek() will actually read the
+    next Token.
     """
     self.next_lex_mode = lex_mode_e.ShCommand
 
   def _Peek(self):
     # type: () -> None
-    """Helper method.
+    """Call this when you need to make a decision based on Id or Kind.
+    
+    If there was an "unfulfilled" call to _Next(), it reads a word and sets
+    self.c_id and self.c_kind.
 
-    Returns True for success and False on error.  Error examples: bad command
-    sub word, or unterminated quoted string, etc.
+    Otherwise it does nothing.
     """
     if self.next_lex_mode != lex_mode_e.Undefined:
       w = self.w_parser.ReadWord(self.next_lex_mode)
@@ -2090,15 +2093,15 @@ class CommandParser(object):
     """
     pipeline         : Bang? command ( '|' newline_ok command )* ;
     """
-    negated = False
+    negated = None  # type: Optional[Token]
 
     # For blaming failures
     pipeline_spid = runtime.NO_SPID
 
     self._Peek()
     if self.c_id == Id.KW_Bang:
-      pipeline_spid = location.OfWordLeft(self.cur_word)
-      negated = True
+      negated = word_.AsKeywordToken(self.cur_word)
+      pipeline_spid = negated.span_id
       self._Next()
 
     child = self.ParseCommand()
@@ -2108,9 +2111,8 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
-      if negated:
-        no_stderrs = []  # type: List[int]
-        node = command.Pipeline(children, negated, no_stderrs)
+      if negated is not None:
+        node = command.Pipeline(negated, children, [])
         node.spids.append(pipeline_spid)
         return node
       else:
@@ -2142,7 +2144,7 @@ class CommandParser(object):
         stderr_indices.append(pipe_index)
       pipe_index += 1
 
-    node = command.Pipeline(children, negated, stderr_indices)
+    node = command.Pipeline(negated, children, stderr_indices)
     node.spids.append(pipeline_spid)
     return node
 
@@ -2193,10 +2195,10 @@ class CommandParser(object):
       if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
         break
 
-    node = command.AndOr(ops, children)
+    node = command.AndOr(children, ops)
     for token in ops:
-        # we cannot use a list comprehension as those are not supported by mycpp
-        node.spids.append(token.span_id)
+      # we cannot use a list comprehension as those are not supported by mycpp
+      node.spids.append(token.span_id)
     return node
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.

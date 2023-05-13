@@ -790,7 +790,7 @@ class CommandEvaluator(object):
         # TODO: how to get errexit_spid into _Execute?
         # It can be the span_id of !, or of the pipeline component that failed,
         # recorded in c_status.
-        if node.negated:
+        if node.negated is not None:
           self._StrictErrExit(node)
           # spid of !
           with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
@@ -1634,7 +1634,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.Pipeline):
         node = cast(command.Pipeline, UP_node)
-        if not node.negated:
+        if node.negated is None:
           #log ('pipe')
           self._NoForkLast(node.children[-1])
 

@@ -98,13 +98,15 @@ def OfCommand(node):
     node = cast(command.ShAssignment, UP_node)
     return node.var
 
-  # TODO: need tokens
   if tag == command_e.Pipeline:
     node = cast(command.Pipeline, UP_node)
+    # TODO:
+    # - use Token for | and |&, not stderr_indices
+    # - '! foo' Id.KW_Bang location
     return loc.Span(node.spids[0])  # first |
   if tag == command_e.AndOr:
     node = cast(command.AndOr, UP_node)
-    return loc.Span(node.spids[0])  # first && or ||
+    return node.ops[0]  # first && or ||
 
   if tag == command_e.DoGroup:
     node = cast(command.DoGroup, UP_node)
