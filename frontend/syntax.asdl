@@ -169,8 +169,8 @@ module syntax
   | CommandSub %CommandSub
     # ~ or ~bob
   | TildeSub(Token token, str? user_name)
-  | ArithSub(arith_expr anode)
-    # {a,b,c}
+  | ArithSub(Token left, arith_expr anode, Token right)
+    # {a,b,c} - TODO: add Token left
   | BracedTuple(List[CompoundWord] words)
     # {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     # {a..f} or {a..f..2} or {a..f..-2}

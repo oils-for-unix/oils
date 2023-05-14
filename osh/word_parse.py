@@ -1171,7 +1171,7 @@ class WordParser(WordEmitter):
     Read an arith substitution, which contains an arith expression, e.g.
     $((a + 1)).
     """
-    left_span_id = self.cur_token.span_id
+    left_tok = self.cur_token
 
     # The second one needs to be disambiguated in stuff like stuff like:
     # $(echo $(( 1+2 )) )
@@ -1195,11 +1195,11 @@ class WordParser(WordEmitter):
     if self.token_type != Id.Right_DollarDParen:
       p_die('Expected second ) to end arith sub', self.cur_token)
 
-    right_span_id = self.cur_token.span_id
+    right_tok = self.cur_token
 
-    node = word_part.ArithSub(anode)
-    node.spids.append(left_span_id)
-    node.spids.append(right_span_id)
+    node = word_part.ArithSub(left_tok, anode, right_tok)
+    node.spids.append(left_tok.span_id)
+    node.spids.append(right_tok.span_id)
     return node
 
   def ReadDParen(self):

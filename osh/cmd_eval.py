@@ -778,7 +778,7 @@ class CommandEvaluator(object):
         cmd_st.check_errexit = True
         for op in node.ops:
           if op.id != Id.Op_Pipe:
-            e_die("|& isn't supported", loc.Span(node.spids[0]))
+            e_die("|& isn't supported", op)
 
         # Remove $_ before pipeline.  This matches bash, and is important in
         # pipelines than assignments because pipelines are non-deterministic.
@@ -816,11 +816,10 @@ class CommandEvaluator(object):
 
       elif case(command_e.DBracket):
         node = cast(command.DBracket, UP_node)
-        left_spid = node.spids[0]
-        self.mem.SetCurrentSpanId(left_spid)
+        self.mem.SetCurrentSpanId(node.left.span_id)
         self._MaybeRunDebugTrap()
 
-        self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
+        self.tracer.PrintSourceCode(node.left.span_id, node.right.span_id, self.arena)
 
         cmd_st.check_errexit = True
         cmd_st.show_code = True  # this is a "leaf" for errors
@@ -829,11 +828,10 @@ class CommandEvaluator(object):
 
       elif case(command_e.DParen):
         node = cast(command.DParen, UP_node)
-        left_spid = node.spids[0]
-        self.mem.SetCurrentSpanId(left_spid)
+        self.mem.SetCurrentSpanId(node.left.span_id)
         self._MaybeRunDebugTrap()
 
-        self.tracer.PrintSourceCode(left_spid, node.spids[1], self.arena)
+        self.tracer.PrintSourceCode(node.left.span_id, node.right.span_id, self.arena)
 
         cmd_st.check_errexit = True
         cmd_st.show_code = True  # this is a "leaf" for errors
@@ -1120,7 +1118,7 @@ class CommandEvaluator(object):
 
         # Suppress failure for every child except the last one.
         self._StrictErrExit(left)
-        with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
+        with state.ctx_ErrExit(self.mutable_opts, False, node.ops[0].span_id):
           status = self._Execute(left)
 
         i = 1
@@ -1128,7 +1126,8 @@ class CommandEvaluator(object):
         while i < n:
           #log('i %d status %d', i, status)
           child = node.children[i]
-          op_id = node.ops[i-1].id
+          op = node.ops[i-1]
+          op_id = op.id
 
           #log('child %s op_id %s', child, op_id)
 
@@ -1146,7 +1145,7 @@ class CommandEvaluator(object):
           else:
             # blame the right && or ||
             self._StrictErrExit(child)
-            with state.ctx_ErrExit(self.mutable_opts, False, node.spids[i]):
+            with state.ctx_ErrExit(self.mutable_opts, False, op.span_id):
               status = self._Execute(child)
 
           i += 1
@@ -1159,7 +1158,7 @@ class CommandEvaluator(object):
           while True:
             try:
               # blame while/until spid
-              b = self._EvalCondition(node.cond, node.spids[0])
+              b = self._EvalCondition(node.cond, node.keyword.span_id)
               if node.keyword.id == Id.KW_Until:
                 b = not b
               if not b:
@@ -1176,7 +1175,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.ForEach):
         node = cast(command.ForEach, UP_node)
-        self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
+        self.mem.SetCurrentSpanId(node.keyword.span_id)  # for x in $LINENO
 
         # for the 2 kinds of shell loop
         iter_list = None  # type: List[str]  
@@ -1224,7 +1223,7 @@ class CommandEvaluator(object):
                 else:
                   # This is similar to a parse error
                   e_die_status(2, 'List iteration expects at most 2 loop variables',
-                               loc.Span(node.spids[0]))
+                               node.keyword)
 
                 index =0
                 for item in obj:
@@ -1306,7 +1305,7 @@ class CommandEvaluator(object):
             else:
               # This is similar to a parse error
               e_die_status(2, 'List iteration expects at most 2 loop variables',
-                           loc.Span(node.spids[0]))
+                           node.keyword)
 
             index = 0
             for x in iter_list:
@@ -1334,7 +1333,7 @@ class CommandEvaluator(object):
       elif case(command_e.ForExpr):
         node = cast(command.ForExpr, UP_node)
 
-        self.mem.SetCurrentSpanId(node.spids[0])
+        self.mem.SetCurrentSpanId(node.keyword.span_id)
         #self._MaybeRunDebugTrap()
 
         status = 0
@@ -1373,9 +1372,9 @@ class CommandEvaluator(object):
         # name_spid is node.spids[1].  Dynamic scope.
         if node.name in self.procs and not self.exec_opts.redefine_proc():
           e_die("Function %s was already defined (redefine_proc)" % node.name,
-              loc.Span(node.spids[1]))
+                node.name_loc)
         self.procs[node.name] = Proc(
-            node.name, loc.Span(node.spids[1]), proc_sig.Open(), node.body, [], True)
+            node.name, node.name_loc, proc_sig.Open(), node.body, [], True)
 
         status = 0
 
@@ -1426,7 +1425,7 @@ class CommandEvaluator(object):
         str_val = self.word_ev.EvalWordToString(node.to_match)
         to_match = str_val.s
 
-        self.mem.SetCurrentSpanId(node.spids[0])
+        self.mem.SetCurrentSpanId(node.case_kw.span_id)
         self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?

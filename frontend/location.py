@@ -215,8 +215,7 @@ def LeftTokenForWordPart(part):
 
     elif case(word_part_e.ArithSub):
       part = cast(word_part.ArithSub, UP_part)
-      # TODO: Add token for $((
-      return None
+      return part.left
 
     elif case(word_part_e.ExtGlob):
       part = cast(word_part.ExtGlob, UP_part)
