@@ -75,6 +75,10 @@ def run_tests():
 
   print("%r" % "tab\tline\nline\r\n")
 
+  s = 'a1b2c3d4e5'
+  print(s[0:10:2])
+  print(s[1:10:2])
+
 
 def run_benchmarks():
   # type: () -> None

@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
     loc, loc_t, re, re_t, Token, word_part, word_part_t,
     SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub, ShArrayLiteral,
-    CommandSub,
+    CommandSub, IntParamBox,
 
     expr, expr_e, expr_t, place_expr, place_expr_e, place_expr_t,
     Attribute, Subscript,
@@ -88,6 +88,11 @@ def Stringify(py_val, word_part=None):
 
   We don't want to tie our sematnics to the Python interpreter too much.
   """
+  # XXX: once verything is typed this should go away and this function should
+  # use tagswitch
+  if isinstance(py_val, value_t):
+    py_val = _ValueToPyObj(py_val)
+
   if isinstance(py_val, bool):
     return 'true' if py_val else 'false'  # Use JSON spelling
 
@@ -125,10 +130,39 @@ def _PyObjToValue(val):
     return value.Str(val)
 
   elif isinstance(val, list):
-    return value.List([_PyObjToValue(elem) for elem in val])
+    return value.List([elem if isinstance(elem, value_t) else _PyObjToValue(elem) for elem in val])
 
   elif isinstance(val, dict):
-      return value.Dict({k: _PyObjToValue(v) for k, v in val.items()})
+      return value.Dict({k: v if isinstance(v, value_t) else _PyObjToValue(v) for k, v in val.items()})
+
+  elif isinstance(val, tuple):
+    return value.Tuple([elem if isinstance(elem, value_t) else _PyObjToValue(elem) for elem in val])
+
+  elif isinstance(val, slice):
+      s = value.Slice(None, None, None)
+      if val.start:
+        s.lower = IntParamBox(val.start)
+
+      if val.stop:
+        s.upper = IntParamBox(val.stop)
+
+      if val.step:
+        s.step = IntParamBox(val.step)
+
+      return s
+
+  elif isinstance(val, xrange):
+      r = value.Range(None, None, None)
+      # awkward, but should go away once everything is typed...
+      l = list(val)
+      if len(l) > 1:
+        r.lower = IntParamBox(l[0])
+        r.upper = IntParamBox(l[-1])
+        r.step = IntParamBox(l[1] - l[0])
+      elif len(l) == 1:
+        r.lower = IntParamBox(l[0])
+
+      return r
 
   elif isinstance(val, objects.Regex):
     eggex = value.Eggex(val.regex, None)
@@ -172,7 +206,11 @@ def _ValueToPyObj(val):
 
     elif case(value_e.List):
       val = cast(value.List, UP_val)
-      return val.items
+      return list(map(_ValueToPyObj, val.items))
+
+    elif case(value_e.Tuple):
+      val = cast(value.Tuple, UP_val)
+      return tuple(map(_ValueToPyObj, val.items))
 
     elif case(value_e.AssocArray):
       val = cast(value.AssocArray, UP_val)
@@ -180,7 +218,34 @@ def _ValueToPyObj(val):
 
     elif case(value_e.Dict):
       val = cast(value.Dict, UP_val)
-      return val.d
+      return {k: _ValueToPyObj(v) for k, v in val.d.items()}
+
+    elif case(value_e.Slice):
+      val = cast(value.Slice, UP_val)
+      step = 1
+      if val.step:
+        step = val.step.i
+
+      if val.lower and val.upper:
+        return slice(val.lower.i, val.upper.i, step)
+      elif val.lower:
+        return slice(val.lower.i, None, step)
+      elif val.upper:
+        return slice(None, val.upper.i, step)
+
+      return slice(None, None, None)
+
+    elif case(value_e.Range):
+      val = cast(value.Range, UP_val)
+      step = 1
+      if val.step:
+        step = val.step.i
+
+      assert val.lower is not None
+      if val.upper:
+        return xrange(val.lower.i, val.upper.i, step)
+
+      return xrange(val.lower.i, None, step)
 
     elif case(value_e.Eggex):
       val = cast(value.Eggex, UP_val)
@@ -458,14 +523,6 @@ class OilEvaluator(object):
         kwargs.update(self.EvalExpr(named.value, loc.Missing))
     return pos_args, kwargs
 
-  def _EvalIndices(self, indices):
-    # type: (List[expr_t]) -> Any
-    if len(indices) == 1:
-      return self.EvalExpr(indices[0], loc.Missing)
-    else:
-      # e.g. mydict[a,b]
-      return tuple(self.EvalExpr(ind, loc.Missing) for ind in indices)
-
   def EvalPlaceExpr(self, place):
     # type: (place_expr_t) -> lvalue_t
 
@@ -480,7 +537,7 @@ class OilEvaluator(object):
         place = cast(Subscript, UP_place)
 
         obj = self.EvalExpr(place.obj, loc.Missing)
-        index = self._EvalIndices(place.indices)
+        index = self.EvalExpr(place.index, loc.Missing)
         return lvalue.ObjIndex(obj, index)
 
       elif case(place_expr_e.Attribute):
@@ -488,8 +545,8 @@ class OilEvaluator(object):
 
         obj = self.EvalExpr(place.obj, loc.Missing)
         if place.op.id == Id.Expr_RArrow:
-          index = place.attr.tval
-          return lvalue.ObjIndex(obj, index)
+          attr = place.attr.tval
+          return lvalue.ObjIndex(obj, attr)
         else:
           return lvalue.ObjAttr(obj, place.attr.tval)
 
@@ -1017,18 +1074,42 @@ class OilEvaluator(object):
     raise NotImplementedError(node.op.id)
 
   def _EvalRange(self, node):
-    # type: (expr.Range) -> Any # XXX
+    # type: (expr.Range) -> value_t
 
-    lower = self._EvalExpr(node.lower)
-    upper = self._EvalExpr(node.upper)
-    return xrange(lower, upper)
+    UP_lower = _PyObjToValue(self._EvalExpr(node.lower))
+    if UP_lower.tag() != value_e.Int:
+      raise error.InvalidType('Expected Int', loc.Missing)
+
+    lower = cast(value.Int, UP_lower)
+
+    UP_upper = _PyObjToValue(self._EvalExpr(node.upper))
+    if UP_upper.tag() != value_e.Int:
+      raise error.InvalidType('Expected Int', loc.Missing)
+
+    upper = cast(value.Int, UP_upper)
+
+    return value.Range(IntParamBox(lower.i), IntParamBox(upper.i), IntParamBox(1))
 
   def _EvalSlice(self, node):
-    # type: (expr.Slice) -> Any # XXX
+    # type: (expr.Slice) -> value_t
 
-    lower = self._EvalExpr(node.lower) if node.lower else None
-    upper = self._EvalExpr(node.upper) if node.upper else None
-    return slice(lower, upper)
+    lower = None # type: Optional[IntParamBox]
+    upper = None # type: Optional[IntParamBox]
+    if node.lower:
+      UP_lower = _PyObjToValue(self._EvalExpr(node.lower))
+      if UP_lower.tag() != value_e.Int:
+        raise error.InvalidType('Expected Int', loc.Missing)
+
+      lower = IntParamBox(cast(value.Int, UP_lower).i)
+
+    if node.upper:
+      UP_upper = _PyObjToValue(self._EvalExpr(node.upper))
+      if UP_upper.tag() != value_e.Int:
+        raise error.InvalidType('Expected Int', loc.Missing)
+
+      upper = IntParamBox(cast(value.Int, UP_upper).i)
+
+    return value.Slice(lower, upper, IntParamBox(1))
 
   def _CompareNumeric(self, left, right, op):
     # type: (value_t, value_t, Id_t) -> bool
@@ -1207,8 +1288,8 @@ class OilEvaluator(object):
     return [self._EvalExpr(e) for e in node.elts]
 
   def _EvalTuple(self, node):
-    # type: (expr.Tuple) -> Any # XXX
-    return tuple(self._EvalExpr(e) for e in node.elts)
+    # type: (expr.Tuple) -> value_t
+    return value.Tuple([_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
   def _EvalDict(self, node):
     # type: (expr.Dict) -> Any # XXX
@@ -1236,19 +1317,143 @@ class OilEvaluator(object):
     return ret
 
   def _EvalSubscript(self, node):
-    # type: (Subscript) -> Any # XXX
-    obj = self._EvalExpr(node.obj)
-    index = self._EvalIndices(node.indices)
-    try:
-      result = obj[index]
-    except KeyError:
-      # TODO: expr.Subscript has no error location
-      raise error.Expr('dict entry not found', loc.Missing)
-    except IndexError:
-      # TODO: expr.Subscript has no error location
-      raise error.Expr('index out of range', loc.Missing)
+    # type: (Subscript) -> value_t
 
-    return result
+    obj = _PyObjToValue(self._EvalExpr(node.obj))
+    index = _PyObjToValue(self._EvalExpr(node.index))
+
+    UP_obj = obj
+    UP_index = index
+
+    with tagswitch(obj) as case:
+      if case(value_e.List):
+        obj = cast(value.List, UP_obj)
+        with tagswitch(index) as case2:
+          if case2(value_e.Slice):
+              index = cast(value.Slice, index)
+              step = 1
+              if index.step:
+                step = index.step.i
+
+              try:
+                  if index.lower and index.upper:
+                    return value.List(obj.items[index.lower.i:index.upper.i:step])
+
+                  elif index.lower:
+                    return value.List(obj.items[index.lower.i:len(obj.items):step])
+
+                  elif index.upper:
+                    return value.List(obj.items[:index.upper.i:step])
+
+                  else:
+                    # l[:] == l
+                    return value.List(list(obj.items))
+
+              except IndexError:
+                # TODO: expr.Subscript has no error location
+                raise error.Expr('index out of range', loc.Missing)
+
+          elif case2(value_e.Int):
+              index = cast(value.Int, index)
+              try:
+                return obj.items[index.i]
+              except IndexError:
+                # TODO: expr.Subscript has no error location
+                raise error.Expr('index out of range', loc.Missing)
+
+          else:
+            raise error.InvalidType('expected Slice or Int', loc.Missing)
+
+      elif case(value_e.Tuple):
+        obj = cast(value.Tuple, UP_obj)
+        with tagswitch(index) as case2:
+          if case2(value_e.Slice):
+              index = cast(value.Slice, index)
+              step = 1
+              if index.step:
+                step = index.step.i
+
+              try:
+                  if index.lower and index.upper:
+                    return value.Tuple(obj.items[index.lower.i:index.upper.i:step])
+
+                  elif index.lower:
+                    return value.Tuple(obj.items[index.lower.i::step])
+
+                  elif index.upper:
+                    return value.Tuple(obj.items[:index.upper.i:step])
+
+                  else:
+                    # l[:] == l
+                    return obj
+
+              except IndexError:
+                # TODO: expr.Subscript has no error location
+                raise error.Expr('index out of range', loc.Missing)
+
+          elif case2(value_e.Int):
+              index = cast(value.Int, index)
+              try:
+                return obj.items[index.i]
+              except IndexError:
+                # TODO: expr.Subscript has no error location
+                raise error.Expr('index out of range', loc.Missing)
+
+          else:
+            raise error.InvalidType('expected Slice or Int', loc.Missing)
+
+      elif case(value_e.Str):
+        obj = cast(value.Str, UP_obj)
+        with tagswitch(index) as case2:
+          if case2(value_e.Slice):
+              index = cast(value.Slice, index)
+              step = 1
+              if index.step:
+                  step = 1
+
+              try:
+                  if index.lower and index.upper:
+                    return value.Str(obj.s[index.lower.i:index.upper.i:step])
+
+                  elif index.lower:
+                    return value.Str(obj.s[index.lower.i::step])
+
+                  elif index.upper:
+                    return value.Str(obj.s[:index.upper.i:step])
+
+                  else:
+                    # l[:] == l
+                    return obj
+
+              except IndexError:
+                # TODO: expr.Subscript has no error location
+                raise error.Expr('index out of range', loc.Missing)
+
+          elif case2(value_e.Int):
+              index = cast(value.Int, index)
+              try:
+                return value.Str(obj.s[index.i])
+              except IndexError:
+                # TODO: expr.Subscript has no error location
+                raise error.Expr('index out of range', loc.Missing)
+
+          else:
+            raise error.InvalidType('expected Slice or Int', loc.Missing)
+
+      elif case(value_e.Dict):
+        obj = cast(value.Dict, UP_obj)
+        if index.tag() != value_e.Str:
+            raise error.InvalidType('expected String', loc.Missing)
+
+        index = cast(value.Str, UP_index)
+        try:
+          return obj.d[index.s]
+        except KeyError:
+          # TODO: expr.Subscript has no error location
+          raise error.Expr('dict entry not found', loc.Missing)
+
+    raise error.InvalidType('expected Dict, List, or Tuple', loc.Missing)
+
 
   def _EvalAttribute(self, node):
     # type: (Attribute) -> Any # XXX
@@ -1341,11 +1546,11 @@ class OilEvaluator(object):
 
       elif case(expr_e.Range):  # 1:10  or  1:10:2
         node = cast(expr.Range, UP_node)
-        return self._EvalRange(node)
+        return _ValueToPyObj(self._EvalRange(node))
 
       elif case(expr_e.Slice):  # a[:0]
         node = cast(expr.Slice, UP_node)
-        return self._EvalSlice(node)
+        return _ValueToPyObj(self._EvalSlice(node))
 
       elif case(expr_e.Compare):
         node = cast(expr.Compare, UP_node)
@@ -1361,7 +1566,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.Tuple):
         node = cast(expr.Tuple, UP_node)
-        return self._EvalTuple(node)
+        return _ValueToPyObj(self._EvalTuple(node))
 
       elif case(expr_e.Dict):
         node = cast(expr.Dict, UP_node)
@@ -1423,7 +1628,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.Subscript):
         node = cast(Subscript, UP_node)
-        return self._EvalSubscript(node)
+        return _ValueToPyObj(self._EvalSubscript(node))
 
       # Note: This is only for the obj.method() case.  We will probably change
       # the AST and get rid of getattr().

@@ -140,10 +140,8 @@ class Transformer(object):
       assert p_args.typ == grammar_nt.subscriptlist
       indices = []  # type: List[expr_t]
       n = p_args.NumChildren()
-      for i in xrange(0, n, 2):  # was children[::2]
-        a = p_args.GetChild(i)
-        indices.append(self._Subscript(a))
-      return Subscript(base, indices)
+      a = p_args.GetChild(0)
+      return Subscript(base, self._Subscript(a))
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
       attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name

@@ -4,7 +4,7 @@ module runtime
 {
   # import these types from syntax.asdl
   use frontend syntax {
-    word CompoundWord ArgList command re redir_loc Token proc_sig loc
+    word CompoundWord ArgList command re redir_loc Token proc_sig loc IntParamBox
   }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
@@ -54,6 +54,8 @@ module runtime
 
     -- TODO: remove MaybeStrArray in favor of this
   | List(List[value] items)
+    # Tuples are like lists, but immutable.
+  | Tuple(List[value] items)
 
     -- TODO: remove AssocArray in favor of this
   | Dict(Dict[str, value] d)
@@ -67,6 +69,11 @@ module runtime
     # - Expr for ^[1 + 2] 
     # - Template for ^"$1 and $2"
     # - Proc, Func
+
+    # TODO: we might be able to combine these types when the refactor is done
+    # and we don't need to be able to recover their pyobj representations. 
+  | Slice(IntParamBox? lower, IntParamBox? upper, IntParamBox? step)
+  | Range(IntParamBox? lower, IntParamBox? upper, IntParamBox? step)
 
     # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)

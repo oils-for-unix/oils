@@ -1149,10 +1149,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.end_index:
             self.write(', ')
             self.accept(o.end_index)
-        self.write(')')
 
         if o.stride:
-            raise AssertionError('Stride not supported')
+            if not o.begin_index or not o.end_index:
+                raise AssertionError('Stride only supported with beginning and ending index')
+
+            self.write(', ')
+            self.accept(o.stride)
+
+        self.write(')')
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
         if not _CheckCondition(o.cond, self.types):
