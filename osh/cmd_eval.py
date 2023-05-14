@@ -329,13 +329,6 @@ class CommandEvaluator(object):
 
     return status
 
-  # TODO: Also change to BareAssign (set global or mutate local) and
-  # KeywordAssign.  The latter may have flags too.
-  def _ShAssignLoc(self, node):
-    # type: (command.ShAssignment) -> loc_t
-    # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
-    return loc.Span(node.spids[0])
-
   def _CheckStatus(self, status, cmd_st, node, default_loc):
     # type: (int, CommandStatus, command_t, loc_t) -> None
     """Raises error.ErrExit, maybe with location info attached."""
@@ -737,7 +730,7 @@ class CommandEvaluator(object):
         # context, as well as redirects in the expansion!
 
         # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
-        # expansion, since aliases are discouarged.
+        # expansion, since aliases are discouraged.
 
         if len(node.more_env):
           with state.ctx_Temp(self.mem):
@@ -769,13 +762,9 @@ class CommandEvaluator(object):
         # which _Execute() boils down into a status for us.
         status = -1
 
-        # TODO: how to get errexit_spid into _Execute?
-        # It can be the span_id of !, or of the pipeline component that failed,
-        # recorded in c_status.
         if node.negated is not None:
           self._StrictErrExit(node)
-          # spid of !
-          with state.ctx_ErrExit(self.mutable_opts, False, node.spids[0]):
+          with state.ctx_ErrExit(self.mutable_opts, False, node.negated.span_id):
             # '! grep' is parsed as a pipeline, according to the grammar, but
             # there's no pipe() call.
             if len(node.children) == 1:

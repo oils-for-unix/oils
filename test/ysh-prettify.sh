@@ -578,16 +578,16 @@ test-brace-group() {
     INVALID
 }
 
-# TODO: New case syntax, probably 
+# TODO: New case syntax, which looks like
 # 
-# case $var {
-#   | *.cc | *.h > echo 'C++'
+# case (myvar) {
+#   *.cc | *.h { echo 'C++' }
 # }
 
-# case $var {
-#   | *.cc >
-#   | *.h >
+# case (myvar) {
+#   *.cc | *.h {
 #     echo 'C++'
+#   }
 # }
 
 test-case() {

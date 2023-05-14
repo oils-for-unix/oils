@@ -358,7 +358,7 @@ class OilPrinter(object):
                              # can't tell if global
 
     if True:
-      self.cursor.PrintUntil(node.spids[0])
+      self.cursor.PrintUntil(node.var.span_id)
 
       # For now, just detect whether the FIRST assignment on the line has been
       # declared locally.  We might want to split every line into separate
@@ -541,8 +541,8 @@ class OilPrinter(object):
         # (echo hi) -> shell echo hi
         # (echo hi; echo bye) -> shell {echo hi; echo bye}
 
-        left_spid = node.spids[0]
-        right_spid = node.spids[1]
+        left_spid = node.left.span_id
+        right_spid = node.right.span_id
 
         self.cursor.PrintUntil(left_spid)
         self.cursor.SkipUntil(left_spid + 1)
@@ -589,8 +589,8 @@ class OilPrinter(object):
       elif case(command_e.DoGroup):
         node = cast(command.DoGroup, UP_node)
 
-        do_spid = node.spids[0]
-        done_spid = node.spids[1]
+        do_spid = node.left.span_id
+        done_spid = node.right.span_id
 
         self.cursor.PrintUntil(do_spid)
         self.cursor.SkipUntil(do_spid + 1)
@@ -667,8 +667,11 @@ class OilPrinter(object):
       elif case(command_e.If):
         node = cast(command.If, UP_node)
 
-        else_spid = node.spids[0]
-        fi_spid = node.spids[1]
+        if node.else_kw:
+          else_spid = node.else_kw.span_id
+        else:
+          else_spid = runtime.NO_SPID
+        fi_spid = node.fi_kw.span_id
 
         # if foo; then -> if foo {
         # elif foo; then -> } elif foo {
@@ -720,9 +723,9 @@ class OilPrinter(object):
       elif case(command_e.Case):
         node = cast(command.Case, UP_node)
 
-        case_spid = node.spids[0]
-        in_spid = node.spids[1]
-        esac_spid = node.spids[2]
+        case_spid = node.case_kw.span_id
+        in_spid = node.in_kw.span_id
+        esac_spid = node.esac_kw.span_id
 
         self.cursor.PrintUntil(case_spid)
         self.cursor.SkipUntil(case_spid + 1)
