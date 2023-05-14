@@ -305,7 +305,7 @@ module syntax
   | ShAssignment(Token var, List[AssignPair] pairs, List[Redir] redirects)
   | ControlFlow(Token keyword, word? arg_word)
     # ops are |  |&
-  | Pipeline(Token? negated, List[command] children, List[int] stderr_indices)
+  | Pipeline(Token? negated, List[command] children, List[Token] ops)
     # ops are &&  ||
   | AndOr(List[command] children, List[Token] ops)
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.

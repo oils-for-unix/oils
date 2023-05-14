@@ -776,8 +776,9 @@ class CommandEvaluator(object):
       elif case(command_e.Pipeline):
         node = cast(command.Pipeline, UP_node)
         cmd_st.check_errexit = True
-        if len(node.stderr_indices):
-          e_die("|& isn't supported", loc.Span(node.spids[0]))
+        for op in node.ops:
+          if op.id != Id.Op_Pipe:
+            e_die("|& isn't supported", loc.Span(node.spids[0]))
 
         # Remove $_ before pipeline.  This matches bash, and is important in
         # pipelines than assignments because pipelines are non-deterministic.

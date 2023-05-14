@@ -468,15 +468,21 @@ class CommandParserTest(unittest.TestCase):
   def testParsePipelineBash(self):
     node = assert_ParseCommandList(self, 'ls | cat |& cat')
     self.assertEqual(command_e.Pipeline, node.tag())
-    self.assertEqual([1], node.stderr_indices)
+    self.assertEqual(2, len(node.ops))
+    self.assertEqual(Id.Op_Pipe, node.ops[0].id)
+    self.assertEqual(Id.Op_PipeAmp, node.ops[1].id)
 
     node = assert_ParseCommandList(self, 'ls |& cat | cat')
     self.assertEqual(command_e.Pipeline, node.tag())
-    self.assertEqual([0], node.stderr_indices)
+    self.assertEqual(2, len(node.ops))
+    self.assertEqual(Id.Op_PipeAmp, node.ops[0].id)
+    self.assertEqual(Id.Op_Pipe, node.ops[1].id)
 
     node = assert_ParseCommandList(self, 'ls |& cat |& cat')
     self.assertEqual(command_e.Pipeline, node.tag())
-    self.assertEqual([0, 1], node.stderr_indices)
+    self.assertEqual(2, len(node.ops))
+    self.assertEqual(Id.Op_PipeAmp, node.ops[0].id)
+    self.assertEqual(Id.Op_PipeAmp, node.ops[1].id)
 
   def testParseAndOr(self):
     node = assertParseAndOr(self, 'ls foo')

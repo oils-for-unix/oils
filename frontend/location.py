@@ -100,10 +100,13 @@ def OfCommand(node):
 
   if tag == command_e.Pipeline:
     node = cast(command.Pipeline, UP_node)
-    # TODO:
-    # - use Token for | and |&, not stderr_indices
-    # - '! foo' Id.KW_Bang location
-    return loc.Span(node.spids[0])  # first |
+    if len(node.ops):
+      # first | or |&
+      return node.ops[0]
+    else:
+      assert node.negated is not None
+      # ! false
+      return node.negated
   if tag == command_e.AndOr:
     node = cast(command.AndOr, UP_node)
     return node.ops[0]  # first && or ||

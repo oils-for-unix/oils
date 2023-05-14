@@ -2116,16 +2116,14 @@ class CommandParser(object):
         node.spids.append(pipeline_spid)
         return node
       else:
-        return child
+        return child  # no pipeline
 
-    pipe_index = 0
-    stderr_indices = []  # type: List[int]
-
-    if self.c_id == Id.Op_PipeAmp:
-      stderr_indices.append(pipe_index)
-    pipe_index += 1
-
+    # | or |&
+    ops = []  # type: List[Token]
     while True:
+      op = word_.AsOperatorToken(self.cur_word)
+      ops.append(op)
+
       # Set it to the first | if it isn't already set.
       if pipeline_spid == runtime.NO_SPID:
         pipeline_spid = location.OfWordLeft(self.cur_word)
@@ -2140,11 +2138,7 @@ class CommandParser(object):
       if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
         break
 
-      if self.c_id == Id.Op_PipeAmp:
-        stderr_indices.append(pipe_index)
-      pipe_index += 1
-
-    node = command.Pipeline(negated, children, stderr_indices)
+    node = command.Pipeline(negated, children, ops)
     node.spids.append(pipeline_spid)
     return node
 
