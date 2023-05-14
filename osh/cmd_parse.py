@@ -1232,8 +1232,6 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    semi_tok = None
-
     self._Peek()
     if self.c_id == Id.KW_In:
 
@@ -1248,6 +1246,7 @@ class CommandParser(object):
           p_die('Expected { after iterable expression',
                 loc.Word(self.cur_word))
       else:
+        semi_tok = None  # type: Optional[Token]
         iter_words, semi_tok = self.ParseForWords()
         node.semi_tok = semi_tok
 
@@ -1733,8 +1732,6 @@ class CommandParser(object):
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
     """
-    left_spid = _KeywordSpid(self.cur_word)
-
     word0 = cast(CompoundWord, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(word0)
     if len(name) == 0:  # example: foo$x is invalid
@@ -1760,8 +1757,6 @@ class CommandParser(object):
       # would just be 'f'
       self._Next()
 
-      after_name_spid = location.OfWordLeft(self.cur_word) + 1
-
       self._NewlineOk()
 
       func = command.ShFunction.CreateNull()
@@ -1769,12 +1764,9 @@ class CommandParser(object):
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
 
-      func.name_loc = loc.Word(word0)
+      name_spid = location.OfWordLeft(word0)
+      func.name_tok = self.arena.GetToken(name_spid)
 
-      # matches ParseKshFunctionDef below
-      func.spids.append(left_spid)
-      func.spids.append(left_spid)  # name span id is same as left_spid in this case
-      func.spids.append(after_name_spid)
       return func
     else:
       p_die('Expected ) in function definition', loc.Word(self.cur_word))
@@ -1786,7 +1778,6 @@ class CommandParser(object):
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
     keyword_tok = word_.AsKeywordToken(self.cur_word)
-    left_spid = location.OfWordLeft(self.cur_word)
 
     self._Next()  # skip past 'function'
     self._Peek()
@@ -1796,9 +1787,7 @@ class CommandParser(object):
     if len(name) == 0:  # example: foo$x is invalid
       p_die('Invalid KSH-style function name', loc.Word(cur_word))
 
-    name_loc = loc.Word(self.cur_word)
-    name_spid = location.OfWordLeft(self.cur_word)
-    after_name_spid = name_spid + 1
+    name_word = self.cur_word
     self._Next()  # skip past 'function name
 
     self._Peek()
@@ -1806,8 +1795,6 @@ class CommandParser(object):
       self.lexer.PushHint(Id.Op_RParen, Id.Right_ShFunction)
       self._Next()
       self._Eat(Id.Right_ShFunction)
-      # Change it: after )
-      after_name_spid = location.OfWordLeft(self.cur_word) + 1
 
     self._NewlineOk()
 
@@ -1817,12 +1804,10 @@ class CommandParser(object):
       func.body = self.ParseCompoundCommand()
 
     func.keyword = keyword_tok
-    func.name_loc = name_loc
 
-    # matches ParseFunctionDef above
-    func.spids.append(left_spid)
-    func.spids.append(name_spid)
-    func.spids.append(after_name_spid)
+    name_spid = location.OfWordLeft(name_word)
+    func.name_tok = self.arena.GetToken(name_spid)
+
     return func
 
   def ParseOilProc(self):

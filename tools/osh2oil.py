@@ -568,23 +568,25 @@ class OilPrinter(object):
         new_local_symbols = {}  # type: Dict[str, bool]
 
         # Should be the left most span, including 'function'
-        self.cursor.PrintUntil(node.spids[0])
+        if node.keyword:  # function foo { ...
+          self.cursor.PrintUntil(node.keyword.span_id)
+        else:  # foo() { ...
+          self.cursor.PrintUntil(node.name_tok.span_id)
 
-        self.f.write('proc ')
-        self.f.write(node.name)
-        self.cursor.SkipUntil(node.spids[2])
+        self.f.write('proc %s ' % node.name)
 
-        if node.body.tag() == command_e.BraceGroup:
-          # Don't add "do" like a standalone brace group.  Just use {}.
-          for child in cast(BraceGroup, node.body).children:
-            self.DoCommand(child, new_local_symbols)
-        else:
-          pass
-          # Add {}.
-          # proc foo {
-          #   shell {echo hi; echo bye}
-          # }
-          #self.DoCommand(node.body)
+        UP_body = node.body
+        with tagswitch(UP_body) as case:
+          if case(command_e.BraceGroup):
+            body = cast(BraceGroup, UP_body)
+            self.cursor.SkipUntil(body.left.span_id)
+
+            # Don't add "do" like a standalone brace group.  Just use {}.
+            for child in body.children:
+              self.DoCommand(child, new_local_symbols)
+          else:
+            # very rare cases like f() ( subshell )
+            pass
 
       elif case(command_e.DoGroup):
         node = cast(command.DoGroup, UP_node)

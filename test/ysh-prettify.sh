@@ -421,33 +421,19 @@ test-posix-func() {
     echo "hi"
   }'
 
-  # Non-brace function bodies
-  # TODO: Bail in this case
-  check-osh2ysh '
-  f() (
-    echo hi
-  )' \
-  '
-  proc f (
-    echo hi
-  )' \
-  INVALID
-
-  return
-
-  # TODO: Move the brace
+  # The brace is moved
   check-osh2ysh '
   f()
   {
     echo "hi"
   }' '
-  proc f
-  {
+  proc f {
     echo "hi"
   }'
 
-  # No nested functinos
   return
+
+  # Nested functinos
   check-osh2ysh '
 func1() {
   echo func1
@@ -464,7 +450,19 @@ proc func1 {
     echo func2
   }
 }'
+  return
 
+  # Non-brace function bodies
+  # TODO: Bail in this case
+  check-osh2ysh '
+  f() (
+    echo hi
+  )' \
+  '
+  proc f (
+    echo hi
+  )' \
+  INVALID
 }
 
 test-ksh-func() {

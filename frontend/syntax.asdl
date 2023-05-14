@@ -331,7 +331,7 @@ module syntax
          Token? esac_kw, List[Redir] redirects)
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
-  | ShFunction(Token? keyword, loc name_loc, str name, command body)
+  | ShFunction(Token? keyword, Token name_tok, str name, command body)
   | TimeBlock(Token keyword, command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level

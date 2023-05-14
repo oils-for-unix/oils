@@ -1341,9 +1341,9 @@ class CommandEvaluator(object):
         node = cast(command.ShFunction, UP_node)
         if node.name in self.procs and not self.exec_opts.redefine_proc():
           e_die("Function %s was already defined (redefine_proc)" % node.name,
-                node.name_loc)
+                node.name_tok)
         self.procs[node.name] = Proc(
-            node.name, node.name_loc, proc_sig.Open(), node.body, [], True)
+            node.name, node.name_tok, proc_sig.Open(), node.body, [], True)
 
         status = 0
 
