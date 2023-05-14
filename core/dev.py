@@ -586,7 +586,7 @@ class Tracer(object):
     start = left_span.col
 
     if left_span.line == right_span.line:
-      end = right_span.col  # This is one spid PAST the end.
+      end = right_span.col + right_span.length
       buf.write(line[start:end])
     else:
       # Print first line only

@@ -22,7 +22,7 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     IntParamBox,
     loc, loc_t, loc_e, Token, CompoundWord,
-    command, command_e, command_t, command__NoOp,
+    command, command_e, command_t, command_str,
     condition, condition_e, condition_t,
     BraceGroup, ArgList,
     assign_op_e,
@@ -348,7 +348,7 @@ class CommandEvaluator(object):
     self._MaybeRunErrTrap()
 
     if self.exec_opts.errexit():
-      # NOTE: Sometimes location info is duplicated.
+      # NOTE: Sometimes we print 2 errors
       # - 'type -z' has a UsageError with location, then errexit
       # - '> /nonexistent' has an I/O error, then errexit
       # - Pipelines and subshells are compound.  Commands within them fail.
@@ -358,53 +358,34 @@ class CommandEvaluator(object):
 
       UP_node = node
       with tagswitch(node) as case:
-        if case(command_e.Simple):
-          node = cast(command.Simple, UP_node)
-          # It would be nice to print "Command 'ls'" failed.  But it's complex
-          # because we could be here for several reasons:
-          #
-          #   ls /x          # command actually failed
-          #   ls > ""        # error.RedirectEval
-          #   ls *Z          # error.FailGlob
-          #   sort <(ls /x)  # process sub failure
-          desc = 'Command'
-          blame_loc = location.OfCommand(node)
-
-        elif case(command_e.ShAssignment):
+        if case(command_e.ShAssignment):
           node = cast(command.ShAssignment, UP_node)
           cmd_st.show_code = True  # leaf
-          # Note: This happens rarely: when errexit and inherit_errexit are on,
-          # but command_sub_errexit is off!
-          desc = 'Assignment'
-          blame_loc = self._ShAssignLoc(node)
+          # Note: we show errors from assignments a=$(false) rarely: when
+          # errexit, inherit_errexit, verbose_errexit are on, but
+          # command_sub_errexit is off!
 
         # Note: a subshell often doesn't fail on its own.
         elif case(command_e.Subshell):
           node = cast(command.Subshell, UP_node)
           cmd_st.show_code = True  # not sure about this, e.g. ( exit 42 )
-          desc = 'Subshell'
-          blame_loc = loc.Span(node.spids[0])
 
         elif case(command_e.Pipeline):
           node = cast(command.Pipeline, UP_node)
           cmd_st.show_code = True  # not sure about this
-          # The whole pipeline can fail separately
           # TODO: We should show which element of the pipeline failed!
-          desc = 'Pipeline'
-          blame_loc = loc.Span(node.spids[0])  # spid of !, or first |
 
-        else:
-          # NOTE: The fallback of CurrentSpanId() fills this in.
-          desc = ui.CommandType(node)
-          blame_loc = loc.Missing
+      desc = command_str(node.tag())
 
-      # Override if explicitly passed.
+      # Override location if explicitly passed.
       # Note: this produces better results for process sub
       #   echo <(sort x)
       # and different results for some pipelines:
       #   { ls; false; } | wc -l; echo hi  # Point to | or first { ?
       if default_loc.tag() != loc_e.Missing:
-        blame_loc = default_loc
+        blame_loc = default_loc  # type: loc_t
+      else:
+        blame_loc = location.TokenForCommand(node)
 
       msg = '%s failed with status %d' % (desc, status)
       raise error.ErrExit(status, msg, blame_loc, show_code=cmd_st.show_code)
@@ -1369,7 +1350,6 @@ class CommandEvaluator(object):
 
       elif case(command_e.ShFunction):
         node = cast(command.ShFunction, UP_node)
-        # name_spid is node.spids[1].  Dynamic scope.
         if node.name in self.procs and not self.exec_opts.redefine_proc():
           e_die("Function %s was already defined (redefine_proc)" % node.name,
                 node.name_loc)
@@ -1417,7 +1397,6 @@ class CommandEvaluator(object):
           status = self._ExecuteList(node.else_action)
 
       elif case(command_e.NoOp):
-        node = cast(command__NoOp, UP_node)
         status = 0  # make it true
 
       elif case(command_e.Case):
@@ -1566,7 +1545,6 @@ class CommandEvaluator(object):
               status = 1 if status == 0 else 0
 
           if 0:
-            from _devbuild.gen.syntax_asdl import command_str
             if status == 1 and node.tag() == command_e.Simple:
               log('node %s', node)
             log('node %s status %d PIPE %s', command_str(node.tag()), status, pipe_status)
