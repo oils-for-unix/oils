@@ -484,8 +484,8 @@ for x in a b c \
   echo $x
 done
 ' '
-for x in [a b c \
-  d e f] {
+for x in a b c \
+  d e f {
   echo $x
 }
 '
@@ -497,8 +497,8 @@ do
   echo $x
 done
 ' '
-for x in [a b c \
-  d e f]
+for x in a b c \
+  d e f
 {
   echo $x
 }
@@ -507,12 +507,12 @@ for x in [a b c \
 
 test-empty-for-loop() {
   check-osh2ysh '
-for x in 
+for x in
 do
   echo $x
 done
 ' '
-for x in []
+for x in
 {
   echo $x
 }

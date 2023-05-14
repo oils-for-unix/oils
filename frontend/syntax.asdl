@@ -318,7 +318,7 @@ module syntax
   | DBracket(Token left, bool_expr expr, Token right, List[Redir] redirects)
     # up to 3 iterations variables
   | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
-            command body, List[Redir] redirects)
+            Token? semi_tok, command body, List[Redir] redirects)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
     # order.

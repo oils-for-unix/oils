@@ -611,9 +611,6 @@ class OilPrinter(object):
         # for x in a b c \
         #    d e f; do
 
-        in_spid = node.spids[1]
-        semi_spid = node.spids[2]
-
         UP_iterable = node.iterable
         with tagswitch(node.iterable) as case:
           if case(for_iter_e.Args):
@@ -625,19 +622,13 @@ class OilPrinter(object):
             self.cursor.SkipUntil(body_spid)
 
           elif case(for_iter_e.Words):
-            iterable = cast(for_iter.Words, UP_iterable)
-
-            self.cursor.PrintUntil(in_spid + 2)  # 'for x in ' and then space
-            self.f.write('[')
-            for w in iterable.words:
-              self.DoWordInCommand(w, local_symbols)
-            self.f.write(']')
-            #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
+            pass
 
           elif case(for_iter_e.Oil):
             pass
 
-        if semi_spid != runtime.NO_SPID:
+        if node.semi_tok is not None:
+          semi_spid = node.semi_tok.span_id
           self.cursor.PrintUntil(semi_spid)
           self.cursor.SkipUntil(semi_spid + 1)
 

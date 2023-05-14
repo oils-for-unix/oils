@@ -1123,7 +1123,7 @@ class CommandParser(object):
     return node
 
   def ParseForWords(self):
-    # type: () -> Tuple[List[CompoundWord], int]
+    # type: () -> Tuple[List[CompoundWord], Optional[Token]]
     """
     for_words        : WORD* for_sep
                      ;
@@ -1133,13 +1133,13 @@ class CommandParser(object):
     """
     words = []  # type: List[CompoundWord]
     # The span_id of any semi-colon, so we can remove it.
-    semi_spid = runtime.NO_SPID
+    semi_tok = None  # type: Optional[Token]
 
     while True:
       self._Peek()
       if self.c_id == Id.Op_Semi:
         tok = cast(Token, self.cur_word)
-        semi_spid = tok.span_id
+        semi_tok = tok
         self._Next()
         self._NewlineOk()
         break
@@ -1156,7 +1156,7 @@ class CommandParser(object):
       w2 = cast(CompoundWord, self.cur_word)
       words.append(w2)
       self._Next()
-    return words, semi_spid
+    return words, semi_tok
 
   def _ParseForExprLoop(self, for_kw):
     # type: (Token) -> command.ForExpr
@@ -1192,7 +1192,6 @@ class CommandParser(object):
     # type: (Token) -> command.ForEach
     node = command.ForEach.CreateNull(alloc_lists=True)
     node.keyword = for_kw
-    node.spids.append(for_kw.span_id)  # for $LINENO and error fallback
 
     num_iter_names = 0
     while True:
@@ -1233,12 +1232,10 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    in_spid = runtime.NO_SPID
-    semi_spid = runtime.NO_SPID
+    semi_tok = None
 
     self._Peek()
     if self.c_id == Id.KW_In:
-      in_spid = location.OfWordLeft(self.cur_word)  # for translation only
 
       self._Next()  # skip in
       if self.w_parser.LookPastSpace() == Id.Op_LParen:
@@ -1251,7 +1248,9 @@ class CommandParser(object):
           p_die('Expected { after iterable expression',
                 loc.Word(self.cur_word))
       else:
-        iter_words, semi_spid = self.ParseForWords()
+        iter_words, semi_tok = self.ParseForWords()
+        node.semi_tok = semi_tok
+
         if not self.parse_opts.parse_bare_word() and len(iter_words) == 1:
           ok, s, quoted = word_.StaticEval(iter_words[0])
           if ok and match.IsValidVarName(s) and not quoted:
@@ -1283,8 +1282,6 @@ class CommandParser(object):
     else:
       node.body = self.ParseDoGroup()
 
-    node.spids.append(in_spid)
-    node.spids.append(semi_spid)
     return node
 
   def ParseFor(self):
