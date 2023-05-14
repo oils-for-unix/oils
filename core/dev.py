@@ -9,7 +9,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e,
     cmd_value, scope_e, trace, trace_e, trace_t 
 )
-from _devbuild.gen.syntax_asdl import assign_op_e
+from _devbuild.gen.syntax_asdl import assign_op_e, Token
 
 from asdl import runtime
 from core import error
@@ -571,8 +571,8 @@ class Tracer(object):
 
     self.f.write(buf.getvalue())
 
-  def PrintSourceCode(self, left_spid, right_spid, arena):
-    # type: (int, int, alloc.Arena) -> None
+  def PrintSourceCode(self, left_tok, right_tok, arena):
+    # type: (Token, Token, alloc.Arena) -> None
     """
     For (( )) and [[ ]].  Bash traces these.
     """
@@ -580,13 +580,11 @@ class Tracer(object):
     if not buf:
       return
 
-    left_span = arena.GetToken(left_spid)
-    right_span = arena.GetToken(right_spid)
-    line = left_span.line.content
-    start = left_span.col
+    line = left_tok.line.content
+    start = left_tok.col
 
-    if left_span.line == right_span.line:
-      end = right_span.col + right_span.length
+    if left_tok.line == right_tok.line:
+      end = right_tok.col + right_tok.length
       buf.write(line[start:end])
     else:
       # Print first line only

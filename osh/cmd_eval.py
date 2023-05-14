@@ -58,7 +58,7 @@ from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
-from mycpp.mylib import log, switch, tagswitch
+from mycpp.mylib import log, switch, tagswitch, StrFromC
 
 import posix_ as posix
 import libc  # for fnmatch
@@ -375,7 +375,7 @@ class CommandEvaluator(object):
           cmd_st.show_code = True  # not sure about this
           # TODO: We should show which element of the pipeline failed!
 
-      desc = command_str(node.tag())
+      desc = StrFromC(command_str(node.tag()))
 
       # Override location if explicitly passed.
       # Note: this produces better results for process sub
@@ -800,7 +800,7 @@ class CommandEvaluator(object):
         self.mem.SetCurrentSpanId(node.left.span_id)
         self._MaybeRunDebugTrap()
 
-        self.tracer.PrintSourceCode(node.left.span_id, node.right.span_id, self.arena)
+        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
 
         cmd_st.check_errexit = True
         cmd_st.show_code = True  # this is a "leaf" for errors
@@ -812,7 +812,7 @@ class CommandEvaluator(object):
         self.mem.SetCurrentSpanId(node.left.span_id)
         self._MaybeRunDebugTrap()
 
-        self.tracer.PrintSourceCode(node.left.span_id, node.right.span_id, self.arena)
+        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
 
         cmd_st.check_errexit = True
         cmd_st.show_code = True  # this is a "leaf" for errors
