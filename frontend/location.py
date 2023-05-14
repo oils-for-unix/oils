@@ -21,7 +21,7 @@ from asdl import runtime
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast, Optional
 
 
 def LName(name):
@@ -71,9 +71,8 @@ def GetSpanId(loc_):
 
   raise AssertionError()
 
-
-def OfCommand(node):
-  # type: (command_t) -> loc_t
+def TokenForCommand(node):
+  # type: (command_t) -> Optional[Token]
   """
   Used in pipe_locs, for _CheckStatus(), _StrictErrExit, etc.
   """
@@ -87,12 +86,7 @@ def OfCommand(node):
 
   if tag == command_e.Simple:
     node = cast(command.Simple, UP_node)
-    # It should have either words or redirects, e.g. '> foo'
-    if len(node.words):
-      # TODO: need token
-      return loc.Word(node.words[0])
-    elif len(node.redirects):
-      return node.redirects[0].op
+    return node.blame_tok
 
   if tag == command_e.ShAssignment:
     node = cast(command.ShAssignment, UP_node)
@@ -101,12 +95,11 @@ def OfCommand(node):
   if tag == command_e.Pipeline:
     node = cast(command.Pipeline, UP_node)
     if len(node.ops):
-      # first | or |&
-      return node.ops[0]
+      return node.ops[0]  # first | or |&
     else:
       assert node.negated is not None
-      # ! false
-      return node.negated
+      return node.negated  # ! false
+
   if tag == command_e.AndOr:
     node = cast(command.AndOr, UP_node)
     return node.ops[0]  # first && or ||
@@ -138,7 +131,16 @@ def OfCommand(node):
   #if node.tag == command_e.CommandList:
   #  pass
 
-  return loc.Missing
+  return None
+
+
+def OfCommand(node):
+  # type: (command_t) -> loc_t
+  tok = TokenForCommand(node)
+  if tok:
+    return tok
+  else:
+    return loc.Missing
 
 
 def OfArithExpr(node):
@@ -157,74 +159,85 @@ def OfArithExpr(node):
 
 def OfWordPartLeft(part):
   # type: (word_part_t) -> int
+  """
+  Span ID wrapper to remove
+  """
+  tok = LeftTokenForWordPart(part)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID
+
+
+def LeftTokenForWordPart(part):
+  # type: (word_part_t) -> Optional[Token]
   UP_part = part
   with tagswitch(part) as case:
     if case(word_part_e.ShArrayLiteral):
       part = cast(ShArrayLiteral, UP_part)
-      return part.left.span_id  # ( location
+      return part.left
 
     elif case(word_part_e.AssocArrayLiteral):
       part = cast(word_part.AssocArrayLiteral, UP_part)
-      return part.left.span_id  # ( location
+      return part.left
 
     elif case(word_part_e.Literal):
       tok = cast(Token, UP_part)
-      return tok.span_id
+      return tok
 
     elif case(word_part_e.EscapedLiteral):
       part = cast(word_part.EscapedLiteral, UP_part)
-      return part.token.span_id
+      return part.token
 
     elif case(word_part_e.SingleQuoted):
       part = cast(SingleQuoted, UP_part)
-      return part.left.span_id  # single quote location
+      return part.left
 
     elif case(word_part_e.DoubleQuoted):
       part = cast(DoubleQuoted, UP_part)
-      return part.left.span_id  # double quote location
+      return part.left
 
     elif case(word_part_e.SimpleVarSub):
       part = cast(SimpleVarSub, UP_part)
-      return part.left.span_id
+      return part.left
 
     elif case(word_part_e.BracedVarSub):
       part = cast(BracedVarSub, UP_part)
-      return part.left.span_id
+      return part.left
 
     elif case(word_part_e.CommandSub):
       part = cast(CommandSub, UP_part)
-      return part.left_token.span_id
+      return part.left_token
 
     elif case(word_part_e.TildeSub):
       part = cast(word_part.TildeSub, UP_part)
-      return part.token.span_id
+      return part.token
 
     elif case(word_part_e.ArithSub):
       part = cast(word_part.ArithSub, UP_part)
-      # begin, end
-      return part.spids[0]
+      # TODO: Add token for $((
+      return None
 
     elif case(word_part_e.ExtGlob):
       part = cast(word_part.ExtGlob, UP_part)
-      # This is the smae as part.op.span_id, but we want to be consistent with
-      # left/right.  Not sure I want to add a right token just for the spid.
-      return part.spids[0]
-      #return part.op.span_id  # e.g. @( is the left-most token
+      return part.op
 
     elif case(word_part_e.BracedTuple):
-      return runtime.NO_SPID
+      part = cast(word_part.BracedTuple, UP_part)
+      # TODO: Derive token from part.words[0]
+      return None
 
     elif case(word_part_e.Splice):
       part = cast(word_part.Splice, UP_part)
-      return part.name.span_id
+      return part.name
 
     elif case(word_part_e.FuncCall):
       part = cast(word_part.FuncCall, UP_part)
-      return part.name.span_id  # @f(x) or $f(x)
+      return part.name  # @f(x) or $f(x)
 
     elif case(word_part_e.ExprSub):
       part = cast(word_part.ExprSub, UP_part)
-      return part.left.span_id  # $[
+      return part.left  # $[
 
     else:
       raise AssertionError(part.tag())

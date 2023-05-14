@@ -321,6 +321,12 @@ def _MakeSimpleCommand(
       if word_.HasArrayPart(w):
         p_die("Commands can't contain array literals", loc.Word(w))
 
+  assert len(suffix_words) != 0
+  # {a,b,c}   # Use { before brace detection
+  # ~/bin/ls  # Use ~ before tilde detection
+  part0 = suffix_words[0].parts[0]
+  blame_tok = location.LeftTokenForWordPart(part0)
+
   # NOTE: We only do brace DETECTION here, not brace EXPANSION.  Therefore we
   # can't implement bash's behavior of having say {~bob,~jane}/src work,
   # because we only have a BracedTree.
@@ -332,9 +338,10 @@ def _MakeSimpleCommand(
 
   more_env = []  # type: List[EnvPair]
   _AppendMoreEnv(preparsed_list, more_env)
+
   # do_fork by default
-  node = command.Simple(more_env, words3, redirects, typed_args, block, True)
-  return node
+  return command.Simple(
+      blame_tok, more_env, words3, redirects, typed_args, block, True)
 
 
 class VarChecker(object):
@@ -967,12 +974,15 @@ class CommandParser(object):
       typed_spid = typed_args.left.span_id  # preferred over block location
 
     if len(words) == 0:  # e.g.  >out.txt  # redirect without words
+      assert len(redirects) != 0
       if typed_spid != runtime.NO_SPID:
         p_die("Unexpected typed args", loc.Span(typed_spid))
+
       simple = command.Simple.CreateNull()
+      simple.blame_tok = redirects[0].op
+      simple.more_env = []
       simple.words = []
       simple.redirects = redirects
-      simple.more_env = []
       return simple
 
     # Disallow =a because it's confusing

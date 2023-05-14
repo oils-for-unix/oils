@@ -291,12 +291,12 @@ module syntax
 
   command =
     NoOp
-    # Note: do_fork is semantic, not syntactic
-  | Simple(
-           # Token left,
+  | Simple(Token? blame_tok,  # TODO: fix ArithSub, BracedTuple, make required
            List[EnvPair] more_env,
            List[word] words, List[Redir] redirects,
-           ArgList? typed_args, BlockArg? block, bool do_fork)
+           ArgList? typed_args, BlockArg? block,
+           # do_fork is semantic, not syntactic
+           bool do_fork)
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
   | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
