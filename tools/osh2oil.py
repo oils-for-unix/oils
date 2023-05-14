@@ -62,7 +62,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_e,
     BraceGroup,
 
-    for_iter, for_iter_e,
+    for_iter_e,
     condition, condition_e,
     redir_param, redir_param_e, Redir,
 )

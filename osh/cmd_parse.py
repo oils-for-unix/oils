@@ -1017,9 +1017,7 @@ class CommandParser(object):
 
       # TODO: get token directly
       left_tok = self.arena.GetToken(location.OfWordLeft(words[0]))
-      assign = command.ShAssignment(left_tok, pairs, redirects)
-      assign.spids.append(left_tok.span_id)  # no keyword spid to skip past
-      return assign
+      return command.ShAssignment(left_tok, pairs, redirects)
 
     kind, kw_token = word_.KeywordToken(suffix_words[0])
 
@@ -1117,10 +1115,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Done)
     done_kw = word_.AsKeywordToken(self.cur_word)  # after _Eat
 
-    node = command.DoGroup(do_kw, c_list.children, done_kw)
-    node.spids.append(do_kw.span_id)
-    node.spids.append(done_kw.span_id)
-    return node
+    return command.DoGroup(do_kw, c_list.children, done_kw)
 
   def ParseForWords(self):
     # type: () -> Tuple[List[CompoundWord], Optional[Token]]
@@ -1165,7 +1160,6 @@ class CommandParser(object):
     """
     node = self.w_parser.ReadForExpression()
     node.keyword = for_kw
-    node.spids.append(for_kw.span_id)
 
     self._Next()
 
@@ -1335,9 +1329,8 @@ class CommandParser(object):
     else:
       body_node = self.ParseDoGroup()
 
-    node = command.WhileUntil(keyword, cond, body_node, None)  # no redirects yet
-    node.spids.append(keyword.span_id)  # e.g. for errexit message
-    return node
+    # no redirects yet
+    return command.WhileUntil(keyword, cond, body_node, None)
 
   def ParseCaseItem(self):
     # type: () -> CaseArm
@@ -1465,10 +1458,6 @@ class CommandParser(object):
     case_node.case_kw = case_kw
     case_node.in_kw = in_kw
     case_node.esac_kw = esac_kw
-
-    case_node.spids.append(case_kw.span_id)
-    case_node.spids.append(in_kw.span_id if in_kw else runtime.NO_SPID)
-    case_node.spids.append(esac_kw.span_id if esac_kw else runtime.NO_SPID)
     return case_node
 
   def _ParseOilElifElse(self, if_node):
@@ -1507,14 +1496,9 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.KW_Else:
-      else_spid = location.OfWordLeft(self.cur_word)
       self._Next()
       body = self.ParseBraceGroup()
       if_node.else_action = body.children
-    else:
-      else_spid = runtime.NO_SPID
-
-    if_node.spids.append(else_spid)
 
   def _ParseOilIf(self, if_kw, cond):
     # type: (Token, condition_t) -> command.If
@@ -1548,8 +1532,6 @@ class CommandParser(object):
     self._Peek()
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       self._ParseOilElifElse(if_node)
-    else:
-      if_node.spids.append(runtime.NO_SPID)  # no else spid
     # the whole if node has the 'else' spid, unlike shell-style there's no 'fi'
     # spid because that's in the BraceGroup.
     return if_node
@@ -1579,16 +1561,13 @@ class CommandParser(object):
 
     if self.c_id == Id.KW_Else:
       else_kw = word_.AsKeywordToken(self.cur_word)
-      else_spid = else_kw.span_id
       self._Next()
       body = self._ParseCommandList()
       if_node.else_action = body.children
     else:
       else_kw = None
-      else_spid = runtime.NO_SPID
 
     if_node.else_kw = else_kw
-    if_node.spids.append(else_spid)
 
   def ParseIf(self):
     # type: () -> command.If
@@ -1625,14 +1604,10 @@ class CommandParser(object):
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       self._ParseElifElse(if_node)
-    else:
-      if_node.spids.append(runtime.NO_SPID)  # no else spid
 
     self._Eat(Id.KW_Fi)
-    fi_kw = word_.AsKeywordToken(self.cur_word)
+    if_node.fi_kw = word_.AsKeywordToken(self.cur_word)
 
-    if_node.fi_kw = fi_kw
-    if_node.spids.append(fi_kw.span_id)
     return if_node
 
   def ParseTime(self):
@@ -1645,9 +1620,7 @@ class CommandParser(object):
     time_kw = word_.AsKeywordToken(self.cur_word)
     self._Next()  # skip time
     pipeline = self.ParsePipeline()
-    node = command.TimeBlock(time_kw, pipeline)
-    node.spids.append(time_kw.span_id)
-    return node
+    return command.TimeBlock(time_kw, pipeline)
 
   def ParseCompoundCommand(self):
     # type: () -> command_t
@@ -1866,11 +1839,7 @@ class CommandParser(object):
     right = word_.AsOperatorToken(self.cur_word)
     self._Eat(Id.Right_Subshell)
 
-    node = command.Subshell(left, child, right, None)  # no redirects yet
-
-    node.spids.append(left.span_id)
-    node.spids.append(right.span_id)
-    return node
+    return command.Subshell(left, child, right, None)  # no redirects yet
 
   def ParseDBracket(self):
     # type: () -> command.DBracket
@@ -1884,16 +1853,7 @@ class CommandParser(object):
     self._Next()  # skip [[
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode, right = b_parser.Parse()  # May raise
-
-    self._Peek()
-    # Similar to the scenario with ParseDParen, we must get the span id following
-    # the ']]' token.
-    right_spid = location.OfWordLeft(self.cur_word)
-
-    node = command.DBracket(left, bnode, right, None)  # no redirects yet
-    node.spids.append(left.span_id)
-    node.spids.append(right_spid)
-    return node
+    return command.DBracket(left, bnode, right, None)  # no redirects yet
 
   def ParseDParen(self):
     # type: () -> command.DParen
@@ -1903,19 +1863,7 @@ class CommandParser(object):
     anode, right = self.w_parser.ReadDParen()
     assert anode is not None
 
-    self._Peek()
-    # The right span id must lie directly after the Op_DRightParen token for
-    # `Tracer` to print properly.
-    # (( a = 42 )) <...>
-    #              ^^^^^-- span id points here
-    # NOTE: we have a simular situation in ParseDBracket
-    # TODO: fix `Tracer.PrintSourceCode` so we don't need this span id
-    right_spid = location.OfWordLeft(self.cur_word)
-
-    node = command.DParen(left, anode, right, None)  # no redirects yet
-    node.spids.append(left.span_id)
-    node.spids.append(right_spid)
-    return node
+    return command.DParen(left, anode, right, None)  # no redirects yet
 
   def ParseCommand(self):
     # type: () -> command_t
@@ -2105,7 +2053,6 @@ class CommandParser(object):
     if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
       if negated is not None:
         node = command.Pipeline(negated, children, [])
-        node.spids.append(pipeline_spid)
         return node
       else:
         return child  # no pipeline
@@ -2130,9 +2077,7 @@ class CommandParser(object):
       if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
         break
 
-    node = command.Pipeline(negated, children, ops)
-    node.spids.append(pipeline_spid)
-    return node
+    return command.Pipeline(negated, children, ops)
 
   def ParseAndOr(self):
     # type: () -> command_t
@@ -2174,18 +2119,13 @@ class CommandParser(object):
       self._NewlineOk()
 
       child = self.ParsePipeline()
-
       children.append(child)
 
       self._Peek()
       if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
         break
 
-    node = command.AndOr(children, ops)
-    for token in ops:
-      # we cannot use a list comprehension as those are not supported by mycpp
-      node.spids.append(token.span_id)
-    return node
+    return command.AndOr(children, ops)
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.
 

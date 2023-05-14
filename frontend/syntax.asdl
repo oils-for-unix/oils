@@ -367,7 +367,6 @@ module syntax
   | While(expr test, command body)
   | Break | Continue
   | Return(expr? value)
-  attributes (List[int] spids)
   generate [zero_arg_singleton]
 
   # Binary(x expr, y expr) or Nullary %Token
