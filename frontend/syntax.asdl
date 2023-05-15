@@ -177,7 +177,7 @@ module syntax
   | BracedRange(id kind, str start, str end, int step)
     # note: optional int may need special handling in ASDL
   # extended globs are parsed statically, unlike globs
-  | ExtGlob(Token op, List[CompoundWord] arms)
+  | ExtGlob(Token op, List[CompoundWord] arms, Token right)
 
     # Oil word_part extensions
 

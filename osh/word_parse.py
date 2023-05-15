@@ -768,9 +768,8 @@ class WordParser(WordEmitter):
       Compound includes ExtGlob
     """
     left_token = self.cur_token
+    right_token = None  # type: Token
     arms = []  # type: List[CompoundWord]
-    spids = []  # type: List[int]
-    spids.append(left_token.span_id)
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
     self._Next(lex_mode_e.ExtGlob)  # advance past LEFT
@@ -783,7 +782,7 @@ class WordParser(WordEmitter):
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
           arms.append(CompoundWord([]))
-        spids.append(self.cur_token.span_id)
+        right_token = self.cur_token
         break
 
       elif self.token_type == Id.Op_Pipe:
@@ -805,9 +804,7 @@ class WordParser(WordEmitter):
       else:
         raise AssertionError(self.cur_token)
 
-    part = word_part.ExtGlob(left_token, arms)
-    part.spids.extend(spids)
-    return part
+    return word_part.ExtGlob(left_token, arms, right_token)
 
   def _ReadLikeDQ(self, left_token, is_oil_expr, out_parts):
     # type: (Optional[Token], bool, List[word_part_t]) -> None

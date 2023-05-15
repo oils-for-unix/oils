@@ -288,11 +288,11 @@ def _OfWordPartRight(part):
 
     elif case(word_part_e.ArithSub):
       part = cast(word_part.ArithSub, UP_part)
-      return part.spids[1]
+      return part.right.span_id
 
     elif case(word_part_e.ExtGlob):
       part = cast(word_part.ExtGlob, UP_part)
-      return part.spids[1]
+      return part.right.span_id
 
     # TODO: Do Splice and FuncCall need it?
     else:
