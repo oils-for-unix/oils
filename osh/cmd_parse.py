@@ -59,19 +59,6 @@ if TYPE_CHECKING:
 TAB_CH = 9  # ord('\t')
 SPACE_CH = 32 # ord(' ')
 
-def _KeywordSpid(w):
-  # type: (word_t) -> int
-  """
-  TODO: Can be we optimize this?
-  Assume that 'while', 'case', etc. are a specific type of CompoundWord.
-
-  I tested turning LeftMostSpanForWord in a no-op and couldn't observe the
-  difference on a ~500 ms parse of testdata/osh-runtime/abuild.  So maybe this
-  doesn't make sense.
-  """
-  return location.OfWordLeft(w)
-
-
 def _ReadHereLines(line_reader,  # type: _Reader
                    h,  # type: Redir
                    delimiter,  # type: str
@@ -547,8 +534,6 @@ class CommandParser(object):
 
       self.c_kind = word_.CommandKind(self.cur_word)
       self.c_id = word_.CommandId(self.cur_word)
-      # Note: could use the equivalent of _KeywordSpid here, or word_.AsKeywordToken
-
       self.next_lex_mode = lex_mode_e.Undefined
 
   def _Eat(self, c_id):
@@ -1072,8 +1057,7 @@ class CommandParser(object):
 
     The doc comment can only occur if there's a newline.
     """
-    # TODO: get token directly
-    left = self.arena.GetToken(_KeywordSpid(self.cur_word))
+    left = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_LBrace)
 
     doc_token = None  # type: Token

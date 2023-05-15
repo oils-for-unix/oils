@@ -569,7 +569,7 @@ class CommandEvaluator(object):
     if _HasManyStatuses(node):
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
-            node_str, location.OfCommand(node))
+            node_str, loc.Command(node))
 
   def _StrictErrExitList(self, node_list):
     # type: (List[command_t]) -> None
@@ -585,14 +585,14 @@ class CommandEvaluator(object):
 
     if len(node_list) > 1:
       e_die("strict_errexit only allows a single command.  Hint: use 'try'.",
-            location.OfCommand(node_list[0]))
+            loc.Command(node_list[0]))
 
     assert len(node_list) > 0
     node = node_list[0]
     if _HasManyStatuses(node):  # TODO: consolidate error message with above
       node_str = ui.CommandType(node)
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
-            node_str, location.OfCommand(node))
+            node_str, loc.Command(node))
 
   def _EvalCondition(self, cond, spid):
     # type: (condition_t, int) -> bool

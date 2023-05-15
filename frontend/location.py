@@ -35,6 +35,9 @@ def LName(name):
 
 def GetSpanId(loc_):
   # type: (loc_t) -> int
+  """
+  Backward compatibility wrapper
+  """
 
   UP_location = loc_
   with tagswitch(loc_) as case:
@@ -66,6 +69,17 @@ def GetSpanId(loc_):
       else:
         return runtime.NO_SPID
 
+    elif case(loc_e.Command):
+      loc_ = cast(loc.Command, UP_location)
+      if loc_.c:
+        tok = TokenForCommand(loc_.c)
+        if tok:
+          return tok.span_id
+        else:
+          return runtime.NO_SPID
+      else:
+        return runtime.NO_SPID
+
     else:
       raise AssertionError()
 
@@ -75,7 +89,7 @@ def GetSpanId(loc_):
 def TokenForCommand(node):
   # type: (command_t) -> Optional[Token]
   """
-  Used in pipe_locs, for _CheckStatus(), _StrictErrExit, etc.
+  Used directly in _CheckStatus()
   """
   UP_node = node # type: command_t
   tag = node.tag()
@@ -135,17 +149,11 @@ def TokenForCommand(node):
   return None
 
 
-def OfCommand(node):
-  # type: (command_t) -> loc_t
-  tok = TokenForCommand(node)
-  if tok:
-    return tok
-  else:
-    return loc.Missing
-
-
 def OfArithExpr(node):
   # type: (arith_expr_t) -> loc_t
+  """
+  TODO: replace with loc.Arith()
+  """
   UP_node = node
   with tagswitch(node) as case:
     if case(arith_expr_e.VarSub):
@@ -164,6 +172,18 @@ def OfWordPartLeft(part):
   Span ID wrapper to remove
   """
   tok = LeftTokenForWordPart(part)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID
+
+
+def _OfWordPartRight(part):
+  # type: (word_part_t) -> int
+  """
+  Span ID wrapper to remove
+  """
+  tok = _RightTokenForWordPart(part)
   if tok:
     return tok.span_id
   else:
@@ -248,82 +268,81 @@ def LeftTokenForWordPart(part):
       raise AssertionError(part.tag())
 
 
-def _OfWordPartRight(part):
-  # type: (word_part_t) -> int
+def _RightTokenForWordPart(part):
+  # type: (word_part_t) -> Token
   UP_part = part
   with tagswitch(part) as case:
     if case(word_part_e.ShArrayLiteral):
       part = cast(ShArrayLiteral, UP_part)
-      return part.right.span_id
+      return part.right
 
     elif case(word_part_e.AssocArrayLiteral):
       part = cast(word_part.AssocArrayLiteral, UP_part)
-      return part.right.span_id
+      return part.right
 
     elif case(word_part_e.Literal):
-      # Just use the token
       tok = cast(Token, UP_part)
-      return tok.span_id
+      # Just use the token
+      return tok
 
     elif case(word_part_e.EscapedLiteral):
       part = cast(word_part.EscapedLiteral, UP_part)
-      return part.token.span_id
+      return part.token
 
     elif case(word_part_e.SingleQuoted):
       part = cast(SingleQuoted, UP_part)
-      return part.right.span_id  # right '
+      return part.right  # right '
 
     elif case(word_part_e.DoubleQuoted):
       part = cast(DoubleQuoted, UP_part)
-      return part.right.span_id  # right "
+      return part.right  # right "
 
     elif case(word_part_e.SimpleVarSub):
       part = cast(SimpleVarSub, UP_part)
       # left and right are the same for $myvar
-      return part.left.span_id
+      return part.left
 
     elif case(word_part_e.BracedVarSub):
       part = cast(BracedVarSub, UP_part)
-      spid = part.right.span_id
-      assert spid != runtime.NO_SPID
-      return spid
+      return part.right
 
     elif case(word_part_e.CommandSub):
       part = cast(CommandSub, UP_part)
-      return part.right.span_id
+      return part.right
 
     elif case(word_part_e.TildeSub):
-      return runtime.NO_SPID
+      part = cast(word_part.TildeSub, UP_part)
+      return part.token
 
     elif case(word_part_e.ArithSub):
       part = cast(word_part.ArithSub, UP_part)
-      return part.right.span_id
+      return part.right
 
     elif case(word_part_e.ExtGlob):
       part = cast(word_part.ExtGlob, UP_part)
-      return part.right.span_id
+      return part.right
 
     elif case(word_part_e.BracedRange):
       part = cast(word_part.BracedRange, UP_part)
-      return part.blame_tok.span_id
+      return part.blame_tok
 
     elif case(word_part_e.BracedTuple):
       part = cast(word_part.BracedTuple, UP_part)
       # TODO: Derive token from part.words[0]
-      return runtime.NO_SPID
+      return None
 
     elif case(word_part_e.Splice):
       part = cast(word_part.Splice, UP_part)
-      return part.blame_tok.span_id
+      return part.blame_tok
 
     elif case(word_part_e.ExprSub):
       part = cast(word_part.ExprSub, UP_part)
-      return part.right.span_id
+      return part.right
 
     # TODO: remove inline function calls from YSH
     elif case(word_part_e.FuncCall):
       part = cast(word_part.FuncCall, UP_part)
-      return runtime.NO_SPID
+      return None
 
     else:
       raise AssertionError(part.tag())
@@ -331,6 +350,9 @@ def _OfWordPartRight(part):
 
 def OfWordLeft(w):
   # type: (word_t) -> int
+  """
+  TODO: Should return a Token
+  """
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Compound):
@@ -362,17 +384,20 @@ def OfWordLeft(w):
 
 def OfWordRight(w):
   # type: (word_t) -> int
-  """Needed for here doc delimiters."""
+  """Needed for here doc delimiters.
+
+  TODO: Should return a Token
+  """
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Compound):
       w = cast(CompoundWord, UP_w)
-      if len(w.parts) == 0:
-        # TODO: Use Empty instead
-        raise AssertionError("Compound shouldn't be empty")
-      else:
+      if len(w.parts):
         end = w.parts[-1]
         return _OfWordPartRight(end)
+      else:
+        # This is possible for empty brace sub alternative {a,b,}
+        return runtime.NO_SPID
 
     elif case(word_e.Token):
       tok = cast(Token, UP_w)

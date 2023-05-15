@@ -21,7 +21,6 @@ from core import ui
 from core import vm
 from frontend import consts
 from frontend import lexer
-from frontend import location
 from mycpp.mylib import log
 
 import posix_ as posix
@@ -389,7 +388,7 @@ class ShellExecutor(vm._Executor):
       child = node.children[i]
 
       # TODO: determine these locations at parse time?
-      pipe_locs.append(location.OfCommand(child))
+      pipe_locs.append(loc.Command(child))
 
       p = self._MakeProcess(child)
       p.Init_ParentPipeline(pi)
@@ -398,7 +397,7 @@ class ShellExecutor(vm._Executor):
     last_child = node.children[n-1]
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
     pi.AddLast((self.cmd_ev, last_child))
-    pipe_locs.append(location.OfCommand(last_child))
+    pipe_locs.append(loc.Command(last_child))
 
     with dev.ctx_Tracer(self.tracer, 'pipeline', None):
       pi.StartPipeline(self.waiter)
