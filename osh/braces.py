@@ -98,7 +98,7 @@ class _RangeParser(object):
     else:
       step = NO_STEP
 
-    part = word_part.BracedRange(range_kind, start, end, step)
+    part = word_part.BracedRange(self.blame_tok, range_kind, start, end, step)
     return part
 
   def Parse(self):
@@ -165,7 +165,7 @@ class _RangeParser(object):
 
 
 def _RangePartDetect(tok):
-  # type: (Token) -> Optional[word_part_t]
+  # type: (Token) -> Optional[word_part.BracedRange]
   """Parse the token and return a new word_part if it looks like a range."""
   lexer = match.BraceRangeLexer(tok.tval)
   p = _RangeParser(lexer, tok)
@@ -173,7 +173,6 @@ def _RangePartDetect(tok):
     part = p.Parse()
   except _NotARange as e:
     return None
-  part.spids.append(tok.span_id)  # Propagate location info
   return part
 
 

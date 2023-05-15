@@ -1194,11 +1194,7 @@ class WordParser(WordEmitter):
       p_die('Expected second ) to end arith sub', self.cur_token)
 
     right_tok = self.cur_token
-
-    node = word_part.ArithSub(left_tok, anode, right_tok)
-    node.spids.append(left_tok.span_id)
-    node.spids.append(right_tok.span_id)
-    return node
+    return word_part.ArithSub(left_tok, anode, right_tok)
 
   def ReadDParen(self):
     # type: () -> Tuple[arith_expr_t, Token]
@@ -1367,15 +1363,12 @@ class WordParser(WordEmitter):
         pairs.append(pair)
 
       # invariant List?
-      node2 = word_part.AssocArrayLiteral(left_token, pairs, right_token)
-      node2.spids.append(paren_spid)
-      return node2
+      return word_part.AssocArrayLiteral(left_token, pairs, right_token)
 
     # Brace detection for arrays but NOT associative arrays
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
-    node = ShArrayLiteral(left_token, words3, right_token)
-    return node
+    return ShArrayLiteral(left_token, words3, right_token)
 
   def _ParseInlineCallArgs(self, arg_list):
     # type: (ArgList) -> None

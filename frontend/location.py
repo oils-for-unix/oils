@@ -222,6 +222,10 @@ def LeftTokenForWordPart(part):
       part = cast(word_part.ExtGlob, UP_part)
       return part.op
 
+    elif case(word_part_e.BracedRange):
+      part = cast(word_part.BracedRange, UP_part)
+      return part.blame_tok
+
     elif case(word_part_e.BracedTuple):
       part = cast(word_part.BracedTuple, UP_part)
       # TODO: Derive token from part.words[0]
@@ -298,6 +302,10 @@ def _OfWordPartRight(part):
     elif case(word_part_e.ExtGlob):
       part = cast(word_part.ExtGlob, UP_part)
       return part.right.span_id
+
+    elif case(word_part_e.BracedRange):
+      part = cast(word_part.BracedRange, UP_part)
+      return part.blame_tok.span_id
 
     elif case(word_part_e.BracedTuple):
       part = cast(word_part.BracedTuple, UP_part)

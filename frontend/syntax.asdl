@@ -174,7 +174,8 @@ module syntax
   | BracedTuple(List[CompoundWord] words)
     # {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     # {a..f} or {a..f..2} or {a..f..-2}
-  | BracedRange(id kind, str start, str end, int step)
+    # the whole range is one Token,
+  | BracedRange(Token blame_tok, id kind, str start, str end, int step)
     # note: optional int may need special handling in ASDL
   # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, List[CompoundWord] arms, Token right)
@@ -187,7 +188,6 @@ module syntax
   | FuncCall(Token name, ArgList args)
     # $[d->key], etc.
   | ExprSub(Token left, expr child, Token right)
-  attributes (List[int] spids)
 
   # TODO: I think Token left should be copied into every CompoundWord
   # either that, or CommandParser needs to reliably have GetToken(word_t)
