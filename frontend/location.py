@@ -229,15 +229,16 @@ def LeftTokenForWordPart(part):
 
     elif case(word_part_e.Splice):
       part = cast(word_part.Splice, UP_part)
-      return part.name
-
-    elif case(word_part_e.FuncCall):
-      part = cast(word_part.FuncCall, UP_part)
-      return part.name  # @f(x) or $f(x)
+      return part.blame_tok
 
     elif case(word_part_e.ExprSub):
       part = cast(word_part.ExprSub, UP_part)
       return part.left  # $[
+
+    # TODO: remove inline function calls from YSH
+    elif case(word_part_e.FuncCall):
+      part = cast(word_part.FuncCall, UP_part)
+      return part.name  # @f(x) or $f(x)
 
     else:
       raise AssertionError(part.tag())
@@ -305,15 +306,15 @@ def _OfWordPartRight(part):
 
     elif case(word_part_e.Splice):
       part = cast(word_part.Splice, UP_part)
-      return runtime.NO_SPID
-
-    elif case(word_part_e.FuncCall):
-      part = cast(word_part.FuncCall, UP_part)
-      return runtime.NO_SPID
+      return part.blame_tok.span_id
 
     elif case(word_part_e.ExprSub):
       part = cast(word_part.ExprSub, UP_part)
-      # TODO: add right token
+      return part.right.span_id
+
+    # TODO: remove inline function calls from YSH
+    elif case(word_part_e.FuncCall):
+      part = cast(word_part.FuncCall, UP_part)
       return runtime.NO_SPID
 
     else:

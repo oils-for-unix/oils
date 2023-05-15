@@ -182,11 +182,11 @@ module syntax
     # Oil word_part extensions
 
     # @myarray
-  | Splice(Token name, str var_name)
+  | Splice(Token blame_tok, str var_name)
     # $strfunc(x) and @arrayfunc(x)
   | FuncCall(Token name, ArgList args)
     # $[d->key], etc.
-  | ExprSub(Token left, expr child)
+  | ExprSub(Token left, expr child, Token right)
   attributes (List[int] spids)
 
   # TODO: I think Token left should be copied into every CompoundWord

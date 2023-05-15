@@ -1027,11 +1027,12 @@ class WordParser(WordEmitter):
     # type: (lex_mode_t) -> word_part.ExprSub
     """  $[d->key]  $[obj.method()]  etc.  """
     left_token = self.cur_token
+
     self._Next(lex_mode_e.Expr)
-    enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr_sub)
-    self._Next(lex_mode)
-    node = word_part.ExprSub(left_token, enode)
-    return node
+    enode, right_token = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr_sub)
+
+    self._Next(lex_mode)  # Move past ]
+    return word_part.ExprSub(left_token, enode, right_token)
 
   def ParseVarDecl(self, kw_token):
     # type: (Token) -> command.VarDecl
