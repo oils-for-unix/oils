@@ -936,9 +936,7 @@ class CommandEvaluator(object):
         which_scopes = self.mem.ScopesForWriting()
 
         for pair in node.pairs:
-          spid = pair.spids[0]  # Source location for tracing
-          # Use the spid of each pair.
-          self.mem.SetCurrentSpanId(spid)
+          self.mem.SetCurrentSpanId(pair.left.span_id)
 
           if pair.op == assign_op_e.PlusEqual:
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?

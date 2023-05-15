@@ -254,7 +254,7 @@ module syntax
   Redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  AssignPair = (sh_lhs_expr lhs, assign_op op, rhs_word rhs, List[int] spids)
+  AssignPair = (Token left, sh_lhs_expr lhs, assign_op op, rhs_word rhs)
   EnvPair = (str name, rhs_word val, List[int] spids)
 
   condition = 
@@ -301,8 +301,9 @@ module syntax
     # execution
   | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
   | Sentence(command child, Token terminator)
-    # Note: Only represents "bare assignment"
-  | ShAssignment(Token var, List[AssignPair] pairs, List[Redir] redirects)
+    # Represents "bare assignment"
+    # Token left is redundant with pairs[0].left
+  | ShAssignment(Token left, List[AssignPair] pairs, List[Redir] redirects)
   | ControlFlow(Token keyword, word? arg_word)
     # ops are |  |&
   | Pipeline(Token? negated, List[command] children, List[Token] ops)

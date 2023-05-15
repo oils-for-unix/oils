@@ -358,7 +358,7 @@ class OilPrinter(object):
                              # can't tell if global
 
     if True:
-      self.cursor.PrintUntil(node.var.span_id)
+      self.cursor.PrintUntil(node.pairs[0].left.span_id)
 
       # For now, just detect whether the FIRST assignment on the line has been
       # declared locally.  We might want to split every line into separate
@@ -394,7 +394,7 @@ class OilPrinter(object):
         if case(sh_lhs_expr_e.Name):
           lhs = cast(sh_lhs_expr.Name, UP_lhs)
 
-          left_spid = pair.spids[0]
+          left_spid = pair.left.span_id
           self.cursor.PrintUntil(left_spid)
           # Assume skipping over one Lit_VarLike token
           self.cursor.SkipUntil(left_spid + 1)

@@ -105,7 +105,7 @@ def TokenForCommand(node):
 
   if tag == command_e.ShAssignment:
     node = cast(command.ShAssignment, UP_node)
-    return node.var
+    return node.left
 
   if tag == command_e.Pipeline:
     node = cast(command.Pipeline, UP_node)

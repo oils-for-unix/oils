@@ -228,8 +228,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     word_.TildeDetectAssign(tmp2)
     rhs = tmp2
 
-  pair = AssignPair(lhs, op, rhs, [left_token.span_id])
-  return pair
+  return AssignPair(left_token, lhs, op, rhs)
 
 
 def _AppendMoreEnv(preparsed_list, more_env):
