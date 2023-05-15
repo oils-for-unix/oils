@@ -254,7 +254,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     else:
       val = CompoundWord(w.parts[part_offset:])
 
-    pair = EnvPair(var_name, val, [left_token.span_id])
+    pair = EnvPair(left_token, var_name, val)
     more_env.append(pair)
 
 

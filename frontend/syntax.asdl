@@ -255,7 +255,7 @@ module syntax
 
   assign_op = Equal | PlusEqual
   AssignPair = (Token left, sh_lhs_expr lhs, assign_op op, rhs_word rhs)
-  EnvPair = (str name, rhs_word val, List[int] spids)
+  EnvPair = (Token left, str name, rhs_word val)
 
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
