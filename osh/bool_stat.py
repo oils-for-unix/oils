@@ -57,17 +57,20 @@ def DoUnaryOp(op_id, s):
   if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e
     return True
 
-  if op_id == Id.BoolUnary_f:
-    return stat.S_ISREG(mode)
-
-  if op_id == Id.BoolUnary_d:
-    return stat.S_ISDIR(mode)
-
   if op_id == Id.BoolUnary_b:
     return stat.S_ISBLK(mode)
 
   if op_id == Id.BoolUnary_c:
     return stat.S_ISCHR(mode)
+
+  if op_id == Id.BoolUnary_d:
+    return stat.S_ISDIR(mode)
+
+  if op_id == Id.BoolUnary_f:
+    return stat.S_ISREG(mode)
+
+  if op_id == Id.BoolUnary_g:
+    return bool(stat.S_IMODE(mode) & stat.S_ISGID)
 
   if op_id == Id.BoolUnary_k:
     # need 'bool' for MyPy
@@ -76,17 +79,8 @@ def DoUnaryOp(op_id, s):
   if op_id == Id.BoolUnary_p:
     return stat.S_ISFIFO(mode)
 
-  if op_id == Id.BoolUnary_S:
-    return stat.S_ISSOCK(mode)
-
-  if op_id == Id.BoolUnary_x:
-    return posix.access(s, X_OK)
-
   if op_id == Id.BoolUnary_r:
     return posix.access(s, R_OK)
-
-  if op_id == Id.BoolUnary_w:
-    return posix.access(s, W_OK)
 
   if op_id == Id.BoolUnary_s:
     return st.st_size != 0
@@ -94,16 +88,21 @@ def DoUnaryOp(op_id, s):
   if op_id == Id.BoolUnary_u:
     return bool(stat.S_IMODE(mode) & stat.S_ISUID)
 
-  if op_id == Id.BoolUnary_g:
-    return bool(stat.S_IMODE(mode) & stat.S_ISGID)
+  if op_id == Id.BoolUnary_w:
+    return posix.access(s, W_OK)
 
-  if op_id == Id.BoolUnary_O:
-    return st.st_uid == posix.geteuid()
+  if op_id == Id.BoolUnary_x:
+    return posix.access(s, X_OK)
 
   if op_id == Id.BoolUnary_G:
     return st.st_gid == posix.getegid()
 
-  # implicit location
+  if op_id == Id.BoolUnary_O:
+    return st.st_uid == posix.geteuid()
+
+  if op_id == Id.BoolUnary_S:
+    return stat.S_ISSOCK(mode)
+
   e_die("%s isn't implemented" % ui.PrettyId(op_id), loc.Missing)
 
 

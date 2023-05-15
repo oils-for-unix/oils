@@ -570,3 +570,10 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
+
+#### test -S
+test -S /dev/zero
+echo status=$?
+## STDOUT:
+status=1
+## END

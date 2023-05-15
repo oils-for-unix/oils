@@ -10,8 +10,8 @@
 // To avoid circular dependency with e_die()
 #include "prebuilt/core/error.mycpp.h"
 
-using id_kind_asdl::Id;  // used below
 using error::e_die;
+using id_kind_asdl::Id;  // used below
 using syntax_asdl::loc;
 
 namespace arith_parse {
@@ -56,13 +56,9 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
     auto mode = st.st_mode;
 
     switch (op_id) {
-    // synonyms for existence
-    case Id::BoolUnary_a:
+    case Id::BoolUnary_a:  // synonyms for existence
     case Id::BoolUnary_e:
       return true;
-
-    case Id::BoolUnary_s:
-      return st.st_size != 0;
 
     case Id::BoolUnary_c:
       return S_ISCHR(mode);
@@ -72,21 +68,6 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
 
     case Id::BoolUnary_f:
       return S_ISREG(mode);
-
-    case Id::BoolUnary_k:
-      return (mode & S_ISVTX) != 0;
-
-    case Id::BoolUnary_p:
-      return S_ISFIFO(mode);
-
-    case Id::BoolUnary_O:
-      return st.st_uid == geteuid();
-
-    case Id::BoolUnary_G:
-      return st.st_gid == getegid();
-
-    case Id::BoolUnary_u:
-      return mode & S_ISUID;
 
     case Id::BoolUnary_g:
       return mode & S_ISGID;
@@ -116,16 +97,36 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
       // And a bug filed for it at:
       //
       // https://github.com/oilshell/oil/issues/1170
-      //
-    case Id::BoolUnary_x:
-      return faccessat(AT_FDCWD, zPath, X_OK, AT_EACCESS) == 0;
-      //
+
+    case Id::BoolUnary_k:
+      return (mode & S_ISVTX) != 0;
+
+    case Id::BoolUnary_p:
+      return S_ISFIFO(mode);
 
     case Id::BoolUnary_r:
       return faccessat(AT_FDCWD, zPath, R_OK, AT_EACCESS) == 0;
 
+    case Id::BoolUnary_s:
+      return st.st_size != 0;
+
+    case Id::BoolUnary_u:
+      return mode & S_ISUID;
+
     case Id::BoolUnary_w:
       return faccessat(AT_FDCWD, zPath, W_OK, AT_EACCESS) == 0;
+
+    case Id::BoolUnary_x:
+      return faccessat(AT_FDCWD, zPath, X_OK, AT_EACCESS) == 0;
+
+    case Id::BoolUnary_G:
+      return st.st_gid == getegid();
+
+    case Id::BoolUnary_O:
+      return st.st_uid == geteuid();
+
+    case Id::BoolUnary_S:
+      return S_ISSOCK(mode);
     }
   }
 
