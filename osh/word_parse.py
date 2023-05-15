@@ -1317,6 +1317,7 @@ class WordParser(WordEmitter):
     if self.cur_token.id != Id.Op_LParen:
       p_die('Expected ( after =', self.cur_token)
     left_token = self.cur_token
+    right_token = None  # type: Token
     paren_spid = self.cur_token.span_id
 
     # MUST use a new word parser (with same lexer).
@@ -1329,6 +1330,7 @@ class WordParser(WordEmitter):
         if case(word_e.Token):
           tok = cast(Token, w)
           if tok.id == Id.Right_ShArrayLiteral:
+            right_token = tok
             done = True  # can't use break here
           # Unlike command parsing, array parsing allows embedded \n.
           elif tok.id == Id.Op_Newline:
@@ -1345,7 +1347,7 @@ class WordParser(WordEmitter):
     if len(words) == 0:  # a=() is empty indexed array
       # Needed for type safety, doh
       no_words = []  # type: List[word_t]
-      node = ShArrayLiteral(left_token, no_words)
+      node = ShArrayLiteral(left_token, no_words, right_token)
       return node
  
     pairs = []  # type: List[AssocPair]
@@ -1364,14 +1366,14 @@ class WordParser(WordEmitter):
         pairs.append(pair)
 
       # invariant List?
-      node2 = word_part.AssocArrayLiteral(left_token, pairs)
+      node2 = word_part.AssocArrayLiteral(left_token, pairs, right_token)
       node2.spids.append(paren_spid)
       return node2
 
     # Brace detection for arrays but NOT associative arrays
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
-    node = ShArrayLiteral(left_token, words3)
+    node = ShArrayLiteral(left_token, words3, right_token)
     return node
 
   def _ParseInlineCallArgs(self, arg_list):

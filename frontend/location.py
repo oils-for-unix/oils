@@ -71,6 +71,7 @@ def GetSpanId(loc_):
 
   raise AssertionError()
 
+
 def TokenForCommand(node):
   # type: (command_t) -> Optional[Token]
   """
@@ -248,8 +249,11 @@ def _OfWordPartRight(part):
   with tagswitch(part) as case:
     if case(word_part_e.ShArrayLiteral):
       part = cast(ShArrayLiteral, UP_part)
-      # TODO: Return )
-      return OfWordLeft(part.words[0])  # Hm this is a=(1 2 3)
+      return part.right.span_id
+
+    elif case(word_part_e.AssocArrayLiteral):
+      part = cast(word_part.AssocArrayLiteral, UP_part)
+      return part.right.span_id
 
     elif case(word_part_e.Literal):
       # Just use the token
@@ -294,7 +298,24 @@ def _OfWordPartRight(part):
       part = cast(word_part.ExtGlob, UP_part)
       return part.right.span_id
 
-    # TODO: Do Splice and FuncCall need it?
+    elif case(word_part_e.BracedTuple):
+      part = cast(word_part.BracedTuple, UP_part)
+      # TODO: Derive token from part.words[0]
+      return runtime.NO_SPID
+
+    elif case(word_part_e.Splice):
+      part = cast(word_part.Splice, UP_part)
+      return runtime.NO_SPID
+
+    elif case(word_part_e.FuncCall):
+      part = cast(word_part.FuncCall, UP_part)
+      return runtime.NO_SPID
+
+    elif case(word_part_e.ExprSub):
+      part = cast(word_part.ExprSub, UP_part)
+      # TODO: add right token
+      return runtime.NO_SPID
+
     else:
       raise AssertionError(part.tag())
 

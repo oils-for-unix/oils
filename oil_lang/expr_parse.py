@@ -202,7 +202,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
       typ = Id.Expr_CastedDummy
 
-      lit_part = ShArrayLiteral(left_tok, words3)
+      lit_part = ShArrayLiteral(left_tok, words3, close_tok)
       opaque = cast(Token, lit_part)  # HACK for expr_to_ast
       done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression

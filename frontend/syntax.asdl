@@ -143,7 +143,7 @@ module syntax
 
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
-  ShArrayLiteral = (Token left, List[word] words)
+  ShArrayLiteral = (Token left, List[word] words, Token right)
 
   # Used in both expr and a word_part
   ArgList = (
@@ -157,7 +157,7 @@ module syntax
 
   word_part = 
     ShArrayLiteral %ShArrayLiteral
-  | AssocArrayLiteral(Token left, List[AssocPair] pairs)
+  | AssocArrayLiteral(Token left, List[AssocPair] pairs, Token right)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
