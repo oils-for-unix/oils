@@ -64,6 +64,9 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
     case Id::BoolUnary_s:
       return st.st_size != 0;
 
+    case Id::BoolUnary_c:
+      return S_ISCHR(mode);
+
     case Id::BoolUnary_d:
       return S_ISDIR(mode);
 
