@@ -10,12 +10,10 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from asdl import runtime
 from core import error
 from core.error import e_usage, p_die
 from core import vm
 from frontend import match
-from frontend import location
 from mycpp.mylib import log, tagswitch
 from osh import sh_expr_eval
 from osh import bool_parse

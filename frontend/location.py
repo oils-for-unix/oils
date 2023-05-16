@@ -362,6 +362,9 @@ def OfWordLeft(w):
 
 def LeftTokenForWord(w):
   # type: (word_t) -> Optional[Token]
+  if w is None:
+    return None  # e.g. builtin_bracket word.String() EOF
+
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Compound):
