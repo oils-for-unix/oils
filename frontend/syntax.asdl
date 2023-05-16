@@ -541,7 +541,7 @@ module syntax
   # with u_braced == true : \u{ff}
   # with u_braced == false: \xff \\ 'a' a '0' 0
   # ERE doesn't make a distinction, but compiling to Python/PCRE can use it
-  CharCode = (int i, bool u_braced, int spid)
+  CharCode = (int i, bool u_braced, Token blame_tok)
 
   # evaluated version of class_literal_term (could be in runtime.asdl)
   char_class_term =

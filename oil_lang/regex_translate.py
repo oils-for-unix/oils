@@ -76,7 +76,7 @@ def _CharCodeToEre(term, parts, special_char_flags):
   if char_int >= 128 and term.u_braced:
     # \u{ff} can't be represented in ERE because we don't know the encoding
     # \xff can be represented
-    e_die("ERE can't express char code %d" % char_int, loc.Span(term.spid))
+    e_die("ERE can't express char code %d" % char_int, term.blame_tok)
 
   # note: mycpp doesn't handle
   # special_char_flags[0] |= FLAG_HYPHEN
@@ -115,14 +115,14 @@ def _CharClassTermToEre(term, parts, special_char_flags):
       _CharCodeToEre(term.start, parts, range_no_special)
       if range_no_special[0] !=0:
         e_die("Can't use char %d as start of range in ERE syntax" % term.start.i,
-              loc.Span(term.start.spid))
+              term.start.blame_tok)
 
       parts.append('-')  # a-b
 
       _CharCodeToEre(term.end, parts, range_no_special)
       if range_no_special[0] != 0:
         e_die("Can't use char %d as end of range in ERE syntax" % term.end.i,
-              loc.Span(term.end.spid))
+              term.end.blame_tok)
 
     elif case(char_class_term_e.CharCode):
       term = cast(CharCode, UP_term)

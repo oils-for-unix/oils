@@ -23,7 +23,6 @@ from _devbuild.gen.runtime_asdl import (
     lvalue,
     value, value_e, value_t,
 )
-from asdl import runtime
 from core import error
 from core.error import e_die, e_die_status
 from core import state
@@ -1445,8 +1444,9 @@ class OilEvaluator(object):
     # type: (class_literal_term_t, List[char_class_term_t]) -> None
     UP_term = term
 
+    # These 2 vars will be initialized if we don't return early
     s = None  # type: str
-    spid = runtime.NO_SPID
+    char_code_tok = None  # type: Token
 
     with tagswitch(term) as case:
 
@@ -1476,29 +1476,31 @@ class OilEvaluator(object):
         out.append(term)
         return
 
+      # Four ways to write literals
       elif case(class_literal_term_e.SingleQuoted):
         term = cast(SingleQuoted, UP_term)
 
         s = word_compile.EvalSingleQuoted(term)
-        spid = term.left.span_id
+        char_code_tok = term.left
 
       elif case(class_literal_term_e.DoubleQuoted):
         term = cast(DoubleQuoted, UP_term)
 
         s = self.word_ev.EvalDoubleQuotedToString(term)
-        spid = term.left.span_id
+        char_code_tok = term.left
 
       elif case(class_literal_term_e.BracedVarSub):
         term = cast(BracedVarSub, UP_term)
 
         s = self.word_ev.EvalBracedVarSubToString(term)
-        spid = term.left.span_id
+        char_code_tok = term.left
 
       elif case(class_literal_term_e.SimpleVarSub):
+        # TODO: Maybe remove / [ $simple ] / ?
         term = cast(SimpleVarSub, UP_term)
 
         s = self.word_ev.EvalSimpleVarSubToString(term)
-        spid = term.left.span_id
+        char_code_tok = term.left
 
     assert s is not None, term
     for ch in s:
@@ -1507,8 +1509,8 @@ class OilEvaluator(object):
         # / [ '\x7f\xff' ] / is better written as / [ \x7f \xff ] /
         e_die("Use unquoted char literal for byte %d, which is >= 128"
               " (avoid confusing a set of bytes with a sequence)" % char_int,
-              loc.Span(spid))
-      out.append(CharCode(char_int, False, spid))
+              char_code_tok)
+      out.append(CharCode(char_int, False, char_code_tok))
 
   def _EvalRegex(self, node):
     # type: (re_t) -> re_t

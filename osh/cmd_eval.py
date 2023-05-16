@@ -593,8 +593,8 @@ class CommandEvaluator(object):
       e_die("strict_errexit only allows simple commands in conditionals (got %s). " %
             node_str, loc.Command(node))
 
-  def _EvalCondition(self, cond, spid):
-    # type: (condition_t, int) -> bool
+  def _EvalCondition(self, cond, blame_tok):
+    # type: (condition_t, Token) -> bool
     """
     Args:
       spid: for shell conditions, where errexit was disabled -- e.g. if
@@ -606,7 +606,7 @@ class CommandEvaluator(object):
       if case(condition_e.Shell):
         cond = cast(condition.Shell, UP_cond)
         self._StrictErrExitList(cond.commands)
-        with state.ctx_ErrExit(self.mutable_opts, False, spid):
+        with state.ctx_ErrExit(self.mutable_opts, False, blame_tok.span_id):
           cond_status = self._ExecuteList(cond.commands)
 
         b = cond_status == 0
@@ -614,7 +614,7 @@ class CommandEvaluator(object):
       elif case(condition_e.Oil):
         if mylib.PYTHON:
           cond = cast(condition.Oil, UP_cond)
-          obj = self.expr_ev.EvalExpr(cond.e, loc.Span(spid))
+          obj = self.expr_ev.EvalExpr(cond.e, blame_tok)
           b = bool(obj)
 
     return b
@@ -1121,7 +1121,7 @@ class CommandEvaluator(object):
           while True:
             try:
               # blame while/until spid
-              b = self._EvalCondition(node.cond, node.keyword.span_id)
+              b = self._EvalCondition(node.cond, node.keyword)
               if node.keyword.id == Id.KW_Until:
                 b = not b
               if not b:
@@ -1369,7 +1369,7 @@ class CommandEvaluator(object):
         node = cast(command.If, UP_node)
         done = False
         for if_arm in node.arms:
-          b = self._EvalCondition(if_arm.cond, if_arm.spids[0])
+          b = self._EvalCondition(if_arm.cond, if_arm.keyword)
           if b:
             status = self._ExecuteList(if_arm.action)
             done = True
