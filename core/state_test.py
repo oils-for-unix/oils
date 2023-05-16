@@ -6,12 +6,14 @@ state_test.py: Tests for state.py
 import unittest
 import os.path
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_e, lvalue, value, value_e
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, source, SourceLine
 from asdl import runtime
 from core import error
 from core import test_lib
 from core import state  # module under test
+from frontend import lexer
 from frontend import location
 
 
@@ -34,7 +36,11 @@ class MemTest(unittest.TestCase):
 
   def testGet(self):
     mem = _InitMem()
-    mem.PushCall('my-func', loc.Span(0), ['a', 'b'])
+
+    tok_a = lexer.DummyToken(Id.Lit_Chars, 'a')
+    tok_a.line = SourceLine(1, 'a b', source.Interactive)
+
+    mem.PushCall('my-func', tok_a, ['a', 'b'])
     print(mem.GetValue('HOME'))
     mem.PopCall()
     print(mem.GetValue('NONEXISTENT'))
@@ -51,7 +57,7 @@ class MemTest(unittest.TestCase):
 
     # Set $PATH
     mem.SetValue(location.LName('PATH'), value.Str('/bin:/usr/bin'),
-               scope_e.GlobalOnly)
+                 scope_e.GlobalOnly)
 
     self.assertEqual(None, search_path.Lookup('__nonexistent__'))
     self.assertEqual('bin/osh', search_path.Lookup('bin/osh'))
@@ -97,7 +103,13 @@ class MemTest(unittest.TestCase):
     mem = _InitMem()
     print(mem)
 
-    mem.PushCall('my-func', loc.Span(0), ['ONE'])
+    tok_one = lexer.DummyToken(Id.Lit_Chars, 'ONE')
+    tok_one.line = SourceLine(1, 'ONE', source.Interactive)
+
+    tok_two = lexer.DummyToken(Id.Lit_Chars, 'TWO')
+    tok_two.line = SourceLine(1, 'TWO', source.Interactive)
+
+    mem.PushCall('my-func', tok_one, ['ONE'])
     self.assertEqual(2, len(mem.var_stack))  # internal details
 
     # local x=y
@@ -106,7 +118,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual('y', mem.var_stack[-1]['x'].val.s)
 
     # New frame
-    mem.PushCall('my-func', loc.Span(0), ['TWO'])
+    mem.PushCall('my-func', tok_two, ['TWO'])
     self.assertEqual(3, len(mem.var_stack))  # internal details
 
     # x=y -- test out dynamic scope
@@ -285,10 +297,18 @@ class MemTest(unittest.TestCase):
 
   def testArgv(self):
     mem = _InitMem()
-    mem.PushCall('my-func', loc.Span(0), ['a', 'b'])
+    src = source.Interactive
+
+    tok_a = lexer.DummyToken(Id.Lit_Chars, 'a')
+    tok_a.line = SourceLine(1, 'a b', src)
+
+    mem.PushCall('my-func', tok_a, ['a', 'b'])
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
-    mem.PushCall('my-func', loc.Span(0), ['x', 'y'])
+    tok_x = lexer.DummyToken(Id.Lit_Chars, 'x')
+    tok_x.line = SourceLine(2, 'x y', src)
+
+    mem.PushCall('my-func', tok_x, ['x', 'y'])
     self.assertEqual(['x', 'y'], mem.GetArgv())
 
     status = mem.Shift(1)

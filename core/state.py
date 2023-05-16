@@ -18,7 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue_t,
     scope_e, scope_t, HayNode, Cell
 )
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.syntax_asdl import loc, loc_t, Token
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
@@ -1119,7 +1119,7 @@ class ctx_Call(object):
 
   def __init__(self, mem, mutable_opts, proc, argv):
     # type: (Mem, MutableOpts, Proc, List[str]) -> None
-    mem.PushCall(proc.name, proc.name_loc, argv)
+    mem.PushCall(proc.name, proc.name_tok, argv)
     mutable_opts.PushDynamicScope(proc.dynamic_scope)
     # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
     # 'if p' should be allowed.
@@ -1284,6 +1284,7 @@ class Mem(object):
 
     self.pwd = None  # type: Optional[str]
 
+    self.current_tok = None  # type: Optional[Token]
     self.current_spid = runtime.NO_SPID
 
     self.last_arg = ''  # $_ is initially empty, NOT unset
@@ -1370,8 +1371,8 @@ class Mem(object):
     """
     self.last_arg = s
 
-  def SetCurrentSpanId(self, span_id):
-    # type: (int) -> None
+  def SetLocationToken(self, tok):
+    # type: (Token) -> None
     """Set the current source location, for BASH_SOURCE, BASH_LINENO, LINENO,
     etc.
 
@@ -1381,18 +1382,20 @@ class Mem(object):
     if self.running_debug_trap:
       return
 
-    if span_id == runtime.NO_SPID:
+    if tok.span_id == runtime.NO_SPID:
       # NOTE: This happened in the osh-runtime benchmark for yash.
       log('Warning: span_id undefined in SetCurrentSpanId')
 
       #import traceback
       #traceback.print_stack()
       return
-    self.current_spid = span_id
+
+    self.current_tok = tok
+    self.current_spid = tok.span_id
 
   def CurrentLocation(self):
-    # type: () -> loc_t
-    return loc.Span(self.current_spid)
+    # type: () -> Token
+    return self.current_tok
 
   #
   # Status Variable Stack (for isolating $PS1 and $PS4)
@@ -1440,16 +1443,14 @@ class Mem(object):
   # Call Stack
   #
 
-  def PushCall(self, func_name, def_loc, argv):
-    # type: (str, loc_t, List[str]) -> None
+  def PushCall(self, func_name, def_tok, argv):
+    # type: (str, Token, List[str]) -> None
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
     frame = NewDict()  # type: Dict[str, Cell]
     self.var_stack.append(frame)
 
-    def_spid = location.GetSpanId(def_loc)
-    token = self.arena.GetToken(def_spid)
-    source_str = ui.GetLineSourceString(self.arena, token.line)
+    source_str = ui.GetLineSourceString(self.arena, def_tok.line)
 
     # bash uses this order: top of stack first.
     self._PushDebugStack(source_str, func_name, None)

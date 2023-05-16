@@ -395,7 +395,7 @@ class CommandEvaluator(object):
         arg_word = cast(CompoundWord, UP_arg)
 
         # note: needed for redirect like 'echo foo > x$LINENO'
-        self.mem.SetCurrentSpanId(r.op.span_id)
+        self.mem.SetLocationToken(r.op)
 
         redir_type = consts.RedirArgType(r.op.id)  # could be static in the LST?
 
@@ -636,15 +636,11 @@ class CommandEvaluator(object):
 
         cmd_st.check_errexit = True
 
-        # Find span_id for a basic implementation of $LINENO, e.g.
-        # PS4='+$SOURCE_NAME:$LINENO:'
-        # Note that for '> $LINENO' the span_id is set in _EvalRedirect.
-        # TODO: Can we avoid setting this so many times?  See issue #567.
-        if len(node.words):
-          span_id = location.OfWordLeft(node.words[0])
-          # Special case for __cat < file: leave it at the redirect.
-          if span_id != runtime.NO_SPID:
-            self.mem.SetCurrentSpanId(span_id)
+        # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
+        # Note that for '> $LINENO' the location token is set in _EvalRedirect.
+        # TODO: blame_tok should always be set.
+        if node.blame_tok is not None:
+          self.mem.SetLocationToken(node.blame_tok)
 
         self._MaybeRunDebugTrap()
 
@@ -729,7 +725,7 @@ class CommandEvaluator(object):
         # Expanded aliases need redirects and env bindings from the calling
         # context, as well as redirects in the expansion!
 
-        # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
+        # TODO: SetLocationToken to OUTSIDE?  Don't bother with stuff inside
         # expansion, since aliases are discouraged.
 
         if len(node.more_env):
@@ -786,7 +782,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.DBracket):
         node = cast(command.DBracket, UP_node)
-        self.mem.SetCurrentSpanId(node.left.span_id)
+        self.mem.SetLocationToken(node.left)
         self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -798,7 +794,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.DParen):
         node = cast(command.DParen, UP_node)
-        self.mem.SetCurrentSpanId(node.left.span_id)
+        self.mem.SetLocationToken(node.left)
         self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -814,7 +810,7 @@ class CommandEvaluator(object):
         if mylib.PYTHON:
           # x = 'foo' in Hay blocks
           if node.keyword is None or node.keyword.id == Id.KW_Const:
-            self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
+            self.mem.SetLocationToken(node.lhs[0].name)  # point to var name
 
             # Note: there's only one LHS
             vd_lval = location.LName(node.lhs[0].name.tval)  # type: lvalue_t
@@ -825,7 +821,7 @@ class CommandEvaluator(object):
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
 
           else:
-            self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
+            self.mem.SetLocationToken(node.keyword)  # point to var
 
             py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
             vd_lvals = []  # type: List[lvalue_t]
@@ -856,7 +852,7 @@ class CommandEvaluator(object):
 
         if mylib.PYTHON:  # DISABLED because it relies on CPytho now
           node = cast(command.PlaceMutation, UP_node)
-          self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
+          self.mem.SetLocationToken(node.keyword)  # point to setvar/set
 
           with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
@@ -936,7 +932,7 @@ class CommandEvaluator(object):
         which_scopes = self.mem.ScopesForWriting()
 
         for pair in node.pairs:
-          self.mem.SetCurrentSpanId(pair.left.span_id)
+          self.mem.SetLocationToken(pair.left)
 
           if pair.op == assign_op_e.PlusEqual:
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
@@ -991,7 +987,7 @@ class CommandEvaluator(object):
         node = cast(command.Expr, UP_node)
 
         if mylib.PYTHON:
-          self.mem.SetCurrentSpanId(node.keyword.span_id)
+          self.mem.SetLocationToken(node.keyword)
           obj = self.expr_ev.EvalExpr(node.e, loc.Missing)
 
           if node.keyword.id == Id.Lit_Equals:
@@ -1143,7 +1139,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.ForEach):
         node = cast(command.ForEach, UP_node)
-        self.mem.SetCurrentSpanId(node.keyword.span_id)  # for x in $LINENO
+        self.mem.SetLocationToken(node.keyword)  # for x in $LINENO
 
         # for the 2 kinds of shell loop
         iter_list = None  # type: List[str]  
@@ -1301,7 +1297,7 @@ class CommandEvaluator(object):
       elif case(command_e.ForExpr):
         node = cast(command.ForExpr, UP_node)
 
-        self.mem.SetCurrentSpanId(node.keyword.span_id)
+        self.mem.SetLocationToken(node.keyword)
         #self._MaybeRunDebugTrap()
 
         status = 0
@@ -1391,7 +1387,7 @@ class CommandEvaluator(object):
         str_val = self.word_ev.EvalWordToString(node.to_match)
         to_match = str_val.s
 
-        self.mem.SetCurrentSpanId(node.case_kw.span_id)
+        self.mem.SetLocationToken(node.case_kw)
         self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?
@@ -1762,7 +1758,7 @@ class CommandEvaluator(object):
 
       with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
         with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-          with state.ctx_DebugTrap(self.mem):  # for SetCurrentSpanId $LINENO
+          with state.ctx_DebugTrap(self.mem):  # for SetLocationToken $LINENO
             # Don't catch util.UserExit, etc.
             self._Execute(node)
 

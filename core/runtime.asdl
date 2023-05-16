@@ -132,7 +132,7 @@ module runtime
   # We store name_loc separately because ShFunction has a word as a name, but
   # a Proc has a Token.
   Proc = (
-    str name, loc name_loc, proc_sig sig, command body, List[value] defaults,
+    str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
     bool dynamic_scope
   )
 

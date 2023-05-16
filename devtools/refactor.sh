@@ -189,28 +189,37 @@ tval-eval() {
     grep -n -w tval */*_eval.py
 }
 
-# 2023-04: 518 left, many are in osh2oil
+# 2023-05: 372 left, many are in osh2oil
 spid-all() {
   show-usages _tmp/spid-all \
     egrep -n 'span_id|spid' */*.py
 }
 
-# 2023-04: 14 left
+# 2023-05: 10 left
 spid-sig() {
   show-usages _tmp/spid-sig \
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-legacy-asdl-types() {
-  show-usages _tmp/legacy-asdl \
-    egrep -n '[a-zA-Z]__[a-zA-Z]' */*.py
+# 2023-05: 26 instances
+get-token() {
+  # Memory leak
+  show-usages _tmp/get-token \
+    egrep -n 'GetToken' */*.py
 }
 
-# We also want to get rid of 2 instances of 'attributes' in frontend/syntax.asdl
-#
-# - Every variant of command_t has a left token
-# - Every variant of word_part_t has a left AND a right -- so we can look up
-#   the right most span for a word
+# 2023-05: 7 instances
+get-span-id() {
+  show-usages _tmp/get-span-id \
+    egrep -n 'GetSpanId' */*.py
+}
+
+# 2023-05: 7 instances
+get-span-id() {
+  show-usages _tmp/get-span-id \
+    egrep -n 'GetSpanId' */*.py
+}
+
 
 asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
