@@ -150,9 +150,6 @@ module syntax
      Token left, List[expr] positional, List[NamedArg] named, Token right
   )
 
-  # TODO: every word_part has Token left, Token right, and remove int* spids
-  # these are used in the main program for alias expansion
-
   AssocPair = (CompoundWord key, CompoundWord value)
 
   word_part = 
@@ -266,8 +263,9 @@ module syntax
 
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})
-  IfArm = (Token keyword, condition cond, Token? then_kw, List[command] action,
-  	   List[int] spids)
+  IfArm = (
+      Token keyword, condition cond, Token? then_kw, List[command] action,
+      List[int] spids)
 
   for_iter =
     Args                      # for x; do echo $x; done # implicit "$@"
@@ -280,11 +278,6 @@ module syntax
       Token left, Token? doc_token, List[command] children,
       List[Redir] redirects, Token right
   )
-
-  # TODO: every command needs Token left
-  # also add Token right_lok (a lok is a token used for the pretty printer ONLY)
-  # then Case, ForEach, and ShFunction also have Token in_lok, esac_lok, etc.
-  # REMOVE int* spids
 
   # Retain references to lines
   BlockArg = (BraceGroup brace_group, List[SourceLine] lines)
@@ -337,9 +330,8 @@ module syntax
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
     # 2. ls ; ls & ls  (same line)
-    # 3. CommandSub # single child that's a CommandList
-    # 4. Subshell # single child that's a CommandList
-    # Similar to DoGroup, except that has do and done spids.
+    # 3. CommandSub  # single child that's a CommandList
+    # 4. Subshell  # single child that's a CommandList
   | CommandList(List[command] children)
 
     # Oil stuff

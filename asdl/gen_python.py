@@ -298,7 +298,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       self.Emit('  L.append(Field(%r, %s))' % (field.name, out_val_name), depth)
 
-  def _GenClass(self, ast_node, attributes, class_name, base_classes,
+  def _GenClass(self, ast_node, class_name, base_classes,
                 tag_num, class_ns=''):
     """Used for both Sum variants ("constructors") and Product types.
 
@@ -308,8 +308,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
     self.Emit('  _type_tag = %d' % tag_num)
 
-    # Add on attributes
-    all_fields = ast_node.fields + attributes
+    all_fields = ast_node.fields
 
     field_names = [f.name for f in all_fields]
 
@@ -342,12 +341,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for f in ast_node.fields:
       # don't wrap the type comment
       self.Emit('    self.%s = %s' % (f.name, f.name), reflow=False)
-
-    # Initialize attributes
-    for f in attributes:
-      assert f.typ.IsList(), f
-      t = _MyPyType(f.typ)
-      self.Emit('    self.%s = []  # type: %s' % (f.name, t), reflow=False)
 
     self.Emit('')
 
@@ -392,7 +385,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
     self.Emit('    L = out_node.fields')
 
-    # NO attributes in abbreviated version
     for local_id, field in enumerate(ast_node.fields):
       self.Indent()
       self._EmitCodeForField('AbbreviatedTree', field, local_id)
@@ -522,8 +514,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
           # We must use the old-style nameing here, ie. command__NoOp, in order
           # to support zero field variants as constants.
           class_name = '%s__%s' % (sum_name, variant.name)
-          self._GenClass(variant, sum.attributes, class_name, (sum_name + '_t',),
-                         i + 1)
+          self._GenClass(variant, class_name, (sum_name + '_t',), i + 1)
 
     # Class that's just a NAMESPACE, e.g. for value.Str
     self.Emit('class %s(object):' % sum_name, depth)
@@ -541,8 +532,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # Use fully-qualified name, so we can have osh_cmd.Simple and
         # oil_cmd.Simple.
         fq_name = variant.name
-        self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
-                       i + 1, class_ns=sum_name + '.')
+        self._GenClass(variant, fq_name, (sum_name + '_t',), i + 1,
+                       class_ns=sum_name + '.')
 
     self.Dedent()
     self.Emit('')
@@ -552,15 +543,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # Create a tuple of _GenClass args to create LAST.  They may inherit from
     # sum types that have yet to be defined.
     self._products.append(
-        (product, product.attributes, name, depth, self._product_counter))
+        (product, name, depth, self._product_counter))
     self._product_counter += 1
 
   def EmitFooter(self):
     # Now generate all the product types we deferred.
     for args in self._products:
-      ast_node, attributes, name, depth, tag_num = args
+      ast_node, name, depth, tag_num = args
       # Figure out base classes AFTERWARD.
       bases = self._product_bases[name]
       if not bases:
         bases = ('pybase.CompoundObj',)
-      self._GenClass(ast_node, attributes, name, bases, tag_num)
+      self._GenClass(ast_node, name, bases, tag_num)

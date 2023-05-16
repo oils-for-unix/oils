@@ -12,7 +12,7 @@ from asdl.util import log
 
 _ = log
 
-_KEYWORDS = ['use', 'module', 'attributes', 'generate']
+_KEYWORDS = ['use', 'module', 'generate']
 
 _TOKENS = [
     ('Keyword', ''),
@@ -230,7 +230,7 @@ class ASDLParser(object):
                 | NAME '%' NAME  # shared variant
 
     compound_type : product
-                  | constructor ('|' constructor)* attributes?
+                  | constructor ('|' constructor)*
     """
     if self.cur_token.kind == TokenKind.LParen:
       # If we see a (, it's a product
@@ -257,7 +257,6 @@ class ASDLParser(object):
         if self.cur_token.kind != TokenKind.Pipe:
           break
         self._advance()
-      attributes = self._parse_optional_attributes()
       generate = self._parse_optional_generate()
 
       # Additional validation
@@ -268,9 +267,9 @@ class ASDLParser(object):
                                   self.cur_token.lineno)
 
       if _SumIsSimple(sumlist):
-        return SimpleSum(sumlist, attributes, generate)
+        return SimpleSum(sumlist, generate)
       else:
-        return Sum(sumlist, attributes, generate)
+        return Sum(sumlist, generate)
 
   def _parse_type_expr(self):
     """
@@ -353,16 +352,6 @@ class ASDLParser(object):
     self._match(TokenKind.RParen)
     return fields
 
-  def _parse_optional_attributes(self):
-    """
-    attributes = 'attributes' fields
-    """
-    if self._at_keyword('attributes'):
-      self._advance()
-      return self._parse_fields()
-    else:
-      return None
-
   def _parse_list(self):
     """
     list_inner: NAME ( ',' NAME )* ','?
@@ -397,7 +386,7 @@ class ASDLParser(object):
     """
     product: fields attributes?
     """
-    return Product(self._parse_fields(), self._parse_optional_attributes())
+    return Product(self._parse_fields())
 
   def _advance(self):
     """Return current token; read next token into self.cur_token."""

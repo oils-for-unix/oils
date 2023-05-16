@@ -2,8 +2,7 @@
 
 module shared_variant {
 
-  -- Testing out this unused syntax
-  prod_with_attrs = (string a, string b) attributes (int* spid)
+  prod = (string a, string b)
 
   DoubleQuoted = (int left, string* tokens) 
 
@@ -12,7 +11,6 @@ module shared_variant {
     -- Use the existing TYPE DoubleQuoted, but create a new TAG
     -- expr_e.DoubleQuoted.
   | DoubleQuoted %DoubleQuoted
-  attributes (int* spids)
 
   Token = (int id, string val)
 

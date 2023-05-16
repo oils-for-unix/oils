@@ -372,15 +372,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         class_name = '%s__%s' % (sum_name, variant.name)
         singleton = zero_arg_singleton and len(variant.fields) == 0
 
-        # NOTE: We disable attribute initialization (really only spids) for
-        # singleton variants because those variants must be statically
-        # initialized. The `spids` attribute is an array which is initialized
-        # during construction for each variant on the gc heap. When the program
-        # initializes (pre main, ie. _start) we cannot use the gc heap as it has
-        # yet to initialize. As we do not use the `spids` array on singleton
-        # variants, we can safely "initialize" `spids` to a nullptr.
-        self._GenClass(variant, sum.attributes, class_name, [super_name], depth,
-                       tag, not singleton)
+        self._GenClass(variant, class_name, [super_name], depth, tag)
 
     # Generate `extern` declarations for zero arg singleton globals
     if zero_arg_singleton:
@@ -401,8 +393,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('};')
     Emit('')
 
-  def _GenClass(self, ast_node, attributes, class_name, base_classes, depth,
-                tag, init_attributes):
+  def _GenClass(self, ast_node, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
@@ -414,7 +405,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Ensure that the member variables are ordered such that GC managed objects
     # come before any unmanaged ones because we use `HeapTag::Scanned`.
     managed_fields, unmanaged_fields = [], []
-    for f in ast_node.fields + attributes:
+    for f in ast_node.fields:
       if _IsManagedType(f.typ):
         managed_fields.append(f)
       else:
@@ -437,18 +428,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # avoid compiler warnings (the order doesn't affect the semantics).
     inits = []
     for f in all_fields:
-      if f in attributes:
-        # spids are initialized separately
-
-        if init_attributes:
-          value = _DefaultValue(f.typ, conditional=False)
-        else:
-          value = 'nullptr'
-
-        inits.append('%s(%s)' %
-                     (f.name, value))
-      else:
-        inits.append('%s(%s)' % (f.name, f.name))
+      inits.append('%s(%s)' % (f.name, f.name))
 
     # Define constructor with N args
     self.Emit('  %s(%s)' % (class_name, ', '.join(params)), depth)
@@ -502,18 +482,16 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Create a tuple of _GenClass args to create LAST.  They may inherit from
     # sum types that have yet to be defined.
     self._products.append(
-        (product, product.attributes, name, depth, self._product_counter))
+        (product, name, depth, self._product_counter))
     self._product_counter += 1
 
   def EmitFooter(self):
     # Now generate all the product types we deferred.
     for args in self._products:
-      ast_node, attributes, name, depth, tag_num = args
+      ast_node, name, depth, tag_num = args
       # Figure out base classes AFTERWARD.
       bases = self._product_bases[name]
-      #if not bases:
-      #  bases = ['Obj']
-      self._GenClass(ast_node, attributes, name, bases, depth, tag_num, True)
+      self._GenClass(ast_node, name, bases, depth, tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
@@ -658,7 +636,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     if ast_node.fields:
       self.Emit('  List<Field*>* L = out_node->fields;')
 
-    # NO attributes in abbreviated version
     for local_id, field in enumerate(ast_node.fields):
       self.Indent()
       self._EmitCodeForField('AbbreviatedTree', field, local_id)
@@ -736,7 +713,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         pass
       else:
         super_name = '%s_t' % sum_name
-        all_fields = variant.fields + sum.attributes
+        all_fields = variant.fields
         tag = '%s_e::%s' % (sum_name, variant.name)
         class_name = '%s__%s' % (sum_name, variant.name)
         self._EmitPrettyPrintMethods(class_name, all_fields, variant)
@@ -768,5 +745,5 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
   def VisitProduct(self, product, name, depth):
     #self._GenClass(product, product.attributes, name, None, depth)
-    all_fields = product.fields + product.attributes
+    all_fields = product.fields
     self._EmitPrettyPrintMethods(name, all_fields, product)

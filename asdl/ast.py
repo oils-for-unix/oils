@@ -1,24 +1,6 @@
-#-------------------------------------------------------------------------------
-# Parser for ASDL [1] definition files. Reads in an ASDL description and parses
-# it into an AST that describes it.
-#
-# The EBNF we're parsing here: Figure 1 of the paper [1]. Extended to support
-# modules and attributes after a product. Words starting with Capital letters
-# are terminals. Literal tokens are in "double quotes". Others are
-# non-terminals. Id is either TokenId or ConstructorId.
-#
-# module        ::= "module" Id "{" [definitions] "}"
-# definitions   ::= { TypeId "=" type }
-# type          ::= product | sum
-# product       ::= fields ["attributes" fields]
-# fields        ::= "(" { field, "," } field ")"
-# field         ::= TypeId ["?" | "*"] [Id]
-# sum           ::= constructor { "|" constructor } ["attributes" fields]
-# constructor   ::= ConstructorId [fields]
-#
-# [1] "The Zephyr Abstract Syntax Description Language" by Wang, et. al. See
-#     http://asdl.sourceforge.net/
-#-------------------------------------------------------------------------------
+"""
+AST for ASDL.  (Not self-hosted!)
+"""
 from __future__ import print_function
 
 import cStringIO
@@ -213,9 +195,8 @@ class Constructor(_CompoundAST):
 
 class Sum(AST):
 
-  def __init__(self, types, attributes=None, generate=None):
+  def __init__(self, types, generate=None):
     self.types = types  # type: List[Constructor]
-    self.attributes = attributes or []
     self.generate = generate or []
 
   def Print(self, f, indent):
@@ -223,11 +204,6 @@ class Sum(AST):
     f.write('%sSum {\n' % ind)
     for t in self.types:
       t.Print(f, indent + 1)
-    if self.attributes:
-      f.write('\n')
-      f.write('%s  (attributes)\n' % ind)
-      for a in self.attributes:
-        a.Print(f, indent + 1)
     if self.generate:
       f.write('%s  generate %s\n' % (ind, self.generate))
     f.write('%s}\n' % ind)
@@ -239,20 +215,14 @@ class SimpleSum(Sum):
 
 class Product(_CompoundAST):
 
-  def __init__(self, fields, attributes=None):
+  def __init__(self, fields):
     _CompoundAST.__init__(self, fields)
-    self.attributes = attributes or []
 
   def Print(self, f, indent):
     ind = indent * '  '
     f.write('%sProduct {\n' % ind)
     for field in self.fields:
       field.Print(f, indent + 1)
-    if self.attributes:
-      f.write('\n')
-      f.write('%s  (attributes)\n' % ind)
-      for a in self.attributes:
-        a.Print(f, indent + 1)
     f.write('%s}\n' % ind)
 
 

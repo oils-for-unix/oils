@@ -30,6 +30,7 @@ def NinjaGraph(ru):
   ru.cc_library(
       '//oil_lang/grammar',
       srcs = ['_gen/oil_lang/grammar_tables.cc'],
+      deps = ['//cpp/pgen2'],
       generated_headers = [
         '_gen/oil_lang/grammar_nt.h',
       ])

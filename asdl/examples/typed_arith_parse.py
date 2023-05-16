@@ -124,9 +124,6 @@ def LeftAssign(p, token, left, rbp):
   if not isinstance(left, (arith_expr.Var, arith_expr.Index)):
     raise tdop.ParseError("Can't assign to %r" % left)
   node = arith_expr.Binary(token.val, left, p.ParseUntil(rbp))
-  # For TESTING
-  node.spids.append(42)
-  node.spids.append(43)
   return node
 
 
