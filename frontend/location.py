@@ -353,29 +353,38 @@ def OfWordLeft(w):
   """
   TODO: Should return a Token
   """
+  tok = LeftTokenForWord(w)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID
+
+
+def LeftTokenForWord(w):
+  # type: (word_t) -> Optional[Token]
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Compound):
       w = cast(CompoundWord, UP_w)
       if len(w.parts):
-        return OfWordPartLeft(w.parts[0])
+        return LeftTokenForWordPart(w.parts[0])
       else:
         # This is possible for empty brace sub alternative {a,b,}
-        return runtime.NO_SPID
+        return None
 
     elif case(word_e.Token):
       tok = cast(Token, UP_w)
-      return tok.span_id
+      return tok
 
     elif case(word_e.BracedTree):
       w = cast(word.BracedTree, UP_w)
       # This should always have one part?
-      return OfWordPartLeft(w.parts[0])
+      return LeftTokenForWordPart(w.parts[0])
 
     elif case(word_e.String):
       w = cast(word.String, UP_w)
       # See _StringWordEmitter in osh/builtin_bracket.py
-      return OfWordLeft(w.blame_loc)
+      return LeftTokenForWord(w.blame_loc)
 
     else:
       raise AssertionError(w.tag())

@@ -67,7 +67,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
     self.i += 1
 
-    # default is an operand word
+    # chained lookup; default is an operand word
     id_ = match.BracketUnary(s)
     if id_ == Id.Undefined_Tok:
       id_ = match.BracketBinary(s)
@@ -84,7 +84,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
       if case(loc_e.Missing):
         pass
       elif case(loc_e.Word):
-        left_loc = cast(loc.Word, left_loc)
+        left_loc = cast(loc.Word, UP_left_loc)
         left_word = left_loc.w
         if left_word:
           assert left_word.tag() == word_e.Compound
