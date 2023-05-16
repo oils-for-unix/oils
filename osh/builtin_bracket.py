@@ -87,7 +87,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
         left_loc = cast(loc.Word, left_loc)
         left_word = left_loc.w
         if left_word:
-          assert w.tag() == word_e.Compound
+          assert left_word.tag() == word_e.Compound
           blame_word = cast(CompoundWord, left_word)
       else:
         # EvalWordSequence should have given us loc.Word()
