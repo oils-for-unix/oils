@@ -951,16 +951,16 @@ class CommandParser(object):
     """
     redirects, words, typed_args, block = self._ScanSimpleCommand()
 
-    typed_spid = runtime.NO_SPID  # location of block or typed data
+    typed_loc = None  # type: Optional[Token]
     if block:
-      typed_spid = block.brace_group.left.span_id
+      typed_loc = block.brace_group.left
     if typed_args:
-      typed_spid = typed_args.left.span_id  # preferred over block location
+      typed_loc = typed_args.left  # preferred over block location
 
     if len(words) == 0:  # e.g.  >out.txt  # redirect without words
       assert len(redirects) != 0
-      if typed_spid != runtime.NO_SPID:
-        p_die("Unexpected typed args", loc.Span(typed_spid))
+      if typed_loc is not None:
+        p_die("Unexpected typed args", typed_loc)
 
       simple = command.Simple.CreateNull()
       simple.blame_tok = redirects[0].op
@@ -991,8 +991,8 @@ class CommandParser(object):
     self.parse_ctx.trail.SetLatestWords(suffix_words, redirects)
 
     if len(suffix_words) == 0:
-      if typed_spid != runtime.NO_SPID:
-        p_die("Unexpected typed args", loc.Span(typed_spid))
+      if typed_loc is not None:
+        p_die("Unexpected typed args", typed_loc)
 
       # ShAssignment: No suffix words like ONE=1 a[x]=1 TWO=2
       pairs = []  # type: List[AssignPair]
@@ -1006,8 +1006,8 @@ class CommandParser(object):
     kind, kw_token = word_.KeywordToken(suffix_words[0])
 
     if kind == Kind.ControlFlow:
-      if typed_spid != runtime.NO_SPID:
-        p_die("Unexpected typed args", loc.Span(typed_spid))
+      if typed_loc is not None:
+        p_die("Unexpected typed args", typed_loc)
       if not self.parse_opts.parse_ignored() and len(redirects):
         p_die("Control flow shouldn't have redirects", kw_token)
 

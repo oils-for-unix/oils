@@ -31,7 +31,6 @@ from core.error import e_die, e_die_status, e_strict, e_usage
 from core import state
 from core import ui
 from frontend import consts
-from frontend import location
 from frontend import match
 from frontend import parse_lib
 from frontend import reader

@@ -1305,7 +1305,7 @@ class OilEvaluator(object):
       elif case(expr_e.Var):
         node = cast(expr.Var, UP_node)
 
-        return self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
+        return self.LookupVar(node.name.tval, node.name)
 
       elif case(expr_e.CommandSub):
         node = cast(CommandSub, UP_node)
@@ -1618,7 +1618,7 @@ class OilEvaluator(object):
       elif case(re_e.Splice):
         node = cast(re.Splice, UP_node)
 
-        obj = self.LookupVar(node.name.tval, var_loc=loc.Span(node.name.span_id))
+        obj = self.LookupVar(node.name.tval, node.name)
         if not isinstance(obj, objects.Regex):
           e_die("Can't splice object of type %r into regex" % obj.__class__,
                 node.name)

@@ -220,6 +220,10 @@ get-span-id() {
     egrep -n 'GetSpanId' */*.py
 }
 
+loc-span() {
+  show-usages _tmp/loc-span \
+    fgrep -n 'loc.Span' */*.py
+}
 
 asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl

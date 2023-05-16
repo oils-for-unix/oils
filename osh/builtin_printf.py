@@ -358,7 +358,7 @@ class Printf(vm._Builtin):
               # Disallowed because it depends on 32- or 64- bit
               if d < 0 and typ in 'ouxX':
                 e_die("Can't format negative number %d with %%%s" % (d, typ), 
-                      loc.Span(part.type.span_id))
+                      part.type)
 
               if typ == 'o':
                 s = mylib.octal(d)
