@@ -179,14 +179,11 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     else:
       op = assign_op_e.Equal
 
-    left_spid = left_token.span_id + 1
-    left_token = parse_ctx.arena.GetToken(left_spid)
-    right_token = close_token
+    assert left_token.line == close_token.line, \
+        '%s and %s not on same line' % (left_token, close_token)
 
-    assert left_token.line == right_token.line, \
-        '%s and %s not on same line' % (left_token, right_token)
-
-    index_str = left_token.line.content[left_token.col : right_token.col]
+    left_pos = left_token.col + left_token.length
+    index_str = left_token.line.content[left_pos : close_token.col]
     lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
@@ -1000,7 +997,7 @@ class CommandParser(object):
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
       # TODO: get token directly
-      left_tok = self.arena.GetToken(location.OfWordLeft(words[0]))
+      left_tok = location.LeftTokenForWord(words[0])
       return command.ShAssignment(left_tok, pairs, redirects)
 
     kind, kw_token = word_.KeywordToken(suffix_words[0])
@@ -1075,7 +1072,7 @@ class CommandParser(object):
     self._Eat(Id.Lit_RBrace)
 
     # TODO: get token directly
-    right = self.arena.GetToken(location.OfWordLeft(self.cur_word))
+    right = location.LeftTokenForWord(self.cur_word)
 
     # Note(andychu): Related ASDL bug #1216.  Choosing the Python [] behavior
     # would allow us to revert this back to None, which was changed in
@@ -1720,9 +1717,7 @@ class CommandParser(object):
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
 
-      name_spid = location.OfWordLeft(word0)
-      func.name_tok = self.arena.GetToken(name_spid)
-
+      func.name_tok = location.LeftTokenForWord(word0)
       return func
     else:
       p_die('Expected ) in function definition', loc.Word(self.cur_word))
@@ -1760,10 +1755,7 @@ class CommandParser(object):
       func.body = self.ParseCompoundCommand()
 
     func.keyword = keyword_tok
-
-    name_spid = location.OfWordLeft(name_word)
-    func.name_tok = self.arena.GetToken(name_spid)
-
+    func.name_tok = location.LeftTokenForWord(name_word)
     return func
 
   def ParseOilProc(self):
