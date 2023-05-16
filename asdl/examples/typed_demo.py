@@ -22,7 +22,7 @@ def main(argv):
   print(op)
   print(repr(op))
 
-  n1 = cflow.Break()
+  n1 = cflow.Break
 
   # Type error!
   # n2 = cflow.Return()

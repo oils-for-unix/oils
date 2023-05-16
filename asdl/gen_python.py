@@ -493,7 +493,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
           self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
           self.Emit('  return self.%s()' % abbrev, depth)
 
-        self.Emit('raise AssertionError', depth)
+        self.Emit('raise AssertionError()', depth)
 
         self.Dedent()
         depth = self.current_depth
@@ -507,14 +507,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # Declare any zero argument singleton classes outside of the main
     # "namespace" class.
-    if 'zero_arg_singleton' in sum.generate:
-      for i, variant in enumerate(sum.types):
-        # NOTE: Don't generate a class for shared types.
-        if not variant.shared_type and len(variant.fields) == 0:
-          # We must use the old-style nameing here, ie. command__NoOp, in order
-          # to support zero field variants as constants.
-          class_name = '%s__%s' % (sum_name, variant.name)
-          self._GenClass(variant, class_name, (sum_name + '_t',), i + 1)
+    for i, variant in enumerate(sum.types):
+      if variant.shared_type:
+        continue  # Don't generate a class for shared types.
+      if len(variant.fields) == 0:
+        # We must use the old-style nameing here, ie. command__NoOp, in order
+        # to support zero field variants as constants.
+        class_name = '%s__%s' % (sum_name, variant.name)
+        self._GenClass(variant, class_name, (sum_name + '_t',), i + 1)
 
     # Class that's just a NAMESPACE, e.g. for value.Str
     self.Emit('class %s(object):' % sum_name, depth)
@@ -523,9 +523,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     for i, variant in enumerate(sum.types):
       if variant.shared_type:
-        # Don't generate a class.
-        pass
-      elif 'zero_arg_singleton' in sum.generate and len(variant.fields) == 0:
+        continue
+
+      if len(variant.fields) == 0:
         self.Emit('%s = %s__%s()' % (variant.name, sum_name, variant.name))
         self.Emit('')
       else:

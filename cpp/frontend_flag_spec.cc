@@ -51,7 +51,7 @@ void _CreateDefaults(DefaultPair_c* in,
     case flag_type_e::Str: {
       const char* s = pair->val.s;
       if (s == nullptr) {
-        val = Alloc<value::Undef>();
+        val = value::Undef;
       } else {
         val = Alloc<value::Str>(StrFromC(s));
       }

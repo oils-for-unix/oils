@@ -53,7 +53,7 @@ def Main(arg_r):
   errfmt = ui.ErrorFormatter(arena)
 
   if arg.c is not None:
-    arena.PushSource(source.CFlag())
+    arena.PushSource(source.CFlag)
     line_reader = reader.StringLineReader(arg.c, arena)  # type: reader._Reader
   else:
     script_name = arg_r.Peek()

@@ -129,7 +129,7 @@ def OldValue(lval, mem, exec_opts):
       s = word_eval.GetArrayItem(array_val.strs, lval.index)
 
       if s is None:
-        val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
+        val = value.Str('')  # NOTE: Other logic is value.Undef?  0?
       else:
         assert isinstance(s, str), s
         val = value.Str(s)
@@ -651,7 +651,7 @@ class ArithEvaluator(object):
                     ui.ValType(left))
 
           if s is None:
-            val = value.Undef()
+            val = value.Undef
           else:
             val = value.Str(s)
 

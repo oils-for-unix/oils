@@ -129,9 +129,8 @@ class ArithAstTest(unittest.TestCase):
     print('-- COMPOUND SUM --')
     print()
 
-    # TODO: Should be cflow_t.Break() and cflow_i.Break
-    c = cflow.Break()
-    assert isinstance(c, cflow.Break)
+    c = cflow.Break
+    assert isinstance(c, typed_demo_asdl.cflow__Break)
     assert isinstance(c, typed_demo_asdl.cflow_t)
     assert isinstance(c, pybase.CompoundObj)
 

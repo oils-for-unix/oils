@@ -874,7 +874,7 @@ class _ArgFrame(object):
     # type: (int) -> value_t
     index = self.num_shifted + arg_num - 1
     if index >= len(self.argv):
-      return value.Undef()
+      return value.Undef
 
     return value.Str(self.argv[index])
 
@@ -1575,7 +1575,7 @@ class Mem(object):
     if op_id == Id.VSub_Bang:  # $!
       n = self.last_bg_pid
       if n == -1:
-        return value.Undef()  # could be an error
+        return value.Undef  # could be an error
 
     elif op_id == Id.VSub_QMark:  # $?
       # External commands need WIFEXITED test.  What about subshells?
@@ -1802,7 +1802,7 @@ class Mem(object):
         else:
           if val is None:  # declare -rx nonexistent
             # set -o nounset; local foo; echo $foo  # It's still undefined!
-            val = value.Undef()  # export foo, readonly foo
+            val = value.Undef  # export foo, readonly foo
 
           cell = Cell(bool(flags & SetExport),
                       bool(flags & SetReadOnly),
@@ -1972,7 +1972,7 @@ class Mem(object):
         # TODO: value.Int()
         return value.Obj(self.TryStatus())
       else:
-        return value.Undef()  # STUB
+        return value.Undef  # STUB
 
     if name == '_this_dir':
       if len(self.this_dir) == 0:
@@ -1980,7 +1980,7 @@ class Mem(object):
         # Should we give a custom error here?
         # If you're at the interactive shell, 'source mymodule.oil' will still
         # work because 'source' sets it.
-        return value.Undef()
+        return value.Undef
       else:
         return value.Str(self.this_dir[-1])  # top of stack
 
@@ -2073,7 +2073,7 @@ class Mem(object):
     if cell:
       return cell.val
 
-    return value.Undef()
+    return value.Undef
 
   def GetCell(self, name, which_scopes=scope_e.Shopt):
     # type: (str, scope_t) -> Cell
@@ -2129,7 +2129,7 @@ class Mem(object):
         mylib.dict_erase(name_map, cell_name)
 
         # alternative that some shells use:
-        #   name_map[cell_name].val = value.Undef()
+        #   name_map[cell_name].val = value.Undef
         #   cell.exported = False
 
         # This should never happen because we do recursive lookups of namerefs.

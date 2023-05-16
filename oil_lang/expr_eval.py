@@ -111,7 +111,7 @@ def _PyObjToValue(val):
   # type: (Any) -> value_t
 
   if val is None:
-    return value.Undef()
+    return value.Undef
 
   elif isinstance(val, bool):
     return value.Bool(val)
@@ -667,7 +667,7 @@ class OilEvaluator(object):
       return value.Float(float(c))
 
     if id_ == Id.Expr_Null:
-      return value.Undef()
+      return value.Undef
     if id_ == Id.Expr_True:
       return value.Bool(True)
     if id_ == Id.Expr_False:

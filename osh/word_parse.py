@@ -192,7 +192,7 @@ class WordParser(WordEmitter):
     # return a Compound with no parts, which is explicitly checked with a
     # custom error message.
     if len(w.parts) == 0 and arg_lex_mode == lex_mode_e.VSub_ArgDQ:
-      return rhs_word.Empty()
+      return rhs_word.Empty
 
     return w
 
@@ -282,7 +282,7 @@ class WordParser(WordEmitter):
 
     if self.token_type == Id.Right_DollarBrace:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
-      return suffix_op.PatSub(pat, rhs_word.Empty(), replace_mode, slash_tok)
+      return suffix_op.PatSub(pat, rhs_word.Empty, replace_mode, slash_tok)
 
     if self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)  # do not stop at /

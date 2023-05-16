@@ -86,7 +86,7 @@ def main(argv):
     if argv[1] == '-c':
       # This path is easier to run through GDB
       line_reader = reader.StringLineReader(argv[2], arena)
-      src = source.CFlag()
+      src = source.CFlag
 
     elif argv[1] == '-n':  # For benchmarking, allow osh_parse -n file.txt
       path = argv[2]

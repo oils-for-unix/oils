@@ -255,7 +255,7 @@ class MemTest(unittest.TestCase):
     test_lib.AssertAsdlEqual(self, value.Str('x'), val)
 
     val = mem.GetValue('undef', scope_e.Dynamic)
-    test_lib.AssertAsdlEqual(self, value.Undef(), val)
+    test_lib.AssertAsdlEqual(self, value.Undef, val)
 
   def testExportThenAssign(self):
     """Regression Test"""

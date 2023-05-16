@@ -125,7 +125,7 @@ def MakeArena(source_name):
 
 def InitLineLexer(s, arena):
   line_lexer = lexer.LineLexer(arena)
-  src = source.Interactive()
+  src = source.Interactive
   line_lexer.Reset(SourceLine(1, s, src), 0)
   return line_lexer
 

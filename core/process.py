@@ -455,7 +455,7 @@ class FdState(object):
 
           # NOTE: we could close the read pipe here, but it doesn't really
           # matter because we control the code.
-          here_proc.StartProcess(trace.HereDoc())
+          here_proc.StartProcess(trace.HereDoc)
           #log('Started %s as %d', here_proc, pid)
           self._PushWait(here_proc)
 
@@ -1206,7 +1206,7 @@ class Pipeline(Job):
       if pgid != INVALID_PGID:
         proc.AddStateChange(SetPgid(pgid))
 
-      pid = proc.StartProcess(trace.PipelinePart())
+      pid = proc.StartProcess(trace.PipelinePart)
       if i == 0 and pgid != INVALID_PGID:
         # Mimick bash and use the PID of the first process as the group for the
         # whole pipeline.

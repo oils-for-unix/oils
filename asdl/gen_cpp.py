@@ -327,8 +327,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def VisitCompoundSum(self, sum, sum_name, depth):
     #log('%d variants in %s', len(sum.types), sum_name)
 
-    zero_arg_singleton = 'zero_arg_singleton' in sum.generate
-
     # Must fit in 7 bit Obj::type_tag
     assert len(sum.types) < 64, 'sum type %r has too many variants' % sum_name
 
@@ -370,26 +368,24 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         super_name = '%s_t' % sum_name
         tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name, variant.name)
         class_name = '%s__%s' % (sum_name, variant.name)
-        singleton = zero_arg_singleton and len(variant.fields) == 0
-
         self._GenClass(variant, class_name, [super_name], depth, tag)
 
-    # Generate `extern` declarations for zero arg singleton globals
-    if zero_arg_singleton:
-      for variant in sum.types:
-        if not variant.shared_type and len(variant.fields) == 0:
-          variant_name = variant.name
-          Emit('extern GcGlobal<%(sum_name)s__%(variant_name)s> g%(variant_name)s;')
+    # Generate 'extern' declarations for zero arg singleton globals
+    for variant in sum.types:
+      if not variant.shared_type and len(variant.fields) == 0:
+        variant_name = variant.name
+        Emit('extern GcGlobal<%(sum_name)s__%(variant_name)s> g%(sum_name)s__%(variant_name)s;')
 
     # Allow expr::Const in addition to expr.Const.
     Emit('ASDL_NAMES %(sum_name)s {')
     for variant in sum.types:
-      if not variant.shared_type:
-        variant_name = variant.name
-        if zero_arg_singleton and len(variant.fields) == 0:
-          Emit('  static %(sum_name)s__%(variant_name)s* %(variant_name)s;')
-        else:
-          Emit('  typedef %(sum_name)s__%(variant_name)s %(variant_name)s;')
+      if variant.shared_type:
+        continue
+      variant_name = variant.name
+      if len(variant.fields) == 0:
+        Emit('  static %(sum_name)s__%(variant_name)s* %(variant_name)s;')
+      else:
+        Emit('  typedef %(sum_name)s__%(variant_name)s %(variant_name)s;')
     Emit('};')
     Emit('')
 
@@ -431,12 +427,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       inits.append('%s(%s)' % (f.name, f.name))
 
     # Define constructor with N args
-    self.Emit('  %s(%s)' % (class_name, ', '.join(params)), depth)
     if len(inits):
+      self.Emit('  %s(%s)' % (class_name, ', '.join(params)), depth)
       self.Emit('      : %s {' % FieldInitJoin(inits), depth, reflow=False)
       self.Emit('  }')
     else:
-      self.Emit('{ }')
+      self.Emit('  %s(%s) {}' % (class_name, ', '.join(params)), depth)
     self.Emit('')
 
     # Define static constructor with ZERO args.  Don't emit for types with no
@@ -698,25 +694,27 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self._EmitStrFunction(sum, sum_name, depth)
 
     # Generate definitions for the for zero arg singleton globals
-    if 'zero_arg_singleton' in sum.generate:
-      for variant in sum.types:
-        if not variant.shared_type and len(variant.fields) == 0:
-          variant_name = variant.name
-          self.Emit('')
-          self.Emit('%s__%s* %s::%s = &g%s.obj;' % (sum_name, variant_name, sum_name, variant_name, variant_name))
-          self.Emit('')
-          self.Emit('GcGlobal<%s__%s> g%s = ' % (sum_name, variant_name, variant_name))
-          self.Emit('  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};' % (sum_name, variant_name))
+    for variant in sum.types:
+      if variant.shared_type:
+        continue
+      if len(variant.fields) == 0:
+        variant_name = variant.name
+        self.Emit('')
+        self.Emit('%s__%s* %s::%s = &g%s__%s.obj;' % (sum_name, variant_name,
+          sum_name, variant_name, sum_name, variant_name))
+        self.Emit('')
+        self.Emit('GcGlobal<%s__%s> g%s__%s = ' % (sum_name, variant_name,
+          sum_name, variant_name))
+        self.Emit('  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};' % (sum_name, variant_name))
 
     for variant in sum.types:
       if variant.shared_type:
-        pass
-      else:
-        super_name = '%s_t' % sum_name
-        all_fields = variant.fields
-        tag = '%s_e::%s' % (sum_name, variant.name)
-        class_name = '%s__%s' % (sum_name, variant.name)
-        self._EmitPrettyPrintMethods(class_name, all_fields, variant)
+        continue
+      super_name = '%s_t' % sum_name
+      all_fields = variant.fields
+      tag = '%s_e::%s' % (sum_name, variant.name)
+      class_name = '%s__%s' % (sum_name, variant.name)
+      self._EmitPrettyPrintMethods(class_name, all_fields, variant)
 
     # Emit dispatch WITHOUT using 'virtual'
     for func_name in PRETTY_METHODS:

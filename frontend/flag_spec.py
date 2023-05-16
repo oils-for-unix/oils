@@ -160,7 +160,7 @@ def _Default(arg_type, arg_default=None):
   elif arg_type == args.Float:
     default = value.Float(-1.0)  # ditto
   elif arg_type == args.String:
-    default = value.Undef()  # e.g. read -d '' is NOT the default
+    default = value.Undef  # e.g. read -d '' is NOT the default
   elif isinstance(arg_type, list):
     default = value.Str('')  # This isn't valid
   else:
@@ -263,7 +263,7 @@ class _FlagSpec(object):
     assert len(char) == 1  # 'r' for -r +r
     self.plus_flags.append(char)
 
-    self.defaults[char] = value.Undef()
+    self.defaults[char] = value.Undef
     # '+' or '-'.  TODO: Should we make it a bool?
     self.fields[char] = flag_type_e.Str
 

@@ -367,7 +367,7 @@ class ShellExecutor(vm._Executor):
       if self.job_control.Enabled():
         p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
-      pid = p.StartProcess(trace.Fork())
+      pid = p.StartProcess(trace.Fork)
       self.mem.last_bg_pid = pid  # for $!
       self.job_list.AddJob(p)  # show in 'jobs' list
     return 0
@@ -413,7 +413,7 @@ class ShellExecutor(vm._Executor):
     if self.job_control.Enabled():
       p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
-    return p.RunProcess(self.waiter, trace.ForkWait())
+    return p.RunProcess(self.waiter, trace.ForkWait)
 
   def RunCommandSub(self, cs_part):
     # type: (CommandSub) -> str
@@ -453,7 +453,7 @@ class ShellExecutor(vm._Executor):
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
 
-    p.StartProcess(trace.CommandSub())
+    p.StartProcess(trace.CommandSub)
     #log('Command sub started %d', pid)
 
     chunks = []  # type: List[str]
@@ -578,7 +578,7 @@ class ShellExecutor(vm._Executor):
       p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
     # Fork, letting the child inherit the pipe file descriptors.
-    p.StartProcess(trace.ProcessSub())
+    p.StartProcess(trace.ProcessSub)
 
     ps_frame = self.process_sub_stack[-1]
 

@@ -423,7 +423,7 @@ class CommandEvaluator(object):
 
           try:
             if t == '-':
-              result.arg = redirect_arg.CloseFd()
+              result.arg = redirect_arg.CloseFd
             elif t[-1] == '-':
               target_fd = int(t[:-1])
               result.arg = redirect_arg.MoveFd(target_fd)
@@ -1341,7 +1341,7 @@ class CommandEvaluator(object):
           e_die("Function %s was already defined (redefine_proc)" % node.name,
                 node.name_tok)
         self.procs[node.name] = Proc(
-            node.name, node.name_tok, proc_sig.Open(), node.body, [], True)
+            node.name, node.name_tok, proc_sig.Open, node.body, [], True)
 
         status = 0
 

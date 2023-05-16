@@ -221,7 +221,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
   # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
-    rhs = rhs_word.Empty()  # type: rhs_word_t
+    rhs = rhs_word.Empty  # type: rhs_word_t
   else:
     # tmp2 is for intersection of C++/MyPy type systems
     tmp2 = CompoundWord(w.parts[part_offset:])
@@ -250,7 +250,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     var_name = lexer.TokenSliceRight(left_token, -1)
     n = len(w.parts)
     if part_offset == n:
-      val = rhs_word.Empty()  # type: rhs_word_t
+      val = rhs_word.Empty  # type: rhs_word_t
     else:
       val = CompoundWord(w.parts[part_offset:])
 
@@ -1242,11 +1242,11 @@ class CommandParser(object):
           p_die('Expected at most 2 loop variables', for_kw)
 
     elif self.c_id == Id.KW_Do:
-      node.iterable = for_iter.Args()  # implicitly loop over "$@"
+      node.iterable = for_iter.Args  # implicitly loop over "$@"
       # do not advance
 
     elif self.c_id == Id.Op_Semi:  # for x; do
-      node.iterable = for_iter.Args()  # implicitly loop over "$@"
+      node.iterable = for_iter.Args  # implicitly loop over "$@"
       self._Next()
 
     else:  # for foo BAD
@@ -2306,9 +2306,9 @@ class CommandParser(object):
     """
     self._Peek()
     if self.c_id == Id.Op_Newline:
-      return parse_result.EmptyLine()
+      return parse_result.EmptyLine
     if self.c_id == Id.Eof_Real:
-      return parse_result.Eof()
+      return parse_result.Eof
 
     node = self._ParseCommandLine()
     return parse_result.Node(node)

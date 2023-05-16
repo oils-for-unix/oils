@@ -134,7 +134,7 @@ if mylib.PYTHON:
     # type: (Any) -> value_t
 
     if py_val is None:
-      val = value.Undef()  # type: value_t
+      val = value.Undef  # type: value_t
     elif isinstance(py_val, bool):
       val = value.Bool(py_val)
     elif isinstance(py_val, int):

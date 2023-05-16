@@ -181,7 +181,7 @@ class Transformer(object):
       if p_node.NumChildren() >= 3:
         value = self.Expr(p_node.GetChild(2))
       else:
-        value = expr.Implicit()
+        value = expr.Implicit
 
     if id_ == Id.Op_LBracket:  # {[x+y]: 'val'}
       key = self.Expr(p_node.GetChild(1))
@@ -311,7 +311,7 @@ class Transformer(object):
 
     if id_ == Id.Expr_Func:
       # STUB.  This should really be a Func, not Lambda.
-      return expr.Lambda([], expr.Implicit())
+      return expr.Lambda([], expr.Implicit)
 
     raise NotImplementedError(Id_str(id_))
 
@@ -913,7 +913,7 @@ class Transformer(object):
 
     n = pnode.NumChildren()
     if n == 1:  # proc f { 
-      sig = proc_sig.Open()  # type: proc_sig_t
+      sig = proc_sig.Open  # type: proc_sig_t
     elif n == 3:  # proc f () {
       sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
     elif n == 4:  # proc f [foo, bar='z', @args] {

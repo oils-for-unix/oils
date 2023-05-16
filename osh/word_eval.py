@@ -96,7 +96,7 @@ def DecayArray(val):
     raise AssertionError(val.tag())
 
   if s is None:
-    return value.Undef()
+    return value.Undef
   else:
     return value.Str(s)
 
@@ -734,7 +734,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Undef):
-        return value.Undef()  # ${!undef} is just weird bash behavior
+        return value.Undef  # ${!undef} is just weird bash behavior
 
       elif case(value_e.Str):
         val = cast(value.Str, UP_val)
@@ -1003,7 +1003,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         s = GetArrayItem(array_val.strs, index)
 
         if s is None:
-          val = value.Undef()
+          val = value.Undef
         else:
           val = value.Str(s)
 
@@ -1014,7 +1014,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         s = assoc_val.d.get(key)
 
         if s is None:
-          val = value.Undef()
+          val = value.Undef
         else:
           val = value.Str(s)
 
@@ -1974,7 +1974,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             append = False
 
           if part_offset == len(w.parts):
-            rhs = rhs_word.Empty()  # type: rhs_word_t
+            rhs = rhs_word.Empty  # type: rhs_word_t
           else:
             # tmp is for intersection of C++/MyPy type systems
             tmp = CompoundWord(w.parts[part_offset:])

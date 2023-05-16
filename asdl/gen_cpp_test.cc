@@ -114,7 +114,7 @@ TEST shared_variant_test() {
 
   log("tok->tag() for Token = %d", tok->tag());
 
-  auto* eof = Alloc<tok::Eof>();
+  auto* eof = tok::Eof;
   tok = eof;
   log("tok->tag() for Eof = %d", tok->tag());
 
@@ -176,6 +176,7 @@ TEST dicts_test() {
 }
 
 using typed_demo_asdl::flag_type;
+using typed_demo_asdl::flag_type__Bool;
 using typed_demo_asdl::SetToArg_;
 
 ObjHeader make_global(ObjHeader header) {
@@ -184,7 +185,7 @@ ObjHeader make_global(ObjHeader header) {
 }
 
 // TODO: We should always use these, rather than 'new flag_type::Bool()'
-GcGlobal<flag_type::Bool> g_ft = {make_global(flag_type::Bool::obj_header())};
+GcGlobal<flag_type__Bool> g_ft = {make_global(flag_type__Bool::obj_header())};
 
 // Use __ style
 using typed_demo_asdl::cflow__Return;
@@ -203,7 +204,7 @@ TEST literal_test() {
   // Interesting, initializer list part of the constructor "runs".  Otherwise
   // this doesn't work.
   log("g_ft.tag() = %d", g_ft.obj.tag());
-  auto ft = Alloc<flag_type::Bool>();
+  auto ft = flag_type::Bool;
   ASSERT_EQ(g_ft.obj.tag(), ft->tag());
 
   log("g_ret.tag() = %d", g_ret.obj.tag());

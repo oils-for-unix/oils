@@ -617,7 +617,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   hist_ev = history.Evaluator(readline, hist_ctx, debug_f)
 
   if flag.c is not None:
-    src = source.CFlag()  # type: source_t
+    src = source.CFlag  # type: source_t
     line_reader = reader.StringLineReader(flag.c, arena)  # type: reader._Reader
     if flag.i:  # -c and -i can be combined
       mutable_opts.set_interactive()
@@ -631,13 +631,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   else:
     if script_name is None:
       if flag.headless:
-        src = source.Headless()
+        src = source.Headless
         line_reader = None  # unused!
         # Not setting '-i' flag for now.  Some people's bashrc may want it?
       else:
         stdin = mylib.Stdin()
         if stdin.isatty():
-          src = source.Interactive()
+          src = source.Interactive
           line_reader = reader.InteractiveLineReader(
               arena, prompt_ev, hist_ev, readline, prompt_state)
           mutable_opts.set_interactive()
