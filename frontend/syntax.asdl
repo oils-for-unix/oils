@@ -600,5 +600,5 @@ module syntax
 
   | Primitive(id id)  # . dot etc.
     # String substitutions are evaluated into literals
-  | LiteralChars(str s, int spid)
+  | LiteralChars(str s, Token blame_tok)
 }

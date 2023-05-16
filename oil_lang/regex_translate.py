@@ -5,7 +5,6 @@ regex_translate.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    loc,
     PosixClass, PerlClass, CharCode,
     char_class_term, char_class_term_e, char_class_term_t,
     re, re_e,
@@ -209,7 +208,7 @@ def AsPosixEre(node, parts):
         # Note: Other regex dialects have non-capturing groups since we don't
         # need this.
         e_die("POSIX EREs don't have groups without capture, so this node "
-              "needs () around it.", loc.Span(child.spid))
+              "needs () around it.", child.blame_tok)
 
     AsPosixEre(node.child, parts)
     op = node.op

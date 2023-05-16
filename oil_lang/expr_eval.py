@@ -1591,31 +1591,31 @@ class OilEvaluator(object):
         kind = consts.GetKind(id_)
         assert kind == Kind.Char, id_
         s = word_compile.EvalCStringToken(node)
-        return re.LiteralChars(s, node.span_id)
+        return re.LiteralChars(s, node)
 
       elif case(re_e.SingleQuoted):
         node = cast(SingleQuoted, UP_node)
 
         s = word_compile.EvalSingleQuoted(node)
-        return re.LiteralChars(s, node.left.span_id)
+        return re.LiteralChars(s, node.left)
 
       elif case(re_e.DoubleQuoted):
         node = cast(DoubleQuoted, UP_node)
 
         s = self.word_ev.EvalDoubleQuotedToString(node)
-        return re.LiteralChars(s, node.left.span_id)
+        return re.LiteralChars(s, node.left)
 
       elif case(re_e.BracedVarSub):
         node = cast(BracedVarSub, UP_node)
 
         s = self.word_ev.EvalBracedVarSubToString(node)
-        return re.LiteralChars(s, node.left.span_id)
+        return re.LiteralChars(s, node.left)
 
       elif case(re_e.SimpleVarSub):
         node = cast(SimpleVarSub, UP_node)
 
         s = self.word_ev.EvalSimpleVarSubToString(node)
-        return re.LiteralChars(s, node.left.span_id)
+        return re.LiteralChars(s, node.left)
 
       elif case(re_e.Splice):
         node = cast(re.Splice, UP_node)
