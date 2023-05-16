@@ -51,10 +51,6 @@ def GetSpanId(loc_):
       else:
         return runtime.NO_SPID
 
-    elif case(loc_e.Span):
-      loc_ = cast(loc.Span, UP_location)
-      return loc_.span_id
-
     elif case(loc_e.WordPart):
       loc_ = cast(loc.WordPart, UP_location)
       if loc_.p:

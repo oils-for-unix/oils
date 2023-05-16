@@ -606,7 +606,7 @@ class CommandEvaluator(object):
       if case(condition_e.Shell):
         cond = cast(condition.Shell, UP_cond)
         self._StrictErrExitList(cond.commands)
-        with state.ctx_ErrExit(self.mutable_opts, False, blame_tok.span_id):
+        with state.ctx_ErrExit(self.mutable_opts, False, blame_tok):
           cond_status = self._ExecuteList(cond.commands)
 
         b = cond_status == 0
@@ -759,7 +759,7 @@ class CommandEvaluator(object):
 
         if node.negated is not None:
           self._StrictErrExit(node)
-          with state.ctx_ErrExit(self.mutable_opts, False, node.negated.span_id):
+          with state.ctx_ErrExit(self.mutable_opts, False, node.negated):
             # '! grep' is parsed as a pipeline, according to the grammar, but
             # there's no pipe() call.
             if len(node.children) == 1:
@@ -1081,7 +1081,7 @@ class CommandEvaluator(object):
 
         # Suppress failure for every child except the last one.
         self._StrictErrExit(left)
-        with state.ctx_ErrExit(self.mutable_opts, False, node.ops[0].span_id):
+        with state.ctx_ErrExit(self.mutable_opts, False, node.ops[0]):
           status = self._Execute(left)
 
         i = 1
@@ -1108,7 +1108,7 @@ class CommandEvaluator(object):
           else:
             # blame the right && or ||
             self._StrictErrExit(child)
-            with state.ctx_ErrExit(self.mutable_opts, False, op.span_id):
+            with state.ctx_ErrExit(self.mutable_opts, False, op):
               status = self._Execute(child)
 
           i += 1

@@ -179,7 +179,7 @@ class ctx_Option(object):
     for opt_num in opt_nums:
       mutable_opts.Push(opt_num, b)
       if opt_num == option_i.errexit:
-        mutable_opts.errexit_disabled_spid.append(runtime.NO_SPID)  # it wasn't disabled
+        mutable_opts.errexit_disabled_tok.append(None)  # it wasn't disabled
 
     self.mutable_opts = mutable_opts
     self.opt_nums = opt_nums
@@ -192,7 +192,7 @@ class ctx_Option(object):
     # type: (Any, Any, Any) -> None
     for opt_num in self.opt_nums:  # don't bother to do it in reverse order
       if opt_num == option_i.errexit:
-        self.mutable_opts.errexit_disabled_spid.pop()
+        self.mutable_opts.errexit_disabled_tok.pop()
       self.mutable_opts.Pop(opt_num)
 
 
@@ -244,15 +244,15 @@ class ctx_ErrExit(object):
     - ! (part of pipeline)
     - && ||
   """
-  def __init__(self, mutable_opts, b, span_id):
-    # type: (MutableOpts, bool, int) -> None
+  def __init__(self, mutable_opts, b, disabled_tok):
+    # type: (MutableOpts, bool, Optional[Token]) -> None
 
     # If we're disabling it, we need a span ID.  If not, then we should NOT
     # have one.
-    assert b == (span_id == runtime.NO_SPID)
+    assert b == (disabled_tok is None)
 
     mutable_opts.Push(option_i.errexit, b)
-    mutable_opts.errexit_disabled_spid.append(span_id)
+    mutable_opts.errexit_disabled_tok.append(disabled_tok)
 
     self.strict = False
     if mutable_opts.Get(option_i.strict_errexit):
@@ -268,7 +268,7 @@ class ctx_ErrExit(object):
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
-    self.mutable_opts.errexit_disabled_spid.pop()
+    self.mutable_opts.errexit_disabled_tok.pop()
     self.mutable_opts.Pop(option_i.errexit)
 
     if self.strict:
@@ -570,7 +570,7 @@ class MutableOpts(object):
     self.mem = mem
     self.opt0_array = opt0_array
     self.opt_stacks = opt_stacks
-    self.errexit_disabled_spid = []  # type: List[int]
+    self.errexit_disabled_tok = []  # type: List[Token]
 
     # Used for 'set -o vi/emacs'
     self.opt_hook = opt_hook
@@ -690,7 +690,7 @@ class MutableOpts(object):
     self._Set(option_i.errexit, False)
 
   def ErrExitDisabledSpanId(self):
-    # type: () -> int
+    # type: () -> Optional[Token]
     """If errexit is disabled by POSIX rules, return span ID for construct.
 
     e.g. the spid for 'if' or '&&' etc.
@@ -701,12 +701,12 @@ class MutableOpts(object):
     # But we run trap handlers in the MAIN LOOP, which break this.  So just
     # declare that it's never disabled in a trap.
     if self.Get(option_i._running_trap):
-      return runtime.NO_SPID
+      return None
 
-    if len(self.errexit_disabled_spid) == 0:
-      return runtime.NO_SPID
+    if len(self.errexit_disabled_tok) == 0:
+      return None
 
-    return self.errexit_disabled_spid[-1]
+    return self.errexit_disabled_tok[-1]
 
     # Old complex logic.  It turns out we don't need to detect whether it was
     # actually disabled.  These are the "strict_errexit without errexit" cases

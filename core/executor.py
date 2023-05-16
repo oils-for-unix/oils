@@ -11,7 +11,6 @@ from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command, command_e, CommandSub, CompoundWord, loc, loc_t,
 )
-from asdl import runtime
 from core import dev
 from core import error
 from core import process
@@ -246,10 +245,10 @@ class ShellExecutor(vm._Executor):
       proc_node = self.procs.get(arg0)
       if proc_node is not None:
         if self.exec_opts.strict_errexit():
-          disabled_spid = self.mutable_opts.ErrExitDisabledSpanId()
-          if disabled_spid != runtime.NO_SPID:
+          disabled_tok = self.mutable_opts.ErrExitDisabledSpanId()
+          if disabled_tok:
             self.errfmt.Print_('errexit was disabled for this construct',
-                               blame_loc=loc.Span(disabled_spid))
+                               disabled_tok)
             self.errfmt.StderrLine('')
             e_die("Can't run a proc while errexit is disabled. "
                   "Use 'try' or wrap it in a process with $0 myproc",

@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc
-from asdl import runtime
 from core import alloc
 from core import dev
 from core import error
@@ -284,7 +283,7 @@ class Try(vm._Builtin):
     if block:
       status = 0  # success by default
       try:
-        with state.ctx_ErrExit(self.mutable_opts, True, runtime.NO_SPID):
+        with state.ctx_ErrExit(self.mutable_opts, True, None):
           unused = self.cmd_ev.EvalBlock(block)
       except error.Expr as e:
         status = e.ExitStatus()
@@ -305,7 +304,7 @@ class Try(vm._Builtin):
       # Temporarily turn ON errexit, but don't pass a SPID because we're
       # ENABLING and not disabling.  Note that 'if try myproc' disables it and
       # then enables it!
-      with state.ctx_ErrExit(self.mutable_opts, True, runtime.NO_SPID):
+      with state.ctx_ErrExit(self.mutable_opts, True, None):
         # Pass do_fork=True.  Slight annoyance: the real value is a field of
         # command.Simple().  See _NoForkLast() in CommandEvaluator We have an
         # extra fork (miss out on an optimization) of code like ( status ls )
