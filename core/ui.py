@@ -140,14 +140,13 @@ def GetLineSourceString(arena, line, quote_filename=False):
       src = cast(source.ArgvWord, UP_src)
 
       # TODO: check loc.Missing; otherwise get Token from loc_t, then line
-      span_id = location.GetSpanId(src.location)
-      if span_id == runtime.NO_SPID:
+      blame_tok = location.TokenFor(src.location)
+      if blame_tok is None:
         s = '[ %s word at ? ]' % src.what
       else:
-        token = arena.GetToken(span_id)
-        line_num = token.line.line_num
-        outer_source = GetLineSourceString(arena,
-                                           token.line,
+        line = blame_tok.line
+        line_num = line.line_num
+        outer_source = GetLineSourceString(arena, line,
                                            quote_filename=quote_filename)
         s = '[ %s word at line %d of %s ]' % (src.what, line_num, outer_source)
       # Note: _PrintCodeExcerpt called above
@@ -163,11 +162,10 @@ def GetLineSourceString(arena, line, quote_filename=False):
       if src.location.tag() == loc_e.Missing:
         where = '?'
       else:
-        span_id = location.GetSpanId(src.location)
-        token = arena.GetToken(span_id)
-        line_num = token.line.line_num
-        outer_source = GetLineSourceString(arena,
-                                           token.line,
+        blame_tok = location.TokenFor(src.location)
+        assert blame_tok is not None
+        line_num = blame_tok.line.line_num
+        outer_source = GetLineSourceString(arena, blame_tok.line,
                                            quote_filename=quote_filename)
         where = 'line %d of %s' % (line_num, outer_source)
 
@@ -216,16 +214,15 @@ def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
   - and turn on "stack" tracing?  For 'source' and more?
   """
   f = mylib.Stderr()
-  span_id = location.GetSpanId(blame_loc)
-  if span_id == runtime.NO_SPID:  # When does this happen?
+  blame_tok = location.TokenFor(blame_loc)
+  if blame_tok is None:  # When does this happen?
     f.write('[??? no location ???] %s%s\n' % (prefix, msg))
     return
 
-  token = arena.GetToken(span_id)
-  orig_col = token.col
-  src = token.line.src
-  line = token.line.content
-  line_num = token.line.line_num  # overwritten by source__LValue case
+  orig_col = blame_tok.col
+  src = blame_tok.line.src
+  line = blame_tok.line.content
+  line_num = blame_tok.line.line_num  # overwritten by source__LValue case
 
   if show_code:
     UP_src = src
@@ -248,9 +245,9 @@ def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
       _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
     else:
-      _PrintCodeExcerpt(line, token.col, token.length, f)
+      _PrintCodeExcerpt(line, blame_tok.col, blame_tok.length, f)
 
-  source_str = GetLineSourceString(arena, token.line, quote_filename=True)
+  source_str = GetLineSourceString(arena, blame_tok.line, quote_filename=True)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?

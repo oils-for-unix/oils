@@ -33,59 +33,51 @@ def LName(name):
   return lvalue.Named(name, loc.Missing)
 
 
-def GetSpanId(loc_):
-  # type: (loc_t) -> int
+def TokenFor(loc_):
+  # type: (loc_t) -> Optional[Token]
   """
-  Backward compatibility wrapper
+  Given a location, get a Token.  This is useful because a Token points to a
+  single line.
   """
-
   UP_location = loc_
   with tagswitch(loc_) as case:
     if case(loc_e.Missing):
-      return runtime.NO_SPID
+      return None
 
     elif case(loc_e.Token):
       tok = cast(Token, UP_location)
       if tok:
-        return tok.span_id
+        return tok
       else:
-        return runtime.NO_SPID
+        return None
 
     elif case(loc_e.WordPart):
       loc_ = cast(loc.WordPart, UP_location)
       if loc_.p:
-        return OfWordPartLeft(loc_.p)
+        return LeftTokenForWordPart(loc_.p)
       else:
-        return runtime.NO_SPID
+        return None
 
     elif case(loc_e.Word):
       loc_ = cast(loc.Word, UP_location)
       if loc_.w:
-        return OfWordLeft(loc_.w)
+        return LeftTokenForWord(loc_.w)
       else:
-        return runtime.NO_SPID
+        return None
 
     elif case(loc_e.Command):
       loc_ = cast(loc.Command, UP_location)
       if loc_.c:
-        tok = TokenForCommand(loc_.c)
-        if tok:
-          return tok.span_id
-        else:
-          return runtime.NO_SPID
+        return TokenForCommand(loc_.c)
       else:
-        return runtime.NO_SPID
+        return None
 
     elif case(loc_e.Arith):
       loc_ = cast(loc.Arith, UP_location)
       if loc_.a:
-        tok = TokenForArith(loc_.a)
-        if tok:
-          return tok.span_id
-        else:
-          return runtime.NO_SPID
+        return TokenForArith(loc_.a)
       else:
-        return runtime.NO_SPID
+        return None
 
     else:
       raise AssertionError()
@@ -170,30 +162,6 @@ def TokenForArith(node):
     # TODO: Fill in other cases
 
   return None
-
-
-def OfWordPartLeft(part):
-  # type: (word_part_t) -> int
-  """
-  Span ID wrapper to remove
-  """
-  tok = LeftTokenForWordPart(part)
-  if tok:
-    return tok.span_id
-  else:
-    return runtime.NO_SPID
-
-
-def _OfWordPartRight(part):
-  # type: (word_part_t) -> int
-  """
-  Span ID wrapper to remove
-  """
-  tok = _RightTokenForWordPart(part)
-  if tok:
-    return tok.span_id
-  else:
-    return runtime.NO_SPID
 
 
 def LeftTokenForWordPart(part):
@@ -354,18 +322,6 @@ def _RightTokenForWordPart(part):
       raise AssertionError(part.tag())
 
 
-def OfWordLeft(w):
-  # type: (word_t) -> int
-  """
-  TODO: Should return a Token
-  """
-  tok = LeftTokenForWord(w)
-  if tok:
-    return tok.span_id
-  else:
-    return runtime.NO_SPID
-
-
 def LeftTokenForWord(w):
   # type: (word_t) -> Optional[Token]
   if w is None:
@@ -426,3 +382,44 @@ def OfWordRight(w):
       raise AssertionError(w.tag())
 
   raise AssertionError('for -Wreturn-type in C++')
+
+
+#
+# Wrappers to remove
+#
+
+
+def OfWordPartLeft(part):
+  # type: (word_part_t) -> int
+  """
+  Span ID wrapper to remove
+  """
+  tok = LeftTokenForWordPart(part)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID
+
+
+def _OfWordPartRight(part):
+  # type: (word_part_t) -> int
+  """
+  Span ID wrapper to remove
+  """
+  tok = _RightTokenForWordPart(part)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID
+
+
+def OfWordLeft(w):
+  # type: (word_t) -> int
+  """
+  TODO: Should return a Token
+  """
+  tok = LeftTokenForWord(w)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID

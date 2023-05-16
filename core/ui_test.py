@@ -20,14 +20,17 @@ class UiTest(unittest.TestCase):
     spid1 = arena.NewTokenId(-1, 0, 2, line_id, '')
     spid2 = arena.NewTokenId(-1, 2, 2, line_id, '')
 
+    tok1 = arena.GetToken(spid1)
+    tok2 = arena.GetToken(spid2)
+
     errfmt = ui.ErrorFormatter(arena)
 
     # no location info
     errfmt.Print_('hello')
 
-    with ui.ctx_Location(errfmt, loc.Span(spid1)):
+    with ui.ctx_Location(errfmt, tok1):
       errfmt.Print_('zero')
-      errfmt.Print_('zero', blame_loc=loc.Span(spid2))
+      errfmt.Print_('zero', tok2)
 
 
 if __name__ == '__main__':

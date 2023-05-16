@@ -96,21 +96,18 @@ class CrashDumper(object):
 
     if mylib.PYTHON:  # can't translate yet due to dynamic typing
       self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump()
-      span_id = location.GetSpanId(err.location)
+      blame_tok = location.TokenFor(err.location)
 
       self.error = {
          'msg': err.UserErrorString(),
-         'span_id': span_id,
       }
 
-      if span_id != runtime.NO_SPID:
-        token = cmd_ev.arena.GetToken(span_id)
-
+      if blame_tok:
         # Could also do msg % args separately, but JavaScript won't be able to
         # render that.
-        self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, token.line)
-        self.error['line_num'] = token.line.line_num
-        self.error['line'] = token.line.content
+        self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, blame_tok.line)
+        self.error['line_num'] = blame_tok.line.line_num
+        self.error['line'] = blame_tok.line.content
 
       # TODO: Collect functions, aliases, etc.
 

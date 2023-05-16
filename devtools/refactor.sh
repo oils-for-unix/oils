@@ -208,18 +208,6 @@ get-token() {
     egrep -n 'GetToken' */*.py
 }
 
-# 2023-05: 5 instances
-get-span-id() {
-  show-usages _tmp/get-span-id \
-    egrep -n 'GetSpanId' */*.py
-}
-
-# 2023-05: 7 instances
-loc-span() {
-  show-usages _tmp/loc-span \
-    fgrep -n 'loc.Span' */*.py
-}
-
 asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
