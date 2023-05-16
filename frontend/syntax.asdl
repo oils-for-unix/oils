@@ -210,7 +210,7 @@ module syntax
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test/[ # the string is already evaluated.
     # TODO: try using Token with source info
-  | String(id id, str s, int span_id)
+  | String(id id, str s, CompoundWord? blame_loc)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs_expr =

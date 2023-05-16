@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import (
-    loc, word, word_e, word_t, bool_expr,
+    loc, loc_e, word, word_e, word_t, CompoundWord, bool_expr,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -16,7 +16,7 @@ from core.error import e_usage, p_die
 from core import vm
 from frontend import match
 from frontend import location
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from osh import sh_expr_eval
 from osh import bool_parse
 from osh import word_parse
@@ -24,7 +24,7 @@ from osh import word_eval
 
 _ = log
 
-from typing import cast, TYPE_CHECKING
+from typing import cast, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value
@@ -58,12 +58,13 @@ class _StringWordEmitter(word_parse.WordEmitter):
       # Does it make sense to define Eof_Argv or something?
       # TODO: Add a way to show this location.  Show 1 char past the right-most
       # spid of the last word?  But we only have the left-most spid.
-      w = word.String(Id.Eof_Real, '', runtime.NO_SPID)
+      w = word.String(Id.Eof_Real, '', None)
       return w
 
     #log('ARGV %s i %d', self.argv, self.i)
     s = self.cmd_val.argv[self.i]
     left_loc = self.cmd_val.arg_locs[self.i]
+
     self.i += 1
 
     # default is an operand word
@@ -75,10 +76,26 @@ class _StringWordEmitter(word_parse.WordEmitter):
     if id_ == Id.Undefined_Tok:
       id_ = Id.Word_Compound
 
+    # TODO: cmd_value.Argv() should store CompoundWord directly, so we don't
+    # have to "unwrap" here
+    blame_word = None  # type: Optional[CompoundWord]
+    UP_left_loc = left_loc
+    with tagswitch(left_loc) as case:
+      if case(loc_e.Missing):
+        pass
+      elif case(loc_e.Word):
+        left_loc = cast(loc.Word, left_loc)
+        left_word = left_loc.w
+        if left_word:
+          assert w.tag() == word_e.Compound
+          blame_word = cast(CompoundWord, left_word)
+      else:
+        # EvalWordSequence should have given us loc.Word()
+        raise AssertionError()
+
     # TODO: use the location from arg_locs once we've replaced spid -> loc_t in
     #       word.String. Currently, changing word.String blows up the refactor.
-    spid = location.GetSpanId(left_loc)
-    w = word.String(id_, s, spid)
+    w = word.String(id_, s, blame_word)
     return w
 
   def Read(self):

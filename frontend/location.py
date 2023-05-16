@@ -374,7 +374,8 @@ def OfWordLeft(w):
 
     elif case(word_e.String):
       w = cast(word.String, UP_w)
-      return w.span_id  # See _StringWordEmitter in osh/builtin_bracket.py
+      # See _StringWordEmitter in osh/builtin_bracket.py
+      return OfWordLeft(w)
 
     else:
       raise AssertionError(w.tag())
