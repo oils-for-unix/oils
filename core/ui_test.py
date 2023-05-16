@@ -6,8 +6,6 @@ ui_test.py: Tests for ui.py
 
 import unittest
 
-from _devbuild.gen.syntax_asdl import loc
-
 from core import test_lib
 from core import ui  # module under test
 

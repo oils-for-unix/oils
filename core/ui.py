@@ -17,7 +17,6 @@ from _devbuild.gen.syntax_asdl import (
     source, source_e,
 )
 from _devbuild.gen.runtime_asdl import value_str, value_t
-from asdl import runtime
 from asdl import format as fmt
 from frontend import lexer
 from frontend import location

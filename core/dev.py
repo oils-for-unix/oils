@@ -11,7 +11,6 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.syntax_asdl import assign_op_e, Token
 
-from asdl import runtime
 from core import error
 from core import optview
 from core import state

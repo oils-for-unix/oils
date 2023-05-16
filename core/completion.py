@@ -44,7 +44,6 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
-from core.alloc import Arena
 from core import pyos
 from core import state
 from core import ui
@@ -829,12 +828,6 @@ def WordEndsWithCompDummy(w):
     return False
 
 
-def _TokenStart(arena, tok):
-  # type: (Arena, Token) -> int
-  span = arena.GetToken(tok.span_id)
-  return span.col
-
-
 class RootCompleter(CompletionAction):
   """Dispatch to various completers.
 
@@ -937,14 +930,14 @@ class RootCompleter(CompletionAction):
     if t2:  # We always have t1?
       # echo $
       if IsDollar(t2) and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1  # 1 for $
+        self.comp_ui_state.display_pos = t2.col + 1  # 1 for $
         for name in self.mem.VarNames():
           yield line_until_tab + name  # no need to quote var names
         return
 
       # echo ${
       if t2.id == Id.Left_DollarBrace and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 2  # 2 for ${
+        self.comp_ui_state.display_pos = t2.col + 2  # 2 for ${
         for name in self.mem.VarNames():
           yield line_until_tab + name  # no need to quote var names
         return
@@ -954,7 +947,7 @@ class RootCompleter(CompletionAction):
         # Example: ${undef:-$P
         # readline splits at ':' so we have to prepend '-$' to every completed
         # variable name.
-        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1  # 1 for $
+        self.comp_ui_state.display_pos = t2.col + 1  # 1 for $
         to_complete = t2.tval[1:]
         n = len(to_complete)
         for name in self.mem.VarNames():
@@ -964,7 +957,7 @@ class RootCompleter(CompletionAction):
 
       # echo ${P
       if t2.id == Id.VSub_Name and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(arena, t2)  # no offset
+        self.comp_ui_state.display_pos = t2.col  # no offset
         to_complete = t2.tval
         n = len(to_complete)
         for name in self.mem.VarNames():
@@ -974,7 +967,7 @@ class RootCompleter(CompletionAction):
 
       # echo $(( VAR
       if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
-        self.comp_ui_state.display_pos = _TokenStart(arena, t2)  # no offset
+        self.comp_ui_state.display_pos = t2.col  # no offset
         to_complete = t2.tval
         n = len(to_complete)
         for name in self.mem.VarNames():
@@ -998,7 +991,7 @@ class RootCompleter(CompletionAction):
         t2 = cast(Token, parts[0])
 
         # +1 for ~
-        self.comp_ui_state.display_pos = _TokenStart(arena, t2) + 1
+        self.comp_ui_state.display_pos = t2.col + 1
 
         to_complete = t2.tval[1:]
         n = len(to_complete)
@@ -1031,10 +1024,8 @@ class RootCompleter(CompletionAction):
             debug_f.writeln("Didn't get a string from redir arg")
             return
 
-          span_id = location.OfWordLeft(arg_word)
-          span = arena.GetToken(span_id)
-
-          self.comp_ui_state.display_pos = span.col
+          tok = location.LeftTokenForWord(arg_word)
+          self.comp_ui_state.display_pos = tok.col
 
           comp.Update('', val.s, '', 0, [])
           n = len(val.s)
@@ -1120,9 +1111,8 @@ class RootCompleter(CompletionAction):
           # echo $(gr   and
           # echo `gr
 
-          span_id = location.OfWordLeft(trail.words[0])
-          span = arena.GetToken(span_id)
-          self.comp_ui_state.display_pos = span.col
+          tok = location.LeftTokenForWord(trail.words[0])
+          self.comp_ui_state.display_pos = tok.col
           self.debug_f.writeln('** DISPLAY_POS = %d' % self.comp_ui_state.display_pos)
 
         else:
@@ -1137,9 +1127,8 @@ class RootCompleter(CompletionAction):
             base_opts, user_spec = self.comp_lookup.GetFallback()
 
           # Display since the beginning
-          span_id = location.OfWordLeft(trail.words[-1])
-          span = arena.GetToken(span_id)
-          self.comp_ui_state.display_pos = span.col
+          tok = location.LeftTokenForWord(trail.words[-1])
+          self.comp_ui_state.display_pos = tok.col
           if mylib.PYTHON:
             self.debug_f.writeln('words[-1]: [%s]' % trail.words[-1])
 
