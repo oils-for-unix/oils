@@ -11,8 +11,6 @@ from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import loc, loc_t, source, source_t, IntParamBox
 
-from asdl import runtime
-
 from core import alloc
 from core import comp_ui
 from core import dev
@@ -352,7 +350,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     debug_stack.append(frame0)
 
   # Copy quirky bash behavior.
-  frame1 = state.DebugFrame(no_str, no_str, no_str, runtime.NO_SPID, 0, 0)
+  frame1 = state.DebugFrame(no_str, no_str, no_str, None, 0, 0)
   debug_stack.append(frame1)
 
   script_name = arg_r.Peek()  # type: Optional[str]

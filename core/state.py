@@ -55,7 +55,8 @@ if TYPE_CHECKING:
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
-LINE_ZERO = -2  # special value that's not runtime.NO_SPID
+# Weird sentinel value
+LINE_ZERO = Token(Id.Unknown_Tok, -1, -1, runtime.NO_SPID, None, None)
 
 
 # flags for SetVar
@@ -996,9 +997,12 @@ def _GetWorkingDir():
 
 class DebugFrame(object):
 
-  def __init__(self, bash_source, func_name, source_name, call_spid, argv_i,
+  def __init__(self, bash_source, func_name, source_name, call_tok, argv_i,
                var_i):
-    # type: (Optional[str], Optional[str], Optional[str], int, int, int) -> None
+    # type: (Optional[str], Optional[str], Optional[str], Optional[Token], int, int) -> None
+    """
+    core/shell.py: call_tok is None
+    """
     self.bash_source = bash_source
 
     # ONE of these is set.  func_name for 'myproc a b', and source_name for
@@ -1006,7 +1010,7 @@ class DebugFrame(object):
     self.func_name = func_name
     self.source_name = source_name
 
-    self.call_spid = call_spid 
+    self.call_tok = call_tok
     self.argv_i = argv_i
     self.var_i = var_i
 
@@ -1285,7 +1289,6 @@ class Mem(object):
     self.pwd = None  # type: Optional[str]
 
     self.current_tok = None  # type: Optional[Token]
-    self.current_spid = runtime.NO_SPID
 
     self.last_arg = ''  # $_ is initially empty, NOT unset
     self.line_num = value.Str('')
@@ -1349,9 +1352,8 @@ class Mem(object):
         else:
           pass  # It's a frame for FOO=bar?  Or the top one?
 
-        d['call_spid'] = frame.call_spid
-        if frame.call_spid != runtime.NO_SPID:  # first frame has this issue
-          token = self.arena.GetToken(frame.call_spid)
+        if frame.call_tok is not None:  # first frame has this issue
+          token = frame.call_tok
           d['call_source'] = ui.GetLineSourceString(self.arena, token.line)
           d['call_line_num'] = token.line.line_num
           d['call_line'] = token.line.content
@@ -1391,7 +1393,6 @@ class Mem(object):
       return
 
     self.current_tok = tok
-    self.current_spid = tok.span_id
 
   def CurrentLocation(self):
     # type: () -> Token
@@ -1512,7 +1513,7 @@ class Mem(object):
 
   def _PushDebugStack(self, bash_source, func_name, source_name):
     # type: (Optional[str], Optional[str], Optional[str]) -> None
-    # self.current_spid is set before every SimpleCommand, ShAssignment, [[, ((,
+    # self.current_tok is set before every SimpleCommand, ShAssignment, [[, ((,
     # etc.  Function calls and 'source' are both SimpleCommand.
 
     # These integers are handles/pointers, for use in CrashDumper.
@@ -1522,7 +1523,7 @@ class Mem(object):
     # The stack is a 5-tuple, where func_name and source_name are optional.  If
     # both are unset, then it's a "temp frame".
     self.debug_stack.append(
-        DebugFrame(bash_source, func_name, source_name, self.current_spid, argv_i, var_i)
+        DebugFrame(bash_source, func_name, source_name, self.current_tok, argv_i, var_i)
     )
 
   def _PopDebugStack(self):
@@ -2032,8 +2033,7 @@ class Mem(object):
           if frame.call_spid == -2:
             strs.append('-')  # Bash does this to line up with main?
             continue
-          span = self.arena.GetToken(frame.call_spid)
-          source_str = ui.GetLineSourceString(self.arena, span.line_id)
+          source_str = ui.GetLineSourceString(self.arena, self.current_tok.line)
           strs.append(source_str)
         return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
@@ -2041,22 +2041,20 @@ class Mem(object):
       strs = []
       for frame in reversed(self.debug_stack):
         # should only happen for the first entry
-        if frame.call_spid == runtime.NO_SPID:
+        if frame.call_tok is None:
           continue
-        if frame.call_spid == LINE_ZERO:
+        if frame.call_tok == LINE_ZERO:
           strs.append('0')  # Bash does this to line up with main?
           continue
-        token = self.arena.GetToken(frame.call_spid)
-        line_num = token.line.line_num
+        line_num = self.current_tok.line.line_num
         strs.append(str(line_num))
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
-      assert self.current_spid != -1, self.current_spid
-      span = self.arena.GetToken(self.current_spid)
+      assert self.current_tok is not None
       # Reuse object with mutation
       # TODO: maybe use interned GetLineNumStr?
-      self.line_num.s = str(span.line.line_num)
+      self.line_num.s = str(self.current_tok.line.line_num)
       return self.line_num
 
     if name == 'BASHPID':  # TODO: Oil name for it
