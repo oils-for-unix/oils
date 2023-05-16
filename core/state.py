@@ -18,7 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue_t,
     scope_e, scope_t, HayNode, Cell
 )
-from _devbuild.gen.syntax_asdl import loc, loc_t, Token
+from _devbuild.gen.syntax_asdl import loc, Token
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
