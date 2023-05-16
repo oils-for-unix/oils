@@ -1368,14 +1368,14 @@ class CommandParser(object):
 
     Returns the terminating `esac` keyword (if present) for location tracking.
     """
+    assert not self.parse_opts.parse_brace(), "ParseCaseList should only be called when parsing sh-style case commands"
+
     self._Peek()
 
     while True:
       # case item begins with a command word or (
       if self.c_id == Id.KW_Esac:
         return word_.AsKeywordToken(self.cur_word)
-      if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:
-        break
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
       arm = self.ParseCaseItem()
@@ -1386,10 +1386,82 @@ class CommandParser(object):
 
     return None
 
+  def ParseOilCaseItem(self):
+    # type: () -> CaseArm
+    """
+    case_item: pat_words newline_ok { newline_ok command_list newline_ok };
+    pat_words: (word PIPE)* word
+    """
+    pat_words = []  # type: List[word_t]
+    while True:
+      self._Peek()
+
+      if self.c_id == Id.Op_LParen:
+        self._Next()  # Skip '('
+        self._Peek()
+        pat_words.append(self.cur_word)
+        self._Next()  # Skip prev word
+        self._Eat(Id.Op_RParen)
+      else:
+        pat_words.append(self.cur_word)
+        self._Next()
+
+      self._Peek()
+      if self.c_id == Id.Op_Pipe:
+        self._Next()
+      else:
+        break
+
+    self._NewlineOk()
+
+    self._Eat(Id.Lit_LBrace)
+
+    self._NewlineOk()
+
+    if self.c_id != Id.Op_RBrace:
+      c_list = self._ParseCommandTerm()
+      action_children = c_list.children
+    else:
+      action_children = []
+
+    self._NewlineOk()
+
+    self._Eat(Id.Lit_RBrace)
+
+    spids = [runtime.NO_SPID] * 4  # HACK: we probably don't need this
+    arm = CaseArm(pat_words, action_children, spids)
+    return arm
+
+  def ParseOilCaseList(self, arms):
+    # type: (List[CaseArm]) -> Optional[Token]
+    """
+    oil_case_list: (case_item newline_ok)* case_item? newline_ok;
+
+    Returns the terminating <}> token (if present) for location tracking.
+    """
+    assert self.parse_opts.parse_brace(), "ParseOilCaseList should only be called when parsing ysh-style case commands"
+
+    self._Peek()
+
+    while True:
+      # case item begins with a command word
+      if self.c_id == Id.Lit_RBrace:
+        return word_.LiteralToken(self.cur_word)
+      arm = self.ParseOilCaseItem()
+
+      self._NewlineOk()
+
+      arms.append(arm)
+      self._Peek()
+      # Now look for <}>
+
+    return None
+
   def ParseCase(self):
     # type: () -> command.Case
     """
     case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
+                     | Case WORD newline_ok { newline_ok oil_case_list? } ;
     """
     case_node = command.Case.CreateNull(alloc_lists=True)
 
@@ -1411,23 +1483,29 @@ class CommandParser(object):
 
     self._NewlineOk()
     self._Peek()
-    if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
-      self._Next()
+    if self.parse_opts.parse_brace():
+      self._Eat(Id.Lit_LBrace)
+      # TODO: capture "in_kw" -- should probably rename that
     else:
       self._Eat(Id.KW_In)
       in_kw = word_.AsKeywordToken(self.cur_word)
     self._NewlineOk()
 
-    if self.c_id != Id.KW_Esac:  # empty case list
-      esac_kw = self.ParseCaseList(case_node.arms)
+    if self.c_id not in (Id.KW_Esac, Id.Lit_RBrace):  # empty case list
+      if self.parse_opts.parse_brace():
+        esac_kw = self.ParseOilCaseList(case_node.arms)
+      else:
+        esac_kw = self.ParseCaseList(case_node.arms)
       # TODO: should it return a list of nodes, and extend?
       self._Peek()
-    else:
+    elif self.c_id == Id.KW_Esac:
       esac_kw = word_.AsKeywordToken(self.cur_word)
+    else:
+      # TODO: rename this...
+      esac_kw = word_.LiteralToken(self.cur_word)
 
-    self._Peek()
-    if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:
-      self._Next()
+    if self.parse_opts.parse_brace():
+      self._Eat(Id.Lit_RBrace)
     else:
       self._Eat(Id.KW_Esac)
     self._Next()
