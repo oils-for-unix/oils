@@ -80,6 +80,17 @@ def GetSpanId(loc_):
       else:
         return runtime.NO_SPID
 
+    elif case(loc_e.Arith):
+      loc_ = cast(loc.Arith, UP_location)
+      if loc_.a:
+        tok = TokenForArith(loc_.a)
+        if tok:
+          return tok.span_id
+        else:
+          return runtime.NO_SPID
+      else:
+        return runtime.NO_SPID
+
     else:
       raise AssertionError()
 
@@ -149,11 +160,8 @@ def TokenForCommand(node):
   return None
 
 
-def OfArithExpr(node):
-  # type: (arith_expr_t) -> loc_t
-  """
-  TODO: replace with loc.Arith()
-  """
+def TokenForArith(node):
+  # type: (arith_expr_t) -> Optional[Token]
   UP_node = node
   with tagswitch(node) as case:
     if case(arith_expr_e.VarSub):
@@ -161,9 +169,11 @@ def OfArithExpr(node):
       return vsub.left
     elif case(arith_expr_e.Word):
       w = cast(CompoundWord, UP_node)
-      return loc.Word(w)
+      return LeftTokenForWord(w)
 
-  return loc.Missing
+    # TODO: Fill in other cases
+
+  return None
 
 
 def OfWordPartLeft(part):

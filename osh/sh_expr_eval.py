@@ -281,7 +281,7 @@ class ArithEvaluator(object):
     # type: () -> None
     assert self.word_ev is not None
 
-  def _StringToInteger(self, s, location):
+  def _StringToInteger(self, s, blame_loc):
     # type: (str, loc_t) -> int
     """Use bash-like rules to coerce a string to an integer.
 
@@ -299,14 +299,14 @@ class ArithEvaluator(object):
       try:
         integer = int(s, 16)
       except ValueError:
-        e_strict('Invalid hex constant %r' % s, location)
+        e_strict('Invalid hex constant %r' % s, blame_loc)
       return integer
 
     if s.startswith('0'):
       try:
         integer = int(s, 8)
       except ValueError:
-        e_strict('Invalid octal constant %r' % s, location)
+        e_strict('Invalid octal constant %r' % s, blame_loc)
       return integer
 
     if '#' in s:
@@ -314,7 +314,7 @@ class ArithEvaluator(object):
       try:
         base = int(b)
       except ValueError:
-        e_strict('Invalid base for numeric constant %r' % b, location)
+        e_strict('Invalid base for numeric constant %r' % b, blame_loc)
 
       integer = 0
       for ch in digits:
@@ -329,10 +329,11 @@ class ArithEvaluator(object):
         elif ch.isdigit():
           digit = int(ch)
         else:
-          e_strict('Invalid digits for numeric constant %r' % digits, location)
+          e_strict('Invalid digits for numeric constant %r' % digits, blame_loc)
 
         if digit >= base:
-          e_strict('Digits %r out of range for base %d' % (digits, base), location)
+          e_strict('Digits %r out of range for base %d' % (digits, base),
+                   blame_loc)
 
         integer = integer * base + digit
       return integer
@@ -355,7 +356,7 @@ class ArithEvaluator(object):
         a_parser = self.parse_ctx.MakeArithParser(s)
 
         # TODO: Fill in the variable name
-        with alloc.ctx_Location(arena, source.Variable(None, location)):
+        with alloc.ctx_Location(arena, source.Variable(None, blame_loc)):
           try:
             node2 = a_parser.Parse()  # may raise error.Parse
           except error.Parse as e:
@@ -365,7 +366,7 @@ class ArithEvaluator(object):
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.
         if node2.tag() == arith_expr_e.Word:
-          e_die("Invalid integer constant %r" % s, location)
+          e_die("Invalid integer constant %r" % s, blame_loc)
 
         if self.exec_opts.eval_unsafe_arith():
           integer = self.EvalToInt(node2)
@@ -381,21 +382,21 @@ class ArithEvaluator(object):
       else:
         if len(s.strip()) == 0 or match.IsValidVarName(s):
           # x42 could evaluate to 0
-          e_strict("Invalid integer constant %r" % s, location)
+          e_strict("Invalid integer constant %r" % s, blame_loc)
         else:
           # 42x is always fatal!
-          e_die("Invalid integer constant %r" % s, location)
+          e_die("Invalid integer constant %r" % s, blame_loc)
 
     return integer
 
-  def _ValToIntOrError(self, val, location):
-    # type: (value_t, loc_t) -> int
+  def _ValToIntOrError(self, val, blame):
+    # type: (value_t, arith_expr_t) -> int
     try:
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Undef):  # 'nounset' already handled before got here
           # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-          e_strict('Undefined value in arithmetic context', location)
+          e_strict('Undefined value in arithmetic context', loc.Arith(blame))
 
         elif case(value_e.Int):
           val = cast(value.Int, UP_val)
@@ -403,7 +404,7 @@ class ArithEvaluator(object):
 
         elif case(value_e.Str):
           val = cast(value.Str, UP_val)
-          return self._StringToInteger(val.s, location)  # calls e_strict
+          return self._StringToInteger(val.s, loc.Arith(blame))  # calls e_strict
 
         elif case(value_e.Obj):
           # Note: this handles var x = 42; echo $(( x > 2 )).
@@ -424,7 +425,7 @@ class ArithEvaluator(object):
     # In bash, (( a )) is like (( a[0] )), but I don't want that.
     # And returning '0' gives different results.
     e_die("Expected a value convertible to integer, got %s" % ui.ValType(val),
-          location)
+          loc.Arith(blame))
 
   def _EvalLhsAndLookupArith(self, node):
     # type: (arith_expr_t) -> Tuple[int, lvalue_t]
@@ -447,8 +448,7 @@ class ArithEvaluator(object):
     #if val.tag() == value_e.MaybeStrArray:
     #  e_die("Can't use assignment like ++ or += on arrays")
 
-    expr_loc = location.OfArithExpr(node)
-    i = self._ValToIntOrError(val, expr_loc)
+    i = self._ValToIntOrError(val, node)
     return i, lval
 
   def _Store(self, lval, new_int):
@@ -470,9 +470,7 @@ class ArithEvaluator(object):
       if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
         val = word_eval.DecayArray(val)
 
-    # TODO: Can we avoid the runtime cost of adding location info?
-    expr_loc = location.OfArithExpr(node)
-    i = self._ValToIntOrError(val, expr_loc)
+    i = self._ValToIntOrError(val, node)
     return i
 
   def Eval(self, node):
@@ -674,16 +672,15 @@ class ArithEvaluator(object):
           ret =  lhs * rhs
         elif op_id == Id.Arith_Slash:
           if rhs == 0:
-            # TODO: Could also blame /
-            e_die('Divide by zero',
-                  location.OfArithExpr(node.right))
+            # TODO: blame / operator
+            e_die('Divide by zero', loc.Arith(node.right))
 
           ret = lhs / rhs
 
         elif op_id == Id.Arith_Percent:
           if rhs == 0:
-            # TODO: Could also blame /
-            e_die('Divide by zero', location.OfArithExpr(node.right))
+            # TODO: blame / operator
+            e_die('Divide by zero', loc.Arith(node.right))
 
           ret = lhs % rhs
 
