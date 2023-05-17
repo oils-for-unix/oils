@@ -201,14 +201,7 @@ spid-sig() {
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-# 2023-05: 21 instances
-get-token() {
-  # Memory leak
-  show-usages _tmp/get-token \
-    egrep -n 'GetToken' */*.py
-}
-
-# 2023-05: 23 instances
+# 2023-05: 13 instances
 of-word() {
   show-usages _tmp/of-word \
     egrep -n 'OfWord' */*.py
