@@ -24,6 +24,7 @@ from _devbuild.gen.syntax_asdl import (
     loc, loc_t, loc_e, Token, CompoundWord,
     command, command_e, command_t, command_str,
     condition, condition_e, condition_t,
+    case_arg, case_arg_e, case_arg_t,
     BraceGroup, ArgList,
     assign_op_e,
     expr_t, place_expr,
@@ -618,6 +619,28 @@ class CommandEvaluator(object):
           b = bool(obj)
 
     return b
+
+  def _EvalCaseArg(self, arg, blame):
+    # type: (case_arg_t, loc_t) -> str
+    """
+    Evaluate a `case_arg` into a `str` which can be matched on in a case
+    command.
+
+    TODO: return a value, the str conversion is lossy and we want to match on
+          type + value.
+    """
+    UP_arg = arg
+    with tagswitch(arg) as case:
+      if case(case_arg_e.Word):
+        arg = cast(case_arg.Word, UP_arg)
+        return self.word_ev.EvalWordToString(arg.w).s
+
+      elif case(case_arg_e.OilExpr):
+        arg = cast(case_arg.OilExpr, UP_arg)
+        obj = self.expr_ev.EvalExpr(arg.e, blame)
+        return str(obj) # TODO: remove this lossy conversion
+
+    assert False, "Unreachable"
 
   def _Dispatch(self, node, cmd_st):
     # type: (command_t, CommandStatus) -> int
@@ -1383,8 +1406,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.Case):
         node = cast(command.Case, UP_node)
-        str_val = self.word_ev.EvalWordToString(node.to_match)
-        to_match = str_val.s
+        to_match = self._EvalCaseArg(node.to_match, node.case_kw)
 
         self.mem.SetLocationToken(node.case_kw)
         self._MaybeRunDebugTrap()

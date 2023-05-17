@@ -2,7 +2,7 @@
 
 #### case syntax, oneline
 const x = "header.h"
-case $x {
+case (x) {
   *.h | *.cc { echo C++ }
   *.py       { echo Python }
 }
@@ -13,7 +13,7 @@ C++
 
 #### case syntax, multiline
 const x = "hello.py"
-case $x {
+case (x) {
   *.h | *.cc {
     echo C++
   }
@@ -26,9 +26,9 @@ case $x {
 Python
 ## END
 
-#### case syntax, expressions
+#### case syntax, simple expressions
 const x = 3
-case $x {
+case (x) {
   (3) { echo three }
   (4) { echo four }
 }
@@ -37,9 +37,19 @@ case $x {
 three
 ## END
 
+#### case syntax, complex expressions
+const x = 3
+case (x) {
+  (1 + 2) { echo three }
+  (2 + 2) { echo four }
+}
+## status: 2
+## STDOUT:
+## END
+
 #### case semantics, no match
 const x = 2
-case $x {
+case (x) {
   (3) { echo three }
   (4) { echo four }
 }
@@ -49,7 +59,7 @@ case $x {
 
 #### case syntax, eggex
 const x = "main.cc"
-case $x {
+case (x) {
   / dot* '.py' / {
     echo Python
   }
@@ -57,14 +67,13 @@ case $x {
    echo C++
   }
 }
-## status: 0
+## status: 2
 ## STDOUT:
-C++
 ## END
 
 #### empty case statement
 const x = ""
-case $x { }
+case (x) { }
 ## status: 0
 ## STDOUT:
 ## END

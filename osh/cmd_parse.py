@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_t, condition, condition_t,
     for_iter,
     ArgList, BraceGroup, BlockArg,
-    CaseArm, IfArm,
+    CaseArm, case_arg, IfArm,
 
     Redir, redir_param,
     redir_loc, redir_loc_t,
@@ -1368,8 +1368,6 @@ class CommandParser(object):
 
     Returns the terminating `esac` keyword (if present) for location tracking.
     """
-    assert not self.parse_opts.parse_brace(), "ParseCaseList should only be called when parsing sh-style case commands"
-
     self._Peek()
 
     while True:
@@ -1439,14 +1437,13 @@ class CommandParser(object):
 
     Returns the terminating <}> token (if present) for location tracking.
     """
-    assert self.parse_opts.parse_brace(), "ParseOilCaseList should only be called when parsing ysh-style case commands"
-
     self._Peek()
 
     while True:
       # case item begins with a command word
       if self.c_id == Id.Lit_RBrace:
         return word_.LiteralToken(self.cur_word)
+
       arm = self.ParseOilCaseItem()
 
       self._NewlineOk()
@@ -1455,7 +1452,20 @@ class CommandParser(object):
       self._Peek()
       # Now look for <}>
 
-    return None
+  def ParseOilCase(self, case_node):
+    # type: (command.Case) -> None
+    """
+    Finish parsing an oil style case command.
+    """
+    enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+    case_node.to_match = case_arg.OilExpr(enode)
+
+    # TODO: collect tokens for location info
+    self._Eat(Id.Lit_LBrace)
+    self._NewlineOk()
+    self.ParseOilCaseList(case_node.arms)
+    self._NewlineOk()
+    self._Eat(Id.Lit_RBrace)
 
   def ParseCase(self):
     # type: () -> command.Case
@@ -1465,8 +1475,12 @@ class CommandParser(object):
     """
     case_node = command.Case.CreateNull(alloc_lists=True)
 
-    case_kw = word_.AsKeywordToken(self.cur_word)
+    case_node.case_kw = word_.AsKeywordToken(self.cur_word)
     self._Next()  # skip case
+
+    if self.w_parser.LookPastSpace() == Id.Op_LParen:
+        self.ParseOilCase(case_node)
+        return case_node
 
     self._Peek()
     to_match = self.cur_word
@@ -1476,43 +1490,25 @@ class CommandParser(object):
         p_die("This is a constant string.  You may want a variable like $x (parse_bare_word)",
               loc.Word(to_match))
 
-    case_node.to_match = to_match
+    case_node.to_match = case_arg.Word(to_match)
     self._Next()
-
-    in_kw = None  # type: Token
 
     self._NewlineOk()
     self._Peek()
-    if self.parse_opts.parse_brace():
-      self._Eat(Id.Lit_LBrace)
-      # TODO: capture "in_kw" -- should probably rename that
-    else:
-      self._Eat(Id.KW_In)
-      in_kw = word_.AsKeywordToken(self.cur_word)
+
+    self._Eat(Id.KW_In)
+    case_node.in_kw = word_.AsKeywordToken(self.cur_word)
     self._NewlineOk()
 
-    if self.c_id not in (Id.KW_Esac, Id.Lit_RBrace):  # empty case list
-      if self.parse_opts.parse_brace():
-        esac_kw = self.ParseOilCaseList(case_node.arms)
-      else:
-        esac_kw = self.ParseCaseList(case_node.arms)
+    if self.c_id == Id.KW_Esac:  # empty case list
+      case_node.esac_kw = word_.AsKeywordToken(self.cur_word)
+    else:
+      case_node.esac_kw = self.ParseCaseList(case_node.arms)
       # TODO: should it return a list of nodes, and extend?
-      self._Peek()
-    elif self.c_id == Id.KW_Esac:
-      esac_kw = word_.AsKeywordToken(self.cur_word)
-    else:
-      # TODO: rename this...
-      esac_kw = word_.LiteralToken(self.cur_word)
 
-    if self.parse_opts.parse_brace():
-      self._Eat(Id.Lit_RBrace)
-    else:
-      self._Eat(Id.KW_Esac)
+    self._Eat(Id.KW_Esac)
     self._Next()
 
-    case_node.case_kw = case_kw
-    case_node.in_kw = in_kw
-    case_node.esac_kw = esac_kw
     return case_node
 
   def _ParseOilElifElse(self, if_node):

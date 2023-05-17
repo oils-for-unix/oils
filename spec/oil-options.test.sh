@@ -415,11 +415,11 @@ for name in "${files[@]}" ; do
 done
 
 for name in @files {
-  case $name {
-  (*.py)
+  case (name) {
+  *.py {
     echo python
-    ;;
-  (*.sh) echo shell ;;
+  }
+  *.sh { echo shell }
   }
 }
 
