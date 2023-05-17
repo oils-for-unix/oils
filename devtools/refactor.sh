@@ -185,7 +185,7 @@ tval-all() {
 
 # 2023-04: 26 left
 tval-eval() {
-  show-usages _tmp/tval-all \
+  show-usages _tmp/tval-eval \
     grep -n -w tval */*_eval.py
 }
 
