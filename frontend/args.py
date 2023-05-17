@@ -53,7 +53,7 @@ However I don't see these used anywhere!  I only see ':' used.
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
 
 from asdl import runtime
@@ -158,7 +158,7 @@ class Reader(object):
   done to get args.
   """
   def __init__(self, argv, locs=None):
-    # type: (List[str], Optional[List[loc_t]]) -> None
+    # type: (List[str], Optional[List[CompoundWord]]) -> None
     self.argv = argv
     self.locs = locs
     self.n = len(argv)
@@ -191,8 +191,7 @@ class Reader(object):
     None is your SENTINEL for parsing.
     """
     if self.i >= self.n:
-      no_str = None  # type: str
-      return no_str, loc.Missing
+      return None, loc.Missing
     else:
       return self.argv[self.i], self.locs[self.i]
 
@@ -221,7 +220,7 @@ class Reader(object):
     return self.argv[self.i:]
 
   def Rest2(self):
-    # type: () -> Tuple[List[str], List[loc_t]]
+    # type: () -> Tuple[List[str], List[CompoundWord]]
     """Return the rest of the arguments."""
     return self.argv[self.i:], self.locs[self.i:]
 
@@ -231,10 +230,10 @@ class Reader(object):
 
   def _FirstLocation(self):
     # type: () -> loc_t
-    if self.locs:
+    if self.locs and self.locs[0] is not None:
       return self.locs[0]
     else:
-      return loc.Missing  # TODO: remove this when all have locations
+      return loc.Missing
 
   def Location(self):
     # type: () -> loc_t
@@ -243,9 +242,12 @@ class Reader(object):
         i = self.n - 1  # if the last arg is missing, point at the one before
       else:
         i = self.i
-      return self.locs[i]
+      if self.locs[i] is not None:
+        return self.locs[i]
+      else:
+        return loc.Missing
     else:
-      return loc.Missing  # TODO: remove this when all have locations
+      return loc.Missing
 
 
 class _Action(object):

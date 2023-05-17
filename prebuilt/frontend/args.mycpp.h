@@ -194,19 +194,19 @@ class _Attributes {
 
 class Reader {
  public:
-  Reader(List<Str*>* argv, List<syntax_asdl::loc_t*>* locs = nullptr);
+  Reader(List<Str*>* argv, List<syntax_asdl::CompoundWord*>* locs = nullptr);
   void Next();
   Str* Peek();
   Tuple2<Str*, syntax_asdl::loc_t*> Peek2();
   Str* ReadRequired(Str* error_msg);
   Tuple2<Str*, syntax_asdl::loc_t*> ReadRequired2(Str* error_msg);
   List<Str*>* Rest();
-  Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*> Rest2();
+  Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*> Rest2();
   bool AtEnd();
   syntax_asdl::loc_t* _FirstLocation();
   syntax_asdl::loc_t* Location();
   List<Str*>* argv;
-  List<syntax_asdl::loc_t*>* locs;
+  List<syntax_asdl::CompoundWord*>* locs;
   int n;
   int i;
 

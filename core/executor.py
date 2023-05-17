@@ -210,7 +210,7 @@ class ShellExecutor(vm._Executor):
     """
     argv = cmd_val.argv
     if len(cmd_val.arg_locs):
-      arg0_loc = cmd_val.arg_locs[0]
+      arg0_loc = cmd_val.arg_locs[0]  # type: loc_t
     else:
       arg0_loc = loc.Missing
 

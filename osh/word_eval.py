@@ -1948,13 +1948,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
     started_pairs = False
 
     flags = [arg0]  # initial flags like -p, and -f -F name1 name2
-    flag_locs = [loc.Word(words[0])]  # type: List[loc_t]
+    flag_locs = [words[0]]
     AssignArgs = []  # type: List[AssignArg]
 
     n = len(words)
     for i in xrange(1, n):  # skip first word
       w = words[i]
-      word_loc = loc.Word(w)
 
       if word_.IsVarLike(w):
         started_pairs = True  # Everything from now on is an assign_pair
@@ -1964,7 +1963,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if left_token:  # Detected statically
           if left_token.id != Id.Lit_VarLike:
             # (not guaranteed since started_pairs is set twice)
-            e_die('LHS array not allowed in assignment builtin', word_loc)
+            e_die('LHS array not allowed in assignment builtin', w)
 
           if lexer.IsPlusEquals(left_token):
             var_name = lexer.TokenSliceRight(left_token, -2)
@@ -1999,7 +1998,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         for arg in argv:
           if arg.startswith('-') or arg.startswith('+'):  # e.g. declare -r +r
             flags.append(arg)
-            flag_locs.append(word_loc)
+            flag_locs.append(w)
 
             # Shortcut that relies on -f and -F always meaning "function" for
             # all assignment builtins
@@ -2020,12 +2019,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (List[CompoundWord], bool) -> cmd_value_t
     """Simple word evaluation for Oil."""
     strs = []  # type: List[str]
-    locs = []  # type: List[loc_t]
+    locs = []  # type: List[CompoundWord]
 
     n = 0
     for i, w in enumerate(words):
-      word_loc = loc.Word(w)
-
       # No globbing in the first arg for command.Simple.
       if i == 0 and allow_assign:
         strs0 = self._EvalWordToArgv(w)  # respects strict-array
@@ -2038,16 +2035,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         strs.extend(strs0)
         for _ in strs0:
-          locs.append(word_loc)
+          locs.append(w)
         continue
 
       if glob_.LooksLikeStaticGlob(w):
         val = self.EvalWordToString(w)  # respects strict-array
         num_appended = self.globber.Expand(val.s, strs)
         if num_appended < 0:
-          raise error.FailGlob('Pattern %r matched no files' % val.s, word_loc)
+          raise error.FailGlob('Pattern %r matched no files' % val.s, w)
         for _ in xrange(num_appended):
-          locs.append(word_loc)
+          locs.append(w)
         continue
 
       part_vals = []  # type: List[part_value_t]
@@ -2074,7 +2071,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if len(frame):  # empty array gives empty frame!
           tmp = [s for (s, _, _) in frame]
           strs.append(''.join(tmp))  # no split or glob
-          locs.append(word_loc)
+          locs.append(w)
 
     return cmd_value.Argv(strs, locs, None)
 
@@ -2107,7 +2104,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     #log('W %s', words)
     strs = []  # type: List[str]
-    locs = []  # type: List[loc_t]
+    locs = []  # type: List[CompoundWord]
 
     n = 0
     for i, w in enumerate(words):
@@ -2155,7 +2152,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       n_next = len(strs)
       word_loc = loc.Word(w)
       for _ in xrange(n_next - n):
-        locs.append(word_loc)
+        locs.append(w)
       n = n_next
 
     # A non-assignment command.

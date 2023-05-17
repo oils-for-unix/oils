@@ -5,24 +5,22 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value
-from _devbuild.gen.syntax_asdl import (
-    loc, loc_e, word, word_e, word_t, CompoundWord, bool_expr,
-)
+from _devbuild.gen.syntax_asdl import loc, word, word_e, word_t, bool_expr
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import error
 from core.error import e_usage, p_die
 from core import vm
 from frontend import match
-from mycpp.mylib import log, tagswitch
-from osh import sh_expr_eval
+from mycpp.mylib import log
 from osh import bool_parse
+from osh import sh_expr_eval
 from osh import word_parse
 from osh import word_eval
 
 _ = log
 
-from typing import cast, TYPE_CHECKING, Optional
+from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value
@@ -61,7 +59,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
     #log('ARGV %s i %d', self.argv, self.i)
     s = self.cmd_val.argv[self.i]
-    left_loc = self.cmd_val.arg_locs[self.i]
+    arg_loc = self.cmd_val.arg_locs[self.i]
 
     self.i += 1
 
@@ -74,27 +72,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
     if id_ == Id.Undefined_Tok:
       id_ = Id.Word_Compound
 
-    # TODO: cmd_value.Argv() should store CompoundWord directly, so we don't
-    # have to "unwrap" here
-    blame_word = None  # type: Optional[CompoundWord]
-    UP_left_loc = left_loc
-    with tagswitch(left_loc) as case:
-      if case(loc_e.Missing):
-        pass
-      elif case(loc_e.Word):
-        left_loc = cast(loc.Word, UP_left_loc)
-        left_word = left_loc.w
-        if left_word:
-          assert left_word.tag() == word_e.Compound
-          blame_word = cast(CompoundWord, left_word)
-      else:
-        # EvalWordSequence should have given us loc.Word()
-        raise AssertionError()
-
-    # TODO: use the location from arg_locs once we've replaced spid -> loc_t in
-    #       word.String. Currently, changing word.String blows up the refactor.
-    w = word.String(id_, s, blame_word)
-    return w
+    return word.String(id_, s, arg_loc)
 
   def Read(self):
     # type: () -> word.String

@@ -1490,6 +1490,7 @@ namespace args {  // define
 
 using syntax_asdl::loc;
 using syntax_asdl::loc_t;
+using syntax_asdl::CompoundWord;
 using runtime_asdl::value;
 using runtime_asdl::value_e;
 using runtime_asdl::value_t;
@@ -1526,7 +1527,7 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   this->attrs->set(name, val);
 }
 
-Reader::Reader(List<Str*>* argv, List<syntax_asdl::loc_t*>* locs) {
+Reader::Reader(List<Str*>* argv, List<syntax_asdl::CompoundWord*>* locs) {
   this->argv = argv;
   this->locs = locs;
   this->n = len(argv);
@@ -1547,12 +1548,8 @@ Str* Reader::Peek() {
 }
 
 Tuple2<Str*, syntax_asdl::loc_t*> Reader::Peek2() {
-  Str* no_str = nullptr;
-  StackRoots _roots({&no_str});
-
   if (this->i >= this->n) {
-    no_str = nullptr;
-    return Tuple2<Str*, syntax_asdl::loc_t*>(no_str, loc::Missing);
+    return Tuple2<Str*, syntax_asdl::loc_t*>(nullptr, loc::Missing);
   }
   else {
     return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->index_(this->i), this->locs->index_(this->i));
@@ -1573,7 +1570,7 @@ Str* Reader::ReadRequired(Str* error_msg) {
 
 Tuple2<Str*, syntax_asdl::loc_t*> Reader::ReadRequired2(Str* error_msg) {
   Str* arg = nullptr;
-  syntax_asdl::loc_t* location = nullptr;
+  syntax_asdl::CompoundWord* location = nullptr;
   StackRoots _roots({&error_msg, &arg, &location});
 
   arg = this->Peek();
@@ -1589,8 +1586,8 @@ List<Str*>* Reader::Rest() {
   return this->argv->slice(this->i);
 }
 
-Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*> Reader::Rest2() {
-  return Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
+Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*> Reader::Rest2() {
+  return Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
 }
 
 bool Reader::AtEnd() {
@@ -1598,7 +1595,7 @@ bool Reader::AtEnd() {
 }
 
 syntax_asdl::loc_t* Reader::_FirstLocation() {
-  if (this->locs) {
+  if ((this->locs and this->locs->index_(0) != nullptr)) {
     return this->locs->index_(0);
   }
   else {
@@ -1615,7 +1612,12 @@ syntax_asdl::loc_t* Reader::Location() {
     else {
       i = this->i;
     }
-    return this->locs->index_(i);
+    if (this->locs->index_(i) != nullptr) {
+      return this->locs->index_(i);
+    }
+    else {
+      return loc::Missing;
+    }
   }
   else {
     return loc::Missing;

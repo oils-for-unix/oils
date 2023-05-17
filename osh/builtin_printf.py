@@ -10,7 +10,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
 from _devbuild.gen.syntax_asdl import (
-    loc, loc_e, loc_t, source, Token,
+    loc, loc_e, loc_t, source, Token, CompoundWord,
     printf_part, printf_part_e, printf_part_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
@@ -160,7 +160,7 @@ class Printf(vm._Builtin):
     self.shell_start_time = time_.time()  # this object initialized in main()
 
   def _Format(self, parts, varargs, locs, out):
-    # type: (List[printf_part_t], List[str], List[loc_t], List[str]) -> int
+    # type: (List[printf_part_t], List[str], List[CompoundWord], List[str]) -> int
     """Hairy printf formatting logic."""
 
     arg_index = 0
@@ -247,7 +247,7 @@ class Printf(vm._Builtin):
 
           if arg_index < num_args:
             s = varargs[arg_index]
-            word_loc = locs[arg_index]
+            word_loc = locs[arg_index]  # type: loc_t
             arg_index += 1
             has_arg = True
           else:
@@ -311,9 +311,12 @@ class Printf(vm._Builtin):
                 d = -1
 
               else:
-                blame_loc = word_loc if has_arg else part.type
+                if has_arg:
+                  blame_loc = word_loc  # type: loc_t
+                else:
+                  blame_loc = part.type  
                 self.errfmt.Print_('printf expected an integer, got %r' % s,
-                                   blame_loc=blame_loc)
+                                   blame_loc)
                 return 1
 
             if part.type.id == Id.Format_Time:

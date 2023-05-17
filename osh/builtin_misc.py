@@ -811,7 +811,6 @@ class Help(vm._Builtin):
     topic, blame_loc = arg_r.Peek2()
     if topic is None:
       topic = 'help'
-      blame_loc = loc.Missing
     else:
       arg_r.Next()
 
@@ -830,8 +829,7 @@ class Help(vm._Builtin):
 
       # 3. This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
-      self.errfmt.Print_('no help topics match %r' % topic,
-                         blame_loc=blame_loc)
+      self.errfmt.Print_('no help topics match %r' % topic, blame_loc)
       return 1
 
     print(contents)

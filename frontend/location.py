@@ -51,6 +51,10 @@ def TokenFor(loc_):
       else:
         return None
 
+    elif case(loc_e.ArgWord):
+      w = cast(CompoundWord, UP_location)
+      return LeftTokenForWord(w)
+
     elif case(loc_e.WordPart):
       loc_ = cast(loc.WordPart, UP_location)
       if loc_.p:
