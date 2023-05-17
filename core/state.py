@@ -1352,8 +1352,10 @@ class Mem(object):
         else:
           pass  # It's a frame for FOO=bar?  Or the top one?
 
-        if frame.call_tok is not None:  # first frame has this issue
+        # skip over frames without tokens
+        if frame.call_tok is not None and frame.call_tok != LINE_ZERO:
           token = frame.call_tok
+          assert token.line is not None
           d['call_source'] = ui.GetLineSourceString(self.arena, token.line)
           d['call_line_num'] = token.line.line_num
           d['call_line'] = token.line.content
@@ -2046,7 +2048,7 @@ class Mem(object):
         if frame.call_tok == LINE_ZERO:
           strs.append('0')  # Bash does this to line up with main?
           continue
-        line_num = self.current_tok.line.line_num
+        line_num = frame.call_tok.line.line_num
         strs.append(str(line_num))
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 

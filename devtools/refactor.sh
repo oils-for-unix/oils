@@ -189,13 +189,13 @@ tval-eval() {
     grep -n -w tval */*_eval.py
 }
 
-# 2023-05: 372 left, many are in osh2oil
+# 2023-05: 253 left, many are in osh2oil
 spid-all() {
   show-usages _tmp/spid-all \
     egrep -n 'span_id|spid' */*.py
 }
 
-# 2023-05: 10 left
+# 2023-05: 4 left
 spid-sig() {
   show-usages _tmp/spid-sig \
     egrep -n 'def.*(span_id|spid)' */*.py
@@ -208,7 +208,7 @@ get-token() {
     egrep -n 'GetToken' */*.py
 }
 
-# 2023-05: 30 instances
+# 2023-05: 23 instances
 of-word() {
   show-usages _tmp/of-word \
     egrep -n 'OfWord' */*.py
