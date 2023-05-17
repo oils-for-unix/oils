@@ -1490,6 +1490,7 @@ namespace args {  // define
 
 using syntax_asdl::loc;
 using syntax_asdl::loc_t;
+using syntax_asdl::CompoundWord;
 using runtime_asdl::value;
 using runtime_asdl::value_e;
 using runtime_asdl::value_t;
@@ -1526,7 +1527,7 @@ void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   this->attrs->set(name, val);
 }
 
-Reader::Reader(List<Str*>* argv, List<syntax_asdl::loc_t*>* locs) {
+Reader::Reader(List<Str*>* argv, List<syntax_asdl::CompoundWord*>* locs) {
   this->argv = argv;
   this->locs = locs;
   this->n = len(argv);
@@ -1546,16 +1547,16 @@ Str* Reader::Peek() {
   }
 }
 
-Tuple2<Str*, syntax_asdl::loc_t*> Reader::Peek2() {
+Tuple2<Str*, syntax_asdl::CompoundWord*> Reader::Peek2() {
   Str* no_str = nullptr;
   StackRoots _roots({&no_str});
 
   if (this->i >= this->n) {
     no_str = nullptr;
-    return Tuple2<Str*, syntax_asdl::loc_t*>(no_str, loc::Missing);
+    return Tuple2<Str*, syntax_asdl::CompoundWord*>(no_str, nullptr);
   }
   else {
-    return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->index_(this->i), this->locs->index_(this->i));
+    return Tuple2<Str*, syntax_asdl::CompoundWord*>(this->argv->index_(this->i), this->locs->index_(this->i));
   }
 }
 
@@ -1565,48 +1566,48 @@ Str* Reader::ReadRequired(Str* error_msg) {
 
   arg = this->Peek();
   if (arg == nullptr) {
-    e_usage(error_msg, this->_FirstLocation());
+    e_usage(error_msg, Alloc<loc::Word>(this->_FirstLocation()));
   }
   this->Next();
   return arg;
 }
 
-Tuple2<Str*, syntax_asdl::loc_t*> Reader::ReadRequired2(Str* error_msg) {
+Tuple2<Str*, syntax_asdl::CompoundWord*> Reader::ReadRequired2(Str* error_msg) {
   Str* arg = nullptr;
-  syntax_asdl::loc_t* location = nullptr;
+  syntax_asdl::CompoundWord* location = nullptr;
   StackRoots _roots({&error_msg, &arg, &location});
 
   arg = this->Peek();
   if (arg == nullptr) {
-    e_usage(error_msg, this->_FirstLocation());
+    e_usage(error_msg, Alloc<loc::Word>(this->_FirstLocation()));
   }
   location = this->locs->index_(this->i);
   this->Next();
-  return Tuple2<Str*, syntax_asdl::loc_t*>(arg, location);
+  return Tuple2<Str*, syntax_asdl::CompoundWord*>(arg, location);
 }
 
 List<Str*>* Reader::Rest() {
   return this->argv->slice(this->i);
 }
 
-Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*> Reader::Rest2() {
-  return Tuple2<List<Str*>*, List<syntax_asdl::loc_t*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
+Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*> Reader::Rest2() {
+  return Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
 }
 
 bool Reader::AtEnd() {
   return this->i >= this->n;
 }
 
-syntax_asdl::loc_t* Reader::_FirstLocation() {
+syntax_asdl::CompoundWord* Reader::_FirstLocation() {
   if (this->locs) {
     return this->locs->index_(0);
   }
   else {
-    return loc::Missing;
+    return nullptr;
   }
 }
 
-syntax_asdl::loc_t* Reader::Location() {
+syntax_asdl::CompoundWord* Reader::Location() {
   int i;
   if (this->locs) {
     if (this->i == this->n) {
@@ -1616,6 +1617,19 @@ syntax_asdl::loc_t* Reader::Location() {
       i = this->i;
     }
     return this->locs->index_(i);
+  }
+  else {
+    return nullptr;
+  }
+}
+
+syntax_asdl::loc_t* Reader::WordLoc() {
+  syntax_asdl::CompoundWord* w = nullptr;
+  StackRoots _roots({&w});
+
+  w = this->Location();
+  if (w) {
+    return Alloc<loc::Word>(w);
   }
   else {
     return loc::Missing;
@@ -1638,7 +1652,7 @@ _ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid) {
   this->valid = valid;
 }
 
-runtime_asdl::value_t* _ArgAction::_Value(Str* arg, syntax_asdl::loc_t* location) {
+runtime_asdl::value_t* _ArgAction::_Value(Str* arg, syntax_asdl::CompoundWord* location) {
   StackRoots _roots({&arg, &location});
 
   FAIL(kNotImplemented);  // Python NotImplementedError
@@ -1656,7 +1670,7 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str99, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to %r", str_concat(str99, this->name)), arg_r->WordLoc());
     }
   }
   val = this->_Value(arg, arg_r->Location());
@@ -1667,7 +1681,7 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
 SetToInt::SetToInt(Str* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) {
+runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::CompoundWord* location) {
   int i;
   StackRoots _roots({&arg, &location});
 
@@ -1675,10 +1689,10 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) 
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str101, this->name), arg), location);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str101, this->name), arg), Alloc<loc::Word>(location));
   }
   if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str103, this->name), arg), location);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str103, this->name), arg), Alloc<loc::Word>(location));
   }
   return Alloc<value::Int>(i);
 }
@@ -1686,7 +1700,7 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) 
 SetToFloat::SetToFloat(Str* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location) {
+runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::CompoundWord* location) {
   double f;
   StackRoots _roots({&arg, &location});
 
@@ -1694,10 +1708,10 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str105, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str105, this->name), arg), Alloc<loc::Word>(location));
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str107, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str107, this->name), arg), Alloc<loc::Word>(location));
   }
   return Alloc<value::Float>(f);
 }
@@ -1705,11 +1719,11 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location
 SetToString::SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid) : _ArgAction(name, quit_parsing_flags, valid) {
 }
 
-runtime_asdl::value_t* SetToString::_Value(Str* arg, syntax_asdl::loc_t* location) {
+runtime_asdl::value_t* SetToString::_Value(Str* arg, syntax_asdl::CompoundWord* location) {
   StackRoots _roots({&arg, &location});
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str109, this->name), str110->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str109, this->name), str110->join(this->valid)), Alloc<loc::Word>(location));
   }
   return Alloc<value::Str>(arg);
 }
@@ -1871,7 +1885,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       }
       action = spec->actions_long->get(flag_name);
       if (action == nullptr) {
-        e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
+        e_usage(StrFormat("got invalid flag %r", arg), arg_r->WordLoc());
       }
       action->OnMatch(suffix, arg_r, out);
       arg_r->Next();
@@ -1899,7 +1913,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str134, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str134, ch)), arg_r->WordLoc());
         }
         arg_r->Next();
       }
@@ -1912,7 +1926,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
               out->Set(ch, Alloc<value::Str>(str136));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str138, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str138, ch)), arg_r->WordLoc());
           }
           arg_r->Next();
         }
@@ -1984,7 +1998,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
     if (arg->startswith(str141)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
-        e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
+        e_usage(StrFormat("got invalid flag %r", arg), arg_r->WordLoc());
       }
       action->OnMatch(nullptr, arg_r, out);
       arg_r->Next();
@@ -1997,7 +2011,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
         StackRoots _for({&ch      });
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str146, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str146, ch)), arg_r->WordLoc());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);
