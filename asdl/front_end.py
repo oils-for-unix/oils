@@ -120,14 +120,11 @@ _CODE_GEN_OPTIONS = [
 
     'bit_set',  # not implemented: 1 << n instead of n
 
-    # TODO:
-    'zero_arg_singleton',  # migrate to this option, then delete it
+    # probably don't need this
+    # 'common_synthetic_field:left_tok',
 
-    # make this configurable, or make it a key-value pair
-    'common_synthetic_field:left_tok',
-
-    # Put this type and all types it references in the unique "first class
-    # variant" namespace, and generate type reflection.
+    # Put this type, and transitive closure of types it references, in the
+    # unique "first class variant" namespace, and generate type reflection.
     'reflect_all_types',
 
     # Squeeze and Freeze, with the number of bits as a option Hm the headers
