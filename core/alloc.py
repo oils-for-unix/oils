@@ -99,14 +99,17 @@ class Arena(object):
   1. Error reporting
   2. osh-to-oil Translation
   """
-  def __init__(self):
-    # type: () -> None
+  def __init__(self, save_tokens=False):
+    # type: (bool) -> None
 
-    # All lines that haven't been discarded.  For LST formatting.
-    self.lines_list = []  # type: List[SourceLine]
+    self.save_tokens = save_tokens
 
     # indexed by span_id
     self.tokens = []  # type: List[Token]
+    self.num_tokens = 0
+
+    # All lines that haven't been discarded.  For LST formatting.
+    self.lines_list = []  # type: List[SourceLine]
 
     # reuse these instances in many line_span instances
     self.source_instances = []  # type: List[source_t]
@@ -244,17 +247,24 @@ class Arena(object):
     assert found_right, "Couldn't find right token"
     return ''.join(pieces)
 
-  def NewTokenId(self, id_, col, length, src_line, val):
-    # type: (int, int, int, SourceLine, str) -> int
-    span_id = len(self.tokens)  # spids are just array indices
-    tok = Token(id_, col, length, span_id, src_line, val)
-    self.tokens.append(tok)
-    return span_id
-
   def NewToken(self, id_, col, length, src_line, val):
     # type: (int, int, int, SourceLine, str) -> Token
-    span_id = self.NewTokenId(id_, col, length, src_line, val)
-    return self.tokens[span_id]
+    span_id = self.num_tokens   # spids are just array indices
+    self.num_tokens += 1
+
+    tok = Token(id_, col, length, span_id, src_line, val)
+    if self.save_tokens:
+      self.tokens.append(tok)
+    return tok
+
+  def UnreadOne(self):
+    # type: () -> None
+    """
+    Reuse the last span ID
+    """
+    if self.save_tokens:
+      self.tokens.pop()
+    self.num_tokens -= 1
 
   def GetToken(self, span_id):
     # type: (int) -> Token

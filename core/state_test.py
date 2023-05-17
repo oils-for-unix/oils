@@ -23,7 +23,7 @@ def _InitMem():
   col = 0
   length = 1
   line_id = arena.AddLine(1, 'foo')
-  arena.NewTokenId(-1, col, length, line_id, '')  # unused, could be NewToken()
+  arena.NewToken(-1, col, length, line_id, '')  # unused, could be NewToken()
   mem = state.Mem('', [], arena, [])
 
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)

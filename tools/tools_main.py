@@ -76,7 +76,7 @@ def OshCommandMain(argv):
     print('TODO:parse-printf')
     return 0
 
-  arena = alloc.Arena()
+  arena = alloc.Arena(save_tokens=True)
   errfmt = ui.ErrorFormatter(arena)
   try:
     script_name = argv[1]

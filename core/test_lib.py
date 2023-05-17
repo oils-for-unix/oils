@@ -118,7 +118,7 @@ def AssertAsdlEqual(test, left, right):
 
 
 def MakeArena(source_name):
-  arena = alloc.Arena()
+  arena = alloc.Arena(save_tokens=True)
   arena.PushSource(source.MainFile(source_name))
   return arena
 
