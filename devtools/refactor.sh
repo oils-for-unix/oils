@@ -201,10 +201,17 @@ spid-sig() {
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-# 2023-05: 13 instances
+# 2023-05: 12 instances
 of-word() {
   show-usages _tmp/of-word \
     egrep -n 'OfWord' */*.py
+}
+
+# 68 instances
+loc-word() {
+  # should NOT wrap CompoundWord
+  show-usages _tmp/loc-word \
+    fgrep -n 'loc.Word(' */*.py
 }
 
 asdl-create() {

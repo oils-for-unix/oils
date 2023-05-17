@@ -407,7 +407,7 @@ class CommandEvaluator(object):
           if len(filename) == 0:
             # Whether this is fatal depends on errexit.
             raise error.RedirectEval(
-                "Redirect filename can't be empty", loc.Word(arg_word))
+                "Redirect filename can't be empty", arg_word)
 
           result.arg = redirect_arg.Path(filename)
           return result
@@ -417,7 +417,7 @@ class CommandEvaluator(object):
           t = val.s
           if len(t) == 0:
             raise error.RedirectEval(
-                "Redirect descriptor can't be empty", loc.Word(arg_word))
+                "Redirect descriptor can't be empty", arg_word)
             return None
 
           try:
@@ -431,7 +431,7 @@ class CommandEvaluator(object):
           except ValueError:
             raise error.RedirectEval(
                 'Invalid descriptor %r.  Expected D, -, or D- where D is an '
-                'integer' % t, loc.Word(arg_word))
+                'integer' % t, arg_word)
             return None
 
           return result

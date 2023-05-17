@@ -803,7 +803,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # ERE.  I don't think there's a straightforward translation from !(*.py) to
     # ERE!  You would need an engine that supports negation?  (Derivatives?)
     if has_extglob:
-      e_die('extended globs not supported in ${x//GLOB/}', loc.Word(op.pat))
+      e_die('extended globs not supported in ${x//GLOB/}', op.pat)
 
     if op.replace:
       replace_val = self.EvalRhsWord(op.replace)
@@ -1465,8 +1465,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(part_value_e.Array):
           # Disallow array
-          e_die("Extended globs and arrays can't appear in the same word",
-                loc.Word(w))
+          e_die("Extended globs and arrays can't appear in the same word", w)
 
         elif case(part_value_e.ExtGlob):
           part_val = cast(part_value.ExtGlob, UP_part_val)
@@ -1675,7 +1674,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         n = self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
         if n < 0:
           raise error.FailGlob(
-              'Extended glob %r matched no files' % fnmatch_pat, loc.Word(w))
+              'Extended glob %r matched no files' % fnmatch_pat, w)
 
         part_vals.append(part_value.Array(results))
       elif bool(eval_flags & EXTGLOB_NESTED):
@@ -1683,7 +1682,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.extend(word_part_vals)
       else:
         # e.g. simple_word_eval, assignment builtin
-        e_die('Extended glob not allowed in this word', loc.Word(w))
+        e_die('Extended glob not allowed in this word', w)
     else:
       part_vals.extend(word_part_vals)
 
@@ -1717,7 +1716,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # flat list of part_vals.  The only case where we really get arrays
             # is "$@", "${a[@]}", "${a[@]//pat/replace}", etc.
             e_die("This word should yield a string, but it contains an array",
-                  loc.Word(w))
+                  w)
 
             # TODO: Maybe add detail like this.
             #e_die('RHS of assignment should only have strings.  '
@@ -1733,7 +1732,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
           # Extended globs are only allowed where we expect them!
           if not bool(eval_flags & QUOTE_FNMATCH):
-            e_die('extended glob not allowed in this word', loc.Word(w))
+            e_die('extended glob not allowed in this word', w)
 
           # recursive call
           self._PartValsToString(part_val.part_vals, w, eval_flags, strs)
@@ -2150,7 +2149,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       # Fill in locations parallel to strs.
       n_next = len(strs)
-      word_loc = loc.Word(w)
       for _ in xrange(n_next - n):
         locs.append(w)
       n = n_next

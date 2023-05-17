@@ -815,7 +815,7 @@ class ArithEvaluator(object):
       elif case(arith_expr_e.Word):
         w = cast(CompoundWord, UP_anode)
         var_name = self.EvalWordToString(w)
-        return (var_name, loc.Word(w))
+        return (var_name, w)
 
     no_str = None  # type: str
     return (no_str, loc.Missing)
