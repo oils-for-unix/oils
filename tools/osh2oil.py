@@ -306,7 +306,7 @@ class OilPrinter(object):
       for part in here_doc.stdin_parts:
         self.DoWordPart(part, local_symbols)
 
-      self.cursor.SkipUntil(here_doc.here_end_span_id + 1)
+      self.cursor.SkipUntil(here_doc.here_end_tok.span_id + 1)
       if delim_quoted:
         self.f.write("'''\n")
       else:

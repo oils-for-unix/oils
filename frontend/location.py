@@ -357,11 +357,12 @@ def LeftTokenForWord(w):
   raise AssertionError('for -Wreturn-type in C++')
 
 
-def OfWordRight(w):
-  # type: (word_t) -> int
-  """Needed for here doc delimiters.
-
-  TODO: Should return a Token
+def RightTokenForWord(w):
+  # type: (word_t) -> Token
+  """
+  Used for alias expansion and history substitution
+  
+  and here doc delimiters?
   """
   UP_w = w
   with tagswitch(w) as case:
@@ -369,19 +370,30 @@ def OfWordRight(w):
       w = cast(CompoundWord, UP_w)
       if len(w.parts):
         end = w.parts[-1]
-        return _OfWordPartRight(end)
+        return _RightTokenForWordPart(end)
       else:
         # This is possible for empty brace sub alternative {a,b,}
-        return runtime.NO_SPID
+        return None
 
     elif case(word_e.Token):
       tok = cast(Token, UP_w)
-      return tok.span_id
+      return tok
+
+    elif case(word_e.BracedTree):
+      w = cast(word.BracedTree, UP_w)
+      # Note: this case may be unused
+      return _RightTokenForWordPart(w.parts[-1])
+
+    elif case(word_e.String):
+      w = cast(word.String, UP_w)
+      # Note: this case may be unused
+      return RightTokenForWord(w.blame_loc)
 
     else:
       raise AssertionError(w.tag())
 
   raise AssertionError('for -Wreturn-type in C++')
+
 
 
 #
@@ -401,24 +413,24 @@ def OfWordPartLeft(part):
     return runtime.NO_SPID
 
 
-def _OfWordPartRight(part):
-  # type: (word_part_t) -> int
-  """
-  Span ID wrapper to remove
-  """
-  tok = _RightTokenForWordPart(part)
-  if tok:
-    return tok.span_id
-  else:
-    return runtime.NO_SPID
-
-
 def OfWordLeft(w):
   # type: (word_t) -> int
   """
   TODO: Should return a Token
   """
   tok = LeftTokenForWord(w)
+  if tok:
+    return tok.span_id
+  else:
+    return runtime.NO_SPID
+
+
+def OfWordRight(w):
+  # type: (word_t) -> int
+  """
+  Span ID wrapper to remove
+  """
+  tok = RightTokenForWord(w)
   if tok:
     return tok.span_id
   else:

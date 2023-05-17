@@ -106,8 +106,8 @@ class Evaluator(object):
               w = words[1]
             except IndexError:
               raise util.HistoryError("No first word in %r" % prev)
-            spid1 = location.OfWordLeft(w)
-            spid2 = location.OfWordRight(w)
+            tok1 = location.LeftTokenForWord(w)
+            tok2 = location.RightTokenForWord(w)
 
           elif ch == '$':
             try:
@@ -115,8 +115,8 @@ class Evaluator(object):
             except IndexError:
               raise util.HistoryError("No last word in %r" % prev)
 
-            spid1 = location.OfWordLeft(w)
-            spid2 = location.OfWordRight(w)
+            tok1 = location.LeftTokenForWord(w)
+            tok2 = location.RightTokenForWord(w)
 
           elif ch == '*':
             try:
@@ -125,18 +125,14 @@ class Evaluator(object):
             except IndexError:
               raise util.HistoryError("Couldn't find words in %r" % prev)
 
-            spid1 = location.OfWordLeft(w1)
-            spid2 = location.OfWordRight(w2)
+            tok1 = location.LeftTokenForWord(w1)
+            tok2 = location.RightTokenForWord(w2)
 
           else:
             raise AssertionError(ch)
 
-          arena = self.parse_ctx.arena
-          span1 = arena.GetToken(spid1)
-          span2 = arena.GetToken(spid2)
-
-          begin = span1.col
-          end = span2.col + span2.length
+          begin = tok1.col
+          end = tok2.col + tok2.length
 
           out = prev[begin:end]
 

@@ -242,7 +242,9 @@ module syntax
   redir_param =
     Word %CompoundWord
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'
-            int here_end_span_id,  # span is whole line (for defunct osh2oil)
+            Token? here_end_tok,  # Token consisting of the whole line
+                                  # It's always filled in AFTER creation, but
+                                  # temporarily so optional
             List[word_part] stdin_parts  # one for each line
            )
 

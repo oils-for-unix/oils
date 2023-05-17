@@ -148,9 +148,9 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
   end_line, end_pos = last_line
 
-  # Create a span with the end terminator.  Maintains the invariant that
-  # the spans "add up".
-  h.here_end_span_id = arena.NewTokenId(
+  # Create a Token with the end terminator.  Maintains the invariant that the
+  # tokens "add up".
+  h.here_end_tok = arena.NewToken(
       Id.Undefined_Tok, end_pos, len(end_line.content), end_line, '')
 
 
@@ -829,11 +829,8 @@ class CommandParser(object):
 
     # We are expanding an alias, so copy the rest of the words and re-parse.
     if i < n:
-      left_spid = location.OfWordLeft(words[i])
-      right_spid = location.OfWordRight(words[-1])
-
-      left_tok = self.arena.GetToken(left_spid)
-      right_tok = self.arena.GetToken(right_spid)
+      left_tok = location.LeftTokenForWord(words[i])
+      right_tok = location.RightTokenForWord(words[-1])
 
       # OLD CONSTRAINT
       #assert left_tok.line_id == right_tok.line_id
