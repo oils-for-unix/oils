@@ -2007,13 +2007,9 @@ class CommandParser(object):
     """
     negated = None  # type: Optional[Token]
 
-    # For blaming failures
-    pipeline_spid = runtime.NO_SPID
-
     self._Peek()
     if self.c_id == Id.KW_Bang:
       negated = word_.AsKeywordToken(self.cur_word)
-      pipeline_spid = negated.span_id
       self._Next()
 
     child = self.ParseCommand()
@@ -2034,10 +2030,6 @@ class CommandParser(object):
     while True:
       op = word_.AsOperatorToken(self.cur_word)
       ops.append(op)
-
-      # Set it to the first | if it isn't already set.
-      if pipeline_spid == runtime.NO_SPID:
-        pipeline_spid = location.OfWordLeft(self.cur_word)
 
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
       self._NewlineOk()
