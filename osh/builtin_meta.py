@@ -66,7 +66,7 @@ class Eval(vm._Builtin):
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    src = source.ArgvWord('eval', eval_loc)
+    src = source.ArgvWord('eval', loc.Word(eval_loc))
     with dev.ctx_Tracer(self.tracer, 'eval', None):
       with alloc.ctx_Location(self.arena, src):
         return main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
@@ -105,7 +105,7 @@ class Source(vm._Builtin):
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except (IOError, OSError) as e:
       self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror(e)),
-                         blame_loc=cmd_val.arg_locs[1])
+                         loc.Word(cmd_val.arg_locs[1]))
       return 1
 
     line_reader = reader.FileLineReader(f, self.arena)
@@ -121,7 +121,7 @@ class Source(vm._Builtin):
         source_argv = arg_r.Rest()
         with state.ctx_Source(self.mem, path, source_argv):
           with state.ctx_ThisDir(self.mem, path):
-            src = source.SourcedFile(path, call_loc)
+            src = source.SourcedFile(path, loc.Word(call_loc))
             with alloc.ctx_Location(self.arena, src):
               try:
                 status = main_loop.Batch(self.cmd_ev, c_parser, self.errfmt,
@@ -202,10 +202,10 @@ class Builtin(vm._Builtin):
       if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
         # NOTE: There's a similar restriction for 'command'
         self.errfmt.Print_("Can't run assignment builtin recursively",
-                          blame_loc=location)
+                          loc.Word(location))
       else:
         self.errfmt.Print_("%r isn't a shell builtin" % name,
-                           blame_loc=location)
+                           loc.Word(location))
       return 1
 
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
@@ -346,7 +346,8 @@ class BoolStatus(vm._Builtin):
 
     if status not in (0, 1):
       e_die_status(
-          status, 'boolstatus expected status 0 or 1, got %d' % status, locs[0])
+          status, 'boolstatus expected status 0 or 1, got %d' % status, 
+          loc.Word(locs[0]))
 
     return status
 

@@ -89,7 +89,7 @@ class Alias(vm._Builtin):
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
           self.errfmt.Print_('No alias named %r' % name,
-                             blame_loc=cmd_val.arg_locs[i])
+                             loc.Word(cmd_val.arg_locs[i]))
           status = 1
         else:
           print('alias %s=%r' % (name, alias_exp))
@@ -121,7 +121,7 @@ class UnAlias(vm._Builtin):
         mylib.dict_erase(self.aliases, name)
       else:
         self.errfmt.Print_('No alias named %r' % name,
-                           blame_loc=cmd_val.arg_locs[i])
+                           loc.Word(cmd_val.arg_locs[i]))
         status = 1
     return status
 
@@ -474,7 +474,8 @@ class GetOpts(vm._Builtin):
     else:
       # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
       # except mksh.
-      raise error.Usage('got invalid variable name %r' % var_name, var_loc)
+      raise error.Usage('got invalid variable name %r' % var_name,
+                        loc.Word(var_loc))
     return status
 
 
@@ -627,12 +628,12 @@ class Use(vm._Builtin):
         else:
           self.errfmt.Print_(
               'Expected dialect %r, got %r' % (expected, actual),
-              blame_loc=e_loc)
+              loc.Word(e_loc))
 
           return 1
       else:
         # Not printing expected value
-        self.errfmt.Print_('Expected dialect %r' % expected, blame_loc=e_loc)
+        self.errfmt.Print_('Expected dialect %r' % expected, loc.Word(e_loc))
         return 1
 
     # 'use bin' can be used for static analysis.  Although could it also
@@ -643,7 +644,7 @@ class Use(vm._Builtin):
         log('bin %s', name)
       return 0
 
-    raise error.Usage("expected 'bin' or 'dialect'", arg_loc)
+    raise error.Usage("expected 'bin' or 'dialect'", loc.Word(arg_loc))
 
 
 class Shvar(vm._Builtin):
@@ -671,7 +672,7 @@ class Shvar(vm._Builtin):
     for i, arg in enumerate(args):
       name, s = mylib.split_once(arg, '=')
       if s is None:
-        raise error.Usage('Expected name=value', arg_locs[i])
+        raise error.Usage('Expected name=value', loc.Word(arg_locs[i]))
       pairs.append((name, s))
 
       # Important fix: shvar PATH='' { } must make all binaries invisible
@@ -789,7 +790,8 @@ if mylib.PYTHON:
 
       # package { ... } is not valid
       if len(arguments) == 0 and lit_block is None:
-        e_usage('expected at least 1 arg, or a literal block { }', arg0_loc)
+        e_usage('expected at least 1 arg, or a literal block { }',
+                loc.Word(arg0_loc))
 
       result['args'] = arguments
 
@@ -890,7 +892,7 @@ if mylib.PYTHON:
 
       action, action_loc = arg_r.Peek2()
       if action is None:
-        e_usage(_HAY_ACTION_ERROR, action_loc)
+        e_usage(_HAY_ACTION_ERROR, loc.Word(action_loc))
       arg_r.Next()
 
       if action == 'define':
@@ -900,7 +902,7 @@ if mylib.PYTHON:
         # arg = args.Parse(JSON_WRITE_SPEC, arg_r)
         first, _ = arg_r.Peek2()
         if first is None:
-          e_usage('define expected a name', action_loc)
+          e_usage('define expected a name', loc.Word(action_loc))
 
         names, name_locs = arg_r.Rest2()
         for i, name in enumerate(names):
@@ -908,7 +910,7 @@ if mylib.PYTHON:
           for p in path:
             if len(p) == 0:
               e_usage("got invalid path %r.  Parts can't be empty." % name,
-                      name_locs[i])
+                      loc.Word(name_locs[i]))
           self.hay_state.DefinePath(path)
 
       elif action == 'eval':
@@ -947,6 +949,7 @@ if mylib.PYTHON:
         ast_f.write('\n')
 
       else:
-        e_usage(_HAY_ACTION_ERROR, action_loc)
+        e_usage(_HAY_ACTION_ERROR, loc.Word(action_loc))
+
 
       return 0

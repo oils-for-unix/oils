@@ -53,7 +53,7 @@ However I don't see these used anywhere!  I only see ':' used.
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
 
 from asdl import runtime
@@ -158,7 +158,7 @@ class Reader(object):
   done to get args.
   """
   def __init__(self, argv, locs=None):
-    # type: (List[str], Optional[List[loc_t]]) -> None
+    # type: (List[str], Optional[List[CompoundWord]]) -> None
     self.argv = argv
     self.locs = locs
     self.n = len(argv)
@@ -185,14 +185,14 @@ class Reader(object):
       return self.argv[self.i]
 
   def Peek2(self):
-    # type: () -> Tuple[Optional[str], loc_t]
+    # type: () -> Tuple[Optional[str], CompoundWord]
     """Return the next token, or None if there are no more.
 
     None is your SENTINEL for parsing.
     """
     if self.i >= self.n:
       no_str = None  # type: str
-      return no_str, loc.Missing
+      return no_str, None
     else:
       return self.argv[self.i], self.locs[self.i]
 
@@ -201,16 +201,16 @@ class Reader(object):
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
-      e_usage(error_msg, self._FirstLocation())
+      e_usage(error_msg, loc.Word(self._FirstLocation()))
     self.Next()
     return arg
 
   def ReadRequired2(self, error_msg):
-    # type: (str) -> Tuple[str, loc_t]
+    # type: (str) -> Tuple[str, CompoundWord]
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
-      e_usage(error_msg, self._FirstLocation())
+      e_usage(error_msg, loc.Word(self._FirstLocation()))
     location = self.locs[self.i]
     self.Next()
     return arg, location
@@ -221,7 +221,7 @@ class Reader(object):
     return self.argv[self.i:]
 
   def Rest2(self):
-    # type: () -> Tuple[List[str], List[loc_t]]
+    # type: () -> Tuple[List[str], List[CompoundWord]]
     """Return the rest of the arguments."""
     return self.argv[self.i:], self.locs[self.i:]
 
@@ -230,14 +230,14 @@ class Reader(object):
     return self.i >= self.n  # must be >= and not ==
 
   def _FirstLocation(self):
-    # type: () -> loc_t
+    # type: () -> CompoundWord
     if self.locs:
       return self.locs[0]
     else:
-      return loc.Missing  # TODO: remove this when all have locations
+      return None  # TODO: remove this when all have locations
 
   def Location(self):
-    # type: () -> loc_t
+    # type: () -> CompoundWord
     if self.locs:
       if self.i == self.n:
         i = self.n - 1  # if the last arg is missing, point at the one before
@@ -245,7 +245,15 @@ class Reader(object):
         i = self.i
       return self.locs[i]
     else:
-      return loc.Missing  # TODO: remove this when all have locations
+      return None  # TODO: remove this when all have locations
+
+  def WordLoc(self):
+    # type: () -> loc_t
+    w = self.Location()
+    if w:
+      return loc.Word(w)
+    else:
+      return loc.Missing
 
 
 class _Action(object):
@@ -286,7 +294,7 @@ class _ArgAction(_Action):
     self.valid = valid
 
   def _Value(self, arg, location):
-    # type: (str, loc_t) -> value_t
+    # type: (str, CompoundWord) -> value_t
     raise NotImplementedError()
 
   def OnMatch(self, attached_arg, arg_r, out):
@@ -298,7 +306,8 @@ class _ArgAction(_Action):
       arg_r.Next()
       arg = arg_r.Peek()
       if arg is None:
-        e_usage('expected argument to %r' % ('-' + self.name), arg_r.Location())
+        e_usage('expected argument to %r' % ('-' + self.name),
+                arg_r.WordLoc())
 
     val = self._Value(arg, arg_r.Location())
     out.Set(self.name, val)
@@ -312,16 +321,18 @@ class SetToInt(_ArgAction):
     _ArgAction.__init__(self, name, False, valid=None)
 
   def _Value(self, arg, location):
-    # type: (str, loc_t) -> value_t
+    # type: (str, CompoundWord) -> value_t
     try:
       i = int(arg)
     except ValueError:
-      e_usage('expected integer after %s, got %r' % ('-' + self.name, arg), location)
+      e_usage('expected integer after %s, got %r' % ('-' + self.name, arg),
+              loc.Word(location))
 
     # So far all our int values are > 0, so use -1 as the 'unset' value
     # corner case: this treats -0 as 0!
     if i < 0:
-      e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg), location)
+      e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg),
+              loc.Word(location))
     return value.Int(i)
 
 
@@ -332,15 +343,17 @@ class SetToFloat(_ArgAction):
     _ArgAction.__init__(self, name, False, valid=None)
 
   def _Value(self, arg, location):
-    # type: (str, loc_t) -> value_t
+    # type: (str, CompoundWord) -> value_t
     try:
       f = float(arg)
     except ValueError:
-      e_usage('expected number after %r, got %r' % ('-' + self.name, arg), location)
+      e_usage('expected number after %r, got %r' % ('-' + self.name, arg),
+              loc.Word(location))
     # So far all our float values are > 0, so use -1.0 as the 'unset' value
     # corner case: this treats -0.0 as 0.0!
     if f < 0:
-      e_usage('got invalid float for %s: %s' % ('-' + self.name, arg), location)
+      e_usage('got invalid float for %s: %s' % ('-' + self.name, arg),
+              loc.Word(location))
     return value.Float(f)
 
 
@@ -350,11 +363,12 @@ class SetToString(_ArgAction):
     _ArgAction.__init__(self, name, quit_parsing_flags, valid=valid)
 
   def _Value(self, arg, location):
-    # type: (str, loc_t) -> value_t
+    # type: (str, CompoundWord) -> value_t
     if self.valid is not None and arg not in self.valid:
       e_usage(
           'got invalid argument %r to %r, expected one of: %s' %
-          (arg, ('-' + self.name), '|'.join(self.valid)), location)
+          (arg, ('-' + self.name), '|'.join(self.valid)),
+          loc.Word(location))
     return value.Str(arg)
 
 
@@ -511,7 +525,7 @@ def Parse(spec, arg_r):
 
       action = spec.actions_long.get(flag_name)
       if action is None:
-        e_usage('got invalid flag %r' % arg, arg_r.Location())
+        e_usage('got invalid flag %r' % arg, arg_r.WordLoc())
 
       action.OnMatch(suffix, arg_r, out)
       arg_r.Next()
@@ -541,7 +555,7 @@ def Parse(spec, arg_r):
           break
 
         e_usage(
-            "doesn't accept flag %s" % ('-' + ch), arg_r.Location())
+            "doesn't accept flag %s" % ('-' + ch), arg_r.WordLoc())
 
       arg_r.Next()  # next arg
 
@@ -555,7 +569,7 @@ def Parse(spec, arg_r):
           continue
 
         e_usage(
-            "doesn't accept option %s" % ('+' + ch), arg_r.Location())
+            "doesn't accept option %s" % ('+' + ch), arg_r.WordLoc())
 
       arg_r.Next()  # next arg
 
@@ -631,7 +645,7 @@ def ParseMore(spec, arg_r):
     if arg.startswith('--'):
       action = spec.actions_long.get(arg[2:])
       if action is None:
-        e_usage('got invalid flag %r' % arg, arg_r.Location())
+        e_usage('got invalid flag %r' % arg, arg_r.WordLoc())
 
       # TODO: attached_arg could be 'bar' for --foo=bar
       action.OnMatch(None, arg_r, out)
@@ -650,7 +664,7 @@ def ParseMore(spec, arg_r):
         #log('ch %r arg_r %s', ch, arg_r)
         action = spec.actions_short.get(ch)
         if action is None:
-          e_usage('got invalid flag %r' % ('-' + ch), arg_r.Location())
+          e_usage('got invalid flag %r' % ('-' + ch), arg_r.WordLoc())
 
         attached_arg = char0 if ch in spec.plus_flags else None
         quit = action.OnMatch(attached_arg, arg_r, out)

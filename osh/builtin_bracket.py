@@ -61,7 +61,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
     #log('ARGV %s i %d', self.argv, self.i)
     s = self.cmd_val.argv[self.i]
-    left_loc = self.cmd_val.arg_locs[self.i]
+    blame_word = self.cmd_val.arg_locs[self.i]
 
     self.i += 1
 
@@ -74,27 +74,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
     if id_ == Id.Undefined_Tok:
       id_ = Id.Word_Compound
 
-    # TODO: cmd_value.Argv() should store CompoundWord directly, so we don't
-    # have to "unwrap" here
-    blame_word = None  # type: Optional[CompoundWord]
-    UP_left_loc = left_loc
-    with tagswitch(left_loc) as case:
-      if case(loc_e.Missing):
-        pass
-      elif case(loc_e.Word):
-        left_loc = cast(loc.Word, UP_left_loc)
-        left_word = left_loc.w
-        if left_word:
-          assert left_word.tag() == word_e.Compound
-          blame_word = cast(CompoundWord, left_word)
-      else:
-        # EvalWordSequence should have given us loc.Word()
-        raise AssertionError()
-
-    # TODO: use the location from arg_locs once we've replaced spid -> loc_t in
-    #       word.String. Currently, changing word.String blows up the refactor.
-    w = word.String(id_, s, blame_word)
-    return w
+    return word.String(id_, s, blame_word)
 
   def Read(self):
     # type: () -> word.String
@@ -211,7 +191,7 @@ class Test(vm._Builtin):
 
       strs = cmd_val.argv
       if len(strs) == 0 or strs[-1] != ']':
-        self.errfmt.Print_('missing closing ]', blame_loc=cmd_val.arg_locs[0])
+        self.errfmt.Print_('missing closing ]', loc.Word(cmd_val.arg_locs[0]))
         return 2
       # Remove the right bracket
       cmd_val.argv.pop()

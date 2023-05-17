@@ -110,7 +110,7 @@ class Fork(vm._Builtin):
 
     arg, location = arg_r.Peek2()
     if arg is not None:
-      e_usage('got unexpected argument %r' % arg, location)
+      e_usage('got unexpected argument %r' % arg, loc.Word(location))
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
@@ -130,7 +130,7 @@ class ForkWait(vm._Builtin):
     _, arg_r = flag_spec.ParseCmdVal('forkwait', cmd_val, accept_typed_args=True)
     arg, location = arg_r.Peek2()
     if arg is not None:
-      e_usage('got unexpected argument %r' % arg, location)
+      e_usage('got unexpected argument %r' % arg, loc.Word(location))
 
     block = typed_args.GetOneBlock(cmd_val.typed_args)
     if block is None:
@@ -164,7 +164,7 @@ class Exec(vm._Builtin):
     argv0_path = self.search_path.CachedLookup(cmd)
     if argv0_path is None:
       e_die_status(127, 'exec: %r not found' % cmd,
-                   cmd_val.arg_locs[1])
+                   loc.Word(cmd_val.arg_locs[1]))
 
     # shift off 'exec'
     c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
@@ -267,19 +267,19 @@ class Wait(vm._Builtin):
       if job_id.startswith('%'):
         raise error.Usage(
             "doesn't support bash-style jobspecs (got %r)" % job_id,
-            location)
+            loc.Word(location))
 
       # Does it look like a PID?
       try:
         pid = int(job_id)
       except ValueError:
         raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                          location)
+                          loc.Word(location))
 
       job = self.job_list.JobFromPid(pid)
       if job is None:
         self.errfmt.Print_("%d isn't a child of this shell" % pid,
-                           blame_loc=location)
+                           loc.Word(location))
         return 127
 
       wait_st = job.JobWait(self.waiter)

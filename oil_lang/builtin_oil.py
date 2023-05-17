@@ -14,7 +14,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (
     value, value_e, Proc, cmd_value
 )
-from _devbuild.gen.syntax_asdl import command_e, BraceGroup
+from _devbuild.gen.syntax_asdl import loc, command_e, BraceGroup
 from core import error
 from core.error import e_usage
 from core import state
@@ -70,12 +70,12 @@ class Pp(_Builtin):
 
         if not match.IsValidVarName(name):
           raise error.Usage('got invalid variable name %r' % name,
-                            locs[i])
+                            loc.Word(locs[i]))
 
         cell = self.mem.GetCell(name)
         if cell is None:
           self.errfmt.Print_("Couldn't find a variable named %r" % name,
-                             blame_loc=locs[i])
+                             loc.Word(locs[i]))
           status = 1
         else:
           self.stdout.write('%s = ' % name)
@@ -90,8 +90,7 @@ class Pp(_Builtin):
         for i, name in enumerate(names):
           node = self.procs.get(name)
           if node is None:
-            self.errfmt.Print_('Invalid proc %r' % name,
-                    blame_loc=locs[i])
+            self.errfmt.Print_('Invalid proc %r' % name, loc.Word(locs[i]))
             return 1
       else:
         names = sorted(self.procs)
@@ -118,7 +117,7 @@ class Pp(_Builtin):
       status = 0
 
     else:
-      e_usage('got invalid action %r' % action, action_loc)
+      e_usage('got invalid action %r' % action, loc.Word(action_loc))
 
     return status
 
@@ -143,7 +142,8 @@ class Append(_Builtin):
       var_name = var_name[1:]
 
     if not match.IsValidVarName(var_name):
-      raise error.Usage('got invalid variable name %r' % var_name, var_loc)
+      raise error.Usage('got invalid variable name %r' % var_name,
+                        loc.Word(var_loc))
 
     val = self.mem.GetValue(var_name)
 
@@ -163,7 +163,7 @@ class Append(_Builtin):
             val.obj.extend(arg_r.Rest())
             ok = True
     if not ok:
-      self.errfmt.Print_("%r isn't an array" % var_name, blame_loc=var_loc)
+      self.errfmt.Print_("%r isn't an array" % var_name, loc.Word(var_loc))
       return 1
 
     return 0

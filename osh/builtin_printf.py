@@ -10,7 +10,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
 from _devbuild.gen.syntax_asdl import (
-    loc, loc_e, loc_t, source, Token,
+    loc, loc_e, loc_t, source, Token, CompoundWord,
     printf_part, printf_part_e, printf_part_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
@@ -160,7 +160,7 @@ class Printf(vm._Builtin):
     self.shell_start_time = time_.time()  # this object initialized in main()
 
   def _Format(self, parts, varargs, locs, out):
-    # type: (List[printf_part_t], List[str], List[loc_t], List[str]) -> int
+    # type: (List[printf_part_t], List[str], List[CompoundWord], List[str]) -> int
     """Hairy printf formatting logic."""
 
     arg_index = 0
@@ -199,7 +199,7 @@ class Printf(vm._Builtin):
             elif part.width.id == Id.Format_Star:
               if arg_index < num_args:
                 width_str = varargs[arg_index]
-                width_loc = locs[arg_index]
+                width_loc = loc.Word(locs[arg_index])
                 arg_index += 1
               else:
                 width_str = ''  # invalid
@@ -213,7 +213,7 @@ class Printf(vm._Builtin):
               if width_loc.tag() == loc_e.Missing:
                 width_loc = part.width
               self.errfmt.Print_("printf got invalid width %r" % width_str,
-                                 blame_loc=width_loc)
+                                 width_loc)
               return 1
 
           precision = -1  # nonexistent
@@ -227,7 +227,7 @@ class Printf(vm._Builtin):
             elif part.precision.id == Id.Format_Star:
               if arg_index < num_args:
                 precision_str = varargs[arg_index]
-                precision_loc = locs[arg_index]
+                precision_loc = loc.Word(locs[arg_index])
                 arg_index += 1
               else:
                 precision_str = ''
@@ -247,7 +247,7 @@ class Printf(vm._Builtin):
 
           if arg_index < num_args:
             s = varargs[arg_index]
-            word_loc = locs[arg_index]
+            word_loc = loc.Word(locs[arg_index])  # type: loc_t
             arg_index += 1
             has_arg = True
           else:
@@ -449,7 +449,8 @@ class Printf(vm._Builtin):
       lexer = self.parse_ctx.MakeLexer(line_reader)
       parser = _FormatStringParser(lexer)
 
-      with alloc.ctx_Location(arena, source.ArgvWord('printf', fmt_loc)):
+      src = source.ArgvWord('printf', loc.Word(fmt_loc))
+      with alloc.ctx_Location(arena, src):
         try:
           parts = parser.Parse()
         except error.Parse as e:

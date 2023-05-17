@@ -3,7 +3,9 @@
 module runtime
 {
   # import these types from syntax.asdl
-  use frontend syntax { word ArgList command re redir_loc Token proc_sig loc }
+  use frontend syntax {
+    word CompoundWord ArgList command re redir_loc Token proc_sig loc
+  }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
@@ -11,9 +13,9 @@ module runtime
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(List[str] argv, List[loc] arg_locs, ArgList? typed_args)
+    Argv(List[str] argv, List[CompoundWord] arg_locs, ArgList? typed_args)
   | Assign(int builtin_id,
-           List[str] argv, List[loc] arg_locs,
+           List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime

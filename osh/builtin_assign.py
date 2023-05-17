@@ -478,7 +478,7 @@ class Unset(vm._Builtin):
 
     argv, arg_locs = arg_r.Rest2()
     for i, name in enumerate(argv):
-      location = arg_locs[i]
+      location = loc.Word(arg_locs[i])
 
       if arg.f:
         mylib.dict_erase(self.procs, name)

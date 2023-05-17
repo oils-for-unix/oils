@@ -32,7 +32,7 @@ class Bind(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
     self.errfmt.Print_("warning: bind isn't implemented",
-                       blame_loc=cmd_val.arg_locs[0])
+                       loc.Word(cmd_val.arg_locs[0]))
     return 1
 
 

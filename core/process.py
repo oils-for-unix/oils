@@ -21,7 +21,7 @@ from _devbuild.gen.runtime_asdl import (
     RedirValue, redirect_arg, redirect_arg_e, value, value_e,
     trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
-    loc_t,
+    loc, loc_t, CompoundWord,
     redir_loc, redir_loc_e, redir_loc_t,
 )
 from core import dev
@@ -654,7 +654,7 @@ class ExternalProgram(object):
     assert False, "This line should never execute"  # NO RETURN
 
   def _Exec(self, argv0_path, argv, argv0_loc, environ, should_retry):
-    # type: (str, List[str], loc_t, Dict[str, str], bool) -> None
+    # type: (str, List[str], CompoundWord, Dict[str, str], bool) -> None
     if len(self.hijack_shebang):
       opened = True
       try:
@@ -695,7 +695,7 @@ class ExternalProgram(object):
 
       self.errfmt.Print_(
           "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
-          argv0_loc)
+          loc.Word(argv0_loc))
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.

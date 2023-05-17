@@ -179,7 +179,7 @@ class ShellExecutor(vm._Executor):
 
     with vm.ctx_FlushStdout():
       # note: could be second word, like 'builtin read'
-      with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
+      with ui.ctx_Location(self.errfmt, loc.Word(cmd_val.arg_locs[0])):
         try:
           status = builtin_func.Run(cmd_val)
           assert isinstance(status, int)
@@ -210,7 +210,7 @@ class ShellExecutor(vm._Executor):
     """
     argv = cmd_val.argv
     if len(cmd_val.arg_locs):
-      arg0_loc = cmd_val.arg_locs[0]
+      arg0_loc = loc.Word(cmd_val.arg_locs[0])  # type: loc_t
     else:
       arg0_loc = loc.Missing
 

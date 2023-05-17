@@ -9,8 +9,9 @@ import time
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, loc_t, source, source_t, IntParamBox
-
+from _devbuild.gen.syntax_asdl import (
+    loc, loc_t, source, source_t, IntParamBox, CompoundWord
+)
 from core import alloc
 from core import comp_ui
 from core import dev
@@ -80,7 +81,7 @@ def MakeBuiltinArgv(argv1):
   argv = ['']  # dummy for argv[0]
   argv.extend(argv1)
   # no location info
-  missing = loc.Missing  # type: loc_t
+  missing = None  # type: CompoundWord
   return cmd_value.Argv(argv, [missing] * len(argv), None)
 
 
