@@ -23,7 +23,7 @@ main() {
 }
 
 run-with-osh() {
-  OSH_CRASH_DUMP_DIR=_tmp bin/osh $0 main "$@"
+  OILS_CRASH_DUMP_DIR=_tmp bin/osh $0 main "$@"
 }
 
 _do-subshell() {
@@ -37,7 +37,7 @@ _do-subshell() {
 
 do-subshell() {
   # clear environment so it's smaller
-  env -i OSH_CRASH_DUMP_DIR=_tmp \
+  env -i OILS_CRASH_DUMP_DIR=_tmp \
     bin/osh $0 _do-subshell "$@"
 }
 
@@ -53,7 +53,7 @@ _pipeline() {
 }
 
 do-pipeline() {
-  env -i PATH=$PATH OSH_CRASH_DUMP_DIR=_tmp \
+  env -i PATH=$PATH OILS_CRASH_DUMP_DIR=_tmp \
     bin/osh $0 _pipeline
 }
 

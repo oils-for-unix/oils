@@ -234,10 +234,10 @@ run-other-tests() {
   for name in "${OTHER_TESTS[@]}"; do
     case $name in
       gold)
-        if test -n "${OSH_HIJACK_SHEBANG:-}"; then
+        if test -n "${OILS_HIJACK_SHEBANG:-}"; then
           cat >&2 <<'EOF'
 =====
-WARNING: Skipping gold tests because $OSH_HIJACK_SHEBANG is set.'
+WARNING: Skipping gold tests because $OILS_HIJACK_SHEBANG is set.'
 Run them manually with:
 
   test/gold.sh run-for-release

@@ -15,7 +15,7 @@ $SH incomplete.oil
 # Hm this test doesn't really tickle the bug
 
 echo $'#! /usr/bin/env \x00 sh \necho hi' > tmp.oil
-env OSH_HIJACK_SHEBANG=1 $SH tmp.oil
+env OILS_HIJACK_SHEBANG=1 $SH tmp.oil
 
 ## STDOUT:
 hi

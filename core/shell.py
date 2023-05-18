@@ -472,7 +472,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   if len(debug_path):
     debug_f.log('Writing logs to %r', debug_path)
 
-  interp = environ.get('OSH_HIJACK_SHEBANG', '')
+  interp = environ.get('OILS_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
   ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
@@ -485,7 +485,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
-  crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
+  crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
   cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
   comp_lookup = completion.Lookup()

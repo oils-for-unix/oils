@@ -32,7 +32,7 @@ hijack-recursive() {
   mkdir -p $dir
 
   OSH_DEBUG_DIR=$dir \
-  OSH_HIJACK_SHEBANG=bin/osh \
+  OILS_HIJACK_SHEBANG=bin/osh \
     bin/osh $0 recursive
 }
 
@@ -49,7 +49,7 @@ osh-for-release() {
 
   # NOTE: This runs the SYSTEM osh, because running bin/osh while doing the
   # release doesn't work!
-  OSH_DEBUG_DIR=$RELEASE_LOGS_DIR OSH_HIJACK_SHEBANG=$(which osh) osh
+  OSH_DEBUG_DIR=$RELEASE_LOGS_DIR OILS_HIJACK_SHEBANG=$(which osh) osh
 }
 
 analyze() {

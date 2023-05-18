@@ -8,7 +8,7 @@ grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
 
 rm -f $TMP/*.json
 
-OSH_CRASH_DUMP_DIR=$TMP $SH -c '
+OILS_CRASH_DUMP_DIR=$TMP $SH -c '
 g() {
   local glocal="glocal"
   echo $(( 1 / 0 ))
@@ -37,7 +37,7 @@ status=0
 # TODO: The failure is not propagated through 'source'.  Failure only happens
 # on 'errexit'.
 #rm -f $TMP/*.json
-OSH_CRASH_DUMP_DIR=$TMP $SH -c "
+OILS_CRASH_DUMP_DIR=$TMP $SH -c "
 set -o errexit
 source $REPO_ROOT/spec/testdata/crash.sh
 "

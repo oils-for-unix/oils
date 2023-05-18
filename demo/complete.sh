@@ -144,7 +144,7 @@ list-distro() {
 
 # After running this, source testdata/completion/git-completion.bash
 fresh-osh-with-dump() {
-  env -i OSH_CRASH_DUMP_DIR=_tmp  \
+  env -i OILS_CRASH_DUMP_DIR=_tmp  \
     bin/osh --debug-file _tmp/debug "$@"
 }
 
@@ -155,15 +155,15 @@ osh-trace() {
   # NOTE: env -i disables $TERM, which breaks some things.
   #env -i 
 
-  OSH_CRASH_DUMP_DIR=_tmp \
-  OSH_HIJACK_SHEBANG=bin/osh \
+  OILS_CRASH_DUMP_DIR=_tmp \
+  OILS_HIJACK_SHEBANG=bin/osh \
     PS4='+[${LINENO}:${FUNCNAME[0]}] ' \
     bin/osh -x --debug-file _tmp/debug --xtrace-to-debug-file "$@"
 }
 
 osh-debug() {
-  OSH_CRASH_DUMP_DIR=_tmp \
-  OSH_HIJACK_SHEBANG=bin/osh \
+  OILS_CRASH_DUMP_DIR=_tmp \
+  OILS_HIJACK_SHEBANG=bin/osh \
     bin/osh --debug-file _tmp/debug "$@"
 }
 
