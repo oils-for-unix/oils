@@ -371,6 +371,8 @@ app-tests() {
 
     # for ble.sh contra
     libx11-dev
+    libxft-dev
+    libncursesw5-dev
   )
 
   apt-install "${packages[@]}"

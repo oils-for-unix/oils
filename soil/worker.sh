@@ -237,12 +237,13 @@ EOF
 # Reuse ovm-tarball container
 app-tests-tasks() {
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
-py-all           build/py.sh all             -
-ble-clone        test/ble.sh clone           -
-ble-build        test/ble.sh build           -
-ble-test         test/ble.sh run-tests       -
+os-info          soil/diagnose.sh os-info         -
+dump-env         soil/diagnose.sh dump-env        -
+py-all           build/py.sh all                  -
+ble-clone        test/ble.sh clone                -
+ble-build        test/ble.sh build                -
+ble-test-bash    test/ble.sh run-tests-bash       -
+ble-test-osh-py  test/ble.sh run-tests-osh-py     -
 EOF
 
 # Only for tarball build

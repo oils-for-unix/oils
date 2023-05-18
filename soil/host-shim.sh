@@ -24,7 +24,7 @@ live-image-tag() {
   case $image_id in
     (app-tests)
       # new ble.sh deps
-      echo 'v-2023-05-18b'
+      echo 'v-2023-05-18c'
       ;;
     (wild)
       # Rebuild with smaller common layer, without GCC
