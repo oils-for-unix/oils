@@ -22,6 +22,10 @@ live-image-tag() {
   local image_id=$1
 
   case $image_id in
+    (app-tests)
+      # new ble.sh deps
+      echo 'v-2023-05-18b'
+      ;;
     (wild)
       # Rebuild with smaller common layer, without GCC
       echo 'v-2023-02-28e'
@@ -241,26 +245,23 @@ run-job-uke() {
 
   local -a flags=()
 
-  local image_id
+  local image_id=$job_name
+
+  # Some jobs don't have their own image, and some need docker -t
   case $job_name in
+    app-tests)
+      # to run ble.sh tests
+      flags=( -t )
+      ;;
     cpp-coverage)
       image_id='clang'
       ;;
-    app-tests)
-      # Hack to reuse this container, e.g. for 'build/py.sh all'
-      image_id='ovm-tarball'
-      # allocate pseudo TTY, ble.sh needs it or it fails on opening /dev/tty 
-      flags=( -t )
-      ;;
     interactive)
-      image_id='benchmarks'
-      # pseudo TTY for job control tests (group-session)
-      # and to run 'interactive-osh' with job control enabled
+      # to run 'interactive-osh' with job control enabled
       flags=( -t )
-      ;;
-    (*)
-      # docker.io is the namespace for hub.docker.com
-      image_id=$job_name
+
+      # Reuse for now
+      image_id='benchmarks'
       ;;
   esac
 

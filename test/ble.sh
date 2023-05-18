@@ -20,10 +20,10 @@ clone() {
 
 # TODO: What version of osh
 build() {
-  make  # make osh
+  #make  # make osh
 
   # make _bin/osh
-  devtools/bin.sh make-ovm-links
+  #devtools/bin.sh make-ovm-links
 
   # make ble.sh
   cd $BASE_DIR
@@ -43,7 +43,7 @@ run-tests() {
   #wc -l lib/test-util.sh
 
   # Force interactive shell on Travis, but remove color.
-  ../../_bin/osh -i --rcfile oshrc.test-util | filter-ansi
+  ../../bin/osh -i --rcfile oshrc.test-util | filter-ansi
 
   echo DONE
 }

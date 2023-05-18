@@ -240,11 +240,13 @@ app-tests-tasks() {
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all           build/py.sh all             -
-yajl             build/py.sh yajl-release    -
 ble-clone        test/ble.sh clone           -
 ble-build        test/ble.sh build           -
 ble-test         test/ble.sh run-tests       -
 EOF
+
+# Only for tarball build
+# yajl             build/py.sh yajl-release    -
 }
 
 # TODO: Most of these should be Ninja tasks.
