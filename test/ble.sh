@@ -65,6 +65,7 @@ run-tests-bash() {
 
   set +o errexit
   bash out/ble.sh --test | filter-ansi
+  echo 'Failure suppressed'
 
   # Some failures, possibly due to old version of bash
 
