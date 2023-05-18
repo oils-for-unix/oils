@@ -1461,16 +1461,18 @@ class CommandParser(object):
     case_node.to_match = case_arg.OilExpr(enode)
 
     # TODO: collect tokens for location info
+    self._Peek()
     if self.c_id == Id.Lit_LBrace:
-        case_node.arms_start = word_.LiteralToken(self.cur_word)
+      case_node.arms_start = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_LBrace)
     self._NewlineOk()
 
     self.ParseOilCaseList(case_node.arms)
 
     self._NewlineOk()
+    self._Peek()
     if self.c_id == Id.Lit_RBrace:
-        case_node.arms_start = word_.LiteralToken(self.cur_word)
+      case_node.arms_end = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
   def ParseCase(self):
