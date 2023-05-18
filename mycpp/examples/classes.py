@@ -129,8 +129,8 @@ class Node(object):
 def TestMethods():
   # type: () -> None
 
-  stdout = mylib.Stdout()
-  out = TextOutput(stdout)
+  stdout_ = mylib.Stdout()
+  out = TextOutput(stdout_)
   out.write('foo\n')
   out.write('bar\n')
   log('Wrote %d bytes', out.num_chars)
