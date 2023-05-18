@@ -1764,6 +1764,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write(' = it.Value();\n')
 
             # Register loop variable as a stack root.
+            # Note we have mylib.Collect() in CommandEvaluator::_Execute(), and
+            # it's called in a loop by _ExecuteList().  Although the 'child'
+            # variable is already live by other means.
+            # TODO: Test how much this affects performance.
             if CTypeIsManaged(c_item_type):
                 self.write_ind('  StackRoots _for({&')
                 self.accept(index_expr)
@@ -2557,6 +2561,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         if self.prepend_to_block:
+            # TODO: put the pointers first, and then register a single
+            # StackRoots record.
             done = set()
             for lval_name, c_type, is_param in self.prepend_to_block:
                 if not is_param and lval_name not in done:

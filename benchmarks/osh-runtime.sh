@@ -151,7 +151,7 @@ run-tasks() {
     # Run it, possibly with GC stats
     case $sh_path in
       *_bin/*/osh)
-        OIL_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99> $gc_stats_file
+        OILS_GC_STATS_FD=99 "${time_argv[@]}" > $stdout_file 99> $gc_stats_file
         ;;
       *)
         "${time_argv[@]}" > $stdout_file

@@ -2,7 +2,7 @@
 """
 gc_stats_to_tsv.py
 
-Turn a set of files with OIL_GC_STATS output into a TSV file.
+Turn a set of files with OILS_GC_STATS output into a TSV file.
 """
 from __future__ import print_function
 

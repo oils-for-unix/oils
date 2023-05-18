@@ -22,7 +22,7 @@ void MarkSweepHeap::Init(int gc_threshold) {
   gc_threshold_ = gc_threshold;
 
   char* e;
-  e = getenv("OIL_GC_THRESHOLD");
+  e = getenv("OILS_GC_THRESHOLD");
   if (e) {
     int result;
     if (StringToInteger(e, strlen(e), 10, &result)) {
@@ -32,7 +32,7 @@ void MarkSweepHeap::Init(int gc_threshold) {
   }
 
   // only for developers
-  e = getenv("_OIL_GC_VERBOSE");
+  e = getenv("_OILS_GC_VERBOSE");
   if (e && strcmp(e, "1") == 0) {
     gc_verbose_ = true;
   }
@@ -74,7 +74,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
   *in_pool = false;
   #endif
 
-  // These only work with GC off -- OIL_GC_THRESHOLD=[big]
+  // These only work with GC off -- OILS_GC_THRESHOLD=[big]
   #ifdef BUMP_SMALL
   if (num_bytes <= 32) {
     return gBumpLeak.Allocate(num_bytes);
@@ -361,7 +361,7 @@ void MarkSweepHeap::PrintStats(int fd) {
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::MaybePrintStats() {
   int stats_fd = -1;
-  char* e = getenv("OIL_GC_STATS");
+  char* e = getenv("OILS_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
     stats_fd = STDERR_FILENO;
   } else {
@@ -369,7 +369,7 @@ void MarkSweepHeap::MaybePrintStats() {
     // writes to stdout and stderr.  Shells can't use open() without potential
     // conflicts.
 
-    e = getenv("OIL_GC_STATS_FD");
+    e = getenv("OILS_GC_STATS_FD");
     if (e && strlen(e)) {
       // Try setting 'stats_fd'.  If there's an error, it will be unchanged, and
       // we don't PrintStats();
@@ -398,8 +398,8 @@ void MarkSweepHeap::FreeEverything() {
 }
 
 void MarkSweepHeap::CleanProcessExit() {
-  char* e = getenv("OIL_GC_ON_EXIT");
-  // collect by default; OIL_GC_ON_EXIT=0 overrides
+  char* e = getenv("OILS_GC_ON_EXIT");
+  // collect by default; OILS_GC_ON_EXIT=0 overrides
   if (e && strcmp(e, "0") == 0) {
     ;
   } else {
@@ -410,8 +410,8 @@ void MarkSweepHeap::CleanProcessExit() {
 
 // for the main binary
 void MarkSweepHeap::FastProcessExit() {
-  char* e = getenv("OIL_GC_ON_EXIT");
-  // don't collect by default; OIL_GC_ON_EXIT=1 overrides
+  char* e = getenv("OILS_GC_ON_EXIT");
+  // don't collect by default; OILS_GC_ON_EXIT=1 overrides
   if (e && strcmp(e, "1") == 0) {
     FreeEverything();
   }

@@ -13,9 +13,9 @@ set -o errexit
 soil-run() {
   ninja _bin/cxx-asan/osh
 
-  OIL_GC_ON_EXIT=1 _bin/cxx-asan/osh --version
+  OILS_GC_ON_EXIT=1 _bin/cxx-asan/osh --version
 
-  OIL_GC_ON_EXIT=1 _bin/cxx-asan/osh -c 'echo hi'
+  OILS_GC_ON_EXIT=1 _bin/cxx-asan/osh -c 'echo hi'
 }
 
 "$@"
