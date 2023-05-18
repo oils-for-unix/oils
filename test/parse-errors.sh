@@ -1142,28 +1142,76 @@ oil_case() {
   set +o errexit
 
   _oil-should-parse '
-  case $foo {
-    # unbalanced is OK
-    *.py) echo "python" ;;
-  }
-  '
-
-  _oil-should-parse '
-  case $foo {
-    (*.py) echo "python" ;;
-  }
-  '
-
-  _oil-should-parse '
-  case "foo" {
-    (*.py) echo "python" ;;
+  case (foo) {
+    *.py { echo "python" }
   }
   '
 
   # parse_bare_word
+  _oil-should-parse '
+  case (foo) {
+    (main.py) { echo "python" }
+  }
+  '
+
+  _oil-should-parse '
+  case (foo) {
+    ("main.py") { echo "python" }
+  }
+  '
+
+  # Various multi-line cases
+  _oil-should-parse '
+  case (foo){("main.py"){ echo "python" } }
+  '
+  _oil-should-parse '
+  case (foo) { ("main.py") { echo "python" } }
+  '
+  _oil-should-parse '
+  case (foo) {
+    ("main.py") {
+      echo "python" } }'
+  _oil-should-parse '
+  case (foo) {
+    ("main.py") {
+      echo "python" }
+  }
+  '
+  _oil-should-parse '
+  case (foo) {
+    ("main.py") { echo "python"
+    }
+  }
+  '
+  _oil-should-parse '
+  case (foo) {
+    ("main.py") {
+      echo "python"
+    }
+  }
+  '
+
   _oil-parse-error '
-  case foo {
-    (*.py) echo "python" ;;
+  case $foo {
+    ("main.py") {
+      echo "python"
+    }
+  }
+  '
+
+  _oil-parse-error '
+  case (foo) in
+    *.py {
+      echo "python"
+    }
+  esac
+  '
+
+  _oil-parse-error '
+  case $foo {
+    bar) {
+      echo "python"
+    }
   }
   '
 }
