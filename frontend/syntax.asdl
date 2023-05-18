@@ -325,8 +325,8 @@ module syntax
   | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
        Token? fi_kw, List[Redir] redirects)
-  | Case(Token case_kw, case_arg to_match, Token? in_kw, List[CaseArm] arms,
-         Token? esac_kw, List[Redir] redirects)
+  | Case(Token case_kw, case_arg to_match, Token arms_start, List[CaseArm] arms,
+         Token arms_end, List[Redir] redirects)
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
   | ShFunction(Token? keyword, Token name_tok, str name, command body)

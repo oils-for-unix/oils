@@ -1461,10 +1461,16 @@ class CommandParser(object):
     case_node.to_match = case_arg.OilExpr(enode)
 
     # TODO: collect tokens for location info
+    if self.c_id == Id.Lit_LBrace:
+        case_node.arms_start = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_LBrace)
     self._NewlineOk()
+
     self.ParseOilCaseList(case_node.arms)
+
     self._NewlineOk()
+    if self.c_id == Id.Lit_RBrace:
+        case_node.arms_start = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
   def ParseCase(self):
@@ -1497,13 +1503,13 @@ class CommandParser(object):
     self._Peek()
 
     self._Eat(Id.KW_In)
-    case_node.in_kw = word_.AsKeywordToken(self.cur_word)
+    case_node.arms_start = word_.AsKeywordToken(self.cur_word)
     self._NewlineOk()
 
     if self.c_id == Id.KW_Esac:  # empty case list
-      case_node.esac_kw = word_.AsKeywordToken(self.cur_word)
+      case_node.arms_end = word_.AsKeywordToken(self.cur_word)
     else:
-      case_node.esac_kw = self.ParseCaseList(case_node.arms)
+      case_node.arms_end = self.ParseCaseList(case_node.arms)
       # TODO: should it return a list of nodes, and extend?
 
     self._Eat(Id.KW_Esac)
