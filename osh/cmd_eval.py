@@ -636,11 +636,15 @@ class CommandEvaluator(object):
         return self.word_ev.EvalWordToString(arg.w).s
 
       elif case(case_arg_e.OilExpr):
-        arg = cast(case_arg.OilExpr, UP_arg)
-        obj = self.expr_ev.EvalExpr(arg.e, blame)
-        return str(obj) # TODO: remove this lossy conversion
+        if mylib.PYTHON:
+          arg = cast(case_arg.OilExpr, UP_arg)
+          obj = self.expr_ev.EvalExpr(arg.e, blame)
+          return str(obj) # TODO: handle typed args
 
-    assert False, "Unreachable"
+    # note, right now this is reachable in mycpp
+    # we will have to wait until we can match on typed args before we can support
+    # new-style case commands in mycpp
+    return ""
 
   def _Dispatch(self, node, cmd_st):
     # type: (command_t, CommandStatus) -> int
