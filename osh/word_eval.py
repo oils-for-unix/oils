@@ -2185,12 +2185,12 @@ class NormalWordEvaluator(AbstractWordEvaluator):
 
   def _EvalCommandSub(self, cs_part, quoted):
     # type: (CommandSub, bool) -> part_value_t
-    stdout = self.shell_ex.RunCommandSub(cs_part)
+    stdout_str = self.shell_ex.RunCommandSub(cs_part)
     if cs_part.left_token.id == Id.Left_AtParen:
-      strs = self.splitter.SplitForWordEval(stdout)
+      strs = self.splitter.SplitForWordEval(stdout_str)
       return part_value.Array(strs)
     else:
-      return part_value.String(stdout, quoted, not quoted)
+      return part_value.String(stdout_str, quoted, not quoted)
 
   def _EvalProcessSub(self, cs_part):
     # type: (CommandSub) -> part_value.String

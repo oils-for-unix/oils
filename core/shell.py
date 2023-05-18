@@ -634,15 +634,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         line_reader = None  # unused!
         # Not setting '-i' flag for now.  Some people's bashrc may want it?
       else:
-        stdin = mylib.Stdin()
-        if stdin.isatty():
+        stdin_ = mylib.Stdin()
+        if stdin_.isatty():
           src = source.Interactive
           line_reader = reader.InteractiveLineReader(
               arena, prompt_ev, hist_ev, readline, prompt_state)
           mutable_opts.set_interactive()
         else:
           src = source.Stdin('')
-          line_reader = reader.FileLineReader(stdin, arena)
+          line_reader = reader.FileLineReader(stdin_, arena)
     else:
       src = source.MainFile(script_name)
       try:

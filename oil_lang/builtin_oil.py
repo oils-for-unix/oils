@@ -50,7 +50,7 @@ class Pp(_Builtin):
     _Builtin.__init__(self, mem, errfmt)
     self.procs = procs
     self.arena = arena
-    self.stdout = Stdout()
+    self.stdout_ = Stdout()
 
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
@@ -78,11 +78,11 @@ class Pp(_Builtin):
                              blame_loc=locs[i])
           status = 1
         else:
-          self.stdout.write('%s = ' % name)
+          self.stdout_.write('%s = ' % name)
           if mylib.PYTHON:
             cell.PrettyPrint()  # may be color
 
-          self.stdout.write('\n')
+          self.stdout_.write('\n')
 
     elif action == 'proc':
       names, locs = arg_r.Rest2()
@@ -223,7 +223,7 @@ class Write(_Builtin):
   def __init__(self, mem, errfmt):
     # type: (state.Mem, ErrorFormatter) -> None
     _Builtin.__init__(self, mem, errfmt)
-    self.stdout = Stdout()
+    self.stdout_ = Stdout()
 
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
@@ -243,13 +243,13 @@ class Write(_Builtin):
     i = 0
     while not arg_r.AtEnd():
       if i != 0:
-        self.stdout.write(arg.sep)
+        self.stdout_.write(arg.sep)
       s = arg_r.Peek()
 
       if arg.qsn:
         s = qsn.maybe_encode(s, bit8_display)
 
-      self.stdout.write(s)
+      self.stdout_.write(s)
 
       arg_r.Next()
       i += 1
@@ -257,7 +257,7 @@ class Write(_Builtin):
     if arg.n:
       pass
     elif len(arg.end):
-      self.stdout.write(arg.end)
+      self.stdout_.write(arg.end)
 
     return 0
 
