@@ -711,19 +711,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   assert line_reader is not None
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  # Calculate ~/.config/oil/oshrc or oilrc.  Used for both -i and --headless
+  # Calculate ~/.config/oils/oshrc or yshrc.  Used for both -i and --headless
   # We avoid cluttering the user's home directory.  Some users may want to ln
-  # -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
+  # -s ~/.config/oils/oshrc ~/oshrc or ~/.oshrc.
 
   # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
 
+  config_dir = '.config/oils'
   rc_paths = []  # type: List[str]
-
   if not flag.norc:
     # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
     rc_path = flag.rcfile
     if rc_path is None:
-      rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
+      rc_paths.append(os_path.join(home_dir, '%s/%src' % (config_dir, lang)))
     else:
       rc_paths.append(rc_path)
 
@@ -732,14 +732,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     rc_dir = flag.rcdir
     if rc_dir is None:
-      rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
+      rc_dir = os_path.join(home_dir, '%s/%src.d' % (config_dir, lang))
 
     rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
   else:
     if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-      print_stderr('osh warning: --rcfile ignored with --norc')
+      print_stderr('%s warning: --rcfile ignored with --norc' % lang)
     if flag.rcdir is not None:
-      print_stderr('osh warning: --rcdir ignored with --norc')
+      print_stderr('%s warning: --rcdir ignored with --norc' % lang)
 
   if flag.headless:
     state.InitInteractive(mem)
