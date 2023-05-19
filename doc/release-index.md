@@ -4,8 +4,8 @@ all_docs_url: -
 version_url: -
 ---
 
-Oil 0.15.0
-============
+Oils 0.15.0
+===========
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
 
@@ -13,7 +13,7 @@ Oil 0.15.0
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.15.0 of Oil, a Unix shell.  To use it,
+This is the home page for version 0.15.0 of Oils, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
@@ -74,7 +74,7 @@ are **ready to read**:
 More docs:
 
 - [OSH Help Topics](doc/osh-help-topics.html) (in progress)
-  | [Oil Help Topics](doc/oil-help-topics.html) (in progress).
+  | [YSH Help Topics](doc/oil-help-topics.html) (in progress).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oil.  These versions may not be up-to-date.

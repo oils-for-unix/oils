@@ -94,7 +94,7 @@ class Evaluator(object):
     # type: (str, str, ParseContext, Mem) -> None
     self.word_ev = None  # type: AbstractWordEvaluator
 
-    assert lang in ('osh', 'oil'), lang
+    assert lang in ('osh', 'ysh'), lang
     self.lang = lang
     self.version_str = version_str
     self.parse_ctx = parse_ctx

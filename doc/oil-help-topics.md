@@ -30,7 +30,7 @@ feature is **unimplemented**.
 </h2>
 
 ```oil-help-topics
-  [Usage]         bundle-usage   oil-usage
+  [Usage]         bundle-usage   ysh-usage
   [Oil Lexing]    docstring ###   multiline-command ...
 ```
 

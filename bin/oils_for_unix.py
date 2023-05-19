@@ -139,7 +139,7 @@ def AppBundleMain(argv):
   environ = pyos.Environ()
 
   if applet in ('ysh', 'oil'):
-    return shell.Main('oil', arg_r, environ, login_shell, loader, readline)
+    return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
 
   elif applet.endswith('sh'):  # sh, osh, bash imply OSH
     return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
