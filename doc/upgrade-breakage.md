@@ -7,7 +7,7 @@ What Breaks When You Upgrade to Oil
 
 Only a few things break when you put this at the top of a shell script:
 
-    shopt --set oil:upgrade
+    shopt --set ysh:upgrade
 
 This doc enumerates and explains them.
 
@@ -62,7 +62,7 @@ Better:
     echo $PWD  # restored
 
 
-(Option `parse_paren` is part of group `oil:upgrade`.)
+(Option `parse_paren` is part of group `ysh:upgrade`.)
 
 ### `@()` is spliced command sub, not extended glob 
 
@@ -80,7 +80,7 @@ Use this Oil alias instead:
 
     echo ,(*.cc|*.h)
 
-(Option `parse_at` is part of group `oil:upgrade`.)
+(Option `parse_at` is part of group `ysh:upgrade`.)
 
 ### `r'c:\Users\'` is a raw string, not joined strings
 
@@ -102,7 +102,7 @@ The prefix **changes** the meaning of commands like:
 
 Instead, write `'rfoo'` if that's what you mean.
 
-(Option `parse_raw_string` is part of group `oil:upgrade`.)
+(Option `parse_raw_string` is part of group `ysh:upgrade`.)
 
 ## Unsupported
 
@@ -125,11 +125,11 @@ after upgrading.
 You may want to use the `find` command or [Egg expressions](eggex.html)
 instead.
 
-(Option `simple_word_eval` is part of group `oil:upgrade`.)
+(Option `simple_word_eval` is part of group `ysh:upgrade`.)
 
 ## More Quotes May Be Needed
 
-### With `oil:upgrade` Options
+### With `ysh:upgrade` Options
 
 Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.

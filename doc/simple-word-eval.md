@@ -62,7 +62,7 @@ The new semantics should be easily adoptable by existing shell scripts.
 
 - Importantly, `bin/osh` is POSIX-compatible and runs real [bash]($xref)
   scripts.  You can gradually opt into **stricter and saner** behavior with
-  `shopt` options (or by running `bin/oil`).  The most important one is
+  `shopt` options (or by running `bin/ysh`).  The most important one is
   [simple_word_eval]($help), and the others are listed below.
 - Even after opting in, the new syntax shouldn't break many scripts.  If it
   does break, the change to fix it should be small.  For example, `echo @foo`

@@ -183,6 +183,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [Completion]    @COMP_WORDS   COMP_CWORD   COMP_LINE   COMP_POINT
                   COMP_WORDBREAKS   @COMPREPLY   X COMP_KEY
                   X COMP_TYPE   COMP_ARGV
+  [History]       HISTFILE
   [cd]            PWD   OLDPWD   X CDPATH
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY

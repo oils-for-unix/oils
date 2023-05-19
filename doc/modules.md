@@ -38,9 +38,9 @@ Library file.  Top level has `module`, `source`, `const`, and `proc`.
 
 Executable file.  Top level the same 4, plus `oil-main` at the bottom.
 
-    #/usr/local/bin/oil
+    #!/usr/bin/env ysh
 
-    # deploy.oil: Deploy C++ program to a server
+    # deploy.ysh: Deploy C++ program to a server
     module main || return 0  # executable programs use 'main' guard
 
     source $_this_dir/lib-foo.oil

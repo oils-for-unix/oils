@@ -27,7 +27,7 @@ It generates both HTML and text for the 'help' builtin.
 
 This section describes how to use the Oil binary.
 
-<h4 id="ysh-usage"><code>bin/oil</code> Usage</h4>
+<h4 id="ysh-usage"><code>bin/ysh</code> Usage</h4>
 
     Usage: ysh [OPTION]... SCRIPT [ARG]...
            ysh [OPTION]... -c COMMAND [ARG]...
@@ -654,7 +654,7 @@ resulting script will still run in another shell.
     shopt --set strict:all  # turn on all options
     shopt -p strict:all     # print their current state
 
-<h4 id="oil:upgrade">oil:upgrade</h4>
+<h4 id="ysh:upgrade">ysh:upgrade</h4>
 
 Options in this group enable Oil features that are less likely to break
 existing shell scripts.
@@ -663,16 +663,16 @@ For example, `parse_at` means that `@myarray` is now the operation to splice
 an array.  This will break scripts that expect `@` to be literal, but you can
 simply quote it like `'@literal'` to fix the problem.
 
-    shopt --set oil:upgrade   # turn on all options
-    shopt -p oil:upgrade      # print their current state
+    shopt --set ysh:upgrade   # turn on all options
+    shopt -p ysh:upgrade      # print their current state
 
-<h4 id="oil:all">oil:all</h4>
+<h4 id="ysh:all">ysh:all</h4>
 
-Enable the full Oil language.  This includes everything in the `oil:upgrade`
+Enable the full Oil language.  This includes everything in the `ysh:upgrade`
 group.
 
-    shopt --set oil:all     # turn on all options
-    shopt -p oil:all        # print their current state
+    shopt --set ysh:all     # turn on all options
+    shopt -p ysh:all        # print their current state
 
 ### Strictness
 

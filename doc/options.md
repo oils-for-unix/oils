@@ -9,7 +9,7 @@ Global Shell Options: Turning OSH into Oil
 This document describes global shell options, which look like this:
 
     shopt --set strict_backslash  # Oil style
-    shopt --set oil:upgrade         # A whole group of options
+    shopt --set ysh:upgrade         # A whole group of options
     set -o errexit                # Bourne shell style
 
 They can affect parsing or execution, and are used to gradually turn the [OSH
@@ -27,11 +27,11 @@ This isn't the **only** use for options, but it's an important one.
 
 ## What Every User Should Know (2 minutes)
 
-When you run `bin/osh`, the **option groups** `strict:all` and `oil:upgrade` are
+When you run `bin/osh`, the **option groups** `strict:all` and `ysh:upgrade` are
 "canned settings" that relieve you of having to know about dozens of shell
 options.
 
-Running `bin/oil` is equivalent to using `shopt --set oil:all` in `bin/osh`.
+Running `bin/ysh` is equivalent to using `shopt --set ysh:all` in `bin/osh`.
 
 Let's look at three examples.
 
@@ -49,17 +49,17 @@ If you want to upgrade a script, and don't care about running under other
 shells, use this:
 
     # Start enabling Oil syntax and semantics
-    shopt --set oil:upgrade
+    shopt --set ysh:upgrade
 
 This second line may break a few things, but is designed to be an easy upgrade.
 See [What Breaks When You Upgrade to Oil](upgrade-breakage.html).
 
 ### Oil
 
-If you're writing a new script, you can use `bin/oil` to get **all**
+If you're writing a new script, you can use `bin/ysh` to get **all**
 enhancements.  Typically you use a shebang line like this:
 
-    #!/usr/bin/env oil
+    #!/usr/bin/env ysh
 
 That's all most users need to know.  For more details, see the wiki page:
 [Gradually Upgrading Shell to Oil]($wiki).
@@ -116,14 +116,14 @@ Shell has many ways to do this, like:
     set -o                      # print all Bourne shell options
     shopt -p                    # print all bash options
     shopt -p nullglob failglob  # print selected options
-    shopt -p oil:upgrade          # print options in the given group
+    shopt -p ysh:upgrade          # print options in the given group
 
 TODO: Oil should enable `shopt --print` for all options.  It should have a flat
 list.
 
 ## Kinds of Options, With Examples
 
-*Option groups* like `oil:upgrade` are baked into the interpreter.  What follows
+*Option groups* like `ysh:upgrade` are baked into the interpreter.  What follows
 is an informal list of *kinds* of options, which are different categorization:
 
 - Groups: How much of Oil do you want to use?

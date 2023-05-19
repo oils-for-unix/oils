@@ -10,7 +10,7 @@ There are many ways to use Oil!
 - You can use it *interactively*, or you can write "shell scripts" with it.
   Shell is the best language for *ad hoc* automation.
 - You can use it in *compatible* mode with `bin/osh`, or in *legacy-free* mode
-  with `bin/oil`.
+  with `bin/ysh`.
 
 As of 2021, the [OSH language][osh-language] is mature, and the [Oil
 language][oil-language] is under development.  The interactive shell exists,
@@ -41,7 +41,7 @@ includes this page.
 
 After running the instructions in [INSTALL](INSTALL.html), run:
 
-    mkdir -p ~/.config/oil
+    mkdir -p ~/.config/oils
 
 OSH will create `osh_history` there to store your command history.
 
@@ -50,7 +50,7 @@ OSH will create `osh_history` there to store your command history.
 You can also create your own startup files in this directory:
 
 - `bin/osh` runs `~/.config/oil/oshrc`
-- `bin/oil` runs `~/.config/oil/oilrc`
+- `bin/ysh` runs `~/.config/oil/yshrc`
 
 These are the **only** files that are "sourced".  Other shells [have a
 confusing initialization sequence involving many files][mess] ([original][]).

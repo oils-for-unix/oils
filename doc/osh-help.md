@@ -51,8 +51,8 @@ osh accepts POSIX sh flags, with these additions:
 If the --rcfile flag is specified, that file will be executed on startup.
 Otherwise:
 
-- `bin/osh` runs `~/.config/oil/oshrc`
-- `bin/oil` runs `~/.config/oil/oilrc`
+- `bin/osh` runs `~/.config/oils/oshrc`
+- `bin/ysh` runs `~/.config/oils/yshrc`
 
 Pass --rcfile /dev/null or --norc to disable the startup file.
 
@@ -60,8 +60,8 @@ If the --rcdir flag is specified, files in that folder will be executed on
 startup.
 Otherwise:
 
-- `bin/osh` runs everything in `~/.config/oil/oshrc.d/`
-- `bin/oil` runs everything in `~/.config/oil/oilrc.d/`
+- `bin/osh` runs everything in `~/.config/oils/oshrc.d/`
+- `bin/ysh` runs everything in `~/.config/oils/yshrc.d/`
 
 Pass --norc to disable the startup directory.
 
@@ -757,7 +757,7 @@ Examples:
     shopt --set errexit
 
 You can set or unset multiple options with the groups `strict:all`,
-`oil:upgrade`, and `oil:all`.
+`ysh:upgrade`, and `ysh:all`.
 
 If a block is passed, then the mutated options are pushed onto a stack, the
 block is executed, and then options are restored to their original state.
