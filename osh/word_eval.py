@@ -426,18 +426,28 @@ class TildeEvaluator(object):
     self.mem = mem
     self.exec_opts = exec_opts
 
+  def GetMyHomeDir(self):
+    # type: () -> Optional[str]
+    """
+    Consult $HOME first, and then make a libc call.
+
+    Important: the libc call can FAIL, which is why we prefer $HOME.  See issue
+    #1578.
+    """
+    # First look up the HOME var, then ask the OS.  This is what bash does.
+    val = self.mem.GetValue('HOME')
+    UP_val = val
+    if val.tag() == value_e.Str:
+      val = cast(value.Str, UP_val)
+      return val.s
+    return pyos.GetMyHomeDir()
+
   def Eval(self, part):
     # type: (word_part.TildeSub) -> str
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
 
     if part.user_name is None:
-      # First look up the HOME var, then ask the OS.  This is what bash does.
-      val = self.mem.GetValue('HOME')
-      UP_val = val
-      if val.tag() == value_e.Str:
-        val = cast(value.Str, UP_val)
-        return val.s
-      result = pyos.GetMyHomeDir()
+      result = self.GetMyHomeDir()
     else:
       result = pyos.GetHomeDir(part.user_name)
 

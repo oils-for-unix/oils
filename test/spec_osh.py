@@ -42,6 +42,12 @@ def Define(sp):
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       tags = ['dev-minimal'])
 
+  if 0:
+    sp.OshFile(
+        'ltrace',
+        compare_shells = 'bash dash mksh',
+        tags = ['cpp-only'])
+
   #
   # suite osh
   #

@@ -306,6 +306,7 @@ class ShellFiles(object):
     self.flag = flag
 
   def _HistVar(self):
+    # type: () -> str
     return 'HISTFILE' if self.lang == 'osh' else 'YSH_HISTFILE'
 
   def _DefaultHistoryFile(self):
@@ -561,12 +562,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
       ext_prog, waiter, tracer, job_control, job_list, fd_state, trap_state, errfmt)
 
-  AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
-         search_path, errfmt)
-  AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx,
-        errfmt)
-  AddProcess(builtins, mem, shell_ex, ext_prog, fd_state,
-             job_control, job_list, waiter, tracer, search_path, errfmt)
+  AddPure(
+      builtins, mem, procs, modules, mutable_opts, aliases, search_path,
+      errfmt)
+  AddIO(
+      builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
+  AddProcess(
+      builtins, mem, shell_ex, ext_prog, fd_state, job_control, job_list,
+      waiter, tracer, search_path, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 
