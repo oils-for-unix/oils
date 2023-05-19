@@ -5,18 +5,14 @@ builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import loc
-from core import error
-from core import pyutil
-from core import state
-from core import vm
 from core.error import e_usage
+from core import pyutil
+from core import vm
 from frontend import flag_spec
 from mycpp import mylib
-from pylib import path_stat
 
-from typing import Optional, cast, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value
   from frontend.py_readline import Readline
@@ -110,18 +106,20 @@ class History(vm._Builtin):
     num_items = readline.get_current_history_length()
     #log('len = %d', num_items)
 
-    rest = arg_r.Rest()
-    if len(rest) == 0:
+    num_arg, num_arg_loc = arg_r.Peek2()
+
+    if num_arg is None:
       start_index = 1
-    elif len(rest) == 1:
-      arg0 = rest[0]
-      try:
-        num_to_show = int(arg0)
-      except ValueError:
-        e_usage('got invalid argument %r' % arg0, loc.Missing)
-      start_index = max(1, num_items + 1 - num_to_show)
     else:
-      e_usage('got many arguments', loc.Missing)
+      try:
+        num_to_show = int(num_arg)
+      except ValueError:
+        e_usage('got invalid argument %r' % num_arg, num_arg_loc)
+      start_index = max(1, num_items + 1 - num_to_show)
+
+    arg_r.Next()
+    if not arg_r.AtEnd():
+      e_usage('got too many arguments', loc.Missing)
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do

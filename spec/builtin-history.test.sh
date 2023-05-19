@@ -155,3 +155,24 @@ status=0
 status=0
 ^D
 ## END
+
+#### history usage
+
+history not-a-number
+echo status=$?
+
+history 3 too-many
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+## END
+
+## OK bash STDOUT:
+status=1
+status=1
+## END
+
+
+
