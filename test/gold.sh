@@ -25,7 +25,7 @@ _compare() {
   "$@" >_tmp/shebang.txt
   local expected_status=$?
 
-  export OSH_HIJACK_SHEBANG=$OSH
+  export OILS_HIJACK_SHEBANG=$OSH
   $OSH "$@" >_tmp/osh.txt
   local osh_status=$?
 

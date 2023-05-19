@@ -107,7 +107,7 @@ soil-run-cpp() {
   ninja $osh
 
   # TODO: replace with run-test-funcs once the rest of oil_lang is translated
-  OIL_GC_ON_EXIT=1 OSH=$osh test-parse-osh
+  OILS_GC_ON_EXIT=1 OSH=$osh test-parse-osh
 }
 
 run-for-release() {

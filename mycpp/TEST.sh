@@ -20,7 +20,7 @@ source test/common.sh  # run-test-bin
 shopt -s failglob
 
 # Will be needed to pass ASAN leak detector?  Or only do this for the main binary?
-# export OIL_GC_ON_EXIT=1
+# export OILS_GC_ON_EXIT=1
 
 examples-variant() {
   ### Run all examples using a variant -- STATS only

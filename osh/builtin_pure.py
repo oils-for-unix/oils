@@ -238,11 +238,11 @@ class Shopt(vm._Builtin):
         # TODO: could consolidate with checks in core/state.py and option
         # lexer?
         opt_group = consts.OptionGroupNum(opt_name)
-        if opt_group == opt_group_i.OilUpgrade:
+        if opt_group == opt_group_i.YshUpgrade:
           opt_nums.extend(consts.OIL_UPGRADE)
           continue
 
-        if opt_group == opt_group_i.OilAll:
+        if opt_group == opt_group_i.YshAll:
           opt_nums.extend(consts.OIL_ALL)
           continue
 

@@ -36,9 +36,9 @@ Reference:
 - [OSH Help Topics](osh-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
 
-## Oil is a New Shell Language
+## YSH is a New Shell
 
-- [A Tour of the Oil Language](oil-language-tour.html).
+- [A Tour of YSH](ysh-tour.html).
 - [Oil vs. Shell Idioms](idioms.html).  Idioms that are nicer in Oil than shell.
 - [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  When you turn
   on Oil, there are some shell constructs you can no longer use.  We try to

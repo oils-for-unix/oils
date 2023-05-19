@@ -301,24 +301,24 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:
-    lang: 'osh' or 'oil'
+    lang: 'osh' or 'ysh'
     argv0, arg_r: command line arguments
     environ: environment
     login_shell: Was - on the front?
     loader: to get help, version, grammar, etc.
     readline: optional GNU readline
   """
-  # Differences between osh and oil:
-  # - --help?  I guess Oil has a SUPERSET of OSH options.
-  # - oshrc vs oilrc
-  # - shopt -s oil:all
-  # - Change the prompt in the interactive shell?
+  # Differences between osh and ysh:
+  # - oshrc vs yshrc
+  # - shopt -s ysh:all
+  # - Default prompt
+  # - --help
 
   argv0 = arg_r.Peek()
   assert argv0 is not None
   arg_r.Next()
 
-  assert lang in ('osh', 'oil'), lang
+  assert lang in ('osh', 'ysh'), lang
 
   try:
     attrs = flag_spec.ParseMore('main', arg_r)
@@ -378,8 +378,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     return 0
 
   # Set these BEFORE processing flags, so they can be overridden.
-  if lang == 'oil':
-    mutable_opts.SetAnyOption('oil:all', True)
+  if lang == 'ysh':
+    mutable_opts.SetAnyOption('ysh:all', True)
 
   builtin_pure.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
                                    attrs.shopt_changes)
@@ -472,7 +472,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   if len(debug_path):
     debug_f.log('Writing logs to %r', debug_path)
 
-  interp = environ.get('OSH_HIJACK_SHEBANG', '')
+  interp = environ.get('OILS_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
   ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
@@ -485,7 +485,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
-  crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
+  crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
   cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
   comp_lookup = completion.Lookup()

@@ -8,7 +8,7 @@ grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
 
 rm -f $TMP/*.json
 
-OSH_CRASH_DUMP_DIR=$TMP $SH -c '
+OILS_CRASH_DUMP_DIR=$TMP $SH -c '
 g() {
   local glocal="glocal"
   echo $(( 1 / 0 ))
@@ -37,7 +37,7 @@ status=0
 # TODO: The failure is not propagated through 'source'.  Failure only happens
 # on 'errexit'.
 #rm -f $TMP/*.json
-OSH_CRASH_DUMP_DIR=$TMP $SH -c "
+OILS_CRASH_DUMP_DIR=$TMP $SH -c "
 set -o errexit
 source $REPO_ROOT/spec/testdata/crash.sh
 "
@@ -71,17 +71,17 @@ found crash dump
 # NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 
 
-#### help osh and oil
+#### help osh and ysh
 help osh > $TMP/osh.txt
 echo osh $?
-help oil > $TMP/oil.txt
-echo oil $?
+help ysh > $TMP/ysh.txt
+echo ysh $?
 
 help index ZZZ > $TMP/index.txt
 echo index ZZZ $?
 ## STDOUT:
 osh 0
-oil 0
+ysh 0
 index ZZZ 1
 ## END
 

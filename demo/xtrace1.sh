@@ -184,7 +184,7 @@ through_xargs() {
   export PS4='+ $$ '
 
   # This doesn't work because xargs invokes $0!  Not OSH.
-  export OSH_HIJACK_SHEBANG=1
+  export OILS_HIJACK_SHEBANG=1
 
   # This makes us trace through xargs.
   #

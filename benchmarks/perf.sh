@@ -203,11 +203,11 @@ profile-osh-parse() {
   profile-cpp 'osh-parse' $mode "${cmd[@]}"
 
   # 'perf list' shows the events
-  #OIL_GC_STATS=1 sudo perf stat -e cache-misses -e cache-references "${cmd[@]}"
-  OIL_GC_STATS=1 sudo perf stat "${cmd[@]}"
+  #OILS_GC_STATS=1 sudo perf stat -e cache-misses -e cache-references "${cmd[@]}"
+  OILS_GC_STATS=1 sudo perf stat "${cmd[@]}"
 
   # Run again with GC stats
-  time OIL_GC_STATS=1 "${cmd[@]}"
+  time OILS_GC_STATS=1 "${cmd[@]}"
 }
 
 profile-fib() {
@@ -404,7 +404,7 @@ build-tar() {
 
   # TODO:
   # - profile each executable
-  # - add OIL_GC_THRESHOLD=$big to avoid GC
+  # - add OILS_GC_THRESHOLD=$big to avoid GC
 
   popd
 }

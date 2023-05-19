@@ -288,17 +288,17 @@ run-tasks() {
         "${instrumented[@]}" > /dev/null
         ;;
       mut)
-        OIL_GC_STATS=1 \
+        OILS_GC_STATS=1 \
           "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc)
         # disable GC with big threshold
-        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD \
+        OILS_GC_STATS=1 OILS_GC_THRESHOLD=$BIG_THRESHOLD \
           "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc+free)
         # do a single GC on exit
-        OIL_GC_STATS=1 OIL_GC_THRESHOLD=$BIG_THRESHOLD OIL_GC_ON_EXIT=1 \
+        OILS_GC_STATS=1 OILS_GC_THRESHOLD=$BIG_THRESHOLD OILS_GC_ON_EXIT=1 \
           "${instrumented[@]}" > /dev/null
         ;;
       mut+alloc+free+gc)
@@ -308,7 +308,7 @@ run-tasks() {
         # interesting.
 
         if test $mode = 'time' && test $sh_path != _bin/cxx-opt+nopool/osh; then
-          OIL_GC_STATS_FD=99 \
+          OILS_GC_STATS_FD=99 \
             "${instrumented[@]}" > /dev/null 99>$BASE_DIR/raw/$join_id.txt
         else
           "${instrumented[@]}" > /dev/null
@@ -316,7 +316,7 @@ run-tasks() {
         ;;
       mut+alloc+free+gc+exit)
         # also GC on exit
-        OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
+        OILS_GC_STATS=1 OILS_GC_ON_EXIT=1 \
           "${instrumented[@]}" > /dev/null
         ;;
 
@@ -327,7 +327,7 @@ run-tasks() {
 
   done
 
-  # TODO: OIL_GC_STATS_FD and tsv_column_from_files.py
+  # TODO: OILS_GC_STATS_FD and tsv_column_from_files.py
 }
 
 fd-demo() {
@@ -339,7 +339,7 @@ fd-demo() {
   # Hm you can't do $fd>out.txt, but that's OK
   local fd=99
 
-  OIL_GC_STATS_FD=$fd 99>$out \
+  OILS_GC_STATS_FD=$fd 99>$out \
     $bin --ast-format none -n benchmarks/testdata/configure
 
   ls -l $out
@@ -358,11 +358,11 @@ more-variants() {
       # 223 ms
       # 61.9 MB bytes allocated
       local bin=_bin/cxx-opt32/oils-for-unix
-      OIL_GC_THRESHOLD=$big_threshold \
+      OILS_GC_THRESHOLD=$big_threshold \
         run-osh $tsv_out $bin 'm32 mutator+malloc' $file
 
       # 280 ms
-      OIL_GC_STATS=1 \
+      OILS_GC_STATS=1 \
         run-osh $tsv_out $bin 'm32 mutator+malloc+free+gc' $file
       ;;
   esac
@@ -372,7 +372,7 @@ more-variants() {
     (*gcverbose*)
       local bin=_bin/cxx-gcverbose/oils-for-unix
       # 280 ms
-      OIL_GC_STATS=1 OIL_GC_ON_EXIT=1 \
+      OILS_GC_STATS=1 OILS_GC_ON_EXIT=1 \
         run-osh $tsv_out $bin 'gcverbose mutator+malloc+free+gc' $file
       ;;
   esac
@@ -555,12 +555,12 @@ gc-parse-smoke() {
   local bin=_bin/cxx-$variant/osh
   ninja $bin
 
-  # OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
+  # OILS_GC_THRESHOLD=1000 OILS_GC_ON_EXIT=1 \
+  time _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 \
     $bin --ast-format none -n $file
 
   # No leaks
-  # OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 $bin -n -c '('
+  # OILS_GC_STATS=1 OILS_GC_THRESHOLD=1000 OILS_GC_ON_EXIT=1 $bin -n -c '('
 }
 
 gc-parse-big() {
@@ -576,7 +576,7 @@ gc-run-smoke() {
   ninja $bin
 
   # expose a bug with printf
-  _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=500 OIL_GC_ON_EXIT=1 \
+  _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 OILS_GC_THRESHOLD=500 OILS_GC_ON_EXIT=1 \
     $bin -c 'for i in $(seq 100); do printf "%s\\n" "-- $i"; done'
 }
 
@@ -602,7 +602,7 @@ gc-run-oil() {
     echo "=== ($i) $script"
 
     # Just run the top level, which (hopefully) does nothing
-    _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=1000 OIL_GC_ON_EXIT=1 \
+    _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 OILS_GC_THRESHOLD=1000 OILS_GC_ON_EXIT=1 \
       $bin $script
 
     i=$((i + 1))
@@ -625,13 +625,13 @@ gc-run-big() {
   mkdir -v -p $dir
 
   pushd $dir
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 OIL_GC_THRESHOLD=100000 OIL_GC_ON_EXIT=1 \
+  time _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 OILS_GC_THRESHOLD=100000 OILS_GC_ON_EXIT=1 \
     $osh ../../Python-2.7.13/configure
   popd
 }
 
 run-verbose() {
-  _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
+  _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 \
     /usr/bin/time --format '*** MAX RSS KiB = %M' -- \
     "$@"
 }
@@ -643,7 +643,7 @@ run-for-a-long-time() {
   ninja $bin
   run-verbose $bin benchmarks/compute/fib.sh 10000
 
-  # time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 _bin/cxx-opt/osh benchmarks/compute/fib.sh 10000
+  # time _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 _bin/cxx-opt/osh benchmarks/compute/fib.sh 10000
 }
 
 while-loop() {
@@ -702,7 +702,7 @@ expand-loop() {
   ninja $bin
 
   set -x
-  time _OIL_GC_VERBOSE=1 OIL_GC_STATS=1 \
+  time _OILS_GC_VERBOSE=1 OILS_GC_STATS=1 \
     $bin -c "for i in {1..$n}; do echo \$i; done > /dev/null"
   set +x
 }

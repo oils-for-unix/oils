@@ -349,6 +349,35 @@ ovm-tarball() {
   apt-install "${packages[@]}"
 }
 
+app-tests() {
+  local -a packages=(
+    # build/py.sh all
+    libreadline-dev
+    python2-dev
+
+    # retrieving spec-bin -- TODO: move to build time
+    wget
+    # for wget https://.  TODO: remove when the build is hermetic
+    ca-certificates
+
+    gcc
+    g++
+
+    # to build ble.sh
+    make
+    # used by ble.sh
+    gawk
+    procps
+
+    # for ble.sh contra
+    libx11-dev
+    libxft-dev
+    libncursesw5-dev
+  )
+
+  apt-install "${packages[@]}"
+}
+
 if test $(basename $0) = 'from-apt.sh'; then
   "$@"
 fi

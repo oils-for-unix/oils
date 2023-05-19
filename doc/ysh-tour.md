@@ -2,8 +2,8 @@
 default_highlighter: oil-sh
 ---
 
-A Tour of the Oil Language
-==========================
+A Tour of YSH
+=============
 
 <!-- author's note about example names
 

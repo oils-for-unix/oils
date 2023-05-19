@@ -4,13 +4,13 @@ css_files: ../web/base.css ../web/manual.css ../web/help.css ../web/toc.css
 body_css_class: width40 help-body
 ---
 
-Oil Help
+YSH Help
 ========
 
-This doc describes every aspect of Oil briefly.  It underlies the `help`
+This doc describes every aspect of YSH briefly.  It underlies the `help`
 builtin, and is indexed by keywords.
 
-Navigate it with the [index of Oil help topics](oil-help-topics.html).
+Navigate it with the [index of YSH help topics](oil-help-topics.html).
 
 <!--
 IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
@@ -27,28 +27,28 @@ It generates both HTML and text for the 'help' builtin.
 
 This section describes how to use the Oil binary.
 
-<h4 id="oil-usage"><code>bin/oil</code> Usage</h4>
+<h4 id="ysh-usage"><code>bin/oil</code> Usage</h4>
 
-    Usage: oil  [OPTION]... SCRIPT [ARG]...
-           oil [OPTION]... -c COMMAND [ARG]...
+    Usage: ysh [OPTION]... SCRIPT [ARG]...
+           ysh [OPTION]... -c COMMAND [ARG]...
 
-`bin/oil` is the same as `bin/osh` with a the `oil:all` option group set.  So
-`bin/oil` also accepts shell flags.
+`bin/ysh` is the same as `bin/osh` with a the `ysh:all` option group set.  So
+`bin/ysh` also accepts shell flags.
 
-    oil -c 'echo hi'
-    oil myscript.oil
-    echo 'echo hi' | oil
+    ysh -c 'echo hi'
+    ysh myscript.ysh
+    echo 'echo hi' | ysh
 
 <h4 id="bundle-usage">App Bundle Usage</h4>
 
-    Usage: oil.ovm MAIN_NAME [ARG]...
+    Usage: oils-for-unix MAIN_NAME [ARG]...
            MAIN_NAME [ARG]...
 
-oil.ovm behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
+oils-for-unix behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
 then it behaves like that binary.  Otherwise, the binary name can be passed as
 the first argument, e.g.:
 
-    oil.ovm osh -c 'echo hi'
+    oils-for-unix osh -c 'echo hi'
 
 <h3>Oil Lexing</h3>
 

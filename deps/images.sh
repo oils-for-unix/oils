@@ -34,7 +34,7 @@ set -o pipefail
 set -o errexit
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-04-18'
+readonly LATEST_TAG='v-2023-05-18c'
 
 # BUGS in Docker.
 #
@@ -132,11 +132,12 @@ push() {
 smoke() {
   ### Smoke test of container
   local name=${1:-dummy}
+  local tag=${2:-$LATEST_TAG}
 
   #sudo docker run oilshell/soil-$name
   #sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
 
-  sudo docker run oilshell/soil-$name bash -c '
+  sudo docker run oilshell/soil-$name:$tag bash -c '
 echo "bash $BASH_VERSION"
 
 git --version

@@ -2,12 +2,11 @@
 default_highlighter: oil-sh
 ---
 
-Oil Language FAQ
-===================
+YSH FAQ
+=======
 
-Here are some common questions about the [Oil language]($xref:oil-language).
-Many of the answers boil down to the fact that Oil is a **smooth upgrade**
-from [bash]($xref).
+Here are some common questions about [YSH]($xref).  Many of the answers boil
+down to the fact that Oil is a **smooth upgrade** from [bash]($xref).
 
 Old and new constructs exist side-by-side.  New constructs have fewer
 "gotchas".

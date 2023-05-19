@@ -35,7 +35,7 @@ NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 
 # So we can pass ASAN.  Note that test/spec-common.sh has to pass this to
 # sh_spec.py.
-export OIL_GC_ON_EXIT=1
+export OILS_GC_ON_EXIT=1
 
 #
 # For translation
