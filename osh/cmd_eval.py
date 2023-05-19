@@ -84,7 +84,7 @@ Optimize = 1 << 2
 
 
 # Python type name -> Oil type name
-OIL_TYPE_NAMES = {
+YSH_TYPE_NAMES = {
     'bool': 'Bool',
     'int': 'Int',
     'float': 'Float',
@@ -993,7 +993,7 @@ class CommandEvaluator(object):
             # NOTE: It would be nice to unify this with 'repr', but there isn't a
             # good way to do it with the value/PyObject split.
             class_name = obj.__class__.__name__
-            oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
+            oil_name = YSH_TYPE_NAMES.get(class_name, class_name)
             print('(%s)   %s' % (oil_name, repr(obj)))
 
             # BUG FIX related to forking!  Note that BUILTINS flush, but

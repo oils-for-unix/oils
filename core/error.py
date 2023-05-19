@@ -126,8 +126,8 @@ class Strict(FatalRuntime):
 
   TODO: Have levels, like:
 
-  OIL_STRICT_PRINT=2   # print warnings at level 2 and above
-  OIL_STRICT_DIE=1  # abort the program at level 1 and above
+  OILS_STRICT_PRINT=2   # print warnings at level 2 and above
+  OILS_STRICT_DIE=1  # abort the program at level 1 and above
   """
   def __init__(self, msg, location):
     # type: (str, loc_t) -> None

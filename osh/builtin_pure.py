@@ -239,11 +239,11 @@ class Shopt(vm._Builtin):
         # lexer?
         opt_group = consts.OptionGroupNum(opt_name)
         if opt_group == opt_group_i.YshUpgrade:
-          opt_nums.extend(consts.OIL_UPGRADE)
+          opt_nums.extend(consts.YSH_UPGRADE)
           continue
 
         if opt_group == opt_group_i.YshAll:
-          opt_nums.extend(consts.OIL_ALL)
+          opt_nums.extend(consts.YSH_ALL)
           continue
 
         if opt_group == opt_group_i.StrictAll:

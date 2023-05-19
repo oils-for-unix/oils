@@ -475,13 +475,13 @@ class WordParser(WordEmitter):
     CASE_OP     = ',' | ',,' | '^' | '^^'
     UnaryOp     = TEST_OP | STRIP_OP | CASE_OP
 
-    OIL_UNARY   = '|' | ' '                 # ${x|html} and ${x %.3f}.
+    YSH_UNARY   = '|' | ' '                 # ${x|html} and ${x %.3f}.
                                             # SPACE is operator not %
     Match       = ('/' | '#' | '%') WORD    # match all / prefix / suffix
     VarExpr     = VarOf
                 | VarOf NULLARY_OP
                 | VarOf UnaryOp WORD
-                | VarOf OIL_UNARY STATIC_WORD
+                | VarOf YSH_UNARY STATIC_WORD
                 | VarOf ':' ArithExpr (':' ArithExpr )?
                 | VarOf '/' Match '/' WORD
 

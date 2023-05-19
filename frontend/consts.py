@@ -22,8 +22,8 @@ NO_INDEX = 0  # for Resolve
 
 # Used as consts::STRICT_ALL, etc.  Do it explicitly to satisfy MyPy.
 STRICT_ALL = option_def.STRICT_ALL
-OIL_UPGRADE = option_def.OIL_UPGRADE
-OIL_ALL = option_def.OIL_ALL
+YSH_UPGRADE = option_def.YSH_UPGRADE
+YSH_ALL = option_def.YSH_ALL
 DEFAULT_TRUE = option_def.DEFAULT_TRUE
 
 PARSE_OPTION_NUMS = option_def.PARSE_OPTION_NUMS
