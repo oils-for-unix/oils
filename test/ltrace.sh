@@ -25,11 +25,14 @@ test-home-dir() {
   # zsh calls getpwuid
   # bash on my Ubuntu machine doesn't call it, but seems to in the Debian CI
   # image
-  for sh in $osh dash mksh "$@"; do
+  # could test mksh, but it's not in the CI image
+  for sh in $osh dash "$@"; do
     local trace
     trace=$BASE_DIR/$(basename $sh).txt
 
+    set -x
     ltrace -e getpwuid -- $sh -c 'echo hi' 2> $trace
+    set +x
 
     if grep getpwuid $trace; then
       log "ERROR: $sh should not call getpwuid()"
