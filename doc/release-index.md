@@ -53,8 +53,8 @@ are **ready to read**:
   | [Quirks](doc/quirks.html)
   | [Tracing Execution](doc/xtrace.html)
   | [Headless Mode](doc/headless.html)
-- The Oil language:
-  - [A Tour of the Oil Language](doc/oil-language-tour.html)
+- YSH:
+  - [A Tour of YSH](doc/ysh-tour.html)
   | [Oil vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [What Breaks When You Upgrade to Oil](doc/upgrade-breakage.html)
   | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
@@ -74,7 +74,7 @@ are **ready to read**:
 More docs:
 
 - [OSH Help Topics](doc/osh-help-topics.html) (in progress)
-  | [YSH Help Topics](doc/oil-help-topics.html) (in progress).
+  | [YSH Help Topics](doc/ysh-help-topics.html) (in progress).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oil.  These versions may not be up-to-date.

@@ -4,7 +4,7 @@ module types {
   bool_arg_type = Undefined | Path | Int | Str | Other
   redir_arg_type = Path | Desc | Here
 
-  opt_group = StrictAll | OilUpgrade | OilAll
+  opt_group = StrictAll | YshUpgrade | YshAll
               generate [integers]
 
   # Fifteen lexer modes for OSH

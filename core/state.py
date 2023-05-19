@@ -784,12 +784,12 @@ class MutableOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     opt_group = consts.OptionGroupNum(opt_name)
-    if opt_group == opt_group_i.OilUpgrade:
+    if opt_group == opt_group_i.YshUpgrade:
       _SetGroup(self.opt0_array, consts.OIL_UPGRADE, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
-    if opt_group == opt_group_i.OilAll:
+    if opt_group == opt_group_i.YshAll:
       _SetGroup(self.opt0_array, consts.OIL_ALL, b)
       self.SetDeferredErrExit(b)  # Special case
       return
@@ -827,9 +827,9 @@ class MutableOpts(object):
     opt_nums = []  # type: List[int]
     for opt_name in opt_names:
       opt_group = consts.OptionGroupNum(opt_name)
-      if opt_group == opt_group_i.OilUpgrade:
+      if opt_group == opt_group_i.YshUpgrade:
         opt_nums.extend(consts.OIL_UPGRADE)
-      elif opt_group == opt_group_i.OilAll:
+      elif opt_group == opt_group_i.YshAll:
         opt_nums.extend(consts.OIL_ALL)
       elif opt_group == opt_group_i.StrictAll:
         opt_nums.extend(consts.STRICT_ALL)

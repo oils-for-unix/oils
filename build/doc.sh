@@ -91,7 +91,7 @@ readonly MARKDOWN_DOCS=(
   doc-plugins
   idioms
   shell-idioms
-  oil-language-faq
+  ysh-faq
   qtt
   language-influences
   oil-vs-python
@@ -107,7 +107,7 @@ readonly MARKDOWN_DOCS=(
   faq-doc
 
   project-tour
-  oil-language-tour
+  ysh-tour
 
   options
   oil-keywords
@@ -239,6 +239,31 @@ all-markdown() {
   special
 }
 
+redir-body() {
+  local to_url=$1  # WARNING: no escaping
+  cat <<EOF
+<head>
+  <meta http-equiv="Refresh" content="0; URL=$to_url" />
+</head>
+EOF
+}
+
+redirect-pairs() {
+  # we want want /release/latest/ URLs to still work
+  cat <<EOF
+oil-language-tour ysh-tour
+oil-language-faq ysh-faq
+oil-help ysh-help
+oil-help-topics ysh-help-topics
+EOF
+}
+
+all-redirects() {
+  redirect-pairs | while read -r from_page to_page; do
+    redir-body "$to_page.html" | tee "_release/VERSION/doc/$from_page.html"
+  done
+}
+
 all-ref() {
   for d in doc/ref/*.md; do
     split-and-render $d '' '../../web'
@@ -328,7 +353,7 @@ readonly CODE_DIR=_devbuild/gen
 
 help-topics() {
   _make-help topics > $TEXT_DIR/osh < $HTML_DIR/doc/osh-help-topics.html
-  _make-help topics > $TEXT_DIR/oil < $HTML_DIR/doc/oil-help-topics.html
+  _make-help topics > $TEXT_DIR/ysh < $HTML_DIR/doc/ysh-help-topics.html
 }
 
 help-cards() {
@@ -339,12 +364,12 @@ help-cards() {
   # TODO: We need to re-indent <code> blocks here, etc.
 
   _make-help cards $TEXT_DIR $py_out \
-    $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/oil-help.html
+    $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/ysh-help.html
 }
 
 tour() {
   ### Build the Oil Language Tour and execute code
-  local name=${1:-oil-language-tour}
+  local name=${1:-ysh-tour}
 
   split-and-render doc/$name.md
 
@@ -394,8 +419,8 @@ all-help() {
   rm -f $TEXT_DIR/*
   make-dirs
 
-  split-and-render doc/oil-help-topics.md
-  split-and-render doc/oil-help.md
+  split-and-render doc/ysh-help-topics.md
+  split-and-render doc/ysh-help.md
   split-and-render doc/osh-help-topics.md
   split-and-render doc/osh-help.md
 
@@ -536,6 +561,7 @@ run-for-release() {
   # Writes _release/VERSION and _tmp/release-index.html
   all-markdown
   all-help
+  all-redirects  # backward compat
 
   modify-pages
 

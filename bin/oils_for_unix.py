@@ -81,7 +81,7 @@ def CaperDispatch():
 
 
 # TODO: Hook up valid applets (including these) to completion
-# APPLETS = ['osh', 'osh', 'oil', 'readlink', 'true', 'false']
+# APPLETS = ['osh', 'ysh', 'oil', 'readlink', 'true', 'false']
 
 
 def AppBundleMain(argv):

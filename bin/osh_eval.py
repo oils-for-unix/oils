@@ -34,7 +34,7 @@ def main(argv):
     return status
   except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
-    log('oil: %s', e.msg)
+    log('oils: %s', e.msg)
     return 2
   except RuntimeError as e:
     if 0:
@@ -57,7 +57,7 @@ def main(argv):
       traceback.print_exc()
 
     # test this with prlimit --nproc=1 --pid=$$
-    print_stderr('osh I/O error: %s' % pyutil.strerror(e))
+    print_stderr('oils I/O error: %s' % pyutil.strerror(e))
     return 2  # dash gives status 2
 
 

@@ -33,7 +33,7 @@ An <span style="color: darkred">X</span> next to a help topic means that the
 feature is **unimplemented**.
 
 - Down: [OSH Help on One Big Page](osh-help.html)
-- Lateral: [Oil Help Topics](oil-help-topics.html)
+- Lateral: [YSH Help Topics](ysh-help-topics.html)
 
 &nbsp;
 

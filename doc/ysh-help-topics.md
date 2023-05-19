@@ -3,10 +3,10 @@ in_progress: yes
 css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 ---
 
-Oil Help Topics
+YSH Help Topics
 ===============
 
-This is the online help for the Oil language.  It underlies the `help` builtin.
+This is the online help for YSH.  It underlies the `help` builtin.
 
 For example, typing `help proc` in the shell shows you how to use the `proc`
 statement.  A link to this same text appears in the
@@ -19,14 +19,14 @@ To view this index inside the shell, use:
 An <span style="color: darkred">X</span> next to a help topic means that the
 feature is **unimplemented**.
 
-- Down: [Oil Help on One Big Page](oil-help.html)
+- Down: [YSH Help on One Big Page](ysh-help.html)
 - Lateral: [OSH Help Topics](osh-help-topics.html)
 
 &nbsp;
 
 
 <h2 id="overview">
-  Overview (<a class="group-link" href="oil-help.html#overview">overview</a>)
+  Overview (<a class="group-link" href="ysh-help.html#overview">overview</a>)
 </h2>
 
 ```oil-help-topics
@@ -35,7 +35,7 @@ feature is **unimplemented**.
 ```
 
 <h2 id="command-lang">
-  Command Language (<a class="group-link" href="oil-help.html#command-lang">command-lang</a>)
+  Command Language (<a class="group-link" href="ysh-help.html#command-lang">command-lang</a>)
 </h2>
 
 ```oil-help-topics
@@ -53,7 +53,7 @@ feature is **unimplemented**.
 ```
 
 <h2 id="expr-lang">
-  Expression Language and Assignments (<a class="group-link" href="oil-help.html#expr-lang">expr-lang</a>)
+  Expression Language and Assignments (<a class="group-link" href="ysh-help.html#expr-lang">expr-lang</a>)
 </h2>
 
 ```oil-help-topics
@@ -94,7 +94,7 @@ feature is **unimplemented**.
 ```
 
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="oil-help.html#word-lang">word-lang</a>)
+  Word Language (<a class="group-link" href="ysh-help.html#word-lang">word-lang</a>)
 </h2>
 
 ```oil-help-topics
@@ -106,7 +106,7 @@ feature is **unimplemented**.
 ```
 
 <h2 id="builtins">
-  Builtin Commands (<a class="group-link" href="oil-help.html#builtins">builtins</a>)
+  Builtin Commands (<a class="group-link" href="ysh-help.html#builtins">builtins</a>)
 </h2>
 
 ```oil-help-topics
@@ -148,7 +148,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="oil-help.html#option">option</a>)
+  Shell Options (<a class="group-link" href="ysh-help.html#option">option</a>)
 </h2>
 
 ```oil-help-topics
@@ -211,7 +211,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="env">
-  Environment Variables (<a class="group-link" href="oil-help.html#env">env</a>)
+  Environment Variables (<a class="group-link" href="ysh-help.html#env">env</a>)
 </h2>
 
 ```oil-help-topics
@@ -219,7 +219,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="special">
-  Special Variables (<a class="group-link" href="oil-help.html#special">special</a>)
+  Special Variables (<a class="group-link" href="ysh-help.html#special">special</a>)
 </h2>
 
 ```oil-help-topics
@@ -234,7 +234,7 @@ X [Builtin Sub]   _buffer
 ```
 
 <h2 id="lib">
-  Builtin Functions (<a class="group-link" href="oil-help.html#lib">lib</a>)
+  Builtin Functions (<a class="group-link" href="ysh-help.html#lib">lib</a>)
 </h2>
 
 Access silently mutated globals:

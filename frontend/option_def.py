@@ -222,19 +222,19 @@ def _Init(opt_def):
   # type: (_OptionDef) -> None
 
   opt_def.Add('errexit', short_flag='e', builtin='set',
-              groups=['oil:upgrade', 'oil:all'])
+              groups=['ysh:upgrade', 'ysh:all'])
   opt_def.Add('nounset', short_flag='u', builtin='set', 
-              groups=['oil:upgrade', 'oil:all'])
+              groups=['ysh:upgrade', 'ysh:all'])
   opt_def.Add('pipefail', builtin='set', 
-              groups=['oil:upgrade', 'oil:all'])
+              groups=['ysh:upgrade', 'ysh:all'])
 
   opt_def.Add('inherit_errexit',
-              groups=['oil:upgrade', 'oil:all'])
+              groups=['ysh:upgrade', 'ysh:all'])
   # Hm is this subsumed by simple_word_eval?
   opt_def.Add('nullglob',
-              groups=['oil:upgrade', 'oil:all'])
+              groups=['ysh:upgrade', 'ysh:all'])
   opt_def.Add('verbose_errexit',
-              groups=['oil:upgrade', 'oil:all'])
+              groups=['ysh:upgrade', 'ysh:all'])
 
   # set -o noclobber, etc.
   for short_flag, name in _OTHER_SET_OPTIONS:
@@ -277,22 +277,22 @@ def _Init(opt_def):
 
   # shopt -s strict_arith, etc.
   for name in _STRICT_OPTION_NAMES:
-    opt_def.Add(name, groups=['strict:all', 'oil:all'])
+    opt_def.Add(name, groups=['strict:all', 'ysh:all'])
 
   #
   # Options that enable Oil language features
   #
 
   for name in _BASIC_PARSE_OPTIONS:
-    opt_def.Add(name, groups=['oil:upgrade', 'oil:all'])
+    opt_def.Add(name, groups=['ysh:upgrade', 'ysh:all'])
   # shopt -s simple_word_eval, etc.
   for name, default in _BASIC_RUNTIME_OPTIONS:
-    opt_def.Add(name, default=default, groups=['oil:upgrade', 'oil:all'])
+    opt_def.Add(name, default=default, groups=['ysh:upgrade', 'ysh:all'])
 
   for name, default in _AGGRESSIVE_PARSE_OPTIONS:
-    opt_def.Add(name, default=default, groups=['oil:all'])
+    opt_def.Add(name, default=default, groups=['ysh:all'])
   for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
-    opt_def.Add(name, default=default, groups=['oil:all'])
+    opt_def.Add(name, default=default, groups=['ysh:all'])
 
   # Off by default.
   opt_def.Add('parse_tea')
@@ -360,14 +360,14 @@ VISIBLE_SHOPT_NUMS = [
     if opt.builtin == 'shopt' and opt.implemented
 ]
 
-OIL_UPGRADE = [opt.index for opt in _SORTED if 'oil:upgrade' in opt.groups]
-OIL_ALL = [opt.index for opt in _SORTED if 'oil:all' in opt.groups]
+OIL_UPGRADE = [opt.index for opt in _SORTED if 'ysh:upgrade' in opt.groups]
+OIL_ALL = [opt.index for opt in _SORTED if 'ysh:all' in opt.groups]
 STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
 DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
 #print([opt.name for opt in _SORTED if opt.default])
 
 
-META_OPTIONS = ['strict:all', 'oil:upgrade', 'oil:all']  # Passed to flag parser
+META_OPTIONS = ['strict:all', 'ysh:upgrade', 'ysh:all']  # Passed to flag parser
 
 # For printing option names to stdout.  Wrapped by frontend/consts.
 OPTION_NAMES = dict((opt.index, opt.name) for opt in _SORTED)

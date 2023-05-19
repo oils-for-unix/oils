@@ -173,8 +173,8 @@ class Headless(object):
 
         #ShowDescriptorState('RESTORED')
 
-      # Note: lang == 'osh' or lang == 'oil' puts this in different modes.
-      # Do we also need 'complete --oil' and 'complete --osh' ?
+      # Note: lang == 'osh' or lang == 'ysh' puts this in different modes.
+      # Do we also need 'complete --osh' and 'complete --ysh' ?
       elif command == 'PARSE':
         # Just parse
         reply = 'TODO:PARSE'
