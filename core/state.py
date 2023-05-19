@@ -1096,7 +1096,7 @@ def InitMem(mem, environ, version_str):
   Initialize memory with shell defaults.  Other interpreters could have
   different builtin variables.
   """
-  SetGlobalString(mem, 'OIL_VERSION', version_str)
+  SetGlobalString(mem, 'OILS_VERSION', version_str)
   _InitDefaults(mem)
   _InitVarsFromEnv(mem, environ)
 
