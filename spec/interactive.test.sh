@@ -309,3 +309,34 @@ $SH --rcfile myrc -i -c 'show-shell-state main'
 # comparisons.
 # The --details flag is useful
 
+
+#### HISTFILE is written in interactive shell
+
+rm -f myhist
+export HISTFILE=myhist
+echo 'echo hist1; echo hist2' | $SH --norc -i
+
+if test -n "$BASH_VERSION"; then
+  echo '^D'  # match OSH for now
+fi
+
+cat myhist
+# cat ~/.config/oil/history_osh
+
+## STDOUT:
+hist1
+hist2
+^D
+echo hist1; echo hist2
+## END
+
+
+#### HISTFILE default value
+
+# it ends with _history
+$SH --norc -i -c 'echo HISTFILE=$HISTFILE' | egrep -q '_history$'
+echo status=$?
+
+## STDOUT:
+status=0
+## END

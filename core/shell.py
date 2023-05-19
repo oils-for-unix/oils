@@ -8,7 +8,7 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
 from _devbuild.gen.syntax_asdl import (
     loc, source, source_t, IntParamBox, CompoundWord
 )
@@ -69,7 +69,7 @@ import libc
 
 import posix_ as posix
 
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value, Proc
@@ -296,6 +296,45 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
   return assign_b
 
 
+class ShellFiles(object):
+  def __init__(self, lang, home_dir, mem, flag):
+    # type: (str, str, state.Mem, arg_types.main) -> None
+    self.lang = lang
+    self.home_dir = home_dir
+    self.mem = mem
+    self.flag = flag
+
+  def _DefaultHistoryFile(self):
+    # type: () -> str
+    return os_path.join(
+        self.home_dir, '.local/share/oils/%s_history' % self.lang)
+
+  def InitAfterLoadingEnv(self):
+    # type: () -> None
+
+    if self.mem.GetValue('HISTFILE').tag() == value_e.Undef:
+      # Note: if the directory doesn't exist, GNU readline ignores
+      state.SetGlobalString(self.mem, 'HISTFILE', self._DefaultHistoryFile())
+
+  def HistoryFile(self):
+    # type: () -> Optional[str]
+    # TODO: In non-strict mode we should try to cast the HISTFILE value to a
+    # string following bash's rules
+
+    UP_val = self.mem.GetValue('HISTFILE')
+    if UP_val.tag() == value_e.Str:
+      val = cast(value.Str, UP_val)
+      return val.s
+    else:
+      # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
+      return None
+      #return self._DefaultHistoryFile()
+
+      # TODO: can we recover line information here?
+      #       might be useful to show where HISTFILE was set
+      #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
+
+
 def Main(lang, arg_r, environ, login_shell, loader, readline):
   # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
@@ -503,9 +542,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   home_dir = pyos.GetMyHomeDir()
   assert home_dir is not None
 
-  # init the HISTFILE variable to our default history file
-  history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
-  state.SetGlobalString(mem, 'HISTFILE', history_filename)
+  sh_files = ShellFiles(lang, home_dir, mem, flag)
+  sh_files.InitAfterLoadingEnv()
 
   #
   # Initialize builtins that don't depend on evaluators
@@ -529,7 +567,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   # Interactive, depend on readline
   builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
-  builtins[builtin_i.history] = builtin_lib.History(readline, mem, errfmt, mylib.Stdout())
+  builtins[builtin_i.history] = builtin_lib.History(
+      readline, sh_files, errfmt, mylib.Stdout())
 
   #
   # Initialize Evaluators
@@ -762,8 +801,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-      comp_ui.InitReadline(readline, history_filename, root_comp, display,
-                           debug_f)
+      comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
+                           display, debug_f)
 
       _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
@@ -800,10 +839,12 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       status = mut_status.i
 
     if readline:
-      try:
-        readline.write_history_file(history_filename)
-      except (IOError, OSError):
-        pass
+      hist_file = sh_files.HistoryFile()
+      if hist_file is not None:
+        try:
+          readline.write_history_file(hist_file)
+        except (IOError, OSError):
+          pass
 
     return status
 

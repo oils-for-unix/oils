@@ -35,7 +35,6 @@ def Define(sp):
   sp.OshFile(
       'builtin-history',
       compare_shells = 'bash',
-      failures_allowed = 1,
       tags = ['interactive'])
 
   sp.OshFile(

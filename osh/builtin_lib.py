@@ -8,6 +8,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
+from core import pyutil
 from core import state
 from core import vm
 from core.error import e_usage
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value
   from frontend.py_readline import Readline
   from core.ui import ErrorFormatter
+  from core import shell
 
 
 class Bind(vm._Builtin):
@@ -39,29 +41,12 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline, mem, errfmt, f):
-    # type: (Optional[Readline], state.Mem, ErrorFormatter, mylib.Writer) -> None
+  def __init__(self, readline, sh_files, errfmt, f):
+    # type: (Optional[Readline], shell.ShellFiles, ErrorFormatter, mylib.Writer) -> None
     self.readline = readline
-    self.mem = mem
+    self.sh_files = sh_files
     self.errfmt = errfmt
     self.f = f  # this hook is for unit testing only
-
-  def GetHistoryFilename(self):
-    # type: () -> str
-    # TODO: In non-strict mode we should try to cast the HISTFILE value to a
-    # string following bash's rules
-
-    UP_val = self.mem.GetValue('HISTFILE')
-    if UP_val.tag() == value_e.Str:
-      val = cast(value.Str, UP_val)
-      return val.s
-    else:
-      # TODO: support bash-like behaviour here where we try to convert $HISTFILE
-      # to a string in anyway possible
-
-      # TODO: can we recover line information here?
-      #       might be useful to show where HISTFILE was set
-      raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
@@ -81,16 +66,33 @@ class History(vm._Builtin):
       return 0
 
     if arg.a:
-      readline.write_history_file(self.GetHistoryFilename())
+      hist_file = self.sh_files.HistoryFile()
+      if hist_file is None:
+        return 1
+
+      try:
+        readline.write_history_file(hist_file)
+      except (IOError, OSError) as e:
+        self.errfmt.Print_(
+            'Error writing HISTFILE %r: %s' % (hist_file, pyutil.strerror(e)),
+            loc.Missing)
+        return 1
+
       return 0
 
     if arg.r:
-      history_filename = self.GetHistoryFilename()
-      if not path_stat.exists(history_filename):
-        self.errfmt.Print_("HISTFILE %r doesn't exist" % history_filename, loc.Missing)
+      hist_file = self.sh_files.HistoryFile()
+      if hist_file is None:
         return 1
 
-      readline.read_history_file(history_filename)
+      try:
+        readline.read_history_file(hist_file)
+      except (IOError, OSError) as e:
+        self.errfmt.Print_(
+            'Error reading HISTFILE %r: %s' % (hist_file, pyutil.strerror(e)),
+            loc.Missing)
+        return 1
+
       return 0
 
     # Delete history entry by id number
