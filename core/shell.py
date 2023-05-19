@@ -299,10 +299,14 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
 class ShellFiles(object):
   def __init__(self, lang, home_dir, mem, flag):
     # type: (str, str, state.Mem, arg_types.main) -> None
+    assert lang in ('osh', 'ysh'), lang
     self.lang = lang
     self.home_dir = home_dir
     self.mem = mem
     self.flag = flag
+
+  def _HistVar(self):
+    return 'HISTFILE' if self.lang == 'osh' else 'YSH_HISTFILE'
 
   def _DefaultHistoryFile(self):
     # type: () -> str
@@ -312,16 +316,17 @@ class ShellFiles(object):
   def InitAfterLoadingEnv(self):
     # type: () -> None
 
-    if self.mem.GetValue('HISTFILE').tag() == value_e.Undef:
+    hist_var = self._HistVar()
+    if self.mem.GetValue(hist_var).tag() == value_e.Undef:
       # Note: if the directory doesn't exist, GNU readline ignores
-      state.SetGlobalString(self.mem, 'HISTFILE', self._DefaultHistoryFile())
+      state.SetGlobalString(self.mem, hist_var, self._DefaultHistoryFile())
 
   def HistoryFile(self):
     # type: () -> Optional[str]
     # TODO: In non-strict mode we should try to cast the HISTFILE value to a
     # string following bash's rules
 
-    UP_val = self.mem.GetValue('HISTFILE')
+    UP_val = self.mem.GetValue(self._HistVar())
     if UP_val.tag() == value_e.Str:
       val = cast(value.Str, UP_val)
       return val.s
