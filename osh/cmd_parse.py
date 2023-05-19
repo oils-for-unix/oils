@@ -1426,8 +1426,9 @@ class CommandParser(object):
 
     self._Eat(Id.Lit_RBrace)
 
-    spids = [runtime.NO_SPID] * 4  # HACK: we probably don't need this
-    arm = CaseArm(pat_words, action_children, spids)
+    # We pass None for spids as those spids are unused, this let's us avoid an
+    # empty list allocation
+    arm = CaseArm(pat_words, action_children, None)
     return arm
 
   def ParseOilCaseList(self, arms):
