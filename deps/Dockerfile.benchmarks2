@@ -38,6 +38,7 @@ COPY --chown=uke \
   _build/deps-source/mypy/mypy-0.780/ \
   /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
+COPY devtools/run-task.sh /home/uke/tmp/devtools/run-task.sh
 COPY build/deps.sh /home/uke/tmp/build/deps.sh
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 

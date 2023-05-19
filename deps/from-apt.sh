@@ -195,6 +195,9 @@ cpp-small() {
 
     # for MyPy git clone https://.  TODO: remove when the build is hermetic
     ca-certificates
+
+    # for test/ltrace
+    ltrace
   )
 
   apt-install "${packages[@]}"
