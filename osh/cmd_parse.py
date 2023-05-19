@@ -1387,8 +1387,13 @@ class CommandParser(object):
   def ParseOilCaseItem(self):
     # type: () -> CaseArm
     """
-    case_item: pat_words newline_ok { newline_ok command_list newline_ok };
-    pat_words: (word PIPE)* word
+    case_item   : pattern newline_ok { newline_ok command_list newline_ok };
+    pattern     : pat_words
+                | pat_expr
+                | pat_eggex
+    pat_words   : (word PIPE)* word
+    pat_expr    : ( oil_expr )
+    pat_eggex   : / oil_eggex /
     """
     pat_words = []  # type: List[word_t]
     while True:
