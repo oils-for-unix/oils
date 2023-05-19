@@ -23,14 +23,16 @@ test-home-dir() {
   local status=0
 
   # zsh calls getpwuid
-  for sh in $osh bash dash mksh; do
-    local err
-    err=$BASE_DIR/$(basename $sh).txt
+  # bash on my Ubuntu machine doesn't call it, but seems to in the Debian CI
+  # image
+  for sh in $osh dash mksh "$@"; do
+    local trace
+    trace=$BASE_DIR/$(basename $sh).txt
 
-    ltrace -e getpwuid -- $sh -c 'echo hi' 2> $err
+    ltrace -e getpwuid -- $sh -c 'echo hi' 2> $trace
 
-    if grep getpwuid $err; then
-      log "ERROR: $sh should not call pwd"
+    if grep getpwuid $trace; then
+      log "ERROR: $sh should not call getpwuid()"
       status=1
     fi
   done
