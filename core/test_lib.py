@@ -156,8 +156,9 @@ def InitWordEvaluator(exec_opts=None):
   splitter = split.SplitContext(mem)
   errfmt = ui.ErrorFormatter(arena)
 
+  tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                         splitter, errfmt)
+                                         tilde_ev, splitter, errfmt)
   return ev
 
 
@@ -238,8 +239,9 @@ def InitCommandEvaluator(
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
+  tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
-                                          splitter, errfmt)
+                                          tilde_ev, splitter, errfmt)
   signal_safe = pyos.InitSignalSafe()
   trap_state = builtin_trap.TrapState(signal_safe)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,

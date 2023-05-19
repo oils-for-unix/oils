@@ -368,7 +368,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   try:
     attrs = flag_spec.ParseMore('main', arg_r)
   except error.Usage as e:
-    print_stderr('osh usage error: %s' % e.msg)
+    print_stderr('%s usage error: %s' % (lang, e.msg))
     return 2
   flag = arg_types.main(attrs.attrs)
 
@@ -486,8 +486,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     try:
       debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))  # type: util._DebugFile
     except (IOError, OSError) as e:
-      print_stderr("osh: Couldn't open %r: %s" %
-                   (debug_path, posix.strerror(e.errno)))
+      print_stderr("%s: Couldn't open %r: %s" %
+                   (lang, debug_path, posix.strerror(e.errno)))
       return 2
   else:
     debug_f = util.NullDebugFile()
@@ -543,10 +543,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   dir_stack = state.DirStack()
 
-  # Find common directories, these are consumed by some builtins and then much
-  # later used while setting up an interactive shell.
-  home_dir = pyos.GetMyHomeDir()
-  assert home_dir is not None
+  # The login program is supposed to set $HOME
+  # https://superuser.com/questions/271925/where-is-the-home-environment-variable-set
+  # state.InitMem(mem) must happen first
+  tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
+  home_dir = tilde_ev.GetMyHomeDir()
+  if home_dir is None:
+    # TODO: print errno from getpwuid()
+    print_stderr("%s: Failed to get home dir from $HOME or getpwuid()" % lang)
+    return 1
 
   sh_files = ShellFiles(lang, home_dir, mem, flag)
   sh_files.InitAfterLoadingEnv()
@@ -591,7 +596,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     expr_ev = None
 
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
-                                          splitter, errfmt)
+                                          tilde_ev, splitter, errfmt)
 
   assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
@@ -695,8 +700,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       try:
         f = fd_state.Open(script_name)
       except (IOError, OSError) as e:
-        print_stderr("osh: Couldn't open %r: %s" %
-                     (script_name, posix.strerror(e.errno)))
+        print_stderr("%s: Couldn't open %r: %s" %
+                     (lang, script_name, posix.strerror(e.errno)))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
@@ -785,7 +790,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     if readline:
       # NOTE: We're using a different WordEvaluator here.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                             splitter, errfmt)
+                                             tilde_ev, splitter, errfmt)
 
       ev.arith_ev = arith_ev
       ev.expr_ev = expr_ev
@@ -857,9 +862,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     return status
 
   if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-    print_stderr('osh warning: --rcfile ignored in non-interactive shell')
+    print_stderr('%s warning: --rcfile ignored in non-interactive shell' % lang)
   if flag.rcdir is not None:
-    print_stderr('osh warning: --rcdir ignored in non-interactive shell')
+    print_stderr('%s warning: --rcdir ignored in non-interactive shell' % lang)
 
   if exec_opts.noexec():
     status = 0
