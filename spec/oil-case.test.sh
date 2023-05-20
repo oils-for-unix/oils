@@ -93,6 +93,13 @@ string
 #### old and new case statements
 
 for flag in -f -x {
+
+  # We can disallow this with shopt --unset parse_old_case, because the new
+  # case statement does everything the old one does
+  #
+  # shopt --set ysh:upgrade lets you use both, but ysh:all only lets you use
+  # the new one
+
   case $flag in
     -f|-d)
       echo 'file'
