@@ -302,14 +302,13 @@ class OilPrinter(object):
       # Turn everything into <<<.  We just change the quotes
       self.f.write('<<<')
 
-      #here_begin_spid2 = location.OfWordRight(node.here_begin)
       if delim_quoted:
         self.f.write(" '''")
       else:
         self.f.write(' """')
 
-      delim_end_spid = location.OfWordRight(here_begin)
-      self.cursor.SkipUntilSpid(delim_end_spid + 1)
+      delim_end_tok = location.RightTokenForWord(here_begin)
+      self.cursor.SkipPast(delim_end_tok)
 
       #self.cursor.SkipUntilSpid(here_begin_spid + 1)
 
@@ -466,7 +465,7 @@ class OilPrinter(object):
         if len(node.words):
           first_word = node.words[0]
           ok, val, quoted = word_.StaticEval(first_word)
-          word0_spid = location.OfWordLeft(first_word)
+          word0_tok = location.LeftTokenForWord(first_word)
           if ok and not quoted:
             if val == '[':
               last_word = node.words[-1]
@@ -474,24 +473,25 @@ class OilPrinter(object):
               ok, val, quoted = word_.StaticEval(last_word)
               if ok and not quoted and val == ']':
                 # Replace [ with 'test'
-                self.cursor.PrintUntilSpid(word0_spid)
-                self.cursor.SkipUntilSpid(word0_spid + 1)
+                self.cursor.PrintUntil(word0_tok)
+                self.cursor.SkipPast(word0_tok)
                 self.f.write('test')
 
                 for w in node.words[1:-1]:
                   self.DoWordInCommand(w, local_symbols)
 
                 # Now omit ]
-                last_spid = location.OfWordLeft(last_word)
-                self.cursor.PrintUntilSpid(last_spid - 1)  # Get the space before
-                self.cursor.SkipUntilSpid(last_spid + 1)  # ] takes one spid
+                rbrack_tok = location.LeftTokenForWord(last_word)
+                # Skip the space token before ]
+                self.cursor.PrintUntilSpid(rbrack_tok.span_id - 1)
+                self.cursor.SkipPast(rbrack_tok)  # ] takes one spid
                 return
               else:
                 raise RuntimeError('Got [ without ]')
 
             elif val == '.':
-              self.cursor.PrintUntilSpid(word0_spid)
-              self.cursor.SkipUntilSpid(word0_spid + 1)
+              self.cursor.PrintUntil(word0_tok)
+              self.cursor.SkipPast(word0_tok)
               self.f.write('source')
               return
 
@@ -974,10 +974,9 @@ class OilPrinter(object):
   def DoWordPart(self, node, local_symbols, quoted=False):
     # type: (word_part_t, Dict[str, bool], bool) -> None
 
-    span_id = location.OfWordPartLeft(node)
-    if span_id != runtime.NO_SPID:
-      span = self.arena.GetToken(span_id)
-      self.cursor.PrintUntilSpid(span_id)
+    left_tok = location.LeftTokenForWordPart(node)
+    if left_tok:
+      self.cursor.PrintUntil(left_tok)
 
     UP_node = node
 
