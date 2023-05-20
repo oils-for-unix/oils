@@ -743,13 +743,11 @@ class OilPrinter(object):
           else:
             raise AssertionError()
 
-        # Print 'case' and after
         self.cursor.PrintIncluding(node.case_kw)
 
-        # Translate 
+        # Figure out the variable name, so we can translate 
         # - $var to (var)
         # - "$var" to (var)
-
         var_part = None  # type: SimpleVarSub
         with tagswitch(to_match) as case:
           if case(word_e.Compound):
@@ -765,9 +763,9 @@ class OilPrinter(object):
                 if len(dq_part.parts) == 1:
                   dq_part0 = dq_part.parts[0]
 
-                  # This is annoying -- it would be nice to use pattern
-                  # matching, but then we have to translate it
-                  # This could be extracted into a common function
+                  # Nesting is annoying -- it would be nice to use pattern
+                  # matching, but mycpp won't like it.
+                  # TODO: extract into a common function
                   with tagswitch(dq_part0) as case3:
                     if case3(word_part_e.SimpleVarSub):
                       var_part = cast(SimpleVarSub, dq_part0)
@@ -778,47 +776,35 @@ class OilPrinter(object):
           self.f.write(var_part.var_name)
           self.f.write(') ')
 
-        # Skip 'in'
-        self.cursor.SkipPast(node.arms_start)
+        self.cursor.SkipPast(node.arms_start)  # Skip past 'in'
         self.f.write('{')
 
-        missing_last_demi = False
+        missing_last_dsemi = False
 
-        # each arm needs the ) and the ;; node to skip over?
         for case_arm in node.arms:
-          left_spid = case_arm.spids[0]
-          rparen_spid = case_arm.spids[1]
-          dsemi_spid = case_arm.spids[2]  # ;;
-
-          # change | to 'or'
-          for pat in case_arm.pat_list:
-            pass
-
-          # Remove the )
-          self.cursor.PrintUntilSpid(rparen_spid)
+          # Replace ) with {
+          self.cursor.PrintUntil(case_arm.middle)
           self.f.write(' {')
-          self.cursor.SkipUntilSpid(rparen_spid + 1)
+          self.cursor.SkipPast(case_arm.middle)
 
           for child in case_arm.action:
             self.DoCommand(child, local_symbols)
 
-          if dsemi_spid != runtime.NO_SPID:
+          if case_arm.right:
             # Change ;; to }
-            self.cursor.PrintUntilSpid(dsemi_spid)
+            self.cursor.PrintUntil(case_arm.right)
             self.f.write('}')
-            self.cursor.SkipUntilSpid(dsemi_spid + 1)
+            self.cursor.SkipPast(case_arm.right)
           else:
-            missing_last_demi = True
+            # valid: case $x in pat) echo hi ; esac
+            missing_last_dsemi = True
 
-        # Print until 'esac' or }
-        self.cursor.PrintUntil(node.arms_end)
+        self.cursor.PrintUntil(node.arms_end)  # 'esac' or }
 
-        # Print } for missing ;;
-        if missing_last_demi:
+        if missing_last_dsemi:  # Print } for missing ;;
           self.f.write('}\n')
 
-        # Skip 'esac' or }
-        self.cursor.SkipPast(node.arms_end)
+        self.cursor.SkipPast(node.arms_end)  # 'esac' or }
 
         self.f.write('}')  # in place of 'esac'
 

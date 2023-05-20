@@ -267,7 +267,10 @@ module syntax
   #
   # For YSH typed case, left can be ( and /
   # And case_pat may contain more details
-  CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
+  CaseArm = (
+      Token left, List[word] pat_list, Token middle, List[command] action,
+      Token? right
+  )
 
   # The argument to match agains in a case command
   # In YSH-style case commands we match against an `expr`, but in sh-style case

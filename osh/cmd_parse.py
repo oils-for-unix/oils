@@ -31,7 +31,6 @@ from _devbuild.gen.syntax_asdl import (
     AssignPair, EnvPair, assign_op_e, NameType,
     proc_sig, proc_sig_e, 
 )
-from asdl import runtime
 from core import alloc
 from core import error
 from core.error import p_die
@@ -430,11 +429,9 @@ SECONDARY_KEYWORDS = [
 
 
 class CommandParser(object):
-  """
-  Args:
-    word_parse: to get a stream of words
-    lexer: for lookahead in function def, PushHint of ()
-    line_reader: for here doc
+  """Recursive descent parser derived from POSIX shell grammar.
+
+  TODO: document the metalanguage.
   """
   def __init__(self, parse_ctx, parse_opts, w_parser, lexer, line_reader,
       eof_id=Id.Eof_Real):
@@ -1137,7 +1134,11 @@ class CommandParser(object):
   def _ParseForExprLoop(self, for_kw):
     # type: (Token) -> command.ForExpr
     """
-    for (( init; cond; update )) for_sep? do_group
+    Shell:
+      for '((' init ';' cond ';' update '))' for_sep? do_group
+
+    YSH:
+      for '((' init ';' cond ';' update '))' for_sep? brace_group
     """
     node = self.w_parser.ReadForExpression()
     node.keyword = for_kw
@@ -1261,6 +1262,8 @@ class CommandParser(object):
   def ParseFor(self):
     # type: () -> command_t
     """
+    TODO: Update the grammar
+
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
@@ -1321,7 +1324,7 @@ class CommandParser(object):
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
-    left_spid = location.OfWordLeft(self.cur_word)
+    left_tok = location.LeftTokenForWord(self.cur_word)
     if self.c_id == Id.Op_LParen:  # Optional (
       self._Next()
 
@@ -1339,8 +1342,9 @@ class CommandParser(object):
       else:
         break
 
-    rparen_spid = location.OfWordLeft(self.cur_word)
-    self._Eat(Id.Right_CasePat)
+    ate = self._Eat(Id.Right_CasePat)
+    middle_tok = word_.AsOperatorToken(ate)
+
     self._NewlineOk()
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
@@ -1349,13 +1353,12 @@ class CommandParser(object):
     else:
       action_children = []
 
-    dsemi_spid = runtime.NO_SPID
-    last_spid = runtime.NO_SPID
+    dsemi_tok = None  # type: Token
     self._Peek()
-    if self.c_id == Id.KW_Esac:
-      last_spid = location.OfWordLeft(self.cur_word)
+    if self.c_id == Id.KW_Esac:  # missing last ;;
+      pass
     elif self.c_id == Id.Op_DSemi:
-      dsemi_spid = location.OfWordLeft(self.cur_word)
+      dsemi_tok = word_.AsOperatorToken(self.cur_word)
       self._Next()
     else:
       # Happens on EOF
@@ -1363,9 +1366,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    spids = [left_spid, rparen_spid, dsemi_spid, last_spid]
-    arm = CaseArm(pat_words, action_children, spids)
-    return arm
+    return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
 
   def ParseCaseList(self, arms):
     # type: (List[CaseArm]) -> Optional[Token]
@@ -1390,10 +1391,10 @@ class CommandParser(object):
 
     return None
 
-  def ParseOilCaseItem(self):
+  def ParseOilCaseArm(self):
     # type: () -> CaseArm
     """
-    case_item   : pattern newline_ok LBrace newline_ok command_list newline_ok RBrace;
+    case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
                 | pat_expr
                 | pat_eggex
@@ -1401,6 +1402,7 @@ class CommandParser(object):
     pat_expr    : '(' oil_expr ')'
     pat_eggex   : '/' oil_eggex '/'
     """
+    left_tok = location.LeftTokenForWord(self.cur_word)
     pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
@@ -1423,25 +1425,11 @@ class CommandParser(object):
         break
 
     self._NewlineOk()
-
-    self._Eat(Id.Lit_LBrace)
-
+    action = self.ParseBraceGroup()
     self._NewlineOk()
 
-    if self.c_id != Id.Op_RBrace:
-      c_list = self._ParseCommandTerm()
-      action_children = c_list.children
-    else:
-      action_children = []
-
-    self._NewlineOk()
-
-    self._Eat(Id.Lit_RBrace)
-
-    # We pass None for spids as those spids are unused, this lets us avoid an
-    # empty list allocation
-    arm = CaseArm(pat_words, action_children, None)
-    return arm
+    # The left token of the action is our "middle" token
+    return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
   def ParseOilCaseList(self, arms):
     # type: (List[CaseArm]) -> Optional[Token]
@@ -1455,7 +1443,7 @@ class CommandParser(object):
       if self.c_id == Id.Lit_RBrace:
         return word_.LiteralToken(self.cur_word)
 
-      arm = self.ParseOilCaseItem()
+      arm = self.ParseOilCaseArm()
       self._NewlineOk()
 
       arms.append(arm)
