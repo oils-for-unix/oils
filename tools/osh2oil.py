@@ -91,7 +91,7 @@ class Cursor(object):
     self.f = f
     self.next_span_id = 0
 
-  def PrintUntil(self, until_span_id):
+  def PrintUntilSpid(self, until_span_id):
     # type: (int) -> None
 
     # Sometimes we add +1
@@ -110,7 +110,7 @@ class Cursor(object):
 
     self.next_span_id = until_span_id
 
-  def SkipUntil(self, next_span_id):
+  def SkipUntilSpid(self, next_span_id):
     # type: (int) -> None
     """Skip everything before next_span_id.
     Printing will start at next_span_id
@@ -120,12 +120,28 @@ class Cursor(object):
       assert 0, 'Missing span ID, got %d' % next_span_id
     self.next_span_id = next_span_id
 
+  def SkipUntil(self, tok):
+    # type: (Token) -> None
+    self.SkipUntilSpid(tok.span_id)
+
+  def SkipPast(self, tok):
+    # type: (Token) -> None
+    self.SkipUntilSpid(tok.span_id + 1)
+
+  def PrintUntil(self, tok):
+    # type: (Token) -> None
+    self.PrintUntilSpid(tok.span_id)
+
+  def PrintIncluding(self, tok):
+    # type: (Token) -> None
+    self.PrintUntilSpid(tok.span_id + 1)
+
 
 def PrintArena(arena):
   # type: (alloc.Arena) -> None
   """For testing the invariant that the spans "add up" to the original doc."""
   cursor = Cursor(arena, mylib.Stdout())
-  cursor.PrintUntil(arena.LastSpanId())
+  cursor.PrintUntilSpid(arena.LastSpanId())
 
 
 def PrintTokens(arena):
@@ -262,7 +278,7 @@ class OilPrinter(object):
   def End(self):
     # type: () -> None
     """Make sure we print until the end of the file."""
-    self.cursor.PrintUntil(self.arena.LastSpanId())
+    self.cursor.PrintUntilSpid(self.arena.LastSpanId())
 
   def DoRedirect(self, node, local_symbols):
     # type: (Redir, Dict[str, bool]) -> None
@@ -273,7 +289,7 @@ class OilPrinter(object):
     #print(node, file=sys.stderr)
     op_spid = node.op.span_id
     op_id = node.op.id
-    self.cursor.PrintUntil(op_spid)
+    self.cursor.PrintUntilSpid(op_spid)
 
     if node.arg.tag() == redir_param_e.HereDoc:
       here_doc = cast(redir_param.HereDoc, node.arg)
@@ -293,9 +309,9 @@ class OilPrinter(object):
         self.f.write(' """')
 
       delim_end_spid = location.OfWordRight(here_begin)
-      self.cursor.SkipUntil(delim_end_spid + 1)
+      self.cursor.SkipUntilSpid(delim_end_spid + 1)
 
-      #self.cursor.SkipUntil(here_begin_spid + 1)
+      #self.cursor.SkipUntilSpid(here_begin_spid + 1)
 
       # Now print the lines.  TODO: Have a flag to indent these to the level of
       # the owning command, e.g.
@@ -306,14 +322,14 @@ class OilPrinter(object):
       for part in here_doc.stdin_parts:
         self.DoWordPart(part, local_symbols)
 
-      self.cursor.SkipUntil(here_doc.here_end_tok.span_id + 1)
+      self.cursor.SkipUntilSpid(here_doc.here_end_tok.span_id + 1)
       if delim_quoted:
         self.f.write("'''\n")
       else:
         self.f.write('"""\n')
 
       # Need
-      #self.cursor.SkipUntil(here_end_spid2)
+      #self.cursor.SkipUntilSpid(here_end_spid2)
 
     else:
       pass
@@ -358,7 +374,7 @@ class OilPrinter(object):
                              # can't tell if global
 
     if True:
-      self.cursor.PrintUntil(node.pairs[0].left.span_id)
+      self.cursor.PrintUntilSpid(node.pairs[0].left.span_id)
 
       # For now, just detect whether the FIRST assignment on the line has been
       # declared locally.  We might want to split every line into separate
@@ -395,9 +411,9 @@ class OilPrinter(object):
           lhs = cast(sh_lhs_expr.Name, UP_lhs)
 
           left_spid = pair.left.span_id
-          self.cursor.PrintUntil(left_spid)
+          self.cursor.PrintUntilSpid(left_spid)
           # Assume skipping over one Lit_VarLike token
-          self.cursor.SkipUntil(left_spid + 1)
+          self.cursor.SkipUntilSpid(left_spid + 1)
 
           # Replace name.  I guess it's Lit_Chars.
           self.f.write(lhs.name)
@@ -458,8 +474,8 @@ class OilPrinter(object):
               ok, val, quoted = word_.StaticEval(last_word)
               if ok and not quoted and val == ']':
                 # Replace [ with 'test'
-                self.cursor.PrintUntil(word0_spid)
-                self.cursor.SkipUntil(word0_spid + 1)
+                self.cursor.PrintUntilSpid(word0_spid)
+                self.cursor.SkipUntilSpid(word0_spid + 1)
                 self.f.write('test')
 
                 for w in node.words[1:-1]:
@@ -467,15 +483,15 @@ class OilPrinter(object):
 
                 # Now omit ]
                 last_spid = location.OfWordLeft(last_word)
-                self.cursor.PrintUntil(last_spid - 1)  # Get the space before
-                self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
+                self.cursor.PrintUntilSpid(last_spid - 1)  # Get the space before
+                self.cursor.SkipUntilSpid(last_spid + 1)  # ] takes one spid
                 return
               else:
                 raise RuntimeError('Got [ without ]')
 
             elif val == '.':
-              self.cursor.PrintUntil(word0_spid)
-              self.cursor.SkipUntil(word0_spid + 1)
+              self.cursor.PrintUntilSpid(word0_spid)
+              self.cursor.SkipUntilSpid(word0_spid + 1)
               self.f.write('source')
               return
 
@@ -528,8 +544,8 @@ class OilPrinter(object):
         # For now it might be OK to keep 'do { echo hi; }
         left_spid = node.left.span_id
 
-        self.cursor.PrintUntil(left_spid)
-        self.cursor.SkipUntil(left_spid + 1)
+        self.cursor.PrintUntilSpid(left_spid)
+        self.cursor.SkipUntilSpid(left_spid + 1)
         self.f.write('do {')
 
         for child in node.children:
@@ -544,8 +560,8 @@ class OilPrinter(object):
         left_spid = node.left.span_id
         right_spid = node.right.span_id
 
-        self.cursor.PrintUntil(left_spid)
-        self.cursor.SkipUntil(left_spid + 1)
+        self.cursor.PrintUntilSpid(left_spid)
+        self.cursor.SkipUntilSpid(left_spid + 1)
         self.f.write('shell {')
 
         self.DoCommand(node.child, local_symbols)
@@ -554,8 +570,8 @@ class OilPrinter(object):
         #self._DebugSpid(right_spid + 1)
 
         #print('RIGHT SPID', right_spid)
-        self.cursor.PrintUntil(right_spid)
-        self.cursor.SkipUntil(right_spid + 1)
+        self.cursor.PrintUntilSpid(right_spid)
+        self.cursor.SkipUntilSpid(right_spid + 1)
         self.f.write('}')
 
       elif case(command_e.ShFunction):
@@ -569,9 +585,9 @@ class OilPrinter(object):
 
         # Should be the left most span, including 'function'
         if node.keyword:  # function foo { ...
-          self.cursor.PrintUntil(node.keyword.span_id)
+          self.cursor.PrintUntilSpid(node.keyword.span_id)
         else:  # foo() { ...
-          self.cursor.PrintUntil(node.name_tok.span_id)
+          self.cursor.PrintUntilSpid(node.name_tok.span_id)
 
         self.f.write('proc %s ' % node.name)
 
@@ -579,7 +595,7 @@ class OilPrinter(object):
         with tagswitch(UP_body) as case:
           if case(command_e.BraceGroup):
             body = cast(BraceGroup, UP_body)
-            self.cursor.SkipUntil(body.left.span_id)
+            self.cursor.SkipUntilSpid(body.left.span_id)
 
             # Don't add "do" like a standalone brace group.  Just use {}.
             for child in body.children:
@@ -594,15 +610,15 @@ class OilPrinter(object):
         do_spid = node.left.span_id
         done_spid = node.right.span_id
 
-        self.cursor.PrintUntil(do_spid)
-        self.cursor.SkipUntil(do_spid + 1)
+        self.cursor.PrintUntilSpid(do_spid)
+        self.cursor.SkipUntilSpid(do_spid + 1)
         self.f.write('{')
 
         for child in node.children:
           self.DoCommand(child, local_symbols)
 
-        self.cursor.PrintUntil(done_spid)
-        self.cursor.SkipUntil(done_spid + 1)
+        self.cursor.PrintUntilSpid(done_spid)
+        self.cursor.SkipUntilSpid(done_spid + 1)
         self.f.write('}')
 
       elif case(command_e.ForEach):
@@ -616,12 +632,12 @@ class OilPrinter(object):
         UP_iterable = node.iterable
         with tagswitch(node.iterable) as case:
           if case(for_iter_e.Args):
-            #self.cursor.PrintUntil()  # 'for x' and then space
+            #self.cursor.PrintUntilSpid()  # 'for x' and then space
             self.f.write('for %s in @ARGV ' % node.iter_names[0])
 
             # note: command_t doesn't have .spids
             body_tok = location.TokenForCommand(node.body)
-            self.cursor.SkipUntil(body_tok.span_id)
+            self.cursor.SkipUntilSpid(body_tok.span_id)
 
           elif case(for_iter_e.Words):
             pass
@@ -631,8 +647,8 @@ class OilPrinter(object):
 
         if node.semi_tok is not None:
           semi_spid = node.semi_tok.span_id
-          self.cursor.PrintUntil(semi_spid)
-          self.cursor.SkipUntil(semi_spid + 1)
+          self.cursor.PrintUntilSpid(semi_spid)
+          self.cursor.SkipUntilSpid(semi_spid + 1)
 
         self.DoCommand(node.body, local_symbols)
 
@@ -642,9 +658,9 @@ class OilPrinter(object):
         # Skip 'until', and replace it with 'while not'
         if node.keyword.id == Id.KW_Until:
           kw_spid = node.keyword.span_id
-          self.cursor.PrintUntil(kw_spid)
+          self.cursor.PrintUntilSpid(kw_spid)
           self.f.write('while not')
-          self.cursor.SkipUntil(kw_spid + 1)
+          self.cursor.SkipUntilSpid(kw_spid + 1)
 
         if node.cond.tag() == condition_e.Shell:
           commands = cast(condition.Shell, node.cond).commands
@@ -653,7 +669,7 @@ class OilPrinter(object):
             sentence = cast(command.Sentence, commands[0])
             self.DoCommand(sentence.child, local_symbols)
             semi_spid = sentence.terminator.span_id
-            self.cursor.SkipUntil(semi_spid + 1)
+            self.cursor.SkipUntilSpid(semi_spid + 1)
 
         self.DoCommand(node.body, local_symbols)
 
@@ -673,7 +689,7 @@ class OilPrinter(object):
           then_spid = arm.spids[1]
 
           if i != 0:  # 'if' not 'elif' on the first arm
-            self.cursor.PrintUntil(elif_spid)
+            self.cursor.PrintUntilSpid(elif_spid)
             self.f.write('} ')
 
           cond = arm.cond
@@ -685,14 +701,14 @@ class OilPrinter(object):
 
               # Remove semi-colon
               semi_spid = sentence.terminator.span_id
-              self.cursor.PrintUntil(semi_spid)
-              self.cursor.SkipUntil(semi_spid + 1)
+              self.cursor.PrintUntilSpid(semi_spid)
+              self.cursor.SkipUntilSpid(semi_spid + 1)
             else:
               for child in commands:
                 self.DoCommand(child, local_symbols)
 
-          self.cursor.PrintUntil(then_spid)
-          self.cursor.SkipUntil(then_spid + 1)
+          self.cursor.PrintUntilSpid(then_spid)
+          self.cursor.SkipUntilSpid(then_spid + 1)
           self.f.write('{')
 
           for child in arm.action:
@@ -700,37 +716,35 @@ class OilPrinter(object):
 
         # else -> } else {
         if len(node.else_action):
-          self.cursor.PrintUntil(else_spid)
+          self.cursor.PrintUntilSpid(else_spid)
           self.f.write('} ')
-          self.cursor.PrintUntil(else_spid + 1)
+          self.cursor.PrintUntilSpid(else_spid + 1)
           self.f.write(' {')
 
           for child in node.else_action:
             self.DoCommand(child, local_symbols)
 
         # fi -> }
-        self.cursor.PrintUntil(fi_spid)
-        self.cursor.SkipUntil(fi_spid + 1)
+        self.cursor.PrintUntilSpid(fi_spid)
+        self.cursor.SkipUntilSpid(fi_spid + 1)
         self.f.write('}')
 
       elif case(command_e.Case):
         node = cast(command.Case, UP_node)
 
-        arms_start_spid = node.arms_start.span_id
-        arms_end_spid = node.arms_end.span_id
-
         to_match = None  # type: word_t
         with tagswitch(node.to_match) as case:
           if case(case_arg_e.OilExpr):
-            self.cursor.PrintUntil(arms_end_spid)
-            self.cursor.SkipUntil(arms_end_spid + 1)
+            #self.cursor.PrintUntilSpid(arms_end_spid)
+            #self.cursor.SkipUntilSpid(arms_end_spid + 1)
             return
           elif case(case_arg_e.Word):
             to_match = cast(case_arg.Word, node.to_match).w
           else:
             raise AssertionError()
 
-        self.cursor.PrintUntil(node.case_kw.span_id + 1)
+        # Print 'case' and after
+        self.cursor.PrintIncluding(node.case_kw)
 
         # Translate 
         # - $var to (var)
@@ -764,50 +778,49 @@ class OilPrinter(object):
           self.f.write(var_part.var_name)
           self.f.write(') ')
 
-        #self.cursor.PrintUntil(arms_start_spid)
-        self.cursor.SkipUntil(arms_start_spid + 1)
-        self.f.write('{')  # matchstr $var {
+        # Skip 'in'
+        self.cursor.SkipPast(node.arms_start)
+        self.f.write('{')
 
-        # TODO: we need to change this to output following the new case command
-        #       syntax
+        missing_last_demi = False
 
         # each arm needs the ) and the ;; node to skip over?
         for case_arm in node.arms:
           left_spid = case_arm.spids[0]
           rparen_spid = case_arm.spids[1]
           dsemi_spid = case_arm.spids[2]  # ;;
-          last_spid = case_arm.spids[3]  # esac - can we avoid this?
 
           # change | to 'or'
           for pat in case_arm.pat_list:
             pass
 
           # Remove the )
-          self.cursor.PrintUntil(rparen_spid)
+          self.cursor.PrintUntilSpid(rparen_spid)
           self.f.write(' {')
-          self.cursor.SkipUntil(rparen_spid + 1)
+          self.cursor.SkipUntilSpid(rparen_spid + 1)
 
           for child in case_arm.action:
             self.DoCommand(child, local_symbols)
 
           if dsemi_spid != runtime.NO_SPID:
             # Change ;; to }
-            self.cursor.PrintUntil(dsemi_spid)
+            self.cursor.PrintUntilSpid(dsemi_spid)
             self.f.write('}')
-            self.cursor.SkipUntil(dsemi_spid + 1)
-
-          elif last_spid != runtime.NO_SPID:
-            # replace 'esac' with }  -- but esac is also replaced twice?  gah
-            self.cursor.PrintUntil(last_spid)
-            self.f.write('}\n')
-
+            self.cursor.SkipUntilSpid(dsemi_spid + 1)
           else:
-            raise AssertionError(
-                "Expected with dsemi_spid or last_spid in case arm")
+            missing_last_demi = True
 
-        self.cursor.PrintUntil(arms_end_spid)
-        self.cursor.SkipUntil(arms_end_spid + 1)
-        self.f.write('}')  # another one for esac ?
+        # Print until 'esac' or }
+        self.cursor.PrintUntil(node.arms_end)
+
+        # Print } for missing ;;
+        if missing_last_demi:
+          self.f.write('}\n')
+
+        # Skip 'esac' or }
+        self.cursor.SkipPast(node.arms_end)
+
+        self.f.write('}')  # in place of 'esac'
 
       elif case(command_e.TimeBlock):
         node = cast(command.TimeBlock, UP_node)
@@ -922,15 +935,15 @@ class OilPrinter(object):
               vsub_part = cast(SimpleVarSub, dq_part.parts[0])
               if vsub_part.left.id == Id.VSub_At:
                 # NOTE: This is off for double quoted part.  Hack to subtract 1.
-                self.cursor.PrintUntil(left_spid)
-                self.cursor.SkipUntil(right_spid + 1)  # " then $@ then "
+                self.cursor.PrintUntilSpid(left_spid)
+                self.cursor.SkipUntilSpid(right_spid + 1)  # " then $@ then "
                 self.f.write('@ARGV')
                 return  # Done replacing
 
               # "$1" -> $1, "$foo" -> $foo
               if vsub_part.left.id in (Id.VSub_Number, Id.VSub_DollarName):
-                self.cursor.PrintUntil(left_spid)
-                self.cursor.SkipUntil(right_spid + 1)
+                self.cursor.PrintUntilSpid(left_spid)
+                self.cursor.SkipUntilSpid(right_spid + 1)
                 self.f.write(lexer.TokenVal(vsub_part.left))
                 return
 
@@ -946,17 +959,17 @@ class OilPrinter(object):
 
             elif part0.tag() == word_part_e.BracedVarSub:
               # Skip over quote
-              self.cursor.PrintUntil(left_spid)
-              self.cursor.SkipUntil(left_spid + 1)
+              self.cursor.PrintUntilSpid(left_spid)
+              self.cursor.SkipUntilSpid(left_spid + 1)
               self.DoWordPart(part0, local_symbols)
-              self.cursor.SkipUntil(right_spid + 1)
+              self.cursor.SkipUntilSpid(right_spid + 1)
               return
 
             elif part0.tag() == word_part_e.CommandSub:
-              self.cursor.PrintUntil(left_spid)
-              self.cursor.SkipUntil(left_spid + 1)
+              self.cursor.PrintUntilSpid(left_spid)
+              self.cursor.SkipUntilSpid(left_spid + 1)
               self.DoWordPart(part0, local_symbols)
-              self.cursor.SkipUntil(right_spid + 1)
+              self.cursor.SkipUntilSpid(right_spid + 1)
               return
 
         # TODO: 'foo'"bar" should be "foobar", etc.
@@ -978,7 +991,7 @@ class OilPrinter(object):
     span_id = location.OfWordPartLeft(node)
     if span_id != runtime.NO_SPID:
       span = self.arena.GetToken(span_id)
-      self.cursor.PrintUntil(span_id)
+      self.cursor.PrintUntilSpid(span_id)
 
     UP_node = node
 
@@ -999,8 +1012,8 @@ class OilPrinter(object):
           val = t.tval[1:]
           assert len(val) == 1, val
           if val != '\n':
-            self.cursor.PrintUntil(t.span_id)
-            self.cursor.SkipUntil(t.span_id + 1)
+            self.cursor.PrintUntilSpid(t.span_id)
+            self.cursor.SkipUntilSpid(t.span_id + 1)
             self.f.write("'%s'" % val)
 
       elif case(word_part_e.Literal):
@@ -1015,7 +1028,7 @@ class OilPrinter(object):
           # TODO: Fix word_.TildeDetect to construct proper tokens.
           log('WARNING: %s has no span_id' % node)
         else:
-          self.cursor.PrintUntil(spid + 1)
+          self.cursor.PrintUntilSpid(spid + 1)
 
       elif case(word_part_e.SingleQuoted):
         node = cast(SingleQuoted, UP_node)
@@ -1027,7 +1040,7 @@ class OilPrinter(object):
         # left_spid, right_spid = node.spids
         if len(node.tokens):  # Empty string has no tokens
           last_spid = node.tokens[-1].span_id
-          self.cursor.PrintUntil(last_spid + 1)
+          self.cursor.PrintUntilSpid(last_spid + 1)
 
       elif case(word_part_e.DoubleQuoted):
         node = cast(DoubleQuoted, UP_node)
@@ -1041,39 +1054,39 @@ class OilPrinter(object):
         op_id = node.left.id
 
         if op_id == Id.VSub_DollarName:
-          self.cursor.PrintUntil(spid + 1)
+          self.cursor.PrintUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_Number:
-          self.cursor.PrintUntil(spid + 1)
+          self.cursor.PrintUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_Bang:  # $!
           self.f.write('$BgPid')  # Job most recently placed in backgroudn
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_At:  # $@
           self.f.write('$ifsjoin(ARGV)')
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_Pound:  # $#
           self.f.write('$Argc')
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_Dollar:  # $$
           self.f.write('$Pid')
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_Star:  # $*
           # PEDANTIC: Depends if quoted or unquoted
           self.f.write('$ifsjoin(ARGV)')
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_Hyphen:  # $*
           self.f.write('$Flags')
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         elif op_id == Id.VSub_QMark:  # $?
           self.f.write('$Status')
-          self.cursor.SkipUntil(spid + 1)
+          self.cursor.SkipUntilSpid(spid + 1)
 
         else:
           pass
@@ -1085,7 +1098,7 @@ class OilPrinter(object):
         right_spid = node.right.span_id
 
         # NOTE: Why do we need this but we don't need it in command sub?
-        self.cursor.PrintUntil(left_spid)
+        self.cursor.PrintUntilSpid(left_spid)
 
         name_spid = node.token.span_id
         op_id = node.token.id
@@ -1104,9 +1117,9 @@ class OilPrinter(object):
           pass
 
         if op_id == Id.VSub_QMark:
-          self.cursor.PrintUntil(name_spid + 1)
+          self.cursor.PrintUntilSpid(name_spid + 1)
 
-        self.cursor.PrintUntil(right_spid + 1)
+        self.cursor.PrintUntilSpid(right_spid + 1)
 
       elif case(word_part_e.CommandSub):
         node = cast(CommandSub, UP_node)
@@ -1115,19 +1128,19 @@ class OilPrinter(object):
         right_spid = node.right.span_id
 
         if node.left_token.id == Id.Left_Backtick:
-          self.cursor.PrintUntil(left_spid)
+          self.cursor.PrintUntilSpid(left_spid)
 
           self.f.write('$(')
-          self.cursor.SkipUntil(left_spid + 1)
+          self.cursor.SkipUntilSpid(left_spid + 1)
 
           self.DoCommand(node.child, local_symbols)
 
           # Skip over right `
-          self.cursor.SkipUntil(right_spid + 1)
+          self.cursor.SkipUntilSpid(right_spid + 1)
           self.f.write(')')
 
         else:
-          self.cursor.PrintUntil(right_spid + 1)
+          self.cursor.PrintUntilSpid(right_spid + 1)
 
       else:
         pass
