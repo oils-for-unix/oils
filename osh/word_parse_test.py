@@ -61,14 +61,10 @@ def _assertSpanForWord(test, word_str):
   arena = test_lib.MakeArena('word_parse_test.py')
   w_parser = test_lib.InitWordParser(word_str, arena=arena)
   w = _assertReadWordWithArena(test, w_parser)
-  span_id = location.OfWordLeft(w)
+  tok = location.LeftTokenForWord(w)
 
   print(word_str)
-  print(span_id)
-
-  if span_id != runtime.NO_SPID:
-    span = arena.GetToken(span_id)
-    print(span)
+  print(tok)
 
 
 def _GetSuffixOp(test, w):
