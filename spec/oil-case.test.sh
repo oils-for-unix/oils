@@ -97,8 +97,8 @@ for flag in -f -x {
   # We can disallow this with shopt --unset parse_old_case, because the new
   # case statement does everything the old one does
   #
-  # shopt --set ysh:upgrade lets you use both, but ysh:all only lets you use
-  # the new one
+  # bin/osh and shopt --set ysh:upgrade let you use both styles, but bin/ysh
+  # only lets you use the new style
 
   case $flag in
     -f|-d)
