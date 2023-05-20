@@ -533,27 +533,30 @@ class CommandParser(object):
       self.next_lex_mode = lex_mode_e.Undefined
 
   def _Eat(self, c_id):
-    # type: (Id_t) -> None
-    actual_id = word_.CommandId(self.cur_word)
+    # type: (Id_t) -> word_t
+    """Consume a word of a type."""
+    # TODO: Printing something like KW_Do is not friendly.  We can map
+    # backwards using the _KEYWORDS list in frontend/lexer_def.py.
     msg = 'Expected word type %s, got %s' % (
-        ui.PrettyId(c_id), ui.PrettyId(actual_id)
+        ui.PrettyId(c_id), ui.PrettyId(self.c_id)
     )
-    self._Eat2(c_id, msg)
+    return self._Eat2(c_id, msg)
 
   def _Eat2(self, c_id, msg):
-    # type: (Id_t, str) -> None
-    """Consume a word of a type.  If it doesn't match, return False.
+    # type: (Id_t, str) -> word_t
+    """Consume a word of a type, and show a custom error message.
 
     Args:
       c_id: the Id we expected
       msg: improved error message
     """
     self._Peek()
-    # TODO: Printing something like KW_Do is not friendly.  We can map
-    # backwards using the _KEYWORDS list in frontend/lexer_def.py.
     if self.c_id != c_id:
       p_die(msg, loc.Word(self.cur_word))
+
+    skipped = self.cur_word
     self._Next()
+    return skipped
 
   def _NewlineOk(self):
     # type: () -> None
@@ -1050,8 +1053,8 @@ class CommandParser(object):
 
     The doc comment can only occur if there's a newline.
     """
-    left = word_.LiteralToken(self.cur_word)
-    self._Eat(Id.Lit_LBrace)
+    ate = self._Eat(Id.Lit_LBrace)
+    left = word_.LiteralToken(ate)
 
     doc_token = None  # type: Token
     self._Peek()
@@ -1066,10 +1069,8 @@ class CommandParser(object):
 
     c_list = self._ParseCommandList()
 
-    self._Eat(Id.Lit_RBrace)
-
-    # TODO: get token directly
-    right = location.LeftTokenForWord(self.cur_word)
+    ate = self._Eat(Id.Lit_RBrace)
+    right = word_.LiteralToken(ate)
 
     # Note(andychu): Related ASDL bug #1216.  Choosing the Python [] behavior
     # would allow us to revert this back to None, which was changed in
@@ -1084,13 +1085,13 @@ class CommandParser(object):
 
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
-    self._Eat(Id.KW_Do)
-    do_kw = word_.AsKeywordToken(self.cur_word)  # Must come AFTER _Eat
+    ate = self._Eat(Id.KW_Do)
+    do_kw = word_.AsKeywordToken(ate)
 
     c_list = self._ParseCommandList()  # could be anything
 
-    self._Eat(Id.KW_Done)
-    done_kw = word_.AsKeywordToken(self.cur_word)  # after _Eat
+    ate = self._Eat(Id.KW_Done)
+    done_kw = word_.AsKeywordToken(ate)
 
     return command.DoGroup(do_kw, c_list.children, done_kw)
 
@@ -1260,8 +1261,8 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
-    self._Eat(Id.KW_For)
-    for_kw = word_.AsKeywordToken(self.cur_word)
+    ate = self._Eat(Id.KW_For)
+    for_kw = word_.AsKeywordToken(ate)
 
     self._Peek()
     if self.c_id == Id.Op_DLeftParen:
@@ -1318,13 +1319,14 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
     left_spid = location.OfWordLeft(self.cur_word)
-    if self.c_id == Id.Op_LParen:
+    if self.c_id == Id.Op_LParen:  # Optional (
       self._Next()
 
     pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
-      pat_words.append(self.cur_word)
+      ate = self._Eat(Id.Word_Compound)
+      pat_words.append(ate)
       self._Next()
 
       self._Peek()

@@ -513,17 +513,12 @@ The case statement matches a string against **glob** patterns, and executes the
 corresponding block:
 
     case $s {
-      (*.py)
-        echo 'python'
-        rm --verbose $s
-        ;;
-      ('README')       # constant words should be quoted
-        echo 'README'
-        ;;
-      (*)
-        echo 'neither'
-        ;;
+      *.py       { echo 'Python' }
+      *.cc | *.h { echo 'C++' }
+      *          { echo 'Other' }
     }
+
+<!-- TODO: document case on typed data -->
 
 (Shell style like `if foo; then ... fi` and `case $x in ...  esac` is also legal,
 but discouraged in Oil code.)

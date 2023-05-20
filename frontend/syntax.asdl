@@ -254,7 +254,7 @@ module syntax
 
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
-  | Oil(expr e)               # if (x > 0) { echo hi }
+  | Oil(expr e)                    # if (x > 0) { echo hi }
 
   # Each arm tests one word against multiple words
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
