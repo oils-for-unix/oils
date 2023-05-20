@@ -1150,7 +1150,7 @@ oil_case() {
   # parse_bare_word
   _oil-should-parse '
   case (foo) {
-    (main.py) { echo "python" }
+    (obj.attr) { echo "python" }
   }
   '
 
@@ -1212,6 +1212,26 @@ oil_case() {
     bar) {
       echo "python"
     }
+  }
+  '
+
+  _oil-parse-error '
+  case (x) {
+    {
+      echo "python"
+    }
+  }
+  '
+
+  _oil-parse-error '
+  case (x {
+    *.py { echo "python" }
+  }
+  '
+
+  _oil-parse-error '
+  case (x) {
+    *.py) { echo "python" }
   }
   '
 }
