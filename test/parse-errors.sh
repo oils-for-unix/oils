@@ -1200,6 +1200,14 @@ oil_case() {
   }
   '
 
+  # Newline not allowed, because it isn't in for, if, while, etc.
+  _oil-parse-error '
+  case (x)
+  {
+    *.py { echo "python" }
+  }
+  '
+
   _oil-parse-error '
   case (foo) in
     *.py {

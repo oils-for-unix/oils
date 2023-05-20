@@ -529,19 +529,9 @@ class CommandParser(object):
       self.c_id = word_.CommandId(self.cur_word)
       self.next_lex_mode = lex_mode_e.Undefined
 
-  def _Eat(self, c_id):
-    # type: (Id_t) -> word_t
-    """Consume a word of a type."""
-    # TODO: Printing something like KW_Do is not friendly.  We can map
-    # backwards using the _KEYWORDS list in frontend/lexer_def.py.
-    msg = 'Expected word type %s, got %s' % (
-        ui.PrettyId(c_id), ui.PrettyId(self.c_id)
-    )
-    return self._Eat2(c_id, msg)
-
-  def _Eat2(self, c_id, msg):
-    # type: (Id_t, str) -> word_t
-    """Consume a word of a type, and show a custom error message.
+  def _Eat(self, c_id, msg=None):
+    # type: (Id_t, Optional[str]) -> word_t
+    """Consume a word of a type, maybe showing a custom error message.
 
     Args:
       c_id: the Id we expected
@@ -549,6 +539,10 @@ class CommandParser(object):
     """
     self._Peek()
     if self.c_id != c_id:
+      if msg is None:
+        msg = 'Expected word type %s, got %s' % (
+            ui.PrettyId(c_id), ui.PrettyId(self.c_id)
+        )
       p_die(msg, loc.Word(self.cur_word))
 
     skipped = self.cur_word
@@ -1368,27 +1362,23 @@ class CommandParser(object):
     return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
 
   def ParseCaseList(self, arms):
-    # type: (List[CaseArm]) -> Optional[Token]
+    # type: (List[CaseArm]) -> None
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
 
     Returns the terminating `esac` keyword (if present) for location tracking.
     """
-    self._Peek()
-
     while True:
-      # case item begins with a command word or (
+      self._Peek()
       if self.c_id == Id.KW_Esac:
-        return word_.AsKeywordToken(self.cur_word)
+        return
+
+      # case item begins with a command word or (
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
+
       arm = self.ParseCaseArm()
-
       arms.append(arm)
-      self._Peek()
-      # Now look for DSEMI or ESAC
-
-    return None
 
   def ParseOilCaseArm(self):
     # type: () -> CaseArm
@@ -1452,29 +1442,25 @@ class CommandParser(object):
   def ParseOilCase(self, case_node):
     # type: (command.Case) -> None
     """
-    oil_case : Case '(' expr ')' newline_ok LBrace newline_ok oil_case_list? RBrace ;
+    oil_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
 
     Call this after we're past 'case'.
     """
     enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
     case_node.to_match = case_arg.OilExpr(enode)
 
-    # TODO: collect tokens for location info
-    self._Peek()
-    if self.c_id == Id.Lit_LBrace:
-      # TODO: _Eat() can return the word it consumed
-      case_node.arms_start = word_.LiteralToken(self.cur_word)
-    self._Eat(Id.Lit_LBrace)
+    ate = self._Eat(Id.Lit_LBrace)
+    case_node.arms_start = word_.BraceToken(ate)
+
     self._NewlineOk()
 
+    # TODO: maybe this doesn't need to be optional
     self.ParseOilCaseList(case_node.arms)
 
     self._NewlineOk()
-    self._Peek()
-    if self.c_id == Id.Lit_RBrace:
-      # TODO: _Eat() can return the word it consumed
-      case_node.arms_end = word_.LiteralToken(self.cur_word)
-    self._Eat(Id.Lit_RBrace)
+
+    ate = self._Eat(Id.Lit_RBrace)
+    case_node.arms_end = word_.BraceToken(ate)
 
   def ParseCase(self):
     # type: () -> command.Case
@@ -1505,17 +1491,17 @@ class CommandParser(object):
     self._NewlineOk()
     self._Peek()
 
-    self._Eat(Id.KW_In)
-    case_node.arms_start = word_.AsKeywordToken(self.cur_word)
+    ate = self._Eat(Id.KW_In)
+    case_node.arms_start = word_.AsKeywordToken(ate)
+
     self._NewlineOk()
 
-    if self.c_id == Id.KW_Esac:  # empty case list
-      case_node.arms_end = word_.AsKeywordToken(self.cur_word)
-    else:
-      case_node.arms_end = self.ParseCaseList(case_node.arms)
-      # TODO: should it return a list of nodes, and extend?
+    if self.c_id != Id.KW_Esac:  # empty case list
+      self.ParseCaseList(case_node.arms)
 
-    self._Eat(Id.KW_Esac)
+    ate = self._Eat(Id.KW_Esac)
+    case_node.arms_end = word_.AsKeywordToken(ate)
+
     self._Next()
 
     return case_node
