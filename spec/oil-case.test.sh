@@ -6,9 +6,14 @@ case (x) {
   *.h | *.cc { echo C++ }
   *.py       { echo Python }
 }
+
+# not recommended, but it works
+case (x) { header.h { echo header.h } * { echo other } }
+
 ## status: 0
 ## STDOUT:
 C++
+header.h
 ## END
 
 #### case syntax, multiline
@@ -16,9 +21,11 @@ const x = "hello.py"
 case (x) {
   *.h | *.cc {
     echo C++
+    echo 2; echo 3
   }
   *.py {
-    echo Python
+    echo \
+      Python
   }
 }
 ## status: 0

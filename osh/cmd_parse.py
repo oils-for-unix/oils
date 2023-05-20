@@ -1387,23 +1387,24 @@ class CommandParser(object):
   def ParseOilCaseItem(self):
     # type: () -> CaseArm
     """
-    case_item   : pattern newline_ok { newline_ok command_list newline_ok };
+    case_item   : pattern newline_ok LBrace newline_ok command_list newline_ok RBrace;
     pattern     : pat_words
                 | pat_expr
                 | pat_eggex
-    pat_words   : (word PIPE)* word
-    pat_expr    : ( oil_expr )
-    pat_eggex   : / oil_eggex /
+    pat_words   : (WORD '|')* WORD
+    pat_expr    : '(' oil_expr ')'
+    pat_eggex   : '/' oil_eggex '/'
     """
     pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
 
       if self.c_id == Id.Op_LParen:
+        # TODO: Parse YSH expressions here
         self._Next()  # Skip '('
         self._Peek()
         pat_words.append(self.cur_word)
-        self._Next()  # Skip prev word
+        self._Next()
         self._Eat(Id.Op_RParen)
       else:
         pat_words.append(self.cur_word)
@@ -1431,7 +1432,7 @@ class CommandParser(object):
 
     self._Eat(Id.Lit_RBrace)
 
-    # We pass None for spids as those spids are unused, this let's us avoid an
+    # We pass None for spids as those spids are unused, this lets us avoid an
     # empty list allocation
     arm = CaseArm(pat_words, action_children, None)
     return arm
@@ -1439,29 +1440,28 @@ class CommandParser(object):
   def ParseOilCaseList(self, arms):
     # type: (List[CaseArm]) -> Optional[Token]
     """
-    oil_case_list: (case_item newline_ok)* case_item? newline_ok;
+    oil_case_list: (case_item newline_ok)*
 
-    Returns the terminating <}> token (if present) for location tracking.
+    Returns the terminating RBrace } token (if present) for location tracking.
     """
-    self._Peek()
-
     while True:
-      # case item begins with a command word
+      self._Peek()
       if self.c_id == Id.Lit_RBrace:
         return word_.LiteralToken(self.cur_word)
 
       arm = self.ParseOilCaseItem()
-
       self._NewlineOk()
 
       arms.append(arm)
-      self._Peek()
-      # Now look for <}>
+
+    return None
 
   def ParseOilCase(self, case_node):
     # type: (command.Case) -> None
     """
-    Finish parsing an oil style case command.
+    oil_case : Case '(' expr ')' newline_ok LBrace newline_ok oil_case_list? RBrace ;
+
+    Call this after we're past 'case'.
     """
     enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
     case_node.to_match = case_arg.OilExpr(enode)
@@ -1469,6 +1469,7 @@ class CommandParser(object):
     # TODO: collect tokens for location info
     self._Peek()
     if self.c_id == Id.Lit_LBrace:
+      # TODO: _Eat() can return the word it consumed
       case_node.arms_start = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_LBrace)
     self._NewlineOk()
@@ -1478,14 +1479,15 @@ class CommandParser(object):
     self._NewlineOk()
     self._Peek()
     if self.c_id == Id.Lit_RBrace:
+      # TODO: _Eat() can return the word it consumed
       case_node.arms_end = word_.LiteralToken(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
   def ParseCase(self):
     # type: () -> command.Case
     """
-    case_clause      : Case WORD newline_ok in newline_ok case_list? Esac ;
-                     | Case WORD newline_ok { newline_ok oil_case_list? } ;
+    case_clause : Case WORD         newline_ok In newline_ok case_list? Esac ;
+                | oil_case
     """
     case_node = command.Case.CreateNull(alloc_lists=True)
 
@@ -1493,8 +1495,8 @@ class CommandParser(object):
     self._Next()  # skip case
 
     if self.w_parser.LookPastSpace() == Id.Op_LParen:
-        self.ParseOilCase(case_node)
-        return case_node
+      self.ParseOilCase(case_node)
+      return case_node
 
     self._Peek()
     to_match = self.cur_word
