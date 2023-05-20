@@ -1053,8 +1053,10 @@ class CommandParser(object):
 
     The doc comment can only occur if there's a newline.
     """
-    ate = self._Eat(Id.Lit_LBrace)
-    left = word_.LiteralToken(ate)
+    left = word_.LiteralToken(self.cur_word)
+    self._Eat(Id.Lit_LBrace)
+    # PROBLEM: can't use 'ate' here because osh/word_parse.py has a hack for
+    # proc { } to translate Token Id.Op_RBrace -> Id.Lit_LBrace.
 
     doc_token = None  # type: Token
     self._Peek()
@@ -1069,8 +1071,10 @@ class CommandParser(object):
 
     c_list = self._ParseCommandList()
 
-    ate = self._Eat(Id.Lit_RBrace)
-    right = word_.LiteralToken(ate)
+    # TODO: get token directly
+    right = location.LeftTokenForWord(self.cur_word)
+    self._Eat(Id.Lit_RBrace)
+    #right = word_.LiteralToken(ate)
 
     # Note(andychu): Related ASDL bug #1216.  Choosing the Python [] behavior
     # would allow us to revert this back to None, which was changed in
@@ -1325,8 +1329,9 @@ class CommandParser(object):
     pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
-      ate = self._Eat(Id.Word_Compound)
-      pat_words.append(ate)
+      if self.c_kind != Kind.Word:
+        p_die('Expected case pattern', loc.Word(self.cur_word))
+      pat_words.append(self.cur_word)
       self._Next()
 
       self._Peek()

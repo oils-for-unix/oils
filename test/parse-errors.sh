@@ -446,6 +446,7 @@ cmd-parse() {
   _error-case '}'
 
   _error-case 'case foo in *) echo '
+  _error-case 'case foo in x|) echo '
 
   _error-case 'ls foo|'
   _error-case 'ls foo&&'

@@ -416,7 +416,7 @@ def LiteralToken(UP_w):
   """
   # We're casting here because this function is called by the CommandParser for
   # var, setvar, '...', etc.  It's easier to cast in one place.
-  assert UP_w.tag() == word_e.Compound
+  assert UP_w.tag() == word_e.Compound, UP_w
   w = cast(CompoundWord, UP_w)
 
   if len(w.parts) != 1:
@@ -435,6 +435,8 @@ def AsKeywordToken(UP_w):
   Given a word that IS A keyword, return the single token at the start.
 
   In C++, this casts without checking, so BE CAREFUL to call it in the right context.
+
+  TODO: How is this different than KeywordToken()?
   """
   assert UP_w.tag() == word_e.Compound, UP_w
   w = cast(CompoundWord, UP_w)
