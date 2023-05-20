@@ -62,7 +62,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_e,
     BraceGroup,
 
-    for_iter_e,
+    for_iter_e, case_arg_e, case_arg,
     condition, condition_e,
     redir_param, redir_param_e, Redir,
 )
@@ -717,19 +717,32 @@ class OilPrinter(object):
         node = cast(command.Case, UP_node)
 
         case_spid = node.case_kw.span_id
-        in_spid = node.in_kw.span_id
-        esac_spid = node.esac_kw.span_id
+        arms_start_spid = node.arms_start.span_id
+        arms_end_spid = node.arms_end.span_id
+
+        to_match = None  # type: word_t
+        with tagswitch(node.to_match) as case:
+          if case(case_arg_e.OilExpr):
+            self.cursor.PrintUntil(arms_end_spid)
+            self.cursor.SkipUntil(arms_end_spid + 1)
+            return
+          else:
+            # case(case_arg_e.Word):
+            to_match = cast(case_arg.Word, node.to_match).w
 
         self.cursor.PrintUntil(case_spid)
         self.cursor.SkipUntil(case_spid + 1)
         self.f.write('match')
 
         # Reformat "$1" to $1
-        self.DoWordInCommand(node.to_match, local_symbols)
+        self.DoWordInCommand(to_match, local_symbols)
 
-        self.cursor.PrintUntil(in_spid)
-        self.cursor.SkipUntil(in_spid + 1)
+        self.cursor.PrintUntil(arms_start_spid)
+        self.cursor.SkipUntil(arms_start_spid + 1)
         self.f.write('{')  # matchstr $var {
+
+        # TODO: we need to change this to output following the new case command
+        #       syntax
 
         # each arm needs the ) and the ;; node to skip over?
         for case_arm in node.arms:
@@ -773,8 +786,8 @@ class OilPrinter(object):
             raise AssertionError(
                 "Expected with dsemi_spid or last_spid in case arm")
 
-        self.cursor.PrintUntil(esac_spid)
-        self.cursor.SkipUntil(esac_spid + 1)
+        self.cursor.PrintUntil(arms_end_spid)
+        self.cursor.SkipUntil(arms_end_spid + 1)
         self.f.write('}')  # strmatch $var {
 
       elif case(command_e.TimeBlock):

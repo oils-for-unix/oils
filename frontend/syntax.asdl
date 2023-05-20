@@ -259,6 +259,13 @@ module syntax
   # Each arm tests one word against multiple words
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
 
+  # The argument to match agains in a case command
+  # In YSH-style case commands we match against an `expr`, but in sh-style case
+  # commands we match against a word.
+  case_arg =
+    Word(word w)
+  | OilExpr(expr e)
+
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})
   IfArm = (
@@ -318,8 +325,8 @@ module syntax
   | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
        Token? fi_kw, List[Redir] redirects)
-  | Case(Token case_kw, word to_match, Token? in_kw, List[CaseArm] arms,
-         Token? esac_kw, List[Redir] redirects)
+  | Case(Token case_kw, case_arg to_match, Token arms_start, List[CaseArm] arms,
+         Token arms_end, List[Redir] redirects)
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
   | ShFunction(Token? keyword, Token name_tok, str name, command body)
