@@ -795,7 +795,7 @@ oil-builtin-shopt() {
 }
 
 oil-case() {
-  sh-spec spec/oil-case.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/oil-case.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"
 }
 

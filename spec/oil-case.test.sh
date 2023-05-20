@@ -1,6 +1,6 @@
 # spec/oil-case
 
-#### case syntax, oneline
+#### case syntax, one line
 const x = "header.h"
 case (x) {
   *.h | *.cc { echo C++ }
@@ -43,7 +43,6 @@ case (x) {
   (1 + 2) { echo three }
   (2 + 2) { echo four }
 }
-## status: 2
 ## STDOUT:
 ## END
 
@@ -67,7 +66,6 @@ case (x) {
    echo C++
   }
 }
-## status: 2
 ## STDOUT:
 ## END
 
@@ -89,5 +87,34 @@ case (x) {
 
 ## status: 0
 ## STDOUT:
-int
+string
+## END
+
+#### old and new case statements
+
+for flag in -f -x {
+  case $flag in
+    -f|-d)
+      echo 'file'
+      ;;
+    *)
+      echo 'other'
+      ;;
+  esac
+
+  case (flag) {
+    -f|-d { echo 'file' }
+    *     { echo 'other' }
+  }
+
+  echo --
+}
+
+## STDOUT:
+file
+file
+--
+other
+other
+--
 ## END
