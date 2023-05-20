@@ -736,7 +736,7 @@ class OilPrinter(object):
         # - $var to (var)
         # - "$var" to (var)
 
-        var_part = None  # type: word_part_t
+        var_part = None  # type: SimpleVarSub
         with tagswitch(to_match) as case:
           if case(word_e.Compound):
             w = cast(CompoundWord, to_match)
