@@ -429,6 +429,29 @@ def LiteralToken(UP_w):
   return None
 
 
+def BraceToken(UP_w):
+  # type: (word_t) -> Optional[Token]
+  """If a word has Id.Lit_LBrace or Lit_RBrace, return a Token
+
+  This is a special case for osh/cmd_parse.py
+
+  The WordParser changes Id.Op_LBrace from ExprParser into Id.Lit_LBrace, so we
+  may get a token, not a word.
+  """
+  with tagswitch(UP_w) as case:
+    if case(word_e.Token):
+      tok = cast(Token, UP_w)
+      assert tok.id in (Id.Lit_LBrace, Id.Lit_RBrace), tok
+      return tok
+
+    elif case(word_e.Compound):
+      w = cast(CompoundWord, UP_w)
+      return LiteralToken(w)
+
+    else:
+      raise AssertionError()
+
+
 def AsKeywordToken(UP_w):
   # type: (word_t) -> Token
   """

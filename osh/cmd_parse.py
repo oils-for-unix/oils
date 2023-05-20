@@ -1049,8 +1049,9 @@ class CommandParser(object):
 
     The doc comment can only occur if there's a newline.
     """
-    left = word_.LiteralToken(self.cur_word)
-    self._Eat(Id.Lit_LBrace)
+    ate = self._Eat(Id.Lit_LBrace)
+    left = word_.BraceToken(ate)
+
     # PROBLEM: can't use 'ate' here because osh/word_parse.py has a hack for
     # proc { } to translate Token Id.Op_RBrace -> Id.Lit_LBrace.
 
@@ -1067,10 +1068,8 @@ class CommandParser(object):
 
     c_list = self._ParseCommandList()
 
-    # TODO: get token directly
-    right = location.LeftTokenForWord(self.cur_word)
-    self._Eat(Id.Lit_RBrace)
-    #right = word_.LiteralToken(ate)
+    ate = self._Eat(Id.Lit_RBrace)
+    right = word_.BraceToken(ate)
 
     # Note(andychu): Related ASDL bug #1216.  Choosing the Python [] behavior
     # would allow us to revert this back to None, which was changed in
