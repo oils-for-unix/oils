@@ -17,7 +17,6 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_e, arith_expr_t,
 )
 from _devbuild.gen.runtime_asdl import lvalue
-from asdl import runtime
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 

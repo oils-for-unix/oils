@@ -15,7 +15,6 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import arith_expr_e, word_e, rhs_word_e
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from asdl import runtime
 from core import error
 from core import test_lib
 from core.test_lib import Tok
