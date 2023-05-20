@@ -257,6 +257,16 @@ module syntax
   | Oil(expr e)                    # if (x > 0) { echo hi }
 
   # Each arm tests one word against multiple words
+  # shell:  *.cc|*.h) echo C++ ;;
+  # YSH:    *.cc|*.h { echo C++ }
+  #
+  # Three location tokens:
+  # 1. left   - shell has ( or *.cc    ysh has *.cc
+  # 2. middle - shell has )            ysh has {
+  # 3. right  - shell has optional ;;  ysh has required }
+  #
+  # For YSH typed case, left can be ( and /
+  # And case_pat may contain more details
   CaseArm = (List[word] pat_list, List[command] action, List[int] spids)
 
   # The argument to match agains in a case command

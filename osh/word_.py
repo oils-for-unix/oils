@@ -388,9 +388,9 @@ def DetectAssocPair(w):
   return None
 
 
-def KeywordToken(w):
+def IsControlFlow(w):
   # type: (CompoundWord) -> Tuple[Kind_t, Optional[Token]]
-  """Tests if a word is an assignment or control flow word."""
+  """Tests if a word is a control flow word."""
   no_token = None  # type: Optional[Token]
 
   if len(w.parts) != 1:
@@ -432,11 +432,8 @@ def LiteralToken(UP_w):
 def AsKeywordToken(UP_w):
   # type: (word_t) -> Token
   """
-  Given a word that IS A keyword, return the single token at the start.
-
-  In C++, this casts without checking, so BE CAREFUL to call it in the right context.
-
-  TODO: How is this different than KeywordToken()?
+  Given a word that IS A CompoundWord containing just a keyword, return the
+  single token at the start.
   """
   assert UP_w.tag() == word_e.Compound, UP_w
   w = cast(CompoundWord, UP_w)

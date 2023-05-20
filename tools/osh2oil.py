@@ -716,7 +716,6 @@ class OilPrinter(object):
       elif case(command_e.Case):
         node = cast(command.Case, UP_node)
 
-        case_spid = node.case_kw.span_id
         arms_start_spid = node.arms_start.span_id
         arms_end_spid = node.arms_end.span_id
 
@@ -726,18 +725,46 @@ class OilPrinter(object):
             self.cursor.PrintUntil(arms_end_spid)
             self.cursor.SkipUntil(arms_end_spid + 1)
             return
-          else:
-            # case(case_arg_e.Word):
+          elif case(case_arg_e.Word):
             to_match = cast(case_arg.Word, node.to_match).w
+          else:
+            raise AssertionError()
 
-        self.cursor.PrintUntil(case_spid)
-        self.cursor.SkipUntil(case_spid + 1)
-        self.f.write('match')
+        self.cursor.PrintUntil(node.case_kw.span_id + 1)
 
-        # Reformat "$1" to $1
-        self.DoWordInCommand(to_match, local_symbols)
+        # Translate 
+        # - $var to (var)
+        # - "$var" to (var)
 
-        self.cursor.PrintUntil(arms_start_spid)
+        var_part = None  # type: word_part_t
+        with tagswitch(to_match) as case:
+          if case(word_e.Compound):
+            w = cast(CompoundWord, to_match)
+            part0 = w.parts[0]
+
+            with tagswitch(part0) as case2:
+              if case2(word_part_e.SimpleVarSub):
+                var_part = cast(SimpleVarSub, part0)
+
+              elif case2(word_part_e.DoubleQuoted):
+                dq_part = cast(DoubleQuoted, part0)
+                if len(dq_part.parts) == 1:
+                  dq_part0 = dq_part.parts[0]
+
+                  # This is annoying -- it would be nice to use pattern
+                  # matching, but then we have to translate it
+                  # This could be extracted into a common function
+                  with tagswitch(dq_part0) as case3:
+                    if case3(word_part_e.SimpleVarSub):
+                      var_part = cast(SimpleVarSub, dq_part0)
+                      #log("VAR PART %s", var_part)
+
+        if var_part:
+          self.f.write(' (')
+          self.f.write(var_part.var_name)
+          self.f.write(') ')
+
+        #self.cursor.PrintUntil(arms_start_spid)
         self.cursor.SkipUntil(arms_start_spid + 1)
         self.f.write('{')  # matchstr $var {
 
@@ -748,47 +775,39 @@ class OilPrinter(object):
         for case_arm in node.arms:
           left_spid = case_arm.spids[0]
           rparen_spid = case_arm.spids[1]
-          dsemi_spid = case_arm.spids[2]
-          last_spid = case_arm.spids[3]
-
-          #print(left_spid, rparen_spid, dsemi_spid)
-
-          self.cursor.PrintUntil(left_spid)
-          # Hm maybe keep | because it's semi-deprecated?  You acn use
-          # reload|force-relaod {
-          # }
-          # e/reload|force-reload/ {
-          # }
-          # / 'reload' or 'force-reload' / {
-          # }
-          #
-          # Yeah it's the more abbreviated syntax.
+          dsemi_spid = case_arm.spids[2]  # ;;
+          last_spid = case_arm.spids[3]  # esac - can we avoid this?
 
           # change | to 'or'
           for pat in case_arm.pat_list:
             pass
 
-          self.f.write('with ')
           # Remove the )
           self.cursor.PrintUntil(rparen_spid)
+          self.f.write(' {')
           self.cursor.SkipUntil(rparen_spid + 1)
 
           for child in case_arm.action:
             self.DoCommand(child, local_symbols)
 
           if dsemi_spid != runtime.NO_SPID:
-            # Remove ;;
+            # Change ;; to }
             self.cursor.PrintUntil(dsemi_spid)
+            self.f.write('}')
             self.cursor.SkipUntil(dsemi_spid + 1)
+
           elif last_spid != runtime.NO_SPID:
+            # replace 'esac' with }  -- but esac is also replaced twice?  gah
             self.cursor.PrintUntil(last_spid)
+            self.f.write('}\n')
+
           else:
             raise AssertionError(
                 "Expected with dsemi_spid or last_spid in case arm")
 
         self.cursor.PrintUntil(arms_end_spid)
         self.cursor.SkipUntil(arms_end_spid + 1)
-        self.f.write('}')  # strmatch $var {
+        self.f.write('}')  # another one for esac ?
 
       elif case(command_e.TimeBlock):
         node = cast(command.TimeBlock, UP_node)

@@ -1000,8 +1000,7 @@ class CommandParser(object):
       left_tok = location.LeftTokenForWord(words[0])
       return command.ShAssignment(left_tok, pairs, redirects)
 
-    kind, kw_token = word_.KeywordToken(suffix_words[0])
-
+    kind, kw_token = word_.IsControlFlow(suffix_words[0])
     if kind == Kind.ControlFlow:
       if typed_loc is not None:
         p_die("Unexpected typed args", typed_loc)
@@ -1314,7 +1313,7 @@ class CommandParser(object):
     # no redirects yet
     return command.WhileUntil(keyword, cond, body_node, None)
 
-  def ParseCaseItem(self):
+  def ParseCaseArm(self):
     # type: () -> CaseArm
     """
     case_item: '('? pattern ('|' pattern)* ')'
@@ -1383,7 +1382,7 @@ class CommandParser(object):
         return word_.AsKeywordToken(self.cur_word)
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
-      arm = self.ParseCaseItem()
+      arm = self.ParseCaseArm()
 
       arms.append(arm)
       self._Peek()
@@ -1625,8 +1624,8 @@ class CommandParser(object):
       commands = self._ParseCommandList()
       cond = condition.Shell(commands.children)
 
-      self._Eat(Id.KW_Then)
-      then_kw = word_.AsKeywordToken(self.cur_word)
+      ate = self._Eat(Id.KW_Then)
+      then_kw = word_.AsKeywordToken(ate)
 
       body = self._ParseCommandList()
       arm = IfArm(elif_kw, cond, then_kw, body.children, [elif_kw.span_id, then_kw.span_id])
@@ -1669,8 +1668,9 @@ class CommandParser(object):
       # if foo {
       return self._ParseOilIf(if_kw, cond)
 
-    self._Eat(Id.KW_Then)
-    then_kw = word_.AsKeywordToken(self.cur_word)
+    ate = self._Eat(Id.KW_Then)
+    then_kw = word_.AsKeywordToken(ate)
+
     body = self._ParseCommandList()
 
     arm = IfArm(if_kw, cond, then_kw, body.children, [if_kw.span_id, then_kw.span_id])
@@ -1679,8 +1679,8 @@ class CommandParser(object):
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       self._ParseElifElse(if_node)
 
-    self._Eat(Id.KW_Fi)
-    if_node.fi_kw = word_.AsKeywordToken(self.cur_word)
+    ate = self._Eat(Id.KW_Fi)
+    if_node.fi_kw = word_.AsKeywordToken(ate)
 
     return if_node
 
@@ -1905,8 +1905,8 @@ class CommandParser(object):
     else:
       child = c_list
 
-    right = word_.AsOperatorToken(self.cur_word)
-    self._Eat(Id.Right_Subshell)
+    ate = self._Eat(Id.Right_Subshell)
+    right = word_.AsOperatorToken(ate)
 
     return command.Subshell(left, child, right, None)  # no redirects yet
 
@@ -2265,7 +2265,7 @@ class CommandParser(object):
     sync_op          : '&' | ';';
 
     This is handled in imperative style, like _ParseCommandLine.
-    Called by _ParseCommandList for all blocks, and also for ParseCaseItem,
+    Called by _ParseCommandList for all blocks, and also for ParseCaseArm,
     which is slightly different.  (HOW?  Is it the DSEMI?)
 
     Returns:

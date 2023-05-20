@@ -602,16 +602,16 @@ case $var in
     ;;
 esac
 ' '
-match $var {
-  with foo|bar
+case (var) {
+  foo|bar {
     test -f foo && echo file
-    
-  with ""
+    }
+  "" {
     echo empty
-    
-  with *
+    }
+  * {
     echo default
-    
+    }
 }
 '
 
@@ -622,10 +622,11 @@ case "$var" in
     echo bar  # no dsemi
 esac
 ' '
-match $var {
-  with *
+case (var) {
+  * {
     echo foo
     echo bar  # no dsemi
+}
 }
 '
 }
