@@ -102,7 +102,7 @@ _oil-should-parse() {
   fi
 }
 
-_oil-parse-error() {
+_ysh-parse-error() {
   ### Assert that a parse error happens with Oil options on
 
   banner "$@"
@@ -116,7 +116,7 @@ _oil-parse-error() {
 }
 
 # So we can write single quoted strings in an easier way
-_oil-parse-error-here() { _oil-parse-error "$(cat)"; }
+_ysh-parse-error-here() { _ysh-parse-error "$(cat)"; }
 
 # All in osh/word_parse.py
 patsub() {
@@ -455,7 +455,7 @@ cmd-parse() {
 
   # parse_ignored
   _should-parse 'break >out'
-  _oil-parse-error 'break >out'
+  _ysh-parse-error 'break >out'
 
   # Unquoted (
   _error-case '[ ( x ]'
@@ -588,16 +588,16 @@ oil-language() {
   set +o errexit
 
   # Unterminated
-  _oil-parse-error 'var x = 1 + '
+  _ysh-parse-error 'var x = 1 + '
 
-  _oil-parse-error 'var x = * '
+  _ysh-parse-error 'var x = * '
 
-  _oil-parse-error 'var x = @($(cat <<EOF
+  _ysh-parse-error 'var x = @($(cat <<EOF
 here doc
 EOF
 ))'
 
-  _oil-parse-error 'var x = $(var x = 1))'
+  _ysh-parse-error 'var x = $(var x = 1))'
 }
 
 append-builtin() {
@@ -615,24 +615,24 @@ append-builtin() {
 blocks() {
   set +o errexit
 
-  _oil-parse-error '>out { echo hi }'
-  _oil-parse-error 'a=1 b=2 { echo hi }'
-  _oil-parse-error 'break { echo hi }'
+  _ysh-parse-error '>out { echo hi }'
+  _ysh-parse-error 'a=1 b=2 { echo hi }'
+  _ysh-parse-error 'break { echo hi }'
   # missing semicolon
-  _oil-parse-error 'cd / { echo hi } cd /'
+  _ysh-parse-error 'cd / { echo hi } cd /'
 }
 
 parse_brace() {
   # missing space
-  _oil-parse-error 'if test -f foo{ echo hi }'
+  _ysh-parse-error 'if test -f foo{ echo hi }'
 
 }
 
 proc_sig() {
   set +o errexit
-  _oil-parse-error 'proc f[] { echo hi }'
-  _oil-parse-error 'proc : { echo hi }'
-  _oil-parse-error 'proc foo::bar { echo hi }'
+  _ysh-parse-error 'proc f[] { echo hi }'
+  _ysh-parse-error 'proc : { echo hi }'
+  _ysh-parse-error 'proc foo::bar { echo hi }'
 }
 
 proc_arg_list() {
@@ -672,61 +672,61 @@ json write (x) {
   fi
 
   # can't be empty
-  _oil-parse-error 'json write ()'
-  _oil-parse-error 'json write ( )'
+  _ysh-parse-error 'json write ()'
+  _ysh-parse-error 'json write ( )'
 
   # should have a space
-  _oil-parse-error 'json write(x)'
-  _oil-parse-error 'json write()'
-  _oil-parse-error 'f(x)'  # test short name
+  _ysh-parse-error 'json write(x)'
+  _ysh-parse-error 'json write()'
+  _ysh-parse-error 'f(x)'  # test short name
 }
 
 regex_literals() {
   set +o errexit
 
-  _oil-parse-error 'var x = / ! /'
+  _ysh-parse-error 'var x = / ! /'
   _oil-should-parse 'var x = / ![a-z] /'
 
   if oils-cpp-bug; then
     _oil-should-parse 'var x = / !d /'
   fi
 
-  _oil-parse-error 'var x = / !! /'
+  _ysh-parse-error 'var x = / !! /'
 
   # missing space between rangfes
-  _oil-parse-error 'var x = /[a-zA-Z]/'
-  _oil-parse-error 'var x = /[a-z0-9]/'
+  _ysh-parse-error 'var x = /[a-zA-Z]/'
+  _ysh-parse-error 'var x = /[a-z0-9]/'
 
-  _oil-parse-error 'var x = /[a-zz]/'
+  _ysh-parse-error 'var x = /[a-zz]/'
 
   # can't have multichar ranges
-  _oil-parse-error "var x = /['ab'-'z']/"
+  _ysh-parse-error "var x = /['ab'-'z']/"
 
   # range endpoints must be constants
-  _oil-parse-error 'var x = /[$a-${z}]/'
+  _ysh-parse-error 'var x = /[$a-${z}]/'
 
   # These are too long too
-  _oil-parse-error 'var x = /[abc]/'
+  _ysh-parse-error 'var x = /[abc]/'
 
   # Single chars not allowed, should be /['%_']/
-  _oil-parse-error 'var x = /[% _]/'
+  _ysh-parse-error 'var x = /[% _]/'
 
 }
 
 oil_expr() {
   set +o errexit
   # old syntax
-  _oil-parse-error '= 5 mod 3'
+  _ysh-parse-error '= 5 mod 3'
 
-  _oil-parse-error '= >>='
-  _oil-parse-error '= %('
+  _ysh-parse-error '= >>='
+  _ysh-parse-error '= %('
 
   # Singleton tuples
-  _oil-parse-error '= 42,'
-  _oil-parse-error '= (42,)'
+  _ysh-parse-error '= 42,'
+  _ysh-parse-error '= (42,)'
 
   # Disallowed unconditionally
-  _oil-parse-error '=a'
+  _ysh-parse-error '=a'
 
 }
 
@@ -734,27 +734,27 @@ oil_expr_more() {
   set +o errexit
 
   # user must choose === or ~==
-  _oil-parse-error 'if (5 == 5) { echo yes }'
+  _ysh-parse-error 'if (5 == 5) { echo yes }'
 }
 
 oil_hay_assign() {
   set +o errexit
 
-  _oil-parse-error '
+  _ysh-parse-error '
 name=val
 '
 
-  _oil-parse-error '
+  _ysh-parse-error '
 name = val
 '
 
-  _oil-parse-error '
+  _ysh-parse-error '
 rule {
   x = 42
 }
 '
 
-  _oil-parse-error '
+  _ysh-parse-error '
 RULE {
   x = 42
 }
@@ -778,7 +778,7 @@ RULe {   # inconsistent but OK
 }
 '
 
-  _oil-parse-error '
+  _ysh-parse-error '
 hay eval :result {
 
   Rule {
@@ -790,7 +790,7 @@ hay eval :result {
 '
 
   if oils-cpp-bug; then
-  _oil-parse-error '
+  _ysh-parse-error '
 hay define TASK
 
 TASK build {
@@ -799,7 +799,7 @@ TASK build {
 '
 
   # CODE node nested inside Attr node.
-  _oil-parse-error '
+  _ysh-parse-error '
 hay define Package/TASK
 
 Package libc {
@@ -824,7 +824,7 @@ EOF
 echo parse_backslash $'\u{03bc'
 EOF
   # Not in Oil
-  _oil-parse-error-here <<'EOF'
+  _ysh-parse-error-here <<'EOF'
 const bad = $'\u{03bc'
 EOF
 
@@ -832,7 +832,7 @@ EOF
   _should-parse-here <<'EOF'
 echo $'\z'
 EOF
-  _oil-parse-error-here <<'EOF'
+  _ysh-parse-error-here <<'EOF'
 const bad = $'\z'
 EOF
 
@@ -840,33 +840,33 @@ EOF
   _should-parse-here <<'EOF'
 echo $'\101'
 EOF
-  _oil-parse-error-here <<'EOF'
+  _ysh-parse-error-here <<'EOF'
 const bad = $'\101'
 EOF
 
   # \xH not allowed
-  _oil-parse-error-here <<'EOF'
+  _ysh-parse-error-here <<'EOF'
 const bad = c'\xf'
 EOF
 
   _should-parse 'echo "\z"'
   # Double quoted is an error
   _error-case2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
-  _oil-parse-error 'echo "\z"'  # not in Oil
-  _oil-parse-error 'const bad = "\z"'  # not in expression mode
+  _ysh-parse-error 'echo "\z"'  # not in Oil
+  _ysh-parse-error 'const bad = "\z"'  # not in expression mode
 
   # C style escapes not respected
   _should-parse 'echo "\u1234"'  # ok in OSH
-  _oil-parse-error 'echo "\u1234"'  # not in Oil
-  _oil-parse-error 'const bad = "\u1234"'
+  _ysh-parse-error 'echo "\u1234"'  # not in Oil
+  _ysh-parse-error 'const bad = "\u1234"'
 
   _should-parse 'echo "`echo hi`"'
-  _oil-parse-error 'echo "`echo hi`"'
-  _oil-parse-error 'const bad = "`echo hi`"'
+  _ysh-parse-error 'echo "`echo hi`"'
+  _ysh-parse-error 'const bad = "`echo hi`"'
 
-  _oil-parse-error 'setvar x = "\z"'
+  _ysh-parse-error 'setvar x = "\z"'
 
-  _oil-parse-error <<'EOF'
+  _ysh-parse-error <<'EOF'
 setvar x = $'\z'
 EOF
 
@@ -906,7 +906,7 @@ parse_dollar() {
   for c in "${CASES[@]}"; do
     _should-parse "$c"
     _error-case2 +O parse_dollar -n -c "$c"
-    _oil-parse-error "$c"
+    _ysh-parse-error "$c"
   done
 }
 
@@ -922,14 +922,14 @@ parse_backslash() {
   _oil-should-parse 'echo \%'  # job ID?  I feel like '%' is better
   _oil-should-parse 'echo \#'  # comment
 
-  _oil-parse-error 'echo \.'
-  _oil-parse-error 'echo \-'
-  _oil-parse-error 'echo \/'
+  _ysh-parse-error 'echo \.'
+  _ysh-parse-error 'echo \-'
+  _ysh-parse-error 'echo \/'
 
-  _oil-parse-error 'echo \a'
-  _oil-parse-error 'echo \Z'
-  _oil-parse-error 'echo \0'
-  _oil-parse-error 'echo \9'
+  _ysh-parse-error 'echo \a'
+  _ysh-parse-error 'echo \Z'
+  _ysh-parse-error 'echo \0'
+  _ysh-parse-error 'echo \9'
 
   _should-parse 'echo \. \- \/ \a \Z \0 \9'
 }
@@ -942,15 +942,15 @@ parse_dparen() {
 
   bad='((1 > 0 && 43 > 42))'
   _should-parse "$bad"
-  _oil-parse-error "$bad"
+  _ysh-parse-error "$bad"
 
   bad='if ((1 > 0 && 43 > 42)); then echo yes; fi'
   _should-parse "$bad"
-  _oil-parse-error "$bad"
+  _ysh-parse-error "$bad"
 
   bad='for ((x = 1; x < 5; ++x)); do echo $x; done'
   _should-parse "$bad"
-  _oil-parse-error "$bad"
+  _ysh-parse-error "$bad"
 
   _oil-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
 
@@ -962,28 +962,28 @@ oil_to_make_nicer() {
   set +o errexit
 
   # expects expression on right
-  _oil-parse-error '='
-  _oil-parse-error '_'
+  _ysh-parse-error '='
+  _ysh-parse-error '_'
 
   # What about \u{123} parse errors
   # I get a warning now, but parse_backslash should give a syntax error
-  # _oil-parse-error "x = c'\\uz'"
+  # _ysh-parse-error "x = c'\\uz'"
 
   # Dict pair split
-  _oil-parse-error 'const d = { name:
+  _ysh-parse-error 'const d = { name:
 42 }'
 
-  #_oil-parse-error ' d = %{}'
+  #_ysh-parse-error ' d = %{}'
 }
 
 parse_at() {
   set +o errexit
 
-  _oil-parse-error 'echo @'
-  _oil-parse-error 'echo @@'
-  _oil-parse-error 'echo @{foo}'
-  _oil-parse-error 'echo @/foo/'
-  _oil-parse-error 'echo @"foo"'
+  _ysh-parse-error 'echo @'
+  _ysh-parse-error 'echo @@'
+  _ysh-parse-error 'echo @{foo}'
+  _ysh-parse-error 'echo @/foo/'
+  _ysh-parse-error 'echo @"foo"'
 }
 
 invalid_parens() {
@@ -1019,13 +1019,13 @@ f() {
 oil_nested_proc() {
   set +o errexit
 
-  _oil-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _oil-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
+  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
   # ksh function
-  _oil-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
+  _ysh-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
 
-  _oil-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
+  _ysh-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
 
   # shell nesting is still allowed
   _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
@@ -1036,14 +1036,14 @@ oil_nested_proc() {
 oil_var_decl() {
   set +o errexit
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p(x) {
     echo hi
     var x = 2  # Cannot redeclare param
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p {
     var x = 1
     echo hi
@@ -1051,7 +1051,7 @@ oil_var_decl() {
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p {
     var x = 1
     echo hi
@@ -1059,13 +1059,13 @@ oil_var_decl() {
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p(x, :out) {
     var out = 2   # Cannot redeclare out param
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p {
     var out = 2   # Cannot redeclare out param
     cd /tmp { 
@@ -1076,7 +1076,7 @@ oil_var_decl() {
 
   # TODO: We COULD disallow this, but not sure it's necessary
   if false; then
-    _oil-parse-error '
+    _ysh-parse-error '
     proc p(x, :out) {
       var __out = 2   # Cannot redeclare out param
     }
@@ -1099,14 +1099,14 @@ oil_var_decl() {
 oil_place_mutation() {
   set +o errexit
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p(x) {
     var y = 1
     setvar L = "L"  # ERROR: not declared
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   proc p(x) {
     const c = 123
     setvar c = 42  # ERROR: cannot modify constant
@@ -1192,7 +1192,7 @@ oil_case() {
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   case $foo {
     ("main.py") {
       echo "python"
@@ -1201,14 +1201,14 @@ oil_case() {
   '
 
   # Newline not allowed, because it isn't in for, if, while, etc.
-  _oil-parse-error '
+  _ysh-parse-error '
   case (x)
   {
     *.py { echo "python" }
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   case (foo) in
     *.py {
       echo "python"
@@ -1216,7 +1216,7 @@ oil_case() {
   esac
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   case $foo {
     bar) {
       echo "python"
@@ -1224,7 +1224,7 @@ oil_case() {
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   case (x) {
     {
       echo "python"
@@ -1232,13 +1232,13 @@ oil_case() {
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   case (x {
     *.py { echo "python" }
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   case (x) {
     *.py) { echo "python" }
   }
@@ -1254,7 +1254,7 @@ oil_for() {
   }
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   for x in (obj); do
     echo $x
   done
@@ -1267,20 +1267,20 @@ oil_for() {
   '
 
   # Bad loop variable name
-  _oil-parse-error '
+  _ysh-parse-error '
   for x-y in SPAM EGGS; do
     echo $x
   done
   '
 
   # Too many indices
-  _oil-parse-error '
+  _ysh-parse-error '
   for x, y, z in SPAM EGGS; do
     echo $x
   done
   '
 
-  _oil-parse-error '
+  _ysh-parse-error '
   for w, x, y, z in SPAM EGGS; do
     echo $x
   done
@@ -1301,7 +1301,7 @@ oil_for() {
 oil_for_parse_bare_word() {
   set +o errexit
 
-  _oil-parse-error '
+  _ysh-parse-error '
   for x in bare {
     echo $x
   }
@@ -1330,7 +1330,7 @@ oil_issue_1118() {
   set +o errexit
 
   # Originally pointed at 'for'
-  _oil-parse-error '
+  _ysh-parse-error '
   var snippets = [{status: 42}]
   for snippet in (snippets) {
     if (snippet["status"] === 0) {
@@ -1346,7 +1346,7 @@ oil_issue_1118() {
 
   # Issue #1118
   # pointed at 'var' in count
-  _oil-parse-error '
+  _ysh-parse-error '
   var content = [ 1, 2, 4 ]
   var count = 0
 
