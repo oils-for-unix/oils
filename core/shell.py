@@ -8,7 +8,7 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
 from _devbuild.gen.syntax_asdl import (
     loc, source, source_t, IntParamBox, CompoundWord
 )
@@ -69,7 +69,7 @@ import libc
 
 import posix_ as posix
 
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value, Proc
@@ -296,6 +296,51 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
   return assign_b
 
 
+class ShellFiles(object):
+  def __init__(self, lang, home_dir, mem, flag):
+    # type: (str, str, state.Mem, arg_types.main) -> None
+    assert lang in ('osh', 'ysh'), lang
+    self.lang = lang
+    self.home_dir = home_dir
+    self.mem = mem
+    self.flag = flag
+
+  def _HistVar(self):
+    # type: () -> str
+    return 'HISTFILE' if self.lang == 'osh' else 'YSH_HISTFILE'
+
+  def _DefaultHistoryFile(self):
+    # type: () -> str
+    return os_path.join(
+        self.home_dir, '.local/share/oils/%s_history' % self.lang)
+
+  def InitAfterLoadingEnv(self):
+    # type: () -> None
+
+    hist_var = self._HistVar()
+    if self.mem.GetValue(hist_var).tag() == value_e.Undef:
+      # Note: if the directory doesn't exist, GNU readline ignores
+      state.SetGlobalString(self.mem, hist_var, self._DefaultHistoryFile())
+
+  def HistoryFile(self):
+    # type: () -> Optional[str]
+    # TODO: In non-strict mode we should try to cast the HISTFILE value to a
+    # string following bash's rules
+
+    UP_val = self.mem.GetValue(self._HistVar())
+    if UP_val.tag() == value_e.Str:
+      val = cast(value.Str, UP_val)
+      return val.s
+    else:
+      # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
+      return None
+      #return self._DefaultHistoryFile()
+
+      # TODO: can we recover line information here?
+      #       might be useful to show where HISTFILE was set
+      #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
+
+
 def Main(lang, arg_r, environ, login_shell, loader, readline):
   # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
@@ -323,7 +368,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   try:
     attrs = flag_spec.ParseMore('main', arg_r)
   except error.Usage as e:
-    print_stderr('osh usage error: %s' % e.msg)
+    print_stderr('%s usage error: %s' % (lang, e.msg))
     return 2
   flag = arg_types.main(attrs.attrs)
 
@@ -441,8 +486,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     try:
       debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))  # type: util._DebugFile
     except (IOError, OSError) as e:
-      print_stderr("osh: Couldn't open %r: %s" %
-                   (debug_path, posix.strerror(e.errno)))
+      print_stderr("%s: Couldn't open %r: %s" %
+                   (lang, debug_path, posix.strerror(e.errno)))
       return 2
   else:
     debug_f = util.NullDebugFile()
@@ -498,14 +543,18 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
   dir_stack = state.DirStack()
 
-  # Find common directories, these are consumed by some builtins and then much
-  # later used while setting up an interactive shell.
-  home_dir = pyos.GetMyHomeDir()
-  assert home_dir is not None
+  # The login program is supposed to set $HOME
+  # https://superuser.com/questions/271925/where-is-the-home-environment-variable-set
+  # state.InitMem(mem) must happen first
+  tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
+  home_dir = tilde_ev.GetMyHomeDir()
+  if home_dir is None:
+    # TODO: print errno from getpwuid()
+    print_stderr("%s: Failed to get home dir from $HOME or getpwuid()" % lang)
+    return 1
 
-  # init the HISTFILE variable to our default history file
-  history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
-  state.SetGlobalString(mem, 'HISTFILE', history_filename)
+  sh_files = ShellFiles(lang, home_dir, mem, flag)
+  sh_files.InitAfterLoadingEnv()
 
   #
   # Initialize builtins that don't depend on evaluators
@@ -518,18 +567,21 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
       ext_prog, waiter, tracer, job_control, job_list, fd_state, trap_state, errfmt)
 
-  AddPure(builtins, mem, procs, modules, mutable_opts, aliases,
-         search_path, errfmt)
-  AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx,
-        errfmt)
-  AddProcess(builtins, mem, shell_ex, ext_prog, fd_state,
-             job_control, job_list, waiter, tracer, search_path, errfmt)
+  AddPure(
+      builtins, mem, procs, modules, mutable_opts, aliases, search_path,
+      errfmt)
+  AddIO(
+      builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
+  AddProcess(
+      builtins, mem, shell_ex, ext_prog, fd_state, job_control, job_list,
+      waiter, tracer, search_path, errfmt)
 
   builtins[builtin_i.help] = help_builtin
 
   # Interactive, depend on readline
   builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
-  builtins[builtin_i.history] = builtin_lib.History(readline, mem, errfmt, mylib.Stdout())
+  builtins[builtin_i.history] = builtin_lib.History(
+      readline, sh_files, errfmt, mylib.Stdout())
 
   #
   # Initialize Evaluators
@@ -544,7 +596,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     expr_ev = None
 
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
-                                          splitter, errfmt)
+                                          tilde_ev, splitter, errfmt)
 
   assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
@@ -648,8 +700,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       try:
         f = fd_state.Open(script_name)
       except (IOError, OSError) as e:
-        print_stderr("osh: Couldn't open %r: %s" %
-                     (script_name, posix.strerror(e.errno)))
+        print_stderr("%s: Couldn't open %r: %s" %
+                     (lang, script_name, posix.strerror(e.errno)))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
@@ -667,19 +719,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   assert line_reader is not None
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  # Calculate ~/.config/oil/oshrc or oilrc.  Used for both -i and --headless
+  # Calculate ~/.config/oils/oshrc or yshrc.  Used for both -i and --headless
   # We avoid cluttering the user's home directory.  Some users may want to ln
-  # -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
+  # -s ~/.config/oils/oshrc ~/oshrc or ~/.oshrc.
 
   # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
 
+  config_dir = '.config/oils'
   rc_paths = []  # type: List[str]
-
   if not flag.norc:
     # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
     rc_path = flag.rcfile
     if rc_path is None:
-      rc_paths.append(os_path.join(home_dir, '.config/oil/%src' % lang))
+      rc_paths.append(os_path.join(home_dir, '%s/%src' % (config_dir, lang)))
     else:
       rc_paths.append(rc_path)
 
@@ -688,14 +740,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     rc_dir = flag.rcdir
     if rc_dir is None:
-      rc_dir = os_path.join(home_dir, '.config/oil/%src.d' % lang)
+      rc_dir = os_path.join(home_dir, '%s/%src.d' % (config_dir, lang))
 
     rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
   else:
     if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-      print_stderr('osh warning: --rcfile ignored with --norc')
+      print_stderr('%s warning: --rcfile ignored with --norc' % lang)
     if flag.rcdir is not None:
-      print_stderr('osh warning: --rcdir ignored with --norc')
+      print_stderr('%s warning: --rcdir ignored with --norc' % lang)
 
   if flag.headless:
     state.InitInteractive(mem)
@@ -738,7 +790,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     if readline:
       # NOTE: We're using a different WordEvaluator here.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                             splitter, errfmt)
+                                             tilde_ev, splitter, errfmt)
 
       ev.arith_ev = arith_ev
       ev.expr_ev = expr_ev
@@ -762,8 +814,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-      comp_ui.InitReadline(readline, history_filename, root_comp, display,
-                           debug_f)
+      comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
+                           display, debug_f)
 
       _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
@@ -800,17 +852,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
       status = mut_status.i
 
     if readline:
-      try:
-        readline.write_history_file(history_filename)
-      except (IOError, OSError):
-        pass
+      hist_file = sh_files.HistoryFile()
+      if hist_file is not None:
+        try:
+          readline.write_history_file(hist_file)
+        except (IOError, OSError):
+          pass
 
     return status
 
   if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-    print_stderr('osh warning: --rcfile ignored in non-interactive shell')
+    print_stderr('%s warning: --rcfile ignored in non-interactive shell' % lang)
   if flag.rcdir is not None:
-    print_stderr('osh warning: --rcdir ignored in non-interactive shell')
+    print_stderr('%s warning: --rcdir ignored in non-interactive shell' % lang)
 
   if exec_opts.noexec():
     status = 0

@@ -47,8 +47,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (cpp-small)
-      # Add Debian packages for -m32 build
-      echo 'v-2023-04-08'
+      # Add ltrace package for test/ltrace.sh
+      echo 'v-2023-05-19'
       ;;
     (clang)
       # Rebuild with wedges

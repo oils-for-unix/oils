@@ -152,7 +152,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```oil-help-topics
-  [Option Groups] strict:all   oil:upgrade   oil:all
+  [Option Groups] strict:all   ysh:upgrade   ysh:all
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
@@ -223,6 +223,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```oil-help-topics
+  [History]       YSH_HISTFILE
   [Shell Vars]    ARGV   X ENV   X OPT
                   X _ESCAPE   _DIALECT
                   _this_dir

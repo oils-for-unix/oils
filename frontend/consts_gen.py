@@ -288,7 +288,7 @@ from asdl import pybase
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
     LIST_INT = [
-        'STRICT_ALL', 'OIL_UPGRADE', 'OIL_ALL', 'DEFAULT_TRUE',
+        'STRICT_ALL', 'YSH_UPGRADE', 'YSH_ALL', 'DEFAULT_TRUE',
         'PARSE_OPTION_NUMS', 'SHOPT_OPTION_NUMS', 'SET_OPTION_NUMS',
         'VISIBLE_SHOPT_NUMS',
         ]

@@ -169,10 +169,10 @@ But when you're using Oil, **you don't have to worry about any of this**!
 
 This means you don't have to explicitly check for errors.  Examples:
 
-    shopt --set oil:upgrade     # Enable good error handling in bin/osh
-                                # It's the default in bin/oil.
+    shopt --set ysh:upgrade     # Enable good error handling in bin/osh
+                                # It's the default in bin/ysh.
     shopt --set strict_errexit  # Disallow bad shell error handling.
-                                # Also the default in bin/oil.
+                                # Also the default in bin/ysh.
 
     local date=$(date X)        # 'date' failure is fatal
     # => date: invalid date 'X' 
@@ -354,7 +354,7 @@ I've learned the hard way that when there's a shell **semantics** change, there
 must be a **syntax** change.  In general, you should be able to read code on
 its own, without context.
 
-Readers shouldn't have to constantly look up whether `oil:upgrade` is on.  There
+Readers shouldn't have to constantly look up whether `ysh:upgrade` is on.  There
 are some cases where this is necessary, but it should be minimized.
 
 Also, both `if foo` and `if boolstatus foo` are useful in idiomatic Oil code.
@@ -376,7 +376,7 @@ the details to use Oil.
 Under the hood, we implement the `errexit` option from POSIX, bash options like
 `pipefail` and `inherit_errexit`, and add more options of our
 own.  They're all hidden behind [option groups](options.html) like `strict:all`
-and `oil:upgrade`.
+and `ysh:upgrade`.
 
 The following sections explain Oil's new options.
 
@@ -553,8 +553,8 @@ Finally, it supports all of these **global options**:
   - `sigpipe_status_ok` ignores a spurious "broken pipe" failure.
   - `verbose_errexit` controls whether error messages are printed.
 
-When using `bin/osh`, set all options at once with `shopt --set oil:upgrade
-strict:all`.  Or use `bin/oil`, where they're set by default.
+When using `bin/osh`, set all options at once with `shopt --set ysh:upgrade
+strict:all`.  Or use `bin/ysh`, where they're set by default.
 
 <!--
 Related 2020 blog post [Reliable Error

@@ -360,8 +360,8 @@ VISIBLE_SHOPT_NUMS = [
     if opt.builtin == 'shopt' and opt.implemented
 ]
 
-OIL_UPGRADE = [opt.index for opt in _SORTED if 'ysh:upgrade' in opt.groups]
-OIL_ALL = [opt.index for opt in _SORTED if 'ysh:all' in opt.groups]
+YSH_UPGRADE = [opt.index for opt in _SORTED if 'ysh:upgrade' in opt.groups]
+YSH_ALL = [opt.index for opt in _SORTED if 'ysh:all' in opt.groups]
 STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
 DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
 #print([opt.name for opt in _SORTED if opt.default])

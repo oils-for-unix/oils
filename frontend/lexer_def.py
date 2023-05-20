@@ -780,7 +780,7 @@ BRACE_RANGE_DEF = [
 
 # Valid in lex_mode_e.{Expr,DQ_Oil}
 # Used by oil_lang/grammar_gen.py
-OIL_LEFT_SUBS = [
+YSH_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
   C('$[', Id.Left_DollarBracket),  # Unused now
@@ -789,7 +789,7 @@ OIL_LEFT_SUBS = [
 # Valid in lex_mode_e.Expr, but not valid in DQ_Oil
 # Used by oil_lang/grammar_gen.py
 
-OIL_LEFT_UNQUOTED = [
+YSH_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
   # In expression mode, we add the r'' and c'' prefixes for '' and $''.
   C("'", Id.Left_SingleQuote),
@@ -891,7 +891,7 @@ float = digitpart fraction? exponent? | fraction exponent?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
-    _VARS + OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + \
+    _VARS + YSH_LEFT_SUBS + YSH_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + \
     EXPR_CHARS + [
 
   # https://docs.python.org/3/reference/lexical_analysis.html#integer-literals

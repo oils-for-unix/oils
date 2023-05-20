@@ -112,12 +112,12 @@ A sigil pair often changes the **lexer mode** to parse what's inside.
 ## Parse Options to Take Over `()`, `@`, and `=`
 
 Most users don't have to worry about parse options.  Instead, they run either
-`bin/osh` or `bin/oil`, which are actually aliases for the same binary.  The
-difference is that `bin/oil` has the **option group** `oil:all` on by default.
+`bin/osh` or `bin/ysh`, which are actually aliases for the same binary.  The
+difference is that `bin/ysh` has the **option group** `ysh:all` on by default.
 
 Nonetheless, here are two examples.
 
-The `parse_at` option (in group `oil:upgrade`) turns `@` into the **splice
+The `parse_at` option (in group `ysh:upgrade`) turns `@` into the **splice
 operator** when it's at the front of a word:
 
 ```sh-prompt
@@ -134,7 +134,7 @@ $ echo '@myarray'       # quote it to get the old behavior
 @myarray
 ```
 
-The `parse_equals` option (in group `oil:all`) lets you omit `const`:
+The `parse_equals` option (in group `ysh:all`) lets you omit `const`:
 
 ```sh-prompt
 const x = 42 + a[i]     # accepted in OSH and Oil

@@ -105,6 +105,7 @@ def AppBundleMain(argv):
   else:
     bundle = 'oils-for-unix'  # _bin/cxx-dbg/oils-for-unix
 
+  # for legacy oil.ovm
   if main_name == bundle or (main_name == 'oil' and len(ext)):
     arg_r.Next()
     first_arg = arg_r.Peek()
@@ -199,7 +200,7 @@ def main(argv):
 
   except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
-    log('oil: %s', e.msg)
+    log('oils: %s', e.msg)
     return 2
 
   except KeyboardInterrupt:
@@ -212,7 +213,7 @@ def main(argv):
       traceback.print_exc()
 
     # test this with prlimit --nproc=1 --pid=$$
-    print_stderr('osh I/O error (main): %s' % posix.strerror(e.errno))
+    print_stderr('oils I/O error (main): %s' % posix.strerror(e.errno))
     return 2  # dash gives status 2
 
   # We don't catch RuntimeError (including AssertionError/NotImplementedError),

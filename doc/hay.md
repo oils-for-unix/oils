@@ -414,7 +414,7 @@ Here is a list of all the mechanisms mentioned.
 
 ### Functions
 
-- `parse_hay()` parses a file, just as `bin/oil` does.
+- `parse_hay()` parses a file, just as `bin/ysh` does.
 - `eval_hay()` evaluates the parsed file in restricted mode, like `hay eval`.
 - `_hay()` retrieves the current result
   - It's useful interactive debugging.
@@ -423,7 +423,7 @@ Here is a list of all the mechanisms mentioned.
 
 ### Options
 
-Hay is parsed and evaluated with option group `oil:all`, which includes
+Hay is parsed and evaluated with option group `ysh:all`, which includes
 `parse_proc` and `parse_equals`.
 
 <!--

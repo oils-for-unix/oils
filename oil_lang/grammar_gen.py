@@ -102,8 +102,8 @@ def main(argv):
   # Tokens that look like / or ${ or @{
   triples = (
       lexer_def.ID_SPEC.LexerPairs(Kind.Arith) +
-      lexer_def.OIL_LEFT_SUBS +
-      lexer_def.OIL_LEFT_UNQUOTED +
+      lexer_def.YSH_LEFT_SUBS +
+      lexer_def.YSH_LEFT_UNQUOTED +
       lexer_def.EXPR_WORDS
   )
   more_ops = {}

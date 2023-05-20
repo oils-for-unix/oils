@@ -121,11 +121,11 @@ class CrashDumper(object):
     - dump unconditionally -- a daily cron job.  This would be fine.
     - dump on non-zero exit code
 
-    OIL_FAIL
+    OILS_FAIL
     Maybe counters are different than failure
 
-    OIL_CRASH_DUMP='function alias trap completion stack' ?
-    OIL_COUNTER_DUMP='function alias trap completion'
+    OILS_CRASH_DUMP='function alias trap completion stack' ?
+    OILS_COUNTER_DUMP='function alias trap completion'
     and then
     I think both of these should dump the (path, mtime, checksum) of the source
     they ran?  And then you can match those up with source control or whatever?

@@ -181,6 +181,7 @@ ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh soil-run              -
 asan             test/asan.sh soil-run                 -
+ltrace           test/ltrace.sh soil-run               -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html

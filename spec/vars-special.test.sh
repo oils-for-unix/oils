@@ -570,22 +570,22 @@ status=0
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### BASH_VERSION / OIL_VERSION
+#### BASH_VERSION / OILS_VERSION
 case $SH in
-  (bash)
+  bash)
     # BASH_VERSION=zz
 
     echo $BASH_VERSION | egrep -o '4\.4\.0' > /dev/null
     echo matched=$?
     ;;
-  (*osh)
+  *osh)
     # note: version string is mutable like in bash.  I guess that's useful for
     # testing?  We might want a strict mode to eliminate that?
 
-    echo $OIL_VERSION | egrep -o '[0-9]+\.[0-9]+\.' > /dev/null
+    echo $OILS_VERSION | egrep -o '[0-9]+\.[0-9]+\.' > /dev/null
     echo matched=$?
     ;;
-  (*)
+  *)
     echo 'no version'
     ;;
 esac

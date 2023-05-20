@@ -46,7 +46,7 @@ default value is `'+ '`, which results in traces like this:
 Oil solves these problems.  Here's an example of tracing a builtin, a pipeline,
 then another builtin:
 
-    $ osh -O oil:upgrade -x -c 'set +e; ls | grep OOPS | wc -l; echo end'
+    $ osh -O ysh:upgrade -x -c 'set +e; ls | grep OOPS | wc -l; echo end'
     . builtin set '+e'
     > pipeline
       | part 103
@@ -78,7 +78,7 @@ then another builtin:
 ### Option Names
 
 This functionality is enabled by the [xtrace_rich]($oil-help) option, but you
-should generally use the `oil:upgrade` option group.  This group turns on
+should generally use the `ysh:upgrade` option group.  This group turns on
 [xtrace_rich]($oil-help) and turns off [xtrace_details]($oil-help), which  is
 equivalent to:
 

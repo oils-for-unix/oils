@@ -201,8 +201,8 @@ class ShellExecutor(vm._Executor):
     """Run builtins, functions, external commands
 
     Possible variations:
-    - Oil might have different, simpler rules.  No special builtins, etc.
-    - Oil might have OIL_PATH = @( ... ) or something.
+    - YSH might have different, simpler rules.  No special builtins, etc.
+    - YSH might have OILS_PATH = @( ... ) or something.
     - Interpreters might want to define all their own builtins.
 
     Args:

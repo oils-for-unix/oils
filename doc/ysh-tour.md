@@ -1014,7 +1014,7 @@ More later:
 
 Although we describe OSH and Oil as different languages, they use the **same**
 interpreter under the hood.  This interpreter has various `shopt` flags that
-are flipped for different behavior, e.g. with `shopt --set oil:all`.
+are flipped for different behavior, e.g. with `shopt --set ysh:all`.
 
 Understanding this interpreter and its interface to the Unix kernel will help
 you understand **both** languages!

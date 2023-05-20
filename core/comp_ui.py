@@ -525,14 +525,15 @@ def ExecutePrintCandidates(display, sub, matches, max_len):
   display.PrintCandidates(sub, matches, max_len)
 
 
-def InitReadline(readline, history_filename, root_comp, display, debug_f):
-  # type: (Optional[Readline], str, completion.RootCompleter, _IDisplay, _DebugFile) -> None
+def InitReadline(readline, hist_file, root_comp, display, debug_f):
+  # type: (Optional[Readline], Optional[str], completion.RootCompleter, _IDisplay, _DebugFile) -> None
   assert readline
 
-  try:
-    readline.read_history_file(history_filename)
-  except (IOError, OSError):
-    pass
+  if hist_file is not None:
+    try:
+      readline.read_history_file(hist_file)
+    except (IOError, OSError):
+      pass
 
   readline.parse_and_bind('tab: complete')
 

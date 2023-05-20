@@ -335,7 +335,7 @@ class ctx_HayEval(object):
       # This blames the right 'hay' location
       e_die("Recursive 'hay eval' not allowed")
 
-    for opt_num in consts.OIL_ALL:
+    for opt_num in consts.YSH_ALL:
       mutable_opts.Push(opt_num, True)
     mutable_opts.Push(option_i._running_hay, True)
 
@@ -353,7 +353,7 @@ class ctx_HayEval(object):
     self.hay_state.PopEval()
 
     self.mutable_opts.Pop(option_i._running_hay)
-    for opt_num in consts.OIL_ALL:
+    for opt_num in consts.YSH_ALL:
       self.mutable_opts.Pop(opt_num)
 
 
@@ -530,7 +530,7 @@ def _SetGroup(opt0_array, opt_nums, b):
 def MakeOilOpts():
   # type: () -> optview.Parse
   opt0_array = InitOpts()
-  _SetGroup(opt0_array, consts.OIL_ALL, True)
+  _SetGroup(opt0_array, consts.YSH_ALL, True)
 
   no_stack = None  # type: List[bool]
   opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
@@ -785,12 +785,12 @@ class MutableOpts(object):
     # options
     opt_group = consts.OptionGroupNum(opt_name)
     if opt_group == opt_group_i.YshUpgrade:
-      _SetGroup(self.opt0_array, consts.OIL_UPGRADE, b)
+      _SetGroup(self.opt0_array, consts.YSH_UPGRADE, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
     if opt_group == opt_group_i.YshAll:
-      _SetGroup(self.opt0_array, consts.OIL_ALL, b)
+      _SetGroup(self.opt0_array, consts.YSH_ALL, b)
       self.SetDeferredErrExit(b)  # Special case
       return
 
@@ -828,9 +828,9 @@ class MutableOpts(object):
     for opt_name in opt_names:
       opt_group = consts.OptionGroupNum(opt_name)
       if opt_group == opt_group_i.YshUpgrade:
-        opt_nums.extend(consts.OIL_UPGRADE)
+        opt_nums.extend(consts.YSH_UPGRADE)
       elif opt_group == opt_group_i.YshAll:
-        opt_nums.extend(consts.OIL_ALL)
+        opt_nums.extend(consts.YSH_ALL)
       elif opt_group == opt_group_i.StrictAll:
         opt_nums.extend(consts.STRICT_ALL)
       else:
@@ -1096,7 +1096,10 @@ def InitMem(mem, environ, version_str):
   Initialize memory with shell defaults.  Other interpreters could have
   different builtin variables.
   """
+  # TODO: REMOVE this legacy.  ble.sh checks it!
   SetGlobalString(mem, 'OIL_VERSION', version_str)
+
+  SetGlobalString(mem, 'OILS_VERSION', version_str)
   _InitDefaults(mem)
   _InitVarsFromEnv(mem, environ)
 

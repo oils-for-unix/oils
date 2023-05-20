@@ -426,18 +426,28 @@ class TildeEvaluator(object):
     self.mem = mem
     self.exec_opts = exec_opts
 
+  def GetMyHomeDir(self):
+    # type: () -> Optional[str]
+    """
+    Consult $HOME first, and then make a libc call.
+
+    Important: the libc call can FAIL, which is why we prefer $HOME.  See issue
+    #1578.
+    """
+    # First look up the HOME var, then ask the OS.  This is what bash does.
+    val = self.mem.GetValue('HOME')
+    UP_val = val
+    if val.tag() == value_e.Str:
+      val = cast(value.Str, UP_val)
+      return val.s
+    return pyos.GetMyHomeDir()
+
   def Eval(self, part):
     # type: (word_part.TildeSub) -> str
     """Evaluates ~ and ~user, given a Lit_TildeLike token"""
 
     if part.user_name is None:
-      # First look up the HOME var, then ask the OS.  This is what bash does.
-      val = self.mem.GetValue('HOME')
-      UP_val = val
-      if val.tag() == value_e.Str:
-        val = cast(value.Str, UP_val)
-        return val.s
-      result = pyos.GetMyHomeDir()
+      result = self.GetMyHomeDir()
     else:
       result = pyos.GetHomeDir(part.user_name)
 
@@ -460,15 +470,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
     EvalWordSequence
     EvalWordSequence2
   """
-  def __init__(self, mem, exec_opts, mutable_opts, splitter, errfmt):
-    # type: (Mem, optview.Exec, state.MutableOpts, SplitContext, ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
     self.prompt_ev = None  # type: prompt.Evaluator
 
     self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith
 
-    self.tilde_ev = TildeEvaluator(mem, exec_opts)
+    self.tilde_ev = tilde_ev
 
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
@@ -2170,9 +2180,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
 class NormalWordEvaluator(AbstractWordEvaluator):
 
-  def __init__(self, mem, exec_opts, mutable_opts, splitter, errfmt):
-    # type: (Mem, optview.Exec, state.MutableOpts, SplitContext, ErrorFormatter) -> None
-    AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts, splitter, errfmt)
+  def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
+    AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
+                                   tilde_ev, splitter, errfmt)
     self.shell_ex = None  # type: _Executor
 
   def CheckCircularDeps(self):
@@ -2210,9 +2221,10 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
   line.
   """
 
-  def __init__(self, mem, exec_opts, mutable_opts, splitter, errfmt):
-    # type: (Mem, optview.Exec, state.MutableOpts, SplitContext, ErrorFormatter) -> None
-    AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts, splitter, errfmt)
+  def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter, errfmt):
+    # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
+    AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
+                                   tilde_ev, splitter, errfmt)
 
   def CheckCircularDeps(self):
     # type: () -> None

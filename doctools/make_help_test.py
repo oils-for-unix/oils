@@ -14,7 +14,7 @@ import make_help  # module under test
 class MakeHelpTest(unittest.TestCase):
 
   def testTableOfContents(self):
-    os.environ['OIL_VERSION'] = '0.7.pre5'
+    os.environ['OILS_VERSION'] = '0.7.pre5'
 
     # Three spaces before
     #
