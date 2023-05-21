@@ -7,7 +7,6 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import CompoundWord
-from asdl import runtime
 from core import error
 from core import shell
 from core import pyos
