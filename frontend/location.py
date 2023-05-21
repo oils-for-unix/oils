@@ -325,6 +325,15 @@ def _RightTokenForWordPart(part):
       raise AssertionError(part.tag())
 
 
+def LeftTokenForCompoundWord(w):
+  # type: (CompoundWord) -> Optional[Token]
+  if len(w.parts):
+    return LeftTokenForWordPart(w.parts[0])
+  else:
+    # This is possible for empty brace sub alternative {a,b,}
+    return None
+
+
 def LeftTokenForWord(w):
   # type: (word_t) -> Optional[Token]
   if w is None:
@@ -334,11 +343,7 @@ def LeftTokenForWord(w):
   with tagswitch(w) as case:
     if case(word_e.Compound):
       w = cast(CompoundWord, UP_w)
-      if len(w.parts):
-        return LeftTokenForWordPart(w.parts[0])
-      else:
-        # This is possible for empty brace sub alternative {a,b,}
-        return None
+      return LeftTokenForCompoundWord(w)
 
     elif case(word_e.Token):
       tok = cast(Token, UP_w)

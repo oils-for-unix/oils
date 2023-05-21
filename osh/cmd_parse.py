@@ -987,8 +987,7 @@ class CommandParser(object):
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
-      # TODO: get token directly
-      left_tok = location.LeftTokenForWord(words[0])
+      left_tok = location.LeftTokenForCompoundWord(words[0])
       return command.ShAssignment(left_tok, pairs, redirects)
 
     kind, kw_token = word_.IsControlFlow(suffix_words[0])
@@ -1289,7 +1288,6 @@ class CommandParser(object):
 
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-      # NOTE: OilCondition could have spids of ( and ) ?
       cond = condition.Oil(enode)  # type: condition_t
     else:
       self.allow_block = False
@@ -1317,7 +1315,8 @@ class CommandParser(object):
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
-    left_tok = location.LeftTokenForWord(self.cur_word)
+    left_tok = location.LeftTokenForWord(self.cur_word)  # ( or pat
+
     if self.c_id == Id.Op_LParen:  # Optional (
       self._Next()
 
@@ -1391,7 +1390,8 @@ class CommandParser(object):
     pat_expr    : '(' oil_expr ')'
     pat_eggex   : '/' oil_eggex '/'
     """
-    left_tok = location.LeftTokenForWord(self.cur_word)
+    left_tok = location.LeftTokenForWord(self.cur_word)  # pat
+
     pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
@@ -1526,7 +1526,6 @@ class CommandParser(object):
       if (self.parse_opts.parse_paren() and
           self.w_parser.LookPastSpace() == Id.Op_LParen):
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-        # NOTE: OilCondition could have spids of ( and ) ?
         cond = condition.Oil(enode)  # type: condition_t
       else:
         self.allow_block = False
@@ -1628,7 +1627,6 @@ class CommandParser(object):
     # Remove ambiguity with if cd / {
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-      # NOTE: OilCondition could have spids of ( and ) ?
       cond = condition.Oil(enode)  # type: condition_t
     else:
       self.allow_block = False
@@ -1784,7 +1782,7 @@ class CommandParser(object):
       with ctx_VarChecker(self.var_checker, blame_tok):
         func.body = self.ParseCompoundCommand()
 
-      func.name_tok = location.LeftTokenForWord(word0)
+      func.name_tok = location.LeftTokenForCompoundWord(word0)
       return func
     else:
       p_die('Expected ) in function definition', loc.Word(self.cur_word))
