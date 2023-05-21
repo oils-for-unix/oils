@@ -123,18 +123,21 @@ patsub() {
   set +o errexit
 
   _error-case 'echo ${x/}'  # pattern must not be empty
-  _error-case 'echo ${x//}'
+  _error-case 'echo ${x//}'  # } or / to close pattern
 
-  _should-parse 'echo ${x/foo}'  # pat 'foo'
+  _should-parse 'echo ${x/foo}'  # pat 'foo', no mode, replace empty
 
-  _should-parse 'echo ${x//foo}'  # pat 'foo' and replace mode '/'
+  _should-parse 'echo ${x//foo}'  # pat 'foo', replace mode '/', replace empty
+  _should-parse 'echo ${x/%foo}'  # same as above
 
   # } or / to close pattern
   _error-case 'echo ${x///foo}'
 
-  _should-parse 'echo ${x///}'   # BUG: pat shouldn't be }
+  _should-parse 'echo ${x///}'   # BUG: pat shouldn't be }, mode '/', replace ''
+  _should-parse 'echo ${x/%/}'   # pat '', replace mode '%', replace ''
 
-  _should-parse 'echo ${x////}'  # pat '/' and replace mode '/'
+  _should-parse 'echo ${x////}'  # pat '/', replace mode '/', replace empty
+  _should-parse 'echo ${x/%//}'  # pat '', replace mode '%', replace '/'
 
   # Newline in replacement pattern
   _should-parse 'echo ${x//foo/replace

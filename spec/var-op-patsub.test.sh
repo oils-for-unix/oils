@@ -289,3 +289,37 @@ fooz
 status=0
 ## END
 ## OK bash/mksh/zsh status: 0
+
+
+#### Synthesized ${x///} bug
+
+# found via test/parse-errors.sh
+#
+# TODO: should really revisit this and require quoting
+# I think Aboriginal Linux was a consideration
+
+x='slash / brace } hi'
+echo x=${x///}
+
+## STDOUT:
+x=slash brace } hi
+## END
+## BUG mksh/zsh STDOUT:
+x=slash / brace } hi
+## END
+
+#### Pattern is empty $foo$bar -- regression for infinite loop
+
+x=-foo-
+
+echo ${x//$foo$bar/bar}
+
+## STDOUT:
+-foo-
+## END
+
+# feels like memory unsafety in ZSH
+## BUG zsh STDOUT:
+bar-barfbarobarobar-
+## END
+
