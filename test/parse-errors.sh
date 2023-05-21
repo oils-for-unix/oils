@@ -122,18 +122,17 @@ _ysh-parse-error-here() { _ysh-parse-error "$(cat)"; }
 patsub() {
   set +o errexit
 
-  _error-case 'echo ${x/}'  # pattern must not be empty
-  _error-case 'echo ${x//}'  # } or / to close pattern
+  _should-parse 'echo ${x/}'
+  _should-parse 'echo ${x//}'
 
   _should-parse 'echo ${x/foo}'  # pat 'foo', no mode, replace empty
 
   _should-parse 'echo ${x//foo}'  # pat 'foo', replace mode '/', replace empty
   _should-parse 'echo ${x/%foo}'  # same as above
 
-  # } or / to close pattern
-  _error-case 'echo ${x///foo}'
+  _should-parse 'echo ${x///foo}'
 
-  _should-parse 'echo ${x///}'   # BUG: pat shouldn't be }, mode '/', replace ''
+  _should-parse 'echo ${x///}'   # found and fixed bug
   _should-parse 'echo ${x/%/}'   # pat '', replace mode '%', replace ''
 
   _should-parse 'echo ${x////}'  # pat '/', replace mode '/', replace empty

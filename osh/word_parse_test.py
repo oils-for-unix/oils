@@ -317,8 +317,14 @@ class WordParserTest(unittest.TestCase):
     self.assertEqual('//', s)
     self.assertTrue(quoted)
 
+    return
+
     # Real example found in the wild!
     # http://www.oilshell.org/blog/2016/11/07.html
+
+    # 2023-05: copied into spec/var-op-patsub.test.sh
+    # This can be improved as ${var//'/'/\\/}, without parsing gymnastics
+
     w = _assertReadWord(self, r'${var////\\/}')
     op = _GetSuffixOp(self, w)
     self.assertEqual(Id.Lit_Slash, op.replace_mode)

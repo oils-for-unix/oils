@@ -250,55 +250,62 @@ class WordParser(WordEmitter):
     """
     slash_tok = self.cur_token  # Save for location info
 
-    # Exception: VSub_ArgUnquoted even if it's quoted
-    # stop at eof_type=Lit_Slash, empty_ok=False
+    # Read arg until eof_type=Lit_Slash, empty_ok=False
+    # } won't be included because it's Id.Right_DollarBrace
+    # Note: lexer mode is VSub_ArgUnquoted even if it's quoted
     pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash)
-
-    # really subtle: ${x////c} is valid and equivalent to ${x//'/'/c} (in bash)
-    if len(pat.parts) == 1 and word_.LiteralId(pat.parts[0]) == Id.Lit_Slash:
-      self._Next(lex_mode_e.VSub_ArgUnquoted)
-      self._Peek()
-      pat.parts.append(self.cur_token)
-
-    if len(pat.parts) == 0:
-      p_die('Pattern in ${x/pat/replace} must not be empty',
-            self.cur_token)
+    #log('pat 1 %r', pat)
 
     replace_mode = Id.Undefined_Tok
-    # Check for / # % modifier on pattern.
-    UP_first_part = pat.parts[0]
-    if UP_first_part.tag() == word_part_e.Literal:
-      lit_id = cast(Token, UP_first_part).id
-      if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
-        pat.parts.pop(0)
-        replace_mode = lit_id
+
+    # If we got /, then assume it's the replace mode
+    if len(pat.parts) == 1 and word_.LiteralId(pat.parts[0]) == Id.Lit_Slash:
+      replace_mode = Id.Lit_Slash
+      if self.token_type == Id.Right_DollarBrace:  # nothing more to read
+        # ${v//}  this empty word is annoying, but occurs elsewhere
+        pat = CompoundWord([])
+        #log('pat 2 A %r', pat)
+      else:
+        # ${v///} - Read again until /
+        # TODO: Should this always be rhs.Empty?  It's weird that we don't pass
+        # empty_ok=True here and above
+        pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash)
+        #log('pat 2 B %r', pat)
+
+    if replace_mode == Id.Undefined_Tok and len(pat.parts):
+      # Check for / # % modifier on pattern.
+      UP_first_part = pat.parts[0]
+      if UP_first_part.tag() == word_part_e.Literal:
+        lit_id = cast(Token, UP_first_part).id
+        if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
+          pat.parts.pop(0)
+          replace_mode = lit_id
 
     tilde = word_.TildeDetect(pat)
     if tilde:
       pat = tilde
 
-    # NOTE: If there is a modifier, the pattern can be empty, e.g.
-    # ${s/#/foo} and ${a/%/foo}.
-
     if self.token_type == Id.Right_DollarBrace:
       # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
-      return suffix_op.PatSub(pat, rhs_word.Empty, replace_mode, slash_tok)
+      replace = rhs_word.Empty  # type: rhs_word_t
+      #return suffix_op.PatSub(pat, rhs_word.Empty, replace_mode, slash_tok)
 
-    if self.token_type == Id.Lit_Slash:
+    elif self.token_type == Id.Lit_Slash:
       replace = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)  # do not stop at /
 
-      self._Peek()
-      if self.token_type != Id.Right_DollarBrace:
-        # NOTE: I think this never happens.
-        # We're either in the VS_ARG_UNQ or VS_ARG_DQ lex state, and everything
-        # there is Lit_ or Left_, except for }.
-        p_die("Expected } after replacement string, got %s" %
-              ui.PrettyId(self.token_type), self.cur_token)
+    else:
+      # When does this happen?
+      replace = rhs_word.Empty
 
-      return suffix_op.PatSub(pat, replace, replace_mode, slash_tok)
+    self._Peek()
+    if self.token_type != Id.Right_DollarBrace:
+      # NOTE: I think this never happens.
+      # We're either in the VS_ARG_UNQ or VS_ARG_DQ lex state, and everything
+      # there is Lit_ or Left_, except for }.
+      p_die("Expected } after replacement string, got %s" %
+            ui.PrettyId(self.token_type), self.cur_token)
 
-    # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
-    p_die('Expected } or / to close pattern', self.cur_token)
+    return suffix_op.PatSub(pat, replace, replace_mode, slash_tok)
 
   def _ReadSubscript(self):
     # type: () -> bracket_op_t

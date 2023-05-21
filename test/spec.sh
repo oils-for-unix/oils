@@ -420,6 +420,7 @@ var-op-patsub() {
   # 1 unicode failure, and [^]] which is a parsing divergence
   sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
+  # TODO: can add $BUSYBOX_ASH
 }
 
 var-op-slice() {

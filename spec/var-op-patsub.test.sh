@@ -20,6 +20,7 @@ status=0
 status=0
 --
 ## status: 1
+## OK ash status: 2
 ## BUG mksh status: 0
 
 #### Global Pattern replacement with /
@@ -35,12 +36,22 @@ echo ${s/?xx/_yy} ${s/#?xx/_yy}
 #### Right Anchored Pattern replacement with %
 s=xx_xx_xx
 echo ${s/?xx/_yy} ${s/%?xx/_yy}
-## stdout: xx_yy_xx xx_xx_yy
+## STDOUT:
+xx_yy_xx xx_xx_yy
+## END
+## BUG ash STDOUT:
+xx_yy_xx xx_xx_xx
+## END
 
 #### Replace fixed strings
 s=xx_xx
 echo ${s/xx/yy} ${s//xx/yy} ${s/#xx/yy} ${s/%xx/yy}
-## stdout: yy_xx yy_yy yy_xx xx_yy
+## STDOUT:
+yy_xx yy_yy yy_xx xx_yy
+## END
+## BUG ash STDOUT:
+yy_xx yy_yy xx_xx xx_xx
+## END
 
 #### Replace is longest match
 # If it were shortest, then you would just replace the first <html>
@@ -59,40 +70,46 @@ s='aa*bb+cc'
 echo ${s//\**+/__}  # Literal *, then any sequence of characters, then literal +
 ## stdout: aa__cc
 
-#### Pattern replacement ${v/} is not valid
+#### ${v/} is empty search and replacement
 v=abcde
 echo -${v/}-
 echo status=$?
-## status: 2
-## stdout-json: ""
-## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh STDOUT:
+## status: 0
+## STDOUT:
 -abcde-
 status=0
 ## END
+## BUG ash STDOUT:
+-abcde -
+status=0
+## END
 
-#### Pattern replacement ${v//} is not valid
+#### ${v//} is empty search and replacement
 v='a/b/c'
 echo -${v//}-
 echo status=$?
-## status: 2
-## stdout-json: ""
-## BUG bash/mksh/zsh status: 0
-## BUG bash/mksh/zsh STDOUT:
+## status: 0
+## STDOUT:
 -a/b/c-
+status=0
+## END
+## BUG ash STDOUT:
+-a/b/c -
 status=0
 ## END
 
 #### Confusing unquoted slash matches bash (and ash)
 x='/_/'
 echo ${x////c}
+
 echo ${x//'/'/c}
+
 ## STDOUT:
-c_c
+/_/
 c_c
 ## END
-## BUG mksh/yash STDOUT:
-/_/
+## BUG bash STDOUT:
+c_c
 c_c
 ## END
 ## BUG zsh STDOUT:
@@ -101,8 +118,37 @@ c_c
 ## END
 ## BUG ash STDOUT:
 c_c
-/_/
+/_/ /c
 ## END
+
+#### Synthesized ${x///} bug (similar to above)
+
+# found via test/parse-errors.sh
+
+x='slash / brace } hi'
+echo 'ambiguous:' ${x///}
+
+echo 'quoted:   ' ${x//'/'}
+
+# Wow we have all combination here -- TERRIBLE
+
+## STDOUT:
+ambiguous: slash / brace } hi
+quoted:    slash brace } hi
+## END
+## BUG bash STDOUT:
+ambiguous: slash brace } hi
+quoted:    slash brace } hi
+## END
+## BUG zsh STDOUT:
+ambiguous: slash / brace } hi
+quoted:    slash / brace } hi
+## END
+## BUG ash STDOUT:
+ambiguous: slash brace } hi
+quoted:    slash / brace } hi
+## END
+
 
 #### ${v/a} is the same as ${v/a/}  -- no replacement string
 v='aabb'
@@ -154,6 +200,10 @@ echo ${v/$x/_}
 ## END
 
 #### Substitute glob characters in pattern, quoted and unquoted
+
+# INFINITE LOOP in ash!
+case $SH in ash) exit ;; esac
+
 g='*'
 v='a*b'
 echo ${v//"$g"/-}
@@ -276,7 +326,7 @@ echo ${s//$pat/z}
 ab^cd^
 ## END
 
-#### patsub syntax error
+#### [a-z] Invalid range end is syntax error
 x=fooz
 pat='[z-a]'  # Invalid range.  Other shells don't catch it!
 #pat='[a-y]'
@@ -284,29 +334,12 @@ echo ${x//$pat}
 echo status=$?
 ## stdout-json: ""
 ## status: 1
-## OK bash/mksh/zsh STDOUT:
+## OK bash/mksh/zsh/ash STDOUT:
 fooz
 status=0
 ## END
-## OK bash/mksh/zsh status: 0
+## OK bash/mksh/zsh/ash status: 0
 
-
-#### Synthesized ${x///} bug
-
-# found via test/parse-errors.sh
-#
-# TODO: should really revisit this and require quoting
-# I think Aboriginal Linux was a consideration
-
-x='slash / brace } hi'
-echo x=${x///}
-
-## STDOUT:
-x=slash brace } hi
-## END
-## BUG mksh/zsh STDOUT:
-x=slash / brace } hi
-## END
 
 #### Pattern is empty $foo$bar -- regression for infinite loop
 
@@ -321,5 +354,28 @@ echo ${x//$foo$bar/bar}
 # feels like memory unsafety in ZSH
 ## BUG zsh STDOUT:
 bar-barfbarobarobar-
+## END
+
+#### Chromium from http://www.oilshell.org/blog/2016/11/07.html
+
+case $SH in zsh) exit ;; esac
+
+HOST_PATH=/foo/bar/baz
+echo ${HOST_PATH////\\/}
+
+# The way bash parses it
+echo ${HOST_PATH//'/'/\\/}
+
+## STDOUT:
+\/foo\/bar\/baz
+\/foo\/bar\/baz
+## END
+
+# zsh has crazy bugs
+## BUG zsh stdout-json: ""
+
+## BUG mksh STDOUT:
+/foo/bar/baz
+\/foo\/bar\/baz
 ## END
 
