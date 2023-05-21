@@ -709,24 +709,6 @@ class MutableOpts(object):
 
     return self.errexit_disabled_tok[-1]
 
-    # Old complex logic.  It turns out we don't need to detect whether it was
-    # actually disabled.  These are the "strict_errexit without errexit" cases
-    # in spec/errexit-oil.
-    """
-      overlay = self.opt_stacks[option_i.errexit]
-      # log('overlay %s', overlay)
-      # log('errexit_disabled_spid %s', self.errexit_disabled_spid)
-      if overlay is None or len(overlay) == 0:
-        return runtime.NO_SPID
-      else:
-        was_on = self.opt0_array[option_i.errexit] or (True in overlay)
-        # top of stack == False means it's disabled
-        if was_on and not overlay[-1]:
-          return self.errexit_disabled_spid[-1]
-        else:
-          return runtime.NO_SPID
-    """
-
   def _SetOldOption(self, opt_name, b):
     # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""

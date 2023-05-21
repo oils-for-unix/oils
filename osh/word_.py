@@ -7,7 +7,6 @@ from _devbuild.gen.syntax_asdl import (
     Token, CompoundWord, DoubleQuoted, SingleQuoted,
     word, word_e, word_t, word_str,
     word_part, word_part_t, word_part_e,
-    sh_lhs_expr, sh_lhs_expr_e, sh_lhs_expr_t,
     AssocPair,
 )
 from mycpp.mylib import log
@@ -585,29 +584,6 @@ def IsVarSub(w):
   # type: (word_t) -> bool
   """Return whether it's any var sub, or a double quoted one."""
   return False
-
-
-def SpanForLhsExpr(node):
-  # type: (sh_lhs_expr_t) -> int
-  """
-  Currently unused?  Will be useful for translating YSH assignment
-  """
-  # This switch is annoying but we don't have inheritance from the sum type
-  # (because of diamond issue).  We might change the schema later, which maeks
-  # it moot.  See the comment in frontend/syntax.asdl.
-  UP_node = node
-  with tagswitch(node) as case:
-    if case(sh_lhs_expr_e.Name):
-      node = cast(sh_lhs_expr.Name, UP_node)
-      return node.left.span_id
-    elif case(sh_lhs_expr_e.IndexedName):
-      node = cast(sh_lhs_expr.IndexedName, UP_node)
-      return node.left.span_id
-    else:
-      # Should not see UnparsedIndex
-      raise AssertionError()
-
-  raise AssertionError()
 
 
 # Doesn't translate with mycpp because of dynamic %

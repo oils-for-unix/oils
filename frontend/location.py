@@ -9,6 +9,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import (
     loc, loc_t, loc_e,
     command, command_e, command_t,
+    sh_lhs_expr, sh_lhs_expr_e, sh_lhs_expr_t,
     word, word_e, word_t,
     word_part, word_part_e, word_part_t,
     CompoundWord, SimpleVarSub, Token,
@@ -401,3 +402,26 @@ def RightTokenForWord(w):
       raise AssertionError(w.tag())
 
   raise AssertionError('for -Wreturn-type in C++')
+
+
+def TokenForLhsExpr(node):
+  # type: (sh_lhs_expr_t) -> Token
+  """
+  Currently unused?  Will be useful for translating YSH assignment
+  """
+  # This switch is annoying but we don't have inheritance from the sum type
+  # (because of diamond issue).  We might change the schema later, which maeks
+  # it moot.  See the comment in frontend/syntax.asdl.
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(sh_lhs_expr_e.Name):
+      node = cast(sh_lhs_expr.Name, UP_node)
+      return node.left
+    elif case(sh_lhs_expr_e.IndexedName):
+      node = cast(sh_lhs_expr.IndexedName, UP_node)
+      return node.left
+    else:
+      # Should not see UnparsedIndex
+      raise AssertionError()
+
+  raise AssertionError()
