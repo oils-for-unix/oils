@@ -11,7 +11,7 @@ word_parse_test.py: Tests for word_parse.py
 
 import unittest
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import arith_expr_e, word_e, rhs_word_e
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -274,7 +274,7 @@ class WordParserTest(unittest.TestCase):
     op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
     self.assertUnquoted('replace', op.replace)
-    self.assertEqual(Id.Lit_Slash, op.replace_mode)
+    self.assertEqual(Id.Lit_Slash, op.replace_mode, Id_str(op.replace_mode))
 
     w = _assertReadWord(self, '${var/%pat/replace}')  # prefix
     op = _GetSuffixOp(self, w)
@@ -317,14 +317,10 @@ class WordParserTest(unittest.TestCase):
     self.assertEqual('//', s)
     self.assertTrue(quoted)
 
-    return
-
     # Real example found in the wild!
     # http://www.oilshell.org/blog/2016/11/07.html
 
     # 2023-05: copied into spec/var-op-patsub.test.sh
-    # This can be improved as ${var//'/'/\\/}, without parsing gymnastics
-
     w = _assertReadWord(self, r'${var////\\/}')
     op = _GetSuffixOp(self, w)
     self.assertEqual(Id.Lit_Slash, op.replace_mode)

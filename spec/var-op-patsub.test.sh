@@ -105,11 +105,11 @@ echo ${x////c}
 echo ${x//'/'/c}
 
 ## STDOUT:
-/_/
+c_c
 c_c
 ## END
-## BUG bash STDOUT:
-c_c
+## BUG mksh STDOUT:
+/_/
 c_c
 ## END
 ## BUG zsh STDOUT:
@@ -133,11 +133,11 @@ echo 'quoted:   ' ${x//'/'}
 # Wow we have all combination here -- TERRIBLE
 
 ## STDOUT:
-ambiguous: slash / brace } hi
+ambiguous: slash brace } hi
 quoted:    slash brace } hi
 ## END
-## BUG bash STDOUT:
-ambiguous: slash brace } hi
+## BUG mksh STDOUT:
+ambiguous: slash / brace } hi
 quoted:    slash brace } hi
 ## END
 ## BUG zsh STDOUT:
@@ -378,4 +378,22 @@ echo ${HOST_PATH//'/'/\\/}
 /foo/bar/baz
 \/foo\/bar\/baz
 ## END
+
+
+#### ${x//~homedir/}
+
+path=~/git/oilshell
+
+# ~ expansion occurs
+#echo path=$path
+
+echo ${path//~/z}
+
+echo ${path/~/z}
+
+## STDOUT:
+z/git/oilshell
+z/git/oilshell
+## END
+
 
