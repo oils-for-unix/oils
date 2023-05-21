@@ -612,9 +612,9 @@ class CommandEvaluator(object):
 
         b = cond_status == 0
 
-      elif case(condition_e.Oil):
+      elif case(condition_e.YshExpr):
         if mylib.PYTHON:
-          cond = cast(condition.Oil, UP_cond)
+          cond = cast(condition.YshExpr, UP_cond)
           obj = self.expr_ev.EvalExpr(cond.e, blame_tok)
           b = bool(obj)
 
@@ -635,9 +635,9 @@ class CommandEvaluator(object):
         arg = cast(case_arg.Word, UP_arg)
         return self.word_ev.EvalWordToString(arg.w).s
 
-      elif case(case_arg_e.OilExpr):
+      elif case(case_arg_e.YshExpr):
         if mylib.PYTHON:
-          arg = cast(case_arg.OilExpr, UP_arg)
+          arg = cast(case_arg.YshExpr, UP_arg)
           obj = self.expr_ev.EvalExpr(arg.e, blame)
           return str(obj) # TODO: handle typed args
 
@@ -1186,8 +1186,8 @@ class CommandEvaluator(object):
             words = braces.BraceExpandWords(iterable.words)
             iter_list = self.word_ev.EvalWordSequence(words)
 
-          elif case(for_iter_e.Oil):
-            iterable = cast(for_iter.Oil, UP_iterable)
+          elif case(for_iter_e.YshExpr):
+            iterable = cast(for_iter.YshExpr, UP_iterable)
             iter_expr = iterable.e
             iter_expr_blame = iterable.blame
 

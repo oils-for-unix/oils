@@ -1,4 +1,4 @@
-# Data types for the Oil AST, aka "Lossless Syntax Tree".
+# Data types for the Oils AST, aka "Lossless Syntax Tree".
 #
 # Invariant: the source text can be reconstructed byte-for-byte from this
 # tree.  The test/arena.sh file partially verifies this.
@@ -118,7 +118,7 @@ module syntax
   suffix_op = 
     Nullary %Token  # ${x@Q} or ${!prefix@} (which also has prefix_op)
   | Unary(Token op, rhs_word arg_word)  # e.g. ${v:-default}
-    # TODO: Implement Oil's ${x|html} and ${x %.3f}
+    # TODO: Implement YSH ${x|html} and ${x %.3f}
   | Static(Token tok, str arg)
   | PatSub(CompoundWord pat, rhs_word replace, id replace_mode, Token slash_tok)
     # begin is optional with ${array::1}
@@ -180,7 +180,7 @@ module syntax
   # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, List[CompoundWord] arms, Token right)
 
-    # Oil word_part extensions
+    # YSH word_part extensions
 
     # @myarray
   | Splice(Token blame_tok, str var_name)
@@ -254,7 +254,7 @@ module syntax
 
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
-  | Oil(expr e)                    # if (x > 0) { echo hi }
+  | YshExpr(expr e)                # if (x > 0) { echo hi }
 
   # Each arm tests one word against multiple words
   # shell:  *.cc|*.h) echo C++ ;;
@@ -277,7 +277,7 @@ module syntax
   # commands we match against a word.
   case_arg =
     Word(word w)
-  | OilExpr(expr e)
+  | YshExpr(expr e)
 
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})
@@ -286,10 +286,10 @@ module syntax
       List[int] spids)
 
   for_iter =
-    Args                      # for x; do echo $x; done # implicit "$@"
-  | Words(List[word] words)   # for x in 'foo' *.py { echo $x }
-                              # like ShArrayLiteral, but no location for %(
-  | Oil(expr e, Token blame)  # for x in (mylist) { echo $x }
+    Args                          # for x; do echo $x; done # implicit "$@"
+  | Words(List[word] words)       # for x in 'foo' *.py { echo $x }
+                                  # like ShArrayLiteral, but no location for %(
+  | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
 
   BraceGroup = (
       Token left, Token? doc_token, List[command] children,
@@ -351,7 +351,7 @@ module syntax
     # 4. Subshell  # single child that's a CommandList
   | CommandList(List[command] children)
 
-    # Oil stuff
+    # YSH command constructs
 
     # For 'x = myexpr'.  There's no type and no comma allowed.
   | BareDecl(Token lhs, expr rhs)
@@ -525,8 +525,7 @@ module syntax
     # (Starred is NOT used for {k:v, **a}.  That used a blank "keys"
     # attribute.)
 
-    # In Oil, "spreading" will be @[1 ...array2] [b, ...list2] and
-    # {k: v, ...dict2}.  We don't need two different symbols.
+    # I think we can use { **pairs } like Python
   | Spread(expr child, expr_context ctx)
 
   #

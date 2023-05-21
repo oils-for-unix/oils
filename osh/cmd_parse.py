@@ -1206,7 +1206,7 @@ class CommandParser(object):
       self._Next()  # skip in
       if self.w_parser.LookPastSpace() == Id.Op_LParen:
         enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-        node.iterable = for_iter.Oil(enode, last_token)
+        node.iterable = for_iter.YshExpr(enode, last_token)
 
         # For simplicity, we don't accept for x in (obj); do ...
         self._Peek()
@@ -1288,7 +1288,7 @@ class CommandParser(object):
 
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-      cond = condition.Oil(enode)  # type: condition_t
+      cond = condition.YshExpr(enode)  # type: condition_t
     else:
       self.allow_block = False
       commands = self._ParseCommandList()
@@ -1447,7 +1447,7 @@ class CommandParser(object):
     Call this after we're past 'case'.
     """
     enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-    case_node.to_match = case_arg.OilExpr(enode)
+    case_node.to_match = case_arg.YshExpr(enode)
 
     ate = self._Eat(Id.Lit_LBrace)
     case_node.arms_start = word_.BraceToken(ate)
@@ -1526,7 +1526,7 @@ class CommandParser(object):
       if (self.parse_opts.parse_paren() and
           self.w_parser.LookPastSpace() == Id.Op_LParen):
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-        cond = condition.Oil(enode)  # type: condition_t
+        cond = condition.YshExpr(enode)  # type: condition_t
       else:
         self.allow_block = False
         commands= self._ParseCommandList()
@@ -1627,7 +1627,7 @@ class CommandParser(object):
     # Remove ambiguity with if cd / {
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
-      cond = condition.Oil(enode)  # type: condition_t
+      cond = condition.YshExpr(enode)  # type: condition_t
     else:
       self.allow_block = False
       commands = self._ParseCommandList()

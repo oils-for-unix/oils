@@ -642,7 +642,7 @@ class OilPrinter(object):
           elif case(for_iter_e.Words):
             pass
 
-          elif case(for_iter_e.Oil):
+          elif case(for_iter_e.YshExpr):
             pass
 
         if node.semi_tok is not None:
@@ -734,7 +734,7 @@ class OilPrinter(object):
 
         to_match = None  # type: word_t
         with tagswitch(node.to_match) as case:
-          if case(case_arg_e.OilExpr):
+          if case(case_arg_e.YshExpr):
             #self.cursor.PrintUntilSpid(arms_end_spid)
             #self.cursor.SkipUntilSpid(arms_end_spid + 1)
             return
