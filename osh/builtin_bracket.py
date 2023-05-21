@@ -52,8 +52,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
     """
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
-      # TODO: Add a way to show this location.  Show 1 char past the right-most
-      # spid of the last word?  But we only have the left-most spid.
+      # TODO: Add a way to show this location.  
       w = word.String(Id.Eof_Real, '', None)
       return w
 

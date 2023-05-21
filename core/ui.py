@@ -351,8 +351,8 @@ class ErrorFormatter(object):
     # means there is no location info, but 0 could mean that the location is EOF.
     # So then you query the arena for the last line in that case?
     # Eof_Real is the ONLY token with 0 span, because it's invisible!
-    # Well Eol_Tok is a sentinel with a span_id of runtime.NO_SPID.  I think
-    # that is OK.
+    # Well Eol_Tok is a sentinel with span_id == runtime.NO_SPID.  I think that
+    # is OK.
     # Problem: the column for Eof could be useful.
 
     _PrintWithLocation(prefix, msg, err.location, True)

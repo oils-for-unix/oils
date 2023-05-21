@@ -225,7 +225,7 @@ class RunProc(vm._Builtin):
     # type: (cmd_value.Argv) -> int
     _, arg_r = flag_spec.ParseCmdVal('runproc', cmd_val,
                                      accept_typed_args=True)
-    argv, spids = arg_r.Rest2()
+    argv, locs= arg_r.Rest2()
 
     if len(argv) == 0:
       raise error.Usage('requires arguments', loc.Missing)
@@ -235,7 +235,7 @@ class RunProc(vm._Builtin):
       self.errfmt.PrintMessage('runproc: no proc named %r' % name)
       return 1
 
-    cmd_val2 = cmd_value.Argv(argv, spids, cmd_val.typed_args)
+    cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
     cmd_st = CommandStatus.CreateNull(alloc_lists=True)
     return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
@@ -257,7 +257,7 @@ class Try(vm._Builtin):
 
   TODO:
   - Set _error_str (e.UserErrorString()) 
-  - Set _error_location (span_id)
+  - Set _error_location
   - These could be used by a 'raise' builtin?  Or 'reraise'
 
   try foo
@@ -299,7 +299,6 @@ class Try(vm._Builtin):
     argv, locs = arg_r.Rest2()
     cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
 
-    #failure_spid = runtime.NO_SPID
     try:
       # Temporarily turn ON errexit, but don't pass a SPID because we're
       # ENABLING and not disabling.  Note that 'if try myproc' disables it and
@@ -317,7 +316,6 @@ class Try(vm._Builtin):
       status = e.ExitStatus()
     except error.ErrExit as e:
       status = e.ExitStatus()
-      #failure_spid = e.span_id
 
     # special variable
     self.mem.SetTryStatus(status)

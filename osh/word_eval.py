@@ -162,7 +162,6 @@ def _SplitAssignArg(arg, blame_word):
     val = None  # no operator
     append = False
 
-  #log('ret %s', AssignArg(left, right, append, word_spid))
   return AssignArg(var_name, val, append, blame_word)
 
 
@@ -1222,7 +1221,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
       var_name = part.var_name
       vtest_place.name = var_name  # for _ApplyTestOp
 
-      # TODO: LINENO can use its own span_id!
       val = self.mem.GetValue(var_name)
 
     elif part.token.id == Id.VSub_Number:

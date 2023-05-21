@@ -190,7 +190,7 @@ class WordParser(WordEmitter):
     # Examples:
     # - "${s:-}", "${s/%pat/}"
     # It's similar to LooksLikeShAssignment where we turn x= into x=''.  And it
-    # has the same potential problem of not having spids.
+    # has the same potential problem of not having Token location info.
     #
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
     # return a Compound with no parts, which is explicitly checked with a
@@ -1303,7 +1303,6 @@ class WordParser(WordEmitter):
       p_die('Expected ( after =', self.cur_token)
     left_token = self.cur_token
     right_token = None  # type: Token
-    paren_spid = self.cur_token.span_id
 
     # MUST use a new word parser (with same lexer).
     w_parser = self.parse_ctx.MakeWordParser(self.lexer, self.line_reader)

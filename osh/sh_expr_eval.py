@@ -779,7 +779,6 @@ class ArithEvaluator(object):
         node = cast(sh_lhs_expr.Name, UP_node)
         assert node.name is not None
 
-        # Note: C++ constructor doesn't take spids directly.  Should we add that?
         lval1 = lvalue.Named(node.name, node.left)
         lval = lval1
 
@@ -804,7 +803,7 @@ class ArithEvaluator(object):
   def _VarNameOrWord(self, anode):
     # type: (arith_expr_t) -> Tuple[Optional[str], loc_t]
     """
-    Returns (var_name, span_id) if the arith node can be interpreted that way
+    Returns a variable name if the arith node can be interpreted that way
     """
     UP_anode = anode
     with tagswitch(anode) as case:

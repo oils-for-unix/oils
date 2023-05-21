@@ -164,8 +164,8 @@ def IsLeadingSpace(s):
 #
 # TODO: do this all at compile time?
 
-# These functions may mutate tok.tval.  The LOSSLESS Syntax tree can be
-# recovered with span_id.  (Is that the case with the new representation too?)
+# These functions may mutate tok.tval.  TODO: mutate the parts instead, after
+# we remove .tval
 
 def RemoveLeadingSpaceDQ(parts):
   # type: (List[word_part_t]) -> None

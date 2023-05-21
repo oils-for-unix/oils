@@ -474,7 +474,7 @@ class Printf(vm._Builtin):
 
     result = ''.join(out)
     if arg.v is not None:
-      # TODO: get the span_id for arg.v!
+      # TODO: get the location for arg.v!
       v_loc = loc.Missing
       lval = self.unsafe_arith.ParseLValue(arg.v, v_loc)
       state.BuiltinSetValue(self.mem, lval, value.Str(result))

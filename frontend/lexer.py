@@ -99,8 +99,8 @@ class LineLexer(object):
     # type: (int) -> Token
     """Create a new span ID for syntax errors involving the EOF token."""
     if self.src_line is None:
-      # There are ZERO lines now.  Add a dummy line 0 so the span_id has a
-      # source to display errors.
+      # There are ZERO lines now.  Add a dummy line 0 so the Token has a source
+      # to display errors.
       src_line = self.arena.AddLine('', 0)
     else:
       src_line = self.src_line
@@ -240,8 +240,6 @@ class LineLexer(object):
     if self.replace_last_token:  # make another token from the last span
       self.arena.UnreadOne()
       self.replace_last_token = False
-
-    #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
     tok_len = end_pos - line_pos
     t = self.arena.NewToken(tok_type, line_pos, tok_len, self.src_line, tok_val)

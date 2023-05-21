@@ -344,7 +344,7 @@ class Read(vm._Builtin):
 
     # Don't respect any of the other options here?  This is buffered I/O.
     if arg.line:  # read --line
-      var_name, var_spid = arg_r.Peek2()
+      var_name, var_loc = arg_r.Peek2()
       if var_name is None:
         var_name = '_line'
       else:
@@ -362,7 +362,7 @@ class Read(vm._Builtin):
       e_usage('--qsn can only be used with --line', loc.Missing)
 
     if arg.all:  # read --all
-      var_name, var_spid = arg_r.Peek2()
+      var_name, var_loc = arg_r.Peek2()
       if var_name is None:
         var_name = '_all'
       else:

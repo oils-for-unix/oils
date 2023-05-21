@@ -252,7 +252,7 @@ class Shopt(vm._Builtin):
 
         index = consts.OptionNum(opt_name)
         if index == 0:
-          # TODO: compute span_id
+          # TODO: location info
           e_usage('got invalid option %r' % opt_name, loc.Missing)
         opt_nums.append(index)
 
@@ -546,7 +546,7 @@ class Echo(vm._Builtin):
       elif n == 1:
         self.f.write(argv[0])
       else:
-        # TODO: span_id could be more accurate
+        # TODO: location info
         e_usage(
             "takes at most one arg when simple_echo is on (hint: add quotes)", loc.Missing)
     else:

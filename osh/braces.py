@@ -441,7 +441,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
           out_parts_.extend(prefix)
 
           # TODO: Does it help to preserve location info?
-          # t = Token(Id.Lit_Chars, expand_part.spids[0], s)
+          # t = Token(Id.Lit_Chars, expand_part.locs[0], s)
           t = lexer.DummyToken(Id.Lit_Chars, s)
 
           out_parts_.append(t)

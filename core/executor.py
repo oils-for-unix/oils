@@ -185,8 +185,8 @@ class ShellExecutor(vm._Executor):
           assert isinstance(status, int)
         except error.Usage as e:
           arg0 = cmd_val.argv[0]
-          # fill in default location.  e.g. osh/state.py raises UsageError without
-          # span_id.
+          # Fill in default location.  e.g. osh/state.py raises UsageError
+          # without location
           location = e.location  # type: loc_t
           if not e.HasLocation():
             location = self.errfmt.CurrentLocation()
