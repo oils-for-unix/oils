@@ -91,7 +91,7 @@ _runtime-parse-error() {
   fi
 }
 
-_oil-should-parse() {
+_ysh-should-parse() {
   banner "$@"
   echo
   $SH -O oil:all -n -c "$@"
@@ -123,21 +123,23 @@ patsub() {
   set +o errexit
 
   _error-case 'echo ${x/}'  # pattern must not be empty
-
-  # These are a little odd
   _error-case 'echo ${x//}'
-  #_error-case 'echo ${x///}'
 
-  #_error-case 'echo ${x/foo}'
-  #_error-case 'echo ${x//foo}'
+  _should-parse 'echo ${x/foo}'  # pat 'foo'
 
-  # This should be a different error?  It should be an empty pattern?
+  _should-parse 'echo ${x//foo}'  # pat 'foo' and replace mode '/'
+
+  # } or / to close pattern
   _error-case 'echo ${x///foo}'
 
+  _should-parse 'echo ${x///}'   # BUG: pat shouldn't be }
+
+  _should-parse 'echo ${x////}'  # pat '/' and replace mode '/'
+
   # Newline in replacement pattern
-  #_error-case 'echo ${x//foo/replace
-#}'
-  #_error-case 'echo ${x//foo/replace$foo}'
+  _should-parse 'echo ${x//foo/replace
+}'
+  _should-parse 'echo ${x//foo/replace$foo}'
 }
 
 # osh/word_parse.py
@@ -584,7 +586,7 @@ invalid-brace-ranges() {
   _error-case 'echo {z..a..1}'
 }
 
-oil-language() {
+ysh_var() {
   set +o errexit
 
   # Unterminated
@@ -654,10 +656,10 @@ echo hi
 '
 
   # with block on same line
-  _oil-should-parse 'json write (x) { echo hi }'
+  _ysh-should-parse 'json write (x) { echo hi }'
 
   # with block
-  _oil-should-parse '
+  _ysh-should-parse '
 json write (x) {
   echo hi
 }'
@@ -685,10 +687,10 @@ regex_literals() {
   set +o errexit
 
   _ysh-parse-error 'var x = / ! /'
-  _oil-should-parse 'var x = / ![a-z] /'
+  _ysh-should-parse 'var x = / ![a-z] /'
 
   if oils-cpp-bug; then
-    _oil-should-parse 'var x = / !d /'
+    _ysh-should-parse 'var x = / !d /'
   fi
 
   _ysh-parse-error 'var x = / !! /'
@@ -713,7 +715,7 @@ regex_literals() {
 
 }
 
-oil_expr() {
+ysh_expr() {
   set +o errexit
   # old syntax
   _ysh-parse-error '= 5 mod 3'
@@ -730,14 +732,14 @@ oil_expr() {
 
 }
 
-oil_expr_more() {
+ysh_expr_more() {
   set +o errexit
 
   # user must choose === or ~==
   _ysh-parse-error 'if (5 == 5) { echo yes }'
 }
 
-oil_hay_assign() {
+ysh_hay_assign() {
   set +o errexit
 
   _ysh-parse-error '
@@ -760,19 +762,19 @@ RULE {
 }
 '
 
-  _oil-should-parse '
+  _ysh-should-parse '
 Rule {
   x = 42
 }
 '
 
-  _oil-should-parse '
+  _ysh-should-parse '
 Rule X Y {
   x = 42
 }
 '
 
-  _oil-should-parse '
+  _ysh-should-parse '
 RULe {   # inconsistent but OK
   x = 42
 }
@@ -812,7 +814,7 @@ Package libc {
 }
 
 
-oil_string_literals() {
+ysh_string_literals() {
   set +o errexit
 
   # OK in OSH
@@ -914,13 +916,13 @@ parse_dollar() {
 parse_backslash() {
   set +o errexit
 
-  _oil-should-parse 'echo \('
-  _oil-should-parse 'echo \;'
-  _oil-should-parse 'echo ~'
-  _oil-should-parse 'echo \!'  # history?
+  _ysh-should-parse 'echo \('
+  _ysh-should-parse 'echo \;'
+  _ysh-should-parse 'echo ~'
+  _ysh-should-parse 'echo \!'  # history?
 
-  _oil-should-parse 'echo \%'  # job ID?  I feel like '%' is better
-  _oil-should-parse 'echo \#'  # comment
+  _ysh-should-parse 'echo \%'  # job ID?  I feel like '%' is better
+  _ysh-should-parse 'echo \#'  # comment
 
   _ysh-parse-error 'echo \.'
   _ysh-parse-error 'echo \-'
@@ -952,13 +954,13 @@ parse_dparen() {
   _should-parse "$bad"
   _ysh-parse-error "$bad"
 
-  _oil-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
+  _ysh-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
 
   # Accepted workaround: add space
-  _oil-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
+  _ysh-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
 }
 
-oil_to_make_nicer() {
+ysh_to_make_nicer() {
   set +o errexit
 
   # expects expression on right
@@ -992,12 +994,12 @@ invalid_parens() {
   # compatible extension in both langauges
   local s='write -- $f(x)'
   _should-parse "$s"
-  _oil-should-parse "$s"
+  _ysh-should-parse "$s"
 
   # requires parse_at
   local s='write -- @sorted(x)'
   _error-case "$s"  # this is a parse error, but BAD message!
-  _oil-should-parse "$s"
+  _ysh-should-parse "$s"
 
   local s='
 f() {
@@ -1005,7 +1007,7 @@ f() {
 }
 '
   _error-case "$s"
-  _oil-should-parse "$s"
+  _ysh-should-parse "$s"
 
   # Analogous bad bug
   local s='
@@ -1016,7 +1018,7 @@ f() {
   _error-case "$s"
 }
 
-oil_nested_proc() {
+ysh_nested_proc() {
   set +o errexit
 
   _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
@@ -1030,10 +1032,10 @@ oil_nested_proc() {
   # shell nesting is still allowed
   _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
 
-  _oil-should-parse 'proc p() { shopt --unset errexit { false hi } }'
+  _ysh-should-parse 'proc p() { shopt --unset errexit { false hi } }'
 }
 
-oil_var_decl() {
+ysh_var_decl() {
   set +o errexit
 
   _ysh-parse-error '
@@ -1083,7 +1085,7 @@ oil_var_decl() {
     '
   fi
 
-  _oil-should-parse '
+  _ysh-should-parse '
   var x = 1
   proc p {
     echo hi
@@ -1096,7 +1098,7 @@ oil_var_decl() {
   '
 }
 
-oil_place_mutation() {
+ysh_place_mutation() {
   set +o errexit
 
   _ysh-parse-error '
@@ -1113,7 +1115,7 @@ oil_place_mutation() {
   }
   '
 
-  _oil-should-parse '
+  _ysh-should-parse '
   proc p(x) {
     setvar x = "X"  # is mutating params allowed?  I guess why not.
   }
@@ -1139,52 +1141,52 @@ shell_for() {
   _should-parse 'for var in x; do echo $var; done'
 }
 
-oil_case() {
+ysh_case() {
   set +o errexit
 
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     *.py { echo "python" }
   }
   '
 
   # parse_bare_word
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     (obj.attr) { echo "python" }
   }
   '
 
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     ("main.py") { echo "python" }
   }
   '
 
   # Various multi-line cases
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo){("main.py"){ echo "python" } }
   '
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) { ("main.py") { echo "python" } }
   '
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     ("main.py") {
       echo "python" } }'
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     ("main.py") {
       echo "python" }
   }
   '
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     ("main.py") { echo "python"
     }
   }
   '
-  _oil-should-parse '
+  _ysh-should-parse '
   case (foo) {
     ("main.py") {
       echo "python"
@@ -1245,10 +1247,10 @@ oil_case() {
   '
 }
 
-oil_for() {
+ysh_for() {
   set +o errexit
 
-  _oil-should-parse '
+  _ysh-should-parse '
   for x in (obj) {
     echo $x
   }
@@ -1260,7 +1262,7 @@ oil_for() {
   done
   '
 
-  _oil-should-parse '
+  _ysh-should-parse '
   for x, y in SPAM EGGS; do
     echo $x
   done
@@ -1287,7 +1289,7 @@ oil_for() {
   '
 
   # Old style
-  _oil-should-parse '
+  _ysh-should-parse '
   for x, y in SPAM EGGS
   do
     echo $x
@@ -1295,10 +1297,10 @@ oil_for() {
   '
 
   # for shell compatibility, allow this
-  _oil-should-parse 'for const in (x) { echo $var }'
+  _ysh-should-parse 'for const in (x) { echo $var }'
 }
 
-oil_for_parse_bare_word() {
+ysh_for_parse_bare_word() {
   set +o errexit
 
   _ysh-parse-error '
@@ -1307,26 +1309,26 @@ oil_for_parse_bare_word() {
   }
   '
 
-  _oil-should-parse '
+  _ysh-should-parse '
   for x in a b {
     echo $x
   }
   '
 
-  _oil-should-parse '
+  _ysh-should-parse '
   for x in *.py {
     echo $x
   }
   '
 
-  _oil-should-parse '
+  _ysh-should-parse '
   for x in "quoted" {
     echo $x
   }
   '
 }
 
-oil_issue_1118() {
+oils_issue_1118() {
   set +o errexit
 
   # Originally pointed at 'for'
@@ -1419,29 +1421,29 @@ cases-in-strings() {
 
   invalid-brace-ranges  # osh/braces.py
 
-  oil-language  # oil_lang/
   append-builtin
   blocks
   parse_brace
   regex_literals
   proc_sig
   proc_arg_list
-  oil_expr
-  oil_expr_more
-  oil_hay_assign
-  oil_string_literals
+  ysh_var
+  ysh_expr
+  ysh_expr_more
+  ysh_hay_assign
+  ysh_string_literals
   parse_backticks
   parse_dollar
   parse_backslash
   parse_dparen
-  oil_to_make_nicer
-  oil_nested_proc
-  oil_var_decl
-  oil_place_mutation
-  oil_case
-  oil_for
-  oil_for_parse_bare_word
-  oil_issue_1118
+  ysh_to_make_nicer
+  ysh_nested_proc
+  ysh_var_decl
+  ysh_place_mutation
+  ysh_case
+  ysh_for
+  ysh_for_parse_bare_word
+  oils_issue_1118
 
   shell_for
   parse_at
