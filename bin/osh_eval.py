@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.syntax_asdl import CompoundWord
 from asdl import runtime
 from core import error
 from core import shell
@@ -26,7 +27,8 @@ def main(argv):
 
   environ = pyos.Environ()
 
-  arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
+  missing = None  # type: CompoundWord
+  arg_r = args.Reader(argv, [missing] * len(argv))
 
   try:
     status = shell.Main('osh', arg_r, environ, login_shell, loader,

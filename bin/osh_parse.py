@@ -114,8 +114,7 @@ def main(argv):
     return 2
   assert node is not None
 
-  # C++ doesn't have the abbreviations yet (though there are some differences
-  # like omitting spids)
+  # C++ doesn't have the abbreviations yet
   #tree = node.AbbreviatedTree()
   if pretty_print:
     tree = node.PrettyTree()

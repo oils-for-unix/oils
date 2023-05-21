@@ -690,13 +690,11 @@ class MutableOpts(object):
     """Called by core/process.py to implement bash quirks."""
     self._Set(option_i.errexit, False)
 
-  def ErrExitDisabledSpanId(self):
+  def ErrExitDisabledToken(self):
     # type: () -> Optional[Token]
-    """If errexit is disabled by POSIX rules, return span ID for construct.
+    """If errexit is disabled by POSIX rules, return Token for construct.
 
-    e.g. the spid for 'if' or '&&' etc.
-
-    Otherwise return runtime.NO_SPID
+    e.g. the Token for 'if' or '&&' etc.
     """
     # Bug fix: The errexit disabling inherently follows a STACK DISCIPLINE.
     # But we run trap handlers in the MAIN LOOP, which break this.  So just
@@ -1373,7 +1371,7 @@ class Mem(object):
 
     if tok.span_id == runtime.NO_SPID:
       # NOTE: This happened in the osh-runtime benchmark for yash.
-      log('Warning: span_id undefined in SetCurrentSpanId')
+      log('Warning: span_id undefined in SetLocationToken')
 
       #import traceback
       #traceback.print_stack()

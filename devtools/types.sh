@@ -54,6 +54,8 @@ soil-run() {
   ./NINJA-config.sh
 
   check-all
+
+  typecheck-more
 }
 
 run-task "$@"

@@ -245,7 +245,7 @@ class ShellExecutor(vm._Executor):
       proc_node = self.procs.get(arg0)
       if proc_node is not None:
         if self.exec_opts.strict_errexit():
-          disabled_tok = self.mutable_opts.ErrExitDisabledSpanId()
+          disabled_tok = self.mutable_opts.ErrExitDisabledToken()
           if disabled_tok:
             self.errfmt.Print_('errexit was disabled for this construct',
                                disabled_tok)
@@ -436,7 +436,6 @@ class ShellExecutor(vm._Executor):
           len(simple.redirects) == 1 and
           simple.redirects[0].op.id == Id.Redir_Less):
         # change it to __cat < file
-        # note: cmd_eval.py _Dispatch works around lack of spid
         # TODO: change to 'internal cat' (issue 1013)
         tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
         cat_word = CompoundWord([tok])

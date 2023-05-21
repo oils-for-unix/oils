@@ -1442,9 +1442,9 @@ class CommandParser(object):
   def ParseYshCase(self, case_node):
     # type: (command.Case) -> None
     """
-    oil_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
+    ysh_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
 
-    Call this after we're past 'case'.
+    Looking at: token after 'case'
     """
     enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
     case_node.to_match = case_arg.YshExpr(enode)
@@ -1466,8 +1466,19 @@ class CommandParser(object):
     # type: () -> command.Case
     """
     case_clause : Case WORD         newline_ok In newline_ok case_list? Esac ;
-                | oil_case
+                | ysh_case
+
+    new:
+    case_clause : old_case
+                | ysh_case
+                ;
     """
+    # this function becomes
+    # if ...  # (
+    #   ParseOldCase()
+    # else:
+    #   ParseYshCase()
+
     case_node = command.Case.CreateNull(alloc_lists=True)
 
     case_node.case_kw = word_.AsKeywordToken(self.cur_word)
