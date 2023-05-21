@@ -69,7 +69,7 @@ def EvalCStringToken(tok):
     log('tok %s', tok)
 
   if id_ in (Id.Char_Literals, Id.Unknown_Backslash):
-    # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in Oil.
+    # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
     return value
 
   # single quotes in the middle of a triple quoted string
@@ -84,7 +84,7 @@ def EvalCStringToken(tok):
     return None
 
   elif id_ in (Id.Char_Octal3, Id.Char_Octal4):
-    if id_ == Id.Char_Octal3:  # $'\377' (disallowed at parse time in Oil)
+    if id_ == Id.Char_Octal3:  # $'\377' (disallowed at parse time in YSH)
       s = value[1:]
     else:                      # echo -e '\0377'
       s = value[2:]

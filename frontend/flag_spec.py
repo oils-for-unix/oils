@@ -93,7 +93,7 @@ def _FlagType(arg_type):
 
   if arg_type is None:  # implicit _FlagSpec
     typ = flag_type_e.Bool
-  elif arg_type == args.Bool:  # explicit _OilFlagSpec
+  elif arg_type == args.Bool:
     typ = flag_type_e.Bool
 
   elif arg_type == args.Int:
@@ -152,7 +152,7 @@ def _Default(arg_type, arg_default=None):
 
   if arg_type is None:
     default = value.Bool(False)  # type: value_t
-  elif arg_type == args.Bool:  # for _OilFlagSpec
+  elif arg_type == args.Bool:
     default = value.Bool(False)
 
   elif arg_type == args.Int:
@@ -182,7 +182,7 @@ class _FlagSpec(object):
     self.arity1 = {}  # type: Dict[str, args._Action]
     self.plus_flags = []  # type: List[str]
 
-    # Oil extensions
+    # YSH extensions
     self.actions_long = {}  # type: Dict[str, args._Action]
     self.defaults = {}  # type: Dict[str, value_t]
 

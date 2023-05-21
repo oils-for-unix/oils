@@ -783,7 +783,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(value_e.MaybeStrArray):
           val = cast(value.MaybeStrArray, UP_val)
-          # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
+          # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
           strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
@@ -1062,7 +1062,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def EvalDoubleQuotedToString(self, dq_part):
     # type: (DoubleQuoted) -> str
-    """For double quoted strings in Oil expressions.
+    """For double quoted strings in YSH expressions.
 
     Example: var x = "$foo-${foo}"
     """
@@ -1376,7 +1376,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def EvalBracedVarSubToString(self, part):
     # type: (BracedVarSub) -> str
-    """For double quoted strings in Oil expressions.
+    """For double quoted strings in YSH expressions.
 
     Example: var x = "$foo-${foo}"
     """
@@ -1428,7 +1428,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def EvalSimpleVarSubToString(self, node):
     # type: (SimpleVarSub) -> str
-    """For double quoted strings in Oil expressions.
+    """For double quoted strings in YSH expressions.
 
     Example: var x = "$foo-${foo}"
     """
@@ -2026,7 +2026,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def SimpleEvalWordSequence2(self, words, allow_assign):
     # type: (List[CompoundWord], bool) -> cmd_value_t
-    """Simple word evaluation for Oil."""
+    """Simple word evaluation for YSH."""
     strs = []  # type: List[str]
     locs = []  # type: List[CompoundWord]
 

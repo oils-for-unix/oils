@@ -350,7 +350,7 @@ class VarChecker(object):
       }
     }
 
-    Oil disallows nested procs.
+    YSH disallows nested procs.
     """
     if len(self.tokens) != 0:
       if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
@@ -971,7 +971,7 @@ class CommandParser(object):
 
       # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
       if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
-        p_die('Use const or var/setvar to assign in Oil (parse_sh_assign)',
+        p_die('Use const or var/setvar to assign in YSH (parse_sh_assign)',
               left_token)
 
     # Set a reference to words and redirects for completion.  We want to
@@ -1037,7 +1037,7 @@ class CommandParser(object):
     Original:
       brace_group : LBrace command_list RBrace ;
 
-    Oil:
+    YSH:
       brace_group : LBrace (Op_Newline IgnoredComment?)? command_list RBrace ;
 
     The doc comment can only occur if there's a newline.
@@ -1205,7 +1205,7 @@ class CommandParser(object):
 
       self._Next()  # skip in
       if self.w_parser.LookPastSpace() == Id.Op_LParen:
-        enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+        enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
         node.iterable = for_iter.YshExpr(enode, last_token)
 
         # For simplicity, we don't accept for x in (obj); do ...
@@ -1287,7 +1287,7 @@ class CommandParser(object):
     self._Next()  # skip keyword
 
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
-      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+      enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
       cond = condition.YshExpr(enode)  # type: condition_t
     else:
       self.allow_block = False
@@ -1295,7 +1295,7 @@ class CommandParser(object):
       self.allow_block = True
       cond = condition.Shell(commands.children)
 
-    # NOTE: The LSTs will be different for Oil and OSH, but the execution
+    # NOTE: The LSTs will be different for OSH and YSH, but the execution
     # should be unchanged.  To be sure we should desugar.
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
@@ -1379,7 +1379,7 @@ class CommandParser(object):
       arm = self.ParseCaseArm()
       arms.append(arm)
 
-  def ParseOilCaseArm(self):
+  def ParseYshCaseArm(self):
     # type: () -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
@@ -1420,7 +1420,7 @@ class CommandParser(object):
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
-  def ParseOilCaseList(self, arms):
+  def ParseYshCaseList(self, arms):
     # type: (List[CaseArm]) -> Optional[Token]
     """
     oil_case_list: (case_item newline_ok)*
@@ -1432,21 +1432,21 @@ class CommandParser(object):
       if self.c_id == Id.Lit_RBrace:
         return word_.LiteralToken(self.cur_word)
 
-      arm = self.ParseOilCaseArm()
+      arm = self.ParseYshCaseArm()
       self._NewlineOk()
 
       arms.append(arm)
 
     return None
 
-  def ParseOilCase(self, case_node):
+  def ParseYshCase(self, case_node):
     # type: (command.Case) -> None
     """
     oil_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
 
     Call this after we're past 'case'.
     """
-    enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+    enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
     case_node.to_match = case_arg.YshExpr(enode)
 
     ate = self._Eat(Id.Lit_LBrace)
@@ -1455,7 +1455,7 @@ class CommandParser(object):
     self._NewlineOk()
 
     # TODO: maybe this doesn't need to be optional
-    self.ParseOilCaseList(case_node.arms)
+    self.ParseYshCaseList(case_node.arms)
 
     self._NewlineOk()
 
@@ -1474,7 +1474,7 @@ class CommandParser(object):
     self._Next()  # skip case
 
     if self.w_parser.LookPastSpace() == Id.Op_LParen:
-      self.ParseOilCase(case_node)
+      self.ParseYshCase(case_node)
       return case_node
 
     self._Peek()
@@ -1506,7 +1506,7 @@ class CommandParser(object):
 
     return case_node
 
-  def _ParseOilElifElse(self, if_node):
+  def _ParseYshElifElse(self, if_node):
     # type: (command.If) -> None
     """
     if test -f foo {
@@ -1525,7 +1525,7 @@ class CommandParser(object):
       self._Next()  # skip elif
       if (self.parse_opts.parse_paren() and
           self.w_parser.LookPastSpace() == Id.Op_LParen):
-        enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
         cond = condition.YshExpr(enode)  # type: condition_t
       else:
         self.allow_block = False
@@ -1545,7 +1545,7 @@ class CommandParser(object):
       body = self.ParseBraceGroup()
       if_node.else_action = body.children
 
-  def _ParseOilIf(self, if_kw, cond):
+  def _ParseYshIf(self, if_kw, cond):
     # type: (Token, condition_t) -> command.If
     """
     if test -f foo {
@@ -1576,7 +1576,7 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
-      self._ParseOilElifElse(if_node)
+      self._ParseYshElifElse(if_node)
     # the whole if node has the 'else' spid, unlike shell-style there's no 'fi'
     # spid because that's in the BraceGroup.
     return if_node
@@ -1626,7 +1626,7 @@ class CommandParser(object):
 
     # Remove ambiguity with if cd / {
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
-      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+      enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
       cond = condition.YshExpr(enode)  # type: condition_t
     else:
       self.allow_block = False
@@ -1637,7 +1637,7 @@ class CommandParser(object):
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       # if foo {
-      return self._ParseOilIf(if_kw, cond)
+      return self._ParseYshIf(if_kw, cond)
 
     ate = self._Eat(Id.KW_Then)
     then_kw = word_.AsKeywordToken(ate)
@@ -1697,7 +1697,7 @@ class CommandParser(object):
 
     if self.c_id == Id.KW_For:
       # Note: Redirects parsed in this call.  POSIX for and bash for (( have
-      # redirects, but Oil for doesn't.
+      # redirects, but YSH for doesn't.
       return self.ParseFor()
     if self.c_id in (Id.KW_While, Id.KW_Until):
       keyword = word_.AsKeywordToken(self.cur_word)
@@ -1823,7 +1823,7 @@ class CommandParser(object):
     func.name_tok = location.LeftTokenForWord(name_word)
     return func
 
-  def ParseOilProc(self):
+  def ParseYshProc(self):
     # type: () -> command.Proc
     node = command.Proc.CreateNull(alloc_lists=True)
 
@@ -1849,7 +1849,7 @@ class CommandParser(object):
 
       self._Next()
       node.body = self.ParseBraceGroup()
-      # No redirects for Oil procs (only at call site)
+      # No redirects for YSH procs (only at call site)
 
     return node
 
@@ -1909,11 +1909,11 @@ class CommandParser(object):
     # type: () -> command_t
     """
     command          : simple_command
-                     | compound_command   # Oil edit: io_redirect* folded in
+                     | compound_command   # OSH edit: io_redirect* folded in
                      | function_def
                      | ksh_function_def
 
-                     # Oil extensions
+                     # YSH extensions
                      | proc NAME ...
                      | const ...
                      | var ...
@@ -1936,16 +1936,16 @@ class CommandParser(object):
     if self._AtSecondaryKeyword():
       p_die('Unexpected word when parsing command', loc.Word(self.cur_word))
 
-    # Oil Extensions
+    # YSH Extensions
 
     if self.c_id == Id.KW_Proc:  # proc p { ... }
       # proc is hidden because of the 'local reasoning' principle
-      # Code inside procs should be Oil, full stop.  That means oil:upgrade is
+      # Code inside procs should be YSH, full stop.  That means oil:upgrade is
       # on.
       if self.parse_opts.parse_proc():
-        return self.ParseOilProc()
+        return self.ParseYshProc()
       else:
-        p_die('Enable Oil to use procs (parse_proc)', loc.Word(self.cur_word))
+        p_die('Enable YSH to use procs (parse_proc)', loc.Word(self.cur_word))
 
     if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
       keyword_id = self.c_id
@@ -2025,7 +2025,7 @@ class CommandParser(object):
       # That requires 2 tokens of lookahead, which we don't have
       #
       # Or maybe we don't just have ParseSimpleCommand -- we will have
-      # ParseOilCommand or something
+      # ParseYshCommand or something
 
       if (self.w_parser.LookAheadFuncParens() and
           not word_.IsVarLike(cur_word)):

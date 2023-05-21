@@ -177,7 +177,7 @@ class Set(vm._Builtin):
       return 0
 
     # Note: set -o nullglob is not valid.  The 'shopt' builtin is preferred in
-    # Oil, and we want code to be consistent.
+    # YSH, and we want code to be consistent.
     for opt_name, b in arg.opt_changes:
       self.exec_opts.SetOldOption(opt_name, b)
 
@@ -489,7 +489,6 @@ class Echo(vm._Builtin):
     -- is accepted
 
   Issues:
-  - Has to use Oil option parser.
   - How does this affect completion?
 
   NOTE: Python's getopt and optparse are both unsuitable for 'echo' because:

@@ -43,7 +43,7 @@ class ExprParseTest(unittest.TestCase):
     print('')
     return node
 
-  def _ParseOilExpression(self, code_str):
+  def _ParseYshExpression(self, code_str):
     """Convenient shortcut."""
     node = self._ParseOsh('var x = %s\n' % code_str)
 
@@ -59,11 +59,11 @@ class ExprParseTest(unittest.TestCase):
     # These raise NotImplementedError()
 
     node = self._ParseOsh('var x = [1,2,3];')
-    node = self._ParseOilExpression('[4+5, 6+7*8]')
-    node = self._ParseOilExpression('[]')
+    node = self._ParseYshExpression('[4+5, 6+7*8]')
+    node = self._ParseYshExpression('[]')
 
-    node = self._ParseOilExpression('[x for x in y]')
-    #node = self._ParseOilExpression('{foo: bar}')
+    node = self._ParseYshExpression('[x for x in y]')
+    #node = self._ParseYshExpression('{foo: bar}')
 
   def testShellArrays(self):
     node = self._ParseOsh('var x = %(a b);')
@@ -129,7 +129,7 @@ EOF)
     # array literal
     for c in CASES:
       print('--- %s' % c)
-      node = self._ParseOilExpression(c)
+      node = self._ParseYshExpression(c)
 
   def testLexer(self):
     # NOTE: Kind.Expr for Oil doesn't have LexerPairs

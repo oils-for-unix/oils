@@ -126,8 +126,8 @@ _BASIC_RUNTIME_OPTIONS = [
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
 
-    # Can procs and shell functions be redefined?  On in shell, off in Oil
-    # batch, on in interactive shell
+    # Can procs and shell functions be redefined?  On in OSH, off in YSH batch,
+    # on in interactive shell
     ('redefine_proc', True),
 ]
 
@@ -280,7 +280,7 @@ def _Init(opt_def):
     opt_def.Add(name, groups=['strict:all', 'ysh:all'])
 
   #
-  # Options that enable Oil language features
+  # Options that enable YSH features
   #
 
   for name in _BASIC_PARSE_OPTIONS:

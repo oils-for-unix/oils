@@ -78,7 +78,7 @@ def OldValue(lval, mem, exec_opts):
     exec_opts: can be None if we don't want to check set -u!
       Because s+=val doesn't check it.
 
-  TODO: A stricter and less ambiguous version for Oil.
+  TODO: A stricter and less ambiguous version for YSH.
   - Problem: why does lvalue have Indexed and Keyed, while sh_lhs_expr only has
     IndexedName?
     - should I have location.LName and lvalue.Indexed only?
@@ -192,7 +192,7 @@ class UnsafeArith(object):
     It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
     """
     if not self.parse_ctx.parse_opts.parse_sh_arith():
-      # Do something simpler for Oil
+      # Do something simpler for YSH
       if not match.IsValidVarName(s):
         e_die('Invalid variable name %r (parse_sh_arith is off)' % s, location)
       return lvalue.Named(s, location)

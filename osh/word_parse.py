@@ -437,7 +437,7 @@ class WordParser(WordEmitter):
 
   def ReadBracedVarSub(self, left_token):
     # type: (Token) -> Tuple[BracedVarSub, Token]
-    """   For Oil expressions like var x = ${x:-"default"}.  """
+    """   For YSH expressions like var x = ${x:-"default"}.  """
     part = self._ReadBracedVarSub(left_token, d_quoted=False)
     last_token = self.cur_token
     return part, last_token
@@ -587,7 +587,7 @@ class WordParser(WordEmitter):
     # type: (lex_mode_t, Token, List[Token], bool) -> Token
     """Used by expr_parse.py."""
 
-    # Oil could also disallow Unicode{4,8} and Octal{3,4}?  And certain OneChar
+    # YSH could also disallow Unicode{4,8} and Octal{3,4}?  And certain OneChar
     # like \v if we want to be pedantic.  Well that would make porting harder
     # for no real reason.  It's probably better in a lint tool.
     #
@@ -616,12 +616,12 @@ class WordParser(WordEmitter):
 
         if is_oil_expr:
           if self.token_type == Id.Char_Octal3:
-            p_die(r"Use \xhh or \u{...} instead of octal escapes in Oil strings",
+            p_die(r"Use \xhh or \u{...} instead of octal escapes in YSH strings",
                   tok)
 
           if self.token_type == Id.Char_Hex and self.cur_token.length != 4:
             # disallow \xH
-            p_die(r'Invalid hex escape in Oil string (must be \xHH)', tok)
+            p_die(r'Invalid hex escape in YSH string (must be \xHH)', tok)
 
         tokens.append(tok)
 
@@ -821,7 +821,7 @@ class WordParser(WordEmitter):
         else:
           if self.token_type == Id.Lit_BadBackslash:
             # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
-            # Oil.
+            # YSH.
             # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
             # recursion (unless parse_backslash)
             if is_oil_expr or not self.parse_opts.parse_backslash():
@@ -836,7 +836,7 @@ class WordParser(WordEmitter):
 
       elif self.token_kind == Kind.Left:
         if self.token_type == Id.Left_Backtick and is_oil_expr:
-          p_die("Invalid backtick: use $(cmd) or \\` in Oil strings",
+          p_die("Invalid backtick: use $(cmd) or \\` in YSH strings",
                 self.cur_token)
 
         part = self._ReadDoubleQuotedLeftParts()
@@ -1017,7 +1017,7 @@ class WordParser(WordEmitter):
     left_token = self.cur_token
 
     self._Next(lex_mode_e.Expr)
-    enode, right_token = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr_sub)
+    enode, right_token = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr_sub)
 
     self._Next(lex_mode)  # Move past ]
     return word_part.ExprSub(left_token, enode, right_token)
@@ -1079,7 +1079,7 @@ class WordParser(WordEmitter):
     """
     self._Next(lex_mode_e.Expr)
     self._Peek()
-    enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
+    enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
                                                     grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
@@ -1092,7 +1092,7 @@ class WordParser(WordEmitter):
     """
     = 1+2
     """
-    enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
+    enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
                                                     grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
@@ -1365,7 +1365,7 @@ class WordParser(WordEmitter):
 
     # Call into expression language.
     arg_list.left = self.cur_token
-    self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
+    self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
 
   def ParseProcCallArgs(self):
     # type: () -> ArgList
@@ -1374,7 +1374,7 @@ class WordParser(WordEmitter):
 
     arg_list = ArgList.CreateNull(alloc_lists=True)
     arg_list.left = self.cur_token
-    self.parse_ctx.ParseOilArgList(self.lexer, arg_list)
+    self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
     return arg_list
 
   def _MaybeReadWholeWord(self, is_first, lex_mode, parts):
@@ -1767,10 +1767,10 @@ class WordParser(WordEmitter):
 
     For the CommandParser to recognize
        array= (1 2 3)
-       Oil for (  versus  bash for ((
-       Oil if (  versus  if test
-       Oil while (  versus  while test
-       Oil bare assignment 'grep ='  versus 'grep foo'
+       YSH for (  versus  bash for ((
+       YSH if (  versus  if test
+       YSH while (  versus  while test
+       YSH bare assignment 'grep ='  versus 'grep foo'
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:

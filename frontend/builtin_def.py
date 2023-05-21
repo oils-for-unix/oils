@@ -47,7 +47,7 @@ _NORMAL_BUILTINS = [
     'bind',
 
     #
-    # Oil
+    # YSH
     #
     'append',
     'write', 'json', 'pp',

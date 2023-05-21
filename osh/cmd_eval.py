@@ -84,7 +84,7 @@ RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 
 
-# Python type name -> Oil type name
+# Python type name -> YSH type name
 YSH_TYPE_NAMES = {
     'bool': 'Bool',
     'int': 'Int',
@@ -141,7 +141,7 @@ def _PackFlags(keyword_id, flags=0):
 def _HasManyStatuses(node):
   # type: (command_t) -> bool
   """
-  Code patterns that are bad for POSIX errexit.  For Oil's strict_errexit.
+  Code patterns that are bad for POSIX errexit.  For YSH strict_errexit.
 
   Note: strict_errexit also uses
     shopt --unset _allow_command_sub _allow_process_sub
@@ -313,7 +313,7 @@ class CommandEvaluator(object):
     """Run an assignment builtin.  Except blocks copied from RunBuiltin."""
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
-      # This only happens with alternative Oil interpreters.
+      # This only happens with alternative Oils interpreters.
       e_die("Assignment builtin %r not configured" % cmd_val.argv[0], cmd_val.arg_locs[0])
 
     with vm.ctx_FlushStdout():
@@ -521,7 +521,7 @@ class CommandEvaluator(object):
         # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
         # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
-        # Oil:
+        # YSH:
         # command_e.VarDecl, command_e.PlaceMutation,
         # command_e.Proc, command_e.Func, command_e.Expr,
         # command_e.BareDecl
@@ -598,8 +598,8 @@ class CommandEvaluator(object):
     # type: (condition_t, Token) -> bool
     """
     Args:
-      spid: for shell conditions, where errexit was disabled -- e.g. if
-            for Oil conditions, it would be nice to blame the ( instead
+      spid: for OSH conditions, where errexit was disabled -- e.g. if
+            for YSH conditions, it would be nice to blame the ( instead
     """
     b = False
     UP_cond = cond
@@ -728,7 +728,7 @@ class CommandEvaluator(object):
           cmd_val = cast(cmd_value.Assign, UP_cmd_val)
 
           # Could reset $_ after assignment, but then we'd have to do it for
-          # all Oil constructs too.  It's easier to let it persist.  Other
+          # all YSH constructs too.  It's easier to let it persist.  Other
           # shells aren't consistent.
           # self.mem.SetLastArgument('')
 
@@ -1170,7 +1170,7 @@ class CommandEvaluator(object):
         # for the 2 kinds of shell loop
         iter_list = None  # type: List[str]  
 
-        # for Oil loop
+        # for YSH loop
         iter_expr = None  # type: expr_t
         iter_blame = None  # type: Token
 
@@ -1193,7 +1193,7 @@ class CommandEvaluator(object):
 
         status = 0  # in case we don't loop
 
-        if iter_list is None:  # for_expr.Oil
+        if iter_list is None:  # for_expr.YshExpr
           if mylib.PYTHON:
             obj = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
 
@@ -1928,7 +1928,7 @@ class CommandEvaluator(object):
 
   def RunFuncForCompletion(self, proc, argv):
     # type: (Proc, List[str]) -> int
-    # TODO: Change this to run Oil procs and funcs too
+    # TODO: Change this to run YSH procs and funcs too
     try:
       status = self.RunProc(proc, argv, loc.Missing)
     except error.FatalRuntime as e:

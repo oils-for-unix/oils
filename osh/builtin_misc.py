@@ -510,7 +510,7 @@ class MapFile(vm._Builtin):
 
     lines = []  # type: List[str]
     while True:
-      # bash uses this slow algorithm; Oil could provide read --all-lines
+      # bash uses this slow algorithm; YSH could provide read --all-lines
       try:
         line = _ReadLineSlowly(self.cmd_ev)
       except pyos.ReadError as e:

@@ -119,7 +119,7 @@ READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
-# Oil extensions
+# YSH extensions
 READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
 READ_SPEC.LongFlag('--all')
 READ_SPEC.LongFlag('--line')
@@ -155,7 +155,6 @@ PWD_SPEC.ShortFlag('-P')
 
 
 HELP_SPEC = FlagSpec('help')
-# Use Oil flags?  -index?
 #HELP_SPEC.ShortFlag('-i')  # show index
 # Note: bash has help -d -m -s, which change the formatting
 
@@ -226,7 +225,7 @@ OSH_SPEC.LongFlag('--ast-format',
 
 # Defines completion style.
 OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
-# TODO: Add option for Oil prompt style?  RHS prompt?
+# TODO: Add option for YSH prompt style?  RHS prompt?
 
 # Don't reparse a[x+1] and ``.  Only valid in -n mode.
 OSH_SPEC.LongFlag('--one-pass-parse')
@@ -354,7 +353,7 @@ COMPADJUST_SPEC.ShortFlag('-s',
 
 
 #
-# Pure Oil
+# Pure YSH
 #
 
 

@@ -119,7 +119,7 @@ def _TwoArgs(w_parser):
 
   unary_id = Id.Undefined_Tok
 
-  # Oil's preferred long flags
+  # YSH prefers long flags
   if w0.s.startswith('--'):
     if s0 == '--dir':
       unary_id = Id.BoolUnary_d

@@ -1,11 +1,11 @@
 """
 string_ops.py - String library functions that can be exposed with a saner syntax.
 
-OSH
+OSH:
 
     local y=${x//a*/b}
 
-Oil:
+YSH:
 
     var y = x => sub('a*', 'b', :ALL)
 

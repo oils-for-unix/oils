@@ -314,7 +314,7 @@ class ParseContext(object):
     lx = self.MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def _OilParser(self):
+  def _YshParser(self):
     # type: () -> expr_parse.ExprParser
     return expr_parse.ExprParser(self, self.oil_grammar, False)
 
@@ -325,7 +325,7 @@ class ParseContext(object):
   def ParseVarDecl(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command.VarDecl, Token]
     """ var mylist = [1, 2, 3] """
-    e_parser = self._OilParser()
+    e_parser = self._YshParser()
     with ctx_PNodeAllocator(e_parser):
       pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_var_decl)
 
@@ -340,7 +340,7 @@ class ParseContext(object):
   def ParsePlaceMutation(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command.PlaceMutation, Token]
     """ setvar d['a'] += 1 """
-    e_parser = self._OilParser()
+    e_parser = self._YshParser()
     with ctx_PNodeAllocator(e_parser):
       pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_place_mutation)
       if 0:
@@ -350,11 +350,11 @@ class ParseContext(object):
 
     return ast_node, last_token
 
-  def ParseOilArgList(self, lx, out):
+  def ParseYshArgList(self, lx, out):
     # type: (Lexer, ArgList) -> None
     """ $f(x, y) """
 
-    e_parser = self._OilParser()
+    e_parser = self._YshParser()
     with ctx_PNodeAllocator(e_parser):
       pnode, last_token = e_parser.Parse(lx, grammar_nt.oil_arglist)
 
@@ -364,11 +364,11 @@ class ParseContext(object):
       self.tr.ToArgList(pnode, out)
       out.right = last_token
 
-  def ParseOilExpr(self, lx, start_symbol):
+  def ParseYshExpr(self, lx, start_symbol):
     # type: (Lexer, int) -> Tuple[expr_t, Token]
     """ if (x > 0) { ... }, while, etc. """
 
-    e_parser = self._OilParser()
+    e_parser = self._YshParser()
     with ctx_PNodeAllocator(e_parser):
       pnode, last_token = e_parser.Parse(lx, start_symbol)
       if 0:
@@ -378,10 +378,10 @@ class ParseContext(object):
 
     return ast_node, last_token
 
-  def ParseOilForExpr(self, lexer, start_symbol):
+  def ParseYshForExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[List[NameType], expr_t, Token]
     """ for (x Int, y Int in foo) """
-    e_parser = self._OilParser()
+    e_parser = self._YshParser()
     with ctx_PNodeAllocator(e_parser):
       pnode, last_token = e_parser.Parse(lexer, start_symbol)
 
@@ -395,7 +395,7 @@ class ParseContext(object):
   def ParseProc(self, lexer, out):
     # type: (Lexer, command.Proc) -> Token
     """ proc f(x, y, @args) { """
-    e_parser = self._OilParser()
+    e_parser = self._YshParser()
     with ctx_PNodeAllocator(e_parser):
       pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_proc)
 

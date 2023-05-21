@@ -176,12 +176,12 @@ def AddKinds(spec):
       ('QMark', '?'), ('Colon', ':'),  # Ternary Op: a < b ? 0 : 1
       ('LessEqual', '<='), ('Less', '<'), ('GreatEqual', '>='), ('Great', '>'),
       ('DEqual', '=='), ('NEqual', '!='),
-      # note: these 3 are not in Oil's Expr.  (Could be used in find dialect.)
+      # note: these 3 are not in YSH Expr.  (Could be used in find dialect.)
       ('DAmp', '&&'), ('DPipe', '||'), ('Bang', '!'),
 
       # Bitwise ops
       ('DGreat', '>>'), ('DLess', '<<'),
-      # Oil: ^ is exponent
+      # YSH: ^ is exponent
       ('Amp', '&'), ('Pipe', '|'), ('Caret', '^'), ('Tilde', '~'),
 
       # 11 mutating operators:  =  +=  -=  etc.
@@ -236,7 +236,7 @@ def AddKinds(spec):
       'At',                # for ${a[@]} in lex_mode_e.Arith, and detecting @[]
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
       'BadBackslash',      # for "\z", not Id.Unknown_Backslash because it's a
-                           # syntax error in Oil, but NOT OSH
+                           # syntax error in YSH, but NOT OSH
       'CompDummy',         # A fake Lit_* token to get partial words during
                            # completion
   ])
@@ -267,14 +267,14 @@ def AddKinds(spec):
       'Great',    # >
       'Bang',     # !
 
-      # Oil [] {}
+      # YSH [] {}
       'LBracket',
       'RBracket',
       'LBrace',
       'RBrace',
   ])
 
-  # Oil expressions use Kind.Expr and Kind.Arith (further below)
+  # YSH expressions use Kind.Expr and Kind.Arith (further below)
   spec.AddKind('Expr', [
     'Reserved',  # <- means nothing but it's reserved now
     'Symbol',  # %foo
@@ -317,7 +317,7 @@ def AddKinds(spec):
       # Two variants of Octal: \377, and \0377.
       'Octal3', 'Octal4',
       'Unicode4', 'Unicode8',  # legacy
-      'UBraced', 'Pound', # Oil
+      'UBraced', 'Pound',  # YSH
       'Literals',
   ])
 
@@ -343,8 +343,8 @@ def AddKinds(spec):
       'AndGreat',   # bash &> stdout/stderr to file
       'AndDGreat',  # bash &>> stdout/stderr append to file
 
-      'GreatPlus',  # >+ is append in Oil
-      'DGreatPlus', # >>+ is append to string in Oil
+      #'GreatPlus',  # >+ is append in YSH
+      #'DGreatPlus', # >>+ is append to string in YSH
   ])
 
   # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
@@ -481,7 +481,7 @@ def AddKinds(spec):
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
                                  # Actually we don't need this because we they
                                  # will be under Expr1/Plus vs Expr2/Plus.
-     'NotIn', 'IsNot',           # For Oil comparisons
+     'NotIn', 'IsNot',           # For YSH comparisons
   ])
 
   # NOTE: Not doing AddKindPairs() here because oil will have a different set
@@ -493,7 +493,7 @@ def AddKinds(spec):
       'Esac', 'If', 'Fi', 'Then', 'Else', 'Elif', 'Function',
       'Time',
 
-      # Oil keywords.
+      # YSH keywords.
       'Const', 'Var', 'SetVar', 'SetRef', 'SetGlobal',
       # later: Auto
       'Proc', 'Func', 'Data', 'Enum',

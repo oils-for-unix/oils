@@ -67,7 +67,7 @@ class _Reader(object):
 
 
 class DisallowedLineReader(_Reader):
-  """For CommandParser in Oil expressions."""
+  """For CommandParser in YSH expressions."""
 
   def __init__(self, arena, blame_token):
     # type: (Arena, Token) -> None

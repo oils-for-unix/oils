@@ -330,8 +330,8 @@ class Printf(vm._Builtin):
               # Note: unlike LANG, TZ doesn't seem to change behavior if it's
               # not exported.
               #
-              # TODO: In Oil, provide an API that doesn't rely on libc's
-              # global state.
+              # TODO: In YSH, provide an API that doesn't rely on libc's global
+              # state.
 
               tzcell = self.mem.GetCell('TZ')
               if tzcell and tzcell.exported and tzcell.val.tag() == value_e.Str:

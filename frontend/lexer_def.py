@@ -1,5 +1,5 @@
 """
-lexer_def.py -- A lexer for both shell and Oil.
+lexer_def.py -- A lexer for both OSH and YSH.
 
 It consists of a series of lexer modes, each with a regex -> Id mapping.
 
@@ -85,7 +85,7 @@ _BACKSLASH = [
 # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
 _DQ_BACKSLASH = [
   R(r'\\[$`"\\]', Id.Lit_EscapedChar),
-  C('\\', Id.Lit_BadBackslash),  # syntax error in Oil, but NOT in OSH
+  C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
 ]
 
 VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -151,7 +151,7 @@ LEXER_DEF[lex_mode_e.Comment] = [
 # A whitelist for efficiency.  The shell language says that "anything else" is
 # a literal character.  In other words, a single $ \ or ! is a literal, not a
 # syntax error.  It's defined negatively, but let's define positive runs here.
-# TODO: Add + here because it's never special?  It's different for Oil though.
+# TODO: Add + here because it's never special?  It's different for YSH though.
 
 # The range \x80-\xff makes sure that UTF-8 sequences are a single token.
 _LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_/.\-]+'
@@ -186,7 +186,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
 
 # In ShCommand and DBracket states.
 _EXTGLOB_BEGIN = [
-  C(',(', Id.ExtGlob_Comma),  # Oil synonym for @(...)
+  C(',(', Id.ExtGlob_Comma),  # YSH synonym for @(...)
   C('@(', Id.ExtGlob_At),
   C('*(', Id.ExtGlob_Star),
   C('+(', Id.ExtGlob_Plus),
@@ -214,7 +214,7 @@ _KEYWORDS = [
   C('function', Id.KW_Function),
   C('time',     Id.KW_Time),
 
-  # Oil integration
+  # YSH integration
   C('const',     Id.KW_Const),
   C('var',       Id.KW_Var),
   C('setvar',    Id.KW_SetVar),
@@ -321,7 +321,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('@', Id.Lit_At),          # for detecting @[, @' etc. shopt -s parse_at_all
 
   # @array and @func(1, c)
-  R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for Oil splicing
+  R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for YSH splicing
   C('@{.', Id.Lit_AtLBraceDot),         # for split builtin sub @{.myproc arg1}
 
   R(FD_NUM + r'<', Id.Redir_Less),
@@ -481,13 +481,13 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 
 # The main purpose for EXPR_CHARS is in regex literals, e.g. [a-z \t \n].
 #
-# In Oil expressions, Chars are code point integers, so \u{1234} is the same as
+# In YSH expressions, Chars are code point integers, so \u{1234} is the same as
 # 0x1234.  And \0 is 0x0.
 
 # In Python:
 # chr(0x00012345) == u'\U00012345'
 #
-# In Oil:
+# In YSH:
 # 0x00012345 == \u{12345}
 # chr(0x00012345) == chr(\u{12345}) == $'\u{012345}'
 
@@ -526,7 +526,7 @@ _C_STRING_COMMON = [
   R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
   R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
 
-  # This is an incompatible extension to make Oil strings "sane" and QSN
+  # This is an incompatible extension to make YSH strings "sane" and QSN
   # compatible.  I don't want to have yet another string syntax!  A lint tool
   # could get rid of the legacy stuff like \U.
   _U_BRACED_CHAR,
@@ -774,11 +774,11 @@ BRACE_RANGE_DEF = [
 ]
 
 #
-# Oil lexing
+# YSH lexing
 #
 
 
-# Valid in lex_mode_e.{Expr,DQ_Oil}
+# Valid in lex_mode_e.{Expr,DQ}
 # Used by oil_lang/grammar_gen.py
 YSH_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
@@ -786,7 +786,7 @@ YSH_LEFT_SUBS = [
   C('$[', Id.Left_DollarBracket),  # Unused now
 ]
 
-# Valid in lex_mode_e.Expr, but not valid in DQ_Oil
+# Valid in lex_mode_e.Expr, but not valid in DQ
 # Used by oil_lang/grammar_gen.py
 
 YSH_LEFT_UNQUOTED = [
@@ -852,7 +852,7 @@ _SIMPLE_FLOAT_RE = r'[0-9]+(\.[0-9]*)?([eE][+\-]?[0-9]+)?'
 
 _WHITESPACE = r'[ \t\r\n]*'  # not including legacy \f \v
 
-# Used for Oil's comparison operators > >= < <=
+# Used for YSH comparison operators > >= < <=
 # Optional -?
 LOOKS_LIKE_FLOAT = _WHITESPACE + '-?' + _SIMPLE_FLOAT_RE + _WHITESPACE
 
@@ -989,7 +989,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
 
   C('!', Id.Expr_Bang),     # For eggex negation
 
-  C('//', Id.Expr_DSlash),  # For Oil integer division
+  C('//', Id.Expr_DSlash),  # For YSH integer division
   C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
   C('.', Id.Expr_Dot),      # attribute access (static or dynamic)

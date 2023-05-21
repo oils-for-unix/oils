@@ -552,8 +552,8 @@ def CommandId(w):
       elif token_type in (
           Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals, Id.Lit_Underscore,
           Id.ControlFlow_Return):
-        # OSH and Oil recognize:  { }
-        # Oil recognizes:         = return
+        # OSH and YSH recognize:  {  }
+        # YSH recognizes:         =  return
         return token_type
 
       token_kind = consts.GetKind(token_type)
@@ -590,7 +590,7 @@ def IsVarSub(w):
 def SpanForLhsExpr(node):
   # type: (sh_lhs_expr_t) -> int
   """
-  Currently unused?  Will be useful for translating Oil assignment
+  Currently unused?  Will be useful for translating YSH assignment
   """
   # This switch is annoying but we don't have inheritance from the sum type
   # (because of diamond issue).  We might change the schema later, which maeks

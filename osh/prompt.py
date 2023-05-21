@@ -247,7 +247,7 @@ class Evaluator(object):
       val = self.mem.GetValue('PS1')
       return self.EvalPrompt(val)
     else:
-      # TODO: If the lang is Oil, we should use a better prompt language than
+      # TODO: If the lang is YSH, we should use a better prompt language than
       # $PS1!!!
       return self.lang + '$ '
 
