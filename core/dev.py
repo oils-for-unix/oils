@@ -104,7 +104,7 @@ class CrashDumper(object):
       if blame_tok:
         # Could also do msg % args separately, but JavaScript won't be able to
         # render that.
-        self.error['source'] = ui.GetLineSourceString(cmd_ev.arena, blame_tok.line)
+        self.error['source'] = ui.GetLineSourceString(blame_tok.line)
         self.error['line_num'] = blame_tok.line.line_num
         self.error['line'] = blame_tok.line.content
 

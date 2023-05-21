@@ -57,8 +57,8 @@ def PrettyId(id_):
   return StrFromC(Id_str(id_))
 
 
-def PrettyToken(tok, arena):
-  # type: (Token, Arena) -> str
+def PrettyToken(tok):
+  # type: (Token) -> str
   """Returns a readable token value for the user.  For syntax errors."""
   if tok.id == Id.Eof_Real:
     return 'EOF'
@@ -101,8 +101,8 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write(buf.getvalue())
 
 
-def GetLineSourceString(arena, line, quote_filename=False):
-  # type: (Arena, SourceLine, bool) -> str
+def GetLineSourceString(line, quote_filename=False):
+  # type: (SourceLine, bool) -> str
   """Returns a human-readable string for dev tools.
 
   This function is RECURSIVE because there may be dynamic parsing.
@@ -145,7 +145,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
       else:
         line = blame_tok.line
         line_num = line.line_num
-        outer_source = GetLineSourceString(arena, line,
+        outer_source = GetLineSourceString(line,
                                            quote_filename=quote_filename)
         s = '[ %s word at line %d of %s ]' % (src.what, line_num, outer_source)
       # Note: _PrintCodeExcerpt called above
@@ -164,7 +164,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
         blame_tok = location.TokenFor(src.location)
         assert blame_tok is not None
         line_num = blame_tok.line.line_num
-        outer_source = GetLineSourceString(arena, blame_tok.line,
+        outer_source = GetLineSourceString(blame_tok.line,
                                            quote_filename=quote_filename)
         where = 'line %d of %s' % (line_num, outer_source)
 
@@ -175,8 +175,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
 
       orig_tok = src.orig_tok
       line_num = orig_tok.line.line_num
-      outer_source = GetLineSourceString(arena,
-                                         orig_tok.line,
+      outer_source = GetLineSourceString(orig_tok.line,
                                          quote_filename=quote_filename)
       where = 'line %d of %s' % (line_num, outer_source)
 
@@ -190,8 +189,7 @@ def GetLineSourceString(arena, line, quote_filename=False):
     elif case(source_e.Reparsed):
       src = cast(source.Reparsed, UP_src)
       span2 = src.left_token
-      outer_source = GetLineSourceString(arena,
-                                         span2.line,
+      outer_source = GetLineSourceString(span2.line,
                                          quote_filename=quote_filename)
       s = '[ %s in %s ]' % (src.what, outer_source)
 
@@ -205,8 +203,8 @@ def GetLineSourceString(arena, line, quote_filename=False):
   return s
 
 
-def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
-  # type: (str, str, loc_t, Arena, bool) -> None
+def _PrintWithLocation(prefix, msg, blame_loc, show_code):
+  # type: (str, str, loc_t, bool) -> None
   """
   Should we have multiple error formats:
   - single line and verbose?
@@ -246,7 +244,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, arena, show_code):
     else:
       _PrintCodeExcerpt(line, blame_tok.col, blame_tok.length, f)
 
-  source_str = GetLineSourceString(arena, blame_tok.line, quote_filename=True)
+  source_str = GetLineSourceString(blame_tok.line, quote_filename=True)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
@@ -314,7 +312,7 @@ class ErrorFormatter(object):
   def PrefixPrint(self, msg, prefix, blame_loc):
     # type: (str, str, loc_t) -> None
     """Print a hard-coded message with a prefix, and quote code."""
-    _PrintWithLocation(prefix, msg, blame_loc, self.arena, show_code=True)
+    _PrintWithLocation(prefix, msg, blame_loc, show_code=True)
 
   def _FallbackLocation(self, blame_loc):
     # type: (Optional[loc_t]) -> loc_t
@@ -328,14 +326,13 @@ class ErrorFormatter(object):
     # type: (str, loc_t) -> None
     """Print message and quote code."""
     _PrintWithLocation(
-        '', msg, self._FallbackLocation(blame_loc), self.arena, show_code=True)
+        '', msg, self._FallbackLocation(blame_loc), show_code=True)
 
   def PrintMessage(self, msg, blame_loc=None):
     # type: (str, loc_t) -> None
     """Print a message WITHOUT quoting code."""
     _PrintWithLocation(
-        '', msg, self._FallbackLocation(blame_loc), self.arena,
-        show_code=False)
+        '', msg, self._FallbackLocation(blame_loc), show_code=False)
 
   def StderrLine(self, msg):
     # type: (str) -> None
@@ -360,7 +357,7 @@ class ErrorFormatter(object):
     # that is OK.
     # Problem: the column for Eof could be useful.
 
-    _PrintWithLocation(prefix, msg, err.location, self.arena, True)
+    _PrintWithLocation(prefix, msg, err.location, True)
 
   def PrintErrExit(self, err, pid):
     # type: (error.ErrExit, int) -> None
@@ -373,7 +370,7 @@ class ErrorFormatter(object):
     #self.PrettyPrintError(err, prefix=prefix)
 
     msg = err.UserErrorString()
-    _PrintWithLocation(prefix, msg, err.location, self.arena, err.show_code)
+    _PrintWithLocation(prefix, msg, err.location, err.show_code)
 
 
 def PrintAst(node, flag):

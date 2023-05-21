@@ -807,7 +807,7 @@ if mylib.PYTHON:
           line = brace_group.left.line
 
           # for the user to pass back to --location-str
-          result['location_str'] = ui.GetLineSourceString(self.arena, line)
+          result['location_str'] = ui.GetLineSourceString(line)
           result['location_start_line'] = line.line_num
 
           # Between { and }

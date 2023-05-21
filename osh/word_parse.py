@@ -1107,7 +1107,7 @@ class WordParser(WordEmitter):
     self._Peek()
     # example: 'proc f[' gets you Lit_ArrayLhsOpen
     if self.token_type != Id.Lit_Chars:
-      p_die('Invalid proc name %s' % ui.PrettyToken(self.cur_token, self.arena),
+      p_die('Invalid proc name %s' % ui.PrettyToken(self.cur_token),
             self.cur_token)
 
     # TODO: validate this more.  Disallow proc 123 { }, which isn't disallowed

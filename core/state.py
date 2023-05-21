@@ -1359,7 +1359,7 @@ class Mem(object):
         if frame.call_tok is not None and frame.call_tok != LINE_ZERO:
           token = frame.call_tok
           assert token.line is not None
-          d['call_source'] = ui.GetLineSourceString(self.arena, token.line)
+          d['call_source'] = ui.GetLineSourceString(token.line)
           d['call_line_num'] = token.line.line_num
           d['call_line'] = token.line.content
 
@@ -1456,7 +1456,7 @@ class Mem(object):
     frame = NewDict()  # type: Dict[str, Cell]
     self.var_stack.append(frame)
 
-    source_str = ui.GetLineSourceString(self.arena, def_tok.line)
+    source_str = ui.GetLineSourceString(def_tok.line)
 
     # bash uses this order: top of stack first.
     self._PushDebugStack(source_str, func_name, None)
