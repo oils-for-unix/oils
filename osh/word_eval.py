@@ -815,9 +815,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if has_extglob:
       e_die('extended globs not supported in ${x//GLOB/}', op.pat)
 
-    if len(pat_val.s) == 0:  # avoid infinite loop
-      return val
-
     if op.replace:
       replace_val = self.EvalRhsWord(op.replace)
       # Can't have an array, so must be a string

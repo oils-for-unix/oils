@@ -413,6 +413,10 @@ class GlobReplacer(object):
     regex = '(%s)' % self.regex  # make it a group
 
     if op.replace_mode == Id.Lit_Slash:
+      # Avoid infinite loop when replacing all copies of empty string
+      if len(self.regex) == 0:
+        return s
+
       try:
         return _PatSubAll(s, regex, self.replace_str)  # loop over matches
       except RuntimeError as e:
