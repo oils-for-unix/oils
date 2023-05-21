@@ -189,7 +189,7 @@ tval-eval() {
     grep -n -w tval */*_eval.py
 }
 
-# 2023-05: 253 left, many are in osh2oil
+# 2023-05: 101 left
 spid-all() {
   show-usages _tmp/spid-all \
     egrep -n 'span_id|spid' */*.py
@@ -201,13 +201,13 @@ spid-sig() {
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-# 2023-05: 12 instances
-of-word() {
-  show-usages _tmp/of-word \
-    egrep -n 'OfWord' */*.py
+# 2023-05: 18 usages
+no-spid() {
+  show-usages _tmp/no-spid \
+    egrep -n 'runtime.NO_SPID' */*.py
 }
 
-# 68 instances
+# 69 instances
 loc-word() {
   # should NOT wrap CompoundWord
   show-usages _tmp/loc-word \
