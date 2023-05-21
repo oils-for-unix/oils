@@ -133,7 +133,14 @@ def _PyObjToValue(val):
     return value.List([elem if isinstance(elem, value_t) else _PyObjToValue(elem) for elem in val])
 
   elif isinstance(val, dict):
-      return value.Dict({k: v if isinstance(v, value_t) else _PyObjToValue(v) for k, v in val.items()})
+      d = NewDict() # type: Dict[str, value_t]
+      for k, v in val.items():
+          if isinstance(v, value_t):
+            d[k] = v
+          else:
+            d[k] = _PyObjToValue(v)
+
+      return value.Dict(d)
 
   elif isinstance(val, tuple):
     return value.Tuple([elem if isinstance(elem, value_t) else _PyObjToValue(elem) for elem in val])
@@ -172,7 +179,7 @@ def _PyObjToValue(val):
     return eggex
 
   else:
-    raise NotImplementedError()
+    raise error.Expr('Trying to convert unexpected type to value_t: %r' % val, loc.Missing)
 
 
 def _ValueToPyObj(val):
@@ -218,7 +225,10 @@ def _ValueToPyObj(val):
 
     elif case(value_e.Dict):
       val = cast(value.Dict, UP_val)
-      return {k: _ValueToPyObj(v) for k, v in val.d.items()}
+      d = NewDict() # type: Dict[str, value_t]
+      for k, v in val.d.items():
+          d[k] = _ValueToPyObj(v)
+      return d
 
     elif case(value_e.Slice):
       val = cast(value.Slice, UP_val)
@@ -252,7 +262,7 @@ def _ValueToPyObj(val):
       return objects.Regex(val.expr)
 
     else:
-      raise NotImplementedError()
+      raise error.Expr('Trying to convert unexpected type to pyobj: %r' % val, loc.Missing)
 
 
 def _ValuesEqual(left, right):
@@ -1276,38 +1286,49 @@ class OilEvaluator(object):
     return value.Bool(result)
 
   def _EvalIfExp(self, node):
-    # type: (expr.IfExp) -> Any # XXX
-    b = self._EvalExpr(node.test)
-    if b:
-      return self._EvalExpr(node.body)
+    # type: (expr.IfExp) -> value_t
+    UP_b = _PyObjToValue(self._EvalExpr(node.test))
+    assert UP_b.tag() == value_e.Bool
+    b = cast(value.Bool, UP_b)
+    if b.b:
+      return _PyObjToValue(self._EvalExpr(node.body))
     else:
-      return self._EvalExpr(node.orelse)
+      return _PyObjToValue(self._EvalExpr(node.orelse))
 
   def _EvalList(self, node):
-    # type: (expr.List) -> Any # XXX
-    return [self._EvalExpr(e) for e in node.elts]
+    # type: (expr.List) -> value_t
+    return value.List([_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
   def _EvalTuple(self, node):
     # type: (expr.Tuple) -> value_t
     return value.Tuple([_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
   def _EvalDict(self, node):
-    # type: (expr.Dict) -> Any # XXX
+    # type: (expr.Dict) -> value_t
     # NOTE: some keys are expr.Const
-    keys = [self._EvalExpr(e) for e in node.keys]
+    keys = [_PyObjToValue(self._EvalExpr(e)) for e in node.keys]
 
-    values = []
+    values = [] # type: List[value_t]
     for i, value_expr in enumerate(node.values):
       if value_expr.tag() == expr_e.Implicit:
-        v = self.LookupVar(keys[i], loc.Missing)  # {name}
+        if keys[i].tag() != value_e.Str:
+          raise error.InvalidType('Dict keys must be strings', loc.Missing)
+
+        s = cast(value.Str, keys[i])
+        v = _PyObjToValue(self.LookupVar(s.s, loc.Missing))  # {name}
       else:
-        v = self._EvalExpr(value_expr)
+        v = _PyObjToValue(self._EvalExpr(value_expr))
+
       values.append(v)
 
-    d = NewDict()
-    for k, v in zip(keys, values):
-      d[k] = v
-    return d
+    d = NewDict() # type: Dict[str, value_t]
+    for i, k in enumerate(keys):
+      if k.tag() != value_e.Str:
+        raise error.InvalidType('Dict keys must be strings', loc.Missing)
+      s = cast(value.Str, k)
+      d[s.s] = values[i]
+
+    return value.Dict(d)
 
   def _EvalFuncCall(self, node):
     # type: (expr.FuncCall) -> Any # XXX
@@ -1558,11 +1579,11 @@ class OilEvaluator(object):
    
       elif case(expr_e.IfExp):
         node = cast(expr.IfExp, UP_node)
-        return self._EvalIfExp(node)
+        return _ValueToPyObj(self._EvalIfExp(node))
 
       elif case(expr_e.List):
         node = cast(expr.List, UP_node)
-        return self._EvalList(node)
+        return _ValueToPyObj(self._EvalList(node))
 
       elif case(expr_e.Tuple):
         node = cast(expr.Tuple, UP_node)
@@ -1570,7 +1591,7 @@ class OilEvaluator(object):
 
       elif case(expr_e.Dict):
         node = cast(expr.Dict, UP_node)
-        return self._EvalDict(node)
+        return _ValueToPyObj(self._EvalDict(node))
 
       elif case(expr_e.ListComp):
         e_die_status(2, 'List comprehension reserved but not implemented')
