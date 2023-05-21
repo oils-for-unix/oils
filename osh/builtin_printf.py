@@ -443,7 +443,7 @@ class Printf(vm._Builtin):
     #log('fmt %s', fmt)
     #log('vals %s', vals)
 
-    arena = self.errfmt.arena
+    arena = self.parse_ctx.arena
     if fmt in self.parse_cache:
       parts = self.parse_cache[fmt]
     else:

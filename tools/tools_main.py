@@ -77,7 +77,7 @@ def OshCommandMain(argv):
     return 0
 
   arena = alloc.Arena(save_tokens=True)
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
   try:
     script_name = argv[1]
     arena.PushSource(source.MainFile(script_name))

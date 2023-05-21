@@ -57,7 +57,7 @@ class ProcessTest(unittest.TestCase):
     self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem, mylib.Stderr())
     self.waiter = process.Waiter(
         self.job_list, exec_opts, self.trap_state, self.tracer)
-    errfmt = ui.ErrorFormatter(self.arena)
+    errfmt = ui.ErrorFormatter()
     self.fd_state = process.FdState(errfmt, self.job_control, self.job_list,
                                     None, self.tracer, None)
     self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,

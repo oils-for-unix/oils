@@ -27,7 +27,6 @@ from data_lang import qsn
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen import arg_types
-  from core.alloc import Arena
   from core import error
   from core.error import _ErrorWithLocation
   from mycpp.mylib import Writer
@@ -285,17 +284,16 @@ class ErrorFormatter(object):
     quotations.  (TODO: turn off in child processes?)
   """
 
-  def __init__(self, arena):
-    # type: (Arena) -> None
-    self.arena = arena
-    self.last_spid = loc.Missing  # last resort for location info
+  def __init__(self):
+    # type: () -> None
     self.loc_stack = []  # type: List[loc_t]
-
     self.one_line_errexit = False  # root process
 
   def OneLineErrExit(self):
     # type: () -> None
-    """Used by SubprogramThunk."""
+    """Unused now
+    
+    For SubprogramThunk."""
     self.one_line_errexit = True
 
   # A stack used for the current builtin.  A fallback for UsageError.

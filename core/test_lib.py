@@ -154,7 +154,7 @@ def InitWordEvaluator(exec_opts=None):
   cmd_deps.trap_nodes = []
 
   splitter = split.SplitContext(mem)
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
 
   tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
@@ -183,7 +183,7 @@ def InitCommandEvaluator(
 
   # No 'readline' in the tests.
 
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
   job_control = process.JobControl()
   job_list = process.JobList()
   fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
@@ -279,7 +279,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   CommandEvaluator.
   """
   arena = parse_ctx.arena
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
 
   comp_lookup = comp_lookup or completion.Lookup()
   mem = mem or state.Mem('', [], arena, [])

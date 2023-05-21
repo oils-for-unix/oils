@@ -16,7 +16,7 @@ from osh import word_
 
 def _assertParseMethod(test, code_str, method, expect_success=True):
   arena = test_lib.MakeArena('<cmd_parse_test>')
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
   c_parser = test_lib.InitCommandParser(code_str, arena=arena)
   m = getattr(c_parser, method)
   try:
@@ -37,7 +37,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
 
 def _assert_ParseCommandListError(test, code_str):
   arena = test_lib.MakeArena('<cmd_parse_test>')
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
   c_parser = test_lib.InitCommandParser(code_str, arena=arena)
 
   try:

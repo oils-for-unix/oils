@@ -40,7 +40,7 @@ def ParseAndEval(code_str):
   state.InitMem(mem, {}, '0.1')
 
   splitter = split.SplitContext(mem)
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
 
   tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
   word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,

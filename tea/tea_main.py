@@ -50,7 +50,7 @@ def Main(arg_r):
   arg = arg_types.tea_main(attrs.attrs)
 
   arena = alloc.Arena()
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
 
   if arg.c is not None:
     arena.PushSource(source.CFlag)

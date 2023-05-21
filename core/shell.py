@@ -373,7 +373,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
   flag = arg_types.main(attrs.attrs)
 
   arena = alloc.Arena()
-  errfmt = ui.ErrorFormatter(arena)
+  errfmt = ui.ErrorFormatter()
 
   help_builtin = builtin_misc.Help(loader, errfmt)
   if flag.help:

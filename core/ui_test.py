@@ -21,7 +21,7 @@ class UiTest(unittest.TestCase):
     tok1 = arena.GetToken(spid1)
     tok2 = arena.GetToken(spid2)
 
-    errfmt = ui.ErrorFormatter(arena)
+    errfmt = ui.ErrorFormatter()
 
     # no location info
     errfmt.Print_('hello')
