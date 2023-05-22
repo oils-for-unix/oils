@@ -2013,7 +2013,7 @@ class Mem(object):
         strs = []
         for frame in reversed(self.debug_stack):
           # should only happen for the first entry
-          if frame.call_tok is None
+          if frame.call_tok is None:
             continue
           if frame.call_tok == LINE_ZERO:
             strs.append('-')  # Bash does this to line up with main?
