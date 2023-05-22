@@ -10,7 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     loc, SourceLine, source,
@@ -53,6 +53,8 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext, AliasesInFlight
   from frontend.reader import _Reader
   from osh.word_parse import WordParser
+
+_ = Kind_str  # for debug prints
 
 
 TAB_CH = 9  # ord('\t')
@@ -1438,25 +1440,10 @@ class CommandParser(object):
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
-  def ParseYshCaseList(self, arms):
-    # type: (List[CaseArm]) -> None
-    """
-    ysh_case_list: (case_item newline_ok)*
-    """
-    while True:
-      self._Peek()
-      if self.c_id == Id.Lit_RBrace:
-        return
-
-      arm = self.ParseYshCaseArm()
-      self._NewlineOk()
-
-      arms.append(arm)
-
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
     """
-    ysh_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
+    ysh_case : Case '(' expr ')' LBrace newline_ok ysh_case_arm* RBrace ;
 
     Looking at: token after 'case'
     """
@@ -1468,42 +1455,31 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    # TODO: maybe this doesn't need to be optional
+    # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
-    self.ParseYshCaseList(arms)
+    while True:
+      self._Peek()
+      if self.c_id == Id.Lit_RBrace:
+        break
 
-    self._NewlineOk()
+      arm = self.ParseYshCaseArm()
+      arms.append(arm)
 
     ate = self._Eat(Id.Lit_RBrace)
     arms_end = word_.BraceToken(ate)
 
     return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
 
-  def ParseOldCaseList(self, arms):
-    # type: (List[CaseArm]) -> None
-    """
-    case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
-
-    Looking at 'pattern'
-    """
-    while True:
-      self._Peek()
-      if self.c_id == Id.KW_Esac:
-        return
-
-      # case arm should begin with a command word or (
-      if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
-        break
-
-      arm = self.ParseCaseArm()
-      arms.append(arm)
-
   def ParseOldCase(self, case_kw):
     # type: (Token) -> command.Case
     """
-    case_clause : Case WORD         newline_ok In newline_ok case_list? Esac ;
+    case_clause : Case WORD newline_ok In newline_ok case_arm* Esac ;
 
-    Looking at WORD
+    -> Looking at WORD
+
+    FYI original POSIX case list, which takes pains for DSEMI
+
+    case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
     """
     self._Peek()
     w = self.cur_word
@@ -1524,8 +1500,16 @@ class CommandParser(object):
     self._NewlineOk()
 
     arms = []  # type: List[CaseArm]
-    if self.c_id != Id.KW_Esac:  # case_list is optional
-      self.ParseOldCaseList(arms)
+    while True:
+      self._Peek()
+      if self.c_id == Id.KW_Esac:  # this is Kind.Word
+        break
+      # case arm should begin with a pattern word or (
+      if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
+        break
+
+      arm = self.ParseCaseArm()
+      arms.append(arm)
 
     ate = self._Eat(Id.KW_Esac)
     arms_end = word_.AsKeywordToken(ate)
