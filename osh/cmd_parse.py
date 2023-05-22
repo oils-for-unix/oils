@@ -1520,7 +1520,7 @@ class CommandParser(object):
   def ParseCase(self):
     # type: () -> command.Case
     """
-    case_clause : case_clause  # from POSIX
+    case_clause : old_case  # from POSIX
                 | ysh_case
                 ;
 
@@ -1645,18 +1645,28 @@ class CommandParser(object):
   def ParseIf(self):
     # type: () -> command.If
     """
-    if_clause        : If command_list Then command_list else_part? Fi ;
-    """
-    if_kw = word_.AsKeywordToken(self.cur_word)
-    if_node = command.If.CreateNull(alloc_lists=True)
-    if_node.if_kw = if_kw
-    self._Next()  # skip if
+    if_clause : If command_list Then command_list else_part? Fi ;
 
-    # Remove ambiguity with if cd / {
+    open      : '{' | Then
+    close     : '}' | Fi
+
+    ysh_if    : If ( command_list | '(' expr ')' )
+                open command_list else_part? close;
+
+    There are 2 conditionals here: parse_paren, then parse_brace
+    """
+    if_node = command.If.CreateNull(alloc_lists=True)
+    if_kw = word_.AsKeywordToken(self.cur_word)
+    if_node.if_kw = if_kw
+    self._Next()  # past 'if'
+
     if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace() == Id.Op_LParen:
+      # if (x + 1)
       enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
       cond = condition.YshExpr(enode)  # type: condition_t
     else:
+      # if echo 1; echo 2; then
+      # Remove ambiguity with if cd / {
       self.allow_block = False
       commands = self._ParseCommandList()
       self.allow_block = True
@@ -1664,7 +1674,6 @@ class CommandParser(object):
 
     self._Peek()
     if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
-      # if foo {
       return self._ParseYshIf(if_kw, cond)
 
     ate = self._Eat(Id.KW_Then)
@@ -1672,9 +1681,11 @@ class CommandParser(object):
 
     body = self._ParseCommandList()
 
+    # First arm
     arm = IfArm(if_kw, cond, then_kw, body.children, [if_kw.span_id, then_kw.span_id])
     if_node.arms.append(arm)
 
+    # 2nd to Nth arm
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       self._ParseElifElse(if_node)
 
