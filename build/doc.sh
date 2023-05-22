@@ -137,7 +137,17 @@ readonly MARKDOWN_DOCS=(
   parser-architecture
 )
 
-readonly TIMESTAMP=$(date)
+# Bug fix: Plain $(date) can output unicode characters (e.g. in Japanese
+# locale), which is loaded by Python into say u'\u5e74'.  But the default
+# encoding in Python 2 is still 'ascii', which means that '%s' % u_str may
+# fail.
+#
+# I believe --rfc-e-mail should never output a Unicode character.
+#
+# A better fix would be to implement json_utf8.load(f), which doesn't decode
+# into unicode instances.  This would remove useless conversions.
+
+readonly TIMESTAMP=$(date --rfc-email)
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
