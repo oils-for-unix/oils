@@ -1398,13 +1398,21 @@ class CommandParser(object):
   def ParseYshCaseArm(self):
     # type: () -> CaseArm
     """
-    case_item   : pattern newline_ok brace_group newline_ok
-    pattern     : pat_words
-                | pat_expr
-                | pat_eggex
-    pat_words   : (WORD '|')* WORD
-    pat_expr    : '(' oil_expr ')'
-    pat_eggex   : '/' oil_eggex '/'
+    case_item    : pattern_list newline_ok brace_group newline_ok
+    pattern_list : pattern ('|' pattern)*
+    pattern      : pat_word
+                 | pat_expr
+                 | pat_eggex
+    pat_word     : WORD
+    pat_expr     : '(' oil_expr ')'
+    pat_eggex    : '/' oil_eggex '/'
+
+    TODO: restrict grammer to prevent mixing of pattern types.
+          ie. The following should be invalid:
+
+          case (x) {
+            (1) | 1 | / d / { echo number }
+          }
 
     Looking at: 'pattern' or '(' or Id.Lit_Slash
     """
@@ -1458,7 +1466,7 @@ class CommandParser(object):
     """
     ysh_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
 
-    Looking at: token after 'case'
+    Looking at: '('
     """
     enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
     to_match = case_arg.YshExpr(enode)
@@ -1484,7 +1492,7 @@ class CommandParser(object):
     """
     case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
 
-    Looking at 'pattern'
+    Looking at: 'pattern' or '('
     """
     while True:
       self._Peek()
