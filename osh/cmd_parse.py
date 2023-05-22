@@ -431,7 +431,40 @@ SECONDARY_KEYWORDS = [
 class CommandParser(object):
   """Recursive descent parser derived from POSIX shell grammar.
 
-  TODO: document the metalanguage.
+  This is a BNF grammar:
+  https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_10
+
+  - Augmented with both bash/OSH and YSH constructs.
+
+  - We use regex-like iteration rather than recursive references
+    ?  means  optional (0 or 1)
+    *  means  0 or more
+    +  means  1 or more
+
+  - Keywords are spelled in Caps:
+    If   Elif   Case
+
+  - Operator tokens are quoted:
+    '('   '|'
+
+    or can be spelled directly if it matters:
+
+    Op_LParen   Op_Pipe
+
+  - Non-terminals are snake_case:
+    brace_group   subshell
+
+  Methods in this class should ROUGHLY CORRESPOND to grammar productions, and
+  the production should be in the method docstrings, e.g.
+
+  def ParseSubshell():
+    "
+    subshell : '(' compound_list ')'
+
+    Looking at Op_LParen   # Comment to say how this method is called
+    "
+
+  The grammar may be factored to make parsing easier.
   """
   def __init__(self, parse_ctx, parse_opts, w_parser, lexer, line_reader,
       eof_id=Id.Eof_Real):
@@ -1312,6 +1345,8 @@ class CommandParser(object):
     """
     case_item: '('? pattern ('|' pattern)* ')'
                newline_ok command_term? trailer? ;
+
+    Looking at '(' or pattern
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
@@ -1360,25 +1395,6 @@ class CommandParser(object):
 
     return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
 
-  def ParseCaseList(self, arms):
-    # type: (List[CaseArm]) -> None
-    """
-    case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
-
-    Returns the terminating `esac` keyword (if present) for location tracking.
-    """
-    while True:
-      self._Peek()
-      if self.c_id == Id.KW_Esac:
-        return
-
-      # case item begins with a command word or (
-      if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
-        break
-
-      arm = self.ParseCaseArm()
-      arms.append(arm)
-
   def ParseYshCaseArm(self):
     # type: () -> CaseArm
     """
@@ -1389,6 +1405,8 @@ class CommandParser(object):
     pat_words   : (WORD '|')* WORD
     pat_expr    : '(' oil_expr ')'
     pat_eggex   : '/' oil_eggex '/'
+
+    Looking at: 'pattern' or '(' or Id.Lit_Slash
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
@@ -1421,101 +1439,116 @@ class CommandParser(object):
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
   def ParseYshCaseList(self, arms):
-    # type: (List[CaseArm]) -> Optional[Token]
+    # type: (List[CaseArm]) -> None
     """
-    oil_case_list: (case_item newline_ok)*
-
-    Returns the terminating RBrace } token (if present) for location tracking.
+    ysh_case_list: (case_item newline_ok)*
     """
     while True:
       self._Peek()
       if self.c_id == Id.Lit_RBrace:
-        return word_.LiteralToken(self.cur_word)
+        return
 
       arm = self.ParseYshCaseArm()
       self._NewlineOk()
 
       arms.append(arm)
 
-    return None
-
-  def ParseYshCase(self, case_node):
-    # type: (command.Case) -> None
+  def ParseYshCase(self, case_kw):
+    # type: (Token) -> command.Case
     """
     ysh_case : Case '(' expr ')' LBrace newline_ok oil_case_list? newline_ok RBrace ;
 
     Looking at: token after 'case'
     """
     enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
-    case_node.to_match = case_arg.YshExpr(enode)
+    to_match = case_arg.YshExpr(enode)
 
     ate = self._Eat(Id.Lit_LBrace)
-    case_node.arms_start = word_.BraceToken(ate)
+    arms_start = word_.BraceToken(ate)
 
     self._NewlineOk()
 
     # TODO: maybe this doesn't need to be optional
-    self.ParseYshCaseList(case_node.arms)
+    arms = []  # type: List[CaseArm]
+    self.ParseYshCaseList(arms)
 
     self._NewlineOk()
 
     ate = self._Eat(Id.Lit_RBrace)
-    case_node.arms_end = word_.BraceToken(ate)
+    arms_end = word_.BraceToken(ate)
+
+    return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
+
+  def ParseOldCaseList(self, arms):
+    # type: (List[CaseArm]) -> None
+    """
+    case_list: case_item (DSEMI newline_ok case_item)* DSEMI? newline_ok;
+
+    Looking at 'pattern'
+    """
+    while True:
+      self._Peek()
+      if self.c_id == Id.KW_Esac:
+        return
+
+      # case arm should begin with a command word or (
+      if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
+        break
+
+      arm = self.ParseCaseArm()
+      arms.append(arm)
+
+  def ParseOldCase(self, case_kw):
+    # type: (Token) -> command.Case
+    """
+    case_clause : Case WORD         newline_ok In newline_ok case_list? Esac ;
+
+    Looking at WORD
+    """
+    self._Peek()
+    w = self.cur_word
+    if not self.parse_opts.parse_bare_word():
+      ok, s, quoted = word_.StaticEval(w)
+      if ok and not quoted:
+        p_die("This is a constant string.  You may want a variable like $x (parse_bare_word)",
+              loc.Word(w))
+
+    to_match = case_arg.Word(w)
+    self._Next()  # past WORD
+
+    self._NewlineOk()
+
+    ate = self._Eat(Id.KW_In)
+    arms_start = word_.AsKeywordToken(ate)
+
+    self._NewlineOk()
+
+    arms = []  # type: List[CaseArm]
+    if self.c_id != Id.KW_Esac:  # case_list is optional
+      self.ParseOldCaseList(arms)
+
+    ate = self._Eat(Id.KW_Esac)
+    arms_end = word_.AsKeywordToken(ate)
+
+    # no redirects yet
+    return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
 
   def ParseCase(self):
     # type: () -> command.Case
     """
-    case_clause : Case WORD         newline_ok In newline_ok case_list? Esac ;
-                | ysh_case
-
-    new:
-    case_clause : old_case
+    case_clause : case_clause  # from POSIX
                 | ysh_case
                 ;
+
+    Looking at 'Case'
     """
-    # this function becomes
-    # if ...  # (
-    #   ParseOldCase()
-    # else:
-    #   ParseYshCase()
-
-    case_node = command.Case.CreateNull(alloc_lists=True)
-
-    case_node.case_kw = word_.AsKeywordToken(self.cur_word)
-    self._Next()  # skip case
+    case_kw = word_.AsKeywordToken(self.cur_word)
+    self._Next()  # past 'case'
 
     if self.w_parser.LookPastSpace() == Id.Op_LParen:
-      self.ParseYshCase(case_node)
-      return case_node
-
-    self._Peek()
-    to_match = self.cur_word
-    if not self.parse_opts.parse_bare_word():
-      ok, s, quoted = word_.StaticEval(to_match)
-      if ok and not quoted:
-        p_die("This is a constant string.  You may want a variable like $x (parse_bare_word)",
-              loc.Word(to_match))
-
-    case_node.to_match = case_arg.Word(to_match)
-    self._Next()
-
-    self._NewlineOk()
-    self._Peek()
-
-    ate = self._Eat(Id.KW_In)
-    case_node.arms_start = word_.AsKeywordToken(ate)
-
-    self._NewlineOk()
-
-    if self.c_id != Id.KW_Esac:  # empty case list
-      self.ParseCaseList(case_node.arms)
-
-    ate = self._Eat(Id.KW_Esac)
-    case_node.arms_end = word_.AsKeywordToken(ate)
-
-    self._Next()
-
-    return case_node
+      return self.ParseYshCase(case_kw)
+    else:
+      return self.ParseOldCase(case_kw)
 
   def _ParseYshElifElse(self, if_node):
     # type: (command.If) -> None
@@ -1873,6 +1906,11 @@ class CommandParser(object):
 
   def ParseSubshell(self):
     # type: () -> command.Subshell
+    """
+    subshell : '(' compound_list ')'
+
+    Looking at Op_LParen
+    """
     left = word_.AsOperatorToken(self.cur_word)
     self._Next()  # skip past (
 
