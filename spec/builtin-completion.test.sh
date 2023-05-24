@@ -161,7 +161,6 @@ cd $REPO_ROOT
 compgen -A file o | sort
 ## STDOUT:
 oil-version.txt
-oil_lang
 opy
 osh
 ## END

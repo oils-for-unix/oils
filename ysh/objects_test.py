@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from oil_lang import objects  # module under test
+from ysh import objects  # module under test
 
 
 class ObjectsTest(unittest.TestCase):

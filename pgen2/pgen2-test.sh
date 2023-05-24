@@ -16,7 +16,7 @@ banner() {
 }
 
 grammar-gen() {
-  PYTHONPATH=. oil_lang/grammar_gen.py "$@"
+  PYTHONPATH=. ysh/grammar_gen.py "$@"
 }
 
 # Build the grammar and parse code.  Outside of the Oil binary.
@@ -104,7 +104,7 @@ parse-types() {
   done
 }
 
-readonly OIL_GRAMMAR='oil_lang/grammar.pgen2'
+readonly OIL_GRAMMAR='ysh/grammar.pgen2'
 
 calc-test() {
   local -a exprs=(

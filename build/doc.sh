@@ -307,7 +307,7 @@ update-src-versions() {
 }
 
 oil-grammar() {
-  PYTHONPATH=. oil_lang/cmd_parse.py "$@"
+  PYTHONPATH=. ysh/cmd_parse.py "$@"
 }
 
 important-source-code() {
@@ -320,7 +320,7 @@ important-source-code() {
     _gen/frontend/match.re2c.h \
     _gen/frontend/id_kind.asdl_c.h \
     frontend/syntax.asdl \
-    oil_lang/grammar.pgen2; do
+    ysh/grammar.pgen2; do
   mkdir -p $dest/$(dirname $rel_path)
     cp --no-target-directory -v $rel_path $dest/$rel_path
   done

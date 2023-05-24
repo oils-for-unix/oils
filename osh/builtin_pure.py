@@ -844,7 +844,7 @@ if mylib.PYTHON:
             val = cell.val
             UP_val = val
             with tagswitch(val) as case:
-              # similar to LookupVar in oil_lang/expr_eval.py
+              # similar to LookupVar in ysh/expr_eval.py
               if case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 obj = val.s  # type: Any

@@ -55,7 +55,7 @@ if TYPE_CHECKING:
   from osh.split import SplitContext
   from osh import prompt
   from osh import sh_expr_eval
-  from oil_lang import expr_eval
+  from ysh import expr_eval
 
 
 # Flags for _EvalWordToParts and _EvalWordPart (not all are used for both)
@@ -205,7 +205,7 @@ def _ValueToPartValue(val, quoted):
     elif case(value_e.Obj):
       if mylib.PYTHON:
         val = cast(value.Obj, UP_val)
-        from oil_lang import expr_eval
+        from ysh import expr_eval
         s = expr_eval.Stringify(val.obj)
         return part_value.String(s, quoted, not quoted)
       # Not in C++

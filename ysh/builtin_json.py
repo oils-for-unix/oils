@@ -22,7 +22,7 @@ import posix_ as posix
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
-  from oil_lang import expr_eval
+  from ysh import expr_eval
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 

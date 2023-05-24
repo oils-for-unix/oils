@@ -8,7 +8,7 @@
 # val = self.mem.GetVar(var_name) ->
 # val = GetWordVar(self.mem, var_name)
 #
-# Conversely, in oil_lang/expr_eval.py:
+# Conversely, in ysh/expr_eval.py:
 # LookupVar gives you a plain Python object.  I don't think there's any
 # downside here.
 #

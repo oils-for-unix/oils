@@ -69,7 +69,7 @@ def NinjaGraph(ru):
           '//core/runtime.asdl',
 
           '//osh/arith_parse',
-          '//oil_lang/grammar',
+          '//ysh/grammar',
 
           '//mycpp/runtime',
           ]

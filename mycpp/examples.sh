@@ -255,8 +255,8 @@ FILES=(
   $REPO_ROOT/frontend/lexer.py 
   $REPO_ROOT/pgen2/grammar.py 
   $REPO_ROOT/pgen2/parse.py 
-  $REPO_ROOT/oil_lang/expr_parse.py 
-  $REPO_ROOT/oil_lang/expr_to_ast.py 
+  $REPO_ROOT/ysh/expr_parse.py 
+  $REPO_ROOT/ysh/expr_to_ast.py 
 )
 
 readonly PGEN2_DEMO_FILES=("${FILES[@]}")

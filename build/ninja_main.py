@@ -20,7 +20,7 @@ from bin import NINJA_subgraph as bin_subgraph
 from core import NINJA_subgraph as core_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
 from frontend import NINJA_subgraph as frontend_subgraph
-from oil_lang import NINJA_subgraph as oil_lang_subgraph
+from ysh import NINJA_subgraph as ysh_subgraph
 from osh import NINJA_subgraph as osh_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
 from pea import NINJA_subgraph as pea_subgraph
@@ -58,7 +58,7 @@ def TarballManifest(cc_sources):
   names.extend(glob('_gen/asdl/*.h'))
   names.extend(glob('_gen/frontend/*.h'))
   names.extend(glob('_gen/core/*.h'))
-  names.extend(glob('_gen/oil_lang/*.h'))
+  names.extend(glob('_gen/ysh/*.h'))
 
   # ONLY the headers
   names.extend(glob('prebuilt/*/*.h'))
@@ -347,7 +347,7 @@ def main(argv):
   mycpp_subgraph.NinjaGraph(ru)
   ru.comment('')
 
-  oil_lang_subgraph.NinjaGraph(ru)
+  ysh_subgraph.NinjaGraph(ru)
   ru.comment('')
 
   osh_subgraph.NinjaGraph(ru)

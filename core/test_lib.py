@@ -43,7 +43,7 @@ from osh import prompt
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
-from oil_lang import expr_eval
+from ysh import expr_eval
 from mycpp import mylib
 
 

@@ -245,7 +245,7 @@ _CONTROL_FLOW = [
   C('exit',     Id.ControlFlow_Exit),
 ]
 
-# Used by oil_lang/grammar_gen.py too
+# Used by ysh/grammar_gen.py too
 EXPR_WORDS = [
   C('null', Id.Expr_Null),
   C('true', Id.Expr_True),
@@ -779,7 +779,7 @@ BRACE_RANGE_DEF = [
 
 
 # Valid in lex_mode_e.{Expr,DQ}
-# Used by oil_lang/grammar_gen.py
+# Used by ysh/grammar_gen.py
 YSH_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
@@ -787,7 +787,7 @@ YSH_LEFT_SUBS = [
 ]
 
 # Valid in lex_mode_e.Expr, but not valid in DQ
-# Used by oil_lang/grammar_gen.py
+# Used by ysh/grammar_gen.py
 
 YSH_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
@@ -825,7 +825,7 @@ YSH_LEFT_UNQUOTED = [
   # Idea: Set literals are #{a, b} like Clojure
 ]
 
-# Used by oil_lang/grammar_gen.py
+# Used by ysh/grammar_gen.py
 EXPR_OPS = [
   # Terminator
   C(';', Id.Op_Semi),

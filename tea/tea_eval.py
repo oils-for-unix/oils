@@ -2,7 +2,7 @@
 """
 tea_eval.py
 
-Extracted from oil_lang/cmd_eval.py.  THIS DOES DOESN'T RUN YET.
+Extracted from ysh/cmd_eval.py.  THIS DOES DOESN'T RUN YET.
 
 TODO: Test it.
 

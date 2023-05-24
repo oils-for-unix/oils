@@ -13,7 +13,7 @@
 #include "_gen/frontend/signal.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "_gen/frontend/types.asdl.h"
-#include "_gen/oil_lang/grammar_nt.h"
+#include "_gen/ysh/grammar_nt.h"
 #include "cpp/core.h"
 #include "cpp/fanos.h"
 #include "cpp/frontend_flag_spec.h"

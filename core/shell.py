@@ -37,11 +37,11 @@ from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
 
-from oil_lang import expr_eval
-from oil_lang import builtin_json
-from oil_lang import builtin_oil
-from oil_lang import funcs
-from oil_lang import funcs_builtin
+from ysh import expr_eval
+from ysh import builtin_json
+from ysh import builtin_oil
+from ysh import funcs
+from ysh import funcs_builtin
 
 from osh import builtin_assign
 from osh import builtin_bracket

@@ -155,7 +155,7 @@ class CompletionTest(unittest.TestCase):
     # that shouldn't go away.
     ADD_SLASH_CASES = [
         # Dirs and files
-        ('o', ['oil-version.txt', 'oil_lang/', 'opy/', 'osh/']),
+        ('o', ['oil-version.txt', 'opy/', 'osh/']),
         ('nonexistent/', []),
         ('README.', ['README.md']),
         # Directory should be completed to core/ ?
@@ -169,7 +169,7 @@ class CompletionTest(unittest.TestCase):
           '/tmp/oil_comp_test/three',
           '/tmp/oil_comp_test/two',
           ]),
-        ('./o', ['./oil-version.txt', './oil_lang/', './opy/', './osh/']),
+        ('./o', ['./oil-version.txt', './opy/', './osh/']),
     ]
 
     a = completion.FileSystemAction(False, False, True)

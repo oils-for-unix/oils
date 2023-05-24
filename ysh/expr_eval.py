@@ -30,7 +30,7 @@ from core import state
 from frontend import consts
 from frontend import match
 from frontend import location
-from oil_lang import objects, regex_translate
+from ysh import objects, regex_translate
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, tagswitch

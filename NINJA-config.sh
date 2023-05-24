@@ -18,7 +18,7 @@ consts-gen() { py-tool frontend.consts_gen; }
 flag-gen() { py-tool frontend.flag_gen; }
 lexer-gen() { py-tool frontend.lexer_gen; }
 option-gen() { py-tool frontend.option_gen; }
-grammar-gen() { py-tool oil_lang.grammar_gen; }
+grammar-gen() { py-tool ysh.grammar_gen; }
 arith-parse-gen() { py-tool osh.arith_parse_gen; }
 signal-gen() { py-tool frontend.signal_gen; }
 

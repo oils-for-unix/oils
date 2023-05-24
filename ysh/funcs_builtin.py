@@ -10,14 +10,14 @@ from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error
 from mycpp.mylib import log
 from frontend import lexer
-from oil_lang import expr_eval
+from ysh import expr_eval
 
 from typing import Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from core import state
   from osh import glob_
   from osh import split
-  from oil_lang import funcs
+  from ysh import funcs
 
 _ = log
 

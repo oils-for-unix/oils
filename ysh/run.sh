@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   oil_lang/run.sh <function name>
+#   ysh/run.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -19,7 +19,7 @@ OSH_CPP=_bin/cxx-asan/osh
 
 parse-one() {
   echo ---
-  # TODO: these tests can be removed once the rest of oil_lang/ is translated
+  # TODO: these tests can be removed once the rest of ysh/ is translated
   if test "$OSH" = "$OSH_CPP"; then
     local prog="$1"
     local skip=''
@@ -39,14 +39,14 @@ parse-one() {
 }
 
 test-parse-osh() {
-  find oil_lang/testdata -name '*.sh' -o -name '*.osh' \
+  find ysh/testdata -name '*.sh' -o -name '*.osh' \
     | xargs -n 1 -- $0 parse-one
 }
 
 test-run-osh() {
   ### Run programs with OSH
 
-  for prog in oil_lang/testdata/*.{sh,osh}; do
+  for prog in ysh/testdata/*.{sh,osh}; do
     echo $prog
 
     local skip=''
@@ -69,7 +69,7 @@ test-run-osh() {
 test-run-oil() {
   ### Run programs with Oil / YSH
 
-  for prog in oil_lang/testdata/*.oil; do
+  for prog in ysh/testdata/*.oil; do
     echo ---
     $OIL $prog all
   done
@@ -78,22 +78,22 @@ test-run-oil() {
 demo() {
   ### Run some of them selectively
 
-  bin/osh oil_lang/testdata/array-rewrite-1.sh
+  bin/osh ysh/testdata/array-rewrite-1.sh
 
-  bin/osh oil_lang/testdata/array-rewrite-2.sh
-  bin/osh oil_lang/testdata/array-splice-demo.osh
+  bin/osh ysh/testdata/array-rewrite-2.sh
+  bin/osh ysh/testdata/array-splice-demo.osh
 
-  bin/osh oil_lang/testdata/hello.osh
+  bin/osh ysh/testdata/hello.osh
 
-  bin/osh oil_lang/testdata/inline-function-calls.oil all
+  bin/osh ysh/testdata/inline-function-calls.oil all
 
-  bin/osh oil_lang/testdata/sigil-pairs.sh
+  bin/osh ysh/testdata/sigil-pairs.sh
 
   set +o errexit
   # Fails correctly
-  bin/osh oil_lang/testdata/no-dynamic-scope.osh
+  bin/osh ysh/testdata/no-dynamic-scope.osh
 
-  bin/osh oil_lang/testdata/assign.osh
+  bin/osh ysh/testdata/assign.osh
 }
 
 soil-run() {
@@ -106,7 +106,7 @@ soil-run-cpp() {
 
   ninja $osh
 
-  # TODO: replace with run-test-funcs once the rest of oil_lang is translated
+  # TODO: replace with run-test-funcs once the rest of ysh is translated
   OILS_GC_ON_EXIT=1 OSH=$osh test-parse-osh
 }
 

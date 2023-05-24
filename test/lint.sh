@@ -125,7 +125,7 @@ flake8-one() {
 }
 
 flake8-all() {
-  local -a dirs=(asdl bin core oil_lang osh opy ovm2 tools)
+  local -a dirs=(asdl bin core ysh osh opy ovm2 tools)
 
   # astgen.py has a PROLOGUE which must have unused imports!
   # opcode.py triggers a flake8 bug?  Complains about def_op() when it is
@@ -352,7 +352,7 @@ sp-rare() {
 
 # 56 instances of inheritance
 inheritance() {
-  grep ^class {osh,core,oil_lang,frontend}/*.py \
+  grep ^class {osh,core,ysh,frontend}/*.py \
     | egrep -v '_test|object'
 }
 

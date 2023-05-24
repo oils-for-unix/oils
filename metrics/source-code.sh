@@ -34,7 +34,7 @@ osh-files() {
 }
 
 oil-lang-files() {
-  ls oil_lang/*.{py,pgen2} tea/*.py | filter-py 
+  ls ysh/*.{py,pgen2} tea/*.py | filter-py 
 }
 
 # cloc doesn't understand ASDL files.

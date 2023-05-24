@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from osh import sh_expr_eval
   from osh.sh_expr_eval import ArithEvaluator
   from osh.sh_expr_eval import BoolEvaluator
-  from oil_lang.expr_eval import OilEvaluator
+  from ysh.expr_eval import OilEvaluator
   from osh.word_eval import NormalWordEvaluator
   from osh.cmd_eval import CommandEvaluator
   from osh import prompt

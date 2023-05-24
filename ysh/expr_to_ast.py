@@ -63,7 +63,7 @@ class Transformer(object):
 
   Files to refer to when modifying this function:
 
-    oil_lang/grammar.pgen2 (generates _devbuild/gen/grammar_nt.py)
+    ysh/grammar.pgen2 (generates _devbuild/gen/grammar_nt.py)
     frontend/syntax.asdl   (generates _devbuild/gen/syntax_asdl.py)
 
   Related examples:

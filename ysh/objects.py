@@ -8,7 +8,7 @@ from __future__ import print_function
 
 from mycpp.mylib import log
 from mycpp import mylib
-from oil_lang import regex_translate
+from ysh import regex_translate
 
 from typing import TYPE_CHECKING, List, Optional
 if TYPE_CHECKING:

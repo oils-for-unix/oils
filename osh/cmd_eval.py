@@ -53,7 +53,7 @@ from core import vm
 from frontend import consts
 from frontend import lexer
 from frontend import location
-from oil_lang import objects
+from ysh import objects
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
@@ -73,7 +73,7 @@ if TYPE_CHECKING:
   from core.alloc import Arena
   from core import optview
   from core.vm import _Executor, _AssignBuiltin
-  from oil_lang import expr_eval
+  from ysh import expr_eval
   from osh import word_eval
   from osh.builtin_trap import TrapState
 
@@ -110,7 +110,7 @@ if mylib.PYTHON:
     """
     Maintain the 'value' invariant in osh/runtime.asdl.
 
-    TODO: Move this to Mem and combine with LookupVar in oil_lang/expr_eval.py.
+    TODO: Move this to Mem and combine with LookupVar in ysh/expr_eval.py.
     They are opposites.
     """
     if isinstance(py_val, str):  # var s = "hello $name"

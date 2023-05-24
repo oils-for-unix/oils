@@ -15,9 +15,9 @@ from frontend import lexer
 from frontend import reader
 from frontend import match
 
-from oil_lang import expr_parse
-from oil_lang import expr_to_ast
-from oil_lang.expr_parse import ctx_PNodeAllocator
+from ysh import expr_parse
+from ysh import expr_to_ast
+from ysh.expr_parse import ctx_PNodeAllocator
 from osh import tdop
 from osh import arith_parse
 from osh import cmd_parse

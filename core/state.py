@@ -1951,7 +1951,7 @@ class Mem(object):
 
   def GetValue(self, name, which_scopes=scope_e.Shopt):
     # type: (str, scope_t) -> value_t
-    """Used by the WordEvaluator, ArithEvalutor, oil_lang/expr_eval.py, etc.
+    """Used by the WordEvaluator, ArithEvalutor, ysh/expr_eval.py, etc.
 
     TODO:
     - Many of these should be value.Int, not value.Str

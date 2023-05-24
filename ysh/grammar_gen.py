@@ -152,7 +152,7 @@ def main(argv):
     with open(nonterm_py, 'w') as out_f:
       gr.dump_nonterminals_py(out_f)
 
-    log('%s -> (oil_lang/grammar_gen) -> %s/%s{.marshal,_nt.py}',
+    log('%s -> (ysh/grammar_gen) -> %s/%s{.marshal,_nt.py}',
         grammar_path, out_dir, basename)
 
     #gr.report()
@@ -175,13 +175,13 @@ def main(argv):
       gr.dump_cpp(src_f)
 
     if 0:
-      log('%s -> (oil_lang/grammar_gen) -> %s/%s._nt.h',
+      log('%s -> (ysh/grammar_gen) -> %s/%s._nt.h',
           grammar_path, out_dir, basename)
 
   elif action == 'parse':  # generate the grammar and parse it
     # Remove build dependency
     from frontend import parse_lib
-    from oil_lang import expr_parse
+    from ysh import expr_parse
 
     grammar_path = argv[0]
     start_symbol = argv[1]
@@ -212,7 +212,7 @@ def main(argv):
     p_printer.Print(pnode)
 
     if is_expr:
-      from oil_lang import expr_to_ast
+      from ysh import expr_to_ast
       tr = expr_to_ast.Transformer(gr)
       if start_symbol == 'eval_input':
         ast_node = tr.Expr(pnode)

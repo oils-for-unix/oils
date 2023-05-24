@@ -2515,8 +2515,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 last_dotted = dotted_parts[-1]
 
                 # Omit these:
-                #   from _gen.oil_lang import grammar_nt
-                if last_dotted == 'oil_lang':
+                #   from _gen.ysh import grammar_nt
+                if last_dotted == 'ysh':
                     return
                 #   from _devbuild.gen import syntax_asdl
                 if last_dotted == 'gen':

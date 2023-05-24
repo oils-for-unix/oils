@@ -37,7 +37,7 @@ def NinjaGraph(ru):
         '//frontend/consts',  # for gVersion
         '//frontend/syntax.asdl',
         '//mycpp/runtime',
-        '//oil_lang/grammar',
+        '//ysh/grammar',
         ],
   )
 

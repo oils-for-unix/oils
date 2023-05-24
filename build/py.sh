@@ -434,18 +434,18 @@ EOF
 }
 
 oil-grammar() {
-  mkdir -p _gen/oil_lang
-  touch _gen/__init__.py _gen/oil_lang/__init__.py
+  mkdir -p _gen/ysh
+  touch _gen/__init__.py _gen/ysh/__init__.py
 
-  oil_lang/grammar_gen.py py oil_lang/grammar.pgen2 _devbuild/gen
+  ysh/grammar_gen.py py ysh/grammar.pgen2 _devbuild/gen
 }
 
 find-grammar() {
-  oil_lang/grammar_gen.py py tools/find/find.pgen2 _devbuild/gen
+  ysh/grammar_gen.py py tools/find/find.pgen2 _devbuild/gen
 }
 
 demo-grammar() {
-  oil_lang/grammar_gen.py py mycpp/examples/arith.pgen2 _devbuild/gen
+  ysh/grammar_gen.py py mycpp/examples/arith.pgen2 _devbuild/gen
 }
 
 time-helper() {

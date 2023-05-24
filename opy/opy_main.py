@@ -72,7 +72,7 @@ def HostStdlibNames():
 def WriteGrammar(grammar_path, marshal_path):
   """Used for py27.grammar.
   
-  oil_lang/grammar.pgen2 uses oil_lang/grammar_gen.py
+  ysh/grammar.pgen2 uses ysh/grammar_gen.py
   """
   with open(grammar_path) as f:
     gr = pgen.MakeGrammar(f)

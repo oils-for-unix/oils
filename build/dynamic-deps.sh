@@ -51,9 +51,9 @@ EOF
 __init__.py
 typing.py
 
-# TODO: oil_lang/ needs to be statically typed
-oil_lang/builtin_json.py
-oil_lang/funcs_builtin.py
+# TODO: ysh/ needs to be statically typed
+ysh/builtin_json.py
+ysh/funcs_builtin.py
 
 # OrderedDict is polymorphic
 pylib/collections_.py
@@ -94,9 +94,9 @@ pgen2/pnode.py
 # should be py_path_stat.py, because it's ported by hand to C++
 pylib/path_stat.py
 
-oil_lang/builtin_json.py
-oil_lang/expr_eval.py
-oil_lang/objects.py
+ysh/builtin_json.py
+ysh/expr_eval.py
+ysh/objects.py
 
 # should be py_bool_stat.py, because it's ported by hand to C++
 osh/bool_stat.py

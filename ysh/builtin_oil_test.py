@@ -7,7 +7,7 @@ from __future__ import print_function
 import unittest
 
 from mycpp.mylib import log
-#from oil_lang import builtin_oil  # module under test
+#from ysh import builtin_oil  # module under test
 
 import yajl  # test this too
 

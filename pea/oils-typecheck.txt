@@ -45,14 +45,6 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
-mycpp/mylib.py
-oil_lang/builtin_oil.py
-oil_lang/expr_eval.py
-oil_lang/expr_parse.py
-oil_lang/expr_to_ast.py
-oil_lang/funcs.py
-oil_lang/objects.py
-oil_lang/regex_translate.py
 osh/arith_parse.py
 osh/bool_parse.py
 osh/bool_stat.py
@@ -88,3 +80,10 @@ pylib/os_path.py
 pylib/path_stat.py
 tea/tea_main.py
 tools/osh2oil.py
+ysh/builtin_oil.py
+ysh/expr_eval.py
+ysh/expr_parse.py
+ysh/expr_to_ast.py
+ysh/funcs.py
+ysh/objects.py
+ysh/regex_translate.py

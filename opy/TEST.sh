@@ -46,7 +46,7 @@ oil-unit() {
 
   # TODO: Share with test/unit.sh.
   #for t in {build,test,native,asdl,core,osh,test,tools}/*_test.py; do
-  for t in {asdl,core,frontend,osh,oil_lang}/*_test.pyc; do
+  for t in {asdl,core,frontend,osh,ysh}/*_test.pyc; do
 
     echo $t
     if test $vm = byterun; then
