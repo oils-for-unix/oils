@@ -732,6 +732,10 @@ ysh_expr() {
   # Disallowed unconditionally
   _ysh-parse-error '=a'
 
+  _ysh-parse-error '
+    var d = {}
+    = d["foo", "bar"]
+  '
 }
 
 ysh_expr_more() {

@@ -27,6 +27,7 @@ class Str {
 
   Str* slice(int begin);
   Str* slice(int begin, int end);
+  Str* slice(int begin, int end, int step);
 
   Str* strip();
   // Used for CommandSub in osh/cmd_exec.py

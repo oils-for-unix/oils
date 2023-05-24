@@ -454,7 +454,7 @@ module syntax
 
   # Subscripts are lists of expressions
   #   a[:i, n]      (we don't have matrices, but we have data frames)
-  Subscript = (expr obj, List[expr] indices)
+  Subscript = (expr obj, expr index)
 
   # Attributes are obj.attr, d->key, name::scope,
   Attribute = (expr obj, Token op, Token attr, expr_context ctx)

@@ -297,6 +297,11 @@ TEST list_methods_test() {
   ASSERT_EQ(2, len(slice2));
   ASSERT_EQ(5, slice2->index_(0));
 
+  List<int>* slice3 = ints->slice(1, 4, 2);
+  ASSERT_EQ(2, len(slice2));
+  ASSERT_EQ(6, slice3->index_(0));
+  ASSERT_EQ(8, slice3->index_(1));
+
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
     log("ints[%d] = %d", i, ints->index_(i));

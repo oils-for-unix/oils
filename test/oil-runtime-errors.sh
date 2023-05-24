@@ -198,11 +198,6 @@ test-EvalExpr-calls() {
 
   _expr-error-case '
     var d = {}
-    = d[len("foo"), len(42)]
-  '
-
-  _expr-error-case '
-    var d = {}
     setvar d[len(42)] = "foo"
   '
 
