@@ -157,6 +157,36 @@ def sigint_trapped_wait(sh):
 
 
 @register()
+def ctrl_c_after_removing_sigint_trap(sh):
+  'Ctrl-C after removing SIGINT trap (issue 1607)'
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=0')
+
+  sh.sendintr()  # SIGINT
+
+  expect_prompt(sh)
+
+  sh.sendline('trap - SIGINT')
+  expect_prompt(sh)
+
+  # Why do we need this?  Weird race condition
+  # I would have thought expect_prompt() should be enough synchronization
+  time.sleep(0.1)
+
+  sh.sendintr()  # SIGINT
+  expect_prompt(sh)
+
+  # bash, zsh, mksh give status 130, dash and OSH gives 0
+  #sh.sendline('echo status=$?')
+  #sh.expect('status=130')
+
+  sh.sendline('echo hi')
+  sh.expect('hi')
+  expect_prompt(sh)
+
+
+@register()
 def sigwinch_trapped_wait(sh):
   'trapped SIGWINCH during wait builtin'
 

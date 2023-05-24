@@ -4,7 +4,7 @@ builtin_trap.py
 """
 from __future__ import print_function
 
-from signal import SIG_DFL, SIGKILL, SIGSTOP, SIGWINCH
+from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
@@ -83,7 +83,12 @@ class TrapState(object):
 
     mylib.dict_erase(self.traps, sig_num)
 
-    if sig_num == SIGWINCH:
+    if sig_num == SIGINT:
+      # Don't disturb the runtime signal handlers:
+      # 1. from CPython
+      # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
+      pass
+    elif sig_num == SIGWINCH:
       self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
     else:
       pyos.Sigaction(sig_num, SIG_DFL)
