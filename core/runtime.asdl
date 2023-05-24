@@ -4,8 +4,10 @@ module runtime
 {
   # import these types from syntax.asdl
   use frontend syntax {
-    word CompoundWord ArgList command re redir_loc Token proc_sig loc IntParamBox
+    word CompoundWord ArgList command re redir_loc Token proc_sig loc
   }
+
+  IntBox = (int i)
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
@@ -72,8 +74,8 @@ module runtime
 
     # TODO: we might be able to combine these types when the refactor is done
     # and we don't need to be able to recover their pyobj representations. 
-  | Slice(IntParamBox? lower, IntParamBox? upper, IntParamBox? step)
-  | Range(IntParamBox? lower, IntParamBox? upper, IntParamBox? step)
+  | Slice(IntBox? lower, IntBox? upper, IntBox? step)
+  | Range(IntBox? lower, IntBox? upper, IntBox? step)
 
     # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)

@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.syntax_asdl import (
     loc, loc_t, re, re_t, Token, word_part, word_part_t,
     SingleQuoted, DoubleQuoted, BracedVarSub, SimpleVarSub, ShArrayLiteral,
-    CommandSub, IntParamBox,
+    CommandSub,
 
     expr, expr_e, expr_t, place_expr, place_expr_e, place_expr_t,
     Attribute, Subscript,
@@ -22,6 +22,7 @@ from _devbuild.gen.runtime_asdl import (
     part_value, part_value_t,
     lvalue,
     value, value_e, value_t,
+    IntBox,
 )
 from core import error
 from core.error import e_die, e_die_status
@@ -148,13 +149,13 @@ def _PyObjToValue(val):
   elif isinstance(val, slice):
       s = value.Slice(None, None, None)
       if val.start:
-        s.lower = IntParamBox(val.start)
+        s.lower = IntBox(val.start)
 
       if val.stop:
-        s.upper = IntParamBox(val.stop)
+        s.upper = IntBox(val.stop)
 
       if val.step:
-        s.step = IntParamBox(val.step)
+        s.step = IntBox(val.step)
 
       return s
 
@@ -163,11 +164,11 @@ def _PyObjToValue(val):
       # awkward, but should go away once everything is typed...
       l = list(val)
       if len(l) > 1:
-        r.lower = IntParamBox(l[0])
-        r.upper = IntParamBox(l[-1])
-        r.step = IntParamBox(l[1] - l[0])
+        r.lower = IntBox(l[0])
+        r.upper = IntBox(l[-1])
+        r.step = IntBox(l[1] - l[0])
       elif len(l) == 1:
-        r.lower = IntParamBox(l[0])
+        r.lower = IntBox(l[0])
 
       return r
 
@@ -1098,28 +1099,28 @@ class OilEvaluator(object):
 
     upper = cast(value.Int, UP_upper)
 
-    return value.Range(IntParamBox(lower.i), IntParamBox(upper.i), IntParamBox(1))
+    return value.Range(IntBox(lower.i), IntBox(upper.i), IntBox(1))
 
   def _EvalSlice(self, node):
     # type: (expr.Slice) -> value_t
 
-    lower = None # type: Optional[IntParamBox]
-    upper = None # type: Optional[IntParamBox]
+    lower = None # type: Optional[IntBox]
+    upper = None # type: Optional[IntBox]
     if node.lower:
       UP_lower = _PyObjToValue(self._EvalExpr(node.lower))
       if UP_lower.tag() != value_e.Int:
         raise error.InvalidType('Slice indices must be Ints', loc.Missing)
 
-      lower = IntParamBox(cast(value.Int, UP_lower).i)
+      lower = IntBox(cast(value.Int, UP_lower).i)
 
     if node.upper:
       UP_upper = _PyObjToValue(self._EvalExpr(node.upper))
       if UP_upper.tag() != value_e.Int:
         raise error.InvalidType('Slice indices must be Ints', loc.Missing)
 
-      upper = IntParamBox(cast(value.Int, UP_upper).i)
+      upper = IntBox(cast(value.Int, UP_upper).i)
 
-    return value.Slice(lower, upper, IntParamBox(1))
+    return value.Slice(lower, upper, IntBox(1))
 
   def _CompareNumeric(self, left, right, op):
     # type: (value_t, value_t, Id_t) -> bool
