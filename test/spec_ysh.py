@@ -13,87 +13,87 @@ def Define(sp):
 
   sp.YshFile('hay-meta', our_shell='osh')
 
-  sp.YshFile('oil-array')
+  sp.YshFile('ysh-array')
 
-  sp.YshFile('oil-assign')
+  sp.YshFile('ysh-assign')
 
-  sp.YshFile('oil-bin')
+  sp.YshFile('ysh-bin')
 
-  sp.YshFile('oil-blocks', our_shell='osh')
+  sp.YshFile('ysh-blocks', our_shell='osh')
 
-  sp.YshFile('oil-bugs')
+  sp.YshFile('ysh-bugs')
 
-  sp.YshFile('oil-builtin-argparse')
+  sp.YshFile('ysh-builtin-argparse')
 
-  sp.YshFile('oil-builtin-describe')
+  sp.YshFile('ysh-builtin-describe')
 
-  sp.YshFile('oil-builtin-error', our_shell='osh')
+  sp.YshFile('ysh-builtin-error', our_shell='osh')
 
-  sp.YshFile('oil-builtin-pp', our_shell='osh')
+  sp.YshFile('ysh-builtin-pp', our_shell='osh')
 
-  sp.YshFile('oil-builtin-process', our_shell='osh')
+  sp.YshFile('ysh-builtin-process', our_shell='osh')
 
-  sp.YshFile('oil-builtins', our_shell='osh')
+  sp.YshFile('ysh-builtins', our_shell='osh')
 
-  sp.YshFile('oil-builtin-shopt', our_shell='osh')
+  sp.YshFile('ysh-builtin-shopt', our_shell='osh')
 
-  sp.YshFile('oil-case')
+  sp.YshFile('ysh-case')
 
-  sp.YshFile('oil-command-sub', our_shell='osh')
+  sp.YshFile('ysh-command-sub', our_shell='osh')
 
-  sp.YshFile('oil-demo', our_shell='osh')
+  sp.YshFile('ysh-demo', our_shell='osh')
 
-  sp.YshFile('oil-expr', our_shell='osh')
+  sp.YshFile('ysh-expr', our_shell='osh')
 
-  sp.YshFile('oil-expr-arith', our_shell='osh')
+  sp.YshFile('ysh-expr-arith', our_shell='osh')
 
-  sp.YshFile('oil-expr-compare', our_shell='osh')
+  sp.YshFile('ysh-expr-compare', our_shell='osh')
 
-  sp.YshFile('oil-expr-sub')
+  sp.YshFile('ysh-expr-sub')
 
-  sp.YshFile('oil-for')
+  sp.YshFile('ysh-for')
 
-  sp.YshFile('oil-funcs-builtin')
+  sp.YshFile('ysh-funcs-builtin')
 
-  sp.YshFile('oil-funcs-external')
+  sp.YshFile('ysh-funcs-external')
 
-  sp.YshFile('oil-interactive')
+  sp.YshFile('ysh-interactive')
 
-  sp.YshFile('oil-json', our_shell='osh', tags=['dev-minimal'])
+  sp.YshFile('ysh-json', our_shell='osh', tags=['dev-minimal'])
 
-  sp.YshFile('oil-keywords')
+  sp.YshFile('ysh-keywords')
 
-  sp.YshFile('oil-multiline', our_shell='osh')
+  sp.YshFile('ysh-multiline', our_shell='osh')
 
-  sp.YshFile('oil-options', our_shell='osh')
+  sp.YshFile('ysh-options', our_shell='osh')
 
-  sp.YshFile('oil-options-assign', our_shell='osh')
+  sp.YshFile('ysh-options-assign', our_shell='osh')
 
-  sp.YshFile('oil-proc', our_shell='osh')
+  sp.YshFile('ysh-proc', our_shell='osh')
 
-  sp.YshFile('oil-regex', our_shell='osh')
+  sp.YshFile('ysh-regex', our_shell='osh')
 
-  sp.YshFile('oil-reserved')
+  sp.YshFile('ysh-reserved')
 
-  sp.YshFile('oil-scope', our_shell='osh')
+  sp.YshFile('ysh-scope', our_shell='osh')
 
-  sp.YshFile('oil-slice-range', our_shell='osh')
+  sp.YshFile('ysh-slice-range', our_shell='osh')
 
-  sp.YshFile('oil-special-vars')
+  sp.YshFile('ysh-special-vars')
 
-  sp.YshFile('oil-string')
+  sp.YshFile('ysh-string')
 
-  sp.YshFile('oil-tuple')
+  sp.YshFile('ysh-tuple')
 
-  sp.YshFile('oil-usage')
+  sp.YshFile('ysh-usage')
 
-  sp.YshFile('oil-user-feedback')
+  sp.YshFile('ysh-user-feedback')
 
-  sp.YshFile('oil-var-sub', our_shell='osh')
+  sp.YshFile('ysh-var-sub', our_shell='osh')
 
-  sp.YshFile('oil-with-sh')
+  sp.YshFile('ysh-with-sh')
 
-  sp.YshFile('oil-word-eval', our_shell='osh')
+  sp.YshFile('ysh-word-eval', our_shell='osh')
 
-  sp.YshFile('oil-xtrace', our_shell='osh')
+  sp.YshFile('ysh-xtrace', our_shell='osh')
 

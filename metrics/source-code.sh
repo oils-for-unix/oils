@@ -33,7 +33,7 @@ osh-files() {
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
 }
 
-oil-lang-files() {
+ysh-files() {
   ls ysh/*.{py,pgen2} tea/*.py | filter-py 
 }
 
@@ -265,8 +265,8 @@ _overview() {
 
   osh-counts $count "$@"
 
-  oil-lang-files | $count \
-    'Oil Language (and Tea)' '' "$@"
+  ysh-files | $count \
+    'YSH (and Tea)' '' "$@"
 
   ls pylib/*.py | filter-py | $count \
     "Code Borrowed from Python's stdlib" '' "$@"

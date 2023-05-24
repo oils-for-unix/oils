@@ -731,213 +731,213 @@ hay-meta() {
 # Oil Language
 #
 
-oil-usage() {
-  sh-spec spec/oil-usage.test.sh $OIL_LIST "$@"
+ysh-usage() {
+  sh-spec spec/ysh-usage.test.sh $OIL_LIST "$@"
 }
 
-oil-bin() {
-  sh-spec spec/oil-bin.test.sh $OIL_LIST "$@"
+ysh-bin() {
+  sh-spec spec/ysh-bin.test.sh $OIL_LIST "$@"
 }
 
-oil-array() {
-  sh-spec spec/oil-array.test.sh --osh-failures-allowed 1 \
+ysh-array() {
+  sh-spec spec/ysh-array.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
-oil-assign() {
-  sh-spec spec/oil-assign.test.sh --osh-failures-allowed 0 \
+ysh-assign() {
+  sh-spec spec/ysh-assign.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-blocks() {
-  sh-spec spec/oil-blocks.test.sh --osh-failures-allowed 4 \
+ysh-blocks() {
+  sh-spec spec/ysh-blocks.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
-oil-bugs() {
-  sh-spec spec/oil-bugs.test.sh --osh-failures-allowed 1 \
+ysh-bugs() {
+  sh-spec spec/ysh-bugs.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
-oil-builtins() {
-  sh-spec spec/oil-builtins.test.sh --osh-failures-allowed 4 \
+ysh-builtins() {
+  sh-spec spec/ysh-builtins.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
-oil-builtin-argparse() {
-  sh-spec spec/oil-builtin-argparse.test.sh --osh-failures-allowed 2 \
+ysh-builtin-argparse() {
+  sh-spec spec/ysh-builtin-argparse.test.sh --osh-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 
-oil-builtin-describe() {
-  sh-spec spec/oil-builtin-describe.test.sh --osh-failures-allowed 1 \
+ysh-builtin-describe() {
+  sh-spec spec/ysh-builtin-describe.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 # Related to errexit-oil
-oil-builtin-error() {
-  sh-spec spec/oil-builtin-error.test.sh --osh-failures-allowed 0 \
+ysh-builtin-error() {
+  sh-spec spec/ysh-builtin-error.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-builtin-pp() {
-  sh-spec spec/oil-builtin-pp.test.sh --osh-failures-allowed 0 \
+ysh-builtin-pp() {
+  sh-spec spec/ysh-builtin-pp.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-builtin-process() {
-  sh-spec spec/oil-builtin-process.test.sh --osh-failures-allowed 0 \
+ysh-builtin-process() {
+  sh-spec spec/ysh-builtin-process.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-builtin-shopt() {
-  sh-spec spec/oil-builtin-shopt.test.sh --osh-failures-allowed 1 \
+ysh-builtin-shopt() {
+  sh-spec spec/ysh-builtin-shopt.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
-oil-case() {
-  sh-spec spec/oil-case.test.sh --osh-failures-allowed 3 \
+ysh-case() {
+  sh-spec spec/ysh-case.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"
 }
 
-oil-command-sub() {
-  sh-spec spec/oil-command-sub.test.sh \
+ysh-command-sub() {
+  sh-spec spec/ysh-command-sub.test.sh \
     $OSH_LIST "$@"
 }
 
-oil-demo() {
+ysh-demo() {
   # Using OSH for minimalism
-  sh-spec spec/oil-demo.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-demo.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-expr() {
-  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 1 \
+ysh-expr() {
+  sh-spec spec/ysh-expr.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
-oil-expr-arith() {
-  sh-spec spec/oil-expr-arith.test.sh --osh-failures-allowed 2 \
+ysh-expr-arith() {
+  sh-spec spec/ysh-expr-arith.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
-oil-expr-compare() {
-  sh-spec spec/oil-expr-compare.test.sh --osh-failures-allowed 2 \
+ysh-expr-compare() {
+  sh-spec spec/ysh-expr-compare.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
-oil-expr-sub() {
-  sh-spec spec/oil-expr-sub.test.sh --osh-failures-allowed 0 \
+ysh-expr-sub() {
+  sh-spec spec/ysh-expr-sub.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-for() {
-  sh-spec spec/oil-for.test.sh --osh-failures-allowed 1 \
+ysh-for() {
+  sh-spec spec/ysh-for.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
-oil-funcs-builtin() {
-  sh-spec spec/oil-funcs-builtin.test.sh --osh-failures-allowed 0 \
+ysh-funcs-builtin() {
+  sh-spec spec/ysh-funcs-builtin.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-funcs-external() {
-  sh-spec spec/oil-funcs-external.test.sh --osh-failures-allowed 3 \
+ysh-funcs-external() {
+  sh-spec spec/ysh-funcs-external.test.sh --osh-failures-allowed 3 \
     $OIL_LIST "$@"
 }
 
-oil-interactive() {
-  sh-spec spec/oil-interactive.test.sh --osh-failures-allowed 0 \
+ysh-interactive() {
+  sh-spec spec/ysh-interactive.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-json() {
-  sh-spec spec/oil-json.test.sh --osh-failures-allowed 0 \
+ysh-json() {
+  sh-spec spec/ysh-json.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-keywords() {
-  sh-spec spec/oil-keywords.test.sh --osh-failures-allowed 0 \
+ysh-keywords() {
+  sh-spec spec/ysh-keywords.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-multiline() {
-  sh-spec spec/oil-multiline.test.sh --osh-failures-allowed 0 \
+ysh-multiline() {
+  sh-spec spec/ysh-multiline.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-options() {
-  sh-spec spec/oil-options.test.sh --osh-failures-allowed 0 \
+ysh-options() {
+  sh-spec spec/ysh-options.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-options-assign() {
-  sh-spec spec/oil-options-assign.test.sh --osh-failures-allowed 0 \
+ysh-options-assign() {
+  sh-spec spec/ysh-options-assign.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-proc() {
-  sh-spec spec/oil-proc.test.sh --osh-failures-allowed 0 \
+ysh-proc() {
+  sh-spec spec/ysh-proc.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-regex() {
-  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 4 \
+ysh-regex() {
+  sh-spec spec/ysh-regex.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
-oil-reserved() {
-  sh-spec spec/oil-reserved.test.sh --osh-failures-allowed 0 \
+ysh-reserved() {
+  sh-spec spec/ysh-reserved.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-scope() {
-  sh-spec spec/oil-scope.test.sh --osh-failures-allowed 1 \
+ysh-scope() {
+  sh-spec spec/ysh-scope.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
-oil-slice-range() {
-  sh-spec spec/oil-slice-range.test.sh --osh-failures-allowed 2 \
+ysh-slice-range() {
+  sh-spec spec/ysh-slice-range.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
-oil-string() {
-  sh-spec spec/oil-string.test.sh --osh-failures-allowed 0 \
+ysh-string() {
+  sh-spec spec/ysh-string.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-special-vars() {
-  sh-spec spec/oil-special-vars.test.sh --osh-failures-allowed 0 \
+ysh-special-vars() {
+  sh-spec spec/ysh-special-vars.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
-oil-tuple() {
-  sh-spec spec/oil-tuple.test.sh --osh-failures-allowed 1 \
+ysh-tuple() {
+  sh-spec spec/ysh-tuple.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
-oil-var-sub() {
-  sh-spec spec/oil-var-sub.test.sh --osh-failures-allowed 4 \
+ysh-var-sub() {
+  sh-spec spec/ysh-var-sub.test.sh --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
-oil-with-sh() {
-  sh-spec spec/oil-with-sh.test.sh --osh-failures-allowed 6 \
+ysh-with-sh() {
+  sh-spec spec/ysh-with-sh.test.sh --osh-failures-allowed 6 \
     $OIL_LIST "$@"
 }
 
-oil-word-eval() {
-  sh-spec spec/oil-word-eval.test.sh --osh-failures-allowed 0 \
+ysh-word-eval() {
+  sh-spec spec/ysh-word-eval.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-xtrace() {
-  sh-spec spec/oil-xtrace.test.sh --osh-failures-allowed 0 \
+ysh-xtrace() {
+  sh-spec spec/ysh-xtrace.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
-oil-user-feedback() {
-  sh-spec spec/oil-user-feedback.test.sh --osh-failures-allowed 0 \
+ysh-user-feedback() {
+  sh-spec spec/ysh-user-feedback.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
