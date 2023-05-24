@@ -223,7 +223,7 @@ List<T>* List<T>::slice(int begin, int end, int step) {
 
   List<T>* result = NewList<T>();
   // step might be negative
-  for (int i = begin; i >= begin && i < end; i += step) {
+  for (int i = begin; begin <= i && i < end; i += step) {
     result->append(slab_->items_[i]);
   }
 

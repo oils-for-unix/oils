@@ -156,7 +156,7 @@ Str* Str::slice(int begin, int end, int step) {
   Str* result = NewStr(new_len + 1);
   // step might be negative
   int j = 0;
-  for (int i = begin; i >= begin && i < end; i += step, j++) {
+  for (int i = begin; begin <= i && i < end; i += step, j++) {
     result->data_[j] = data_[i];
   }
   result->data_[new_len] = '\0';

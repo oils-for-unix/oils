@@ -140,6 +140,9 @@ class Transformer(object):
       assert p_args.typ == grammar_nt.subscriptlist
       indices = []  # type: List[expr_t]
       n = p_args.NumChildren()
+      if n > 1:
+        p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
+
       a = p_args.GetChild(0)
       return Subscript(base, self._Subscript(a))
 

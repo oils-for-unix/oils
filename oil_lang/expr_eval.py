@@ -1108,14 +1108,14 @@ class OilEvaluator(object):
     if node.lower:
       UP_lower = _PyObjToValue(self._EvalExpr(node.lower))
       if UP_lower.tag() != value_e.Int:
-        raise error.InvalidType('Expected Int', loc.Missing)
+        raise error.InvalidType('Slice indices must be Ints', loc.Missing)
 
       lower = IntParamBox(cast(value.Int, UP_lower).i)
 
     if node.upper:
       UP_upper = _PyObjToValue(self._EvalExpr(node.upper))
       if UP_upper.tag() != value_e.Int:
-        raise error.InvalidType('Expected Int', loc.Missing)
+        raise error.InvalidType('Slice indices must be Ints', loc.Missing)
 
       upper = IntParamBox(cast(value.Int, UP_upper).i)
 
@@ -1464,7 +1464,7 @@ class OilEvaluator(object):
       elif case(value_e.Dict):
         obj = cast(value.Dict, UP_obj)
         if index.tag() != value_e.Str:
-            raise error.InvalidType('expected String', loc.Missing)
+            raise error.InvalidType('expected String index for Dict', loc.Missing)
 
         index = cast(value.Str, UP_index)
         try:
