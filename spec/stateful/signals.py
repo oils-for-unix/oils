@@ -317,6 +317,21 @@ def t2(sh):
 
 
 @register()
+def read_d(sh):
+  'Ctrl-C during read -d'
+
+  sh.sendline('read -d :')
+
+  time.sleep(0.1)
+  sh.sendintr()  # SIGINT
+
+  expect_prompt(sh)
+
+  sh.sendline('echo status=$?')
+  sh.expect('status=130')
+
+
+@register()
 def c_wait(sh):
   'Ctrl-C (untrapped) during wait builtin'
 

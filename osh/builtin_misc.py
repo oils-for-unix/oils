@@ -260,6 +260,27 @@ def ReadAll():
   return ''.join(chunks)
 
 
+class ctx_TermAttrs(object):
+
+  def __init__(self, fd, local_modes):
+    # type: (int, int) -> None
+    self.fd = fd
+
+    # We change term_attrs[3] in Python, which is lflag "local modes"
+    orig_local_modes, term_attrs = pyos.PushTermAttrs(fd, local_modes)
+
+    self.orig_local_modes = orig_local_modes
+    self.term_attrs = term_attrs
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    pyos.PopTermAttrs(self.fd, self.orig_local_modes, self.term_attrs)
+
+
 class Read(vm._Builtin):
 
   def __init__(self, splitter, mem, parse_ctx, cmd_ev, errfmt):
@@ -399,11 +420,8 @@ class Read(vm._Builtin):
     if bits == 0:
       status = self._Read(arg, names)
     else:
-      term = pyos.TermState(STDIN_FILENO, ~bits)
-      try:
+      with ctx_TermAttrs(STDIN_FILENO, ~bits):
         status = self._Read(arg, names)
-      finally:
-        term.Restore()
     return status
 
   def _Read(self, arg, names):

@@ -236,34 +236,34 @@ TERM_ICANON = termios.ICANON
 TERM_ECHO = termios.ECHO
 
 
-class TermState(object):
+def PushTermAttrs(fd, mask):
+  # type: (int, int) -> Tuple[int, Any]
   """
-  TODO: Make this into a context manager which is a C++ destructor?
+  Returns opaque type (void* in C++) to be reused in the PopTermAttrs()
   """
-  def __init__(self, fd, mask):
-    # type: (int, int) -> None
-    self.fd = fd
+  # https://docs.python.org/2/library/termios.html
+  term_attrs = termios.tcgetattr(fd)
 
-    # silly way to make a copy
-    # https://docs.python.org/2/library/termios.html
-    self.orig_attrs = termios.tcgetattr(fd)
-    term_attrs = termios.tcgetattr(fd)
+  # Flip the bits in one field, e.g. ICANON to disable canonical (buffered)
+  # mode.
+  orig_local_modes = cast(int, term_attrs[3])
+  term_attrs[3] = orig_local_modes & mask
 
-    a3 = cast(int, term_attrs[3])
-    # Disable canonical (buffered) mode.  See `man termios` for an extended
-    # discussion.
-    term_attrs[3] = a3 & mask
-    termios.tcsetattr(self.fd, termios.TCSANOW, term_attrs)
+  termios.tcsetattr(fd, termios.TCSANOW, term_attrs)
+  return orig_local_modes, term_attrs
 
-  def Restore(self):
-    # type: () -> None
-    try:
-      termios.tcsetattr(self.fd, termios.TCSANOW, self.orig_attrs)
-    except termios.error as e:
-      # Superficial fix for issue #1001.  I'm not sure why we get errno.EIO,
-      # but we can't really handle it here.  In C++ I guess we ignore the
-      # error.
-      pass
+
+def PopTermAttrs(fd, orig_local_modes, term_attrs):
+  # type: (int, int, Any) -> None
+
+  term_attrs[3] = orig_local_modes
+  try:
+    termios.tcsetattr(fd, termios.TCSANOW, term_attrs)
+  except termios.error as e:
+    # Superficial fix for issue #1001.  I'm not sure why we get errno.EIO,
+    # but we can't really handle it here.  In C++ I guess we ignore the
+    # error.
+    pass
 
 
 def OsType():

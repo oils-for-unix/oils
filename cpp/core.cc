@@ -14,6 +14,7 @@
 #include <sys/times.h>     // tms / times()
 #include <sys/utsname.h>   // uname
 #include <sys/wait.h>      // waitpid()
+#include <termios.h>       // tcgetattr(), tcsetattr()
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
@@ -263,6 +264,32 @@ Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {
   }
 
   return Alloc<Tuple2<Str*, int>>(path, st.st_mtime);
+}
+
+Tuple2<int, void*> PushTermAttrs(int fd, int mask) {
+  struct termios* term_attrs =
+      static_cast<struct termios*>(malloc(sizeof(struct termios)));
+
+  if (tcgetattr(fd, term_attrs) < 0) {
+    throw Alloc<OSError>(errno);
+  }
+  // Flip the bits in one field
+  int orig_local_modes = term_attrs->c_lflag;
+  term_attrs->c_lflag = orig_local_modes & mask;
+
+  if (tcsetattr(fd, TCSANOW, term_attrs) < 0) {
+    throw Alloc<OSError>(errno);
+  }
+
+  return Tuple2<int, void*>(orig_local_modes, term_attrs);
+}
+
+void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs) {
+  struct termios* t = static_cast<struct termios*>(term_attrs);
+  t->c_lflag = orig_local_modes;
+  if (tcsetattr(fd, TCSANOW, t) < 0) {
+    ;  // Like Python, ignore error because of issue #1001
+  }
 }
 
 }  // namespace pyos

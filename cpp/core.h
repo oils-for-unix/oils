@@ -94,18 +94,8 @@ inline void FlushStdout() {
   fflush(stdout);
 }
 
-class TermState {
- public:
-  TermState(int fd, int mask) {
-    assert(0);
-  }
-  void Restore() {
-    assert(0);
-  }
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(TermState));
-  }
-};
+Tuple2<int, void*> PushTermAttrs(int fd, int mask);
+void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs);
 
 // Make the signal queue slab 4096 bytes, including the GC header.  See
 // cpp/core_test.cc.
