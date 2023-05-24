@@ -127,9 +127,10 @@ proc myproc {
   return 1
 }
 
-if try myproc {
-  echo OK
-} else {
+try {
+  myproc
+}
+if (_status !== 0) {
   echo failure
 }
 
@@ -182,7 +183,8 @@ proc is_it_true() {
 # to make it work you have to 'try' the proc
 # and remove the brackets
 
-if ! try is_it_true {
+try is_it_true
+if (_status !== 0) {
   echo "could be anything really"
 }
 
@@ -191,9 +193,11 @@ proc err_today() {
   date --wrong-flag
 }
 
-if try err_today {
+try {
+  err_today
   echo "will never be executed"
-} else {
+} 
+if (_status !== 0) {
   # this will also print the proc error
   # date: illegal option -- -
   # usage: date [-jnRu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ...
