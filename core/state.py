@@ -277,6 +277,23 @@ class ctx_ErrExit(object):
       self.mutable_opts.Pop(option_i._allow_process_sub)
 
 
+class ctx_Try(object):
+
+  def __init__(self, mutable_opts):
+    # type: (MutableOpts) -> None
+
+    mutable_opts.Push(option_i.errexit, True)
+    self.mutable_opts = mutable_opts
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mutable_opts.Pop(option_i.errexit)
+
+
 class ctx_HayNode(object):
   """ haynode builtin makes new names in the tree visible """
   def __init__(self, hay_state, hay_name):

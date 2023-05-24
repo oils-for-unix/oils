@@ -20,10 +20,12 @@ osh-all() {
   test/spec-runner.sh all-parallel osh compare-py osh-py
 }
 
-oil-all() {
+ysh-all() {
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel oil compare-py oil-py
 }
+
+oil-all() { ysh-all "$@"; }
 
 tea-all() {
   # $suite $compare_mode $spec_subdir
@@ -43,7 +45,7 @@ osh-minimal() {
 
 
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
-oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
+ysh-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 

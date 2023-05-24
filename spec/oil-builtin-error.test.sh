@@ -305,6 +305,18 @@ hi
 try 42
 ## END
 
+#### try allows command sub (bug #1608)
+shopt --set ysh:all
+
+try {
+  var x = $(echo hi)
+}
+echo $x
+
+## STDOUT:
+hi
+## END
+
 #### Uncaught expression error exits status 3
 $SH -c '
 shopt --set parse_proc

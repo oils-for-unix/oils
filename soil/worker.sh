@@ -88,7 +88,7 @@ arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 oil-runtime-errors  test/oil-runtime-errors.sh soil-run          -
-oil-spec            test/spec-py.sh oil-all-serial               _tmp/spec/oil-py/index.html
+oil-spec            test/spec-py.sh ysh-all-serial               _tmp/spec/oil-py/index.html
 tea-spec            test/spec-py.sh tea-all-serial               _tmp/spec/tea/index.html
 oil-large           oil_lang/run.sh soil-run                     -
 tea-large           tea/run.sh soil-run                          -
