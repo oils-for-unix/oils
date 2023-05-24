@@ -779,3 +779,33 @@ common
 status=0
 2 stderr.txt
 ## END
+
+
+#### parse options in sourced file (bug #1628)
+
+set -e  # catch errors
+
+alias e=echo
+shopt -u expand_aliases
+
+source $REPO_ROOT/spec/testdata/parse_opts.sh a b c
+
+echo OK
+
+# alias persists
+e alias on
+
+# parse_paren doesn't persist
+#if (x > 1) {
+#  echo 'OK'
+#}
+
+FOO=bar source $REPO_ROOT/spec/testdata/parse_opts.sh
+echo OK
+
+
+## STDOUT:
+OK
+alias on
+OK
+## END

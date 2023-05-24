@@ -684,7 +684,7 @@ class MutableOpts(object):
   def _SetArrayByNum(self, opt_num, b):
     # type: (int, bool) -> None
     if (opt_num in consts.PARSE_OPTION_NUMS and
-        not self.mem.InGlobalNamespace()):
+        not self.mem.ParsingChangesAllowed()):
       e_die('Syntax options must be set at the top level '
             '(outside any function)')
 
@@ -1331,10 +1331,14 @@ class Mem(object):
     """Used by builtins."""
     self.pwd = pwd
 
-  def InGlobalNamespace(self):
+  def ParsingChangesAllowed(self):
     # type: () -> bool
     """For checking that syntax options are only used at the top level."""
-    return len(self.argv_stack) == 1
+
+    # DISALLOW proc calls     : they push argv_stack, var_stack, debug_stack
+    # ALLOW source foo.sh arg1: pushes argv_stack, debug_stack
+    # ALLOW FOO=bar           : pushes var_stack
+    return len(self.var_stack) == 1 or len(self.argv_stack) == 1
 
   def Dump(self):
     # type: () -> Tuple[Any, Any, Any]
