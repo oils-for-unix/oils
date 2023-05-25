@@ -47,6 +47,8 @@ def Define(sp):
 
   sp.YshFile('ysh-expr-arith', our_shell='osh')
 
+  sp.YshFile('ysh-expr-bool', our_shell='osh')
+
   sp.YshFile('ysh-expr-compare', our_shell='osh')
 
   sp.YshFile('ysh-expr-sub')

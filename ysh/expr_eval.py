@@ -408,6 +408,63 @@ def AsPosixEre(eggex):
   return eggex.as_ere
 
 
+def ToBool(val):
+  # type: (value_t) -> bool
+  """
+  Convert any value to a boolean.  TODO: expose this as Bool(x), like Python's
+  bool(x).
+  """
+  UP_val = val
+  with tagswitch(val) as case:
+    if case(value_e.Undef):
+      return False
+
+    elif case(value_e.Str):
+      val = cast(value.Str, UP_val)
+      return len(val.s) != 0
+
+    # OLD TYPES
+    elif case(value_e.MaybeStrArray):
+      val = cast(value.MaybeStrArray, UP_val)
+      return len(val.strs) != 0
+
+    elif case(value_e.AssocArray):
+      val = cast(value.AssocArray, UP_val)
+      return len(val.d) != 0
+
+    elif case(value_e.Bool):
+      val = cast(value.Bool, UP_val)
+      return val.b
+
+    elif case(value_e.Int):
+      val = cast(value.Int, UP_val)
+      return val.i != 0
+
+    elif case(value_e.Float):
+      val = cast(value.Float, UP_val)
+      return val.f != 0.0
+
+    elif case(value_e.List):
+      val = cast(value.List, UP_val)
+      return len(val.items) > 0
+
+    elif case(value_e.Tuple):
+      val = cast(value.Tuple, UP_val)
+      return len(val.items) > 0
+
+    elif case(value_e.Dict):
+      val = cast(value.Dict, UP_val)
+      return len(val.d) > 0
+
+    elif case(value_e.Obj):
+      val = cast(value.Obj, UP_val)
+      return bool(val.obj)
+
+    else:
+      return True  # all other types are Truthy
+
+
+
 class OilEvaluator(object):
   """Shared between arith and bool evaluators.
 
@@ -981,31 +1038,25 @@ class OilEvaluator(object):
 
     raise NotImplementedError()
 
-  def _ArithLogical(self, left, right, op):
-    # type: (value_t, value_t, Id_t) -> value.Bool
+  def _ArithLogical(self, left, right, op_id):
+    # type: (value_t, value_t, Id_t) -> value_t
     UP_left = left
     UP_right = right
 
-    with tagswitch(left) as lcase:
-      if lcase(value_e.Bool):
-        left = cast(value.Bool, UP_left)
-
-        with tagswitch(right) as rcase:
-          if rcase(value_e.Bool):
-            right = cast(value.Bool, UP_right)
-
-            if op == Id.Expr_And:
-              return value.Bool(left.b and right.b)
-            elif op == Id.Expr_Or:
-              return value.Bool(left.b or right.b)
-
-          else:
-            raise error.InvalidType('Expected Bool', loc.Missing)
-
+    if op_id == Id.Expr_And:
+      if ToBool(left):
+        return right
       else:
-        raise error.InvalidType('Expected Bool', loc.Missing)
+        return left
 
-      raise NotImplementedError()
+    elif op_id == Id.Expr_Or:
+      if ToBool(left):
+        return left
+      else:
+        return right
+
+    else:
+      raise AssertionError(op_id)
 
   def _Concat(self, left, right):
     # type: (value_t, value_t) -> value_t
