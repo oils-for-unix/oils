@@ -816,6 +816,10 @@ ysh-expr() {
     $OSH_LIST "$@"
 }
 
+ysh-expr-bool() {
+  run-file ysh-expr-bool "$@"
+}
+
 ysh-expr-arith() {
   sh-spec spec/ysh-expr-arith.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"

@@ -543,34 +543,6 @@ echo $y
 (Int)   1
 ## END
 
-#### Logical operators
-var a = not true
-echo $a
-var b = true and false
-echo $b
-var c = true or false
-echo $c
-
-# TODO: These should be spelled 'false' 'false' 'true'?
-
-## STDOUT:
-false
-false
-true
-## END
-
-#### x if b else y
-var b = true
-var i = 42
-var t = i+1 if b else i-1
-echo $t
-var f = i+1 if false else i-1
-echo $f
-## STDOUT:
-43
-41
-## END
-
 #### multiline strings, list, tuples, etc.
 var dq = "
 dq
