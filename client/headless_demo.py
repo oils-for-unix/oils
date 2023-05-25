@@ -79,6 +79,9 @@ def main(argv):
   p.add_option(
       '--stderr-file', dest='stderr_file', default='/dev/stderr',
       help='Where the server should send child stdout')
+  p.add_option(
+      '--sh-binary', dest='sh_binary', default='bin/osh',
+      help='Which shell binary to launch')
 
   # Use a terminal instead
   p.add_option(
@@ -97,7 +100,7 @@ def main(argv):
   os.set_inheritable(left.fileno(), True)
   os.set_inheritable(right.fileno(), True)
 
-  child_argv = ['bin/osh', '--headless']
+  child_argv = [opts.sh_binary, '--headless']
 
   ret = os.fork()
   if ret < 0:

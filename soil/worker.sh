@@ -94,7 +94,7 @@ oil-large           ysh/run.sh soil-run                          -
 tea-large           tea/run.sh soil-run                          -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
-headless            client/run.sh soil-run                       -
+headless            client/run.sh soil-run-py                    -
 EOF
 }
 
@@ -181,6 +181,7 @@ build-minimal    build/py.sh minimal                   -
 ninja-config     soil/worker.sh ninja-config           -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh soil-run              -
+headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html

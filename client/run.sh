@@ -7,8 +7,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-demo() {
-  echo mystdin | client/headless_demo.py
+py-demo() {
+  echo mystdin | client/headless_demo.py --sh-binary bin/osh
+}
+
+cpp-demo() {
+  local bin=_bin/cxx-dbg/osh
+  ninja $bin
+  echo mystdin | client/headless_demo.py --sh-binary $bin
 }
 
 errors() {
@@ -32,12 +38,16 @@ demo-pty() {
   echo mystdin | client/headless_demo.py --to-new-pty
 }
 
-soil-run() {
-  demo
+soil-run-py() {
+  py-demo
   echo
 
   errors
   echo
+}
+
+soil-run-cpp() {
+  cpp-demo
 }
 
 
