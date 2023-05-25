@@ -15,78 +15,80 @@ from typing import Any
 
 
 class UserExit(Exception):
-  """For explicit 'exit'."""
-  def __init__(self, status):
-    # type: (int) -> None
-    self.status = status
+    """For explicit 'exit'."""
+
+    def __init__(self, status):
+        # type: (int) -> None
+        self.status = status
 
 
 class HistoryError(Exception):
 
-  def __init__(self, msg):
-    # type: (str) -> None
-    if mylib.PYTHON:
-      Exception.__init__(self)
+    def __init__(self, msg):
+        # type: (str) -> None
+        if mylib.PYTHON:
+            Exception.__init__(self)
 
-    self.msg = msg
+        self.msg = msg
 
-  def UserErrorString(self):
-    # type: () -> str
-    return 'history: %s' % self.msg
+    def UserErrorString(self):
+        # type: () -> str
+        return 'history: %s' % self.msg
 
 
 class _DebugFile(object):
 
-  def __init__(self):
-    # type: () -> None
-    pass
+    def __init__(self):
+        # type: () -> None
+        pass
 
-  def log(self, msg, *args):
-    # type: (str, *Any) -> None
-    pass
+    def log(self, msg, *args):
+        # type: (str, *Any) -> None
+        pass
 
-  def write(self, s):
-    # type: (str) -> None
-    pass
+    def write(self, s):
+        # type: (str) -> None
+        pass
 
-  def writeln(self, s):
-    # type: (str) -> None
-    self.write(s + '\n')
+    def writeln(self, s):
+        # type: (str) -> None
+        self.write(s + '\n')
 
-  def isatty(self):
-    # type: () -> bool
-    return False
+    def isatty(self):
+        # type: () -> bool
+        return False
 
 
 class NullDebugFile(_DebugFile):
 
-  def __init__(self):
-    # type: () -> None
-    """Empty constructor for mycpp."""
-    _DebugFile.__init__(self)
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        _DebugFile.__init__(self)
 
 
 class DebugFile(_DebugFile):
-  def __init__(self, f):
-    # type: (mylib.Writer) -> None
-    _DebugFile.__init__(self)
-    self.f = f
 
-  def log(self, msg, *args):
-    # type: (str, *Any) -> None
-    if mylib.PYTHON:  # remove dynamic format
-      if args:
-        msg = msg % args
-    self.f.write(msg)
-    self.f.write('\n')
-    self.f.flush()  # need to see it interactively
+    def __init__(self, f):
+        # type: (mylib.Writer) -> None
+        _DebugFile.__init__(self)
+        self.f = f
 
-  def write(self, s):
-    # type: (str) -> None
-    """Used by dev::Tracer and ASDL node.PrettyPrint()."""
-    self.f.write(s)
+    def log(self, msg, *args):
+        # type: (str, *Any) -> None
+        if mylib.PYTHON:  # remove dynamic format
+            if args:
+                msg = msg % args
+        self.f.write(msg)
+        self.f.write('\n')
+        self.f.flush()  # need to see it interactively
 
-  def isatty(self):
-    # type: () -> bool
-    """Used by node.PrettyPrint()."""
-    return self.f.isatty()
+    def write(self, s):
+        # type: (str) -> None
+        """Used by dev::Tracer and ASDL node.PrettyPrint()."""
+        self.f.write(s)
+
+    def isatty(self):
+        # type: () -> bool
+        """Used by node.PrettyPrint()."""
+        return self.f.isatty()

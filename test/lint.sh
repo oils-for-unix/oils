@@ -189,7 +189,7 @@ run-black() {
 
 
 install-yapf() {
-  pip3 install yapf
+  pip3 install yapf docformatter
 }
 
 run-yapf-3() {
@@ -198,13 +198,7 @@ run-yapf-3() {
 }
 
 py2-files-to-format() {
-  ### Just print ASDL files for now
-
-  # Recently modified
-  echo core/process.py
-  echo core/ui.py
-
-  for name in asdl/*.py; do
+  for name in asdl/*.py core/*.py ysh/*.py; do
     echo $name
   done | grep -v 'NINJA_subgraph'  # leave out for now
 }
@@ -214,7 +208,10 @@ run-yapf-2() {
 
   # These files originally had 4 space indentation, but it got inconsistent
   py2-files-to-format \
-    | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 2}'
+    | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
+
+  py2-files-to-format \
+    | xargs python3 -m docformatter --in-place
 }
 
 #
