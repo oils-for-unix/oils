@@ -1200,6 +1200,115 @@ ysh_case() {
   }
   '
 
+  # Example valid cases from grammar brain-storming
+  _ysh-should-parse '
+  case (add(10, 32)) {
+    (40 + 2) { echo Found the answer }
+    else { echo Incorrect
+    }
+  }
+  '
+  _ysh-should-parse "
+  case (file) {
+    / dot* '.py' /
+    {
+      echo Python
+    }
+
+    / dot* ('.cc' | '.h') /
+    {
+      echo C++
+    }
+  }
+  "
+  _ysh-should-parse '
+  case (lang) {
+      en-US
+    | en-CA
+    | en-UK {
+      echo Hello
+    }
+    fr-FR |
+    fr-CA {
+      echo Bonjour
+    }
+    else {
+      echo o/
+    }
+  }
+  '
+  _ysh-should-parse '
+  case (num) {
+      (1) | (2) | (3)
+    | (4) | (5) {
+      echo small
+    }
+
+    else {
+      echo large
+    }
+  }
+  '
+
+  # Example invalid cases from grammar brain-storming
+  _ysh-parse-error '
+  case
+  (add(10, 32)) {
+      (40 + 2) { echo Found the answer }
+      else { echo Incorrect }
+  }
+  '
+  _ysh-parse-error "
+  case (file)
+  {
+    ('README') | / dot* '.md' / { echo Markdown }
+  }
+  "
+  _ysh-parse-error '
+  case (file)
+  {
+    {
+      echo Python
+    }
+  }
+  '
+  _ysh-parse-error '
+  case (file)
+  {
+    cc h {
+      echo C++
+    }
+  }
+  '
+  _ysh-parse-error "
+  case (lang) {
+      en-US
+    | ('en-CA')
+    | / 'en-UK' / {
+      echo Hello
+    }
+  }
+  "
+  _ysh-parse-error '
+  case (lang) {
+    else) {
+      echo o/
+    }
+  }
+  '
+  _ysh-parse-error '
+  case (num) {
+      (1) | (2) | (3)
+    | (4) | (5) {
+      echo small
+    }
+
+    (6) | else {
+      echo large
+    }
+  }
+  '
+
   _ysh-parse-error '
   case $foo {
     ("main.py") {

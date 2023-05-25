@@ -423,6 +423,17 @@ class Transformer(object):
       # Oil Entry Points / Additions
       #
 
+      if typ == grammar_nt.expr_pat:  # for case
+        # expr_pat: expr ')'
+        return self.Expr(pnode.GetChild(0))
+
+      if typ == grammar_nt.regex_pat:  # for case
+        # oil_expr: regex '/'
+        r = self._Regex(pnode.GetChild(0))
+        flags = []  # type: List[Token]
+        trans_pref = None  # type: Token
+        return expr.RegexLiteral(pnode.GetChild(0).tok, r, flags, trans_pref)
+
       if typ == grammar_nt.oil_expr:  # for if/while
         # oil_expr: '(' testlist ')'
         return self.Expr(pnode.GetChild(1))

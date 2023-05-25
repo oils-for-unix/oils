@@ -20,6 +20,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter,
     ArgList, BraceGroup, BlockArg,
     CaseArm, case_arg, IfArm,
+    pat, pat_t, pat_e,
 
     Redir, redir_param,
     redir_loc, redir_loc_t,
@@ -1342,6 +1343,47 @@ class CommandParser(object):
     # no redirects yet
     return command.WhileUntil(keyword, cond, body_node, None)
 
+  def _ParsePatWords(self, relaxed_newlines):
+    # type: (bool) -> List[word_t]
+    """
+    pat_words   : pat_word (newline_ok '|' newline_ok pat_word)*
+    pat_word    : WORD
+
+    If `relaxed_newlines` is set to False, no newlines are allowed in the
+    pattern to support the POSIX case grammar.
+
+    For example, the following is *only* valid with `relaxed_newlines = True`:
+      case (x) {
+        a |
+        b |
+        c {
+          ...
+        }
+      }
+
+    Looking at: the first WORD
+    """
+    pat_words = []  # type: List[word_t]
+    while True:
+      self._Peek()
+      if self.c_kind != Kind.Word:
+        p_die('Expected case pattern', loc.Word(self.cur_word))
+      pat_words.append(self.cur_word)
+      self._Next()
+
+      if relaxed_newlines:
+        self._NewlineOk()
+
+      self._Peek()
+      if self.c_id == Id.Op_Pipe:
+        self._Next()
+        if relaxed_newlines:
+          self._NewlineOk()
+      else:
+        break
+
+    return pat_words
+
   def ParseCaseArm(self):
     # type: () -> CaseArm
     """
@@ -1357,19 +1399,7 @@ class CommandParser(object):
     if self.c_id == Id.Op_LParen:  # Optional (
       self._Next()
 
-    pat_words = []  # type: List[word_t]
-    while True:
-      self._Peek()
-      if self.c_kind != Kind.Word:
-        p_die('Expected case pattern', loc.Word(self.cur_word))
-      pat_words.append(self.cur_word)
-      self._Next()
-
-      self._Peek()
-      if self.c_id == Id.Op_Pipe:
-        self._Next()
-      else:
-        break
+    pat_words = self._ParsePatWords(False)
 
     ate = self._Eat(Id.Right_CasePat)
     middle_tok = word_.AsOperatorToken(ate)
@@ -1395,55 +1425,77 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
+    return CaseArm(left_tok, pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self):
     # type: () -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
-                | pat_expr
+                | pat_exprs
                 | pat_eggex
-    pat_words   : (WORD '|')* WORD
+                | pat_else
+    pat_words   : pat_word (newline_ok '|' newline_ok pat_word)*
+    pat_exprs   : pat_expr (newline_ok '|' newline_ok pat_expr)*
+    pat_word    : WORD
     pat_expr    : '(' oil_expr ')'
     pat_eggex   : '/' oil_eggex '/'
+    pat_else    : Id.KW_Else
 
     Looking at: 'pattern' or '(' or Id.Lit_Slash
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
-    pat_words = []  # type: List[word_t]
-    while True:
-      self._Peek()
+    pattern = None  # type: pat_t
 
-      if self.c_id == Id.Op_LParen:
-        # TODO: Parse YSH expressions here
-        self._Next()  # Skip '('
+    self._Peek()
+    if self.c_id == Id.Op_LParen:
+      # must be a pat_exprs
+      while True:
+        self._Eat(Id.Op_LParen)
+
+        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.expr_pat)
+        pattern = pat.YshExprs([enode])
+
+        self._NewlineOk()
+
         self._Peek()
-        pat_words.append(self.cur_word)
-        self._Next()
-        self._Eat(Id.Op_RParen)
-      else:
-        pat_words.append(self.cur_word)
-        self._Next()
+        if self.c_id == Id.Op_Pipe:
+          self._Next()
+          self._NewlineOk()
+        else:
+          break
 
-      self._Peek()
-      if self.c_id == Id.Op_Pipe:
-        self._Next()
-      else:
-        break
+    # TODO: figure out how to parse '(else)'
+    #       ...or fold and use `else { ... }` instead
+    elif self.c_id == Id.KW_Else:
+      # we have a pat_else
+      self._Next()
+      pattern = pat.Else
+
+    # TODO: clean this up...
+    elif self.c_id == Id.Word_Compound and cast(Token, cast(CompoundWord, self.cur_word).parts[0]).tval == '/':
+      # pat_eggex
+      self._Next()
+      enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.regex_pat)
+      pattern = pat.YshExprs([enode]) # TODO: Should we have a seperate `pat` variant for eggexs?
+
+    else:
+      # pat_words
+      pat_words = self._ParsePatWords(True)
+      pattern = pat.Words(pat_words)
 
     self._NewlineOk()
     action = self.ParseBraceGroup()
     self._NewlineOk()
 
     # The left token of the action is our "middle" token
-    return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
+    return CaseArm(left_tok, pattern, action.left, action.children, action.right)
 
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
     """
-    ysh_case : Case '(' expr ')' LBrace newline_ok ysh_case_arm* RBrace ;
+    ysh_case : Case '(' expr ')' newline_ok LBrace newline_ok ysh_case_arm* RBrace ;
 
     Looking at: token after 'case'
     """

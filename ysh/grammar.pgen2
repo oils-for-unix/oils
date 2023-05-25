@@ -597,6 +597,9 @@ re_alt: (re_atom [repeat_op])+
 
 regex: [re_alt] (('|'|'or') re_alt)*
 
+regex_pat: regex [re_flags] '/'
+expr_pat: expr ')'
+
 # e.g. /digit+ ; multiline !ignorecase/
 #
 # This can express translation preferences:

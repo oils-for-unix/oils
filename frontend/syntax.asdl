@@ -268,7 +268,7 @@ module syntax
   # For YSH typed case, left can be ( and /
   # And case_pat may contain more details
   CaseArm = (
-      Token left, List[word] pat_list, Token middle, List[command] action,
+      Token left, pat pattern, Token middle, List[command] action,
       Token? right
   )
 
@@ -278,6 +278,11 @@ module syntax
   case_arg =
     Word(word w)
   | YshExpr(expr e)
+
+  pat =
+    Else
+  | Words(List[word] w)
+  | YshExprs(List[expr] e)
 
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})
