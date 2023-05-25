@@ -1,14 +1,18 @@
 #!/usr/bin/env python2
-"""
-regex_translate.py
-"""
+"""regex_translate.py."""
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    PosixClass, PerlClass, CharCode,
-    char_class_term, char_class_term_e, char_class_term_t,
-    re, re_e,
-    re_repeat, re_repeat_e,
+    PosixClass,
+    PerlClass,
+    CharCode,
+    char_class_term,
+    char_class_term_e,
+    char_class_term_t,
+    re,
+    re_e,
+    re_repeat,
+    re_repeat_e,
 )
 from _devbuild.gen.id_kind_asdl import Id
 
@@ -31,10 +35,9 @@ PERL_CLASS = {
     's': '[:space:]',
 }
 
-
 # ERE's in POSIX:
 # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
-# 
+#
 # NOTE: They don't support \x00 or \u1234 as in Perl/Python!
 #
 # It's hard to grep for tabs with BRE or ERE syntax.  You have to use:
@@ -60,254 +63,253 @@ CH_BACKSLASH = 0x5c
 CH_CARET = 0x5e
 CH_HYPHEN = 0x2d
 
-FLAG_RBRACKET  = 0b0001
+FLAG_RBRACKET = 0b0001
 FLAG_BACKSLASH = 0b0010
-FLAG_CARET     = 0b0100
-FLAG_HYPHEN    = 0b1000
+FLAG_CARET = 0b0100
+FLAG_HYPHEN = 0b1000
+
 
 def _CharCodeToEre(term, parts, special_char_flags):
-  # type: (CharCode, List[str], List[int]) -> None
-  """
-  special_char_flags: list of single int that is mutated
-  """
+    # type: (CharCode, List[str], List[int]) -> None
+    """special_char_flags: list of single int that is mutated."""
 
-  char_int = term.i
-  if char_int >= 128 and term.u_braced:
-    # \u{ff} can't be represented in ERE because we don't know the encoding
-    # \xff can be represented
-    e_die("ERE can't express char code %d" % char_int, term.blame_tok)
+    char_int = term.i
+    if char_int >= 128 and term.u_braced:
+        # \u{ff} can't be represented in ERE because we don't know the encoding
+        # \xff can be represented
+        e_die("ERE can't express char code %d" % char_int, term.blame_tok)
 
-  # note: mycpp doesn't handle
-  # special_char_flags[0] |= FLAG_HYPHEN
-  mask = special_char_flags[0]
+    # note: mycpp doesn't handle
+    # special_char_flags[0] |= FLAG_HYPHEN
+    mask = special_char_flags[0]
 
-  if char_int == CH_HYPHEN:
-    mask |= FLAG_HYPHEN
-  elif char_int == CH_CARET:
-    mask |= FLAG_CARET
-  elif char_int == CH_RBRACKET:
-    mask |= FLAG_RBRACKET
-  elif char_int == CH_BACKSLASH:
-    mask |= FLAG_BACKSLASH
-  else:
-    parts.append(chr(char_int))
+    if char_int == CH_HYPHEN:
+        mask |= FLAG_HYPHEN
+    elif char_int == CH_CARET:
+        mask |= FLAG_CARET
+    elif char_int == CH_RBRACKET:
+        mask |= FLAG_RBRACKET
+    elif char_int == CH_BACKSLASH:
+        mask |= FLAG_BACKSLASH
+    else:
+        parts.append(chr(char_int))
 
-  special_char_flags[0] = mask
+    special_char_flags[0] = mask
 
 
 def _CharClassTermToEre(term, parts, special_char_flags):
-  # type: (char_class_term_t, List[str], List[int]) -> None
-  """
-  special_char_flags: list of single int that is mutated
-  """
+    # type: (char_class_term_t, List[str], List[int]) -> None
+    """special_char_flags: list of single int that is mutated."""
 
-  UP_term = term
-  tag = term.tag()
+    UP_term = term
+    tag = term.tag()
 
-  with tagswitch(term) as case:
-    if case(char_class_term_e.Range):
-      term = cast(char_class_term.Range, UP_term)
+    with tagswitch(term) as case:
+        if case(char_class_term_e.Range):
+            term = cast(char_class_term.Range, UP_term)
 
-      # Create our own flags
-      range_no_special = [0]
+            # Create our own flags
+            range_no_special = [0]
 
-      _CharCodeToEre(term.start, parts, range_no_special)
-      if range_no_special[0] !=0:
-        e_die("Can't use char %d as start of range in ERE syntax" % term.start.i,
-              term.start.blame_tok)
+            _CharCodeToEre(term.start, parts, range_no_special)
+            if range_no_special[0] != 0:
+                e_die(
+                    "Can't use char %d as start of range in ERE syntax" %
+                    term.start.i, term.start.blame_tok)
 
-      parts.append('-')  # a-b
+            parts.append('-')  # a-b
 
-      _CharCodeToEre(term.end, parts, range_no_special)
-      if range_no_special[0] != 0:
-        e_die("Can't use char %d as end of range in ERE syntax" % term.end.i,
-              term.end.blame_tok)
+            _CharCodeToEre(term.end, parts, range_no_special)
+            if range_no_special[0] != 0:
+                e_die(
+                    "Can't use char %d as end of range in ERE syntax" %
+                    term.end.i, term.end.blame_tok)
 
-    elif case(char_class_term_e.CharCode):
-      term = cast(CharCode, UP_term)
+        elif case(char_class_term_e.CharCode):
+            term = cast(CharCode, UP_term)
 
-      _CharCodeToEre(term, parts, special_char_flags)
+            _CharCodeToEre(term, parts, special_char_flags)
 
-    elif case(char_class_term_e.PerlClass):
-      term = cast(PerlClass, UP_term)
-      n = term.name
-      chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
-      if term.negated:
-        e_die("Perl classes can't be negated in ERE", term.negated)
-      else:
-        pat = '%s' % chars
-      parts.append(pat)
+        elif case(char_class_term_e.PerlClass):
+            term = cast(PerlClass, UP_term)
+            n = term.name
+            chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
+            if term.negated:
+                e_die("Perl classes can't be negated in ERE", term.negated)
+            else:
+                pat = '%s' % chars
+            parts.append(pat)
 
-    elif case(char_class_term_e.PosixClass):
-      term = cast(PosixClass, UP_term)
-      n = term.name  # looks like 'digit'
-      if term.negated:
-        e_die("POSIX classes can't be negated in ERE", term.negated)
-      else:
-        pat = '[:%s:]' % n
-      parts.append(pat)
+        elif case(char_class_term_e.PosixClass):
+            term = cast(PosixClass, UP_term)
+            n = term.name  # looks like 'digit'
+            if term.negated:
+                e_die("POSIX classes can't be negated in ERE", term.negated)
+            else:
+                pat = '[:%s:]' % n
+            parts.append(pat)
 
-    else:
-      raise AssertionError(term)
+        else:
+            raise AssertionError(term)
 
 
 def AsPosixEre(node, parts):
-  # type: (re_t, List[str]) -> None
-  """Translate an Oil regex to a POSIX ERE.
+    # type: (re_t, List[str]) -> None
+    """Translate an Oil regex to a POSIX ERE.
 
-  Appends to a list of parts that you have to join.
-  """
-  UP_node = node
-  tag = node.tag()
+    Appends to a list of parts that you have to join.
+    """
+    UP_node = node
+    tag = node.tag()
 
-  if tag == re_e.Primitive:
-    node = cast(re.Primitive, UP_node)
-    if node.id == Id.Re_Dot:
-      parts.append('.')
-    elif node.id == Id.Re_Start:
-      parts.append('^')
-    elif node.id == Id.Re_End:
-      parts.append('$')
-    else:
-      raise AssertionError(node.id)
-    return
+    if tag == re_e.Primitive:
+        node = cast(re.Primitive, UP_node)
+        if node.id == Id.Re_Dot:
+            parts.append('.')
+        elif node.id == Id.Re_Start:
+            parts.append('^')
+        elif node.id == Id.Re_End:
+            parts.append('$')
+        else:
+            raise AssertionError(node.id)
+        return
 
-  if tag == re_e.LiteralChars:
-    node = cast(re.LiteralChars, UP_node)
-    # The bash [[ x =~ "." ]] construct also has to do this
+    if tag == re_e.LiteralChars:
+        node = cast(re.LiteralChars, UP_node)
+        # The bash [[ x =~ "." ]] construct also has to do this
 
-    # TODO: What about \0 and unicode escapes?
-    # Those won't be as LiteralChars I don't think?
-    # Unless you put them there through \0
-    # Maybe DISALLOW those.
-    # "Unprintable chars should be written as \0 or \x00 or \u0000"
+        # TODO: What about \0 and unicode escapes?
+        # Those won't be as LiteralChars I don't think?
+        # Unless you put them there through \0
+        # Maybe DISALLOW those.
+        # "Unprintable chars should be written as \0 or \x00 or \u0000"
 
-    parts.append(glob_.ExtendedRegexEscape(node.s))
-    return
+        parts.append(glob_.ExtendedRegexEscape(node.s))
+        return
 
-  if tag == re_e.Seq:
-    node = cast(re.Seq, UP_node)
-    for c in node.children:
-      AsPosixEre(c, parts)
-    return
+    if tag == re_e.Seq:
+        node = cast(re.Seq, UP_node)
+        for c in node.children:
+            AsPosixEre(c, parts)
+        return
 
-  if tag == re_e.Alt:
-    node = cast(re.Alt, UP_node)
-    for i, c in enumerate(node.children):
-      if i != 0:
-        parts.append('|')
-      AsPosixEre(c, parts)
-    return
+    if tag == re_e.Alt:
+        node = cast(re.Alt, UP_node)
+        for i, c in enumerate(node.children):
+            if i != 0:
+                parts.append('|')
+            AsPosixEre(c, parts)
+        return
 
-  if tag == re_e.Repeat:
-    node = cast(re.Repeat, UP_node)
-    # 'foo' or "foo" or $x or ${x} evaluated to too many chars
-    if node.child.tag() == re_e.LiteralChars:
-      child = cast(re.LiteralChars, node.child)
-      if len(child.s) > 1:
-        # Note: Other regex dialects have non-capturing groups since we don't
-        # need this.
-        e_die("POSIX EREs don't have groups without capture, so this node "
-              "needs () around it.", child.blame_tok)
+    if tag == re_e.Repeat:
+        node = cast(re.Repeat, UP_node)
+        # 'foo' or "foo" or $x or ${x} evaluated to too many chars
+        if node.child.tag() == re_e.LiteralChars:
+            child = cast(re.LiteralChars, node.child)
+            if len(child.s) > 1:
+                # Note: Other regex dialects have non-capturing groups since we don't
+                # need this.
+                e_die(
+                    "POSIX EREs don't have groups without capture, so this node "
+                    "needs () around it.", child.blame_tok)
 
-    AsPosixEre(node.child, parts)
-    op = node.op
-    op_tag = op.tag()
-    UP_op = op
+        AsPosixEre(node.child, parts)
+        op = node.op
+        op_tag = op.tag()
+        UP_op = op
 
-    if op_tag == re_repeat_e.Op:
-      op = cast(re_repeat.Op, UP_op)
-      op_id = op.op.id
-      if op_id == Id.Arith_Plus:
-        parts.append('+')
-      elif op_id == Id.Arith_Star:
-        parts.append('*')
-      elif op_id == Id.Arith_QMark:
-        parts.append('?')
-      else:
-        raise AssertionError(op_id)
-      return
+        if op_tag == re_repeat_e.Op:
+            op = cast(re_repeat.Op, UP_op)
+            op_id = op.op.id
+            if op_id == Id.Arith_Plus:
+                parts.append('+')
+            elif op_id == Id.Arith_Star:
+                parts.append('*')
+            elif op_id == Id.Arith_QMark:
+                parts.append('?')
+            else:
+                raise AssertionError(op_id)
+            return
 
-    if op_tag == re_repeat_e.Num:
-      op = cast(re_repeat.Num, UP_op)
-      parts.append('{%s}' % op.times.tval)
-      return
+        if op_tag == re_repeat_e.Num:
+            op = cast(re_repeat.Num, UP_op)
+            parts.append('{%s}' % op.times.tval)
+            return
 
-    if op_tag == re_repeat_e.Range:
-      op = cast(re_repeat.Range, UP_op)
-      lower = op.lower.tval if op.lower else ''
-      upper = op.upper.tval if op.upper else ''
-      parts.append('{%s,%s}' % (lower, upper))
-      return
+        if op_tag == re_repeat_e.Range:
+            op = cast(re_repeat.Range, UP_op)
+            lower = op.lower.tval if op.lower else ''
+            upper = op.upper.tval if op.upper else ''
+            parts.append('{%s,%s}' % (lower, upper))
+            return
 
-    raise NotImplementedError(op_tag)
+        raise NotImplementedError(op_tag)
 
-  # Special case for familiarity: () is acceptable as a group in ERE
-  if tag in (re_e.Group, re_e.Capture):
-    node = cast(re.Group, UP_node)
-    parts.append('(')
-    AsPosixEre(node.child, parts)
-    parts.append(')')
-    return
+    # Special case for familiarity: () is acceptable as a group in ERE
+    if tag in (re_e.Group, re_e.Capture):
+        node = cast(re.Group, UP_node)
+        parts.append('(')
+        AsPosixEre(node.child, parts)
+        parts.append(')')
+        return
 
-  if tag == re_e.PerlClass:
-    node = cast(PerlClass, UP_node)
-    n = node.name
-    chars = PERL_CLASS[node.name]  # looks like [:digit:]
-    if node.negated:
-      pat = '[^%s]' % chars
-    else:
-      pat = '[%s]' % chars
-    parts.append(pat)
-    return
+    if tag == re_e.PerlClass:
+        node = cast(PerlClass, UP_node)
+        n = node.name
+        chars = PERL_CLASS[node.name]  # looks like [:digit:]
+        if node.negated:
+            pat = '[^%s]' % chars
+        else:
+            pat = '[%s]' % chars
+        parts.append(pat)
+        return
 
-  if tag == re_e.PosixClass:
-    node = cast(PosixClass, UP_node)
-    n = node.name  # looks like 'digit'
-    if node.negated:
-      pat = '[^[:%s:]]' % n
-    else:
-      pat = '[[:%s:]]' % n
-    parts.append(pat)
-    return
+    if tag == re_e.PosixClass:
+        node = cast(PosixClass, UP_node)
+        n = node.name  # looks like 'digit'
+        if node.negated:
+            pat = '[^[:%s:]]' % n
+        else:
+            pat = '[[:%s:]]' % n
+        parts.append(pat)
+        return
 
-  if tag == re_e.CharClass:
-    node = cast(re.CharClass, UP_node)
+    if tag == re_e.CharClass:
+        node = cast(re.CharClass, UP_node)
 
-    # HYPHEN CARET RBRACKET BACKSLASH
-    special_char_flags = [0]
-    non_special_parts = []  # type: List[str]
+        # HYPHEN CARET RBRACKET BACKSLASH
+        special_char_flags = [0]
+        non_special_parts = []  # type: List[str]
 
-    for term in node.terms:
-      _CharClassTermToEre(term, non_special_parts, special_char_flags)
+        for term in node.terms:
+            _CharClassTermToEre(term, non_special_parts, special_char_flags)
 
-    parts.append('[')
-    if node.negated:
-      parts.append('^')
+        parts.append('[')
+        if node.negated:
+            parts.append('^')
 
-    # Help the user with some of terrible corner cases
+        # Help the user with some of terrible corner cases
 
-    # - move literal - to end        [ab-] not [a-b]
-    # - move literal ^ to end        [x^-] not [^x-]
-    # - move literal ] to beginning: []x] not [x]]
-    # - double up \\ because of Gawk extension [\\]
+        # - move literal - to end        [ab-] not [a-b]
+        # - move literal ^ to end        [x^-] not [^x-]
+        # - move literal ] to beginning: []x] not [x]]
+        # - double up \\ because of Gawk extension [\\]
 
-    if special_char_flags[0] & FLAG_RBRACKET:
-      parts.append(']')
+        if special_char_flags[0] & FLAG_RBRACKET:
+            parts.append(']')
 
-    parts.extend(non_special_parts)
+        parts.extend(non_special_parts)
 
-    if special_char_flags[0] & FLAG_BACKSLASH:
-      parts.append('\\\\')  # TWO backslashes
+        if special_char_flags[0] & FLAG_BACKSLASH:
+            parts.append('\\\\')  # TWO backslashes
 
-    if special_char_flags[0] & FLAG_CARET:
-      parts.append('^')
+        if special_char_flags[0] & FLAG_CARET:
+            parts.append('^')
 
-    if special_char_flags[0] & FLAG_HYPHEN:
-      parts.append('-')
+        if special_char_flags[0] & FLAG_HYPHEN:
+            parts.append('-')
 
-    parts.append(']')
-    return
+        parts.append(']')
+        return
 
-  raise NotImplementedError(tag)
-
+    raise NotImplementedError(tag)

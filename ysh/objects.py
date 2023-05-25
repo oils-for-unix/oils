@@ -1,6 +1,4 @@
-
-"""
-objects.py
+"""objects.py.
 
 Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
@@ -12,10 +10,10 @@ from ysh import regex_translate
 
 from typing import TYPE_CHECKING, List, Optional
 if TYPE_CHECKING:
-  StrList = List[str]
-  from _devbuild.gen.syntax_asdl import re_t
+    StrList = List[str]
+    from _devbuild.gen.syntax_asdl import re_t
 else:
-  StrList = list
+    StrList = list
 
 _ = log
 
@@ -23,23 +21,22 @@ _ = log
 # TODO: Consolidate with value_t
 # Use value.Obj for now
 class StrArray(StrList):
-  """
-  local oldarray=(a b c)  # only strings, but deprecated
+    """Local oldarray=(a b c)  # only strings, but deprecated.
 
-  var array = @(a b c)  # only strings, PARSED like shell
-  var oilarray = @[a b c]  # can be integers
+    var array = @(a b c)  # only strings, PARSED like shell
+    var oilarray = @[a b c]  # can be integers
 
-  TODO: value.MaybeStrArray should be renamed LooseArray?
-    Because it can have holes!
-    StrNoneArray?  MaybeMaybeStrArray?
+    TODO: value.MaybeStrArray should be renamed LooseArray?
+      Because it can have holes!
+      StrNoneArray?  MaybeMaybeStrArray?
 
-  In C, do both of them have the same physical representation?
-  """
-  pass
+    In C, do both of them have the same physical representation?
+    """
+    pass
 
 
 class Regex(object):
-  """
+    """
   How to use Regex objects:
   
   Match:
@@ -111,36 +108,36 @@ class Regex(object):
        => var new
  
   """
-  def __init__(self, regex):
-    # type: (re_t) -> None
-    self.regex = regex
-    self.as_ere = None # type: Optional[str] # Cache the evaluation
 
-  def __repr__(self):
-    # type: () -> str
+    def __init__(self, regex):
+        # type: (re_t) -> None
+        self.regex = regex
+        self.as_ere = None  # type: Optional[str] # Cache the evaluation
 
-    # for the = operator
-    # = / d+ /
-    f = mylib.BufWriter()
-    f.write(repr(self.AsPosixEre()))
-    f.write('\n')
-    self.regex.PrettyPrint(f=f)
-    return f.getvalue()
+    def __repr__(self):
+        # type: () -> str
 
-  def AsPosixEre(self):
-    # type: () -> str
-    if self.as_ere is None:
-      parts = [] # type: List[str]
-      regex_translate.AsPosixEre(self.regex, parts)
-      self.as_ere = ''.join(parts)
-    return self.as_ere
+        # for the = operator
+        # = / d+ /
+        f = mylib.BufWriter()
+        f.write(repr(self.AsPosixEre()))
+        f.write('\n')
+        self.regex.PrettyPrint(f=f)
+        return f.getvalue()
 
-  def AsPcre(self):
-    # type: () -> None
-    pass
+    def AsPosixEre(self):
+        # type: () -> str
+        if self.as_ere is None:
+            parts = []  # type: List[str]
+            regex_translate.AsPosixEre(self.regex, parts)
+            self.as_ere = ''.join(parts)
+        return self.as_ere
 
-  def AsPythonRe(self):
-    # type: () -> None
-    """Very similar to PCRE, except a few constructs aren't allowed."""
-    pass
+    def AsPcre(self):
+        # type: () -> None
+        pass
 
+    def AsPythonRe(self):
+        # type: () -> None
+        """Very similar to PCRE, except a few constructs aren't allowed."""
+        pass
