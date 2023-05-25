@@ -204,7 +204,7 @@ py2-files-to-format() {
   echo core/process.py
   echo core/ui.py
 
-  for name in asdl/*.py; do
+  for name in asdl/*.py ysh/*.py; do
     echo $name
   done | grep -v 'NINJA_subgraph'  # leave out for now
 }
@@ -214,7 +214,7 @@ run-yapf-2() {
 
   # These files originally had 4 space indentation, but it got inconsistent
   py2-files-to-format \
-    | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 2}'
+    | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
 }
 
 #
