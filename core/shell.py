@@ -734,11 +734,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     arena.PushSource(src)
 
-    # TODO: assert arena.NumSourcePaths() == 1
-    # TODO: .rc file needs its own arena.
-    assert line_reader is not None
-    c_parser = parse_ctx.MakeOshParser(line_reader)
-
     # Calculate ~/.config/oils/oshrc or yshrc.  Used for both -i and --headless
     # We avoid cluttering the user's home directory.  Some users may want to ln
     # -s ~/.config/oils/oshrc ~/oshrc or ~/.oshrc.
@@ -801,6 +796,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         status = mut_status.i
 
         return status
+
+    # Note: headless mode above doesn't use c_parser
+    assert line_reader is not None
+    c_parser = parse_ctx.MakeOshParser(line_reader)
 
     if exec_opts.interactive():
         state.InitInteractive(mem)

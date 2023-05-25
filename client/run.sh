@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./run.sh <function name>
+#   client/run.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -27,9 +27,17 @@ errors() {
   echo status=$?
 }
 
-# Hm this doesn't work that well
+# Hm what is this suppose to do?  It waits for input
 demo-pty() {
   echo mystdin | client/headless_demo.py --to-new-pty
+}
+
+soil-run() {
+  demo
+  echo
+
+  errors
+  echo
 }
 
 
