@@ -189,7 +189,7 @@ run-black() {
 
 
 install-yapf() {
-  pip3 install yapf
+  pip3 install yapf docformatter
 }
 
 run-yapf-3() {
@@ -215,6 +215,9 @@ run-yapf-2() {
   # These files originally had 4 space indentation, but it got inconsistent
   py2-files-to-format \
     | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
+
+  py2-files-to-format \
+    | xargs python3 -m docformatter --in-place
 }
 
 #
