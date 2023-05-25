@@ -539,8 +539,14 @@ def ExecutePrintCandidates(display, sub, matches, max_len):
     display.PrintCandidates(sub, matches, max_len)
 
 
-def InitReadline(readline, hist_file, root_comp, display, debug_f):
-    # type: (Optional[Readline], Optional[str], completion.RootCompleter, _IDisplay, _DebugFile) -> None
+def InitReadline(
+        readline,  # type: Optional[Readline]
+        hist_file,  # type: Optional[str]
+        root_comp,  # type: completion.RootCompleter
+        display,  # type: _IDisplay
+        debug_f,  # type: _DebugFile
+):
+    # type: (...) -> None
     assert readline
 
     if hist_file is not None:

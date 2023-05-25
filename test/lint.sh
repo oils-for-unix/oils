@@ -207,11 +207,11 @@ run-yapf-2() {
   ### Run yapf on Python 2 code
 
   # These files originally had 4 space indentation, but it got inconsistent
-  py2-files-to-format \
-    | xargs python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
+  time py2-files-to-format \
+    | xargs --verbose -- python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
 
-  py2-files-to-format \
-    | xargs python3 -m docformatter --in-place
+  time py2-files-to-format \
+    | xargs --verbose -- python3 -m docformatter --in-place
 }
 
 #
