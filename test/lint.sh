@@ -198,13 +198,7 @@ run-yapf-3() {
 }
 
 py2-files-to-format() {
-  ### Just print ASDL files for now
-
-  # Recently modified
-  echo core/process.py
-  echo core/ui.py
-
-  for name in asdl/*.py ysh/*.py; do
+  for name in asdl/*.py core/*.py ysh/*.py; do
     echo $name
   done | grep -v 'NINJA_subgraph'  # leave out for now
 }

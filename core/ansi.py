@@ -1,6 +1,4 @@
-"""
-ansi.py
-"""
+"""ansi.py."""
 from __future__ import print_function
 
 RESET = '\x1b[0;0m'
