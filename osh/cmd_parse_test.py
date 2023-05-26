@@ -619,6 +619,17 @@ case (x) {
     self.assertEqual(1, len(node.arms))
     self.assertEqual(Pat_e.Else, node.arms[0].pattern.tag())
 
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+  (2) | (3) { echo hi; }
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(1, len(node.arms))
+    pattern = node.arms[0].pattern
+    self.assertEqual(Pat_e.YshExprs, pattern.tag())
+    self.assertEqual(2, len(pattern.e))
+
   def testParseWhile(self):
     node = assert_ParseCommandList(self, """\
 while true; do
