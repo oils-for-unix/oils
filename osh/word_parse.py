@@ -1778,6 +1778,20 @@ class WordParser(WordEmitter):
       id_ = self.cur_token.id
     return id_
 
+  def LookYshCase(self):
+    # type: () -> Id_t
+    """
+    """
+    assert self.token_type != Id.Undefined_Tok
+
+    id_ = self.lexer.LookAheadOne(lex_mode_e.Expr)
+
+    #if self.cur_token.id == Id.WS_Space:
+    #  id_ = self.lexer.LookPastSpace(lex_mode_e.Expr)
+    #else:
+    #  id_ = self.cur_token.id
+    return id_
+
   def LookAheadFuncParens(self):
     # type: () -> bool
     """Special lookahead for f( ) { echo hi; } to check for ( )

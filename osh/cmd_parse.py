@@ -10,7 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Kind_str
+from _devbuild.gen.id_kind_asdl import Id, Id_str, Id_t, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     loc, SourceLine, source,
@@ -590,7 +590,7 @@ class CommandParser(object):
     self._Peek()
     if self.c_id == Id.Op_Newline:
       self._Next()
-      self._Peek()
+      self._Peek()  # This is calling ReadWord()
 
   def _AtSecondaryKeyword(self):
     # type: () -> bool
@@ -1435,7 +1435,7 @@ class CommandParser(object):
 
     self._NewlineOk()
     action = self.ParseBraceGroup()
-    self._NewlineOk()
+    #self._NewlineOk()  # 
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
@@ -1453,16 +1453,47 @@ class CommandParser(object):
     ate = self._Eat(Id.Lit_LBrace)
     arms_start = word_.BraceToken(ate)
 
-    self._NewlineOk()
+    # TODO: Change stratgies
+    #self._NewlineOk()
 
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
     while True:
-      self._Peek()
-      if self.c_id == Id.Lit_RBrace:
+      print('====')
+      print('')
+      print('AFTER peek %s' % Id_str(self.c_id))
+      print('WordParser.cur_token %s' % self.w_parser.cur_token)
+
+      # four way decision
+      #x = self.w_parser.DetectYshCasePattern()
+      x = self.w_parser.LookYshCase()
+      print('LookYshCase  %s' % Id_str(x))
+      print('')
+
+      #x = self.lexer.LookAheadOne(lex_mode_e.Expr)
+
+      #which_matcher = FourWayDecision()
+
+      #if which == Id.Expr_Slash:
+      #if which == Id.Op_LParen:
+      #if which == Id.Op_RBrace:
+      #  else:
+      self._Peek()  # ReadWord
+
+      #print('AFTER peek %s' % Id_str(self.c_id))
+      #print('WordParser.cur_token %s' % self.w_parser.cur_token)
+
+      # 4 way decision
+      # WORD
+      # (
+      # /
+      # }
+
+      if self.c_id == Id.Lit_RBrace:  # is this part of the 4 way decision?
         break
 
       arm = self.ParseYshCaseArm()
+      print(arm.pat_list)
       arms.append(arm)
 
     ate = self._Eat(Id.Lit_RBrace)
