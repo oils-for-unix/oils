@@ -1421,28 +1421,29 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.Op_LParen:
-      # must be a pat_exprs
-      while True:
-        self._Eat(Id.Op_LParen)
+      # either a pat_exprs or a pat_else
+      peek = self.lexer.LookAheadOne(lex_mode_e.ShCommand)
+      if peek == Id.KW_Else:
+        # we have a pat_else
+        self._Next()
+        self._Eat(Id.KW_Else)
+        self._Eat(Id.Op_RParen)
+        pattern = pat.Else
+      else:
+        while True:
+          self._Eat(Id.Op_LParen)
 
-        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.expr_pat)
-        pattern = pat.YshExprs([enode])
+          enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.expr_pat)
+          pattern = pat.YshExprs([enode])
 
-        self._NewlineOk()
-
-        self._Peek()
-        if self.c_id == Id.Op_Pipe:
-          self._Next()
           self._NewlineOk()
-        else:
-          break
 
-    # TODO: figure out how to parse '(else)'
-    #       ...or fold and use `else { ... }` instead
-    elif self.c_id == Id.KW_Else:
-      # we have a pat_else
-      self._Next()
-      pattern = pat.Else
+          self._Peek()
+          if self.c_id == Id.Op_Pipe:
+            self._Next()
+            self._NewlineOk()
+          else:
+            break
 
     # TODO: clean this up...
     elif self.c_id == Id.Word_Compound and cast(Token, cast(CompoundWord, self.cur_word).parts[0]).tval == '/':

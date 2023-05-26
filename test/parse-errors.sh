@@ -1207,7 +1207,7 @@ ysh_case() {
   _ysh-should-parse '
   case (add(10, 32)) {
     (40 + 2) { echo Found the answer }
-    else { echo Incorrect
+    (else) { echo Incorrect
     }
   }
   '
@@ -1235,7 +1235,7 @@ ysh_case() {
     fr-CA {
       echo Bonjour
     }
-    else {
+    (else) {
       echo o/
     }
   }
@@ -1247,7 +1247,7 @@ ysh_case() {
       echo small
     }
 
-    else {
+    (else) {
       echo large
     }
   }
@@ -1258,7 +1258,7 @@ ysh_case() {
   case
   (add(10, 32)) {
       (40 + 2) { echo Found the answer }
-      else { echo Incorrect }
+      (else) { echo Incorrect }
   }
   '
   _ysh-parse-error "
@@ -1306,7 +1306,7 @@ ysh_case() {
       echo small
     }
 
-    (6) | else {
+    (6) | (else) {
       echo large
     }
   }
