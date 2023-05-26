@@ -1343,47 +1343,6 @@ class CommandParser(object):
     # no redirects yet
     return command.WhileUntil(keyword, cond, body_node, None)
 
-  def _ParsePatWords(self, relaxed_newlines):
-    # type: (bool) -> List[word_t]
-    """
-    pat_words   : pat_word (newline_ok '|' newline_ok pat_word)*
-    pat_word    : WORD
-
-    If `relaxed_newlines` is set to False, no newlines are allowed in the
-    pattern to support the POSIX case grammar.
-
-    For example, the following is *only* valid with `relaxed_newlines = True`:
-      case (x) {
-        a |
-        b |
-        c {
-          ...
-        }
-      }
-
-    Looking at: the first WORD
-    """
-    pat_words = []  # type: List[word_t]
-    while True:
-      self._Peek()
-      if self.c_kind != Kind.Word:
-        p_die('Expected case pattern', loc.Word(self.cur_word))
-      pat_words.append(self.cur_word)
-      self._Next()
-
-      if relaxed_newlines:
-        self._NewlineOk()
-
-      self._Peek()
-      if self.c_id == Id.Op_Pipe:
-        self._Next()
-        if relaxed_newlines:
-          self._NewlineOk()
-      else:
-        break
-
-    return pat_words
-
   def ParseCaseArm(self):
     # type: () -> CaseArm
     """
@@ -1399,7 +1358,19 @@ class CommandParser(object):
     if self.c_id == Id.Op_LParen:  # Optional (
       self._Next()
 
-    pat_words = self._ParsePatWords(False)
+    pat_words = []  # type: List[word_t]
+    while True:
+      self._Peek()
+      if self.c_kind != Kind.Word:
+        p_die('Expected case pattern', loc.Word(self.cur_word))
+      pat_words.append(self.cur_word)
+      self._Next()
+
+      self._Peek()
+      if self.c_id == Id.Op_Pipe:
+        self._Next()
+      else:
+        break
 
     ate = self._Eat(Id.Right_CasePat)
     middle_tok = word_.AsOperatorToken(ate)
@@ -1482,7 +1453,22 @@ class CommandParser(object):
 
     else:
       # pat_words
-      pat_words = self._ParsePatWords(True)
+      pat_words = []  # type: List[word_t]
+      while True:
+        self._Peek()
+        if self.c_kind != Kind.Word:
+          p_die('Expected case pattern', loc.Word(self.cur_word))
+        pat_words.append(self.cur_word)
+        self._Next()
+
+        self._NewlineOk()
+
+        self._Peek()
+        if self.c_id == Id.Op_Pipe:
+          self._Next()
+          self._NewlineOk()
+        else:
+          break
       pattern = pat.Words(pat_words)
 
     self._NewlineOk()
