@@ -268,7 +268,7 @@ module syntax
   # For YSH typed case, left can be ( and /
   # And case_pat may contain more details
   CaseArm = (
-      Token left, pat pattern, Token middle, List[command] action,
+      Token left, Pat pattern, Token middle, List[command] action,
       Token? right
   )
 
@@ -279,7 +279,7 @@ module syntax
     Word(word w)
   | YshExpr(expr e)
 
-  pat =
+  Pat =
     Else
   | Words(List[word] w)
   | YshExprs(List[expr] e)

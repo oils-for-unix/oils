@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter,
     ArgList, BraceGroup, BlockArg,
     CaseArm, case_arg, IfArm,
-    pat, pat_t, pat_e,
+    Pat, Pat_t,
 
     Redir, redir_param,
     redir_loc, redir_loc_t,
@@ -1396,7 +1396,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    return CaseArm(left_tok, pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
+    return CaseArm(left_tok, Pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self):
     # type: () -> CaseArm
@@ -1417,7 +1417,7 @@ class CommandParser(object):
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
-    pattern = None  # type: pat_t
+    pattern = None  # type: Pat_t
 
     self._Peek()
     if self.c_id == Id.Op_LParen:
@@ -1428,13 +1428,13 @@ class CommandParser(object):
         self._Next()
         self._Eat(Id.KW_Else)
         self._Eat(Id.Op_RParen)
-        pattern = pat.Else
+        pattern = Pat.Else
       else:
         while True:
           self._Eat(Id.Op_LParen)
 
           enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.expr_pat)
-          pattern = pat.YshExprs([enode])
+          pattern = Pat.YshExprs([enode])
 
           self._NewlineOk()
 
@@ -1450,7 +1450,7 @@ class CommandParser(object):
       # pat_eggex
       self._Next()
       enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.regex_pat)
-      pattern = pat.YshExprs([enode]) # TODO: Should we have a seperate `pat` variant for eggexs?
+      pattern = Pat.YshExprs([enode]) # TODO: Should we have a seperate `Pat` variant for eggexs?
 
     else:
       # pat_words
@@ -1470,7 +1470,7 @@ class CommandParser(object):
           self._NewlineOk()
         else:
           break
-      pattern = pat.Words(pat_words)
+      pattern = Pat.Words(pat_words)
 
     self._NewlineOk()
     action = self.ParseBraceGroup()
