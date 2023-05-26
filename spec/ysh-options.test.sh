@@ -541,14 +541,18 @@ echo $foo   # bad split then join
 shopt -s simple_echo
 echo
 echo "$foo"  # good
-echo -e "$foo"  # still good
 echo $foo
-## status: 2
+
+echo -e "$foo"  # -e isn't special!
+echo -n "$foo"  # -n isn't special!
+
 ## STDOUT:
 one two
 
 one   two
-one   two
+one two
+-e one   two
+-n one   two
 ## END
 
 #### shopt -s dashglob

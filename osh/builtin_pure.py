@@ -16,7 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_e, value, value_e
+from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value_t
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.syntax_asdl import loc
 
@@ -481,32 +481,37 @@ class GetOpts(vm._Builtin):
 class Echo(vm._Builtin):
   """echo builtin.
 
-  shopt -s simple-echo:
-    -sep ''
-    -end '\n'
-    -n is a synonym for -end ''
-    -e deprecated
-    -- is accepted
-
-  Issues:
-  - How does this affect completion?
-
-  NOTE: Python's getopt and optparse are both unsuitable for 'echo' because:
-  - 'echo -c' should print '-c', not fail
-  - echo '---' should print ---, not fail
+  shopt -s simple_echo disables -e and -n.
   """
   def __init__(self, exec_opts):
     # type: (optview.Exec) -> None
     self.exec_opts = exec_opts
     self.f = mylib.Stdout()
 
+    # Reuse this constant instance
+    self.simple_flag = None  # type: arg_types.echo
+
+  def _SimpleFlag(self):
+    # type: () -> arg_types.echo
+    """For arg.e and arg.n without parsing."""
+    if self.simple_flag is None:
+      attrs = {}  # type: Dict[str, value_t]
+      attrs['e'] = value.Bool(False)
+      attrs['n'] = value.Bool(False)
+      self.simple_flag = arg_types.echo(attrs)
+    return self.simple_flag
+
   def Run(self, cmd_val):
     # type: (cmd_value.Argv) -> int
     argv = cmd_val.argv[1:]
-    attrs, arg_r = flag_spec.ParseLikeEcho('echo', cmd_val)
 
-    arg = arg_types.echo(attrs.attrs)
-    argv = arg_r.Rest()
+    if self.exec_opts.simple_echo():
+      # Avoid parsing -e -n
+      arg = self._SimpleFlag()
+    else:
+      attrs, arg_r = flag_spec.ParseLikeEcho('echo', cmd_val)
+      arg = arg_types.echo(attrs.attrs)
+      argv = arg_r.Rest()
 
     backslash_c = False  # \c terminates input
 
@@ -516,13 +521,13 @@ class Echo(vm._Builtin):
         parts = []  # type: List[str]
         lex = match.EchoLexer(a)
         while not backslash_c:
-          id_, value = lex.Next()
+          id_, s = lex.Next()
           if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
             break
 
           # Note: DummyToken is OK because EvalCStringToken() doesn't have any
           # syntax errors.
-          tok = lexer.DummyToken(id_, value)
+          tok = lexer.DummyToken(id_, s)
           p = word_compile.EvalCStringToken(tok)
 
           # Unusual behavior: '\c' prints what is there and aborts processing!
@@ -539,22 +544,11 @@ class Echo(vm._Builtin):
       # Replace it
       argv = new_argv
 
-    if self.exec_opts.simple_echo():
-      n = len(argv)
-      if n == 0:
-        pass
-      elif n == 1:
-        self.f.write(argv[0])
-      else:
-        # TODO: location info
-        e_usage(
-            "takes at most one arg when simple_echo is on (hint: add quotes)", loc.Missing)
-    else:
-      #log('echo argv %s', argv)
-      for i, a in enumerate(argv):
-        if i != 0:
-          self.f.write(' ')  # arg separator
-        self.f.write(a)
+    #log('echo argv %s', argv)
+    for i, a in enumerate(argv):
+      if i != 0:
+        self.f.write(' ')  # arg separator
+      self.f.write(a)
 
     if not arg.n and not backslash_c:
       self.f.write('\n')
