@@ -6,7 +6,7 @@ cmd_parse_test.py: Tests for cmd_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import command_e, for_iter_e
+from _devbuild.gen.syntax_asdl import command_e, for_iter_e, Pat_e
 from core import error
 from core import test_lib
 from core import ui
@@ -609,6 +609,15 @@ case (x) {
 """)
     self.assertEqual(command_e.Case, node.tag())
     self.assertEqual(0, len(node.arms))
+
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+  (else) { echo hi; }
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(1, len(node.arms))
+    self.assertEqual(Pat_e.Else, node.arms[0].pattern.tag())
 
   def testParseWhile(self):
     node = assert_ParseCommandList(self, """\
