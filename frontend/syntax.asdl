@@ -283,6 +283,7 @@ module syntax
     Else
   | Words(List[word] w)
   | YshExprs(List[expr] e)
+  | Eggex(re r)
 
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})

@@ -643,6 +643,21 @@ case (x) {
     self.assertEqual(Pat_e.Words, pattern.tag())
     self.assertEqual(3, len(pattern.w))
 
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+  / d+ / { echo space; }
+  /d+/   { echo space2; }
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(2, len(node.arms))
+
+    pattern0 = node.arms[0].pattern
+    self.assertEqual(Pat_e.Eggex, pattern0.tag())
+
+    pattern1 = node.arms[1].pattern
+    self.assertEqual(Pat_e.Eggex, pattern1.tag())
+
   def testParseWhile(self):
     node = assert_ParseCommandList(self, """\
 while true; do
