@@ -5,9 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-"""
-util_test.py: Tests for util.py
-"""
+"""util_test.py: Tests for util.py."""
 
 import unittest
 
@@ -16,10 +14,10 @@ from core import util  # module under test
 
 class UtilTest(unittest.TestCase):
 
-  def testDebugFile(self):
-    n = util.NullDebugFile()
-    n.write('foo')
+    def testDebugFile(self):
+        n = util.NullDebugFile()
+        n.write('foo')
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

@@ -1,8 +1,5 @@
 #!/usr/bin/env python2
-"""
-optview_gen.py
-
-"""
+"""optview_gen.py."""
 from __future__ import print_function
 
 import sys
@@ -12,14 +9,14 @@ from frontend import option_def
 
 
 def GenMethods(opt_names, f):
-  for n in opt_names:
-    f.write('  bool %s() { return _Get(option_i::%s); }\n' % (n, n))
+    for n in opt_names:
+        f.write('  bool %s() { return _Get(option_i::%s); }\n' % (n, n))
 
 
 def main(argv):
-  f = sys.stdout
+    f = sys.stdout
 
-  f.write("""\
+    f.write("""\
 #ifndef OPTVIEW_H
 #define OPTVIEW_H
 
@@ -66,9 +63,9 @@ class Parse : public _View {
   }
 """)
 
-  GenMethods(option_def.ParseOptNames(), f)
+    GenMethods(option_def.ParseOptNames(), f)
 
-  f.write("""\
+    f.write("""\
 };
 
 class Exec : public _View {
@@ -78,9 +75,9 @@ class Exec : public _View {
   }
 """)
 
-  GenMethods(option_def.ExecOptNames(), f)
+    GenMethods(option_def.ExecOptNames(), f)
 
-  f.write("""\
+    f.write("""\
 };
 
 }  // namespace optview
@@ -90,8 +87,8 @@ class Exec : public _View {
 
 
 if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+    try:
+        main(sys.argv)
+    except RuntimeError as e:
+        print('FATAL: %s' % e, file=sys.stderr)
+        sys.exit(1)

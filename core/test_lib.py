@@ -48,302 +48,315 @@ from mycpp import mylib
 
 
 def MakeBuiltinArgv(argv):
-  return cmd_value.Argv(argv, [loc.Missing] * len(argv), None)
+    return cmd_value.Argv(argv, [loc.Missing] * len(argv), None)
 
 
 def Tok(id_, val):
-  # TODO: Tests could use this directly
-  return lexer.DummyToken(id_, val)
+    # TODO: Tests could use this directly
+    return lexer.DummyToken(id_, val)
 
 
 def PrintableString(s):
-  """For pretty-printing in tests."""
-  if all(c in string.printable for c in s):
-    return s
-  return repr(s)
+    """For pretty-printing in tests."""
+    if all(c in string.printable for c in s):
+        return s
+    return repr(s)
 
 
 def TokensEqual(left, right):
-  # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
-  return left.id == right.id and left.tval == right.tval
-  #return left == right
+    # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
+    return left.id == right.id and left.tval == right.tval
+    #return left == right
 
 
 def TokenWordsEqual(left, right):
-  # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
-  return TokensEqual(left.token, right.token)
-  #return left == right
+    # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
+    return TokensEqual(left.token, right.token)
+    #return left == right
 
 
 def AsdlEqual(left, right):
-  """Check if generated ASDL instances are equal.
+    """Check if generated ASDL instances are equal.
 
-  We don't use equality in the actual code, so this is relegated to test_lib.
-  """
-  if left is None and right is None:
-    return True
+    We don't use equality in the actual code, so this is relegated to
+    test_lib.
+    """
+    if left is None and right is None:
+        return True
 
-  if isinstance(left, (int, str, bool, pybase.SimpleObj)):
-    return left == right
+    if isinstance(left, (int, str, bool, pybase.SimpleObj)):
+        return left == right
 
-  if isinstance(left, list):
-    if len(left) != len(right):
-      return False
-    for a, b in zip(left, right):
-      if not AsdlEqual(a, b):
-        return False
-    return True
+    if isinstance(left, list):
+        if len(left) != len(right):
+            return False
+        for a, b in zip(left, right):
+            if not AsdlEqual(a, b):
+                return False
+        return True
 
-  if isinstance(left, pybase.CompoundObj):
-    if left.tag() != right.tag():
-      return False
+    if isinstance(left, pybase.CompoundObj):
+        if left.tag() != right.tag():
+            return False
 
-    field_names = left.__slots__  # hack for now
-    for name in field_names:
-      # Special case: we are not testing locations right now.
-      if name == 'span_id':
-        continue
-      a = getattr(left, name)
-      b = getattr(right, name)
-      if not AsdlEqual(a, b):
-        return False
+        field_names = left.__slots__  # hack for now
+        for name in field_names:
+            # Special case: we are not testing locations right now.
+            if name == 'span_id':
+                continue
+            a = getattr(left, name)
+            b = getattr(right, name)
+            if not AsdlEqual(a, b):
+                return False
 
-    return True
+        return True
 
-  raise AssertionError(left)
+    raise AssertionError(left)
 
 
 def AssertAsdlEqual(test, left, right):
-  test.assertTrue(AsdlEqual(left, right), 'Expected %s, got %s' % (left, right))
+    test.assertTrue(AsdlEqual(left, right),
+                    'Expected %s, got %s' % (left, right))
 
 
 def MakeArena(source_name):
-  arena = alloc.Arena(save_tokens=True)
-  arena.PushSource(source.MainFile(source_name))
-  return arena
+    arena = alloc.Arena(save_tokens=True)
+    arena.PushSource(source.MainFile(source_name))
+    return arena
 
 
 def InitLineLexer(s, arena):
-  line_lexer = lexer.LineLexer(arena)
-  src = source.Interactive
-  line_lexer.Reset(SourceLine(1, s, src), 0)
-  return line_lexer
+    line_lexer = lexer.LineLexer(arena)
+    src = source.Interactive
+    line_lexer.Reset(SourceLine(1, s, src), 0)
+    return line_lexer
 
 
 def InitLexer(s, arena):
-  """For tests only."""
-  line_lexer = lexer.LineLexer(arena)
-  line_reader = reader.StringLineReader(s, arena)
-  lx = lexer.Lexer(line_lexer, line_reader)
-  return line_reader, lx
+    """For tests only."""
+    line_lexer = lexer.LineLexer(arena)
+    line_reader = reader.StringLineReader(s, arena)
+    lx = lexer.Lexer(line_lexer, line_reader)
+    return line_reader, lx
 
 
 def InitWordEvaluator(exec_opts=None):
-  arena = MakeArena('<InitWordEvaluator>')
-  mem = state.Mem('', [], arena, [])
+    arena = MakeArena('<InitWordEvaluator>')
+    mem = state.Mem('', [], arena, [])
 
-  if exec_opts is None:
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
-    mem.exec_opts = exec_opts  # circular dep
+    if exec_opts is None:
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+        mem.exec_opts = exec_opts  # circular dep
+        state.InitMem(mem, {}, '0.1')
+        mutable_opts.Init()
+    else:
+        mutable_opts = None
+
+    cmd_deps = cmd_eval.Deps()
+    cmd_deps.trap_nodes = []
+
+    splitter = split.SplitContext(mem)
+    errfmt = ui.ErrorFormatter()
+
+    tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
+    ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                           tilde_ev, splitter, errfmt)
+    return ev
+
+
+def InitCommandEvaluator(parse_ctx=None,
+                         comp_lookup=None,
+                         arena=None,
+                         mem=None,
+                         aliases=None,
+                         ext_prog=None):
+
+    opt0_array = state.InitOpts()
+    opt_stacks = [None] * option_i.ARRAY_SIZE
+    if parse_ctx:
+        arena = parse_ctx.arena
+        parse_opts = parse_ctx.parse_opts
+    else:
+        parse_ctx = InitParseContext()
+
+    mem = mem or state.Mem('', [], arena, [])
+    exec_opts = optview.Exec(opt0_array, opt_stacks)
+    mutable_opts = state.MutableOpts(mem, opt0_array, opt_stacks, None)
+    mem.exec_opts = exec_opts
     state.InitMem(mem, {}, '0.1')
     mutable_opts.Init()
-  else:
-    mutable_opts = None
 
-  cmd_deps = cmd_eval.Deps()
-  cmd_deps.trap_nodes = []
+    # No 'readline' in the tests.
 
-  splitter = split.SplitContext(mem)
-  errfmt = ui.ErrorFormatter()
+    errfmt = ui.ErrorFormatter()
+    job_control = process.JobControl()
+    job_list = process.JobList()
+    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
+    aliases = {} if aliases is None else aliases
+    procs = {}
 
-  tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                         tilde_ev, splitter, errfmt)
-  return ev
+    compopt_state = completion.OptionState()
+    comp_lookup = comp_lookup or completion.Lookup()
 
+    readline = None  # simulate not having it
 
-def InitCommandEvaluator(
-    parse_ctx=None, comp_lookup=None, arena=None, mem=None, aliases=None,
-    ext_prog=None):
+    new_var = builtin_assign.NewVar(mem, procs, errfmt)
+    assign_builtins = {
+        builtin_i.declare: new_var,
+        builtin_i.typeset: new_var,
+        builtin_i.local: new_var,
+        builtin_i.export_: builtin_assign.Export(mem, errfmt),
+        builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+    }
+    builtins = {  # Lookup
+        builtin_i.echo: builtin_pure.Echo(exec_opts),
+        builtin_i.shift: builtin_assign.Shift(mem),
 
-  opt0_array = state.InitOpts()
-  opt_stacks = [None] * option_i.ARRAY_SIZE
-  if parse_ctx:
-    arena = parse_ctx.arena
-    parse_opts = parse_ctx.parse_opts
-  else:
-    parse_ctx = InitParseContext()
+        builtin_i.history: builtin_lib.History(
+          readline,
+          mem,
+          errfmt,
+          mylib.Stdout(),
+        ),
 
-  mem = mem or state.Mem('', [], arena, [])
-  exec_opts = optview.Exec(opt0_array, opt_stacks)
-  mutable_opts = state.MutableOpts(mem, opt0_array, opt_stacks, None)
-  mem.exec_opts = exec_opts
-  state.InitMem(mem, {}, '0.1')
-  mutable_opts.Init()
+        builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
+        builtin_i.compadjust: builtin_comp.CompAdjust(mem),
 
-  # No 'readline' in the tests.
+        builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
+        builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
+    }
 
-  errfmt = ui.ErrorFormatter()
-  job_control = process.JobControl()
-  job_list = process.JobList()
-  fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
-  aliases = {} if aliases is None else aliases
-  procs = {}
+    debug_f = util.DebugFile(sys.stderr)
+    cmd_deps = cmd_eval.Deps()
+    cmd_deps.mutable_opts = mutable_opts
 
-  compopt_state = completion.OptionState()
-  comp_lookup = comp_lookup or completion.Lookup()
+    search_path = state.SearchPath(mem)
 
-  readline = None  # simulate not having it
+    ext_prog = \
+        ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
 
-  new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  assign_builtins = {
-      builtin_i.declare: new_var,
-      builtin_i.typeset: new_var,
-      builtin_i.local: new_var,
+    cmd_deps.dumper = dev.CrashDumper('')
+    cmd_deps.debug_f = debug_f
 
-      builtin_i.export_: builtin_assign.Export(mem, errfmt),
-      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
-  }
-  builtins = {  # Lookup
-      builtin_i.echo: builtin_pure.Echo(exec_opts),
-      builtin_i.shift: builtin_assign.Shift(mem),
+    splitter = split.SplitContext(mem)
 
-      builtin_i.history: builtin_lib.History(
-        readline,
-        mem,
-        errfmt,
-        mylib.Stdout(),
-      ),
+    arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
+                                           parse_ctx, errfmt)
+    bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
+                                         parse_ctx, errfmt)
+    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
+    tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
+    word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
+                                            tilde_ev, splitter, errfmt)
+    signal_safe = pyos.InitSignalSafe()
+    trap_state = builtin_trap.TrapState(signal_safe)
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+                                       assign_builtins, arena, cmd_deps,
+                                       trap_state, signal_safe)
 
-      builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
-      builtin_i.compadjust: builtin_comp.CompAdjust(mem),
+    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
+    waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
 
-      builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
-      builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
-  }
+    hay_state = state.Hay()
+    shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
+                                      hay_state, builtins, search_path,
+                                      ext_prog, waiter, tracer, job_control,
+                                      job_list, fd_state, trap_state, errfmt)
 
-  debug_f = util.DebugFile(sys.stderr)
-  cmd_deps = cmd_eval.Deps()
-  cmd_deps.mutable_opts = mutable_opts
+    assert cmd_ev.mutable_opts is not None, cmd_ev
+    prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
 
-  search_path = state.SearchPath(mem)
+    vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
+                        prompt_ev, tracer)
 
-  ext_prog = \
-      ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
+    spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
+                                            splitter, comp_lookup, errfmt)
+    # Add some builtins that depend on the executor!
+    complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
+    builtins[builtin_i.complete] = complete_builtin
+    builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
 
-  cmd_deps.dumper = dev.CrashDumper('')
-  cmd_deps.debug_f = debug_f
-
-  splitter = split.SplitContext(mem)
-
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
-  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts, parse_ctx, errfmt)
-  expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
-  tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
-                                          tilde_ev, splitter, errfmt)
-  signal_safe = pyos.InitSignalSafe()
-  trap_state = builtin_trap.TrapState(signal_safe)
-  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_builtins, arena, cmd_deps,
-                                     trap_state, signal_safe)
-
-  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
-  waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
-
-  hay_state = state.Hay()
-  shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, hay_state, builtins, search_path,
-      ext_prog, waiter, tracer, job_control, job_list, fd_state, trap_state,
-      errfmt)
-
-  assert cmd_ev.mutable_opts is not None, cmd_ev
-  prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
-
-  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                      prompt_ev, tracer)
-
-  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
-                                          comp_lookup, errfmt)
-  # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
-  builtins[builtin_i.complete] = complete_builtin
-  builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
-
-  return cmd_ev
+    return cmd_ev
 
 
 def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
-  """
-  Unit tests can evaluate code strings and then use the resulting
-  CommandEvaluator.
-  """
-  arena = parse_ctx.arena
-  errfmt = ui.ErrorFormatter()
+    """Unit tests can evaluate code strings and then use the resulting
+    CommandEvaluator."""
+    arena = parse_ctx.arena
+    errfmt = ui.ErrorFormatter()
 
-  comp_lookup = comp_lookup or completion.Lookup()
-  mem = mem or state.Mem('', [], arena, [])
-  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
-  mem.exec_opts = exec_opts
-
-  state.InitMem(mem, {}, '0.1')
-  mutable_opts.Init()
-
-  line_reader, _ = InitLexer(code_str, arena)
-  c_parser = parse_ctx.MakeOshParser(line_reader)
-
-  cmd_ev = InitCommandEvaluator(parse_ctx=parse_ctx, comp_lookup=comp_lookup,
-                                arena=arena, mem=mem, aliases=aliases)
-
-  main_loop.Batch(cmd_ev, c_parser, errfmt)  # Parse and execute!
-  return cmd_ev
-
-
-def InitParseContext(arena=None, oil_grammar=None, aliases=None,
-                     parse_opts=None, one_pass_parse=False):
-  arena = arena or MakeArena('<test_lib>')
-
-  if aliases is None:
-    aliases = {}
-
-  mem = state.Mem('', [], arena, [])
-  if parse_opts is None:
+    comp_lookup = comp_lookup or completion.Lookup()
+    mem = mem or state.Mem('', [], arena, [])
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem.exec_opts = exec_opts
 
-  parse_ctx = parse_lib.ParseContext(
-      arena, parse_opts, aliases, oil_grammar, one_pass_parse=one_pass_parse)
+    state.InitMem(mem, {}, '0.1')
+    mutable_opts.Init()
 
-  return parse_ctx
+    line_reader, _ = InitLexer(code_str, arena)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
+
+    cmd_ev = InitCommandEvaluator(parse_ctx=parse_ctx,
+                                  comp_lookup=comp_lookup,
+                                  arena=arena,
+                                  mem=mem,
+                                  aliases=aliases)
+
+    main_loop.Batch(cmd_ev, c_parser, errfmt)  # Parse and execute!
+    return cmd_ev
+
+
+def InitParseContext(arena=None,
+                     oil_grammar=None,
+                     aliases=None,
+                     parse_opts=None,
+                     one_pass_parse=False):
+    arena = arena or MakeArena('<test_lib>')
+
+    if aliases is None:
+        aliases = {}
+
+    mem = state.Mem('', [], arena, [])
+    if parse_opts is None:
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+
+    parse_ctx = parse_lib.ParseContext(arena,
+                                       parse_opts,
+                                       aliases,
+                                       oil_grammar,
+                                       one_pass_parse=one_pass_parse)
+
+    return parse_ctx
 
 
 def InitWordParser(word_str, oil_at=False, arena=None):
-  arena = arena or MakeArena('<test_lib>')
+    arena = arena or MakeArena('<test_lib>')
 
-  mem = state.Mem('', [], arena, [])
-  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem = state.Mem('', [], arena, [])
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
 
-  # CUSTOM SETTING
-  mutable_opts.opt0_array[option_i.parse_at] = oil_at
+    # CUSTOM SETTING
+    mutable_opts.opt0_array[option_i.parse_at] = oil_at
 
-  loader = pyutil.GetResourceLoader()
-  oil_grammar = pyutil.LoadOilGrammar(loader)
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
-  line_reader, _ = InitLexer(word_str, arena)
-  c_parser = parse_ctx.MakeOshParser(line_reader)
-  # Hack
-  return c_parser.w_parser
+    loader = pyutil.GetResourceLoader()
+    oil_grammar = pyutil.LoadOilGrammar(loader)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
+    line_reader, _ = InitLexer(word_str, arena)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
+    # Hack
+    return c_parser.w_parser
 
 
 def InitCommandParser(code_str, arena=None):
-  arena = arena or MakeArena('<test_lib>')
-  parse_ctx = InitParseContext(arena=arena)
-  line_reader, _ = InitLexer(code_str, arena)
-  c_parser = parse_ctx.MakeOshParser(line_reader)
-  return c_parser
+    arena = arena or MakeArena('<test_lib>')
+    parse_ctx = InitParseContext(arena=arena)
+    line_reader, _ = InitLexer(code_str, arena)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
+    return c_parser
 
 
 def SetLocalString(mem, name, s):
-  # type: (state.Mem, str, str) -> None
-  """Bind a local string."""
-  assert isinstance(s, str)
-  mem.SetValue(location.LName(name), value.Str(s), scope_e.LocalOnly)
+    # type: (state.Mem, str, str) -> None
+    """Bind a local string."""
+    assert isinstance(s, str)
+    mem.SetValue(location.LName(name), value.Str(s), scope_e.LocalOnly)

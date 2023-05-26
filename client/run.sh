@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./run.sh <function name>
+#   client/run.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-demo() {
-  echo mystdin | client/headless_demo.py
+source build/dev-shell.sh  # python3
+source devtools/run-task.sh
+
+py-demo() {
+  echo mystdin | client/headless_demo.py --sh-binary bin/osh
+}
+
+cpp-demo() {
+  local bin=_bin/cxx-dbg/osh
+  ninja $bin
+  echo mystdin | client/headless_demo.py --sh-binary $bin
 }
 
 errors() {
@@ -27,10 +36,25 @@ errors() {
   echo status=$?
 }
 
-# Hm this doesn't work that well
+# Hm what is this suppose to do?  It waits for input
 demo-pty() {
   echo mystdin | client/headless_demo.py --to-new-pty
 }
 
+soil-run-py() {
+  py-demo
+  echo
 
-"$@"
+  errors
+  echo
+}
+
+soil-run-cpp() {
+  which python3
+  echo
+
+  cpp-demo
+}
+
+
+run-task "$@"

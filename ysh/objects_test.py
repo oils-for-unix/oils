@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
-"""
-objects_test.py: Tests for objects.py
-"""
+"""objects_test.py: Tests for objects.py."""
 from __future__ import print_function
 
 import unittest
@@ -11,9 +9,9 @@ from ysh import objects  # module under test
 
 class ObjectsTest(unittest.TestCase):
 
-  def testRegex(self):
-    a = objects.Regex(None)
+    def testRegex(self):
+        a = objects.Regex(None)
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

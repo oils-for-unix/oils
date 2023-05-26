@@ -1,5 +1,4 @@
-"""
-runtime.py
+"""runtime.py.
 
 - Base classes for generated code
 - Nodes for pretty printing
@@ -15,25 +14,25 @@ NO_SPID = -1
 
 
 def NewRecord(node_type):
-  # type: (str) -> hnode.Record
-  return hnode.Record(
-      node_type,
-      [],  # fields
-      False,
-      '(',
-      ')',  # abbrev, left, right
-      []  # unnamed fields
-  )
+    # type: (str) -> hnode.Record
+    return hnode.Record(
+        node_type,
+        [],  # fields
+        False,
+        '(',
+        ')',  # abbrev, left, right
+        []  # unnamed fields
+    )
 
 
 def NewLeaf(s, e_color):
-  # type: (Optional[str], color_t) -> hnode.Leaf
+    # type: (Optional[str], color_t) -> hnode.Leaf
 
-  # for repr of MaybeStrArray, which can have 'None'
-  if s is None:
-    return hnode.Leaf('_', color_e.OtherConst)
-  else:
-    return hnode.Leaf(s, e_color)
+    # for repr of MaybeStrArray, which can have 'None'
+    if s is None:
+        return hnode.Leaf('_', color_e.OtherConst)
+    else:
+        return hnode.Leaf(s, e_color)
 
 
 # Constants to avoid 'StrFromC("T")' in ASDL-generated code
