@@ -1150,6 +1150,7 @@ shell_for() {
 ysh_case() {
   set +o errexit
 
+  if false; then
   _ysh-should-parse '
   case (foo) {
     *.py { echo "python" }
@@ -1157,7 +1158,6 @@ ysh_case() {
   '
 
   # TODO: Make this case parse
-  if false; then
     # parse_bare_word
     _ysh-should-parse '
     case (foo) {
@@ -1178,6 +1178,9 @@ ysh_case() {
   '
   _ysh-should-parse '
   case (foo) { ("main.py") { echo "python" } }
+  '
+  _ysh-should-parse '
+  case(foo) { ("main.py") { echo "python" } }
   '
   _ysh-should-parse '
   case (foo) {

@@ -600,6 +600,19 @@ regex: [re_alt] (('|'|'or') re_alt)*
 regex_pat: regex [re_flags] '/'
 expr_pat: expr ')'
 
+case_pat: '(' dq_string ')'
+# case_pat: (
+#     pat_words
+#   | pat_eggex
+#   | '(' (pat_else | pat_exprs)
+# )
+# pat_words: pat_word ([Op_Newline] '|' [Op_Newline] pat_word)*
+# pat_exprs: pat_expr ([Op_Newline] '|' [Op_Newline] '(' pat_expr)*
+# pat_word: dq_string | sq_string | Expr_Name
+# pat_expr: pat_word ')'
+# pat_eggex: '/' regex [re_flags] '/'
+# pat_else: 'else' ')'
+
 # e.g. /digit+ ; multiline !ignorecase/
 #
 # This can express translation preferences:

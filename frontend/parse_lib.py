@@ -4,7 +4,8 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, CompoundWord, expr_t, word_t, Redir, ArgList, NameType, command
+    Token, CompoundWord, expr_t, word_t, Redir, ArgList, NameType, command,
+    Pat_t
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -377,6 +378,16 @@ class ParseContext(object):
       ast_node = self.tr.Expr(pnode)
 
     return ast_node, last_token
+
+  def ParseYshCasePattern(self, lexer):
+    # type: (Lexer) -> Pat_t
+    """ (else), some-word, (1) | (2), etc. """
+    e_parser = self._YshParser()
+    with ctx_PNodeAllocator(e_parser):
+      pnode, last_token = e_parser.Parse(lexer, grammar_nt.case_pat)
+      pat = self.tr.YshCasePattern(pnode)
+
+    return pat
 
   def ParseYshForExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[List[NameType], expr_t, Token]

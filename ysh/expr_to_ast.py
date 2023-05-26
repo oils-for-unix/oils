@@ -44,6 +44,8 @@ from _devbuild.gen.syntax_asdl import (
     Variant,
     variant_type,
     variant_type_t,
+    Pat,
+    Pat_t,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -743,6 +745,35 @@ class Transformer(object):
         nt_name = self.number2symbol[typ]
         raise AssertionError("PNode type %d (%s) wasn't handled" %
                              (typ, nt_name))
+
+    def YshCasePattern(self, pnode):
+        # type: (PNode) -> Pat_t
+        assert pnode.typ == grammar_nt.case_pat, pnode
+
+        expr_node = pnode.GetChild(1)
+        expr = self.Expr(expr_node)
+        return Pat.YshExprs([expr])
+
+        pattern_node = pnode.GetChild(0)
+        typ = pattern_node.typ
+
+        if typ == grammar_nt.pat_words:
+            pass
+        elif typ == grammar_nt.pat_eggex:
+            pass
+        else:
+            pattern_node = pnode.GetChild(1)
+            typ = pattern_node.typ
+
+            if typ == grammar_nt.pat_exprs:
+                exprs = pattern_node.GetChild(0).GetChild(0)
+                expr = self.Expr(exprs)
+                return Pat.YshExprs([expr])
+            elif typ == grammar_nt.pat_else:
+                pass
+
+        raise NotImplementedError()
+
 
     def _Argument(self, p_node, do_named, arglist):
         # type: (PNode, bool, ArgList) -> None

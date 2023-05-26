@@ -1399,7 +1399,7 @@ class CommandParser(object):
     return CaseArm(left_tok, Pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self):
-    # type: () -> CaseArm
+    # type: () -> Optional[CaseArm]
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
@@ -1417,61 +1417,9 @@ class CommandParser(object):
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
-    pattern = None  # type: Pat_t
+    # How do we handle integrating this?
 
-    self._Peek()
-    if self.c_id == Id.Op_LParen:
-      # either a pat_exprs or a pat_else
-      peek = self.lexer.LookAheadOne(lex_mode_e.ShCommand)
-      if peek == Id.KW_Else:
-        # we have a pat_else
-        self._Next()
-        self._Eat(Id.KW_Else)
-        self._Eat(Id.Op_RParen)
-        pattern = Pat.Else
-      else:
-        while True:
-          self._Eat(Id.Op_LParen)
-
-          enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.expr_pat)
-          pattern = Pat.YshExprs([enode])
-
-          self._NewlineOk()
-
-          self._Peek()
-          if self.c_id == Id.Op_Pipe:
-            self._Next()
-            self._NewlineOk()
-          else:
-            break
-
-    # TODO: clean this up...
-    elif self.c_id == Id.Word_Compound and cast(Token, cast(CompoundWord, self.cur_word).parts[0]).tval == '/':
-      # pat_eggex
-      self._Next()
-      enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.regex_pat)
-      pattern = Pat.YshExprs([enode]) # TODO: Should we have a seperate `Pat` variant for eggexs?
-
-    else:
-      # pat_words
-      pat_words = []  # type: List[word_t]
-      while True:
-        self._Peek()
-        if self.c_kind != Kind.Word:
-          p_die('Expected case pattern', loc.Word(self.cur_word))
-        pat_words.append(self.cur_word)
-        self._Next()
-
-        self._NewlineOk()
-
-        self._Peek()
-        if self.c_id == Id.Op_Pipe:
-          self._Next()
-          self._NewlineOk()
-        else:
-          break
-      pattern = Pat.Words(pat_words)
-
+    pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
     self._NewlineOk()
     action = self.ParseBraceGroup()
     self._NewlineOk()
@@ -1492,16 +1440,21 @@ class CommandParser(object):
     ate = self._Eat(Id.Lit_LBrace)
     arms_start = word_.BraceToken(ate)
 
-    self._NewlineOk()
+    # self._NewlineOk()
+    while self.lexer.LookAheadOne(lex_mode_e.ShCommand) == Id.Op_Newline:
+      self._Peek()
+      self._Next()
 
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
     while True:
-      self._Peek()
-      if self.c_id == Id.Lit_RBrace:
+      if self.lexer.LookAheadOne(lex_mode_e.ShCommand) == Id.Lit_RBrace:
         break
 
       arm = self.ParseYshCaseArm()
+      if not arm:
+          print("no arm")
+          break
       arms.append(arm)
 
     ate = self._Eat(Id.Lit_RBrace)
