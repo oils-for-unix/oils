@@ -601,6 +601,15 @@ esac
     self.assertEqual(command_e.Case, node.tag())
     self.assertEqual(2, len(node.arms))
 
+  def testParseYshCase(self):
+    # Empty case
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(0, len(node.arms))
+
   def testParseWhile(self):
     node = assert_ParseCommandList(self, """\
 while true; do

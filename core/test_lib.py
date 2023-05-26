@@ -349,7 +349,11 @@ def InitWordParser(word_str, oil_at=False, arena=None):
 
 def InitCommandParser(code_str, arena=None):
     arena = arena or MakeArena('<test_lib>')
-    parse_ctx = InitParseContext(arena=arena)
+
+    loader = pyutil.GetResourceLoader()
+    oil_grammar = pyutil.LoadOilGrammar(loader)
+
+    parse_ctx = InitParseContext(arena=arena, oil_grammar=oil_grammar)
     line_reader, _ = InitLexer(code_str, arena)
     c_parser = parse_ctx.MakeOshParser(line_reader)
     return c_parser
