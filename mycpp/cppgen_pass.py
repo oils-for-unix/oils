@@ -22,7 +22,7 @@ from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log
 
-from typing import Tuple
+from typing import Tuple, Union
 
 T = None
 
@@ -176,12 +176,19 @@ def _CheckCondition(node, types):
 
 
 def CTypeIsManaged(c_type):
-    # type: (str) -> bool
+    # type: (Union[str, Tuple[str, str]]) -> bool
     """For rooting and field masks."""
+    if isinstance(c_type, tuple):
+        return False
+
     assert c_type != 'void'
 
     # int, double, bool, scope_t enums, etc. are not managed
     return c_type.endswith('*')
+
+def CTypeIsFuncPointer(c_type):
+    # type: (Union[str, Tuple[str, str]]) -> bool
+    return isinstance(c_type, tuple)
 
 
 def GetCType(t, param=False, local=False):
@@ -292,7 +299,7 @@ def GetCType(t, param=False, local=False):
 
         ret_type = GetCType(t.ret_type)
         arg_types = [GetCType(typ) for typ in t.arg_types]
-        c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
+        return ret_type, '(%s)' % ', '.join(arg_types)
 
     elif isinstance(t, TypeAliasType):
         if 0:
@@ -1333,6 +1340,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
+                if CTypeIsFuncPointer(val_c_type):
+                    ret_c_type, arg_c_types = val_c_type
+                    val_c_type = '%s(*)%s' % (ret_c_type, arg_c_types)
 
                 self.write_ind('auto* %s = NewDict<%s, %s>();\n', lval.name,
                                key_c_type, val_c_type)
@@ -2572,7 +2582,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             for lval_name, c_type, is_param in self.prepend_to_block:
                 if not is_param and lval_name not in done:
                     rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                    self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+                    if CTypeIsFuncPointer(c_type):
+                        ret_c_type, arg_c_types = c_type
+                        self.write_ind('%s (*%s)%s%s;\n', ret_c_type, lval_name, arg_c_types, rhs)
+                    else:
+                        self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
                     done.add(lval_name)
 
             # Figure out if we have any roots to write with StackRoots

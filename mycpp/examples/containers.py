@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 from mycpp.mylib import log, NewDict, iteritems
 
-from typing import List, Tuple, Dict, Optional
+from typing import Callable, List, Tuple, Dict, Optional
 
 
 gstr = 'foo'  # type: str
@@ -113,6 +113,16 @@ def TupleDemo():
   log("glist_str = %d", len(glist_str))
 
 
+def f(x, y):
+  # type: (int, int) -> str
+  return '%d' % (x + y)
+
+
+def g(x, y):
+  # type: (int, int) -> str
+  return '%d' % (x * y)
+
+
 def DictDemo():
   # type: () -> None
 
@@ -139,6 +149,14 @@ def DictDemo():
   ordered['a'] = 50
   for k, v in iteritems(ordered):
     log("%s %d", k, v)
+
+  funcs = NewDict() # type: Dict[str, Callable[[int, int], str]]
+  funcs["add"] = f
+  funcs["mult"] = g
+  add = funcs["add"]
+  mult = funcs["mult"]
+  log('2 + 3 = %s', add(2, 3))
+  log('2 * 3 = %s', mult(2, 3))
 
 
 def run_tests():
