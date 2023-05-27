@@ -585,8 +585,8 @@ const children = d['children']
 write 'level 0 children' $[len(children)] ---
 
 # TODO: Do we need @[] for array expression sub?
-write 'child 0' $[children[0]->type] $[join(children[0]->args)] ---
-write 'child 1' $[children[1]->type] $[join(children[1]->args)] ---
+write 'child 0' $[children[0].type] $[join(children[0].args)] ---
+write 'child 1' $[children[1].type] $[join(children[1].args)] ---
 
 ## STDOUT:
 level 0 children

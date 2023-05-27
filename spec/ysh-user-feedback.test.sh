@@ -86,7 +86,7 @@ EOF
 git-branch-merged | while read --line {
   # Note: this can't be 'const' because const is dynamic like 'readonly'.  And
   # we don't have block scope.
-  var line = _line.strip()  # removing leading space
+  var line = _line->strip()  # removing leading space
 
   # with glob: line ~~ '\**'           (awkward)
   # with regex: line ~ / %start '*' /  (not terrible, but somewhat complex)
@@ -98,7 +98,7 @@ git-branch-merged | while read --line {
   # line %startswith 'a'
   # line %endswith 'b'
 
-  if (line !== 'master' and not line.startswith('*')) {
+  if (line !== 'master' and not line->startswith('*')) {
     echo $line
   }
 } | readarray -t :branches
@@ -112,8 +112,8 @@ if (len(branches) === 0) {
 # With "append".  Hm read --lines isn't bad.
 var branches2 = %()
 git-branch-merged | while read --line {
-  var line2 = _line.strip()  # removing leading space
-  if (line2 !== 'master' and not line2.startswith('*')) {
+  var line2 = _line->strip()  # removing leading space
+  if (line2 !== 'master' and not line2->startswith('*')) {
     append :branches2 $line2
   }
 }

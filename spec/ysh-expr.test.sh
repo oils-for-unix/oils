@@ -606,26 +606,26 @@ array=3
 comsub=6
 ## END
 
-#### obj.attr and obj.method()
+#### obj->method()
 var s = 'hi'
 
 # TODO: This does a bound method thing we probably don't want
-var s2 = s.upper()
+var s2 = s->upper()
 echo $s2
 ## STDOUT:
 HI
 ## END
 
-#### obj.method does NOT give you a bound method
+#### obj->method does NOT give you a bound method
 var s = 'hi'
-var method = s.upper
+var method = s->upper
 echo $method
-## status: 2
+## status: 3
 ## stdout-json: ""
 
-#### d->key
+#### d.key
 var d = {name: 'andy'}
-var x = d->name
+var x = d.name
 echo $x
 ## STDOUT:
 andy
