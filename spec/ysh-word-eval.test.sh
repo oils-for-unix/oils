@@ -29,13 +29,13 @@ echo done
 ## status: 1
 ## stdout-json: ""
 
-#### echo $f(x) for various types
+#### echo $[f(x)] for various types
 shopt -s oil:upgrade
 
-echo bool $identity(true)
-echo int $len(['a', 'b'])
-echo float $abs(-3.14)
-echo str $identity('identity')
+echo bool $[identity(true)]
+echo int $[len(['a', 'b'])]
+echo float $[abs(-3.14)]
+echo str $[identity('identity')]
 
 echo ---
 echo bool expr $[true]
@@ -91,7 +91,7 @@ write @range(10, 15, 2)
 
 #### Wrong sigil with $range() is runtime error
 shopt -s oil:upgrade
-echo $range(10, 15, 2)
+echo $[range(10, 15, 2)]
 echo 'should not get here'
 ## status: 3
 ## STDOUT:

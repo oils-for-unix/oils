@@ -48,7 +48,7 @@ write $a $b
 #### Dict()
 # TODO: more testing
 var a = Dict()
-write $len(a)
+write $[len(a)]
 ## STDOUT:
 0
 ## END
@@ -69,8 +69,8 @@ argv.py $z
 #### abs
 
 # Also test smooshing
-write $abs(-5)$abs(-0)$abs(5)
-write $abs(-5) $abs(-0) $abs(5)
+write $[abs(-5)]$[abs(-0)]$[abs(5)]
+write $[abs(-5)] $[abs(-0)] $[abs(5)]
 ## STDOUT:
 505
 5
@@ -104,9 +104,9 @@ false
 #### sum()
 var start = 42
 
-write $sum( range(3) )
-write $sum( range(3), start)
-write $sum( range(0), start)
+write $[sum( range(3) )]
+write $[sum( range(3), start)]
+write $[sum( range(0), start)]
 ## STDOUT:
 3
 45

@@ -116,7 +116,7 @@ Package one
 echo status=$?
 
 setvar args = _hay()['children'][0]['args']
-write --sep ' ' $len(_hay()['children']) @args
+write --sep ' ' $[len(_hay()['children'])] @args
 
 hay eval :result {
   Package two
@@ -124,13 +124,13 @@ hay eval :result {
 }
 
 setvar args = result['children'][0]['args']
-write --sep ' ' $len(result['children']) @args
+write --sep ' ' $[len(result['children'])] @args
 
 Package three
 echo status=$?
 
 setvar args = _hay()['children'][0]['args']
-write --sep ' ' $len(_hay()['children']) $[_hay()['children'][0]['args'][0]]
+write --sep ' ' $[len(_hay()['children'])] $[_hay()['children'][0]['args'][0]]
 
 ## STDOUT:
 status=0
@@ -288,17 +288,17 @@ hay eval :result {
 
   user alice
   # = _hay()
-  write -- $len(_hay()['children'])
+  write -- $[len(_hay()['children'])]
 
   user bob
   setvar result = _hay()
-  write -- $len(_hay()['children'])
+  write -- $[len(_hay()['children'])]
 
 }
 
 # TODO: Should be cleared here
 setvar result = _hay()
-write -- $len(_hay()['children'])
+write -- $[len(_hay()['children'])]
 
 ## STDOUT:
 1
@@ -332,14 +332,14 @@ hay eval :result {
 }
 
 #= result
-write -- 'level 0 children' $len(result['children'])
-write -- 'level 1 children' $len(result['children'][0]['children']) 
+write -- 'level 0 children' $[len(result['children'])]
+write -- 'level 1 children' $[len(result['children'][0]['children'])]
 
 hay eval :result {
   haynode parent foo
   haynode parent bar
 }
-write -- 'level 0 children' $len(result['children'])
+write -- 'level 0 children' $[len(result['children'])]
 
 
 ## STDOUT:
@@ -582,11 +582,11 @@ shvar _DIALECT=sourcehut {
 }
 
 const children = d['children']
-write 'level 0 children' $len(children) ---
+write 'level 0 children' $[len(children)] ---
 
 # TODO: Do we need @[] for array expression sub?
-write 'child 0' $[children[0]->type] $join(children[0]->args) ---
-write 'child 1' $[children[1]->type] $join(children[1]->args) ---
+write 'child 0' $[children[0]->type] $[join(children[0]->args)] ---
+write 'child 1' $[children[1]->type] $[join(children[1]->args)] ---
 
 ## STDOUT:
 level 0 children
@@ -612,8 +612,8 @@ const block = parse_hay(path)
 
 hay define Package
 const d = eval_hay(block)
-write 'level 0 children' $len(d['children'])
-write 'level 1 children' $len(d['children'][1]['children'])
+write 'level 0 children' $[len(d['children'])]
+write 'level 1 children' $[len(d['children'][1]['children'])]
 
 ## STDOUT:
 level 0 children

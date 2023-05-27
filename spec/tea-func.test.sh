@@ -53,8 +53,8 @@ shopt -s parse_tea
 func add(x Int, y=1, z=1+2*3) {
   return x + y + z
 }
-echo $add(3)
-echo $add(3,4)
+echo $[add(3)]
+echo $[add(3,4)]
 ## STDOUT:
 11
 14
@@ -226,7 +226,7 @@ var a = [42, 43]
 var n = %{x: 99, y: 100}
 
 echo ____
-write string $f(0, 1, ...a, c=2, d=3)
+write string $[f(0, 1, ...a, c=2, d=3)]
 
 # Now get a list back
 echo ____
@@ -263,7 +263,7 @@ array
 var f = |x| x+1
 var y = f(0)
 echo $y
-echo $f(42)
+echo $[f(42)]
 ## STDOUT:
 1
 43

@@ -82,10 +82,6 @@ echo DONE
 ## OK mksh/zsh status: 1
 ## STDOUT:
 ## END
-## OK osh status: 0
-## OK osh STDOUT:
-DONE
-## END
 
 #### Function names
 foo$x() {
@@ -97,7 +93,7 @@ foo $x() {
 }
 
 ## status: 2
-## OK mksh/zsh/osh status: 1
+## OK mksh/zsh status: 1
 ## BUG zsh status: 0
 ## STDOUT:
 ## END

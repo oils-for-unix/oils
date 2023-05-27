@@ -1507,22 +1507,6 @@ class WordParser(WordEmitter):
         vsub_token = self.cur_token
 
         part = SimpleVarSub(vsub_token, lexer.TokenSliceLeft(vsub_token, 1))  # type: word_part_t
-        if self.token_type == Id.VSub_DollarName:
-          # Look ahead for $strfunc(x)
-          #   $f(x) or --name=$f(x) is allowed
-          #   but "--name=$f(x)" not allowed?  This would BREAK EXISTING CODE.
-          #   It would need a parse option.
-
-          next_id = self.lexer.LookAheadOne(lex_mode)
-          if next_id == Id.Op_LParen:
-            arglist = ArgList.CreateNull(alloc_lists=True)
-            self._ParseInlineCallArgs(arglist)
-            part = word_part.FuncCall(vsub_token, arglist)
-
-            # Unlike @arrayfunc(x), it makes sense to allow $f(1)$f(2)
-            # var a = f(1); var b = f(2); echo $a$b
-            # It's consistent with other uses of $.
-
         w.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:

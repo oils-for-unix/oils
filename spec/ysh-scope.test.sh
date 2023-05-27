@@ -750,7 +750,7 @@ s='xzx zxz'
 
 proc myproc {
   echo wrong IFS="$IFS"         # NOT what's used
-  echo shvar IFS=$shvar_get('IFS')  # what IS used: dynamic scope
+  echo shvar IFS=$[shvar_get('IFS')]  # what IS used: dynamic scope
   argv.py $s
 }
 
