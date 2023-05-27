@@ -997,10 +997,10 @@ parse_at() {
 invalid_parens() {
   set +o errexit
 
-  # compatible extension in both langauges
+  # removed function sub syntax
   local s='write -- $f(x)'
-  _should-parse "$s"
-  _ysh-should-parse "$s"
+  _parse-error "$s"
+  _ysh-parse-error "$s"
 
   # requires parse_at
   local s='write -- @sorted(x)'
