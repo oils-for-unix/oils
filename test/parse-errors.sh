@@ -1151,6 +1151,10 @@ ysh_case() {
   set +o errexit
 
   _ysh-should-parse '
+  case (foo) { (else) { echo } }
+  '
+
+  _ysh-should-parse '
   case (foo) {
     *.py { echo "python" }
   }
