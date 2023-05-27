@@ -1409,32 +1409,30 @@ class CommandParser(object):
     pat_words   : pat_word (newline_ok '|' newline_ok pat_word)*
     pat_exprs   : pat_expr (newline_ok '|' newline_ok pat_expr)*
     pat_word    : WORD
-    pat_expr    : '(' oil_expr ')'
     pat_eggex   : '/' oil_eggex '/'
-    pat_else    : Id.KW_Else
+    pat_expr    : '(' oil_expr ')'
+    pat_else    : '(' Id.KW_Else ')'
 
-    Looking at: 'pattern' or '(' or Id.Lit_Slash
+    Looking at: 'pattern'
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
     pattern = None  # type: pat_t
 
-    self._Peek()
-    if self.c_id == Id.Op_LParen:
-      # either a pat_exprs or a pat_else
-      peek = self.lexer.LookAheadOne(lex_mode_e.ShCommand)
-      if peek == Id.KW_Else:
-        # we have a pat_else
-        self._Next()
-        self._Eat(Id.KW_Else)
-        self._Eat(Id.Op_RParen)
-        pattern = Pat.Else
-      else:
-        while True:
-          self._Eat(Id.Op_LParen)
+    discriminant = self.lexer.LookPastSpace(lex_mode_e.Expr)
 
-          enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.expr_pat)
-          pattern = Pat.YshExprs([enode])
+    if discriminant in (Id.Op_LParen, Id.Arith_Slash):
+        # pat_exprs, pat_else or par_eggex
+        pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
+    else:
+        # pat_words
+        pat_words = []  # type: List[word_t]
+        while True:
+          self._Peek()
+          if self.c_kind != Kind.Word:
+            p_die('Expected case pattern', loc.Word(self.cur_word))
+          pat_words.append(self.cur_word)
+          self._Next()
 
           self._NewlineOk()
 
@@ -1444,33 +1442,7 @@ class CommandParser(object):
             self._NewlineOk()
           else:
             break
-
-    # TODO: clean this up...
-    elif self.c_id == Id.Word_Compound and cast(Token, cast(CompoundWord, self.cur_word).parts[0]).tval == '/':
-      # pat_eggex
-      self._Next()
-      enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.regex_pat)
-      pattern = Pat.YshExprs([enode]) # TODO: Should we have a seperate `Pat` variant for eggexs?
-
-    else:
-      # pat_words
-      pat_words = []  # type: List[word_t]
-      while True:
-        self._Peek()
-        if self.c_kind != Kind.Word:
-          p_die('Expected case pattern', loc.Word(self.cur_word))
-        pat_words.append(self.cur_word)
-        self._Next()
-
-        self._NewlineOk()
-
-        self._Peek()
-        if self.c_id == Id.Op_Pipe:
-          self._Next()
-          self._NewlineOk()
-        else:
-          break
-      pattern = Pat.Words(pat_words)
+        pattern = pat.Words(pat_words)
 
     self._NewlineOk()
     action = self.ParseBraceGroup()
