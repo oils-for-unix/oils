@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter,
     ArgList, BraceGroup, BlockArg,
     CaseArm, case_arg, IfArm,
-    Pat, Pat_t,
+    pat, pat_t,
 
     Redir, redir_param,
     redir_loc, redir_loc_t,
@@ -1396,7 +1396,7 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    return CaseArm(left_tok, Pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
+    return CaseArm(left_tok, pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self):
     # type: () -> CaseArm
@@ -1417,7 +1417,7 @@ class CommandParser(object):
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
-    pattern = None  # type: Pat_t
+    pattern = None  # type: pat_t
 
     self._Peek()
     if self.c_id == Id.Op_LParen:
