@@ -87,6 +87,8 @@ def Define(sp):
 
   sp.YshFile('ysh-tuple')
 
+  sp.YshFile('ysh-unicode', our_shell='osh')
+
   sp.YshFile('ysh-usage')
 
   sp.YshFile('ysh-user-feedback')

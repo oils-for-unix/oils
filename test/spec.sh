@@ -735,6 +735,10 @@ ysh-usage() {
   sh-spec spec/ysh-usage.test.sh $OIL_LIST "$@"
 }
 
+ysh-unicode() {
+  run-file ysh-unicode "$@"
+}
+
 ysh-bin() {
   sh-spec spec/ysh-bin.test.sh $OIL_LIST "$@"
 }
