@@ -37,7 +37,7 @@ Example:
     var x = 42 + a[i]
 
     # The arguments inside function calls expressions
-    echo $len(s.strip())
+    echo $[len(s.strip())]
 -->
 
 ## From Command Mode to Expression Mode

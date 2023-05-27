@@ -40,7 +40,7 @@ The command and word syntax comes from shell:
 Oil's own shell-like extensions:
 
     echo $[42 + a[i]]                 # Expression substitution
-    echo $strfunc(x, y)               # Inline Function Calls
+    cd /tmp { echo hi }               # Block arguments
 
 ### bash and ksh
 

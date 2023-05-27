@@ -58,7 +58,6 @@ PowerShell.
 And these Oil language extensions also use `$`:
 
     echo $[42 + a[i]]            # string interpolation of expression
-    echo $len(x)                 # string interpolation of function call
     grep $/ digit+ /             # inline eggex (not implemented yet)
 
 `@` means *array* / *splice an array*:

@@ -117,7 +117,7 @@ Examples:
   - Or `$[ /pat+ /]`?
   - I don't think so.
 
-- Inline function calls, an Oil extension: `$join(myarray)`
+- Inline function calls, a YSH extension: `$[join(myarray)]`
 
 (C-style strings like `$'\n'` use `$`, but that's more of a bash anachronism.
 In Oil, `c'\n'` is preferred.
@@ -138,55 +138,6 @@ The array literal syntax also uses a `@`:
 ```
 var myarray = %(1 2 3)
 ```
-
-## Inline Function Calls
-
-This feature is purely syntactic sugar.  Instead of:
-
-    write $strfunc(x) @arrayfunc(y)
-
-You can always refactor to:
-
-    var mystr = strfunc(x)
-    var myarray = arrayfunc(y)
-
-    write $mystr @myarray
-
-### That Return Strings (Function Sub)
-
-Examples:
-
-```
-echo $join(myarray, '/')
-echo $len(mystr)  # len returns an int, but it's automatically converted to a string
-echo foo=$len(mystr)  # also works
-```
-
-Note that inline function calls can't be placed in double quoted strings:
-`"__$len(s)__"` 
-
-You can either extract a variable:
-
-```
-var x = len(s)
-echo "__$x__"
-```
-
-or use an expression substitution ([expr-sub]($help)):
-
-```
-echo $[len(x)]
-```
-
-`$[]` is for Oil expressions, while `${}` is shell.
-
-This is documented in [warts](warts.html).
-
-### That Return Arrays (Function Splice)
-
-    cc -o foo -- @arrayfunc(x, y)
-
-    echo @split(mystr, '/')  # split on a delimiter
 
 ## OSH Features
 
@@ -259,31 +210,3 @@ There are some limitations and differences:
   evaluation).
   - For similar reasons, they're also not supported in assignment builtins.
     (This is a good thing!)
-
-## Notes
-
-### On The Design of Substitution
-
-This is the same discussion as `$f(x) vs `$(f(x))` on the [inline function
-calls
-thread](https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/Inline.20function.20calls.20implemented).
-
-We only want to interpolate **vars** and **functions**.  Arbitrary expressions
-aren't necessary.
-
-In summary:
-
-- `echo foo=$x` interpolates a variable into a unquoted word
-- `echo foo=$f(x)` interpolates a call returning a string into an unquoted word
-- `echo "foo=$[x] 1 2 3"` interpolates a variable into a double quoted string
-- `echo "foo=${x} 1 2 3"` -- older, same
-- `echo "foo=$[f(x)] 1 2 3"` interpolates a call returning a string into a
-  double quoted string
-
----
-
-And then for completeness we also have:
-
-- `echo @x`  interpolates an array into a command
-- `echo @f(x)` interpolates a function returning an array into a command
-

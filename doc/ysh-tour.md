@@ -730,7 +730,7 @@ Omitting the value causes it to be taken from a variable of the same name:
 More:
 
     var empty = {}
-    echo $len(empty)  # => 0
+    echo $[len(empty)]  # => 0
 
 #### Block and Expr
 

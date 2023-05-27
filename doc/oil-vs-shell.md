@@ -61,7 +61,7 @@ Language](command-language.html) for more details.
 - [Simple Word Evaluation](simple-word-eval.html)
   - Splicing with arrays
 - Expression substitution like `$[42 + a[i] + f(x)]`
-- Inline function calls like `echo $join(['pea', nut'])`
+- Inline function calls like `echo $[join(['pea', nut'])]`
 - You can write raw strings like `echo r'C:\Program Files\'`
 
 See [A Tour of Oil](oil-language-tour.html) and [Word
