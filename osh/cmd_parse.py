@@ -1431,7 +1431,7 @@ class CommandParser(object):
     if discriminant in (Id.Op_LParen, Id.Arith_Slash):
         # pat_exprs, pat_else or par_eggex
         pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
-    elif discriminant == Id.Lit_RBrace:
+    elif discriminant == Id.Op_RBrace:
         return None
     else:
         # pat_words
