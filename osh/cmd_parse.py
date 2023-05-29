@@ -590,7 +590,14 @@ class CommandParser(object):
     self._Peek()
     if self.c_id == Id.Op_Newline:
       self._Next()
-      self._Peek()  # This is calling ReadWord()
+      self._Peek()  # BUG: This is calling ReadWord()
+
+  def _NewlineOk2(self):
+    # type: () -> None
+    """Check for optional newline and consume it."""
+    self._Peek()
+    if self.c_id == Id.Op_Newline:
+      self._Next()
 
   def _AtSecondaryKeyword(self):
     # type: () -> bool
@@ -1433,9 +1440,9 @@ class CommandParser(object):
       else:
         break
 
-    self._NewlineOk()
+    self._NewlineOk2()
     action = self.ParseBraceGroup()
-    #self._NewlineOk()  # 
+    #self._NewlineOk2()
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
@@ -1454,15 +1461,16 @@ class CommandParser(object):
     arms_start = word_.BraceToken(ate)
 
     # TODO: Change stratgies
-    #self._NewlineOk()
+    self._NewlineOk2()
 
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
     while True:
       print('====')
       print('')
-      print('AFTER peek %s' % Id_str(self.c_id))
-      print('WordParser.cur_token %s' % self.w_parser.cur_token)
+      if 0:
+        print('AFTER peek %s' % Id_str(self.c_id))
+        print('WordParser.cur_token %s' % self.w_parser.cur_token)
 
       # four way decision
       #x = self.w_parser.DetectYshCasePattern()
@@ -1493,7 +1501,7 @@ class CommandParser(object):
         break
 
       arm = self.ParseYshCaseArm()
-      print(arm.pat_list)
+      #print(arm.pat_list)
       arms.append(arm)
 
     ate = self._Eat(Id.Lit_RBrace)
