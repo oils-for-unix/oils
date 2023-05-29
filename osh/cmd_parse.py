@@ -1423,7 +1423,7 @@ class CommandParser(object):
     while True:
       self._Peek()
       #log('=> %s', Id_str(self.c_id))
-      #log('=> %s', self.cur_word)
+      #log('=> pat_word %s', self.cur_word)
 
       if self.c_id == Id.Op_LParen:
         # TODO: Parse YSH expressions here
@@ -1446,12 +1446,33 @@ class CommandParser(object):
     action = self.ParseBraceGroup()
 
     # This is like _NewlineOk2
-    self._Peek()
-    if self.c_id == Id.Op_Newline:
-      self._Next()
+    if 0:
+      self._Peek()
+      if self.c_id == Id.Op_Newline:
+        self._Next()
+      log('AFTER ParseBraceGroup Op_Newline?')
+
+    self._NewlineOk3()
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
+
+  def _NewlineOk3(self):
+    id_ = self.w_parser.LookPastSpace()
+    log('_NewlineOk3 id_ %s', Id_str(id_))
+    if id_ == Id.Op_Newline:
+      log('c_id 1 %s', Id_str(self.c_id))
+      self._Next()
+      log('c_id 2 %s', Id_str(self.c_id))
+
+      self._Peek()  # materialize it
+      log('c_id 3 %s', Id_str(self.c_id))
+
+      self._Next()
+      log('c_id 4 %s', Id_str(self.c_id))
+
+      self._Peek()  # materialize it
+      log('c_id 5 %s', Id_str(self.c_id))
 
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
@@ -1467,19 +1488,29 @@ class CommandParser(object):
     arms_start = word_.BraceToken(ate)
 
     # TODO: Change stratgies
-    self._NewlineOk2()
+    #self._NewlineOk2()
+
+    if 0:
+      self._Peek()
+      if self.c_id == Id.Op_Newline:
+        self._Next()
+
+    self._NewlineOk3()
+    log('AFTER { Op_Newline?')
+    # TODO: Return newline state
 
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
     while True:
-      print('====')
-      print('')
+      #print('====')
+      #print('')
       if 0:
         print('AFTER peek %s' % Id_str(self.c_id))
         print('WordParser.cur_token %s' % self.w_parser.cur_token)
 
       # four way decision
       #x = self.w_parser.DetectYshCasePattern()
+      #self._Peek()
       x = self.w_parser.LookYshCase()
       print('LookYshCase  %s' % Id_str(x))
       print('')
@@ -1506,9 +1537,15 @@ class CommandParser(object):
       if self.c_id == Id.Lit_RBrace:  # is this part of the 4 way decision?
         break
 
+      # TODO: newline state
       arm = self.ParseYshCaseArm()
+
       #print(arm.pat_list)
       arms.append(arm)
+
+      print('')
+      print('==== appended ARM')
+      print('')
 
     ate = self._Eat(Id.Lit_RBrace)
     arms_end = word_.BraceToken(ate)

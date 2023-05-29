@@ -48,7 +48,7 @@ lex_mode_e.VSub_ArgDQ
 """
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox, Token, loc, source,
@@ -1768,8 +1768,17 @@ class WordParser(WordEmitter):
     """
     assert self.token_type != Id.Undefined_Tok
 
-    #log('%s', self.cur_token)
+    #if self.token_type == Id.Op_Newline:
+    #  log('LookYshCase NEWLINE')
+    #  self._Next(lex_mode_e.ShCommand)
+    #self._Peek()
+
+    log('LookYshCase self.cur_token %s', Id_str(self.cur_token.id))
+    #log('LookYshCase self.cur_token')
+    #log('-> %s', self.cur_token)
+
     id_ = self.lexer.LookAheadOne(lex_mode_e.Expr)
+    log('-> LookAheadOne Expr %s', Id_str(id_))
 
     #if self.cur_token.id == Id.WS_Space:
     #  id_ = self.lexer.LookPastSpace(lex_mode_e.Expr)
