@@ -1464,31 +1464,30 @@ class CommandParser(object):
     id_ = self.w_parser.LookPastSpace()
     #log('_NewlineOk3 id_ %s', Id_str(id_))
     if id_ == Id.Op_Newline:
-      log('token_type 1 %s', Id_str(self.w_parser.token_type))
-
-      #log('c_id 1 %s', Id_str(self.c_id))
-      self._Next()
-      #log('c_id 2 %s', Id_str(self.c_id))
-
-      self._Peek()  # materialize it
-      log('token_type 3 %s', Id_str(self.w_parser.token_type))
-      #log('c_id 3 %s', Id_str(self.c_id))
+      log('NL 1 %s', Id_str(self.w_parser.LookYshCase()))
 
       self._Next()
-      #log('c_id 4 %s', Id_str(self.c_id))
+      log('NL 2 %s', Id_str(self.w_parser.LookYshCase()))
 
       self._Peek()  # materialize it
-      log('token_type 5 %s', Id_str(self.w_parser.token_type))
-      #log('c_id 5 %s', Id_str(self.c_id))
+      log('NL 3 %s', Id_str(self.w_parser.LookYshCase()))
+
+      self._Next()
+      log('NL 4 %s', Id_str(self.w_parser.LookYshCase()))
+
+      self._Peek()  # materialize it
+      log('NL 5 %s', Id_str(self.w_parser.LookYshCase()))
 
       # PROBLEM: This can't see past the newline!
       id2 = self.w_parser.LookYshCase3()
       first_pat_tok[0] = id2
 
-      log('_NewlineOk Look id2 %s', Id_str(id2))
+      log('_NewlineOk newline id2 %s', Id_str(id2))
 
     else:
-      first_pat_tok[0] = self.w_parser.LookYshCase()
+      id1 = self.w_parser.LookYshCase()
+      first_pat_tok[0] = id1
+      log('_NewlineOk3 single %s', Id_str(id1))
 
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
