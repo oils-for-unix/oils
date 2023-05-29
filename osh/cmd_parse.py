@@ -1405,7 +1405,7 @@ class CommandParser(object):
     return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self, first_pat_tok):
-    # type: (List[Token]) -> CaseArm
+    # type: (List[Id_t]) -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
@@ -1458,24 +1458,37 @@ class CommandParser(object):
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
   def _NewlineOk3(self, first_pat_tok):
-    # type: (List[Token]) -> None
+    # type: (List[Id_t]) -> None
     """
     """
     id_ = self.w_parser.LookPastSpace()
-    log('_NewlineOk3 id_ %s', Id_str(id_))
+    #log('_NewlineOk3 id_ %s', Id_str(id_))
     if id_ == Id.Op_Newline:
-      log('c_id 1 %s', Id_str(self.c_id))
+      log('token_type 1 %s', Id_str(self.w_parser.token_type))
+
+      #log('c_id 1 %s', Id_str(self.c_id))
       self._Next()
       #log('c_id 2 %s', Id_str(self.c_id))
 
       self._Peek()  # materialize it
-      log('c_id 3 %s', Id_str(self.c_id))
+      log('token_type 3 %s', Id_str(self.w_parser.token_type))
+      #log('c_id 3 %s', Id_str(self.c_id))
 
       self._Next()
       #log('c_id 4 %s', Id_str(self.c_id))
 
       self._Peek()  # materialize it
-      log('c_id 5 %s', Id_str(self.c_id))
+      log('token_type 5 %s', Id_str(self.w_parser.token_type))
+      #log('c_id 5 %s', Id_str(self.c_id))
+
+      # PROBLEM: This can't see past the newline!
+      id2 = self.w_parser.LookYshCase3()
+      first_pat_tok[0] = id2
+
+      log('_NewlineOk Look id2 %s', Id_str(id2))
+
+    else:
+      first_pat_tok[0] = self.w_parser.LookYshCase()
 
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
@@ -1490,7 +1503,7 @@ class CommandParser(object):
     ate = self._Eat(Id.Lit_LBrace)
     arms_start = word_.BraceToken(ate)
 
-    first_pat_tok = []  # type: List[Token]
+    first_pat_tok = [Id.Unknown_Tok]  # type: List[Id_t]
     self._NewlineOk3(first_pat_tok)
     log('AFTER { Op_Newline?')
     # TODO: Return newline state
@@ -1507,9 +1520,10 @@ class CommandParser(object):
       # four way decision
       #x = self.w_parser.DetectYshCasePattern()
       #self._Peek()
-      x = self.w_parser.LookYshCase()
-      print('LookYshCase  %s' % Id_str(x))
-      print('')
+      #x = self.w_parser.LookYshCase()
+      #print('LookYshCase  %s' % Id_str(x))
+      print('*** first_pat_tok %s' % Id_str(first_pat_tok[0]))
+      #print('')
 
       #x = self.lexer.LookAheadOne(lex_mode_e.Expr)
 
