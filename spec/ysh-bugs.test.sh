@@ -28,7 +28,7 @@ var d = {data: 'foo'}
 echo $[d->data]
 
 var e = {enum: 1, class: 2, import: 3, const: 4, var: 5, set: 6}
-echo $len(e)
+echo $[len(e)]
 
 ## STDOUT:
 foo

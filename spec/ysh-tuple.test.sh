@@ -6,7 +6,7 @@ yes
 
 #### Empty tuple
 var t = ()
-echo length=$len(t)
+echo length=$[len(t)]
 ## STDOUT:
 length=0
 ## END

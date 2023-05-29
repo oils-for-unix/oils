@@ -58,7 +58,6 @@ PowerShell.
 And these Oil language extensions also use `$`:
 
     echo $[42 + a[i]]            # string interpolation of expression
-    echo $len(x)                 # string interpolation of function call
     grep $/ digit+ /             # inline eggex (not implemented yet)
 
 `@` means *array* / *splice an array*:
@@ -353,24 +352,26 @@ Help](oil-help-topics.html) is a better reference for users.
 
     Example      Description        What's Inside  Where Valid  Notes
 
-    ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
-
     $(hostname)  Command Sub        Command        cmd,expr
-    @(seq 3)     Split Command Sub  Command        cmd,expr
+    @(seq 3)     Split Command Sub  Command        cmd,expr     should decode J8
+                                                                strings
 
-    ^(echo hi)   Block Literal      Command        expr
     { echo hi }  Block Literal      Command        cmd          shell requires ;
+    ^(echo hi)   Unevaluated Block  Command        expr         rare
 
     >(sort -n)   Process Sub        Command        cmd          rare
     <(echo hi)   Process Sub        Command        cmd          rare
 
     %(array lit) Array Literal      Words          expr
 
-    ${.echo hi}  Builtin Sub        Words          cmd,expr     not implemented
-    @{.echo hi}  Builtin Sub        Words          cmd,expr     not implemented
+    $[42 + a[i]] Stringify Expr     Expression     cmd,expr
+    @[glob(x)]   Array-ify Expr     Expression     cmd,expr     not implemented
+    ^[42 + a[i]] Unevaluated Expr   Expression     expr         not implemented
 
-    $[42 + a[i]] Stringify Expr     Expression     cmd
-    ^[42 + a[i]] Lazy Expression    Expression     expr         not implemented
+    ^"$1 $2"     Unevaluated Str    DQ String      expr         not implemented
+
+    ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
+    ${x|html}    Var Sub            Formatting     cmd,expr     not implemented
 
     json (x)     Typed Arg List     Argument       cmd
                                     Expressions
@@ -380,7 +381,7 @@ Help](oil-help-topics.html) is a better reference for users.
     r''          Raw String         String         expr         cmd when shopt
                  Literal                                        parse_raw_string
 
-    $''          C-escaped String   String         cmd,expr
+    j""          JSON8 String       String         cmd,expr     not implemented
                  Literal
 
     #'a'         Char Literal       UTF-8 char     expr

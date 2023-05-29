@@ -224,7 +224,7 @@ echo, printf, and write have their output captured.
     var buf = %()
     push :buf 'one '
     push :buf $'two\n'
-    echo $join(buf)
+    echo $[join(buf)]
 
 ## Appendix A: Deprecated Shell Constructs
 

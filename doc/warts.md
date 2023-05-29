@@ -52,51 +52,6 @@ Yes:
 This is because the `((` token is for bash arithmetic, which is disallowed in
 Oil.
 
-### Case Patterns are in Parens, But They're Words, Not Expressions
-
-Code inside `()` without sigils is usually parsed as an expression:
-
-    if (x > 0) { echo 'positive' }
-    while (x > 0) { echo 'hi' }
-    for x in (mydict) { echo 'hi' }
-
-See [Command vs. Expression Mode](command-vs-expression-mode.html).  But this
-isn't true of case patterns, which are parsed as words:
-
-    case $x {
-      (*.py) echo 'Python' ;;
-      (*.sh) echo 'Shell'  ;;
-      (*)    echo 'Other'  ;;
-    }
-
-This syntax, including the `;;` operator, is inherited from shell.  (Aside: In
-Oil, the left paren is required.  Matchin parens are easier for tools to
-understand.)
-
-### Function Sub Isn't Allowed in Double Quoted Strings
-
-You can do
-
-    echo $f(x)
-
-but not
-
-    echo "_ $f(x) _"   # means the variable $f and then literals '(x)' !
-
-Instead you have to use an expression sub:
-
-    echo "_ $[f(x)] _"
-
-You can also factor it out:
-
-    var s = f(x)
-    echo "_ $s _"
-
-To disambiguate the cases, use explicit braces:
-
-    echo "_ ${f}(x) _"  # variable f
-    echo "_ $[f(x)] _"  # function call f
-
 ### Two Different Syntaxes For `Block` and `Expr` Literals
 
 Blocks look different in command vs expression mode:

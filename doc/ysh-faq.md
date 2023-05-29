@@ -94,19 +94,22 @@ are impossible to fix.  Shell's `echo` doesn't accept `--`.
 Note that `write -- $x` is equivalent to `echo $x` in YSH, so `echo` is
 superfluous.  But we wanted the short and familiar `echo $x` to work.
 
-## What's the difference between `$(dirname $x)` and `$len(x)` ?
+## What's the difference between `$(dirname $x)` and `$[len(x)]` ?
 
 Superficially, both of these syntaxes take an argument `x` and return a
 string.  But they are different:
 
 - `$(dirname $x)` is a shell command substitution that returns a string, and
   **starts another process**.
-- `$len(x)` is a function call, and doesn't need to start a process.
-  - Note that `len(x)` is an expression that evaluates to an integer, and
-    `$len(x)` converts it to a string.
+- `$[len(x)]` is an expression sub containing a function call expression.
+  - It doesn't need to start a process.
+  - Note that `len(x)` evaluates to an integer, and `$[len(x)]` converts it to
+    a string.
 
+<!--
 (Note: builtin subs like `${.myproc $x}` are meant to eliminate process
 overhead, but they're not yet implemented.)
+-->
 
 ## How can I return rich values from shell functions / Oil `proc`s?
 

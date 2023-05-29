@@ -15,10 +15,10 @@ echo $[d['key']]
 42
 ## END
 
-#### $[d->key]
+#### $[d.key]
 var d = {}
 setvar d['key'] = 42
-echo $[d->key]
+echo $[d.key]
 ## STDOUT:
 42
 ## END
@@ -30,7 +30,7 @@ var d = {}
 setvar d['key'] = 42
 echo "func $[len(a)]"
 echo "key $[d['key']]"
-echo "key $[d->key]"
+echo "key $[d.key]"
 echo "dq $[d["key"]]"
 ## STDOUT:
 func 3

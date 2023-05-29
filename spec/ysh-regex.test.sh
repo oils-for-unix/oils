@@ -63,9 +63,9 @@ setvar BASH_REMATCH = %(reset)
 
 if (x ~ /<d+> '-' <d+>/) {
   argv.py "${BASH_REMATCH[@]}"
-  argv.py $_match(0) $_match(1) $_match(2)
+  argv.py $[_match(0)] $[_match(1)] $[_match(2)]
 
-  argv.py $_match()  # synonym for _match(0)
+  argv.py $[_match()]  # synonym for _match(0)
 
   # TODO: Also test _start() and _end()
 }
@@ -82,11 +82,11 @@ shopt -s oil:upgrade
 var s = 'foo'
 if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
   echo matches
-  argv.py $_match(0) $_match(1)
+  argv.py $[_match(0)] $[_match(1)]
 }
 if (s !~ '[[:digit:]]+') {
   echo "does not match"
-  argv.py $_match(0) $_match(1)
+  argv.py $[_match(0)] $[_match(1)]
 }
 
 if (s ~ '[[:digit:]]+') {
@@ -113,11 +113,11 @@ shopt -s oil:upgrade
 
 var s = 'foo123bar'
 if (s ~ /digit+/) {
-  echo start=$_start() end=$_end()
+  echo start=$[_start()] end=$[_end()]
 }
 
 if (s ~ / word+ <digit+> /) {
-  echo start=$_start(1) end=$_end(1)
+  echo start=$[_start(1)] end=$[_end(1)]
 }
 ## STDOUT:
 start=3 end=6
@@ -271,7 +271,7 @@ shopt -s oil:all
 var x = 'zz 2020-08-20'
 
 if (x ~ /<d+ : year> '-' <d+ : month>/) {
-  argv.py $_match('year') $_match('month')
+  argv.py $[_match('year')] $[_match('month')]
 }
 ## STDOUT:
 ['2020', '08']

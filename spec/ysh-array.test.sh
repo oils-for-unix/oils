@@ -2,7 +2,7 @@
 
 #### basic array
 var x = %(1 2 3)
-write len=$len(x)
+write len=$[len(x)]
 ## STDOUT:
 len=3
 ## END
@@ -12,7 +12,7 @@ shopt -s oil:all
 
 var x = 1
 var a = %($x $(write hi) 'sq' "dq $x")
-write len=$len(a)
+write len=$[len(a)]
 write @a
 ## STDOUT:
 len=4

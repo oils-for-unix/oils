@@ -42,11 +42,11 @@ The Oil parser starts out in command mode:
 
 But it switches to expression mode in a few places:
 
-    var x = 42 + a[i]      # the RHS of an assignment is an expression
+    var x = 42 + a[i]          # the RHS of = is a YSH expression
 
-    echo $len('foo')       # interpolated function call
+    echo $[mydict['key']]      # interpolated expressions with $[]
 
-    echo $[mydict['key']]  # interpolated Oil expressions with $[]
+    json write ({key: "val"})  # typed args inside ()
 
 See [Command vs. Expression Mode](command-vs-expression-mode.html) for details.
 
