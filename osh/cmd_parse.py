@@ -1404,8 +1404,8 @@ class CommandParser(object):
 
     return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
 
-  def ParseYshCaseArm(self):
-    # type: () -> CaseArm
+  def ParseYshCaseArm(self, first_pat_tok):
+    # type: (List[Token]) -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
@@ -1452,24 +1452,27 @@ class CommandParser(object):
         self._Next()
       log('AFTER ParseBraceGroup Op_Newline?')
 
-    self._NewlineOk3()
+    self._NewlineOk3(first_pat_tok)
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
-  def _NewlineOk3(self):
+  def _NewlineOk3(self, first_pat_tok):
+    # type: (List[Token]) -> None
+    """
+    """
     id_ = self.w_parser.LookPastSpace()
     log('_NewlineOk3 id_ %s', Id_str(id_))
     if id_ == Id.Op_Newline:
       log('c_id 1 %s', Id_str(self.c_id))
       self._Next()
-      log('c_id 2 %s', Id_str(self.c_id))
+      #log('c_id 2 %s', Id_str(self.c_id))
 
       self._Peek()  # materialize it
       log('c_id 3 %s', Id_str(self.c_id))
 
       self._Next()
-      log('c_id 4 %s', Id_str(self.c_id))
+      #log('c_id 4 %s', Id_str(self.c_id))
 
       self._Peek()  # materialize it
       log('c_id 5 %s', Id_str(self.c_id))
@@ -1487,15 +1490,8 @@ class CommandParser(object):
     ate = self._Eat(Id.Lit_LBrace)
     arms_start = word_.BraceToken(ate)
 
-    # TODO: Change stratgies
-    #self._NewlineOk2()
-
-    if 0:
-      self._Peek()
-      if self.c_id == Id.Op_Newline:
-        self._Next()
-
-    self._NewlineOk3()
+    first_pat_tok = []  # type: List[Token]
+    self._NewlineOk3(first_pat_tok)
     log('AFTER { Op_Newline?')
     # TODO: Return newline state
 
@@ -1538,7 +1534,7 @@ class CommandParser(object):
         break
 
       # TODO: newline state
-      arm = self.ParseYshCaseArm()
+      arm = self.ParseYshCaseArm(first_pat_tok)
 
       #print(arm.pat_list)
       arms.append(arm)
