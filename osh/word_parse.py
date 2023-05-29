@@ -1768,6 +1768,7 @@ class WordParser(WordEmitter):
     """
     assert self.token_type != Id.Undefined_Tok
 
+    #log('%s', self.cur_token)
     id_ = self.lexer.LookAheadOne(lex_mode_e.Expr)
 
     #if self.cur_token.id == Id.WS_Space:

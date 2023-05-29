@@ -1153,6 +1153,25 @@ ysh_case_experiment() {
   _ysh-should-parse '
 case (x) {
   word    { echo word; } (3)     { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /eggex/ { echo eggex; }
+}'
+
 }
 
 ysh_case() {

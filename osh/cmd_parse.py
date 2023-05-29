@@ -1422,6 +1422,8 @@ class CommandParser(object):
     pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
+      #log('=> %s', Id_str(self.c_id))
+      #log('=> %s', self.cur_word)
 
       if self.c_id == Id.Op_LParen:
         # TODO: Parse YSH expressions here
@@ -1442,7 +1444,11 @@ class CommandParser(object):
 
     self._NewlineOk2()
     action = self.ParseBraceGroup()
-    #self._NewlineOk2()
+
+    # This is like _NewlineOk2
+    self._Peek()
+    if self.c_id == Id.Op_Newline:
+      self._Next()
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
