@@ -1478,8 +1478,8 @@ class CommandParser(object):
 
       next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
 
-      self._Next()  # move to Id.Op_Newline; we looked ahed
-      self._Peek()
+      self._Next()  # move to Id.Op_Newline; we looked ahead to it
+      self._Peek()  # causes ReadWord(), which may or may not change lexer state
       self._Next()  # move PAST Id.Op_Newline
 
       first_id_out[0] = next_id
