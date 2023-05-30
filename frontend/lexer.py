@@ -120,6 +120,7 @@ class LineLexer(object):
       return tok_type
 
   def AssertAtEndOfLine(self):
+    # type: () -> None
     assert self.line_pos == len(self.src_line.content), \
         '%d %s' % (self.line_pos, self.src_line.content)
 

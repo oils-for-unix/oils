@@ -1404,7 +1404,7 @@ class CommandParser(object):
 
     return CaseArm(left_tok, pat_words, middle_tok, action_children, dsemi_tok)
 
-  def ParseYshCaseArm(self, first_pat_tok):
+  def ParseYshCaseArm(self, first_id_out):
     # type: (List[Id_t]) -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
@@ -1452,49 +1452,42 @@ class CommandParser(object):
         self._Next()
       log('AFTER ParseBraceGroup Op_Newline?')
 
-    self._NewlineOk3(first_pat_tok)
+    self._NewlineOk3(first_id_out)
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pat_words, action.left, action.children, action.right)
 
-  def _NewlineOk3(self, first_pat_tok):
+  def _NewlineOk3(self, first_id_out):
     # type: (List[Id_t]) -> None
     """
+    HACK: first_id_out is filled with the choice of
+    
+         word { echo word }
+         (3)  { echo expr }
+         /e/  { echo eggex }
+       }        # right brace
     """
     id_ = self.w_parser.LookPastSpace()
-    #log('_NewlineOk3 id_ %s', Id_str(id_))
-    if id_ == Id.Op_Newline:
-      next_id = self.w_parser.LookYshCase()
+    if id_ == Id.Op_Newline: 
+      next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
       assert next_id == Id.Unknown_Tok, Id_str(next_id)
+
+      # Hack to make lookahead work!
       self.lexer.MoveToNextLine()
       #log('Moved to next line')
-      next_id = self.w_parser.LookYshCase()
 
-      #log('NL 1 %s', Id_str(self.w_parser.LookYshCase()))
+      next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
 
-      self._Next()
-      #log('NL 2 %s', Id_str(self.w_parser.LookYshCase()))
+      self._Next()  # move to Id.Op_Newline; we looked ahed
+      self._Peek()
+      self._Next()  # move PAST Id.Op_Newline
 
-      self._Peek()  # materialize it
-      #log('NL 3 %s', Id_str(self.w_parser.LookYshCase()))
-
-      self._Next()
-      #log('NL 4 %s', Id_str(self.w_parser.LookYshCase()))
-
-      # TODO: We need to pump to the NEXT LINE HERE!
-
-      self._Peek()  # materialize it
-      #log('NL 5 %s', Id_str(self.w_parser.LookYshCase()))
-
-      # PROBLEM: This can't see past the newline!
-      #id2 = self.w_parser.LookYshCase3()
-      first_pat_tok[0] = next_id
+      first_id_out[0] = next_id
 
       #log('_NewlineOk newline id2 %s', Id_str(id2))
-
     else:
-      next_id = self.w_parser.LookYshCase()
-      first_pat_tok[0] = next_id
+      next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
+      first_id_out[0] = next_id
       #log('_NewlineOk3 single %s', Id_str(id1))
 
   def ParseYshCase(self, case_kw):
@@ -1510,8 +1503,8 @@ class CommandParser(object):
     ate = self._Eat(Id.Lit_LBrace)
     arms_start = word_.BraceToken(ate)
 
-    first_pat_tok = [Id.Unknown_Tok]  # type: List[Id_t]
-    self._NewlineOk3(first_pat_tok)
+    first_id_out = [Id.Unknown_Tok]  # type: List[Id_t]
+    self._NewlineOk3(first_id_out)
     log('AFTER { Op_Newline?')
     # TODO: Return newline state
 
@@ -1525,37 +1518,14 @@ class CommandParser(object):
         print('WordParser.cur_token %s' % self.w_parser.cur_token)
 
       # four way decision
-      #x = self.w_parser.DetectYshCasePattern()
-      #self._Peek()
-      #x = self.w_parser.LookYshCase()
-      #print('LookYshCase  %s' % Id_str(x))
-      print('*** first_pat_tok %s' % Id_str(first_pat_tok[0]))
-      #print('')
-
-      #x = self.lexer.LookAheadOne(lex_mode_e.Expr)
-
-      #which_matcher = FourWayDecision()
-
-      #if which == Id.Expr_Slash:
-      #if which == Id.Op_LParen:
-      #if which == Id.Op_RBrace:
-      #  else:
+      print('*** first_id_out %s' % Id_str(first_id_out[0]))
       self._Peek()  # ReadWord
-
-      #print('AFTER peek %s' % Id_str(self.c_id))
-      #print('WordParser.cur_token %s' % self.w_parser.cur_token)
-
-      # 4 way decision
-      # WORD
-      # (
-      # /
-      # }
 
       if self.c_id == Id.Lit_RBrace:  # is this part of the 4 way decision?
         break
 
       # TODO: newline state
-      arm = self.ParseYshCaseArm(first_pat_tok)
+      arm = self.ParseYshCaseArm(first_id_out)
 
       #print(arm.pat_list)
       arms.append(arm)

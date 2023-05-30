@@ -1762,46 +1762,6 @@ class WordParser(WordEmitter):
       id_ = self.cur_token.id
     return id_
 
-  def LookYshCase(self):
-    # type: () -> Id_t
-    """
-    """
-    assert self.token_type != Id.Undefined_Tok
-
-    #if self.token_type == Id.Op_Newline:
-    #  log('LookYshCase NEWLINE')
-    #  self._Next(lex_mode_e.ShCommand)
-    #self._Peek()
-
-    #log('LookYshCase self.cur_token %s', Id_str(self.cur_token.id))
-    #log('LookYshCase self.cur_token')
-    #log('-> %s', self.cur_token)
-
-    #id_ = self.lexer.LookAheadOne(lex_mode_e.Expr)
-
-    id_ = self.lexer.LookPastSpace(lex_mode_e.Expr)
-
-    #log('-> LookAheadOne Expr %s', Id_str(id_))
-
-    #if self.cur_token.id == Id.WS_Space:
-    #  id_ = self.lexer.LookPastSpace(lex_mode_e.Expr)
-    #else:
-    #  id_ = self.cur_token.id
-    return id_
-
-  def LookYshCase3(self):
-    # type: () -> Id_t
-    """
-    """
-    assert self.token_type != Id.Undefined_Tok
-
-    id_ = self.cur_token.id
-    log('LookYshCase3 self.cur_token %s', Id_str(id_))
-    #log('LookYshCase self.cur_token')
-    #log('-> %s', self.cur_token)
-
-    return id_
-
   def LookAheadFuncParens(self):
     # type: () -> bool
     """Special lookahead for f( ) { echo hi; } to check for ( )
