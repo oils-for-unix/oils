@@ -1464,30 +1464,38 @@ class CommandParser(object):
     id_ = self.w_parser.LookPastSpace()
     #log('_NewlineOk3 id_ %s', Id_str(id_))
     if id_ == Id.Op_Newline:
-      log('NL 1 %s', Id_str(self.w_parser.LookYshCase()))
+      next_id = self.w_parser.LookYshCase()
+      assert next_id == Id.Unknown_Tok, Id_str(next_id)
+      self.lexer.MoveToNextLine()
+      #log('Moved to next line')
+      next_id = self.w_parser.LookYshCase()
+
+      #log('NL 1 %s', Id_str(self.w_parser.LookYshCase()))
 
       self._Next()
-      log('NL 2 %s', Id_str(self.w_parser.LookYshCase()))
+      #log('NL 2 %s', Id_str(self.w_parser.LookYshCase()))
 
       self._Peek()  # materialize it
-      log('NL 3 %s', Id_str(self.w_parser.LookYshCase()))
+      #log('NL 3 %s', Id_str(self.w_parser.LookYshCase()))
 
       self._Next()
-      log('NL 4 %s', Id_str(self.w_parser.LookYshCase()))
+      #log('NL 4 %s', Id_str(self.w_parser.LookYshCase()))
+
+      # TODO: We need to pump to the NEXT LINE HERE!
 
       self._Peek()  # materialize it
-      log('NL 5 %s', Id_str(self.w_parser.LookYshCase()))
+      #log('NL 5 %s', Id_str(self.w_parser.LookYshCase()))
 
       # PROBLEM: This can't see past the newline!
-      id2 = self.w_parser.LookYshCase3()
-      first_pat_tok[0] = id2
+      #id2 = self.w_parser.LookYshCase3()
+      first_pat_tok[0] = next_id
 
-      log('_NewlineOk newline id2 %s', Id_str(id2))
+      #log('_NewlineOk newline id2 %s', Id_str(id2))
 
     else:
-      id1 = self.w_parser.LookYshCase()
-      first_pat_tok[0] = id1
-      log('_NewlineOk3 single %s', Id_str(id1))
+      next_id = self.w_parser.LookYshCase()
+      first_pat_tok[0] = next_id
+      #log('_NewlineOk3 single %s', Id_str(id1))
 
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case

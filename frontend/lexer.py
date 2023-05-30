@@ -119,6 +119,10 @@ class LineLexer(object):
       tok_type, _ = match.OneToken(lex_mode, line_str, pos)
       return tok_type
 
+  def AssertAtEndOfLine(self):
+    assert self.line_pos == len(self.src_line.content), \
+        '%d %s' % (self.line_pos, self.src_line.content)
+
   def LookPastSpace(self, lex_mode):
     # type: (lex_mode_t) -> Id_t
     """Look ahead in current line for non-space token, using given lexer mode.
@@ -148,8 +152,9 @@ class LineLexer(object):
 
       # NOTE: Instead of hard-coding this token, we could pass it in.
       # LookPastSpace(lex_mode, past_token_type)
-      # WS_Space only appears in the ShCommand state! 
-      if tok_type != Id.WS_Space:
+      # - WS_Space only given in lex_mode_e.ShCommand
+      # - Id.Ignored_Space give in lex_mode_e.Expr
+      if tok_type != Id.WS_Space and tok_type != Id.Ignored_Space:
         break
       pos = end_pos
 
@@ -263,7 +268,6 @@ class Lexer(object):
     self.line_lexer = line_lexer
     self.line_reader = line_reader
 
-    self.line_id = -1  # Invalid one
     self.translation_stack = []  # type: List[Tuple[Id_t, Id_t]]
     self.emit_comp_dummy = False
 
@@ -319,6 +323,17 @@ class Lexer(object):
     """
     #log('   PushHint %s ==> %s', Id_str(old_id), Id_str(new_id))
     self.translation_stack.append((old_id, new_id))
+
+  def MoveToNextLine(self):
+    # type: () -> None
+    """For YSH case
+
+    For lookahead on the next line
+    """
+    self.line_lexer.AssertAtEndOfLine() # Only call this when you've seen \n
+
+    src_line, line_pos = self.line_reader.GetLine()
+    self.line_lexer.Reset(src_line, line_pos)  # fill with a new line
 
   def _Read(self, lex_mode):
     # type: (lex_mode_t) -> Token

@@ -1172,6 +1172,14 @@ case (x) {
   /eggex/ { echo eggex; }
 }'
 
+  # No leading space
+  _ysh-should-parse '
+case (x) {
+word    { echo word; }
+(3)     { echo expr; }
+/eggex/ { echo eggex; }
+}'
+
 }
 
 ysh_case() {
