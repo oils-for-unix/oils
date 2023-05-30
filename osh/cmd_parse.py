@@ -596,9 +596,10 @@ class CommandParser(object):
   def _NewlineOk(self):
     # type: () -> None
     """Check for optional newline and consume it."""
-    if self.w_parser.LookPastSpace() == Id.Op_Newline:
-      self._Peek()
-      self._Next()
+    pass
+    #if self.w_parser.LookPastSpace() == Id.Op_Newline:
+    #  self._Peek()
+    #  self._Next()
 
   def _AtSecondaryKeyword(self):
     # type: () -> bool
@@ -1428,10 +1429,13 @@ class CommandParser(object):
 
     discriminant = self.lexer.LookPastSpace(lex_mode_e.Expr)
 
+    from _devbuild.gen.syntax_asdl import Id_str
+    print(Id_str(discriminant))
+
     if discriminant in (Id.Op_LParen, Id.Arith_Slash):
         # pat_exprs, pat_else or par_eggex
         pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
-    elif discriminant == Id.Op_RBrace:
+    elif discriminant in (Id.Op_RBrace, Id.Lit_RBrace):
         return None
     else:
         # pat_words
@@ -1452,6 +1456,8 @@ class CommandParser(object):
           else:
             break
         pattern = pat.Words(pat_words)
+
+    print('read pattern', pattern)
 
     self._NewlineOk()
     action = self.ParseBraceGroup()

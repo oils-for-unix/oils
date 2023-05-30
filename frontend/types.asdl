@@ -39,4 +39,16 @@ module types {
   # More possibilities
   # - printf formatting ${x %05d}.  I think that is mostly in expression mode
   #   like ${x|html} or ${x|title}
+
+  # The word parser, like the lexer, is modal.
+  word_mode =
+    ShCommand  # 3 word modes which translate directly to lexer modes
+  | DBracket
+  | BashRegex
+
+  | Arith  # _ReadArithWord()
+
+  # NOTE: These have not yet been implemented
+  | YshExpr  # if, while, for
+  | YshCasePattern  # new logic for 3 types of pattern
 }

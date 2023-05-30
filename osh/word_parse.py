@@ -49,7 +49,7 @@ lex_mode_e.VSub_ArgDQ
 
 from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
-from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
+from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e, word_mode_t, word_mode_e
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox, Token, loc, source,
     DoubleQuoted, SingleQuoted, SimpleVarSub, BracedVarSub, CommandSub,
@@ -1794,8 +1794,8 @@ class WordParser(WordEmitter):
     else:
       return False
 
-  def ReadWord(self, lex_mode):
-    # type: (lex_mode_t) -> word_t
+  def ReadWord(self, word_mode):
+    # type: (word_mode_t) -> word_t
     """Read the next Word.
 
     Returns:
@@ -1809,14 +1809,15 @@ class WordParser(WordEmitter):
       # Implementation note: This is an stateful/iterative function that calls
       # the stateless "_ReadWord" function.
       while True:
-        if lex_mode == lex_mode_e.Arith:
+        if word_mode == word_mode_e.Arith:
           # TODO: Can this be unified?
           w, need_more = self._ReadArithWord()
-        elif lex_mode in (
-            lex_mode_e.ShCommand, lex_mode_e.DBracket, lex_mode_e.BashRegex):
-          w, need_more = self._ReadWord(lex_mode)
+        elif word_mode in (
+            word_mode_e.ShCommand, word_mode_e.DBracket, word_mode_e.BashRegex):
+          w, need_more = self._ReadWord(word_mode)
         else:
-          raise AssertionError('Invalid lex state %s' % lex_mode)
+          raise AssertionError('Invalid word state %s' % word_mode)
+
         if not need_more:
           break
 

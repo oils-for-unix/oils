@@ -1,0 +1,2 @@
+case (foo) {
+(else) { echo; } }
