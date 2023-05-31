@@ -6,7 +6,7 @@ cmd_parse_test.py: Tests for cmd_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import command_e, for_iter_e, Pat_e
+from _devbuild.gen.syntax_asdl import command_e, for_iter_e, pat_e
 from core import error
 from core import test_lib
 from core import ui
