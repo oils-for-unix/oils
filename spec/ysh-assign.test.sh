@@ -187,16 +187,16 @@ x=1 y=9
 x=9 y=1
 ## END
 
-#### setvar d->key = 42 (setitem)
+#### setvar d.key = 42 (setitem)
 shopt -s oil:all
 
 var d = {}
 setvar d['f2'] = 42
-setvar d->f3 = 43
+setvar d.f3 = 43
 
 # Use the opposite thing to retrieve
 var f3 = d['f3']
-var f2 = d->f2
+var f2 = d.f2
 echo f3=$f3
 echo f2=$f2
 ## STDOUT:

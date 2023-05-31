@@ -293,38 +293,6 @@ proc name-with-hyphen (x, y, @names) {
 name-with-hyphen a b c
 ```
 
-<!--
-
-OBSOLETE
-
-func:
-
-```
-shopt -s ysh:upgrade
-
-func f(a, b=0, ...args; c, d=0, ...named) {
-  echo __ args: @args
-  echo __ named:
-  echo @named | sort
-  if (named) {
-    return [a, b, c, d]
-  } else {
-    return a + b + c + d
-  }
-}
-var a = [42, 43]
-var n = {x: 99, y: 100}
-
-echo ____
-echo string $f(0, 1, ...a, c=2, d=3)
-
-# Now get a list back
-echo ____
-echo array @f(5, 6, ...a, c=7, d=8; ...n)
-```
-
--->
-
 ### More Notes on Procs. vs Funcs
 
 

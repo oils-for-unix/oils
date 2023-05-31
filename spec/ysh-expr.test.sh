@@ -90,16 +90,16 @@ echo shell=${#x[@]}
 
 # Oil function call: length is 20.  I think that makes sense?  It's just a
 # different notion of length.
-echo oil=$len(x)
+echo oil=$[len(x)]
 
 ## STDOUT:
 shell=5
 oil=21
 ## END
 
-#### $len(x) inside strings
+#### $[len(x)] inside strings
 var s = "abc"
-echo -$len(s)-
+echo -$[len(s)]-
 
 # This already has a meaning ...
 #echo "-$len(x)-"
@@ -111,7 +111,7 @@ echo -$len(s)-
 
 #### Func with multiple args in multiple contexts
 var x = max(1+2, 3+4)
-echo $x $max(1+2, 3+4)
+echo $x $[max(1+2, 3+4)]
 
 ## STDOUT:
 7 7
@@ -120,7 +120,7 @@ echo $x $max(1+2, 3+4)
 
 #### Trailing Comma in Param list
 var x = max(1+2, 3+4,)
-echo $x $max(1+2, 3+4,)
+echo $x $[max(1+2, 3+4,)]
 
 ## STDOUT:
 7 7
@@ -130,7 +130,7 @@ echo $x $max(1+2, 3+4,)
 var s = "123"
 
 # lex_mode_e.ShCommand -> Expr -> ShCommand -> Expr
-var x = $(echo $'len\n' $len(s))
+var x = $(echo $'len\n' $[len(s)])
 echo $x
 ## STDOUT:
 len 3
@@ -398,9 +398,9 @@ great
 var zero = ()
 var one = tup(42)
 var two = (1,2)
-echo $len(zero)
-echo $len(one)
-echo $len(two)
+echo $[len(zero)]
+echo $[len(one)]
+echo $[len(two)]
 ## STDOUT:
 0
 1
@@ -423,11 +423,11 @@ true
 
 #### dict with 'bare word' keys
 var d0 = {}
-echo len=$len(d0)
+echo len=$[len(d0)]
 var d1 = {name: "hello"}
-echo len=$len(d1)
+echo len=$[len(d1)]
 var d2 = {name: "hello", other: 2}
-echo len=$len(d2)
+echo len=$[len(d2)]
 ## STDOUT:
 len=0
 len=1
@@ -436,13 +436,13 @@ len=2
 
 #### dict with expression keys
 var d1 = {['name']: "hello"}
-echo len=$len(d1)
+echo len=$[len(d1)]
 var v = d1['name']
 echo $v
 
 var key='k'
 var d2 = {["$key"]: "bar"}
-echo len=$len(d2)
+echo len=$[len(d2)]
 var v2 = d2['k']
 echo $v2
 
@@ -457,12 +457,12 @@ bar
 #### dict literal with implicit value
 var name = 'foo'
 var d1 = {name}
-echo len=$len(d1)
+echo len=$[len(d1)]
 var v1 = d1['name']
 echo $v1
 
 var d2 = {name, other: 'val'}
-echo len=$len(d2)
+echo len=$[len(d2)]
 var v2 = d2['name']
 echo $v2
 
@@ -548,24 +548,24 @@ var dq = "
 dq
 2
 "
-echo dq=$len(dq)
+echo dq=$[len(dq)]
 
 var sq = '
 sq
 2
 '
-echo sq=$len(sq)
+echo sq=$[len(sq)]
 
 var mylist = [
   1,
   2,
   3,
 ]
-echo mylist=$len(mylist)
+echo mylist=$[len(mylist)]
 
 var mytuple = (1,
   2, 3)
-echo mytuple=$len(mytuple)
+echo mytuple=$[len(mytuple)]
 
 ## STDOUT:
 dq=6
@@ -582,7 +582,7 @@ mytuple=3
 var mydict = { a:1,
   b: 2,
 }
-echo mydict=$len(mydict)
+echo mydict=$[len(mydict)]
 ## STDOUT:
 mydict=2
 ## END
@@ -593,39 +593,39 @@ var array = %(
   two
   three
 )
-echo array=$len(array)
+echo array=$[len(array)]
 
 var comsub = $(
 echo hi
 echo bye
 )
-echo comsub=$len(comsub)
+echo comsub=$[len(comsub)]
 
 ## STDOUT:
 array=3
 comsub=6
 ## END
 
-#### obj.attr and obj.method()
+#### obj->method()
 var s = 'hi'
 
 # TODO: This does a bound method thing we probably don't want
-var s2 = s.upper()
+var s2 = s->upper()
 echo $s2
 ## STDOUT:
 HI
 ## END
 
-#### obj.method does NOT give you a bound method
+#### obj->method does NOT give you a bound method
 var s = 'hi'
-var method = s.upper
+var method = s->upper
 echo $method
-## status: 2
+## status: 3
 ## stdout-json: ""
 
-#### d->key
+#### d.key
 var d = {name: 'andy'}
-var x = d->name
+var x = d.name
 echo $x
 ## STDOUT:
 andy
@@ -640,7 +640,7 @@ echo $k
 var a = [1, 2]
 var b = [3]
 var c = a ++ b
-echo len=$len(c)
+echo len=$[len(c)]
 
 ## STDOUT:
 abcde

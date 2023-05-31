@@ -105,7 +105,7 @@ hay eval :result {
 }
 
 const args = result['children'][0]['args']
-write --sep ' ' -- $len(result['children']) @args
+write --sep ' ' -- $[len(result['children'])] @args
 
 ## STDOUT:
 outside

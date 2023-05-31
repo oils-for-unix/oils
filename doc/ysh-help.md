@@ -850,10 +850,10 @@ Given an array of strings, returns a string.
 
     var x = ['a', 'b', 'c']
 
-    $ echo $join(x)
+    $ echo $[join(x)]
     abc
 
-    $ echo $join(x, ' ')  # optional delimiter
+    $ echo $[join(x, ' ')]  # optional delimiter
     a b c
 
 #### split

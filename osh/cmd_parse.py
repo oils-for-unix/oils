@@ -10,7 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Kind_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     loc, SourceLine, source,
@@ -593,13 +593,43 @@ class CommandParser(object):
       self._Next()
       self._Peek()
 
-  def _NewlineOk(self):
-    # type: () -> None
-    """Check for optional newline and consume it."""
-    pass
-    #if self.w_parser.LookPastSpace() == Id.Op_Newline:
-    #  self._Peek()
-    #  self._Next()
+  def _NewlineOkForYshCase(self, first_id_out):
+    # type: (List[Id_t]) -> None
+    """Check for optional newline and consume it.
+
+    This is a special case of `_NewlineOk` which fixed some "off-by-one" issues
+    which crop up while parsing Ysh Case Arms. For more details, see
+    #oil-dev > Progress On YSH Case Grammar on zulip.
+
+    HACK: first_id_out is filled with the choice of
+
+         word { echo word }
+         (3)  { echo expr }
+         /e/  { echo eggex }
+       }        # right brace
+    """
+    id_ = self.w_parser.LookPastSpace()
+    if id_ == Id.Op_Newline:
+      next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
+      assert next_id == Id.Unknown_Tok, Id_str(next_id)
+
+      # Hack to make lookahead work!
+      self.lexer.MoveToNextLine()
+      #log('Moved to next line')
+
+      next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
+
+      self._Next()  # move to Id.Op_Newline; we looked ahead to it
+      self._Peek()  # causes ReadWord(), which may or may not change lexer state
+      self._Next()  # move PAST Id.Op_Newline
+
+      first_id_out[0] = next_id
+
+      #log('_NewlineOk newline id2 %s', Id_str(id2))
+    else:
+      next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
+      first_id_out[0] = next_id
+      #log('_NewlineOk3 single %s', Id_str(id1))
 
   def _AtSecondaryKeyword(self):
     # type: () -> bool
@@ -1461,7 +1491,6 @@ class CommandParser(object):
 
     self._NewlineOk()
     action = self.ParseBraceGroup()
-    self._NewlineOk()
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pattern, action.left, action.children, action.right)
@@ -1479,7 +1508,8 @@ class CommandParser(object):
     ate = self._Eat(Id.Lit_LBrace)
     arms_start = word_.BraceToken(ate)
 
-    self._NewlineOk()
+    first_id_out = [Id.Unknown_Tok]
+    self._NewlineOkForYshCase(first_id_out)
 
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
@@ -1489,6 +1519,8 @@ class CommandParser(object):
         arms.append(arm)
       else:
         break
+
+      self._NewlineOkForYshCase(first_id_out)
 
     ate = self._Eat(Id.Lit_RBrace)
     arms_end = word_.BraceToken(ate)

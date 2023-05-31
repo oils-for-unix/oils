@@ -45,19 +45,71 @@ Rarely use `$` on the right-hand side:
 See [Command vs. Expression Mode](command-vs-expression-mode.html) for more
 details.
 
-## What's the difference between `$(dirname $x)` and `$len(x)` ?
+## How do I write `~/src` or `~bob/git` in a YSH assignment?
+
+This should cover 80% of cases:
+
+    var path = "$HOME/src"  # equivalent to ~/src
+
+The old shell style will cover the remaining cases:
+
+    declare path=~/src
+    readonly other=~bob/git
+
+---
+
+This is only in issue in *expressions*.  The traditional shell idioms work in
+*command* mode:
+
+    echo ~/src ~bob/git
+    # => /home/alice/src /home/bob/git
+
+The underlying design issue is that the YSH expression `~bob` looks like a
+unary operator and a variable, not some kind of string substitution.
+
+Also, quoted `"~"` is a literal tilde, and shells disagree on what `~""` means.
+The rules are subtle, so we avoid inventing new ones.
+
+## How do I write `echo -e` or `echo -n`?
+
+To escape variables, you can use the string language, rather than `echo`:
+
+    echo $'tab \t newline \n'   # YES
+    echo j"tab \t newline \n"   # TODO: J8 notation
+
+    echo -e tab \t newline \n'  # NO
+
+To omit the newline, use the `write` builtin:
+
+    write -n 'prefix'           # YES
+    write --end '' -- 'prefix'  # synonym
+
+    echo -n 'prefix'            # NO
+
+### Why Were `-e` and `-n` Removed?
+
+Without the flags, you can write `echo $flag` without the 2 corner cases that
+are impossible to fix.  Shell's `echo` doesn't accept `--`.
+
+Note that `write -- $x` is equivalent to `echo $x` in YSH, so `echo` is
+superfluous.  But we wanted the short and familiar `echo $x` to work.
+
+## What's the difference between `$(dirname $x)` and `$[len(x)]` ?
 
 Superficially, both of these syntaxes take an argument `x` and return a
 string.  But they are different:
 
 - `$(dirname $x)` is a shell command substitution that returns a string, and
   **starts another process**.
-- `$len(x)` is a function call, and doesn't need to start a process.
-  - Note that `len(x)` is an expression that evaluates to an integer, and
-    `$len(x)` converts it to a string.
+- `$[len(x)]` is an expression sub containing a function call expression.
+  - It doesn't need to start a process.
+  - Note that `len(x)` evaluates to an integer, and `$[len(x)]` converts it to
+    a string.
 
+<!--
 (Note: builtin subs like `${.myproc $x}` are meant to eliminate process
 overhead, but they're not yet implemented.)
+-->
 
 ## How can I return rich values from shell functions / Oil `proc`s?
 

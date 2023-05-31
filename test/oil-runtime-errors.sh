@@ -115,9 +115,9 @@ test-undefined-vars() {
 test-oil-word-eval() {
   set +o errexit
 
-  _expr-error-case 'echo $maybe("foo")'
+  _expr-error-case 'echo $[maybe("foo")]'
 
-  _expr-error-case 'echo $identity({key: "val"})'
+  _expr-error-case 'echo $[identity({key: "val"})]'
 
   # this should be consistent
   _expr-error-case 'write -- @identity([{key: "val"}])'
@@ -186,9 +186,7 @@ test-EvalExpr-calls() {
   _expr-error-case '_ len(42)'
 
   _expr-error-case 'echo $[len(42)]'
-
-  _expr-error-case 'echo $len(42)'
-  _expr-error-case 'echo $len(z = 42)'
+  _expr-error-case 'echo $[len(z = 42)]'
 
   _expr-error-case 'echo @len(42)'
   _expr-error-case 'echo @len(z = 42)'

@@ -652,7 +652,7 @@ class OilEvaluator(object):
                 place = cast(Attribute, UP_place)
 
                 obj = self.EvalExpr(place.obj, loc.Missing)
-                if place.op.id == Id.Expr_RArrow:
+                if place.op.id == Id.Expr_Dot:
                     attr = place.attr.tval
                     return lvalue.ObjIndex(obj, attr)
                 else:
@@ -1596,12 +1596,12 @@ class OilEvaluator(object):
         # type: (Attribute) -> Any # XXX
         o = self._EvalExpr(node.obj)
         id_ = node.op.id
-        if id_ == Id.Expr_Dot:
-            # Used for .startswith()
+        if id_ == Id.Expr_RArrow:
+            # Used for s->startswith(x)
             name = node.attr.tval
             return getattr(o, name)
 
-        if id_ == Id.Expr_RArrow:  # d->key is like d['key']
+        if id_ == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval
             try:
                 result = o[name]

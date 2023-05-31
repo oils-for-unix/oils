@@ -997,10 +997,10 @@ parse_at() {
 invalid_parens() {
   set +o errexit
 
-  # compatible extension in both langauges
+  # removed function sub syntax
   local s='write -- $f(x)'
-  _should-parse "$s"
-  _ysh-should-parse "$s"
+  _parse-error "$s"
+  _ysh-parse-error "$s"
 
   # requires parse_at
   local s='write -- @sorted(x)'
@@ -1367,6 +1367,38 @@ ysh_case() {
     *.py) { echo "python" }
   }
   '
+
+  _ysh-should-parse 'case (x) { word { echo word; } (3) { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; } (3)     { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /eggex/ { echo eggex; }
+}'
+
+  # No leading space
+  _ysh-should-parse '
+case (x) {
+word    { echo word; }
+(3)     { echo expr; }
+/eggex/ { echo eggex; }
+}'
 }
 
 ysh_for() {

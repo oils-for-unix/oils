@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   oil_lang/inline-function-calls.sh <function name>
+#   ysh/testdata/inline-function-calls.sh <function name>
 
 shopt -s ysh:upgrade
 
@@ -14,11 +14,11 @@ simple-demo() {
   echo
 
   echo '+ Inline call that coerces to string:'
-  write -- $len(myarray) $len("abc") ''
+  write -- $[len(myarray)] $[len("abc")] ''
   echo
 
   echo '+ Inline calls can be part of a word:'
-  write -- --length=$len(myarray) $len("abc")$len("xyz")
+  write -- --length=$[len(myarray)] $[len("abc")]$[len("xyz")]
   echo
 
   echo "+ Caveat: can't double quote.  It would break programs."
@@ -50,7 +50,7 @@ split-join-demo() {
   write -- 'Parts:' @parts
   echo
 
-  write 'join(parts):' $join(parts)
+  write 'join(parts):' $[join(parts)]
   echo
 
   echo '+ Another way of doing it, without creating another variable:'

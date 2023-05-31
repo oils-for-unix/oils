@@ -594,17 +594,12 @@ class Transformer(object):
                 if pnode.NumChildren() == 1:  # No trailers
                     return node
 
+                # Support a->startswith(b) and mydict.key
                 n = pnode.NumChildren()
                 i = 1
                 while i < n and ISNONTERMINAL(pnode.GetChild(i).typ):
                     node = self._Trailer(node, pnode.GetChild(i))
                     i += 1
-                if node.tag() == expr_e.Attribute:
-                    # Support a.startswith(b) but not obj.field
-                    attr_node = cast(Attribute, node)
-                    if attr_node.op.id == Id.Expr_Dot:
-                        p_die("obj.field isn't valid, but obj.method() is",
-                              attr_node.op)
 
                 if i != n:  # ['**' factor]
                     op_tok = pnode.GetChild(i).tok

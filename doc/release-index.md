@@ -57,7 +57,7 @@ are **ready to read**:
   - [A Tour of YSH](doc/ysh-tour.html)
   | [Oil vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [What Breaks When You Upgrade to Oil](doc/upgrade-breakage.html)
-  | [Oil Language FAQ](doc/oil-language-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
+  | [YSH Language FAQ](doc/ysh-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
   | [Oil Fixes Shell's Error Handling](doc/error-handling.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)

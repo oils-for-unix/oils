@@ -45,7 +45,7 @@ Reference:
   minimize the length of this list.
 - [Hay - Custom Languages for Unix Systems](hay.html).  Use Ruby-like
   blocks to declare data and interleaved code.
-- [Oil Language FAQ](oil-language-faq.html).  Common questions about the
+- [YSH Language FAQ](ysh-faq.html).  Common questions about the
   language.
 - [Warts](warts.html).  Mostly for compatibility.
 
