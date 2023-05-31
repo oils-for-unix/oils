@@ -1251,6 +1251,38 @@ ysh_case() {
     *.py) { echo "python" }
   }
   '
+
+  _ysh-should-parse 'case (x) { word { echo word; } (3) { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; } (3)     { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; } /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /eggex/ { echo eggex; } }'
+
+  _ysh-should-parse '
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /eggex/ { echo eggex; }
+}'
+
+  # No leading space
+  _ysh-should-parse '
+case (x) {
+word    { echo word; }
+(3)     { echo expr; }
+/eggex/ { echo eggex; }
+}'
 }
 
 ysh_for() {
