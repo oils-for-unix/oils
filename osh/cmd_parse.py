@@ -585,7 +585,7 @@ class CommandParser(object):
     self._Next()
     return skipped
 
-  def _NewlineOkLegacy(self):
+  def _NewlineOk(self):
     # type: () -> None
     """Check for optional newline and consume it."""
     self._Peek()
@@ -1180,7 +1180,7 @@ class CommandParser(object):
         tok = cast(Token, self.cur_word)
         semi_tok = tok
         self._Next()
-        self._NewlineOkLegacy()
+        self._NewlineOk()
         break
       elif self.c_id == Id.Op_Newline:
         self._Next()
@@ -1214,7 +1214,7 @@ class CommandParser(object):
     self._Peek()
     if self.c_id == Id.Op_Semi:
       self._Next()
-      self._NewlineOkLegacy()
+      self._NewlineOk()
     elif self.c_id == Id.Op_Newline:
       self._Next()
     elif self.c_id == Id.KW_Do:  # missing semicolon/newline allowed
@@ -1272,7 +1272,7 @@ class CommandParser(object):
         p_die('Unexpected word after 3 loop variables',
               loc.Word(self.cur_word))
 
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     self._Peek()
     if self.c_id == Id.KW_In:
@@ -1413,7 +1413,7 @@ class CommandParser(object):
     ate = self._Eat(Id.Right_CasePat)
     middle_tok = word_.AsOperatorToken(ate)
 
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
       c_list = self._ParseCommandTerm()
@@ -1432,12 +1432,12 @@ class CommandParser(object):
       # Happens on EOF
       p_die('Expected ;; or esac', loc.Word(self.cur_word))
 
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     return CaseArm(left_tok, pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self):
-    # type: () -> Optional[CaseArm]
+    # type: () -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
@@ -1514,13 +1514,12 @@ class CommandParser(object):
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
     while True:
-      arm = self.ParseYshCaseArm()
-      if arm:
-        arms.append(arm)
-      else:
+      self._Peek()
+      if self.c_id == Id.Lit_RBrace:
         break
 
-      self._NewlineOkForYshCase(first_id_out)
+      arm = self.ParseYshCaseArm()
+      arms.append(arm)
 
     ate = self._Eat(Id.Lit_RBrace)
     arms_end = word_.BraceToken(ate)
@@ -1549,12 +1548,12 @@ class CommandParser(object):
     to_match = case_arg.Word(w)
     self._Next()  # past WORD
 
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     ate = self._Eat(Id.KW_In)
     arms_start = word_.AsKeywordToken(ate)
 
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     arms = []  # type: List[CaseArm]
     while True:
@@ -1871,7 +1870,7 @@ class CommandParser(object):
       # would just be 'f'
       self._Next()
 
-      self._NewlineOkLegacy()
+      self._NewlineOk()
 
       func = command.ShFunction.CreateNull()
       func.name = name
@@ -1908,7 +1907,7 @@ class CommandParser(object):
       self._Next()
       self._Eat(Id.Right_ShFunction)
 
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     func = command.ShFunction.CreateNull()
     func.name = name
@@ -2201,7 +2200,7 @@ class CommandParser(object):
       ops.append(op)
 
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
-      self._NewlineOkLegacy()
+      self._NewlineOk()
 
       child = self.ParseCommand()
       children.append(child)
@@ -2249,7 +2248,7 @@ class CommandParser(object):
       ops.append(word_.AsOperatorToken(self.cur_word))
 
       self._Next()  # skip past || &&
-      self._NewlineOkLegacy()
+      self._NewlineOk()
 
       child = self.ParsePipeline()
       children.append(child)
@@ -2424,7 +2423,7 @@ class CommandParser(object):
     more like this: more like this: (and_or trailer)+.  It makes capture
     easier.
     """
-    self._NewlineOkLegacy()
+    self._NewlineOk()
     node = self._ParseCommandTerm()
     return node
 
@@ -2438,7 +2437,7 @@ class CommandParser(object):
     Raises:
       ParseError
     """
-    self._NewlineOkLegacy()
+    self._NewlineOk()
     self._Peek()
     if self.c_id == Id.Eof_Real:
       return None  # main loop checks for here docs
@@ -2473,7 +2472,7 @@ class CommandParser(object):
       echo two
     )
     """
-    self._NewlineOkLegacy()
+    self._NewlineOk()
 
     if self.c_kind == Kind.Eof:  # e.g. $()
       return command.NoOp
