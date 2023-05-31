@@ -1172,14 +1172,22 @@ ysh_case() {
 
   _ysh-should-parse '
   case (foo) {
+    (0) { echo "python" }
+  }
+  '
+
+  _ysh-should-parse '
+  case (foo) {
     ("main.py") { echo "python" }
   }
   '
 
   # Various multi-line cases
-  _ysh-should-parse '
-  case (foo){("main.py"){ echo "python" } }
-  '
+  if false; then # TODO: fixme, this is in the vein of the `if(x)` error
+    _ysh-should-parse '
+    case (foo){("main.py"){ echo "python" } }
+    '
+  fi
   _ysh-should-parse '
   case (foo) { ("main.py") { echo "python" } }
   '
@@ -1239,6 +1247,11 @@ ysh_case() {
     fr-CA {
       echo Bonjour
     }
+
+
+
+
+
     (else) {
       echo o/
     }

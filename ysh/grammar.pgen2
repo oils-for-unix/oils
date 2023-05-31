@@ -618,7 +618,8 @@ case_pat: (
 # easier to read and transform in `expr_to_ast.py`
 pat_paren: '(' (pat_else | pat_exprs)
 
-pat_exprs: pat_expr ([Op_Newline] '|' [Op_Newline] '(' pat_expr)*
+pat_exprs: pat_expr # ([Op_Newline] '|' [Op_Newline] '(' pat_expr)*
+                    # ^^^-- adding all of this seems to break things
 pat_expr: expr ')'
 
 pat_else: 'else' ')'

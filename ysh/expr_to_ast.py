@@ -756,11 +756,13 @@ class Transformer(object):
             if typ == grammar_nt.pat_else:
                 return pat.Else
             elif typ == grammar_nt.pat_exprs:
-                raise NotImplementedError() # I am lazy....
+                e = pattern.GetChild(0).GetChild(0)
+                # TODO: recursively extract all expressions
+                return self.Expr(e)
 
         elif typ == grammar_nt.pat_eggex:
             # pat_eggex
-            re = self._Regex(pattern)
+            re = self._Regex(pattern.GetChild(1))
             return pat.Eggex(re)
 
         raise NotImplementedError()

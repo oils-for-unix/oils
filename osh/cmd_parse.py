@@ -619,11 +619,19 @@ class CommandParser(object):
 
       next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
 
-      self._Next()  # move to Id.Op_Newline; we looked ahead to it
-      self._Peek()  # causes ReadWord(), which may or may not change lexer state
-      self._Next()  # move PAST Id.Op_Newline
+      # Maybe a little hacky???
+      if next_id == Id.Op_Newline:
+        n = self.lexer.Read(lex_mode_e.Expr)
+        assert n.id == Id.Op_Newline, Id_str(n)
 
-      first_id_out[0] = next_id
+        # TODO: this recursion should probably be removed...
+        self._NewlineOkForYshCase(first_id_out)
+      else:
+        self._Next()  # move to Id.Op_Newline; we looked ahead to it
+        self._Peek()  # causes ReadWord(), which may or may not change lexer state
+        self._Next()  # move PAST Id.Op_Newline
+
+        first_id_out[0] = next_id
 
       #log('_NewlineOk newline id2 %s', Id_str(id2))
     else:
@@ -1436,8 +1444,8 @@ class CommandParser(object):
 
     return CaseArm(left_tok, pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
-  def ParseYshCaseArm(self):
-    # type: () -> CaseArm
+  def ParseYshCaseArm(self, first_id_out):
+    # type: (List[Id_t]) -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
@@ -1456,16 +1464,12 @@ class CommandParser(object):
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
     pattern = None  # type: pat_t
-
-    discriminant = self.lexer.LookPastSpace(lex_mode_e.Expr)
-
-    from _devbuild.gen.syntax_asdl import Id_str
-    print(Id_str(discriminant))
+    discriminant = first_id_out[0]  # TODO: remove `first_id_out`
 
     if discriminant in (Id.Op_LParen, Id.Arith_Slash):
         # pat_exprs, pat_else or par_eggex
         pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
-    elif discriminant in (Id.Op_RBrace, Id.Lit_RBrace):
+    elif discriminant == Id.Op_RBrace:
         return None
     else:
         # pat_words
@@ -1487,10 +1491,10 @@ class CommandParser(object):
             break
         pattern = pat.Words(pat_words)
 
-    print('read pattern', pattern)
-
     self._NewlineOk()
     action = self.ParseBraceGroup()
+
+    self._NewlineOkForYshCase(first_id_out)
 
     # The left token of the action is our "middle" token
     return CaseArm(left_tok, pattern, action.left, action.children, action.right)
@@ -1514,12 +1518,14 @@ class CommandParser(object):
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
     while True:
-      self._Peek()
-      if self.c_id == Id.Lit_RBrace:
+      if self.w_parser.LookPastSpace() == Id.Lit_RBrace:
         break
 
-      arm = self.ParseYshCaseArm()
-      arms.append(arm)
+      arm = self.ParseYshCaseArm(first_id_out)
+      if arm:
+        arms.append(arm)
+      else:
+        break
 
     ate = self._Eat(Id.Lit_RBrace)
     arms_end = word_.BraceToken(ate)
