@@ -89,25 +89,25 @@ class _BaseTrail(object):
       # type: (_DebugFile) -> None
 
       # note: could cast DebugFile to IO[str] instead of ignoring?
-      debug_f.log('  words:')
+      debug_f.writeln('  words:')
       for w in self.words:
         w.PrettyPrint(f=debug_f)  # type: ignore
-      debug_f.log('')
+      debug_f.writeln('')
 
-      debug_f.log('  redirects:')
+      debug_f.writeln('  redirects:')
       for r in self.redirects:
         r.PrettyPrint(f=debug_f)  # type: ignore
-      debug_f.log('')
+      debug_f.writeln('')
 
-      debug_f.log('  tokens:')
+      debug_f.writeln('  tokens:')
       for p in self.tokens:
         p.PrettyPrint(f=debug_f)  # type: ignore
-      debug_f.log('')
+      debug_f.writeln('')
 
-      debug_f.log('  alias_words:')
+      debug_f.writeln('  alias_words:')
       for w in self.alias_words:
         w.PrettyPrint(f=debug_f)  # type: ignore
-      debug_f.log('')
+      debug_f.writeln('')
 
   def __repr__(self):
     # type: () -> str

@@ -42,17 +42,13 @@ class _DebugFile(object):
         # type: () -> None
         pass
 
-    def log(self, msg, *args):
-        # type: (str, *Any) -> None
-        pass
-
     def write(self, s):
         # type: (str) -> None
         pass
 
     def writeln(self, s):
         # type: (str) -> None
-        self.write(s + '\n')
+        pass
 
     def isatty(self):
         # type: () -> bool
@@ -74,19 +70,14 @@ class DebugFile(_DebugFile):
         _DebugFile.__init__(self)
         self.f = f
 
-    def log(self, msg, *args):
-        # type: (str, *Any) -> None
-        if mylib.PYTHON:  # remove dynamic format
-            if args:
-                msg = msg % args
-        self.f.write(msg)
-        self.f.write('\n')
-        self.f.flush()  # need to see it interactively
-
     def write(self, s):
         # type: (str) -> None
         """Used by dev::Tracer and ASDL node.PrettyPrint()."""
         self.f.write(s)
+
+    def writeln(self, s):
+        # type: (str) -> None
+        self.write(s + '\n')
 
     def isatty(self):
         # type: () -> bool

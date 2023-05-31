@@ -685,7 +685,7 @@ class ExternalProgram(object):
                         h_argv.extend(argv[1:])
                         argv = h_argv
                         argv0_path = self.hijack_shebang
-                        self.debug_f.log('Hijacked: %s', argv0_path)
+                        self.debug_f.writeln('Hijacked: %s' % argv0_path)
                     else:
                         #self.debug_f.log('Not hijacking %s (%r)', argv, line)
                         pass

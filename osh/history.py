@@ -60,7 +60,7 @@ class Evaluator(object):
     if history_len <= 0:  # no commands to expand
       return line
 
-    self.debug_f.log('history length = %d', history_len)
+    self.debug_f.writeln('history length = %d' % history_len)
 
     parts = []  # type: List[str]
     for id_, val in tokens:
@@ -84,8 +84,9 @@ class Evaluator(object):
             # Invalid command in history.  bash uses a separate, approximate
             # history lexer which allows invalid commands, and will retrieve
             # parts of them.  I guess we should too!
-            self.debug_f.log(
-                "Couldn't parse historical command %r: %s", prev, e)
+            self.debug_f.writeln(
+                "Couldn't parse historical command %r: %s" %
+                (prev, e.UserErrorString()))
 
           # NOTE: We're using the trail rather than the return value of
           # ParseLogicalLine() because it handles cases like 
@@ -99,7 +100,7 @@ class Evaluator(object):
           # isn't a great idea.
 
           words = self.parse_ctx.trail.words
-          self.debug_f.log('TRAIL words: %s', words)
+          #self.debug_f.log('TRAIL words: %d', len(words))
 
           if ch == '^':
             try:

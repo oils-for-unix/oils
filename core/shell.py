@@ -529,10 +529,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # but time.strftime doesn't).
     if mylib.PYTHON:
         iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid,
-                    arg_r.argv)
+        debug_f.writeln('%s [%d] OSH started with argv %s' %
+                        (iso_stamp, my_pid, arg_r.argv))
     if len(debug_path):
-        debug_f.log('Writing logs to %r', debug_path)
+        debug_f.writeln('Writing logs to %r' % debug_path)
 
     interp = environ.get('OILS_HIJACK_SHEBANG', '')
     search_path = state.SearchPath(mem)
