@@ -488,7 +488,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     my_pid = posix.getpid()
 
     debug_path = ''
-    debug_dir = environ.get('OSH_DEBUG_DIR')
+    debug_dir = environ.get('OILS_DEBUG_DIR')
     if flag.debug_file is not None:
         # --debug-file takes precedence over OSH_DEBUG_DIR
         debug_path = flag.debug_file
@@ -545,7 +545,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     if mylib.PYTHON:
         funcs_builtin.Init2(mem, splitter, globber)
 
-    # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
+    # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
     cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
