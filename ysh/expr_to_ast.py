@@ -1179,18 +1179,8 @@ class Transformer(object):
         typ = p_node.GetChild(0).typ
         if ISNONTERMINAL(typ):
             p_child = p_node.GetChild(0)
-            if typ == grammar_nt.braced_var_sub:
-                return cast(BracedVarSub, p_child.GetChild(1).tok)
-
-            if typ == grammar_nt.dq_string:
-                return cast(DoubleQuoted, p_child.GetChild(1).tok)
-
             if typ == grammar_nt.sq_string:
                 return cast(SingleQuoted, p_child.GetChild(1).tok)
-
-            if typ == grammar_nt.simple_var_sub:
-                tok = p_node.GetChild(0).tok
-                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
 
             if typ == grammar_nt.char_literal:
                 return class_literal_term.CharLiteral(p_node.GetChild(0).tok)
@@ -1207,19 +1197,11 @@ class Transformer(object):
         e.g. 'abc' or "abc$mychars" | dq_string ..."""
         assert p_node.typ == grammar_nt.class_literal_term, p_node
 
-        typ = p_node.GetChild(0).typ
+        first = p_node.GetChild(0)
+        typ = first.typ
 
         if ISNONTERMINAL(typ):
             p_child = p_node.GetChild(0)
-            if typ == grammar_nt.simple_var_sub:
-                tok = p_child.GetChild(0).tok
-                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
-
-            if typ == grammar_nt.braced_var_sub:
-                return cast(BracedVarSub, p_child.GetChild(1).tok)
-
-            if typ == grammar_nt.dq_string:
-                return cast(DoubleQuoted, p_child.GetChild(1).tok)
 
             n = p_node.NumChildren()
 
@@ -1233,7 +1215,11 @@ class Transformer(object):
                 return class_literal_term.Range(start, end)
 
         else:
-            if p_node.GetChild(0).tok.id == Id.Expr_Bang:
+            if first.tok.id == Id.Expr_At:
+                tok1 = p_node.GetChild(1).tok
+                return class_literal_term.Splice(tok1, lexer.TokenVal(tok1))
+
+            if first.tok.id == Id.Expr_Bang:
                 return self._NameInClass(
                     p_node.GetChild(0).tok,
                     p_node.GetChild(1).tok)
@@ -1315,18 +1301,8 @@ class Transformer(object):
             if typ == grammar_nt.class_literal:
                 return re.CharClassLiteral(False, self._ClassLiteral(p_child))
 
-            if typ == grammar_nt.braced_var_sub:
-                return cast(BracedVarSub, p_child.GetChild(1).tok)
-
-            if typ == grammar_nt.dq_string:
-                return cast(DoubleQuoted, p_child.GetChild(1).tok)
-
             if typ == grammar_nt.sq_string:
                 return cast(SingleQuoted, p_child.GetChild(1).tok)
-
-            if typ == grammar_nt.simple_var_sub:
-                tok = p_atom.GetChild(0).tok
-                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
 
             if typ == grammar_nt.char_literal:
                 return p_atom.GetChild(0).tok

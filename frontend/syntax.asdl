@@ -547,10 +547,9 @@ module syntax
   | Range(Token start, Token end)
   | CharLiteral(Token tok)
 
-  | SimpleVarSub %SimpleVarSub
-  | BracedVarSub %BracedVarSub
   | SingleQuoted %SingleQuoted
-  | DoubleQuoted %DoubleQuoted
+    # @chars
+  | Splice(Token name, str var_name)
 
   # Char Sets and Ranges both use Char Codes
   # with u_braced == true : \u{ff}
@@ -591,11 +590,7 @@ module syntax
     # @D
   | Splice(Token name, str var_name)
 
-    # $literal ${literal} 'no-backslashes' "other$foo"
-  | SimpleVarSub %SimpleVarSub
-  | BracedVarSub %BracedVarSub
   | SingleQuoted %SingleQuoted
-  | DoubleQuoted %DoubleQuoted
 
     # Compound:
   | Repeat(re child, re_repeat op)

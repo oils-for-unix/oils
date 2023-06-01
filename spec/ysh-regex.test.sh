@@ -291,7 +291,7 @@ if ('123' ~ pat) {
 yes
 ## END
 
-#### Named Capture With ~ Assigns Variable
+#### Operator ~ assigns named variable
 shopt -s oil:all
 var pat = /<d+ : month>/
 echo $pat
@@ -325,13 +325,13 @@ no
 yes
 ## END
 
-#### double quoted, $x, and ${x}
+#### Single quotes and splicing (do what "foo $x ${x}" used to)
 shopt -s oil:all
 var pat = ''
 
 var x = 'x'
 var y = 'y'
-setvar pat = / $x ${x} "abc" "$x${y}"/
+setvar pat = / @x @x 'abc' @x @y /
 echo $pat
 
 if ('xxabcx' ~ pat) { echo yes } else { echo no }
@@ -469,7 +469,7 @@ if ($'\x7e' ~ pat) { echo yes } else { echo no }
 
 #### non-ASCII bytes must be singleton terms, e.g. '\x7f\xff' is disallowed
 var bytes = $'\x7f\xff'
-var pat = / [ $bytes ] /
+var pat = / [ @bytes ] /
 echo $pat
 ## status: 1
 ## stdout-json: ""
@@ -492,9 +492,9 @@ shopt -s oil:all
 var literal = 'f'
 var pat = null
 
-setvar pat = / %start $literal+ %end /
+setvar pat = / %start @literal+ %end /
 echo $pat
-setvar pat = / %start ($literal)+ %end /
+setvar pat = / %start (@literal)+ %end /
 echo $pat
 
 if ('fff' ~ pat) { echo yes }
@@ -513,9 +513,9 @@ shopt -s oil:all
 var literal = 'foo'
 var pat = null
 
-setvar pat = / %start $literal+ %end /
+setvar pat = / %start @literal+ %end /
 echo $pat
-setvar pat = / %start ($literal)+ %end /
+setvar pat = / %start (@literal)+ %end /
 echo $pat
 
 if ('foofoo' ~ pat) { echo yes }
@@ -688,7 +688,7 @@ for line in (lines) {
 
   # = / $line /
 
-  if ("x$line" ~ / dot $line /) {
+if ("x$line" ~ / dot @line /) {
   #if (line ~ / $line /) {
     write "matched $line"
   }
@@ -705,10 +705,6 @@ matched bar
 #### Regex with [ (bug regression)
 shopt --set oil:all
 
-if ('[' ~ / "[" /) {
-  echo 'dq'
-}
-
 if ('[' ~ / '[' /) {
   echo 'sq'
 }
@@ -723,7 +719,6 @@ if ("a" ~ / s* 'imports' s* '=' s* '[' /) {
 }
 
 ## STDOUT:
-dq
 sq
 char class
 ## END
@@ -834,7 +829,7 @@ dq "
 shopt -s oil:all
 
 var literal = '-'
-var pat = / [ 'a' 'b' $literal ] /
+var pat = / [ 'a' 'b' @literal ] /
 write pat=$pat
 write 'c-d' 'ab' 'cd' | grep $pat
 ## STDOUT:

@@ -1820,31 +1820,22 @@ class OilEvaluator(object):
                 out.append(term)
                 return
 
-            # Four ways to write literals
             elif case(class_literal_term_e.SingleQuoted):
                 term = cast(SingleQuoted, UP_term)
 
                 s = word_compile.EvalSingleQuoted(term)
                 char_code_tok = term.left
 
-            elif case(class_literal_term_e.DoubleQuoted):
-                term = cast(DoubleQuoted, UP_term)
+            elif case(class_literal_term_e.Splice):
+                term = cast(class_literal_term.Splice, UP_term)
 
-                s = self.word_ev.EvalDoubleQuotedToString(term)
-                char_code_tok = term.left
-
-            elif case(class_literal_term_e.BracedVarSub):
-                term = cast(BracedVarSub, UP_term)
-
-                s = self.word_ev.EvalBracedVarSubToString(term)
-                char_code_tok = term.left
-
-            elif case(class_literal_term_e.SimpleVarSub):
-                # TODO: Maybe remove / [ $simple ] / ?
-                term = cast(SimpleVarSub, UP_term)
-
-                s = self.word_ev.EvalSimpleVarSubToString(term)
-                char_code_tok = term.left
+                obj = self.LookupVar(term.name.tval, term.name)
+                if not isinstance(obj, str):
+                  e_die(
+                      "Can't splice object of type %r into char class literal" %
+                      obj.__class__, term.name)
+                s = obj
+                char_code_tok = term.name
 
         assert s is not None, term
         for ch in s:
@@ -1947,35 +1938,21 @@ class OilEvaluator(object):
                 s = word_compile.EvalSingleQuoted(node)
                 return re.LiteralChars(s, node.left)
 
-            elif case(re_e.DoubleQuoted):
-                node = cast(DoubleQuoted, UP_node)
-
-                s = self.word_ev.EvalDoubleQuotedToString(node)
-                return re.LiteralChars(s, node.left)
-
-            elif case(re_e.BracedVarSub):
-                node = cast(BracedVarSub, UP_node)
-
-                s = self.word_ev.EvalBracedVarSubToString(node)
-                return re.LiteralChars(s, node.left)
-
-            elif case(re_e.SimpleVarSub):
-                node = cast(SimpleVarSub, UP_node)
-
-                s = self.word_ev.EvalSimpleVarSubToString(node)
-                return re.LiteralChars(s, node.left)
-
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
 
                 obj = self.LookupVar(node.name.tval, node.name)
-                if not isinstance(obj, objects.Regex):
-                    e_die(
-                        "Can't splice object of type %r into regex" %
-                        obj.__class__, node.name)
-                # Note: we only splice the regex, and ignore flags.
-                # Should we warn about this?
-                return obj.regex
+                if isinstance(obj, str):
+                  to_splice = re.LiteralChars(obj, node.name)  # type: re_t
+                elif isinstance(obj, objects.Regex):
+                  # Note: we only splice the regex, and ignore flags.
+                  # Should we warn about this?
+                  to_splice = obj.regex
+                else:
+                  e_die(
+                      "Can't splice object of type %r into regex" %
+                      obj.__class__, node.name)
+                return to_splice
 
             else:
                 # These are evaluated at translation time
