@@ -601,7 +601,7 @@ class CommandParser(object):
     which crop up while parsing Ysh Case Arms. For more details, see
     #oil-dev > Progress On YSH Case Grammar on zulip.
 
-    Retusn a token id, first_id_out, which is filled with the choice of
+    Returns a token id, first_id_out, which is filled with the choice of
 
          word { echo word }
          (3)  { echo expr }
