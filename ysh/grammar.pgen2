@@ -511,13 +511,11 @@ range_char: Expr_Name | Expr_DecInt | sq_string | char_literal
 # digit or a-z
 # We have to do further validation of ranges later.
 class_literal_term: (
-    range_char ['-' range_char ]
-  | '!' Expr_Name
-    # $mychars or ${mymodule.mychars}
-  | simple_var_sub | braced_var_sub
-    # e.g. 'abc' or "abc$mychars" 
     # NOTE: range_char has sq_string
-  | dq_string
+    range_char ['-' range_char ]
+    # splice a literal set of characters
+  | '@' Expr_Name
+  | '!' Expr_Name
     # Reserved for [[.collating sequences.]] (Unicode)
   | '.' Expr_Name
     # Reserved for [[=character equivalents=]] (Unicode)
@@ -558,11 +556,11 @@ re_atom: (
   | '@' Expr_Name
     # any %start %end are preferred
   | '.' | '^' | '$'
-    # literal STRINGS like $foo or ${module.foo}
-  | simple_var_sub | braced_var_sub
     # In a language-independent spec, backslashes are disallowed within 'sq'.
     # Write it with char literals outside strings: 'foo' \\ 'bar' \n
-  | sq_string | dq_string
+    # 
+    # No double-quoted strings because you can write "x = $x" with 'x = ' @x
+  | sq_string
 
     # grouping (non-capturing in Perl; capturing in ERE although < > is preferred)
   | '(' regex ')'

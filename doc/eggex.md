@@ -204,16 +204,21 @@ In contrast, regexes have many confusing syntaxes for negation:
 
     /\w/-i vs /\w/i
 
-### Splice Other Patterns With Uppercase Names
+### Splice Other Patterns `@var_name` or `UpperCaseVarName`
 
-New in Eggex!  You can reuse patterns with `PatternName`.
+This allows you to reuse patterns.  Using uppercase variables:
 
-See the example at the front of this document.
+    var D = / digit{3} /
+
+    var ip_addr = / D '.' D '.' D '.' D /
+
+Using normal variables:
+
+    var part = / digit{3} /
+
+    var ip_addr = / @part '.' @part '.' @part '.' @part /
 
 This is similar to how `lex` and `re2c` work.
-
-If the host language discourages uppercase identifiers, use `@pattern_name`
-instead.
 
 ### Group and Capture With `()` and `<>`
 

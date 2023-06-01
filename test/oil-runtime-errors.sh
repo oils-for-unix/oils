@@ -67,37 +67,6 @@ _should-run() {
   fi
 }
 
-test-regex-literals() {
-  set +o errexit
-
-  _should-run "var sq = / 'foo'+ /"
-
-  _error-case '
-  var dq = / "foo"+ /
-  echo $dq
-  '
-
-  _should-run '
-  var dq = / ("foo")+ /
-  echo $dq
-
-  var dq2 = / <"foo">+ /
-  echo $dq2
-  '
-
-  _error-case '
-  var literal = "foo"
-  var svs = / $literal+ /
-  echo $svs
-  '
-
-  _error-case '
-  var literal = "foo"
-  var bvs = / ${literal}+ /
-  echo $bvs
-  '
-}
-
 test-undefined-vars() {
   set +o errexit
 
@@ -291,7 +260,10 @@ EOF
   _error-case ' = / [ \u{7f}-\u{80} ] /'
 
   # Now test special characters
-  _should-run ' = / [ \\ "^-]" "abc" ] /'
+  _should-run "$(cat <<'EOF'
+= / [ \\ '^-]' 'abc' ] /
+EOF
+)"
 
   # Special chars in ranges are disallowed for simplicity
   _error-case " = / [ a-'^' ] /"
@@ -300,6 +272,28 @@ EOF
 
   # Hm this runs but will cause a syntax error.  Could disallow it.
   # _should-run ' = / ["^"] /'
+}
+
+test-eggex-2() {
+  set +o errexit
+
+  _should-run "var sq = / 'foo'+ /"
+
+  _should-run "$(cat <<'EOF'
+  var sq = / ('foo')+ /
+  echo $sq
+
+  var sq2 = / <'foo'>+ /
+  echo $sq2
+EOF
+)"
+
+
+  _error-case '
+  var literal = "foo"
+  var svs = / @literal+ /
+  echo $svs
+  '
 }
 
 soil-run() {
