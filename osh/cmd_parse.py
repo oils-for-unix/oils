@@ -615,18 +615,17 @@ class CommandParser(object):
       next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
       return next_id
 
-    # Feed the next line into the lexer
-    self.lexer.MoveToNextLine()
-    next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
-
-    while next_id == Id.Op_Newline:
-      # Skip past the newline token
-      next_ = self.lexer.Read(lex_mode_e.Expr)
-      assert next_.id == Id.Op_Newline, Id_str(next_.id)
-
+    while True:
       # Feed the next line into the lexer
       self.lexer.MoveToNextLine()
       next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
+
+      if next_id != Id.Op_Newline:
+        break
+
+      # Skip past the newline token
+      next_ = self.lexer.Read(lex_mode_e.Expr)
+      assert next_.id == Id.Op_Newline, Id_str(next_.id)
 
     # Now synchronize the word parser and continue
     self._Next()  # move to Id.Op_Newline; we looked ahead to it
