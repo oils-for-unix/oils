@@ -11,7 +11,6 @@ util.py - Common infrastructure.
 from __future__ import print_function
 
 from mycpp import mylib
-from typing import Any
 
 
 class UserExit(Exception):
@@ -26,9 +25,6 @@ class HistoryError(Exception):
 
     def __init__(self, msg):
         # type: (str) -> None
-        if mylib.PYTHON:
-            Exception.__init__(self)
-
         self.msg = msg
 
     def UserErrorString(self):
