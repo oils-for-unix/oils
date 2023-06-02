@@ -725,47 +725,6 @@ class OilEvaluator(object):
 
         # Note: IndexError and KeyError are handled in more specific places
 
-    def _ToNumber(self, val):
-        # type: (Any) -> Union[int, float]
-        """Convert to something that can be compared."""
-        if isinstance(val, bool):
-            raise ValueError("A boolean isn't a number")  # preserves location
-
-        if isinstance(val, int):
-            return val
-
-        if isinstance(val, float):
-            return val
-
-        if isinstance(val, str):
-            # NOTE: Can we avoid scanning the string twice?
-            if match.LooksLikeInteger(val):
-                return int(val)
-            elif match.LooksLikeFloat(val):
-                return float(val)
-            else:
-                raise ValueError("%r doesn't look like a number" % val)
-
-        raise ValueError("%r isn't like a number" % (val,))
-
-    def _ToInteger(self, val):
-        # type: (Any) -> int
-        """Like the above, but no floats."""
-        if isinstance(val, bool):
-            raise ValueError("A boolean isn't an integer")  # preserves location
-
-        if isinstance(val, int):
-            return val
-
-        if isinstance(val, str):
-            # NOTE: Can we avoid scanning the string twice?
-            if match.LooksLikeInteger(val):
-                return int(val)
-            else:
-                raise ValueError("%r doesn't look like an integer" % val)
-
-        raise ValueError("%r isn't like an integer" % (val,))
-
     def _ValueToInteger(self, val):
         # type: (value_t) -> int
         UP_val = val
