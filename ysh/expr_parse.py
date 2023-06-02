@@ -170,9 +170,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
         # Mututally recursive calls into the command/word parsers.
         #
 
-        if tok.id == Id.Left_PercentParen:  # %(
+        if tok.id in (Id.Left_ColonPipe, Id.Left_PercentParen):  # :|  %(  LEGACY!
             left_tok = tok
-            lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+            if tok.id == Id.Left_PercentParen:
+              lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
 
             # Blame the opening token
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -186,6 +187,13 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
                     if case(word_e.Token):
                         tok = cast(Token, w)
                         if tok.id == Id.Right_ShArrayLiteral:
+                            if left_tok.id != Id.Left_PercentParen:
+                                p_die('Expected ) to close', left_tok)
+                            close_tok = tok
+                            done = True  # can't use break here
+                        elif tok.id == Id.Op_Pipe:
+                            if left_tok.id != Id.Left_ColonPipe:
+                                p_die('Expected ) to close', left_tok)
                             close_tok = tok
                             done = True  # can't use break here
                         elif tok.id == Id.Op_Newline:  # internal newlines allowed

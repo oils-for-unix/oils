@@ -783,7 +783,7 @@ BRACE_RANGE_DEF = [
 YSH_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
-  C('$[', Id.Left_DollarBracket),  # Unused now
+  C('$[', Id.Left_DollarBracket),  # TODO: Implement $[x]
 ]
 
 # Valid in lex_mode_e.Expr, but not valid in DQ
@@ -805,10 +805,11 @@ YSH_LEFT_UNQUOTED = [
   C('@(', Id.Left_AtParen),         # Split Command Sub
 
   C('^(', Id.Left_CaretParen),      # Block literals in expression mode
-  C('^[', Id.Left_CaretBracket),    # Expr literals
-  C('^{', Id.Left_CaretBrace),      # ArgList literals
+  C('^[', Id.Left_CaretBracket),    # Expr literals, unimplemented
+  C('^{', Id.Left_CaretBrace),      # Unused
 
-  C('%(', Id.Left_PercentParen),    # shell-like word arrays.
+  C(':|', Id.Left_ColonPipe),       # shell-like word arrays.
+  C('%(', Id.Left_PercentParen),    # old syntax for shell-like word arrays.
 
   C('%[', Id.Expr_Reserved),        # Maybe: like %() without unquoted [], {}
   C('%{', Id.Expr_Reserved),        # Table literals

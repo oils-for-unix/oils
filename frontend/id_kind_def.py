@@ -375,7 +375,8 @@ def AddKinds(spec):
       'CaretBracket',       # ^[ for Expr literal
       'CaretBrace',         # ^{ for Arglist
 
-      'PercentParen',       # %( for word arrays
+      'ColonPipe',          # :| for word arrays
+      'PercentParen',       # legacy %( for word arrays
   ])
 
   spec.AddKind('Right', [

@@ -605,6 +605,9 @@ class Transformer(object):
             elif typ == grammar_nt.sh_array_literal:
                 return cast(ShArrayLiteral, pnode.GetChild(1).tok)
 
+            elif typ == grammar_nt.old_sh_array_literal:
+                return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+
             elif typ == grammar_nt.sh_command_sub:
                 return cast(CommandSub, pnode.GetChild(1).tok)
 
