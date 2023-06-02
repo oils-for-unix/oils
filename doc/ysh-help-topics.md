@@ -39,13 +39,13 @@ feature is **unimplemented**.
 </h2>
 
 ```oil-help-topics
-                  X proc        proc p (x, out Ref, @rest, e Expr, b Block) { c }
-                  X func        func f(x; opt1, opt2) { return (x + 1) }
-                  X oil-return  return (myexpr)
-                  X oil-case    case (x) { *.py { echo 'python' } }
-                  oil-if        if (x > 0) { echo }
-                  oil-while     while (x > 0) { echo }
-                  oil-for       for i, item in (mylist) { echo }
+                  proc-def      proc p (x, out Ref, @rest, e Expr, b Block) { c }
+                  X func-def    func f(x; opt1, opt2) { return (x + 1) }
+                  X ysh-return  return (myexpr)
+                  X ysh-case    case (x) { *.py { echo 'python' } }
+                  ysh-if        if (x > 0) { echo }
+                  ysh-while     while (x > 0) { echo }
+                  ysh-for       for i, item in (mylist) { echo }
                   equal =       = 1 + 2*3
                   underscore _  _ mylist.append(42)
                   typed-arg     json write (x)
@@ -63,7 +63,8 @@ feature is **unimplemented**.
                   X float-lit   3.14  1.5e-10
                   num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
-                  str-literal   r'[a-z]\n'  $'line\n'  
+                  str-literal   r'[a-z]\n'  X j"line\n"  
+                  X multi-str   """  r'''  j"""
                   list-literal  %(one two)  ['one', 'two', 3]
                   dict-literal  {name: 'bob'}
                   block-literal ^(echo $PWD)
@@ -72,23 +73,24 @@ feature is **unimplemented**.
                   X to-string   $[myobj]
                   X to-array    @[myobj]
   [Operators]     concat        s1 ++ s2,  L1 ++ L2
-                  oil-equals    ===   !==   ~==   is, is not, in, not in
-                  oil-compare   <  <=  >  >=  (numbers only)
-                  oil-logical    not  and  or
-                  oil-arith     +  -  *  /  //  %   ** 
-                  oil-bitwise   ~  &  |  ^  <<  >>
-                  oil-ternary   '+' if x >= 0 else '-'
-                  oil-index     a[3]  s[3]
-                  X oil-attr    mydict.key
-                  oil-slice     a[1:-1]  s[1:-1]
-                  func-call     f(x, y)   s.startswith('prefix')
+                  ysh-equals    ===   !==   ~==   is, is not, in, not in
+                  ysh-compare   <  <=  >  >=  (numbers only)
+                  ysh-logical    not  and  or
+                  ysh-arith     +  -  *  /  //  %   ** 
+                  ysh-bitwise   ~  &  |  ^  <<  >>
+                  ysh-ternary   '+' if x >= 0 else '-'
+                  ysh-index     a[3]  s[3]
+                  ysh-attr      mydict.key
+                  ysh-slice     a[1:-1]  s[1:-1]
+                  func-call     f(x, y)   s->startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
-                  re-compound   ~   (group)   <capture>   sequence
-                  re-primitive  %zero   Subpattern   @subpattern
-                                'sq'   "dq"   $x   ${x}
+                  re-compound   pat|alt   pat seq   (group)
+                                <capture>   <capture :name> 
+                  re-primitive  %zero   Subpattern   @subpattern   'sq'
+                                char-class  ! char-class
                   named-class    dot  digit  space  word  d  s  w
-                  class-literal [c a-z 'abc' \\ \xFF \u0100]
+                  class-literal [c a-z 'abc' @str_var \\ \xFF \u0100]
                   X re-flags    ignorecase etc.
                   X re-multiline  ///
 ```
@@ -98,11 +100,13 @@ feature is **unimplemented**.
 </h2>
 
 ```oil-help-topics
-                  splice        @myarray @ARGV
                   expr-sub      echo $[42 + a[i]]
-                  X ystr        y"byte \y00 unicode \u{123456}"
-                  X oil-printf  ${x %.3f}
-                  X oil-format  ${x|html}
+                  expr-splice   echo @[split(x)]
+                  var-splice    @myarray @ARGV
+                  X multi-str   """  r'''  j"""
+                  X J8 strings  j"byte \y00 unicode \u{123456}"
+                  X ysh-printf  ${x %.3f}
+                  X ysh-format  ${x|html}
 ```
 
 <h2 id="builtins">
@@ -117,14 +121,14 @@ feature is **unimplemented**.
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
                   X error                Can be used in both proc and func
-  [Shell State]   oil-cd   oil-shopt     compatible, and takes a block
+  [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
   [Modules]       runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   use                    change first word lookup
-  [I/O]           oil-read               Buffered I/O with --line, --all, --qsn
-                  X oil-echo             Single arg, no -e -n with simple_echo
+  [I/O]           ysh-read               Buffered I/O with --line, --all, --qsn
+                  X ysh-echo             no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end, ()
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
@@ -132,11 +136,11 @@ feature is **unimplemented**.
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Data Formats]  json
-                  X ystr                 Upgrade JSON with binary, utf-8
-                  X yson                 Tree-shaped
-                  X ytsv                 Table-shaped
+                  X j8str                Upgrade JSON with binary, utf-8
+                  X json8                Tree-shaped
+                  X tsv8                 Table-shaped
                   X packle               Graph-shaped
-X [QTT]           rows                   pick rows; dplyr filter()
+X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
@@ -259,6 +263,6 @@ X [Hay Config]    parse_hay()   eval_hay()   block_as_str()
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()
-X [Codecs]        posix-sh-str   oil-str   html-utf8
+X [Codecs]        posix-sh-str   html-utf8
 X [Hashing]       sha1   sha256 (etc.)
 ```

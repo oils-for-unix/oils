@@ -103,7 +103,7 @@ scope (TODO):
 
 Compare with [sh-func]($osh-help).
 
-#### oil-if
+#### ysh-if
 
 Command or expression:
 
@@ -111,7 +111,7 @@ Command or expression:
       echo 'positive'
     }
 
-#### oil-case
+#### ysh-case
 
     case $x {
       # balanced parens around patterns
@@ -120,7 +120,7 @@ Command or expression:
       (*)        echo 'Other'  ;;
     }
 
-#### oil-while
+#### ysh-while
 
 Command or expression:
 
@@ -129,7 +129,7 @@ Command or expression:
       setvar x -= 1
     }
 
-#### oil-for
+#### ysh-for
 
 Two forms for shell-style loops:
 
@@ -330,34 +330,34 @@ The shell-like syntax accepts the same syntax that a command can:
     var concat5 = mydict ++ otherdict
 
 
-#### oil-compare
+#### ysh-compare
 
     a == b        # Python-like equality, no type conversion
     3 ~== 3.0     # True, type conversion
     3 ~== '3'     # True, type conversion
     3 ~== '3.0'   # True, type conversion
 
-#### oil-logical
+#### ysh-logical
 
     not  and  or
 
 Note that these are distinct from `!  &&  ||`.
 
-#### oil-arith
+#### ysh-arith
 
     +  -  *  /   //   %   **
 
-#### oil-bitwise
+#### ysh-bitwise
 
     ~  &  |  ^
 
-#### oil-ternary
+#### ysh-ternary
 
 Like Python:
 
     display = 'yes' if len(s) else 'empty'
 
-#### oil-index
+#### ysh-index
 
 Like Python:
 
@@ -366,7 +366,7 @@ Like Python:
 
 TODO: Does string indexing give you an integer back?
 
-#### oil-slice
+#### ysh-slice
 
 Like Python:
 
@@ -407,9 +407,11 @@ Not implemented.
 
 #### inline-call
 
-#### splice
-
 #### expr-sub
+
+#### expr-splice
+
+#### var-splice
 
 
 <h2 id="builtins">Builtin Commands</h2>
@@ -483,7 +485,7 @@ Runs a command and requires the exit code to be 0 or 1.
 
 ### Shell State
 
-#### oil-cd
+#### ysh-cd
 
 It takes a block:
 
@@ -491,7 +493,7 @@ It takes a block:
       echo $PWD
     }
 
-#### oil-shopt
+#### ysh-shopt
 
 It takes a block:
 
@@ -571,7 +573,7 @@ An accepted declaration that tools can use, but isn't used by Oil:
 
 ### I/O
 
-#### oil-read
+#### ysh-read
 
 Oil adds buffered, line-oriented I/O to shell's `read`.
 
