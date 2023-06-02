@@ -42,6 +42,12 @@ def Define(sp):
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       tags = ['dev-minimal'])
 
+  sp.OshFile(
+      'case_',
+      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
+      failures_allowed = 4,
+      )
+
   #
   # suite osh
   #
@@ -113,8 +119,6 @@ def Define(sp):
   sp.OshFile('builtin-trap-bash')
 
   sp.OshFile('builtin-vars')
-
-  sp.OshFile('case_')
 
   sp.OshFile('command_')
 

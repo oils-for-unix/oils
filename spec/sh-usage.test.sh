@@ -88,3 +88,4 @@ $SH --login -c 'exit 0'
 ## status: 0
 ## OK dash status: 2
 ## OK mksh status: 1
+

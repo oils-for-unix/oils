@@ -219,8 +219,7 @@ loop() {
 }
 
 case_() {
-  sh-spec spec/case_.test.sh --osh-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file case_ "$@"
 }
 
 if_() {
