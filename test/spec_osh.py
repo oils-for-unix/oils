@@ -19,7 +19,7 @@ def Define(sp):
       'sh-options',
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       failures_allowed = 2,
-      tags  =['interactive'])
+      tags = ['interactive'])
 
   sp.OshFile(
       'sh-usage',
@@ -46,6 +46,17 @@ def Define(sp):
       'case_',
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       failures_allowed = 4,
+      )
+
+  #
+  # suite needs-terminal
+  #
+
+  sp.File(
+      'interactive-parse',
+      suite = 'needs-terminal',
+      our_shell = 'osh',
+      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       )
 
   #

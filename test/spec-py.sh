@@ -32,6 +32,11 @@ tea-all() {
   test/spec-runner.sh all-parallel tea compare-py tea
 }
 
+needs-terminal-all() {
+  # $suite $compare_mode $spec_subdir
+  test/spec-runner.sh all-parallel needs-terminal compare-py needs-terminal-py
+}
+
 osh-minimal() {
   ### Some tests that work on the minimal build.  Run by Soil.
 
@@ -50,6 +55,9 @@ tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
 interactive-osh() {
+  ### Run spec files tagged 'interactive' in soil/interactive, which uses a terminal
+  # This repeats what 'compare-py' does.
+
   # Doesn't seem to triggger "Stopped" bug, but it hangs in the CI unless serial
 
   # pass '1' to make it serial.  default is N-1 CPUS in test/spec-common.sh

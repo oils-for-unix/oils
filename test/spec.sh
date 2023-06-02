@@ -111,6 +111,10 @@ run-file-with-bash() { _run-file-with-one bash "$@"; }
 # prevent regressions.)
 #
 
+interactive-parse() {
+  run-file interactive-parse "$@"
+}
+
 smoke() {
   run-file smoke "$@"
 }

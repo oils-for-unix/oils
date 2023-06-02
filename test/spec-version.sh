@@ -119,4 +119,8 @@ interactive-version-text() {
   osh-version-text
 }
 
+needs-terminal-version-text() {
+  osh-version-text
+}
+
 run-task "$@"

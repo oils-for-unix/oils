@@ -123,12 +123,14 @@ write-suite-manifests() {
         osh) echo $name >& $osh ;;
         ysh) echo $name >& $oil ;;
         tea) echo $name >& $tea ;;
+        needs-terminal) echo $name >& $needs_terminal ;;
         *)   die "Invalid suite $suite" ;;
       esac
     done 
   } {osh}>_tmp/spec/SUITE-osh.txt \
     {oil}>_tmp/spec/SUITE-oil.txt \
-    {tea}>_tmp/spec/SUITE-tea.txt 
+    {tea}>_tmp/spec/SUITE-tea.txt \
+    {needs_terminal}>_tmp/spec/SUITE-needs-terminal.txt
 
   # These are kind of pseudo-suites, not the main 3
   test/spec_params.py print-tagged interactive > _tmp/spec/SUITE-interactive.txt
