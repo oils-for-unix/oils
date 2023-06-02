@@ -45,10 +45,12 @@ from _devbuild.gen.runtime_asdl import (
     lvalue,
     value,
     value_e,
+    value_str,
     value_t,
     IntBox,
+    FuncBox,
 )
-from core import error
+from core import error, vm
 from core.error import e_die, e_die_status
 from core import state
 from frontend import consts
@@ -102,6 +104,12 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
         elif case(value_e.Obj):
             val = cast(value.Obj, UP_val)
             return val.obj
+
+        elif case(value_e.Func):
+            return val  # passthrough. stored as value_t
+
+        elif case(value_e.BoundFunc):
+            return val  # passthrough. stored as value_t
 
         else:
             raise NotImplementedError()
@@ -211,6 +219,10 @@ def _PyObjToValue(val):
 
         return eggex
 
+    elif isinstance(val, value_t):
+        assert val.tag() in (value_e.Func, value_e.BoundFunc)
+        return val  # passthrough. stored as value_t
+
     else:
         raise error.Expr(
             'Trying to convert unexpected type to value_t: %r' % val,
@@ -295,6 +307,12 @@ def _ValueToPyObj(val):
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
             return objects.Regex(val.expr)
+
+        elif case(value_e.Func):
+            return val  # passthrough. stored as value_t
+
+        elif case(value_e.BoundFunc):
+            return val  # passthrough. stored as value_t
 
         else:
             raise error.Expr(
@@ -608,27 +626,29 @@ class OilEvaluator(object):
             return False
 
     def EvalArgList(self, args):
-        # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
+        # type: (ArgList) -> Tuple[List[value_t], Dict[str, value_t]]
         """Used by f(x) and echo $f(x)."""
-        pos_args = []
+        pos_args = []  # type: List[value_t]
         for arg in args.positional:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:
                 arg = cast(expr.Spread, UP_arg)
                 # assume it returns a list
-                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
+                pos_args.extend(
+                    _PyObjToValue(self.EvalExpr(arg.child, loc.Missing)))
             else:
-                pos_args.append(self.EvalExpr(arg, loc.Missing))
+                pos_args.append(_PyObjToValue(self.EvalExpr(arg, loc.Missing)))
 
-        kwargs = {}
+        kwargs = NewDict()  # type: Dict[str, value_t]
         for named in args.named:
             if named.name:
-                kwargs[named.name.tval] = self.EvalExpr(named.value,
-                                                        loc.Missing)
+                kwargs[named.name.tval] = _PyObjToValue(
+                    self.EvalExpr(named.value, loc.Missing))
             else:
                 # ...named
-                kwargs.update(self.EvalExpr(named.value, loc.Missing))
+                kwargs.update(
+                    _PyObjToValue(self.EvalExpr(named.value, loc.Missing)))
         return pos_args, kwargs
 
     def EvalPlaceExpr(self, place):
@@ -1407,11 +1427,24 @@ class OilEvaluator(object):
         return value.Dict(d)
 
     def _EvalFuncCall(self, node):
-        # type: (expr.FuncCall) -> Any # XXX
-        func = self._EvalExpr(node.func)
+        # type: (expr.FuncCall) -> value_t
+        func = _PyObjToValue(self._EvalExpr(node.func))
         pos_args, named_args = self.EvalArgList(node.args)
-        ret = func(*pos_args, **named_args)
-        return ret
+        UP_func = func
+        with tagswitch(func) as case:
+            if case(value_e.Func):
+                func = cast(value.Func, UP_func)
+                f = cast(vm._Func, func.f)
+                return f.Run(pos_args, named_args)
+            elif case(value_e.BoundFunc):
+                func = cast(value.BoundFunc, UP_func)
+                bf = cast(FuncBox, func.f)
+                f = cast(vm._Func, bf.f)
+                args = [func.me]  # type: List[value_t]
+                args.extend(pos_args)
+                return f.Run(args, named_args)
+            else:
+                raise error.InvalidType('Expected callable', loc.Missing)
 
     def _EvalSubscript(self, node):
         # type: (Subscript) -> value_t
@@ -1564,18 +1597,26 @@ class OilEvaluator(object):
         raise error.InvalidType('expected Dict, List, or Tuple', loc.Missing)
 
     def _EvalAttribute(self, node):
-        # type: (Attribute) -> Any # XXX
-        o = self._EvalExpr(node.obj)
+        # type: (Attribute) -> value_t
+        obj = _PyObjToValue(self._EvalExpr(node.obj))
+        UP_obj = obj
         id_ = node.op.id
         if id_ == Id.Expr_RArrow:
             # Used for s->startswith(x)
-            name = node.attr.tval
-            return getattr(o, name)
+            # XXX: hacky
+            func_name = '%s::%s' % (value_str(obj.tag()), node.attr.tval)
+            func = self.LookupVar(func_name, node.attr)
+            return value.BoundFunc(obj, func)
 
         if id_ == Id.Expr_Dot:  # d.key is like d['key']
+            if obj.tag() != value_e.Dict:
+                raise error.Invalidtype('expected Dict for key lookup',
+                                        loc.Missing)
+
+            obj = cast(value.Dict, UP_obj)
             name = node.attr.tval
             try:
-                result = o[name]
+                result = obj.d[name]
             except KeyError:
                 raise error.Expr('dict entry not found', node.op)
 
@@ -1733,7 +1774,7 @@ class OilEvaluator(object):
 
             elif case(expr_e.FuncCall):
                 node = cast(expr.FuncCall, UP_node)
-                return self._EvalFuncCall(node)
+                return _ValueToPyObj(self._EvalFuncCall(node))
 
             elif case(expr_e.Subscript):
                 node = cast(Subscript, UP_node)

@@ -8,9 +8,9 @@ from _devbuild.gen.syntax_asdl import Token
 from core import pyos
 from mycpp.mylib import log
 
-from typing import List, Any, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
+    from _devbuild.gen.runtime_asdl import cmd_value, RedirValue, value_t
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
     from osh import sh_expr_eval
     from osh.sh_expr_eval import ArithEvaluator
@@ -228,6 +228,19 @@ class _Builtin(object):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        raise NotImplementedError()
+
+
+class _Func(object):
+    """Interface for functions in the runtime."""
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
         raise NotImplementedError()
 
 

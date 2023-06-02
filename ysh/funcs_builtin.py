@@ -3,14 +3,14 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, scope_e
+from _devbuild.gen.runtime_asdl import value, value_e, value_t, scope_e
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
-from core import error
+from core import error, vm
 from mycpp.mylib import log
 from frontend import lexer
 from ysh import expr_eval
 
-from typing import Callable, Union, TYPE_CHECKING
+from typing import cast, Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import state
     from osh import glob_
@@ -21,14 +21,17 @@ _ = log
 
 
 def SetGlobalFunc(mem, name, func):
-    # type: (state.Mem, str, Union[Callable, type]) -> None
+    # type: (state.Mem, str, Union[Callable, type, vm._Func]) -> None
     """Used by bin/oil.py to set split(), etc."""
-    assert callable(func), func
-
     # TODO: Fix this location info
     left = lexer.DummyToken(Id.Undefined_Tok, '')
-    mem.SetValue(sh_lhs_expr.Name(left, name), value.Obj(func),
-                 scope_e.GlobalOnly)
+    if isinstance(func, vm._Func):
+        mem.SetValue(sh_lhs_expr.Name(left, name), value.Func(func),
+                     scope_e.GlobalOnly)
+    else:
+        assert callable(func), func
+        mem.SetValue(sh_lhs_expr.Name(left, name), value.Obj(func),
+                     scope_e.GlobalOnly)
 
 
 def _Join(array, delim=''):
@@ -191,6 +194,39 @@ def Init3(mem, config_parser, eval_to_dict, block_as_str, hay_result):
     SetGlobalFunc(mem, 'block_as_str', block_as_str.Call)
 
 
+class _Bool(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert len(pos_args) == 1
+        assert len(named_args) == 0
+        return value.Bool(expr_eval.ToBool(pos_args[0]))
+
+
+class _StrStartsWith(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert len(pos_args) == 2
+        assert len(named_args) == 0
+
+        UP_s = pos_args[0]
+        UP_prefix = pos_args[1]
+        assert UP_s.tag() == value_e.Str
+        assert UP_prefix.tag() == value_e.Str
+        s = cast(value.Str, UP_s)
+        prefix = cast(value.Str, UP_prefix)
+        return value.Bool(s.s[:len(prefix.s)] == prefix.s)
+
+
 def Init(mem):
     # type: (state.Mem) -> None
     """Populate the top level namespace with some builtin functions."""
@@ -217,7 +253,7 @@ def Init(mem):
 
     # Types:
     # Should the constructors be Python compatible, and types be capital?
-    SetGlobalFunc(mem, 'Bool', bool)
+    SetGlobalFunc(mem, 'Bool', _Bool())
     SetGlobalFunc(mem, 'Int', int)
 
     SetGlobalFunc(mem, 'Float', float)
@@ -273,6 +309,7 @@ def Init(mem):
     # String Methods
     #
 
+    SetGlobalFunc(mem, 'value.Str::startswith', _StrStartsWith())
     # TODO: strip(), lstrip(), rstrip().  What about upper() and lower() etc.?
     # Shell has versions of those
     # startswith, endswith
