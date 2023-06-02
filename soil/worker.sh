@@ -103,13 +103,18 @@ interactive-tasks() {
 
   # TODO: also run interactive suite with osh-cpp
 
+# TODO: Why does the needs-terminal suite hang in Docker?  It doesn't hang in an interactive Docker session.
+#
+# needs-terminal   test/spec-py.sh needs-terminal-all  _tmp/spec/needs-terminal-py/index.html
+#
+# https://oilshell.zulipchat.com/#narrow/stream/121539-oil-dev/topic/Spec.20Tests.20for.20Interactive.20Parsing
+
   cat <<EOF
 os-info          soil/diagnose.sh os-info            -
 dump-env         soil/diagnose.sh dump-env           -
 py-all-and-ninja soil/worker.sh py-all-and-ninja     -
 nohup            test/nohup.sh soil-run              -
 interactive-osh  test/spec-py.sh interactive-osh     _tmp/spec/interactive-osh/index.html
-needs-terminal   test/spec-py.sh needs-terminal-all  _tmp/spec/needs-terminal-py/index.html
 process-table    test/process-table.sh soil-run      _tmp/process-table/www/index.html
 stateful         test/stateful.sh soil-run           _tmp/spec/stateful/index.html
 EOF
