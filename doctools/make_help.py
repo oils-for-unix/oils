@@ -57,7 +57,7 @@ from lazylex import html
 SECTION_RE = re.compile(r'''
   \s*
   \[
-  ([a-zA-Z /:]+)  # colon for oil:nice
+  ([a-zA-Z0-9 /:]+)  # colon for ysh:upgrade
   \]
 ''', re.VERBOSE)
 
