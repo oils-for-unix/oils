@@ -1562,9 +1562,11 @@ class OilEvaluator(object):
         id_ = node.op.id
         if id_ == Id.Expr_RArrow:
             # Used for s->startswith(x)
-            # XXX: hacky
-            func_name = '%s::%s' % (value_str(obj.tag()), node.attr.tval)
+            func_name = node.attr.tval
             func = self.LookupVar(func_name, node.attr)
+            # If there are collisions on method names for different types, mem
+            # will have generic vm._Func that will handle dispatch to
+            # specialized implementations based on obj's type.
             return value.BoundFunc(obj, func)
 
         if id_ == Id.Expr_Dot:  # d.key is like d['key']

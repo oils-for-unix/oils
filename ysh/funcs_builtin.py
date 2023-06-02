@@ -224,7 +224,7 @@ class _StrStartsWith(vm._Func):
         assert UP_prefix.tag() == value_e.Str
         s = cast(value.Str, UP_s)
         prefix = cast(value.Str, UP_prefix)
-        return value.Bool(s.s[:len(prefix.s)] == prefix.s)
+        return value.Bool(s.s.startswith(prefix.s))
 
 
 def Init(mem):
@@ -309,7 +309,7 @@ def Init(mem):
     # String Methods
     #
 
-    SetGlobalFunc(mem, 'value.Str::startswith', _StrStartsWith())
+    SetGlobalFunc(mem, 'startswith', _StrStartsWith())
     # TODO: strip(), lstrip(), rstrip().  What about upper() and lower() etc.?
     # Shell has versions of those
     # startswith, endswith
