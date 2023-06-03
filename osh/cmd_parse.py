@@ -1465,7 +1465,7 @@ class CommandParser(object):
 
     pattern = None  # type: pat_t
     if discriminant in (Id.Op_LParen, Id.Arith_Slash):
-      # pat_exprs, pat_else or par_eggex
+      # pat_exprs, pat_else or pat_eggex
       pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
     else:
       # pat_words
