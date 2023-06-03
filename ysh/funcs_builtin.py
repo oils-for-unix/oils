@@ -34,111 +34,171 @@ def SetGlobalFunc(mem, name, func):
                      scope_e.GlobalOnly)
 
 
-def _Join(array, delim=''):
-    """Func join(items Array[Str]) Str ..."""
-    # default is not ' '?
-    return delim.join(array)
+class _Join(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return value.Undef
+        # args = [array, delim]
+        # return delim.join(array)
 
 
-def _Maybe(obj):
-    """Func join(items Array[Str]) Str ..."""
-    if obj is None:
-        return []
+class _Maybe(vm._Func):
 
-    # TODO: Need proper span IDs
-    if not isinstance(obj, str):
-        raise error.Expr('maybe() passed arg of invalid type %r' %
-                         obj.__class__.__name__)
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
 
-    s = obj
-    if len(s):
-        return [s]
-    else:
-        return []
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return value.Undef
+        #if obj is None:
+        #    return []
 
+        ## TODO: Need proper span IDs
+        #if not isinstance(obj, str):
+        #    raise error.Expr('maybe() passed arg of invalid type %r' %
+        #                     obj.__class__.__name__)
 
-def _Append(L, arg):
-    L.append(arg)
-
-
-def _Extend(L, arg):
-    L.extend(arg)
-
-
-def _Pop(L):
-    L.pop()
+        #s = obj
+        #if len(s):
+        #    return [s]
+        #else:
+        #    return []
 
 
-class _Match(object):
+class _Append(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        # args = [L, arg]
+        # L.append(arg)
+        return value.Undef
+
+
+class _Extend(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        # args = [L, arg]
+        # L.extend(arg)
+        return value.Undef
+
+
+class _Pop(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        # args = [L]
+        # L.pop()
+        return value.Undef
+
+
+class _Match(vm._Func):
     """_match(0) or _match():   get the whole match _match(1) ..
 
     _match(N):  submatch
     """
 
     def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Func.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
-        if len(args) == 0:
-            return self.mem.GetMatch(0)
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return value.Undef
+        #if len(args) == 0:
+        #    return self.mem.GetMatch(0)
 
-        if len(args) == 1:
-            arg = args[0]
-            if isinstance(arg, int):
-                s = self.mem.GetMatch(arg)
-                # Oil code doesn't deal well with exceptions!
-                #if s is None:
-                #  raise IndexError('No such group')
-                return s
+        #if len(args) == 1:
+        #    arg = args[0]
+        #    if isinstance(arg, int):
+        #        s = self.mem.GetMatch(arg)
+        #        # Oil code doesn't deal well with exceptions!
+        #        #if s is None:
+        #        #  raise IndexError('No such group')
+        #        return s
 
-            # TODO: Support strings
-            raise TypeError('Expected an integer, got %r' % arg)
+        #    # TODO: Support strings
+        #    raise TypeError('Expected an integer, got %r' % arg)
 
-        raise TypeError('Too many arguments')
+        #raise TypeError('Too many arguments')
 
 
-class _Start(object):
+class _Start(vm._Func):
     """Same signature as _match(), but for start positions."""
 
     def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Func.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
         raise NotImplementedError('_start')
 
 
-class _End(object):
-    """Same signature as _match(), but for end positions."""
+class _End(vm._Func):
+    """Same signature as _match(), but for start positions."""
 
     def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Func.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
         raise NotImplementedError('_end')
 
 
-class _Shvar_get(object):
+class _Shvar_get(vm._Func):
     """Look up with dynamic scope."""
 
     def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Func.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
-        name = args[0]
-        return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing)
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return value.Undef
+        #name = pos_args[0]
+        #return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing)
 
 
-class _VmEval(object):
+class _VmEval(vm._Func):
     """_vm_eval()"""
 
     def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Func.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
-        source_path = args[0]
-        first_words = args[1]
-        log('source %s', source_path)
-        log('words %s', first_words)
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return value.Undef
+
+        # XXX source_path = args[0]
+        # XXX first_words = args[1]
+        # XXX log('source %s', source_path)
+        # XXX log('words %s', first_words)
 
         # Notes on logic for the 'source' builtin:
         # - no search_path lookup
@@ -167,8 +227,36 @@ class _VmEval(object):
         # pure Oil is pretty safe, even against timing attacks, since there's no
         # way to tie.
 
-        return {'key': 'value'}
+        return value.Dict({'key': 'value'})
         raise NotImplementedError()
+
+
+class _Split(vm._Func):
+
+    def __init__(self, splitter):
+        # type: (split.SplitContext) -> None
+        vm._Func.__init__(self)
+        self.splitter = splitter
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        s = pos_args[0] # XXX str
+        # XXX self.splitter.SplitFuncBuiltin(s)
+        return value.Undef
+
+
+class _Glob(vm._Func):
+
+    def __init__(self, globber):
+        # type: (glob_.Globber) -> None
+        vm._Func.__init__(self)
+        self.globber = globber
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        s = pos_args[0] # XXX str
+        # XXX self.globber.OilFuncCall(s)
+        return value.Undef
 
 
 def Init2(mem, splitter, globber):
@@ -176,22 +264,22 @@ def Init2(mem, splitter, globber):
 
     # split() builtin
     # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
-    SetGlobalFunc(mem, 'split', splitter.SplitFuncBuiltin)
+    SetGlobalFunc(mem, 'split', _Split(splitter))
 
     # glob() builtin
-    SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
+    SetGlobalFunc(mem, 'glob', _Glob(globber))
 
 
 def Init3(mem, config_parser, eval_to_dict, block_as_str, hay_result):
     # type: (state.Mem, funcs.ParseHay, funcs.EvalHay, funcs.BlockAsStr, funcs.HayResult) -> None
-    SetGlobalFunc(mem, 'parse_hay', config_parser.Call)
-    SetGlobalFunc(mem, 'eval_hay', eval_to_dict.Call)
+    SetGlobalFunc(mem, 'parse_hay', config_parser)
+    SetGlobalFunc(mem, 'eval_hay', eval_to_dict)
 
     # For interactive debugging.  'eval_hay()' and 'hay eval' are the main APIs.
-    SetGlobalFunc(mem, '_hay', hay_result.Call)
+    SetGlobalFunc(mem, '_hay', hay_result)
 
     # for upper case TASK blocks: command_t -> Str
-    SetGlobalFunc(mem, 'block_as_str', block_as_str.Call)
+    SetGlobalFunc(mem, 'block_as_str', block_as_str)
 
 
 class _Bool(vm._Func):
@@ -205,6 +293,204 @@ class _Bool(vm._Func):
         assert len(pos_args) == 1
         assert len(named_args) == 0
         return value.Bool(expr_eval.ToBool(pos_args[0]))
+
+
+class _Int(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Float(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Str(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _List(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Dict(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Identity(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Tup(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Len(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Max(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Min(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Abs(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Range(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Slice(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Any(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _All(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Sum(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Sorted(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
+
+
+class _Reversed(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Func.__init__(self)
+
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        assert value.Undef
 
 
 class _StrStartsWith(vm._Func):
@@ -235,8 +521,8 @@ def Init(mem):
     # Oil
     #
 
-    SetGlobalFunc(mem, 'join', _Join)
-    SetGlobalFunc(mem, 'maybe', _Maybe)
+    SetGlobalFunc(mem, 'join', _Join())
+    SetGlobalFunc(mem, 'maybe', _Maybe())
     # NOTE: split() is set in main(), since it depends on the Splitter() object /
     # $IFS.
     # TODO: How to ask for Python's split algorithm?  Or Awk's?
@@ -254,46 +540,46 @@ def Init(mem):
     # Types:
     # Should the constructors be Python compatible, and types be capital?
     SetGlobalFunc(mem, 'Bool', _Bool())
-    SetGlobalFunc(mem, 'Int', int)
+    SetGlobalFunc(mem, 'Int', _Int())
 
-    SetGlobalFunc(mem, 'Float', float)
+    SetGlobalFunc(mem, 'Float', _Float())
 
-    SetGlobalFunc(mem, 'Str', str)
-    SetGlobalFunc(mem, 'List', list)
-    SetGlobalFunc(mem, 'Dict', dict)
+    SetGlobalFunc(mem, 'Str', _Str())
+    SetGlobalFunc(mem, 'List', _List())
+    SetGlobalFunc(mem, 'Dict', _Dict())
 
     # For compositionality and testing
-    SetGlobalFunc(mem, 'identity', lambda x: x)
+    SetGlobalFunc(mem, 'identity', _Identity())
 
     # Singleton tuple!
     # TODO: remove this and the trailing comma message for 3,
     # A trailing comma can just be a syntax error?
-    SetGlobalFunc(mem, 'tup', lambda x: (x,))
+    SetGlobalFunc(mem, 'tup', _Tup())
 
-    SetGlobalFunc(mem, 'len', len)
-    SetGlobalFunc(mem, 'max', max)
-    SetGlobalFunc(mem, 'min', min)
+    SetGlobalFunc(mem, 'len', _Len())
+    SetGlobalFunc(mem, 'max', _Max())
+    SetGlobalFunc(mem, 'min', _Min())
     # NOTE: cmp() deprecated in Python 3
 
     # Utilities
-    SetGlobalFunc(mem, 'abs', abs)
+    SetGlobalFunc(mem, 'abs', _Abs())
     # round()
     # divmod() - probably useful?  Look at the implementation
 
     # TODO: Consolidate with explicit 1:2 syntax
     # Return an iterable like Python 3.  Used for 'step' param.
-    SetGlobalFunc(mem, 'range', xrange)
+    SetGlobalFunc(mem, 'range', _Range())
     # For the 'step' param.
-    SetGlobalFunc(mem, 'slice', slice)
+    SetGlobalFunc(mem, 'slice', _Slice())
 
-    SetGlobalFunc(mem, 'any', any)
-    SetGlobalFunc(mem, 'all', all)
-    SetGlobalFunc(mem, 'sum', sum)
+    SetGlobalFunc(mem, 'any', _Any())
+    SetGlobalFunc(mem, 'all', _All())
+    SetGlobalFunc(mem, 'sum', _Sum())
 
     # We maintain the L.sort() aka sort(L) and sorted(L) distinction.
     # TODO: How do these interact with rows of a data frame?
-    SetGlobalFunc(mem, 'sorted', sorted)
-    SetGlobalFunc(mem, 'reversed', reversed)
+    SetGlobalFunc(mem, 'sorted', _Sorted())
+    SetGlobalFunc(mem, 'reversed', _Reversed())
 
     #
     # List/array methods

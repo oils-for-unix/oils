@@ -9,12 +9,13 @@ from core import error
 from core import main_loop
 from core import state
 from core import ui
+from core import vm
 from frontend import reader
 from mycpp import mylib
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, cast, Any, Dict
+from typing import TYPE_CHECKING, cast, Any, Dict, List
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import value_t
@@ -23,17 +24,19 @@ if TYPE_CHECKING:
     from osh import cmd_eval
 
 
-class ParseHay(object):
+class ParseHay(vm._Func):
     """parse_config()"""
 
     def __init__(self, fd_state, parse_ctx, errfmt):
         # type: (process.FdState, parse_lib.ParseContext, ui.ErrorFormatter) -> None
+        vm._Func.__init__(self)
         self.fd_state = fd_state
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
 
-    def Call(self, path):
-        # type: (str) -> value_t
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        path = pos_args[0] # XXX str
 
         call_loc = loc.Missing  # TODO: location info
 
@@ -66,11 +69,12 @@ class ParseHay(object):
         return value.Block(node)
 
 
-class EvalHay(object):
+class EvalHay(vm._Func):
     """eval_to_dict()"""
 
     def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
         # type: (state.Hay, state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator) -> None
+        vm._Func.__init__(self)
         self.hay_state = hay_state
         self.mutable_opts = mutable_opts
         self.mem = mem
@@ -79,8 +83,9 @@ class EvalHay(object):
     if mylib.PYTHON:
         # Hard to translate the Dict[str, Any]
 
-        def Call(self, block):
-            # type: (value_t) -> Dict[str, Any]
+        def Run(self, pos_args, named_args):
+            # type: (List[value_t], Dict[str, value_t]) -> value_t
+            block = pos_args[0] # XXX value_t
 
             call_loc = loc.Missing
             if block.tag() != value_e.Block:
@@ -98,27 +103,29 @@ class EvalHay(object):
             # needs more validation.
 
 
-class BlockAsStr(object):
+class BlockAsStr(vm._Func):
     """block_as_str()"""
 
     def __init__(self, arena):
         # type: (alloc.Arena) -> None
+        vm._Func.__init__(self)
         self.arena = arena
 
-    def Call(self, block):
-        # type: (value_t) -> value_t
-        return block
+    def Run(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return pos_args[0]
 
 
-class HayFunc(object):
+class HayFunc(vm._Func):
     """hay_result()"""
 
     def __init__(self, hay_state):
         # type: (state.Hay) -> None
+        vm._Func.__init__(self)
         self.hay_state = hay_state
 
     if mylib.PYTHON:
 
-        def Call(self):
-            # type: () -> Dict[str, Any]
+        def Run(self, pos_args, named_args):
+            # type: (List[value_t], Dict[str, value_t]) -> value_t
             return self.hay_state.HayRegister()
