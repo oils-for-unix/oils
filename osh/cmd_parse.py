@@ -564,8 +564,8 @@ class CommandParser(object):
         # type: () -> None
         """Call this when you no longer need the current token.
 
-        This method is lazy.  A subsequent call to _GetWord() will actually
-        read the next Token.
+        This method is lazy.  A subsequent call to _GetWord() will
+        actually read the next Token.
         """
         self.next_lex_mode = lex_mode_e.ShCommand
 

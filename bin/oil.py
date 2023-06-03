@@ -20,43 +20,45 @@ import sys
 # Needed for oil.ovm app bundle build, since there is an function-local import
 # to break a circular build dep in frontend/consts.py.
 from _devbuild.gen import id_kind
+
 _ = id_kind
 
 from bin import oils_for_unix
 
 from typing import List
 
+
 # Called from Python-2.7.13/Modules/main.c.
 def _cpython_main_hook():
-  # type: () -> None
-  sys.exit(oils_for_unix.main(sys.argv))
+    # type: () -> None
+    sys.exit(oils_for_unix.main(sys.argv))
 
 
 def main(argv):
-  # type: (List[str]) -> int
-  return oils_for_unix.main(sys.argv)
+    # type: (List[str]) -> int
+    return oils_for_unix.main(sys.argv)
 
 
 if __name__ == '__main__':
-  pyann_out = posix.environ.get('PYANN_OUT')
+    pyann_out = posix.environ.get('PYANN_OUT')
 
-  if pyann_out:
-    from pyannotate_runtime import collect_types
+    if pyann_out:
+        from pyannotate_runtime import collect_types
 
-    collect_types.init_types_collection()
-    with collect_types.collect():
-      status = main(sys.argv)
-    collect_types.dump_stats(pyann_out)
-    sys.exit(status)
+        collect_types.init_types_collection()
+        with collect_types.collect():
+            status = main(sys.argv)
+        collect_types.dump_stats(pyann_out)
+        sys.exit(status)
 
-  elif posix.environ.get('RESOLVE') == '1':
-    from opy import resolve
-    resolve.Walk(dict(sys.modules))
+    elif posix.environ.get('RESOLVE') == '1':
+        from opy import resolve
+        resolve.Walk(dict(sys.modules))
 
-  elif posix.environ.get('CALLGRAPH') == '1':
-    # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
-    from opy import callgraph
-    callgraph.Walk(main, sys.modules)
+    elif posix.environ.get('CALLGRAPH') == '1':
+        # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
+        from opy import callgraph
+        callgraph.Walk(main, sys.modules)
 
-  else:
-    sys.exit(main(sys.argv))
+    else:
+        sys.exit(main(sys.argv))

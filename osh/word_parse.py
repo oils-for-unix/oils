@@ -171,9 +171,7 @@ class WordParser(WordEmitter):
         # type: () -> None
         """Call this when you need to make a decision based on any of:
 
-        self.token_type
-        self.token_kind
-        self.cur_token  # contents
+        self.token_type self.token_kind self.cur_token  # contents
         """
         if self.next_lex_mode != lex_mode_e.Undefined:
             self.cur_token = self.lexer.Read(self.next_lex_mode)
@@ -1211,7 +1209,8 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.Arith)
         anode = self._ReadArithExpr(Id.Arith_RParen)
 
-        self._SetNext(lex_mode_e.ShCommand)  # TODO: This could be DQ or ARITH too
+        # TODO: This could be DQ or Arith too
+        self._SetNext(lex_mode_e.ShCommand)
 
         # PROBLEM: $(echo $(( 1 + 2 )) )
         # Two right parens break the Id.Eof_RParen scheme

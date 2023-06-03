@@ -16,6 +16,8 @@ readonly REPO_ROOT
 source build/common.sh
 source devtools/run-task.sh  # run-task
 
+readonly -a CODE_DIRS=(asdl bin core frontend osh tools ysh)
+
 get-cpplint() {
   mkdir -p _tmp
   wget --directory _tmp \
@@ -125,7 +127,7 @@ flake8-one() {
 }
 
 flake8-all() {
-  local -a dirs=(asdl bin core frontend osh opy tools ysh)
+  local -a dirs=( "${CODE_DIRS[@]}" )
 
   # astgen.py has a PROLOGUE which must have unused imports!
   # opcode.py triggers a flake8 bug?  Complains about def_op() when it is
@@ -198,8 +200,10 @@ run-yapf-3() {
 }
 
 py2-files-to-format() {
-  for name in {asdl,core,frontend,osh,tools,ysh}/*.py; do
-    echo $name
+  for dir in "${CODE_DIRS[@]}"; do
+    for name in $dir/*.py; do
+      echo $name
+    done
   done | grep -v 'NINJA_subgraph'  # leave out for now
 }
 
