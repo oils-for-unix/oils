@@ -131,21 +131,21 @@ write @x
 0
 ## END
 
-#### @split(x) respects IFS
+#### @[split(x)] respects IFS
 setvar IFS = ":"
 var x = "one:two:three"
-argv.py @split(x)
+argv.py @[split(x)]
 ## STDOUT:
 ['one', 'two', 'three']
 ## END
 
-#### @maybe(x)
+#### @[maybe(x)]
 setvar empty = ''
 setvar x = 'X'
-argv.py a @maybe(empty) @maybe(x) b
+argv.py a @[maybe(empty)] @[maybe(x)] b
 
 setvar n = null
-argv.py a @maybe(n) b
+argv.py a @[maybe(n)] b
 
 ## STDOUT:
 ['a', 'X', 'b']
@@ -156,7 +156,7 @@ argv.py a @maybe(n) b
 
 # not allowed
 setvar marray = :||
-argv.py a @maybe(marray) b
+argv.py a @[maybe(marray)] b
 echo done
 ## status: 3
 ## STDOUT:
@@ -164,27 +164,27 @@ echo done
 
 #### split() on invalid type is fatal error
 var myarray = :| --all --long |
-write -- @myarray
-write -- @split(myarray)
+write -- @[myarray]
+write -- @[split(myarray)]
 ## status: 3
 ## STDOUT:
 --all
 --long
 ## END
 
-#### @glob(x)
+#### @[glob(x)]
 
 # empty glob
-write -- A @glob('__nope__') B
+write -- A @[glob('__nope__')] B
 echo ___
 
 touch -- a.z b.z -.z
-write -- @glob('?.z')
+write -- @[glob('?.z')]
 echo ___
 
 # add it back
 shopt -s dashglob
-write -- @glob('?.z')
+write -- @[glob('?.z')]
 
 ## STDOUT:
 A

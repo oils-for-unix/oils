@@ -743,6 +743,18 @@ ysh_expr_more() {
 
   # user must choose === or ~==
   _ysh-parse-error 'if (5 == 5) { echo yes }'
+
+  _ysh-should-parse 'echo $[join(x)]'
+
+  _ysh-parse-error 'echo $join(x)'
+
+  _ysh-should-parse 'echo @[split(x)]'
+  _ysh-should-parse 'echo @[split(x)] two'
+
+  _ysh-parse-error 'echo @[split(x)]extra'
+
+  # Old syntax to remove
+  #_ysh-parse-error 'echo @split("a")'
 }
 
 ysh_hay_assign() {

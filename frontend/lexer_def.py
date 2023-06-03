@@ -322,6 +322,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 
   # @array and @func(1, c)
   R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for YSH splicing
+  C('@[', Id.Lit_AtLBracket),           # @[split(x)]
   C('@{.', Id.Lit_AtLBraceDot),         # for split builtin sub @{.myproc arg1}
 
   R(FD_NUM + r'<', Id.Redir_Less),

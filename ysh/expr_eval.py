@@ -663,10 +663,23 @@ class OilEvaluator(object):
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
-        py_val = self.EvalExpr(part.child, loc.Missing)
-        s = Stringify(py_val, word_part=part)
-        return part_value.String(s, False, False)
 
+        py_val = self.EvalExpr(part.child, loc.Missing)
+
+        if part.left.id == Id.Left_DollarBracket:
+            s = Stringify(py_val, word_part=part)
+            return part_value.String(s, False, False)
+
+        elif part.left.id == Id.Lit_AtLBracket:
+            a = [
+                Stringify(item, word_part=part)
+                for item in py_val
+            ]
+            return part_value.Array(a)
+
+        else:
+            raise AssertionError(part.left)
+       
     def EvalInlineFunc(self, part):
         # type: (word_part.FuncCall) -> part_value_t
         func_name = part.name.tval[1:]

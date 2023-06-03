@@ -215,8 +215,9 @@ def AddKinds(spec):
 
   spec.AddKind('Lit', [
       'Chars', 'VarLike', 'ArrayLhsOpen', 'ArrayLhsClose',
-      'Splice',  # @func(a, b)
-      'AtLBraceDot',  # @{.myproc arg1}
+      'Splice',       # @func(a, b)
+      'AtLBracket',   # @[split(x)]
+      'AtLBraceDot',  # @{.myproc arg1} should be builtin_sub
       'Other', 'EscapedChar', 'RegexMeta',
       'LBracket', 'RBracket',  # for assoc array literals, static globs
       'Star', 'QMark',

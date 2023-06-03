@@ -1435,6 +1435,19 @@ class WordParser(WordEmitter):
       done = True
 
     elif (is_first and self.parse_opts.parse_at() and
+          self.token_type == Id.Lit_AtLBracket):  # @[split(x)]
+      part2 = self._ReadExprSub(lex_mode_e.DQ)
+      parts.append(part2)
+
+      # @[split(x)]
+      self._Next(lex_mode)
+      self._Peek()
+      # EOF, whitespace, newline, Right_Subshell
+      if self.token_kind not in KINDS_THAT_END_WORDS:
+        p_die('Unexpected token after expr splice', self.cur_token)
+      done = True
+
+    elif (is_first and self.parse_opts.parse_at() and
           self.token_type == Id.Lit_AtLBraceDot):
       p_die('TODO: @{.myproc builtin sub}', self.cur_token)
 
