@@ -154,7 +154,7 @@ class LineLexer(object):
       # NOTE: Instead of hard-coding this token, we could pass it in.
       # LookPastSpace(lex_mode, past_token_type)
       # - WS_Space only given in lex_mode_e.ShCommand
-      # - Id.Ignored_Space give in lex_mode_e.Expr
+      # - Id.Ignored_Space given in lex_mode_e.Expr
       if tok_type != Id.WS_Space and tok_type != Id.Ignored_Space:
         break
       pos = end_pos
