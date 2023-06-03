@@ -604,10 +604,6 @@ regex: [re_alt] (('|'|'or') re_alt)*
 #   ^^^^^^^^-- This is pattern
 # }
 
-# TODO: remove regex_pat, expr_pat
-regex_pat: regex [re_flags] '/'
-expr_pat: expr ')'
-
 case_pat: (
     pat_paren
   | pat_eggex
