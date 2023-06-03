@@ -664,30 +664,25 @@ class OilEvaluator(object):
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
 
-        try:
-            py_val = self.EvalExpr(part.child, loc.Missing)
+        py_val = self.EvalExpr(part.child, loc.Missing)
 
-            if part.left.id == Id.Left_DollarBracket:
-                s = Stringify(py_val, word_part=part)
-                return part_value.String(s, False, False)
+        if part.left.id == Id.Left_DollarBracket:
+            s = Stringify(py_val, word_part=part)
+            return part_value.String(s, False, False)
 
-            elif part.left.id == Id.Lit_AtLBracket:
+        elif part.left.id == Id.Lit_AtLBracket:
+            try:
                 a = [
                     Stringify(item, word_part=part)
                     for item in py_val
                 ]
-                return part_value.Array(a)
+            except TypeError as e:  # TypeError if it isn't iterable
+                raise error.Expr('Type error in expression: %s' % str(e),
+                                 loc.WordPart(part))
+            return part_value.Array(a)
 
-            else:
-                raise AssertionError(part.left)
-        # Same error handling as EvalExpr below
-        except TypeError as e:
-            # TODO: Add location info.  Right now we blame the variable name for
-            # 'var' and 'setvar', etc.
-            raise error.Expr('Type error in expression: %s' % str(e),
-                             loc.Missing)
-        except (AttributeError, ValueError) as e:
-            raise error.Expr('Expression eval error: %s' % str(e), loc.Missing)
+        else:
+            raise AssertionError(part.left)
        
     def EvalInlineFunc(self, part):
         # type: (word_part.FuncCall) -> part_value_t
