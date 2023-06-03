@@ -15,17 +15,17 @@ SPEC.ShortFlag('-f')
 
 
 def main(argv):
-  # type: (List[str]) -> int
-  arg_r = args.Reader(argv)
-  arg_r.Next()  # skip argv[0]
-  arg = args.Parse(SPEC, arg_r)
+    # type: (List[str]) -> int
+    arg_r = args.Reader(argv)
+    arg_r.Next()  # skip argv[0]
+    arg = args.Parse(SPEC, arg_r)
 
-  if not arg.f:
-    print_stderr("readlink: -f must be passed")
-    return 1
-  for path in arg_r.Rest():
-    res = libc.realpath(path)
-    if res is None:
-      return 1
-    print(res)
-  return 0
+    if not arg.f:
+        print_stderr("readlink: -f must be passed")
+        return 1
+    for path in arg_r.Rest():
+        res = libc.realpath(path)
+        if res is None:
+            return 1
+        print(res)
+    return 0

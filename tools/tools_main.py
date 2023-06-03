@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
-"""
-tools_main.py
-"""
+"""Tools_main.py."""
 from __future__ import print_function
 
 import posix_ as posix
@@ -27,135 +25,143 @@ from typing import List, Dict
 
 # TODO: Hook up to completion.
 SUBCOMMANDS = [
-    'translate', 'arena', 'tokens', 'format', 'deps', 'undefined-vars',
-    'parse-glob', 'parse-printf',
+    'translate',
+    'arena',
+    'tokens',
+    'format',
+    'deps',
+    'undefined-vars',
+    'parse-glob',
+    'parse-printf',
 ]
 
+
 def OshCommandMain(argv):
-  # type: (List[str]) -> int
-  """Run an 'oshc' tool.
+    # type: (List[str]) -> int
+    """Run an 'oshc' tool.
 
-  'osh' is short for "osh compiler" or "osh command".
+    'osh' is short for "osh compiler" or "osh command".
 
-  TODO:
-  - oshc --help
+    TODO:
+    - oshc --help
 
-  oshc deps
-    --path: the $PATH to use to find executables.  What about libraries?
+    oshc deps
+      --path: the $PATH to use to find executables.  What about libraries?
 
-    NOTE: we're leaving out su -c, find, xargs, etc.?  Those should generally
-    run functions using the $0 pattern.
-    --chained-command sudo
+      NOTE: we're leaving out su -c, find, xargs, etc.?  Those should generally
+      run functions using the $0 pattern.
+      --chained-command sudo
 
-  TODO: Get rid of oshc, and change this to
+    TODO: Get rid of oshc, and change this to
 
-  osh/oil --tool translate foo.py
-  osh/oil --tool translate -c 'echo hi'
-  osh/oil --tool parse-glob 'my-glob'
+    osh/oil --tool translate foo.py
+    osh/oil --tool translate -c 'echo hi'
+    osh/oil --tool parse-glob 'my-glob'
 
-  Although it does ParseWholeFile, like -n.
+    Although it does ParseWholeFile, like -n.
 
-  And then you can use the same -o options and so forth.  Also push this into
-  core/shell_native.py.
-  """
-  try:
-    action = argv[0]
-  except IndexError:
-    raise error.Usage('Missing required subcommand.', loc.Missing)
-
-  if action not in SUBCOMMANDS:
-    raise error.Usage('Invalid subcommand %r.' % action, loc.Missing)
-
-  if action == 'parse-glob':
-    # Pretty-print the AST produced by osh/glob_.py
-    print('TODO:parse-glob')
-    return 0
-
-  if action == 'parse-printf':
-    # Pretty-print the AST produced by osh/builtin_printf.py
-    print('TODO:parse-printf')
-    return 0
-
-  arena = alloc.Arena(save_tokens=True)
-  errfmt = ui.ErrorFormatter()
-  try:
-    script_name = argv[1]
-    arena.PushSource(source.MainFile(script_name))
-  except IndexError:
-    arena.PushSource(source.Stdin(''))
-    f = mylib.Stdin()
-  else:
+    And then you can use the same -o options and so forth.  Also push this into
+    core/shell_native.py.
+    """
     try:
-      # TODO: fd_state.Open() or something similar
-      f = open(script_name)
-    except IOError as e:
-      print_stderr("oshc: Couldn't open %r: %s" %
-                   (script_name, posix.strerror(e.errno)))
-      return 2
+        action = argv[0]
+    except IndexError:
+        raise error.Usage('Missing required subcommand.', loc.Missing)
 
-  # Dummy value; not respecting aliases!
-  aliases = {}  # type: Dict[str, str]
+    if action not in SUBCOMMANDS:
+        raise error.Usage('Invalid subcommand %r.' % action, loc.Missing)
 
-  loader = pyutil.GetResourceLoader()
-  oil_grammar = pyutil.LoadOilGrammar(loader)
+    if action == 'parse-glob':
+        # Pretty-print the AST produced by osh/glob_.py
+        print('TODO:parse-glob')
+        return 0
 
-  opt0_array = state.InitOpts()
-  no_stack = None  # type: List[bool]  # for mycpp
-  opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
+    if action == 'parse-printf':
+        # Pretty-print the AST produced by osh/builtin_printf.py
+        print('TODO:parse-printf')
+        return 0
 
-  parse_opts = optview.Parse(opt0_array, opt_stacks)
-  # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(
-      arena, parse_opts, aliases, oil_grammar, one_pass_parse=True)
+    arena = alloc.Arena(save_tokens=True)
+    errfmt = ui.ErrorFormatter()
+    try:
+        script_name = argv[1]
+        arena.PushSource(source.MainFile(script_name))
+    except IndexError:
+        arena.PushSource(source.Stdin(''))
+        f = mylib.Stdin()
+    else:
+        try:
+            # TODO: fd_state.Open() or something similar
+            f = open(script_name)
+        except IOError as e:
+            print_stderr("oshc: Couldn't open %r: %s" %
+                         (script_name, posix.strerror(e.errno)))
+            return 2
 
-  line_reader = reader.FileLineReader(f, arena)
-  c_parser = parse_ctx.MakeOshParser(line_reader)
+    # Dummy value; not respecting aliases!
+    aliases = {}  # type: Dict[str, str]
 
-  try:
-    node = main_loop.ParseWholeFile(c_parser)
-  except error.Parse as e:
-    errfmt.PrettyPrintError(e)
-    return 2
-  assert node is not None
+    loader = pyutil.GetResourceLoader()
+    oil_grammar = pyutil.LoadOilGrammar(loader)
 
-  f.close()
+    opt0_array = state.InitOpts()
+    no_stack = None  # type: List[bool]  # for mycpp
+    opt_stacks = [no_stack] * option_i.ARRAY_SIZE  # type: List[List[bool]]
 
-  # Columns for list-*
-  # path line name
-  # where name is the binary path, variable name, or library path.
+    parse_opts = optview.Parse(opt0_array, opt_stacks)
+    # parse `` and a[x+1]=bar differently
+    parse_ctx = parse_lib.ParseContext(arena,
+                                       parse_opts,
+                                       aliases,
+                                       oil_grammar,
+                                       one_pass_parse=True)
 
-  # bin-deps and lib-deps can be used to make an app bundle.
-  # Maybe I should list them together?  'deps' can show 4 columns?
-  #
-  # path, line, type, name
-  #
-  # --pretty can show the LST location.
+    line_reader = reader.FileLineReader(f, arena)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  # stderr: show how we're following imports?
+    try:
+        node = main_loop.ParseWholeFile(c_parser)
+    except error.Parse as e:
+        errfmt.PrettyPrintError(e)
+        return 2
+    assert node is not None
 
-  if action == 'translate':
-    osh2oil.PrintAsOil(arena, node)
+    f.close()
 
-  elif action == 'arena':  # for debugging
-    osh2oil.PrintArena(arena)
+    # Columns for list-*
+    # path line name
+    # where name is the binary path, variable name, or library path.
 
-  elif action == 'tokens':  # for debugging
-    osh2oil.PrintTokens(arena)
+    # bin-deps and lib-deps can be used to make an app bundle.
+    # Maybe I should list them together?  'deps' can show 4 columns?
+    #
+    # path, line, type, name
+    #
+    # --pretty can show the LST location.
 
-  elif action == 'format':
-    # TODO: autoformat code
-    raise NotImplementedError(action)
+    # stderr: show how we're following imports?
 
-  elif action == 'deps':
-    if mylib.PYTHON:
-      deps.Deps(node)
+    if action == 'translate':
+        osh2oil.PrintAsOil(arena, node)
 
-  elif action == 'undefined-vars':  # could be environment variables
-    raise NotImplementedError()
+    elif action == 'arena':  # for debugging
+        osh2oil.PrintArena(arena)
 
-  else:
-    raise AssertionError  # Checked above
+    elif action == 'tokens':  # for debugging
+        osh2oil.PrintTokens(arena)
 
-  return 0
+    elif action == 'format':
+        # TODO: autoformat code
+        raise NotImplementedError(action)
 
+    elif action == 'deps':
+        if mylib.PYTHON:
+            deps.Deps(node)
 
+    elif action == 'undefined-vars':  # could be environment variables
+        raise NotImplementedError()
+
+    else:
+        raise AssertionError  # Checked above
+
+    return 0
