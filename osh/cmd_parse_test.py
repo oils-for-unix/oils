@@ -642,7 +642,7 @@ case (x) {
     self.assertEqual(1, len(node.arms))
     pattern = node.arms[0].pattern
     self.assertEqual(pat_e.Words, pattern.tag())
-    self.assertEqual(3, len(pattern.w))
+    self.assertEqual(3, len(pattern.words))
 
     node = assert_ParseCommandLine(self, """\
 case (x) {
