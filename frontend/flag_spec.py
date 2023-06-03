@@ -4,8 +4,6 @@ flag_spec.py -- Flag and arg defs for builtins.
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
     flag_type_e,

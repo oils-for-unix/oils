@@ -11,6 +11,8 @@ from core import error
 from frontend import flag_spec
 from frontend import args  # module under test
 
+from typing import Tuple
+
 
 def _MakeBuiltinArgv(argv):
     """Different than test_lib.MakeBuiltinArgv()"""

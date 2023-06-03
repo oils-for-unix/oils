@@ -38,7 +38,9 @@ from _devbuild.gen.runtime_asdl import lvalue
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 
-from typing import TYPE_CHECKING, cast, Optional
+_ = log
+
+from typing import cast, Optional
 
 
 def LName(name):

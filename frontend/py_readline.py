@@ -7,7 +7,7 @@ try:
 except ImportError:
     line_input = None
 
-from typing import Callable, List, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.completion import ReadlineCallback
     from core.comp_ui import _IDisplay

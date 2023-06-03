@@ -1716,8 +1716,8 @@ class CommandParser(object):
         self._GetWord()
         while self.c_id == Id.KW_Elif:
             elif_kw = word_.AsKeywordToken(self.cur_word)
+            self._SetNext()  # past 'elif'
 
-            self._SetNext()  # skip elif
             commands = self._ParseCommandList()
             cond = condition.Shell(commands.children)
 
@@ -1730,9 +1730,10 @@ class CommandParser(object):
 
             arms.append(arm)
 
+        self._GetWord()
         if self.c_id == Id.KW_Else:
             else_kw = word_.AsKeywordToken(self.cur_word)
-            self._SetNext()
+            self._SetNext()  # past 'else'
             body = self._ParseCommandList()
             if_node.else_action = body.children
         else:
@@ -2453,7 +2454,6 @@ class CommandParser(object):
 
             children.append(child)
 
-        self._GetWord()  # TODO: Remove because it doesn't follow the style
         return command.CommandList(children)
 
     def _ParseCommandList(self):
@@ -2469,8 +2469,7 @@ class CommandParser(object):
         easier.
         """
         self._NewlineOk()
-        node = self._ParseCommandTerm()
-        return node
+        return self._ParseCommandTerm()
 
     def ParseLogicalLine(self):
         # type: () -> command_t

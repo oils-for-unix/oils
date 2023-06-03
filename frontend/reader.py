@@ -13,7 +13,7 @@ from mycpp import mylib
 
 from core.error import p_die
 
-from typing import Optional, Tuple, List, Union, IO, TYPE_CHECKING
+from typing import Optional, Tuple, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import Token, SourceLine
     from core.alloc import Arena

@@ -145,12 +145,12 @@ class BoolParser(object):
     def ParseExpr(self):
         # type: () -> bool_expr_t
         """
-    Iterative:
-    Expr    : Term (OR Term)*
+        Iterative:
+        Expr    : Term (OR Term)*
 
-    Right recursion:
-    Expr    : Term (OR Expr)?
-    """
+        Right recursion:
+        Expr    : Term (OR Expr)?
+        """
         left = self.ParseTerm()
         # [[ uses || but [ uses -o
         if self.bool_id in (Id.Op_DPipe, Id.BoolUnary_o):
@@ -163,11 +163,11 @@ class BoolParser(object):
     def ParseTerm(self):
         # type: () -> bool_expr_t
         """
-    Term    : Negated (AND Negated)*
+        Term    : Negated (AND Negated)*
 
-    Right recursion:
-    Term    : Negated (AND Term)?
-    """
+        Right recursion:
+        Term    : Negated (AND Term)?
+        """
         left = self.ParseNegatedFactor()
         # [[ uses && but [ uses -a
         if self.bool_id in (Id.Op_DAmp, Id.BoolUnary_a):
@@ -180,8 +180,8 @@ class BoolParser(object):
     def ParseNegatedFactor(self):
         # type: () -> bool_expr_t
         """
-    Negated : '!'? Factor
-    """
+        Negated : '!'? Factor
+        """
         if self.bool_id == Id.KW_Bang:
             self._Next()
             child = self.ParseFactor()
@@ -192,11 +192,11 @@ class BoolParser(object):
     def ParseFactor(self):
         # type: () -> bool_expr_t
         """
-    Factor  : WORD
-            | UNARY_OP WORD
-            | WORD BINARY_OP WORD
-            | '(' Expr ')'
-    """
+        Factor  : WORD
+                | UNARY_OP WORD
+                | WORD BINARY_OP WORD
+                | '(' Expr ')'
+        """
         if self.bool_kind == Kind.BoolUnary:
             # Just save the type and not the token itself?
             op = self.bool_id

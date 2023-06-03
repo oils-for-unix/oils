@@ -12,9 +12,7 @@ import sys
 import sre_parse
 import sre_constants
 
-from frontend import builtin_def
 from frontend import lexer_def
-from frontend import option_def
 
 
 def PrintTree(re_tree, depth=2):

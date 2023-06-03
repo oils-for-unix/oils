@@ -5,9 +5,8 @@ match.py - match with generated re2c code or Python regexes.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
 from frontend import lexer_def
-from frontend import option_def
 
-from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
+from typing import Tuple, Callable, Dict, List, Any, TYPE_CHECKING
 
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.

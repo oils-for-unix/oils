@@ -10,10 +10,12 @@ from mycpp.mylib import log
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 from frontend import flag_spec
-from mycpp.mylib import switch, tagswitch
+from mycpp.mylib import switch
 # This causes a circular build dependency!  That is annoying.
 # builtin_comp -> core/completion -> pylib/{os_path,path_stat,...} -> posix_
 #from osh import builtin_comp
+
+_ = flag_def
 
 
 def CString(s):

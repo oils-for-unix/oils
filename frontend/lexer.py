@@ -13,9 +13,10 @@ from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
 from asdl import runtime
 from mycpp.mylib import log
-from mycpp import mylib
 from frontend import consts
 from frontend import match
+
+unused = log, Id_str
 
 from typing import List, Tuple, Optional, Counter, TYPE_CHECKING
 if TYPE_CHECKING:

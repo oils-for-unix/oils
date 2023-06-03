@@ -13,7 +13,6 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
-from _devbuild.gen import syntax_asdl
 from frontend import consts
 from frontend.lexer_def import ID_SPEC
 from core.test_lib import Tok

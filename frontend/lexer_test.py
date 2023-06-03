@@ -11,7 +11,6 @@ from core import test_lib
 from core.test_lib import Tok
 from mycpp.mylib import log
 from frontend.lexer_def import LEXER_DEF
-from frontend import parse_lib
 from frontend import reader
 
 

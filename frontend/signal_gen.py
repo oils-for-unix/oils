@@ -2,7 +2,6 @@
 """Signal_gen.py."""
 from __future__ import print_function
 
-import signal
 import sys
 
 import signal_def
@@ -56,8 +55,6 @@ def main(argv):
         raise RuntimeError('Action required')
 
     if action == 'cpp':
-        from asdl import gen_cpp
-
         out_prefix = argv[2]
 
         with open(out_prefix + '.h', 'w') as f:

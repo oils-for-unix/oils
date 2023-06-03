@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import signal
 
-from typing import List, Dict, Tuple
+from typing import Dict
 
 
 def _MakeSignalsOld():

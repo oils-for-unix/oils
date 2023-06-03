@@ -125,7 +125,7 @@ flake8-one() {
 }
 
 flake8-all() {
-  local -a dirs=(asdl bin core ysh osh opy ovm2 tools)
+  local -a dirs=(asdl bin core frontend osh opy tools ysh)
 
   # astgen.py has a PROLOGUE which must have unused imports!
   # opcode.py triggers a flake8 bug?  Complains about def_op() when it is

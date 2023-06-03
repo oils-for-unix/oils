@@ -2,17 +2,15 @@
 parse_lib.py - Consolidate various parser instantiations here.
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t, word_t,
+from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t,
                                        Redir, ArgList, NameType, command, pat_t)
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
-from core.error import p_die
 from core import state
 from frontend import lexer
 from frontend import reader
-from frontend import match
 
 from ysh import expr_parse
 from ysh import expr_to_ast
@@ -24,7 +22,9 @@ from osh import word_parse
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
+_ = log
+
+from typing import Any, List, Tuple, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.alloc import Arena
     from core.util import _DebugFile
@@ -35,7 +35,6 @@ if TYPE_CHECKING:
     from osh.word_parse import WordParser
     from osh.cmd_parse import CommandParser
     from pgen2.grammar import Grammar
-    from pgen2.pnode import PNode
 
 
 class _BaseTrail(object):

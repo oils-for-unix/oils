@@ -5,7 +5,6 @@ from __future__ import print_function
 import sys
 
 from asdl import ast
-from asdl.visitor import FormatLines
 from frontend import builtin_def
 from frontend import option_def
 

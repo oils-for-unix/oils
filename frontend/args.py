@@ -56,12 +56,13 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
 
-from asdl import runtime
 from core.error import e_usage
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, iteritems
 
-from typing import (cast, Tuple, Optional, Dict, List, Any, IO, TYPE_CHECKING)
+_ = log
+
+from typing import (cast, Tuple, Optional, Dict, List, Any, TYPE_CHECKING)
 if TYPE_CHECKING:
     from frontend import flag_spec
     OptChange = Tuple[str, bool]

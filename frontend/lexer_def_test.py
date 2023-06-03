@@ -8,16 +8,15 @@ import re
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str, Kind
-from _devbuild.gen.syntax_asdl import SourceLine
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.test_lib import Tok
 from mycpp.mylib import log
 from core import test_lib
 from frontend import lexer_def
-from frontend import lexer
 from frontend import consts
-from frontend.lexer import LineLexer
 from frontend import match
+
+_ = log
 
 
 def _InitLexer(s):

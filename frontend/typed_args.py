@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
 from core.error import e_usage
 from mycpp.mylib import tagswitch
 
-from typing import Optional, cast, TYPE_CHECKING
+from typing import Optional, cast
 
 
 def DoesNotAccept(arg_list):
