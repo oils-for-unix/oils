@@ -58,7 +58,7 @@ This is a supplement to the [main release page](index.html).
   errors.
 - [oil-runtime-errors](test/other.wwz/suite-logs/oil-runtime-errors.txt).  Oil language
   runtime errors.
-- [oil-large](test/other.wwz/suite-logs/oil-large.txt)
+- [ysh-large](test/other.wwz/suite-logs/ysh-large.txt)
 - [tea-large](test/other.wwz/suite-logs/tea-large.txt)
 - [arena](test/other.wwz/suite-logs/arena.txt).  Testing an invariant for the parser.
 - [osh-usage](test/other.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.

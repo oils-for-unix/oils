@@ -66,10 +66,10 @@ test-run-osh() {
   done
 }
 
-test-run-oil() {
+test-run-ysh() {
   ### Run programs with Oil / YSH
 
-  for prog in ysh/testdata/*.oil; do
+  for prog in ysh/testdata/*.ysh; do
     echo ---
     $OIL $prog all
   done
@@ -85,7 +85,7 @@ demo() {
 
   bin/osh ysh/testdata/hello.osh
 
-  bin/osh ysh/testdata/inline-function-calls.oil all
+  bin/osh ysh/testdata/inline-function-calls.ysh all
 
   bin/osh ysh/testdata/sigil-pairs.sh
 
@@ -112,7 +112,7 @@ soil-run-cpp() {
 
 run-for-release() {
   ### Used by devtools/release.sh.  Writes a file.
-  run-other-suite-for-release oil-large run-test-funcs
+  run-other-suite-for-release ysh-large run-test-funcs
 }
 
 "$@"
