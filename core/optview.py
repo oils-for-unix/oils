@@ -8,7 +8,6 @@ from typing import List
 
 
 class _Getter(object):
-
     def __init__(self, opt0_array, opt_stacks, opt_name):
         # type: (List[bool], List[List[bool]], str) -> None
         self.opt0_array = opt0_array
@@ -44,14 +43,12 @@ class _View(object):
 
 
 class Parse(_View):
-
     def __init__(self, opt0_array, opt_stacks):
         # type: (List[bool], List[List[bool]]) -> None
         _View.__init__(self, opt0_array, opt_stacks, option_def.ParseOptNames())
 
 
 class Exec(_View):
-
     def __init__(self, opt0_array, opt_stacks):
         # type: (List[bool], List[List[bool]]) -> None
         _View.__init__(self, opt0_array, opt_stacks, option_def.ExecOptNames())

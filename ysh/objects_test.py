@@ -8,7 +8,6 @@ from ysh import objects  # module under test
 
 
 class ObjectsTest(unittest.TestCase):
-
     def testRegex(self):
         a = objects.Regex(None)
 

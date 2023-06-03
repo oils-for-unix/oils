@@ -672,10 +672,7 @@ class OilEvaluator(object):
 
         elif part.left.id == Id.Lit_AtLBracket:
             try:
-                a = [
-                    Stringify(item, word_part=part)
-                    for item in py_val
-                ]
+                a = [Stringify(item, word_part=part) for item in py_val]
             except TypeError as e:  # TypeError if it isn't iterable
                 raise error.Expr('Type error in expression: %s' % str(e),
                                  loc.WordPart(part))
@@ -683,7 +680,7 @@ class OilEvaluator(object):
 
         else:
             raise AssertionError(part.left)
-       
+
     def SpliceValue(self, val, part):
         # type: (value.Obj, word_part.Splice) -> List[Any]
         try:
@@ -1805,9 +1802,9 @@ class OilEvaluator(object):
 
                 obj = self.LookupVar(term.name.tval, term.name)
                 if not isinstance(obj, str):
-                  e_die(
-                      "Can't splice object of type %r into char class literal" %
-                      obj.__class__, term.name)
+                    e_die(
+                        "Can't splice object of type %r into char class literal"
+                        % obj.__class__, term.name)
                 s = obj
                 char_code_tok = term.name
 
@@ -1917,15 +1914,15 @@ class OilEvaluator(object):
 
                 obj = self.LookupVar(node.name.tval, node.name)
                 if isinstance(obj, str):
-                  to_splice = re.LiteralChars(obj, node.name)  # type: re_t
+                    to_splice = re.LiteralChars(obj, node.name)  # type: re_t
                 elif isinstance(obj, objects.Regex):
-                  # Note: we only splice the regex, and ignore flags.
-                  # Should we warn about this?
-                  to_splice = obj.regex
+                    # Note: we only splice the regex, and ignore flags.
+                    # Should we warn about this?
+                    to_splice = obj.regex
                 else:
-                  e_die(
-                      "Can't splice object of type %r into regex" %
-                      obj.__class__, node.name)
+                    e_die(
+                        "Can't splice object of type %r into regex" %
+                        obj.__class__, node.name)
                 return to_splice
 
             else:

@@ -78,7 +78,6 @@ def LoadOilGrammar(loader):
 
 
 class _ResourceLoader(object):
-
     def Get(self, rel_path):
         # type: (str) -> str
         raise NotImplementedError()

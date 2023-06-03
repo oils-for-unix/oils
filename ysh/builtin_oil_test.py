@@ -11,7 +11,6 @@ import yajl  # test this too
 
 
 class YajlTest(unittest.TestCase):
-
     def testMisc(self):
         print(yajl.dumps({'foo': 42}))
 

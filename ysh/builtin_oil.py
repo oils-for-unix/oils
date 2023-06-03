@@ -32,7 +32,6 @@ _ = log
 
 
 class _Builtin(vm._Builtin):
-
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ErrorFormatter) -> None
         self.mem = mem

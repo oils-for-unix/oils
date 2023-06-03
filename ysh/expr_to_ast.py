@@ -858,7 +858,6 @@ class Transformer(object):
         name = None  # type: Optional[Token]
         typ = None  # type: Optional[Token]
         default_val = None  # type: Optional[expr_t]
-
         if tok0.id in (Id.Arith_Colon, Id.Expr_At):
             prefix = tok0
             name = pnode.GetChild(1).tok

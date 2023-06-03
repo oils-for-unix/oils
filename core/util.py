@@ -22,7 +22,6 @@ class UserExit(Exception):
 
 
 class HistoryError(Exception):
-
     def __init__(self, msg):
         # type: (str) -> None
         self.msg = msg
@@ -33,7 +32,6 @@ class HistoryError(Exception):
 
 
 class _DebugFile(object):
-
     def __init__(self):
         # type: () -> None
         pass
@@ -52,7 +50,6 @@ class _DebugFile(object):
 
 
 class NullDebugFile(_DebugFile):
-
     def __init__(self):
         # type: () -> None
         """Empty constructor for mycpp."""
@@ -60,7 +57,6 @@ class NullDebugFile(_DebugFile):
 
 
 class DebugFile(_DebugFile):
-
     def __init__(self, f):
         # type: (mylib.Writer) -> None
         _DebugFile.__init__(self)

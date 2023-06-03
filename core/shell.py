@@ -146,7 +146,6 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
 
 
 class ShellOptHook(state.OptHook):
-
     def __init__(self, readline):
         # type: (Optional[Readline]) -> None
         self.readline = readline
@@ -304,7 +303,6 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
 
 
 class ShellFiles(object):
-
     def __init__(self, lang, home_dir, mem, flag):
         # type: (str, str, state.Mem, arg_types.main) -> None
         assert lang in ('osh', 'ysh'), lang

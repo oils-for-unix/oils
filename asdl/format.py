@@ -216,7 +216,6 @@ INDENT = 2
 
 
 class _PrettyPrinter(object):
-
     def __init__(self, max_col):
         # type: (int) -> None
         self.max_col = max_col

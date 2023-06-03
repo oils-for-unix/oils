@@ -278,7 +278,6 @@ class ctx_ErrExit(object):
 
 
 class ctx_Try(object):
-
     def __init__(self, mutable_opts):
         # type: (MutableOpts) -> None
 
@@ -461,7 +460,9 @@ class Hay(object):
     def Push(self, hay_name):
         # type: (Optional[str]) -> None
         """Package cppunit { }   # pushes a namespace haynode package cppunit {
-        }   # just assumes every TYPE 'package' is valid."""
+
+        }   # just assumes every TYPE 'package' is valid.
+        """
         if mylib.PYTHON:
             top = self.result_stack[-1]
             self.result_stack.append(top['children'][-1])
@@ -582,7 +583,6 @@ def _SetOptionNum(opt_name):
 
 
 class MutableOpts(object):
-
     def __init__(self, mem, opt0_array, opt_stacks, opt_hook):
         # type: (Mem, List[bool], List[List[bool]], OptHook) -> None
         self.mem = mem
@@ -1001,7 +1001,6 @@ def _GetWorkingDir():
 
 
 class DebugFrame(object):
-
     def __init__(self, bash_source, func_name, source_name, call_tok, argv_i,
                  var_i):
         # type: (Optional[str], Optional[str], Optional[str], Optional[Token], int, int) -> None

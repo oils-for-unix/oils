@@ -36,78 +36,76 @@ class StrArray(StrList):
 
 
 class Regex(object):
+    """How to use Regex objects:
+
+    Match:
+      if (x ~ /d+/) {    # Compare with Perl's noisy $x =~ m/\d+/
+      }
+
+    Iterative Match:
+      while (x ~ /d+ ; g/) {  # Do we want this global flag?
+        echo $x
+      }
+
+      # maybe this should be the ~~ operator.
+      # Honestly you don't need another operator?  If should always clear
+      # MATCH_STATE the first time?
+      # What if you break though?
+
+      while (x ~~ /d+/) {
+        # this is the state you have?
+        echo $_POS
+
+        M.pos
+      }
+
+      # This might be better for initializing state
+      for (/d+/ in x) {
+
+      }
+
+    Slurp All Matches:
+      set m = matchall(s, /d+/)
+      pass s => matchall( /(d+ as month) '/' (d+ as day)/ ) => var m
+
+      Idea: if (s @~ m)  -- match all?
+
+      # Doesn't work
+      set matches = @[x ~ /d+/]
+
+    Split:
+      set parts = split(s, /d+/)
+      set parts = split(s, ' ')   # Split by character
+      set parts = split(s)        # IFS split algorithm
+      set parts = split(s, %awk)  # Awk's algorithm
+
+      pass x => split(/d+/) => var parts
+
+    Subst
+      Perl:
+        $text =~ s/regex/replacement/modifiers
+
+      Python:
+        text = pat.sub(replace, string, n)
+        replace can be a function
+
+      Oil:
+        # Winner: First argument is text.
+        pass text => subst(/d+/, 'replace') => var new
+        var text = subst(text, /d+/, 'replace', n)
+
+        Discarded:
+          var text = sub /d+/ in text with 'replace'
+          var text = text.subst(/d+/, 'replace', n)
+
+        pass text => subst(/d+/, func(M) {
+          return "${M.name} ${M.ratio %.3f}"
+        }) => var new
+
+        %%% pass text
+         => subst(/d+/, fn(M) "${M.name} --- ${M.ratio %.3f}")
+         => var new
     """
-  How to use Regex objects:
-  
-  Match:
-    if (x ~ /d+/) {    # Compare with Perl's noisy $x =~ m/\d+/
-    }
-
-  Iterative Match:
-    while (x ~ /d+ ; g/) {  # Do we want this global flag?
-      echo $x
-    }
-
-    # maybe this should be the ~~ operator.
-    # Honestly you don't need another operator?  If should always clear 
-    # MATCH_STATE the first time?
-    # What if you break though?
-
-    while (x ~~ /d+/) {
-      # this is the state you have?
-      echo $_POS
-
-      M.pos
-    }
-
-    # This might be better for initializing state
-    for (/d+/ in x) {
-
-    }
-
-  Slurp All Matches:
-    set m = matchall(s, /d+/)
-    pass s => matchall( /(d+ as month) '/' (d+ as day)/ ) => var m
-
-    Idea: if (s @~ m)  -- match all?
-
-    # Doesn't work
-    set matches = @[x ~ /d+/]
-
-  Split:
-    set parts = split(s, /d+/)
-    set parts = split(s, ' ')   # Split by character
-    set parts = split(s)        # IFS split algorithm
-    set parts = split(s, %awk)  # Awk's algorithm
-
-    pass x => split(/d+/) => var parts
-
-  Subst
-    Perl:
-      $text =~ s/regex/replacement/modifiers
-
-    Python:
-      text = pat.sub(replace, string, n)
-      replace can be a function
-
-    Oil:
-      # Winner: First argument is text.
-      pass text => subst(/d+/, 'replace') => var new
-      var text = subst(text, /d+/, 'replace', n)
-
-      Discarded:
-        var text = sub /d+/ in text with 'replace'
-        var text = text.subst(/d+/, 'replace', n)
-
-      pass text => subst(/d+/, func(M) {
-        return "${M.name} ${M.ratio %.3f}"
-      }) => var new
-
-      %%% pass text
-       => subst(/d+/, fn(M) "${M.name} --- ${M.ratio %.3f}")
-       => var new
- 
-  """
 
     def __init__(self, regex):
         # type: (re_t) -> None

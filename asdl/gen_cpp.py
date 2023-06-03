@@ -42,7 +42,6 @@ else:
 # Used by core/asdl_gen.py to generate _devbuild/gen/osh-types.h, with
 # lex_mode__*
 class CEnumVisitor(visitor.AsdlVisitor):
-
     def VisitSimpleSum(self, sum, name, depth):
         # Just use #define, since enums aren't namespaced.
         for i, variant in enumerate(sum.types):
@@ -121,7 +120,7 @@ def _IsManagedType(typ):
 
 
 def _DefaultValue(typ, conditional=True):
-    """ Values that the ::CreateNull() constructor passes. """
+    """Values that the ::CreateNull() constructor passes."""
 
     if isinstance(typ, ast.ParameterizedType):
         type_name = typ.type_name
@@ -155,7 +154,6 @@ def _DefaultValue(typ, conditional=True):
             default = 'false'
         elif type_name == 'float':
             default = '0.0'  # or should it be NaN?
-
         elif type_name == 'string':
             default = 'kEmptyString'
 
@@ -167,7 +165,6 @@ def _DefaultValue(typ, conditional=True):
 
         else:
             default = 'nullptr'  # Sum or Product
-
         return default
 
     else:

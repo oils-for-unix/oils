@@ -74,7 +74,6 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
 
 
 class FunctionsTest(unittest.TestCase):
-
     def testAdjustArg(self):
         AdjustArg = completion.AdjustArg
         out = []
@@ -96,7 +95,6 @@ class FunctionsTest(unittest.TestCase):
 
 
 class CompletionTest(unittest.TestCase):
-
     def _CompApi(self, partial_argv, index, to_complete):
         comp = completion.Api('', 0, 0)
         comp.Update('', to_complete, '', index, partial_argv)
@@ -225,7 +223,6 @@ class CompletionTest(unittest.TestCase):
 
 
 class RootCompleterTest(unittest.TestCase):
-
     def testCompletesWords(self):
         comp_lookup = completion.Lookup()
 
@@ -685,7 +682,6 @@ complete -F my_complete %(command)s
 
 
 class InitCompletionTest(unittest.TestCase):
-
     def testMatchesOracle(self):
         for i, case in enumerate(bash_oracle.CASES):  # generated data
             flags = case.get('_init_completion_flags')

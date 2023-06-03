@@ -35,7 +35,6 @@ def _CommandNode(code_str, arena):
 
 
 class ProcessTest(unittest.TestCase):
-
     def setUp(self):
         self.arena = test_lib.MakeArena('process_test.py')
 
@@ -86,7 +85,6 @@ class ProcessTest(unittest.TestCase):
                        redirect_arg.Path(PATH))
 
         class CommandEvaluator(object):
-
             def RunPendingTraps(self):
                 pass
 
@@ -105,7 +103,6 @@ class ProcessTest(unittest.TestCase):
         self.assertEqual('one', line2)
 
     def testProcess(self):
-
         # 3 fds.  Does Python open it?  Shell seems to have it too.  Maybe it
         # inherits from the shell.
         print('FDS BEFORE', os.listdir('/dev/fd'))

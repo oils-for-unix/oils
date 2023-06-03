@@ -31,7 +31,6 @@ def _InitMem():
 
 
 class MemTest(unittest.TestCase):
-
     def testGet(self):
         mem = _InitMem()
 

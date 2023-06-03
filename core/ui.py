@@ -213,11 +213,11 @@ def GetLineSourceString(line, quote_filename=False):
 
 def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     # type: (str, str, loc_t, bool) -> None
+    """Should we have multiple error formats:
+
+    - single line and verbose?
+    - and turn on "stack" tracing?  For 'source' and more?
     """
-  Should we have multiple error formats:
-  - single line and verbose?
-  - and turn on "stack" tracing?  For 'source' and more?
-  """
     f = mylib.Stderr()
     blame_tok = location.TokenFor(blame_loc)
     if blame_tok is None:  # When does this happen?
@@ -260,7 +260,6 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
 
 
 class ctx_Location(object):
-
     def __init__(self, errfmt, location):
         # type: (ErrorFormatter, loc_t) -> None
         errfmt.loc_stack.append(location)

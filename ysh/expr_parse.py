@@ -170,10 +170,11 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
         # Mututally recursive calls into the command/word parsers.
         #
 
-        if tok.id in (Id.Left_ColonPipe, Id.Left_PercentParen):  # :|  %(  LEGACY!
+        if tok.id in (Id.Left_ColonPipe,
+                      Id.Left_PercentParen):  # :|  %(  LEGACY!
             left_tok = tok
             if tok.id == Id.Left_PercentParen:
-              lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+                lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
 
             # Blame the opening token
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -355,7 +356,6 @@ class ExprParser(object):
 
 
 class ctx_PNodeAllocator(object):
-
     def __init__(self, ep):
         # type: (ExprParser) -> None
         self.expr_parser = ep

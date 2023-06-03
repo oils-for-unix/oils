@@ -268,7 +268,6 @@ class Lookup(object):
 
 
 class Api(object):
-
     def __init__(self, line, begin, end):
         # type: (str, int, int) -> None
         """
@@ -354,7 +353,6 @@ class UsersAction(CompletionAction):
 
 
 class TestAction(CompletionAction):
-
     def __init__(self, words, delay=0.0):
         # type: (List[str], Optional[float]) -> None
         self.words = words
@@ -669,7 +667,6 @@ class ExternalCommandAction(CompletionAction):
 
 
 class _Predicate(object):
-
     def __init__(self):
         # type: () -> None
         pass
@@ -680,7 +677,6 @@ class _Predicate(object):
 
 
 class DefaultPredicate(_Predicate):
-
     def __init__(self):
         # type: () -> None
         pass

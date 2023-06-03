@@ -20,7 +20,6 @@ from pgen2 import parse, pgen
 
 
 class OilTokenDef(object):
-
     def __init__(self, ops, more_ops, keyword_ops):
         self.ops = ops
         self.more_ops = more_ops

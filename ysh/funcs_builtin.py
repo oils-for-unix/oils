@@ -132,7 +132,6 @@ class _VmEval(object):
         self.mem = mem
 
     def __call__(self, *args):
-
         source_path = args[0]
         first_words = args[1]
         log('source %s', source_path)

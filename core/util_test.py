@@ -13,7 +13,6 @@ from core import util  # module under test
 
 
 class UtilTest(unittest.TestCase):
-
     def testDebugFile(self):
         n = util.NullDebugFile()
         n.write('foo')

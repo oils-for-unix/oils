@@ -192,7 +192,6 @@ def GetHomeDir(user_name):
 
 
 class PasswdEntry(object):
-
     def __init__(self, pw_name, uid, gid):
         # type: (str, int, int) -> None
         self.pw_name = pw_name

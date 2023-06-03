@@ -37,7 +37,6 @@ class AsdlVisitor:
         self.EmitFooter()
 
     def VisitType(self, typ, depth=0):
-
         if isinstance(typ.value, ast.SimpleSum):
             self.VisitSimpleSum(typ.value, typ.name, depth)
 

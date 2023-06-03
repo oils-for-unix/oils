@@ -143,7 +143,6 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
 
 
 class _Executor(object):
-
     def __init__(self):
         # type: () -> None
         self.cmd_ev = None  # type: CommandEvaluator
@@ -280,7 +279,6 @@ class ctx_ProcessSub(object):
 
 
 class ctx_FlushStdout(object):
-
     def __init__(self):
         # type: () -> None
         pass

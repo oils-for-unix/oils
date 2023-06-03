@@ -415,17 +415,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def VisitCompoundSum(self, sum, sum_name, depth):
+        """Note that the following is_simple:
+
+          cflow = Break | Continue
+
+        But this is compound:
+
+          cflow = Break | Continue | Return(int val)
+
+        The generated code changes depending on which one it is.
         """
-    Note that the following is_simple:
-
-      cflow = Break | Continue
-
-    But this is compound:
-
-      cflow = Break | Continue | Return(int val)
-
-    The generated code changes depending on which one it is.
-    """
         #log('%d variants in %s', len(sum.types), sum_name)
 
         # We emit THREE Python types for each meta.CompoundType:

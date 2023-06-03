@@ -57,7 +57,6 @@ for i, (name, val) in enumerate(_TOKENS):
 
 
 class Token(object):
-
     def __init__(self, kind, value, lineno):
         self.kind = kind
         self.value = value
@@ -65,7 +64,6 @@ class Token(object):
 
 
 class ASDLSyntaxError(Exception):
-
     def __init__(self, msg, lineno=None):
         self.msg = msg
         self.lineno = lineno or '<unknown>'
@@ -265,15 +263,14 @@ class ASDLParser(object):
                 return Sum(sumlist, generate)
 
     def _parse_type_expr(self):
+        """One or two params:
+
+        type_params : '[' type_expr ( ',' type_expr )* ']'
+
+        type_expr   : NAME type_params? (''?' | '*')?  # allow one suffix
+
+        NAME is validated against Optional, List, Dict afterward
         """
-    One or two params:
-
-    type_params : '[' type_expr ( ',' type_expr )* ']'
-
-    type_expr   : NAME type_params? (''?' | '*')?  # allow one suffix
-
-    NAME is validated against Optional, List, Dict afterward
-    """
         type_name = self._match(TokenKind.Name)
 
         # Accept Python-like naming!

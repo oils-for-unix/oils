@@ -89,7 +89,6 @@ STYLE_PID_ONLY = 2
 
 
 class ctx_FileCloser(object):
-
     def __init__(self, f):
         # type: (mylib.LineReader) -> None
         self.f = f
@@ -134,7 +133,6 @@ def SaveFd(fd):
 
 
 class _RedirFrame(object):
-
     def __init__(self, saved_fd, orig_fd, forget):
         # type: (int, int, bool) -> None
         self.saved_fd = saved_fd
@@ -143,7 +141,6 @@ class _RedirFrame(object):
 
 
 class _FdFrame(object):
-
     def __init__(self):
         # type: () -> None
         self.saved = []  # type: List[_RedirFrame]
@@ -544,7 +541,6 @@ class FdState(object):
 
 
 class ChildStateChange(object):
-
     def __init__(self):
         # type: () -> None
         """Empty constructor for mycpp."""
@@ -561,7 +557,6 @@ class ChildStateChange(object):
 
 
 class StdinFromPipe(ChildStateChange):
-
     def __init__(self, pipe_read_fd, w):
         # type: (int, int) -> None
         self.r = pipe_read_fd
@@ -581,7 +576,6 @@ class StdinFromPipe(ChildStateChange):
 
 
 class StdoutToPipe(ChildStateChange):
-
     def __init__(self, r, pipe_write_fd):
         # type: (int, int) -> None
         self.r = r
@@ -606,7 +600,6 @@ OWN_LEADER = 0
 
 
 class SetPgid(ChildStateChange):
-
     def __init__(self, pgid):
         # type: (int) -> None
         self.pgid = pgid
@@ -655,10 +648,7 @@ class ExternalProgram(object):
         # type: (str, cmd_value.Argv, Dict[str, str]) -> None
         """Execute a program and exit this process.
 
-        Called by:
-          ls /
-          exec ls /
-          ( ls / )
+        Called by:   ls /   exec ls /   ( ls / )
         """
         self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_locs[0], environ, True)
         assert False, "This line should never execute"  # NO RETURN
@@ -1095,7 +1085,6 @@ class Process(Job):
 
 
 class ctx_Pipe(object):
-
     def __init__(self, fd_state, fd):
         # type: (FdState, int) -> None
         fd_state.PushStdinFromPipe(fd)
@@ -1344,7 +1333,6 @@ def _GetTtyFd():
 
 
 class ctx_TerminalControl(object):
-
     def __init__(self, job_control, errfmt):
         # type: (JobControl, ui.ErrorFormatter) -> None
         job_control.InitJobControl()

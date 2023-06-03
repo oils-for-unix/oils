@@ -9,7 +9,6 @@ from comp_ui import _PromptLen
 
 
 class PromptTest(unittest.TestCase):
-
     @given(text())
     def testNeverPanics(self, s):
         self.assertIs(_PromptLen(s) >= 0, True)

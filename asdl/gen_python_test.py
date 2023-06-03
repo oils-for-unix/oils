@@ -18,7 +18,6 @@ cflow_e = typed_demo_asdl.cflow_e
 
 
 class ArithAstTest(unittest.TestCase):
-
     def testStringDefaults(self):
         st = typed_demo_asdl.Strings('', '')
         self.assertEqual('', st.required)
