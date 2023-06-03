@@ -198,7 +198,7 @@ run-yapf-3() {
 }
 
 py2-files-to-format() {
-  for name in {asdl,core,tools,ysh}/*.py; do
+  for name in {asdl,core,frontend,osh,tools,ysh}/*.py; do
     echo $name
   done | grep -v 'NINJA_subgraph'  # leave out for now
 }

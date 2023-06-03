@@ -3,19 +3,18 @@ py_readline.py: GNU readline wrapper that's also implemented in C++
 """
 
 try:
-  import line_input
+    import line_input
 except ImportError:
-  line_input = None
+    line_input = None
 
 from typing import Callable, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.completion import ReadlineCallback
-  from core.comp_ui import _IDisplay
+    from core.completion import ReadlineCallback
+    from core.comp_ui import _IDisplay
+
 
 class Readline(object):
-    """
-    A thin wrapper around GNU readline to make it usable from C++.
-    """
+    """A thin wrapper around GNU readline to make it usable from C++."""
 
     def __init__(self):
         # type: () -> None
@@ -88,9 +87,7 @@ class Readline(object):
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]
-    """
-    Returns a readline "module" if we were built with readline support.
-    """
+    """Returns a readline "module" if we were built with readline support."""
     if line_input is not None:
         return Readline()
 

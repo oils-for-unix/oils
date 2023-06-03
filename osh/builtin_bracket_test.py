@@ -12,18 +12,17 @@ from osh import builtin_bracket  # module under test
 
 
 class BracketTest(unittest.TestCase):
-
-  def testStringWordEmitter(self):
-    # Test
-    argv = '-z X -o -z Y -a -z X'.split()
-    cmd_val = test_lib.MakeBuiltinArgv(argv)
-    e = builtin_bracket._StringWordEmitter(cmd_val)
-    while True:
-      w = e.ReadWord(None)
-      print(w)
-      if w.id == Id.Eof_Real:
-        break
+    def testStringWordEmitter(self):
+        # Test
+        argv = '-z X -o -z Y -a -z X'.split()
+        cmd_val = test_lib.MakeBuiltinArgv(argv)
+        e = builtin_bracket._StringWordEmitter(cmd_val)
+        while True:
+            w = e.ReadWord(None)
+            print(w)
+            if w.id == Id.Eof_Real:
+                break
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

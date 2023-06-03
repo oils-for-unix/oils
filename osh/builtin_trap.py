@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
-"""
-builtin_trap.py
-"""
+"""Builtin_trap.py."""
 from __future__ import print_function
 
 from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
@@ -24,117 +22,124 @@ from mycpp.mylib import iteritems, print_stderr
 
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import command_t
-  from core.ui import ErrorFormatter
-  from frontend.parse_lib import ParseContext
+    from _devbuild.gen.syntax_asdl import command_t
+    from core.ui import ErrorFormatter
+    from frontend.parse_lib import ParseContext
 
 _ = log
 
 
 class TrapState(object):
-  """Traps are shell callbacks that the user wants to run on certain events.
+    """Traps are shell callbacks that the user wants to run on certain events.
 
-  There are 2 catogires:
-  1. Signals like SIGUSR1
-  2. Hooks like EXIT
+    There are 2 catogires:
+    1. Signals like SIGUSR1
+    2. Hooks like EXIT
 
-  Signal handlers execute in the main loop, and within blocking syscalls.
+    Signal handlers execute in the main loop, and within blocking syscalls.
 
-  EXIT, DEBUG, ERR, RETURN execute in specific places in the interpreter.
-  """
-  def __init__(self, signal_safe):
-    # type: (pyos.SignalSafe) -> None
-    self.signal_safe = signal_safe
-    self.hooks = {}  # type: Dict[str, command_t]
-    self.traps = {}  # type: Dict[int, command_t]
+    EXIT, DEBUG, ERR, RETURN execute in specific places in the interpreter.
+    """
 
-  def ClearForSubProgram(self):
-    # type: () -> None
-    """ SubProgramThunk uses this because traps aren't inherited. """
+    def __init__(self, signal_safe):
+        # type: (pyos.SignalSafe) -> None
+        self.signal_safe = signal_safe
+        self.hooks = {}  # type: Dict[str, command_t]
+        self.traps = {}  # type: Dict[int, command_t]
 
-    self.hooks.clear()
-    self.traps.clear()
+    def ClearForSubProgram(self):
+        # type: () -> None
+        """SubProgramThunk uses this because traps aren't inherited."""
 
-  def GetHook(self, hook_name):
-    # type: (str) -> command_t
-    """ e.g. EXIT hook """
-    return self.hooks.get(hook_name, None)
+        self.hooks.clear()
+        self.traps.clear()
 
-  def AddUserHook(self, hook_name, handler):
-    # type: (str, command_t) -> None
-    self.hooks[hook_name] = handler
+    def GetHook(self, hook_name):
+        # type: (str) -> command_t
+        """E.g.
 
-  def RemoveUserHook(self, hook_name):
-    # type: (str) -> None
-    mylib.dict_erase(self.hooks, hook_name)
+        EXIT hook.
+        """
+        return self.hooks.get(hook_name, None)
 
-  def AddUserTrap(self, sig_num, handler):
-    # type: (int, command_t) -> None
-    """ e.g. SIGUSR1 """
-    self.traps[sig_num] = handler
+    def AddUserHook(self, hook_name, handler):
+        # type: (str, command_t) -> None
+        self.hooks[hook_name] = handler
 
-    if sig_num == SIGWINCH:
-      self.signal_safe.SetSigWinchCode(SIGWINCH)
-    else:
-      pyos.RegisterSignalInterest(sig_num)
+    def RemoveUserHook(self, hook_name):
+        # type: (str) -> None
+        mylib.dict_erase(self.hooks, hook_name)
 
-  def RemoveUserTrap(self, sig_num):
-    # type: (int) -> None
+    def AddUserTrap(self, sig_num, handler):
+        # type: (int, command_t) -> None
+        """E.g.
 
-    mylib.dict_erase(self.traps, sig_num)
+        SIGUSR1.
+        """
+        self.traps[sig_num] = handler
 
-    if sig_num == SIGINT:
-      # Don't disturb the runtime signal handlers:
-      # 1. from CPython
-      # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
-      pass
-    elif sig_num == SIGWINCH:
-      self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
-    else:
-      pyos.Sigaction(sig_num, SIG_DFL)
+        if sig_num == SIGWINCH:
+            self.signal_safe.SetSigWinchCode(SIGWINCH)
+        else:
+            pyos.RegisterSignalInterest(sig_num)
 
-  def GetPendingTraps(self):
-    # type: () -> Optional[List[command_t]]
-    """Transfer ownership of the current queue of pending trap handlers to the caller."""
-    signals = self.signal_safe.TakePendingSignals()
+    def RemoveUserTrap(self, sig_num):
+        # type: (int) -> None
 
-    # Optimization for the common case: do not allocate a list.  This function
-    # is called in the interpreter loop.
-    if len(signals) == 0:
-      self.signal_safe.ReuseEmptyList(signals)
-      return None
+        mylib.dict_erase(self.traps, sig_num)
 
-    run_list = []  # type: List[command_t]
-    for sig_num in signals:
-      node = self.traps.get(sig_num, None)
-      if node is not None:
-        run_list.append(node)
+        if sig_num == SIGINT:
+            # Don't disturb the runtime signal handlers:
+            # 1. from CPython
+            # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
+            pass
+        elif sig_num == SIGWINCH:
+            self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
+        else:
+            pyos.Sigaction(sig_num, SIG_DFL)
 
-    # Optimization to avoid allocation in the main loop.
-    del signals[:]
-    self.signal_safe.ReuseEmptyList(signals)
+    def GetPendingTraps(self):
+        # type: () -> Optional[List[command_t]]
+        """Transfer ownership of the current queue of pending trap handlers to
+        the caller."""
+        signals = self.signal_safe.TakePendingSignals()
 
-    return run_list
+        # Optimization for the common case: do not allocate a list.  This function
+        # is called in the interpreter loop.
+        if len(signals) == 0:
+            self.signal_safe.ReuseEmptyList(signals)
+            return None
+
+        run_list = []  # type: List[command_t]
+        for sig_num in signals:
+            node = self.traps.get(sig_num, None)
+            if node is not None:
+                run_list.append(node)
+
+        # Optimization to avoid allocation in the main loop.
+        del signals[:]
+        self.signal_safe.ReuseEmptyList(signals)
+
+        return run_list
 
 
 def _GetSignalNumber(sig_spec):
-  # type: (str) -> int
+    # type: (str) -> int
 
-  # POSIX lists the numbers that are required.
-  # http://pubs.opengroup.org/onlinepubs/9699919799/
-  #
-  # Added 13 for SIGPIPE because autoconf's 'configure' uses it!
-  if sig_spec.strip() in ('1', '2', '3', '6', '9', '13', '14', '15'):
-    return int(sig_spec)
+    # POSIX lists the numbers that are required.
+    # http://pubs.opengroup.org/onlinepubs/9699919799/
+    #
+    # Added 13 for SIGPIPE because autoconf's 'configure' uses it!
+    if sig_spec.strip() in ('1', '2', '3', '6', '9', '13', '14', '15'):
+        return int(sig_spec)
 
-  # INT is an alias for SIGINT
-  if sig_spec.startswith('SIG'):
-    sig_spec = sig_spec[3:]
-  return signal_def.GetNumber(sig_spec)
+    # INT is an alias for SIGINT
+    if sig_spec.startswith('SIG'):
+        sig_spec = sig_spec[3:]
+    return signal_def.GetNumber(sig_spec)
 
 
 _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
-
 
 # bash's default -p looks like this:
 # trap -- '' SIGTSTP
@@ -151,117 +156,119 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
 class Trap(vm._Builtin):
-  def __init__(self, trap_state, parse_ctx, tracer, errfmt):
-    # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
-    self.trap_state = trap_state
-    self.parse_ctx = parse_ctx
-    self.arena = parse_ctx.arena
-    self.tracer = tracer
-    self.errfmt = errfmt
+    def __init__(self, trap_state, parse_ctx, tracer, errfmt):
+        # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+        self.trap_state = trap_state
+        self.parse_ctx = parse_ctx
+        self.arena = parse_ctx.arena
+        self.tracer = tracer
+        self.errfmt = errfmt
 
-  def _ParseTrapCode(self, code_str):
-    # type: (str) -> command_t
-    """
+    def _ParseTrapCode(self, code_str):
+        # type: (str) -> command_t
+        """
     Returns:
       A node, or None if the code is invalid.
     """
-    line_reader = reader.StringLineReader(code_str, self.arena)
-    c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        line_reader = reader.StringLineReader(code_str, self.arena)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    # TODO: the SPID should be passed through argv.
-    src = source.ArgvWord('trap', loc.Missing)
-    with alloc.ctx_Location(self.arena, src):
-      try:
-        node = main_loop.ParseWholeFile(c_parser)
-      except error.Parse as e:
-        self.errfmt.PrettyPrintError(e)
-        return None
+        # TODO: the SPID should be passed through argv.
+        src = source.ArgvWord('trap', loc.Missing)
+        with alloc.ctx_Location(self.arena, src):
+            try:
+                node = main_loop.ParseWholeFile(c_parser)
+            except error.Parse as e:
+                self.errfmt.PrettyPrintError(e)
+                return None
 
-    return node
+        return node
 
-  def Run(self, cmd_val):
-    # type: (cmd_value.Argv) -> int
-    attrs, arg_r = flag_spec.ParseCmdVal('trap', cmd_val)
-    arg = arg_types.trap(attrs.attrs)
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_spec.ParseCmdVal('trap', cmd_val)
+        arg = arg_types.trap(attrs.attrs)
 
-    if arg.p:  # Print registered handlers
-      # The unit tests rely on this being one line.
-      # bash prints a line that can be re-parsed.
-      for name, _ in iteritems(self.trap_state.hooks):
-        print('%s TrapState' % (name,))
+        if arg.p:  # Print registered handlers
+            # The unit tests rely on this being one line.
+            # bash prints a line that can be re-parsed.
+            for name, _ in iteritems(self.trap_state.hooks):
+                print('%s TrapState' % (name,))
 
-      for sig_num, _ in iteritems(self.trap_state.traps):
-        print('%d TrapState' % (sig_num,))
+            for sig_num, _ in iteritems(self.trap_state.traps):
+                print('%d TrapState' % (sig_num,))
 
-      return 0
+            return 0
 
-    if arg.l:  # List valid signals and hooks
-      for name in _HOOK_NAMES:
-        print('   %s' % name)
+        if arg.l:  # List valid signals and hooks
+            for name in _HOOK_NAMES:
+                print('   %s' % name)
 
-      signal_def.PrintSignals()
+            signal_def.PrintSignals()
 
-      return 0
+            return 0
 
-    code_str = arg_r.ReadRequired('requires a code string')
-    sig_spec, sig_loc = arg_r.ReadRequired2('requires a signal or hook name')
+        code_str = arg_r.ReadRequired('requires a code string')
+        sig_spec, sig_loc = arg_r.ReadRequired2(
+            'requires a signal or hook name')
 
-    # sig_key is NORMALIZED sig_spec: a signal number string or string hook
-    # name.
-    sig_key = None  # type: Optional[str]
-    sig_num = signal_def.NO_SIGNAL
+        # sig_key is NORMALIZED sig_spec: a signal number string or string hook
+        # name.
+        sig_key = None  # type: Optional[str]
+        sig_num = signal_def.NO_SIGNAL
 
-    if sig_spec in _HOOK_NAMES:
-      sig_key = sig_spec
-    elif sig_spec == '0':  # Special case
-      sig_key = 'EXIT'
-    else:
-      sig_num = _GetSignalNumber(sig_spec)
-      if sig_num != signal_def.NO_SIGNAL:
-        sig_key = str(sig_num)
+        if sig_spec in _HOOK_NAMES:
+            sig_key = sig_spec
+        elif sig_spec == '0':  # Special case
+            sig_key = 'EXIT'
+        else:
+            sig_num = _GetSignalNumber(sig_spec)
+            if sig_num != signal_def.NO_SIGNAL:
+                sig_key = str(sig_num)
 
-    if sig_key is None:
-      self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                         blame_loc=cmd_val.arg_locs[2])
-      return 1
+        if sig_key is None:
+            self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
+                               blame_loc=cmd_val.arg_locs[2])
+            return 1
 
-    # NOTE: sig_spec isn't validated when removing handlers.
-    if code_str == '-':
-      if sig_key in _HOOK_NAMES:
-        self.trap_state.RemoveUserHook(sig_key)
-        return 0
+        # NOTE: sig_spec isn't validated when removing handlers.
+        if code_str == '-':
+            if sig_key in _HOOK_NAMES:
+                self.trap_state.RemoveUserHook(sig_key)
+                return 0
 
-      if sig_num != signal_def.NO_SIGNAL:
-        self.trap_state.RemoveUserTrap(sig_num)
-        return 0
+            if sig_num != signal_def.NO_SIGNAL:
+                self.trap_state.RemoveUserTrap(sig_num)
+                return 0
 
-      raise AssertionError('Signal or trap')
+            raise AssertionError('Signal or trap')
 
-    # Try parsing the code first.
+        # Try parsing the code first.
 
-    # TODO: If simple_trap is on (for oil:upgrade), then it must be a function
-    # name?  And then you wrap it in 'try'?
+        # TODO: If simple_trap is on (for oil:upgrade), then it must be a function
+        # name?  And then you wrap it in 'try'?
 
-    node = self._ParseTrapCode(code_str)
-    if node is None:
-      return 1  # ParseTrapCode() prints an error for us.
+        node = self._ParseTrapCode(code_str)
+        if node is None:
+            return 1  # ParseTrapCode() prints an error for us.
 
-    # Register a hook.
-    if sig_key in _HOOK_NAMES:
-      if sig_key == 'RETURN':
-        print_stderr("osh warning: The %r hook isn't implemented" % sig_spec)
-      self.trap_state.AddUserHook(sig_key, node)
-      return 0
+        # Register a hook.
+        if sig_key in _HOOK_NAMES:
+            if sig_key == 'RETURN':
+                print_stderr("osh warning: The %r hook isn't implemented" %
+                             sig_spec)
+            self.trap_state.AddUserHook(sig_key, node)
+            return 0
 
-    # Register a signal.
-    if sig_num != signal_def.NO_SIGNAL:
-      # For signal handlers, the traps dictionary is used only for debugging.
-      if sig_num in (SIGKILL, SIGSTOP):
-        self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
-                           blame_loc=sig_loc)
-        # Other shells return 0, but this seems like an obvious error
-        return 1
-      self.trap_state.AddUserTrap(sig_num, node)
-      return 0
+        # Register a signal.
+        if sig_num != signal_def.NO_SIGNAL:
+            # For signal handlers, the traps dictionary is used only for debugging.
+            if sig_num in (SIGKILL, SIGSTOP):
+                self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
+                                   blame_loc=sig_loc)
+                # Other shells return 0, but this seems like an obvious error
+                return 1
+            self.trap_state.AddUserTrap(sig_num, node)
+            return 0
 
-    raise AssertionError('Signal or trap')
+        raise AssertionError('Signal or trap')

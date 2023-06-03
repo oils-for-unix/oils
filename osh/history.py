@@ -15,174 +15,178 @@ from frontend import reader
 
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-  from frontend.parse_lib import ParseContext
-  from frontend.py_readline import Readline
-  from core.util import _DebugFile
+    from frontend.parse_lib import ParseContext
+    from frontend.py_readline import Readline
+    from core.util import _DebugFile
 
 
 class Evaluator(object):
-  """Expand ! commands within the command line.
+    """Expand ! commands within the command line.
 
-  This necessarily happens BEFORE lexing.
+    This necessarily happens BEFORE lexing.
 
-  NOTE: This should also be used in completion, and it COULD be used in history
-  -p, if we want to support that.
-  """
+    NOTE: This should also be used in completion, and it COULD be used in history
+    -p, if we want to support that.
+    """
 
-  def __init__(self, readline, parse_ctx, debug_f):
-    # type: (Optional[Readline], ParseContext, _DebugFile) -> None
-    self.readline = readline
-    self.parse_ctx = parse_ctx
-    self.debug_f = debug_f
+    def __init__(self, readline, parse_ctx, debug_f):
+        # type: (Optional[Readline], ParseContext, _DebugFile) -> None
+        self.readline = readline
+        self.parse_ctx = parse_ctx
+        self.debug_f = debug_f
 
-  def Eval(self, line):
-    # type: (str) -> str
-    """Returns an expanded line."""
+    def Eval(self, line):
+        # type: (str) -> str
+        """Returns an expanded line."""
 
-    if not self.readline:
-      return line
+        if not self.readline:
+            return line
 
-    tokens = match.HistoryTokens(line)
-    #self.debug_f.log('tokens %r', tokens)
+        tokens = match.HistoryTokens(line)
+        #self.debug_f.log('tokens %r', tokens)
 
-    # Common case: no history expansion.
-    # mycpp: rewrite of all()
-    ok = True
-    for (id_, _) in tokens:
-      if id_ != Id.History_Other:
-        ok = False
-        break
+        # Common case: no history expansion.
+        # mycpp: rewrite of all()
+        ok = True
+        for (id_, _) in tokens:
+            if id_ != Id.History_Other:
+                ok = False
+                break
 
-    if ok:
-      return line
+        if ok:
+            return line
 
-    history_len = self.readline.get_current_history_length()
-    if history_len <= 0:  # no commands to expand
-      return line
+        history_len = self.readline.get_current_history_length()
+        if history_len <= 0:  # no commands to expand
+            return line
 
-    self.debug_f.writeln('history length = %d' % history_len)
+        self.debug_f.writeln('history length = %d' % history_len)
 
-    parts = []  # type: List[str]
-    for id_, val in tokens:
-      if id_ == Id.History_Other:
-        out = val
+        parts = []  # type: List[str]
+        for id_, val in tokens:
+            if id_ == Id.History_Other:
+                out = val
 
-      elif id_ == Id.History_Op:
-        # all operations get a part of the previous line
-        prev = self.readline.get_history_item(history_len)
+            elif id_ == Id.History_Op:
+                # all operations get a part of the previous line
+                prev = self.readline.get_history_item(history_len)
 
-        ch = val[1]
-        if ch == '!':  # !!
-          out = prev
-        else:
-          self.parse_ctx.trail.Clear()  # not strictly necessary?
-          line_reader = reader.StringLineReader(prev, self.parse_ctx.arena)
-          c_parser = self.parse_ctx.MakeOshParser(line_reader)
-          try:
-            c_parser.ParseLogicalLine()
-          except error.Parse as e:
-            # Invalid command in history.  bash uses a separate, approximate
-            # history lexer which allows invalid commands, and will retrieve
-            # parts of them.  I guess we should too!
-            self.debug_f.writeln(
-                "Couldn't parse historical command %r: %s" %
-                (prev, e.UserErrorString()))
+                ch = val[1]
+                if ch == '!':  # !!
+                    out = prev
+                else:
+                    self.parse_ctx.trail.Clear()  # not strictly necessary?
+                    line_reader = reader.StringLineReader(
+                        prev, self.parse_ctx.arena)
+                    c_parser = self.parse_ctx.MakeOshParser(line_reader)
+                    try:
+                        c_parser.ParseLogicalLine()
+                    except error.Parse as e:
+                        # Invalid command in history.  bash uses a separate, approximate
+                        # history lexer which allows invalid commands, and will retrieve
+                        # parts of them.  I guess we should too!
+                        self.debug_f.writeln(
+                            "Couldn't parse historical command %r: %s" %
+                            (prev, e.UserErrorString()))
 
-          # NOTE: We're using the trail rather than the return value of
-          # ParseLogicalLine() because it handles cases like 
-          #
-          # $ for i in 1 2 3; do sleep ${i}; done
-          # $ echo !$
-          # which should expand to 'echo ${i}'
-          #
-          # Although the approximate bash parser returns 'done'.
-          # TODO: The trail isn't particularly well-defined, so maybe this
-          # isn't a great idea.
+                    # NOTE: We're using the trail rather than the return value of
+                    # ParseLogicalLine() because it handles cases like
+                    #
+                    # $ for i in 1 2 3; do sleep ${i}; done
+                    # $ echo !$
+                    # which should expand to 'echo ${i}'
+                    #
+                    # Although the approximate bash parser returns 'done'.
+                    # TODO: The trail isn't particularly well-defined, so maybe this
+                    # isn't a great idea.
 
-          words = self.parse_ctx.trail.words
-          #self.debug_f.log('TRAIL words: %d', len(words))
+                    words = self.parse_ctx.trail.words
+                    #self.debug_f.log('TRAIL words: %d', len(words))
 
-          if ch == '^':
-            try:
-              w = words[1]
-            except IndexError:
-              raise util.HistoryError("No first word in %r" % prev)
-            tok1 = location.LeftTokenForWord(w)
-            tok2 = location.RightTokenForWord(w)
+                    if ch == '^':
+                        try:
+                            w = words[1]
+                        except IndexError:
+                            raise util.HistoryError("No first word in %r" %
+                                                    prev)
+                        tok1 = location.LeftTokenForWord(w)
+                        tok2 = location.RightTokenForWord(w)
 
-          elif ch == '$':
-            try:
-              w = words[-1]
-            except IndexError:
-              raise util.HistoryError("No last word in %r" % prev)
+                    elif ch == '$':
+                        try:
+                            w = words[-1]
+                        except IndexError:
+                            raise util.HistoryError("No last word in %r" % prev)
 
-            tok1 = location.LeftTokenForWord(w)
-            tok2 = location.RightTokenForWord(w)
+                        tok1 = location.LeftTokenForWord(w)
+                        tok2 = location.RightTokenForWord(w)
 
-          elif ch == '*':
-            try:
-              w1 = words[1]
-              w2 = words[-1]
-            except IndexError:
-              raise util.HistoryError("Couldn't find words in %r" % prev)
+                    elif ch == '*':
+                        try:
+                            w1 = words[1]
+                            w2 = words[-1]
+                        except IndexError:
+                            raise util.HistoryError(
+                                "Couldn't find words in %r" % prev)
 
-            tok1 = location.LeftTokenForWord(w1)
-            tok2 = location.RightTokenForWord(w2)
+                        tok1 = location.LeftTokenForWord(w1)
+                        tok2 = location.RightTokenForWord(w2)
 
-          else:
-            raise AssertionError(ch)
+                    else:
+                        raise AssertionError(ch)
 
-          begin = tok1.col
-          end = tok2.col + tok2.length
+                    begin = tok1.col
+                    end = tok2.col + tok2.length
 
-          out = prev[begin:end]
+                    out = prev[begin:end]
 
-      elif id_ == Id.History_Num:
-        index = int(val[1:])  # regex ensures this.  Maybe have - on the front.
-        if index < 0:
-          num = history_len + 1 + index
-        else:
-          num = index
+            elif id_ == Id.History_Num:
+                index = int(
+                    val[1:])  # regex ensures this.  Maybe have - on the front.
+                if index < 0:
+                    num = history_len + 1 + index
+                else:
+                    num = index
 
-        out = self.readline.get_history_item(num)
-        if out is None:  # out of range
-          raise util.HistoryError('%s: not found' % val)
+                out = self.readline.get_history_item(num)
+                if out is None:  # out of range
+                    raise util.HistoryError('%s: not found' % val)
 
-      elif id_ == Id.History_Search:
-        # Remove the required space at the end and save it.  A simple hack than
-        # the one bash has.
-        last_char = val[-1]
-        val = val[:-1]
+            elif id_ == Id.History_Search:
+                # Remove the required space at the end and save it.  A simple hack than
+                # the one bash has.
+                last_char = val[-1]
+                val = val[:-1]
 
-        # Search backward
-        prefix = None  # type: Optional[str]
-        substring = ''
-        if val[1] == '?':
-          substring = val[2:]
-        else:
-          prefix = val[1:]
+                # Search backward
+                prefix = None  # type: Optional[str]
+                substring = ''
+                if val[1] == '?':
+                    substring = val[2:]
+                else:
+                    prefix = val[1:]
 
-        out = None
-        for i in xrange(history_len, 1, -1):
-          cmd = self.readline.get_history_item(i)
-          if prefix is not None and cmd.startswith(prefix):
-            out = cmd
-          if len(substring) and substring in cmd:
-            out = cmd
-          if out is not None:
-            # mycpp: rewrite of +=
-            out = out + last_char  # restore required space
-            break
+                out = None
+                for i in xrange(history_len, 1, -1):
+                    cmd = self.readline.get_history_item(i)
+                    if prefix is not None and cmd.startswith(prefix):
+                        out = cmd
+                    if len(substring) and substring in cmd:
+                        out = cmd
+                    if out is not None:
+                        # mycpp: rewrite of +=
+                        out = out + last_char  # restore required space
+                        break
 
-        if out is None:
-          raise util.HistoryError('%r found no results' % val)
+                if out is None:
+                    raise util.HistoryError('%r found no results' % val)
 
-      else:
-        raise AssertionError(id_)
+            else:
+                raise AssertionError(id_)
 
-      parts.append(out)
+            parts.append(out)
 
-    line = ''.join(parts)
-    # show what we expanded to
-    print('! %s' % line)
-    return line
+        line = ''.join(parts)
+        # show what we expanded to
+        print('! %s' % line)
+        return line
