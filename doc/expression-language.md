@@ -106,20 +106,20 @@ Those last two caveats about floats are TODOs:
 
 There is a single list type, but it has two syntaxes:
 
-- `%(one two three)` for an "array" of strings.  This is equivalent to `['one',
-  'two', 'three']`.
+- `:| one two three |` for an "array" of strings.  This is equivalent to
+  `['one', 'two', 'three']`.
 - `[1, [2, 'three', {}]]` for arbitrary Python-like "lists".
 
 Longer example:
 
-    var x = %(a b c)
-    var x = %(
+    var x = :| a b c |
+    var x = :|
       'single quoted'
-      "double quoted"
+      "double quoted $var"
       $'c string'
       glob/*.py
       brace-{a,b,c}-{1..3}
-    )
+    |
 
 ### Dict Literals Look Like JavaScript
 
@@ -270,7 +270,7 @@ In addition to pattern matching.
 ### Concatenation with `++`
 
     s ++ 'suffix'
-    L ++ [1, 2] ++ %(a b)
+    L ++ [1, 2] ++ :| a b |
 
 ### Indexing `a[i]`
 
@@ -278,7 +278,7 @@ In addition to pattern matching.
     var second = s[1]    # are these integers though?  maybe slicing gives you things of length 1
     echo $second  # 'o'
 
-    var a = %(spam eggs ham)
+    var a = :| spam eggs ham |
     var second = a[1]
     echo $second  # => 'eggs'
 
@@ -292,7 +292,7 @@ Semantics are like Python:  Out of bounds is an error.
     var slice = s[1:3]
     echo $second  # 'oo'
 
-    var a = %(spam eggs ham)
+    var a = :| spam eggs ham |
     var slice = a[1:3]
     write -- @slice  # eggs, ham
 

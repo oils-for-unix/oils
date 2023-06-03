@@ -139,7 +139,7 @@ Example:
 ```
 declare -a myarray=("${other_array[@]}")   # shell
 
-var myarray = %( @other_array )            # Oil
+var myarray = :| @other_array |            # Oils
 ```
 
 Reason: There's no Garbage collection.

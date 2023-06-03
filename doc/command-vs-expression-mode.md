@@ -112,7 +112,7 @@ Parameters aren't expressions, but they're parsed with the same lexer:
 
 ### Array Literals
 
-    var myarray = %( /tmp/foo ${var} $(echo hi) @myarray )
+    var myarray = :| /tmp/foo ${var} $(echo hi) @myarray |
 
 ### Command Substitution
 

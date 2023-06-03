@@ -44,7 +44,7 @@ and [A Tour of the Oil Language](oil-language-tour.html).
   - Unicode `\u{03bc}`
   - Backslash: `\n`  `\\`  `\'`
   - Pound `#'a'`
-- Shell-like list literals: `%(pea nut)` is equivalent to `['pea', 'nut']`
+- Shell-like list literals: `:| pea nut |` is equivalent to `['pea', 'nut']`
 - Unevaluated expressions
   - Block `^(ls | wc -l)`
   - Unevaluated expression: `^[1 + a[i] + f(x)]`

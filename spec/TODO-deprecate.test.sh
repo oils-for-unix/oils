@@ -16,3 +16,12 @@ shopt -s simple_word_eval
 shopt -u simple_word_eval
 ## END
 
+
+#### %() array literal
+
+var x = %(one two)
+echo "${x[@]}"
+
+## STDOUT:
+one two
+## END

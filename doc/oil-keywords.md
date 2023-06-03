@@ -35,7 +35,7 @@ Useful interactively.
     $ = 'foo'
     (Str)   'foo'
     
-    $ = %(one two)
+    $ = :| one two |
     (StrArray)   ['one', 'two']
 
 ### `_` Ignores an Expression
@@ -74,7 +74,7 @@ Shell:
 
 Oil:
 
-    var a = %(one two three)
+    var a = :| one two three |
     setvar a[0] = 'zz'  # also acceptable
 
 ### Mutating Associative Arrays

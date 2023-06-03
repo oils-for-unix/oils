@@ -54,7 +54,7 @@ language and eggex (for lexers).
                   Bool          True   False   None
                   Int           1_000_000  0b0100  0xFF  0o377  \n  \\  \u0100
                   Float         3.14   6.022e+23
-                  List[]        %(ls -l)
+                  List[]        :| ls -l |
                   Tuple[]       ()  tup(42)  (42, "foo")
                   Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
                   Regex         / d+ /

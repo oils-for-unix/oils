@@ -81,36 +81,21 @@ Oil:
 
 ### Less Important
 
-Oil doesn't need sigils for hashes, so `%` isn't used the way it's used in
-Perl.  Instead, `%` means "unquoted word" in these two cases:
+A colon `:` means "unquoted word" in these two lines:
 
-    var mysymbol = %key             # not implemented yet
-    var myarray = %(one two three)
+    var mysymbol = :key               # string, not implemented yet
+    var myarray = :| one two three |  # array
 
-These sigils are parsed, but not entirely implemented:
+It's also used to pass the name of a variable to a builtiN:
 
-- `&` for Ruby-like blocks in expression mode
-- `:` means "out param" / "nameref", or "lazily evaluated"
+    echo hi | read :myvar
 
 <!--
-
-`&` means a command block in these 2 cases:
-
-    &(echo $PWD)
-    proc foo(x, &myblock) { echo $x; _ evalexpr(myblock) }
 
 `:` means lazily evaluated in these 2 cases (not implemented):
 
     when :(x > 0) { echo 'positive' }
     x = :[1 + 2]
-
-`:` means "out param" or "nameref" in these 2 cases:
-
-    proc foo(x, :out) {
-      setref out = 'z'
-    }
-    var x
-    foo :x   # x is set to z
 
 -->
 
@@ -189,10 +174,6 @@ The "sigil pairs" with parens enclose commands:
     var myblock = &(echo $PWD)     # block literal in expression mode
 
     diff <(sort left.txt) <(sort right.txt)  # bash syntax
-
-And shell words:
-
-    var mylist = %(one two three)  # equivalent to ['one', 'two', 'three']
 
 Unlike brackets and braces, the `()` characters can't appear in shell commands,
 which makes them useful as delimiters.
@@ -362,7 +343,7 @@ Help](oil-help-topics.html) is a better reference for users.
     >(sort -n)   Process Sub        Command        cmd          rare
     <(echo hi)   Process Sub        Command        cmd          rare
 
-    %(array lit) Array Literal      Words          expr
+    :|foo $bar|  Array Literal      Words          expr
 
     $[42 + a[i]] Stringify Expr     Expression     cmd,expr
     @[glob(x)]   Array-ify Expr     Expression     cmd,expr     not implemented

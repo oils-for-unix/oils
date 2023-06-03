@@ -45,7 +45,7 @@ No:
 
 Yes:
 
-    var myflags = %( --all --long )
+    var myflags = :| --all --long |
     ls @myflags @ARGV
 
 ### Explicitly Split, Glob, and Omit Empty Args
@@ -64,8 +64,8 @@ Yes:
 
 Even better:
 
-    var packages = %(python-dev gawk)  # array literal
-    apt install @packages              # splice array
+    var packages = :| python-dev gawk |  # array literal
+    apt install @packages                # splice array
 
 ---
 
@@ -190,7 +190,7 @@ Yes:
 
 ### Write an Array of Lines
 
-    var myarray = %(one two three)
+    var myarray = :| one two three |
     write -- @myarray
 
 ## New Long Flags on the `read` builtin
@@ -782,7 +782,7 @@ Yes:
 
 ### Initialize and Assign Arrays
 
-Arrays in Oil look like `%(my array)` and `['my', 'array']`.
+Arrays in Oil look like `:| my array |` and `['my', 'array']`.
 
 No:
 
@@ -791,7 +791,7 @@ No:
 
 Yes:
 
-    var myarray = %(one two three)
+    var myarray = :| one two three |
     setvar myarray[3] = 'THREE'
 
     var same = ['one', 'two', 'three']

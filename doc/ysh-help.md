@@ -179,7 +179,7 @@ variable on the left.
 
 The `_` keyword evaluates an expression and throws away the result:
 
-    var x = %(one two)
+    var x = :| one two |
     _ x.append('three')
 
 Think of it as a shortcut for `_ = expr` (throwaway assignment).
@@ -292,14 +292,14 @@ Lists have a Python-like syntax:
 
 And a shell-like syntax:
 
-    var list2 = %(one two)
+    var list2 = %| one two |
 
 The shell-like syntax accepts the same syntax that a command can:
 
     ls $mystr @ARGV *.py {foo,bar}@example.com
 
     # Rather than executing ls, evaluate and store words
-    var cmd = %(ls $mystr @ARGV *.py {foo,bar}@example.com)
+    var cmd = :| ls $mystr @ARGV *.py {foo,bar}@example.com |
 
 #### dict-literal
 
@@ -321,9 +321,9 @@ The shell-like syntax accepts the same syntax that a command can:
     var concat1 = s ++ '_suffix'
     var concat2 = "${s}_suffix"  # similar
 
-    var c = %(one two)
-    var concat3 = c ++ %(three 4)
-    var concat4 = %( @c three 4 )
+    var c = :| one two |
+    var concat3 = c ++ :| three 4 |
+    var concat4 = :| @c three 4 |
 
     var mydict = {a: 1, b: 2}
     var otherdict = {a: 10, c: 20}
@@ -422,7 +422,7 @@ Not implemented.
 
 Append a string to an array of strings:
 
-    var mylist = %(one two)
+    var mylist = :| one two |
     append :mylist three
 
 This is a command-mode synonym for the expression:
@@ -438,10 +438,8 @@ Examples:
 
     pp proc  # print all procs and their doc comments
 
-    var x = %(one two)
-    pp .cell x  # print a cell, which is a location for a value
-
-The `.cell` action starts with `.` to indicate that its format is unstable.
+    var x = :| one two |
+    pp cell x  # print a cell, which is a location for a value
 
 ### Handle Errors
 

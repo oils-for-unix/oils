@@ -47,7 +47,7 @@ See [Oil Languages Idioms](idioms.html) for more rewrites.
   - Ruby-like Blocks, and metaprogramming
 - **Keywords for Variables** like `var`, `const`, `setvar` instead of builtins
   like `local`, `readonly`, `myvar=foo`, etc.
-  - Array literals like `var a = %(ale bean)` instead of `local a=(ale bean)`.
+  - Array literals like `var a = :| ale bean |` instead of `local a=(ale bean)`.
 - **Multiline strings** replace here docs
 - `fork` and `forkwait` **builtins** instead of `&` and `()`.  Parentheses are
   generally used for Python-like expressions, e.g. `if (x > 0) { echo

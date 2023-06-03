@@ -91,7 +91,7 @@ This is one way to make a copy of an array
   
 In contrast, this doesn't work when the elements have newlines:
 
-    var myarray = %( 'bad\n' )
+    var myarray = :| 'bad\n' |
     write -- @myarray | read --lines :otherarray
 
 ### File -> Array -> File

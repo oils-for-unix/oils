@@ -186,7 +186,7 @@ TODO
 Or `"${str1}${str2}"`
 
 - is `s ++ t` valid?. It isn't necessary for strings and lists
-  - `%(@a @b)` is the same for lists
+  - `:| @a @b |` is the same for lists
   - does this Python syntax also work?  `[*a, *b]`
   - Dicts: `{d, **e}` might be better
 
@@ -219,11 +219,11 @@ echo, printf, and write have their output captured.
 
     echo ${.p one}  # $'one\ntwo\nthree\n'
 
-### `push` and `join`
+### `append` and `join`
 
-    var buf = %()
-    push :buf 'one '
-    push :buf $'two\n'
+    var buf = %| |
+    append :buf 'one '
+    append :buf $'two\n'
     echo $[join(buf)]
 
 ## Appendix A: Deprecated Shell Constructs

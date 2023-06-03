@@ -162,7 +162,7 @@ setting it, you're using parts of the Oil language.
 Options that affect parsing start with `parse_`.  For example, `shopt -s
 parse_at` enables **splicing** with the `@` character:
 
-    var words = %(ale bean)
+    var words = :| ale bean |
     write -- @words
     # =>
     # ale
@@ -170,7 +170,7 @@ parse_at` enables **splicing** with the `@` character:
 
 and inline function calls:
 
-    write -- @split('ale bean')
+    write -- @[split('ale bean')]
     # =>
     # ale
     # bean

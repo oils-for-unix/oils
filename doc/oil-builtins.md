@@ -26,13 +26,13 @@ memory.
 
 Example:
 
-    var a = %(1 '2 two')
+    var a = :| 1 '2 two' |
     append :a three four
     echo @a  # prints 4 lines
 
 Here's another way to write it:
 
-    setvar a = %( @a three four )
+    setvar a = :| @a three four |
 
 Note that you can append to a string like this:
 

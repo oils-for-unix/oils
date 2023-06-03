@@ -270,7 +270,7 @@ The brace expansion mini-language lets you write strings without duplication:
 
 The `@` operator splices an array into a command:
 
-    var myarray = %(ale bean)
+    var myarray = :| ale bean |
     write S @myarray E
     # =>
     # S
@@ -693,10 +693,10 @@ As a special case, list of strings are called **arrays**.  It's often more
 convenient to write them with shell-like literals:
 
     # No quotes or commas
-    var foods = %(ale bean corn)
+    var foods = :| ale bean corn |
 
     # You can use the word language here
-    var other = %(foo $s *.py {alice,bob}@example.com)
+    var other = :| foo $s *.py {alice,bob}@example.com |
 
 #### Dict
 
@@ -867,7 +867,7 @@ Here are the languages we saw in the last 3 sections:
    - abstraction: `proc`
 3. **Expressions** on typed data are borrowed from Python, with some JavaScript
    influence.
-   - Lists: `['ale', 'bean']` or `%(ale bean)`
+   - Lists: `['ale', 'bean']` or `:| ale bean |`
    - Dicts: `{name: 'bob', age: 42}`
    - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
 
@@ -976,27 +976,10 @@ Or I think we just implement
 - rows: 'where' or 'filter' (dplyr)
 - cols: 'select' conflicts with shell builtin; call it 'cols'?
 - sort: 'sort-by' or 'arrange' (dplyr)
-- QTT <=> sqlite conversion.  Are these drivers or what?
+- TSV8 <=> sqlite conversion.  Are these drivers or what?
   - and then let you pipe output?
 
-```none
-    var t = {food: %(ale bean), price: [5.99, 0.40]}
-    qtt write :t                  # dump variable t as QTT
-
-    echo $'name:Str\tage:Int\nbob\t42\n' > example.qtt
-
-    echo $'''
-    name:Str\tage:Int
-    bob\t42
-    ''' > example.qtt
-
-    qtt read :t2 < example.qtt    # parse QTT into var t2
-    pp cell t2                    # inspect the in-memory value
-    # =>
-    # {name: ['bob'], age: [42]}  
-```
-
-Do we also need QTT space2tab or something?  For writing QTT inline.
+Do we also need TSV8 space2tab or something?  For writing TSV8 inline.
 
 More later:
 - MessagePack (e.g. for shared library extension modules)

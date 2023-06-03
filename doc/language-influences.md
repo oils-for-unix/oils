@@ -140,7 +140,7 @@ Clojure):
 
 The `@` character comes from Perl (and PowerShell):
 
-    var myarray = %(one two three)
+    var myarray = :| one two three |
     echo @myarray          # @ is the "splice" operator
 
     echo @arrayfunc(x, y)
@@ -237,11 +237,11 @@ Lua's implementation as a pure ANSI C core without I/O was also influential.
 
 Oil also uses `++` to concatenate strings and lists:
 
-     mystr = a ++ b    
-     mystr = "$a$b"       # very similar
+     var mystr = a ++ b    
+     var mystr = "$a$b"       # very similar
 
-     mylist = c ++ d
-     mylist = %( @c @d )  # also converts every element to a string
+     var mylist = c ++ d
+     var mylist = :| @c @d |  # also converts every element to a string
 
 <!--
 

@@ -65,7 +65,7 @@ feature is **unimplemented**.
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   str-literal   r'[a-z]\n'  X j"line\n"  
                   X multi-str   """  r'''  j"""
-                  list-literal  %(one two)  ['one', 'two', 3]
+                  list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
                   block-literal ^(echo $PWD)
                   X expr-lit    ^[1 + 2*3]

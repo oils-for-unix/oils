@@ -103,7 +103,7 @@ So are raw and C-style string literals:
 
 But array literals only make sense in expression mode:
 
-    var myarray = %(one two three)
+    var myarray = :| one two three |
 
     echo one two three  # no array literal needed
 
@@ -121,7 +121,7 @@ The `parse_at` option (in group `ysh:upgrade`) turns `@` into the **splice
 operator** when it's at the front of a word:
 
 ```sh-prompt
-$ var myarray = %(one two three)
+$ var myarray = :| one two three |
 
 $ echo @myarray         # @ isn't an an operator in shell
 @myarray

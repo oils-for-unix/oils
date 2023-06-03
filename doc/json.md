@@ -129,7 +129,7 @@ Oil arrays and shell arrays both serialize to a list of strings:
        "two.py"
     ]
 
-    $ var oilarray = %( foo.txt *.py )
+    $ var oilarray = :| foo.txt *.py |
     $ json write (oilarray)
     [  
        "foo.txt",

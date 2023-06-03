@@ -217,7 +217,7 @@ For loops iterate over words.
 Oil style:
 
     var mystr = 'one'
-    var myarray = %(two three)
+    var myarray = :| two three |
 
     for i in $mystr @myarray *.py {
       echo $i
