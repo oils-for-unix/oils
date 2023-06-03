@@ -599,6 +599,31 @@ re_alt: (re_atom [repeat_op])+
 
 regex: [re_alt] (('|'|'or') re_alt)*
 
+# Patterns are the start of a case arm. Ie,
+#
+# case (foo) {
+#   (40 + 2) | (0) { echo number }
+#   ^^^^^^^^-- This is pattern
+# }
+
+case_pat: (
+    pat_paren
+  | pat_eggex
+)
+
+# This odd factorization is present so pat_exprs+pat_else can be parsed
+# unambiguously. Furthermore, seperating it from `case_pat` makes it both
+# easier to read and transform in `expr_to_ast.py`
+pat_paren: '(' (pat_else | pat_exprs)
+
+pat_exprs: pat_expr # ([Op_Newline] '|' [Op_Newline] '(' pat_expr)*
+                    # ^^^-- adding all of this seems to break things
+pat_expr: expr ')'
+
+pat_else: 'else' ')'
+
+pat_eggex: '/' regex [re_flags] '/'
+
 # e.g. /digit+ ; multiline !ignorecase/
 #
 # This can express translation preferences:

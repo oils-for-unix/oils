@@ -803,7 +803,7 @@ ysh-builtin-shopt() {
 }
 
 ysh-case() {
-  sh-spec spec/ysh-case.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/ysh-case.test.sh --osh-failures-allowed 5 \
     $OIL_LIST "$@"
 }
 

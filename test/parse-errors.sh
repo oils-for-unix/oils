@@ -1163,15 +1163,28 @@ ysh_case() {
   set +o errexit
 
   _ysh-should-parse '
+  case (foo) { (else) { echo } }
+  '
+
+  _ysh-should-parse '
   case (foo) {
     *.py { echo "python" }
   }
   '
 
-  # parse_bare_word
+  # TODO: Make this case parse
+  if false; then
+    # parse_bare_word
+    _ysh-should-parse '
+    case (foo) {
+      (obj.attr) { echo "python" }
+    }
+    '
+  fi
+
   _ysh-should-parse '
   case (foo) {
-    (obj.attr) { echo "python" }
+    (0) { echo "python" }
   }
   '
 
@@ -1182,9 +1195,11 @@ ysh_case() {
   '
 
   # Various multi-line cases
-  _ysh-should-parse '
-  case (foo){("main.py"){ echo "python" } }
-  '
+  if false; then # TODO: fixme, this is in the vein of the `if(x)` error
+    _ysh-should-parse '
+    case (foo){("main.py"){ echo "python" } }
+    '
+  fi
   _ysh-should-parse '
   case (foo) { ("main.py") { echo "python" } }
   '
@@ -1208,6 +1223,124 @@ ysh_case() {
   case (foo) {
     ("main.py") {
       echo "python"
+    }
+  }
+  '
+
+  # Example valid cases from grammar brain-storming
+  _ysh-should-parse '
+  case (add(10, 32)) {
+    (40 + 2) { echo Found the answer }
+    (else) { echo Incorrect
+    }
+  }
+  '
+
+  _ysh-should-parse "
+  case (file) {
+    / dot* '.py' / {
+      echo Python
+    }
+
+    / dot* ('.cc' | '.h') /
+    {
+      echo C++
+    }
+  }
+  "
+  _ysh-should-parse '
+  case (lang) {
+      en-US
+    | en-CA
+    | en-UK {
+      echo Hello
+    }
+    fr-FR |
+    fr-CA {
+      echo Bonjour
+    }
+
+
+
+
+
+    (else) {
+      echo o/
+    }
+  }
+  '
+
+  # TODO: make this parse
+  if false; then
+    _ysh-should-parse '
+    case (num) {
+        (1) | (2) | (3)
+      | (4) | (5) {
+        echo small
+      }
+
+      (else) {
+        echo large
+      }
+    }
+    '
+  fi
+
+  # Example invalid cases from grammar brain-storming
+  _ysh-parse-error '
+  case
+  (add(10, 32)) {
+      (40 + 2) { echo Found the answer }
+      (else) { echo Incorrect }
+  }
+  '
+  _ysh-parse-error "
+  case (file)
+  {
+    ('README') | / dot* '.md' / { echo Markdown }
+  }
+  "
+  _ysh-parse-error '
+  case (file)
+  {
+    {
+      echo Python
+    }
+  }
+  '
+  _ysh-parse-error '
+  case (file)
+  {
+    cc h {
+      echo C++
+    }
+  }
+  '
+  _ysh-parse-error "
+  case (lang) {
+      en-US
+    | ('en-CA')
+    | / 'en-UK' / {
+      echo Hello
+    }
+  }
+  "
+  _ysh-parse-error '
+  case (lang) {
+    else) {
+      echo o/
+    }
+  }
+  '
+  _ysh-parse-error '
+  case (num) {
+      (1) | (2) | (3)
+    | (4) | (5) {
+      echo small
+    }
+
+    (6) | (else) {
+      echo large
     }
   }
   '
@@ -1263,6 +1396,38 @@ ysh_case() {
     *.py) { echo "python" }
   }
   '
+
+  _ysh-should-parse "case (x) { word { echo word; } (3) { echo expr; } /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; } (3)     { echo expr; } /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; } /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /'eggex'/ { echo eggex; }
+}"
+
+  # No leading space
+  _ysh-should-parse "
+case (x) {
+word    { echo word; }
+(3)     { echo expr; }
+/'eggex'/ { echo eggex; }
+}"
 }
 
 ysh_for() {

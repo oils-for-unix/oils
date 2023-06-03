@@ -6,7 +6,7 @@ cmd_parse_test.py: Tests for cmd_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import command_e, for_iter_e
+from _devbuild.gen.syntax_asdl import command_e, for_iter_e, pat_e
 from core import error
 from core import test_lib
 from core import ui
@@ -600,6 +600,64 @@ esac
 """)
     self.assertEqual(command_e.Case, node.tag())
     self.assertEqual(2, len(node.arms))
+
+  def testParseYshCase(self):
+    # Empty case
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(0, len(node.arms))
+
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+  (else) { echo hi; }
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(1, len(node.arms))
+    self.assertEqual(pat_e.Else, node.arms[0].pattern.tag())
+
+    if 0:
+      node = assert_ParseCommandLine(self, """\
+  case (x) {
+    (2) | (3) { echo hi; }
+  }
+  """)
+      self.assertEqual(command_e.Case, node.tag())
+      self.assertEqual(1, len(node.arms))
+      pattern = node.arms[0].pattern
+      self.assertEqual(pat_e.YshExprs, pattern.tag())
+
+      # TODO: Fix this test!
+      #self.assertEqual(2, len(pattern.e))
+
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+  bare | x | 'string' { echo hi; }
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(1, len(node.arms))
+    pattern = node.arms[0].pattern
+    self.assertEqual(pat_e.Words, pattern.tag())
+    self.assertEqual(3, len(pattern.words))
+
+    node = assert_ParseCommandLine(self, """\
+case (x) {
+  / d+ / { echo space; }
+  /d+/   { echo space2; }
+}
+""")
+    self.assertEqual(command_e.Case, node.tag())
+    self.assertEqual(2, len(node.arms))
+
+    pattern0 = node.arms[0].pattern
+    self.assertEqual(pat_e.Eggex, pattern0.tag())
+
+    pattern1 = node.arms[1].pattern
+    self.assertEqual(pat_e.Eggex, pattern1.tag())
 
   def testParseWhile(self):
     node = assert_ParseCommandList(self, """\

@@ -44,6 +44,8 @@ from _devbuild.gen.syntax_asdl import (
     Variant,
     variant_type,
     variant_type_t,
+    pat,
+    pat_t,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -729,6 +731,34 @@ class Transformer(object):
         nt_name = self.number2symbol[typ]
         raise AssertionError("PNode type %d (%s) wasn't handled" %
                              (typ, nt_name))
+
+    def YshCasePattern(self, pnode):
+        # type: (PNode) -> pat_t
+        assert pnode.typ == grammar_nt.case_pat, pnode
+
+        # We need to descriminate against
+        pattern = pnode.GetChild(0)
+        typ = pattern.typ
+        if typ == grammar_nt.pat_paren:
+            # pat_expr or pat_else
+            pattern = pattern.GetChild(1)
+            typ = pattern.typ
+
+            if typ == grammar_nt.pat_else:
+                return pat.Else
+            elif typ == grammar_nt.pat_exprs:
+                # TODO: recursively extract all expressions
+                #       but this is fine for now as we only parse one expression
+                e = pattern.GetChild(0).GetChild(0)
+                expr = self.Expr(e)
+                return pat.YshExprs([expr])
+
+        elif typ == grammar_nt.pat_eggex:
+            # pat_eggex
+            re = self._Regex(pattern.GetChild(1))
+            return pat.Eggex(re)
+
+        raise NotImplementedError()
 
     def _Argument(self, p_node, do_named, arglist):
         # type: (PNode, bool, ArgList) -> None

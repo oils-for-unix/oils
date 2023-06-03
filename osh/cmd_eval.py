@@ -31,6 +31,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig, proc_sig_e,
     redir_param, redir_param_e,
     for_iter, for_iter_e,
+    pat, pat_e,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e,
@@ -1419,7 +1420,13 @@ class CommandEvaluator(object):
         done = False
 
         for case_arm in node.arms:
-          for pat_word in case_arm.pat_list:
+          if case_arm.pattern.tag() != pat_e.Words:
+            # TODO: support more than pat.Words
+            raise NotImplementedError()
+
+          pat_words = cast(pat.Words, case_arm.pattern)
+
+          for pat_word in pat_words.words:
             # NOTE: Is it OK that we're evaluating these as we go?
             # TODO: test it out in a loop
             pat_val = self.word_ev.EvalWordToString(pat_word,
