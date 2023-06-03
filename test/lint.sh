@@ -16,7 +16,7 @@ readonly REPO_ROOT
 source build/common.sh
 source devtools/run-task.sh  # run-task
 
-readonly -a CODE_DIRS=(asdl bin core frontend osh tools ysh)
+readonly -a CODE_DIRS=(asdl bin core data_lang frontend osh tools ysh)
 
 get-cpplint() {
   mkdir -p _tmp
