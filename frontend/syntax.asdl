@@ -281,9 +281,9 @@ module syntax
 
   pat =
     Else
-  | Words(List[word] w)
-  | YshExprs(List[expr] e)
-  | Eggex(re r)
+  | Words(List[word] words)
+  | YshExprs(List[expr] exprs)
+  | Eggex(re eggex)
 
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})

@@ -1426,7 +1426,7 @@ class CommandEvaluator(object):
 
           pat_words = cast(pat.Words, case_arm.pattern)
 
-          for pat_word in pat_words.w:
+          for pat_word in pat_words.words:
             # NOTE: Is it OK that we're evaluating these as we go?
             # TODO: test it out in a loop
             pat_val = self.word_ev.EvalWordToString(pat_word,
