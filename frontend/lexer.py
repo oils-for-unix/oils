@@ -328,8 +328,27 @@ class Lexer(object):
 
   def MoveToNextLine(self):
     # type: () -> None
-    """For YSH case
-    For lookahead on the next line
+    """For lookahead on the next line.
+
+    This is required by `ParseYshCase` and is used in `_NewlineOkForYshCase`.
+
+    We use this because otherwise calling `LookPastSpace` would return
+    `Id.Unknown_Tok` when the lexer has reached the end of the line. For an
+    example, take this case:
+
+      case (x) {
+               ^--- We are here
+
+        (else) {
+        ^--- We want lookahead to here
+
+            echo test
+        }
+      }
+
+    But, without `MoveToNextLine`, it is impossible to peek the '(' without
+    consuming it. And consuming it would be a problem once we want to hand off
+    pattern parsing to the expression parser.
     """
     self.line_lexer.AssertAtEndOfLine() # Only call this when you've seen \n
 
