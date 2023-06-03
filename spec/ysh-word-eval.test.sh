@@ -39,7 +39,7 @@ echo str $[identity('identity')]
 
 echo ---
 echo bool expr $[true]
-echo bool splice @identity([true])
+echo bool splice @[identity([true])]
 
 ## STDOUT:
 bool true
@@ -80,9 +80,9 @@ true
 3.14
 ## END
 
-#### @range()
+#### @[range()]
 shopt -s oil:all
-write @range(10, 15, 2)
+write @[range(10, 15, 2)]
 ## STDOUT:
 10
 12
@@ -117,9 +117,9 @@ true
 ___
 ## END
 
-#### Wrong sigil @max(3, 4)
+#### Wrong sigil @[max(3, 4)]
 shopt -s oil:upgrade
-write @max(3, 4)
+write @[max(3, 4)]
 echo 'should not get here'
 ## status: 3
 ## STDOUT:

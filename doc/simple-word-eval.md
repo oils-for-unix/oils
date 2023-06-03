@@ -196,14 +196,6 @@ $ echo "{spam,eggs}.sh"  # brace expansion disabled with quotes
 ```
 
 <!--
-Key differences is **quoting** and the `@` **splice** operator.
-
-The "arity" of the command is more static than dynamic, because there's no
-splitting.  Splitting can be done with `@split(mystr)` and dynamic globbing
-could be `@glob(myglobstr)` (not implemented)
--->
-
-<!--
 help topics:
 
 - braces
@@ -241,9 +233,9 @@ EvalWordSequence
 
 Oil can express everything that shell can.
 
-- Split with `@split(mystr, IFS?)`
-- Glob with `@glob(mypat)`
-- Elision with `@maybe(s)`
+- Split with `@[split(mystr, IFS?)]`
+- Glob with `@[glob(mypat)]`
+- Elision with `@[maybe(s)]`
 
 ## More Word Evaluation Issues
 
@@ -267,8 +259,8 @@ Differences](known-differences.html#static-parsing) doc.
 <!--
 TODO: also allow
 
-var parts = @split(x) 
-var python = @glob('*.py')
+var parts = @[split(x)]
+var python = @[glob('*.py')]
 -->
 
 ## Summary
@@ -281,7 +273,7 @@ Variable, command, and arithmetic substitutions predictably evaluate to a
 There's no implicit splitting, globbing, or elision of empty words.
 
 You can opt into those behaviors with explicit expressions like
-`@split(mystr)`, which evaluates to an array.
+`@[split(mystr)]`, which evaluates to an array.
 
 Oil also supports shell features that evaluate to **0 to N arguments**:
 splicing, globbing, and brace expansion.
@@ -346,9 +338,9 @@ Evaluation of the syntax tree is a single step.
 
 <!--
 
-### Elision Without @maybe()
+### Elision Without @[maybe()]
 
-The `@maybe(s)` function is a shortcut for something like:
+The `@[maybe(s)]` function is a shortcut for something like:
 
 ```
 var x = ''         # empty in this case

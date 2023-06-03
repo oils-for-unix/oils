@@ -82,15 +82,15 @@ Expressions are surrounded by `( )`:
 (The syntax of `case` breaks this rule.  It's a [wart inherited from
 shell](warts.html#case-patterns-are-in-parens-but-theyre-words-not-expressions).)
 
-### Expression Substitution
+### Expression Sub and Splice
 
 The `$[]` construct converts an expression to a string:
 
     echo $[42 + a[i]]
 
-### Function Splice Arguments
+The `@[]` construct converts a list to an array of strings:
 
-    echo @arrayfunc('three', 'four', f(x))
+    echo @[arrayfunc('three', 'four', f(x))]
 
 ### Typed Arguments to Procs
 
@@ -134,7 +134,7 @@ No:
 
     echo '*.py'              # a literal string, not a glob
 
-    echo @glob(*.py)         # syntax error, * is an operator in 
+    echo @[glob(*.py)]       # syntax error, * is an operator in 
                              # expression mode
 
     var x = myfunc(*.py)     # ditto, syntax error
@@ -143,7 +143,7 @@ Yes:
 
     echo *.py                # expanded as a glob
 
-    echo @glob('*.py')       # A literal string passed to the builtin
+    echo @[glob('*.py')]     # A literal string passed to the builtin
                              # glob function
 
     var x = f('*.py')        # Just a string

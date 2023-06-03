@@ -168,7 +168,7 @@ X [External Lang] BEGIN   END   when (awk)
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
   [Oil Upgrade]   ... Migrate Existing Code to Oil
-                  parse_at               echo @array @arrayfunc(x, y)
+                  parse_at               echo @array @[arrayfunc(x, y)]
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_equals           x = 'val' in Caps { } config blocks
                   parse_paren            if (x > 0) ...
@@ -249,7 +249,7 @@ Access silently mutated globals:
 X [Wok]           _field()
 ```
 
-Functions:
+Functions and Methods:
 
 ```oil-help-topics
   [Collections]   len()
@@ -257,7 +257,7 @@ X [String]        find(eggex)   replace(eggex, template)   join()
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()
   [Arrays]        X index()   append()   extend()
-  [Assoc Arrays]  @keys()   @values()
+  [Assoc Arrays]  keys()   values()
   [Introspection] shvar_get()
 X [Hay Config]    parse_hay()   eval_hay()   block_as_str()   
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()

@@ -230,7 +230,7 @@ write string $[f(0, 1, ...a, c=2, d=3)]
 
 # Now get a list back
 echo ____
-write array @f(5, 6, ...a, c=7, d=8; ...n)
+write array @[f(5, 6, ...a, c=7, d=8; ...n)]
 
 ## STDOUT:
 ____

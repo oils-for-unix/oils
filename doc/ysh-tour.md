@@ -278,14 +278,16 @@ The `@` operator splices an array into a command:
     # bean
     # E
 
-#### Function Splice
+#### Expression Splice
 
-You can also splice the result of a function returning an array:
+You can also splice an expression that evaluates to a list:
 
-    write -- @split('ale bean')
+    write -- @[split('ale bean')]
     # => 
     # ale
     # bean
+
+Each item will be converted to a string.
 
 #### Split Command Sub / Split Builtin Sub
 

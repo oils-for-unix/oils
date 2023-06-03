@@ -129,7 +129,7 @@ Enabled with `shopt -s parse_at`.
 Examples:
 
 - `@myarray`
-- `@arrayfunc(x, y)`
+- `@[arrayfunc(x, y)]`
 
 These are both Oil extensions.
 

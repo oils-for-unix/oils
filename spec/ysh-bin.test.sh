@@ -1,7 +1,7 @@
 # Smoke test for the bin/oil binary
 
 #### Array func
-write @split('foo bar')
+write @[split('foo bar')]
 ## STDOUT:
 foo
 bar

@@ -68,7 +68,7 @@ Oil:
 
     echo @strs                   # splice array
 
-    echo @split(x) @glob(x)      # splice function that returns array
+    echo @[split(x)] @[glob(x)]  # splice expressions that returns arrays
 
     for i in @(seq 3) {          # split command sub
       echo $i

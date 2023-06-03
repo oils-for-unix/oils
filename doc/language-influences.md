@@ -143,7 +143,7 @@ The `@` character comes from Perl (and PowerShell):
     var myarray = :| one two three |
     echo @myarray          # @ is the "splice" operator
 
-    echo @arrayfunc(x, y)
+    echo @[arrayfunc(x, y)]
 
     for i in @(seq 3) {    # split command sub
       echo $i

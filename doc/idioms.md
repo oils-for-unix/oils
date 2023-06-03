@@ -60,7 +60,7 @@ No:
 Yes:
 
     var packages = 'python-dev gawk'
-    apt install @split(packages)
+    apt install @[split(packages)]
 
 Even better:
 
@@ -80,7 +80,7 @@ No:
 Yes:
 
     var pat = '*.py'
-    echo @glob(pat)   # explicit call
+    echo @[glob(pat)]   # explicit call
 
 ---
 
@@ -94,7 +94,7 @@ No:
 Yes:
 
     var e = ''
-    cp @maybe(e) other $dest     # explicit call
+    cp @[maybe(e)] other $dest   # explicit call
 
 ### Iterate a Number of Times (Split Command Sub)
 
