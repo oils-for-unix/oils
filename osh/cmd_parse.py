@@ -1440,7 +1440,7 @@ class CommandParser(object):
     return CaseArm(left_tok, pat.Words(pat_words), middle_tok, action_children, dsemi_tok)
 
   def ParseYshCaseArm(self, discriminant):
-    # type: (Id_t) -> Optional[Tuple[CaseArm, Id_t]]
+    # type: (Id_t) -> CaseArm
     """
     case_item   : pattern newline_ok brace_group newline_ok
     pattern     : pat_words
@@ -1455,6 +1455,11 @@ class CommandParser(object):
     pat_else    : '(' Id.KW_Else ')'
 
     Looking at: 'pattern'
+
+    Note that the training `newline_ok` in `case_item` is handled by
+    `ParseYshCase`. We do this because parsing that `newline_ok` yields
+    the next "discriminant" for the next token, so it makes more sense to handle
+    it there.
     """
     left_tok = location.LeftTokenForWord(self.cur_word)  # pat
 
@@ -1462,8 +1467,6 @@ class CommandParser(object):
     if discriminant in (Id.Op_LParen, Id.Arith_Slash):
       # pat_exprs, pat_else or par_eggex
       pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
-    elif discriminant == Id.Op_RBrace:
-      return None
     else:
       # pat_words
       pat_words = []  # type: List[word_t]
@@ -1487,10 +1490,8 @@ class CommandParser(object):
     self._NewlineOk()
     action = self.ParseBraceGroup()
 
-    first_id_out = self._NewlineOkForYshCase()
-
     # The left token of the action is our "middle" token
-    return CaseArm(left_tok, pattern, action.left, action.children, action.right), first_id_out
+    return CaseArm(left_tok, pattern, action.left, action.children, action.right)
 
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
@@ -1509,17 +1510,11 @@ class CommandParser(object):
 
     # Note: for now, zero arms are accepted, just like POSIX case $x in esac
     arms = []  # type: List[CaseArm]
-    while True:
-      if self.w_parser.LookPastSpace() == Id.Lit_RBrace:
-        break
+    while discriminant != Id.Op_RBrace:
+      arm = self.ParseYshCaseArm(discriminant)
+      arms.append(arm)
 
-      res = self.ParseYshCaseArm(discriminant)
-      if res:
-        arm, first_id_out = res
-        discriminant = first_id_out
-        arms.append(arm)
-      else:
-        break
+      discriminant = self._NewlineOkForYshCase()
 
     ate = self._Eat(Id.Lit_RBrace)
     arms_end = word_.BraceToken(ate)
