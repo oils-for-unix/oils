@@ -1496,7 +1496,7 @@ class CommandParser(object):
   def ParseYshCase(self, case_kw):
     # type: (Token) -> command.Case
     """
-    ysh_case : Case '(' expr ')' newline_ok LBrace newline_ok ysh_case_arm* RBrace ;
+    ysh_case : Case '(' expr ')' LBrace newline_ok ysh_case_arm* RBrace ;
 
     Looking at: token after 'case'
     """
