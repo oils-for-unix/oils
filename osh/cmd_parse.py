@@ -1456,8 +1456,8 @@ class CommandParser(object):
 
     Looking at: 'pattern'
 
-    Note that the training `newline_ok` in `case_item` is handled by
-    `ParseYshCase`. We do this because parsing that `newline_ok` yields
+    Note that the trailing `newline_ok` in `case_item` is handled by
+    `ParseYshCase`. We do this because parsing that `newline_ok` returns
     the next "discriminant" for the next token, so it makes more sense to handle
     it there.
     """
