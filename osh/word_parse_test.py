@@ -518,7 +518,7 @@ class WordParserTest(unittest.TestCase):
             print()
 
             w_parser = test_lib.InitWordParser(expr)
-            w_parser._Next(lex_mode_e.Arith)  # Can we remove this requirement?
+            w_parser._SetNext(lex_mode_e.Arith)  # Can we remove this requirement?
 
             while True:
                 w = w_parser.ReadWord(lex_mode_e.Arith)

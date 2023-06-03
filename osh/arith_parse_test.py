@@ -29,7 +29,7 @@ def ParseAndEval(code_str):
     w_parser = test_lib.InitWordParser(code_str, arena=arena)
 
     # This is weird but works
-    w_parser._Next(lex_mode_e.Arith)  # Calling private method
+    w_parser._SetNext(lex_mode_e.Arith)  # Calling private method
     anode = w_parser.a_parser.Parse()
 
     print('node:', anode)
