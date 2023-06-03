@@ -623,7 +623,6 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id == Id.Op_Newline:
             self._SetNext()
-            self._GetWord()
 
     def _NewlineOkForYshCase(self):
         # type: () -> Id_t
@@ -669,6 +668,7 @@ class CommandParser(object):
 
     def _AtSecondaryKeyword(self):
         # type: () -> bool
+        self._GetWord()
         if self.c_id in SECONDARY_KEYWORDS:
             return True
         return False
@@ -703,7 +703,12 @@ class CommandParser(object):
             where = redir_loc.Fd(consts.RedirDefaultFd(op_tok.id))
 
         self._SetNext()
+
         self._GetWord()
+        # Other redirect
+        if self.c_kind != Kind.Word:
+            p_die('Invalid token after redirect operator',
+                  loc.Word(self.cur_word))
 
         # Here doc
         if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
@@ -717,11 +722,6 @@ class CommandParser(object):
 
             self._SetNext()
             return r
-
-        # Other redirect
-        if self.c_kind != Kind.Word:
-            p_die('Invalid token after redirect operator',
-                  loc.Word(self.cur_word))
 
         arg_word = self.cur_word
         tilde = word_.TildeDetect(arg_word)
@@ -741,10 +741,9 @@ class CommandParser(object):
         """
         redirects = []  # type: List[Redir]
         while True:
-            self._GetWord()
-
             # This prediction needs to ONLY accept redirect operators.  Should we
             # make them a separate Kind?
+            self._GetWord()
             if self.c_kind != Kind.Redir:
                 break
 
@@ -1465,6 +1464,7 @@ class CommandParser(object):
 
         self._NewlineOk()
 
+        self._GetWord()
         if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
             c_list = self._ParseCommandTerm()
             action_children = c_list.children
@@ -1825,6 +1825,7 @@ class CommandParser(object):
                          | [[ BoolExpr ]]
                          | (( ArithExpr ))
         """
+        self._GetWord()
         if self.c_id == Id.Lit_LBrace:
             n1 = self.ParseBraceGroup()
             n1.redirects = self._ParseRedirectList()
@@ -2074,8 +2075,6 @@ class CommandParser(object):
         This is valid shell   f() if true; then echo hi; fi  
         This is invalid       f() var x = 1
         """
-        self._GetWord()
-
         if self._AtSecondaryKeyword():
             p_die('Unexpected word when parsing command',
                   loc.Word(self.cur_word))
@@ -2404,8 +2403,6 @@ class CommandParser(object):
         children = []  # type: List[command_t]
         done = False
         while not done:
-            self._GetWord()
-
             # Most keywords are valid "first words".  But do/done/then do not BEGIN
             # commands, so they are not valid.
             if self._AtSecondaryKeyword():
@@ -2456,8 +2453,7 @@ class CommandParser(object):
 
             children.append(child)
 
-        self._GetWord()
-
+        self._GetWord()  # TODO: Remove because it doesn't follow the style
         return command.CommandList(children)
 
     def _ParseCommandList(self):
@@ -2520,6 +2516,7 @@ class CommandParser(object):
         """
         self._NewlineOk()
 
+        self._GetWord()
         if self.c_kind == Kind.Eof:  # e.g. $()
             return command.NoOp
 
