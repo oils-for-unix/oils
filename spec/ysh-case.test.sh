@@ -34,10 +34,6 @@ Python
 ## END
 
 #### case syntax, simple expressions
-# TODO: make this execute
-echo three
-exit 0
-
 const x = 3
 case (x) {
   (3) { echo three }
@@ -49,9 +45,6 @@ three
 ## END
 
 #### case syntax, complex expressions
-# TODO: make this execute
-exit 0
-
 const x = 3
 case (x) {
   (1 + 2) { echo three }
@@ -61,9 +54,6 @@ case (x) {
 ## END
 
 #### case semantics, no match
-# TODO: make this execute
-exit 0
-
 const x = 2
 case (x) {
   (3) { echo three }
@@ -74,9 +64,6 @@ case (x) {
 ## END
 
 #### case syntax, eggex
-# TODO: make this execute
-exit 0
-
 const x = "main.cc"
 case (x) {
   / dot* '.py' / {
@@ -97,10 +84,6 @@ case (x) { }
 ## END
 
 #### typed args
-# TODO: make this execute
-echo string
-exit 0
-
 const x = "0"
 case (x) {
   (0) { echo int }
