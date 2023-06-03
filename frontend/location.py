@@ -237,11 +237,6 @@ def LeftTokenForWordPart(part):
       part = cast(word_part.ExprSub, UP_part)
       return part.left  # $[
 
-    # TODO: remove inline function calls from YSH
-    elif case(word_part_e.FuncCall):
-      part = cast(word_part.FuncCall, UP_part)
-      return part.name  # @f(x) or $f(x)
-
     else:
       raise AssertionError(part.tag())
 
@@ -316,11 +311,6 @@ def _RightTokenForWordPart(part):
     elif case(word_part_e.ExprSub):
       part = cast(word_part.ExprSub, UP_part)
       return part.right
-
-    # TODO: remove inline function calls from YSH
-    elif case(word_part_e.FuncCall):
-      part = cast(word_part.FuncCall, UP_part)
-      return None
 
     else:
       raise AssertionError(part.tag())

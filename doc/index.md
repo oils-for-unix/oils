@@ -56,7 +56,7 @@ Reference:
 
 ### Language Design
 
-- [A Feel For Oil's Syntax](syntax-feelings.html)
+- [A Feel For YSH Syntax](syntax-feelings.html)
 - [Language Influences](language-influences.html)
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).

@@ -1415,18 +1415,11 @@ class WordParser(WordEmitter):
           self.token_type == Id.Lit_Splice):
 
       splice_tok = self.cur_token
-
-      next_id = self.lexer.LookAheadOne(lex_mode)
-      if next_id == Id.Op_LParen:  # @arrayfunc(x)
-        arglist = ArgList.CreateNull(alloc_lists=True)
-        self._ParseInlineCallArgs(arglist)
-        part2 = word_part.FuncCall(splice_tok, arglist)
-      else:
-        part2 = word_part.Splice(splice_tok, lexer.TokenSliceLeft(splice_tok, 1))
+      part2 = word_part.Splice(splice_tok, lexer.TokenSliceLeft(splice_tok, 1))
 
       parts.append(part2)
 
-      # @words or @arrayfunc() must be the last part of the word
+      # @words must be the last part of the word
       self._Next(lex_mode)
       self._Peek()
       # EOF, whitespace, newline, Right_Subshell

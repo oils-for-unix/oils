@@ -89,7 +89,7 @@ test-oil-word-eval() {
   _expr-error-case 'echo $[identity({key: "val"})]'
 
   # this should be consistent
-  _expr-error-case 'write -- @identity([{key: "val"}])'
+  _expr-error-case 'write -- @[identity([{key: "val"}])]'
 
   _expr-error-case 'const x = [1, 2]; echo $x'
 }
@@ -157,8 +157,8 @@ test-EvalExpr-calls() {
   _expr-error-case 'echo $[len(42)]'
   _expr-error-case 'echo $[len(z = 42)]'
 
-  _expr-error-case 'echo @len(42)'
-  _expr-error-case 'echo @len(z = 42)'
+  _expr-error-case 'echo @[len(42)]'
+  _expr-error-case 'echo @[len(z = 42)]'
 
   _expr-error-case 'const x = len(42)'
   _expr-error-case 'setvar x += len(42)'

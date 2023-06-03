@@ -184,9 +184,7 @@ module syntax
 
     # @myarray
   | Splice(Token blame_tok, str var_name)
-    # $strfunc(x) and @arrayfunc(x)
-  | FuncCall(Token name, ArgList args)
-    # $[d->key], etc.
+    # $[d.key], etc.
   | ExprSub(Token left, expr child, Token right)
 
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".

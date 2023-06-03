@@ -1607,12 +1607,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         part_vals.append(part_value.Array(items))
 
-      elif case(word_part_e.FuncCall):
-        part = cast(word_part.FuncCall, UP_part)
-        if mylib.PYTHON:
-          part_val = self.expr_ev.EvalInlineFunc(part)
-          part_vals.append(part_val)
-
       elif case(word_part_e.ExprSub):
         part = cast(word_part.ExprSub, UP_part)
         if mylib.PYTHON:

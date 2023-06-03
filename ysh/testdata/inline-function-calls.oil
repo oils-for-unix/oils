@@ -38,7 +38,7 @@ simple-demo() {
   echo '  - the sorted() function is from Python.'
   echo '  - sorting utf-8 encoded strings as bytes is well-defined'
   echo
-  write -- @sorted(myarray)
+  write -- @[sorted(myarray)]
   echo
 
   # But this is a syntax error
@@ -63,20 +63,20 @@ split-join-demo() {
 
   write --sep '' "j => " $j
   write --sep '' 'When IFS is the default, split(j) => '
-  write @split(j)
+  write @[split(j)]
   echo
 
   # NOTE: Can't use setvar IFS = ':' here because of static check
   # declare or declare -g makes sense
   declare IFS=':'
   echo 'When IFS is :, split(j) => '
-  write @split(j)
+  write @[split(j)]
   echo
 
   unset IFS
 
   echo '+ Since there is no word splitting of unquoted $(ls), here is an idiom:'
-  write @split( $(write bin/ lib/ | grep b) )
+  write @[split( $(write bin/ lib/ | grep b) )]
 }
 
 types-demo() {

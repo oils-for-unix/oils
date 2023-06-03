@@ -684,49 +684,6 @@ class OilEvaluator(object):
         else:
             raise AssertionError(part.left)
        
-    def EvalInlineFunc(self, part):
-        # type: (word_part.FuncCall) -> part_value_t
-        func_name = part.name.tval[1:]
-
-        fn_val = self.mem.GetValue(func_name)  # type: value_t
-        if fn_val.tag() != value_e.Obj:
-            e_die("Expected function named %r, got %r " % (func_name, fn_val))
-        assert isinstance(fn_val, value.Obj)
-
-        func = fn_val.obj
-        pos_args, named_args = self.EvalArgList(part.args)
-
-        try:
-            id_ = part.name.id
-            if id_ == Id.VSub_DollarName:
-                # func() can raise TypeError, ValueError, etc.
-                s = Stringify(func(*pos_args, **named_args), word_part=part)
-                part_val = part_value.String(s, False,
-                                             False)  # type: part_value_t
-
-            elif id_ == Id.Lit_Splice:
-                # func() can raise TypeError, ValueError, etc.
-                # 'for in' raises TypeError if it's not iterable
-                a = [
-                    Stringify(item, word_part=part)
-                    for item in func(*pos_args, **named_args)
-                ]
-                part_val = part_value.Array(a)
-
-            else:
-                raise AssertionError(id_)
-
-        # Same error handling as EvalExpr below
-        except TypeError as e:
-            # TODO: Add location info.  Right now we blame the variable name for
-            # 'var' and 'setvar', etc.
-            raise error.Expr('Type error in expression: %s' % str(e),
-                             loc.Missing)
-        except (AttributeError, ValueError) as e:
-            raise error.Expr('Expression eval error: %s' % str(e), loc.Missing)
-
-        return part_val
-
     def SpliceValue(self, val, part):
         # type: (value.Obj, word_part.Splice) -> List[Any]
         try:

@@ -64,7 +64,7 @@ are **ready to read**:
   | [Hay - Custom Languages for Unix Systems](doc/hay.html)
   | [Warts](doc/warts.html)
 - Language Design:
-  - [A Feel For Oil's Syntax](doc/syntax-feelings.html) 
+  - [A Feel For YSH Syntax](doc/syntax-feelings.html) 
   | [Syntactic Concepts](doc/syntactic-concepts.html) 
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
   | [Language Influences](doc/language-influences.html)

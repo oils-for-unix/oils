@@ -1015,13 +1015,13 @@ invalid_parens() {
   _ysh-parse-error "$s"
 
   # requires parse_at
-  local s='write -- @sorted(x)'
+  local s='write -- @[sorted(x)]'
   _error-case "$s"  # this is a parse error, but BAD message!
   _ysh-should-parse "$s"
 
   local s='
 f() {
-  write -- @sorted(x)
+  write -- @[sorted(x)]
 }
 '
   _error-case "$s"

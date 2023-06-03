@@ -2,39 +2,38 @@
 default_highlighter: oil-sh
 ---
 
-A Feel For Oil's Syntax
-=======================
+A Feel For YSH Syntax
+=====================
 
-Here's one of the shortest ways to describe the [Oil
-language]($xref:oil-language):
+A short way to describe the [YSH]($xref) language:
 
 > A Unix shell that's familiar to people who know Python, JavaScript, or Ruby.
 
 This document gives you a feel for that, with brief examples.  It's not a
-comprehensive or precise guide.  Roughly speaking, Oil code has more
+comprehensive or precise guide.  Roughly speaking, YSH code has more
 punctuation than those 3 languages, but less than shell and Perl.
 
 If you're totally unfamiliar with the language, read [The Simplest Explanation
 of Oil ](//www.oilshell.org/blog/2020/01/simplest-explanation.html) first.
-
+(Oil was renamed [YSH]($xref) in 2023.)
 
 <div id="toc">
 </div> 
 
 ## Preliminaries
 
-Recall that **expression mode** is like Python and appears to the right of `=`:
-
-    var x = 42 + array[i]
-
-And **command mode** is like shell:
+Different parts of YSH are parsed in either **command** or **expression** mode.
+Command mode is like shell:
 
     echo $x 
 
+Expression mode looks like Python or JavaScript, and appears on right-hand side
+of `=`:
+
+    var x = 42 + array[i]
+
 The examples below aren't organized along those lines, but they use `var` and
 `echo` to remind you of the context.  Some constructs are valid in both modes.
-
-(I use `echo $x` for familiarity, even though `write -- $x` is more correct.)
 
 ## Sigils
 
@@ -45,7 +44,7 @@ Unlike Perl and PHP, Oil doesn't use sigils on the LHS of assignments, or in
 expression mode.  The [syntactic concepts](syntactic-concepts.html) doc
 explains this difference.
 
-### Pervasive
+### Very Common
 
 The `$` and `@` sigils mean roughly what they do in shell, Perl, and
 PowerShell.
@@ -79,16 +78,22 @@ Oil:
       write -- @rest
     }
 
-### Less Important
+### Less Common
 
-A colon `:` means "unquoted word" in these two lines:
+The colon means "unquoted word" in these two lines:
 
     var mysymbol = :key               # string, not implemented yet
     var myarray = :| one two three |  # array
 
-It's also used to pass the name of a variable to a builtiN:
+It's also used to pass the name of a variable to a builtin:
 
     echo hi | read :myvar
+
+A caret means "unevaluated":
+
+    var cmd = ^(cd /tmp; ls *.txt)
+    var expr = ^[42 + a[i]]  # unimplemented
+    var template = ^"var = $var"  # unimplemented
 
 <!--
 
@@ -105,11 +110,11 @@ The `{}` `[]` and `()` characters have several different meanings, but we try
 our best to make them consistent.  They're subject to legacy constraints from
 Bourne shell, Korn shell, and [bash]($xref).
 
-### Braces: Blocks and Dicts
+### Braces: Command Blocks and Dict Literal Expressions
 
-The `{}` characters are used for blocks of code and dict literals (aka hash
-tables, associative arrays), which makes Oil look like JavaScript in many
-circumstances:
+In expression mode, `{}` are used for dict literals (aka hash
+tables, associative arrays), which makes Oil look like JavaScript:
+
 
     var d = {name: 'Bob', age: 10}
 
@@ -117,13 +122,13 @@ circumstances:
       setvar x -= 1
     }
 
-Oil also has Ruby-like blocks:
+In command mode, they're used for blocks of code:
 
     cd /tmp {
       echo $PWD
     }
 
-Which can be used for "declarative" configuration:
+Blocks are also used for "declarative" configuration:
 
     server www.example.com {
       port = 80
@@ -132,10 +137,6 @@ Which can be used for "declarative" configuration:
         ...
       }
     }
-
-<!--
-Future: QTT / table literals with %{ ... }
--->
 
 ### Parens: Expression
 
@@ -153,8 +154,8 @@ And signatures:
       echo $x $y
     }
 
-In [Eggex](eggex.html), they mean grouping and **not** capture, which is
-consistent with arithmetic:
+In [Eggex](eggex.html), they mean **grouping** and not capture, which is
+consistent with other YSH expressions:
 
     var p = / digit+ ('seconds' | 'minutes' | 'hours' ) /
 
@@ -171,7 +172,7 @@ The "sigil pairs" with parens enclose commands:
     echo $(ls | wc -l)             # command sub
     echo @(seq 3)                  # split command usb
 
-    var myblock = &(echo $PWD)     # block literal in expression mode
+    var myblock = ^(echo $PWD)     # block literal in expression mode
 
     diff <(sort left.txt) <(sort right.txt)  # bash syntax
 
@@ -230,7 +231,7 @@ Which is similar to the syntax of the `env` command:
 
     gc-test   opt-stats   gen-mypy-asdl
 
-    test/spec-runner.oil   spec/data-enum.tea
+    test/spec-runner.ysh
 
 `snake_case` is for local variables:
 
@@ -247,8 +248,8 @@ External programs also accept environment variables in `CAPS`:
 
     PYTHONPATH  LD_LIBRARY_PATH
 
-(In progress) Global variables that are **silently mutated** by the
-interpreter start with `_`:
+Global variables that are **silently mutated** by the interpreter start with
+`_`:
 
     _argv   _status   _pipeline_status   _line
 
@@ -280,9 +281,8 @@ Eggex:
     / [a-f A-F 0-9] /         # char classes use []
 
     / digit+ ('ms' | 'us') /  # non-capturing group
-                              # Consistent with arithmetic expressions!
     < digit+ >                # capturing group
-    < digit+ : hour >         # named capture
+    < digit+ :hour >          # named capture
 
     dot{3,4} a{+ N}           # repetition
 

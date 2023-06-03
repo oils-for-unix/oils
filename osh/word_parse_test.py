@@ -450,17 +450,6 @@ class WordParserTest(unittest.TestCase):
     _assertReadWordFailure(self, '@words[', oil_at=True)
     _assertReadWordFailure(self, '@words.', oil_at=True)
 
-    # can't have parens unless it's the first token
-    #_assertReadWordFailure(self, '.@notfunc()')
-
-    w = _assertReadWord(self, '@func()', oil_at=True)
-
-    w = _assertReadWord(self, '$(echo @func())', oil_at=True)
-    w = _assertReadWord(self, '$(($(echo @func())))', oil_at=True)
-
-    # Can't have trailing chars
-    _assertReadWordFailure(self, '@func().', oil_at=True)
-
   def testReadComment(self):
     # Test that we get Id.Op_Newline
     code = 'foo # comment\nbar #comment\n'
