@@ -326,13 +326,12 @@ g=p new_global=p
 shopt --set parse_proc
 
 proc set-it(:s, val) {
+  # s param is rewritten to __s to avoid name conflict
   #pp cell __s
   setref s = "foo-$val"
 }
 
 proc demo {
-  # TODO: Our bad implementation causes a recursion problem here because we use
-  # the name 's'.
   if true; then
     var s = 'abc'
     set-it :s SS
