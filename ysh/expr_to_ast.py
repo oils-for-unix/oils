@@ -230,8 +230,9 @@ class Transformer(object):
 
     def _Dict(self, p_node):
         # type: (PNode) -> expr.Dict
-        """Dict: dict_pair (',' dict_pair)* [',']
-
+        """Parse tree to LST
+        
+        dict: dict_pair (',' dict_pair)* [',']
         dict2: dict_pair (comma_newline dict_pair)* [comma_newline]
         """
         if not ISNONTERMINAL(p_node.typ):
@@ -274,8 +275,11 @@ class Transformer(object):
 
     def _TestlistComp(self, p_node, id0):
         # type: (PNode, Id_t) -> expr_t
-        """testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))*
-        [','] )"""
+        """Parse tree to LST
+        
+        testlist_comp:
+          (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+        """
         assert p_node.typ == grammar_nt.testlist_comp
         n = p_node.NumChildren()
         if n > 1 and p_node.GetChild(1).typ == grammar_nt.comp_for:
@@ -309,8 +313,7 @@ class Transformer(object):
 
     def _Atom(self, parent):
         # type: (PNode) -> expr_t
-        """Handles alternatives of 'atom' where there is more than one
-        child."""
+        """Handle alternatives of 'atom' where there's more than one child."""
 
         tok = parent.GetChild(0).tok
         id_ = tok.id
@@ -391,7 +394,7 @@ class Transformer(object):
 
     def _CompareChain(self, parent):
         # type: (PNode) -> expr_t
-        """Comparison: expr (comp_op expr)*"""
+        """comparison: expr (comp_op expr)*"""
         cmp_ops = []  # type: List[Token]
         comparators = []  # type: List[expr_t]
         left = self.Expr(parent.GetChild(0))
@@ -421,7 +424,7 @@ class Transformer(object):
 
     def _Subscript(self, parent):
         # type: (PNode) -> expr_t
-        """Subscript: expr | [expr] ':' [expr]"""
+        """subscript: expr | [expr] ':' [expr]"""
         typ0 = parent.GetChild(0).typ
 
         n = parent.NumChildren()
@@ -708,8 +711,10 @@ class Transformer(object):
 
     def MakePlaceMutation(self, p_node):
         # type: (PNode) -> command.PlaceMutation
-        """oil_place_mutation: place_list (augassign | '=') testlist
-        end_stmt."""
+        """Parse tree to LST
+        
+        oil_place_mutation: place_list (augassign | '=') testlist end_stmt
+        """
         typ = p_node.typ
         assert typ == grammar_nt.oil_place_mutation
 
@@ -762,9 +767,13 @@ class Transformer(object):
 
     def _Argument(self, p_node, do_named, arglist):
         # type: (PNode, bool, ArgList) -> None
-        """Argument: ( test [comp_for] # named arg | test '=' test # var args.
+        """Parse tree to LST
 
-        | '...' test )
+        argument: (
+          test [comp_for]
+        | test '=' test  # named arg
+        | '...' test  # var args
+        )
         """
         positional = arglist.positional
         named = arglist.named
@@ -807,8 +816,12 @@ class Transformer(object):
 
     def _Arglist(self, parent, arglist):
         # type: (PNode, ArgList) -> None
-        """Arglist: argument (',' argument)* [','] [';' argument (','
-        argument)* [',']]"""
+        """Parse tree to LST
+
+        arglist:
+               argument (',' argument)* [',']
+          [';' argument (',' argument)* [','] ]
+        """
         do_named = False
         for i in xrange(parent.NumChildren()):
             p_child = parent.GetChild(i)
@@ -844,10 +857,14 @@ class Transformer(object):
 
     def _ProcParam(self, pnode):
         # type: (PNode) -> Tuple[Optional[Token], Token, Optional[Token], Optional[expr_t]]
-        """proc_param: ( ':' Expr_Name | '@' Expr_Name |
+        """
+        proc_param:
+          # old
+          ':' Expr_Name |
 
-        Expr_Name [ Expr_Name ] ['=' expr]  # type is either Expr or
-        Block )
+          '...' Expr_Name
+          # type is either Expr or Block 
+          Expr_Name [ Expr_Name ] ['=' expr]  
         """
         assert pnode.typ == grammar_nt.proc_param
 
@@ -858,7 +875,7 @@ class Transformer(object):
         name = None  # type: Optional[Token]
         typ = None  # type: Optional[Token]
         default_val = None  # type: Optional[expr_t]
-        if tok0.id in (Id.Arith_Colon, Id.Expr_At):
+        if tok0.id in (Id.Arith_Colon, Id.Expr_At, Id.Expr_Ellipsis):
             prefix = tok0
             name = pnode.GetChild(1).tok
             return prefix, name, typ, default_val
@@ -895,7 +912,7 @@ class Transformer(object):
 
             # TODO: enforce the order of params.  It should look like
             # untyped* rest? typed*, which is while / if / while!
-            if prefix and prefix.id == Id.Expr_At:
+            if prefix and prefix.id in (Id.Expr_At, Id.Expr_Ellipsis):
                 rest = name
             elif typ is None:
                 untyped.append(UntypedParam(prefix, name, default_val))
@@ -966,17 +983,26 @@ class Transformer(object):
 
     def func_item(self, node):
         # type: (PNode) -> command_t
-        """func_item: ( ('var' | 'const') name_type_list '=' testlist  #
-        oil_var_decl.
+        """Parse tree to LST
 
-        # TODO: for, if/switch, with, break/continue/return,
-        try/throw, etc. | 'while' test suite | 'for' name_type_list 'in'
-        test suite | flow_stmt | 'set' place_list (augassign | '=')
-        testlist  # oil_place_mutation   # x  f(x)  etc.   #   # And x =
-        1.  Python uses the same "hack" to fit within pgen2.  It also
-        # supports a = b = 1, which we don't want.   #   # And echo 'hi'
-        'there'   #   # TODO: expr_to_ast needs to validate this |
-        testlist (['=' testlist] | tea_word*) )
+        func_item: (
+          ('var' | 'const') name_type_list '=' testlist  # oil_var_decl.
+
+          # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
+        | 'while' test suite
+        | 'for' name_type_list 'in' test suite
+        | flow_stmt
+        | 'set' place_list (augassign | '=') testlist  # oil_place_mutation   
+          # x  f(x)  etc.
+          #
+          # And x = 1.  Python uses the same "hack" to fit within pgen2.  It
+          # also supports a = b = 1, which we don't want.
+          #
+          # And echo 'hi' 'there'   
+          #
+          # TODO: expr_to_ast needs to validate this
+        | testlist (['=' testlist] | tea_word*)
+        )
         """
         if node.tok.id == Id.Expr_While:
             return command.While(self.Expr(node.GetChild(1)),
@@ -1016,7 +1042,10 @@ class Transformer(object):
 
     def _Suite(self, pnode):
         # type: (PNode) -> command.CommandList
-        """Suite: '{' [Op_Newline] [func_items] '}'."""
+        """Parse tree to LST
+
+        suite: '{' [Op_Newline] [func_items] '}'
+        """
         n = pnode.NumChildren()
 
         if n == 2:  # {}
@@ -1035,9 +1064,10 @@ class Transformer(object):
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.Func) -> None
-        """tea_func: ( '(' [func_params] [';' func_params] ')' [type_expr_list]
+        """Parse tree to LST
 
-        suite )
+        tea_func:
+          '(' [func_params] [';' func_params] ')' [type_expr_list] suite 
         """
         assert pnode.typ == grammar_nt.tea_func
         assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
@@ -1118,8 +1148,13 @@ class Transformer(object):
 
     def Enum(self, pnode, out):
         # type: (PNode, command.Enum) -> None
-        """tea_enum: Expr_Name '{' [Op_Newline] (variant variant_end)* [
-        variant [variant_end] ] '}'."""
+        """Parse tree to LST
+
+        tea_enum:
+          Expr_Name '{' [Op_Newline]
+          (variant variant_end)* [ variant [variant_end] ]
+          '}'
+        """
         assert pnode.typ == grammar_nt.tea_enum
 
         out.name = pnode.GetChild(0).tok
@@ -1151,9 +1186,11 @@ class Transformer(object):
 
     def Import(self, pnode, out):
         # type: (PNode, command.Import) -> None
-        """tea_import: ( sq_string ['as' Expr_Name]
-
-        (import_name ',')* [ import_name [','] ] )
+        """Parse tree to LST
+        
+        tea_import: (
+          sq_string ['as' Expr_Name] (import_name ',')* [ import_name [','] ]
+        )
         """
         assert pnode.typ == grammar_nt.tea_import
 
@@ -1224,9 +1261,14 @@ class Transformer(object):
 
     def _ClassLiteralTerm(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """class_literal_term: ( range_char ['-' range_char ] | '~' Expr_Name #
-        $mychars or ${mymodule.mychars} | simple_var_sub | braced_var_sub #
-        e.g. 'abc' or "abc$mychars" | dq_string ..."""
+        """Parse tree to LST
+
+        class_literal_term:
+          range_char ['-' range_char ] 
+        | '@' Expr_Name  # splice
+        | '!' Expr_Name  # negate char class
+          ...
+        """
         assert p_node.typ == grammar_nt.class_literal_term, p_node
 
         first = p_node.GetChild(0)

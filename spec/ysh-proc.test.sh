@@ -100,7 +100,7 @@ status=42
 
 shopt -s oil:all
 
-proc f(@names) {
+proc f(...names) {
   write names: @names
 }
 # this gets called with 3 args then?
@@ -117,7 +117,7 @@ status=0
 #### varargs 2
 shopt -s oil:all
 
-proc f(first, @rest) {  # @ means "the rest of the arguments"
+proc f(first, ...rest) {  # @ means "the rest of the arguments"
   write --sep ' ' -- $first
   write --sep ' ' -- @rest        # @ means "splice this array"
 }
@@ -150,7 +150,7 @@ f a b
 # With varargs and block
 shopt --set parse_proc
 
-proc g(x, y, @rest, block Block) {
+proc g(x, y, ...rest, block Block) {
   echo G
 }
 g a b c d

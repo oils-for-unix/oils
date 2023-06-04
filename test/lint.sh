@@ -213,7 +213,13 @@ run-yapf-2() {
   # These files originally had 4 space indentation, but it got inconsistent
   time py2-files-to-format \
     | xargs --verbose -- python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
+}
 
+run-docformatter() {
+  ### Format docstrings
+  # Only done as a ONE OFF to indent docstrings after yapf-2
+  # Because it tends to mangle comments, e.g. grammar comments in
+  # ysh/expr_to_ast.py
   time py2-files-to-format \
     | xargs --verbose -- python3 -m docformatter --in-place
 }

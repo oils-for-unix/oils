@@ -361,8 +361,16 @@ oil_expr_sub: testlist ']'
 #
 # Note: might want typed splat ... later
 
+# TODO:
+# - change @rest to ...rest
+# - change :out to 'out Ref'
+# should be compatible
+
 proc_param: (
-    ':' Expr_Name | '@' Expr_Name |
+    # OLD SYNTAX
+    ':' Expr_Name | #'@' Expr_Name |
+
+    '...' Expr_Name |
     Expr_Name [Expr_Name] ['=' expr]  # type is either Expr or Block
 )
 

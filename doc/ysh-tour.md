@@ -1134,7 +1134,7 @@ source $_this_dir/lib/util.oil  # defines 'log' helper
 
 const DEST = '/tmp'
 
-proc my-sync(@files) {
+proc my-sync(...files) {
   ### Sync files and show which ones
 
   cp --verbose @files $DEST
