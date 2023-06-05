@@ -4,16 +4,17 @@
 #
 # https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/Experience.20using.20oil
 
-#### setvar
+#### setvar doesn't work with ref param
 
-# This seems to work as expected?
-
-proc get_opt(arg, :out) {
-  setvar out = arg
+proc get_opt(arg, out Ref) {
+  setvar out = arg  # error
 }
+
 var a = ''
 get_opt a 'lol'
-echo hi
+
+echo 'should not get here'
+
 ## status: 1
 ## STDOUT:
 ## END

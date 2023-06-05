@@ -142,7 +142,7 @@ x y z
 shopt --set parse_proc
 
 # TODO: Test more of this
-proc f(x, y, block Block) {
+proc f(x, y; block) {
   echo F
 }
 f a b
@@ -150,7 +150,7 @@ f a b
 # With varargs and block
 shopt --set parse_proc
 
-proc g(x, y, ...rest, block Block) {
+proc g(x, y, ...rest; block = null) {
   echo G
 }
 g a b c d
@@ -188,7 +188,7 @@ f
 #### Out param / setref
 shopt --set parse_proc
 
-proc f(input, :out) {  # : means accept a string "reference"
+proc f(input, out Ref) {  # : means accept a string "reference"
   #pp cell __out
   setref out = "PREFIX-$input"
 }
@@ -207,11 +207,11 @@ myvar=PREFIX-zzz
 
 shopt --set parse_proc
 
-proc p(s, :out) {
+proc p(s, out Ref) {
   setref out = "PREFIX-$s"  # only goes up ONE level
 }
 
-proc p2(s, :out) {
+proc p2(s, out Ref) {
   # SILLY MANUAL idiom, because setref only looks up one level (scope_e.Parent)
 
   var tmp = null  # can be null

@@ -327,49 +327,22 @@ oil_expr_sub: testlist ']'
 # Signatures for proc and func.
 # 
 # Examples:
-#   func print(msg Str, v = 0, ...args; span_id Int = 0, ...named) Int {
+#   func print(msg Str, v = 0, ...args; n1 Int = 0, ...kwargs) Int {
 #     echo hi
 #   }
-#   proc rule [src, dest, @argv, &block] { echo hi }
+#   proc rule (src, dest, ...args; n1 Int = 0, ...kwargs; block = null) {
+#     echo hi
+#   }
 
-# Comparison:
-# ()
-#   func: required because func f { } doesn't make sense
-#   proc: optional
-# ...args
-#   func: allowed for args of any type
-#   proc: doesn't make sense because it takes homogeneous args
-# ; 
-#   func: allowed for named args
-#   proc: doesn't make sense
-# return types
+# Differences:
+# - procs can have a third section after ; -- the block arg, which may be
+#   required or optional
+# - return types
 #   func: optional list
 #   proc: disallowed -- it's always int
 
-# proc_params is an overapproximation of what's allowed in the signature.  It
-# really should look like 
-#
-#   untyped_params* typed_param*
-#
-# where untyped_params are     mystr            :myref        @rest
-# and typed_params are         myblock Block    myexpr Expr
-#
-# Example:                     proc p(x, :out, @rest, cond Expr, block Block) {
-#
-# These two styles are hard to express within the LL(1) constraint, so we
-# have a single proc_param production and then sort it out in expr_to_ast.py.
-#
-# Note: might want typed splat ... later
-
-# TODO:
-# - change @rest to ...rest
-# - change :out to 'out Ref'
-# should be compatible
-
 proc_param: (
-    # OLD SYNTAX
-    ':' Expr_Name | #'@' Expr_Name |
-
+    # TODO: Make this like func_params: ... must come last
     '...' Expr_Name |
     Expr_Name [Expr_Name] ['=' expr]  # type is either Expr or Block
 )
@@ -378,7 +351,14 @@ proc_params: (proc_param ',')* [ proc_param  [','] ]
 
 # Note: we might have proc name-with-hyphens, so we can't parse the name in
 # expression mode.
-oil_proc: ['(' [proc_params] ')'] '{'  # opening { for pgen2
+oil_proc: (
+  [ '(' [ proc_params ]           # positional params
+    [ ';' [ proc_params ] ]           # keyword params
+    [ ';' Expr_Name ['=' expr] ]  # optional block param, with no type
+    ')'  
+  ]
+  '{'  # opening { for pgen2
+)
 
 func_param: Expr_Name [type_expr] ['=' expr]
 

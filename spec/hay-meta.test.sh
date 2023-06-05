@@ -131,7 +131,7 @@ shopt --set oil:all
 
 hay define rule  # lower case allowed
 
-proc p(name, :out) {
+proc p(name, out Ref) {
   echo 'p'
   setref out = name
 }

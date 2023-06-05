@@ -292,13 +292,13 @@ class CommandEvaluator(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      mem: Mem instance for storing variables
-      procs: dict of SHELL functions or 'procs'
-      builtins: dict of builtin callables
-                TODO: This should only be for assignment builtins?
-      cmd_deps: A bundle of stateless code
-    """
+        Args:
+          mem: Mem instance for storing variables
+          procs: dict of SHELL functions or 'procs'
+          builtins: dict of builtin callables
+                    TODO: This should only be for assignment builtins?
+          cmd_deps: A bundle of stateless code
+        """
         self.shell_ex = None  # type: _Executor
         self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
         self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
@@ -633,10 +633,10 @@ class CommandEvaluator(object):
     def _EvalCondition(self, cond, blame_tok):
         # type: (condition_t, Token) -> bool
         """
-    Args:
-      spid: for OSH conditions, where errexit was disabled -- e.g. if
-            for YSH conditions, it would be nice to blame the ( instead
-    """
+        Args:
+          spid: for OSH conditions, where errexit was disabled -- e.g. if
+                for YSH conditions, it would be nice to blame the ( instead
+        """
         b = False
         UP_cond = cond
         with tagswitch(cond) as case:
@@ -1469,11 +1469,11 @@ class CommandEvaluator(object):
                     UP_sig = node.sig
                     if UP_sig.tag() == proc_sig_e.Closed:
                         sig = cast(proc_sig.Closed, UP_sig)
-                        defaults = [None] * len(sig.untyped)
-                        for i, p in enumerate(sig.untyped):
+                        defaults = [None] * len(sig.pos_params)
+                        for i, p in enumerate(sig.pos_params):
                             if p.default_val:
-                                py_val = self.expr_ev.EvalExpr(
-                                    p.default_val, loc.Missing)
+                                py_val = self.expr_ev.EvalExpr(p.default_val,
+                                                               loc.Missing)
                                 defaults[i] = _PyObjectToVal(py_val)
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
@@ -1922,8 +1922,8 @@ class CommandEvaluator(object):
 
             if UP_sig.tag() == proc_sig_e.Closed:  # proc is-closed ()
                 sig = cast(proc_sig.Closed, UP_sig)
-                for i, p in enumerate(sig.untyped):
-                    is_out_param = p.ref is not None
+                for i, p in enumerate(sig.pos_params):
+                    is_out_param = p.type is not None and p.type.tval == 'Ref'
 
                     param_name = p.name.tval
                     if i < n_args:
@@ -1961,7 +1961,7 @@ class CommandEvaluator(object):
                                       scope_e.LocalOnly,
                                       flags=flags)
 
-                n_params = len(sig.untyped)
+                n_params = len(sig.pos_params)
                 if sig.rest:
                     leftover = value.MaybeStrArray(argv[n_params:])
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,

@@ -314,7 +314,7 @@ pushd 2
 
 shopt --set oil:all
 
-proc Rule(s, b Block) {
+proc Rule(s; ; b) {
   echo "rule $s"
 }
 

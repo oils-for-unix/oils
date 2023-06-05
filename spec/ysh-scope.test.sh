@@ -322,10 +322,10 @@ echo g=$g new_global=$new_global
 g=p new_global=p
 ## END
 
-#### setref with :out param
+#### setref with out Ref param
 shopt --set parse_proc
 
-proc set-it(:s, val) {
+proc set-it(s Ref, val) {
   # s param is rewritten to __s to avoid name conflict
   #pp cell __s
   setref s = "foo-$val"
@@ -353,7 +353,7 @@ foo-TT
 #### setref with conflicting variable name
 shopt --set parse_proc
 
-proc set-it(:s, val) {
+proc set-it(s Ref, val) {
   #pp cell __s
 
   # This breaks it!
@@ -377,7 +377,7 @@ oops=foo-zz
 #### setref of regular param is a fatal error
 shopt --set parse_proc
 
-proc set-it(:s, val) {
+proc set-it(s Ref, val) {
   setref val = 'oops'
 }
 
@@ -431,7 +431,7 @@ foo-TT
 #### setref a, b = 'one', 'two'
 shopt --set parse_proc
 
-proc p(x, :a, :b) {
+proc p(x, a Ref, b Ref) {
   setref a, b = "${x}1", "${x}2"
 }
 

@@ -1977,13 +1977,10 @@ class CommandParser(object):
                 sig = cast(proc_sig.Closed, node.sig)
 
                 # Treat params as variables.
-                for param in sig.untyped:
+                for param in sig.pos_params:
                     self.var_checker.Check(Id.KW_Var, param.name)
                 if sig.rest:
                     self.var_checker.Check(Id.KW_Var, sig.rest)
-                for param2 in sig.typed:
-                    self.var_checker.Check(Id.KW_Var, param2.name)
-
                     # We COULD register __out here but it would require a different API.
                     #if param.prefix and param.prefix.id == Id.Arith_Colon:
                     #  self.var_checker.Check(Id.KW_Var, '__' + param.name)

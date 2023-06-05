@@ -183,39 +183,6 @@ class Trail(_BaseTrail):
 if TYPE_CHECKING:
     AliasesInFlight = List[Tuple[str, int]]
 
-if mylib.PYTHON:
-
-    def MakeGrammarNames(oil_grammar):
-        # type: (Grammar) -> Dict[int, str]
-
-        # TODO: Break this dependency
-        from frontend import lexer_def
-
-        names = {}
-
-        #from _devbuild.gen.id_kind_asdl import _Id_str
-        # This is a dictionary
-
-        # _Id_str()
-
-        for id_name, k in lexer_def.ID_SPEC.id_str2int.items():
-            # Hm some are out of range
-            #assert k < 256, (k, id_name)
-
-            # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
-            # that.  TODO: Change NT_OFFSET?  That might affect C code though.
-            # Best to keep everything fed to pgen under 256.  This only affects
-            # pretty printing.
-            if k < 256:
-                names[k] = id_name
-
-        for k, v in oil_grammar.number2symbol.items():
-            # eval_input == 256.  Remove?
-            assert k >= 256, (k, v)
-            names[k] = v
-
-        return names
-
 
 class ParseContext(object):
     """Context shared between the mutually recursive Command and Word parsers.
@@ -240,16 +207,14 @@ class ParseContext(object):
         # NOTE: The transformer is really a pure function.
         if oil_grammar:
             self.tr = expr_to_ast.Transformer(oil_grammar)
-            if mylib.PYTHON:
-                names = MakeGrammarNames(oil_grammar)
         else:  # hack for unit tests, which pass None
             self.tr = None
-            if mylib.PYTHON:  # TODO: Simplify
-                names = {}
 
         if mylib.PYTHON:
-            self.p_printer = expr_parse.ParseTreePrinter(
-                names)  # print raw nodes
+            if self.tr:
+                self.p_printer = self.tr.p_printer
+            else:
+                self.p_printer = None
 
         # Completion state lives here since it may span multiple parsers.
         self.trail = _BaseTrail()  # no-op by default

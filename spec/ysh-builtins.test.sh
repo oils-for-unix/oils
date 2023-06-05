@@ -182,7 +182,7 @@ x=foo y=bar
 #### Idiom for returning 'read'
 shopt --set parse_proc
 
-proc p(:out) {
+proc p(out Ref) {
   #var tmp = ''
 
   # We can't do read :out in Oil.  I think that's OK -- there's consistency in

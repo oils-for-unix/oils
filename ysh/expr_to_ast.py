@@ -39,8 +39,7 @@ from _devbuild.gen.syntax_asdl import (
     Param,
     NamedArg,
     ArgList,
-    TypedParam,
-    UntypedParam,
+    ProcParam,
     Variant,
     variant_type,
     variant_type_t,
@@ -50,9 +49,11 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen import grammar_nt
 from core.error import p_die
 from frontend import lexer
+from mycpp import mylib
 from mycpp.mylib import log
+from ysh import expr_parse
 
-from typing import TYPE_CHECKING, List, Tuple, Optional, cast
+from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, cast
 if TYPE_CHECKING:
     from pgen2.grammar import Grammar
     from pgen2.pnode import PNode
@@ -89,6 +90,40 @@ RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 NT_OFFSET = 256
 
 
+if mylib.PYTHON:
+
+    def MakeGrammarNames(oil_grammar):
+        # type: (Grammar) -> Dict[int, str]
+
+        # TODO: Break this dependency
+        from frontend import lexer_def
+
+        names = {}
+
+        #from _devbuild.gen.id_kind_asdl import _Id_str
+        # This is a dictionary
+
+        # _Id_str()
+
+        for id_name, k in lexer_def.ID_SPEC.id_str2int.items():
+            # Hm some are out of range
+            #assert k < 256, (k, id_name)
+
+            # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
+            # that.  TODO: Change NT_OFFSET?  That might affect C code though.
+            # Best to keep everything fed to pgen under 256.  This only affects
+            # pretty printing.
+            if k < 256:
+                names[k] = id_name
+
+        for k, v in oil_grammar.number2symbol.items():
+            # eval_input == 256.  Remove?
+            assert k >= 256, (k, v)
+            names[k] = v
+
+        return names
+
+
 def ISNONTERMINAL(x):
     # type: (int) -> bool
     return x >= NT_OFFSET
@@ -121,6 +156,10 @@ class Transformer(object):
     def __init__(self, gr):
         # type: (Grammar) -> None
         self.number2symbol = gr.number2symbol
+        if mylib.PYTHON:
+            names = MakeGrammarNames(gr)
+            # print raw nodes
+            self.p_printer = expr_parse.ParseTreePrinter(names)
 
     def _AssocBinary(self, parent):
         # type: (PNode) -> expr_t
@@ -900,9 +939,8 @@ class Transformer(object):
         """proc_params: (proc_param ',')* [ proc_param  [','] ]"""
         n = p_node.NumChildren()
 
-        untyped = []  # type: List[UntypedParam]
+        pos_params = []  # type: List[ProcParam]
         rest = None  # type: Optional[Token]
-        typed = []  # type: List[TypedParam]
 
         state = 0
 
@@ -914,16 +952,14 @@ class Transformer(object):
             # untyped* rest? typed*, which is while / if / while!
             if prefix and prefix.id in (Id.Expr_At, Id.Expr_Ellipsis):
                 rest = name
-            elif typ is None:
-                untyped.append(UntypedParam(prefix, name, default_val))
             else:
-                if typ.tval not in ('Expr', 'Block'):
-                    p_die('proc param types should be Expr or Block', typ)
-                typed.append(TypedParam(name, typ, default_val))
+                if typ and typ.tval not in ('Ref', 'Expr', 'Block'):
+                    p_die('proc param types should be Ref, Expr, or Block', typ)
+                pos_params.append(ProcParam(name, typ, default_val))
 
             i += 2
 
-        return proc_sig.Closed(untyped, rest, typed)
+        return proc_sig.Closed(pos_params, rest)
 
     def _FuncParam(self, pnode):
         # type: (PNode) -> Param
@@ -965,19 +1001,30 @@ class Transformer(object):
 
     def Proc(self, pnode):
         # type: (PNode) -> proc_sig_t
-        """oil_proc: ['(' [proc_params] ')'] '{'."""
+        """
+        oil_proc: (
+          [ '('
+            [proc_params]
+            # optional block arg, with no type
+            [';' Expr_Name ['=' expr] ]
+            ')'
+          ]
+          '{'  # opening { for pgen2
+        )
+        """
         typ = pnode.typ
         assert typ == grammar_nt.oil_proc
+
+        #self.p_printer.Print(pnode)
 
         n = pnode.NumChildren()
         if n == 1:  # proc f {
             sig = proc_sig.Open  # type: proc_sig_t
         elif n == 3:  # proc f () {
             sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
-        elif n == 4:  # proc f [foo, bar='z', @args] {
-            sig = self._ProcParams(pnode.GetChild(1))
         else:
-            raise AssertionError(n)
+            sig = self._ProcParams(pnode.GetChild(1))
+            # TODO: process keyword args and block args
 
         return sig
 

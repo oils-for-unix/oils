@@ -397,15 +397,13 @@ module syntax
 
   ImportName = (Token name, Token? alias)
 
-  # ref is always ':' or empty
-  UntypedParam = (Token? ref, Token name, expr? default_val)
-  # type is Expr or Block
-  TypedParam = (Token name, Token type, expr? default_val)
+  # type is Ref, Expr, or Block
+  ProcParam = (Token name, Token? type, expr? default_val)
 
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
-  | Closed(List[UntypedParam] untyped, Token? rest, List[TypedParam] typed)
+  | Closed(List[ProcParam] pos_params, Token? rest)
 
   # prefix is : for out param, @ for proc splat, ... for func splat
   # procs only have types Expr, Block (and Str is implicit)
@@ -444,7 +442,7 @@ module syntax
 
   # type expressions:   Int   Array[Int]   Dict[Str, Any]
   type_expr =
-    Simple(Token name)
+    Simple(Token tok, str name)
   | Compound(Token name, List[type_expr] params)
 
   # LHS binding in loops, list comprehensions, and var/const

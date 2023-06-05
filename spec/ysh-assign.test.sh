@@ -241,7 +241,7 @@ status=1
 ## END
 
 #### setref out = 'YY'
-proc p (s, :out) {
+proc p (s, out Ref) {
   setref out = 'YY'
 }
 var x = 'XX'
@@ -259,11 +259,11 @@ u=YY
 ## END
 
 #### setref composes: 2 levels deep
-proc q(s, :out) {
+proc q(s, out Ref) {
   echo "q s=$s"
   setref out = 'YY'
 }
-proc p(:out) {
+proc p(out Ref) {
   # NOTE: This doesn't work
   # q dummy :out
   var tmp = ''
