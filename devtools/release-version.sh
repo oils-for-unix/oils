@@ -581,6 +581,11 @@ git-changelog-0.15.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.16.0() {
+  _git-changelog origin/release/0.15.0 release/0.16.0 \
+    > _release/VERSION/changelog.html
+}
+
 
 # For announcement.html
 html-redirect() {
@@ -967,6 +972,10 @@ announcement-0.14.2() {
 }
 
 announcement-0.15.0() {
+  write-no-announcement
+}
+
+announcement-0.16.0() {
   write-no-announcement
 }
 
