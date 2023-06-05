@@ -1412,7 +1412,7 @@ class WordParser(WordEmitter):
         self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
         return arg_list
 
-    def _MaybeReadWholeWord(self, is_first, lex_mode, parts):
+    def _MaybeReadWordPart(self, is_first, lex_mode, parts):
         # type: (bool, lex_mode_t, List[word_part_t]) -> bool
         """Helper for _ReadCompoundWord3."""
         done = False
@@ -1548,8 +1548,8 @@ class WordParser(WordEmitter):
                         p_die('Literal $ should be quoted like \$',
                               self.cur_token)
 
-                done = self._MaybeReadWholeWord(num_parts == 0, lex_mode,
-                                                w.parts)
+                done = self._MaybeReadWordPart(num_parts == 0, lex_mode,
+                                               w.parts)
 
             elif self.token_kind == Kind.VSub:
                 vsub_token = self.cur_token
@@ -1563,14 +1563,14 @@ class WordParser(WordEmitter):
                 # If parse_at, we can take over @( to start @(seq 3)
                 # Users can also use look at ,(*.py|*.sh)
                 if (self.parse_opts.parse_at() and
-                        self.token_type == Id.ExtGlob_At and num_parts == 0):
+                    self.token_type == Id.ExtGlob_At and num_parts == 0):
                     cs_part = self._ReadCommandSub(Id.Left_AtParen,
                                                    d_quoted=False)
                     # RARE mutation of tok.id!
                     cs_part.left_token.id = Id.Left_AtParen
                     part = cs_part  # for type safety
 
-                    # Same check as _MaybeReadWholeWord.  @(seq 3)x is illegal, just like
+                    # Same check as _MaybeReadWordPart.  @(seq 3)x is illegal, just like
                     # a=(one two)x and @arrayfunc(3)x.
                     self._GetToken()
                     if self.token_kind not in KINDS_THAT_END_WORDS:
@@ -1762,10 +1762,10 @@ class WordParser(WordEmitter):
             else:
                 # parse_raw_string: Is there an r'' at the beginning of a word?
                 if (self.parse_opts.parse_raw_string() and
-                        self.token_type == Id.Lit_Chars and
-                        self.cur_token.tval == 'r'):
-                    if self.lexer.LookAheadOne(
-                            lex_mode_e.ShCommand) == Id.Left_SingleQuote:
+                    self.token_type == Id.Lit_Chars and
+                    self.cur_token.tval == 'r'):
+                    if (self.lexer.LookAheadOne(lex_mode_e.ShCommand) == 
+                        Id.Left_SingleQuote):
                         self._SetNext(lex_mode_e.ShCommand)
 
                 w = self._ReadCompoundWord(lex_mode)

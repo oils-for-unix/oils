@@ -5,6 +5,8 @@ default_highlighter: oil-sh
 A Tour of YSH
 =============
 
+(Until 2023, YSH was called the "Oil language".  This doc will be updated.)
+
 <!-- author's note about example names
 
 - people: alice, bob

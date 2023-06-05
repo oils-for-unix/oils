@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# The big Oil release process.
+# The big Oils release process.
 #
 # Usage:
 #   devtools/release.sh <function name>
