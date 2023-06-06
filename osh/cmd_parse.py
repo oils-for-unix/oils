@@ -1412,7 +1412,7 @@ class CommandParser(object):
         self.allow_block = True
 
         if len(commands.children) == 0:
-          p_die("Expected a condition", loc.Word(self.cur_word))
+            p_die("Expected a condition", loc.Word(self.cur_word))
 
         return condition.Shell(commands.children)
 
