@@ -44,8 +44,9 @@ print-thread() {
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
   #local needle="Spring 2023 Blog Posts"
-  local needle="Notes on Naming Blog Post"
-  local needle='Renaming Oil to "Oils for Unix" and YSH, like Busybox'
+  #local needle='Summer 2023 Blog Backlog'
+  #local needle='Praise Backlog'
+  local needle='An Ambitious Version of YSH (blog backlog)'
 
   # JQ query
   # - narrow to messages array
