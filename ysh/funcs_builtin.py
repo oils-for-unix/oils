@@ -240,7 +240,7 @@ class _Split(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        s = pos_args[0] # XXX str
+        s = pos_args[0]  # XXX str
         # XXX self.splitter.SplitFuncBuiltin(s)
         return value.Undef
 
@@ -254,7 +254,7 @@ class _Glob(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        s = pos_args[0] # XXX str
+        s = pos_args[0]  # XXX str
         # XXX self.globber.OilFuncCall(s)
         return value.Undef
 

@@ -36,7 +36,7 @@ class ParseHay(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        path = pos_args[0] # XXX str
+        path = pos_args[0]  # XXX str
 
         call_loc = loc.Missing  # TODO: location info
 
@@ -85,7 +85,7 @@ class EvalHay(vm._Func):
 
         def Run(self, pos_args, named_args):
             # type: (List[value_t], Dict[str, value_t]) -> value_t
-            block = pos_args[0] # XXX value_t
+            block = pos_args[0]  # XXX value_t
 
             call_loc = loc.Missing
             if block.tag() != value_e.Block:
