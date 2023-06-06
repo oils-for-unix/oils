@@ -24,50 +24,49 @@ This is a supplement to the [main release page](index.html).
 
 - [OSH Survey](test/spec.wwz/osh-py/index.html).  Test OSH with existing shells,
   and compare their behavior.
-  - [OSH in C++](test/spec.wwz/osh-cpp/compare.html).  The progress of Oil's
-    C++ translation.
-- [Oil Language](test/spec.wwz/oil-py/index.html).  The legacy-free
-  language.
-  - [Oil in C++](test/spec.wwz/ysh-cpp/compare.html).  The progress of Oil's C++
+  - [OSH in C++](test/spec.wwz/osh-cpp/compare.html).  The progress of the C++
+    translation.
+- [YSH](test/spec.wwz/oil-py/index.html).  The legacy-free language.
+  - [YSH in C++](test/spec.wwz/ysh-cpp/compare.html).  The progress of the C++
     translation.
 - [Stateful Tests](test/spec.wwz/stateful/index.html).  Tests that use
   [pexpect]($xref).
 
-### Other Primary Suites
+### Primary Test Suites
 
-- [Gold Tests](test/other.wwz/suite-logs/gold.txt).  Compare OSH against bash (using
-  implicit assertions, no golden output.)
+- [Gold Tests](more-tests.wwz/suite-logs/gold.txt).  Compare OSH with bash
+  (using implicit assertions, not golden output.)
 - [Wild Tests](test/wild.wwz/).  Parse and translate thousands of shell scripts
   with OSH.
-- [Python Unit Tests](test/other.wwz/unit/).
+- [Python Unit Tests](more-tests.wwz/unit/).
 - [C++ Test Coverage](test/coverage.wwz/unified/html/index.html) measured by
   Clang.
   - [Log Files](test/coverage.wwz/log-files.html)
-- [Process Table](test/other.wwz/process-table/).  Are child processes in the
+- [Process Table](more-tests.wwz/process-table/).  Are child processes in the
   right state for job control?
 
-### More
+### More Tests
 
 - [Smoosh][] test suite (from [mgree/smoosh][]):
   - [smoosh](test/spec.wwz/smoosh/smoosh.html)
     | [smoosh-hang](test/spec.wwz/smoosh/smoosh-hang.html)
-- [parse-errors](test/other.wwz/suite-logs/parse-errors.txt).  A list of all parse errors.
-  - [parse-errors-osh-cpp](test/other.wwz/suite-logs/parse-errors-osh-cpp.txt).
+- [parse-errors](more-tests.wwz/suite-logs/parse-errors.txt).  A list of all parse errors.
+  - [parse-errors-osh-cpp](more-tests.wwz/suite-logs/parse-errors-osh-cpp.txt).
     With the native binary.
-- [runtime-errors](test/other.wwz/suite-logs/runtime-errors.txt).  A list of shell runtime
+- [runtime-errors](more-tests.wwz/suite-logs/runtime-errors.txt).  A list of shell runtime
   errors.
-- [oil-runtime-errors](test/other.wwz/suite-logs/oil-runtime-errors.txt).  Oil language
+- [oil-runtime-errors](more-tests.wwz/suite-logs/oil-runtime-errors.txt).  YSH
   runtime errors.
-- [ysh-large](test/other.wwz/suite-logs/ysh-large.txt)
-- [tea-large](test/other.wwz/suite-logs/tea-large.txt)
-- [arena](test/other.wwz/suite-logs/arena.txt).  Testing an invariant for the parser.
-- [osh-usage](test/other.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
-- [oshc-deps](test/other.wwz/suite-logs/oshc-deps.txt).  Tests for a subcommand in
+- [ysh-large](more-tests.wwz/suite-logs/ysh-large.txt)
+- [tea-large](more-tests.wwz/suite-logs/tea-large.txt)
+- [arena](more-tests.wwz/suite-logs/arena.txt).  Test an invariant of the parser.
+- [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
+- [oshc-deps](more-tests.wwz/suite-logs/oshc-deps.txt).  Tests for a subcommand in
   progress.
-- How many processes does Oil start compared to other shells?
-  - [syscall/by-code](test/other.wwz/syscall/by-code.txt)
-    | [syscall/by-input](test/other.wwz/syscall/by-input.txt)
-- [ysh-prettify Tests](test/other.wwz/suite-logs/ysh-prettify.txt).  Test OSH to YSH
+- How many processes does Oils start compared to other shells?
+  - [syscall/by-code](more-tests.wwz/syscall/by-code.txt)
+    | [syscall/by-input](more-tests.wwz/syscall/by-input.txt)
+- [ysh-prettify Tests](more-tests.wwz/suite-logs/ysh-prettify.txt).  Test OSH to YSH
   translation.
 
 [Smoosh]: http://shell.cs.pomona.edu/
@@ -83,7 +82,7 @@ This is a supplement to the [main release page](index.html).
 - [Compute](benchmarks.wwz/compute/).  How fast does OSH run small programs
   without I/O?
 - [Build](benchmarks.wwz/ovm-build/).  How long does it take for end users to
-  build Oil?  How big is the resulting binary?
+  build Oils?  How big is the resulting binary?
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory do
   shells use at startup?
 - [mycpp](benchmarks.wwz/mycpp-examples/).  Compares Python and generated C++
@@ -97,10 +96,10 @@ compared with the shell interpreter?
 ## Metrics
 
 - Lines of source, counted in different ways:
-  - [overview](pub/metrics.wwz/line-counts/overview.html).  The whole Oil repo organized by
-    type of source file.
-  - [for-translation](pub/metrics.wwz/line-counts/for-translation.html).
-    An overview of the "compiler engineer" project.
+  - [overview](pub/metrics.wwz/line-counts/overview.html).  The whole Oils
+    repo, organized by type of source file.
+  - [for-translation](pub/metrics.wwz/line-counts/for-translation.html).  An
+    overview of the "compiler engineer" project.
   - [osh-cloc](pub/metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
     libraries, as measured by the [cloc][] tool.
 - Generated C++ code
@@ -122,7 +121,7 @@ compared with the shell interpreter?
 
 ## Source Code
 
-These files may help you understand how Oil is implemented, i.e. with
+These files may help you understand how Oils is implemented, i.e. with
 domain-specific languages and code generation.
 
 - [_gen/frontend/id_kind.asdl_c.h](source-code.wwz/_gen/frontend/id_kind.asdl_c.h).
@@ -133,9 +132,9 @@ domain-specific languages and code generation.
     | [_build/tmp/frontend/match.re2c.txt](source-code.wwz/_build/tmp/frontend/match.re2c.txt)
     | [_gen/frontend/match.re2c.h](source-code.wwz/_gen/frontend/match.re2c.h)
 - [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
-  for OSH and Oil.
-- [oil_lang/grammar.pgen2](source-code.wwz/oil_lang/grammar.pgen2). The
-  expression grammar for Oil.  In contrast, the OSH parsers are hand-written.
+  for OSH and YSH.
+- [oil_lang/grammar.pgen2](source-code.wwz/ysh/grammar.pgen2). The
+  expression grammar for YSH.  In contrast, the OSH parsers are hand-written.
 
 Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.
 
@@ -149,20 +148,20 @@ coverage/                  code coverage in Python and C
 ## Old
 
 These links describe the CPython / "[OVM]($xref)" build, which should become
-the "experimental" version of Oil.
+the "experimental" version of Oils.
 
 #### OPy / OVM Metrics
 
 - Lines of dependencies:
-  - [pydeps](pub/metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
+  - [pydeps](pub/metrics.wwz/line-counts/pydeps.txt).  Oils code plus the Python
     standard library.
-  - [nativedeps](pub/metrics.wwz/line-counts/nativedeps.txt).  Oil code plus a
+  - [nativedeps](pub/metrics.wwz/line-counts/nativedeps.txt).  Oils code plus a
     slice of CPython.
 - Bytecode Metrics
   - [overview](pub/metrics.wwz/bytecode/overview.txt) - Compare OPy vs. CPython.
-  - [oil-with-opy](pub/metrics.wwz/bytecode/oil-with-opy.txt) - Oil compiled with
+  - [oil-with-opy](pub/metrics.wwz/bytecode/oil-with-opy.txt) - Oils compiled with
     OPy.
-  - [oil-with-cpython](pub/metrics.wwz/bytecode/oil-with-cpython.txt) - Oil
+  - [oil-with-cpython](pub/metrics.wwz/bytecode/oil-with-cpython.txt) - Oils
     compiled with CPython (for comparison).
   - [src-bin-ratio-with-opy](pub/metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?

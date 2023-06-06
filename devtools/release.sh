@@ -219,7 +219,7 @@ _release-build() {
 
 readonly HAVE_ROOT=1
 
-readonly -a OTHER_TESTS=(
+readonly -a MORE_TESTS=(
   process-table
   gold 
   ysh-prettify
@@ -230,8 +230,8 @@ readonly -a OTHER_TESTS=(
   syscall
 )
 
-run-other-tests() {
-  for name in "${OTHER_TESTS[@]}"; do
+run-more-tests() {
+  for name in "${MORE_TESTS[@]}"; do
     case $name in
       gold)
         if test -n "${OILS_HIJACK_SHEBANG:-}"; then
@@ -339,7 +339,7 @@ build-and-test() {
 
   test/spec.sh smoke  # Initial smoke test, slightly redundant.
 
-  run-other-tests
+  run-more-tests
 }
 
 _install() {
@@ -412,8 +412,8 @@ _link() {
 compress() {
   local root=$PWD/_release/VERSION/
 
-  log "--- test/other"
-  local out="$root/test/other.wwz"
+  log '--- more-tests'
+  local out="$root/more-tests.wwz"
   pushd _tmp
   time zip -r -q $out suite-logs unit syscall process-table
   popd
