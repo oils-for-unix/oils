@@ -82,23 +82,34 @@ class DebugFile(_DebugFile):
         return self.f.isatty()
 
 
-def UnpackStr(val):
-    # type: (value_t) -> str
+def MustCastStr(val):
+    # type: (value_t) -> value.Str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
-        return val.s
+        return val
 
     raise error.InvalidType(
         'expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def UnpackList(val):
-    # type: (value_t) -> List[value_t]
+def MustCastList(val):
+    # type: (value_t) -> value.List
     UP_val = val
     if val.tag() == value_e.List:
         val = cast(value.List, UP_val)
-        return val.items
+        return val
 
     raise error.InvalidType(
         'expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
+
+
+def MustCastFunc(val):
+    # type: (value_t) -> value.Func
+    UP_val = val
+    if val.tag() == value_e.Func:
+        val = cast(value.Func, UP_val)
+        return val
+
+    raise error.InvalidType(
+        'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)

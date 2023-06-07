@@ -6,7 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error, vm
-from core.util import UnpackStr, UnpackList
+from core.util import MustCastStr, MustCastList
 from mycpp.mylib import log
 from frontend import lexer
 from ysh import expr_eval
@@ -47,14 +47,14 @@ class _Join(vm._Func):
 
         # XXX: python's join() accepts dict keys, strings, and other iterables.
         # should we do the same?
-        array = UnpackList(pos_args[0])
-        delim = UnpackStr(pos_args[1])
+        array = MustCastList(pos_args[0])
+        delim = MustCastStr(pos_args[1])
 
         strs = []  # type: List[str]
-        for elem in array:
-            strs.append(UnpackStr(elem))
+        for elem in array.items:
+            strs.append(MustCastStr(elem).s)
 
-        return value.Str(delim.join(strs))
+        return value.Str(delim.s.join(strs))
 
 
 class _Maybe(vm._Func):
@@ -72,9 +72,9 @@ class _Maybe(vm._Func):
             return value.List([])
 
         ## TODO: Need proper span IDs
-        s = UnpackStr(obj)
-        if len(s):
-            return value.List([obj])
+        s = MustCastStr(obj)
+        if len(s.s):
+            return value.List([s])
         else:
             return value.List([])
 
@@ -87,8 +87,10 @@ class _Append(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        # args = [L, arg]
-        # L.append(arg)
+        assert len(pos_args) == 2
+        L = MustCastList(pos_args[0])
+        arg = pos_args[1]
+        L.items.append(arg)
         return value.Undef
 
 
@@ -100,8 +102,10 @@ class _Extend(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        # args = [L, arg]
-        # L.extend(arg)
+        assert len(pos_args) == 2
+        L = MustCastList(pos_args[0])
+        args = MustCastList(pos_args[1])
+        L.items.extend(args.items)
         return value.Undef
 
 
@@ -113,8 +117,9 @@ class _Pop(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        # args = [L]
-        # L.pop()
+        assert len(pos_args) == 1
+        L = MustCastList(pos_args[0])
+        L.pop()  # NOT returned
         return value.Undef
 
 
@@ -594,9 +599,9 @@ def Init(mem):
     #
 
     # TODO: Universal function call syntax can change this?
-    SetGlobalFunc(mem, 'append', _Append)
-    SetGlobalFunc(mem, 'extend', _Extend)
-    SetGlobalFunc(mem, 'pop', _Pop)
+    SetGlobalFunc(mem, 'append', _Append())
+    SetGlobalFunc(mem, 'extend', _Extend())
+    SetGlobalFunc(mem, 'pop', _Pop())
     # count, index, insert, remove
 
     #
