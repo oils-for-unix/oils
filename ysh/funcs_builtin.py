@@ -65,20 +65,18 @@ class _Maybe(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        return value.Undef
-        #if obj is None:
-        #    return []
+        assert len(pos_args) == 1
+
+        obj = pos_args[0]
+        if obj.tag() == value_e.Undef:
+            return value.List([])
 
         ## TODO: Need proper span IDs
-        #if not isinstance(obj, str):
-        #    raise error.Expr('maybe() passed arg of invalid type %r' %
-        #                     obj.__class__.__name__)
-
-        #s = obj
-        #if len(s):
-        #    return [s]
-        #else:
-        #    return []
+        s = UnpackStr(obj)
+        if len(s):
+            return value.List([obj])
+        else:
+            return value.List([])
 
 
 class _Append(vm._Func):
