@@ -1402,15 +1402,15 @@ class CommandParser(object):
     def _ParseConditionList(self):
         # type: () -> condition_t
         """
-        condition_list: command_term
+        condition_list: command_list
 
-        Looking at `command_term`
+        Looking at `command_list`
 
         This is a helper to parse a condition list for if commands and while/until
         loops. It will throw a parse error if there are no conditions in the list.
         """
         self.allow_block = False
-        commands = self._ParseCommandTerm()
+        commands = self._ParseCommandList()
         self.allow_block = True
 
         if len(commands.children) == 0:

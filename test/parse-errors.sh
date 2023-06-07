@@ -662,21 +662,21 @@ extra-newlines() {
   esac
   '
 
-  _error-case '
+  _should-parse '
   if
   true
   then
   fi
   '
 
-  _error-case '
+  _should-parse '
   while
   false
   do
   done
   '
 
-  _error-case '
+  _should-parse '
   while
   true;
   false
