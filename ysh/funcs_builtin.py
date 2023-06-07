@@ -6,6 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error, vm
+from core.util import UnpackStr, UnpackList
 from mycpp.mylib import log
 from frontend import lexer
 from ysh import expr_eval
@@ -46,27 +47,14 @@ class _Join(vm._Func):
 
         # XXX: python's join() accepts dict keys, strings, and other iterables.
         # should we do the same?
-        UP_array = pos_args[0]
-        assert UP_array.tag() == value_e.List
-        array = cast(value.List, UP_array)
-
-        UP_delim = pos_args[1]
-        assert UP_delim.tag() == value_e.Str
-        delim = cast(value.Str, UP_delim)
+        array = UnpackList(pos_args[0])
+        delim = UnpackStr(pos_args[1])
 
         strs = []  # type: List[str]
-        for i, elem in enumerate(array.items):
-            if elem.tag() == value_e.Str:
-                raise error.InvalidType(
-                    'list element %d should be Str, but got %s' % (
-                        i,
-                        value_str(elem.tag()),
-                    ), loc.Missing)
-            UP_elem = elem
-            elem = cast(value.Str, UP_elem)
-            strs.append(elem.s)
+        for elem in array:
+            strs.append(UnpackStr(elem))
 
-        return value.Str(delim.s.join(strs))
+        return value.Str(delim.join(strs))
 
 
 class _Maybe(vm._Func):
