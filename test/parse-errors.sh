@@ -649,6 +649,18 @@ extra-newlines() {
   then
   fi
   '
+
+  _error-case '
+  case |
+  in
+  esac
+  '
+
+  _error-case '
+  case ;
+  in
+  esac
+  '
 }
 
 blocks() {

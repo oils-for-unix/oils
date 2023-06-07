@@ -1605,9 +1605,7 @@ class CommandParser(object):
                     loc.Word(w))
 
         if w.tag() == word_e.Token:
-            token = cast(Token, w)
-            if token.id == Id.Op_Newline:
-                p_die("Expected a word to match against", loc.Word(w))
+            p_die("Expected a word to match against", loc.Word(w))
 
         to_match = case_arg.Word(w)
         self._SetNext()  # past WORD
