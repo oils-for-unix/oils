@@ -1399,6 +1399,23 @@ class CommandParser(object):
             n2.redirects = self._ParseRedirectList()
             return n2
 
+    def _ParseConditionList(self):
+        # type: () -> condition_t
+        """
+        condition_list: command_list
+
+        This is a helper to parse a condition list for if commands and while/until
+        loops. It will throw a parse error if there are no conditions in the list.
+        """
+        self.allow_block = False
+        commands = self._ParseCommandList()
+        self.allow_block = True
+
+        if len(commands.children) == 0:
+            p_die("Expected a condition", loc.Word(self.cur_word))
+
+        return condition.Shell(commands.children)
+
     def ParseWhileUntil(self, keyword):
         # type: (Token) -> command.WhileUntil
         """
@@ -1413,10 +1430,7 @@ class CommandParser(object):
                                                    grammar_nt.oil_expr)
             cond = condition.YshExpr(enode)  # type: condition_t
         else:
-            self.allow_block = False
-            commands = self._ParseCommandList()
-            self.allow_block = True
-            cond = condition.Shell(commands.children)
+            cond = self._ParseConditionList()
 
         # NOTE: The LSTs will be different for OSH and YSH, but the execution
         # should be unchanged.  To be sure we should desugar.
@@ -1590,6 +1604,9 @@ class CommandParser(object):
                     "This is a constant string.  You may want a variable like $x (parse_bare_word)",
                     loc.Word(w))
 
+        if w.tag() != word_e.Compound:
+            p_die("Expected a word to match against", loc.Word(w))
+
         to_match = case_arg.Word(w)
         self._SetNext()  # past WORD
 
@@ -1718,8 +1735,7 @@ class CommandParser(object):
             elif_kw = word_.AsKeywordToken(self.cur_word)
             self._SetNext()  # past 'elif'
 
-            commands = self._ParseCommandList()
-            cond = condition.Shell(commands.children)
+            cond = self._ParseConditionList()
 
             ate = self._Eat(Id.KW_Then)
             then_kw = word_.AsKeywordToken(ate)
@@ -1768,10 +1784,7 @@ class CommandParser(object):
         else:
             # if echo 1; echo 2; then
             # Remove ambiguity with if cd / {
-            self.allow_block = False
-            commands = self._ParseCommandList()
-            self.allow_block = True
-            cond = condition.Shell(commands.children)
+            cond = self._ParseConditionList()
 
         self._GetWord()
         if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:

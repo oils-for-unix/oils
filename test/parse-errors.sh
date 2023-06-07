@@ -616,6 +616,88 @@ append-builtin() {
   #_error-case 'push notarray'  # returns status 1
 }
 
+extra-newlines() {
+  set +o errexit
+
+  _error-case '
+  for
+  do
+  done
+  '
+
+  _error-case '
+  case
+  in esac
+  '
+
+  _error-case '
+  while
+  do
+  done
+  '
+
+  _error-case '
+  if
+  then
+  fi
+  '
+
+  _error-case '
+  if true
+  then
+  elif
+  then
+  fi
+  '
+
+  _error-case '
+  case |
+  in
+  esac
+  '
+
+  _error-case '
+  case ;
+  in
+  esac
+  '
+
+  _should-parse '
+  if
+  true
+  then
+  fi
+  '
+
+  _should-parse '
+  while
+  false
+  do
+  done
+  '
+
+  _should-parse '
+  while
+  true;
+  false
+  do
+  done
+  '
+
+  _should-parse '
+  if true
+  then
+  fi
+  '
+
+  _should-parse '
+  while true;
+        false
+  do
+  done
+  '
+}
+
 blocks() {
   set +o errexit
 
@@ -1580,6 +1662,7 @@ cases-in-strings() {
   here-doc
   here-doc-delimiter
   append
+  extra-newlines
 
   # Word
   word-parse

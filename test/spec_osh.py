@@ -45,7 +45,7 @@ def Define(sp):
   sp.OshFile(
       'case_',
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
-      failures_allowed = 4,
+      failures_allowed = 3,
       )
 
   #
