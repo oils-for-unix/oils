@@ -1404,8 +1404,6 @@ class CommandParser(object):
         """
         condition_list: command_list
 
-        Looking at `command_list`
-
         This is a helper to parse a condition list for if commands and while/until
         loops. It will throw a parse error if there are no conditions in the list.
         """
