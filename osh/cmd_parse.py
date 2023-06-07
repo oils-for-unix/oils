@@ -1604,7 +1604,7 @@ class CommandParser(object):
                     "This is a constant string.  You may want a variable like $x (parse_bare_word)",
                     loc.Word(w))
 
-        if w.tag() == word_e.Token:
+        if w.tag() != word_e.Compound:
             p_die("Expected a word to match against", loc.Word(w))
 
         to_match = case_arg.Word(w)
