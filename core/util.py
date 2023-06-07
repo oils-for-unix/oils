@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import loc
 from core import error
 from mycpp import mylib
 
-from typing import cast
+from typing import cast, List
 
 
 class UserExit(Exception):
@@ -94,7 +94,7 @@ def UnpackStr(val):
 
 
 def UnpackList(val):
-    # type: (value_t) -> value.List
+    # type: (value_t) -> List[value_t]
     UP_val = val
     if val.tag() == value_e.List:
         val = cast(value.List, UP_val)
