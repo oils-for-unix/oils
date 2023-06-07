@@ -661,6 +661,41 @@ extra-newlines() {
   in
   esac
   '
+
+  _error-case '
+  if
+  true
+  then
+  fi
+  '
+
+  _error-case '
+  while
+  false
+  do
+  done
+  '
+
+  _error-case '
+  while
+  true;
+  false
+  do
+  done
+  '
+
+  _should-parse '
+  if true
+  then
+  fi
+  '
+
+  _should-parse '
+  while true;
+        false
+  do
+  done
+  '
 }
 
 blocks() {
