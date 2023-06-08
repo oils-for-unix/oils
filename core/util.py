@@ -82,6 +82,17 @@ class DebugFile(_DebugFile):
         return self.f.isatty()
 
 
+def MustCastInt(val):
+    # type: (value_t) -> value.Int
+    UP_val = val
+    if val.tag() == value_e.Int:
+        val = cast(value.Int, UP_val)
+        return val
+
+    raise error.InvalidType(
+        'expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
+
+
 def MustCastStr(val):
     # type: (value_t) -> value.Str
     UP_val = val

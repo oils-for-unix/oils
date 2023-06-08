@@ -6,7 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error, vm
-from core.util import MustCastStr, MustCastList
+from core.util import MustCastInt, MustCastStr, MustCastList
 from mycpp.mylib import log
 from frontend import lexer
 from ysh import expr_eval
@@ -137,22 +137,19 @@ class _Match(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         return value.Undef
-        #if len(args) == 0:
-        #    return self.mem.GetMatch(0)
+        if len(pos_args) == 0:
+            return self.mem.GetMatch(0)
 
-        #if len(args) == 1:
-        #    arg = args[0]
-        #    if isinstance(arg, int):
-        #        s = self.mem.GetMatch(arg)
-        #        # Oil code doesn't deal well with exceptions!
-        #        #if s is None:
-        #        #  raise IndexError('No such group')
-        #        return s
+        if len(args) > 1:
+            raise TypeError('Too many arguments')
 
-        #    # TODO: Support strings
-        #    raise TypeError('Expected an integer, got %r' % arg)
-
-        #raise TypeError('Too many arguments')
+        # TODO: Support strings
+        arg = MustCastInt(pos_args[0])
+        s = self.mem.GetMatch(arg.i)
+        # Oil code doesn't deal well with exceptions!
+        #if s is None:
+        #  raise IndexError('No such group')
+        return value.Str(s)
 
 
 class _Start(vm._Func):
@@ -192,8 +189,10 @@ class _Shvar_get(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         return value.Undef
-        #name = pos_args[0]
-        #return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing)
+        assert len(pos_args) == 1
+        name = MustCastStr(pos_args[0])
+        return expr_eval.LookupVar(self.mem, name.s, scope_e.Dynamic,
+                                   loc.Missing)
 
 
 class _VmEval(vm._Func):
@@ -253,9 +252,11 @@ class _Split(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        s = pos_args[0]  # XXX str
-        # XXX self.splitter.SplitFuncBuiltin(s)
-        return value.Undef
+        assert len(pos_args) == 1
+        s = MustCastStr(pos_args[0])
+        # XXX: just update splitter.SplitFuncBuiltin to return value_t
+        return value.List(
+            [value.Str(elem) for elem in self.splitter.SplitFuncBuiltin(s.s)])
 
 
 class _Glob(vm._Func):
@@ -267,9 +268,11 @@ class _Glob(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        s = pos_args[0]  # XXX str
-        # XXX self.globber.OilFuncCall(s)
-        return value.Undef
+        assert len(pos_args) == 1
+        s = MustCastStr(pos_args[0])
+        # XXX: just update globber.OilFuncCall to return value_t
+        return value.List(
+            [value.Str(elem) for elem in self.globber.OilFuncCall(s.s)])
 
 
 def Init2(mem, splitter, globber):
