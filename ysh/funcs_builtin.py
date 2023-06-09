@@ -3,15 +3,15 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e
+from _devbuild.gen.runtime_asdl import value, value_e, value_t, scope_e
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
-from core import error, vm
+from core import vm
 from core.util import MustCastInt, MustCastStr, MustCastList
 from mycpp.mylib import log
 from frontend import lexer
 from ysh import expr_eval
 
-from typing import cast, Callable, Union, TYPE_CHECKING
+from typing import cast, Callable, Dict, List, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import state
     from osh import glob_
@@ -140,7 +140,7 @@ class _Match(vm._Func):
         if len(pos_args) == 0:
             return self.mem.GetMatch(0)
 
-        if len(args) > 1:
+        if len(pos_args) > 1:
             raise TypeError('Too many arguments')
 
         # TODO: Support strings
@@ -465,7 +465,7 @@ class _Any(vm._Func):
         assert len(pos_args) == 1
         L = MustCastList(pos_args[0])
         for item in L.items:
-            if ToBool(item):
+            if expr_eval.ToBool(item):
                 return value.Bool(True)
 
         assert value.Bool(False)
@@ -482,7 +482,7 @@ class _All(vm._Func):
         assert len(pos_args) == 1
         L = MustCastList(pos_args[0])
         for item in L.items:
-            if not ToBool(item):
+            if not expr_eval.ToBool(item):
                 return value.Bool(False)
 
         assert value.Bool(True)

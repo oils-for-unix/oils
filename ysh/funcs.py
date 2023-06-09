@@ -15,7 +15,7 @@ from mycpp import mylib
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, cast, Any, Dict, List
+from typing import TYPE_CHECKING, cast, Dict, List
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import value_t

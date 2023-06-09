@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import loc
 from core import error
 from mycpp import mylib
 
-from typing import cast, List
+from typing import cast
 
 
 class UserExit(Exception):

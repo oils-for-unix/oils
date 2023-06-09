@@ -45,7 +45,6 @@ from _devbuild.gen.runtime_asdl import (
     lvalue,
     value,
     value_e,
-    value_str,
     value_t,
     IntBox,
     FuncBox,
@@ -53,7 +52,6 @@ from _devbuild.gen.runtime_asdl import (
 from core import error, vm
 from core.error import e_die, e_die_status
 from core import state
-from core.util import MustCastFunc
 from frontend import consts
 from frontend import match
 from frontend import location
