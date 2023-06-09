@@ -1270,21 +1270,26 @@ ysh_case() {
   }
   '
 
-  # TODO: make this parse
-  if false; then
-    _ysh-should-parse '
-    case (num) {
-        (1) | (2) | (3)
-      | (4) | (5) {
-        echo small
-      }
-
-      (else) {
-        echo large
-      }
+  _ysh-should-parse '
+  case (num) {
+    (1) | (2) {
+      echo number
     }
-    '
-  fi
+  }
+  '
+
+  _ysh-should-parse '
+  case (num) {
+      (1) | (2) | (3)
+    | (4) | (5) {
+      echo small
+    }
+
+    (else) {
+      echo large
+    }
+  }
+  '
 
   # Example invalid cases from grammar brain-storming
   _ysh-parse-error '

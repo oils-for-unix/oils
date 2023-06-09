@@ -791,11 +791,13 @@ class Transformer(object):
             if typ == grammar_nt.pat_else:
                 return pat.Else
             elif typ == grammar_nt.pat_exprs:
-                # TODO: recursively extract all expressions
-                #       but this is fine for now as we only parse one expression
-                e = pattern.GetChild(0).GetChild(0)
-                expr = self.Expr(e)
-                return pat.YshExprs([expr])
+                exprs = []  # type: List[expr_t]
+                assert pattern.children
+                for child in pattern.children:
+                    if child.typ == grammar_nt.expr:
+                        expr = self.Expr(child)
+                        exprs.append(expr)
+                return pat.YshExprs(exprs)
 
         elif typ == grammar_nt.pat_eggex:
             # pat_eggex

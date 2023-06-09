@@ -1161,6 +1161,11 @@ class CommandParser(object):
         ate = self._Eat(Id.Lit_LBrace)
         left = word_.BraceToken(ate)
 
+        return self._ParseBraceGroupAfterLBrace(left)
+
+    def _ParseBraceGroupAfterLBrace(self, left):
+        # type: (Token) -> BraceGroup
+
         # PROBLEM: can't use 'ate' here because osh/word_parse.py has a hack for
         # proc { } to translate Token Id.Op_RBrace -> Id.Lit_LBrace.
 
@@ -1515,6 +1520,9 @@ class CommandParser(object):
         if discriminant in (Id.Op_LParen, Id.Arith_Slash):
             # pat_exprs, pat_else or pat_eggex
             pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
+
+            # TODO: how to get this?
+            left = self.w_parser.cur_token
         else:
             # pat_words
             pat_words = []  # type: List[word_t]
@@ -1535,8 +1543,11 @@ class CommandParser(object):
                     break
             pattern = pat.Words(pat_words)
 
+            ate = self._Eat(Id.Lit_LBrace)
+            left = word_.BraceToken(ate)
+
         self._NewlineOk()
-        action = self.ParseBraceGroup()
+        action = self._ParseBraceGroupAfterLBrace(left)
 
         # The left token of the action is our "middle" token
         return CaseArm(left_tok, pattern, action.left, action.children,
