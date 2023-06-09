@@ -60,7 +60,7 @@ class OilTokenDef(object):
 def MakeOilLexer(code_str, arena):
     arena.PushSource(source.MainFile('pgen2_main'))
     line_reader = reader.StringLineReader(code_str, arena)
-    line_lexer = lexer.LineLexer('', arena)
+    line_lexer = lexer.LineLexer(arena)
     lex = lexer.Lexer(line_lexer, line_reader)
     return lex
 
@@ -175,6 +175,7 @@ def main(argv):
         # Remove build dependency
         from frontend import parse_lib
         from ysh import expr_parse
+        from ysh import expr_to_ast
 
         grammar_path = argv[0]
         start_symbol = argv[1]
@@ -191,24 +192,26 @@ def main(argv):
 
         is_expr = grammar_name in ('calc', 'grammar')
 
-        parse_opts = optview.Parse()
+        parse_opts = optview.Parse([], [])
         parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, gr)
-        p = expr_parse.ExprParser(parse_ctx, gr)
+        p = expr_parse.ExprParser(parse_ctx, gr, False)
         try:
-            pnode, _ = p.Parse(lex_, gr.symbol2number[start_symbol])
+            with expr_parse.ctx_PNodeAllocator(p):
+                pnode, _ = p.Parse(lex_, gr.symbol2number[start_symbol])
         except parse.ParseError as e:
             log('Parse Error: %s', e)
             return 1
 
-        names = parse_lib.MakeGrammarNames(gr)
+        names = expr_to_ast.MakeGrammarNames(gr)
         p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
         p_printer.Print(pnode)
 
         if is_expr:
-            from ysh import expr_to_ast
             tr = expr_to_ast.Transformer(gr)
             if start_symbol == 'eval_input':
                 ast_node = tr.Expr(pnode)
+            elif start_symbol == 'case_pat':
+                ast_node = tr.YshCasePattern(pnode)
             else:
                 ast_node = tr.VarDecl(pnode)
             ast_node.PrettyPrint()
