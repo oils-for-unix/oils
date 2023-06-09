@@ -462,7 +462,13 @@ class _Any(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        assert value.Undef
+        assert len(pos_args) == 1
+        L = MustCastList(pos_args[0])
+        for item in L.items:
+            if ToBool(item):
+                return value.Bool(True)
+
+        assert value.Bool(False)
 
 
 class _All(vm._Func):
@@ -473,7 +479,13 @@ class _All(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        assert value.Undef
+        assert len(pos_args) == 1
+        L = MustCastList(pos_args[0])
+        for item in L.items:
+            if not ToBool(item):
+                return value.Bool(False)
+
+        assert value.Bool(True)
 
 
 class _Sum(vm._Func):
