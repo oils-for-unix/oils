@@ -777,7 +777,7 @@ class Transformer(object):
                              (typ, nt_name))
 
     def YshCasePattern(self, pnode):
-        # type: (PNode) -> pat_t
+        # type: (PNode) -> Tuple[pat_t, Token]
         assert pnode.typ == grammar_nt.case_pat, pnode
 
         # We need to descriminate against

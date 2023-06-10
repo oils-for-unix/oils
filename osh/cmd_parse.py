@@ -1519,10 +1519,7 @@ class CommandParser(object):
         pattern = None  # type: pat_t
         if discriminant in (Id.Op_LParen, Id.Arith_Slash):
             # pat_exprs, pat_else or pat_eggex
-            pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
-
-            # TODO: how to get this?
-            left = self.w_parser.cur_token
+            pattern, left = self.parse_ctx.ParseYshCasePattern(self.lexer)
         else:
             # pat_words
             pat_words = []  # type: List[word_t]
