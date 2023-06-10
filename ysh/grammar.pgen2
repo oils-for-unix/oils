@@ -605,9 +605,7 @@ case_pat: (
 pat_paren: '(' (pat_else | pat_exprs)
 
 pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
-
 pat_else: 'else' ')'
-
 pat_eggex: '/' regex [re_flags] '/'
 
 # e.g. /digit+ ; multiline !ignorecase/
