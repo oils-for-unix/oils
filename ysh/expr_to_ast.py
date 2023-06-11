@@ -777,7 +777,7 @@ class Transformer(object):
                              (typ, nt_name))
 
     def YshCasePattern(self, pnode):
-        # type: (PNode) -> Tuple[pat_t, Token]
+        # type: (PNode) -> pat_t
         assert pnode.typ == grammar_nt.case_pat, pnode
 
         # We need to descriminate against
@@ -792,8 +792,8 @@ class Transformer(object):
                 return pat.Else
             elif typ == grammar_nt.pat_exprs:
                 exprs = []  # type: List[expr_t]
-                assert pattern.children
-                for child in pattern.children:
+                for i in xrange(pattern.NumChildren()):
+                    child = pattern.GetChild(i)
                     if child.typ == grammar_nt.expr:
                         expr = self.Expr(child)
                         exprs.append(expr)
