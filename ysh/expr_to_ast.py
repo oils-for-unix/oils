@@ -780,7 +780,6 @@ class Transformer(object):
         # type: (PNode) -> pat_t
         assert pnode.typ == grammar_nt.case_pat, pnode
 
-        # We need to descriminate against
         pattern = pnode.GetChild(0)
         typ = pattern.typ
         if typ == grammar_nt.pat_paren:

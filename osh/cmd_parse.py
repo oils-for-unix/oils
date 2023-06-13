@@ -1166,9 +1166,6 @@ class CommandParser(object):
     def _ParseBraceGroupAfterLBrace(self, left):
         # type: (Token) -> BraceGroup
 
-        # PROBLEM: can't use 'ate' here because osh/word_parse.py has a hack for
-        # proc { } to translate Token Id.Op_RBrace -> Id.Lit_LBrace.
-
         doc_token = None  # type: Token
         self._GetWord()
         if self.c_id == Id.Op_Newline:

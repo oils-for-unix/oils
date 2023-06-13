@@ -591,7 +591,17 @@ regex: [re_alt] (('|'|'or') re_alt)*
 #
 # case (foo) {
 #   (40 + 2) | (0) { echo number }
-#   ^^^^^^^^-- This is pattern
+#   ^^^^^^^^^^^^^^-- This is pattern
+# }
+#
+# Due to limitations created from pgen2/cmd_parser interactions, we also parse
+# the leading '{' token of the case arm body in pgen2. We do this to help pgen2
+# figure out when to transfer control back to the cmd_parser. For more details
+# see #oil-dev > Dev Friction / Smells.
+#
+# case (foo) {
+#   (40 + 2) | (0) { echo number }
+#                  ^-- End of pattern/beginning of case arm body
 # }
 
 case_pat: (
