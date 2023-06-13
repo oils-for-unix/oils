@@ -80,6 +80,7 @@ from _devbuild.gen.syntax_asdl import (
     command,
     expr_t,
     ArgList,
+    pat_t,
 )
 from core import alloc
 from core.error import p_die
@@ -1154,6 +1155,16 @@ class WordParser(WordEmitter):
             last_token.id = Id.Lit_LBrace
         self.buffered_word = last_token
         self._SetNext(lex_mode_e.ShCommand)  # TODO: Do we need this?
+
+    def ParseYshCasePattern(self):
+        # type: () -> pat_t
+        pat, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
+
+        if last_token.id == Id.Op_LBrace:
+            last_token.id = Id.Lit_LBrace
+        self.buffered_word = last_token
+
+        return pat
 
     def ParseImport(self, node):
         # type: (command.Import) -> None

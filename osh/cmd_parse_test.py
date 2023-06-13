@@ -656,7 +656,7 @@ case (x) {
             self.assertEqual(pat_e.YshExprs, pattern.tag())
 
             # TODO: Fix this test!
-            #self.assertEqual(2, len(pattern.e))
+            self.assertEqual(2, len(pattern.exprs))
 
         node = assert_ParseCommandLine(
             self, """\
