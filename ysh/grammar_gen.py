@@ -210,7 +210,7 @@ def main(argv):
             tr = expr_to_ast.Transformer(gr)
             if start_symbol == 'eval_input':
                 ast_node = tr.Expr(pnode)
-            elif start_symbol == 'case_pat':
+            elif start_symbol == 'ysh_case_pat':
                 ast_node = tr.YshCasePattern(pnode)
             else:
                 ast_node = tr.VarDecl(pnode)

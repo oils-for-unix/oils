@@ -384,7 +384,7 @@ class ParseContext(object):
         """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.case_pat)
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_case_pat)
 
             pattern = self.tr.YshCasePattern(pnode)
 

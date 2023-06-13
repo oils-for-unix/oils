@@ -604,7 +604,7 @@ regex: [re_alt] (('|'|'or') re_alt)*
 #                  ^-- End of pattern/beginning of case arm body
 # }
 
-case_pat: (
+ysh_case_pat: (
     '(' (pat_else | pat_exprs)
   | pat_eggex
 ) [Op_Newline] '{'

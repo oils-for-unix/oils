@@ -778,7 +778,7 @@ class Transformer(object):
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t
-        assert pnode.typ == grammar_nt.case_pat, pnode
+        assert pnode.typ == grammar_nt.ysh_case_pat, pnode
 
         pattern = pnode.GetChild(0)
         typ = pattern.typ
