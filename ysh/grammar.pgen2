@@ -605,17 +605,12 @@ regex: [re_alt] (('|'|'or') re_alt)*
 # }
 
 case_pat: (
-    pat_paren
+    '(' (pat_else | pat_exprs)
   | pat_eggex
 ) [Op_Newline] '{'
 
-# This odd factorization is present so pat_exprs+pat_else can be parsed
-# unambiguously. Furthermore, seperating it from `case_pat` makes it both
-# easier to read and transform in `expr_to_ast.py`
-pat_paren: '(' (pat_else | pat_exprs)
-
-pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
 pat_else: 'else' ')'
+pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
 pat_eggex: '/' regex [re_flags] '/'
 
 # e.g. /digit+ ; multiline !ignorecase/

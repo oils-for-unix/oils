@@ -782,9 +782,9 @@ class Transformer(object):
 
         pattern = pnode.GetChild(0)
         typ = pattern.typ
-        if typ == grammar_nt.pat_paren:
+        if typ == Id.Op_LParen:
             # pat_expr or pat_else
-            pattern = pattern.GetChild(1)
+            pattern = pnode.GetChild(1)
             typ = pattern.typ
 
             if typ == grammar_nt.pat_else:
