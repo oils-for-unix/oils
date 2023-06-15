@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, value_e, value_t, scope_e
+from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e, IntBox
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import vm
 from core.util import MustCastInt, MustCastStr, MustCastList
@@ -374,7 +374,8 @@ class _Identity(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        assert value.Undef
+        assert len(pos_args) == 1
+        return pos_args[0]
 
 
 class _Tup(vm._Func):
@@ -396,7 +397,25 @@ class _Len(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        assert value.Undef
+        assert len(pos_args) == 1
+        arg = pos_args[0]
+        UP_arg = arg
+        with tagswitch(arg) as case:
+            if case(value_e.List):
+                arg = cast(value.List, UP_arg)
+                return len(arg.items)
+            elif case(value_e.Tuple):
+                arg = cast(value.Tuple, UP_arg)
+                return len(arg.items)
+            elif case(value_e.Dict):
+                arg = cast(value.Dict, UP_arg)
+                return len(arg.d)
+            elif case(value_e.Str):
+                arg = cast(value.Str, UP_arg)
+                return len(arg.s)
+            else:
+                raise error.InvalidType(
+                        'expected List, Tuple, Dict, or Str, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 class _Max(vm._Func):
@@ -440,7 +459,23 @@ class _Range(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        assert value.Undef
+        if len(pos_args) == 1:
+            lower = MustCastInt(pos_args[0])
+            return value.Range(
+                IntBox(lower.i), None, None)
+        elif len(pos_args) == 2:
+            lower = MustCastInt(pos_args[0])
+            upper = MustCastInt(pos_args[1])
+            return value.Range(
+                IntBox(lower.i), IntBox(upper.i), None)
+        elif len(pos_args) == 3:
+            lower = MustCastInt(pos_args[0])
+            upper = MustCastInt(pos_args[1])
+            step = MustCastInt(pos_args[2])
+            return value.Range(
+                IntBox(lower.i), IntBox(upper.i), IntBox(step.i))
+        else:
+            raise error.Expr('expected 1-3 arguments', loc.Missing)
 
 
 class _Slice(vm._Func):
@@ -451,7 +486,23 @@ class _Slice(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        assert value.Undef
+        if len(pos_args) == 1:
+            lower = MustCastInt(pos_args[0])
+            return value.Range(
+                IntBox(lower.i), None, None)
+        elif len(pos_args) == 2:
+            lower = MustCastInt(pos_args[0])
+            upper = MustCastInt(pos_args[1])
+            return value.Range(
+                IntBox(lower.i), IntBox(upper.i), None)
+        elif len(pos_args) == 3:
+            lower = MustCastInt(pos_args[0])
+            upper = MustCastInt(pos_args[1])
+            step = MustCastInt(pos_args[2])
+            return value.Range(
+                IntBox(lower.i), IntBox(upper.i), IntBox(step.i))
+        else:
+            raise error.Expr('expected 1-3 arguments', loc.Missing)
 
 
 class _Any(vm._Func):
