@@ -9,9 +9,11 @@ from core import error
 from core import main_loop
 from core import state
 from core import ui
+from core.util import MustCastStr
 from core import vm
 from frontend import reader
 from mycpp import mylib
+from ysh import expr_eval
 
 import posix_ as posix
 
@@ -36,16 +38,17 @@ class ParseHay(vm._Func):
 
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        path = pos_args[0]  # XXX str
+        assert len(pos_args) == 1
+        path = MustCastStr(pos_args[0])
 
         call_loc = loc.Missing  # TODO: location info
 
         # TODO: need to close the file!
         try:
-            f = self.fd_state.Open(path)
+            f = self.fd_state.Open(path.s)
         except (IOError, OSError) as e:
             msg = posix.strerror(e.errno)
-            raise error.Expr("Couldn't open %r: %s" % (path, msg), call_loc)
+            raise error.Expr("Couldn't open %r: %s" % (path.s, msg), call_loc)
 
         arena = self.parse_ctx.arena
         line_reader = reader.FileLineReader(f, arena)
@@ -57,7 +60,7 @@ class ParseHay(vm._Func):
         c_parser = self.parse_ctx.MakeConfigParser(line_reader)
 
         # TODO: Should there be a separate config file source?
-        src = source.SourcedFile(path, call_loc)
+        src = source.SourcedFile(path.s, call_loc)
         try:
             with alloc.ctx_Location(arena, src):
                 node = main_loop.ParseWholeFile(c_parser)
@@ -97,7 +100,8 @@ class EvalHay(vm._Func):
             with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
                 unused = self.cmd_ev.EvalBlock(block.body)
 
-            return self.hay_state.Result()
+            # XXX Don't use _PyObjToValue()
+            return expr_eval._PyObjToValue(self.hay_state.Result())
 
             # Note: we should discourage the unvalidated top namesapce for files?  It
             # needs more validation.
@@ -128,4 +132,5 @@ class HayFunc(vm._Func):
 
         def Run(self, pos_args, named_args):
             # type: (List[value_t], Dict[str, value_t]) -> value_t
-            return self.hay_state.HayRegister()
+            # XXX Don't use _PyObjToValue()
+            return expr_eval._PyObjToValue(self.hay_state.HayRegister())

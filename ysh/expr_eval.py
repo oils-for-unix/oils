@@ -634,8 +634,7 @@ class OilEvaluator(object):
             if arg.tag() == expr_e.Spread:
                 arg = cast(expr.Spread, UP_arg)
                 # assume it returns a list
-                pos_args.extend(
-                    _PyObjToValue(self.EvalExpr(arg.child, loc.Missing)))
+                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
             else:
                 pos_args.append(_PyObjToValue(self.EvalExpr(arg, loc.Missing)))
 
@@ -647,7 +646,7 @@ class OilEvaluator(object):
             else:
                 # ...named
                 kwargs.update(
-                    _PyObjToValue(self.EvalExpr(named.value, loc.Missing)))
+                    self.EvalExpr(named.value, loc.Missing))
         return pos_args, kwargs
 
     def EvalPlaceExpr(self, place):
@@ -1396,8 +1395,7 @@ class OilEvaluator(object):
                 return f.Run(pos_args, named_args)
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)
-                bf = cast(FuncBox, func.f)
-                f = cast(vm._Func, bf.f)
+                f = cast(vm._Func, func.f.f)
                 args = [func.me]  # type: List[value_t]
                 args.extend(pos_args)
                 return f.Run(args, named_args)
@@ -1570,7 +1568,7 @@ class OilEvaluator(object):
 
         if id_ == Id.Expr_Dot:  # d.key is like d['key']
             if obj.tag() != value_e.Dict:
-                raise error.Invalidtype('expected Dict for key lookup',
+                raise error.InvalidType('expected Dict for key lookup',
                                         loc.Missing)
 
             obj = cast(value.Dict, UP_obj)
