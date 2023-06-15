@@ -47,7 +47,6 @@ from _devbuild.gen.runtime_asdl import (
     value_e,
     value_t,
     IntBox,
-    FuncBox,
 )
 from core import error, vm
 from core.error import e_die, e_die_status
