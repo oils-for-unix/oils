@@ -52,7 +52,7 @@ readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
 readonly MYPY_GIT_URL=https://github.com/python/mypy
-readonly MYPY_VERSION=0.780
+readonly MYPY_VERSION=0.970
 
 readonly PY3_LIBS_VERSION=2023-03-04
 
