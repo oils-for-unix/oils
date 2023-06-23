@@ -74,7 +74,7 @@ run-file() {
 
   #local -p
 
-  sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
+  sh-spec spec/$spec_name.test.sh --oils-failures-allowed $failures_allowed \
     $other_shell_list $OSH_LIST "$@"
 }
 
@@ -92,7 +92,7 @@ run-file-with-osh-bash() {
   # defines: suite failures_allowed our_shell compare_shells
   local $(test/spec_params.py vars-for-file $spec_name)
 
-  sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
+  sh-spec spec/$spec_name.test.sh --oils-failures-allowed $failures_allowed \
     bash $OSH_LIST "$@"
 }
 
@@ -104,7 +104,7 @@ _run-file-with-one() {
   # defines: suite failures_allowed our_shell compare_shells
   local $(test/spec_params.py vars-for-file $spec_name)
 
-  sh-spec spec/$spec_name.test.sh --osh-failures-allowed $failures_allowed \
+  sh-spec spec/$spec_name.test.sh --oils-failures-allowed $failures_allowed \
     $shell "$@"
 }
 
@@ -131,23 +131,23 @@ interactive() {
 }
 
 prompt() {
-  sh-spec spec/prompt.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/prompt.test.sh --oils-failures-allowed 0 \
     $BASH $OSH_LIST "$@"
 }
 
 osh-only() {
-  sh-spec spec/osh-only.test.sh --osh-failures-allowed 0  \
+  sh-spec spec/osh-only.test.sh --oils-failures-allowed 0  \
     $OSH_LIST "$@"
 }
 
 # Regress bugs
 bugs() {
-  sh-spec spec/bugs.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/bugs.test.sh --oils-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 TODO-deprecate() {
-  sh-spec spec/TODO-deprecate.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/TODO-deprecate.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
@@ -176,7 +176,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec spec/word-split.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/word-split.test.sh --oils-failures-allowed 7 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -187,7 +187,7 @@ word-eval() {
 
 # These cases apply to many shells.
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/assign.test.sh --oils-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@" 
 }
 
@@ -205,12 +205,12 @@ assign-deferred() {
 
 # These test associative arrays
 assign-dialects() {
-  sh-spec spec/assign-dialects.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/assign-dialects.test.sh --oils-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
 background() {
-  sh-spec spec/background.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/background.test.sh --oils-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
 }
 
@@ -239,7 +239,7 @@ if_() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/builtins.test.sh --oils-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -249,18 +249,18 @@ builtin-eval-source() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-io.test.sh --oils-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 nul-bytes() {
-  sh-spec spec/nul-bytes.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/nul-bytes.test.sh --oils-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 # Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
 builtin-printf() {
-  sh-spec spec/builtin-printf.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-printf.test.sh --oils-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -280,12 +280,12 @@ builtin-dirs() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-vars.test.sh --oils-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 builtin-getopts() {
-  sh-spec spec/builtin-getopts.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/builtin-getopts.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -295,40 +295,40 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/builtin-trap.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 builtin-trap-bash() {
-  sh-spec spec/builtin-trap-bash.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-trap-bash.test.sh --oils-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
-  sh-spec spec/builtin-bash.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/builtin-bash.test.sh --oils-failures-allowed 4 \
     $BASH $OSH_LIST "$@"
 }
 
 vars-bash() {
-  sh-spec spec/vars-bash.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/vars-bash.test.sh --oils-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
 vars-special() {
-  sh-spec spec/vars-special.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/vars-special.test.sh --oils-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 # This is bash/OSH only
 builtin-completion() {
-  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-completion.test.sh --oils-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
 builtin-special() {
-  sh-spec spec/builtin-special.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/builtin-special.test.sh --oils-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -345,18 +345,18 @@ func-parsing() {
 }
 
 sh-func() {
-  sh-spec spec/sh-func.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/sh-func.test.sh --oils-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 glob() {
   # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/glob.test.sh --oils-failures-allowed 4 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/arith.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -381,7 +381,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/parse-errors.test.sh --oils-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -397,7 +397,7 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/redirect.test.sh --oils-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -407,17 +407,17 @@ posix() {
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/introspect.test.sh --oils-failures-allowed 0 \
     $BASH $OSH_LIST "$@"
 }
 
 tilde() {
-  sh-spec spec/tilde.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/tilde.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 var-op-test() {
-  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-op-test.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -428,24 +428,24 @@ var-op-len() {
 
 var-op-patsub() {
   # 1 unicode failure, and [^]] which is a parsing divergence
-  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/var-op-patsub.test.sh --oils-failures-allowed 2 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
   # TODO: can add $BUSYBOX_ASH
 }
 
 var-op-slice() {
   # dash doesn't support any of these operations
-  sh-spec spec/var-op-slice.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-op-slice.test.sh --oils-failures-allowed 1 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
 var-op-bash() {
-  sh-spec spec/var-op-bash.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-bash.test.sh --oils-failures-allowed 5 \
     $BASH $OSH_LIST "$@"
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-op-strip.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -464,7 +464,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec spec/var-sub-quote.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-sub-quote.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -477,7 +477,7 @@ sh-options() {
 }
 
 xtrace() {
-  sh-spec spec/xtrace.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/xtrace.test.sh --oils-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -487,22 +487,22 @@ strict-options() {
 }
 
 exit-status() {
-  sh-spec spec/exit-status.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/exit-status.test.sh --oils-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/errexit.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/errexit-oil.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 fatal-errors() {
-  sh-spec spec/fatal-errors.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/fatal-errors.test.sh --oils-failures-allowed 0 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -532,13 +532,13 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/append.test.sh --oils-failures-allowed 0 \
     $BASH $MKSH $ZSH $OSH_LIST "$@" 
 }
 
 # associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/assoc.test.sh --oils-failures-allowed 3 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -550,13 +550,13 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/dbracket.test.sh --oils-failures-allowed 0 \
     $BASH $MKSH $OSH_LIST "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/dparen.test.sh --oils-failures-allowed 1 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
@@ -566,44 +566,44 @@ brace-expansion() {
 }
 
 regex() {
-  sh-spec spec/regex.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/regex.test.sh --oils-failures-allowed 2 \
     $BASH $ZSH $OSH_LIST "$@"
 }
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/process-sub.test.sh --oils-failures-allowed 0 \
     $BASH $ZSH $OSH_LIST "$@"
 }
 
 # This does file system globbing
 extglob-files() {
-  sh-spec spec/extglob-files.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/extglob-files.test.sh --oils-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/extglob-match.test.sh --oils-failures-allowed 0 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
 nocasematch-match() {
-  sh-spec spec/nocasematch-match.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/nocasematch-match.test.sh --oils-failures-allowed 3 \
     $BASH $OSH_LIST "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.
 # mksh has completely different behavior for this syntax.  Not worth testing.
 var-ref() {
-  sh-spec spec/var-ref.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-ref.test.sh --oils-failures-allowed 0 \
     $BASH $OSH_LIST "$@"
 }
 
 # declare / local -n
 # there is one divergence when combining -n and ${!ref}
 nameref() {
-  sh-spec spec/nameref.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/nameref.test.sh --oils-failures-allowed 7 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
@@ -628,7 +628,7 @@ shell-grammar() {
 
 serialize() {
   # dash doesn't have echo -e, $'', etc.
-  sh-spec spec/serialize.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/serialize.test.sh --oils-failures-allowed 0 \
     $BASH $MKSH $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -726,17 +726,17 @@ html-demo() {
 #
 
 hay() {
-  sh-spec spec/hay.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/hay.test.sh --oils-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
 hay-isolation() {
-  sh-spec spec/hay-isolation.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/hay-isolation.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 hay-meta() {
-  sh-spec spec/hay-meta.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/hay-meta.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
@@ -757,63 +757,63 @@ ysh-bin() {
 }
 
 ysh-array() {
-  sh-spec spec/ysh-array.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-array.test.sh --oils-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 ysh-assign() {
-  sh-spec spec/ysh-assign.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-assign.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-blocks() {
-  sh-spec spec/ysh-blocks.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/ysh-blocks.test.sh --oils-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
 ysh-bugs() {
-  sh-spec spec/ysh-bugs.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-bugs.test.sh --oils-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 ysh-builtins() {
-  sh-spec spec/ysh-builtins.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/ysh-builtins.test.sh --oils-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
 ysh-builtin-argparse() {
-  sh-spec spec/ysh-builtin-argparse.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/ysh-builtin-argparse.test.sh --oils-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 
 ysh-builtin-describe() {
-  sh-spec spec/ysh-builtin-describe.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-builtin-describe.test.sh --oils-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 # Related to errexit-oil
 ysh-builtin-error() {
-  sh-spec spec/ysh-builtin-error.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-builtin-error.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-builtin-pp() {
-  sh-spec spec/ysh-builtin-pp.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-builtin-pp.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-builtin-process() {
-  sh-spec spec/ysh-builtin-process.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-builtin-process.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-builtin-shopt() {
-  sh-spec spec/ysh-builtin-shopt.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-builtin-shopt.test.sh --oils-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
 ysh-case() {
-  sh-spec spec/ysh-case.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/ysh-case.test.sh --oils-failures-allowed 5 \
     $OIL_LIST "$@"
 }
 
@@ -824,12 +824,12 @@ ysh-command-sub() {
 
 ysh-demo() {
   # Using OSH for minimalism
-  sh-spec spec/ysh-demo.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-demo.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-expr() {
-  sh-spec spec/ysh-expr.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-expr.test.sh --oils-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
@@ -838,127 +838,127 @@ ysh-expr-bool() {
 }
 
 ysh-expr-arith() {
-  sh-spec spec/ysh-expr-arith.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/ysh-expr-arith.test.sh --oils-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
 ysh-expr-compare() {
-  sh-spec spec/ysh-expr-compare.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/ysh-expr-compare.test.sh --oils-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
 ysh-expr-sub() {
-  sh-spec spec/ysh-expr-sub.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-expr-sub.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-for() {
-  sh-spec spec/ysh-for.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-for.test.sh --oils-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 ysh-funcs-builtin() {
-  sh-spec spec/ysh-funcs-builtin.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-funcs-builtin.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-funcs-external() {
-  sh-spec spec/ysh-funcs-external.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/ysh-funcs-external.test.sh --oils-failures-allowed 3 \
     $OIL_LIST "$@"
 }
 
 ysh-interactive() {
-  sh-spec spec/ysh-interactive.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-interactive.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-json() {
-  sh-spec spec/ysh-json.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-json.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-keywords() {
-  sh-spec spec/ysh-keywords.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-keywords.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-multiline() {
-  sh-spec spec/ysh-multiline.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-multiline.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-options() {
-  sh-spec spec/ysh-options.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-options.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-options-assign() {
-  sh-spec spec/ysh-options-assign.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-options-assign.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-proc() {
-  sh-spec spec/ysh-proc.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-proc.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-regex() {
-  sh-spec spec/ysh-regex.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/ysh-regex.test.sh --oils-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
 ysh-reserved() {
-  sh-spec spec/ysh-reserved.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-reserved.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-scope() {
-  sh-spec spec/ysh-scope.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-scope.test.sh --oils-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
 ysh-slice-range() {
-  sh-spec spec/ysh-slice-range.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/ysh-slice-range.test.sh --oils-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
 ysh-string() {
-  sh-spec spec/ysh-string.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-string.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-special-vars() {
-  sh-spec spec/ysh-special-vars.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-special-vars.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 ysh-tuple() {
-  sh-spec spec/ysh-tuple.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/ysh-tuple.test.sh --oils-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 ysh-var-sub() {
-  sh-spec spec/ysh-var-sub.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/ysh-var-sub.test.sh --oils-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 
 ysh-with-sh() {
-  sh-spec spec/ysh-with-sh.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/ysh-with-sh.test.sh --oils-failures-allowed 6 \
     $OIL_LIST "$@"
 }
 
 ysh-word-eval() {
-  sh-spec spec/ysh-word-eval.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-word-eval.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-xtrace() {
-  sh-spec spec/ysh-xtrace.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-xtrace.test.sh --oils-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 ysh-user-feedback() {
-  sh-spec spec/ysh-user-feedback.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ysh-user-feedback.test.sh --oils-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
@@ -967,27 +967,27 @@ ysh-user-feedback() {
 #
 
 nix-idioms() {
-  sh-spec spec/nix-idioms.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/nix-idioms.test.sh --oils-failures-allowed 2 \
     $BASH $OSH_LIST "$@"
 }
 
 ble-idioms() {
-  sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ble-idioms.test.sh --oils-failures-allowed 0 \
     $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 ble-features() {
-  sh-spec spec/ble-features.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ble-features.test.sh --oils-failures-allowed 0 \
     $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
 toysh() {
-  sh-spec spec/toysh.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/toysh.test.sh --oils-failures-allowed 3 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
 toysh-posix() {
-  sh-spec spec/toysh-posix.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/toysh-posix.test.sh --oils-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
 }
 
@@ -997,7 +997,7 @@ toysh-posix() {
 
 tea-func() {
   # all of these were broken by the new grammar!
-  sh-spec spec/tea-func.test.sh --osh-failures-allowed 15 \
+  sh-spec spec/tea-func.test.sh --oils-failures-allowed 15 \
     $OSH_LIST "$@"
 }
 
