@@ -122,6 +122,9 @@ def DefineCommon(p):
   p.add_option(
       '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
       default=0, help="Allow this number of osh failures")
+  p.add_option(
+      '--oils-bin-dir', dest='oils_bin_dir', default=None,
+      help="Directory that osh and ysh live in")
 
 
 def DefineStateful(p):
@@ -145,9 +148,13 @@ def DefineShSpec(p):
   p.add_option(
       '-t', '--trace', dest='trace', action='store_true', default=False,
       help='trace execution of shells to diagnose hangs')
+
+  # Execution modes
   p.add_option(
       '-p', '--print', dest='do_print', action='store_true', default=None,
       help="Print test code, but don't run it")
+
+  # Output control
   p.add_option(
       '--format', dest='format', choices=['ansi', 'html'],
       default='ansi', help="Output format (default 'ansi')")

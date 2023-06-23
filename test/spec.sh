@@ -78,6 +78,13 @@ run-file() {
     $other_shell_list $OSH_LIST "$@"
 }
 
+run-file-with-metadata() {
+  local spec_name=$1
+  shift
+
+  sh-spec spec/$spec_name.test.sh --oils-bin-dir $PWD/bin "$@"
+}
+
 run-file-with-osh-bash() {
   local spec_name=$1
   shift
@@ -451,6 +458,9 @@ var-sub() {
 
 var-num() {
   run-file var-num "$@"
+
+  # TODO: all files should use run-file-with-metadata
+  #run-file-with-metadata var-num "$@"
 }
 
 var-sub-quote() {

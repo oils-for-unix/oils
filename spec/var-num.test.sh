@@ -1,5 +1,9 @@
-#
 # Test $0 $1 $2
+
+## tags: interactive
+## compare_shells: bash dash mksh
+
+# ignored comment
 
 #### Normal and braced
 $SH -c 'echo $0 $1 ${2}' a b c d
