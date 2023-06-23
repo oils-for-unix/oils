@@ -14,8 +14,10 @@
 namespace libc {
 
 Str* gethostname() {
-  Str* result = OverAllocatedStr(HOST_NAME_MAX);
-  int status = ::gethostname(result->data_, HOST_NAME_MAX);
+  // Note: Fixed issue #1656 - OS X and FreeBSD don't have HOST_NAME_MAX
+  // https://reviews.freebsd.org/D30062
+  Str* result = OverAllocatedStr(_POSIX_HOST_NAME_MAX);
+  int status = ::gethostname(result->data_, _POSIX_HOST_NAME_MAX);
   if (status != 0) {
     throw Alloc<OSError>(errno);
   }
