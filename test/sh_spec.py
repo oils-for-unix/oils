@@ -1282,7 +1282,7 @@ def main(argv):
       stats.WriteTsv(f)
 
   # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
-  stats.Set('osh_failures_allowed', opts.osh_failures_allowed)
+  stats.Set('oils_failures_allowed', opts.oils_failures_allowed)
   if opts.stats_file:
     with open(opts.stats_file, 'w') as f:
       f.write(opts.stats_template % stats.counters)
@@ -1294,7 +1294,7 @@ def main(argv):
   # spec/smoke.test.sh -> smoke
   test_name = os.path.basename(test_file).split('.')[0]
 
-  allowed = opts.osh_failures_allowed
+  allowed = opts.oils_failures_allowed
   all_count = stats.Get('num_failed')
   osh_count = stats.Get('osh_num_failed')
   if allowed == 0:
