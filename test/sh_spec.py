@@ -1221,7 +1221,8 @@ def main(argv):
   shell_args = argv[2:]
   if opts.oils_bin_dir:
     sh1 = file_metadata.get('compare_shells')
-    assert sh1 is not None, 'Expected with --oils-bin-dir'
+    if sh1 is None:
+      raise RuntimeError('Expected compare_shells with --oils-bin-dir')
 
     # problem: we need to get the real osh or ysh shell
     sh2 = file_metadata.get('our_shell', 'osh')  # default is OSH
@@ -1230,6 +1231,11 @@ def main(argv):
     meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
 
     shells = meta_shells
+
+    # Overwrite it when --oils-bin-dir is set
+    # It's no longer a flag
+    opts.oils_failures_allowed = \
+        int(file_metadata.get('oils_failures_allowed', 0))
   else:
     shells = shell_args
 

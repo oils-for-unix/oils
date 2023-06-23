@@ -1,5 +1,8 @@
-#
 # Test set flags, sh flags.
+
+## compare_shells: bash dash mksh
+## oils_failures_allowed: 2
+## tags: interactive
 
 #### $- with -c
 # dash's behavior seems most sensible here?

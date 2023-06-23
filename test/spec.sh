@@ -474,6 +474,7 @@ sh-usage() {
 
 sh-options() {
   run-file sh-options "$@"
+  #run-file-with-metadata sh-options "$@"
 }
 
 xtrace() {
