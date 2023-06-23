@@ -249,6 +249,16 @@ echo_shell_vars() {
   fi
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
+  cat >$TMP/ld_flags.c <<EOF
+int main() {
+  return 0;
+}
+EOF
+  if cc_quiet $TMP/ld_flags.c -Wl,--gc-sections; then
+    echo 'STRIP_FLAGS=--gc-sections'
+  elif cc_quiet $TMP/ld_flags.c -Wl,-dead_strip; then
+    echo 'STRIP_FLAGS=-dead_strip'
+  fi
 }
 
 # c.m4 AC_LANG_INT_SAVE
