@@ -174,7 +174,7 @@ dispatch-one() {
       --format html \
       --stats-file $base_dir/${spec_name}.stats.txt \
       --stats-template \
-      '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d %(osh_ALT_delta)d' \
+      '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(oils_failures_allowed)d %(osh_ALT_delta)d' \
     > $base_dir/${spec_name}.html
 }
 
@@ -246,7 +246,7 @@ EOF
     num_cases = $1
     osh_num_passed = $2
     osh_num_failed = $3
-    osh_failures_allowed = $4
+    oils_failures_allowed = $4
     osh_ALT_delta = $5
 
     sum_status += status
@@ -254,7 +254,7 @@ EOF
     sum_num_cases += num_cases
     sum_osh_num_passed += osh_num_passed
     sum_osh_num_failed += osh_num_failed
-    sum_osh_failures_allowed += osh_failures_allowed
+    sum_oils_failures_allowed += oils_failures_allowed
     sum_osh_ALT_delta += osh_ALT_delta
     num_rows += 1
 
@@ -280,7 +280,7 @@ EOF
     print "<td>" num_cases "</td>"
     print "<td>" osh_num_passed "</td>"
     print "<td>" osh_num_failed "</td>"
-    print "<td>" osh_failures_allowed "</td>"
+    print "<td>" oils_failures_allowed "</td>"
     print "<td>" osh_ALT_delta "</td>"
     printf("<td>%.2f</td>\n", wall_secs);
     print "</tr>"
@@ -292,7 +292,7 @@ EOF
     print "<td>" sum_num_cases "</td>" >totals
     print "<td>" sum_osh_num_passed "</td>" >totals
     print "<td>" sum_osh_num_failed "</td>" >totals
-    print "<td>" sum_osh_failures_allowed "</td>" >totals
+    print "<td>" sum_oils_failures_allowed "</td>" >totals
     print "<td>" sum_osh_ALT_delta "</td>" >totals
     printf("<td>%.2f</td>\n", sum_wall_secs) > totals
     print "</tr>" >totals

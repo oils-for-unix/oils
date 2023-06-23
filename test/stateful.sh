@@ -50,11 +50,11 @@ signals() {
 }
 
 interactive() {
-  spec/stateful/interactive.py $FIRST --osh-failures-allowed 1 "$@"
+  spec/stateful/interactive.py $FIRST --oils-failures-allowed 1 "$@"
 }
 
 job-control() {
-  spec/stateful/job_control.py $FIRST --osh-failures-allowed 1 "$@"
+  spec/stateful/job_control.py $FIRST --oils-failures-allowed 1 "$@"
 }
 
 # Run on just 2 shells

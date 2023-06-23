@@ -355,9 +355,9 @@ def main(argv):
 
   results_f.close()
 
-  if opts.osh_failures_allowed != num_failures:
+  if opts.oils_failures_allowed != num_failures:
     log('%s: Expected %d failures, got %d', sys.argv[0],
-        opts.osh_failures_allowed, num_failures)
+        opts.oils_failures_allowed, num_failures)
     return 1
 
   return 0

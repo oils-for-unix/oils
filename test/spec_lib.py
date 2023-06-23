@@ -120,8 +120,8 @@ def DefineCommon(p):
       '--list', dest='do_list', action='store_true', default=None,
       help='Just list tests')
   p.add_option(
-      '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
-      default=0, help="Allow this number of osh failures")
+      '--oils-failures-allowed', dest='oils_failures_allowed', type='int',
+      default=0, help="Allow this number of Oils failures")
   p.add_option(
       '--oils-bin-dir', dest='oils_bin_dir', default=None,
       help="Directory that osh and ysh live in")

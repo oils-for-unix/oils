@@ -18,14 +18,14 @@ readonly SH=osh  # just use the one in the $PATH
 builtin-bracket() {
   # some tests depend on 'bin' existing
   # Also running as root so you can read anything!  Doh!  Need a real user.
-  sh-spec spec/builtin-bracket.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-bracket.test.sh --oils-failures-allowed 3 \
     $SH "$@"
 }
 
 # This is bash/OSH only
 builtin-completion() {
   # 8 failures instead of 1
-  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 8 \
+  sh-spec spec/builtin-completion.test.sh --oils-failures-allowed 8 \
     $SH "$@"
 }
 
@@ -34,13 +34,13 @@ builtin-eval-source() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-trap.test.sh --oils-failures-allowed 3 \
     $SH "$@"
 }
 
 builtins() {
   # 6 failures instead of 1
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/builtins.test.sh --oils-failures-allowed 6 \
     $SH "$@"
 }
 
@@ -51,7 +51,7 @@ errexit-oil() {
 glob() {
   # 11 failures rather than 7 under Ubuntu.  Probably due to musl libc globbing
   # differences.
-  sh-spec spec/glob.test.sh --osh-failures-allowed 11 \
+  sh-spec spec/glob.test.sh --oils-failures-allowed 11 \
     $SH "$@"
 }
 
@@ -61,13 +61,13 @@ introspect() {
 
 loop() {
   # 1 failure instead of 0
-  sh-spec spec/loop.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/loop.test.sh --oils-failures-allowed 1 \
     $SH "$@"
 }
 
 smoke() {
   # 1 failure instead of 0
-  sh-spec spec/smoke.test.sh --osh-failures-allowed 1 $SH "$@"
+  sh-spec spec/smoke.test.sh --oils-failures-allowed 1 $SH "$@"
 }
 
 strict-options() {
