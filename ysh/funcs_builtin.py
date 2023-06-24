@@ -1,13 +1,14 @@
 #!/usr/bin/env python2
-"""builtin_funcs.py."""
+"""funcs_builtin.py."""
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e, IntBox
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
+from core import error
 from core import vm
 from core.util import MustCastInt, MustCastStr, MustCastList
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from frontend import lexer
 from ysh import expr_eval
 
@@ -415,7 +416,7 @@ class _Len(vm._Func):
                 return len(arg.s)
             else:
                 raise error.InvalidType(
-                        'expected List, Tuple, Dict, or Str, but got %s' % value_str(val.tag()), loc.Missing)
+                        'expected List, Tuple, Dict, or Str, but got %s' % value_str(arg.tag()), loc.Missing)
 
 
 class _Max(vm._Func):
