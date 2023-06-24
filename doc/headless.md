@@ -2,10 +2,10 @@
 default_highlighter: oil-sh
 ---
 
-Oil's Headless Mode: For Alternative UIs
-========================================
+Oils Headless Mode: For Alternative UIs
+=======================================
 
-A GUI or [TUI][] process can start Oil like this:
+A GUI or [TUI][] process can start Oils like this:
 
     osh --headless
 
@@ -26,7 +26,7 @@ Note: This doc is **in progress**.  Join the `#shell-gui` channel on
 
 The UI process should handle these things:
 
-- Auto-completion.  It should use Oil for parsing, and not try to parse shell
+- Auto-completion.  It should use Oils for parsing, and not try to parse shell
   itself!
 - History: Allow the user to retrieve commands typed in the past.
 - Cancelling commands in progress.
@@ -58,7 +58,7 @@ List of commands:
   - The stdin, stdout, and stderr of **the shell and its child processes** will
     be redirected to the descriptors you pass.
   - There's no history expansion for now.  The UI can implement this itself,
-    and Oil may be able to help.
+    and Oils may be able to help.
 
 TODO: More commands.
 
@@ -78,14 +78,14 @@ of it!
 ### Example Code
 
 See [client/headless_demo.py]($oil-src).  This is pure Python code that's
-divorced from the rest of Oil.
+divorced from the rest of Oils.
 
 ## Related Links
 
 Feel free to edit these pages:
 
 - [Headless Mode][] on the wiki.  We want there to be a rich ecosystem of
-  interactive shells built upon Oil.
+  interactive shells built upon Oils.
 - [Interactive Shell][] on the wiki.  Be inspired by these nice projects, many
   of which have screenshots! 
 

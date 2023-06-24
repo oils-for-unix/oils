@@ -86,6 +86,8 @@ print-template() {
 title: Oils $OIL_VERSION - Foo Foo
 date: $(date +%Y/%m/%d)
 css_file: blog-bundle-v6.css
+body_css_class: width35
+default_highlighter: oil-sh
 tags: oil-release
 comments_url: TODO
 published: no
