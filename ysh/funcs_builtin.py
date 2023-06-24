@@ -3,7 +3,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t, scope_e, IntBox
+from _devbuild.gen.runtime_asdl import (value, value_e, value_str, value_t,
+                                        scope_e, IntBox)
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error
 from core import vm
@@ -416,7 +417,8 @@ class _Len(vm._Func):
                 return len(arg.s)
             else:
                 raise error.InvalidType(
-                        'expected List, Tuple, Dict, or Str, but got %s' % value_str(arg.tag()), loc.Missing)
+                    'expected List, Tuple, Dict, or Str, but got %s' %
+                    value_str(arg.tag()), loc.Missing)
 
 
 class _Max(vm._Func):
@@ -462,19 +464,17 @@ class _Range(vm._Func):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         if len(pos_args) == 1:
             lower = MustCastInt(pos_args[0])
-            return value.Range(
-                IntBox(lower.i), None, None)
+            return value.Range(IntBox(lower.i), None, None)
         elif len(pos_args) == 2:
             lower = MustCastInt(pos_args[0])
             upper = MustCastInt(pos_args[1])
-            return value.Range(
-                IntBox(lower.i), IntBox(upper.i), None)
+            return value.Range(IntBox(lower.i), IntBox(upper.i), None)
         elif len(pos_args) == 3:
             lower = MustCastInt(pos_args[0])
             upper = MustCastInt(pos_args[1])
             step = MustCastInt(pos_args[2])
-            return value.Range(
-                IntBox(lower.i), IntBox(upper.i), IntBox(step.i))
+            return value.Range(IntBox(lower.i), IntBox(upper.i),
+                               IntBox(step.i))
         else:
             raise error.Expr('expected 1-3 arguments', loc.Missing)
 
@@ -489,19 +489,17 @@ class _Slice(vm._Func):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         if len(pos_args) == 1:
             lower = MustCastInt(pos_args[0])
-            return value.Range(
-                IntBox(lower.i), None, None)
+            return value.Range(IntBox(lower.i), None, None)
         elif len(pos_args) == 2:
             lower = MustCastInt(pos_args[0])
             upper = MustCastInt(pos_args[1])
-            return value.Range(
-                IntBox(lower.i), IntBox(upper.i), None)
+            return value.Range(IntBox(lower.i), IntBox(upper.i), None)
         elif len(pos_args) == 3:
             lower = MustCastInt(pos_args[0])
             upper = MustCastInt(pos_args[1])
             step = MustCastInt(pos_args[2])
-            return value.Range(
-                IntBox(lower.i), IntBox(upper.i), IntBox(step.i))
+            return value.Range(IntBox(lower.i), IntBox(upper.i),
+                               IntBox(step.i))
         else:
             raise error.Expr('expected 1-3 arguments', loc.Missing)
 
