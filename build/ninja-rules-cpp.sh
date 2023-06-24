@@ -226,7 +226,7 @@ setglobal_link_flags() {
       ;;
   esac
 
-  if test -n "$STRIP_FLAGS"; then
+  if test -n "${STRIP_FLAGS:-}"; then
     link_flags="$link_flags -Wl,$STRIP_FLAGS"
   fi
 }
