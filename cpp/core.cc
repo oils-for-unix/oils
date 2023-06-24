@@ -20,9 +20,7 @@
 
 #include "_gen/frontend/consts.h"  // gVersion
 
-#ifndef HAVE_ENVIRON // handle systems that don't include environ in unistd
 extern char **environ;
-#endif
 
 namespace pyos {
 

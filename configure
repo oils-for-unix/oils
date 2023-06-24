@@ -351,8 +351,6 @@ detect_c_language() {
   #  check_sizeof SIZEOF_WCHAR_T 'wchar_t' 4
   #fi
 
-  cc_statement HAVE_ENVIRON 'char **my_environ = environ;' '#include <unistd.h>'
-
   # TODO: Detect header and size.
   echo '#define HAVE_WCHAR_H 1'
   echo '#define SIZEOF_WCHAR_T 4'
