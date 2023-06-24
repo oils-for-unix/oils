@@ -121,7 +121,8 @@ test_echo_vars() {
   fi
   if ! test "$output" = 'HAVE_READLINE=
 PREFIX=/usr/local
-DATAROOTDIR='; then
+DATAROOTDIR=
+STRIP_FLAGS=--gc-sections'; then
     die "Unexpected echo_shell_vars output: $output"
   fi
 
@@ -134,7 +135,8 @@ DATAROOTDIR='; then
   if ! test "$output" = 'HAVE_READLINE=1
 READLINE_DIR=
 PREFIX=/usr/local
-DATAROOTDIR='; then
+DATAROOTDIR=
+STRIP_FLAGS=--gc-sections'; then
     die "Unexpected echo_shell_vars output: $output"
   fi
 
@@ -148,7 +150,8 @@ DATAROOTDIR='; then
   if ! test "$output" = 'HAVE_READLINE=1
 READLINE_DIR=/path/to/readline
 PREFIX=/usr/local
-DATAROOTDIR='; then
+DATAROOTDIR=
+STRIP_FLAGS=--gc-sections'; then
     die "Unexpected echo_shell_vars output: $output"
   fi
 

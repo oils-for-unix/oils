@@ -249,6 +249,11 @@ echo_shell_vars() {
   fi
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
+  if cc_quiet build/detect-cc.c -Wl,--gc-sections; then
+    echo 'STRIP_FLAGS=--gc-sections'
+  elif cc_quiet build/detect-cc.c -Wl,-dead_strip; then
+    echo 'STRIP_FLAGS=-dead_strip'
+  fi
 }
 
 # c.m4 AC_LANG_INT_SAVE
