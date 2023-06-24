@@ -778,24 +778,25 @@ class Transformer(object):
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t
-        assert pnode.typ == grammar_nt.case_pat, pnode
+        assert pnode.typ == grammar_nt.ysh_case_pat, pnode
 
-        # We need to descriminate against
         pattern = pnode.GetChild(0)
         typ = pattern.typ
-        if typ == grammar_nt.pat_paren:
+        if typ == Id.Op_LParen:
             # pat_expr or pat_else
-            pattern = pattern.GetChild(1)
+            pattern = pnode.GetChild(1)
             typ = pattern.typ
 
             if typ == grammar_nt.pat_else:
                 return pat.Else
             elif typ == grammar_nt.pat_exprs:
-                # TODO: recursively extract all expressions
-                #       but this is fine for now as we only parse one expression
-                e = pattern.GetChild(0).GetChild(0)
-                expr = self.Expr(e)
-                return pat.YshExprs([expr])
+                exprs = []  # type: List[expr_t]
+                for i in xrange(pattern.NumChildren()):
+                    child = pattern.GetChild(i)
+                    if child.typ == grammar_nt.expr:
+                        expr = self.Expr(child)
+                        exprs.append(expr)
+                return pat.YshExprs(exprs)
 
         elif typ == grammar_nt.pat_eggex:
             # pat_eggex

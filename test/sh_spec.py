@@ -93,7 +93,8 @@ class ParseError(Exception):
 
 KEY_VALUE_RE = re.compile(r'''
    [#][#] \s+
-   (?: (OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?   # optional prefix
+   # optional prefix with qualifier and shells
+   (?: (OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?
    ([\w\-]+)              # key
    :
    \s* (.*)               # value
@@ -179,6 +180,15 @@ class Tokenizer(object):
     return self.cursor
 
 
+def AddMetadataToCase(case, qualifier, shells, name, value):
+  shells = shells.split('/')  # bash/dash/mksh
+  for shell in shells:
+    if shell not in case:
+      case[shell] = {}
+    case[shell][name] = value
+    case[shell]['qualifier'] = qualifier
+
+
 # Format of a test script.
 #
 # -- Code is either literal lines, or a commented out code: value.
@@ -197,16 +207,10 @@ class Tokenizer(object):
 #
 # -- Should be a blank line after each test case.  Leading comments and code
 # -- are OK.
-# test_file = (COMMENT | PLAIN_LINE)* (test_case '\n')*
-
-
-def AddMetadataToCase(case, qualifier, shells, name, value):
-  shells = shells.split('/')  # bash/dash/mksh
-  for shell in shells:
-    if shell not in case:
-      case[shell] = {}
-    case[shell][name] = value
-    case[shell]['qualifier'] = qualifier
+#
+# test_file = 
+#   key_value*  -- file level metadata
+#   (test_case '\n')*
 
 
 def ParseKeyValue(tokens, case):
@@ -307,16 +311,25 @@ def ParseTestCase(tokens):
 
 
 def ParseTestFile(tokens):
-  #pprint.pprint(list(lines))
-  #return
+  file_metadata = {}
   test_cases = []
+
   try:
     # Skip over the header.  Setup code can go here, although would we have to
     # execute it on every case?
     while True:
       line_num, kind, item = tokens.peek()
-      if kind == TEST_CASE_BEGIN:
+      if kind != KEY_VALUE:
         break
+
+      qualifier, shells, name, value = item
+      if qualifier is not None:
+        raise RuntimeError('Invalid qualifier in spec file metadata')
+      if shells is not None:
+        raise RuntimeError('Invalid shells in spec file metadata')
+
+      file_metadata[name] = value
+
       tokens.next()
 
     while True:  # Loop over cases
@@ -328,7 +341,7 @@ def ParseTestFile(tokens):
   except StopIteration:
     raise RuntimeError('Unexpected EOF parsing test cases')
 
-  return test_cases
+  return file_metadata, test_cases
 
 
 def CreateStringAssertion(d, key, assertions, qualifier=False):
@@ -1193,12 +1206,40 @@ def main(argv):
     p.print_usage()
     return 1
 
-  shells = argv[2:]
-  shell_pairs = spec_lib.MakeShellPairs(shells)
-
   with open(test_file) as f:
     tokens = Tokenizer(f)
-    cases = ParseTestFile(tokens)
+    file_metadata, cases = ParseTestFile(tokens)
+
+  # TODO: file_metadata should override --osh-allowed-failures and so forth
+  # Change to --oils-allowed-failures
+
+  if opts.verbose:
+    for k, v in file_metadata.items():
+      print('\t%-20s: %s' % (k, v), file=sys.stderr)
+    print('', file=sys.stderr)
+
+  shell_args = argv[2:]
+  if opts.oils_bin_dir:
+    sh1 = file_metadata.get('compare_shells')
+    if sh1 is None:
+      raise RuntimeError('Expected compare_shells with --oils-bin-dir')
+
+    # problem: we need to get the real osh or ysh shell
+    sh2 = file_metadata.get('our_shell', 'osh')  # default is OSH
+
+    meta_shells = sh1.split() if sh1 else []
+    meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
+
+    shells = meta_shells
+
+    # Overwrite it when --oils-bin-dir is set
+    # It's no longer a flag
+    opts.oils_failures_allowed = \
+        int(file_metadata.get('oils_failures_allowed', 0))
+  else:
+    shells = shell_args
+
+  shell_pairs = spec_lib.MakeShellPairs(shells)
 
   # List test cases and return
   if opts.do_list:
@@ -1247,7 +1288,7 @@ def main(argv):
       stats.WriteTsv(f)
 
   # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
-  stats.Set('osh_failures_allowed', opts.osh_failures_allowed)
+  stats.Set('oils_failures_allowed', opts.oils_failures_allowed)
   if opts.stats_file:
     with open(opts.stats_file, 'w') as f:
       f.write(opts.stats_template % stats.counters)
@@ -1259,7 +1300,7 @@ def main(argv):
   # spec/smoke.test.sh -> smoke
   test_name = os.path.basename(test_file).split('.')[0]
 
-  allowed = opts.osh_failures_allowed
+  allowed = opts.oils_failures_allowed
   all_count = stats.Get('num_failed')
   osh_count = stats.Get('osh_num_failed')
   if allowed == 0:

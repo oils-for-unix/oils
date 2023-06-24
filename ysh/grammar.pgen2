@@ -591,25 +591,26 @@ regex: [re_alt] (('|'|'or') re_alt)*
 #
 # case (foo) {
 #   (40 + 2) | (0) { echo number }
-#   ^^^^^^^^-- This is pattern
+#   ^^^^^^^^^^^^^^-- This is pattern
+# }
+#
+# Due to limitations created from pgen2/cmd_parser interactions, we also parse
+# the leading '{' token of the case arm body in pgen2. We do this to help pgen2
+# figure out when to transfer control back to the cmd_parser. For more details
+# see #oil-dev > Dev Friction / Smells.
+#
+# case (foo) {
+#   (40 + 2) | (0) { echo number }
+#                  ^-- End of pattern/beginning of case arm body
 # }
 
-case_pat: (
-    pat_paren
+ysh_case_pat: (
+    '(' (pat_else | pat_exprs)
   | pat_eggex
-)
-
-# This odd factorization is present so pat_exprs+pat_else can be parsed
-# unambiguously. Furthermore, seperating it from `case_pat` makes it both
-# easier to read and transform in `expr_to_ast.py`
-pat_paren: '(' (pat_else | pat_exprs)
-
-pat_exprs: pat_expr # ([Op_Newline] '|' [Op_Newline] '(' pat_expr)*
-                    # ^^^-- adding all of this seems to break things
-pat_expr: expr ')'
+) [Op_Newline] '{'
 
 pat_else: 'else' ')'
-
+pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
 pat_eggex: '/' regex [re_flags] '/'
 
 # e.g. /digit+ ; multiline !ignorecase/

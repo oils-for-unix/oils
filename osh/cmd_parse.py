@@ -1161,9 +1161,6 @@ class CommandParser(object):
         ate = self._Eat(Id.Lit_LBrace)
         left = word_.BraceToken(ate)
 
-        # PROBLEM: can't use 'ate' here because osh/word_parse.py has a hack for
-        # proc { } to translate Token Id.Op_RBrace -> Id.Lit_LBrace.
-
         doc_token = None  # type: Token
         self._GetWord()
         if self.c_id == Id.Op_Newline:
@@ -1528,7 +1525,7 @@ class CommandParser(object):
         pattern = None  # type: pat_t
         if discriminant in (Id.Op_LParen, Id.Arith_Slash):
             # pat_exprs, pat_else or pat_eggex
-            pattern = self.parse_ctx.ParseYshCasePattern(self.lexer)
+            pattern = self.w_parser.ParseYshCasePattern()
         else:
             # pat_words
             pat_words = []  # type: List[word_t]

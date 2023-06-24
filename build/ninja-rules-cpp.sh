@@ -24,7 +24,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 . build/common.sh  # for $BASE_CXXFLAGS
 
-# for HAVE_READLINE
+# for HAVE_READLINE, READLINE_DIR, and STRIP_FLAGS
 if ! . _build/detected-config.sh; then
   die "Can't find _build/detected-config.sh.  Run './configure'"
 fi
@@ -50,7 +50,7 @@ link_flags=''  # link flags
 setglobal_cxx() {
   local compiler=$1
 
-  case $compiler in 
+  case $compiler in
     (cxx)   cxx='c++'    ;;
     (clang) cxx=$CLANGXX ;;
     (*)     die "Invalid compiler $compiler" ;;
@@ -71,6 +71,10 @@ setglobal_compile_flags() {
   local env_flags=${CXXFLAGS:-}
   if test -n "$env_flags"; then
     flags="$flags $env_flags"
+  fi
+
+  if test -n "$READLINE_DIR"; then
+    flags="$flags -I${READLINE_DIR}/include"
   fi
 
   case $variant in
@@ -216,10 +220,15 @@ setglobal_link_flags() {
       if test "$HAVE_READLINE" = 1; then
         link_flags="$link_flags -lreadline"
       fi
+      if test -n "$READLINE_DIR"; then
+        link_flags="$link_flags -L${READLINE_DIR}/lib"
+      fi
       ;;
   esac
 
-  link_flags="$link_flags -Wl,--gc-sections"
+  if test -n "${STRIP_FLAGS:-}"; then
+    link_flags="$link_flags -Wl,$STRIP_FLAGS"
+  fi
 }
 
 compile_one() {
