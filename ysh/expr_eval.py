@@ -644,8 +644,7 @@ class OilEvaluator(object):
                     self.EvalExpr(named.value, loc.Missing))
             else:
                 # ...named
-                kwargs.update(
-                    self.EvalExpr(named.value, loc.Missing))
+                kwargs.update(self.EvalExpr(named.value, loc.Missing))
         return pos_args, kwargs
 
     def EvalPlaceExpr(self, place):
@@ -716,7 +715,8 @@ class OilEvaluator(object):
             with state.ctx_OilExpr(self.mutable_opts):
                 return self._EvalExpr(node)
         except TypeError as e:
-            raise error.Expr('Type error in expression: %s' % str(e), blame_loc)
+            raise error.Expr('Type error in expression: %s' % str(e),
+                             blame_loc)
         except (AttributeError, ValueError) as e:
             raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
 
@@ -1346,7 +1346,8 @@ class OilEvaluator(object):
 
     def _EvalList(self, node):
         # type: (expr.List) -> value_t
-        return value.List([_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
+        return value.List(
+            [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
     def _EvalTuple(self, node):
         # type: (expr.Tuple) -> value_t
@@ -1423,12 +1424,13 @@ class OilEvaluator(object):
                         try:
                             if index.lower and index.upper:
                                 return value.List(
-                                    obj.items[index.lower.i:index.upper.i:step])
+                                    obj.items[index.lower.i:index.upper.
+                                              i:step])
 
                             elif index.lower:
                                 return value.List(
                                     obj.items[index.lower.i:len(obj.items
-                                                               ):step])
+                                                                ):step])
 
                             elif index.upper:
                                 return value.List(
@@ -1466,7 +1468,8 @@ class OilEvaluator(object):
                         try:
                             if index.lower and index.upper:
                                 return value.Tuple(
-                                    obj.items[index.lower.i:index.upper.i:step])
+                                    obj.items[index.lower.i:index.upper.
+                                              i:step])
 
                             elif index.lower:
                                 return value.Tuple(
@@ -1678,8 +1681,8 @@ class OilEvaluator(object):
                 return _ValueToPyObj(self._EvalDict(node))
 
             elif case(expr_e.ListComp):
-                e_die_status(2,
-                             'List comprehension reserved but not implemented')
+                e_die_status(
+                    2, 'List comprehension reserved but not implemented')
 
                 #
                 # TODO: Move this code to the new for loop
