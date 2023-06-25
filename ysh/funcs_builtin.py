@@ -246,7 +246,7 @@ def Init(mem):
 
     # TODO: Consolidate with explicit 1:2 syntax
     # Return an iterable like Python 3.  Used for 'step' param.
-    SetGlobalFunc(mem, 'range', xrange)
+    SetGlobalFunc(mem, 'range', range)
     # For the 'step' param.
     SetGlobalFunc(mem, 'slice', slice)
 

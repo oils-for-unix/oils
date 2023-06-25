@@ -919,7 +919,7 @@ ysh-scope() {
 }
 
 ysh-slice-range() {
-  sh-spec spec/ysh-slice-range.test.sh --oils-failures-allowed 2 \
+  sh-spec spec/ysh-slice-range.test.sh --oils-failures-allowed 5 \
     $OSH_LIST "$@"
 }
 

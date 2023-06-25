@@ -191,19 +191,6 @@ def _PyObjToValue(val):
 
         return s
 
-    elif isinstance(val, xrange):
-        r = value.Range(None, None, None)
-        # awkward, but should go away once everything is typed...
-        l = list(val)
-        if len(l) > 1:
-            r.lower = IntBox(l[0])
-            r.upper = IntBox(l[-1])
-            r.step = IntBox(l[1] - l[0])
-        elif len(l) == 1:
-            r.lower = IntBox(l[0])
-
-        return r
-
     elif isinstance(val, objects.Regex):
         eggex = value.Eggex(val.regex, None)
         if val.as_ere is not None:
@@ -279,18 +266,6 @@ def _ValueToPyObj(val):
                 return slice(None, val.upper.i, step)
 
             return slice(None, None, None)
-
-        elif case(value_e.Range):
-            val = cast(value.Range, UP_val)
-            step = 1
-            if val.step:
-                step = val.step.i
-
-            assert val.lower is not None
-            if val.upper:
-                return xrange(val.lower.i, val.upper.i, step)
-
-            return xrange(val.lower.i, None, step)
 
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
@@ -1153,23 +1128,6 @@ class OilEvaluator(object):
 
         raise NotImplementedError(node.op.id)
 
-    def _EvalRange(self, node):
-        # type: (expr.Range) -> value_t
-
-        UP_lower = _PyObjToValue(self._EvalExpr(node.lower))
-        if UP_lower.tag() != value_e.Int:
-            raise error.InvalidType('Expected Int', loc.Missing)
-
-        lower = cast(value.Int, UP_lower)
-
-        UP_upper = _PyObjToValue(self._EvalExpr(node.upper))
-        if UP_upper.tag() != value_e.Int:
-            raise error.InvalidType('Expected Int', loc.Missing)
-
-        upper = cast(value.Int, UP_upper)
-
-        return value.Range(IntBox(lower.i), IntBox(upper.i), IntBox(1))
-
     def _EvalSlice(self, node):
         # type: (expr.Slice) -> value_t
 
@@ -1650,10 +1608,6 @@ class OilEvaluator(object):
             elif case(expr_e.Binary):
                 node = cast(expr.Binary, UP_node)
                 return _ValueToPyObj(self._EvalBinary(node))
-
-            elif case(expr_e.Range):  # 1:10  or  1:10:2
-                node = cast(expr.Range, UP_node)
-                return _ValueToPyObj(self._EvalRange(node))
 
             elif case(expr_e.Slice):  # a[:0]
                 node = cast(expr.Slice, UP_node)

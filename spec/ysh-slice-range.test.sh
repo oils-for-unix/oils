@@ -1,6 +1,6 @@
 # Test a[1]
 
-#### ranges have higher precedence than comparison (disabled)
+#### precedence of 1:3 vs comparison
 
 # This test exposed nondeterminism in CPython itself!  Gah.  Is this because of
 # the hashing?
@@ -18,7 +18,7 @@
 (xrange)   xrange(1, 3)
 ## END
 
-#### ranges have lower precedence than bitwise operators
+#### precedence of 1:3 vs bitwise operator
 = 3:3|4
 ## STDOUT:
 (xrange)   xrange(3, 7)
@@ -139,7 +139,7 @@ var myslice = mylist[r]
 TODO
 ## END
 
-#### Range with list constructor
+#### List(0:3) should copy the list?
 shopt -s oil:all
 var mylist = List(0:3)
 write @mylist

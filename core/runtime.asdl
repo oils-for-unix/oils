@@ -75,7 +75,6 @@ module runtime
     # TODO: we might be able to combine these types when the refactor is done
     # and we don't need to be able to recover their pyobj representations. 
   | Slice(IntBox? lower, IntBox? upper, IntBox? step)
-  | Range(IntBox? lower, IntBox? upper, IntBox? step)
 
     # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)
