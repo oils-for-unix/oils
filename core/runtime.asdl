@@ -8,6 +8,7 @@ module runtime
   }
 
   IntBox = (int i)
+  FuncBox = (any f)
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
@@ -78,6 +79,8 @@ module runtime
 
     # Hack for a PyObject.  # TODO: Remove
   | Obj(any obj)
+  | Func(any f)
+  | BoundFunc(value me, FuncBox f)
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
