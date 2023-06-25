@@ -198,6 +198,12 @@ def _PyObjToValue(val):
 
         return eggex
 
+    elif isinstance(val, value.Block):
+        return val  # passthrough
+
+    elif callable(val):
+        return value.Func(val)
+
     else:
         raise error.Expr(
             'Trying to convert unexpected type to value_t: %r' % val,
@@ -270,6 +276,13 @@ def _ValueToPyObj(val):
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
             return objects.Regex(val.expr)
+
+        elif case(value_e.Func):
+            val = cast(value.Func, UP_val)
+            return val.f
+
+        elif case(value_e.Block):
+            return val  # passthrough
 
         else:
             raise error.Expr(
@@ -1584,6 +1597,10 @@ class OilEvaluator(object):
 
         raise AssertionError(id_)
 
+    def _EvalAttribute2(self, node):
+        # type: (Attribute) -> value_t
+        return _PyObjToValue(self._EvalAttribute(node))
+
     def _EvalExpr(self, node):
         # type: (expr_t) -> Any
         """This is a naive PyObject evaluator!  It uses the type dispatch of
@@ -1727,11 +1744,9 @@ class OilEvaluator(object):
                 node = cast(Subscript, UP_node)
                 return _ValueToPyObj(self._EvalSubscript(node))
 
-            # Note: This is only for the obj.method() case.  We will probably change
-            # the AST and get rid of getattr().
-            elif case(expr_e.Attribute):  # obj.attr
+            elif case(expr_e.Attribute):  # obj->method or mydict.key
                 node = cast(Attribute, UP_node)
-                return self._EvalAttribute(node)
+                return _ValueToPyObj(self._EvalAttribute2(node))
 
             elif case(expr_e.RegexLiteral):
                 node = cast(expr.RegexLiteral, UP_node)

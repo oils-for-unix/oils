@@ -168,6 +168,11 @@ class _VmEval(object):
         raise NotImplementedError()
 
 
+def _Reversed(mylist):
+    # Make a copy
+    return list(reversed(mylist))
+
+
 def Init2(mem, splitter, globber):
     # type: (state.Mem, split.SplitContext, glob_.Globber) -> None
 
@@ -257,7 +262,8 @@ def Init(mem):
     # We maintain the L.sort() aka sort(L) and sorted(L) distinction.
     # TODO: How do these interact with rows of a data frame?
     SetGlobalFunc(mem, 'sorted', sorted)
-    SetGlobalFunc(mem, 'reversed', reversed)
+
+    SetGlobalFunc(mem, 'reversed', _Reversed)
 
     #
     # List/array methods
