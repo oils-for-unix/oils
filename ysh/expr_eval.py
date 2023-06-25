@@ -51,6 +51,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core.error import e_die, e_die_status
 from core import state
+from core import vm
 from frontend import consts
 from frontend import match
 from frontend import location
@@ -66,8 +67,7 @@ from typing import cast, Any, Union, Optional, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import lvalue, lvalue_t
     from _devbuild.gen.syntax_asdl import ArgList
-    from core.vm import _Executor
-    from core.ui import ErrorFormatter
+    from core import ui
     from core.state import Mem
     from osh.word_eval import AbstractWordEvaluator
     from osh import split
@@ -491,10 +491,10 @@ class OilEvaluator(object):
             mutable_opts,  # type: state.MutableOpts
             funcs,  # type: Dict[str, Any]
             splitter,  # type: split.SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
-        self.shell_ex = None  # type: _Executor
+        self.shell_ex = None  # type: vm._Executor
         self.word_ev = None  # type: AbstractWordEvaluator
 
         self.mem = mem
@@ -544,9 +544,9 @@ class OilEvaluator(object):
     def _EvalMatch(self, left, right, set_match_result):
         # type: (value_t, value_t, bool) -> bool
         """
-    Args:
-      set_match_result: Whether to assign
-    """
+        Args:
+          set_match_result: Whether to assign
+        """
         UP_right = right
         right_s = None  # type: str
         with tagswitch(right) as case:
@@ -581,30 +581,6 @@ class OilEvaluator(object):
             if set_match_result:
                 self.mem.ClearMatches()
             return False
-
-    def EvalArgList(self, args):
-        # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
-        """Used by f(x) and echo $f(x)."""
-        pos_args = []
-        for arg in args.positional:
-            UP_arg = arg
-
-            if arg.tag() == expr_e.Spread:
-                arg = cast(expr.Spread, UP_arg)
-                # assume it returns a list
-                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
-            else:
-                pos_args.append(self.EvalExpr(arg, loc.Missing))
-
-        kwargs = {}
-        for named in args.named:
-            if named.name:
-                kwargs[named.name.tval] = self.EvalExpr(named.value,
-                                                        loc.Missing)
-            else:
-                # ...named
-                kwargs.update(self.EvalExpr(named.value, loc.Missing))
-        return pos_args, kwargs
 
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
@@ -674,7 +650,8 @@ class OilEvaluator(object):
             with state.ctx_OilExpr(self.mutable_opts):
                 return self._EvalExpr(node)
         except TypeError as e:
-            raise error.Expr('Type error in expression: %s' % str(e), blame_loc)
+            raise error.Expr('Type error in expression: %s' % str(e),
+                             blame_loc)
         except (AttributeError, ValueError) as e:
             raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
 
@@ -701,13 +678,14 @@ class OilEvaluator(object):
             else:
                 raise ValueError("%r doesn't look like a number" % val)
 
-        raise ValueError("%r isn't like a number" % (val,))
+        raise ValueError("%r isn't like a number" % (val, ))
 
     def _ToInteger(self, val):
         # type: (Any) -> int
         """Like the above, but no floats."""
         if isinstance(val, bool):
-            raise ValueError("A boolean isn't an integer")  # preserves location
+            raise ValueError(
+                "A boolean isn't an integer")  # preserves location
 
         if isinstance(val, int):
             return val
@@ -719,7 +697,7 @@ class OilEvaluator(object):
             else:
                 raise ValueError("%r doesn't look like an integer" % val)
 
-        raise ValueError("%r isn't like an integer" % (val,))
+        raise ValueError("%r isn't like an integer" % (val, ))
 
     def _ValueToInteger(self, val):
         # type: (value_t) -> int
@@ -1328,7 +1306,8 @@ class OilEvaluator(object):
 
     def _EvalList(self, node):
         # type: (expr.List) -> value_t
-        return value.List([_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
+        return value.List(
+            [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
     def _EvalTuple(self, node):
         # type: (expr.Tuple) -> value_t
@@ -1364,12 +1343,65 @@ class OilEvaluator(object):
 
         return value.Dict(d)
 
+    def EvalArgList(self, args):
+        # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
+        """For procs and funcs - UNTYPED"""
+        pos_args = []
+        for arg in args.positional:
+            UP_arg = arg
+
+            if arg.tag() == expr_e.Spread:
+                arg = cast(expr.Spread, UP_arg)
+                # assume it returns a list
+                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
+            else:
+                pos_args.append(self.EvalExpr(arg, loc.Missing))
+
+        kwargs = {}
+        for named in args.named:
+            if named.name:
+                kwargs[named.name.tval] = self.EvalExpr(
+                    named.value, loc.Missing)
+            else:
+                # ...named
+                kwargs.update(self.EvalExpr(named.value, loc.Missing))
+        return pos_args, kwargs
+
+    def EvalArgList2(self, args):
+        # type: (ArgList) -> Tuple[List[value_t], Dict[str, value_t]]
+        """For procs and args - TYPED """
+        pos_args = []
+        for arg in args.positional:
+            UP_arg = arg
+
+            if arg.tag() == expr_e.Spread:
+                arg = cast(expr.Spread, UP_arg)
+                # assume it returns a list
+                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
+            else:
+                pos_args.append(self.EvalExpr(arg, loc.Missing))
+
+        kwargs = {}
+        for named in args.named:
+            if named.name:
+                kwargs[named.name.tval] = self.EvalExpr(
+                    named.value, loc.Missing)
+            else:
+                # ...named
+                kwargs.update(self.EvalExpr(named.value, loc.Missing))
+        return pos_args, kwargs
+
     def _EvalFuncCall(self, node):
-        # type: (expr.FuncCall) -> Any # XXX
+        # type: (expr.FuncCall) -> value_t
         func = self._EvalExpr(node.func)
-        pos_args, named_args = self.EvalArgList(node.args)
-        ret = func(*pos_args, **named_args)
-        return ret
+        if isinstance(func, value.Func):
+            vm_func = cast(vm._Func, func)
+            pos_args, named_args = self.EvalArgList2(node.args)
+            return vm_func.Call(pos_args, named_args)
+        else:
+            u_pos_args, u_named_args = self.EvalArgList(node.args)
+            ret = func(*u_pos_args, **u_named_args)
+            return _PyObjToValue(ret)
 
     def _EvalSubscript(self, node):
         # type: (Subscript) -> value_t
@@ -1393,12 +1425,13 @@ class OilEvaluator(object):
                         try:
                             if index.lower and index.upper:
                                 return value.List(
-                                    obj.items[index.lower.i:index.upper.i:step])
+                                    obj.items[index.lower.i:index.upper.
+                                              i:step])
 
                             elif index.lower:
                                 return value.List(
                                     obj.items[index.lower.i:len(obj.items
-                                                               ):step])
+                                                                ):step])
 
                             elif index.upper:
                                 return value.List(
@@ -1436,7 +1469,8 @@ class OilEvaluator(object):
                         try:
                             if index.lower and index.upper:
                                 return value.Tuple(
-                                    obj.items[index.lower.i:index.upper.i:step])
+                                    obj.items[index.lower.i:index.upper.
+                                              i:step])
 
                             elif index.lower:
                                 return value.Tuple(
@@ -1634,8 +1668,8 @@ class OilEvaluator(object):
                 return _ValueToPyObj(self._EvalDict(node))
 
             elif case(expr_e.ListComp):
-                e_die_status(2,
-                             'List comprehension reserved but not implemented')
+                e_die_status(
+                    2, 'List comprehension reserved but not implemented')
 
                 #
                 # TODO: Move this code to the new for loop
@@ -1687,7 +1721,7 @@ class OilEvaluator(object):
 
             elif case(expr_e.FuncCall):
                 node = cast(expr.FuncCall, UP_node)
-                return self._EvalFuncCall(node)
+                return _ValueToPyObj(self._EvalFuncCall(node))
 
             elif case(expr_e.Subscript):
                 node = cast(Subscript, UP_node)

@@ -239,7 +239,7 @@ class _Func(object):
         """Empty constructor for mycpp."""
         pass
 
-    def Run(self, pos_args, named_args):
+    def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         raise NotImplementedError()
 
