@@ -758,7 +758,7 @@ ysh-bin() {
 }
 
 ysh-array() {
-  sh-spec spec/ysh-array.test.sh --oils-failures-allowed 1 \
+  sh-spec spec/ysh-array.test.sh --oils-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 

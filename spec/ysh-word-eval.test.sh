@@ -19,14 +19,14 @@ spam
 shopt -s oil:upgrade
 var mystr = 'abc'
 argv.py @mystr
-## status: 1
+## status: 3
 ## stdout-json: ""
 
 #### Can't splice undefined
 shopt -s oil:upgrade
 argv.py @undefined
 echo done
-## status: 1
+## status: 3
 ## stdout-json: ""
 
 #### echo $[f(x)] for various types

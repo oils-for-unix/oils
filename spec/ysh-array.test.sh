@@ -36,3 +36,16 @@ pp cell empty
 Array[Bool]
 Array[???]  # what should this be?
 ## END
+
+#### splice and stringify array
+
+var x = :| 'a b' c |
+
+argv.py "${x[@]}"  # should work
+
+echo -$x-  # fails because it's not an array
+
+## STDOUT:
+['a b', 'c']
+2023-06 TODO: should fail
+## END

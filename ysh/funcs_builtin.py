@@ -27,7 +27,7 @@ def SetGlobalFunc(mem, name, func):
 
     # TODO: Fix this location info
     left = lexer.DummyToken(Id.Undefined_Tok, '')
-    mem.SetValue(sh_lhs_expr.Name(left, name), value.Obj(func),
+    mem.SetValue(sh_lhs_expr.Name(left, name), value.Func(func),
                  scope_e.GlobalOnly)
 
 
@@ -55,6 +55,7 @@ def _Maybe(obj):
 
 
 def _Append(L, arg):
+    #print(L, arg)
     L.append(arg)
 
 

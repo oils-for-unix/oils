@@ -79,7 +79,6 @@ from core import vm
 from frontend import consts
 from frontend import lexer
 from frontend import location
-from ysh import objects
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
@@ -141,9 +140,9 @@ if mylib.PYTHON:
         if isinstance(py_val, str):  # var s = "hello $name"
             val = value.Str(py_val)  # type: Any
 
-        elif isinstance(py_val, objects.StrArray):  # var a = %(a b)
-            # It's safe to convert StrArray to MaybeStrArray.
-            val = value.MaybeStrArray(py_val)
+        #elif isinstance(py_val, objects.StrArray):  # var a = %(a b)
+        #    # It's safe to convert StrArray to MaybeStrArray.
+        #    val = value.MaybeStrArray(py_val)
 
         elif isinstance(py_val, dict):  # var d = {name: "bob"}
             # TODO: Is this necessary?  Shell assoc arrays aren't nested and don't have

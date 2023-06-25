@@ -30,6 +30,7 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
+    value_str,
     part_value,
     part_value_e,
     part_value_t,
@@ -227,15 +228,22 @@ def _ValueToPartValue(val, quoted):
         elif case(value_e.Obj):
             if mylib.PYTHON:
                 val = cast(value.Obj, UP_val)
+
                 from ysh import expr_eval
-                s = expr_eval.Stringify(val.obj)
-                return part_value.String(s, quoted, not quoted)
+                if isinstance(val.obj, list):
+                    # allow "${files[@]}"
+                    strs = [expr_eval.Stringify(item) for item in val.obj]
+                    return part_value.Array(strs)
+                else:
+                    s = expr_eval.Stringify(val.obj)
+                    return part_value.String(s, quoted, not quoted)
             # Not in C++
             raise AssertionError()
 
         else:
-            # Undef should be caught by _EmptyStrOrError().
-            raise AssertionError(val.tag())
+            #raise AssertionError(val)
+            raise error.InvalidType(
+                "Can't expand %s into word" % value_str(val.tag()), loc.Missing)
 
     raise AssertionError('for -Wreturn-type in C++')
 
@@ -732,8 +740,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = cast(value.AssocArray, UP_val)
                 length = len(val.d)
 
-            else:
-                raise AssertionError()
+            elif case(value_e.Obj):
+                val = cast(value.Obj, UP_val)
+                if mylib.PYTHON:
+                    if isinstance(val.obj, list):
+                        length = len(val.obj)
+                    else:
+                        raise AssertionError(val)
+                else:
+                    length = -1   # TODO: remove this
 
         return value.Str(str(length))
 
@@ -1648,6 +1663,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         val = cast(value.MaybeStrArray, UP_val)
                         items = val.strs
                     elif case2(value_e.AssocArray):
+                        # Should we force an explicit @[d->keys()] ?
                         val = cast(value.AssocArray, UP_val)
                         items = val.d.keys()
 
@@ -1661,8 +1677,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                             raise AssertionError()
 
                     else:
-                        e_die("Can't splice %r" % part.var_name,
-                              loc.WordPart(part))
+                        raise error.InvalidType(
+                            "Can't splice %r" % part.var_name, loc.WordPart(part))
 
                 part_vals.append(part_value.Array(items))
 

@@ -85,26 +85,7 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
         # TODO: Location info
         e_die('Undefined variable %r' % var_name, var_loc)
 
-    UP_val = val
-    with tagswitch(val) as case:
-        if case(value_e.Str):
-            val = cast(value.Str, UP_val)
-            return val.s
-
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
-            return val.strs  # node: has None
-
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
-            return val.d
-
-        elif case(value_e.Obj):
-            val = cast(value.Obj, UP_val)
-            return val.obj
-
-        else:
-            raise NotImplementedError()
+    return _ValueToPyObj(val)
 
 
 def Stringify(py_val, word_part=None):
@@ -236,8 +217,7 @@ def _ValueToPyObj(val):
 
         elif case(value_e.MaybeStrArray):
             val = cast(value.MaybeStrArray, UP_val)
-            # XXX type checker is somehow OK with this (holes)?
-            return objects.StrArray(val.strs)
+            return val.strs
 
         elif case(value_e.List):
             val = cast(value.List, UP_val)
@@ -283,6 +263,10 @@ def _ValueToPyObj(val):
 
         elif case(value_e.Block):
             return val  # passthrough
+
+        elif case(value_e.Obj):
+            val = cast(value.Obj, UP_val)
+            return val.obj
 
         else:
             raise error.Expr(

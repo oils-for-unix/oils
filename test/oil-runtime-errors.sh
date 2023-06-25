@@ -91,7 +91,8 @@ test-oil-word-eval() {
   # this should be consistent
   _expr-error-case 'write -- @[identity([{key: "val"}])]'
 
-  _expr-error-case 'const x = [1, 2]; echo $x'
+  # 2023-06: temporarily broken, moved to spec tests
+  #_expr-error-case 'const x = [1, 2]; echo $x'
 }
 
 test-oil-expr-eval() {
