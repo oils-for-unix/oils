@@ -82,7 +82,7 @@ class DebugFile(_DebugFile):
         return self.f.isatty()
 
 
-def MustCastInt(val):
+def MustBeInt(val):
     # type: (value_t) -> value.Int
     UP_val = val
     if val.tag() == value_e.Int:
@@ -93,7 +93,7 @@ def MustCastInt(val):
         'expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def MustCastStr(val):
+def MustBeStr(val):
     # type: (value_t) -> value.Str
     UP_val = val
     if val.tag() == value_e.Str:
@@ -104,7 +104,7 @@ def MustCastStr(val):
         'expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def MustCastList(val):
+def MustBeList(val):
     # type: (value_t) -> value.List
     UP_val = val
     if val.tag() == value_e.List:
@@ -115,7 +115,7 @@ def MustCastList(val):
         'expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def MustCastFunc(val):
+def MustBeFunc(val):
     # type: (value_t) -> value.Func
     UP_val = val
     if val.tag() == value_e.Func:

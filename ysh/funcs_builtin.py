@@ -8,7 +8,7 @@ from _devbuild.gen.runtime_asdl import (value, value_e, value_str, value_t,
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error
 from core import vm
-from core.util import MustCastInt, MustCastStr, MustCastList
+from core.util import MustBeInt, MustBeStr, MustBeList
 from mycpp.mylib import log, tagswitch
 from frontend import lexer
 from ysh import expr_eval
@@ -49,12 +49,12 @@ class _Join(vm._Func):
 
         # XXX: python's join() accepts dict keys, strings, and other iterables.
         # should we do the same?
-        array = MustCastList(pos_args[0])
-        delim = MustCastStr(pos_args[1])
+        array = MustBeList(pos_args[0])
+        delim = MustBeStr(pos_args[1])
 
         strs = []  # type: List[str]
         for elem in array.items:
-            strs.append(MustCastStr(elem).s)
+            strs.append(MustBeStr(elem).s)
 
         return value.Str(delim.s.join(strs))
 
@@ -74,7 +74,7 @@ class _Maybe(vm._Func):
             return value.List([])
 
         ## TODO: Need proper span IDs
-        s = MustCastStr(obj)
+        s = MustBeStr(obj)
         if len(s.s):
             return value.List([s])
         else:
@@ -90,7 +90,7 @@ class _Append(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 2
-        L = MustCastList(pos_args[0])
+        L = MustBeList(pos_args[0])
         arg = pos_args[1]
         L.items.append(arg)
         return value.Undef
@@ -105,8 +105,8 @@ class _Extend(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 2
-        L = MustCastList(pos_args[0])
-        args = MustCastList(pos_args[1])
+        L = MustBeList(pos_args[0])
+        args = MustBeList(pos_args[1])
         L.items.extend(args.items)
         return value.Undef
 
@@ -120,7 +120,7 @@ class _Pop(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 1
-        L = MustCastList(pos_args[0])
+        L = MustBeList(pos_args[0])
         L.pop()  # NOT returned
         return value.Undef
 
@@ -146,7 +146,7 @@ class _Match(vm._Func):
             raise TypeError('Too many arguments')
 
         # TODO: Support strings
-        arg = MustCastInt(pos_args[0])
+        arg = MustBeInt(pos_args[0])
         s = self.mem.GetMatch(arg.i)
         # Oil code doesn't deal well with exceptions!
         #if s is None:
@@ -192,7 +192,7 @@ class _Shvar_get(vm._Func):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         return value.Undef
         assert len(pos_args) == 1
-        name = MustCastStr(pos_args[0])
+        name = MustBeStr(pos_args[0])
         return expr_eval.LookupVar(self.mem, name.s, scope_e.Dynamic,
                                    loc.Missing)
 
@@ -255,7 +255,7 @@ class _Split(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 1
-        s = MustCastStr(pos_args[0])
+        s = MustBeStr(pos_args[0])
         # XXX: just update splitter.SplitFuncBuiltin to return value_t
         return value.List(
             [value.Str(elem) for elem in self.splitter.SplitFuncBuiltin(s.s)])
@@ -271,7 +271,7 @@ class _Glob(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 1
-        s = MustCastStr(pos_args[0])
+        s = MustBeStr(pos_args[0])
         # XXX: just update globber.OilFuncCall to return value_t
         return value.List(
             [value.Str(elem) for elem in self.globber.OilFuncCall(s.s)])
@@ -463,16 +463,16 @@ class _Range(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         if len(pos_args) == 1:
-            lower = MustCastInt(pos_args[0])
+            lower = MustBeInt(pos_args[0])
             return value.Range(IntBox(lower.i), None, None)
         elif len(pos_args) == 2:
-            lower = MustCastInt(pos_args[0])
-            upper = MustCastInt(pos_args[1])
+            lower = MustBeInt(pos_args[0])
+            upper = MustBeInt(pos_args[1])
             return value.Range(IntBox(lower.i), IntBox(upper.i), None)
         elif len(pos_args) == 3:
-            lower = MustCastInt(pos_args[0])
-            upper = MustCastInt(pos_args[1])
-            step = MustCastInt(pos_args[2])
+            lower = MustBeInt(pos_args[0])
+            upper = MustBeInt(pos_args[1])
+            step = MustBeInt(pos_args[2])
             return value.Range(IntBox(lower.i), IntBox(upper.i),
                                IntBox(step.i))
         else:
@@ -488,16 +488,16 @@ class _Slice(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         if len(pos_args) == 1:
-            lower = MustCastInt(pos_args[0])
+            lower = MustBeInt(pos_args[0])
             return value.Range(IntBox(lower.i), None, None)
         elif len(pos_args) == 2:
-            lower = MustCastInt(pos_args[0])
-            upper = MustCastInt(pos_args[1])
+            lower = MustBeInt(pos_args[0])
+            upper = MustBeInt(pos_args[1])
             return value.Range(IntBox(lower.i), IntBox(upper.i), None)
         elif len(pos_args) == 3:
-            lower = MustCastInt(pos_args[0])
-            upper = MustCastInt(pos_args[1])
-            step = MustCastInt(pos_args[2])
+            lower = MustBeInt(pos_args[0])
+            upper = MustBeInt(pos_args[1])
+            step = MustBeInt(pos_args[2])
             return value.Range(IntBox(lower.i), IntBox(upper.i),
                                IntBox(step.i))
         else:
@@ -513,7 +513,7 @@ class _Any(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 1
-        L = MustCastList(pos_args[0])
+        L = MustBeList(pos_args[0])
         for item in L.items:
             if expr_eval.ToBool(item):
                 return value.Bool(True)
@@ -530,7 +530,7 @@ class _All(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 1
-        L = MustCastList(pos_args[0])
+        L = MustBeList(pos_args[0])
         for item in L.items:
             if not expr_eval.ToBool(item):
                 return value.Bool(False)

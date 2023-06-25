@@ -9,7 +9,7 @@ from core import error
 from core import main_loop
 from core import state
 from core import ui
-from core.util import MustCastStr
+from core.util import MustBeStr
 from core import vm
 from frontend import reader
 from mycpp import mylib
@@ -39,7 +39,7 @@ class ParseHay(vm._Func):
     def Run(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         assert len(pos_args) == 1
-        path = MustCastStr(pos_args[0])
+        path = MustBeStr(pos_args[0])
 
         call_loc = loc.Missing  # TODO: location info
 
