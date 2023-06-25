@@ -143,7 +143,7 @@ sophisticated users may use it to interpret tricky shell programs without
 running them.
 
 
-### `OSH_HIJACK_SHEBANG`
+### `OILS_HIJACK_SHEBANG`
 
 This environment variable can be set to the path of a **shell**.  Before OSH
 executes a program, it will inspect the shebang line to see if it looks like a
@@ -166,7 +166,7 @@ and `otherscript.sh`:
 
 Then you can run `myscript.sh` like this:
 
-    OSH_HIJACK_SHEBANG=osh osh myscript.sh
+    OILS_HIJACK_SHEBANG=osh osh myscript.sh
 
 and `otherscript.sh` will be executed with OSH rather than the `/bin/sh`.
 
