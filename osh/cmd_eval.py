@@ -137,6 +137,13 @@ if mylib.PYTHON:
         TODO: Move this to Mem and combine with LookupVar in ysh/expr_eval.py.
         They are opposites.
         """
+        # TODO:
+        # - inspect list
+        #   - if every member is a str, then convert it to value.MaybeStrArray
+        #   - otherwise value.List
+        # - ditto Dict?
+        #   - if every value is a str, convert it to assocarray
+
         if isinstance(py_val, str):  # var s = "hello $name"
             val = value.Str(py_val)  # type: Any
 

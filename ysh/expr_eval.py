@@ -138,20 +138,58 @@ def _PyObjToValue(val):
         return value.Str(val)
 
     elif isinstance(val, list):
-        return value.List([
-            elem if isinstance(elem, value_t) else _PyObjToValue(elem)
-            for elem in val
-        ])
+        # Hack for converting back and forth
+        is_shell_array = True
+
+        shell_array = []  # type: List[str]
+        typed_array = []  # type: List[value_t]
+
+        for elem in val:
+            if elem is None:
+                shell_array.append(elem)
+                # TODO: probably need value.Null
+                typed_array.append(value.Undef)
+
+            elif isinstance(elem, str):
+                shell_array.append(elem)
+                typed_array.append(value.Str(elem))
+
+            elif isinstance(elem, value_t):  # Does this happen?
+                is_shell_array = False
+                typed_array.append(elem)
+
+            else:
+                is_shell_array = False
+                typed_array.append(_PyObjToValue(elem))
+
+        if is_shell_array:
+            return value.MaybeStrArray(shell_array)
+        else:
+            return value.List(typed_array)
 
     elif isinstance(val, dict):
-        d = NewDict()  # type: Dict[str, value_t]
-        for k, v in val.items():
-            if isinstance(v, value_t):
-                d[k] = v
-            else:
-                d[k] = _PyObjToValue(v)
+        is_shell_dict = True
 
-        return value.Dict(d)
+        shell_dict = NewDict()  # type: Dict[str, str]
+        typed_dict = NewDict()  # type: Dict[str, value_t]
+
+        for k, v in val.items():
+            if isinstance(v, str):
+                shell_dict[k] = v
+                typed_dict[k] = value.Str(v)
+
+            elif isinstance(v, value_t):  # Does this happen?
+                is_shell_dict = False
+                typed_dict[k] = v
+
+            else:
+                is_shell_dict = False
+                typed_dict[k] = _PyObjToValue(v)
+
+        if is_shell_dict:
+            return value.AssocArray(shell_dict)
+        else:
+            return value.Dict(typed_dict)
 
     elif isinstance(val, tuple):
         return value.List([
@@ -1441,6 +1479,50 @@ class OilEvaluator(object):
                         raise error.InvalidType('expected Slice or Int',
                                                 loc.Missing)
 
+            elif case(value_e.MaybeStrArray):
+                obj = cast(value.MaybeStrArray, UP_obj)
+                with tagswitch(index) as case2:
+                    if case2(value_e.Slice):
+                        index = cast(value.Slice, index)
+                        step = 1
+                        if index.step:
+                            step = index.step.i
+
+                        try:
+                            if index.lower and index.upper:
+                                return value.MaybeStrArray(
+                                    obj.strs[index.lower.i:index.upper.
+                                              i:step])
+
+                            elif index.lower:
+                                return value.MaybeStrArray(
+                                    obj.strs[index.lower.i:len(obj.strs
+                                                                ):step])
+
+                            elif index.upper:
+                                return value.MaybeStrArray(
+                                    obj.strs[:index.upper.i:step])
+
+                            else:
+                                # l[:] == l
+                                return value.MaybeStrArray(list(obj.strs))
+
+                        except IndexError:
+                            # TODO: expr.Subscript has no error location
+                            raise error.Expr('index out of range', loc.Missing)
+
+                    elif case2(value_e.Int):
+                        index = cast(value.Int, index)
+                        try:
+                            return _PyObjToValue(obj.strs[index.i])
+                        except IndexError:
+                            # TODO: expr.Subscript has no error location
+                            raise error.Expr('index out of range', loc.Missing)
+
+                    else:
+                        raise error.InvalidType('MaybeStrArray subscript expected Slice or Int',
+                                                loc.Missing)
+
             elif case(value_e.Str):
                 obj = cast(value.Str, UP_obj)
                 with tagswitch(index) as case2:
@@ -1481,6 +1563,19 @@ class OilEvaluator(object):
                         raise error.InvalidType('expected Slice or Int',
                                                 loc.Missing)
 
+            elif case(value_e.AssocArray):
+                obj = cast(value.AssocArray, UP_obj)
+                if index.tag() != value_e.Str:
+                    raise error.InvalidType('expected String index for AssocArray',
+                                            loc.Missing)
+
+                index = cast(value.Str, UP_index)
+                try:
+                    return value.Str(obj.d[index.s])
+                except KeyError:
+                    # TODO: expr.Subscript has no error location
+                    raise error.Expr('dict entry not found', loc.Missing)
+
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
                 if index.tag() != value_e.Str:
@@ -1494,7 +1589,7 @@ class OilEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.InvalidType('expected Dict, List, or Tuple', loc.Missing)
+        raise error.InvalidType('expected Dict or List', loc.Missing)
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> Any # XXX
