@@ -16,14 +16,14 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value_t, value_str
+from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value_t
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.syntax_asdl import loc
 
 from asdl import format as fmt
 from core import alloc
 from core import error
-from core.error import e_usage, e_die
+from core.error import e_usage
 from core import optview
 from core import state
 from mycpp.mylib import log
@@ -38,7 +38,7 @@ from frontend import location
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import iteritems, tagswitch, NewDict, print_stderr
+from mycpp.mylib import iteritems, NewDict, print_stderr
 from osh import word_compile
 
 from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
