@@ -63,6 +63,7 @@ from osh import glob_
 from osh import string_ops
 from osh import word_
 from osh import word_compile
+from ysh import expr_eval
 
 import libc
 
@@ -78,7 +79,6 @@ if TYPE_CHECKING:
     from osh.split import SplitContext
     from osh import prompt
     from osh import sh_expr_eval
-    from ysh import expr_eval
 
 # Flags for _EvalWordToParts and _EvalWordPart (not all are used for both)
 QUOTED = 1 << 0
@@ -225,11 +225,15 @@ def _ValueToPartValue(val, quoted):
             # TODO: Is this correct?
             return part_value.Array(val.d.values())
 
+        elif case(value_e.Eggex):
+            val = cast(value.Eggex, UP_val)
+            s = expr_eval.AsPosixEre(val)  # lazily converts to ERE
+            return part_value.String(s, quoted, not quoted)
+
         elif case(value_e.Obj):
             if mylib.PYTHON:
                 val = cast(value.Obj, UP_val)
 
-                from ysh import expr_eval
                 if isinstance(val.obj, list):
                     # allow "${files[@]}"
                     strs = [expr_eval.Stringify(item) for item in val.obj]
