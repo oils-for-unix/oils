@@ -1667,12 +1667,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         val = cast(value.AssocArray, UP_val)
                         items = val.d.keys()
 
+                    elif case2(value_e.List):
+                        val = cast(value.List, UP_val)
+                        if mylib.PYTHON:
+                            items = self.expr_ev.SpliceValue(val.items, part)
+                        else:
+                            raise AssertionError()
+
                     # TODO: Get rid of this case!  Need to DEFER a lot of oil spec
                     # tests though.
                     elif case2(value_e.Obj):
+                        val = cast(value.Obj, UP_val)
                         if mylib.PYTHON:
-                            val = cast(value.Obj, UP_val)
-                            items = self.expr_ev.SpliceValue(val, part)
+                            items = self.expr_ev.SpliceValue(val.obj, part)
                         else:
                             raise AssertionError()
 

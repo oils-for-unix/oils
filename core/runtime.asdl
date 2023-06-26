@@ -40,8 +40,10 @@ module runtime
   # instances are stored in state.Mem().
   value =
     # A var bound to Undef is different than no binding because of dynamic scope.
-    # It's also our null value.
     Undef
+    # Explicit null for JSON; should be rarely used.  Note: the YSH language
+    # doesn't have an 'undefined' and 'null' like JS, just 'null'.
+  | Null
   | Str(str s)
     # "holes" in the array are represented by None
   | MaybeStrArray(List[str] strs)

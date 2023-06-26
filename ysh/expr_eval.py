@@ -123,7 +123,7 @@ def _PyObjToValue(val):
     # type: (Any) -> value_t
 
     if val is None:
-        return value.Undef
+        return value.Null
 
     elif isinstance(val, bool):
         return value.Bool(val)
@@ -161,6 +161,7 @@ def _PyObjToValue(val):
             else:
                 is_shell_array = False
                 typed_array.append(_PyObjToValue(elem))
+                #typed_array.append(elem)
 
         if is_shell_array:
             return value.MaybeStrArray(shell_array)
@@ -185,6 +186,7 @@ def _PyObjToValue(val):
             else:
                 is_shell_dict = False
                 typed_dict[k] = _PyObjToValue(v)
+                #typed_dict[k] = v
 
         if is_shell_dict:
             return value.AssocArray(shell_dict)
@@ -230,7 +232,10 @@ def _ValueToPyObj(val):
 
     UP_val = val
     with tagswitch(val) as case:
-        if case(value_e.Undef):
+        if case(value_e.Null):
+            return None
+
+        elif case(value_e.Undef):
             return None
 
         elif case(value_e.Bool):
@@ -312,7 +317,10 @@ def _ValuesEqual(left, right):
     UP_right = right
     with tagswitch(left) as case:
         if case(value_e.Undef):
-            return True
+            return True  # there's only one Undef
+
+        if case(value_e.Null):
+            return True  # there's only one Null
 
         elif case(value_e.Bool):
             left = cast(value.Bool, UP_left)
@@ -382,7 +390,7 @@ def _ValuesEqual(left, right):
 
             return True
 
-    raise NotImplementedError()
+    raise NotImplementedError(left)
 
 
 def _ValueContains(needle, haystack):
@@ -455,6 +463,9 @@ def ToBool(val):
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Undef):
+            return False
+
+        elif case(value_e.Null):
             return False
 
         elif case(value_e.Str):
@@ -654,10 +665,10 @@ class OilEvaluator(object):
         else:
             raise AssertionError(part.left)
 
-    def SpliceValue(self, val, part):
-        # type: (value.Obj, word_part.Splice) -> List[Any]
+    def SpliceValue(self, py_val, part):
+        # type: (Any, word_part.Splice) -> List[Any]
         try:
-            items = [Stringify(item, word_part=part) for item in val.obj]
+            items = [Stringify(item, word_part=part) for item in py_val]
         except TypeError as e:  # TypeError if it isn't iterable
             raise error.Expr('Type error in expression: %s' % str(e),
                              loc.WordPart(part))

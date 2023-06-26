@@ -137,6 +137,18 @@ if mylib.PYTHON:
         TODO: Move this to Mem and combine with LookupVar in ysh/expr_eval.py.
         They are opposites.
         """
+        if 0:
+            if isinstance(py_val, int):
+                return value.Obj(py_val)
+            if isinstance(py_val, float):
+                return value.Obj(py_val)
+            # TODO: remove this
+            if isinstance(py_val, value.Eggex):
+                return value.Obj(py_val)
+
+            from ysh import expr_eval
+            return expr_eval._PyObjToValue(py_val)
+
         # TODO:
         # - inspect list
         #   - if every member is a str, then convert it to value.MaybeStrArray

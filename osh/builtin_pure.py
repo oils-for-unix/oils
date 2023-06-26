@@ -16,7 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value_t
+from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value_t, value_str
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.syntax_asdl import loc
 
@@ -858,21 +858,29 @@ if mylib.PYTHON:
                         UP_val = val
                         with tagswitch(val) as case:
                             # similar to LookupVar in ysh/expr_eval.py
-                            if case(value_e.Str):
+                            if case(value_e.Null):
+                                obj = None  # type: Any
+                            elif case(value_e.Str):
                                 val = cast(value.Str, UP_val)
-                                obj = val.s  # type: Any
+                                obj = val.s
                             elif case(value_e.MaybeStrArray):
                                 val = cast(value.MaybeStrArray, UP_val)
                                 obj = val.strs
                             elif case(value_e.AssocArray):
                                 val = cast(value.AssocArray, UP_val)
                                 obj = val.d
+                            elif case(value_e.List):
+                                val = cast(value.List, UP_val)
+                                obj = val.items
+                            elif case(value_e.Dict):
+                                val = cast(value.Dict, UP_val)
+                                obj = val.d
                             elif case(value_e.Obj):
                                 val = cast(value.Obj, UP_val)
                                 obj = val.obj
                             else:
-                                e_die("Can't serialize value of type %d" %
-                                      val.tag())
+                                e_die("Can't serialize value of type %s" %
+                                      value_str(val.tag()))
                         attrs[name] = obj
 
                     result['attrs'] = attrs
