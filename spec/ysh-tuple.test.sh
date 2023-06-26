@@ -1,4 +1,4 @@
-#### tuple literal doesn't conflict with ((
+#### tuple literal and (( conflict
 if ((0,0) < (0,1)) { echo yes }
 ## STDOUT:
 yes

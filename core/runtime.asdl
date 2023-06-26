@@ -57,8 +57,6 @@ module runtime
 
     -- TODO: remove MaybeStrArray in favor of this
   | List(List[value] items)
-    # Tuples are like lists, but immutable.
-  | Tuple(List[value] items)
 
     -- TODO: remove AssocArray in favor of this
   | Dict(Dict[str, value] d)

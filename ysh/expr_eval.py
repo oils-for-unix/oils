@@ -154,7 +154,7 @@ def _PyObjToValue(val):
         return value.Dict(d)
 
     elif isinstance(val, tuple):
-        return value.Tuple([
+        return value.List([
             elem if isinstance(elem, value_t) else _PyObjToValue(elem)
             for elem in val
         ])
@@ -222,10 +222,6 @@ def _ValueToPyObj(val):
         elif case(value_e.List):
             val = cast(value.List, UP_val)
             return list(map(_ValueToPyObj, val.items))
-
-        elif case(value_e.Tuple):
-            val = cast(value.Tuple, UP_val)
-            return tuple(map(_ValueToPyObj, val.items))
 
         elif case(value_e.AssocArray):
             val = cast(value.AssocArray, UP_val)
@@ -455,10 +451,6 @@ def ToBool(val):
 
         elif case(value_e.List):
             val = cast(value.List, UP_val)
-            return len(val.items) > 0
-
-        elif case(value_e.Tuple):
-            val = cast(value.Tuple, UP_val)
             return len(val.items) > 0
 
         elif case(value_e.Dict):
@@ -1308,7 +1300,7 @@ class OilEvaluator(object):
 
     def _EvalTuple(self, node):
         # type: (expr.Tuple) -> value_t
-        return value.Tuple(
+        return value.List(
             [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
     def _EvalDict(self, node):
@@ -1437,49 +1429,6 @@ class OilEvaluator(object):
                             else:
                                 # l[:] == l
                                 return value.List(list(obj.items))
-
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
-
-                    elif case2(value_e.Int):
-                        index = cast(value.Int, index)
-                        try:
-                            return obj.items[index.i]
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
-
-                    else:
-                        raise error.InvalidType('expected Slice or Int',
-                                                loc.Missing)
-
-            elif case(value_e.Tuple):
-                obj = cast(value.Tuple, UP_obj)
-                with tagswitch(index) as case2:
-                    if case2(value_e.Slice):
-                        index = cast(value.Slice, index)
-                        step = 1
-                        if index.step:
-                            step = index.step.i
-
-                        try:
-                            if index.lower and index.upper:
-                                return value.Tuple(
-                                    obj.items[index.lower.i:index.upper.
-                                              i:step])
-
-                            elif index.lower:
-                                return value.Tuple(
-                                    obj.items[index.lower.i::step])
-
-                            elif index.upper:
-                                return value.Tuple(
-                                    obj.items[:index.upper.i:step])
-
-                            else:
-                                # l[:] == l
-                                return obj
 
                         except IndexError:
                             # TODO: expr.Subscript has no error location
