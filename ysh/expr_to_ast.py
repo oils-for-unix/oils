@@ -302,8 +302,7 @@ class Transformer(object):
 
         # x, and (x,) aren't allowed
         if n == 2:
-            p_die('Write singleton tuples with tup(), not a trailing comma',
-                  parent.GetChild(1).tok)
+            p_die('Invalid trailing comma', parent.GetChild(1).tok)
 
         elts = []  # type: List[expr_t]
         for i in xrange(0, n, 2):  # skip commas

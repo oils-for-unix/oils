@@ -855,33 +855,10 @@ if mylib.PYTHON:
                             continue
 
                         val = cell.val
-                        UP_val = val
-                        with tagswitch(val) as case:
-                            # similar to LookupVar in ysh/expr_eval.py
-                            if case(value_e.Null):
-                                obj = None  # type: Any
-                            elif case(value_e.Str):
-                                val = cast(value.Str, UP_val)
-                                obj = val.s
-                            elif case(value_e.MaybeStrArray):
-                                val = cast(value.MaybeStrArray, UP_val)
-                                obj = val.strs
-                            elif case(value_e.AssocArray):
-                                val = cast(value.AssocArray, UP_val)
-                                obj = val.d
-                            elif case(value_e.List):
-                                val = cast(value.List, UP_val)
-                                obj = val.items
-                            elif case(value_e.Dict):
-                                val = cast(value.Dict, UP_val)
-                                obj = val.d
-                            elif case(value_e.Obj):
-                                val = cast(value.Obj, UP_val)
-                                obj = val.obj
-                            else:
-                                e_die("Can't serialize value of type %s" %
-                                      value_str(val.tag()))
-                        attrs[name] = obj
+
+                        from ysh import expr_eval
+                        py_obj = expr_eval._ValueToPyObj(val)
+                        attrs[name] = py_obj
 
                     result['attrs'] = attrs
 
@@ -890,9 +867,13 @@ if mylib.PYTHON:
     _HAY_ACTION_ERROR = "builtin expects 'define', 'reset' or 'pp'"
 
     class Hay(vm._Builtin):
-        """Hay define -- package user hay define -- user/foo user/bar  # second
-        level hay pp hay reset."""
+        """hay builtin
 
+        hay define -- package user
+        hay define -- user/foo user/bar  # second level
+        hay pp
+        hay reset
+        """
         def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
             # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
             self.hay_state = hay_state

@@ -235,11 +235,6 @@ def Init(mem):
     # For compositionality and testing
     SetGlobalFunc(mem, 'identity', lambda x: x)
 
-    # Singleton tuple!
-    # TODO: remove this and the trailing comma message for 3,
-    # A trailing comma can just be a syntax error?
-    SetGlobalFunc(mem, 'tup', lambda x: (x,))
-
     SetGlobalFunc(mem, 'len', len)
     SetGlobalFunc(mem, 'max', max)
     SetGlobalFunc(mem, 'min', min)

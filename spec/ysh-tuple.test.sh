@@ -11,16 +11,15 @@ echo length=$[len(t)]
 length=0
 ## END
 
-#### Singleton tuple
-var t = tup(42)
-echo "length = $[len(t)]"
-echo "t[0] = $[t[0]]"
+#### Singleton tuple should be empty list
 
-# NOT ALLOWED.  Use tup() instead.
+var t = [42]
+echo len=$[len(t)]
+
 #var t1 = 1,
-var t2 = (1,)
+var t2 = (42,)
+
 ## status: 2
 ## STDOUT:
-length = 1
-t[0] = 42
+len=1
 ## END

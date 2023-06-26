@@ -394,19 +394,6 @@ less
 great
 ## END
 
-#### Tuples
-var zero = ()
-var one = tup(42)
-var two = (1,2)
-echo $[len(zero)]
-echo $[len(one)]
-echo $[len(two)]
-## STDOUT:
-0
-1
-2
-## END
-
 #### in, not in
 var d = [1,2,3]
 var b = 1 in d
@@ -543,7 +530,7 @@ echo $y
 (Int)   1
 ## END
 
-#### multiline strings, list, tuples, etc.
+#### multiline strings, list, tuple syntax for list, etc.
 var dq = "
 dq
 2
