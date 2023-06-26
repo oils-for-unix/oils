@@ -100,7 +100,7 @@ def Stringify(py_val, word_part=None):
     if isinstance(py_val, value_t):
         if py_val.tag() == value_e.Eggex:
             eggex = cast(value.Eggex, py_val)
-            return AsPosixEre(eggex)
+            return regex_translate.AsPosixEre(eggex)
         else:
             py_val = _ValueToPyObj(py_val)
 
@@ -442,17 +442,6 @@ def _ValueContains(needle, haystack):
     return False
 
 
-def AsPosixEre(eggex):
-    # type: (value.Eggex) -> str
-    if eggex.as_ere is not None:
-        return eggex.as_ere
-
-    parts = []  # type: List[str]
-    regex_translate.AsPosixEre(eggex.expr, parts)
-    eggex.as_ere = ''.join(parts)
-    return eggex.as_ere
-
-
 def ToBool(val):
     # type: (value_t) -> bool
     """Convert any value to a boolean.
@@ -588,7 +577,7 @@ class OilEvaluator(object):
                 right_s = right.s
             elif case(value_e.Eggex):
                 right = cast(value.Eggex, UP_right)
-                right_s = AsPosixEre(right)
+                right_s = regex_translate.AsPosixEre(right)
             else:
                 raise RuntimeError(
                     "RHS of ~ should be string or Regex (got %s)" %

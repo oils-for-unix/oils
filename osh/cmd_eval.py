@@ -138,11 +138,6 @@ if mylib.PYTHON:
         They are opposites.
         """
         if 0:
-            if isinstance(py_val, int):
-                return value.Obj(py_val)
-            if isinstance(py_val, float):
-                return value.Obj(py_val)
-
             from ysh import expr_eval
             return expr_eval._PyObjToValue(py_val)
 

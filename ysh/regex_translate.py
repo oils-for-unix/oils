@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     re_repeat,
     re_repeat_e,
 )
+from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.id_kind_asdl import Id
 
 from core.error import e_die
@@ -153,7 +154,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
             raise AssertionError(term)
 
 
-def AsPosixEre(node, parts):
+def _AsPosixEre(node, parts):
     # type: (re_t, List[str]) -> None
     """Translate an Oil regex to a POSIX ERE.
 
@@ -190,7 +191,7 @@ def AsPosixEre(node, parts):
     if tag == re_e.Seq:
         node = cast(re.Seq, UP_node)
         for c in node.children:
-            AsPosixEre(c, parts)
+            _AsPosixEre(c, parts)
         return
 
     if tag == re_e.Alt:
@@ -198,7 +199,7 @@ def AsPosixEre(node, parts):
         for i, c in enumerate(node.children):
             if i != 0:
                 parts.append('|')
-            AsPosixEre(c, parts)
+            _AsPosixEre(c, parts)
         return
 
     if tag == re_e.Repeat:
@@ -213,7 +214,7 @@ def AsPosixEre(node, parts):
                     "POSIX EREs don't have groups without capture, so this node "
                     "needs () around it.", child.blame_tok)
 
-        AsPosixEre(node.child, parts)
+        _AsPosixEre(node.child, parts)
         op = node.op
         op_tag = op.tag()
         UP_op = op
@@ -249,7 +250,7 @@ def AsPosixEre(node, parts):
     if tag in (re_e.Group, re_e.Capture):
         node = cast(re.Group, UP_node)
         parts.append('(')
-        AsPosixEre(node.child, parts)
+        _AsPosixEre(node.child, parts)
         parts.append(')')
         return
 
@@ -313,3 +314,14 @@ def AsPosixEre(node, parts):
         return
 
     raise NotImplementedError(tag)
+
+
+def AsPosixEre(eggex):
+    # type: (value.Eggex) -> str
+    if eggex.as_ere is not None:
+        return eggex.as_ere
+
+    parts = []  # type: List[str]
+    _AsPosixEre(eggex.expr, parts)
+    eggex.as_ere = ''.join(parts)
+    return eggex.as_ere

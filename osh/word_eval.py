@@ -64,6 +64,7 @@ from osh import string_ops
 from osh import word_
 from osh import word_compile
 from ysh import expr_eval
+from ysh import regex_translate
 
 import libc
 
@@ -212,6 +213,25 @@ def _ValueToPartValue(val, quoted):
             # but we have to append to the empty string.
             return part_value.String('', quoted, not quoted)
 
+        elif case(value_e.Bool):
+            val = cast(value.Bool, UP_val)
+            s = 'true' if val.b else 'false'  # Use JSON spelling
+            return part_value.String(s, quoted, not quoted)
+
+        elif case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            s = str(val.i)
+            return part_value.String(s, quoted, not quoted)
+
+        elif case(value_e.Float):
+            val = cast(value.Float, UP_val)
+            # TODO: what precision does this have?
+            # The default could be like awk or Python, and then we also allow
+            # ${myfloat %.3f} and more.
+            # Python 3 seems to give a few more digits than Python 2 for str(1.0/3)
+            s = str(val.f)
+            return part_value.String(s, quoted, not quoted)
+
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
             return part_value.String(val.s, quoted, not quoted)
@@ -227,7 +247,7 @@ def _ValueToPartValue(val, quoted):
 
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
-            s = expr_eval.AsPosixEre(val)  # lazily converts to ERE
+            s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
             return part_value.String(s, quoted, not quoted)
 
         elif case(value_e.Obj):
