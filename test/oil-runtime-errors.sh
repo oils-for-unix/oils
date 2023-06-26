@@ -257,8 +257,8 @@ EOF
   _should-run ' = / [ \u{0}-\u{1} ] /'
 
   # Too high
-  _error-case ' = / [ \u{80} ] /'
-  _error-case ' = / [ \u{7f}-\u{80} ] /'
+  _error-case 'var x =/ [ \u{80} ] /; echo $x'
+  _error-case 'var x = / [ \u{7f}-\u{80} ] /; echo $x'
 
   # Now test special characters
   _should-run "$(cat <<'EOF'
@@ -267,9 +267,9 @@ EOF
 )"
 
   # Special chars in ranges are disallowed for simplicity
-  _error-case " = / [ a-'^' ] /"
-  _error-case " = / [ '-'-z ] /"
-  _error-case " = / [ ']'-z ] /"
+  _error-case "var x = / [ a-'^' ] /; echo \$x"
+  _error-case "var x = / [ '-'-z ] /; echo \$x"
+  _error-case "var x = / [ ']'-z ] /; echo \$x"
 
   # Hm this runs but will cause a syntax error.  Could disallow it.
   # _should-run ' = / ["^"] /'

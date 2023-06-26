@@ -85,5 +85,4 @@ ysh/expr_eval.py
 ysh/expr_parse.py
 ysh/expr_to_ast.py
 ysh/funcs.py
-ysh/objects.py
 ysh/regex_translate.py

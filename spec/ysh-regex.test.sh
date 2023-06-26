@@ -457,7 +457,13 @@ no
 #### ERE can't express higher Unicode escapes
 shopt -s oil:all
 var pat2 = /[ \u{00} - \u{ff} ]/;
+
+# This causes an error
+echo $pat2
+
+# This just prints it
 = pat2
+
 var pat1 = /[ \u{ff} ]/;
 
 echo $pat1 | od -A n -t x1

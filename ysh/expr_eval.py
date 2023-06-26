@@ -55,7 +55,7 @@ from core import vm
 from frontend import consts
 from frontend import match
 from frontend import location
-from ysh import objects, regex_translate
+from ysh import regex_translate
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, tagswitch
@@ -98,14 +98,14 @@ def Stringify(py_val, word_part=None):
     # XXX: once verything is typed this should go away and this function should
     # use tagswitch
     if isinstance(py_val, value_t):
-        py_val = _ValueToPyObj(py_val)
+        if py_val.tag() == value_e.Eggex:
+            eggex = cast(value.Eggex, py_val)
+            return AsPosixEre(eggex)
+        else:
+            py_val = _ValueToPyObj(py_val)
 
     if isinstance(py_val, bool):
         return 'true' if py_val else 'false'  # Use JSON spelling
-
-    if isinstance(py_val,
-                  objects.Regex):  # TODO: This should be a variant of value_t?
-        return py_val.AsPosixEre()
 
     if not isinstance(py_val, (int, float, str)):
         raise error.Expr(
@@ -172,12 +172,8 @@ def _PyObjToValue(val):
 
         return s
 
-    elif isinstance(val, objects.Regex):
-        eggex = value.Eggex(val.regex, None)
-        if val.as_ere is not None:
-            eggex.as_ere = val.as_ere
-
-        return eggex
+    elif isinstance(val, value.Eggex):
+        return val  # passthrough
 
     elif isinstance(val, value.Block):
         return val  # passthrough
@@ -250,8 +246,7 @@ def _ValueToPyObj(val):
             return slice(None, None, None)
 
         elif case(value_e.Eggex):
-            val = cast(value.Eggex, UP_val)
-            return objects.Regex(val.expr)
+            return val  # passthrough
 
         elif case(value_e.Func):
             val = cast(value.Func, UP_val)
@@ -1851,10 +1846,10 @@ class OilEvaluator(object):
                 obj = self.LookupVar(node.name.tval, node.name)
                 if isinstance(obj, str):
                     to_splice = re.LiteralChars(obj, node.name)  # type: re_t
-                elif isinstance(obj, objects.Regex):
+                elif isinstance(obj, value.Eggex):
                     # Note: we only splice the regex, and ignore flags.
                     # Should we warn about this?
-                    to_splice = obj.regex
+                    to_splice = obj.expr
                 else:
                     e_die(
                         "Can't splice object of type %r into regex" %
