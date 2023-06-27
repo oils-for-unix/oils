@@ -160,7 +160,8 @@ if mylib.PYTHON:
             val = value.AssocArray(py_val)
 
         else:
-            val = value.Obj(py_val)
+            #val = value.Obj(py_val)
+            val = expr_eval._PyObjToValue(py_val)
 
         return val
 

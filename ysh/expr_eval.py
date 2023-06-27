@@ -1792,7 +1792,7 @@ class OilEvaluator(object):
                     except StopIteration:
                         break
                     self.mem.SetValue(location.LName(iter_name),
-                                      value.Obj(loop_val), scope_e.LocalOnly)
+                                      _PyObjToValue(loop_val), scope_e.LocalOnly)
 
                     if comp.cond:
                         b = self._EvalExpr(comp.cond)
