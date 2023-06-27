@@ -89,7 +89,8 @@ class EvalHay(object):
             UP_block = block
             block = cast(value.Block, UP_block)
 
-            with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
+            with state.ctx_HayEval(self.hay_state, self.mutable_opts,
+                                   self.mem):
                 unused = self.cmd_ev.EvalBlock(block.body)
 
             return self.hay_state.Result()

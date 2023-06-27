@@ -226,7 +226,7 @@ def _PyObjToValue(val):
     elif isinstance(val, value.Block):
         return val  # passthrough
 
-    elif callable(val):
+    elif isinstance(val, vm._Func) or callable(val):
         return value.Func(val)
 
     else:
@@ -1442,7 +1442,12 @@ class OilEvaluator(object):
                 f = func.f
                 if isinstance(f, vm._Func):  # typed
                     pos_args, named_args = self.EvalArgList2(node.args)
-                    return f.Call(pos_args, named_args)
+                    #log('pos_args %s', pos_args)
+
+                    ret = f.Call(pos_args, named_args)
+
+                    #log('ret %s', ret)
+                    return ret
                 else:
                     u_pos_args, u_named_args = self.EvalArgList(node.args)
                     #log('ARGS %s', u_pos_args)

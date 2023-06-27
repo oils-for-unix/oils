@@ -3,14 +3,15 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, scope_e
+from _devbuild.gen.runtime_asdl import value, value_e, value_t, scope_e
 from _devbuild.gen.syntax_asdl import loc, sh_lhs_expr
 from core import error
-from mycpp.mylib import log
+from core import vm
+from mycpp.mylib import log, tagswitch
 from frontend import lexer
 from ysh import expr_eval
 
-from typing import Callable, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Callable, Union, cast
 if TYPE_CHECKING:
     from core import state
     from osh import glob_
@@ -23,7 +24,7 @@ _ = log
 def SetGlobalFunc(mem, name, func):
     # type: (state.Mem, str, Union[Callable, type]) -> None
     """Used by bin/oil.py to set split(), etc."""
-    assert callable(func), func
+    assert isinstance(func, vm._Func) or callable(func), func
 
     # TODO: Fix this location info
     left = lexer.DummyToken(Id.Undefined_Tok, '')
@@ -54,9 +55,38 @@ def _Maybe(obj):
         return []
 
 
-def _Append(L, arg):
-    #print(L, arg)
+def _AppendUntyped(L, arg):
     L.append(arg)
+
+
+class _Append(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        li = pos_args[0]
+        UP_li = li
+
+        to_append = pos_args[1]
+
+        with tagswitch(li) as case:
+            if case(value_e.MaybeStrArray):
+                li = cast(value.MaybeStrArray, UP_li)
+                li.strs.append(to_append)
+
+            elif case(value_e.List):
+                li = cast(value.List, UP_li)
+                li.items.append(to_append)
+            else:
+                raise error.InvalidType('append() expected List', loc.Missing)
+
+        # Equivalentto no return value?
+        return value.Null
 
 
 def _Extend(L, arg):
@@ -123,7 +153,8 @@ class _Shvar_get(object):
 
     def __call__(self, *args):
         name = args[0]
-        return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic, loc.Missing)
+        return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
+                                   loc.Missing)
 
 
 class _VmEval(object):
@@ -266,7 +297,12 @@ def Init(mem):
     #
 
     # TODO: Universal function call syntax can change this?
-    SetGlobalFunc(mem, 'append', _Append)
+
+    if 0:
+        SetGlobalFunc(mem, 'append', _Append())
+    else:
+        SetGlobalFunc(mem, 'append', _AppendUntyped)
+
     SetGlobalFunc(mem, 'extend', _Extend)
     SetGlobalFunc(mem, 'pop', _Pop)
     # count, index, insert, remove
