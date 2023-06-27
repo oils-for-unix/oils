@@ -231,20 +231,6 @@ def _ValueToPartValue(val, quoted):
             s = val_ops.Stringify(val)
             return part_value.String(s, quoted, not quoted)
 
-        elif case(value_e.Obj):
-            if mylib.PYTHON:
-                val = cast(value.Obj, UP_val)
-
-                if isinstance(val.obj, list):
-                    # allow "${files[@]}"
-                    strs = [expr_eval.Stringify(item) for item in val.obj]
-                    return part_value.Array(strs)
-                else:
-                    s = expr_eval.Stringify(val.obj)
-                    return part_value.String(s, quoted, not quoted)
-            # Not in C++
-            raise AssertionError()
-
         else:
             #raise AssertionError(val)
             raise error.InvalidType(
@@ -745,15 +731,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = cast(value.AssocArray, UP_val)
                 length = len(val.d)
 
-            elif case(value_e.Obj):
-                val = cast(value.Obj, UP_val)
-                if mylib.PYTHON:
-                    if isinstance(val.obj, list):
-                        length = len(val.obj)
-                    else:
-                        raise AssertionError(val)
-                else:
-                    length = -1   # TODO: remove this
+            else:
+                raise error.InvalidType2(val, "Can't take length", loc.Missing)
 
         return value.Str(str(length))
 
@@ -1676,15 +1655,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         val = cast(value.List, UP_val)
                         if mylib.PYTHON:
                             items = self.expr_ev.SpliceValue(val.items, part)
-                        else:
-                            raise AssertionError()
-
-                    # TODO: Get rid of this case!  Need to DEFER a lot of oil spec
-                    # tests though.
-                    elif case2(value_e.Obj):
-                        val = cast(value.Obj, UP_val)
-                        if mylib.PYTHON:
-                            items = self.expr_ev.SpliceValue(val.obj, part)
                         else:
                             raise AssertionError()
 

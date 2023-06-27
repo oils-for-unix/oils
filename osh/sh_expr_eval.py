@@ -431,14 +431,6 @@ class ArithEvaluator(object):
                     return self._StringToInteger(
                         val.s, loc.Arith(blame))  # calls e_strict
 
-                elif case(value_e.Obj):
-                    # Note: this handles var x = 42; echo $(( x > 2 )).
-                    if mylib.PYTHON:
-                        val = cast(value.Obj, UP_val)
-                        if isinstance(val.obj, int):
-                            return val.obj
-                    raise AssertionError()  # not in C++
-
         except error.Strict as e:
             if self.exec_opts.strict_arith():
                 raise

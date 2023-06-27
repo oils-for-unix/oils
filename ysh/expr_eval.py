@@ -308,10 +308,6 @@ def _ValueToPyObj(val):
         elif case(value_e.Block):
             return val  # passthrough
 
-        elif case(value_e.Obj):
-            val = cast(value.Obj, UP_val)
-            return val.obj
-
         else:
             raise error.Expr(
                 'Trying to convert unexpected type to pyobj: %r' % val,
@@ -499,10 +495,6 @@ def ToBool(val):
         elif case(value_e.Dict):
             val = cast(value.Dict, UP_val)
             return len(val.d) > 0
-
-        elif case(value_e.Obj):
-            val = cast(value.Obj, UP_val)
-            return bool(val.obj)
 
         else:
             return True  # all other types are Truthy

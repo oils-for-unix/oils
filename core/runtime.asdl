@@ -77,8 +77,6 @@ module runtime
     # and we don't need to be able to recover their pyobj representations. 
   | Slice(IntBox? lower, IntBox? upper, IntBox? step)
 
-    # Hack for a PyObject.  # TODO: Remove
-  | Obj(any obj)
   | Func(any f)
   | BoundFunc(value me, FuncBox f)
 

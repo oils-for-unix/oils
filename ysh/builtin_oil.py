@@ -158,13 +158,6 @@ class Append(_Builtin):
                 val = cast(value.MaybeStrArray, UP_val)
                 val.strs.extend(arg_r.Rest())
                 ok = True
-            elif case(value_e.Obj):
-                # shouldn't be necessary once the array types are consolidated
-                if mylib.PYTHON:
-                    val = cast(value.Obj, UP_val)
-                    if isinstance(val.obj, list):
-                        val.obj.extend(arg_r.Rest())
-                        ok = True
         if not ok:
             self.errfmt.Print_("%r isn't an array" % var_name,
                                blame_loc=var_loc)
