@@ -9,6 +9,7 @@ from _devbuild.gen.syntax_asdl import loc
 
 from core import error
 from mycpp.mylib import tagswitch
+from ysh import regex_translate
 
 from typing import cast, Optional
 
@@ -66,6 +67,7 @@ def Stringify(val):
     @[x]    expression splice - each element is stringified
     @x      splice value
     """
+    UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Null):
             s = 'null'  # JSON spelling
