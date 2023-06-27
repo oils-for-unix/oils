@@ -1341,6 +1341,11 @@ class OilEvaluator(object):
         return value.List(
             [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
+    def _EvalTupleSyntax(self, node):
+        # type: (expr.Tuple) -> value_t
+        return value.List(
+            [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
+
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
         # NOTE: some keys are expr.Const
@@ -1711,6 +1716,10 @@ class OilEvaluator(object):
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
                 return _ValueToPyObj(self._EvalList(node))
+
+            elif case(expr_e.Tuple):
+                node = cast(expr.Tuple, UP_node)
+                return _ValueToPyObj(self._EvalTupleSyntax(node))
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)
