@@ -325,35 +325,35 @@ set +o errexit
 
 run '
 var x = $(false)
-echo inside=$?
+echo inside1=$?
 '
-echo outside=$?
+echo outside1=$?
 
 run '
 setvar x = $(false)
-echo inside=$?
+echo inside2=$?
 '
-echo outside=$?
+echo outside2=$?
 
 # Argument list
 run '
 _ split( $(false) )
-echo inside=$?
+echo inside3=$?
 '
-echo outside=$?
+echo outside3=$?
 
 # Place expression
 run '
 var d = {}
 setvar d[ $(false) ] = 42
-echo inside=$?
+echo inside4=$?
 '
-echo outside=$?
+echo outside4=$?
 
 ## STDOUT:
-outside=1
-outside=1
-outside=1
-outside=1
+outside1=1
+outside2=1
+outside3=1
+outside4=1
 ## END
 
