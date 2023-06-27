@@ -973,28 +973,51 @@ class CommandEvaluator(object):
                                 lvals_.append(lval_)
                                 py_vals.append(py_val)
 
-                        # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
                         for UP_lval_, py_val in zip(lvals_, py_vals):
                             tag = UP_lval_.tag()
                             if tag == lvalue_e.ObjIndex:
                                 # setvar mylist[0] = 42
                                 # setvar mydict['key'] = 42
                                 lval_ = cast(lvalue.ObjIndex, UP_lval_)
-                                #obj = lval_.obj
-                                #with tagswitch(lval_) as case:
-                                #    if case(value_e.MaybeStrArray):
-                                #        val
-                                #    if case(value_e.MaybeStrArray):
-                                lval_.obj[lval_.index] = py_val
+
+                                obj = lval_.obj
+                                UP_obj = obj
+                                with tagswitch(obj) as case:
+                                    if case(value_e.MaybeStrArray):
+                                        obj = cast(value.MaybeStrArray, UP_obj)
+                                        # index must be value.Int
+                                        obj.strs[lval_.index.i] = py_val
+
+                                    elif case(value_e.List):
+                                        obj = cast(value.List, UP_obj)
+                                        # index must be value.Int
+                                        obj.items[lval_.index.i] = py_val
+
+                                    elif case(value_e.AssocArray):
+                                        obj = cast(value.AssocArray, UP_obj)
+                                        # index must be value.Str
+                                        obj.d[lval_.index.s] = py_val
+
+                                    elif case(value_e.Dict):
+                                        obj = cast(value.Dict, UP_obj)
+                                        # index must be value.Str
+                                        obj.d[lval_.index.s] = py_val
+
+                                    else:
+                                        raise error.InvalidType2(obj,
+                                                "obj[index] expected List or Dict",
+                                                loc.Missing)
+
+                                #lval_.obj[lval_.index] = py_val
                                 if node.keyword.id == Id.KW_SetRef:
                                     e_die('setref obj[index] not implemented')
 
-                            elif tag == lvalue_e.ObjAttr:
-                                # setvar mydict.key = 42
-                                lval_ = cast(lvalue.ObjAttr, UP_lval_)
-                                setattr(lval_.obj, lval_.attr, py_val)
-                                if node.keyword.id == Id.KW_SetRef:
-                                    e_die('setref obj.attr not implemented')
+                            #elif tag == lvalue_e.ObjAttr:
+                            #    # setvar mydict.key = 42
+                            #    lval_ = cast(lvalue.ObjAttr, UP_lval_)
+                            #    setattr(lval_.obj, lval_.attr, py_val)
+                            #    if node.keyword.id == Id.KW_SetRef:
+                            #        e_die('setref obj.attr not implemented')
 
                             else:
                                 val = _PyObjectToVal(py_val)

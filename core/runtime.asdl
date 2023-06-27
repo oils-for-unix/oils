@@ -127,8 +127,8 @@ module runtime
   | Keyed(str name, str key, loc blame_loc)
 
     # Oil variants
-  | ObjIndex(any obj, any index)
-  | ObjAttr(any obj, str attr)
+  | ObjIndex(value obj, value index)
+  #| ObjAttr(value obj, str attr)
 
   redirect_arg =
     Path(str filename)

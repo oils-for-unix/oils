@@ -630,20 +630,24 @@ class OilEvaluator(object):
 
             elif case(place_expr_e.Subscript):
                 place = cast(Subscript, UP_place)
+                # setvar mylist[0] = 42
+                # setvar mydict['key'] = 42
 
-                obj = self.EvalExpr(place.obj, loc.Missing)
-                index = self.EvalExpr(place.index, loc.Missing)
-                return lvalue.ObjIndex(obj, index)
+                lval = self._EvalExpr(place.obj)
+                index = self._EvalExpr(place.index)
+                return lvalue.ObjIndex(lval, index)
 
             elif case(place_expr_e.Attribute):
                 place = cast(Attribute, UP_place)
+                # setvar mydict.key = 42
 
-                obj = self.EvalExpr(place.obj, loc.Missing)
+                lval = self._EvalExpr(place.obj)
                 if place.op.id == Id.Expr_Dot:
-                    attr = place.attr.tval
-                    return lvalue.ObjIndex(obj, attr)
+                    attr = value.Str(place.attr.tval)
+                    return lvalue.ObjIndex(lval, attr)
                 else:
-                    return lvalue.ObjAttr(obj, place.attr.tval)
+                    raise AssertionError()
+                    #return lvalue.ObjAttr(lval, place.attr.tval)
 
             else:
                 raise NotImplementedError(place)
