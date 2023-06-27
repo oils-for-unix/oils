@@ -66,7 +66,31 @@ def Stringify(val):
     @[x]    expression splice - each element is stringified
     @x      splice value
     """
-    pass
+    with tagswitch(val) as case:
+        if case(value_e.Null):
+            s = 'null'  # JSON spelling
+
+        elif case(value_e.Bool):
+            val = cast(value.Bool, UP_val)
+            s = 'true' if val.b else 'false'  # JSON spelling
+
+        elif case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            s = str(val.i)  # Decimal '42', the only sensible representation
+
+        elif case(value_e.Float):
+            val = cast(value.Float, UP_val)
+            # TODO: what precision does this have?
+            # The default could be like awk or Python, and then we also allow
+            # ${myfloat %.3f} and more.
+            # Python 3 seems to give a few more digits than Python 2 for str(1.0/3)
+            s = str(val.f)
+
+        elif case(value_e.Eggex):
+            val = cast(value.Eggex, UP_val)
+            s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
+
+    return s
 
 
 def ToShellArray(val):
