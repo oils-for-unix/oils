@@ -46,6 +46,7 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
+    value_str,
     IntBox,
 )
 from core import error
@@ -58,6 +59,7 @@ from frontend import location
 from ysh import regex_translate
 from osh import braces
 from osh import word_compile
+from mycpp import mylib
 from mycpp.mylib import log, NewDict, tagswitch
 
 import libc
@@ -73,6 +75,7 @@ if TYPE_CHECKING:
     from osh import split
 
 _ = log
+
 
 def LookupVar2(mem, var_name, which_scopes, var_loc):
     # type: (Mem, str, scope_t, loc_t) -> value_t
@@ -1509,13 +1512,11 @@ class OilEvaluator(object):
                         try:
                             if index.lower and index.upper:
                                 return value.MaybeStrArray(
-                                    obj.strs[index.lower.i:index.upper.
-                                              i:step])
+                                    obj.strs[index.lower.i:index.upper.i:step])
 
                             elif index.lower:
                                 return value.MaybeStrArray(
-                                    obj.strs[index.lower.i:len(obj.strs
-                                                                ):step])
+                                    obj.strs[index.lower.i:len(obj.strs):step])
 
                             elif index.upper:
                                 return value.MaybeStrArray(
@@ -1538,8 +1539,9 @@ class OilEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType('MaybeStrArray subscript expected Slice or Int',
-                                                loc.Missing)
+                        raise error.InvalidType(
+                            'MaybeStrArray subscript expected Slice or Int',
+                            loc.Missing)
 
             elif case(value_e.Str):
                 obj = cast(value.Str, UP_obj)
@@ -1584,8 +1586,8 @@ class OilEvaluator(object):
             elif case(value_e.AssocArray):
                 obj = cast(value.AssocArray, UP_obj)
                 if index.tag() != value_e.Str:
-                    raise error.InvalidType('expected String index for AssocArray',
-                                            loc.Missing)
+                    raise error.InvalidType(
+                        'expected String index for AssocArray', loc.Missing)
 
                 index = cast(value.Str, UP_index)
                 try:
@@ -1610,20 +1612,43 @@ class OilEvaluator(object):
         raise error.InvalidType('expected Dict or List', loc.Missing)
 
     def _EvalAttribute(self, node):
-        # type: (Attribute) -> Any # XXX
-        o = self._EvalExpr(node.obj)
+        # type: (Attribute) -> value_t
+
+        o = _PyObjToValue(self._EvalExpr(node.obj))
+        UP_o = o
+
         id_ = node.op.id
         if id_ == Id.Expr_RArrow:
-            # Used for s->startswith(x)
             name = node.attr.tval
-            return getattr(o, name)
+            with tagswitch(o) as case:
+                if case(value_e.Str):
+                    o = cast(value.Str, UP_o)
+                    if mylib.PYTHON:
+                        method = getattr(o.s, name)
+                        return value.Func(method)
+                else:
+                    raise error.InvalidType('Method %r' % name, loc.Missing)
 
         if id_ == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval
-            try:
-                result = o[name]
-            except KeyError:
-                raise error.Expr('dict entry not found', node.op)
+            with tagswitch(o) as case:
+                if case(value_e.Dict):
+                    o = cast(value.Dict, UP_o)
+                    try:
+                        result = o.d[name]
+                    except KeyError:
+                        raise error.Expr('dict entry not found', node.op)
+
+                elif case(value_e.AssocArray):
+                    o = cast(value.AssocArray, UP_o)
+                    try:
+                        result = value.Str(o.d[name])
+                    except KeyError:
+                        raise error.Expr('dict entry not found', node.op)
+                else:
+                    raise error.InvalidType(
+                        'd.key expected Dict or AssocArray, got %s' %
+                        value_str(o.tag()), loc.Missing)
 
             return result
 
@@ -1637,10 +1662,6 @@ class OilEvaluator(object):
             # in a supertype or __class__, etc.
 
         raise AssertionError(id_)
-
-    def _EvalAttribute2(self, node):
-        # type: (Attribute) -> value_t
-        return _PyObjToValue(self._EvalAttribute(node))
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> Any
@@ -1787,7 +1808,7 @@ class OilEvaluator(object):
 
             elif case(expr_e.Attribute):  # obj->method or mydict.key
                 node = cast(Attribute, UP_node)
-                return _ValueToPyObj(self._EvalAttribute2(node))
+                return _ValueToPyObj(self._EvalAttribute(node))
 
             elif case(expr_e.RegexLiteral):
                 node = cast(expr.RegexLiteral, UP_node)
