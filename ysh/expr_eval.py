@@ -155,8 +155,7 @@ def _PyObjToValue(val):
         for elem in val:
             if elem is None:
                 shell_array.append(elem)
-                # TODO: probably need value.Null
-                typed_array.append(value.Undef)
+                typed_array.append(value.Null)
 
             elif isinstance(elem, str):
                 shell_array.append(elem)
@@ -237,6 +236,9 @@ def _PyObjToValue(val):
 
 def _ValueToPyObj(val):
     # type: (value_t) -> Any
+
+    if not isinstance(val, value_t):
+        raise AssertionError(val)
 
     UP_val = val
     with tagswitch(val) as case:
@@ -791,7 +793,7 @@ class OilEvaluator(object):
             return value.Float(float(c))
 
         if id_ == Id.Expr_Null:
-            return value.Undef
+            return value.Null
         if id_ == Id.Expr_True:
             return value.Bool(True)
         if id_ == Id.Expr_False:

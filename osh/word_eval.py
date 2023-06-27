@@ -1689,7 +1689,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                             raise AssertionError()
 
                     else:
-                        raise error.InvalidType(
+                        raise error.InvalidType2(val,
                             "Can't splice %r" % part.var_name, loc.WordPart(part))
 
                 part_vals.append(part_value.Array(items))

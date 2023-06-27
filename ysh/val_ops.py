@@ -69,7 +69,11 @@ def Stringify(val):
     """
     UP_val = val
     with tagswitch(val) as case:
-        if case(value_e.Null):
+        if case(value_e.Str):  # trivial case
+            val = cast(value.Str, UP_val)
+            return val.s
+
+        elif case(value_e.Null):
             s = 'null'  # JSON spelling
 
         elif case(value_e.Bool):
@@ -91,6 +95,10 @@ def Stringify(val):
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
+
+        else:
+            raise error.InvalidType2(
+                val, "stringify expected Null, Bool, Int, Float, Eggex", loc.Missing)
 
     return s
 
