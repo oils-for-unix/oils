@@ -14,8 +14,9 @@ from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from mycpp import mylib
+from mycpp.mylib import tagswitch
 
-from typing import cast
+from typing import cast, Optional
 
 
 class UserExit(Exception):
@@ -27,6 +28,7 @@ class UserExit(Exception):
 
 
 class HistoryError(Exception):
+
     def __init__(self, msg):
         # type: (str) -> None
         self.msg = msg
@@ -37,6 +39,7 @@ class HistoryError(Exception):
 
 
 class _DebugFile(object):
+
     def __init__(self):
         # type: () -> None
         pass
@@ -55,6 +58,7 @@ class _DebugFile(object):
 
 
 class NullDebugFile(_DebugFile):
+
     def __init__(self):
         # type: () -> None
         """Empty constructor for mycpp."""
@@ -62,6 +66,7 @@ class NullDebugFile(_DebugFile):
 
 
 class DebugFile(_DebugFile):
+
     def __init__(self, f):
         # type: (mylib.Writer) -> None
         _DebugFile.__init__(self)
@@ -124,3 +129,51 @@ def MustBeFunc(val):
 
     raise error.InvalidType(
         'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
+
+
+class ItemIterator(object):
+
+    def __init__(self, val):
+        # type: (value_t) -> None
+        self.val = val
+        self.i = 0
+
+        UP_val = val
+        with tagswitch(val) as case:
+
+            if case(value_e.MaybeStrArray):
+                val = cast(value.MaybeStrArray, UP_val)
+                self.n = len(val.strs)
+
+            elif case(value_e.List):
+                val = cast(value.List, UP_val)
+                self.n = len(val.items)
+
+            else:
+                raise error.InvalidType2(val, 'ItemIterator', loc.Missing)
+
+    def GetNext(self):
+        # type: () -> Optional[value_t]
+
+        if self.i == self.n:
+            return None
+
+        ret = None  # type: value_t
+        val = self.val
+        UP_val = val
+        with tagswitch(self.val) as case:
+
+            if case(value_e.MaybeStrArray):
+                val = cast(value.MaybeStrArray, UP_val)
+                ret = value.Str(val.strs[self.i])
+
+            elif case(value_e.List):
+                val = cast(value.List, UP_val)
+                ret = val.items[self.i]
+
+            else:
+                raise error.InvalidType2(val, 'ItemIterator', loc.Missing)
+
+        self.i += 1
+
+        return ret
