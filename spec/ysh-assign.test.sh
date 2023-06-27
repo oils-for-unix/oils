@@ -298,7 +298,7 @@ setvar d['name'] = d
 (OrderedDict)   <'name': ...>
 ## END
 
-#### circular list
+#### circular list - TODO 2023-06 REGRESS
 var L = [1,2,3]
 = L
 setvar L[0] = L
