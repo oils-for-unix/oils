@@ -1301,7 +1301,7 @@ class CommandEvaluator(object):
                                         self.mem.SetValue(
                                             i_name, value.Int(index),
                                             scope_e.LocalOnly)
-                                    self.mem.SetValue(val_name, value.Obj(item),
+                                    self.mem.SetValue(val_name, expr_eval._PyObjToValue(item),
                                                       scope_e.LocalOnly)
 
                                     try:
@@ -1343,12 +1343,12 @@ class CommandEvaluator(object):
 
                                 index = 0
                                 for key in obj:
-                                    self.mem.SetValue(key_name, value.Obj(key),
+                                    self.mem.SetValue(key_name, expr_eval._PyObjToValue(key),
                                                       scope_e.LocalOnly)
                                     if val_name:
                                         dict_value = obj[key]
                                         self.mem.SetValue(
-                                            val_name, value.Obj(dict_value),
+                                            val_name, expr_eval._PyObjToValue(dict_value),
                                             scope_e.LocalOnly)
                                     if i_name:
                                         self.mem.SetValue(
