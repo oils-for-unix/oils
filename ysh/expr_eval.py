@@ -618,7 +618,7 @@ class OilEvaluator(object):
                 self.mem.ClearMatches()
             return False
 
-    def EvalPlaceExpr(self, place):
+    def _EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
 
         UP_place = place
@@ -635,6 +635,7 @@ class OilEvaluator(object):
 
                 lval = self._EvalExpr(place.obj)
                 index = self._EvalExpr(place.index)
+                #log('index %s', index)
                 return lvalue.ObjIndex(lval, index)
 
             elif case(place_expr_e.Attribute):
@@ -651,6 +652,13 @@ class OilEvaluator(object):
 
             else:
                 raise NotImplementedError(place)
+
+    def EvalPlaceExpr(self, place):
+        # type: (place_expr_t) -> lvalue_t
+        """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
+        with state.ctx_OilExpr(self.mutable_opts):
+            lval = self._EvalPlaceExpr(place)
+        return lval
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t

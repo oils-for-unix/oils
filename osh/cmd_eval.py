@@ -1001,7 +1001,7 @@ class CommandEvaluator(object):
                                     elif case(value_e.Dict):
                                         obj = cast(value.Dict, UP_obj)
                                         # index must be value.Str
-                                        obj.d[lval_.index.s] = expr_eval._PyObjectToVal(py_val)
+                                        obj.d[lval_.index.s] = expr_eval._PyObjToValue(py_val)
 
                                     else:
                                         raise error.InvalidType2(obj,
