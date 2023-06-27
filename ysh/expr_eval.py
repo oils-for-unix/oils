@@ -1364,7 +1364,7 @@ class OilEvaluator(object):
                                             loc.Missing)
 
                 s = cast(value.Str, keys[i])
-                v = self.LookupVar(s.s, loc.Missing)  # {name}
+                v = self.LookupVar2(s.s, loc.Missing)  # {name}
             else:
                 v = self._EvalExpr(value_expr)
 
