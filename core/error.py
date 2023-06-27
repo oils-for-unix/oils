@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc
+from _devbuild.gen.runtime_asdl import value, value_t, value_str
 
 from typing import TYPE_CHECKING, NoReturn
 if TYPE_CHECKING:
@@ -168,6 +169,26 @@ class InvalidType(Expr):
     def __init__(self, msg, location):
         # type: (str, loc_t) -> None
         Expr.__init__(self, msg, location)
+
+
+class InvalidType2(InvalidType):
+
+    def __init__(self, actual_val, msg, location):
+        # type: (value_t, str, loc_t) -> None
+        InvalidType.__init__(
+            self, 
+            "Invalid type %s: %s" % (value_str(actual_val.tag()), msg),
+            location)
+
+
+class InvalidType3(InvalidType):
+
+    def __init__(self, left_val, right_val, msg, location):
+        # type: (value_t, value_t, str, loc_t) -> None
+        InvalidType.__init__(
+            self, 
+            "%s != %s: %s" % (value_str(left_val.tag()), value_str(right_val.tag()), msg),
+            location)
 
 
 def e_usage(msg, location):

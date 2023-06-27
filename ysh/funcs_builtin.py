@@ -77,7 +77,8 @@ class _Append(vm._Func):
         with tagswitch(li) as case:
             if case(value_e.MaybeStrArray):
                 li = cast(value.MaybeStrArray, UP_li)
-                li.strs.append(to_append)
+                # TODO: check type
+                li.strs.append(to_append.s)
 
             elif case(value_e.List):
                 li = cast(value.List, UP_li)
@@ -85,7 +86,7 @@ class _Append(vm._Func):
             else:
                 raise error.InvalidType('append() expected List', loc.Missing)
 
-        # Equivalentto no return value?
+        # Equivalent to no return value?
         return value.Null
 
 
@@ -93,8 +94,36 @@ def _Extend(L, arg):
     L.extend(arg)
 
 
-def _Pop(L):
+def _PopUntyped(L):
     L.pop()
+
+
+class _Pop(vm._Func):
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        li = pos_args[0]
+        UP_li = li
+
+        with tagswitch(li) as case:
+            if case(value_e.MaybeStrArray):
+                li = cast(value.MaybeStrArray, UP_li)
+                li.strs.pop()
+
+            elif case(value_e.List):
+                li = cast(value.List, UP_li)
+                li.items.pop()
+            else:
+                raise error.InvalidType('append() expected List', loc.Missing)
+
+        # Equivalent to no return value?
+        return value.Null
 
 
 class _Match(object):
@@ -300,11 +329,13 @@ def Init(mem):
 
     if 0:
         SetGlobalFunc(mem, 'append', _Append())
+        SetGlobalFunc(mem, 'pop', _Pop())
     else:
         SetGlobalFunc(mem, 'append', _AppendUntyped)
+        SetGlobalFunc(mem, 'append', _PopUntyped)
 
     SetGlobalFunc(mem, 'extend', _Extend)
-    SetGlobalFunc(mem, 'pop', _Pop)
+
     # count, index, insert, remove
 
     #
