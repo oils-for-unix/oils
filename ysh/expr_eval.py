@@ -74,10 +74,8 @@ if TYPE_CHECKING:
 
 _ = log
 
-
-def LookupVar(mem, var_name, which_scopes, var_loc):
-    # type: (Mem, str, scope_t, loc_t) -> Any
-    """Convert to a Python object so we can calculate on it natively."""
+def LookupVar2(mem, var_name, which_scopes, var_loc):
+    # type: (Mem, str, scope_t, loc_t) -> value_t
 
     # Lookup WITHOUT dynamic scope.
     val = mem.GetValue(var_name, which_scopes=which_scopes)
@@ -85,6 +83,14 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
         # TODO: Location info
         e_die('Undefined variable %r' % var_name, var_loc)
 
+    return val
+
+
+def LookupVar(mem, var_name, which_scopes, var_loc):
+    # type: (Mem, str, scope_t, loc_t) -> Any
+    """Convert to a Python object so we can calculate on it natively."""
+
+    val = LookupVar2(mem, var_name, which_scopes, var_loc)
     return _ValueToPyObj(val)
 
 
@@ -533,6 +539,10 @@ class OilEvaluator(object):
     def LookupVar(self, name, var_loc):
         # type: (str, loc_t) -> Any
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
+
+    def LookupVar2(self, name, var_loc):
+        # type: (str, loc_t) -> value_t
+        return LookupVar2(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
     def EvalPlusEquals(self, lval, rhs_py):
         # type: (lvalue.Named, Union[int, float]) -> Union[int, float]
@@ -1331,11 +1341,6 @@ class OilEvaluator(object):
         return value.List(
             [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
 
-    def _EvalTuple(self, node):
-        # type: (expr.Tuple) -> value_t
-        return value.List(
-            [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
-
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
         # NOTE: some keys are expr.Const
@@ -1706,10 +1711,6 @@ class OilEvaluator(object):
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
                 return _ValueToPyObj(self._EvalList(node))
-
-            elif case(expr_e.Tuple):
-                node = cast(expr.Tuple, UP_node)
-                return _ValueToPyObj(self._EvalTuple(node))
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)
