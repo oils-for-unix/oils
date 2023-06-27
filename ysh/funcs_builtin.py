@@ -327,7 +327,7 @@ def Init(mem):
 
     # TODO: Universal function call syntax can change this?
 
-    if 0:
+    if 1:
         SetGlobalFunc(mem, 'append', _Append())
         SetGlobalFunc(mem, 'pop', _Pop())
     else:

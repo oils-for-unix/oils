@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import value, scope_e, cmd_value
+from _devbuild.gen.runtime_asdl import scope_e, cmd_value
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core.error import e_usage
@@ -105,8 +105,9 @@ class Json(vm._Builtin):
                 return 1
 
             # TODO: use token directly
-            self.mem.SetValue(location.LName(var_name), value.Obj(obj),
-                              scope_e.LocalOnly)
+            from ysh import expr_eval
+            val = expr_eval._PyObjToValue(obj)
+            self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

@@ -84,6 +84,8 @@ from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch, StrFromC
+from ysh import expr_eval
+from ysh import val_ops
 
 import posix_ as posix
 import libc  # for fnmatch
@@ -98,7 +100,6 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
-    from ysh import expr_eval
     from osh import word_eval
     from osh.builtin_trap import TrapState
 
@@ -137,8 +138,7 @@ if mylib.PYTHON:
         TODO: Move this to Mem and combine with LookupVar in ysh/expr_eval.py.
         They are opposites.
         """
-        if 0:
-            from ysh import expr_eval
+        if 1:
             return expr_eval._PyObjToValue(py_val)
 
         # TODO:
@@ -161,7 +161,8 @@ if mylib.PYTHON:
             val = value.AssocArray(py_val)
 
         else:
-            val = value.Obj(py_val)
+            #val = value.Obj(py_val)
+            val = expr_eval._PyObjToValue(py_val)
 
         return val
 
@@ -973,19 +974,44 @@ class CommandEvaluator(object):
                                 lvals_.append(lval_)
                                 py_vals.append(py_val)
 
-                        # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
                         for UP_lval_, py_val in zip(lvals_, py_vals):
                             tag = UP_lval_.tag()
                             if tag == lvalue_e.ObjIndex:
+                                # setvar mylist[0] = 42
+                                # setvar mydict['key'] = 42
                                 lval_ = cast(lvalue.ObjIndex, UP_lval_)
-                                lval_.obj[lval_.index] = py_val
+
+                                obj = lval_.obj
+                                UP_obj = obj
+                                with tagswitch(obj) as case:
+                                    if case(value_e.MaybeStrArray):
+                                        obj = cast(value.MaybeStrArray, UP_obj)
+                                        # index must be value.Int
+                                        obj.strs[val_ops.ToInt(lval_.index)] = py_val
+
+                                    elif case(value_e.List):
+                                        obj = cast(value.List, UP_obj)
+                                        # index must be value.Int
+                                        obj.items[val_ops.ToInt(lval_.index)] = expr_eval._PyObjToValue(py_val)
+
+                                    elif case(value_e.AssocArray):
+                                        obj = cast(value.AssocArray, UP_obj)
+                                        # index must be value.Str
+                                        obj.d[val_ops.ToStr(lval_.index)] = py_val
+
+                                    elif case(value_e.Dict):
+                                        obj = cast(value.Dict, UP_obj)
+                                        # index must be value.Str
+                                        obj.d[val_ops.ToStr(lval_.index)] = expr_eval._PyObjToValue(py_val)
+
+                                    else:
+                                        raise error.InvalidType2(obj,
+                                                "obj[index] expected List or Dict",
+                                                loc.Missing)
+
                                 if node.keyword.id == Id.KW_SetRef:
                                     e_die('setref obj[index] not implemented')
-                            elif tag == lvalue_e.ObjAttr:
-                                lval_ = cast(lvalue.ObjAttr, UP_lval_)
-                                setattr(lval_.obj, lval_.attr, py_val)
-                                if node.keyword.id == Id.KW_SetRef:
-                                    e_die('setref obj.attr not implemented')
+
                             else:
                                 val = _PyObjectToVal(py_val)
                                 # top level variable
@@ -1007,7 +1033,7 @@ class CommandEvaluator(object):
                         new_py_val = self.expr_ev.EvalPlusEquals(
                             pe_lval, py_val)
                         # This should only be an int or float, so we don't need the logic above
-                        val = value.Obj(new_py_val)
+                        val = expr_eval._PyObjToValue(new_py_val)
 
                         self.mem.SetValue(pe_lval,
                                           val,
@@ -1300,9 +1326,9 @@ class CommandEvaluator(object):
                                 for item in obj:
                                     if i_name:
                                         self.mem.SetValue(
-                                            i_name, value.Obj(index),
+                                            i_name, value.Int(index),
                                             scope_e.LocalOnly)
-                                    self.mem.SetValue(val_name, value.Obj(item),
+                                    self.mem.SetValue(val_name, expr_eval._PyObjToValue(item),
                                                       scope_e.LocalOnly)
 
                                     try:
@@ -1344,16 +1370,16 @@ class CommandEvaluator(object):
 
                                 index = 0
                                 for key in obj:
-                                    self.mem.SetValue(key_name, value.Obj(key),
+                                    self.mem.SetValue(key_name, expr_eval._PyObjToValue(key),
                                                       scope_e.LocalOnly)
                                     if val_name:
                                         dict_value = obj[key]
                                         self.mem.SetValue(
-                                            val_name, value.Obj(dict_value),
+                                            val_name, expr_eval._PyObjToValue(dict_value),
                                             scope_e.LocalOnly)
                                     if i_name:
                                         self.mem.SetValue(
-                                            i_name, value.Obj(index),
+                                            i_name, value.Int(index),
                                             scope_e.LocalOnly)
 
                                     try:
@@ -1397,7 +1423,7 @@ class CommandEvaluator(object):
                             if mylib.PYTHON:
                                 # value.Obj not available in C++
                                 if i_name:
-                                    self.mem.SetValue(i_name, value.Obj(index),
+                                    self.mem.SetValue(i_name, value.Int(index),
                                                       scope_e.LocalOnly)
                             self.mem.SetValue(val_name, value.Str(x),
                                               scope_e.LocalOnly)

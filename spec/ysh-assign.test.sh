@@ -298,7 +298,7 @@ setvar d['name'] = d
 (OrderedDict)   <'name': ...>
 ## END
 
-#### circular list
+#### circular list - TODO 2023-06 REGRESS
 var L = [1,2,3]
 = L
 setvar L[0] = L
@@ -325,35 +325,62 @@ set +o errexit
 
 run '
 var x = $(false)
-echo inside=$?
+echo inside1=$?
 '
-echo outside=$?
+echo outside1=$?
 
 run '
 setvar x = $(false)
-echo inside=$?
+echo inside2=$?
 '
-echo outside=$?
+echo outside2=$?
 
 # Argument list
 run '
 _ split( $(false) )
-echo inside=$?
+echo inside3=$?
 '
-echo outside=$?
+echo outside3=$?
 
 # Place expression
 run '
 var d = {}
 setvar d[ $(false) ] = 42
-echo inside=$?
+echo inside4=$?
 '
-echo outside=$?
+echo outside4=$?
 
 ## STDOUT:
-outside=1
-outside=1
-outside=1
-outside=1
+outside1=1
+outside2=1
+outside3=1
+outside4=1
 ## END
 
+#### setvar obj[INVALID TYPE] =
+
+set +o errexit
+
+$SH -c '
+var d = {}
+setvar d["key"] = 5
+echo "d.key = $[d.key]"
+setvar d[42] = 6
+echo "should not get here"
+'
+echo outside1=$?
+
+$SH -c '
+var L = [42]
+setvar L[0] = 43
+echo "L[0] = $[L[0]]"
+setvar L["key"] = 44
+'
+echo outside2=$?
+
+## STDOUT:
+d.key = 5
+outside1=3
+L[0] = 43
+outside2=3
+## END

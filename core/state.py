@@ -1994,11 +1994,7 @@ class Mem(object):
 
         # "Registers"
         if name == '_status':
-            if mylib.PYTHON:
-                # TODO: value.Int()
-                return value.Obj(self.TryStatus())
-            else:
-                return value.Undef  # STUB
+            return value.Int(self.TryStatus())
 
         if name == '_this_dir':
             if len(self.this_dir) == 0:

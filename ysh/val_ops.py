@@ -14,6 +14,28 @@ from ysh import regex_translate
 from typing import cast, Optional
 
 
+def ToInt(val):
+    # type: (value_t) -> int
+    UP_val = val
+    if val.tag() == value_e.Int:
+        val = cast(value.Int, UP_val)
+        return val.i
+
+    raise error.InvalidType(
+        'expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
+
+
+def ToStr(val):
+    # type: (value_t) -> str
+    UP_val = val
+    if val.tag() == value_e.Str:
+        val = cast(value.Str, UP_val)
+        return val.s
+
+    raise error.InvalidType(
+        'expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
+
+
 def MustBeInt(val):
     # type: (value_t) -> value.Int
     UP_val = val

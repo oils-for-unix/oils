@@ -618,7 +618,7 @@ class OilEvaluator(object):
                 self.mem.ClearMatches()
             return False
 
-    def EvalPlaceExpr(self, place):
+    def _EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
 
         UP_place = place
@@ -630,23 +630,45 @@ class OilEvaluator(object):
 
             elif case(place_expr_e.Subscript):
                 place = cast(Subscript, UP_place)
+                # setvar mylist[0] = 42
+                # setvar mydict['key'] = 42
 
-                obj = self.EvalExpr(place.obj, loc.Missing)
-                index = self.EvalExpr(place.index, loc.Missing)
-                return lvalue.ObjIndex(obj, index)
+                lval = self._EvalExpr(place.obj)
+                index = self._EvalExpr(place.index)
+                #log('index %s', index)
+                return lvalue.ObjIndex(lval, index)
 
             elif case(place_expr_e.Attribute):
                 place = cast(Attribute, UP_place)
+                # setvar mydict.key = 42
 
-                obj = self.EvalExpr(place.obj, loc.Missing)
+                lval = self._EvalExpr(place.obj)
                 if place.op.id == Id.Expr_Dot:
-                    attr = place.attr.tval
-                    return lvalue.ObjIndex(obj, attr)
+                    attr = value.Str(place.attr.tval)
+                    return lvalue.ObjIndex(lval, attr)
                 else:
-                    return lvalue.ObjAttr(obj, place.attr.tval)
+                    raise AssertionError()
+                    #return lvalue.ObjAttr(lval, place.attr.tval)
 
             else:
                 raise NotImplementedError(place)
+
+    def EvalPlaceExpr(self, place):
+        # type: (place_expr_t) -> lvalue_t
+        """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
+
+        blame_loc = loc.Missing
+        try:
+            with state.ctx_OilExpr(self.mutable_opts):
+                lval = self._EvalPlaceExpr(place)
+            return lval
+
+        # TODO(remove): Catch PYTHON exceptions
+        except TypeError as e:
+            raise error.Expr('Type error in place expression: %s' % str(e),
+                             blame_loc)
+        except (AttributeError, ValueError) as e:
+            raise error.Expr('Place expression eval error: %s' % str(e), blame_loc)
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
@@ -684,7 +706,10 @@ class OilEvaluator(object):
         on."""
         try:
             with state.ctx_OilExpr(self.mutable_opts):
-                return self._EvalExpr(node)
+                val = self._EvalExpr(node)
+            return _ValueToPyObj(val)
+
+        # TODO(remove): Catch PYTHON exceptions
         except TypeError as e:
             raise error.Expr('Type error in expression: %s' % str(e),
                              blame_loc)
@@ -750,7 +775,7 @@ class OilEvaluator(object):
                 else:
                     raise ValueError("%r doesn't look like an integer" % val.s)
 
-        raise error.InvalidType('Expected Int', loc.Missing)
+        raise error.InvalidType2(val, 'Expected Int', loc.Missing)
 
     def _ValueToNumber(self, val):
         # type: (value_t) -> value_t
@@ -869,7 +894,7 @@ class OilEvaluator(object):
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
-        child = _PyObjToValue(self._EvalExpr(node.child))  # XXX
+        child = self._EvalExpr(node.child)
         if node.op.id == Id.Arith_Minus:
             UP_child = child
             with tagswitch(child) as case:
@@ -895,7 +920,7 @@ class OilEvaluator(object):
 
                 else:
                     # TODO: want location of operand
-                    raise error.InvalidType('Expected Int', loc.Missing)
+                    raise error.InvalidType2(child, 'Expected Int', loc.Missing)
 
         if node.op.id == Id.Expr_Not:
             UP_child = child
@@ -1108,8 +1133,8 @@ class OilEvaluator(object):
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
 
-        left = _PyObjToValue(self._EvalExpr(node.left))
-        right = _PyObjToValue(self._EvalExpr(node.right))
+        left = self._EvalExpr(node.left)
+        right = self._EvalExpr(node.right)
 
         if node.op.id in \
           (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
@@ -1148,7 +1173,7 @@ class OilEvaluator(object):
         lower = None  # type: Optional[IntBox]
         upper = None  # type: Optional[IntBox]
         if node.lower:
-            UP_lower = _PyObjToValue(self._EvalExpr(node.lower))
+            UP_lower = self._EvalExpr(node.lower)
             if UP_lower.tag() != value_e.Int:
                 raise error.InvalidType('Slice indices must be Ints',
                                         loc.Missing)
@@ -1156,7 +1181,7 @@ class OilEvaluator(object):
             lower = IntBox(cast(value.Int, UP_lower).i)
 
         if node.upper:
-            UP_upper = _PyObjToValue(self._EvalExpr(node.upper))
+            UP_upper = self._EvalExpr(node.upper)
             if UP_upper.tag() != value_e.Int:
                 raise error.InvalidType('Slice indices must be Ints',
                                         loc.Missing)
@@ -1173,7 +1198,7 @@ class OilEvaluator(object):
         UP_right = right
 
         if left.tag() != right.tag():
-            raise error.InvalidType('Mismatched types', loc.Missing)
+            raise error.InvalidType3(left, right, 'Mismatched types', loc.Missing)
 
         with tagswitch(left) as case:
             if case(value_e.Int):
@@ -1206,11 +1231,11 @@ class OilEvaluator(object):
     def _EvalCompare(self, node):
         # type: (expr.Compare) -> value_t
 
-        left = _PyObjToValue(self._EvalExpr(node.left))
+        left = self._EvalExpr(node.left)
         result = True  # Implicit and
         for op, right_expr in zip(node.ops, node.comparators):
 
-            right = _PyObjToValue(self._EvalExpr(right_expr))
+            right = self._EvalExpr(right_expr)
 
             if op.id in \
               (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual):
@@ -1332,28 +1357,28 @@ class OilEvaluator(object):
 
     def _EvalIfExp(self, node):
         # type: (expr.IfExp) -> value_t
-        UP_b = _PyObjToValue(self._EvalExpr(node.test))
+        UP_b = self._EvalExpr(node.test)
         assert UP_b.tag() == value_e.Bool
         b = cast(value.Bool, UP_b)
         if b.b:
-            return _PyObjToValue(self._EvalExpr(node.body))
+            return self._EvalExpr(node.body)
         else:
-            return _PyObjToValue(self._EvalExpr(node.orelse))
+            return self._EvalExpr(node.orelse)
 
     def _EvalList(self, node):
         # type: (expr.List) -> value_t
-        return value.List(
-            [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
+        return value.List([self._EvalExpr(e) for e in node.elts])
 
     def _EvalTupleSyntax(self, node):
         # type: (expr.Tuple) -> value_t
-        return value.List(
-            [_PyObjToValue(self._EvalExpr(e)) for e in node.elts])
+        """Tuple syntax evaluates to LIST"""
+
+        return value.List([self._EvalExpr(e) for e in node.elts])
 
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
         # NOTE: some keys are expr.Const
-        keys = [_PyObjToValue(self._EvalExpr(e)) for e in node.keys]
+        keys = [self._EvalExpr(e) for e in node.keys]
 
         values = []  # type: List[value_t]
         for i, value_expr in enumerate(node.values):
@@ -1363,9 +1388,9 @@ class OilEvaluator(object):
                                             loc.Missing)
 
                 s = cast(value.Str, keys[i])
-                v = _PyObjToValue(self.LookupVar(s.s, loc.Missing))  # {name}
+                v = self.LookupVar2(s.s, loc.Missing)  # {name}
             else:
-                v = _PyObjToValue(self._EvalExpr(value_expr))
+                v = self._EvalExpr(value_expr)
 
             values.append(v)
 
@@ -1389,7 +1414,7 @@ class OilEvaluator(object):
             if arg.tag() == expr_e.Spread:
                 arg = cast(expr.Spread, UP_arg)
                 # assume it returns a list
-                pos_args.extend(self._EvalExpr(arg.child))
+                #pos_args.extend(self._EvalExpr(arg.child))
             else:
                 pos_args.append(self._EvalExpr(arg))
 
@@ -1419,7 +1444,7 @@ class OilEvaluator(object):
                 #pos_args.extend(self._EvalExpr(arg.child))
                 pass
             else:
-                pos_args.append(_PyObjToValue(self._EvalExpr(arg)))
+                pos_args.append(self._EvalExpr(arg))
 
         kwargs = {}  # type: Dict[str, value_t]
 
@@ -1436,7 +1461,7 @@ class OilEvaluator(object):
 
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
-        func = _PyObjToValue(self._EvalExpr(node.func))
+        func = self._EvalExpr(node.func)
         UP_func = func
         with tagswitch(func) as case:
             if case(value_e.Func):
@@ -1454,9 +1479,10 @@ class OilEvaluator(object):
                     u_pos_args, u_named_args = self.EvalArgList(node.args)
                     #log('ARGS %s', u_pos_args)
                     #ret = f(*u_pos_args, **u_named_args)
-                    #pos_args = [_ValueToPyObj(a) for a in u_pos_args]
 
-                    ret = f(*u_pos_args)
+                    pos_args = [_ValueToPyObj(a) for a in u_pos_args]
+                    ret = f(*pos_args)
+
                     return _PyObjToValue(ret)
             else:
                 raise error.InvalidType('Expected value.Func', loc.Missing)
@@ -1464,8 +1490,8 @@ class OilEvaluator(object):
     def _EvalSubscript(self, node):
         # type: (Subscript) -> value_t
 
-        obj = _PyObjToValue(self._EvalExpr(node.obj))
-        index = _PyObjToValue(self._EvalExpr(node.index))
+        obj = self._EvalExpr(node.obj)
+        index = self._EvalExpr(node.index)
 
         UP_obj = obj
         UP_index = index
@@ -1512,7 +1538,7 @@ class OilEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType('expected Slice or Int',
+                        raise error.InvalidType2(index, 'expected Slice or Int',
                                                 loc.Missing)
 
             elif case(value_e.MaybeStrArray):
@@ -1548,14 +1574,14 @@ class OilEvaluator(object):
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
                         try:
-                            return _PyObjToValue(obj.strs[index.i])
+                            return value.Str(obj.strs[index.i])
                         except IndexError:
                             # TODO: expr.Subscript has no error location
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType(
-                            'MaybeStrArray subscript expected Slice or Int',
+                        raise error.InvalidType2(
+                            index, 'MaybeStrArray subscript expected Slice or Int',
                             loc.Missing)
 
             elif case(value_e.Str):
@@ -1624,12 +1650,12 @@ class OilEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.InvalidType('expected Dict or List', loc.Missing)
+        raise error.InvalidType2(obj, 'expected Dict or List', loc.Missing)
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
 
-        o = _PyObjToValue(self._EvalExpr(node.obj))
+        o = self._EvalExpr(node.obj)
         UP_o = o
 
         id_ = node.op.id
@@ -1678,7 +1704,7 @@ class OilEvaluator(object):
         raise AssertionError(id_)
 
     def _EvalExpr(self, node):
-        # type: (expr_t) -> Any
+        # type: (expr_t) -> value_t
         """This is a naive PyObject evaluator!  It uses the type dispatch of
         the host Python interpreter.
 
@@ -1696,69 +1722,69 @@ class OilEvaluator(object):
             if case(expr_e.Const):
                 node = cast(expr.Const, UP_node)
 
-                return _ValueToPyObj(self._EvalConst(node))
+                return self._EvalConst(node)
 
             elif case(expr_e.Var):
                 node = cast(expr.Var, UP_node)
 
-                return self.LookupVar(node.name.tval, node.name)
+                return self.LookupVar2(node.name.tval, node.name)
 
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)
 
-                return _ValueToPyObj(self._EvalCommandSub(node))
+                return self._EvalCommandSub(node)
 
             elif case(expr_e.ShArrayLiteral):
                 node = cast(ShArrayLiteral, UP_node)
-                return _ValueToPyObj(self._EvalShArrayLiteral(node))
+                return self._EvalShArrayLiteral(node)
 
             elif case(expr_e.DoubleQuoted):
                 node = cast(DoubleQuoted, UP_node)
-                return _ValueToPyObj(self._EvalDoubleQuoted(node))
+                return self._EvalDoubleQuoted(node)
 
             elif case(expr_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
-                return _ValueToPyObj(self._EvalSingleQuoted(node))
+                return self._EvalSingleQuoted(node)
 
             elif case(expr_e.BracedVarSub):
                 node = cast(BracedVarSub, UP_node)
-                return _ValueToPyObj(self._EvalBracedVarSub(node))
+                return self._EvalBracedVarSub(node)
 
             elif case(expr_e.SimpleVarSub):
                 node = cast(SimpleVarSub, UP_node)
-                return _ValueToPyObj(self._EvalSimpleVarSub(node))
+                return self._EvalSimpleVarSub(node)
 
             elif case(expr_e.Unary):
                 node = cast(expr.Unary, UP_node)
-                return _ValueToPyObj(self._EvalUnary(node))
+                return self._EvalUnary(node)
 
             elif case(expr_e.Binary):
                 node = cast(expr.Binary, UP_node)
-                return _ValueToPyObj(self._EvalBinary(node))
+                return self._EvalBinary(node)
 
             elif case(expr_e.Slice):  # a[:0]
                 node = cast(expr.Slice, UP_node)
-                return _ValueToPyObj(self._EvalSlice(node))
+                return self._EvalSlice(node)
 
             elif case(expr_e.Compare):
                 node = cast(expr.Compare, UP_node)
-                return _ValueToPyObj(self._EvalCompare(node))
+                return self._EvalCompare(node)
 
             elif case(expr_e.IfExp):
                 node = cast(expr.IfExp, UP_node)
-                return _ValueToPyObj(self._EvalIfExp(node))
+                return self._EvalIfExp(node)
 
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
-                return _ValueToPyObj(self._EvalList(node))
+                return self._EvalList(node)
 
             elif case(expr_e.Tuple):
                 node = cast(expr.Tuple, UP_node)
-                return _ValueToPyObj(self._EvalTupleSyntax(node))
+                return self._EvalTupleSyntax(node)
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)
-                return _ValueToPyObj(self._EvalDict(node))
+                return self._EvalDict(node)
 
             elif case(expr_e.ListComp):
                 e_die_status(
@@ -1790,7 +1816,7 @@ class OilEvaluator(object):
                     except StopIteration:
                         break
                     self.mem.SetValue(location.LName(iter_name),
-                                      value.Obj(loop_val), scope_e.LocalOnly)
+                                      _PyObjToValue(loop_val), scope_e.LocalOnly)
 
                     if comp.cond:
                         b = self._EvalExpr(comp.cond)
@@ -1814,22 +1840,21 @@ class OilEvaluator(object):
 
             elif case(expr_e.FuncCall):
                 node = cast(expr.FuncCall, UP_node)
-                return _ValueToPyObj(self._EvalFuncCall(node))
+                return self._EvalFuncCall(node)
 
             elif case(expr_e.Subscript):
                 node = cast(Subscript, UP_node)
-                return _ValueToPyObj(self._EvalSubscript(node))
+                return self._EvalSubscript(node)
 
             elif case(expr_e.Attribute):  # obj->method or mydict.key
                 node = cast(Attribute, UP_node)
-                return _ValueToPyObj(self._EvalAttribute(node))
+                return self._EvalAttribute(node)
 
             elif case(expr_e.RegexLiteral):
                 node = cast(expr.RegexLiteral, UP_node)
 
                 # TODO: Should this just be an object that ~ calls?
-                return _ValueToPyObj(
-                    value.Eggex(self.EvalRegex(node.regex), None))
+                return value.Eggex(self.EvalRegex(node.regex), None)
 
             else:
                 raise NotImplementedError(node.__class__.__name__)

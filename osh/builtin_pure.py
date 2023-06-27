@@ -934,7 +934,9 @@ if mylib.PYTHON:
 
                 result = self.hay_state.Result()
 
-                self.mem.SetValue(location.LName(var_name), value.Obj(result),
+                from ysh import expr_eval
+                val = expr_eval._PyObjToValue(result)
+                self.mem.SetValue(location.LName(var_name), val,
                                   scope_e.LocalOnly)
 
             elif action == 'reset':
