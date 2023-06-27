@@ -137,7 +137,7 @@ if mylib.PYTHON:
         TODO: Move this to Mem and combine with LookupVar in ysh/expr_eval.py.
         They are opposites.
         """
-        if 0:
+        if 1:
             from ysh import expr_eval
             return expr_eval._PyObjToValue(py_val)
 
@@ -1300,7 +1300,7 @@ class CommandEvaluator(object):
                                 for item in obj:
                                     if i_name:
                                         self.mem.SetValue(
-                                            i_name, value.Obj(index),
+                                            i_name, value.Int(index),
                                             scope_e.LocalOnly)
                                     self.mem.SetValue(val_name, value.Obj(item),
                                                       scope_e.LocalOnly)
@@ -1353,7 +1353,7 @@ class CommandEvaluator(object):
                                             scope_e.LocalOnly)
                                     if i_name:
                                         self.mem.SetValue(
-                                            i_name, value.Obj(index),
+                                            i_name, value.Int(index),
                                             scope_e.LocalOnly)
 
                                     try:
@@ -1397,7 +1397,7 @@ class CommandEvaluator(object):
                             if mylib.PYTHON:
                                 # value.Obj not available in C++
                                 if i_name:
-                                    self.mem.SetValue(i_name, value.Obj(index),
+                                    self.mem.SetValue(i_name, value.Int(index),
                                                       scope_e.LocalOnly)
                             self.mem.SetValue(val_name, value.Str(x),
                                               scope_e.LocalOnly)
