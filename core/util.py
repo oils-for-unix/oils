@@ -132,6 +132,13 @@ def MustBeFunc(val):
 
 
 class ItemIterator(object):
+    """
+    Iterate over a single item:
+    
+    - splicing @myarray
+    - destructured assignment setvar x, y = y, x
+    - for x in (mylist)
+    """
 
     def __init__(self, val):
         # type: (value_t) -> None
