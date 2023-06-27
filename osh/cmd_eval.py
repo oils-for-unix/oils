@@ -84,6 +84,7 @@ from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch, StrFromC
+from ysh import expr_eval
 
 import posix_ as posix
 import libc  # for fnmatch
@@ -98,7 +99,6 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
-    from ysh import expr_eval
     from osh import word_eval
     from osh.builtin_trap import TrapState
 
@@ -138,7 +138,6 @@ if mylib.PYTHON:
         They are opposites.
         """
         if 1:
-            from ysh import expr_eval
             return expr_eval._PyObjToValue(py_val)
 
         # TODO:
@@ -1007,7 +1006,7 @@ class CommandEvaluator(object):
                         new_py_val = self.expr_ev.EvalPlusEquals(
                             pe_lval, py_val)
                         # This should only be an int or float, so we don't need the logic above
-                        val = value.Obj(new_py_val)
+                        val = expr_eval._PyObjToValue(new_py_val)
 
                         self.mem.SetValue(pe_lval,
                                           val,
