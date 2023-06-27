@@ -12,10 +12,10 @@ from ysh import val_ops  # module under test
 
 class IteratorTest(unittest.TestCase):
 
-    def testItemIterator(self):
+    def testIterator(self):
         a = value.MaybeStrArray(['a', 'b'])
 
-        it = val_ops.ItemIterator(a)
+        it = val_ops.Iterator(a)
         x = it.GetNext()
         y = it.GetNext()
         z = it.GetNext()
@@ -26,7 +26,7 @@ class IteratorTest(unittest.TestCase):
 
         a = value.List([value.Str('x'), value.Str('y')])
 
-        it = val_ops.ItemIterator(a)
+        it = val_ops.Iterator(a)
         x = it.GetNext()
         y = it.GetNext()
         z = it.GetNext()

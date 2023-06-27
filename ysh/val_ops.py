@@ -57,13 +57,41 @@ def MustBeFunc(val):
         'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-class ItemIterator(object):
+def Stringify(val):
+    # type: (value_t) -> str
     """
-    Iterate over a single item:
+    Used by
+
+    $[x]    stringify operator
+    @[x]    expression splice - each element is stringified
+    @x      splice value
+    """
+    pass
+
+
+def ToShellArray(val):
+    # type: (value_t) -> str
+    """
+    Used by
+
+    @[x]  expression splice
+    @x    splice value
+
+          Do dictionaries get spliced?
+    """
+    # iterate and then stringify?
+    # It doesn't make sense for Dict because:
+    # - keys are already strings
+    # - it's not clear you want the keys only?
+
+
+class Iterator(object):
+    """
+    Iterate over a single item.  Used by
     
-    - splicing @myarray
-    - destructured assignment setvar x, y = y, x
-    - for x in (mylist)
+    @myarray              splice
+    setvar x, y = y, x    destructured assignment 
+    for x in (myval) {    loop
     """
 
     def __init__(self, val):
