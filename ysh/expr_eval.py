@@ -59,7 +59,6 @@ from frontend import location
 from ysh import regex_translate
 from osh import braces
 from osh import word_compile
-from mycpp import mylib
 from mycpp.mylib import log, NewDict, tagswitch
 
 import libc
@@ -1392,15 +1391,17 @@ class OilEvaluator(object):
             else:
                 pos_args.append(self._EvalExpr(arg))
 
-        # NOTE: Keyword args aren't tested
-
         kwargs = {}  # type: Dict[str, Any]
-        for named in args.named:
-            if named.name:
-                kwargs[named.name.tval] = self._EvalExpr(named.value)
-            else:
-                # ...named
-                kwargs.update(self._EvalExpr(named.value))
+
+        # NOTE: Keyword args aren't tested
+        if 0:
+            for named in args.named:
+                if named.name:
+                    kwargs[named.name.tval] = self._EvalExpr(named.value)
+                else:
+                    # ...named
+                    kwargs.update(self._EvalExpr(named.value))
+
         return pos_args, kwargs
 
     def EvalArgList2(self, args):
@@ -1413,19 +1414,22 @@ class OilEvaluator(object):
             if arg.tag() == expr_e.Spread:
                 arg = cast(expr.Spread, UP_arg)
                 # assume it returns a list
-                pos_args.extend(self._EvalExpr(arg.child))
+                #pos_args.extend(self._EvalExpr(arg.child))
+                pass
             else:
-                pos_args.append(self._EvalExpr(arg))
-
-        # NOTE: Keyword args aren't tested
+                pos_args.append(_PyObjToValue(self._EvalExpr(arg)))
 
         kwargs = {}  # type: Dict[str, value_t]
-        for named in args.named:
-            if named.name:
-                kwargs[named.name.tval] = self._EvalExpr(named.value)
-            else:
-                # ...named
-                kwargs.update(self._EvalExpr(named.value))
+
+        # NOTE: Keyword args aren't tested
+        if 0:
+            for named in args.named:
+                if named.name:
+                    kwargs[named.name.tval] = self._EvalExpr(named.value)
+                else:
+                    # ...named
+                    kwargs.update(self._EvalExpr(named.value))
+
         return pos_args, kwargs
 
     def _EvalFuncCall(self, node):
@@ -1441,7 +1445,11 @@ class OilEvaluator(object):
                     return f.Call(pos_args, named_args)
                 else:
                     u_pos_args, u_named_args = self.EvalArgList(node.args)
-                    ret = f(*u_pos_args, **u_named_args)
+                    #log('ARGS %s', u_pos_args)
+                    #ret = f(*u_pos_args, **u_named_args)
+                    #pos_args = [_ValueToPyObj(a) for a in u_pos_args]
+
+                    ret = f(*u_pos_args)
                     return _PyObjToValue(ret)
             else:
                 raise error.InvalidType('Expected value.Func', loc.Missing)
@@ -1623,9 +1631,8 @@ class OilEvaluator(object):
             with tagswitch(o) as case:
                 if case(value_e.Str):
                     o = cast(value.Str, UP_o)
-                    if mylib.PYTHON:
-                        method = getattr(o.s, name)
-                        return value.Func(method)
+                    method = getattr(o.s, name)
+                    return value.Func(method)
                 else:
                     raise error.InvalidType('Method %r' % name, loc.Missing)
 
