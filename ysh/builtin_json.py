@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import value, scope_e, cmd_value
+from _devbuild.gen.runtime_asdl import scope_e, cmd_value
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core.error import e_usage
