@@ -1368,62 +1368,70 @@ class OilEvaluator(object):
     def EvalArgList(self, args):
         # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
         """For procs and funcs - UNTYPED"""
-        pos_args = []
+        pos_args = []  # type: List[Any]
         for arg in args.positional:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:
                 arg = cast(expr.Spread, UP_arg)
                 # assume it returns a list
-                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
+                pos_args.extend(self._EvalExpr(arg.child))
             else:
-                pos_args.append(self.EvalExpr(arg, loc.Missing))
+                pos_args.append(self._EvalExpr(arg))
 
-        kwargs = {}
+        # NOTE: Keyword args aren't tested
+
+        kwargs = {}  # type: Dict[str, Any]
         for named in args.named:
             if named.name:
-                kwargs[named.name.tval] = self.EvalExpr(
-                    named.value, loc.Missing)
+                kwargs[named.name.tval] = self._EvalExpr(named.value)
             else:
                 # ...named
-                kwargs.update(self.EvalExpr(named.value, loc.Missing))
+                kwargs.update(self._EvalExpr(named.value))
         return pos_args, kwargs
 
     def EvalArgList2(self, args):
         # type: (ArgList) -> Tuple[List[value_t], Dict[str, value_t]]
         """For procs and args - TYPED """
-        pos_args = []
+        pos_args = []  # type: List[value_t]
         for arg in args.positional:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:
                 arg = cast(expr.Spread, UP_arg)
                 # assume it returns a list
-                pos_args.extend(self.EvalExpr(arg.child, loc.Missing))
+                pos_args.extend(self._EvalExpr(arg.child))
             else:
-                pos_args.append(self.EvalExpr(arg, loc.Missing))
+                pos_args.append(self._EvalExpr(arg))
 
-        kwargs = {}
+        # NOTE: Keyword args aren't tested
+
+        kwargs = {}  # type: Dict[str, value_t]
         for named in args.named:
             if named.name:
-                kwargs[named.name.tval] = self.EvalExpr(
-                    named.value, loc.Missing)
+                kwargs[named.name.tval] = self._EvalExpr(named.value)
             else:
                 # ...named
-                kwargs.update(self.EvalExpr(named.value, loc.Missing))
+                kwargs.update(self._EvalExpr(named.value))
         return pos_args, kwargs
 
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
-        func = self._EvalExpr(node.func)
-        if isinstance(func, value.Func):
-            vm_func = cast(vm._Func, func)
-            pos_args, named_args = self.EvalArgList2(node.args)
-            return vm_func.Call(pos_args, named_args)
-        else:
-            u_pos_args, u_named_args = self.EvalArgList(node.args)
-            ret = func(*u_pos_args, **u_named_args)
-            return _PyObjToValue(ret)
+        func = _PyObjToValue(self._EvalExpr(node.func))
+        UP_func = func
+        with tagswitch(func) as case:
+            if case(value_e.Func):
+                func = cast(value.Func, UP_func)
+                f = func.f
+                if isinstance(f, vm._Func):  # typed
+                    pos_args, named_args = self.EvalArgList2(node.args)
+                    return f.Call(pos_args, named_args)
+                else:
+                    u_pos_args, u_named_args = self.EvalArgList(node.args)
+                    ret = f(*u_pos_args, **u_named_args)
+                    return _PyObjToValue(ret)
+            else:
+                raise error.InvalidType('Expected value.Func', loc.Missing)
 
     def _EvalSubscript(self, node):
         # type: (Subscript) -> value_t

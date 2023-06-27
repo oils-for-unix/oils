@@ -213,6 +213,20 @@ def _ValueToPartValue(val, quoted):
             # but we have to append to the empty string.
             return part_value.String('', quoted, not quoted)
 
+        elif case(value_e.Str):
+            val = cast(value.Str, UP_val)
+            return part_value.String(val.s, quoted, not quoted)
+
+        elif case(value_e.MaybeStrArray):
+            val = cast(value.MaybeStrArray, UP_val)
+            return part_value.Array(val.strs)
+
+        elif case(value_e.AssocArray):
+            val = cast(value.AssocArray, UP_val)
+            # TODO: Is this correct?
+            return part_value.Array(val.d.values())
+
+        # Cases added for YSH
         elif case(value_e.Bool):
             val = cast(value.Bool, UP_val)
             s = 'true' if val.b else 'false'  # Use JSON spelling
@@ -231,19 +245,6 @@ def _ValueToPartValue(val, quoted):
             # Python 3 seems to give a few more digits than Python 2 for str(1.0/3)
             s = str(val.f)
             return part_value.String(s, quoted, not quoted)
-
-        elif case(value_e.Str):
-            val = cast(value.Str, UP_val)
-            return part_value.String(val.s, quoted, not quoted)
-
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
-            return part_value.Array(val.strs)
-
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
-            # TODO: Is this correct?
-            return part_value.Array(val.d.values())
 
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
