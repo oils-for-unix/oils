@@ -1008,16 +1008,8 @@ class CommandEvaluator(object):
                                                 "obj[index] expected List or Dict",
                                                 loc.Missing)
 
-                                #lval_.obj[lval_.index] = py_val
                                 if node.keyword.id == Id.KW_SetRef:
                                     e_die('setref obj[index] not implemented')
-
-                            #elif tag == lvalue_e.ObjAttr:
-                            #    # setvar mydict.key = 42
-                            #    lval_ = cast(lvalue.ObjAttr, UP_lval_)
-                            #    setattr(lval_.obj, lval_.attr, py_val)
-                            #    if node.keyword.id == Id.KW_SetRef:
-                            #        e_die('setref obj.attr not implemented')
 
                             else:
                                 val = _PyObjectToVal(py_val)

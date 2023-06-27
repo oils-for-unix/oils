@@ -125,10 +125,8 @@ module runtime
     Named(str name, loc blame_loc)
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
-
-    # Oil variants
+    # YSH setvar is typed
   | ObjIndex(value obj, value index)
-  #| ObjAttr(value obj, str attr)
 
   redirect_arg =
     Path(str filename)
