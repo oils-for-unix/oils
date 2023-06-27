@@ -1626,7 +1626,7 @@ class OilEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.InvalidType('expected Dict or List', loc.Missing)
+        raise error.InvalidType2(obj, 'expected Dict or List', loc.Missing)
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
