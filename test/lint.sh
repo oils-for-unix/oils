@@ -194,9 +194,13 @@ install-yapf() {
   pip3 install yapf docformatter
 }
 
+yapf-files() {
+  python3 -m yapf -i "$@"
+}
+
 run-yapf-3() {
   ### Run yapf on Python 3 code
-  mycpp-files | xargs python3 -m yapf -i
+  mycpp-files | xargs $0 yapf-files
 }
 
 py2-files-to-format() {
