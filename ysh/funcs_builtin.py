@@ -332,7 +332,7 @@ def Init(mem):
         SetGlobalFunc(mem, 'pop', _Pop())
     else:
         SetGlobalFunc(mem, 'append', _AppendUntyped)
-        SetGlobalFunc(mem, 'append', _PopUntyped)
+        SetGlobalFunc(mem, 'pop', _PopUntyped)
 
     SetGlobalFunc(mem, 'extend', _Extend)
 
