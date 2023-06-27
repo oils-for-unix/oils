@@ -357,3 +357,30 @@ outside3=1
 outside4=1
 ## END
 
+#### setvar obj[INVALID TYPE] =
+
+set +o errexit
+
+$SH -c '
+var d = {}
+setvar d["key"] = 5
+echo "d.key = $[d.key]"
+setvar d[42] = 6
+echo "should not get here"
+'
+echo outside1=$?
+
+$SH -c '
+var L = [42]
+setvar L[0] = 43
+echo "L[0] = $[L[0]]"
+setvar L["key"] = 44
+'
+echo outside2=$?
+
+## STDOUT:
+d.key = 5
+outside1=3
+L[0] = 43
+outside2=3
+## END

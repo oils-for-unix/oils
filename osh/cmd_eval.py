@@ -85,6 +85,7 @@ from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch, StrFromC
 from ysh import expr_eval
+from ysh import val_ops
 
 import posix_ as posix
 import libc  # for fnmatch
@@ -986,22 +987,22 @@ class CommandEvaluator(object):
                                     if case(value_e.MaybeStrArray):
                                         obj = cast(value.MaybeStrArray, UP_obj)
                                         # index must be value.Int
-                                        obj.strs[lval_.index.i] = py_val
+                                        obj.strs[val_ops.ToInt(lval_.index)] = py_val
 
                                     elif case(value_e.List):
                                         obj = cast(value.List, UP_obj)
                                         # index must be value.Int
-                                        obj.items[lval_.index.i] = expr_eval._PyObjToValue(py_val)
+                                        obj.items[val_ops.ToInt(lval_.index)] = expr_eval._PyObjToValue(py_val)
 
                                     elif case(value_e.AssocArray):
                                         obj = cast(value.AssocArray, UP_obj)
                                         # index must be value.Str
-                                        obj.d[lval_.index.s] = py_val
+                                        obj.d[val_ops.ToStr(lval_.index)] = py_val
 
                                     elif case(value_e.Dict):
                                         obj = cast(value.Dict, UP_obj)
                                         # index must be value.Str
-                                        obj.d[lval_.index.s] = expr_eval._PyObjToValue(py_val)
+                                        obj.d[val_ops.ToStr(lval_.index)] = expr_eval._PyObjToValue(py_val)
 
                                     else:
                                         raise error.InvalidType2(obj,
