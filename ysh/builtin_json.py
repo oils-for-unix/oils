@@ -14,7 +14,7 @@ from frontend import location
 from frontend import match
 from frontend import typed_args
 from osh import builtin_misc
-from ysh import expr_eval
+from ysh import cpython
 
 import sys
 import yajl
@@ -23,6 +23,7 @@ import posix_ as posix
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
+    from ysh import expr_eval
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
@@ -59,7 +60,7 @@ class Json(vm._Builtin):
 
             expr = typed_args.RequiredExpr(cmd_val.typed_args)
             val = self.expr_ev.EvalExpr(expr, loc.Missing)
-            obj = expr_eval._ValueToPyObj(val)
+            obj = cpython._ValueToPyObj(val)
 
             if arg_jw.pretty:
                 indent = arg_jw.indent
@@ -106,7 +107,7 @@ class Json(vm._Builtin):
                 return 1
 
             # TODO: use token directly
-            val = expr_eval._PyObjToValue(obj)
+            val = cpython._PyObjToValue(obj)
             self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
 
         else:

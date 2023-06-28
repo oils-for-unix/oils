@@ -162,7 +162,8 @@ def ToShellArray(val, blame_loc, prefix=''):
                 strs.append(Stringify(item, blame_loc, prefix=prefix))
 
         else:
-            raise error.InvalidType2(val, "%sexpected List" % prefix, blame_loc)
+            raise error.InvalidType2(val, "%sexpected List" % prefix,
+                                     blame_loc)
 
     return strs
 
@@ -450,5 +451,6 @@ def RegexMatch(left, right, mem):
         if mem:
             mem.ClearMatches()
         return False
+
 
 # vim: sw=4

@@ -9,6 +9,7 @@ from core import error
 from core import vm
 from mycpp.mylib import log, tagswitch
 from frontend import lexer
+from ysh import cpython
 from ysh import expr_eval
 
 from typing import TYPE_CHECKING, Dict, List, Callable, Union, cast
@@ -184,7 +185,7 @@ class _Shvar_get(object):
         name = args[0]
         val = expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
                                    loc.Missing)
-        return expr_eval._ValueToPyObj(val)
+        return cpython._ValueToPyObj(val)
 
 
 class _VmEval(object):

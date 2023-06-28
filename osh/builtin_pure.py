@@ -856,8 +856,8 @@ if mylib.PYTHON:
 
                         val = cell.val
 
-                        from ysh import expr_eval
-                        py_obj = expr_eval._ValueToPyObj(val)
+                        from ysh import cpython
+                        py_obj = cpython._ValueToPyObj(val)
                         attrs[name] = py_obj
 
                     result['attrs'] = attrs
@@ -934,8 +934,8 @@ if mylib.PYTHON:
 
                 result = self.hay_state.Result()
 
-                from ysh import expr_eval
-                val = expr_eval._PyObjToValue(result)
+                from ysh import cpython
+                val = cpython._PyObjToValue(result)
                 self.mem.SetValue(location.LName(var_name), val,
                                   scope_e.LocalOnly)
 

@@ -84,6 +84,7 @@ from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch, StrFromC
+from ysh import cpython
 from ysh import expr_eval
 from ysh import val_ops
 
@@ -128,44 +129,6 @@ class Deps(object):
         self.mutable_opts = None  # type: state.MutableOpts
         self.dumper = None  # type: dev.CrashDumper
         self.debug_f = None  # type: util._DebugFile
-
-
-if mylib.PYTHON:
-
-    def _PyObjectToVal(py_val):
-        # type: (Any) -> Any
-        """Maintain the 'value' invariant in osh/runtime.asdl.
-
-        TODO: Move this to Mem and combine with LookupVar in ysh/expr_eval.py.
-        They are opposites.
-        """
-        if 1:
-            return expr_eval._PyObjToValue(py_val)
-
-        # TODO:
-        # - inspect list
-        #   - if every member is a str, then convert it to value.MaybeStrArray
-        #   - otherwise value.List
-        # - ditto Dict?
-        #   - if every value is a str, convert it to assocarray
-
-        if isinstance(py_val, str):  # var s = "hello $name"
-            val = value.Str(py_val)  # type: Any
-
-        #elif isinstance(py_val, objects.StrArray):  # var a = %(a b)
-        #    # It's safe to convert StrArray to MaybeStrArray.
-        #    val = value.MaybeStrArray(py_val)
-
-        elif isinstance(py_val, dict):  # var d = {name: "bob"}
-            # TODO: Is this necessary?  Shell assoc arrays aren't nested and don't have
-            # arbitrary values.
-            val = value.AssocArray(py_val)
-
-        else:
-            #val = value.Obj(py_val)
-            val = expr_eval._PyObjToValue(py_val)
-
-        return val
 
 
 def _PackFlags(keyword_id, flags=0):
@@ -939,7 +902,7 @@ class CommandEvaluator(object):
 
                     if node.op.id == Id.Arith_Equal:
                         val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                        py_val = expr_eval._ValueToPyObj(val)
+                        py_val = cpython._ValueToPyObj(val)
 
                         lvals_ = []  # type: List[lvalue_t]
                         py_vals = []
@@ -985,7 +948,7 @@ class CommandEvaluator(object):
                                             loc.Missing,
                                             prefix='List index ')
                                         obj.items[
-                                            index] = expr_eval._PyObjToValue(
+                                            index] = cpython._PyObjToValue(
                                                 py_val)
 
                                     elif case(value_e.AssocArray):
@@ -1002,7 +965,7 @@ class CommandEvaluator(object):
                                             lval_.index,
                                             loc.Missing,
                                             prefix='Dict index ')
-                                        obj.d[key] = expr_eval._PyObjToValue(
+                                        obj.d[key] = cpython._PyObjToValue(
                                             py_val)
 
                                     else:
@@ -1015,7 +978,7 @@ class CommandEvaluator(object):
                                     e_die('setref obj[index] not implemented')
 
                             else:
-                                val = _PyObjectToVal(py_val)
+                                val = cpython._PyObjToValue(py_val)
                                 # top level variable
                                 self.mem.SetValue(UP_lval_,
                                                   val,
@@ -1111,7 +1074,7 @@ class CommandEvaluator(object):
                 if mylib.PYTHON:
                     self.mem.SetLocationToken(node.keyword)
                     val = self.expr_ev.EvalExpr(node.e, loc.Missing)
-                    obj = expr_eval._ValueToPyObj(val)
+                    obj = cpython._ValueToPyObj(val)
 
                     if node.keyword.id == Id.Lit_Equals:
                         # NOTE: It would be nice to unify this with 'repr', but there isn't a
@@ -1299,7 +1262,7 @@ class CommandEvaluator(object):
                 if iter_list is None:  # for_expr.YshExpr
                     if mylib.PYTHON:
                         val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
-                        obj = expr_eval._ValueToPyObj(val)
+                        obj = cpython._ValueToPyObj(val)
 
                         # TODO: Once expr_eval.py is statically typed, consolidate this
                         # with the shell-style loop.
@@ -1331,7 +1294,7 @@ class CommandEvaluator(object):
                                             scope_e.LocalOnly)
                                     self.mem.SetValue(
                                         val_name,
-                                        expr_eval._PyObjToValue(item),
+                                        cpython._PyObjToValue(item),
                                         scope_e.LocalOnly)
 
                                     try:
@@ -1374,13 +1337,13 @@ class CommandEvaluator(object):
                                 index = 0
                                 for key in obj:
                                     self.mem.SetValue(
-                                        key_name, expr_eval._PyObjToValue(key),
+                                        key_name, cpython._PyObjToValue(key),
                                         scope_e.LocalOnly)
                                     if val_name:
                                         dict_value = obj[key]
                                         self.mem.SetValue(
                                             val_name,
-                                            expr_eval._PyObjToValue(
+                                            cpython._PyObjToValue(
                                                 dict_value), scope_e.LocalOnly)
                                     if i_name:
                                         self.mem.SetValue(

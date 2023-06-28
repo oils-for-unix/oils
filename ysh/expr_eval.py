@@ -10,7 +10,6 @@ from _devbuild.gen.syntax_asdl import (
     re_t,
     Token,
     word_part,
-    word_part_t,
     SingleQuoted,
     DoubleQuoted,
     BracedVarSub,
@@ -59,6 +58,7 @@ from frontend import location
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, tagswitch
+from ysh import cpython
 from ysh import val_ops
 
 import libc
@@ -86,197 +86,6 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
         e_die('Undefined variable %r' % var_name, var_loc)
 
     return val
-
-
-# XXX this function should be removed once _EvalExpr is completeley refactored.
-# Until then we'll need this as a bit of scaffolding to allow us to refactor one
-# kind of expression at a time while still being able to type-check and run
-# tests.
-def _PyObjToValue(val):
-    # type: (Any) -> value_t
-
-    if val is None:
-        return value.Null
-
-    elif isinstance(val, bool):
-        return value.Bool(val)
-
-    elif isinstance(val, int):
-        return value.Int(val)
-
-    elif isinstance(val, float):
-        return value.Float(val)
-
-    elif isinstance(val, str):
-        return value.Str(val)
-
-    elif isinstance(val, list):
-        # Hack for converting back and forth
-        is_shell_array = True
-
-        shell_array = []  # type: List[str]
-        typed_array = []  # type: List[value_t]
-
-        for elem in val:
-            if elem is None:
-                shell_array.append(elem)
-                typed_array.append(value.Null)
-
-            elif isinstance(elem, str):
-                shell_array.append(elem)
-                typed_array.append(value.Str(elem))
-
-            elif isinstance(elem, value_t):  # Does this happen?
-                is_shell_array = False
-                typed_array.append(elem)
-
-            else:
-                is_shell_array = False
-                typed_array.append(_PyObjToValue(elem))
-                #typed_array.append(elem)
-
-        if is_shell_array:
-            return value.MaybeStrArray(shell_array)
-        else:
-            return value.List(typed_array)
-
-    elif isinstance(val, dict):
-        is_shell_dict = True
-
-        shell_dict = NewDict()  # type: Dict[str, str]
-        typed_dict = NewDict()  # type: Dict[str, value_t]
-
-        for k, v in val.items():
-            if isinstance(v, str):
-                shell_dict[k] = v
-                typed_dict[k] = value.Str(v)
-
-            elif isinstance(v, value_t):  # Does this happen?
-                is_shell_dict = False
-                typed_dict[k] = v
-
-            else:
-                is_shell_dict = False
-                typed_dict[k] = _PyObjToValue(v)
-                #typed_dict[k] = v
-
-        if is_shell_dict:
-            return value.AssocArray(shell_dict)
-        else:
-            return value.Dict(typed_dict)
-
-    elif isinstance(val, tuple):
-        return value.List([
-            elem if isinstance(elem, value_t) else _PyObjToValue(elem)
-            for elem in val
-        ])
-
-    elif isinstance(val, slice):
-        s = value.Slice(None, None, None)
-        if val.start:
-            s.lower = IntBox(val.start)
-
-        if val.stop:
-            s.upper = IntBox(val.stop)
-
-        if val.step:
-            s.step = IntBox(val.step)
-
-        return s
-
-    elif isinstance(val, value.Eggex):
-        return val  # passthrough
-
-    elif isinstance(val, value.Block):
-        return val  # passthrough
-
-    elif isinstance(val, vm._Func) or callable(val):
-        return value.Func(val)
-
-    else:
-        raise error.Expr(
-            'Trying to convert unexpected type to value_t: %r' % val,
-            loc.Missing)
-
-
-def _ValueToPyObj(val):
-    # type: (value_t) -> Any
-
-    if not isinstance(val, value_t):
-        raise AssertionError(val)
-
-    UP_val = val
-    with tagswitch(val) as case:
-        if case(value_e.Null):
-            return None
-
-        elif case(value_e.Undef):
-            return None
-
-        elif case(value_e.Bool):
-            val = cast(value.Bool, UP_val)
-            return val.b
-
-        elif case(value_e.Int):
-            val = cast(value.Int, UP_val)
-            return val.i
-
-        elif case(value_e.Float):
-            val = cast(value.Float, UP_val)
-            return val.f
-
-        elif case(value_e.Str):
-            val = cast(value.Str, UP_val)
-            return val.s
-
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
-            return val.strs
-
-        elif case(value_e.List):
-            val = cast(value.List, UP_val)
-            return list(map(_ValueToPyObj, val.items))
-
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
-            return val.d
-
-        elif case(value_e.Dict):
-            val = cast(value.Dict, UP_val)
-            d = NewDict()  # type: Dict[str, value_t]
-            for k, v in val.d.items():
-                d[k] = _ValueToPyObj(v)
-            return d
-
-        elif case(value_e.Slice):
-            val = cast(value.Slice, UP_val)
-            step = 1
-            if val.step:
-                step = val.step.i
-
-            if val.lower and val.upper:
-                return slice(val.lower.i, val.upper.i, step)
-            elif val.lower:
-                return slice(val.lower.i, None, step)
-            elif val.upper:
-                return slice(None, val.upper.i, step)
-
-            return slice(None, None, None)
-
-        elif case(value_e.Eggex):
-            return val  # passthrough
-
-        elif case(value_e.Func):
-            val = cast(value.Func, UP_val)
-            return val.f
-
-        elif case(value_e.Block):
-            return val  # passthrough
-
-        else:
-            raise error.Expr(
-                'Trying to convert unexpected type to pyobj: %r' % val,
-                loc.Missing)
 
 
 class OilEvaluator(object):
@@ -387,7 +196,8 @@ class OilEvaluator(object):
             raise error.Expr('Type error in place expression: %s' % str(e),
                              blame_loc)
         except (AttributeError, ValueError) as e:
-            raise error.Expr('Place expression eval error: %s' % str(e), blame_loc)
+            raise error.Expr('Place expression eval error: %s' % str(e),
+                             blame_loc)
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
@@ -399,7 +209,9 @@ class OilEvaluator(object):
             return part_value.String(s, False, False)
 
         elif part.left.id == Id.Lit_AtLBracket:  # @[split(x)]
-            strs = val_ops.ToShellArray(val, loc.WordPart(part), prefix='Expr splice ')
+            strs = val_ops.ToShellArray(val,
+                                        loc.WordPart(part),
+                                        prefix='Expr splice ')
             return part_value.Array(strs)
 
         else:
@@ -587,7 +399,8 @@ class OilEvaluator(object):
 
                 else:
                     # TODO: want location of operand
-                    raise error.InvalidType2(child, 'Expected Int', loc.Missing)
+                    raise error.InvalidType2(child, 'Expected Int',
+                                             loc.Missing)
 
         if node.op.id == Id.Expr_Not:
             UP_child = child
@@ -865,7 +678,8 @@ class OilEvaluator(object):
         UP_right = right
 
         if left.tag() != right.tag():
-            raise error.InvalidType3(left, right, 'Mismatched types', loc.Missing)
+            raise error.InvalidType3(left, right, 'Mismatched types',
+                                     loc.Missing)
 
         with tagswitch(left) as case:
             if case(value_e.Int):
@@ -1148,10 +962,10 @@ class OilEvaluator(object):
                     #log('ARGS %s', u_pos_args)
                     #ret = f(*u_pos_args, **u_named_args)
 
-                    pos_args = [_ValueToPyObj(a) for a in u_pos_args]
+                    pos_args = [cpython._ValueToPyObj(a) for a in u_pos_args]
                     ret = f(*pos_args)
 
-                    return _PyObjToValue(ret)
+                    return cpython._PyObjToValue(ret)
             else:
                 raise error.InvalidType('Expected value.Func', loc.Missing)
 
@@ -1206,8 +1020,9 @@ class OilEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType2(index, 'expected Slice or Int',
-                                                loc.Missing)
+                        raise error.InvalidType2(index,
+                                                 'expected Slice or Int',
+                                                 loc.Missing)
 
             elif case(value_e.MaybeStrArray):
                 obj = cast(value.MaybeStrArray, UP_obj)
@@ -1249,7 +1064,8 @@ class OilEvaluator(object):
 
                     else:
                         raise error.InvalidType2(
-                            index, 'MaybeStrArray subscript expected Slice or Int',
+                            index,
+                            'MaybeStrArray subscript expected Slice or Int',
                             loc.Missing)
 
             elif case(value_e.Str):
@@ -1534,7 +1350,9 @@ class OilEvaluator(object):
                 term = cast(class_literal_term.Splice, UP_term)
 
                 val = self.LookupVar(term.name.tval, term.name)
-                s = val_ops.ToStr(val, term.name, prefix='Eggex char class splice ')
+                s = val_ops.ToStr(val,
+                                  term.name,
+                                  prefix='Eggex char class splice ')
                 char_code_tok = term.name
 
         assert s is not None, term
@@ -1646,7 +1464,8 @@ class OilEvaluator(object):
                 with tagswitch(val) as case:
                     if case(value_e.Str):
                         val = cast(value.Str, UP_val)
-                        to_splice = re.LiteralChars(val.s, node.name)  # type: re_t
+                        to_splice = re.LiteralChars(val.s,
+                                                    node.name)  # type: re_t
 
                     elif case(value_e.Eggex):
                         val = cast(value.Eggex, UP_val)
@@ -1656,7 +1475,8 @@ class OilEvaluator(object):
 
                     else:
                         raise error.InvalidType2(
-                            val, 'Eggex splice expected Str or Eggex', node.name)
+                            val, 'Eggex splice expected Str or Eggex',
+                            node.name)
                 return to_splice
 
             else:
@@ -1677,5 +1497,6 @@ class OilEvaluator(object):
             new_node.PrettyPrint()
             print()
         return new_node
+
 
 # vim: sw=4
