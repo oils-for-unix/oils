@@ -13,27 +13,18 @@ from ysh import val_ops  # module under test
 class IteratorTest(unittest.TestCase):
 
     def testIterator(self):
-        a = value.MaybeStrArray(['a', 'b'])
+        a = ['a', 'b']
 
-        it = val_ops.Iterator(a)
-        x = it.GetNext()
-        y = it.GetNext()
-        z = it.GetNext()
+        it = val_ops.ArrayIter(a)
+        self.assertEqual('a', it.FirstValue().s)
+        self.assert_(not it.Done())
+        x = it.Next()
 
-        self.assertEqual('a', x.s)
-        self.assertEqual('b', y.s)
-        self.assertEqual(None, z)
+        self.assertEqual('b', it.FirstValue().s)
+        self.assert_(not it.Done())
+        x = it.Next()
 
-        a = value.List([value.Str('x'), value.Str('y')])
-
-        it = val_ops.Iterator(a)
-        x = it.GetNext()
-        y = it.GetNext()
-        z = it.GetNext()
-
-        self.assertEqual('x', x.s)
-        self.assertEqual('y', y.s)
-        self.assertEqual(None, z)
+        self.assert_(it.Done())
 
 
 if __name__ == '__main__':

@@ -91,7 +91,7 @@ from ysh import val_ops
 import posix_ as posix
 import libc  # for fnmatch
 
-from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
@@ -1238,7 +1238,7 @@ class CommandEvaluator(object):
 
                 # for YSH loop
                 iter_expr = None  # type: expr_t
-                iter_blame = None  # type: Token
+                #iter_blame = None  # type: Token
 
                 iterable = node.iterable
                 UP_iterable = iterable
@@ -1257,157 +1257,131 @@ class CommandEvaluator(object):
                         iter_expr = iterable.e
                         iter_expr_blame = iterable.blame
 
-                status = 0  # in case we don't loop
+                n = len(node.iter_names)
+                assert n > 0
 
+                i_name = None  # type: Optional[lvalue_t]
+                # required
+                name1 = None  # type: lvalue_t
+                name2 = None  # type: Optional[lvalue_t]
+
+                it2 = None  # type: val_ops._ContainerIter
                 if iter_list is None:  # for_expr.YshExpr
                     if mylib.PYTHON:
                         val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
-                        obj = cpython._ValueToPyObj(val)
+                    else:
+                        val = value.Null  # Satisfy compiler
 
-                        # TODO: Once expr_eval.py is statically typed, consolidate this
-                        # with the shell-style loop.
-                        with ctx_LoopLevel(self):
-                            if isinstance(obj, list):
+                    UP_val = val
+                    with tagswitch(val) as case:
+                        if case(value_e.MaybeStrArray):
+                            val = cast(value.MaybeStrArray, UP_val)
+                            it2 = val_ops.ArrayIter(val.strs)
 
-                                n = len(node.iter_names)
-                                assert n > 0
-                                if n == 1:
-                                    i_name = None
-                                    val_name = location.LName(
-                                        node.iter_names[0])
-                                elif n == 2:
-                                    i_name = location.LName(node.iter_names[0])
-                                    val_name = location.LName(
-                                        node.iter_names[1])
-                                else:
-                                    # This is similar to a parse error
-                                    e_die_status(
-                                        2,
-                                        'List iteration expects at most 2 loop variables',
-                                        node.keyword)
-
-                                index = 0
-                                for item in obj:
-                                    if i_name:
-                                        self.mem.SetValue(
-                                            i_name, value.Int(index),
-                                            scope_e.LocalOnly)
-                                    self.mem.SetValue(
-                                        val_name,
-                                        cpython._PyObjToValue(item),
-                                        scope_e.LocalOnly)
-
-                                    try:
-                                        status = self._Execute(
-                                            node.body)  # last one wins
-                                    except vm.ControlFlow as e:
-                                        status = 0
-                                        action = e.HandleLoop()
-                                        if action == flow_e.Break:
-                                            break
-                                        elif action == flow_e.Raise:
-                                            raise
-                                    index += 1
-
-                            elif isinstance(obj, dict):
-
-                                n = len(node.iter_names)
-                                assert n > 0
-                                if n == 1:
-                                    i_name = None
-                                    key_name = location.LName(
-                                        node.iter_names[0])
-                                    val_name = None
-                                elif n == 2:
-                                    i_name = None
-                                    key_name = location.LName(
-                                        node.iter_names[0])
-                                    val_name = location.LName(
-                                        node.iter_names[1])
-                                elif n == 3:
-                                    i_name = location.LName(node.iter_names[0])
-                                    key_name = location.LName(
-                                        node.iter_names[1])
-                                    val_name = location.LName(
-                                        node.iter_names[2])
-                                else:
-                                    # already checked at parse time
-                                    assert False
-
-                                index = 0
-                                for key in obj:
-                                    self.mem.SetValue(
-                                        key_name, cpython._PyObjToValue(key),
-                                        scope_e.LocalOnly)
-                                    if val_name:
-                                        dict_value = obj[key]
-                                        self.mem.SetValue(
-                                            val_name,
-                                            cpython._PyObjToValue(
-                                                dict_value), scope_e.LocalOnly)
-                                    if i_name:
-                                        self.mem.SetValue(
-                                            i_name, value.Int(index),
-                                            scope_e.LocalOnly)
-
-                                    try:
-                                        status = self._Execute(
-                                            node.body)  # last one wins
-                                    except vm.ControlFlow as e:
-                                        status = 0
-                                        action = e.HandleLoop()
-                                        if action == flow_e.Break:
-                                            break
-                                        elif action == flow_e.Raise:
-                                            raise
-
-                                    index += 1
-
+                            if n == 1:
+                                name1 = location.LName(node.iter_names[0])
+                            elif n == 2:
+                                i_name = location.LName(node.iter_names[0])
+                                name2 = location.LName(node.iter_names[1])
                             else:
-                                raise error.Expr(
-                                    "Expected list or dict, got %r" %
-                                    type(obj), iter_expr_blame)
+                                # This is similar to a parse error
+                                e_die_status(
+                                    2,
+                                    'MaybeStrArray iteration expects at most 2 loop variables',
+                                    node.keyword)
 
-                else:
-                    with ctx_LoopLevel(self):
-                        n = len(node.iter_names)
-                        assert n > 0
-                        if n == 1:
-                            i_name = None
-                            val_name = location.LName(node.iter_names[0])
-                        elif n == 2:
-                            i_name = location.LName(node.iter_names[0])
-                            val_name = location.LName(node.iter_names[1])
+                        elif case(value_e.List):
+                            val = cast(value.List, UP_val)
+                            it2 = val_ops.ListIterator(val)
+
+                            if n == 1:
+                                name1 = location.LName(node.iter_names[0])
+                            elif n == 2:
+                                i_name = location.LName(node.iter_names[0])
+                                name1 = location.LName(node.iter_names[1])
+                            else:
+                                # This is similar to a parse error
+                                e_die_status(
+                                    2,
+                                    'List iteration expects at most 2 loop variables',
+                                    node.keyword)
+
+                        elif case(value_e.Dict):
+                            val = cast(value.Dict, UP_val)
+                            it2 = val_ops.DictIterator(val)
+
+                            if n == 1:
+                                name1 = location.LName(node.iter_names[0])
+                            elif n == 2:
+                                name1 = location.LName(node.iter_names[0])
+                                name2 = location.LName(node.iter_names[1])
+                            elif n == 3:
+                                i_name = location.LName(node.iter_names[0])
+                                name1 = location.LName(node.iter_names[1])
+                                name2 = location.LName(node.iter_names[2])
+                            else:
+                                raise AssertionError()
+
+                        elif case(value_e.AssocArray):
+                            val = cast(value.AssocArray, UP_val)
+                            it2 = val_ops.AssocArrayIter(val)
+
+                            if n == 1:
+                                name1 = location.LName(node.iter_names[0])
+                            elif n == 2:
+                                name1 = location.LName(node.iter_names[0])
+                                name2 = location.LName(node.iter_names[1])
+                            elif n == 3:
+                                i_name = location.LName(node.iter_names[0])
+                                name1 = location.LName(node.iter_names[1])
+                                name2 = location.LName(node.iter_names[2])
+                            else:
+                                raise AssertionError()
+
                         else:
-                            # This is similar to a parse error
-                            e_die_status(
-                                2,
-                                'List iteration expects at most 2 loop variables',
+                            raise error.InvalidType2(
+                                val, 'for loop expected Dict or List',
                                 node.keyword)
+                else:
+                    #log('iter list %s', iter_list)
+                    it2 = val_ops.ArrayIter(iter_list)
 
-                        index = 0
-                        for x in iter_list:
-                            #log('> ForEach setting %r', x)
-                            if mylib.PYTHON:
-                                # value.Obj not available in C++
-                                if i_name:
-                                    self.mem.SetValue(i_name, value.Int(index),
-                                                      scope_e.LocalOnly)
-                            self.mem.SetValue(val_name, value.Str(x),
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                    else:
+                        # This is similar to a parse error
+                        e_die_status(
+                            2,
+                            'Argv iteration expects at most 2 loop variables',
+                            node.keyword)
+
+                status = 0  # in case we loop zero times
+                with ctx_LoopLevel(self):
+                    while not it2.Done():
+                        self.mem.SetValue(name1, it2.FirstValue(),
+                                          scope_e.LocalOnly)
+                        if name2:
+                            self.mem.SetValue(name2, it2.SecondValue(),
                                               scope_e.LocalOnly)
-                            #log('<')
+                        if i_name:
+                            self.mem.SetValue(i_name, value.Int(it2.Index()),
+                                              scope_e.LocalOnly)
 
-                            try:
-                                status = self._Execute(
-                                    node.body)  # last one wins
-                            except vm.ControlFlow as e:
-                                status = 0
-                                action = e.HandleLoop()
-                                if action == flow_e.Break:
-                                    break
-                                elif action == flow_e.Raise:
-                                    raise
-                            index += 1
+                        # increment index before handling continue, etc.
+                        it2.Next()
+
+                        try:
+                            status = self._Execute(node.body)  # last one wins
+                        except vm.ControlFlow as e:
+                            status = 0
+                            action = e.HandleLoop()
+                            if action == flow_e.Break:
+                                break
+                            elif action == flow_e.Raise:
+                                raise
 
             elif case(command_e.ForExpr):
                 node = cast(command.ForExpr, UP_node)
@@ -2054,3 +2028,6 @@ class CommandEvaluator(object):
             status = 1
         # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
         return status
+
+
+# vim: sw=4

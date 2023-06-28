@@ -168,67 +168,117 @@ def ToShellArray(val, blame_loc, prefix=''):
     return strs
 
 
-class Iterator(object):
-    """
-    Iterate over a single item.  Used by
-    
-    @myarray              splice
-    setvar x, y = y, x    destructured assignment 
-    for x in (myval) {    loop
-    """
+class _ContainerIter(object):
+    """Interface for various types of for loop."""
 
-    def __init__(self, val):
-        # type: (value_t) -> None
-        self.val = val
+    def __init__(self):
+        # type: () -> None
         self.i = 0
+        self.n = 0  # should be overwritten
 
-        UP_val = val
-        with tagswitch(val) as case:
+    def Index(self):
+        # type: () -> int
+        return self.i
 
-            if case(value_e.MaybeStrArray):
-                val = cast(value.MaybeStrArray, UP_val)
-                self.n = len(val.strs)
+    def Done(self):
+        # type: () -> int
+        return self.i == self.n
 
-            elif case(value_e.List):
-                val = cast(value.List, UP_val)
-                self.n = len(val.items)
-
-            else:
-                raise error.InvalidType2(val, 'ItemIterator', loc.Missing)
-
-    def GetNext(self):
-        # type: () -> Optional[value_t]
-
-        if self.i == self.n:
-            return None
-
-        ret = None  # type: value_t
-        val = self.val
-        UP_val = val
-        with tagswitch(self.val) as case:
-
-            if case(value_e.MaybeStrArray):
-                val = cast(value.MaybeStrArray, UP_val)
-                ret = value.Str(val.strs[self.i])
-
-            elif case(value_e.List):
-                val = cast(value.List, UP_val)
-                ret = val.items[self.i]
-
-            else:
-                raise error.InvalidType2(val, 'ItemIterator', loc.Missing)
-
+    def Next(self):
+        # type: () -> None
+        """Returns whether iteration is done"""
         self.i += 1
 
-        return ret
+    def FirstValue(self):
+        # type: () -> value_t
+        """Return Dict key or List value"""
+        raise NotImplementedError()
+
+    def SecondValue(self):
+        # type: () -> value_t
+        """Return Dict value or FAIL"""
+        raise AssertionError("Shouldn't have called this")
+
+
+class ArrayIter(_ContainerIter):
+    """ for x in 1 2 3 { """
+
+    def __init__(self, strs):
+        # type: (List[str]) -> None
+        _ContainerIter.__init__(self)
+        self.strs = strs
+        self.n = len(strs)
+
+    def FirstValue(self):
+        # type: () -> value_t
+        return value.Str(self.strs[self.i])
+
+
+class ListIterator(_ContainerIter):
+    """ for x in (mylist) { """
+
+    def __init__(self, val):
+        # type: (value.List) -> None
+        _ContainerIter.__init__(self)
+        self.val = val
+        self.n = len(val.items)
+
+    def FirstValue(self):
+        # type: () -> value_t
+        return self.val.items[self.i]
+
+
+class DictIterator(_ContainerIter):
+    """ for x in (mydict) { """
+
+    def __init__(self, val):
+        # type: (value.Dict) -> None
+        _ContainerIter.__init__(self)
+
+        # TODO: Don't materialize these Lists
+        self.keys = val.d.keys()  # type: List[str]
+        self.values = val.d.values()  # type: List[value_t]
+
+        self.n = len(val.d)
+        assert self.n == len(self.keys)
+
+    def FirstValue(self):
+        # type: () -> value_t
+        return value.Str(self.keys[self.i])
+
+    def SecondValue(self):
+        # type: () -> value_t
+        return self.values[self.i]
+
+
+class AssocArrayIter(_ContainerIter):
+    """ for x in (mydict) { """
+
+    def __init__(self, val):
+        # type: (value.AssocArray) -> None
+        _ContainerIter.__init__(self)
+
+        # TODO: Don't materialize these Lists
+        self.keys = val.d.keys()  # type: List[str]
+        self.values = val.d.values()  # type: List[str]
+
+        self.n = len(val.d)
+        assert self.n == len(self.keys)
+
+    def FirstValue(self):
+        # type: () -> value_t
+        return value.Str(self.keys[self.i])
+
+    def SecondValue(self):
+        # type: () -> value_t
+        return value.Str(self.values[self.i])
 
 
 def ToBool(val):
     # type: (value_t) -> bool
     """Convert any value to a boolean.
 
-    TODO: expose this as Bool(x), like Python's
-    bool(x).
+    TODO: expose this as Bool(x), like Python's bool(x).
     """
     UP_val = val
     with tagswitch(val) as case:
