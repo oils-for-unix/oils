@@ -445,7 +445,9 @@ c=foo1 d=foo2
 
 # You can do this in bash/mksh.  See nameref!
 
-proc set1(:a, item) {
+shopt --set parse_proc
+
+proc set1(a Ref, item) {
   setref a[1] = item
 }
 

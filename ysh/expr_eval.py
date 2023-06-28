@@ -89,14 +89,6 @@ def LookupVar2(mem, var_name, which_scopes, var_loc):
     return val
 
 
-def LookupVar(mem, var_name, which_scopes, var_loc):
-    # type: (Mem, str, scope_t, loc_t) -> Any
-    """Convert to a Python object so we can calculate on it natively."""
-
-    val = LookupVar2(mem, var_name, which_scopes, var_loc)
-    return _ValueToPyObj(val)
-
-
 def Stringify(py_val, word_part=None):
     # type: (Any, Optional[word_part_t]) -> str
     """For predictably converting between Python objects and strings.
@@ -346,10 +338,6 @@ class OilEvaluator(object):
         # type: () -> None
         assert self.shell_ex is not None
         assert self.word_ev is not None
-
-    def LookupVar(self, name, var_loc):
-        # type: (str, loc_t) -> Any
-        return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
     def LookupVar2(self, name, var_loc):
         # type: (str, loc_t) -> value_t
@@ -1641,12 +1629,8 @@ class OilEvaluator(object):
             elif case(class_literal_term_e.Splice):
                 term = cast(class_literal_term.Splice, UP_term)
 
-                obj = self.LookupVar(term.name.tval, term.name)
-                if not isinstance(obj, str):
-                    e_die(
-                        "Can't splice object of type %r into char class literal"
-                        % obj.__class__, term.name)
-                s = obj
+                val = self.LookupVar2(term.name.tval, term.name)
+                s = val_ops.ToStr(val, term.name, prefix='Eggex char class splice ')
                 char_code_tok = term.name
 
         assert s is not None, term
@@ -1715,7 +1699,7 @@ class OilEvaluator(object):
                 node = cast(Token, UP_node)
 
                 id_ = node.id
-                val = node.tval
+                tval = node.tval
 
                 if id_ == Id.Expr_Dot:
                     return re.Primitive(Id.Re_Dot)
@@ -1727,16 +1711,16 @@ class OilEvaluator(object):
                     return re.Primitive(Id.Re_End)
 
                 if id_ == Id.Expr_Name:
-                    if val == 'dot':
+                    if tval == 'dot':
                         return re.Primitive(Id.Re_Dot)
-                    raise NotImplementedError(val)
+                    raise NotImplementedError(tval)
 
                 if id_ == Id.Expr_Symbol:
-                    if val == '%start':
+                    if tval == '%start':
                         return re.Primitive(Id.Re_Start)
-                    if val == '%end':
+                    if tval == '%end':
                         return re.Primitive(Id.Re_End)
-                    raise NotImplementedError(val)
+                    raise NotImplementedError(tval)
 
                 # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
                 kind = consts.GetKind(id_)
@@ -1753,17 +1737,22 @@ class OilEvaluator(object):
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
 
-                obj = self.LookupVar(node.name.tval, node.name)
-                if isinstance(obj, str):
-                    to_splice = re.LiteralChars(obj, node.name)  # type: re_t
-                elif isinstance(obj, value.Eggex):
-                    # Note: we only splice the regex, and ignore flags.
-                    # Should we warn about this?
-                    to_splice = obj.expr
-                else:
-                    e_die(
-                        "Can't splice object of type %r into regex" %
-                        obj.__class__, node.name)
+                val = self.LookupVar2(node.name.tval, node.name)
+                UP_val = val
+                with tagswitch(val) as case:
+                    if case(value_e.Str):
+                        val = cast(value.Str, UP_val)
+                        to_splice = re.LiteralChars(val.s, node.name)  # type: re_t
+
+                    elif case(value_e.Eggex):
+                        val = cast(value.Eggex, UP_val)
+                        # Note: we only splice the regex, and ignore flags.
+                        # Should we warn about this?
+                        to_splice = val.expr
+
+                    else:
+                        raise error.InvalidType2(
+                            val, 'Eggex splice expected Str or Eggex', node.name)
                 return to_splice
 
             else:

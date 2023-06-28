@@ -81,7 +81,7 @@ test-undefined-vars() {
   _error-case 'setvar a = undef'  # PlaceMutation
 }
 
-test-oil-word-eval() {
+test-ysh-word-eval() {
   set +o errexit
 
   _expr-error-case 'echo $[maybe("foo")]'
@@ -95,7 +95,7 @@ test-oil-word-eval() {
   #_expr-error-case 'const x = [1, 2]; echo $x'
 }
 
-test-oil-expr-eval() {
+test-ysh-expr-eval() {
   set +o errexit
 
   _expr-error-case 'echo $[42 / 0 ]'
@@ -115,6 +115,10 @@ test-oil-expr-eval() {
   _expr-error-case 'case (42 / 0) { * { echo hi } }; echo OK'
 
   _expr-error-case 'var d = {}; for x in $[d->zzz] { echo hi }'
+
+  # Wrong index type
+  _expr-error-case 'var d = {}; setvar d[42] = 3'
+  _expr-error-case 'var L = []; setvar L["key"] = 3'
 }
 
 test-user-reported() {
@@ -271,8 +275,19 @@ EOF
   _error-case "var x = / [ '-'-z ] /; echo \$x"
   _error-case "var x = / [ ']'-z ] /; echo \$x"
 
-  # Hm this runs but will cause a syntax error.  Could disallow it.
-  # _should-run ' = / ["^"] /'
+  # TODO: Disallow this.  It translates to [^], which is a syntax error in
+  # egrep "Unmatched [ or [^"
+  _should-run "var x = / ['^'] /; echo \$x"
+
+  _expr-error-case '
+  var i = 42
+  = / @i /   # splice object of wrong type
+  '
+
+  _expr-error-case '
+  var i = 42
+  = / [a @i] /   # char class splice object of wrong type
+  '
 }
 
 test-eggex-2() {
@@ -288,7 +303,6 @@ test-eggex-2() {
   echo $sq2
 EOF
 )"
-
 
   _error-case '
   var literal = "foo"

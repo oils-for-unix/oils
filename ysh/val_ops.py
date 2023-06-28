@@ -19,26 +19,28 @@ if TYPE_CHECKING:
     from core import state
 
 
-def ToInt(val):
-    # type: (value_t) -> int
+def ToInt(val, blame_loc, prefix=''):
+    # type: (value_t, loc_t, Optional[str]) -> int
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
         return val.i
 
     raise error.InvalidType(
-        'expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
+        '%sexpected value.Int, but got %s' % (prefix, value_str(val.tag())),
+        blame_loc)
 
 
-def ToStr(val):
-    # type: (value_t) -> str
+def ToStr(val, blame_loc, prefix=''):
+    # type: (value_t, loc_t, Optional[str]) -> str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
         return val.s
 
     raise error.InvalidType(
-        'expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
+        '%sexpected value.Str, but got %s' % (prefix, value_str(val.tag())),
+        blame_loc)
 
 
 def MustBeInt(val):

@@ -122,6 +122,7 @@ YSH_TYPE_NAMES = {
 
 
 class Deps(object):
+
     def __init__(self):
         # type: () -> None
         self.mutable_opts = None  # type: state.MutableOpts
@@ -635,7 +636,8 @@ class CommandEvaluator(object):
 
         assert len(node_list) > 0
         node = node_list[0]
-        if _HasManyStatuses(node):  # TODO: consolidate error message with above
+        if _HasManyStatuses(node):
+            # TODO: consolidate error message with above
             node_str = ui.CommandType(node)
             e_die(
                 "strict_errexit only allows simple commands in conditionals (got %s). "
@@ -686,7 +688,7 @@ class CommandEvaluator(object):
                     arg = cast(case_arg.YshExpr, UP_arg)
                     val = self.expr_ev.EvalExpr2(arg.e, blame)
                     # TODO: more informative errors, with locations
-                    return val_ops.ToStr(val)
+                    return val_ops.ToStr(val, loc.Missing)
 
         # note, right now this is reachable in mycpp
         # we will have to wait until we can match on typed args before we can support
@@ -785,8 +787,8 @@ class CommandEvaluator(object):
                     if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                         # Special builtins have their temp env persisted.
                         self._EvalTempEnv(node.more_env, 0)
-                        status = self._RunSimpleCommand(cmd_val, cmd_st,
-                                                        node.do_fork)
+                        status = self._RunSimpleCommand(
+                            cmd_val, cmd_st, node.do_fork)
                     else:
                         with state.ctx_Temp(self.mem):
                             self._EvalTempEnv(node.more_env, state.SetExport)
@@ -970,28 +972,44 @@ class CommandEvaluator(object):
                                 with tagswitch(obj) as case:
                                     if case(value_e.MaybeStrArray):
                                         obj = cast(value.MaybeStrArray, UP_obj)
-                                        # index must be value.Int
-                                        obj.strs[val_ops.ToInt(lval_.index)] = py_val
+                                        index = val_ops.ToInt(
+                                            lval_.index,
+                                            loc.Missing,
+                                            prefix='List index ')
+                                        obj.strs[index] = py_val
 
                                     elif case(value_e.List):
                                         obj = cast(value.List, UP_obj)
-                                        # index must be value.Int
-                                        obj.items[val_ops.ToInt(lval_.index)] = expr_eval._PyObjToValue(py_val)
+                                        index = val_ops.ToInt(
+                                            lval_.index,
+                                            loc.Missing,
+                                            prefix='List index ')
+                                        obj.items[
+                                            index] = expr_eval._PyObjToValue(
+                                                py_val)
 
                                     elif case(value_e.AssocArray):
                                         obj = cast(value.AssocArray, UP_obj)
-                                        # index must be value.Str
-                                        obj.d[val_ops.ToStr(lval_.index)] = py_val
+                                        key = val_ops.ToStr(
+                                            lval_.index,
+                                            loc.Missing,
+                                            prefix='AssocArray index ')
+                                        obj.d[key] = py_val
 
                                     elif case(value_e.Dict):
                                         obj = cast(value.Dict, UP_obj)
-                                        # index must be value.Str
-                                        obj.d[val_ops.ToStr(lval_.index)] = expr_eval._PyObjToValue(py_val)
+                                        key = val_ops.ToStr(
+                                            lval_.index,
+                                            loc.Missing,
+                                            prefix='Dict index ')
+                                        obj.d[key] = expr_eval._PyObjToValue(
+                                            py_val)
 
                                     else:
-                                        raise error.InvalidType2(obj,
-                                                "obj[index] expected List or Dict",
-                                                loc.Missing)
+                                        raise error.InvalidType2(
+                                            obj,
+                                            "obj[index] expected List or Dict",
+                                            loc.Missing)
 
                                 if node.keyword.id == Id.KW_SetRef:
                                     e_die('setref obj[index] not implemented')
@@ -1122,7 +1140,7 @@ class CommandEvaluator(object):
                     # break/continue at top level.  It has the side effect of making
                     # 'return ""' valid, which shells other than zsh fail on.
                     if len(str_val.s
-                          ) == 0 and not self.exec_opts.strict_control_flow():
+                           ) == 0 and not self.exec_opts.strict_control_flow():
                         arg = 0
                     else:
                         try:
@@ -1147,8 +1165,8 @@ class CommandEvaluator(object):
                 # from a sourced script, it makes sense to return from a main script.
                 ok = True
                 if (keyword.id
-                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
-                        self.loop_level == 0):
+                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue)
+                        and self.loop_level == 0):
                     ok = False
 
                 if ok:
@@ -1311,8 +1329,10 @@ class CommandEvaluator(object):
                                         self.mem.SetValue(
                                             i_name, value.Int(index),
                                             scope_e.LocalOnly)
-                                    self.mem.SetValue(val_name, expr_eval._PyObjToValue(item),
-                                                      scope_e.LocalOnly)
+                                    self.mem.SetValue(
+                                        val_name,
+                                        expr_eval._PyObjToValue(item),
+                                        scope_e.LocalOnly)
 
                                     try:
                                         status = self._Execute(
@@ -1353,13 +1373,15 @@ class CommandEvaluator(object):
 
                                 index = 0
                                 for key in obj:
-                                    self.mem.SetValue(key_name, expr_eval._PyObjToValue(key),
-                                                      scope_e.LocalOnly)
+                                    self.mem.SetValue(
+                                        key_name, expr_eval._PyObjToValue(key),
+                                        scope_e.LocalOnly)
                                     if val_name:
                                         dict_value = obj[key]
                                         self.mem.SetValue(
-                                            val_name, expr_eval._PyObjToValue(dict_value),
-                                            scope_e.LocalOnly)
+                                            val_name,
+                                            expr_eval._PyObjToValue(
+                                                dict_value), scope_e.LocalOnly)
                                     if i_name:
                                         self.mem.SetValue(
                                             i_name, value.Int(index),
@@ -1380,8 +1402,8 @@ class CommandEvaluator(object):
 
                             else:
                                 raise error.Expr(
-                                    "Expected list or dict, got %r" % type(obj),
-                                    iter_expr_blame)
+                                    "Expected list or dict, got %r" %
+                                    type(obj), iter_expr_blame)
 
                 else:
                     with ctx_LoopLevel(self):
@@ -1469,7 +1491,8 @@ class CommandEvaluator(object):
                         "Function %s was already defined (redefine_proc)" %
                         node.name, node.name_tok)
                 self.procs[node.name] = Proc(node.name, node.name_tok,
-                                             proc_sig.Open, node.body, [], True)
+                                             proc_sig.Open, node.body, [],
+                                             True)
 
                 status = 0
 
@@ -1491,7 +1514,8 @@ class CommandEvaluator(object):
                         defaults = [None] * len(sig.pos_params)
                         for i, p in enumerate(sig.pos_params):
                             if p.default_val:
-                                val = self.expr_ev.EvalExpr2(p.default_val, loc.Missing)
+                                val = self.expr_ev.EvalExpr2(
+                                    p.default_val, loc.Missing)
                                 defaults[i] = val
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
@@ -1560,7 +1584,8 @@ class CommandEvaluator(object):
                 status = self._Execute(node.pipeline)
                 e_real, e_user, e_sys = pyos.Time()
                 # note: mycpp doesn't support %.3f
-                libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
+                libc.print_time(e_real - s_real, e_user - s_user,
+                                e_sys - s_sys)
 
             else:
                 raise NotImplementedError(node.tag())
@@ -1636,7 +1661,8 @@ class CommandEvaluator(object):
                         except error.FailGlob as e:
                             if not e.HasLocation():  # Last resort!
                                 e.location = self.mem.CurrentLocation()
-                            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                            self.errfmt.PrettyPrintError(e,
+                                                         prefix='failglob: ')
                             status = 1
                             check_errexit = True
 
@@ -1839,7 +1865,8 @@ class CommandEvaluator(object):
             status = err.ExitStatus()
 
             is_fatal = True
-            self.dumper.MaybeRecord(self, err)  # Do this before unwinding stack
+            # Do this before unwinding stack
+            self.dumper.MaybeRecord(self, err)
 
             if not err.HasLocation():  # Last resort!
                 err.location = self.mem.CurrentLocation()
