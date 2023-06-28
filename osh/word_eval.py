@@ -223,7 +223,7 @@ def _ValueToPartValue(val, quoted):
 
         elif case(value_e.AssocArray):
             val = cast(value.AssocArray, UP_val)
-            # TODO: Is this correct?
+            # bash behavior: splice values!
             return part_value.Array(val.d.values())
 
         # Cases added for YSH
@@ -1641,28 +1641,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(word_part.Splice, UP_part)
                 val = self.mem.GetValue(part.var_name)
 
-                UP_val = val
-                with tagswitch(val) as case2:
-                    if case2(value_e.MaybeStrArray):
-                        val = cast(value.MaybeStrArray, UP_val)
-                        items = val.strs
-                    elif case2(value_e.AssocArray):
-                        # Should we force an explicit @[d->keys()] ?
-                        val = cast(value.AssocArray, UP_val)
-                        items = val.d.keys()
-
-                    elif case2(value_e.List):
-                        val = cast(value.List, UP_val)
-                        if mylib.PYTHON:
-                            items = self.expr_ev.SpliceValue(val.items, part)
-                        else:
-                            raise AssertionError()
-
-                    else:
-                        raise error.InvalidType2(val,
-                            "Can't splice %r" % part.var_name, loc.WordPart(part))
-
-                part_vals.append(part_value.Array(items))
+                strs = self.expr_ev.SpliceValue(val, part)
+                part_vals.append(part_value.Array(strs))
 
             elif case(word_part_e.ExprSub):
                 part = cast(word_part.ExprSub, UP_part)

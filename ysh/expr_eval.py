@@ -436,7 +436,7 @@ class OilEvaluator(object):
         py_val = _ValueToPyObj(val)
 
         if part.left.id == Id.Left_DollarBracket:
-            s = Stringify(py_val, word_part=part)
+            s = val_ops.Stringify(val, blame_loc=loc.WordPart(part))
             return part_value.String(s, False, False)
 
         elif part.left.id == Id.Lit_AtLBracket:
@@ -450,15 +450,34 @@ class OilEvaluator(object):
         else:
             raise AssertionError(part.left)
 
-    def SpliceValue(self, py_val, part):
-        # type: (Any, word_part.Splice) -> List[Any]
-        try:
-            items = [Stringify(item, word_part=part) for item in py_val]
-        except TypeError as e:  # TypeError if it isn't iterable
-            raise error.Expr('Type error in expression: %s' % str(e),
-                             loc.WordPart(part))
+    def SpliceValue(self, val, part):
+        # type: (value_t, word_part.Splice) -> List[str]
 
-        return items
+        UP_val = val
+        with tagswitch(val) as case2:
+            if case2(value_e.MaybeStrArray):
+                val = cast(value.MaybeStrArray, UP_val)
+                strs = val.strs
+
+            elif case2(value_e.List):
+                val = cast(value.List, UP_val)
+                try:
+                    strs = [Stringify(item, word_part=part) for item in val.items]
+                except TypeError as e:  # TypeError if it isn't iterable
+                    raise error.Expr('Type error in expression: %s' % str(e),
+                                     loc.WordPart(part))
+
+            # Dict and AssocArray?
+            # For now let's use 
+            # @[d->keys()]
+            # @[d->values()]
+            # Because "${A[@]}" in bash shows the VALUES, and @A should arguably be consistent
+
+            else:
+                raise error.InvalidType2(val,
+                    "Can't splice %r" % part.var_name, loc.WordPart(part))
+
+        return strs
 
     def EvalExpr2(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t

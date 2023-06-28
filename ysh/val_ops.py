@@ -5,7 +5,7 @@ val_ops.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, loc_t
 
 from core import error
 from mycpp.mylib import tagswitch
@@ -85,8 +85,8 @@ def MustBeFunc(val):
         'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def Stringify(val):
-    # type: (value_t) -> str
+def Stringify(val, blame_loc=loc.Missing):
+    # type: (value_t, loc_t) -> str
     """
     Used by
 
@@ -126,7 +126,7 @@ def Stringify(val):
         else:
             raise error.InvalidType2(
                 val, "stringify expected Null, Bool, Int, Float, Eggex",
-                loc.Missing)
+                blame_loc)
 
     return s
 

@@ -6,13 +6,25 @@ argv.py @a
 ['one', 'two', 'three']
 ## END
 
-#### Splice in assoc array
-shopt -s oil:upgrade
-declare -A A=(['foo']=bar, ['spam']=eggs)
+#### Assoc array can't be spliced directly
+
+shopt -s ysh:upgrade
+declare -A A=(['foo']=bar ['spam']=eggs)
+
+# Bash behavior is to splice values
+write -- "${A[@]}"
+
 write -- @A
+echo 'should not get here'
+
+# These should eventually work
+#write -- @[A->keys()]
+#write -- @[A->values()]
+
+## status: 3
 ## STDOUT:
-foo
-spam
+bar
+eggs
 ## END
 
 #### Can't splice string
