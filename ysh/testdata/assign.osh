@@ -21,7 +21,8 @@ setvar x = 4
 
 setvar d = 1  # comment
 
-var y, z = a, b
+var y =a
+var z=b
 
 echo hi
 
