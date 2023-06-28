@@ -2031,6 +2031,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                                'builtins.float',
                                                'builtins.str'):
                             valid = True
+
+                        # Note: loc.Missing not allowed because the type is loc__Missing
+                        # Could we allow it?  Global reference is a little weird
                         if t.type.fullname.endswith(
                                 '_t'):  # ASDL lex_mode_t, scope_t, ...
                             valid = True
@@ -2038,7 +2041,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     if not valid:
                         self.report_error(
                             arg,
-                            'Invalid default arg %r of type %s (not None, bool, int, float)'
+                            'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
                             % (arg.initializer, t))
                         return
 

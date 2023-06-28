@@ -435,11 +435,11 @@ class OilEvaluator(object):
         val = self.EvalExpr2(part.child, loc.Missing)
         py_val = _ValueToPyObj(val)
 
-        if part.left.id == Id.Left_DollarBracket:
+        if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
             s = val_ops.Stringify(val, blame_loc=loc.WordPart(part))
             return part_value.String(s, False, False)
 
-        elif part.left.id == Id.Lit_AtLBracket:
+        elif part.left.id == Id.Lit_AtLBracket:  # @[split(x)]
             try:
                 a = [Stringify(item, word_part=part) for item in py_val]
             except TypeError as e:  # TypeError if it isn't iterable
@@ -452,7 +452,7 @@ class OilEvaluator(object):
 
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]
-
+        """ write -- @myvar """
         UP_val = val
         with tagswitch(val) as case2:
             if case2(value_e.MaybeStrArray):

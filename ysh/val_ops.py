@@ -85,7 +85,7 @@ def MustBeFunc(val):
         'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def Stringify(val, blame_loc=loc.Missing):
+def Stringify(val, blame_loc=None):
     # type: (value_t, loc_t) -> str
     """
     Used by
@@ -94,6 +94,9 @@ def Stringify(val, blame_loc=loc.Missing):
     @[x]    expression splice - each element is stringified
     @x      splice value
     """
+    if blame_loc is None:
+        blame_loc = loc.Missing
+
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Str):  # trivial case
@@ -145,6 +148,7 @@ def ToShellArray(val):
     # It doesn't make sense for Dict because:
     # - keys are already strings
     # - it's not clear you want the keys only?
+    return None
 
 
 class Iterator(object):

@@ -1641,7 +1641,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(word_part.Splice, UP_part)
                 val = self.mem.GetValue(part.var_name)
 
-                strs = self.expr_ev.SpliceValue(val, part)
+                if mylib.PYTHON:
+                    strs = self.expr_ev.SpliceValue(val, part)
+                else:
+                    strs = []
                 part_vals.append(part_value.Array(strs))
 
             elif case(word_part_e.ExprSub):
