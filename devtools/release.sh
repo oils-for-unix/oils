@@ -224,7 +224,7 @@ readonly -a MORE_TESTS=(
   gold 
   ysh-prettify
   parse-errors runtime-errors
-  oil-runtime-errors
+  ysh-runtime-errors
   arena
   osh-usage oshc-deps
   syscall

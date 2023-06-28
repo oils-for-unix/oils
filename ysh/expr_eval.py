@@ -1515,45 +1515,6 @@ class OilEvaluator(object):
                 e_die_status(
                     2, 'List comprehension reserved but not implemented')
 
-                #
-                # TODO: Move this code to the new for loop
-                #
-
-                # TODO:
-                # - Consolidate with command_e.OilForIn in osh/cmd_eval.py?
-                # - Do I have to push a temp frame here?
-                #   Hm... lexical or dynamic scope is an issue.
-                result = []
-                comp = node.generators[0]
-                obj = self._EvalExpr(comp.iter)
-
-                # TODO: Handle x,y etc.
-                iter_name = comp.lhs[0].name.tval
-
-                if isinstance(obj, str):
-                    e_die("Strings aren't iterable")
-                else:
-                    it = obj.__iter__()
-
-                while True:
-                    try:
-                        loop_val = it.next()  # e.g. x
-                    except StopIteration:
-                        break
-                    self.mem.SetValue(location.LName(iter_name),
-                                      _PyObjToValue(loop_val), scope_e.LocalOnly)
-
-                    if comp.cond:
-                        b = self._EvalExpr(comp.cond)
-                    else:
-                        b = True
-
-                    if b:
-                        item = self._EvalExpr(node.elt)  # e.g. x*2
-                        result.append(item)
-
-                return result
-
             elif case(expr_e.GeneratorExp):
                 e_die_status(
                     2, 'Generator expression reserved but not implemented')

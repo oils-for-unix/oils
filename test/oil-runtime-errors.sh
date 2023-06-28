@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   test/oil-runtime-errors.sh <function name>
+#   test/ysh-runtime-errors.sh <function name>
 
 # NOTE: No set -o errexit, etc.
 
@@ -317,7 +317,7 @@ soil-run() {
 }
 
 run-for-release() {
-  run-other-suite-for-release oil-runtime-errors run-test-funcs
+  run-other-suite-for-release ysh-runtime-errors run-test-funcs
 }
 
 "$@"
