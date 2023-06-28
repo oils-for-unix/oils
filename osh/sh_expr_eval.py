@@ -1056,11 +1056,12 @@ class BoolEvaluator(ArithEvaluator):
                             e_die_status(2, 'Invalid regex %r: %s' % (s2, msg),
                                          loc.Word(node.right))
 
-                        if matches is None:
+                        if matches is not None:
+                            self.mem.SetMatches(matches)
+                            return True
+                        else:
+                            self.mem.ClearMatches()
                             return False
-
-                        self.mem.SetMatches(matches)
-                        return True
 
                     if op_id == Id.Op_Less:
                         return str_cmp(s1, s2) < 0

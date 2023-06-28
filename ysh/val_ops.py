@@ -11,7 +11,12 @@ from core import error
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
-from typing import cast, Optional
+from typing import TYPE_CHECKING, cast, Optional
+
+import libc
+
+if TYPE_CHECKING:
+    from core import state
 
 
 def ToInt(val):
@@ -120,7 +125,8 @@ def Stringify(val):
 
         else:
             raise error.InvalidType2(
-                val, "stringify expected Null, Bool, Int, Float, Eggex", loc.Missing)
+                val, "stringify expected Null, Bool, Int, Float, Eggex",
+                loc.Missing)
 
     return s
 
@@ -194,3 +200,233 @@ class Iterator(object):
         self.i += 1
 
         return ret
+
+
+def ToBool(val):
+    # type: (value_t) -> bool
+    """Convert any value to a boolean.
+
+    TODO: expose this as Bool(x), like Python's
+    bool(x).
+    """
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.Undef):
+            return False
+
+        elif case(value_e.Null):
+            return False
+
+        elif case(value_e.Str):
+            val = cast(value.Str, UP_val)
+            return len(val.s) != 0
+
+        # OLD TYPES
+        elif case(value_e.MaybeStrArray):
+            val = cast(value.MaybeStrArray, UP_val)
+            return len(val.strs) != 0
+
+        elif case(value_e.AssocArray):
+            val = cast(value.AssocArray, UP_val)
+            return len(val.d) != 0
+
+        elif case(value_e.Bool):
+            val = cast(value.Bool, UP_val)
+            return val.b
+
+        elif case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            return val.i != 0
+
+        elif case(value_e.Float):
+            val = cast(value.Float, UP_val)
+            return val.f != 0.0
+
+        elif case(value_e.List):
+            val = cast(value.List, UP_val)
+            return len(val.items) > 0
+
+        elif case(value_e.Dict):
+            val = cast(value.Dict, UP_val)
+            return len(val.d) > 0
+
+        else:
+            return True  # all other types are Truthy
+
+
+def ExactlyEqual(left, right):
+    # type: (value_t, value_t) -> bool
+    if left.tag() != right.tag():
+        return False
+
+    UP_left = left
+    UP_right = right
+    with tagswitch(left) as case:
+        if case(value_e.Undef):
+            return True  # there's only one Undef
+
+        elif case(value_e.Null):
+            return True  # there's only one Null
+
+        elif case(value_e.Bool):
+            left = cast(value.Bool, UP_left)
+            right = cast(value.Bool, UP_right)
+            return left.b == right.b
+
+        elif case(value_e.Int):
+            left = cast(value.Int, UP_left)
+            right = cast(value.Int, UP_right)
+            return left.i == right.i
+
+        elif case(value_e.Float):
+            left = cast(value.Float, UP_left)
+            right = cast(value.Float, UP_right)
+            return left.f == right.f
+
+        elif case(value_e.Str):
+            left = cast(value.Str, UP_left)
+            right = cast(value.Str, UP_right)
+            return left.s == right.s
+
+        elif case(value_e.MaybeStrArray):
+            left = cast(value.MaybeStrArray, UP_left)
+            right = cast(value.MaybeStrArray, UP_right)
+            if len(left.strs) != len(right.strs):
+                return False
+
+            for i in xrange(0, len(left.strs)):
+                if left.strs[i] != right.strs[i]:
+                    return False
+
+            return True
+
+        elif case(value_e.List):
+            left = cast(value.List, UP_left)
+            right = cast(value.List, UP_right)
+            if len(left.items) != len(right.items):
+                return False
+
+            for i in xrange(0, len(left.items)):
+                if not ExactlyEqual(left.items[i], right.items[i]):
+                    return False
+
+            return True
+
+        elif case(value_e.AssocArray):
+            left = cast(value.Dict, UP_left)
+            right = cast(value.Dict, UP_right)
+            if len(left.d) != len(right.d):
+                return False
+
+            for k in left.d.keys():
+                if k not in right.d or right.d[k] != left.d[k]:
+                    return False
+
+            return True
+
+        elif case(value_e.Dict):
+            left = cast(value.Dict, UP_left)
+            right = cast(value.Dict, UP_right)
+            if len(left.d) != len(right.d):
+                return False
+
+            for k in left.d.keys():
+                if k not in right.d or not ExactlyEqual(right.d[k], left.d[k]):
+                    return False
+
+            return True
+
+    raise NotImplementedError(left)
+
+
+def Contains(needle, haystack):
+    # type: (value_t, value_t) -> bool
+    """Haystack must be a collection type."""
+
+    UP_needle = needle
+    UP_haystack = haystack
+    with tagswitch(haystack) as case:
+        if case(value_e.List):
+            haystack = cast(value.List, UP_haystack)
+            for item in haystack.items:
+                if ExactlyEqual(item, needle):
+                    return True
+
+            return False
+
+        elif case(value_e.MaybeStrArray):
+            haystack = cast(value.MaybeStrArray, UP_haystack)
+            if needle.tag() != value_e.Str:
+                raise error.InvalidType('Expected Str', loc.Missing)
+
+            needle = cast(value.Str, UP_needle)
+            for s in haystack.strs:
+                if s == needle.s:
+                    return True
+
+            return False
+
+        elif case(value_e.Dict):
+            haystack = cast(value.Dict, UP_haystack)
+            if needle.tag() != value_e.Str:
+                raise error.InvalidType('Expected Str', loc.Missing)
+
+            needle = cast(value.Str, UP_needle)
+            return needle.s in haystack.d
+
+        elif case(value_e.AssocArray):
+            haystack = cast(value.AssocArray, UP_haystack)
+            if needle.tag() != value_e.Str:
+                raise error.InvalidType('Expected Str', loc.Missing)
+
+            needle = cast(value.Str, UP_needle)
+            return needle.s in haystack.d
+
+        else:
+            raise error.InvalidType('Expected List or Dict', loc.Missing)
+
+    return False
+
+
+def RegexMatch(left, right, mem):
+    # type: (value_t, value_t, Optional[state.Mem]) -> bool
+    """
+    Args:
+      mem: Whether to set or clear matches
+    """
+    UP_right = right
+    right_s = None  # type: str
+    with tagswitch(right) as case:
+        if case(value_e.Str):
+            right = cast(value.Str, UP_right)
+            right_s = right.s
+        elif case(value_e.Eggex):
+            right = cast(value.Eggex, UP_right)
+            right_s = regex_translate.AsPosixEre(right)
+        else:
+            raise error.InvalidType2(right,
+                                     'Expected Str or Regex for RHS of ~',
+                                     loc.Missing)
+
+    UP_left = left
+    left_s = None  # type: str
+    with tagswitch(left) as case:
+        if case(value_e.Str):
+            left = cast(value.Str, UP_left)
+            left_s = left.s
+        else:
+            raise error.InvalidType('LHS must be a string', loc.Missing)
+
+    # TODO:
+    # - libc_regex_match should populate _start() and _end() too (out params?)
+    # - What is the ordering for named captures?  See demo/ere*.sh
+
+    matches = libc.regex_match(right_s, left_s)
+    if matches is not None:
+        if mem:
+            mem.SetMatches(matches)
+        return True
+    else:
+        if mem:
+            mem.ClearMatches()
+        return False

@@ -35,11 +35,23 @@
 
 #### BASH_REMATCH
 [[ foo123 =~ ([a-z]+)([0-9]+) ]]
+echo status=$?
 argv.py "${BASH_REMATCH[@]}"
+
+[[ failed =~ ([a-z]+)([0-9]+) ]]
+echo status=$?
+argv.py "${BASH_REMATCH[@]}"  # not cleared!
+
 ## STDOUT:
+status=0
 ['foo123', 'foo', '123']
+status=1
+[]
 ## END
 ## N-I zsh STDOUT:
+status=0
+['']
+status=1
 ['']
 ## END
 

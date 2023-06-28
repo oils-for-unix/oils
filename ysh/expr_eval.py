@@ -56,10 +56,11 @@ from core import vm
 from frontend import consts
 from frontend import match
 from frontend import location
-from ysh import regex_translate
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, tagswitch
+from ysh import regex_translate
+from ysh import val_ops
 
 import libc
 
@@ -103,7 +104,7 @@ def Stringify(py_val, word_part=None):
     We don't want to tie our sematnics to the Python interpreter too
     much.
     """
-    # XXX: once verything is typed this should go away and this function should
+    # XXX: once everything is typed this should go away and this function should
     # use tagswitch
     if isinstance(py_val, value_t):
         if py_val.tag() == value_e.Eggex:
@@ -314,192 +315,6 @@ def _ValueToPyObj(val):
                 loc.Missing)
 
 
-def _ValuesEqual(left, right):
-    # type: (value_t, value_t) -> bool
-    if left.tag() != right.tag():
-        return False
-
-    UP_left = left
-    UP_right = right
-    with tagswitch(left) as case:
-        if case(value_e.Undef):
-            return True  # there's only one Undef
-
-        if case(value_e.Null):
-            return True  # there's only one Null
-
-        elif case(value_e.Bool):
-            left = cast(value.Bool, UP_left)
-            right = cast(value.Bool, UP_right)
-            return left.b == right.b
-
-        elif case(value_e.Int):
-            left = cast(value.Int, UP_left)
-            right = cast(value.Int, UP_right)
-            return left.i == right.i
-
-        elif case(value_e.Float):
-            left = cast(value.Float, UP_left)
-            right = cast(value.Float, UP_right)
-            return left.f == right.f
-
-        elif case(value_e.Str):
-            left = cast(value.Str, UP_left)
-            right = cast(value.Str, UP_right)
-            return left.s == right.s
-
-        elif case(value_e.MaybeStrArray):
-            left = cast(value.MaybeStrArray, UP_left)
-            right = cast(value.MaybeStrArray, UP_right)
-            if len(left.strs) != len(right.strs):
-                return False
-
-            for i in xrange(0, len(left.strs)):
-                if left.strs[i] != right.strs[i]:
-                    return False
-
-            return True
-
-        elif case(value_e.List):
-            left = cast(value.List, UP_left)
-            right = cast(value.List, UP_right)
-            if len(left.items) != len(right.items):
-                return False
-
-            for i in xrange(0, len(left.items)):
-                if not _ValuesEqual(left.items[i], right.items[i]):
-                    return False
-
-            return True
-
-        elif case(value_e.AssocArray):
-            left = cast(value.Dict, UP_left)
-            right = cast(value.Dict, UP_right)
-            if len(left.d) != len(right.d):
-                return False
-
-            for k in left.d.keys():
-                if k not in right.d or right.d[k] != left.d[k]:
-                    return False
-
-            return True
-
-        elif case(value_e.Dict):
-            left = cast(value.Dict, UP_left)
-            right = cast(value.Dict, UP_right)
-            if len(left.d) != len(right.d):
-                return False
-
-            for k in left.d.keys():
-                if k not in right.d or not _ValuesEqual(right.d[k], left.d[k]):
-                    return False
-
-            return True
-
-    raise NotImplementedError(left)
-
-
-def _ValueContains(needle, haystack):
-    # type: (value_t, value_t) -> bool
-    """Haystack must be a collection type."""
-
-    UP_needle = needle
-    UP_haystack = haystack
-    with tagswitch(haystack) as case:
-        if case(value_e.List):
-            haystack = cast(value.List, UP_haystack)
-            for item in haystack.items:
-                if _ValuesEqual(item, needle):
-                    return True
-
-            return False
-
-        elif case(value_e.MaybeStrArray):
-            haystack = cast(value.MaybeStrArray, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            for s in haystack.strs:
-                if s == needle.s:
-                    return True
-
-            return False
-
-        elif case(value_e.Dict):
-            haystack = cast(value.Dict, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            return needle.s in haystack.d
-
-        elif case(value_e.AssocArray):
-            haystack = cast(value.AssocArray, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            return needle.s in haystack.d
-
-        else:
-            raise error.InvalidType('Expected List or Dict', loc.Missing)
-
-    return False
-
-
-def ToBool(val):
-    # type: (value_t) -> bool
-    """Convert any value to a boolean.
-
-    TODO: expose this as Bool(x), like Python's
-    bool(x).
-    """
-    UP_val = val
-    with tagswitch(val) as case:
-        if case(value_e.Undef):
-            return False
-
-        elif case(value_e.Null):
-            return False
-
-        elif case(value_e.Str):
-            val = cast(value.Str, UP_val)
-            return len(val.s) != 0
-
-        # OLD TYPES
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
-            return len(val.strs) != 0
-
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
-            return len(val.d) != 0
-
-        elif case(value_e.Bool):
-            val = cast(value.Bool, UP_val)
-            return val.b
-
-        elif case(value_e.Int):
-            val = cast(value.Int, UP_val)
-            return val.i != 0
-
-        elif case(value_e.Float):
-            val = cast(value.Float, UP_val)
-            return val.f != 0.0
-
-        elif case(value_e.List):
-            val = cast(value.List, UP_val)
-            return len(val.items) > 0
-
-        elif case(value_e.Dict):
-            val = cast(value.Dict, UP_val)
-            return len(val.d) > 0
-
-        else:
-            return True  # all other types are Truthy
-
-
 class OilEvaluator(object):
     """Shared between arith and bool evaluators.
 
@@ -567,48 +382,6 @@ class OilEvaluator(object):
                 # TODO:
                 # subscripts, tuple unpacking, starred expressions, etc.
                 raise NotImplementedError(node.__class__.__name__)
-
-    # Copied from BoolEvaluator
-    def _EvalMatch(self, left, right, set_match_result):
-        # type: (value_t, value_t, bool) -> bool
-        """
-        Args:
-          set_match_result: Whether to assign
-        """
-        UP_right = right
-        right_s = None  # type: str
-        with tagswitch(right) as case:
-            if case(value_e.Str):
-                right = cast(value.Str, UP_right)
-                right_s = right.s
-            elif case(value_e.Eggex):
-                right = cast(value.Eggex, UP_right)
-                right_s = regex_translate.AsPosixEre(right)
-            else:
-                raise RuntimeError(
-                    "RHS of ~ should be string or Regex (got %s)" %
-                    right.__class__.__name__)
-
-        UP_left = left
-        with tagswitch(left) as case:
-            if case(value_e.Str):
-                left = cast(value.Str, UP_left)
-            else:
-                raise error.InvalidType('LHS must be a string', loc.Missing)
-
-        # TODO:
-        # - libc_regex_match should populate _start() and _end() too (out params?)
-        # - What is the ordering for named captures?  See demo/ere*.sh
-
-        matches = libc.regex_match(right_s, left.s)
-        if matches:
-            if set_match_result:
-                self.mem.SetMatches(matches)
-            return True
-        else:
-            if set_match_result:
-                self.mem.ClearMatches()
-            return False
 
     def _EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
@@ -709,48 +482,6 @@ class OilEvaluator(object):
             raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
 
         # Note: IndexError and KeyError are handled in more specific places
-
-    def _ToNumber(self, val):
-        # type: (Any) -> Union[int, float]
-        """Convert to something that can be compared."""
-        if isinstance(val, bool):
-            raise ValueError("A boolean isn't a number")  # preserves location
-
-        if isinstance(val, int):
-            return val
-
-        if isinstance(val, float):
-            return val
-
-        if isinstance(val, str):
-            # NOTE: Can we avoid scanning the string twice?
-            if match.LooksLikeInteger(val):
-                return int(val)
-            elif match.LooksLikeFloat(val):
-                return float(val)
-            else:
-                raise ValueError("%r doesn't look like a number" % val)
-
-        raise ValueError("%r isn't like a number" % (val, ))
-
-    def _ToInteger(self, val):
-        # type: (Any) -> int
-        """Like the above, but no floats."""
-        if isinstance(val, bool):
-            raise ValueError(
-                "A boolean isn't an integer")  # preserves location
-
-        if isinstance(val, int):
-            return val
-
-        if isinstance(val, str):
-            # NOTE: Can we avoid scanning the string twice?
-            if match.LooksLikeInteger(val):
-                return int(val)
-            else:
-                raise ValueError("%r doesn't look like an integer" % val)
-
-        raise ValueError("%r isn't like an integer" % (val, ))
 
     def _ValueToInteger(self, val):
         # type: (value_t) -> int
@@ -1067,13 +798,13 @@ class OilEvaluator(object):
         UP_right = right
 
         if op_id == Id.Expr_And:
-            if ToBool(left):
+            if val_ops.ToBool(left):
                 return right
             else:
                 return left
 
         elif op_id == Id.Expr_Or:
-            if ToBool(left):
+            if val_ops.ToBool(left):
                 return left
             else:
                 return right
@@ -1237,17 +968,17 @@ class OilEvaluator(object):
                 if left.tag() != right.tag():
                     result = False
                 else:
-                    result = _ValuesEqual(left, right)
+                    result = val_ops.ExactlyEqual(left, right)
             elif op.id == Id.Expr_NotDEqual:
                 if left.tag() != right.tag():
                     result = True
                 else:
-                    result = not _ValuesEqual(left, right)
+                    result = not val_ops.ExactlyEqual(left, right)
 
             elif op.id == Id.Expr_In:
-                result = _ValueContains(left, right)
+                result = val_ops.Contains(left, right)
             elif op.id == Id.Node_NotIn:
-                result = not _ValueContains(left, right)
+                result = not val_ops.Contains(left, right)
 
             elif op.id == Id.Expr_Is:
                 if left.tag() != right.tag():
@@ -1328,10 +1059,11 @@ class OilEvaluator(object):
             else:
                 try:
                     if op.id == Id.Arith_Tilde:
-                        result = self._EvalMatch(left, right, True)
+                        result = val_ops.RegexMatch(left, right, self.mem)
 
                     elif op.id == Id.Expr_NotTilde:
-                        result = not self._EvalMatch(left, right, False)
+                        # don't pass self.mem to not set a match
+                        result = not val_ops.RegexMatch(left, right, None)
 
                     else:
                         raise AssertionError(op)
