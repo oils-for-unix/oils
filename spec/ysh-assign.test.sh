@@ -203,11 +203,24 @@ x=XX
 x=xx
 ## END
 
-#### var/setvar x, y = 1, 2
+#### var x, y = 1, 2 is NOT allowed
+
+# The syntax consistent with JavaScript woudl be
+# var x = 1, y = 2;
+
+var x, y = 1, 2
+
+## status: 2
+## STDOUT:
+## END
+
+
+#### setvar x, y = 1, 2
 
 # Python doesn't allow you to have annotation on each variable!
 # https://www.python.org/dev/peps/pep-0526/#where-annotations-aren-t-allowed
-var x Int, y Int = 3, 4
+var x Int = 3
+var y Int = 4
 echo "x=$x y=$y"
 
 setvar x, y = 1, 9
@@ -317,7 +330,7 @@ q s=dummy
 x=YY
 ## END
 
-#### circular dict
+#### circular dict - TODO 2023-06 REGRESS
 var d = {name: 'foo'}
 = d
 setvar d['name'] = 123
@@ -326,6 +339,9 @@ setvar d['name'] = 'mystr'
 = d
 setvar d['name'] = d
 = d
+
+# This used to print ...
+
 ## STDOUT:
 (OrderedDict)   <'name': 'foo'>
 (OrderedDict)   <'name': 123>

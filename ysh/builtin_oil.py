@@ -11,7 +11,8 @@ It's sort of like xargs too.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (value, value_e, Proc, cmd_value)
+from _devbuild.gen.runtime_asdl import (value, value_e, value_t, Proc,
+                                        cmd_value)
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from core import error
 from core.error import e_usage
@@ -23,7 +24,7 @@ from mycpp import mylib
 from mycpp.mylib import log, tagswitch, Stdout
 from data_lang import qsn
 
-from typing import Dict, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Dict, List
 if TYPE_CHECKING:
     from core.alloc import Arena
     from core.ui import ErrorFormatter
@@ -32,6 +33,7 @@ _ = log
 
 
 class _Builtin(vm._Builtin):
+
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ErrorFormatter) -> None
         self.mem = mem
@@ -150,7 +152,7 @@ class Append(_Builtin):
 
         val = self.mem.GetValue(var_name)
 
-        # TODO: Get rid of the value.MaybeStrArray and value.Obj distinction!
+        # TODO: Get rid of value.MaybeStrArray
         ok = False
         UP_val = val
         with tagswitch(val) as case:
@@ -158,9 +160,16 @@ class Append(_Builtin):
                 val = cast(value.MaybeStrArray, UP_val)
                 val.strs.extend(arg_r.Rest())
                 ok = True
+            elif case(value_e.List):
+                val = cast(value.List, UP_val)
+                typed = [value.Str(s)
+                         for s in arg_r.Rest()]  # type: List[value_t]
+                val.items.extend(typed)
+                ok = True
+
         if not ok:
-            self.errfmt.Print_("%r isn't an array" % var_name,
-                               blame_loc=var_loc)
+            # consider exit code 3 like error.InvalidType?
+            self.errfmt.Print_("%r isn't a List" % var_name, blame_loc=var_loc)
             return 1
 
         return 0

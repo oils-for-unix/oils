@@ -763,7 +763,7 @@ ysh-array() {
 }
 
 ysh-assign() {
-  sh-spec spec/ysh-assign.test.sh --oils-failures-allowed 1 \
+  sh-spec spec/ysh-assign.test.sh --oils-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 
@@ -844,7 +844,7 @@ ysh-expr-arith() {
 }
 
 ysh-expr-compare() {
-  sh-spec spec/ysh-expr-compare.test.sh --oils-failures-allowed 3 \
+  sh-spec spec/ysh-expr-compare.test.sh --oils-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 

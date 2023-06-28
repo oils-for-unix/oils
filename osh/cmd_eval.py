@@ -893,8 +893,7 @@ class CommandEvaluator(object):
                         # Note: there's only one LHS
                         vd_lval = location.LName(
                             node.lhs[0].name.tval)  # type: lvalue_t
-                        py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                        val = _PyObjectToVal(py_val)  # type: value_t
+                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
 
                         self.mem.SetValue(vd_lval,
                                           val,
@@ -905,31 +904,15 @@ class CommandEvaluator(object):
                     else:
                         self.mem.SetLocationToken(node.keyword)  # point to var
 
-                        py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                        vd_lvals = []  # type: List[lvalue_t]
-                        vals = []  # type: List[value_t]
-                        if len(
-                                node.lhs
-                        ) == 1:  # TODO: optimize this common case (but measure)
-                            vd_lval = location.LName(node.lhs[0].name.tval)
-                            val = _PyObjectToVal(py_val)
+                        # TODO: optimize this common case (but measure)
+                        assert len(node.lhs) == 1, node.lhs
 
-                            vd_lvals.append(vd_lval)
-                            vals.append(val)
-                        else:
-                            it = py_val.__iter__()
-                            for vd_lhs in node.lhs:
-                                vd_lval = location.LName(vd_lhs.name.tval)
-                                val = _PyObjectToVal(it.next())
-
-                                vd_lvals.append(vd_lval)
-                                vals.append(val)
-
-                        for vd_lval, val in zip(vd_lvals, vals):
-                            self.mem.SetValue(vd_lval,
-                                              val,
-                                              scope_e.LocalOnly,
-                                              flags=_PackFlags(node.keyword.id))
+                        vd_lval = location.LName(node.lhs[0].name.tval)
+                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
+                        self.mem.SetValue(vd_lval,
+                                          val,
+                                          scope_e.LocalOnly,
+                                          flags=_PackFlags(node.keyword.id))
 
                 # outside mylib.PYTHON
                 status = 0

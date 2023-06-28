@@ -556,7 +556,8 @@ shopt --set oil:upgrade
 
 var x = 42
 cd / {
-  var y, z = 0, 1
+  var y = 0
+  var z = 1
   echo $x $y $z
   setvar y = 43
 }
