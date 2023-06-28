@@ -51,18 +51,6 @@ argv.py @x
 ['/home/bob/src', 'bar.py', 'foo.py', 'andy@example.com', 'bob@example.com', '*.py']
 ## END
 
-#### augmented assignment doesn't work on shell arrays
-shopt -s parse_at simple_word_eval
-var x = %(a 'b c')
-argv.py @x
-
-setvar x += %(d e)  # fatal error
-argv.py @x
-## status: 1
-## STDOUT:
-['a', 'b c']
-## END
-
 #### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
 var HOME = "foo"
 echo $HOME

@@ -355,16 +355,10 @@ class OilEvaluator(object):
         # type: (str, loc_t) -> value_t
         return LookupVar2(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
-    def EvalPlusEquals(self, lval, rhs_py):
-        # type: (lvalue.Named, Union[int, float]) -> Union[int, float]
-        lhs_py = self.LookupVar(lval.name, loc.Missing)
-
-        if not isinstance(lhs_py, (int, float)):
-            # TODO: Could point at the variable name
-            e_die("Object of type %r doesn't support +=" %
-                  lhs_py.__class__.__name__)
-
-        return lhs_py + rhs_py
+    def EvalPlusEquals(self, lval, rhs_val):
+        # type: (lvalue.Named, value_t) -> value_t
+        lhs_val = self.LookupVar2(lval.name, loc.Missing)
+        return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
 
     def EvalLHS(self, node):
         # type: (expr_t) -> lvalue_t
@@ -467,12 +461,28 @@ class OilEvaluator(object):
 
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> Any
-        """Public API for _EvalExpr that ensures that command_sub_errexit is
-        on."""
+        """Public API for _EvalExpr to ensure command_sub_errexit is on."""
         try:
             with state.ctx_OilExpr(self.mutable_opts):
                 val = self._EvalExpr(node)
             return _ValueToPyObj(val)
+
+        # TODO(remove): Catch PYTHON exceptions
+        except TypeError as e:
+            raise error.Expr('Type error in expression: %s' % str(e),
+                             blame_loc)
+        except (AttributeError, ValueError) as e:
+            raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
+
+        # Note: IndexError and KeyError are handled in more specific places
+
+    def EvalExpr2(self, node, blame_loc):
+        # type: (expr_t, loc_t) -> value_t
+        """Public API for _EvalExpr to ensure command_sub_errexit is on."""
+        try:
+            with state.ctx_OilExpr(self.mutable_opts):
+                val = self._EvalExpr(node)
+            return val
 
         # TODO(remove): Catch PYTHON exceptions
         except TypeError as e:

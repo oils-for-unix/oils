@@ -1028,15 +1028,12 @@ class CommandEvaluator(object):
 
                         place = cast(place_expr.Var, node.lhs[0])
                         pe_lval = location.LName(place.name.tval)
-                        py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
 
-                        new_py_val = self.expr_ev.EvalPlusEquals(
-                            pe_lval, py_val)
-                        # This should only be an int or float, so we don't need the logic above
-                        val = expr_eval._PyObjToValue(new_py_val)
+                        new_val = self.expr_ev.EvalPlusEquals(pe_lval, val)
 
                         self.mem.SetValue(pe_lval,
-                                          val,
+                                          new_val,
                                           which_scopes,
                                           flags=_PackFlags(node.keyword.id))
 

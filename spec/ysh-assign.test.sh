@@ -25,15 +25,50 @@
 #   - LhsIndexedName should not reference Oil vars either
 
 
-#### integers expression and augmented assignment
+#### Augmented assignment doesn't work on shell arrays
+
+# I suppose the logic is that string and array concat is ++
+#
+# I wonder if a ++= operator makes sense?
+
+shopt -s parse_at simple_word_eval
+var x = %(a 'b c')
+argv.py @x
+
+setvar x += %(d e)  # fatal error
+argv.py @x
+## status: 3
+## STDOUT:
+['a', 'b c']
+## END
+
+
+#### Augmented assignment with integers
 var x = 1 + 2 * 3
 echo x=$x
 
-setvar x += 4
+setvar x += 4 * 1
 echo x=$x
 ## STDOUT:
 x=7
 x=11
+## END
+
+#### Augmented assignment on string changes to integer
+
+var x = '42'
+= x
+
+setvar x += 4 * 1
+= x
+
+setvar x += '9'
+= x
+
+## STDOUT:
+(Str)   '42'
+(Int)   46
+(Int)   55
 ## END
 
 #### proc static check: const can't be mutated
