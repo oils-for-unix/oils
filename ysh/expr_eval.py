@@ -77,7 +77,7 @@ if TYPE_CHECKING:
 _ = log
 
 
-def LookupVar2(mem, var_name, which_scopes, var_loc):
+def LookupVar(mem, var_name, which_scopes, var_loc):
     # type: (Mem, str, scope_t, loc_t) -> value_t
 
     # Lookup WITHOUT dynamic scope.
@@ -339,13 +339,13 @@ class OilEvaluator(object):
         assert self.shell_ex is not None
         assert self.word_ev is not None
 
-    def LookupVar2(self, name, var_loc):
+    def LookupVar(self, name, var_loc):
         # type: (str, loc_t) -> value_t
-        return LookupVar2(self.mem, name, scope_e.LocalOrGlobal, var_loc)
+        return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
     def EvalPlusEquals(self, lval, rhs_val):
         # type: (lvalue.Named, value_t) -> value_t
-        lhs_val = self.LookupVar2(lval.name, loc.Missing)
+        lhs_val = self.LookupVar(lval.name, loc.Missing)
         return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
 
     def EvalLHS(self, node):
@@ -420,7 +420,7 @@ class OilEvaluator(object):
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
 
-        val = self.EvalExpr2(part.child, loc.Missing)
+        val = self.EvalExpr(part.child, loc.Missing)
         py_val = _ValueToPyObj(val)
 
         if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
@@ -467,7 +467,7 @@ class OilEvaluator(object):
 
         return strs
 
-    def EvalExpr2(self, node, blame_loc):
+    def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit is on."""
         try:
@@ -1113,7 +1113,7 @@ class OilEvaluator(object):
                                             loc.Missing)
 
                 s = cast(value.Str, keys[i])
-                v = self.LookupVar2(s.s, loc.Missing)  # {name}
+                v = self.LookupVar(s.s, loc.Missing)  # {name}
             else:
                 v = self._EvalExpr(value_expr)
 
@@ -1452,7 +1452,7 @@ class OilEvaluator(object):
             elif case(expr_e.Var):
                 node = cast(expr.Var, UP_node)
 
-                return self.LookupVar2(node.name.tval, node.name)
+                return self.LookupVar(node.name.tval, node.name)
 
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)
@@ -1629,7 +1629,7 @@ class OilEvaluator(object):
             elif case(class_literal_term_e.Splice):
                 term = cast(class_literal_term.Splice, UP_term)
 
-                val = self.LookupVar2(term.name.tval, term.name)
+                val = self.LookupVar(term.name.tval, term.name)
                 s = val_ops.ToStr(val, term.name, prefix='Eggex char class splice ')
                 char_code_tok = term.name
 
@@ -1737,7 +1737,7 @@ class OilEvaluator(object):
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
 
-                val = self.LookupVar2(node.name.tval, node.name)
+                val = self.LookupVar(node.name.tval, node.name)
                 UP_val = val
                 with tagswitch(val) as case:
                     if case(value_e.Str):

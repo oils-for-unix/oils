@@ -182,7 +182,7 @@ class _Shvar_get(object):
 
     def __call__(self, *args):
         name = args[0]
-        val = expr_eval.LookupVar2(self.mem, name, scope_e.Dynamic,
+        val = expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
                                    loc.Missing)
         return expr_eval._ValueToPyObj(val)
 

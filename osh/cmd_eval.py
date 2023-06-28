@@ -664,7 +664,7 @@ class CommandEvaluator(object):
             elif case(condition_e.YshExpr):
                 if mylib.PYTHON:
                     cond = cast(condition.YshExpr, UP_cond)
-                    obj = self.expr_ev.EvalExpr2(cond.e, blame_tok)
+                    obj = self.expr_ev.EvalExpr(cond.e, blame_tok)
                     b = val_ops.ToBool(obj)
 
         return b
@@ -686,7 +686,7 @@ class CommandEvaluator(object):
             elif case(case_arg_e.YshExpr):
                 if mylib.PYTHON:
                     arg = cast(case_arg.YshExpr, UP_arg)
-                    val = self.expr_ev.EvalExpr2(arg.e, blame)
+                    val = self.expr_ev.EvalExpr(arg.e, blame)
                     # TODO: more informative errors, with locations
                     return val_ops.ToStr(val, loc.Missing)
 
@@ -895,7 +895,7 @@ class CommandEvaluator(object):
                         # Note: there's only one LHS
                         vd_lval = location.LName(
                             node.lhs[0].name.tval)  # type: lvalue_t
-                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
+                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
                         self.mem.SetValue(vd_lval,
                                           val,
@@ -910,7 +910,7 @@ class CommandEvaluator(object):
                         assert len(node.lhs) == 1, node.lhs
 
                         vd_lval = location.LName(node.lhs[0].name.tval)
-                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
+                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
                         self.mem.SetValue(vd_lval,
                                           val,
                                           scope_e.LocalOnly,
@@ -938,7 +938,7 @@ class CommandEvaluator(object):
                             raise AssertionError(node.keyword.id)
 
                     if node.op.id == Id.Arith_Equal:
-                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
+                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
                         py_val = expr_eval._ValueToPyObj(val)
 
                         lvals_ = []  # type: List[lvalue_t]
@@ -1030,7 +1030,7 @@ class CommandEvaluator(object):
 
                         place = cast(place_expr.Var, node.lhs[0])
                         pe_lval = location.LName(place.name.tval)
-                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
+                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
                         new_val = self.expr_ev.EvalPlusEquals(pe_lval, val)
 
@@ -1110,7 +1110,7 @@ class CommandEvaluator(object):
 
                 if mylib.PYTHON:
                     self.mem.SetLocationToken(node.keyword)
-                    val = self.expr_ev.EvalExpr2(node.e, loc.Missing)
+                    val = self.expr_ev.EvalExpr(node.e, loc.Missing)
                     obj = expr_eval._ValueToPyObj(val)
 
                     if node.keyword.id == Id.Lit_Equals:
@@ -1298,7 +1298,7 @@ class CommandEvaluator(object):
 
                 if iter_list is None:  # for_expr.YshExpr
                     if mylib.PYTHON:
-                        val = self.expr_ev.EvalExpr2(iter_expr, loc.Missing)
+                        val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
                         obj = expr_eval._ValueToPyObj(val)
 
                         # TODO: Once expr_eval.py is statically typed, consolidate this
@@ -1514,7 +1514,7 @@ class CommandEvaluator(object):
                         defaults = [None] * len(sig.pos_params)
                         for i, p in enumerate(sig.pos_params):
                             if p.default_val:
-                                val = self.expr_ev.EvalExpr2(
+                                val = self.expr_ev.EvalExpr(
                                     p.default_val, loc.Missing)
                                 defaults[i] = val
 

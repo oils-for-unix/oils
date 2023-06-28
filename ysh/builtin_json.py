@@ -58,7 +58,7 @@ class Json(vm._Builtin):
                 e_usage('write got too many args', arg_r.Location())
 
             expr = typed_args.RequiredExpr(cmd_val.typed_args)
-            val = self.expr_ev.EvalExpr2(expr, loc.Missing)
+            val = self.expr_ev.EvalExpr(expr, loc.Missing)
             obj = expr_eval._ValueToPyObj(val)
 
             if arg_jw.pretty:
