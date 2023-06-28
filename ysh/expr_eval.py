@@ -127,6 +127,7 @@ class OilEvaluator(object):
 
     def EvalPlusEquals(self, lval, rhs_val):
         # type: (lvalue.Named, value_t) -> value_t
+        """Called by CommandEvaluator."""
         lhs_val = self._LookupVar(lval.name, loc.Missing)
         return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
 
@@ -177,7 +178,6 @@ class OilEvaluator(object):
                     return lvalue.ObjIndex(lval, attr)
                 else:
                     raise AssertionError()
-                    #return lvalue.ObjAttr(lval, place.attr.tval)
 
             else:
                 raise NotImplementedError(place)
@@ -240,7 +240,8 @@ class OilEvaluator(object):
                 raise error.Expr('Type error in expression: %s' % str(e),
                                  blame_loc)
             except (AttributeError, ValueError) as e:
-                raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
+                raise error.Expr('Expression eval error: %s' % str(e),
+                                 blame_loc)
 
         else:
             raise AssertionError()
@@ -331,53 +332,6 @@ class OilEvaluator(object):
         # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using it
         # yet.
         raise AssertionError(id_)
-
-    def _EvalCommandSub(self, node):
-        # type: (CommandSub) -> value_t
-
-        id_ = node.left_token.id
-        # &(echo block literal)
-        if id_ == Id.Left_CaretParen:
-            return value.Str('TODO: value.Block')
-        else:
-            stdout_str = self.shell_ex.RunCommandSub(node)
-            if id_ == Id.Left_AtParen:  # @(seq 3)
-                strs = self.splitter.SplitForWordEval(stdout_str)
-                return value.MaybeStrArray(strs)
-            else:
-                return value.Str(stdout_str)
-
-    def _EvalShArrayLiteral(self, node):
-        # type: (ShArrayLiteral) -> value_t
-        words = braces.BraceExpandWords(node.words)
-        strs = self.word_ev.EvalWordSequence(words)
-        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-        return value.MaybeStrArray(strs)
-
-    def _EvalDoubleQuoted(self, node):
-        # type: (DoubleQuoted) -> value_t
-
-        # In an ideal world, I would *statically* disallow:
-        # - "$@" and "${array[@]}"
-        # - backticks like `echo hi`
-        # - $(( 1+2 )) and $[] -- although useful for refactoring
-        #   - not sure: ${x%%} -- could disallow this
-        #     - these enters the ArgDQ state: "${a:-foo bar}" ?
-        # But that would complicate the parser/evaluator.  So just rely on
-        # strict_array to disallow the bad parts.
-        return value.Str(self.word_ev.EvalDoubleQuotedToString(node))
-
-    def _EvalSingleQuoted(self, node):
-        # type: (SingleQuoted) -> value_t
-        return value.Str(word_compile.EvalSingleQuoted(node))
-
-    def _EvalBracedVarSub(self, node):
-        # type: (BracedVarSub) -> value_t
-        return value.Str(self.word_ev.EvalBracedVarSubToString(node))
-
-    def _EvalSimpleVarSub(self, node):
-        # type: (SimpleVarSub) -> value_t
-        return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
@@ -860,16 +814,6 @@ class OilEvaluator(object):
         else:
             return self._EvalExpr(node.orelse)
 
-    def _EvalList(self, node):
-        # type: (expr.List) -> value_t
-        return value.List([self._EvalExpr(e) for e in node.elts])
-
-    def _EvalTupleSyntax(self, node):
-        # type: (expr.Tuple) -> value_t
-        """Tuple syntax evaluates to LIST"""
-
-        return value.List([self._EvalExpr(e) for e in node.elts])
-
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
         # NOTE: some keys are expr.Const
@@ -976,7 +920,9 @@ class OilEvaluator(object):
                         #log('ARGS %s', u_pos_args)
                         #ret = f(*u_pos_args, **u_named_args)
 
-                        pos_args = [cpython._ValueToPyObj(a) for a in u_pos_args]
+                        pos_args = [
+                            cpython._ValueToPyObj(a) for a in u_pos_args
+                        ]
                         ret = f(*pos_args)
 
                         return cpython._PyObjToValue(ret)
@@ -1027,7 +973,8 @@ class OilEvaluator(object):
 
                             except IndexError:
                                 # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range', loc.Missing)
+                                raise error.Expr('index out of range',
+                                                 loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1053,11 +1000,13 @@ class OilEvaluator(object):
                             try:
                                 if index.lower and index.upper:
                                     return value.MaybeStrArray(
-                                        obj.strs[index.lower.i:index.upper.i:step])
+                                        obj.strs[index.lower.i:index.upper.
+                                                 i:step])
 
                                 elif index.lower:
                                     return value.MaybeStrArray(
-                                        obj.strs[index.lower.i:len(obj.strs):step])
+                                        obj.strs[index.lower.i:len(obj.strs
+                                                                   ):step])
 
                                 elif index.upper:
                                     return value.MaybeStrArray(
@@ -1069,7 +1018,8 @@ class OilEvaluator(object):
 
                             except IndexError:
                                 # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range', loc.Missing)
+                                raise error.Expr('index out of range',
+                                                 loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1096,14 +1046,16 @@ class OilEvaluator(object):
 
                             try:
                                 if index.lower and index.upper:
-                                    return value.Str(
-                                        obj.s[index.lower.i:index.upper.i:step])
+                                    return value.Str(obj.s[index.lower.i:index.
+                                                           upper.i:step])
 
                                 elif index.lower:
-                                    return value.Str(obj.s[index.lower.i::step])
+                                    return value.Str(
+                                        obj.s[index.lower.i::step])
 
                                 elif index.upper:
-                                    return value.Str(obj.s[:index.upper.i:step])
+                                    return value.Str(
+                                        obj.s[:index.upper.i:step])
 
                                 else:
                                     # l[:] == l
@@ -1111,7 +1063,8 @@ class OilEvaluator(object):
 
                             except IndexError:
                                 # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range', loc.Missing)
+                                raise error.Expr('index out of range',
+                                                 loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1225,38 +1178,60 @@ class OilEvaluator(object):
         with tagswitch(node) as case:
             if case(expr_e.Const):
                 node = cast(expr.Const, UP_node)
-
                 return self._EvalConst(node)
 
             elif case(expr_e.Var):
                 node = cast(expr.Var, UP_node)
-
                 return self._LookupVar(node.name.tval, node.name)
 
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)
 
-                return self._EvalCommandSub(node)
+                id_ = node.left_token.id
+                if id_ == Id.Left_CaretParen:
+                    # ^(echo block literal)
+                    return value.Str('TODO: value.Block')
+                else:
+                    stdout_str = self.shell_ex.RunCommandSub(node)
+                    if id_ == Id.Left_AtParen:  # @(seq 3)
+                        # TODO: Should use J8 lines
+                        strs = self.splitter.SplitForWordEval(stdout_str)
+                        return value.MaybeStrArray(strs)
+                    else:
+                        return value.Str(stdout_str)
 
             elif case(expr_e.ShArrayLiteral):
                 node = cast(ShArrayLiteral, UP_node)
-                return self._EvalShArrayLiteral(node)
+                words = braces.BraceExpandWords(node.words)
+                strs = self.word_ev.EvalWordSequence(words)
+                #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+                return value.MaybeStrArray(strs)
 
             elif case(expr_e.DoubleQuoted):
                 node = cast(DoubleQuoted, UP_node)
-                return self._EvalDoubleQuoted(node)
+                # In an ideal world, YSH would *statically* disallow:
+                #
+                # - "$@" and "${array[@]}"
+                # - backticks like `echo hi`
+                # - $(( 1+2 )) and $[] -- although useful for refactoring
+                #   - not sure: ${x%%} -- could disallow this
+                #     - these enters the ArgDQ state: "${a:-foo bar}" ?
+                #
+                # But that would complicate the parser/evaluator.  So just rely
+                # on runtime strict_array to disallow the bad parts.
+                return value.Str(self.word_ev.EvalDoubleQuotedToString(node))
 
             elif case(expr_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
-                return self._EvalSingleQuoted(node)
+                return value.Str(word_compile.EvalSingleQuoted(node))
 
             elif case(expr_e.BracedVarSub):
                 node = cast(BracedVarSub, UP_node)
-                return self._EvalBracedVarSub(node)
+                return value.Str(self.word_ev.EvalBracedVarSubToString(node))
 
             elif case(expr_e.SimpleVarSub):
                 node = cast(SimpleVarSub, UP_node)
-                return self._EvalSimpleVarSub(node)
+                return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
             elif case(expr_e.Unary):
                 node = cast(expr.Unary, UP_node)
@@ -1280,11 +1255,12 @@ class OilEvaluator(object):
 
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
-                return self._EvalList(node)
+                return value.List([self._EvalExpr(e) for e in node.elts])
 
             elif case(expr_e.Tuple):
                 node = cast(expr.Tuple, UP_node)
-                return self._EvalTupleSyntax(node)
+                # YSH language: Tuple syntax evaluates to LIST !
+                return value.List([self._EvalExpr(e) for e in node.elts])
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)
@@ -1317,8 +1293,6 @@ class OilEvaluator(object):
 
             elif case(expr_e.RegexLiteral):
                 node = cast(expr.RegexLiteral, UP_node)
-
-                # TODO: Should this just be an object that ~ calls?
                 return value.Eggex(self.EvalRegex(node.regex), None)
 
             else:
