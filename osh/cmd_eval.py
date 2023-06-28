@@ -936,13 +936,13 @@ class CommandEvaluator(object):
                             raise AssertionError(node.keyword.id)
 
                     if node.op.id == Id.Arith_Equal:
-                        py_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+                        val = self.expr_ev.EvalExpr2(node.rhs, loc.Missing)
+                        py_val = expr_eval._ValueToPyObj(val)
 
                         lvals_ = []  # type: List[lvalue_t]
                         py_vals = []
-                        if len(
-                                node.lhs
-                        ) == 1:  # TODO: Optimize this common case (but measure)
+                        # TODO: Optimize this common case (but measure)
+                        if len(node.lhs) == 1:
                             # See ShAssignment
                             lval_ = self.expr_ev.EvalPlaceExpr(
                                 node.lhs[0])  # type: lvalue_t
@@ -1092,7 +1092,8 @@ class CommandEvaluator(object):
 
                 if mylib.PYTHON:
                     self.mem.SetLocationToken(node.keyword)
-                    obj = self.expr_ev.EvalExpr(node.e, loc.Missing)
+                    val = self.expr_ev.EvalExpr2(node.e, loc.Missing)
+                    obj = expr_eval._ValueToPyObj(val)
 
                     if node.keyword.id == Id.Lit_Equals:
                         # NOTE: It would be nice to unify this with 'repr', but there isn't a
@@ -1279,7 +1280,8 @@ class CommandEvaluator(object):
 
                 if iter_list is None:  # for_expr.YshExpr
                     if mylib.PYTHON:
-                        obj = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
+                        val = self.expr_ev.EvalExpr2(iter_expr, loc.Missing)
+                        obj = expr_eval._ValueToPyObj(val)
 
                         # TODO: Once expr_eval.py is statically typed, consolidate this
                         # with the shell-style loop.
@@ -1489,9 +1491,8 @@ class CommandEvaluator(object):
                         defaults = [None] * len(sig.pos_params)
                         for i, p in enumerate(sig.pos_params):
                             if p.default_val:
-                                py_val = self.expr_ev.EvalExpr(p.default_val,
-                                                               loc.Missing)
-                                defaults[i] = _PyObjectToVal(py_val)
+                                val = self.expr_ev.EvalExpr2(p.default_val, loc.Missing)
+                                defaults[i] = val
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
                                              node.body, defaults,

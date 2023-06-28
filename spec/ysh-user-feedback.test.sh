@@ -164,7 +164,7 @@ yes
 ## END
 
 
-#### Append object onto Array - TODO 2023-06 REGRESS
+#### Append object onto Array
 var e = []
 
 # %() is also acceptable, but we prefer Python-like [] for objects.
