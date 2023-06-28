@@ -97,4 +97,14 @@ bool ShouldHijack(Str* s) {
                         len(s));
 }
 
+bool LooksLikeFloat(Str* s) {
+  return ::LooksLikeFloat(reinterpret_cast<const unsigned char*>(s->data_),
+                          len(s));
+}
+
+bool LooksLikeInteger(Str* s) {
+  return ::LooksLikeInteger(reinterpret_cast<const unsigned char*>(s->data_),
+                            len(s));
+}
+
 }  // namespace match

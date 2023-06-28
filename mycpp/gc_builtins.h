@@ -30,6 +30,8 @@ class KeyError : public _ExceptionOpaque {};
 
 class EOFError : public _ExceptionOpaque {};
 
+class ZeroDivisionError : public _ExceptionOpaque {};
+
 class KeyboardInterrupt : public _ExceptionOpaque {};
 
 class StopIteration : public _ExceptionOpaque {};

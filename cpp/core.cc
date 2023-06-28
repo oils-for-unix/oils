@@ -20,7 +20,7 @@
 
 #include "_gen/frontend/consts.h"  // gVersion
 
-extern char **environ;
+extern char** environ;
 
 namespace pyos {
 

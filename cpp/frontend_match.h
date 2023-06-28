@@ -65,6 +65,8 @@ Id_t BracketOther(Str* s);
 
 bool IsValidVarName(Str* s);
 bool ShouldHijack(Str* s);
+bool LooksLikeFloat(Str* s);
+bool LooksLikeInteger(Str* s);
 
 // StringToInt
 

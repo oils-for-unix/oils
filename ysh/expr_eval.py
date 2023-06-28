@@ -121,13 +121,13 @@ class OilEvaluator(object):
         assert self.shell_ex is not None
         assert self.word_ev is not None
 
-    def LookupVar(self, name, var_loc):
+    def _LookupVar(self, name, var_loc):
         # type: (str, loc_t) -> value_t
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
     def EvalPlusEquals(self, lval, rhs_val):
         # type: (lvalue.Named, value_t) -> value_t
-        lhs_val = self.LookupVar(lval.name, loc.Missing)
+        lhs_val = self._LookupVar(lval.name, loc.Missing)
         return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
 
     def EvalLHS(self, node):
@@ -185,20 +185,23 @@ class OilEvaluator(object):
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
+        if mylib.PYTHON:
 
-        blame_loc = loc.Missing
-        try:
-            with state.ctx_OilExpr(self.mutable_opts):
-                lval = self._EvalPlaceExpr(place)
-            return lval
+            blame_loc = loc.Missing
+            try:
+                with state.ctx_OilExpr(self.mutable_opts):
+                    lval = self._EvalPlaceExpr(place)
+                return lval
 
-        # TODO(remove): Catch PYTHON exceptions
-        except TypeError as e:
-            raise error.Expr('Type error in place expression: %s' % str(e),
-                             blame_loc)
-        except (AttributeError, ValueError) as e:
-            raise error.Expr('Place expression eval error: %s' % str(e),
-                             blame_loc)
+            # Catch PYTHON exceptions.  Remove after function calls are statically typed
+            except TypeError as e:
+                raise error.Expr('Type error in place expression: %s' % str(e),
+                                 blame_loc)
+            except (AttributeError, ValueError) as e:
+                raise error.Expr('Place expression eval error: %s' % str(e),
+                                 blame_loc)
+        else:
+            raise AssertionError()
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
@@ -226,17 +229,21 @@ class OilEvaluator(object):
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit is on."""
-        try:
-            with state.ctx_OilExpr(self.mutable_opts):
-                val = self._EvalExpr(node)
-            return val
+        if mylib.PYTHON:
+            try:
+                with state.ctx_OilExpr(self.mutable_opts):
+                    val = self._EvalExpr(node)
+                return val
 
-        # TODO(remove): Catch PYTHON exceptions
-        except TypeError as e:
-            raise error.Expr('Type error in expression: %s' % str(e),
-                             blame_loc)
-        except (AttributeError, ValueError) as e:
-            raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
+            # Catch PYTHON exceptions.  Remove after function calls are statically typed
+            except TypeError as e:
+                raise error.Expr('Type error in expression: %s' % str(e),
+                                 blame_loc)
+            except (AttributeError, ValueError) as e:
+                raise error.Expr('Expression eval error: %s' % str(e), blame_loc)
+
+        else:
+            raise AssertionError()
 
         # Note: IndexError and KeyError are handled in more specific places
 
@@ -311,8 +318,8 @@ class OilEvaluator(object):
 
         # These calculations could also be done at COMPILE TIME
         if id_ == Id.Char_OneChar:
-            return value.Int(consts.LookupCharInt(
-                node.c.tval[1]))  # It's an integer
+            # TODO: look up integer directly?
+            return value.Int(ord(consts.LookupCharC(node.c.tval[1])))
         if id_ == Id.Char_UBraced:
             s = node.c.tval[3:-1]  # \u{123}
             return value.Int(int(s, 16))
@@ -876,7 +883,7 @@ class OilEvaluator(object):
                                             loc.Missing)
 
                 s = cast(value.Str, keys[i])
-                v = self.LookupVar(s.s, loc.Missing)  # {name}
+                v = self._LookupVar(s.s, loc.Missing)  # {name}
             else:
                 v = self._EvalExpr(value_expr)
 
@@ -1224,7 +1231,7 @@ class OilEvaluator(object):
             elif case(expr_e.Var):
                 node = cast(expr.Var, UP_node)
 
-                return self.LookupVar(node.name.tval, node.name)
+                return self._LookupVar(node.name.tval, node.name)
 
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)
@@ -1362,7 +1369,7 @@ class OilEvaluator(object):
             elif case(class_literal_term_e.Splice):
                 term = cast(class_literal_term.Splice, UP_term)
 
-                val = self.LookupVar(term.name.tval, term.name)
+                val = self._LookupVar(term.name.tval, term.name)
                 s = val_ops.ToStr(val,
                                   term.name,
                                   prefix='Eggex char class splice ')
@@ -1472,7 +1479,7 @@ class OilEvaluator(object):
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
 
-                val = self.LookupVar(node.name.tval, node.name)
+                val = self._LookupVar(node.name.tval, node.name)
                 UP_val = val
                 with tagswitch(val) as case:
                     if case(value_e.Str):

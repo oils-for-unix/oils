@@ -17,6 +17,7 @@ namespace word_eval {
 class AbstractWordEvaluator;
 }
 
+#if 1
 namespace expr_eval {
 
 class OilEvaluator {
@@ -32,5 +33,6 @@ class OilEvaluator {
   word_eval::AbstractWordEvaluator* word_ev;
 };
 }  // namespace expr_eval
+#endif
 
 #endif  // CPP_TRANSLATION_STUBS_H
