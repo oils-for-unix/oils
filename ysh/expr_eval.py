@@ -64,7 +64,7 @@ from ysh import val_ops
 
 import libc
 
-from typing import cast, Any, Union, Optional, Dict, List, Tuple, TYPE_CHECKING
+from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import lvalue, lvalue_t

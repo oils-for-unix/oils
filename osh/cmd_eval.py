@@ -662,8 +662,8 @@ class CommandEvaluator(object):
             elif case(condition_e.YshExpr):
                 if mylib.PYTHON:
                     cond = cast(condition.YshExpr, UP_cond)
-                    obj = self.expr_ev.EvalExpr(cond.e, blame_tok)
-                    b = bool(obj)
+                    obj = self.expr_ev.EvalExpr2(cond.e, blame_tok)
+                    b = val_ops.ToBool(obj)
 
         return b
 
@@ -684,8 +684,9 @@ class CommandEvaluator(object):
             elif case(case_arg_e.YshExpr):
                 if mylib.PYTHON:
                     arg = cast(case_arg.YshExpr, UP_arg)
-                    obj = self.expr_ev.EvalExpr(arg.e, blame)
-                    return str(obj)  # TODO: handle typed args
+                    val = self.expr_ev.EvalExpr2(arg.e, blame)
+                    # TODO: more informative errors, with locations
+                    return val_ops.ToStr(val)
 
         # note, right now this is reachable in mycpp
         # we will have to wait until we can match on typed args before we can support
