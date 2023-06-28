@@ -12,7 +12,8 @@ pgen2/grammar.py
 pgen2/pnode.py
 pylib/path_stat.py
 ysh/builtin_json.py
-ysh/expr_eval.py
 ysh/objects.py
+ysh/cpython.py
+ysh/expr_eval.py
 osh/bool_stat.py
 tea/

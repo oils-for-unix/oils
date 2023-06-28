@@ -57,6 +57,7 @@ from frontend import match
 from frontend import location
 from osh import braces
 from osh import word_compile
+from mycpp import mylib
 from mycpp.mylib import log, NewDict, tagswitch
 from ysh import cpython
 from ysh import val_ops
@@ -332,12 +333,12 @@ class OilEvaluator(object):
         if id_ == Id.Left_CaretParen:
             return value.Str('TODO: value.Block')
         else:
-            stdout = self.shell_ex.RunCommandSub(node)
+            stdout_str = self.shell_ex.RunCommandSub(node)
             if id_ == Id.Left_AtParen:  # @(seq 3)
-                strs = self.splitter.SplitForWordEval(stdout)
+                strs = self.splitter.SplitForWordEval(stdout_str)
                 return value.MaybeStrArray(strs)
             else:
-                return value.Str(stdout)
+                return value.Str(stdout_str)
 
     def _EvalShArrayLiteral(self, node):
         # type: (ShArrayLiteral) -> value_t
@@ -586,7 +587,7 @@ class OilEvaluator(object):
                     else:
                         raise error.InvalidType('Expected List', loc.Missing)
 
-            if lcase(value_e.Str):
+            elif lcase(value_e.Str):
                 left = cast(value.Str, UP_left)
                 with tagswitch(right) as rcase:
                     if rcase(value_e.Str):
@@ -596,7 +597,7 @@ class OilEvaluator(object):
                     else:
                         raise error.InvalidType('Expected String', loc.Missing)
 
-            if lcase(value_e.MaybeStrArray):
+            elif lcase(value_e.MaybeStrArray):
                 left = cast(value.MaybeStrArray, UP_left)
                 with tagswitch(right) as rcase:
                     if rcase(value_e.MaybeStrArray):
@@ -693,6 +694,8 @@ class OilEvaluator(object):
                     return left.i <= right.i
                 elif op == Id.Arith_GreatEqual:
                     return left.i >= right.i
+                else:
+                    raise AssertionError()
 
             elif case(value_e.Float):
                 left = cast(value.Float, UP_left)
@@ -705,9 +708,12 @@ class OilEvaluator(object):
                     return left.f <= right.f
                 elif op == Id.Arith_GreatEqual:
                     return left.f >= right.f
+                else:
+                    raise AssertionError()
 
-            raise error.InvalidType('Expected Int or Float operands',
-                                    loc.Missing)
+            else:
+                raise error.InvalidType('Expected Int or Float operands',
+                                        loc.Missing)
 
     def _EvalCompare(self, node):
         # type: (expr.Compare) -> value_t
@@ -787,7 +793,7 @@ class OilEvaluator(object):
 
                 UP_right = right
                 with tagswitch(right) as case:
-                    if right.tag() == value_e.Str:
+                    if case(value_e.Str):
                         right = cast(value.Str, UP_right)
                         return value.Bool(left2 == right.s)
 
@@ -945,29 +951,32 @@ class OilEvaluator(object):
         # type: (expr.FuncCall) -> value_t
         func = self._EvalExpr(node.func)
         UP_func = func
-        with tagswitch(func) as case:
-            if case(value_e.Func):
-                func = cast(value.Func, UP_func)
-                f = func.f
-                if isinstance(f, vm._Func):  # typed
-                    pos_args, named_args = self.EvalArgList2(node.args)
-                    #log('pos_args %s', pos_args)
+        if mylib.PYTHON:
+            with tagswitch(func) as case:
+                if case(value_e.Func):
+                    func = cast(value.Func, UP_func)
+                    f = func.f
+                    if isinstance(f, vm._Func):  # typed
+                        pos_args, named_args = self.EvalArgList2(node.args)
+                        #log('pos_args %s', pos_args)
 
-                    ret = f.Call(pos_args, named_args)
+                        ret = f.Call(pos_args, named_args)
 
-                    #log('ret %s', ret)
-                    return ret
+                        #log('ret %s', ret)
+                        return ret
+                    else:
+                        u_pos_args, u_named_args = self.EvalArgList(node.args)
+                        #log('ARGS %s', u_pos_args)
+                        #ret = f(*u_pos_args, **u_named_args)
+
+                        pos_args = [cpython._ValueToPyObj(a) for a in u_pos_args]
+                        ret = f(*pos_args)
+
+                        return cpython._PyObjToValue(ret)
                 else:
-                    u_pos_args, u_named_args = self.EvalArgList(node.args)
-                    #log('ARGS %s', u_pos_args)
-                    #ret = f(*u_pos_args, **u_named_args)
+                    raise error.InvalidType('Expected value.Func', loc.Missing)
 
-                    pos_args = [cpython._ValueToPyObj(a) for a in u_pos_args]
-                    ret = f(*pos_args)
-
-                    return cpython._PyObjToValue(ret)
-            else:
-                raise error.InvalidType('Expected value.Func', loc.Missing)
+        raise AssertionError()
 
     def _EvalSubscript(self, node):
         # type: (Subscript) -> value_t
@@ -984,32 +993,34 @@ class OilEvaluator(object):
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
-                        step = 1
-                        if index.step:
-                            step = index.step.i
 
-                        try:
-                            if index.lower and index.upper:
-                                return value.List(
-                                    obj.items[index.lower.i:index.upper.
-                                              i:step])
+                        if mylib.PYTHON:
+                            # stride not supported in mycpp
 
-                            elif index.lower:
-                                return value.List(
-                                    obj.items[index.lower.i:len(obj.items
-                                                                ):step])
+                            step = index.step.i if index.step else 1
 
-                            elif index.upper:
-                                return value.List(
-                                    obj.items[:index.upper.i:step])
+                            try:
+                                if index.lower and index.upper:
+                                    return value.List(
+                                        obj.items[index.lower.i:index.upper.
+                                                  i:step])
 
-                            else:
-                                # l[:] == l
-                                return value.List(list(obj.items))
+                                elif index.lower:
+                                    return value.List(
+                                        obj.items[index.lower.i:len(obj.items
+                                                                    ):step])
 
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                                elif index.upper:
+                                    return value.List(
+                                        obj.items[:index.upper.i:step])
+
+                                else:
+                                    # l[:] == l
+                                    return value.List(list(obj.items))
+
+                            except IndexError:
+                                # TODO: expr.Subscript has no error location
+                                raise error.Expr('index out of range', loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1029,30 +1040,29 @@ class OilEvaluator(object):
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
-                        step = 1
-                        if index.step:
-                            step = index.step.i
+                        if mylib.PYTHON:
+                            step = index.step.i if index.step else 1
 
-                        try:
-                            if index.lower and index.upper:
-                                return value.MaybeStrArray(
-                                    obj.strs[index.lower.i:index.upper.i:step])
+                            try:
+                                if index.lower and index.upper:
+                                    return value.MaybeStrArray(
+                                        obj.strs[index.lower.i:index.upper.i:step])
 
-                            elif index.lower:
-                                return value.MaybeStrArray(
-                                    obj.strs[index.lower.i:len(obj.strs):step])
+                                elif index.lower:
+                                    return value.MaybeStrArray(
+                                        obj.strs[index.lower.i:len(obj.strs):step])
 
-                            elif index.upper:
-                                return value.MaybeStrArray(
-                                    obj.strs[:index.upper.i:step])
+                                elif index.upper:
+                                    return value.MaybeStrArray(
+                                        obj.strs[:index.upper.i:step])
 
-                            else:
-                                # l[:] == l
-                                return value.MaybeStrArray(list(obj.strs))
+                                else:
+                                    # l[:] == l
+                                    return value.MaybeStrArray(list(obj.strs))
 
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                            except IndexError:
+                                # TODO: expr.Subscript has no error location
+                                raise error.Expr('index out of range', loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1073,28 +1083,28 @@ class OilEvaluator(object):
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
-                        step = 1
-                        if index.step:
-                            step = 1
 
-                        try:
-                            if index.lower and index.upper:
-                                return value.Str(
-                                    obj.s[index.lower.i:index.upper.i:step])
+                        if mylib.PYTHON:
+                            step = index.step.i if index.step else 1
 
-                            elif index.lower:
-                                return value.Str(obj.s[index.lower.i::step])
+                            try:
+                                if index.lower and index.upper:
+                                    return value.Str(
+                                        obj.s[index.lower.i:index.upper.i:step])
 
-                            elif index.upper:
-                                return value.Str(obj.s[:index.upper.i:step])
+                                elif index.lower:
+                                    return value.Str(obj.s[index.lower.i::step])
 
-                            else:
-                                # l[:] == l
-                                return obj
+                                elif index.upper:
+                                    return value.Str(obj.s[:index.upper.i:step])
 
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                                else:
+                                    # l[:] == l
+                                    return obj
+
+                            except IndexError:
+                                # TODO: expr.Subscript has no error location
+                                raise error.Expr('index out of range', loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1147,9 +1157,12 @@ class OilEvaluator(object):
             name = node.attr.tval
             with tagswitch(o) as case:
                 if case(value_e.Str):
-                    o = cast(value.Str, UP_o)
-                    method = getattr(o.s, name)
-                    return value.Func(method)
+                    if mylib.PYTHON:
+                        o = cast(value.Str, UP_o)
+                        method = getattr(o.s, name)
+                        return value.Func(method)
+                    else:
+                        raise AssertionError()
                 else:
                     raise error.InvalidType('Method %r' % name, loc.Missing)
 
