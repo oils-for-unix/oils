@@ -11,7 +11,7 @@ from core import error
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
-from typing import TYPE_CHECKING, cast, Optional
+from typing import TYPE_CHECKING, cast, List, Optional
 
 import libc
 
@@ -87,8 +87,8 @@ def MustBeFunc(val):
         'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
 
 
-def Stringify(val, blame_loc=None):
-    # type: (value_t, loc_t) -> str
+def Stringify(val, blame_loc, prefix=''):
+    # type: (value_t, loc_t, str) -> str
     """
     Used by
 
@@ -130,27 +130,41 @@ def Stringify(val, blame_loc=None):
 
         else:
             raise error.InvalidType2(
-                val, "stringify expected Null, Bool, Int, Float, Eggex",
+                val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
                 blame_loc)
 
     return s
 
 
-def ToShellArray(val):
-    # type: (value_t) -> str
+def ToShellArray(val, blame_loc, prefix=''):
+    # type: (value_t, loc_t, str) -> List[str]
     """
     Used by
 
     @[x]  expression splice
     @x    splice value
 
-          Do dictionaries get spliced?
+    Dicts do NOT get spliced, but they iterate over their keys
+    So this function NOT use Iterator.
     """
-    # iterate and then stringify?
-    # It doesn't make sense for Dict because:
-    # - keys are already strings
-    # - it's not clear you want the keys only?
-    return None
+    UP_val = val
+    with tagswitch(val) as case2:
+        if case2(value_e.MaybeStrArray):
+            val = cast(value.MaybeStrArray, UP_val)
+            strs = val.strs
+
+        elif case2(value_e.List):
+            val = cast(value.List, UP_val)
+            strs = []
+            # Note: it would be nice to add the index to the error message
+            # prefix, WITHOUT allocating a string for every item
+            for item in val.items:
+                strs.append(Stringify(item, blame_loc, prefix=prefix))
+
+        else:
+            raise error.InvalidType2(val, "%sexpected List" % prefix, blame_loc)
+
+    return strs
 
 
 class Iterator(object):
@@ -436,3 +450,5 @@ def RegexMatch(left, right, mem):
         if mem:
             mem.ClearMatches()
         return False
+
+# vim: sw=4

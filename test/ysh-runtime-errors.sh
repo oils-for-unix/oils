@@ -84,15 +84,28 @@ test-undefined-vars() {
 test-ysh-word-eval() {
   set +o errexit
 
+  # Wrong sigil
   _expr-error-case 'echo $[maybe("foo")]'
 
+  # Wrong sigil
   _expr-error-case 'echo $[identity({key: "val"})]'
 
   # this should be consistent
   _expr-error-case 'write -- @[identity([{key: "val"}])]'
 
-  # 2023-06: temporarily broken, moved to spec tests
-  #_expr-error-case 'const x = [1, 2]; echo $x'
+  _expr-error-case 'const x = [1, 2]; echo $x'
+
+  _should-run 'var x = [1, 2]; write @x'
+
+  # errors in items
+  _expr-error-case 'var x = [3, {}]; write @x'
+
+  _expr-error-case 'var x = [3, {}]; write @[x]'
+
+  # errors at top level
+  _expr-error-case 'var x = /d+/; write @x'
+
+  _expr-error-case 'var x = /d+/; write @[x]'
 }
 
 test-ysh-expr-eval() {

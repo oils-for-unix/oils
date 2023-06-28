@@ -59,7 +59,6 @@ from frontend import location
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, tagswitch
-from ysh import regex_translate
 from ysh import val_ops
 
 import libc
@@ -87,33 +86,6 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
         e_die('Undefined variable %r' % var_name, var_loc)
 
     return val
-
-
-def Stringify(py_val, word_part=None):
-    # type: (Any, Optional[word_part_t]) -> str
-    """For predictably converting between Python objects and strings.
-
-    We don't want to tie our sematnics to the Python interpreter too
-    much.
-    """
-    # XXX: once everything is typed this should go away and this function should
-    # use tagswitch
-    if isinstance(py_val, value_t):
-        if py_val.tag() == value_e.Eggex:
-            eggex = cast(value.Eggex, py_val)
-            return regex_translate.AsPosixEre(eggex)
-        else:
-            py_val = _ValueToPyObj(py_val)
-
-    if isinstance(py_val, bool):
-        return 'true' if py_val else 'false'  # Use JSON spelling
-
-    if not isinstance(py_val, (int, float, str)):
-        raise error.Expr(
-            'Expected string-like value (Bool, Int, Str), but got %s' %
-            type(py_val), loc.WordPart(word_part))
-
-    return str(py_val)
 
 
 # XXX this function should be removed once _EvalExpr is completeley refactored.
@@ -421,19 +393,14 @@ class OilEvaluator(object):
         # type: (word_part.ExprSub) -> part_value_t
 
         val = self.EvalExpr(part.child, loc.Missing)
-        py_val = _ValueToPyObj(val)
 
         if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
-            s = val_ops.Stringify(val, blame_loc=loc.WordPart(part))
+            s = val_ops.Stringify(val, loc.WordPart(part))
             return part_value.String(s, False, False)
 
         elif part.left.id == Id.Lit_AtLBracket:  # @[split(x)]
-            try:
-                a = [Stringify(item, word_part=part) for item in py_val]
-            except TypeError as e:  # TypeError if it isn't iterable
-                raise error.Expr('Type error in expression: %s' % str(e),
-                                 loc.WordPart(part))
-            return part_value.Array(a)
+            strs = val_ops.ToShellArray(val, loc.WordPart(part), prefix='Expr splice ')
+            return part_value.Array(strs)
 
         else:
             raise AssertionError(part.left)
@@ -441,31 +408,7 @@ class OilEvaluator(object):
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]
         """ write -- @myvar """
-        UP_val = val
-        with tagswitch(val) as case2:
-            if case2(value_e.MaybeStrArray):
-                val = cast(value.MaybeStrArray, UP_val)
-                strs = val.strs
-
-            elif case2(value_e.List):
-                val = cast(value.List, UP_val)
-                try:
-                    strs = [Stringify(item, word_part=part) for item in val.items]
-                except TypeError as e:  # TypeError if it isn't iterable
-                    raise error.Expr('Type error in expression: %s' % str(e),
-                                     loc.WordPart(part))
-
-            # Dict and AssocArray?
-            # For now let's use 
-            # @[d->keys()]
-            # @[d->values()]
-            # Because "${A[@]}" in bash shows the VALUES, and @A should arguably be consistent
-
-            else:
-                raise error.InvalidType2(val,
-                    "Can't splice %r" % part.var_name, loc.WordPart(part))
-
-        return strs
+        return val_ops.ToShellArray(val, loc.WordPart(part), prefix='Splice ')
 
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
@@ -1734,3 +1677,5 @@ class OilEvaluator(object):
             new_node.PrettyPrint()
             print()
         return new_node
+
+# vim: sw=4

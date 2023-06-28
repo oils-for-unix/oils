@@ -228,7 +228,7 @@ def _ValueToPartValue(val, quoted):
 
         # Cases added for YSH
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float, value_e.Eggex):
-            s = val_ops.Stringify(val)
+            s = val_ops.Stringify(val, loc.Missing)
             return part_value.String(s, quoted, not quoted)
 
         else:
