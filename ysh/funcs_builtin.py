@@ -25,7 +25,7 @@ _ = log
 def SetGlobalFunc(mem, name, func):
     # type: (state.Mem, str, Union[Callable, type]) -> None
     """Used by bin/oil.py to set split(), etc."""
-    assert isinstance(func, vm._Func) or callable(func), func
+    assert isinstance(func, vm._Callable) or callable(func), func
 
     # TODO: Fix this location info
     left = lexer.DummyToken(Id.Undefined_Tok, '')
@@ -60,7 +60,7 @@ def _AppendUntyped(L, arg):
     L.append(arg)
 
 
-class _Append(vm._Func):
+class _Append(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -99,7 +99,7 @@ def _PopUntyped(L):
     L.pop()
 
 
-class _Pop(vm._Func):
+class _Pop(vm._Callable):
 
     def __init__(self):
         # type: () -> None

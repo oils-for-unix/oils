@@ -97,12 +97,6 @@ def _PyObjToValue(val):
         else:
             return value.Dict(typed_dict)
 
-    elif isinstance(val, tuple):
-        return value.List([
-            elem if isinstance(elem, value_t) else _PyObjToValue(elem)
-            for elem in val
-        ])
-
     elif isinstance(val, slice):
         s = value.Slice(None, None, None)
         if val.start:
