@@ -75,6 +75,7 @@ case (x) {
   }
 }
 ## STDOUT:
+C++
 ## END
 
 #### empty case statement
