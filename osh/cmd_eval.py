@@ -1486,22 +1486,19 @@ class CommandEvaluator(object):
                     with tagswitch(case_arm.pattern) as case:
                         if case(pat_e.Words):
                             if to_match.tag() != value_e.Str:
-                                continue # A non-string `to_match` will never match a pat.Words
+                                continue  # A non-string `to_match` will never match a pat.Words
                             to_match_str = cast(value.Str, to_match)
 
                             pat_words = cast(pat.Words, case_arm.pattern)
 
                             for pat_word in pat_words.words:
-                                # NOTE: Is it OK that we're evaluating these as we go?
-                                # TODO: test it out in a loop
                                 word_val = self.word_ev.EvalWordToString(
                                     pat_word, word_eval.QUOTE_FNMATCH)
 
-                                #log('Matching word %r against pattern %r', to_match, pat_val.s)
                                 if libc.fnmatch(word_val.s, to_match_str.s):
                                     status = self._ExecuteList(case_arm.action)
                                     done = True  # TODO: Parse ;;& and for fallthrough and such?
-                                    break  # Only execute action ONCE
+                                    break
 
                         elif case(pat_e.YshExprs):
                             pat_exprs = cast(pat.YshExprs, case_arm.pattern)
@@ -1519,6 +1516,7 @@ class CommandEvaluator(object):
                             pat_eggex = cast(pat.Eggex, case_arm.pattern)
                             eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
                             eggex_val = value.Eggex(eggex, None)
+
                             if val_ops.RegexMatch(to_match, eggex_val, self.mem):
                                 status = self._ExecuteList(case_arm.action)
                                 done = True

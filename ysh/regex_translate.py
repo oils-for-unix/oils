@@ -11,7 +11,6 @@ from _devbuild.gen.syntax_asdl import (
     char_class_term_t,
     re,
     re_e,
-    re_str,
     re_repeat,
     re_repeat_e,
 )
@@ -314,7 +313,7 @@ def _AsPosixEre(node, parts):
         parts.append(']')
         return
 
-    raise NotImplementedError(re_str(tag))
+    raise NotImplementedError(tag)
 
 
 def AsPosixEre(eggex):
