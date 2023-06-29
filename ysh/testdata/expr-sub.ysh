@@ -35,10 +35,9 @@ simple-demo() {
 
   echo '+ You can also splice the result of a function returning a sequence:'
   echo '  Notes:'
-  echo '  - the sorted() function is from Python.'
-  echo '  - sorting utf-8 encoded strings as bytes is well-defined'
+  echo '  - the reversed() function is from Python.'
   echo
-  write -- @[sorted(myarray)]
+  write -- @[reversed(myarray)]
   echo
 
   # But this is a syntax error
