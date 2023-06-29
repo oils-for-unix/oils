@@ -814,8 +814,7 @@ ysh-builtin-shopt() {
 }
 
 ysh-case() {
-  sh-spec spec/ysh-case.test.sh --oils-failures-allowed 0 \
-    $OIL_LIST "$@"
+  run-file-with-metadata ysh-case "$@"
 }
 
 ysh-command-sub() {
