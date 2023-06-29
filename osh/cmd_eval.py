@@ -1501,9 +1501,9 @@ class CommandEvaluator(object):
                                     break
 
                         elif case(pat_e.YshExprs):
-                            pat_exprs = cast(pat.YshExprs, case_arm.pattern)
-
                             if mylib.PYTHON:
+                                pat_exprs = cast(pat.YshExprs, case_arm.pattern)
+
                                 for pat_expr in pat_exprs.exprs:
                                     expr_val = self.expr_ev.EvalExpr(pat_expr, case_arm.left)
 
@@ -1513,14 +1513,15 @@ class CommandEvaluator(object):
                                         break
 
                         elif case(pat_e.Eggex):
-                            pat_eggex = cast(pat.Eggex, case_arm.pattern)
-                            eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
-                            eggex_val = value.Eggex(eggex, None)
+                            if mylib.PYTHON:
+                                pat_eggex = cast(pat.Eggex, case_arm.pattern)
+                                eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
+                                eggex_val = value.Eggex(eggex, None)
 
-                            if val_ops.RegexMatch(to_match, eggex_val, self.mem):
-                                status = self._ExecuteList(case_arm.action)
-                                done = True
-                                break
+                                if val_ops.RegexMatch(to_match, eggex_val, self.mem):
+                                    status = self._ExecuteList(case_arm.action)
+                                    done = True
+                                    break
 
                         elif case(pat_e.Else):
                             status = self._ExecuteList(case_arm.action)
