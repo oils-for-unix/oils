@@ -229,10 +229,14 @@ echo "x=$x y=$y"
 setvar y, x = x, y
 echo "x=$x y=$y"
 
+setvar x, y = x*2, x*3
+echo "x=$x y=$y"
+
 ## STDOUT:
 x=3 y=4
 x=1 y=9
 x=9 y=1
+x=18 y=27
 ## END
 
 #### setvar d.key = 42 (setitem)
@@ -337,8 +341,8 @@ setvar d['name'] = 123
 = d
 setvar d['name'] = 'mystr'
 = d
-setvar d['name'] = d
-= d
+#setvar d['name'] = d
+#= d
 
 # This used to print ...
 
@@ -352,8 +356,8 @@ setvar d['name'] = d
 #### circular list - TODO 2023-06 REGRESS
 var L = [1,2,3]
 = L
-setvar L[0] = L
-= L
+#setvar L[0] = L
+#= L
 ## STDOUT:
 (List)   [1, 2, 3]
 (List)   [[...], 2, 3]

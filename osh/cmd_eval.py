@@ -884,7 +884,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.PlaceMutation):
 
-                if mylib.PYTHON:  # DISABLED because it relies on CPytho now
+                if mylib.PYTHON:
                     node = cast(command.PlaceMutation, UP_node)
                     self.mem.SetLocationToken(
                         node.keyword)  # point to setvar/set
@@ -901,72 +901,86 @@ class CommandEvaluator(object):
                             raise AssertionError(node.keyword.id)
 
                     if node.op.id == Id.Arith_Equal:
-                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                        py_val = cpython._ValueToPyObj(val)
+                        right_val = self.expr_ev.EvalExpr(
+                            node.rhs, loc.Missing)
+                        UP_right_val = right_val
 
-                        lvals_ = []  # type: List[lvalue_t]
-                        py_vals = []
-                        # TODO: Optimize this common case (but measure)
-                        if len(node.lhs) == 1:
-                            # See ShAssignment
-                            lval_ = self.expr_ev.EvalPlaceExpr(
-                                node.lhs[0])  # type: lvalue_t
+                        places = None  # type: List[lvalue_t]
+                        rhs_vals = None  # type: List[value_t]
 
-                            lvals_.append(lval_)
-                            py_vals.append(py_val)
+                        num_lhs = len(node.lhs)
+                        if num_lhs == 1:
+                            places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
+                            rhs_vals = [right_val]
                         else:
-                            it = py_val.__iter__()
-                            for pm_lhs in node.lhs:
-                                lval_ = self.expr_ev.EvalPlaceExpr(pm_lhs)
-                                py_val = it.next()
+                            if right_val.tag() != value_e.List:
+                                raise error.InvalidType2(
+                                    right_val, 'expected a List', loc.Missing)
+                            right_val = cast(value.List, UP_right_val)
 
-                                lvals_.append(lval_)
-                                py_vals.append(py_val)
+                            num_rhs = len(right_val.items)
+                            if num_lhs != num_rhs:
+                                raise error.Expr(
+                                    '%d != %d' % (num_lhs, num_rhs),
+                                    loc.Missing)
 
-                        for UP_lval_, py_val in zip(lvals_, py_vals):
-                            tag = UP_lval_.tag()
+                            places = []
+                            rhs_vals = []
+                            for i, lhs_val in enumerate(node.lhs):
+                                places.append(
+                                    self.expr_ev.EvalPlaceExpr(lhs_val))
+                                rhs_vals.append(right_val.items[i])
+
+                        for place, rval in zip(places, rhs_vals):
+                            UP_place = place
+                            tag = place.tag()
+
                             if tag == lvalue_e.ObjIndex:
                                 # setvar mylist[0] = 42
                                 # setvar mydict['key'] = 42
-                                lval_ = cast(lvalue.ObjIndex, UP_lval_)
+                                place = cast(lvalue.ObjIndex, UP_place)
 
-                                obj = lval_.obj
+                                obj = place.obj
                                 UP_obj = obj
                                 with tagswitch(obj) as case:
                                     if case(value_e.MaybeStrArray):
                                         obj = cast(value.MaybeStrArray, UP_obj)
                                         index = val_ops.ToInt(
-                                            lval_.index,
+                                            place.index,
                                             loc.Missing,
                                             prefix='List index ')
-                                        obj.strs[index] = py_val
+                                        r = val_ops.ToStr(rval,
+                                                          loc.Missing,
+                                                          prefix='List index ')
+                                        obj.strs[index] = r
 
                                     elif case(value_e.List):
                                         obj = cast(value.List, UP_obj)
                                         index = val_ops.ToInt(
-                                            lval_.index,
+                                            place.index,
                                             loc.Missing,
                                             prefix='List index ')
-                                        obj.items[
-                                            index] = cpython._PyObjToValue(
-                                                py_val)
+                                        obj.items[index] = rval
 
                                     elif case(value_e.AssocArray):
                                         obj = cast(value.AssocArray, UP_obj)
                                         key = val_ops.ToStr(
-                                            lval_.index,
+                                            place.index,
                                             loc.Missing,
                                             prefix='AssocArray index ')
-                                        obj.d[key] = py_val
+                                        r = val_ops.ToStr(
+                                            rval,
+                                            loc.Missing,
+                                            prefix='AssocArray index ')
+                                        obj.d[key] = r
 
                                     elif case(value_e.Dict):
                                         obj = cast(value.Dict, UP_obj)
                                         key = val_ops.ToStr(
-                                            lval_.index,
+                                            place.index,
                                             loc.Missing,
                                             prefix='Dict index ')
-                                        obj.d[key] = cpython._PyObjToValue(
-                                            py_val)
+                                        obj.d[key] = rval
 
                                     else:
                                         raise error.InvalidType2(
@@ -978,10 +992,10 @@ class CommandEvaluator(object):
                                     e_die('setref obj[index] not implemented')
 
                             else:
-                                val = cpython._PyObjToValue(py_val)
+                                #val = cpython._PyObjToValue(py_val)
                                 # top level variable
-                                self.mem.SetValue(UP_lval_,
-                                                  val,
+                                self.mem.SetValue(place,
+                                                  rval,
                                                   which_scopes,
                                                   flags=_PackFlags(
                                                       node.keyword.id))
@@ -991,8 +1005,8 @@ class CommandEvaluator(object):
                         # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
                         # transformer and not the grammar.  We should do that too.
 
-                        place = cast(place_expr.Var, node.lhs[0])
-                        pe_lval = location.LName(place.name.tval)
+                        place2 = cast(place_expr.Var, node.lhs[0])
+                        pe_lval = location.LName(place2.name.tval)
                         val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
                         new_val = self.expr_ev.EvalPlusEquals(pe_lval, val)

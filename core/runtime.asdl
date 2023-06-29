@@ -73,8 +73,8 @@ module runtime
     # - Template for ^"$1 and $2"
     # - Proc, Func
 
-    # TODO: we might be able to combine these types when the refactor is done
-    # and we don't need to be able to recover their pyobj representations. 
+    # Does this need to be a first-class type?  That's inherited from Python
+    # Should it be combined with ranges?
   | Slice(IntBox? lower, IntBox? upper, IntBox? step)
 
   | Func(any f)
