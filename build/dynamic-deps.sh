@@ -82,9 +82,9 @@ _gen/
 asdl/py.*           # pybase.py ported by hand to C++
 
 core/py.*           # pyos.py, pyutil.py ported by hand to C++
-core/optview\.py     # core/optview_gen.py
+core/optview\.py    # core/optview_gen.py
 
-frontend/py.*\.py    # py_readline.py ported by hand to C++
+frontend/py.*\.py   # py_readline.py ported by hand to C++
 frontend/consts.py  # frontend/consts_gen.py
 frontend/match.py   # frontend/lexer_gen.py
 
@@ -95,6 +95,7 @@ pgen2/pnode.py
 pylib/path_stat.py
 
 library/func_cpython.py
+library/func_eggex.py
 
 ysh/builtin_json.py
 ysh/cpython.py
