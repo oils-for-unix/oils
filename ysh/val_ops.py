@@ -174,20 +174,19 @@ class _ContainerIter(object):
     def __init__(self):
         # type: () -> None
         self.i = 0
-        self.n = 0  # should be overwritten
 
     def Index(self):
         # type: () -> int
         return self.i
 
-    def Done(self):
-        # type: () -> int
-        return self.i == self.n
-
     def Next(self):
         # type: () -> None
         """Returns whether iteration is done"""
         self.i += 1
+
+    def Done(self):
+        # type: () -> int
+        raise NotImplementedError()
 
     def FirstValue(self):
         # type: () -> value_t
@@ -209,6 +208,10 @@ class ArrayIter(_ContainerIter):
         self.strs = strs
         self.n = len(strs)
 
+    def Done(self):
+        # type: () -> int
+        return self.i == self.n
+
     def FirstValue(self):
         # type: () -> value_t
         return value.Str(self.strs[self.i])
@@ -222,6 +225,10 @@ class ListIterator(_ContainerIter):
         _ContainerIter.__init__(self)
         self.val = val
         self.n = len(val.items)
+
+    def Done(self):
+        # type: () -> int
+        return self.i == self.n
 
     def FirstValue(self):
         # type: () -> value_t
@@ -241,6 +248,10 @@ class DictIterator(_ContainerIter):
 
         self.n = len(val.d)
         assert self.n == len(self.keys)
+
+    def Done(self):
+        # type: () -> int
+        return self.i == self.n
 
     def FirstValue(self):
         # type: () -> value_t
@@ -264,6 +275,10 @@ class AssocArrayIter(_ContainerIter):
 
         self.n = len(val.d)
         assert self.n == len(self.keys)
+
+    def Done(self):
+        # type: () -> int
+        return self.i == self.n
 
     def FirstValue(self):
         # type: () -> value_t
