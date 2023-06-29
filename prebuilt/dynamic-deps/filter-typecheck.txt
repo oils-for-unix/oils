@@ -1,7 +1,7 @@
 __init__.py
 typing.py
 ysh/builtin_json.py
-ysh/funcs_builtin.py
+library/func_misc.py
 pylib/collections_.py
 mycpp/mylib.py
 tools/deps.py

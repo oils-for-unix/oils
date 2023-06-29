@@ -379,6 +379,10 @@ class OilEvaluator(object):
 
     def _ArithNumeric(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> value_t
+        """
+        Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
+        with overflow detection
+        """
         left = self._ValueToNumber(left)
         right = self._ValueToNumber(right)
         UP_left = left
@@ -402,7 +406,7 @@ class OilEvaluator(object):
                             if right.i == 0:
                                 raise ZeroDivisionError()
 
-                            return value.Float(left.i / float(right.i))
+                            return value.Float(float(left.i) / float(right.i))
                         else:
                             raise NotImplementedError(op)
 
@@ -900,8 +904,13 @@ class OilEvaluator(object):
 
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
+
+        # TODO: 
+        # - look in a separate self.funcs namespace
+        # - node.func must be a expr.Var
         func = self._EvalExpr(node.func)
         UP_func = func
+
         if mylib.PYTHON:
             with tagswitch(func) as case:
                 if case(value_e.Func):

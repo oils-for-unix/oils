@@ -236,6 +236,8 @@ X [External Lang] BEGIN   END   when (awk)
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
+X [Types]         Null   Bool   Int   Float   Str   List   Dict
+                  Eggex   Template   Expr   Command   Proc   Func
 ```
 
 <h2 id="lib">
@@ -258,7 +260,8 @@ X [String]        find(eggex)   replace(eggex, template)   join()
   [Word]          glob()   maybe()
   [Arrays]        X index()   append()   extend()
   [Assoc Arrays]  keys()   values()
-  [Introspection] shvar_get()
+  [Introspection] shvar_get()   VM.funcs()   VM.procs()
+                  VM.types()
 X [Hay Config]    parse_hay()   eval_hay()   block_as_str()   
 X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()

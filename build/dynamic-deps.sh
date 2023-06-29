@@ -53,7 +53,7 @@ typing.py
 
 # TODO: ysh/ needs to be statically typed
 ysh/builtin_json.py
-ysh/funcs_builtin.py
+library/func_misc.py
 
 # OrderedDict is polymorphic
 pylib/collections_.py

@@ -1,8 +1,8 @@
-# Data types for evaluating the syntax tree
+# Data types used at runtime
 
 module runtime
 {
-  # import these types from syntax.asdl
+  # import from frontend/syntax.asdl
   use frontend syntax {
     loc Token 
     expr word command
@@ -67,7 +67,7 @@ module runtime
 
     # CODE types
     #   unevaluated: Eggex, Expr, Template, Command/Block
-    #   callable: Func, BoundFunc
+    #   callable, in separate namespaces: Func, BoundFunc, Proc
 
     # / d+ /
   | Eggex(re expr, str? as_ere)
@@ -81,9 +81,12 @@ module runtime
 
     # callable is vm._Callable.  TODO: ASDL should be able to express and
     # "inline" such types?  Maybe we need a forward declaration of it.
+    #
+    # VM.funcs() and VM.procs() could return dictionaries.
   | Func(any callable)
   | BoundFunc(value me, any callable)
-    # Reflect on Proc too?
+    # Reflect on Proc, e.g. find location info for its file!
+  | Proc(any p)
 
     # Internal detail?  Does it need to be a first class type, or maybe it can
     # double for a range?  It can't be serialized.

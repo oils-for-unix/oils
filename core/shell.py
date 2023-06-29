@@ -38,11 +38,12 @@ from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
 
+from library import func_hay
+from library import func_misc
+
 from ysh import expr_eval
 from ysh import builtin_json
 from ysh import builtin_oil
-from ysh import funcs
-from ysh import funcs_builtin
 
 from osh import builtin_assign
 from osh import builtin_bracket
@@ -421,9 +422,17 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     state.InitMem(mem, environ, version_str)
 
     if mylib.PYTHON:
-        funcs_builtin.Init(mem)
+        func_misc.Init(mem)
 
     procs = {}  # type: Dict[str, Proc]
+
+    # TODO: rename funcs module
+    # e.g. max() sum() etc.
+    funcs = {}  # type: Dict[str, vm._Callable]
+
+    # e.g. s->startswith()
+    methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
+
     hay_state = state.Hay()
 
     if attrs.show_options:  # special case: sh -o
@@ -541,7 +550,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     globber = glob_.Globber(exec_opts)
 
     if mylib.PYTHON:
-        funcs_builtin.Init2(mem, splitter, globber)
+        func_misc.Init2(mem, splitter, globber)
 
     # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
@@ -622,12 +631,12 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
     if mylib.PYTHON:
-        parse_config = funcs.ParseHay(fd_state, parse_ctx, errfmt)
-        eval_to_dict = funcs.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
-        block_as_str = funcs.BlockAsStr(arena)
+        parse_config = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
+        eval_to_dict = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
+        block_as_str = func_hay.BlockAsStr(arena)
 
-        hay_func = funcs.HayFunc(hay_state)
-        funcs_builtin.Init3(mem, parse_config, eval_to_dict, block_as_str,
+        hay_func = func_hay.HayFunc(hay_state)
+        func_misc.Init3(mem, parse_config, eval_to_dict, block_as_str,
                             hay_func)
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.

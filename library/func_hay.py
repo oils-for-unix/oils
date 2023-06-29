@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class ParseHay(object):
-    """parse_config()"""
+    """parseHay()"""
 
     def __init__(self, fd_state, parse_ctx, errfmt):
         # type: (process.FdState, parse_lib.ParseContext, ui.ErrorFormatter) -> None
@@ -67,7 +67,7 @@ class ParseHay(object):
 
 
 class EvalHay(object):
-    """eval_to_dict()"""
+    """evalHay()"""
 
     def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
         # type: (state.Hay, state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator) -> None
@@ -112,7 +112,7 @@ class BlockAsStr(object):
 
 
 class HayFunc(object):
-    """hay_result()"""
+    """_hay() register"""
 
     def __init__(self, hay_state):
         # type: (state.Hay) -> None
