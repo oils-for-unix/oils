@@ -771,6 +771,8 @@ class Transformer(object):
 
         place_list = self._PlaceList(p_node.GetChild(0))  # could be a tuple
         op_tok = p_node.GetChild(1).tok
+        if len(place_list) > 1 and op_tok.id != Id.Arith_Equal:
+            p_die('Multiple assignment must use =', op_tok)
         rhs = self.Expr(p_node.GetChild(2))
         return command.PlaceMutation(None, place_list, op_tok, rhs)
 
@@ -1597,3 +1599,6 @@ class Transformer(object):
 
         nt_name = self.number2symbol[typ]
         raise NotImplementedError(nt_name)
+
+
+# vim: sw=4

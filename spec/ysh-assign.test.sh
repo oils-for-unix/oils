@@ -71,6 +71,18 @@ setvar x += '9'
 (Int)   55
 ## END
 
+#### Augmented assignment doesn't work with multiple LHS
+
+var x = 3
+var y = 4
+setvar x, y += 2
+echo $x $y
+
+## status: 2
+## STDOUT:
+## END
+
+
 #### proc static check: const can't be mutated
 proc f {
   const x = 'local'
@@ -237,6 +249,30 @@ x=3 y=4
 x=1 y=9
 x=9 y=1
 x=18 y=27
+## END
+
+#### setvar to swap List and Dict elements
+var x = [1, 2, 3]
+echo @x
+
+setvar x[0], x[1] = x[1], x[0]
+
+echo @x
+
+var d = {int: 42}
+
+setvar x[0], d.int = d.int, x[0]
+
+echo @x
+json write (d)
+
+## STDOUT:
+1 2 3
+2 1 3
+42 1 3
+{
+  "int": 2
+}
 ## END
 
 #### setvar d.key = 42 (setitem)
