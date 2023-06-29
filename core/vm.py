@@ -231,7 +231,7 @@ class _Builtin(object):
         raise NotImplementedError()
 
 
-class _Func(object):
+class _Callable(object):
     """Interface for functions in the runtime."""
 
     def __init__(self):

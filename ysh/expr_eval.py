@@ -906,8 +906,8 @@ class OilEvaluator(object):
             with tagswitch(func) as case:
                 if case(value_e.Func):
                     func = cast(value.Func, UP_func)
-                    f = func.f
-                    if isinstance(f, vm._Func):  # typed
+                    f = func.callable
+                    if isinstance(f, vm._Callable):  # typed
                         pos_args, named_args = self.EvalArgList2(node.args)
                         #log('pos_args %s', pos_args)
 

@@ -122,7 +122,7 @@ def _PyObjToValue(val):
     elif isinstance(val, value.Block):
         return val  # passthrough
 
-    elif isinstance(val, vm._Func) or callable(val):
+    elif isinstance(val, vm._Callable) or callable(val):
         return value.Func(val)
 
     else:
@@ -200,7 +200,7 @@ def _ValueToPyObj(val):
 
         elif case(value_e.Func):
             val = cast(value.Func, UP_val)
-            return val.f
+            return val.callable
 
         elif case(value_e.Block):
             return val  # passthrough

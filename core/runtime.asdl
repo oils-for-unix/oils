@@ -4,11 +4,13 @@ module runtime
 {
   # import these types from syntax.asdl
   use frontend syntax {
-    word CompoundWord ArgList command re redir_loc Token proc_sig loc
+    loc Token 
+    expr word command
+    CompoundWord DoubleQuoted
+    ArgList re redir_loc proc_sig 
   }
 
   IntBox = (int i)
-  FuncBox = (any f)
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
@@ -36,25 +38,25 @@ module runtime
     # only produced when EXTGLOB_FS flag is passed
   | ExtGlob(List[part_value] part_vals)
 
-  # A static word from osh.asdl is evaluted to a dynamic value.  value
-  # instances are stored in state.Mem().
+  # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
+  # value instances are stored in state.Mem().
   value =
     # A var bound to Undef is different than no binding because of dynamic scope.
     Undef
-    # Explicit null for JSON; should be rarely used.  Note: the YSH language
-    # doesn't have an 'undefined' and 'null' like JS, just 'null'.
-  | Null
+
+    # DATA types: Str, Null, Bool, Int, Float, List, Dict
+
   | Str(str s)
     # "holes" in the array are represented by None
   | MaybeStrArray(List[str] strs)
     # d will be a dict
   | AssocArray(Dict[str, str] d)
 
-    # Important: This is NOT stored in state.Mem now.  It's used only by
-    # the arithmetic evaluator.
-  | Int(int i)
-    # TODO: Use the rest of these types!
+    # Explicit null for JSON; should be rarely used.  Note: the YSH language
+    # doesn't have an 'undefined' and 'null' like JS, just 'null'.
+  | Null
   | Bool(bool b)
+  | Int(int i)
   | Float(float f)
 
     -- TODO: remove MaybeStrArray in favor of this
@@ -63,22 +65,30 @@ module runtime
     -- TODO: remove AssocArray in favor of this
   | Dict(Dict[str, value] d)
 
+    # CODE types
+    #   unevaluated: Eggex, Expr, Template, Command/Block
+    #   callable: Func, BoundFunc
+
     # / d+ /
   | Eggex(re expr, str? as_ere)
 
-    # cd { echo 1; echo 2 } and &(echo 1; echo 2)
-  | Block(command body)
-    # TODO: more reflection
-    # - Expr for ^[1 + 2] 
-    # - Template for ^"$1 and $2"
-    # - Proc, Func
+    # ^[42 + a[i]]
+  | Expr(expr e)
+    # ^"$1 and $2"
+  | Template(DoubleQuoted eq)
+    # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
+  | Block(command body)  # TODO: rename Command or Cmd
 
-    # Does this need to be a first-class type?  That's inherited from Python
-    # Should it be combined with ranges?
+    # callable is vm._Callable.  TODO: ASDL should be able to express and
+    # "inline" such types?  Maybe we need a forward declaration of it.
+  | Func(any callable)
+  | BoundFunc(value me, any callable)
+    # Reflect on Proc too?
+
+    # Internal detail?  Does it need to be a first class type, or maybe it can
+    # double for a range?  It can't be serialized.
+    # Might want for i in (1:n) { echo $i }, although it's inconsistent with shell ..
   | Slice(IntBox? lower, IntBox? upper, IntBox? step)
-
-  | Func(any f)
-  | BoundFunc(value me, FuncBox f)
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
