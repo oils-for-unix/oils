@@ -204,17 +204,18 @@ def Init(mem):
     SetGlobalFunc(mem, 'all', all)
     SetGlobalFunc(mem, 'sum', sum)
 
-    # We maintain the L.sort() aka sort(L) and sorted(L) distinction.
-    # TODO: How do these interact with rows of a data frame?
-    SetGlobalFunc(mem, 'sorted', sorted)
-
     SetGlobalFunc(mem, 'reversed', _Reversed)
 
     #
     # List/array methods
     #
 
-    # TODO: Universal function call syntax can change this?
+    # Do we want to make these methods?
+    #
+    # _ mylist->append('x')
+    # _ mylist->pop()
+    #
+    # It does help
 
     SetGlobalFunc(mem, 'append', func_misc.Append())
     SetGlobalFunc(mem, 'pop', func_misc.Pop())
@@ -227,10 +228,22 @@ def Init(mem):
     # String Methods
     #
 
-    # TODO: strip(), lstrip(), rstrip().  What about upper() and lower() etc.?
-    # Shell has versions of those
-    # startswith, endswith
-    # find, index, cout
+    # TODO:
+    # - strip(), lStrip(), rStrip()
+    #
+    # Better API
+    #   trim() trimLeft() trimRight() - whitespace
+    #   trimLeft(runes='') - like Python lstrip() rstrip()
+    #
+    #   Like shell versions ${s%} ${s^}
+    #
+    #   trimLeft(str='prefix')
+    #   trimLeft(glob='')   # SLOW, DISCOURAGED
+
+    # - upper() lower()
+    # - startsWith(), endsWith
+    # - find, index
+    #
     # partition, rpartition: I never seem to use these?
 
     # Notes on overloaded functions
@@ -276,26 +289,17 @@ def Init(mem):
     # There's also float.hex() and float.fromhex()
 
     # Types:
-    #   type()     -- similar to = operator
-    #   callable() -- test if it's callable
+    #   data: Null, Bool, Str, Int, Float, List, Dict
+    #   supertype for serialization?  Obj or Data?
+    #   code: Eggex, Template, Expr, Command
+    #         Func, Proc, BoundFunc (or method?)
     #
     # All Objects:  (Ruby has Kernel?)
-    #   id() - unique ID
-    #   hash()
-    #   object() -- what is this for?  For subtyping?
-    #   repr() -- are we maintaining repr and str?  We also have a repr builtin.
+    #   id() - unique integer ID
+    #   repr() -- I think ours is $[]
     #
     # Introspection:
     #   intern()
-    #   dir() -- list attributes names.  Might want this.
-    #   globals(), locals()
-    #
-    # Iterators:
-    #   iter([]) -> listiterator
-    #   next() -- do we need it?
-    #
-    # Attributes:
-    #   delattr, hasattr, getattr, setattr
 
     # Not including:
     # - map, filter (use list comp), reduce
@@ -304,13 +308,6 @@ def Init(mem):
     # - input(), raw_input() -- read builtin instead?
     # - super() -- object system is different
     # - python marks these as deprecated: apply, coerce, buffer, intern
-    #
-    # Other Types:
-    # - set() -- I think the dict type will subsume this
-    # - these seem confusing
-    #   - memoryview()
-    #   - bytearray()
-    #   - buffer() (deprecated by Python)
 
     # Modules that could be builtin:
     # - math -- sin(), a lot of floating point stuff like frexp()

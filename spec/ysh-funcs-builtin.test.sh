@@ -113,15 +113,6 @@ write $[sum( range(0), start)]
 42
 ## END
 
-#### sorted()
-var x = sorted(range(3))
-write @x
-## STDOUT:
-0
-1
-2
-## END
-
 #### reversed()
 var x = reversed(range(3))
 write @x
