@@ -51,9 +51,9 @@ EOF
 __init__.py
 typing.py
 
-# TODO: ysh/ needs to be statically typed
+library/func_cpython.py
+
 ysh/builtin_json.py
-library/func_misc.py
 
 # OrderedDict is polymorphic
 pylib/collections_.py
@@ -94,8 +94,9 @@ pgen2/pnode.py
 # should be py_path_stat.py, because it's ported by hand to C++
 pylib/path_stat.py
 
+library/func_cpython.py
+
 ysh/builtin_json.py
-ysh/objects.py
 ysh/cpython.py
 ysh/expr_eval.py
 

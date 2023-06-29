@@ -45,6 +45,9 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
+library/func_eggex.py
+library/func_hay.py
+library/func_misc.py
 osh/arith_parse.py
 osh/bool_parse.py
 osh/bool_stat.py
@@ -81,8 +84,9 @@ pylib/path_stat.py
 tea/tea_main.py
 tools/osh2oil.py
 ysh/builtin_oil.py
+ysh/cpython.py
 ysh/expr_eval.py
 ysh/expr_parse.py
 ysh/expr_to_ast.py
-ysh/funcs.py
 ysh/regex_translate.py
+ysh/val_ops.py

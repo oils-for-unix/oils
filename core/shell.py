@@ -39,7 +39,7 @@ from frontend import reader
 from frontend import parse_lib
 
 from library import func_hay
-from library import func_misc
+from library import func_cpython
 
 from ysh import expr_eval
 from ysh import builtin_json
@@ -422,7 +422,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     state.InitMem(mem, environ, version_str)
 
     if mylib.PYTHON:
-        func_misc.Init(mem)
+        func_cpython.Init(mem)
 
     procs = {}  # type: Dict[str, Proc]
 
@@ -550,7 +550,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     globber = glob_.Globber(exec_opts)
 
     if mylib.PYTHON:
-        func_misc.Init2(mem, splitter, globber)
+        func_cpython.Init2(mem, splitter, globber)
 
     # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
@@ -636,8 +636,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         block_as_str = func_hay.BlockAsStr(arena)
 
         hay_func = func_hay.HayFunc(hay_state)
-        func_misc.Init3(mem, parse_config, eval_to_dict, block_as_str,
-                            hay_func)
+        func_cpython.Init3(mem, parse_config, eval_to_dict, block_as_str,
+                           hay_func)
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
