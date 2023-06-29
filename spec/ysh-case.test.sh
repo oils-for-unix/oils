@@ -51,6 +51,7 @@ case (x) {
   (2 + 2) { echo four }
 }
 ## STDOUT:
+three
 ## END
 
 #### case semantics, no match
