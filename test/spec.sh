@@ -66,7 +66,9 @@ run-file-with-metadata() {
   local spec_name=$1
   shift
 
-  sh-spec spec/$spec_name.test.sh --oils-bin-dir $PWD/bin "$@"
+  sh-spec spec/$spec_name.test.sh \
+    --compare-shells \
+    --oils-bin-dir $PWD/bin "$@"
 }
 
 run-file-with-osh-bash() {

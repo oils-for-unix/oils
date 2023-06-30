@@ -87,6 +87,10 @@ debug-2023-06() {
   # I get an ORPHANED bash -i command running at 100%, outside the container
   # Remember that runs with docker -t
 
+  # NARROWED DOWN: the bug was that bash ALWAYS fails inside the container
+  #
+  # We don't run with bash and a terminal in the CI
+
   test/spec.sh run-file-with-osh builtin-history
 }
 

@@ -1280,23 +1280,21 @@ def main(argv):
 
   shell_args = argv[2:]
   if opts.oils_bin_dir:
-    sh1 = file_metadata.get('compare_shells')
 
-    # problem: we need to get the real osh or ysh shell
-    sh2 = file_metadata.get('our_shell', 'osh')  # default is OSH
+    shells = []
+
+    if opts.compare_shells:
+      comp = file_metadata.get('compare_shells')
+      # Compare 'compare_shells' and Python
+      shells.extend(comp.split() if comp else [])
+
+    # Always run with the Python version
+    our_shell = file_metadata.get('our_shell', 'osh')  # default is OSH
+    shells.append(os.path.join(opts.oils_bin_dir, our_shell))
 
     # Also run against C++ version
     if opts.oils_cpp_bin_dir:
-      # Compare Python and C++
-      meta_shells = []
-      meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
-      meta_shells.append(os.path.join(opts.oils_cpp_bin_dir, sh2))
-    else:
-      # Compare 'compare_shells' and Python
-      meta_shells = sh1.split() if sh1 else []
-      meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
-
-    shells = meta_shells
+      shells.append(os.path.join(opts.oils_cpp_bin_dir, our_shell))
 
     # Overwrite it when --oils-bin-dir is set
     # It's no longer a flag

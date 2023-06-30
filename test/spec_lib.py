@@ -128,6 +128,9 @@ def DefineCommon(p):
   p.add_option(
       '--oils-cpp-bin-dir', dest='oils_cpp_bin_dir', default=None,
       help="Directory that native C++ osh and ysh live in")
+  p.add_option(
+      '--compare-shells', dest='compare_shells', action='store_true',
+      help="Compare against shells specified at the top of each file")
 
 
 def DefineStateful(p):
