@@ -1494,7 +1494,7 @@ class CommandEvaluator(object):
                 self._MaybeRunDebugTrap()
 
                 status = 0  # If there are no arms, it should be zero?
-                done = False
+                matched = False
 
                 for case_arm in node.arms:
                     with tagswitch(case_arm.pattern) as case:
@@ -1511,7 +1511,7 @@ class CommandEvaluator(object):
 
                                 if libc.fnmatch(word_val.s, to_match_str.s):
                                     status = self._ExecuteList(case_arm.action)
-                                    done = True  # TODO: Parse ;;& and for fallthrough and such?
+                                    matched = True  # TODO: Parse ;;& and for fallthrough and such?
                                     break
 
                         elif case(pat_e.YshExprs):
@@ -1523,7 +1523,7 @@ class CommandEvaluator(object):
 
                                     if val_ops.ExactlyEqual(expr_val, to_match):
                                         status = self._ExecuteList(case_arm.action)
-                                        done = True
+                                        matched = True
                                         break
 
                         elif case(pat_e.Eggex):
@@ -1534,18 +1534,18 @@ class CommandEvaluator(object):
 
                                 if val_ops.RegexMatch(to_match, eggex_val, self.mem):
                                     status = self._ExecuteList(case_arm.action)
-                                    done = True
+                                    matched = True
                                     break
 
                         elif case(pat_e.Else):
                             status = self._ExecuteList(case_arm.action)
-                            done = True
+                            matched = True
                             break
 
                         else:
-                            raise NotImplementedError()
+                            raise AssertionError()
 
-                    if done:
+                    if matched:  # first match wins
                         break
 
             elif case(command_e.TimeBlock):
