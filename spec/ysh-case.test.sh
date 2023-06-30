@@ -103,14 +103,18 @@ string
 ## END
 
 #### eggex capture
-var x = 'foo.py'
-case (x) {
-  / <dot*> '.py' / { echo "match is $[_match(0)]" }
-  / <dot*> '.cc' / { echo "match is $[_match(0)]" }
+for name in foo/foo.py bar/bar.cc zz {
+  case (name) {
+    / '/f' <dot*> '.' / { echo "g0=$[_match(0)] g1=$[_match(1)] g2=$[_match(2)]" }
+    / '/b' <dot*> '.' / { echo "g0=$[_match(1)] g1=$[_match(1)]" }
+    (else) { echo 'no match' }
+  }
 }
 ## status: 0
 ## STDOUT:
-match is foo.py
+g0=/foo. g1=oo g2=null
+g0=ar g1=ar
+no match
 ## END
 
 #### else case pattern
