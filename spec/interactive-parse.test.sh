@@ -1,6 +1,8 @@
-### spec/interactive-parse
+# spec/interactive-parse
+
 
 ## suite: disabled
+## compare_shells:'bash dash mksh
 
 #### parse if
 

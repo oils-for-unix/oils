@@ -89,10 +89,7 @@ run-file-with-osh-bash() {
   local spec_name=$1
   shift
 
-  # defines: suite failures_allowed our_shell compare_shells
-  local $(test/spec_params.py vars-for-file $spec_name)
-
-  sh-spec spec/$spec_name.test.sh --oils-failures-allowed $failures_allowed \
+  sh-spec spec/$spec_name.test.sh --oils-bin-dir $PWD/bin \
     bash $OSH_LIST "$@"
 }
 
@@ -101,10 +98,7 @@ _run-file-with-one() {
   local spec_name=$2
   shift 2
 
-  # defines: suite failures_allowed our_shell compare_shells
-  local $(test/spec_params.py vars-for-file $spec_name)
-
-  sh-spec spec/$spec_name.test.sh --oils-failures-allowed $failures_allowed \
+  sh-spec spec/$spec_name.test.sh --oils-bin-dir $PWD/bin \
     $shell "$@"
 }
 
@@ -457,10 +451,7 @@ var-sub() {
 }
 
 var-num() {
-  run-file var-num "$@"
-
-  # TODO: all files should use run-file-with-metadata
-  #run-file-with-metadata var-num "$@"
+  run-file-with-metadata var-num "$@"
 }
 
 var-sub-quote() {
@@ -473,8 +464,7 @@ sh-usage() {
 }
 
 sh-options() {
-  run-file sh-options "$@"
-  #run-file-with-metadata sh-options "$@"
+  run-file-with-metadata sh-options "$@"
 }
 
 xtrace() {

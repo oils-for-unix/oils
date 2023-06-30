@@ -13,12 +13,6 @@ def Define(sp):
 
   sp.YshFile('hay-meta', our_shell='osh')
 
-  sp.YshFile('ysh-array')
-
-  sp.YshFile('ysh-assign')
-
-  sp.YshFile('ysh-bin')
-
   sp.YshFile('ysh-blocks', our_shell='osh')
 
   sp.YshFile('ysh-bugs')
@@ -36,9 +30,6 @@ def Define(sp):
   sp.YshFile('ysh-builtins', our_shell='osh')
 
   sp.YshFile('ysh-builtin-shopt', our_shell='osh')
-
-  # TODO: Remove this
-  sp.YshFile('ysh-case')
 
   sp.YshFile('ysh-command-sub', our_shell='osh')
 
@@ -62,7 +53,7 @@ def Define(sp):
 
   sp.YshFile('ysh-interactive')
 
-  sp.YshFile('ysh-json', our_shell='osh', tags=['dev-minimal'])
+  sp.YshFile('ysh-json', our_shell='osh')
 
   sp.YshFile('ysh-keywords')
 

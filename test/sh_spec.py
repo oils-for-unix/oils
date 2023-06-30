@@ -1185,6 +1185,19 @@ def MakeTestEnv(opts):
   return env
 
 
+def _DefaultSuite(spec_name):
+  if spec_name.startswith('ysh-'):
+    suite = 'ysh'
+  elif spec_name.startswith('hay'):  # hay is ysh
+    suite = 'ysh'
+
+  elif spec_name.startswith('tea-'):
+    suite = 'tea'
+  else:
+    suite = 'osh'
+
+  return suite
+
 
 def ParseTestList(spec_files):
     for spec_file in spec_files:
@@ -1195,16 +1208,7 @@ def ParseTestList(spec_files):
       tmp = os.path.basename(spec_file)
       spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
 
-      suite = file_metadata.get('suite')
-      if suite is None:
-        if spec_name.startswith('ysh-'):
-          suite = 'ysh'
-        elif spec_name.startswith('hay'):
-          suite = 'ysh'
-        elif spec_name.startswith('tea-'):
-          suite = 'tea'
-        else:
-          suite = 'osh'
+      suite = file_metadata.get('suite') or _DefaultSuite(spec_name)
 
       tmp = file_metadata.get('tags')
       tags = tmp.split() if tmp else []
@@ -1248,7 +1252,6 @@ def main(argv):
       #print(row)
     return 0
 
-
   try:
     test_file = argv[1]
   except IndexError:
@@ -1258,6 +1261,14 @@ def main(argv):
   with open(test_file) as f:
     tokens = Tokenizer(f)
     file_metadata, cases = ParseTestFile(tokens)
+
+  if opts.print_spec_suite:
+    tmp = os.path.basename(test_file)
+    spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
+
+    suite = file_metadata.get('suite') or _DefaultSuite(spec_name)
+    print(suite)
+    return
 
   # TODO: file_metadata should override --osh-allowed-failures and so forth
   # Change to --oils-allowed-failures
@@ -1270,8 +1281,6 @@ def main(argv):
   shell_args = argv[2:]
   if opts.oils_bin_dir:
     sh1 = file_metadata.get('compare_shells')
-    if sh1 is None:
-      raise RuntimeError('Expected compare_shells with --oils-bin-dir')
 
     # problem: we need to get the real osh or ysh shell
     sh2 = file_metadata.get('our_shell', 'osh')  # default is OSH

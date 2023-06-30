@@ -45,7 +45,9 @@ run-file() {
   local test_name=$1
 
   case $test_name in
-    ysh-case)
+    # removed these from metadata
+    # that was premature
+    ysh-case|ysh-array|ysh-assign|ysh-bin|sh-options|var-num)
       func=run-file-with-metadata
       ;;
     *)
@@ -63,7 +65,6 @@ run-file-old() {
 
   local test_name=$1
   shift
-
 
   # defines: suite allowed_failures our_shell compare_shells
   local $(test/spec_params.py vars-for-file $test_name)
@@ -105,7 +106,7 @@ run-file-with-metadata() {
   local spec_file=spec/$spec_name.test.sh
 
   local suite
-  suite=$(print-spec-suite $spec_name)
+  suite=$(test/sh_spec.py --print-spec-suite $spec_file)
 
   local spec_subdir
   case $suite in

@@ -1,7 +1,6 @@
 # spec/ysh-case
 
 ## our_shell: ysh
-## compare_shells:
 ## oils_failures_allowed: 0
 
 #### case syntax, one line

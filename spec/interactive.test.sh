@@ -1,4 +1,5 @@
 ## tags: dev-minimal interactive
+## compare_shells: bash
 
 #### 'exit' in oshrc (regression)
 cat >$TMP/oshrc <<EOF

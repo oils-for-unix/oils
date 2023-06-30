@@ -157,6 +157,9 @@ def DefineShSpec(p):
       '-p', '--print', dest='do_print', action='store_true', default=None,
       help="Print test code, but don't run it")
   p.add_option(
+      '--print-spec-suite', dest='print_spec_suite', action='store_true', default=None,
+      help="Print suite this file belongs to")
+  p.add_option(
       '--print-table', dest='print_table', action='store_true', default=None,
       help="Print table of test files")
   p.add_option(

@@ -1,6 +1,8 @@
 # For testing the Python sketch
 
+
 ## tags: dev-minimal
+## compare_shells: bash dash mksh
 
 #### builtin
 echo hi

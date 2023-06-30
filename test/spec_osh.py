@@ -12,51 +12,27 @@ def Define(sp):
   sp.OshFile(
       'interactive',
       compare_shells = 'bash',  # dash / mksh don't implemented --rcfile etc.
-      tags = ['interactive', 'dev-minimal'])
-
-  # Uses $SH -i quite a bit
-  sp.OshFile(
-      'sh-options',
-      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
-      failures_allowed = 2,
-      tags = ['interactive'])
+      )
 
   sp.OshFile(
       'sh-usage',
       compare_shells = 'bash dash mksh zsh',
-      tags = ['interactive'])
-
-  # one cases uses $SH -i
-  sp.OshFile(
-      'var-num',
-      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
-      tags = ['interactive'])
+      )
 
   sp.OshFile(
       'builtin-history',
       compare_shells = 'bash',
-      tags = ['interactive'])
+      )
 
   sp.OshFile(
       'smoke',
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
-      tags = ['dev-minimal'])
+      )
 
   sp.OshFile(
       'case_',
       compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       failures_allowed = 3,
-      )
-
-  #
-  # suite needs-terminal
-  #
-
-  sp.File(
-      'interactive-parse',
-      suite = 'needs-terminal',
-      our_shell = 'osh',
-      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       )
 
   #

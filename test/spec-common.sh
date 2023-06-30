@@ -46,18 +46,6 @@ sh-spec() {
   #    --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \
 }
 
-print-spec-suite() {
-  local spec_name=$1
-
-  case $spec_name in
-    ysh-*|hay-*) suite=ysh ;;
-    tea-*)       suite=tea ;;
-    *)           suite=osh ;;
-  esac
-
-  echo $suite
-}
-
 # Usage: callers can override OSH_LIST to test on more than one version.
 #
 # Example:

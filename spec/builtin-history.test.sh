@@ -1,4 +1,5 @@
 ## tags: interactive
+## compare_shells: bash
 
 #### history -a
 rm -f tmp

@@ -1,5 +1,5 @@
-#
-# Test the case statement
+
+## compare_shells: bash dash mksh
 
 #### Case statement
 case a in
