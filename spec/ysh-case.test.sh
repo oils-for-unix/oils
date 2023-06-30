@@ -178,6 +178,20 @@ case (x) {
 a
 ## END
 
+#### stop on errors
+var x = "42"
+case (x) {
+  (42 / 0) { echo no error }
+
+  ('42') { echo a }
+  42 { echo b }
+  / '42' / { echo c }
+  (Str(40 + 2)) { echo d }
+}
+## status: 3
+## STDOUT:
+## END
+
 #### old and new case statements
 
 for flag in -f -x {
