@@ -1,5 +1,10 @@
 # spec/oil-case
 
+## our_shell: ysh
+## compare_shells:
+## oils_failures_allowed: 0
+## tags: dev-minimal
+
 #### case syntax, one line
 const x = "header.h"
 case (x) {
@@ -51,6 +56,7 @@ case (x) {
   (2 + 2) { echo four }
 }
 ## STDOUT:
+three
 ## END
 
 #### case semantics, no match
@@ -74,6 +80,7 @@ case (x) {
   }
 }
 ## STDOUT:
+C++
 ## END
 
 #### empty case statement

@@ -633,30 +633,25 @@ class CommandEvaluator(object):
         return b
 
     def _EvalCaseArg(self, arg, blame):
-        # type: (case_arg_t, loc_t) -> str
-        """Evaluate a `case_arg` into a `str` which can be matched on in a case
+        # type: (case_arg_t, loc_t) -> value_t
+        """Evaluate a `case_arg` into a `value_t` which can be matched on in a case
         command.
-
-        TODO: return a value, the str conversion is lossy and we want to match on
-              type + value.
         """
         UP_arg = arg
         with tagswitch(arg) as case:
             if case(case_arg_e.Word):
                 arg = cast(case_arg.Word, UP_arg)
-                return self.word_ev.EvalWordToString(arg.w).s
+                return self.word_ev.EvalWordToString(arg.w)
 
             elif case(case_arg_e.YshExpr):
                 if mylib.PYTHON:
                     arg = cast(case_arg.YshExpr, UP_arg)
-                    val = self.expr_ev.EvalExpr(arg.e, blame)
-                    # TODO: more informative errors, with locations
-                    return val_ops.ToStr(val, loc.Missing)
+                    return self.expr_ev.EvalExpr(arg.e, blame)
+                else:
+                    return value.Null
 
-        # note, right now this is reachable in mycpp
-        # we will have to wait until we can match on typed args before we can support
-        # new-style case commands in mycpp
-        return ""
+            else:
+                raise NotImplementedError()
 
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
@@ -1502,23 +1497,54 @@ class CommandEvaluator(object):
                 done = False
 
                 for case_arm in node.arms:
-                    if case_arm.pattern.tag() != pat_e.Words:
-                        # TODO: support more than pat.Words
-                        raise NotImplementedError()
+                    with tagswitch(case_arm.pattern) as case:
+                        if case(pat_e.Words):
+                            if to_match.tag() != value_e.Str:
+                                continue  # A non-string `to_match` will never match a pat.Words
+                            to_match_str = cast(value.Str, to_match)
 
-                    pat_words = cast(pat.Words, case_arm.pattern)
+                            pat_words = cast(pat.Words, case_arm.pattern)
 
-                    for pat_word in pat_words.words:
-                        # NOTE: Is it OK that we're evaluating these as we go?
-                        # TODO: test it out in a loop
-                        pat_val = self.word_ev.EvalWordToString(
-                            pat_word, word_eval.QUOTE_FNMATCH)
+                            for pat_word in pat_words.words:
+                                word_val = self.word_ev.EvalWordToString(
+                                    pat_word, word_eval.QUOTE_FNMATCH)
 
-                        #log('Matching word %r against pattern %r', to_match, pat_val.s)
-                        if libc.fnmatch(pat_val.s, to_match):
+                                if libc.fnmatch(word_val.s, to_match_str.s):
+                                    status = self._ExecuteList(case_arm.action)
+                                    done = True  # TODO: Parse ;;& and for fallthrough and such?
+                                    break
+
+                        elif case(pat_e.YshExprs):
+                            if mylib.PYTHON:
+                                pat_exprs = cast(pat.YshExprs, case_arm.pattern)
+
+                                for pat_expr in pat_exprs.exprs:
+                                    expr_val = self.expr_ev.EvalExpr(pat_expr, case_arm.left)
+
+                                    if val_ops.ExactlyEqual(expr_val, to_match):
+                                        status = self._ExecuteList(case_arm.action)
+                                        done = True
+                                        break
+
+                        elif case(pat_e.Eggex):
+                            if mylib.PYTHON:
+                                pat_eggex = cast(pat.Eggex, case_arm.pattern)
+                                eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
+                                eggex_val = value.Eggex(eggex, None)
+
+                                if val_ops.RegexMatch(to_match, eggex_val, self.mem):
+                                    status = self._ExecuteList(case_arm.action)
+                                    done = True
+                                    break
+
+                        elif case(pat_e.Else):
                             status = self._ExecuteList(case_arm.action)
-                            done = True  # TODO: Parse ;;& and for fallthrough and such?
-                            break  # Only execute action ONCE
+                            done = True
+                            break
+
+                        else:
+                            raise NotImplementedError()
+
                     if done:
                         break
 
