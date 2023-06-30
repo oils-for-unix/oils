@@ -574,7 +574,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
   if opts.trace:
     for _, sh in shells:
       log('\tshell: %s', sh)
-      log('\twhich:')
+      print('\twhich $SH: ', end='', file=sys.stderr)
       subprocess.call(['which', sh])
 
   #pprint.pprint(cases)
@@ -662,7 +662,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         argv.extend(['-o', 'posix'])
 
       if opts.trace:
-        log('\t%s', ' '.join(argv))
+        log('\targv: %s', ' '.join(argv))
 
       case_env = sh_env[shell_index]
 

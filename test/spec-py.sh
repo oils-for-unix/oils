@@ -76,6 +76,20 @@ interactive-osh() {
   MAX_PROCS=$max_procs test/spec-runner.sh all-parallel interactive osh-only interactive-osh
 }
 
+debug-2023-06() {
+  # 2023-06-30: 
+  # HANGING BUG after removing test/spec_param.py, and using run-file-with-metadata
+  # All of the sudden test/spec-py.sh interactive-osh hangs in Docker, and then
+  # this does too
+  # It reproduces LOCALLY as well
+  # But doesn't reproduce outside the container on my machine
+  #
+  # I get an ORPHANED bash -i command running at 100%, outside the container
+  # Remember that runs with docker -t
+
+  test/spec.sh run-file-with-osh builtin-history
+}
+
 interactive-bash() {
   # Triggers the "Stopped" bug with bash alone, unless max_procs=1
 

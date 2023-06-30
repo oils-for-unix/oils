@@ -114,10 +114,13 @@ os-info          soil/diagnose.sh os-info            -
 dump-env         soil/diagnose.sh dump-env           -
 py-all-and-ninja soil/worker.sh py-all-and-ninja     -
 nohup            test/nohup.sh soil-run              -
-interactive-osh  test/spec-py.sh interactive-osh     _tmp/spec/interactive-osh/index.html
 process-table    test/process-table.sh soil-run      _tmp/process-table/index.html
 stateful         test/stateful.sh soil-run           _tmp/spec/stateful/index.html
 EOF
+
+# TODO: Restore interactive-osh
+# debug6            test/spec-py.sh debug-2023-06       -
+# interactive-osh  test/spec-py.sh interactive-osh     _tmp/spec/interactive-osh/index.html
 }
 
 wild-tasks() {

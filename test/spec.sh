@@ -82,7 +82,12 @@ _run-file-with-one() {
   local spec_name=$2
   shift 2
 
-  sh-spec spec/$spec_name.test.sh --oils-bin-dir $PWD/bin \
+  # 2023-06: note --timeout 10 seems to make every test hang
+  # I guess $SH -i doesn't run well like that
+  sh-spec spec/$spec_name.test.sh \
+    --oils-bin-dir $PWD/bin \
+    -d \
+    -t \
     $shell "$@"
 }
 
