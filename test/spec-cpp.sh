@@ -41,64 +41,6 @@ export OILS_GC_ON_EXIT=1
 # For translation
 #
 
-run-file() {
-  local test_name=$1
-
-  case $test_name in
-    # removed these from metadata
-    # that was premature
-    ysh-*|hay)  # hay.test.sh
-      func=run-file-with-metadata
-      ;;
-    *)
-      func=run-file-old
-      ;;
-  esac
-
-  $func "$@"
-}
-
-run-file-old() {
-  ### Run a test with the given name.
-
-  # Invoked by test/spec-runner.sh run-file
-
-  local test_name=$1
-  shift
-
-  # defines: suite allowed_failures our_shell compare_shells
-  local $(test/spec_params.py vars-for-file $test_name)
-
-  local spec_subdir
-  case $suite in
-    osh) spec_subdir='osh-cpp' ;;
-    ysh) spec_subdir='ysh-cpp' ;;
-    *)   die "Invalid suite $suite" ;;
-  esac
-
-  local -a shells
-  case $our_shell in
-    osh)
-      shells=( $OSH_PY $OSH_CC )
-      ;;
-    ysh)
-      shells=( $YSH_PY $YSH_CC )
-      ;;
-  esac
-
-  local base_dir=_tmp/spec/$spec_subdir
-  mkdir -p "$base_dir"
-
-  log "Running $test_name with $our_shell in dir $spec_subdir"
-
-  # Output TSV so we can compare the data.  2022-01: Try 10 second timeout.
-  sh-spec spec/$test_name.test.sh \
-    --timeout 10 \
-    --tsv-output $base_dir/${test_name}.tsv \
-    "${shells[@]}" \
-    "$@"
-}
-
 run-file-with-metadata() {
   local spec_name=$1
   shift

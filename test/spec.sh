@@ -62,22 +62,6 @@ trace-var-sub() {
 # run-file variants
 # 
 
-run-file() {
-  local spec_name=$1
-  shift
-
-  # defines: suite failures_allowed our_shell compare_shells
-  local $(test/spec_params.py vars-for-file $spec_name)
-
-  # space-separated list
-  local other_shell_list=$(test/spec_params.py other-shells-for-file $spec_name)
-
-  #local -p
-
-  sh-spec spec/$spec_name.test.sh --oils-failures-allowed $failures_allowed \
-    $other_shell_list $OSH_LIST "$@"
-}
-
 run-file-with-metadata() {
   local spec_name=$1
   shift

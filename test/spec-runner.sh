@@ -176,11 +176,9 @@ dispatch-one() {
   local -a prefix
   case $compare_mode in
 
-    # TODO: Add test/spec.sh run-file, which should use spec_params.py to get
-    # the 'compare_shells'
     compare-py)     prefix=(test/spec.sh) ;;
 
-    compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
+    compare-cpp)    prefix=(test/spec-cpp.sh run-file-with-metadata) ;;
 
     # For interactive comparison
     osh-only)       prefix=(test/spec.sh run-file-with-osh) ;;
