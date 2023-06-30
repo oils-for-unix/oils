@@ -102,6 +102,82 @@ case (x) {
 string
 ## END
 
+#### eggex capture
+var x = 'foo.py'
+case (x) {
+  / <dot*> '.py' / { echo "match is $[_match(0)]" }
+  / <dot*> '.cc' / { echo "match is $[_match(0)]" }
+}
+## status: 0
+## STDOUT:
+match is foo.py
+## END
+
+#### else case pattern
+var x = 123
+case (x) {
+  (else) { echo else matches all }
+  (123) { echo unreachable }
+}
+## status: 0
+## STDOUT:
+else matches all
+## END
+
+#### expression evaluation shortcuts
+var x = 123
+case (x) {
+  (x) | (y) { echo no error }
+}
+## status: 0
+## STDOUT:
+no error
+## END
+
+#### expression evaluation order
+var x = 123
+case (x) {
+  (y) | (x) { echo no error }
+}
+## status: 1
+## STDOUT:
+## END
+
+#### word evaluation shortcuts
+var x = "abc"
+case (x) {
+  $x | $y { echo no error }
+}
+## status: 0
+## STDOUT:
+no error
+## END
+
+#### word evaluation order
+var x = "abc"
+case (x) {
+  $y | $x { echo no error }
+}
+## status: 1
+## STDOUT:
+## END
+
+#### only one branch is evaluated
+var x = "42"
+case (x) {
+  ('42') { echo a }
+  42 { echo b }
+  / '42' / { echo c }
+  (Str(40 + 2)) { echo d }
+
+  # even errors are ignored
+  (42 / 0) { echo no error }
+}
+## status: 0
+## STDOUT:
+a
+## END
+
 #### old and new case statements
 
 for flag in -f -x {
