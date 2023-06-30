@@ -83,6 +83,39 @@ run-file() {
     "$@"
 }
 
+run-file-with-metadata() {
+  local spec_name=$1
+  shift
+
+  local spec_file=spec/$spec_name.test.sh
+
+  # defines: suite
+  #echo "VARS $(test/sh_spec.py --print-metadata $spec_file)"
+  local $(test/sh_spec.py --print-metadata $spec_file)
+
+  if test -z "${suite:-}"; then
+    die 'Expected $suite to be defined'
+  fi
+
+  local spec_subdir
+  case $suite in
+    osh) spec_subdir='osh-cpp' ;;
+    ysh) spec_subdir='ysh-cpp' ;;
+    *)   die "Invalid suite $suite" ;;
+  esac
+
+  local base_dir=_tmp/spec/$spec_subdir
+  mkdir -v -p $base_dir
+
+  # Compare Python and C++ shells by passing --oils-cpp-bin-dir
+  sh-spec $spec_file \
+    --timeout 10 \
+    --oils-bin-dir $PWD/bin \
+    --oils-cpp-bin-dir $REPO_ROOT/_bin/cxx-asan \
+    --tsv-output $base_dir/${spec_name}.tsv \
+    "$@"
+}
+
 osh-all() {
   # Like test/spec.sh {oil,osh}-all, but it compares against different binaries
 
@@ -107,7 +140,7 @@ ysh-all() {
   local spec_subdir=ysh-cpp 
 
   # $suite $compare_mode
-  test/spec-runner.sh all-parallel oil compare-cpp $spec_subdir || true  # OK if it fails
+  test/spec-runner.sh all-parallel ysh compare-cpp $spec_subdir || true  # OK if it fails
 
   write-compare-html $spec_subdir
 }
@@ -247,7 +280,7 @@ summary-csv() {
       ;;
     ysh-cpp)
       sh_label=ysh
-      manifest=_tmp/spec/SUITE-oil.txt
+      manifest=_tmp/spec/SUITE-ysh.txt
       ;;
     *)
       die "Invalid dir $spec_subdir"

@@ -77,7 +77,7 @@ log = spec_lib.log
 OSH_CPYTHON = ('osh', 'osh-dbg')
 OTHER_OSH = ('osh_ALT', 'osh-byterun')
 
-OIL_CPYTHON = ('oil', 'oil-dbg')
+OIL_CPYTHON = ('oil', 'oil-dbg', 'ysh', 'ysh-dbg')
 OTHER_OIL = ('oil_ALT',)
 
 
@@ -1210,6 +1210,20 @@ def main(argv):
     tokens = Tokenizer(f)
     file_metadata, cases = ParseTestFile(tokens)
 
+  if opts.print_metadata:
+    # HACK to print shell code to evaluate like this:
+    # local $(test/sh_spec.py --print-metadata spec/smoke.test.sh)
+    parts = []
+    for k, v in file_metadata.iteritems():
+      if k == 'suite':
+        # can't have spaces or quotes
+        assert "'" not in v, v
+        assert " " not in v, v
+
+        parts.append(('%s=%s' % (k, v)))
+    print(' '.join(parts))
+    return 0
+
   # TODO: file_metadata should override --osh-allowed-failures and so forth
   # Change to --oils-allowed-failures
 
@@ -1227,8 +1241,16 @@ def main(argv):
     # problem: we need to get the real osh or ysh shell
     sh2 = file_metadata.get('our_shell', 'osh')  # default is OSH
 
-    meta_shells = sh1.split() if sh1 else []
-    meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
+    # Also run against C++ version
+    if opts.oils_cpp_bin_dir:
+      # Compare Python and C++
+      meta_shells = []
+      meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
+      meta_shells.append(os.path.join(opts.oils_cpp_bin_dir, sh2))
+    else:
+      # Compare 'compare_shells' and Python
+      meta_shells = sh1.split() if sh1 else []
+      meta_shells.append(os.path.join(opts.oils_bin_dir, sh2))
 
     shells = meta_shells
 
@@ -1236,6 +1258,7 @@ def main(argv):
     # It's no longer a flag
     opts.oils_failures_allowed = \
         int(file_metadata.get('oils_failures_allowed', 0))
+
   else:
     shells = shell_args
 

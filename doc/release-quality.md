@@ -26,7 +26,7 @@ This is a supplement to the [main release page](index.html).
   and compare their behavior.
   - [OSH in C++](test/spec.wwz/osh-cpp/compare.html).  The progress of the C++
     translation.
-- [YSH](test/spec.wwz/oil-py/index.html).  The legacy-free language.
+- [YSH](test/spec.wwz/ysh-py/index.html).  The legacy-free language.
   - [YSH in C++](test/spec.wwz/ysh-cpp/compare.html).  The progress of the C++
     translation.
 - [Stateful Tests](test/spec.wwz/stateful/index.html).  Tests that use

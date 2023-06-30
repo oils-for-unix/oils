@@ -2,6 +2,7 @@
 
 ## tags: interactive
 ## compare_shells: bash dash mksh
+## suite: osh
 
 # ignored comment
 

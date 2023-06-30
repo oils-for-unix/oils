@@ -22,7 +22,7 @@ osh-all() {
 
 ysh-all() {
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel oil compare-py oil-py
+  test/spec-runner.sh all-parallel ysh compare-py ysh-py
 }
 
 oil-all() { ysh-all "$@"; }

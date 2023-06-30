@@ -3,7 +3,6 @@
 ## our_shell: ysh
 ## compare_shells:
 ## oils_failures_allowed: 0
-## tags: dev-minimal
 
 #### case syntax, one line
 const x = "header.h"

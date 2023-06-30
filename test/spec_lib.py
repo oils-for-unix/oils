@@ -125,6 +125,9 @@ def DefineCommon(p):
   p.add_option(
       '--oils-bin-dir', dest='oils_bin_dir', default=None,
       help="Directory that osh and ysh live in")
+  p.add_option(
+      '--oils-cpp-bin-dir', dest='oils_cpp_bin_dir', default=None,
+      help="Directory that native C++ osh and ysh live in")
 
 
 def DefineStateful(p):
@@ -153,6 +156,10 @@ def DefineShSpec(p):
   p.add_option(
       '-p', '--print', dest='do_print', action='store_true', default=None,
       help="Print test code, but don't run it")
+  # Execution modes
+  p.add_option(
+      '--print-metadata', dest='print_metadata', action='store_true', default=None,
+      help="Print test file metadata, but don't run it")
 
   # Output control
   p.add_option(

@@ -121,14 +121,14 @@ write-suite-manifests() {
   { test/spec_params.py print-table | while read suite _ _ name; do
       case $suite in
         osh) echo $name >& $osh ;;
-        ysh) echo $name >& $oil ;;
+        ysh) echo $name >& $ysh ;;
         tea) echo $name >& $tea ;;
         needs-terminal) echo $name >& $needs_terminal ;;
         *)   die "Invalid suite $suite" ;;
       esac
     done 
   } {osh}>_tmp/spec/SUITE-osh.txt \
-    {oil}>_tmp/spec/SUITE-oil.txt \
+    {ysh}>_tmp/spec/SUITE-ysh.txt \
     {tea}>_tmp/spec/SUITE-tea.txt \
     {needs_terminal}>_tmp/spec/SUITE-needs-terminal.txt
 
@@ -140,7 +140,7 @@ write-suite-manifests() {
 dispatch-one() {
   # Determines what binaries to compare against: compare-py | compare-cpp | release-alpine 
   local compare_mode=${1:-compare-py}
-  # Which subdir of _tmp/spec: osh-py oil-py osh-cpp ysh-cpp smoosh tea
+  # Which subdir of _tmp/spec: osh-py ysh-py osh-cpp ysh-cpp smoosh tea
   local spec_subdir=${2:-osh-py}
   local spec_name=$3
 
@@ -182,7 +182,7 @@ dispatch-one() {
 _html-summary() {
   ### Print an HTML summary to stdout and return whether all tests succeeded
 
-  local sh_label=$1  # osh or oil
+  local sh_label=$1  # osh or ysh
   local base_dir=$2  # e.g. _tmp/spec/oil-language
   local totals=$3  # path to print HTML to
   local manifest=$4

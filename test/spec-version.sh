@@ -22,7 +22,7 @@ maybe-show() {
   fi
 }
 
-oil-version-text() {
+ysh-version-text() {
   date-and-git-info
 
   for bin in $OIL_LIST; do
