@@ -1,3 +1,5 @@
+## tags: interactive
+
 #### sh -c
 $SH -c 'echo hi'
 ## stdout: hi

@@ -42,6 +42,21 @@ export OILS_GC_ON_EXIT=1
 #
 
 run-file() {
+  local test_name=$1
+
+  case $test_name in
+    ysh-case)
+      func=run-file-with-metadata
+      ;;
+    *)
+      func=run-file-old
+      ;;
+  esac
+
+  $func "$@"
+}
+
+run-file-old() {
   ### Run a test with the given name.
 
   # Invoked by test/spec-runner.sh run-file
@@ -89,13 +104,8 @@ run-file-with-metadata() {
 
   local spec_file=spec/$spec_name.test.sh
 
-  # defines: suite
-  #echo "VARS $(test/sh_spec.py --print-metadata $spec_file)"
-  local $(test/sh_spec.py --print-metadata $spec_file)
-
-  if test -z "${suite:-}"; then
-    die 'Expected $suite to be defined'
-  fi
+  local suite
+  suite=$(print-spec-suite $spec_name)
 
   local spec_subdir
   case $suite in

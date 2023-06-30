@@ -1,5 +1,6 @@
-#
 # For testing the Python sketch
+
+## tags: dev-minimal
 
 #### builtin
 echo hi

@@ -37,6 +37,7 @@ def Define(sp):
 
   sp.YshFile('ysh-builtin-shopt', our_shell='osh')
 
+  # TODO: Remove this
   sp.YshFile('ysh-case')
 
   sp.YshFile('ysh-command-sub', our_shell='osh')

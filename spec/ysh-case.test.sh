@@ -1,4 +1,4 @@
-# spec/oil-case
+# spec/ysh-case
 
 ## our_shell: ysh
 ## compare_shells:

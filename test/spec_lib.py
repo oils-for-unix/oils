@@ -156,10 +156,12 @@ def DefineShSpec(p):
   p.add_option(
       '-p', '--print', dest='do_print', action='store_true', default=None,
       help="Print test code, but don't run it")
-  # Execution modes
   p.add_option(
-      '--print-metadata', dest='print_metadata', action='store_true', default=None,
-      help="Print test file metadata, but don't run it")
+      '--print-table', dest='print_table', action='store_true', default=None,
+      help="Print table of test files")
+  p.add_option(
+      '--print-tagged', dest='print_tagged',
+      help="Print spec files tagged with a certain string")
 
   # Output control
   p.add_option(

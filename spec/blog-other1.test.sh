@@ -4,6 +4,8 @@
 # https://lobste.rs/s/xhtim1/problems_with_shells_test_builtin_what
 # http://alangrow.com/blog/shell-quirk-assign-from-heredoc
 
+## suite: disabled
+
 #### Blog Post Example
 paths=`tr '\n' ':' | sed -e 's/:$//'`<<EOPATHS
 /foo

@@ -1185,6 +1185,37 @@ def MakeTestEnv(opts):
   return env
 
 
+
+def ParseTestList(spec_files):
+    for spec_file in spec_files:
+      with open(spec_file) as f:
+        tokens = Tokenizer(f)
+        file_metadata, cases = ParseTestFile(tokens)
+
+      tmp = os.path.basename(spec_file)
+      spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
+
+      suite = file_metadata.get('suite')
+      if suite is None:
+        if spec_name.startswith('ysh-'):
+          suite = 'ysh'
+        elif spec_name.startswith('hay'):
+          suite = 'ysh'
+        elif spec_name.startswith('tea-'):
+          suite = 'tea'
+        else:
+          suite = 'osh'
+
+      tmp = file_metadata.get('tags')
+      tags = tmp.split() if tmp else []
+
+      # Don't need compare_shells, etc. to decide what to run
+
+      row = {'spec_name': spec_name, 'suite': suite, 'tags': tags}
+      #print(row)
+      yield row
+
+
 def main(argv):
   # First check if bash is polluting the environment.  Tests rely on the
   # environment.
@@ -1200,6 +1231,24 @@ def main(argv):
   spec_lib.DefineShSpec(p)
   opts, argv = p.parse_args(argv)
 
+  # This should be --print-table
+  # And then --print-tagged
+  # To match test/spec-runner.sh
+
+  if opts.print_tagged:
+    to_find = opts.print_tagged
+    for row in ParseTestList(argv[1:]):
+      if to_find in row['tags']:
+        print(row['spec_name'])
+    return 0
+
+  if opts.print_table:
+    for row in ParseTestList(argv[1:]):
+      print('%(suite)s\t%(spec_name)s' % row)
+      #print(row)
+    return 0
+
+
   try:
     test_file = argv[1]
   except IndexError:
@@ -1209,20 +1258,6 @@ def main(argv):
   with open(test_file) as f:
     tokens = Tokenizer(f)
     file_metadata, cases = ParseTestFile(tokens)
-
-  if opts.print_metadata:
-    # HACK to print shell code to evaluate like this:
-    # local $(test/sh_spec.py --print-metadata spec/smoke.test.sh)
-    parts = []
-    for k, v in file_metadata.iteritems():
-      if k == 'suite':
-        # can't have spaces or quotes
-        assert "'" not in v, v
-        assert " " not in v, v
-
-        parts.append(('%s=%s' % (k, v)))
-    print(' '.join(parts))
-    return 0
 
   # TODO: file_metadata should override --osh-allowed-failures and so forth
   # Change to --oils-allowed-failures

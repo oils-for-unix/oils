@@ -1,5 +1,7 @@
 ### spec/interactive-parse
 
+## suite: disabled
+
 #### parse if
 
 case $SH in zsh) exit ;; esac

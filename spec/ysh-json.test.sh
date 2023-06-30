@@ -1,5 +1,7 @@
 # Test out Oil's JSON support.
 
+## tags: dev-minimal
+
 #### json write STRING
 shopt --set parse_proc
 

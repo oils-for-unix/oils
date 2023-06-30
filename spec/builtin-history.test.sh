@@ -1,3 +1,5 @@
+## tags: interactive
+
 #### history -a
 rm -f tmp
 

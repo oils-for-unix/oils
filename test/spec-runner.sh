@@ -117,7 +117,9 @@ EOF
   done
 }
 
-write-suite-manifests() {
+write-suite-manifests-OLD() {
+  # TODO: Use test/sh_spec.py --print-table spec/*.test.sh
+
   { test/spec_params.py print-table | while read suite _ _ name; do
       case $suite in
         osh) echo $name >& $osh ;;
@@ -135,6 +137,53 @@ write-suite-manifests() {
   # These are kind of pseudo-suites, not the main 3
   test/spec_params.py print-tagged interactive > _tmp/spec/SUITE-interactive.txt
   test/spec_params.py print-tagged dev-minimal > _tmp/spec/SUITE-osh-minimal.txt
+}
+
+write-suite-manifests() {
+  #test/sh_spec.py --print-table spec/*.test.sh
+  { test/sh_spec.py --print-table spec/*.test.sh | while read suite name; do
+      case $suite in
+        osh) echo $name >& $osh ;;
+        ysh) echo $name >& $ysh ;;
+        tea) echo $name >& $tea ;;
+        disabled) ;;  # ignore
+        *)   die "Invalid suite $suite" ;;
+      esac
+    done 
+  } {osh}>_tmp/spec/SUITE-osh.txt \
+    {ysh}>_tmp/spec/SUITE-ysh.txt \
+    {tea}>_tmp/spec/SUITE-tea.txt \
+    {needs_terminal}>_tmp/spec/SUITE-needs-terminal.txt
+
+  # These are kind of pseudo-suites, not the main 3
+  test/sh_spec.py --print-tagged interactive \
+    spec/*.test.sh > _tmp/spec/SUITE-interactive.txt
+
+  test/sh_spec.py --print-tagged dev-minimal \
+    spec/*.test.sh > _tmp/spec/SUITE-osh-minimal.txt
+}
+
+
+diff-manifest() {
+  ### temporary test
+
+  write-suite-manifests2
+  #return
+
+  # crazy sorting, affects glob
+  # doesn't work
+  #LANG=C 
+  #LC_COLLATE=C
+  #LC_ALL=C
+  #export LANG LC_COLLATE LC_ALL
+
+  for suite in osh ysh tea interactive osh-minimal; do
+    echo
+    echo [$suite]
+    echo
+
+    diff -u -r <(sort spec2/SUITE-$suite.txt) <(sort _tmp/spec/SUITE-$suite.txt) #|| true
+  done
 }
 
 dispatch-one() {
