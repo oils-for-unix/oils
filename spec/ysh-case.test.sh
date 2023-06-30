@@ -1,5 +1,10 @@
 # spec/oil-case
 
+## our_shell: ysh
+## compare_shells:
+## oils_failures_allowed: 0
+## tags: dev-minimal
+
 #### case syntax, one line
 const x = "header.h"
 case (x) {
@@ -51,6 +56,7 @@ case (x) {
   (2 + 2) { echo four }
 }
 ## STDOUT:
+three
 ## END
 
 #### case semantics, no match
@@ -74,6 +80,7 @@ case (x) {
   }
 }
 ## STDOUT:
+C++
 ## END
 
 #### empty case statement
@@ -90,11 +97,103 @@ case (x) {
   ("0") { echo string }
 }
 
-# FIXME: stdout should be "string", but right now it is "int"
-
 ## status: 0
 ## STDOUT:
 string
+## END
+
+#### eggex capture
+for name in foo/foo.py bar/bar.cc zz {
+  case (name) {
+    / '/f' <dot*> '.' / { echo "g0=$[_match(0)] g1=$[_match(1)] g2=$[_match(2)]" }
+    / '/b' <dot*> '.' / { echo "g0=$[_match(1)] g1=$[_match(1)]" }
+    (else) { echo 'no match' }
+  }
+}
+## status: 0
+## STDOUT:
+g0=/foo. g1=oo g2=null
+g0=ar g1=ar
+no match
+## END
+
+#### else case pattern
+var x = 123
+case (x) {
+  (else) { echo else matches all }
+  (123) { echo unreachable }
+}
+## status: 0
+## STDOUT:
+else matches all
+## END
+
+#### expression evaluation shortcuts
+var x = 123
+case (x) {
+  (x) | (y) { echo no error }
+}
+## status: 0
+## STDOUT:
+no error
+## END
+
+#### expression evaluation order
+var x = 123
+case (x) {
+  (y) | (x) { echo no error }
+}
+## status: 1
+## STDOUT:
+## END
+
+#### word evaluation shortcuts
+var x = "abc"
+case (x) {
+  $x | $y { echo no error }
+}
+## status: 0
+## STDOUT:
+no error
+## END
+
+#### word evaluation order
+var x = "abc"
+case (x) {
+  $y | $x { echo no error }
+}
+## status: 1
+## STDOUT:
+## END
+
+#### only one branch is evaluated
+var x = "42"
+case (x) {
+  ('42') { echo a }
+  42 { echo b }
+  / '42' / { echo c }
+  (Str(40 + 2)) { echo d }
+
+  # even errors are ignored
+  (42 / 0) { echo no error }
+}
+## status: 0
+## STDOUT:
+a
+## END
+
+#### stop on errors
+var x = "42"
+case (x) {
+  (42 / 0) { echo no error }
+
+  ('42') { echo a }
+  42 { echo b }
+  / '42' / { echo c }
+  (Str(40 + 2)) { echo d }
+}
+## status: 3
+## STDOUT:
 ## END
 
 #### old and new case statements
