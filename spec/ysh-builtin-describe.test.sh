@@ -1,7 +1,6 @@
-# oil-builtin-describe
-#
-# Some thoughts before writing code.  Hm can we do this entirely in user code, not as a builtin?
-#
+## our_shell: ysh
+
+# Hm can we do this entirely in user code, not as a builtin?
 
 #### Describe Prototype
 

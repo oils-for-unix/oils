@@ -47,7 +47,7 @@ run-file() {
   case $test_name in
     # removed these from metadata
     # that was premature
-    ysh-case|ysh-array|ysh-assign|ysh-bin|sh-options|var-num)
+    ysh-*|hay-*)
       func=run-file-with-metadata
       ;;
     *)

@@ -1,4 +1,4 @@
-# spec/oil-for
+## our_shell: ysh
 
 #### For loop over expression: list
 var mylist = [1, 2, 3]

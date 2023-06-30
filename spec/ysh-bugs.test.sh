@@ -1,3 +1,5 @@
+## our_shell: ysh
+
 #### fastlex: NUL byte not allowed inside char literal #' '
 
 echo $'var x = #\'\x00\'; echo x=$x' > tmp.oil

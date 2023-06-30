@@ -1,3 +1,5 @@
+## our_shell: ysh
+
 #### _this_dir in main and oshrc
 
 $SH $REPO_ROOT/spec/testdata/module/this_dir.oil

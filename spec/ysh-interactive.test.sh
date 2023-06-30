@@ -1,3 +1,4 @@
+## our_shell: ysh
 
 #### yshrc
 cat >$TMP/yshrc <<EOF

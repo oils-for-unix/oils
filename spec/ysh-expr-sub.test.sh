@@ -1,4 +1,6 @@
-# Test Oil expressions within $[]
+## our_shell: ysh
+
+# Test YSH expressions within $[]
 
 #### $[f(x)]
 var a = %(a b c)

@@ -113,15 +113,15 @@ run-file-with-bash() { _run-file-with-one bash "$@"; }
 #
 
 interactive-parse() {
-  run-file interactive-parse "$@"
+  run-file-with-metadata interactive-parse "$@"
 }
 
 smoke() {
-  run-file smoke "$@"
+  run-file-with-metadata smoke "$@"
 }
 
 interactive() {
-  run-file interactive "$@"
+  run-file-with-metadata interactive "$@"
 }
 
 prompt() {
@@ -224,7 +224,7 @@ loop() {
 }
 
 case_() {
-  run-file case_ "$@"
+  run-file-with-metadata case_ "$@"
 }
 
 if_() {
@@ -264,7 +264,7 @@ builtins2() {
 }
 
 builtin-history() {
-  run-file builtin-history "$@"
+  run-file-with-metadata builtin-history "$@"
 }
 
 # dash and mksh don't implement 'dirs'
@@ -460,7 +460,7 @@ var-sub-quote() {
 }
 
 sh-usage() {
-  run-file sh-usage "$@"
+  run-file-with-metadata sh-usage "$@"
 }
 
 sh-options() {
@@ -740,7 +740,7 @@ ysh-usage() {
 }
 
 ysh-unicode() {
-  run-file ysh-unicode "$@"
+  run-file-with-metadata ysh-unicode "$@"
 }
 
 ysh-bin() {
@@ -824,7 +824,7 @@ ysh-expr() {
 }
 
 ysh-expr-bool() {
-  run-file ysh-expr-bool "$@"
+  run-file-with-metadata ysh-expr-bool "$@"
 }
 
 ysh-expr-arith() {

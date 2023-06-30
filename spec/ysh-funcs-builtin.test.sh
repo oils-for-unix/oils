@@ -1,4 +1,4 @@
-# oil-builtin-funcs.test.sh
+## our_shell: ysh
 
 # TODO: Test that there are exceptions when there are too many args, etc.
 

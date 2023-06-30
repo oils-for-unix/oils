@@ -1,5 +1,5 @@
-# oil-builtin-argparse
-#
+## our_shell: ysh
+
 # Some thoughts before writing code.  Hm can we do this entirely in user code, not as a builtin?
 #
 # The following is as close as possible to the python argparse which seems to work well

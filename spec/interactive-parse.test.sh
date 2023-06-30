@@ -2,7 +2,7 @@
 
 
 ## suite: disabled
-## compare_shells:'bash dash mksh
+## compare_shells: bash dash mksh
 
 #### parse if
 

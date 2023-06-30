@@ -10,7 +10,6 @@ import collections
 import sys
 
 from test import spec_osh
-from test import spec_ysh
 
 File = collections.namedtuple('File',
     'name suite tags compare_shells our_shell failures_allowed')
@@ -85,7 +84,6 @@ def main(argv):
   sp.File('tea-func', suite='tea', our_shell='osh')
 
   spec_osh.Define(sp)
-  spec_ysh.Define(sp)
 
   action = argv[1]
 

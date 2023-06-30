@@ -1,3 +1,5 @@
+## our_shell: ysh
+
 #### Standalone generator expression
 var x = (i+1 for i in 1:3)
 # This is NOT a list.  TODO: This test is overspecified.
