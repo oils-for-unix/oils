@@ -97,8 +97,6 @@ case (x) {
   ("0") { echo string }
 }
 
-# FIXME: stdout should be "string", but right now it is "int"
-
 ## status: 0
 ## STDOUT:
 string
