@@ -1188,7 +1188,7 @@ def MakeTestEnv(opts):
 def _DefaultSuite(spec_name):
   if spec_name.startswith('ysh-'):
     suite = 'ysh'
-  elif spec_name.startswith('hay'):  # hay is ysh
+  elif spec_name.startswith('hay'):  # hay.test.sh is ysh
     suite = 'ysh'
 
   elif spec_name.startswith('tea-'):

@@ -11,29 +11,21 @@ def Define(sp):
 
   sp.OshFile(
       'interactive',
-      compare_shells = 'bash',  # dash / mksh don't implemented --rcfile etc.
       )
 
   sp.OshFile(
       'sh-usage',
-      compare_shells = 'bash dash mksh zsh',
       )
 
   sp.OshFile(
       'builtin-history',
-      compare_shells = 'bash',
       )
 
   sp.OshFile(
       'smoke',
-      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
       )
 
-  sp.OshFile(
-      'case_',
-      compare_shells = 'bash dash mksh',  # aka REF_SHELLS
-      failures_allowed = 3,
-      )
+  sp.OshFile('case_',)
 
   #
   # suite osh

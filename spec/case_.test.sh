@@ -1,5 +1,6 @@
 
 ## compare_shells: bash dash mksh
+## oils_failures_allowed: 3
 
 #### Case statement
 case a in

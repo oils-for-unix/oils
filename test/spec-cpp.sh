@@ -47,7 +47,7 @@ run-file() {
   case $test_name in
     # removed these from metadata
     # that was premature
-    ysh-*|hay-*)
+    ysh-*|hay)  # hay.test.sh
       func=run-file-with-metadata
       ;;
     *)
