@@ -62,7 +62,7 @@ trace-var-sub() {
 # run-file variants
 # 
 
-run-file-with-metadata() {
+run-file() {
   local spec_name=$1
   shift
 
@@ -104,15 +104,15 @@ run-file-with-bash() { _run-file-with-one bash "$@"; }
 #
 
 interactive-parse() {
-  run-file-with-metadata interactive-parse "$@"
+  run-file interactive-parse "$@"
 }
 
 smoke() {
-  run-file-with-metadata smoke "$@"
+  run-file smoke "$@"
 }
 
 interactive() {
-  run-file-with-metadata interactive "$@"
+  run-file interactive "$@"
 }
 
 prompt() {
@@ -215,7 +215,7 @@ loop() {
 }
 
 case_() {
-  run-file-with-metadata case_ "$@"
+  run-file case_ "$@"
 }
 
 if_() {
@@ -255,7 +255,7 @@ builtins2() {
 }
 
 builtin-history() {
-  run-file-with-metadata builtin-history "$@"
+  run-file builtin-history "$@"
 }
 
 # dash and mksh don't implement 'dirs'
@@ -442,7 +442,7 @@ var-sub() {
 }
 
 var-num() {
-  run-file-with-metadata var-num "$@"
+  run-file var-num "$@"
 }
 
 var-sub-quote() {
@@ -451,11 +451,11 @@ var-sub-quote() {
 }
 
 sh-usage() {
-  run-file-with-metadata sh-usage "$@"
+  run-file sh-usage "$@"
 }
 
 sh-options() {
-  run-file-with-metadata sh-options "$@"
+  run-file sh-options "$@"
 }
 
 xtrace() {
@@ -479,7 +479,7 @@ errexit() {
 }
 
 errexit-osh() {
-  run-file-with-metadata errexit-osh "$@"
+  run-file errexit-osh "$@"
 }
 
 fatal-errors() {
@@ -730,7 +730,7 @@ ysh-usage() {
 }
 
 ysh-unicode() {
-  run-file-with-metadata ysh-unicode "$@"
+  run-file ysh-unicode "$@"
 }
 
 ysh-bin() {
@@ -794,7 +794,7 @@ ysh-builtin-shopt() {
 }
 
 ysh-case() {
-  run-file-with-metadata ysh-case "$@"
+  run-file ysh-case "$@"
 }
 
 ysh-command-sub() {
@@ -814,7 +814,7 @@ ysh-expr() {
 }
 
 ysh-expr-bool() {
-  run-file-with-metadata ysh-expr-bool "$@"
+  run-file ysh-expr-bool "$@"
 }
 
 ysh-expr-arith() {

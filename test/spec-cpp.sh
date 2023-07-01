@@ -41,7 +41,7 @@ export OILS_GC_ON_EXIT=1
 # For translation
 #
 
-run-file-with-metadata() {
+run-file() {
   local spec_name=$1
   shift
 

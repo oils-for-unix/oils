@@ -947,9 +947,7 @@ class AnsiOutput(Output):
     self.f.write(_RESET)
     self.f.write('\n')
 
-    # Write totals by cell.  TODO: Switch to spaces instead of tabs and
-    # right-justify?
-
+    # Write totals by cell.  
     for result in sorted(stats.nonzero_results, reverse=True):
       self.f.write('\t%s' % ANSI_CELLS[result])
       for sh_label in sh_labels:
@@ -1011,9 +1009,8 @@ class HtmlOutput(Output):
   </tr>
 </thead>
 ''')
-    # Write totals by cell.  TODO: Switch to spaces instead of tabs and
-    # right-justify?
 
+    # Write totals by cell.
     for result in sorted(stats.nonzero_results, reverse=True):
       self.f.write('<tr>')
 
@@ -1235,10 +1232,7 @@ def main(argv):
   spec_lib.DefineShSpec(p)
   opts, argv = p.parse_args(argv)
 
-  # This should be --print-table
-  # And then --print-tagged
-  # To match test/spec-runner.sh
-
+  # --print-tagged to figure out what to run
   if opts.print_tagged:
     to_find = opts.print_tagged
     for row in ParseTestList(argv[1:]):
@@ -1246,11 +1240,16 @@ def main(argv):
         print(row['spec_name'])
     return 0
 
+  # --print-table to figure out what to run
   if opts.print_table:
     for row in ParseTestList(argv[1:]):
       print('%(suite)s\t%(spec_name)s' % row)
       #print(row)
     return 0
+
+  #
+  # Now deal with a single file
+  #
 
   try:
     test_file = argv[1]
@@ -1262,23 +1261,29 @@ def main(argv):
     tokens = Tokenizer(f)
     file_metadata, cases = ParseTestFile(tokens)
 
+  # List test cases and return
+  if opts.do_list:
+    for i, case in enumerate(cases):
+      if opts.verbose:  # print the raw dictionary for debugging
+        print(pprint.pformat(case))
+      else:
+        print('%d\t%s' % (i, case['desc']))
+    return 0
+
+  # for test/spec-cpp.sh
   if opts.print_spec_suite:
     tmp = os.path.basename(test_file)
     spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
 
     suite = file_metadata.get('suite') or _DefaultSuite(spec_name)
     print(suite)
-    return
-
-  # TODO: file_metadata should override --osh-allowed-failures and so forth
-  # Change to --oils-allowed-failures
+    return 0
 
   if opts.verbose:
     for k, v in file_metadata.items():
       print('\t%-20s: %s' % (k, v), file=sys.stderr)
     print('', file=sys.stderr)
 
-  shell_args = argv[2:]
   if opts.oils_bin_dir:
 
     shells = []
@@ -1302,18 +1307,10 @@ def main(argv):
         int(file_metadata.get('oils_failures_allowed', 0))
 
   else:
-    shells = shell_args
+    # TODO: remove this mode?
+    shells = argv[2:]
 
   shell_pairs = spec_lib.MakeShellPairs(shells)
-
-  # List test cases and return
-  if opts.do_list:
-    for i, case in enumerate(cases):
-      if opts.verbose:  # print the raw dictionary for debugging
-        print(pprint.pformat(case))
-      else:
-        print('%d\t%s' % (i, case['desc']))
-    return
 
   if opts.range:
     begin, end = spec_lib.ParseRange(opts.range)

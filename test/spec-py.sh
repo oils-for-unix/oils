@@ -78,7 +78,7 @@ interactive-osh() {
 
 debug-2023-06() {
   # 2023-06-30: 
-  # HANGING BUG after removing test/spec_param.py, and using run-file-with-metadata
+  # HANGING BUG after removing test/spec_param.py, and using run-file
   # All of the sudden test/spec-py.sh interactive-osh hangs in Docker, and then
   # this does too
   # It reproduces LOCALLY as well

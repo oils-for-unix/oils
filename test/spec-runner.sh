@@ -90,7 +90,7 @@ dispatch-one() {
 
     compare-py)     prefix=(test/spec.sh) ;;
 
-    compare-cpp)    prefix=(test/spec-cpp.sh run-file-with-metadata) ;;
+    compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
 
     # For interactive comparison
     osh-only)       prefix=(test/spec.sh run-file-with-osh) ;;
