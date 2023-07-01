@@ -478,9 +478,8 @@ errexit() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
-errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh --oils-failures-allowed 0 \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+errexit-osh() {
+  run-file-with-metadata errexit-osh "$@"
 }
 
 fatal-errors() {

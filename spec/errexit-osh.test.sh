@@ -1,4 +1,7 @@
-# Oil mechanisms:
+
+## our_shells: bash dash mksh ash
+
+# OSH mechanisms:
 #
 # - shopt -s strict_errexit 
 # - shopt -s command_sub_errexit
