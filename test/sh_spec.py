@@ -310,7 +310,19 @@ def ParseTestCase(tokens):
   return case
 
 
-def ParseTestFile(tokens):
+_META_FIELDS = [
+    'our_shell',
+    'compare_shells',
+    'suite',
+    'tags',
+    'oils_failures_allowed',
+    ]
+
+
+def ParseTestFile(test_file, tokens):
+  """
+  test_file: Only for error message
+  """
   file_metadata = {}
   test_cases = []
 
@@ -340,6 +352,10 @@ def ParseTestFile(tokens):
 
   except StopIteration:
     raise RuntimeError('Unexpected EOF parsing test cases')
+
+  for name in file_metadata:
+    if name not in _META_FIELDS:
+      raise RuntimeError('Invalid file metadata %r in %r' % (name, test_file))
 
   return file_metadata, test_cases
 
@@ -1196,13 +1212,13 @@ def _DefaultSuite(spec_name):
   return suite
 
 
-def ParseTestList(spec_files):
-    for spec_file in spec_files:
-      with open(spec_file) as f:
+def ParseTestList(test_files):
+    for test_file in test_files:
+      with open(test_file) as f:
         tokens = Tokenizer(f)
-        file_metadata, cases = ParseTestFile(tokens)
+        file_metadata, cases = ParseTestFile(test_file, tokens)
 
-      tmp = os.path.basename(spec_file)
+      tmp = os.path.basename(test_file)
       spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
 
       suite = file_metadata.get('suite') or _DefaultSuite(spec_name)
@@ -1259,7 +1275,7 @@ def main(argv):
 
   with open(test_file) as f:
     tokens = Tokenizer(f)
-    file_metadata, cases = ParseTestFile(tokens)
+    file_metadata, cases = ParseTestFile(test_file, tokens)
 
   # List test cases and return
   if opts.do_list:

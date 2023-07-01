@@ -1,5 +1,5 @@
 
-## our_shells: bash dash mksh ash
+## compare_shells: bash dash mksh ash
 
 # OSH mechanisms:
 #
