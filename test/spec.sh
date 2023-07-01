@@ -82,24 +82,19 @@ interactive() {
 }
 
 prompt() {
-  sh-spec spec/prompt.test.sh --oils-failures-allowed 0 \
-    $BASH $OSH_LIST "$@"
+  run-file prompt "$@"
 }
 
 osh-only() {
-  sh-spec spec/osh-only.test.sh --oils-failures-allowed 0  \
-    $OSH_LIST "$@"
+  run-file osh-only "$@"
 }
 
-# Regress bugs
 bugs() {
-  sh-spec spec/bugs.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file bugs "$@"
 }
 
 TODO-deprecate() {
-  sh-spec spec/TODO-deprecate.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file TODO-deprecate "$@"
 }
 
 blog1() {

@@ -1,4 +1,7 @@
 
+## compare_shells: bash dash mksh zsh ash
+## oils_allowed_failures: 1
+
 #### echo keyword
 echo done
 ## stdout: done
