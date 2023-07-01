@@ -70,7 +70,7 @@ run-file-with-metadata() {
 }
 
 osh-all() {
-  # Like test/spec.sh {oil,osh}-all, but it compares against different binaries
+  # Like test/spec.sh {osh,ysh}-all, but it compares against different binaries
 
   # For debugging hangs
   #export MAX_PROCS=1

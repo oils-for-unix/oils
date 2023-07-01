@@ -50,7 +50,7 @@ osh-minimal() {
 
 
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
-ysh-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
+ysh-all-serial() { MAX_PROCS=1 $0 ysh-all "$@"; }
 tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
@@ -118,7 +118,7 @@ all-and-smoosh() {
   # Note: MAX_PROCS=1 prevents [#oil-dev > Random Spec Test Stoppages]
   # Still need to fix that bug
   MAX_PROCS=1 osh-all
-  oil-all
+  ysh-all
 
   # These aren't all green/yellow yet, and are slow.
   test/spec.sh smoosh-html

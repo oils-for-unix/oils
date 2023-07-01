@@ -1,7 +1,7 @@
 """
 spec_lib.py
 
-Shared between sh_spec.py (Python 2) and interactive.py (Python 3)!
+Shared between sh_spec.py (Python 2) and spec/stateful/harness.py (Python 3)!
 """
 from __future__ import print_function
 

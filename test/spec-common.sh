@@ -67,17 +67,17 @@ if test -z "$OSH_LIST"; then
   fi
 fi
 
-readonly OIL_CPYTHON="$REPO_ROOT/bin/oil"
-readonly OIL_OVM=${OIL_OVM:-$REPO_ROOT/_bin/oil}
+readonly YSH_CPYTHON="$REPO_ROOT/bin/ysh"
+readonly YSH_OVM=${YSH_OVM:-$REPO_ROOT/_bin/ysh}
 
-OIL_LIST=${OIL_LIST:-}  # A space-separated list.
+YSH_LIST=${YSH_LIST:-}  # A space-separated list.
 
-if test -z "$OIL_LIST"; then
-  # By default, run with both, unless $OIL_OVM isn't available.
-  if test -e $OIL_OVM; then
-    OIL_LIST="$OIL_CPYTHON $OIL_OVM"
+if test -z "$YSH_LIST"; then
+  # By default, run with both, unless $YSH_OVM isn't available.
+  if test -e $YSH_OVM; then
+    YSH_LIST="$YSH_CPYTHON $YSH_OVM"
   else
-    OIL_LIST="$OIL_CPYTHON"
+    YSH_LIST="$YSH_CPYTHON"
   fi
 fi
 

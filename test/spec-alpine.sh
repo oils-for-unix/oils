@@ -96,7 +96,7 @@ run-file() {
 all() {
   # TODO: Test this function and run in CI
 
-  export OSH_LIST=osh OIL_LIST=oil
+  export OSH_LIST=osh YSH_LIST=ysh
 
   # this is like test/spec.sh {oil,osh}-all
   # $suite $compare_mode $spec_subdir

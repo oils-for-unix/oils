@@ -72,13 +72,13 @@ log = spec_lib.log
 
 # NOTE: osh_ALT is usually _bin/osh -- the release binary.
 # It would be better to rename these osh-cpython and osh-ovm.  Have the concept
-# of a suffix?  Then we can have osh-byterun too.
+# of a suffix?
 
 OSH_CPYTHON = ('osh', 'osh-dbg')
-OTHER_OSH = ('osh_ALT', 'osh-byterun')
+OTHER_OSH = ('osh_ALT',)
 
-OIL_CPYTHON = ('oil', 'oil-dbg', 'ysh', 'ysh-dbg')
-OTHER_OIL = ('oil_ALT',)
+YSH_CPYTHON = ('ysh', 'ysh-dbg')
+OTHER_YSH = ('oil_ALT',)
 
 
 class ParseError(Exception):
@@ -507,10 +507,10 @@ class Stats(object):
     self.counters = collections.defaultdict(int)
     c = self.counters
     c['num_cases'] = num_cases
-    c['osh_num_passed'] = 0
-    c['osh_num_failed'] = 0
+    c['oils_num_passed'] = 0
+    c['oils_num_failed'] = 0
     # Number of osh_ALT results that differed from osh.
-    c['osh_ALT_delta'] = 0
+    c['oils_ALT_delta'] = 0
 
     self.by_shell = {}
     for sh in sh_labels:
@@ -540,11 +540,11 @@ class Stats(object):
     elif cell_result == Result.FAIL:
       # Special logic: don't count osh_ALT beacuse its failures will be
       # counted in the delta.
-      if sh_label not in OTHER_OSH + OTHER_OIL:
+      if sh_label not in OTHER_OSH + OTHER_YSH:
         c['num_failed'] += 1
 
-      if sh_label in OSH_CPYTHON + OIL_CPYTHON:
-        c['osh_num_failed'] += 1
+      if sh_label in OSH_CPYTHON + YSH_CPYTHON:
+        c['oils_num_failed'] += 1
     elif cell_result == Result.BUG:
       c['num_bug'] += 1
     elif cell_result == Result.NI:
@@ -553,8 +553,8 @@ class Stats(object):
       c['num_ok'] += 1
     elif cell_result == Result.PASS:
       c['num_passed'] += 1
-      if sh_label in OSH_CPYTHON + OIL_CPYTHON:
-        c['osh_num_passed'] += 1
+      if sh_label in OSH_CPYTHON + YSH_CPYTHON:
+        c['oils_num_passed'] += 1
     else:
       raise AssertionError()
 
@@ -743,7 +743,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         other_result = result_row[shell_index]
         cpython_result = result_row[osh_cpython_index]
         if other_result != cpython_result:
-          stats.Inc('osh_ALT_delta')
+          stats.Inc('oils_ALT_delta')
 
     out.WriteRow(i, line_num, result_row, desc)
 
@@ -1115,8 +1115,8 @@ class HtmlOutput(Output):
     self.f.write('</table>\n')
     self.f.write('<pre>')
     self._WriteStats(stats)
-    if stats.Get('osh_num_failed'):
-      self.f.write('%(osh_num_failed)d failed under osh\n' % stats.counters)
+    if stats.Get('oils_num_failed'):
+      self.f.write('%(oils_num_failed)d failed under osh\n' % stats.counters)
     self.f.write('</pre>')
 
     if self.details:
@@ -1367,22 +1367,22 @@ def main(argv):
 
   allowed = opts.oils_failures_allowed
   all_count = stats.Get('num_failed')
-  osh_count = stats.Get('osh_num_failed')
+  oils_count = stats.Get('oils_num_failed')
   if allowed == 0:
     log('')
-    log('%s: FATAL: %d tests failed (%d osh failures)', test_name, all_count,
-        osh_count)
+    log('%s: FATAL: %d tests failed (%d oils failures)', test_name, all_count,
+        oils_count)
     log('')
   else:
     # If we got EXACTLY the allowed number of failures, exit 0.
-    if allowed == all_count and all_count == osh_count:
-      log('%s: note: Got %d allowed osh failures (exit with code 0)',
+    if allowed == all_count and all_count == oils_count:
+      log('%s: note: Got %d allowed oils failures (exit with code 0)',
           test_name, allowed)
       return 0
     else:
       log('')
-      log('%s: FATAL: Got %d failures (%d osh failures), but %d are allowed',
-          test_name, all_count, osh_count, allowed)
+      log('%s: FATAL: Got %d failures (%d oils failures), but %d are allowed',
+          test_name, all_count, oils_count, allowed)
       log('')
 
   return 1

@@ -61,7 +61,7 @@ source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
-readonly OIL_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/oil
+readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/ysh
 
 log() {
   echo "$@" 1>&2
@@ -214,7 +214,7 @@ _release-build() {
 
   # For _spec-sanity-check
   ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
-  ln -s -f --no-target-directory -v oil.ovm $OIL_RELEASE_BINARY
+  ln -s -f --no-target-directory -v oil.ovm $YSH_RELEASE_BINARY
 }
 
 readonly HAVE_ROOT=1
@@ -264,7 +264,7 @@ _spec-sanity-check() {
   # Note: MAX_PROCS=1 prevents [#oil-dev > Random Spec Test Stoppages]
   # Still need to fix that bug
   MAX_PROCS=1 NUM_SPEC_TASKS=2 OSH_LIST="$OSH_RELEASE_BINARY" test/spec-py.sh osh-all
-  MAX_PROCS=1 NUM_SPEC_TASKS=2 OIL_LIST="$OIL_RELEASE_BINARY" test/spec-py.sh oil-all
+  MAX_PROCS=1 NUM_SPEC_TASKS=2 YSH_LIST="$YSH_RELEASE_BINARY" test/spec-py.sh ysh-all
 }
 
 spec-all() {
@@ -277,7 +277,7 @@ spec-all() {
 
   # 8/2019: Added smoosh
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
-  export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
+  export YSH_LIST="$REPO_ROOT/bin/ysh $YSH_RELEASE_BINARY"
   test/spec-py.sh all-and-smoosh
 
   # Build $OSH_CPP_BENCHMARK_DATA
@@ -299,7 +299,7 @@ spec-cpp() {
 # For quickly debugging failures that don't happen in dev mode.
 spec-one() {
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
-  export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
+  export YSH_LIST="$REPO_ROOT/bin/ysh $YSH_RELEASE_BINARY"
   test/spec.sh "$@"
 }
 

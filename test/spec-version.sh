@@ -25,7 +25,7 @@ maybe-show() {
 ysh-version-text() {
   date-and-git-info
 
-  for bin in $OIL_LIST; do
+  for bin in $YSH_LIST; do
     echo ---
     echo "\$ $bin --version"
     $bin --version
@@ -38,7 +38,7 @@ ysh-version-text() {
 }
 
 tea-version-text() {
-  oil-version-text
+  ysh-version-text
 }
 
 # This has to be in test/spec because it uses $OSH_LIST, etc.

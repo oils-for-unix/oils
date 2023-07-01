@@ -29,94 +29,6 @@ NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 # Test Runner
 #
 
-# Generate an array of the spec test names.
-_spec-names() {
-  for t in spec/*.test.sh; do
-    echo $t 
-  done | gawk '
-  match($0, "spec/(.*)[.]test.sh", array) {
-    name = array[1]
-    print name
-  }
-  ' \
-  | egrep -v 'shell-grammar|blog-other1' \
-  | sort
-
-  # Gawk-like extraction in Oil:
-  #
-  # for t in spec/*.test.sh {
-  #   if (t ~ / 'spec/' <dot* : name> '.test.sh' /) {
-  #     write -- $name
-  #   } else {
-  #     die "Should have matched"
-  #   }
-  # }
-}
-
-print-tasks() {
-  local mode=${1:-osh}
-
-  cat <<EOF
-#!/usr/bin/env python2
-"""
-spec_$mode.py
-"""
-from __future__ import print_function
-
-def Define(sp):
-EOF
-
-  _spec-names | while read t; do
-
-    local suite
-    local executable
-    case $t in
-      oil-*|hay*)
-        suite=oil
-        executable=oil
-
-        # There are ~45 Oil/Hay tests.  But about half run with bin/osh, and
-        # have with bin/oil.  See test/spec.sh
-        case $t in
-          oil-blocks|oil-builtins|oil-builtin-error|oil-builtin-pp|\
-          oil-builtin-process|oil-builtin-shopt|oil-command-sub|\
-          oil-demo|\
-          oil-expr|oil-expr-arith|oil-expr-compare|\
-          oil-json|oil-multiline|oil-options*|oil-proc|oil-regex|\
-          oil-scope|oil-slice-range|oil-var-sub|oil-word-eval|\
-          oil-xtrace|\
-          hay*)
-            executable=osh
-            ;;
-          *)
-            ;;
-        esac
-        if test $mode = ysh; then
-          if test $executable = osh; then
-            echo "  sp.File('$t', our_shell='osh')"
-          else
-            echo "  sp.File('$t')"
-          fi
-          echo
-        fi
-
-        ;;
-      tea-*)
-        suite=tea
-        executable=tea
-        ;;
-      *)
-        suite=osh
-        executable=osh
-        if test $mode = osh; then
-          echo "  sp.File('$t')"
-          echo
-        fi
-        ;;
-    esac
-  done
-}
-
 write-suite-manifests() {
   #test/sh_spec.py --print-table spec/*.test.sh
   { test/sh_spec.py --print-table spec/*.test.sh | while read suite name; do
@@ -199,7 +111,7 @@ dispatch-one() {
       --format html \
       --stats-file $base_dir/${spec_name}.stats.txt \
       --stats-template \
-      '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(oils_failures_allowed)d %(osh_ALT_delta)d' \
+      '%(num_cases)d %(oils_num_passed)d %(oils_num_failed)d %(oils_failures_allowed)d %(oils_ALT_delta)d' \
     > $base_dir/${spec_name}.html
 }
 
@@ -208,7 +120,7 @@ _html-summary() {
   ### Print an HTML summary to stdout and return whether all tests succeeded
 
   local sh_label=$1  # osh or ysh
-  local base_dir=$2  # e.g. _tmp/spec/oil-language
+  local base_dir=$2  # e.g. _tmp/spec/ysh-cpp
   local totals=$3  # path to print HTML to
   local manifest=$4
 
@@ -269,18 +181,18 @@ EOF
       error(path)
     }
     num_cases = $1
-    osh_num_passed = $2
-    osh_num_failed = $3
+    oils_num_passed = $2
+    oils_num_failed = $3
     oils_failures_allowed = $4
-    osh_ALT_delta = $5
+    oils_ALT_delta = $5
 
     sum_status += status
     sum_wall_secs += wall_secs
     sum_num_cases += num_cases
-    sum_osh_num_passed += osh_num_passed
-    sum_osh_num_failed += osh_num_failed
+    sum_oils_num_passed += oils_num_passed
+    sum_oils_num_failed += oils_num_failed
     sum_oils_failures_allowed += oils_failures_allowed
-    sum_osh_ALT_delta += osh_ALT_delta
+    sum_oils_ALT_delta += oils_ALT_delta
     num_rows += 1
 
     # For the console
@@ -293,9 +205,9 @@ EOF
 
     if (status != 0) {
       css_class = "failed"
-    } else if (osh_num_failed != 0) {
+    } else if (oils_num_failed != 0) {
       css_class = "osh-allow-fail"
-    } else if (osh_num_passed != 0) {
+    } else if (oils_num_passed != 0) {
       css_class = "osh-pass"
     } else {
       css_class = ""
@@ -303,10 +215,10 @@ EOF
     print "<tr class=" css_class ">"
     print "<td><a href=" spec_name ".html>" spec_name "</a></td>"
     print "<td>" num_cases "</td>"
-    print "<td>" osh_num_passed "</td>"
-    print "<td>" osh_num_failed "</td>"
+    print "<td>" oils_num_passed "</td>"
+    print "<td>" oils_num_failed "</td>"
     print "<td>" oils_failures_allowed "</td>"
-    print "<td>" osh_ALT_delta "</td>"
+    print "<td>" oils_ALT_delta "</td>"
     printf("<td>%.2f</td>\n", wall_secs);
     print "</tr>"
   }
@@ -315,10 +227,10 @@ EOF
     print "<tr class=totals>" >totals
     print "<td>TOTAL (" num_rows " rows) </td>" >totals
     print "<td>" sum_num_cases "</td>" >totals
-    print "<td>" sum_osh_num_passed "</td>" >totals
-    print "<td>" sum_osh_num_failed "</td>" >totals
+    print "<td>" sum_oils_num_passed "</td>" >totals
+    print "<td>" sum_oils_num_failed "</td>" >totals
     print "<td>" sum_oils_failures_allowed "</td>" >totals
-    print "<td>" sum_osh_ALT_delta "</td>" >totals
+    print "<td>" sum_oils_ALT_delta "</td>" >totals
     printf("<td>%.2f</td>\n", sum_wall_secs) > totals
     print "</tr>" >totals
 
@@ -399,7 +311,7 @@ html-summary() {
 }
 
 _all-parallel() {
-  local suite=${1:-osh-oil}
+  local suite=${1:-osh}
   local compare_mode=${2:-compare-py}
   local spec_subdir=${3:-survey}
 
