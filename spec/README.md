@@ -40,7 +40,7 @@ Faster way:
     ## our_shell: osh               # shell we run with
                                     # some ysh-* files run with osh
 
-    ## oils_allowed_failures: 1     # number of failures we allow
+    ## oils_failures_allowed: 1     # number of failures we allow
 
 TODO: Start upgrading tests to bash 5.2, etc.  Add a label for that.
 

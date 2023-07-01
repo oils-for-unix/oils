@@ -155,6 +155,10 @@ class Tokenizer(object):
     if m:
       return self.line_num, END_MULTILINE, None
 
+    # If it starts with ##, it should be metadata.  This finds some typos.
+    if line.lstrip().startswith('##'):
+      raise RuntimeError('Invalid ## line %r' % line)
+
     if line.lstrip().startswith('#'):  # Ignore comments
       return None  # try again
 
@@ -1216,7 +1220,11 @@ def ParseTestList(test_files):
     for test_file in test_files:
       with open(test_file) as f:
         tokens = Tokenizer(f)
-        file_metadata, cases = ParseTestFile(test_file, tokens)
+        try:
+          file_metadata, cases = ParseTestFile(test_file, tokens)
+        except RuntimeError as e:
+          log('ERROR in %r', test_file)
+          raise
 
       tmp = os.path.basename(test_file)
       spec_name = tmp.split('.')[0]  # foo.test.sh -> foo

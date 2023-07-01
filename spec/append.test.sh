@@ -141,14 +141,21 @@ argv.py "${a[@]}"
 a=(1 '2 3')
 a[-1]+=(4 5)
 argv.py "${a[@]}"
+
+## stdout-json: ""
+## status: 2
+
+## OK bash status: 0
 ## OK bash STDOUT:
 ['1', '2 3']
 ## END
-## OK bash status: 0
-## N-I mksh stdout-json: ""
+
+## OK zsh status: 0
+## OK zsh STDOUT:
+['1', '2 3', '4', '5']
+## END
+
 ## N-I mksh status: 1
-## OK stdout-json: ""
-## OK osh status: 2
 
 #### Strings have value semantics, not reference semantics
 s1='abc'
