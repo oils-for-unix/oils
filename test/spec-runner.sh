@@ -93,9 +93,8 @@ dispatch-one() {
     compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
 
     # For interactive comparison
-    osh-only)       prefix=(test/spec.sh run-file-with-osh) ;;
-    bash-only)      prefix=(test/spec.sh run-file-with-bash) ;;
-    osh-bash)       prefix=(test/spec.sh run-file-with-osh-bash) ;;
+    osh-only)       prefix=(test/spec-util.sh run-file-with-osh) ;;
+    bash-only)      prefix=(test/spec-util.sh run-file-with-bash) ;;
 
     release-alpine) prefix=(test/spec-alpine.sh run-file) ;;
 

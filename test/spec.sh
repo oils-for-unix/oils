@@ -37,6 +37,10 @@ check-survey-shells() {
   test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
 }
 
+# TODO: remove this stub after we hollow out this file
+
+run-file() { test/spec-py.sh run-file "$@"; }
+
 #
 # Misc
 #
@@ -57,44 +61,6 @@ trace-var-sub() {
   ls -l $out
   head $out/*.cover
 }
-
-#
-# run-file variants
-# 
-
-run-file() {
-  local spec_name=$1
-  shift
-
-  sh-spec spec/$spec_name.test.sh \
-    --compare-shells \
-    --oils-bin-dir $PWD/bin "$@"
-}
-
-run-file-with-osh-bash() {
-  local spec_name=$1
-  shift
-
-  sh-spec spec/$spec_name.test.sh --oils-bin-dir $PWD/bin \
-    bash $OSH_LIST "$@"
-}
-
-_run-file-with-one() {
-  local shell=$1
-  local spec_name=$2
-  shift 2
-
-  # 2023-06: note --timeout 10 seems to make every test hang
-  # I guess $SH -i doesn't run well like that
-  sh-spec spec/$spec_name.test.sh \
-    --oils-bin-dir $PWD/bin \
-    -d \
-    -t \
-    $shell "$@"
-}
-
-run-file-with-osh() { _run-file-with-one $REPO_ROOT/bin/osh "$@"; }
-run-file-with-bash() { _run-file-with-one bash "$@"; }
 
 #
 # Individual tests.

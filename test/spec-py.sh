@@ -11,7 +11,19 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
+source test/spec-common.sh
 source devtools/run-task.sh
+
+run-file() {
+  local spec_name=$1
+  shift
+
+  sh-spec spec/$spec_name.test.sh \
+    --compare-shells \
+    --oils-bin-dir $PWD/bin "$@"
+}
 
 osh-all() {
   test/spec.sh check-survey-shells
@@ -104,12 +116,12 @@ interactive-bash() {
   MAX_PROCS=$max_procs test/spec-runner.sh all-parallel interactive bash-only interactive-bash
 }
 
-
 interactive-osh-bash() {
   # Triggers the "Stopped" bug with osh and bash!
 
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel interactive osh-bash interactive-osh-bash
+  # Note: there's no longer a way to run with 2 shells?  We could do
+  # test/sh_spec.py --shells-from-argv foo.test.sh osh bash
+  echo TODO
 }
 
 all-and-smoosh() {

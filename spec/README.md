@@ -8,7 +8,7 @@ top.
 
 Run individual files:
 
-    test/spec.sh run-file smoke
+    test/spec-py.sh run-file smoke
     test/spec-cpp.sh run-file smoke
 
 Run suites:
