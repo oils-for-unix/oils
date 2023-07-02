@@ -29,6 +29,10 @@ readonly BUSYBOX_ASH=ash
 # POSIX.
 readonly REF_SHELLS=($DASH $BASH $MKSH)
 
+# TODO: Could be
+# test/sh_spec.py --osh-sanity-check --oils-bin-dir 
+# Along with comparison shells
+
 check-survey-shells() {
   ### Make sure bash, zsh, OSH, etc. exist
 
@@ -595,6 +599,8 @@ sh-spec-smoosh-env() {
     --env-pair "LOGNAME=$LOGNAME" \
     --env-pair "HOME=$HOME" \
     --timeout 1 \
+    --oils-bin-dir $REPO_ROOT/bin \
+    --compare-shells \
     "$@"
 }
 
@@ -604,8 +610,12 @@ readonly smoosh_osh_list=$OSH_CPYTHON
 smoosh() {
   ### Run case smoosh from the console
 
+  # TODO: Use --oils-bin-dir
+  # our_shells, etc.
+
   sh-spec-smoosh-env _tmp/smoosh.test.sh \
-    ${REF_SHELLS[@]} $smoosh_osh_list "$@"
+    ${REF_SHELLS[@]} $smoosh_osh_list \
+    "$@"
 }
 
 smoosh-hang() {
@@ -615,7 +625,7 @@ smoosh-hang() {
   sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
     --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
     --timeout 1 \
-    ${REF_SHELLS[@]} $smoosh_osh_list "$@"
+    "$@"
 }
 
 _one-html() {
@@ -634,6 +644,7 @@ _one-html() {
 
   local out=$base_dir/${spec_name}.html
   set +o errexit
+  # Shell function is smoosh or smoosh-hang
   time $spec_name --format html "$@" > $out
   set -o errexit
 
@@ -644,11 +655,11 @@ _one-html() {
 }
 
 smoosh-html() {
-  _one-html smoosh
+  _one-html smoosh "$@"
 }
 
 smoosh-hang-html() {
-  _one-html smoosh-hang
+  _one-html smoosh-hang "$@"
 }
 
 html-demo() {

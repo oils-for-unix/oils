@@ -82,7 +82,8 @@ osh-all() {
   local spec_subdir=osh-cpp 
 
   # $suite $compare_mode
-  test/spec-runner.sh all-parallel osh compare-cpp $spec_subdir || true  # OK if it fails
+  test/spec-runner.sh all-parallel \
+    osh compare-cpp $spec_subdir "$@" || true  # OK if it fails
 
   write-compare-html $spec_subdir
 }
@@ -93,7 +94,8 @@ ysh-all() {
   local spec_subdir=ysh-cpp 
 
   # $suite $compare_mode
-  test/spec-runner.sh all-parallel ysh compare-cpp $spec_subdir || true  # OK if it fails
+  test/spec-runner.sh all-parallel \
+    ysh compare-cpp $spec_subdir "$@" || true  # OK if it fails
 
   write-compare-html $spec_subdir
 }

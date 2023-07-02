@@ -130,14 +130,19 @@ interactive-osh-bash() {
 all-and-smoosh() {
   ### Published with each release
 
+  # Args are flags to sh_spec.py
+  #   --oils-bin-dir
+  #   --ovm-bin-dir
+  local -a more_flags=( "$@" )
+
   # Note: MAX_PROCS=1 prevents [#oil-dev > Random Spec Test Stoppages]
   # Still need to fix that bug
-  MAX_PROCS=1 osh-all
-  ysh-all
+  MAX_PROCS=1 osh-all "${more_flags[@]}"
+  ysh-all "${more_flags[@]}"
 
   # These aren't all green/yellow yet, and are slow.
-  test/spec.sh smoosh-html
-  test/spec.sh smoosh-hang-html
+  test/spec.sh smoosh-html "${more_flags[@]}"
+  test/spec.sh smoosh-hang-html "${more_flags[@]}"
 }
 
 run-task "$@"

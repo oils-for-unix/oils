@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+# Called from the end of html-summary in test/spec-runner.sh.
+#
 # Usage:
 #   test/spec-version.sh <function name>
 
@@ -41,7 +43,11 @@ tea-version-text() {
   ysh-version-text
 }
 
-# This has to be in test/spec because it uses $OSH_LIST, etc.
+# TODO: Refactor this so you get the shells
+# test/sh_spec.py --shells
+# And then do 'bash dash mksh zsh ash' IF they exist?
+# That should be fine because we do check-survey-shells BEFORE running
+
 osh-version-text() {
 
   local -a osh_list
@@ -116,10 +122,6 @@ osh-minimal-version-text() {
 }
 
 interactive-version-text() {
-  osh-version-text
-}
-
-needs-terminal-version-text() {
   osh-version-text
 }
 

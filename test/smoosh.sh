@@ -138,10 +138,13 @@ test-hangs() {
 
 
 test-cases() {
-  local translate=${1:-}
-  local hang=${2:-}
+  local translate=${1:-}  # translate or just print
+  local hang=${2:-}  # which suite: smoosh or smoosh-hang
 
   local i=0
+
+  # REF_SHELLS
+  echo '## compare_shells: bash dash mksh'
 
   pushd ~/git/languages/smoosh/tests/shell >/dev/null
   for t in *.test; do 
@@ -163,36 +166,40 @@ test-cases() {
 
     if test -z "$translate"; then
       echo $t
-    else
-      echo "#### $t"
-      cat $t
-      echo
-
-      # If no file, it's zero
-      local ec="$prefix.ec"
-      if test -f "$ec"; then
-        echo "## status: $(cat $ec)"
-      fi
-
-      local stdout="$prefix.out"
-      if test -f "$stdout"; then
-        # Choose between STDOUT and stdout-json assertions.
-        $REPO_ROOT/test/smoosh_import.py "$stdout"
-      fi
-
-      if false; then
-        local stderr="$prefix.err"
-        if test -f "$stderr"; then
-          echo '## STDERR:'
-          cat $stderr
-          echo '## END'
-        fi
-      fi
-
-      echo
-
-      i=$((i + 1))
+      continue
     fi
+
+    # Print the test case
+
+    echo "#### $t"
+    cat $t
+    echo
+
+    # If no file, it's zero
+    local ec="$prefix.ec"
+    if test -f "$ec"; then
+      echo "## status: $(cat $ec)"
+    fi
+
+    local stdout="$prefix.out"
+    if test -f "$stdout"; then
+      # Choose between STDOUT and stdout-json assertions.
+      $REPO_ROOT/test/smoosh_import.py "$stdout"
+    fi
+
+    if false; then
+      local stderr="$prefix.err"
+      if test -f "$stderr"; then
+        echo '## STDERR:'
+        cat $stderr
+        echo '## END'
+      fi
+    fi
+
+    echo
+
+    i=$((i + 1))
+
   done
   popd >/dev/null
 
