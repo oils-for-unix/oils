@@ -1,5 +1,7 @@
 # spec/append.test.sh: Test +=
 
+## compare_shells: bash mksh zsh
+
 #### Append string to string
 s='abc'
 s+=d

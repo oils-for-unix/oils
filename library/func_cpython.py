@@ -178,33 +178,34 @@ def Init(mem):
     SetGlobalFunc(mem, 'Float', float)
 
     SetGlobalFunc(mem, 'Str', str)
-    SetGlobalFunc(mem, 'List', list)
-    SetGlobalFunc(mem, 'Dict', dict)
+    SetGlobalFunc(mem, 'List', list)  # obsolete without Python-like iterators?
+    SetGlobalFunc(mem, 'Dict', dict)  # ditto
+
+    # NOTE: IN-YSH means we can move it to YSH itself
 
     # For compositionality and testing
-    SetGlobalFunc(mem, 'identity', lambda x: x)
+    SetGlobalFunc(mem, 'identity', lambda x: x)  # IN-YSH
 
     SetGlobalFunc(mem, 'len', len)
-    SetGlobalFunc(mem, 'max', max)
-    SetGlobalFunc(mem, 'min', min)
+    SetGlobalFunc(mem, 'max', max)  # IN-YSH with <
+    SetGlobalFunc(mem, 'min', min)  # IN-YSH
     # NOTE: cmp() deprecated in Python 3
 
     # Utilities
-    SetGlobalFunc(mem, 'abs', abs)
+    SetGlobalFunc(mem, 'abs', abs)  # IN-YSH with <
     # round()
     # divmod() - probably useful?  Look at the implementation
 
-    # TODO: Consolidate with explicit 1:2 syntax
-    # Return an iterable like Python 3.  Used for 'step' param.
-    SetGlobalFunc(mem, 'range', range)
+    # Temporary: use xrange until we rewrite in YSH
+    SetGlobalFunc(mem, 'range', lambda *args: list(xrange(*args)))
     # For the 'step' param.
     SetGlobalFunc(mem, 'slice', slice)
 
-    SetGlobalFunc(mem, 'any', any)
-    SetGlobalFunc(mem, 'all', all)
-    SetGlobalFunc(mem, 'sum', sum)
+    SetGlobalFunc(mem, 'any', any)  # IN-YSH with Bool
+    SetGlobalFunc(mem, 'all', all)  # IN-YSH with Bool
+    SetGlobalFunc(mem, 'sum', sum)  # IN-YSH with +
 
-    SetGlobalFunc(mem, 'reversed', _Reversed)
+    SetGlobalFunc(mem, 'reversed', _Reversed)  # IN-YSH with for
 
     #
     # List/array methods

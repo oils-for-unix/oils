@@ -82,6 +82,7 @@ dispatch-one() {
   # Which subdir of _tmp/spec: osh-py ysh-py osh-cpp ysh-cpp smoosh tea
   local spec_subdir=${2:-osh-py}
   local spec_name=$3
+  shift 3  # rest are more flags
 
   log "__ $spec_name"
 
@@ -111,6 +112,7 @@ dispatch-one() {
       --stats-file $base_dir/${spec_name}.stats.txt \
       --stats-template \
       '%(num_cases)d %(oils_num_passed)d %(oils_num_failed)d %(oils_failures_allowed)d %(oils_ALT_delta)d' \
+      "$@" \
     > $base_dir/${spec_name}.html
 }
 
@@ -314,6 +316,9 @@ _all-parallel() {
   local compare_mode=${2:-compare-py}
   local spec_subdir=${3:-survey}
 
+  # The rest are more flags
+  shift 3
+
   local manifest="_tmp/spec/SUITE-$suite.txt"
   local output_base_dir="_tmp/spec/$spec_subdir"
   mkdir -p $output_base_dir
@@ -323,7 +328,8 @@ _all-parallel() {
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs -n 1 -P $MAX_PROCS -- $0 dispatch-one $compare_mode $spec_subdir
+    | xargs -n 1 -I {} -P $MAX_PROCS -- \
+      $0 dispatch-one $compare_mode $spec_subdir {} "$@"
   set -o errexit
 
   all-tests-to-html $manifest $output_base_dir

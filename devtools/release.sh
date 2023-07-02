@@ -259,8 +259,9 @@ EOF
 }
 
 _spec-sanity-check() {
-  # Quick early test for _bin/osh and _bin/oil
+  # Quick early test for _bin/osh and _bin/ysh
 
+  # TODO: Use --ovm-bin-dir
   # Note: MAX_PROCS=1 prevents [#oil-dev > Random Spec Test Stoppages]
   # Still need to fix that bug
   MAX_PROCS=1 NUM_SPEC_TASKS=2 OSH_LIST="$OSH_RELEASE_BINARY" test/spec-py.sh osh-all
@@ -275,7 +276,7 @@ spec-all() {
   # Create the tests we're running
   test/smoosh.sh make-spec
 
-  # 8/2019: Added smoosh
+  # TODO: Use --ovm-bin-dir
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
   export YSH_LIST="$REPO_ROOT/bin/ysh $YSH_RELEASE_BINARY"
   test/spec-py.sh all-and-smoosh
@@ -283,6 +284,7 @@ spec-all() {
   # Build $OSH_CPP_BENCHMARK_DATA
   _build-oils-benchmark-data
 
+  # TODO: Use --oils-cpp-bin-dir
   # Collect and publish stats about the C++ translation.
   OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh osh-all
   YSH_CC="$YSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh ysh-all
@@ -290,6 +292,8 @@ spec-all() {
 
 spec-cpp() {
   ### For repair
+
+  # TODO: Use --oils-cpp-bin-dir
 
   # Quick
   # NUM_SPEC_TASKS=2 OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all

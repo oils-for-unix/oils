@@ -122,12 +122,17 @@ def DefineCommon(p):
   p.add_option(
       '--oils-failures-allowed', dest='oils_failures_allowed', type='int',
       default=0, help="Allow this number of Oils failures")
+
+  # Select what shells to run
   p.add_option(
       '--oils-bin-dir', dest='oils_bin_dir', default=None,
       help="Directory that osh and ysh live in")
   p.add_option(
       '--oils-cpp-bin-dir', dest='oils_cpp_bin_dir', default=None,
       help="Directory that native C++ osh and ysh live in")
+  p.add_option(
+      '--ovm-bin-dir', dest='ovm_bin_dir', default=None,
+      help="Directory of the legacy OVM/CPython build")
   p.add_option(
       '--compare-shells', dest='compare_shells', action='store_true',
       help="Compare against shells specified at the top of each file")

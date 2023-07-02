@@ -1321,7 +1321,11 @@ def main(argv):
     our_shell = file_metadata.get('our_shell', 'osh')  # default is OSH
     shells.append(os.path.join(opts.oils_bin_dir, our_shell))
 
-    # Also run against C++ version
+    # Legacy OVM/CPython build
+    if opts.ovm_bin_dir:
+      shells.append(os.path.join(opts.ovm_bin_dir, our_shell))
+
+    # New C++ build
     if opts.oils_cpp_bin_dir:
       shells.append(os.path.join(opts.oils_cpp_bin_dir, our_shell))
 

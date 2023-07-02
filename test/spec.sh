@@ -113,8 +113,7 @@ blog-other1() {
 }
 
 alias() {
-  sh-spec spec/alias.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file alias "$@"
 }
 
 comments() {
@@ -474,8 +473,7 @@ type-compat() {
 
 # += is not POSIX and not in dash.
 append() {
-  sh-spec spec/append.test.sh --oils-failures-allowed 0 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@" 
+  run-file append "$@"
 }
 
 # associative array -- mksh and zsh implement different associative arrays.

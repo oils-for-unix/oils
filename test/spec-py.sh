@@ -29,12 +29,18 @@ osh-all() {
   test/spec.sh check-survey-shells
 
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel osh compare-py osh-py
+  test/spec-runner.sh all-parallel osh compare-py osh-py "$@"
+
+  # By default, it runs sh_spec.py with --compare-shells
+  # Can also add:
+  #   --ovm-bin-dir
+  #   --oils-cpp-bin-dir
+  # to compare with more
 }
 
 ysh-all() {
   # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel ysh compare-py ysh-py
+  test/spec-runner.sh all-parallel ysh compare-py ysh-py "$@"
 }
 
 oil-all() { ysh-all "$@"; }
@@ -42,11 +48,6 @@ oil-all() { ysh-all "$@"; }
 tea-all() {
   # $suite $compare_mode $spec_subdir
   test/spec-runner.sh all-parallel tea compare-py tea
-}
-
-needs-terminal-all() {
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel needs-terminal compare-py needs-terminal-py
 }
 
 osh-minimal() {
@@ -57,7 +58,7 @@ osh-minimal() {
   test/spec.sh check-survey-shells
 
   # suite compare_mode spec_subdir
-  test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal
+  test/spec-runner.sh all-parallel osh-minimal compare-py osh-minimal "$@"
 }
 
 
@@ -85,7 +86,8 @@ interactive-osh() {
   #   the kernel in Python unit tests
 
   # $suite $compare_mode $spec_subdir
-  MAX_PROCS=$max_procs test/spec-runner.sh all-parallel interactive osh-only interactive-osh
+  MAX_PROCS=$max_procs test/spec-runner.sh all-parallel \
+    interactive osh-only interactive-osh "$@"
 }
 
 debug-2023-06() {
@@ -113,7 +115,8 @@ interactive-bash() {
   local max_procs=${1:-}
 
   # $suite $compare_mode $spec_subdir
-  MAX_PROCS=$max_procs test/spec-runner.sh all-parallel interactive bash-only interactive-bash
+  MAX_PROCS=$max_procs test/spec-runner.sh all-parallel \
+    interactive bash-only interactive-bash "$@"
 }
 
 interactive-osh-bash() {
