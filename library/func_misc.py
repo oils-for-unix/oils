@@ -105,3 +105,29 @@ class StartsWith(vm._Callable):
 
         res = string_s.startswith(match_s)
         return value.Bool(res)
+
+
+class Keys(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        if len(pos_args) != 1:
+            raise error.InvalidType("keys() expects 1 arguments but %d were given" % len(pos_args), loc.Missing)
+
+        if len(named_args) != 0:
+            raise error.InvalidType("keys() expects 0 named arguments but %d were given" % len(named_args), loc.Missing)
+
+        dictionary = pos_args[0]
+
+        assert dictionary.tag() == value_e.Dict, "Unreachable, Keys is only defined on Dict"
+
+        dictionary_d = cast(value.Dict, dictionary).d
+
+        keys = [value.Str(k) for k in dictionary_d.keys()]  # type: List[value_t]
+        return value.List(keys)

@@ -25,3 +25,14 @@
 #### Missing method (Str->doesNotExist())
 = "abc"->doesNotExist()
 ## status: 3
+
+#### Dict->keys()
+var en2fr = {}
+setvar en2fr["hello"] = "bonjour"
+setvar en2fr["friend"] = "ami"
+setvar en2fr["cat"] = "chat"
+= en2fr->keys()
+## status: 0
+## STDOUT:
+(List)   ['hello', 'friend', 'cat']
+## END

@@ -67,7 +67,7 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
 
-from library.func_misc import StartsWith
+from library.func_misc import StartsWith, Keys
 
 import libc
 
@@ -435,6 +435,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
     methods[value_e.Str] = {'startsWith': StartsWith()}
+    methods[value_e.Dict] = {'keys': Keys()}
 
     hay_state = state.Hay()
 
