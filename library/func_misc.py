@@ -75,3 +75,32 @@ class Pop(vm._Callable):
 
         # Equivalent to no return value?
         return value.Null
+
+
+class StartsWith(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        if len(pos_args) != 2:
+            raise error.InvalidType("startsWith() expects 2 arguments but %d were given" % len(pos_args), loc.Missing)
+
+        if len(named_args) != 0:
+            raise error.InvalidType("startsWith() expects 0 named arguments but %d were given" % len(named_args), loc.Missing)
+
+        this = pos_args[0]
+        match = pos_args[1]
+
+        assert this.tag() == value_e.Str, "Unreachable, StartsWith is only defined on Str"
+        if match.tag() != value_e.Str:
+            raise error.InvalidType("startsWith() expected Str", loc.Missing)
+
+        this_s = cast(value.Str, this).s
+        match_s = cast(value.Str, match).s
+
+        return value.Bool(this_s.startswith(match_s))

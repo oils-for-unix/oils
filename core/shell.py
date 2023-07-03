@@ -433,6 +433,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
 
+    from library.func_misc import StartsWith
+    methods[value_e.Str] = {'startsWith': StartsWith()}
+
     hay_state = state.Hay()
 
     if attrs.show_options:  # special case: sh -o
@@ -616,8 +619,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                          parse_ctx, errfmt)
 
     if mylib.PYTHON:
-        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter,
-                                         errfmt)
+        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods,
+                                         splitter, errfmt)
     else:
         expr_ev = None
 

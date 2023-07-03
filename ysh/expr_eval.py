@@ -103,6 +103,7 @@ class OilEvaluator(object):
             mem,  # type: Mem
             mutable_opts,  # type: state.MutableOpts
             funcs,  # type: Dict[str, Any]
+            methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
             errfmt,  # type: ui.ErrorFormatter
     ):
@@ -113,6 +114,7 @@ class OilEvaluator(object):
         self.mem = mem
         self.mutable_opts = mutable_opts
         self.funcs = funcs
+        self.methods = methods
         self.splitter = splitter
         self.errfmt = errfmt
 
@@ -935,6 +937,30 @@ class OilEvaluator(object):
                         ret = f(*pos_args)
 
                         return cpython._PyObjToValue(ret)
+                elif case(value_e.BoundFunc):
+                    func = cast(value.BoundFunc, UP_func)
+                    f = func.callable
+                    if isinstance(f, vm._Callable):  # typed
+                        pos_args, named_args = self.EvalArgList2(node.args)
+                        #log('pos_args %s', pos_args)
+
+                        pos_args.insert(0, func.me)
+                        ret = f.Call(pos_args, named_args)
+
+                        #log('ret %s', ret)
+                        return ret
+                    else:
+                        u_pos_args, u_named_args = self.EvalArgList(node.args)
+                        #log('ARGS %s', u_pos_args)
+                        #ret = f(*u_pos_args, **u_named_args)
+
+                        pos_args = [
+                            cpython._ValueToPyObj(a) for a in u_pos_args
+                        ]
+                        pos_args.insert(0, func.me)
+                        ret = f(*pos_args)
+
+                        return cpython._PyObjToValue(ret)
                 else:
                     raise error.InvalidType('Expected value.Func', loc.Missing)
 
@@ -1124,16 +1150,17 @@ class OilEvaluator(object):
         id_ = node.op.id
         if id_ == Id.Expr_RArrow:
             name = node.attr.tval
-            with tagswitch(o) as case:
-                if case(value_e.Str):
-                    if mylib.PYTHON:
-                        o = cast(value.Str, UP_o)
-                        method = getattr(o.s, name)
-                        return value.Func(method)
-                    else:
-                        raise AssertionError()
-                else:
-                    raise error.InvalidType('Method %r' % name, loc.Missing)
+            ty = o.tag()
+
+            recv = self.methods.get(ty)
+            if not recv:
+                raise error.InvalidType('Unbound method %r' % name, node.attr)
+
+            method = recv.get(name)
+            if not method:
+                raise error.InvalidType('Unbound method %r' % name, node.attr)
+
+            return value.BoundFunc(o, method)
 
         if id_ == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval
