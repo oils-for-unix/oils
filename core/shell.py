@@ -431,10 +431,12 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # e.g. max() sum() etc.
     funcs = {}  # type: Dict[str, vm._Callable]
 
+    # TODO: move initialization?
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
     methods[value_e.Str] = {
-        'startsWith': func_misc.StartsWith(),
+        'startswith': func_misc.StartsWith(),
+        'strip': func_misc.Strip(),
         'upper': func_misc.Upper(),
     }
     methods[value_e.Dict] = {'keys': func_misc.Keys()}

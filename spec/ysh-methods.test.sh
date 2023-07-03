@@ -3,10 +3,10 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 0
 
-#### Str->startsWith
-= "abc"->startsWith("")
-= "abc"->startsWith("a")
-= "abc"->startsWith("z")
+#### Str->startswith
+= "abc"->startswith("")
+= "abc"->startswith("a")
+= "abc"->startswith("z")
 ## status: 0
 ## STDOUT:
 (Bool)   True
@@ -14,12 +14,12 @@
 (Bool)   False
 ## END
 
-#### Str->startsWith, no args
-= "abc"->startsWith()
+#### Str->startswith, no args
+= "abc"->startswith()
 ## status: 3
 
-#### Str->startsWith, too many args
-= "abc"->startsWith("extra", "arg")
+#### Str->startswith, too many args
+= "abc"->startswith("extra", "arg")
 ## status: 3
 
 #### Missing method (Str->doesNotExist())
@@ -38,7 +38,7 @@ setvar en2fr["cat"] = "chat"
 ## END
 
 #### Seperation of -> attr and () calling
-const check = "abc"->startsWith
+const check = "abc"->startswith
 = check("a")
 ## status: 0
 ## STDOUT:
