@@ -40,6 +40,7 @@ from frontend import parse_lib
 
 from library import func_hay
 from library import func_cpython
+from library import func_misc
 
 from ysh import expr_eval
 from ysh import builtin_json
@@ -66,8 +67,6 @@ from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
-
-from library.func_misc import StartsWith, Keys
 
 import libc
 
@@ -434,8 +433,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
-    methods[value_e.Str] = {'startsWith': StartsWith()}
-    methods[value_e.Dict] = {'keys': Keys()}
+    methods[value_e.Str] = {
+        'startsWith': func_misc.StartsWith(),
+        'upper': func_misc.Upper(),
+    }
+    methods[value_e.Dict] = {'keys': func_misc.Keys()}
 
     hay_state = state.Hay()
 

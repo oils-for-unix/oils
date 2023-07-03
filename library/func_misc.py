@@ -107,6 +107,32 @@ class StartsWith(vm._Callable):
         return value.Bool(res)
 
 
+class Upper(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        if len(pos_args) != 1:
+            raise error.InvalidType("upper() expects 1 arguments but %d were given" % len(pos_args), loc.Missing)
+
+        if len(named_args) != 0:
+            raise error.InvalidType("upper() expects 0 named arguments but %d were given" % len(named_args), loc.Missing)
+
+        string = pos_args[0]
+
+        assert string.tag() == value_e.Str, "Unreachable, Keys is only defined on Str"
+
+        string_s = cast(value.Str, string).s
+
+        res = string_s.upper()
+        return value.Str(res)
+
+
 class Keys(vm._Callable):
 
     def __init__(self):
