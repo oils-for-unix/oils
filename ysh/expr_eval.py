@@ -955,7 +955,7 @@ class OilEvaluator(object):
                 return ret
 
             else:
-                raise error.InvalidType('Expected value.Func', loc.Missing)
+                raise error.InvalidType('Expected a function or method', loc.Missing)
 
         raise AssertionError()
 
@@ -1146,10 +1146,7 @@ class OilEvaluator(object):
             ty = o.tag()
 
             recv = self.methods.get(ty)
-            if not recv:
-                raise error.InvalidType('Unbound method %r' % name, node.attr)
-
-            method = recv.get(name)
+            method = recv.get(name) if recv else None
             if not method:
                 raise error.InvalidType('Unbound method %r' % name, node.attr)
 
