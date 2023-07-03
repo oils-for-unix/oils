@@ -21,6 +21,7 @@ class ArgsSpec(object):
 
     def AssertArgs(self, func_name, pos_args, named_args):
         # type: (str, List[value_t], Dict[str, value_t]) -> None
+        """Assert any type differences between the spec and the given args."""
         nargs = len(pos_args)
         expected = len(self.pos_args)
         if nargs != expected:
