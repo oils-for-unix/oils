@@ -45,10 +45,10 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
-library/_func_utils.py
 library/func_eggex.py
 library/func_hay.py
 library/func_misc.py
+library/util.py
 osh/arith_parse.py
 osh/bool_parse.py
 osh/bool_stat.py

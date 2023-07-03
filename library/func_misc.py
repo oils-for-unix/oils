@@ -8,7 +8,7 @@ from _devbuild.gen.runtime_asdl import value, value_e, value_t, value_str
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import vm
-from library._func_utils import ArgsSpec
+from library.util import ArgsSpec
 from mycpp.mylib import log, tagswitch
 from ysh import val_ops
 
