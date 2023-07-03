@@ -36,3 +36,11 @@ setvar en2fr["cat"] = "chat"
 ## STDOUT:
 (List)   ['hello', 'friend', 'cat']
 ## END
+
+#### Seperation of -> attr and () calling
+const check = "abc"->startsWith
+= check("a")
+## status: 0
+## STDOUT:
+(Bool)   True
+## END
