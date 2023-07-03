@@ -67,6 +67,8 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
 
+from library.func_misc import StartsWith
+
 import libc
 
 import posix_ as posix
@@ -432,8 +434,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
-
-    from library.func_misc import StartsWith
     methods[value_e.Str] = {'startsWith': StartsWith()}
 
     hay_state = state.Hay()

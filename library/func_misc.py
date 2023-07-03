@@ -93,14 +93,15 @@ class StartsWith(vm._Callable):
         if len(named_args) != 0:
             raise error.InvalidType("startsWith() expects 0 named arguments but %d were given" % len(named_args), loc.Missing)
 
-        this = pos_args[0]
+        string = pos_args[0]
         match = pos_args[1]
 
-        assert this.tag() == value_e.Str, "Unreachable, StartsWith is only defined on Str"
+        assert string.tag() == value_e.Str, "Unreachable, StartsWith is only defined on Str"
         if match.tag() != value_e.Str:
             raise error.InvalidType("startsWith() expected Str", loc.Missing)
 
-        this_s = cast(value.Str, this).s
+        string_s = cast(value.Str, string).s
         match_s = cast(value.Str, match).s
 
-        return value.Bool(this_s.startswith(match_s))
+        res = string_s.startswith(match_s)
+        return value.Bool(res)

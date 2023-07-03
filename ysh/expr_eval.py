@@ -913,9 +913,9 @@ class OilEvaluator(object):
         func = self._EvalExpr(node.func)
         UP_func = func
 
-        if mylib.PYTHON:
-            with tagswitch(func) as case:
-                if case(value_e.Func):
+        with tagswitch(func) as case:
+            if case(value_e.Func):
+                if mylib.PYTHON:
                     func = cast(value.Func, UP_func)
                     f = func.callable
                     if isinstance(f, vm._Callable):  # typed
@@ -937,32 +937,25 @@ class OilEvaluator(object):
                         ret = f(*pos_args)
 
                         return cpython._PyObjToValue(ret)
-                elif case(value_e.BoundFunc):
-                    func = cast(value.BoundFunc, UP_func)
-                    f = func.callable
-                    if isinstance(f, vm._Callable):  # typed
-                        pos_args, named_args = self.EvalArgList2(node.args)
-                        #log('pos_args %s', pos_args)
-
-                        pos_args.insert(0, func.me)
-                        ret = f.Call(pos_args, named_args)
-
-                        #log('ret %s', ret)
-                        return ret
-                    else:
-                        u_pos_args, u_named_args = self.EvalArgList(node.args)
-                        #log('ARGS %s', u_pos_args)
-                        #ret = f(*u_pos_args, **u_named_args)
-
-                        pos_args = [
-                            cpython._ValueToPyObj(a) for a in u_pos_args
-                        ]
-                        pos_args.insert(0, func.me)
-                        ret = f(*pos_args)
-
-                        return cpython._PyObjToValue(ret)
                 else:
-                    raise error.InvalidType('Expected value.Func', loc.Missing)
+                    raise NotImplementedError() # isinstance does not work in mycpp
+
+            elif case(value_e.BoundFunc):
+                func = cast(value.BoundFunc, UP_func)
+                f = func.callable
+
+                if mylib.PYTHON:
+                    assert isinstance(f, vm._Callable), "Bound funcs must be typed"
+
+                pos_args, named_args = self.EvalArgList2(node.args)
+                pos_args.insert(0, func.me)
+
+                ret = f.Call(pos_args, named_args)
+
+                return ret
+
+            else:
+                raise error.InvalidType('Expected value.Func', loc.Missing)
 
         raise AssertionError()
 
