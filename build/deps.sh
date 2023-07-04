@@ -72,23 +72,21 @@ die() {
 }
 
 install-ubuntu-packages() {
-  ### Packages for build/py.sh all and more
+  ### Packages for build/py.sh all, building wedges, etc.
 
-  # python-dev: for all the extension modules
+  # python2-dev is no longer available on Debian 12
+  # python-dev als seems gone
+  #
+  # g++: essential
   # libreadline-dev: needed for the build/prepare.sh Python build.
   # gawk: used by spec-runner.sh for the special match() function.
   # cmake: for build/py.sh yajl-release (TODO: remove eventually)
-  if apt-cache show python2-dev > /dev/null 2>&1; then
-    local python2_package=python2-dev 
-  else
-    local python2_package=python-dev 
-  fi
 
   set -x  # show what needs sudo
 
   # pass -y for say gitpod
   sudo apt "$@" install \
-    $python2_package gawk libreadline-dev ninja-build cmake \
+    g++ gawk libreadline-dev ninja-build cmake \
     "${PY3_BUILD_DEPS[@]}"
   set +x
 

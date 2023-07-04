@@ -9,6 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/dev-shell.sh  # python2 in $PATH
 source build/dynamic-deps.sh  # py-tool, etc
 
 asdl-main() { py-tool asdl.asdl_main; }

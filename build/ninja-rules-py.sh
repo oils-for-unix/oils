@@ -11,8 +11,9 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
+source build/dev-shell.sh  # python2 in $PATH
 source mycpp/common-vars.sh  # MYPY_REPO
+source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
 example-main() {
   local main_module=${1:-fib_iter}

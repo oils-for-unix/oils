@@ -23,6 +23,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 . build/common.sh  # for $BASE_CXXFLAGS
+. build/dev-shell.sh  # python2 in $PATH
 
 # for HAVE_READLINE, READLINE_DIR, and STRIP_FLAGS
 if ! . _build/detected-config.sh; then
