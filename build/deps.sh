@@ -48,6 +48,9 @@ readonly RE2C_URL="https://github.com/skvadrik/re2c/releases/download/$RE2C_VERS
 readonly CMARK_VERSION=0.29.0
 readonly CMARK_URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 
+readonly PY2_VERSION=2.7.18
+readonly PY2_URL="https://www.python.org/ftp/python/2.7.18/Python-$PY2_VERSION.tar.xz"
+
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
@@ -168,10 +171,13 @@ fetch() {
     return
   fi
 
+  download-to $DEPS_SOURCE_DIR/python2 "$PY2_URL"
   download-to $DEPS_SOURCE_DIR/python3 "$PY3_URL"
 
   maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
   maybe-extract $DEPS_SOURCE_DIR/cmark "$(basename $CMARK_URL)" cmark-$CMARK_VERSION
+
+  maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
   # This is in $DEPS_SOURCE_DIR to COPY into containers, which mycpp will directly import.
@@ -275,8 +281,13 @@ install-wedges() {
     return
   fi
 
+  if ! wedge-exists python2 $PY2_VERSION; then
+    deps/wedge.sh unboxed-build _build/deps-source/python2/
+  fi
+  return
+
   # TODO: make the Python build faster by using all your cores?
-  if ! wedge-exists python3 3.10.4; then
+  if ! wedge-exists python3 $PY3_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/python3/
   fi
 

@@ -16,6 +16,13 @@ ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
 
+# put 'python2' in $PATH
+readonly WEDGE_PY2_DIR=$ROOT_WEDGE_DIR/pkg/python2/2.7.18/bin
+if test -d $WEDGE_PY2_DIR; then
+  export PATH="$WEDGE_PY2_DIR:$PATH"
+fi
+
+# put 'python3' in $PATH
 readonly WEDGE_PY3_DIR=$ROOT_WEDGE_DIR/pkg/python3/3.10.4/bin
 if test -d $WEDGE_PY3_DIR; then
   export PATH="$WEDGE_PY3_DIR:$PATH"
