@@ -1,3 +1,5 @@
+## compare_shells: bash dash mksh
+## oils_failures_allowed: 8
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -384,4 +386,22 @@ set -f
 echo $var
 ## STDOUT:
 \
+## END
+
+#### Bug #627, empty IFS
+
+set -- a 'b c'
+IFS=''
+printf '[%s]\n' $@ $*
+
+argv.py $@
+argv.py $*
+
+## STDOUT:
+[a]
+[b c]
+[a]
+[b c]
+['a', 'b c']
+['a', 'b c']
 ## END

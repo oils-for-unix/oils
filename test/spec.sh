@@ -125,8 +125,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec spec/word-split.test.sh --oils-failures-allowed 7 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file word-split "$@"
 }
 
 word-eval() {
