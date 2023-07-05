@@ -303,6 +303,7 @@ print-shwrap() {
   cat << 'EOF'
 #!/bin/sh
 REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
+. $REPO_ROOT/build/py2.sh
 EOF
 
   case $template in

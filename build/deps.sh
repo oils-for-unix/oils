@@ -282,7 +282,6 @@ install-wedges() {
   if ! wedge-exists python2 $PY2_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/python2/
   fi
-  return
 
   # TODO: make the Python build faster by using all your cores?
   if ! wedge-exists python3 $PY3_VERSION; then
