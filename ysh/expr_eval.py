@@ -1148,7 +1148,7 @@ class OilEvaluator(object):
             recv = self.methods.get(ty)
             method = recv.get(name) if recv else None
             if not method:
-                raise error.InvalidType('Unbound method %r' % name, node.attr)
+                raise error.InvalidType('Method %r does not exist on %r' % (name, ty), node.attr)
 
             return value.BoundFunc(o, method)
 
