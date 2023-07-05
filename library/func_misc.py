@@ -21,7 +21,6 @@ class Append(vm._Callable):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         pass
 
     def Call(self, pos_args, named_args):
@@ -54,7 +53,6 @@ class Pop(vm._Callable):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         pass
 
     def Call(self, pos_args, named_args):
@@ -82,7 +80,6 @@ class StartsWith(vm._Callable):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         pass
 
     def Call(self, pos_args, named_args):
@@ -102,7 +99,6 @@ class Strip(vm._Callable):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         pass
 
     def Call(self, pos_args, named_args):
@@ -121,7 +117,6 @@ class Upper(vm._Callable):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         pass
 
     def Call(self, pos_args, named_args):
@@ -140,7 +135,6 @@ class Keys(vm._Callable):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         pass
 
     def Call(self, pos_args, named_args):
