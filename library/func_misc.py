@@ -4,7 +4,7 @@ func_misc.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_t, value_str
+from _devbuild.gen.runtime_asdl import value, value_t, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import vm
