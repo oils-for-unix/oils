@@ -44,3 +44,23 @@ const check = "abc"->startswith
 ## STDOUT:
 (Bool)   True
 ## END
+
+#### Bound methods, receiver value/reference semantics
+var is_a_ref = { "foo": "bar" }
+const f = is_a_ref->keys
+= f()
+setvar is_a_ref["baz"] = 42
+= f()
+
+var is_a_val = "abc"
+const g = is_a_val->startswith
+= g("a")
+setvar is_a_val = "xyz"
+= g("a")
+## status: 0
+## STDOUT:
+(List)   ['foo']
+(List)   ['foo', 'baz']
+(Bool)   True
+(Bool)   True
+## END
