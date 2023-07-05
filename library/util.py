@@ -4,7 +4,7 @@ _func_utils.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_t, value_str
+from _devbuild.gen.runtime_asdl import value, value_t, value_str
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 
@@ -34,14 +34,14 @@ class ArgsSpec(object):
 
         for i in xrange(len(pos_args)):
             expected = self.pos_args[i]
-            got = pos_args[i].tag()
-            if got != expected:
-                msg = "%s() expected %s but received %s" % (func_name, value_str(expected), value_str(got))
-                raise error.InvalidType(msg, loc.Missing)
+            got = pos_args[i]
+            if got.tag() != expected:
+                msg = "%s() expected %s" % (func_name, value_str(expected))
+                raise error.InvalidType2(got, msg, loc.Missing)
 
         for name in named_args:
             expected = self.named_args[name]
-            got = named_args[name].tag()
-            if got != expected:
-                msg = "%s() expected %s but received %s" % (func_name, value_str(expected), value_str(got))
-                raise error.InvalidType(msg, loc.Missing)
+            got = named_args[name]
+            if got.tag() != expected:
+                msg = "%s() expected %s" % (func_name, value_str(expected))
+                raise error.InvalidType2(got, msg, loc.Missing)
