@@ -194,6 +194,7 @@ def InitCommandEvaluator(parse_ctx=None,
     fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
     aliases = {} if aliases is None else aliases
     procs = {}
+    methods = {}
 
     compopt_state = completion.OptionState()
     comp_lookup = comp_lookup or completion.Lookup()
@@ -244,7 +245,8 @@ def InitCommandEvaluator(parse_ctx=None,
                                            parse_ctx, errfmt)
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
-    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter, errfmt)
+    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods, splitter,
+                                     errfmt)
     tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)

@@ -40,6 +40,7 @@ from frontend import parse_lib
 
 from library import func_hay
 from library import func_cpython
+from library import func_misc
 
 from ysh import expr_eval
 from ysh import builtin_json
@@ -287,6 +288,17 @@ def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex,
             hay_state, mem, cmd_ev)
 
 
+def AddMethods(methods):
+    # type: (Dict[int, Dict[str, vm._Callable]]) -> None
+    """Initialize methods table."""
+    methods[value_e.Str] = {
+        'startswith': func_misc.StartsWith(),
+        'strip': func_misc.Strip(),
+        'upper': func_misc.Upper(),
+    }
+    methods[value_e.Dict] = {'keys': func_misc.Keys()}
+
+
 def InitAssignmentBuiltins(mem, procs, errfmt):
     # type: (state.Mem, Dict[str, Proc], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
 
@@ -432,6 +444,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
+    AddMethods(methods)
 
     hay_state = state.Hay()
 
@@ -616,8 +629,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                          parse_ctx, errfmt)
 
     if mylib.PYTHON:
-        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, splitter,
-                                         errfmt)
+        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods,
+                                         splitter, errfmt)
     else:
         expr_ev = None
 

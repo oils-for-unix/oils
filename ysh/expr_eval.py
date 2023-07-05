@@ -103,6 +103,7 @@ class OilEvaluator(object):
             mem,  # type: Mem
             mutable_opts,  # type: state.MutableOpts
             funcs,  # type: Dict[str, Any]
+            methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
             errfmt,  # type: ui.ErrorFormatter
     ):
@@ -113,6 +114,7 @@ class OilEvaluator(object):
         self.mem = mem
         self.mutable_opts = mutable_opts
         self.funcs = funcs
+        self.methods = methods
         self.splitter = splitter
         self.errfmt = errfmt
 
@@ -911,9 +913,9 @@ class OilEvaluator(object):
         func = self._EvalExpr(node.func)
         UP_func = func
 
-        if mylib.PYTHON:
-            with tagswitch(func) as case:
-                if case(value_e.Func):
+        with tagswitch(func) as case:
+            if case(value_e.Func):
+                if mylib.PYTHON:
                     func = cast(value.Func, UP_func)
                     f = func.callable
                     if isinstance(f, vm._Callable):  # typed
@@ -936,7 +938,24 @@ class OilEvaluator(object):
 
                         return cpython._PyObjToValue(ret)
                 else:
-                    raise error.InvalidType('Expected value.Func', loc.Missing)
+                    raise NotImplementedError() # isinstance does not work in mycpp
+
+            elif case(value_e.BoundFunc):
+                func = cast(value.BoundFunc, UP_func)
+                f = func.callable
+
+                if mylib.PYTHON:
+                    assert isinstance(f, vm._Callable), "Bound funcs must be typed"
+
+                pos_args, named_args = self.EvalArgList2(node.args)
+                pos_args.insert(0, func.me)
+
+                ret = f.Call(pos_args, named_args)
+
+                return ret
+
+            else:
+                raise error.InvalidType('Expected a function or method', loc.Missing)
 
         raise AssertionError()
 
@@ -1124,16 +1143,14 @@ class OilEvaluator(object):
         id_ = node.op.id
         if id_ == Id.Expr_RArrow:
             name = node.attr.tval
-            with tagswitch(o) as case:
-                if case(value_e.Str):
-                    if mylib.PYTHON:
-                        o = cast(value.Str, UP_o)
-                        method = getattr(o.s, name)
-                        return value.Func(method)
-                    else:
-                        raise AssertionError()
-                else:
-                    raise error.InvalidType('Method %r' % name, loc.Missing)
+            ty = o.tag()
+
+            recv = self.methods.get(ty)
+            method = recv.get(name) if recv else None
+            if not method:
+                raise error.InvalidType('Method %r does not exist on %r' % (name, ty), node.attr)
+
+            return value.BoundFunc(o, method)
 
         if id_ == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval
