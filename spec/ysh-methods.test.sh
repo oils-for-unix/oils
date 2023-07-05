@@ -1,4 +1,4 @@
-# spec/ysh-case
+# spec/ysh-methods
 
 ## our_shell: ysh
 ## oils_failures_allowed: 0
