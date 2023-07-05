@@ -67,6 +67,11 @@ def TarballManifest(cc_sources):
   names.extend([
     'build/common.sh',
     'build/native.sh',
+
+    # These 2 are used by build/ninja-rules-cpp.sh
+    'build/py2.sh',
+    'build/dev-shell.sh',
+
     'build/ninja-rules-cpp.sh',
     'mycpp/common.sh',
 

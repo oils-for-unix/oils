@@ -1,6 +1,8 @@
 # Usage: source build/py2.sh
 #
 # Duplicates build/dev-shell.sh, for _bin/shwrap stubs
+#
+# IMPORTANT: sourced by _build/oils.sh, so it must remain POSIX SHELL
 
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 

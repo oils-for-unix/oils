@@ -5,6 +5,8 @@
 #   source build/dev-shell.sh
 #
 # Note: assumes that $REPO_ROOT is $PWD.
+#
+# IMPORTANT: sourced by _build/oils.sh, so it must remain POSIX SHELL
 
 # Old location for python3
 readonly DEPS_DIR="$PWD/../oil_DEPS"
