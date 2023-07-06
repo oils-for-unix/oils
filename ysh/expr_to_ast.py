@@ -1152,43 +1152,15 @@ class Transformer(object):
                 pnode.GetChild(pos + 1))
             pos += 3
 
-    def NamedFunc(self, pnode, out):
+    def TeaFunc(self, pnode, out):
         # type: (PNode, command.Func) -> None
         """Parse tree to LST
 
-        named_func: Expr_Name '(' [func_params] [';' func_params] ')'
+        tea_func:
+          '(' [func_params] [';' func_params] ')' [type_expr_list] suite 
         """
-        assert pnode.typ == grammar_nt.named_func
-
-        out.name = pnode.GetChild(0).tok
-
-        pos = 2
-        typ2 = pnode.GetChild(pos).typ
-        if ISNONTERMINAL(typ2):
-            assert typ2 == grammar_nt.func_params, pnode.GetChild(
-                pos)  # f(x, y)
-            # every other one is a comma
-            out.pos_params, out.pos_splat = self._FuncParams(
-                pnode.GetChild(pos))
-            pos += 1
-
-        id_ = pnode.GetChild(pos).tok.id
-        if id_ == Id.Op_RParen:  # f()
-            pos += 1
-        elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._FuncParams(
-                pnode.GetChild(pos + 1))
-            pos += 3
-
-    def NamedTeaFunc(self, pnode, out):
-        # type: (PNode, command.Func) -> None
-        """Parse tree to LST
-
-        named_tea_func: Expr_Name tea_func
-        """
-        assert pnode.typ == grammar_nt.named_tea_func
-
-        out.name = pnode.GetChild(0).tok
+        assert pnode.typ == grammar_nt.tea_func
+        assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
 
         pos = 1
         typ2 = pnode.GetChild(pos).typ
@@ -1207,6 +1179,20 @@ class Transformer(object):
             out.named_params, out.named_splat = self._FuncParams(
                 pnode.GetChild(pos + 1))
             pos += 3
+
+        if pnode.GetChild(pos).typ == grammar_nt.type_expr_list:
+            out.return_types = self._TypeExprList(pnode.GetChild(pos))
+            pos += 1
+
+        out.body = self._Suite(pnode.GetChild(pos))
+
+    def NamedTeaFunc(self, pnode, out):
+        # type: (PNode, command.Func) -> None
+        """named_tea_func: Expr_Name tea_func."""
+        assert pnode.typ == grammar_nt.named_tea_func
+
+        out.name = pnode.GetChild(0).tok
+        self.TeaFunc(pnode.GetChild(1), out)
 
     def _DataParams(self, p_node):
         # type: (PNode) -> List[Param]

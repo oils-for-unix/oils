@@ -2153,6 +2153,7 @@ class CommandParser(object):
         if self.parse_opts.parse_tea():
             if self.c_id == Id.KW_Func:  # Duplicate kept for compatibility with tea
                 out0 = command.Func.CreateNull(alloc_lists=True)
+                out0.keyword = word_.AsKeywordToken(self.cur_word)
                 self.parse_ctx.ParseTeaFunc(self.lexer, out0)
                 self._SetNext()
                 return out0
