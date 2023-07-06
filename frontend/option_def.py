@@ -150,6 +150,7 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
 _BASIC_PARSE_OPTIONS = [
     'parse_at',  # @foo, @array(a, b)
     'parse_proc',  # proc p { ... }
+    'parse_func',  # func f(x) { ... }
     'parse_brace',  # cd /bin { ... }
 
     # bare assignment 'x = 42' is allowed in Hay { } blocks, but disallowed

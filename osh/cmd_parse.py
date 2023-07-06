@@ -2001,6 +2001,24 @@ class CommandParser(object):
 
         return node
 
+    def ParseYshFunc(self):
+        # type: () -> command.Func
+        """
+        ysh_func: KW_Func Expr_Name '(' [func_params] [';' func_params] ')' brace_group
+
+        Looking at KW_Func
+        """
+        node = command.Func.CreateNull(alloc_lists=True)
+
+        node.keyword = word_.AsKeywordToken(self.cur_word)
+
+        self.parse_ctx.ParseFunc(self.lexer, node)
+
+        self._SetNext()
+        node.body = self.ParseBraceGroup()
+
+        return node
+
     def ParseCoproc(self):
         # type: () -> command_t
         """
@@ -2099,6 +2117,13 @@ class CommandParser(object):
                 p_die('Enable YSH to use procs (parse_proc)',
                       loc.Word(self.cur_word))
 
+        if self.c_id == Id.KW_Func:  # func f(x) { ... }
+            if self.parse_opts.parse_func():
+                return self.ParseYshFunc()
+            else:
+                p_die('Enable YSH to use funcs (parse_func)',
+                      loc.Word(self.cur_word))
+
         if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
             keyword_id = self.c_id
             kw_token = word_.LiteralToken(self.cur_word)
@@ -2127,7 +2152,7 @@ class CommandParser(object):
         # Top-level keywords to hide: func, data, enum, class/mod.  Not sure about
         # 'use'.
         if self.parse_opts.parse_tea():
-            if self.c_id == Id.KW_Func:
+            if self.c_id == Id.KW_Func:  # Duplicate kept for compatibility with tea
                 out0 = command.Func.CreateNull(alloc_lists=True)
                 self.parse_ctx.ParseFunc(self.lexer, out0)
                 self._SetNext()

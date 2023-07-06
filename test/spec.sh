@@ -810,6 +810,10 @@ ysh-methods() {
   run-file ysh-methods "$@"
 }
 
+ysh-funcs() {
+  run-file ysh-funcs "$@"
+}
+
 ysh-funcs-builtin() {
   sh-spec spec/ysh-funcs-builtin.test.sh --oils-failures-allowed 0 \
     $YSH_LIST "$@"

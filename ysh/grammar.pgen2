@@ -428,7 +428,7 @@ tea_func: (
 )
 
 # Oil entry point
-named_func: Expr_Name tea_func
+named_func: Expr_Name '(' [func_params] [';' func_params] ')'
 
 # TODO: Methods differ from functions:
 #  super() can be the first arg

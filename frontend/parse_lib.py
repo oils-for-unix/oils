@@ -407,7 +407,7 @@ class ParseContext(object):
     def ParseFunc(self, lexer, out):
         # type: (Lexer, command.Func) -> Token
         """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
-        e_parser = self._TeaParser()
+        e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer, grammar_nt.named_func)
 
