@@ -1124,13 +1124,13 @@ class Transformer(object):
 
         return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
-    def NamedFunc(self, pnode, out):
+    def YshFunc(self, pnode, out):
         # type: (PNode, command.Func) -> None
         """Parse tree to LST
 
-        named_func: Expr_Name '(' [func_params] [';' func_params] ')'
+        ysh_func: Expr_Name '(' [func_params] [';' func_params] ')'
         """
-        assert pnode.typ == grammar_nt.named_func
+        assert pnode.typ == grammar_nt.ysh_func
 
         out.name = pnode.GetChild(0).tok
 
@@ -1186,10 +1186,10 @@ class Transformer(object):
 
         out.body = self._Suite(pnode.GetChild(pos))
 
-    def NamedTeaFunc(self, pnode, out):
+    def NamedFunc(self, pnode, out):
         # type: (PNode, command.Func) -> None
-        """named_tea_func: Expr_Name tea_func."""
-        assert pnode.typ == grammar_nt.named_tea_func
+        """named_func: Expr_Name tea_func."""
+        assert pnode.typ == grammar_nt.named_func
 
         out.name = pnode.GetChild(0).tok
         self.TeaFunc(pnode.GetChild(1), out)
