@@ -2118,7 +2118,7 @@ class CommandParser(object):
             # ie.  bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
-            if self.parse_opts.parse_func():
+            if self.parse_opts.parse_func() and not self.parse_opts.parse_tea():
                 return self.ParseYshFunc()
 
             # otherwise silently pass, like for the procs
@@ -2153,7 +2153,7 @@ class CommandParser(object):
         if self.parse_opts.parse_tea():
             if self.c_id == Id.KW_Func:  # Duplicate kept for compatibility with tea
                 out0 = command.Func.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseFunc(self.lexer, out0)
+                self.parse_ctx.ParseTeaFunc(self.lexer, out0)
                 self._SetNext()
                 return out0
             if self.c_id == Id.KW_Data:

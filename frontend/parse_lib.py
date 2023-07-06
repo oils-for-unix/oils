@@ -406,7 +406,7 @@ class ParseContext(object):
 
     def ParseFunc(self, lexer, out):
         # type: (Lexer, command.Func) -> Token
-        """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
+        """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer, grammar_nt.named_func)
@@ -415,6 +415,20 @@ class ParseContext(object):
                 self.p_printer.Print(pnode)
 
             self.tr.NamedFunc(pnode, out)
+
+        return last_token
+
+    def ParseTeaFunc(self, lexer, out):
+        # type: (Lexer, command.Func) -> Token
+        """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
+        e_parser = self._TeaParser()
+        with ctx_PNodeAllocator(e_parser):
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.named_tea_func)
+
+            if 0:
+                self.p_printer.Print(pnode)
+
+            self.tr.NamedTeaFunc(pnode, out)
 
         return last_token
 

@@ -1152,6 +1152,62 @@ class Transformer(object):
                 pnode.GetChild(pos + 1))
             pos += 3
 
+    def NamedFunc(self, pnode, out):
+        # type: (PNode, command.Func) -> None
+        """Parse tree to LST
+
+        named_func: Expr_Name '(' [func_params] [';' func_params] ')'
+        """
+        assert pnode.typ == grammar_nt.named_func
+
+        out.name = pnode.GetChild(0).tok
+
+        pos = 2
+        typ2 = pnode.GetChild(pos).typ
+        if ISNONTERMINAL(typ2):
+            assert typ2 == grammar_nt.func_params, pnode.GetChild(
+                pos)  # f(x, y)
+            # every other one is a comma
+            out.pos_params, out.pos_splat = self._FuncParams(
+                pnode.GetChild(pos))
+            pos += 1
+
+        id_ = pnode.GetChild(pos).tok.id
+        if id_ == Id.Op_RParen:  # f()
+            pos += 1
+        elif id_ == Id.Op_Semi:  # f(; a)
+            out.named_params, out.named_splat = self._FuncParams(
+                pnode.GetChild(pos + 1))
+            pos += 3
+
+    def NamedTeaFunc(self, pnode, out):
+        # type: (PNode, command.Func) -> None
+        """Parse tree to LST
+
+        named_tea_func: Expr_Name tea_func
+        """
+        assert pnode.typ == grammar_nt.named_tea_func
+
+        out.name = pnode.GetChild(0).tok
+
+        pos = 1
+        typ2 = pnode.GetChild(pos).typ
+        if ISNONTERMINAL(typ2):
+            assert typ2 == grammar_nt.func_params, pnode.GetChild(
+                pos)  # f(x, y)
+            # every other one is a comma
+            out.pos_params, out.pos_splat = self._FuncParams(
+                pnode.GetChild(pos))
+            pos += 1
+
+        id_ = pnode.GetChild(pos).tok.id
+        if id_ == Id.Op_RParen:  # f()
+            pos += 1
+        elif id_ == Id.Op_Semi:  # f(; a)
+            out.named_params, out.named_splat = self._FuncParams(
+                pnode.GetChild(pos + 1))
+            pos += 3
+
     def _DataParams(self, p_node):
         # type: (PNode) -> List[Param]
         """data_params: (func_param ',')* [ func_param [','] ]"""

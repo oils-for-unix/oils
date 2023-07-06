@@ -426,6 +426,7 @@ tea_func: (
   '(' [func_params] [';' func_params] ')' [type_expr_list]
   suite
 )
+named_tea_func: Expr_Name tea_func
 
 # Oil entry point
 named_func: Expr_Name '(' [func_params] [';' func_params] ')'
