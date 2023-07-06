@@ -2114,14 +2114,14 @@ class CommandParser(object):
             if self.parse_opts.parse_proc():
                 return self.ParseYshProc()
 
-            # otherwise silently pass, this is to support,
-            # ie.  bash -c 'proc() { echo p; }; proc'
+            # Otherwise silently pass. This is to support scripts like:
+            # $ bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
             if self.parse_opts.parse_func() and not self.parse_opts.parse_tea():
                 return self.ParseYshFunc()
 
-            # otherwise silently pass, like for the procs
+            # Otherwise silently pass, like for the procs.
 
         if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
             keyword_id = self.c_id
@@ -2151,7 +2151,7 @@ class CommandParser(object):
         # Top-level keywords to hide: func, data, enum, class/mod.  Not sure about
         # 'use'.
         if self.parse_opts.parse_tea():
-            if self.c_id == Id.KW_Func:  # Duplicate kept for compatibility with tea
+            if self.c_id == Id.KW_Func:
                 out0 = command.Func.CreateNull(alloc_lists=True)
                 out0.keyword = word_.AsKeywordToken(self.cur_word)
                 self.parse_ctx.ParseTeaFunc(self.lexer, out0)
