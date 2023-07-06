@@ -196,6 +196,7 @@ shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_equals
+shopt -s parse_func
 shopt -s parse_paren
 shopt -s parse_proc
 shopt -s parse_raw_string
