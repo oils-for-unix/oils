@@ -2113,16 +2113,15 @@ class CommandParser(object):
             # on.
             if self.parse_opts.parse_proc():
                 return self.ParseYshProc()
-            else:
-                p_die('Enable YSH to use procs (parse_proc)',
-                      loc.Word(self.cur_word))
+
+            # otherwise silently pass, this is to support,
+            # ie.  bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
             if self.parse_opts.parse_func():
                 return self.ParseYshFunc()
-            else:
-                p_die('Enable YSH to use funcs (parse_func)',
-                      loc.Word(self.cur_word))
+
+            # otherwise silently pass, like for the procs
 
         if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
             keyword_id = self.c_id
