@@ -1151,7 +1151,7 @@ class Transformer(object):
                 pnode.GetChild(pos + 1))
 
     def TeaFunc(self, pnode, out):
-        # type: (PNode, command.Func) -> None
+        # type: (PNode, command.TeaFunc) -> None
         """Parse tree to LST
 
         tea_func:
@@ -1185,7 +1185,7 @@ class Transformer(object):
         out.body = self._Suite(pnode.GetChild(pos))
 
     def NamedFunc(self, pnode, out):
-        # type: (PNode, command.Func) -> None
+        # type: (PNode, command.TeaFunc) -> None
         """named_func: Expr_Name tea_func."""
         assert pnode.typ == grammar_nt.named_func
 

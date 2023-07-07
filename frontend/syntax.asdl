@@ -370,10 +370,14 @@ module syntax
   | Func(Token keyword, Token name,
          List[Param] pos_params, Token? pos_splat,
          List[Param] named_params, Token? named_splat,
-         List[type_expr] return_types, command body)
+         command body)
 
   # Tea
 
+  | TeaFunc(Token name,
+         List[Param] pos_params, Token? pos_splat,
+         List[Param] named_params, Token? named_splat,
+         List[type_expr] return_types, command body)
   | Data(Token name, List[Param] params)
   | Enum(Token name, List[Variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)

@@ -405,7 +405,7 @@ class ParseContext(object):
         return last_token
 
     def ParseFunc(self, lexer, out):
-        # type: (Lexer, command.Func) -> Token
+        # type: (Lexer, command.Func) -> None
         """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
@@ -416,10 +416,8 @@ class ParseContext(object):
 
             self.tr.YshFunc(pnode, out)
 
-        return last_token
-
     def ParseTeaFunc(self, lexer, out):
-        # type: (Lexer, command.Func) -> Token
+        # type: (Lexer, command.TeaFunc) -> Token
         """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
         e_parser = self._TeaParser()
         with ctx_PNodeAllocator(e_parser):

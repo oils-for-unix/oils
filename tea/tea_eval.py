@@ -15,7 +15,7 @@ import sys
 class Func(object):
 
   def __init__(self, node, pos_defaults, named_defaults, cmd_ev):
-    # type: (command.Func, List[Any], Dict[str, Any], CommandEvaluator) -> None
+    # type: (command.TeaFunc, List[Any], Dict[str, Any], CommandEvaluator) -> None
     self.node = node
     self.pos_defaults = pos_defaults
     self.named_defaults = named_defaults
