@@ -1135,10 +1135,9 @@ class Transformer(object):
         out.name = pnode.GetChild(0).tok
 
         pos = 2
-        typ2 = pnode.GetChild(pos).typ
-        if ISNONTERMINAL(typ2):
-            assert typ2 == grammar_nt.func_params, pnode.GetChild(
-                pos)  # f(x, y)
+        typ = pnode.GetChild(pos).typ  # discriminate f(x) vs. f(; x=y)
+        if ISNONTERMINAL(typ):  # f(x)
+            assert typ == grammar_nt.func_params, pnode.GetChild(pos)
             # every other one is a comma
             out.pos_params, out.pos_splat = self._FuncParams(
                 pnode.GetChild(pos))
@@ -1146,11 +1145,10 @@ class Transformer(object):
 
         id_ = pnode.GetChild(pos).tok.id
         if id_ == Id.Op_RParen:  # f()
-            pos += 1
+            return
         elif id_ == Id.Op_Semi:  # f(; a)
             out.named_params, out.named_splat = self._FuncParams(
                 pnode.GetChild(pos + 1))
-            pos += 3
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.Func) -> None
