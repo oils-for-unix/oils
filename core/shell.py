@@ -629,7 +629,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                          parse_ctx, errfmt)
 
     if mylib.PYTHON:
-        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods,
+        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, funcs, methods,
                                          splitter, errfmt)
     else:
         expr_ev = None
@@ -638,8 +638,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                             tilde_ev, splitter, errfmt)
 
     assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
-    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
-                                       arena, cmd_deps, trap_state, signal_safe)
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, funcs,
+                                       assign_b, arena, cmd_deps, trap_state, signal_safe)
 
     AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 

@@ -259,6 +259,7 @@ class CommandEvaluator(object):
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
             procs,  # type: Dict[str, Proc]
+            funcs,  # type: Dict[str, vm._Callable]
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -286,6 +287,7 @@ class CommandEvaluator(object):
         self.exec_opts = exec_opts
         self.errfmt = errfmt
         self.procs = procs
+        self.funcs = funcs
         self.assign_builtins = assign_builtins
         self.arena = arena
 
@@ -1467,6 +1469,21 @@ class CommandEvaluator(object):
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
                                              node.body, defaults,
                                              False)  # no dynamic scope
+
+                status = 0
+
+            elif case(command_e.Func):
+                node = cast(command.Func, UP_node)
+
+                name = lexer.TokenVal(node.name)
+                if name in self.funcs and not self.exec_opts.redefine_proc():
+                    e_die(
+                        "Func %s was already defined (redefine_proc)" %
+                        node.name, node.name)
+
+                self.funcs[name] = expr_eval.Func(name, node.name,
+                                                  node.pos_params,
+                                                  node.named_params, node.body)
 
                 status = 0
 

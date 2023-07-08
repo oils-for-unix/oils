@@ -1,7 +1,7 @@
 # spec/ysh-funcs
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Identity function
 func identity(x) {
@@ -10,5 +10,5 @@ func identity(x) {
 
 = identity("ysh")
 ## STDOUT:
-ysh
+(Str)   'ysh'
 ## END

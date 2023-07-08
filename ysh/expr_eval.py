@@ -54,6 +54,7 @@ from core import state
 from core import vm
 from frontend import consts
 from frontend import match
+from frontend import lexer
 from frontend import location
 from osh import braces
 from osh import word_compile
@@ -89,6 +90,21 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
     return val
 
 
+class Func(vm._Callable):
+
+    def __init__(self, name, name_loc, pos_params, named_params, body):
+        # (str, loc_t, List[Param] pos_params, List[Param] named_params, command_t body) -> None
+        self.name = name
+        self.name_loc = name_loc
+        self.pos_params = pos_params
+        self.named_params = named_params
+        self.body = body
+
+    def Call(self, pos_args, named_args):
+        # (List[expr_t], Dict[str, expr_t]) -> value_t
+        return pos_args[0]  # TODO: evaluate the function
+
+
 class OilEvaluator(object):
     """Shared between arith and bool evaluators.
 
@@ -102,7 +118,7 @@ class OilEvaluator(object):
             self,
             mem,  # type: Mem
             mutable_opts,  # type: state.MutableOpts
-            funcs,  # type: Dict[str, Any]
+            funcs,  # type: Dict[str, vm._Callable]
             methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
             errfmt,  # type: ui.ErrorFormatter
@@ -910,6 +926,19 @@ class OilEvaluator(object):
         # TODO: 
         # - look in a separate self.funcs namespace
         # - node.func must be a expr.Var
+
+        if node.func.tag() == expr_e.Var:
+            var = cast(expr.Var, node.func)
+            var_name = lexer.TokenVal(var.name)
+            f = self.funcs.get(var_name)
+
+            if not f:
+                e_die('Undefined function %r' % var_name, var.name)
+
+            pos_args, named_args = self.EvalArgList2(node.args)
+            ret = f.Call(pos_args, named_args)
+            return ret
+
         func = self._EvalExpr(node.func)
         UP_func = func
 
