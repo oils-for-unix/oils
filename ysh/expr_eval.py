@@ -73,7 +73,6 @@ if TYPE_CHECKING:
     from core import ui
     from core.state import Mem
     from osh.word_eval import AbstractWordEvaluator
-    from osh.cmd_eval import CommandEvaluator
     from osh import split
 
 _ = log
