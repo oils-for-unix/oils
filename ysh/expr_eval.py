@@ -73,6 +73,7 @@ if TYPE_CHECKING:
     from core import ui
     from core.state import Mem
     from osh.word_eval import AbstractWordEvaluator
+    from osh.cmd_eval import CommandEvaluator
     from osh import split
 
 _ = log
@@ -88,21 +89,6 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
         e_die('Undefined variable %r' % var_name, var_loc)
 
     return val
-
-
-class Func(vm._Callable):
-
-    def __init__(self, name, name_loc, pos_params, named_params, body):
-        # (str, loc_t, List[Param] pos_params, List[Param] named_params, command_t body) -> None
-        self.name = name
-        self.name_loc = name_loc
-        self.pos_params = pos_params
-        self.named_params = named_params
-        self.body = body
-
-    def Call(self, pos_args, named_args):
-        # (List[expr_t], Dict[str, expr_t]) -> value_t
-        return pos_args[0]  # TODO: evaluate the function
 
 
 class OilEvaluator(object):

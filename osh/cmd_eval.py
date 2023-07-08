@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
     from _devbuild.gen.runtime_asdl import cmd_value_t, Cell, lvalue_t
-    from _devbuild.gen.syntax_asdl import Redir, EnvPair
+    from _devbuild.gen.syntax_asdl import Redir, EnvPair, Param
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
@@ -210,6 +210,28 @@ def PlusEquals(old_val, val):
         val = value.MaybeStrArray(strs)
 
     return val
+
+
+class Func(vm._Callable):
+
+    def __init__(self, name, name_loc, pos_params, named_params, body, cmd_ev):
+        # type: (str, loc_t, List[Param], List[Param], command_t, CommandEvaluator) -> None
+        self.name = name
+        self.name_loc = name_loc
+        self.pos_params = pos_params
+        self.named_params = named_params
+        self.body = body
+        self.cmd_ev = cmd_ev
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        is_return, is_fatal = self.cmd_ev.ExecuteAndCatch(self.body)
+        if is_fatal:
+            e_die("Error in function %r" % self.name, self.name_loc)
+
+        status = self.cmd_ev.mem.last_status[-1]
+        return value.Int(status)
 
 
 class ctx_LoopLevel(object):
@@ -1481,9 +1503,8 @@ class CommandEvaluator(object):
                         "Func %s was already defined (redefine_proc)" %
                         node.name, node.name)
 
-                self.funcs[name] = expr_eval.Func(name, node.name,
-                                                  node.pos_params,
-                                                  node.named_params, node.body)
+                self.funcs[name] = Func(name, node.name, node.pos_params,
+                                        node.named_params, node.body, self)
 
                 status = 0
 
