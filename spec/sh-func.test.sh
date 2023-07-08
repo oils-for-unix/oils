@@ -149,7 +149,7 @@ status=42
 status=42
 ## END
 
-#### Functions have be named func or proc
+#### Functions can be named func or proc
 func() { echo f; }
 proc() { echo p; }
 
