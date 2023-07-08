@@ -314,7 +314,7 @@ X="X"
 Yspaces=" Y "
 
 
-#### IFS='' with $@ and $*
+#### IFS='' with $@ and $* (bug #627)
 set -- a 'b c'
 IFS=''
 argv.py at $@
@@ -330,7 +330,7 @@ argv.py star $*
 ['star', 'ab c']
 ## END
 
-#### IFS='' with $@ and $* and printf
+#### IFS='' with $@ and $* and printf (bug #627)
 set -- a 'b c'
 IFS=''
 printf '[%s]\n' $@
@@ -346,7 +346,7 @@ printf '[%s]\n' $*
 [ab c]
 ## END
 
-#### IFS='' with ${a[@]} and ${a[*]}
+#### IFS='' with ${a[@]} and ${a[*]} (bug #627)
 myarray=(a 'b c')
 IFS=''
 argv.py at ${myarray[@]}
@@ -388,20 +388,34 @@ echo $var
 \
 ## END
 
-#### Bug #627, empty IFS
+#### Bug #1664, \\ with noglob
 
-set -- a 'b c'
-IFS=''
-printf '[%s]\n' $@ $*
+# Note that we're not changing IFS
 
-argv.py $@
-argv.py $*
+argv.py [\\]_
+argv.py "[\\]_"
+
+# TODO: no difference observed here, go back to original bug
+
+#argv.py [\\_
+#argv.py "[\\_"
+
+echo noglob
+
+# repeat cases with -f, noglob
+set -f
+
+argv.py [\\]_
+argv.py "[\\]_"
+
+#argv.py [\\_
+#argv.py "[\\_"
 
 ## STDOUT:
-[a]
-[b c]
-[a]
-[b c]
-['a', 'b c']
-['a', 'b c']
+['[\\]_']
+['[\\]_']
+noglob
+['[\\]_']
+['[\\]_']
 ## END
+
