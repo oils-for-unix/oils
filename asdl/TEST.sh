@@ -39,7 +39,6 @@ asdl-check() {
   python3 -m mypy --py2 --strict --follow-imports=silent "$@"
 }
 
-
 # NOTE: We're testing ASDL code generation with --strict because we might want
 # Oil to pass under --strict someday.
 typed-demo-asdl() {
@@ -56,7 +55,7 @@ check-arith() {
   # NOTE: There are still some Any types here!  We don't want them for
   # translation.
 
-  MYPYPATH=. PYTHONPATH=$PY_PATH asdl-check \
+  asdl-check \
     asdl/examples/typed_arith_parse.py \
     asdl/examples/typed_arith_parse_test.py \
     asdl/examples/tdop.py
@@ -65,15 +64,14 @@ check-arith() {
 typed-arith-asdl() {
   check-arith
 
-  export PYTHONPATH=$PY_PATH
-  asdl/examples/typed_arith_parse_test.py
+  PYTHONPATH=$PY_PATH asdl/examples/typed_arith_parse_test.py
 
   banner 'parse'
-  asdl/examples/typed_arith_parse.py parse '40+2'
+  PYTHONPATH=$PY_PATH asdl/examples/typed_arith_parse.py parse '40+2'
   echo
 
   banner 'eval'
-  asdl/examples/typed_arith_parse.py eval '40+2+5'
+  PYTHONPATH=$PY_PATH asdl/examples/typed_arith_parse.py eval '40+2+5'
   echo
 }
 
