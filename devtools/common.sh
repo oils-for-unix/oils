@@ -26,14 +26,11 @@ mypy_() {
   fi
 }
 
-typecheck() {
+DELETE_ME_typecheck() {
   # we 'import libc' but the source is pyext/libc.{c,pyi}
 
   echo "MYPY $@"
 
   MYPYPATH='.:pyext' PYTHONPATH='.' mypy_ --py2 "$@"
 }
-
-readonly MYPY_FLAGS='--strict --no-strict-optional'
-readonly COMMENT_RE='^[ ]*#'
 

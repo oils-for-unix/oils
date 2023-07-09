@@ -7,8 +7,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/common.sh     # typecheck, mypy_
+source build/dev-shell.sh  # python3 in $PATH
 source devtools/run-task.sh  # run-task
+
+readonly MYPY_FLAGS='--strict --no-strict-optional'
+
+# Note: similar to filters in build/dynamic-deps.sh
+readonly COMMENT_RE='^[ ]*#'
 
 typecheck-files() {
   # The --follow-imports=silent option allows adding type annotations
@@ -17,7 +22,8 @@ typecheck-files() {
   # everything will be annotated anyway.  (that would require
   # re-adding assert-one-error and its associated cruft, though).
 
-  typecheck --follow-imports=silent $MYPY_FLAGS "$@"
+  echo "MYPY $@"
+  MYPYPATH='.:pyext' python3 -m mypy --py2 --follow-imports=silent $MYPY_FLAGS "$@"
   echo
 }
 
@@ -47,7 +53,7 @@ check-all() {
 
 soil-run() {
   set -x
-  mypy_ --version
+  python3 -m mypy --version
   set +x
 
   # Generate oils-for-unix dependencies.  Though this is overly aggressive
