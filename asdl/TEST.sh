@@ -11,6 +11,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+source build/dev-shell.sh  # python3 in $PATH
 source devtools/common.sh  # banner
 source test/common.sh      # run-one-test
 
@@ -35,7 +36,7 @@ readonly PY_PATH='.:vendor/'  # note: could consolidate with other scripts
 
 asdl-check() {
   # Unlike Python code, we use --strict mode
-  typecheck --strict --follow-imports=silent "$@"
+  python3 -m mypy --py2 --strict --follow-imports=silent "$@"
 }
 
 
