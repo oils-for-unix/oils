@@ -96,6 +96,23 @@ class ControlFlow(Exception):
         return '<ControlFlow %s %s>' % (self.token, self.arg)
 
 
+class ReturnValue(Exception):
+
+    def __init__(self, token, value):
+        # type: (Token, value_t) -> None
+        """
+        Args:
+          token: the keyword token
+          value: the value to 'return'
+        """
+        self.token = token
+        self.value = value
+
+    def __repr__(self):
+        # type: () -> str
+        return '<Return %s %s>' % (self.token, self.value)
+
+
 def InitUnsafeArith(mem, word_ev, unsafe_arith):
     # type: (state.Mem, NormalWordEvaluator, sh_expr_eval.UnsafeArith) -> None
     """Wire up circular dependencies for UnsafeArith."""

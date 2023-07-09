@@ -226,12 +226,14 @@ class Func(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        is_return, is_fatal = self.cmd_ev.ExecuteAndCatch(self.body)
-        if is_fatal:
-            e_die("Error in function %r" % self.name, self.name_loc)
+        try:
+            _is_return, is_fatal = self.cmd_ev.ExecuteAndCatch(self.body)
+            if is_fatal:
+                e_die("Error in function %r" % self.name, self.name_loc)
 
-        status = self.cmd_ev.mem.last_status[-1]
-        return value.Int(status)
+            return value.Null  # no `return (...)`
+        except vm.ReturnValue as retval:
+            return retval.value
 
 
 class ctx_LoopLevel(object):
@@ -1122,6 +1124,19 @@ class CommandEvaluator(object):
                         sys.stdout.flush()
 
                 # TODO: What about exceptions?  They just throw?
+                status = 0
+
+            elif case(command_e.Retval):
+                node = cast(command.Retval, UP_node)
+
+                if mylib.PYTHON:
+                    val = self.expr_ev.EvalExpr(node.val, node.keyword)
+                else:
+                    # We have to return, but cannot evaluate expressions in the
+                    # native build yet. So we return value.Null for now.
+                    val = value.Null
+                raise vm.ReturnValue(node.keyword, val)
+
                 status = 0
 
             elif case(command_e.ControlFlow):

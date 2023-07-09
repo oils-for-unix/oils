@@ -319,6 +319,7 @@ module syntax
     # Represents "bare assignment"
     # Token left is redundant with pairs[0].left
   | ShAssignment(Token left, List[AssignPair] pairs, List[Redir] redirects)
+  | Retval(Token keyword, expr val)
   | ControlFlow(Token keyword, word? arg_word)
     # ops are |  |&
   | Pipeline(Token? negated, List[command] children, List[Token] ops)
