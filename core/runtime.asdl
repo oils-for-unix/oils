@@ -91,7 +91,7 @@ module runtime
     # Internal detail?  Does it need to be a first class type, or maybe it can
     # double for a range?  It can't be serialized.
     # Might want for i in (1:n) { echo $i }, although it's inconsistent with shell ..
-  | Slice(IntBox? lower, IntBox? upper, IntBox? step)
+  | Slice(IntBox? lower, IntBox? upper)
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
