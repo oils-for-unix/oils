@@ -97,16 +97,6 @@ def _PyObjToValue(val):
         else:
             return value.Dict(typed_dict)
 
-    elif isinstance(val, slice):
-        s = value.Slice(None, None)
-        if val.start:
-            s.lower = IntBox(val.start)
-
-        if val.stop:
-            s.upper = IntBox(val.stop)
-
-        return s
-
     elif isinstance(val, value.Eggex):
         return val  # passthrough
 
@@ -170,18 +160,6 @@ def _ValueToPyObj(val):
             for k, v in val.d.items():
                 d[k] = _ValueToPyObj(v)
             return d
-
-        elif case(value_e.Slice):
-            val = cast(value.Slice, UP_val)
-
-            if val.lower and val.upper:
-                return slice(val.lower.i, val.upper.i)
-            elif val.lower:
-                return slice(val.lower.i, None)
-            elif val.upper:
-                return slice(None, val.upper.i)
-
-            return slice(None, None)
 
         elif case(value_e.Eggex):
             return val  # passthrough

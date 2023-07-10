@@ -976,20 +976,9 @@ class OilEvaluator(object):
                         index = cast(value.Slice, index)
 
                         try:
-                            if index.lower and index.upper:
-                                return value.List(
-                                    obj.items[index.lower.i:index.upper.i])
-
-                            elif index.lower:
-                                return value.List(
-                                    obj.items[index.lower.i:len(obj.items)])
-
-                            elif index.upper:
-                                return value.List(obj.items[:index.upper.i])
-
-                            else:
-                                # l[:] == l
-                                return value.List(list(obj.items))
+                            lower = index.lower.i if index.lower else 0
+                            upper = index.upper.i if index.upper else len(obj.items)
+                            return value.List(obj.items[lower:upper])
 
                         except IndexError:
                             # TODO: expr.Subscript has no error location
@@ -1015,21 +1004,9 @@ class OilEvaluator(object):
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
                         try:
-                            if index.lower and index.upper:
-                                return value.MaybeStrArray(
-                                    obj.strs[index.lower.i:index.upper.i])
-
-                            elif index.lower:
-                                return value.MaybeStrArray(
-                                    obj.strs[index.lower.i:len(obj.strs)])
-
-                            elif index.upper:
-                                return value.MaybeStrArray(
-                                    obj.strs[:index.upper.i])
-
-                            else:
-                                # l[:] == l
-                                return value.MaybeStrArray(list(obj.strs))
+                            lower = index.lower.i if index.lower else 0
+                            upper = index.upper.i if index.upper else len(obj.items)
+                            return value.MaybeStrArray(obj.strs[lower:upper])
 
                         except IndexError:
                             # TODO: expr.Subscript has no error location
@@ -1056,18 +1033,9 @@ class OilEvaluator(object):
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
                         try:
-                            if index.lower and index.upper:
-                                return value.Str(obj.s[index.lower.i:index.upper.i])
-
-                            elif index.lower:
-                                return value.Str(obj.s[index.lower.i:])
-
-                            elif index.upper:
-                                return value.Str(obj.s[:index.upper.i])
-
-                            else:
-                                # l[:] == l
-                                return obj
+                            lower = index.lower.i if index.lower else 0
+                            upper = index.upper.i if index.upper else len(obj.items)
+                            return value.Str(obj.s[lower:upper])
 
                         except IndexError:
                             # TODO: expr.Subscript has no error location
