@@ -1005,7 +1005,7 @@ class OilEvaluator(object):
                         index = cast(value.Slice, index)
                         try:
                             lower = index.lower.i if index.lower else 0
-                            upper = index.upper.i if index.upper else len(obj.items)
+                            upper = index.upper.i if index.upper else len(obj.strs)
                             return value.MaybeStrArray(obj.strs[lower:upper])
 
                         except IndexError:
@@ -1034,7 +1034,7 @@ class OilEvaluator(object):
                         index = cast(value.Slice, index)
                         try:
                             lower = index.lower.i if index.lower else 0
-                            upper = index.upper.i if index.upper else len(obj.items)
+                            upper = index.upper.i if index.upper else len(obj.s)
                             return value.Str(obj.s[lower:upper])
 
                         except IndexError:
