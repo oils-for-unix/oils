@@ -731,6 +731,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = cast(value.AssocArray, UP_val)
                 length = len(val.d)
 
+            elif case(value_e.List):
+                val = cast(value.List, UP_val)
+                length = len(val.items)
+
+            elif case(value_e.Dict):
+                val = cast(value.Dict, UP_val)
+                length = len(val.d)
+
             else:
                 raise error.InvalidType2(val, "Can't take length", loc.Missing)
 
@@ -2287,3 +2295,5 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
         # type: (CommandSub) -> part_value.String
         # pretend it's quoted; no split or glob
         return part_value.String('__NO_PROCESS_SUB__', True, False)
+
+# vim: sw=4

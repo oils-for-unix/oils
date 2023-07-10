@@ -896,8 +896,7 @@ ysh-var-sub() {
 }
 
 ysh-with-sh() {
-  sh-spec spec/ysh-with-sh.test.sh --oils-failures-allowed 6 \
-    $YSH_LIST "$@"
+  run-file ysh-with-sh "$@"
 }
 
 ysh-word-eval() {
