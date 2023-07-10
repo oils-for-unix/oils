@@ -466,8 +466,7 @@ array() {
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file array-compat "$@"
 }
 
 type-compat() {
