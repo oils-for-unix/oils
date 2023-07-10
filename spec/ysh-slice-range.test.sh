@@ -78,17 +78,6 @@ implicit
 (List)   ['4', '5']
 ## END
 
-#### Explicit slice with step
-shopt -s oil:all
-var mylist = [0,1,2,3,4,5,6,7,8]
-var x = mylist[slice(1, 7, 2)]
-write @x
-## STDOUT:
-1
-3
-5
-## END
-
 #### Index with expression
 var mydict = {['5']: 3}
 var val = mydict["$[2+3]"]

@@ -636,7 +636,7 @@ class OilEvaluator(object):
 
             upper = IntBox(cast(value.Int, UP_upper).i)
 
-        return value.Slice(lower, upper, IntBox(1))
+        return value.Slice(lower, upper)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> bool
@@ -975,34 +975,15 @@ class OilEvaluator(object):
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
 
-                        if mylib.PYTHON:
-                            # stride not supported in mycpp
+                        try:
+                            lower = index.lower.i if index.lower else 0
+                            upper = index.upper.i if index.upper else len(obj.items)
+                            return value.List(obj.items[lower:upper])
 
-                            step = index.step.i if index.step else 1
-
-                            try:
-                                if index.lower and index.upper:
-                                    return value.List(
-                                        obj.items[index.lower.i:index.upper.
-                                                  i:step])
-
-                                elif index.lower:
-                                    return value.List(
-                                        obj.items[index.lower.i:len(obj.items
-                                                                    ):step])
-
-                                elif index.upper:
-                                    return value.List(
-                                        obj.items[:index.upper.i:step])
-
-                                else:
-                                    # l[:] == l
-                                    return value.List(list(obj.items))
-
-                            except IndexError:
-                                # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range',
-                                                 loc.Missing)
+                        except IndexError:
+                            # TODO: expr.Subscript has no error location
+                            raise error.Expr('index out of range',
+                                             loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1022,32 +1003,15 @@ class OilEvaluator(object):
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
-                        if mylib.PYTHON:
-                            step = index.step.i if index.step else 1
+                        try:
+                            lower = index.lower.i if index.lower else 0
+                            upper = index.upper.i if index.upper else len(obj.strs)
+                            return value.MaybeStrArray(obj.strs[lower:upper])
 
-                            try:
-                                if index.lower and index.upper:
-                                    return value.MaybeStrArray(
-                                        obj.strs[index.lower.i:index.upper.
-                                                 i:step])
-
-                                elif index.lower:
-                                    return value.MaybeStrArray(
-                                        obj.strs[index.lower.i:len(obj.strs
-                                                                   ):step])
-
-                                elif index.upper:
-                                    return value.MaybeStrArray(
-                                        obj.strs[:index.upper.i:step])
-
-                                else:
-                                    # l[:] == l
-                                    return value.MaybeStrArray(list(obj.strs))
-
-                            except IndexError:
-                                # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range',
-                                                 loc.Missing)
+                        except IndexError:
+                            # TODO: expr.Subscript has no error location
+                            raise error.Expr('index out of range',
+                                             loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1068,31 +1032,15 @@ class OilEvaluator(object):
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
+                        try:
+                            lower = index.lower.i if index.lower else 0
+                            upper = index.upper.i if index.upper else len(obj.s)
+                            return value.Str(obj.s[lower:upper])
 
-                        if mylib.PYTHON:
-                            step = index.step.i if index.step else 1
-
-                            try:
-                                if index.lower and index.upper:
-                                    return value.Str(obj.s[index.lower.i:index.
-                                                           upper.i:step])
-
-                                elif index.lower:
-                                    return value.Str(
-                                        obj.s[index.lower.i::step])
-
-                                elif index.upper:
-                                    return value.Str(
-                                        obj.s[:index.upper.i:step])
-
-                                else:
-                                    # l[:] == l
-                                    return obj
-
-                            except IndexError:
-                                # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range',
-                                                 loc.Missing)
+                        except IndexError:
+                            # TODO: expr.Subscript has no error location
+                            raise error.Expr('index out of range',
+                                             loc.Missing)
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
