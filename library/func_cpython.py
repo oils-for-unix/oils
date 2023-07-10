@@ -184,9 +184,6 @@ def Init(mem):
     # round()
     # divmod() - probably useful?  Look at the implementation
 
-    # Temporary: use xrange until we rewrite in YSH
-    SetGlobalFunc(mem, 'range', lambda *args: list(xrange(*args)))
-
     SetGlobalFunc(mem, 'any', any)  # IN-YSH with Bool
     SetGlobalFunc(mem, 'all', all)  # IN-YSH with Bool
     SetGlobalFunc(mem, 'sum', sum)  # IN-YSH with +

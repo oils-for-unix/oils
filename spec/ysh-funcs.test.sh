@@ -150,7 +150,7 @@ var cache = []
 var maxSize = 4
 
 func remove(l, i) {
-  for i in (range(i, len(l) - 1)) {
+  for i in (i:len(l) - 1) {
     setvar l[i] = l[i + 1]
   }
 
