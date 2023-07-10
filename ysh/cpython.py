@@ -8,7 +8,6 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
-    IntBox,
 )
 from _devbuild.gen.syntax_asdl import loc
 from core import error
