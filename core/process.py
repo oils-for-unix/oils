@@ -41,6 +41,7 @@ from osh import cmd_eval
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems, StrFromC
 
+import libc
 import posix_ as posix
 from posix_ import (
     # translated by mycpp and directly called!  No wrapper!
@@ -876,6 +877,7 @@ class Job(object):
         # type: () -> None
         # Initial state with & or Ctrl-Z is Running.
         self.state = job_state_e.Running
+        self.job_id = -1
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -884,6 +886,11 @@ class Job(object):
     def State(self):
         # type: () -> job_state_t
         return self.state
+
+    def GroupId(self):
+        # type: () -> int
+        """Only supported for Process right now."""
+        raise NotImplementedError()
 
     def JobWait(self, waiter):
         # type: (Waiter) -> wait_status_t
@@ -935,6 +942,15 @@ class Process(Job):
         #s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
         #return '<Process %s%s>' % (self.thunk, s)
         return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
+
+    def GroupId(self):
+        # type: () -> int
+        """Returns the process' group ID."""
+        if self.parent_pipeline:
+            # Only supported for standalone processes right now
+            raise NotImplementedError()
+
+        return self.pid
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1475,12 +1491,28 @@ class JobList(object):
         # And we can find what part of the pipeline it's in.
 
         self.last_stopped_pid = pid
+        job = self.child_procs[pid]
+        if job.job_id == -1:
+            self.AddJob(job) # want this to show up in 'jobs' list
 
     def GetLastStopped(self):
         # type: () -> int
 
         # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
         return self.last_stopped_pid
+
+    def GetJobWithSpec(self, job_spec):
+        # type: (str) -> Optional[Job]
+        # TODO: Add support for job specs other than %<digits>.
+        # The Bash manual has some notes about different kinds of specs:
+        # https://www.gnu.org/software/bash/manual/html_node/Job-Control-Basics.html
+        m = libc.regex_match(r'^%([0-9]+)$', job_spec)
+        if m and len(m) > 1:
+            job_id = int(m[1])
+            if job_id in self.jobs:
+                return self.jobs[job_id]
+
+        return None
 
     def WhenContinued(self, pid, waiter):
         # type: (int, Waiter) -> int
@@ -1499,7 +1531,8 @@ class JobList(object):
         if pid == self.last_stopped_pid:
             self.last_stopped_pid = -1
 
-        mylib.dict_erase(self.jobs, pid)
+        job = self.JobFromPid(pid)
+        mylib.dict_erase(self.jobs, job.job_id)
 
     def AddJob(self, job):
         # type: (Job) -> int
@@ -1514,6 +1547,7 @@ class JobList(object):
         2. stopped jobs: sleep 5; then Ctrl-Z
         """
         job_id = self.job_id
+        job.job_id = job_id
         self.jobs[job_id] = job
         self.job_id += 1  # For now, the ID is ever-increasing.
         return job_id

@@ -69,7 +69,15 @@ class Fg(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        pid = self.job_list.GetLastStopped()
+        pid = -1
+        if len(cmd_val.argv) > 1:
+            job_spec = cmd_val.argv[1]
+            job = self.job_list.GetJobWithSpec(job_spec)
+            if job:
+                pid = job.GroupId()
+        else:
+            pid = self.job_list.GetLastStopped()
+
         if pid == -1:
             log('No job to put in the foreground')
             return 1
