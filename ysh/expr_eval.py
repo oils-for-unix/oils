@@ -643,6 +643,31 @@ class ExprEvaluator(object):
 
         return value.Slice(lower, upper)
 
+    def _EvalRange(self, node):
+        # type: (expr.Range) -> value_t
+
+        if not node.lower:
+            raise error.Expr('Missing range lower bound', loc.Missing)
+
+        UP_lower = self._EvalExpr(node.lower)
+        if UP_lower.tag() != value_e.Int:
+            raise error.InvalidType('Range indices must be Ints',
+                                    loc.Missing)
+
+        lower = cast(value.Int, UP_lower)
+
+        if not node.upper:
+            raise error.Expr('Missing range upper bound', loc.Missing)
+
+        UP_upper = self._EvalExpr(node.upper)
+        if UP_upper.tag() != value_e.Int:
+            raise error.InvalidType('Range indices must be Ints',
+                                    loc.Missing)
+
+        upper = cast(value.Int, UP_upper)
+
+        return value.Range(lower.i, upper.i)
+
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> bool
         left = self._ValueToNumber(left)
@@ -1190,6 +1215,10 @@ class ExprEvaluator(object):
             elif case(expr_e.Slice):  # a[:0]
                 node = cast(expr.Slice, UP_node)
                 return self._EvalSlice(node)
+
+            elif case(expr_e.Range):
+                node = cast(expr.Range, UP_node)
+                return self._EvalRange(node)
 
             elif case(expr_e.Compare):
                 node = cast(expr.Compare, UP_node)

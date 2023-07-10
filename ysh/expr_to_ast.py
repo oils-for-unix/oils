@@ -574,15 +574,8 @@ class Transformer(object):
                     return self.Expr(pnode.GetChild(0))
 
                 if n == 3:
-                    # Note: 1:4 was special syntax for Python 2 range(1, 4),
-                    # which is [1,2,3]
-                    #
-                    # Since we're doing a minimal version of YSH, let's avoid
-                    # special syntax, and just use the builtin
-
-                    p_die('Ranges not implemented', loc.Missing)
-                    #return expr.Range(self.Expr(pnode.GetChild(0)),
-                    #                  self.Expr(pnode.GetChild(2)))
+                    return expr.Range(self.Expr(pnode.GetChild(0)),
+                                      self.Expr(pnode.GetChild(2)))
 
                 raise AssertionError(n)
 

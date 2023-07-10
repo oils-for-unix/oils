@@ -1386,6 +1386,11 @@ class CommandEvaluator(object):
                             else:
                                 raise AssertionError()
 
+                        elif case(value_e.Range):
+                            val = cast(value.Range, UP_val)
+                            it2 = val_ops.RangeIterator(val)
+                            name1 = location.LName(node.iter_names[0])
+
                         else:
                             raise error.InvalidType2(
                                 val, 'for loop expected List or Dict',
