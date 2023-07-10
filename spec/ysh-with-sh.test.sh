@@ -1,5 +1,5 @@
 ## our_shell: osh
-## oils_failures_allowed: 5
+## oils_failures_allowed: 6
 # compare_shells: bash
 
 #### Can't use x+= on YSH Int (issue #840)
@@ -186,4 +186,22 @@ array abc
 array abc
 Assoc abc
 Assoc abc
+## END
+
+#### Iterate over array with holes (BUG)
+
+declare -a array=(a b)
+array[5]=c
+argv.py "${array[@]}"
+
+# TODO: Can make this like bash with value.BashArray
+declare -a
+
+for i, item in (array) {
+  echo "$i $item"
+}
+
+## STDOUT:
+['a', 'b', 'c']
+array=(); array[0]=a array[1]=b array[5]=c
 ## END
