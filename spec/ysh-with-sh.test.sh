@@ -1,22 +1,66 @@
 ## our_shell: osh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
+# compare_shells: bash
 
-#### Shell Append += with YSH Int (issue #840)
+#### Can't use x+= on YSH Int (issue #840)
 
-var g = 2
-echo g=$g
+sh_str=2
+echo sh_str=$sh_str
+
+sh_str+=1
+echo sh_str=$sh_str
+
+sh_str+=1
+echo sh_str=$sh_str
+
+echo
+
+var ysh_int = 2
+echo ysh_int=$ysh_int
 
 # What should happen here?
 
-g+=1
-echo g=$g
+ysh_int+=1
+echo ysh_int=$ysh_int
 
-g+=1
-echo g=$g
+ysh_int+=1
+echo ysh_int=$ysh_int
 
+## status: 1
 ## STDOUT:
+sh_str=2
+sh_str=21
+sh_str=211
+
+ysh_int=2
 ## END
 
+#### Can't x+= on other YSH types
+
+$SH -c '
+var x = /d+/
+x+=1
+'
+echo eggex $?
+
+$SH -c '
+var d = {}
+d+=1
+'
+echo Dict $?
+
+# This is unspecified for now, could try to match bash
+$SH -c '
+declare -A A=()
+A+=1
+declare -A
+'
+#echo AssocArray $?
+
+## STDOUT:
+eggex 1
+Dict 1
+## END
 
 #### Shell ${x:-default} with YSH List (issue #954)
 
@@ -90,7 +134,7 @@ len c 2
 ## END
 
 
-#### List length
+#### ${#x} on List and Dict
 
 var L = [1,2,3]
 
@@ -104,16 +148,6 @@ declare -a a=(abc d)
 echo array ${#a[@]}
 echo array ${#a}
 echo array ${#a[0]}
-
-## STDOUT:
-List 3
-List 3
-array 2
-array 3
-array 3
-## END
-#
-#### Dict length
 
 var d = {k: 'v', '0': 'abc'}
 
@@ -129,9 +163,27 @@ echo Assoc ${#d}
 echo Assoc ${#d[0]}
 
 ## STDOUT:
-Dict 2
-Dict 2
-Assoc 2
-Assoc 3
-Assoc 3
+## END
+
+#### $x for List and Dict
+
+declare -a a=(abc d)
+echo array $a
+echo array ${a[0]}
+
+var L = [1,2,3]
+echo List $L
+
+declare -A A=([k]=v [0]=abc)
+echo Assoc $A
+echo Assoc ${A[0]}
+
+var d = {k: 'v', '0': 'abc'}
+#echo Dict $d
+
+## STDOUT:
+array abc
+array abc
+Assoc abc
+Assoc abc
 ## END

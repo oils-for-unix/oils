@@ -119,6 +119,9 @@ find-long-lines() {
 
 bin-flake8() {
   python2 -m flake8 "$@"
+
+  # Note: tried flake8 under Python 3, and many 'xrange' errors, etc.
+  #python3 -m flake8 "$@"
 }
 
 # Just do a single file

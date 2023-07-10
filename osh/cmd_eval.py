@@ -56,6 +56,7 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
+    value_str,
     cmd_value,
     cmd_value_e,
     RedirValue,
@@ -180,34 +181,47 @@ def PlusEquals(old_val, val):
     UP_old_val = old_val
     UP_val = val
 
-    old_tag = old_val.tag()
     tag = val.tag()
 
-    if old_tag == value_e.Undef and tag == value_e.Str:
-        pass  # val is RHS
-    elif old_tag == value_e.Undef and tag == value_e.MaybeStrArray:
-        pass  # val is RHS
+    with tagswitch(old_val) as case:
+        if case(value_e.Undef):
+            pass  # val is RHS
 
-    elif old_tag == value_e.Str and tag == value_e.Str:
-        old_val = cast(value.Str, UP_old_val)
-        str_to_append = cast(value.Str, UP_val)
-        val = value.Str(old_val.s + str_to_append.s)
+        elif case(value_e.Str):
+            if tag == value_e.Str:
+                old_val = cast(value.Str, UP_old_val)
+                str_to_append = cast(value.Str, UP_val)
+                val = value.Str(old_val.s + str_to_append.s)
 
-    elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
-        e_die("Can't append array to string")
+            elif tag == value_e.MaybeStrArray:
+                e_die("Can't append array to string")
 
-    elif old_tag == value_e.MaybeStrArray and tag == value_e.Str:
-        e_die("Can't append string to array")
+            else:
+                raise AssertionError()  # parsing should prevent this
 
-    elif (old_tag == value_e.MaybeStrArray and tag == value_e.MaybeStrArray):
-        old_val = cast(value.MaybeStrArray, UP_old_val)
-        to_append = cast(value.MaybeStrArray, UP_val)
+        elif case(value_e.MaybeStrArray):
+            if tag == value_e.Str:
+                e_die("Can't append string to array")
 
-        # TODO: MUTATE the existing value for efficiency?
-        strs = []  # type: List[str]
-        strs.extend(old_val.strs)
-        strs.extend(to_append.strs)
-        val = value.MaybeStrArray(strs)
+            elif tag == value_e.MaybeStrArray:
+                old_val = cast(value.MaybeStrArray, UP_old_val)
+                to_append = cast(value.MaybeStrArray, UP_val)
+
+                # TODO: MUTATE the existing value for efficiency?
+                strs = []  # type: List[str]
+                strs.extend(old_val.strs)
+                strs.extend(to_append.strs)
+                val = value.MaybeStrArray(strs)
+
+            else:
+                raise AssertionError()  # parsing should prevent this
+
+        elif case(value_e.AssocArray):
+            # TODO: Could try to match bash, it will append to ${A[0]}
+            pass
+
+        else:
+            e_die("Can't append to value of type %s" % value_str(old_val.tag()))
 
     return val
 
