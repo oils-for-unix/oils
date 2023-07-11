@@ -61,6 +61,10 @@ readonly PY3_LIBS_VERSION=2023-03-04
 
 readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
 
+# Version 2.4.0 from 2021-10-06 was the last version that supported Python 2
+# https://github.com/PyCQA/pyflakes/blob/main/NEWS.rst
+readonly PYFLAKES_VERSION=2.4.0
+readonly PYFLAKES_URL='https://files.pythonhosted.org/packages/15/60/c577e54518086e98470e9088278247f4af1d39cb43bcbd731e2c307acd6a/pyflakes-2.4.0.tar.gz'
 
 log() {
   echo "$0: $@" >& 2
@@ -168,6 +172,10 @@ fetch() {
     log "Fetched dependencies for 'build/py.sh'"
     return
   fi
+ 
+  download-to $DEPS_SOURCE_DIR/pyflakes "$PYFLAKES_URL"
+  maybe-extract $DEPS_SOURCE_DIR/pyflakes "$(basename $PYFLAKES_URL)" \
+    pyflakes-$PYFLAKES_VERSION
 
   download-to $DEPS_SOURCE_DIR/python2 "$PY2_URL"
   download-to $DEPS_SOURCE_DIR/python3 "$PY3_URL"
@@ -277,6 +285,15 @@ install-wedges() {
   if test -n "$py_only"; then
     log "Installed dependencies for 'build/py.sh'"
     return
+  fi
+
+  # Just copy this source tarball
+  if ! wedge-exists pyflakes $PYFLAKES_VERSION; then
+    local dest_dir=$USER_WEDGE_DIR/pkg/pyflakes/$PYFLAKES_VERSION
+    mkdir -p $dest_dir
+
+    cp --verbose --recursive --no-target-directory \
+      $DEPS_SOURCE_DIR/pyflakes/pyflakes-$PYFLAKES_VERSION $dest_dir
   fi
 
   if ! wedge-exists python2 $PY2_VERSION; then

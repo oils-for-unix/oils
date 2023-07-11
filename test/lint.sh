@@ -117,6 +117,11 @@ find-long-lines() {
   find-src-files | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
+oils-lint() {
+  PYTHONPATH=.:~/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0 test/oils_lint.py "$@"
+  #PYTHONPATH=.:vendor/pyflakes-2.4.0 test/oils_lint.py "$@"
+}
+
 bin-flake8() {
   python2 -m flake8 "$@"
 
@@ -193,10 +198,7 @@ run-black() {
 }
 
 
-install-yapf() {
-  pip3 install yapf docformatter
-}
-
+# NOTE: test/format.sh installs and runs yapf for Debian 12 bookworm
 yapf-files() {
   python3 -m yapf -i "$@"
 }
