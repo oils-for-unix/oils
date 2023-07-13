@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import Token
 from core import pyos
 from mycpp.mylib import log
 
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue, value_t
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
@@ -44,19 +44,30 @@ class ControlFlow(Exception):
     | OilReturn(Token keyword, value val)
     """
 
-    def __init__(self, token, arg):
-        # type: (Token, int) -> None
+    def __init__(self, token, arg, value):
+        # type: (Token, Optional[int], Optional[value_t]) -> None
         """
     Args:
       token: the keyword token
-      arg: exit code fo 'return', or number of levels to break/continue
+      arg: exit code to 'return', or number of levels to break/continue
+      value: value_t to 'return' from a function
     """
+        if value:
+            assert token.id == Id.ControlFlow_Return, "Can only return a value"
+        else:
+            assert arg, "One of arg or value must be defined"
+
         self.token = token
         self.arg = arg
+        self.value = value
 
     def IsReturn(self):
         # type: () -> bool
-        return self.token.id == Id.ControlFlow_Return
+        return self.token.id == Id.ControlFlow_Return and self.arg is not None
+
+    def IsRetval(self):
+        # type: () -> bool
+        return self.token.id == Id.ControlFlow_Return and self.value is not None
 
     def IsBreak(self):
         # type: () -> bool
@@ -93,24 +104,8 @@ class ControlFlow(Exception):
 
     def __repr__(self):
         # type: () -> str
-        return '<ControlFlow %s %s>' % (self.token, self.arg)
-
-
-class ReturnValue(Exception):
-
-    def __init__(self, token, value):
-        # type: (Token, value_t) -> None
-        """
-        Args:
-          token: the keyword token
-          value: the value to 'return'
-        """
-        self.token = token
-        self.value = value
-
-    def __repr__(self):
-        # type: () -> str
-        return '<Return %s %s>' % (self.token, self.value)
+        arg_or_val = str(self.arg) if self.arg else repr(self.value)
+        return '<ControlFlow %s %s>' % (self.token, arg_or_val)
 
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):

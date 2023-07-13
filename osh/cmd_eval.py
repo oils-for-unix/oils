@@ -227,13 +227,14 @@ class Func(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
         try:
-            _is_return, is_fatal = self.cmd_ev.ExecuteAndCatch(self.body)
-            if is_fatal:
-                e_die("Error in function %r" % self.name, self.name_loc)
+            self.cmd_ev._Execute(self.body)
 
-            return value.Null  # no `return (...)`
-        except vm.ReturnValue as retval:
-            return retval.value
+            return value.Null  # implicit return
+        except vm.ControlFlow as e:
+            if e.IsRetval():
+                return e.value
+            else:
+                e_die("Unexpected control flow in func: %s" % e, self.name_loc)
 
 
 class ctx_LoopLevel(object):
@@ -1135,7 +1136,7 @@ class CommandEvaluator(object):
                     # We have to return, but cannot evaluate expressions in the
                     # native build yet. So we return value.Null for now.
                     val = value.Null
-                raise vm.ReturnValue(node.keyword, val)
+                raise vm.ControlFlow(node.keyword, None, val)
 
                 status = 0
 
@@ -1185,7 +1186,7 @@ class CommandEvaluator(object):
                         raise util.UserExit(
                             arg)  # handled differently than other control flow
                     else:
-                        raise vm.ControlFlow(keyword, arg)
+                        raise vm.ControlFlow(keyword, arg, None)
                 else:
                     msg = 'Invalid control flow at top level'
                     if self.exec_opts.strict_control_flow():
