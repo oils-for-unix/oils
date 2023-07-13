@@ -354,7 +354,8 @@ build() {
   # - Bind mount WEDGE_DEPS='', space separated list of paths
   #   - py3-libs depends on python3 and mypy wedges!
 
-  sudo $DOCKER run "${docker_flags[@]}" \
+  # -E to preserve CONTAINERS_REGISTRIES_CONF
+  sudo -E $DOCKER run "${docker_flags[@]}" \
     --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
     $BUILD_IMAGE:$BUILD_IMAGE_TAG \

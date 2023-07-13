@@ -35,6 +35,7 @@ set -o pipefail
 set -o errexit
 
 source deps/from-apt.sh      # PY3_BUILD_DEPS
+source deps/podman.sh
 source devtools/run-task.sh  # run-task
 
 # Also in build/dev-shell.sh
@@ -65,6 +66,12 @@ readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
 # https://github.com/PyCQA/pyflakes/blob/main/NEWS.rst
 readonly PYFLAKES_VERSION=2.4.0
 readonly PYFLAKES_URL='https://files.pythonhosted.org/packages/15/60/c577e54518086e98470e9088278247f4af1d39cb43bcbd731e2c307acd6a/pyflakes-2.4.0.tar.gz'
+
+readonly BLOATY_VERSION=1.1
+readonly BLOATY_URL='https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2'
+
+readonly UFTRACE_VERSION=0.13
+readonly UFTRACE_URL='https://github.com/namhyung/uftrace/archive/refs/tags/v0.13.tar.gz'
 
 log() {
   echo "$0: $@" >& 2
@@ -167,6 +174,8 @@ fetch() {
 
   download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
   download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"
+  maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/cmark "$(basename $CMARK_URL)" cmark-$CMARK_VERSION
 
   if test -n "$py_only"; then
     log "Fetched dependencies for 'build/py.sh'"
@@ -179,12 +188,14 @@ fetch() {
 
   download-to $DEPS_SOURCE_DIR/python2 "$PY2_URL"
   download-to $DEPS_SOURCE_DIR/python3 "$PY3_URL"
-
-  maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
-  maybe-extract $DEPS_SOURCE_DIR/cmark "$(basename $CMARK_URL)" cmark-$CMARK_VERSION
-
   maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
+
+  # bloaty and uftrace are for benchmarks, in containers
+  download-to $DEPS_SOURCE_DIR/bloaty "$BLOATY_URL"
+  download-to $DEPS_SOURCE_DIR/uftrace "$UFTRACE_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bloaty "$(basename $BLOATY_URL)" uftrace-$BLOATY_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/uftrace "$(basename $UFTRACE_URL)" bloaty-$UFTRACE_VERSION
 
   # This is in $DEPS_SOURCE_DIR to COPY into containers, which mycpp will directly import.
   # It's also copied into a wedge in install-wedges.
@@ -326,11 +337,17 @@ install-wedges-py() {
 }
 
 container-wedges() {
-  deps/wedge.sh build deps/source.medo/time-helper
-  deps/wedge.sh build deps/source.medo/cmark/
-  deps/wedge.sh build deps/source.medo/re2c/
+  export-podman
+
+  if false; then
+    deps/wedge.sh build deps/source.medo/time-helper
+    deps/wedge.sh build deps/source.medo/cmark/
+    deps/wedge.sh build deps/source.medo/re2c/
+  fi
+
   deps/wedge.sh build deps/source.medo/bloaty/
   deps/wedge.sh build deps/source.medo/uftrace/
+
   #deps/wedge.sh build deps/source.medo/python3/
   #deps/wedge.sh build deps/source.medo/R-libs/
 }

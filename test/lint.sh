@@ -14,6 +14,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
+source build/dev-shell.sh  # python2 and python3
 source devtools/common.sh  # banner
 source devtools/run-task.sh  # run-task
 
@@ -280,7 +281,10 @@ soil-run() {
     return
   fi
 
-  flake8-all
+  #flake8-all
+
+  # Our new lint script
+  all-py
 
   check-shebangs
 }

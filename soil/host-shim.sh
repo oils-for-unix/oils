@@ -67,8 +67,8 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (dev-minimal)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      # Rebuild with podman
+      echo 'v-2023-07-13'
       ;;
 
     # Not run directly
@@ -227,7 +227,6 @@ created_by    string
 EOF
 
   log "Wrote $soil_dir/image-layers.schema.tsv"
-
 }
 
 run-job-uke() {
