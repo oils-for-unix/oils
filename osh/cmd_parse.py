@@ -436,6 +436,7 @@ class VarChecker(object):
 
 
 class ctx_VarChecker(object):
+
     def __init__(self, var_checker, blame_tok):
         # type: (VarChecker, Token) -> None
         var_checker.Push(blame_tok)
@@ -1107,14 +1108,15 @@ class CommandParser(object):
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
-        if (typed_args is not None and
-            kw_token is not None and
-            kw_token.id == Id.ControlFlow_Return):
+        if (typed_args is not None and kw_token is not None and
+                kw_token.id == Id.ControlFlow_Return):
             # typed return (this is special from the other control flow types)
             if len(typed_args.positional) != 1:
-                p_die("Expected one argument passed to a typed return", typed_loc)
+                p_die("Expected one argument passed to a typed return",
+                      typed_loc)
             if len(typed_args.named) != 0:
-                p_die("Expected no named arguments passed to a typed return", typed_loc)
+                p_die("Expected no named arguments passed to a typed return",
+                      typed_loc)
             return command.Retval(kw_token, typed_args.positional[0])
 
         if kind == Kind.ControlFlow:
