@@ -262,11 +262,11 @@ class DictIterator(_ContainerIter):
         return self.values[self.i]
 
 
-class AssocArrayIter(_ContainerIter):
+class BashAssocIter(_ContainerIter):
     """ for x in (mydict) { """
 
     def __init__(self, val):
-        # type: (value.AssocArray) -> None
+        # type: (value.BashAssoc) -> None
         _ContainerIter.__init__(self)
 
         # TODO: Don't materialize these Lists
@@ -312,8 +312,8 @@ def ToBool(val):
             val = cast(value.MaybeStrArray, UP_val)
             return len(val.strs) != 0
 
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
             return len(val.d) != 0
 
         elif case(value_e.Bool):
@@ -398,7 +398,7 @@ def ExactlyEqual(left, right):
 
             return True
 
-        elif case(value_e.AssocArray):
+        elif case(value_e.BashAssoc):
             left = cast(value.Dict, UP_left)
             right = cast(value.Dict, UP_right)
             if len(left.d) != len(right.d):
@@ -460,8 +460,8 @@ def Contains(needle, haystack):
             needle = cast(value.Str, UP_needle)
             return needle.s in haystack.d
 
-        elif case(value_e.AssocArray):
-            haystack = cast(value.AssocArray, UP_haystack)
+        elif case(value_e.BashAssoc):
+            haystack = cast(value.BashAssoc, UP_haystack)
             if needle.tag() != value_e.Str:
                 raise error.InvalidType('Expected Str', loc.Missing)
 

@@ -198,8 +198,8 @@ def _PrintShValue(val, buf):
             parts.append(')')
             result = ' '.join(parts)
 
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
             parts = ['(']
             for k, v in iteritems(val.d):
                 parts.append(

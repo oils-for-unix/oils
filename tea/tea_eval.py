@@ -99,7 +99,7 @@ class TeaEvaluator(object):
 
     if node.named_splat:
       splat_name = node.named_splat.val
-      # Note: this dict is not an AssocArray
+      # Note: this dict is not an BashAssoc
       leftover = value.Obj(kwargs)
       self.mem.SetValue(location.LName(splat_name), leftover, scope_e.LocalOnly)
     else:

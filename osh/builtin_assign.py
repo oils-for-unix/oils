@@ -141,7 +141,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
         if flag_a and val.tag() != value_e.MaybeStrArray:
             continue
-        if flag_A and val.tag() != value_e.AssocArray:
+        if flag_A and val.tag() != value_e.BashAssoc:
             continue
 
         decl = []  # type: List[str]
@@ -155,7 +155,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('x')
             if val.tag() == value_e.MaybeStrArray:
                 flags.append('a')
-            elif val.tag() == value_e.AssocArray:
+            elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
             if len(flags) == 0:
                 flags.append('-')
@@ -201,8 +201,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                     body.append(qsn.maybe_shell_encode(element))
                 decl.extend(["=(", ''.join(body), ")"])
 
-        elif val.tag() == value_e.AssocArray:
-            assoc_val = cast(value.AssocArray, val)
+        elif val.tag() == value_e.BashAssoc:
+            assoc_val = cast(value.BashAssoc, val)
             body = []
             for key in sorted(assoc_val.d):
                 if len(body) > 0:
@@ -310,10 +310,10 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
         if rval.tag() == value_e.MaybeStrArray:
             array_val = cast(value.MaybeStrArray, rval)
             if len(array_val.strs) == 0:
-                return value.AssocArray({})
+                return value.BashAssoc({})
                 #return value.MaybeStrArray([])
 
-        if rval.tag() != value_e.AssocArray:
+        if rval.tag() != value_e.BashAssoc:
             e_usage("Got -A but RHS isn't an associative array",
                     loc.Word(blame_word))
 
@@ -345,7 +345,7 @@ class Readonly(vm._AssignBuiltin):
                 if arg.a:
                     rval = value.MaybeStrArray([])  # type: value_t
                 elif arg.A:
-                    rval = value.AssocArray({})
+                    rval = value.BashAssoc({})
                 else:
                     rval = None
             else:
@@ -455,8 +455,8 @@ class NewVar(vm._AssignBuiltin):
                     if old_val.tag() != value_e.MaybeStrArray:
                         rval = value.MaybeStrArray([])
                 elif arg.A:
-                    if old_val.tag() != value_e.AssocArray:
-                        rval = value.AssocArray({})
+                    if old_val.tag() != value_e.BashAssoc:
+                        rval = value.BashAssoc({})
 
             lval = location.LName(pair.var_name)
             if pair.plus_eq:

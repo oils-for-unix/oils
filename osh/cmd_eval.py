@@ -216,7 +216,7 @@ def PlusEquals(old_val, val):
             else:
                 raise AssertionError()  # parsing should prevent this
 
-        elif case(value_e.AssocArray):
+        elif case(value_e.BashAssoc):
             # TODO: Could try to match bash, it will append to ${A[0]}
             pass
 
@@ -971,16 +971,16 @@ class CommandEvaluator(object):
                                             prefix='List index ')
                                         obj.items[index] = rval
 
-                                    elif case(value_e.AssocArray):
-                                        obj = cast(value.AssocArray, UP_obj)
+                                    elif case(value_e.BashAssoc):
+                                        obj = cast(value.BashAssoc, UP_obj)
                                         key = val_ops.ToStr(
                                             place.index,
                                             loc.Missing,
-                                            prefix='AssocArray index ')
+                                            prefix='BashAssoc index ')
                                         r = val_ops.ToStr(
                                             rval,
                                             loc.Missing,
-                                            prefix='AssocArray index ')
+                                            prefix='BashAssoc index ')
                                         obj.d[key] = r
 
                                     elif case(value_e.Dict):
@@ -1329,9 +1329,9 @@ class CommandEvaluator(object):
                             else:
                                 raise AssertionError()
 
-                        elif case(value_e.AssocArray):
-                            val = cast(value.AssocArray, UP_val)
-                            it2 = val_ops.AssocArrayIter(val)
+                        elif case(value_e.BashAssoc):
+                            val = cast(value.BashAssoc, UP_val)
+                            it2 = val_ops.BashAssocIter(val)
 
                             if n == 1:
                                 name1 = location.LName(node.iter_names[0])

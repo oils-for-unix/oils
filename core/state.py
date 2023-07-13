@@ -930,9 +930,9 @@ if mylib.PYTHON:
                     cell_json['type'] = 'MaybeStrArray'
                     cell_json['value'] = val.strs
 
-                elif case(value_e.AssocArray):
-                    val = cast(value.AssocArray, cell.val)
-                    cell_json['type'] = 'AssocArray'
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, cell.val)
+                    cell_json['type'] = 'BashAssoc'
                     cell_json['value'] = val.d
 
             vars_json[name] = cell_json
@@ -1722,7 +1722,7 @@ class Mem(object):
                                                            ref_trail=ref_trail)
         return cell, name_map, cell_name
 
-    def IsAssocArray(self, name):
+    def IsBashAssoc(self, name):
         # type: (str) -> bool
         """Returns whether a name resolve to a cell with an associative array.
 
@@ -1732,7 +1732,7 @@ class Mem(object):
         cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(),
                                             False)
         if cell:
-            if cell.val.tag() == value_e.AssocArray:  # foo=([key]=value)
+            if cell.val.tag() == value_e.BashAssoc:  # foo=([key]=value)
                 return True
         return False
 
@@ -1910,7 +1910,7 @@ class Mem(object):
                         return
 
                 # This could be an object, eggex object, etc.  It won't be
-                # AssocArray shouldn because we query IsAssocArray before evaluating
+                # BashAssoc shouldn because we query IsBashAssoc before evaluating
                 # sh_lhs_expr.  Could conslidate with s[i] case above
                 e_die(
                     "Value of type %s can't be indexed" % ui.ValType(cell.val),
@@ -1932,8 +1932,8 @@ class Mem(object):
                           left_loc)
 
                 # We already looked it up before making the lvalue
-                assert cell.val.tag() == value_e.AssocArray, cell
-                cell_val2 = cast(value.AssocArray, cell.val)
+                assert cell.val.tag() == value_e.BashAssoc, cell
+                cell_val2 = cast(value.BashAssoc, cell.val)
 
                 cell_val2.d[lval.key] = rval.s
 
@@ -1948,7 +1948,7 @@ class Mem(object):
         items.append(val.s)
         new_value = value.MaybeStrArray(items)
 
-        # arrays can't be exported; can't have AssocArray flag
+        # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
         name_map[lval.name] = Cell(False, readonly, False, new_value)
 
@@ -2198,11 +2198,11 @@ class Mem(object):
                 val = cell.val
                 UP_val = val
 
-                # note: never happens because of mem.IsAssocArray test for lvalue.Keyed
-                #if val.tag() != value_e.AssocArray:
+                # note: never happens because of mem.IsBashAssoc test for lvalue.Keyed
+                #if val.tag() != value_e.BashAssoc:
                 #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
-                val = cast(value.AssocArray, UP_val)
+                val = cast(value.BashAssoc, UP_val)
                 mylib.dict_erase(val.d, lval.key)
 
             else:

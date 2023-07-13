@@ -150,13 +150,13 @@ def OldValue(lval, mem, exec_opts):
         elif case(lvalue_e.Keyed):
             lval = cast(lvalue.Keyed, UP_lval)
 
-            assoc_val = None  # type: value.AssocArray
+            assoc_val = None  # type: value.BashAssoc
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
                     # This never happens, because undef[x]+= is assumed to
                     raise AssertionError()
-                elif case2(value_e.AssocArray):
-                    tmp2 = cast(value.AssocArray, UP_val)
+                elif case2(value_e.BashAssoc):
+                    tmp2 = cast(value.BashAssoc, UP_val)
                     # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
                     assoc_val = tmp2
                 else:
@@ -454,12 +454,12 @@ class ArithEvaluator(object):
 
         # BASH_LINENO, arr (array name without strict_array), etc.
         if val.tag() in (value_e.MaybeStrArray,
-                         value_e.AssocArray) and lval.tag() == lvalue_e.Named:
+                         value_e.BashAssoc) and lval.tag() == lvalue_e.Named:
             named_lval = cast(lvalue.Named, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
                 if val.tag() == value_e.MaybeStrArray:
                     lval = lvalue.Indexed(named_lval.name, 0, loc.Missing)
-                elif val.tag() == value_e.AssocArray:
+                elif val.tag() == value_e.BashAssoc:
                     lval = lvalue.Keyed(named_lval.name, '0', loc.Missing)
                 val = word_eval.DecayArray(val)
 
@@ -484,7 +484,7 @@ class ArithEvaluator(object):
         val = self.Eval(node)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.MaybeStrArray, value_e.AssocArray
+        if val.tag() in (value_e.MaybeStrArray, value_e.BashAssoc
                         ) and node.tag() == arith_expr_e.VarSub:
             vsub = cast(SimpleVarSub, node)
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
@@ -503,7 +503,7 @@ class ArithEvaluator(object):
       None for Undef  (e.g. empty cell)  TODO: Don't return 0!
       int for Str
       List[int] for MaybeStrArray
-      Dict[str, str] for AssocArray (TODO: Should we support this?)
+      Dict[str, str] for BashAssoc (TODO: Should we support this?)
 
     NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
     bash, but don't do what you'd think.  'x' sometimes a variable name and
@@ -658,8 +658,8 @@ class ArithEvaluator(object):
                             index = self.EvalToInt(node.right)
                             s = word_eval.GetArrayItem(array_val.strs, index)
 
-                        elif case(value_e.AssocArray):
-                            left = cast(value.AssocArray, UP_left)
+                        elif case(value_e.BashAssoc):
+                            left = cast(value.BashAssoc, UP_left)
                             key = self.EvalWordToString(node.right)
                             s = left.d.get(key)
 
@@ -809,7 +809,7 @@ class ArithEvaluator(object):
                 node = cast(sh_lhs_expr.IndexedName, UP_node)
                 assert node.name is not None
 
-                if self.mem.IsAssocArray(node.name):
+                if self.mem.IsBashAssoc(node.name):
                     key = self.EvalWordToString(node.index)
                     lval2 = lvalue.Keyed(node.name, key, node.left)
                     lval = lval2
@@ -857,7 +857,7 @@ class ArithEvaluator(object):
                     e_die('Invalid variable name %r' % var_name, location)
 
                 if var_name is not None:
-                    if self.mem.IsAssocArray(var_name):
+                    if self.mem.IsBashAssoc(var_name):
                         key = self.EvalWordToString(anode.right)
                         return lvalue.Keyed(var_name, key, location)
                     else:

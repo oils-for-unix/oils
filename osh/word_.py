@@ -69,7 +69,7 @@ def _EvalWordPart(part):
             # EvalWordToString?
             return False, '', False
 
-        elif case(word_part_e.AssocArrayLiteral):
+        elif case(word_part_e.BashAssocLiteral):
             return False, '', False
 
         elif case(word_part_e.Literal):

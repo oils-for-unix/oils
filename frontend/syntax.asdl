@@ -158,7 +158,7 @@ module syntax
 
   word_part = 
     ShArrayLiteral %ShArrayLiteral
-  | AssocArrayLiteral(Token left, List[AssocPair] pairs, Token right)
+  | BashAssocLiteral(Token left, List[AssocPair] pairs, Token right)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)

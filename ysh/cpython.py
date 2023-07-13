@@ -91,7 +91,7 @@ def _PyObjToValue(val):
                 #typed_dict[k] = v
 
         if is_shell_dict:
-            return value.AssocArray(shell_dict)
+            return value.BashAssoc(shell_dict)
         else:
             return value.Dict(typed_dict)
 
@@ -148,8 +148,8 @@ def _ValueToPyObj(val):
             val = cast(value.List, UP_val)
             return list(map(_ValueToPyObj, val.items))
 
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
             return val.d
 
         elif case(value_e.Dict):
