@@ -24,14 +24,18 @@
 (xrange)   xrange(3, 7)
 ## END
 
-#### subscript and range of array
-var myarray = %(1 2 3 4)
+#### subscript and slice :| 1 2 3 4 |
+var myarray = :|1 2 3 4|
 = myarray[1]
 = myarray[1:3]
 
 echo 'implicit'
 = myarray[:2]
 = myarray[2:]
+
+echo 'out of bounds'
+= myarray[:5]
+= myarray[-5:]
 
 # Stride not supported
 #= myarray[1:4:2]
@@ -44,9 +48,12 @@ echo 'implicit'
 implicit
 (List)   ['1', '2']
 (List)   ['3', '4']
+out of bounds
+(List)   ['1', '2', '3', '4']
+(List)   ['1', '2', '3', '4']
 ## END
 
-#### subscript and range of list
+#### subscript and slice of List
 var mylist = [1,2,3,4]
 = mylist[1]
 = mylist[1:3]

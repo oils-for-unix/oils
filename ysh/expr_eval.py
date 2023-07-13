@@ -979,15 +979,10 @@ class OilEvaluator(object):
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
-                        try:
-                            lower = index.lower.i if index.lower else 0
-                            upper = index.upper.i if index.upper else len(
-                                obj.s)
-                            return value.Str(obj.s[lower:upper])
 
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                        lower = index.lower.i if index.lower else 0
+                        upper = index.upper.i if index.upper else len(obj.s)
+                        return value.Str(obj.s[lower:upper])
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1007,15 +1002,10 @@ class OilEvaluator(object):
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
 
-                        try:
-                            lower = index.lower.i if index.lower else 0
-                            upper = index.upper.i if index.upper else len(
-                                obj.items)
-                            return value.List(obj.items[lower:upper])
-
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                        lower = index.lower.i if index.lower else 0
+                        upper = index.upper.i if index.upper else len(
+                            obj.items)
+                        return value.List(obj.items[lower:upper])
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
