@@ -1,5 +1,5 @@
 ## our_shell: osh
-## oils_failures_allowed: 6
+## oils_failures_allowed: 2
 # compare_shells: bash
 
 #### Can't use x+= on YSH Int (issue #840)
@@ -85,7 +85,7 @@ echo first ${a[0]}
 ## END
 
 
-#### Cannot splice nested List
+#### Can't splice nested List
 
 shopt --set parse_at
 
@@ -97,7 +97,7 @@ echo @mylist
 ## STDOUT:
 ## END
 
-#### Splice nested Dict
+#### Can't splice nested Dict
 
 declare -A A=([k]=v [k2]=v2)
 echo ${A[@]}
@@ -105,34 +105,10 @@ echo ${A[@]}
 var d ={name: [1, 2, 3]}
 echo ${d[@]}
 
+## status: 3
 ## STDOUT:
 v v2
 ## END
-
-
-#### Concatenate shell arrays and ${#a}
-
-var a = :|a|
-var b = :|b|
-
-echo "len a ${#a[@]}"
-echo "len b ${#b[@]}"
-
-pp cell a
-
-var c = a ++ b
-pp cell c
-
-echo len c ${#c[@]}
-
-## STDOUT:
-len a 1
-len b 1
-a = (Cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[a]))
-c = (Cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[a b]))
-len c 2
-## END
-
 
 #### ${#x} on List and Dict
 
@@ -162,10 +138,11 @@ echo Assoc ${#d[@]}
 echo Assoc ${#d}
 echo Assoc ${#d[0]}
 
+## status: 3
 ## STDOUT:
 ## END
 
-#### $x for List and Dict
+#### Can't use $x on List and Dict
 
 declare -a a=(abc d)
 echo array $a
@@ -181,14 +158,13 @@ echo Assoc ${A[0]}
 var d = {k: 'v', '0': 'abc'}
 #echo Dict $d
 
+## status: 3
 ## STDOUT:
 array abc
 array abc
-Assoc abc
-Assoc abc
 ## END
 
-#### Iterate over array with holes (BUG)
+#### Iterate over array with holes (bug fix)
 
 declare -a array=(a b)
 array[5]=c

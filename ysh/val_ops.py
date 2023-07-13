@@ -262,33 +262,6 @@ class DictIterator(_ContainerIter):
         return self.values[self.i]
 
 
-class BashAssocIter(_ContainerIter):
-    """ for x in (mydict) { """
-
-    def __init__(self, val):
-        # type: (value.BashAssoc) -> None
-        _ContainerIter.__init__(self)
-
-        # TODO: Don't materialize these Lists
-        self.keys = val.d.keys()  # type: List[str]
-        self.values = val.d.values()  # type: List[str]
-
-        self.n = len(val.d)
-        assert self.n == len(self.keys)
-
-    def Done(self):
-        # type: () -> int
-        return self.i == self.n
-
-    def FirstValue(self):
-        # type: () -> value_t
-        return value.Str(self.keys[self.i])
-
-    def SecondValue(self):
-        # type: () -> value_t
-        return value.Str(self.values[self.i])
-
-
 def ToBool(val):
     # type: (value_t) -> bool
     """Convert any value to a boolean.

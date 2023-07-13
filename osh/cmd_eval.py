@@ -1329,22 +1329,6 @@ class CommandEvaluator(object):
                             else:
                                 raise AssertionError()
 
-                        elif case(value_e.BashAssoc):
-                            val = cast(value.BashAssoc, UP_val)
-                            it2 = val_ops.BashAssocIter(val)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                name1 = location.LName(node.iter_names[0])
-                                name2 = location.LName(node.iter_names[1])
-                            elif n == 3:
-                                i_name = location.LName(node.iter_names[0])
-                                name1 = location.LName(node.iter_names[1])
-                                name2 = location.LName(node.iter_names[2])
-                            else:
-                                raise AssertionError()
-
                         else:
                             raise error.InvalidType2(
                                 val, 'for loop expected List or Dict',
