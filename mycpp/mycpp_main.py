@@ -13,7 +13,6 @@ from typing import List, Optional, Tuple
 from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
-from mypy.options import Options
 
 from mycpp import const_pass
 from mycpp import cppgen_pass

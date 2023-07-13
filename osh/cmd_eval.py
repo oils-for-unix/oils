@@ -102,7 +102,6 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
-    from osh import word_eval
     from osh.builtin_trap import TrapState
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in

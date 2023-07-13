@@ -51,11 +51,10 @@ from frontend import location
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
+from osh.string_ops import ShellQuoteB
+from osh import word_
 from pylib import os_path
 from pylib import path_stat
-from osh import word_
-from osh.string_ops import ShellQuoteB
-from mycpp import mylib
 
 import libc
 import posix_ as posix

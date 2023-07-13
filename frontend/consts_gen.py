@@ -42,7 +42,7 @@ def _CreateModule(id_spec, ids):
 _BUILTINS = builtin_def.All()
 
 
-def GenBuiltinLookup(b, func_name, kind, f):
+def GenBuiltinLookup(func_name, kind, f):
     #log('%r %r', func_name, kind)
 
     pairs = [(b.name, b.index) for b in _BUILTINS if b.kind == kind]
@@ -458,10 +458,9 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             pairs = [(opt.name, opt.index) for opt in option_def.All()]
             GenStringLookup('option_asdl::option_t', 'OptionNum', pairs, f)
 
-            b = builtin_def.BuiltinDict()
-            GenBuiltinLookup(b, 'LookupNormalBuiltin', 'normal', f)
-            GenBuiltinLookup(b, 'LookupAssignBuiltin', 'assign', f)
-            GenBuiltinLookup(b, 'LookupSpecialBuiltin', 'special', f)
+            GenBuiltinLookup('LookupNormalBuiltin', 'normal', f)
+            GenBuiltinLookup('LookupAssignBuiltin', 'assign', f)
+            GenBuiltinLookup('LookupSpecialBuiltin', 'special', f)
 
             from frontend import lexer_def  # break circular dep
             GenStringMembership('IsControlFlow', lexer_def.CONTROL_FLOW_NAMES,

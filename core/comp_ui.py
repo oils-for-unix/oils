@@ -11,7 +11,6 @@ from typing import Any, List, Optional, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend.py_readline import Readline
     from core.util import _DebugFile
-    from core import completion
     from core import pyos
 
 # ANSI escape codes affect the prompt!

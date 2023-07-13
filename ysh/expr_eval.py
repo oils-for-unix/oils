@@ -7,6 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
     re,
+    re_e,
     re_t,
     Token,
     word_part,
@@ -24,9 +25,6 @@ from _devbuild.gen.syntax_asdl import (
     place_expr_t,
     Attribute,
     Subscript,
-    re,
-    re_e,
-    re_t,
     class_literal_term,
     class_literal_term_e,
     class_literal_term_t,
@@ -42,6 +40,7 @@ from _devbuild.gen.runtime_asdl import (
     part_value,
     part_value_t,
     lvalue,
+    lvalue_t,
     value,
     value_e,
     value_t,
@@ -66,7 +65,6 @@ import libc
 from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import lvalue, lvalue_t
     from _devbuild.gen.syntax_asdl import ArgList
     from core import ui
     from core.state import Mem

@@ -13,9 +13,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import List, Union, TYPE_CHECKING
-if TYPE_CHECKING:
-    from mycpp import mylib
+from typing import List, Union
 
 # Copied from 'string' module
 _PUNCT = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
