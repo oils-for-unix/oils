@@ -128,12 +128,12 @@ def OldValue(lval, mem, exec_opts):
         elif case(lvalue_e.Indexed):
             lval = cast(lvalue.Indexed, UP_lval)
 
-            array_val = None  # type: value.MaybeStrArray
+            array_val = None  # type: value.BashArray
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
-                    array_val = value.MaybeStrArray([])
-                elif case2(value_e.MaybeStrArray):
-                    tmp = cast(value.MaybeStrArray, UP_val)
+                    array_val = value.BashArray([])
+                elif case2(value_e.BashArray):
+                    tmp = cast(value.BashArray, UP_val)
                     # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
                     array_val = tmp
                 else:
@@ -453,18 +453,18 @@ class ArithEvaluator(object):
         val = OldValue(lval, self.mem, self.exec_opts)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.MaybeStrArray,
+        if val.tag() in (value_e.BashArray,
                          value_e.BashAssoc) and lval.tag() == lvalue_e.Named:
             named_lval = cast(lvalue.Named, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
-                if val.tag() == value_e.MaybeStrArray:
+                if val.tag() == value_e.BashArray:
                     lval = lvalue.Indexed(named_lval.name, 0, loc.Missing)
                 elif val.tag() == value_e.BashAssoc:
                     lval = lvalue.Keyed(named_lval.name, '0', loc.Missing)
                 val = word_eval.DecayArray(val)
 
         # This error message could be better, but we already have one
-        #if val.tag() == value_e.MaybeStrArray:
+        #if val.tag() == value_e.BashArray:
         #  e_die("Can't use assignment like ++ or += on arrays")
 
         i = self._ValToIntOrError(val, node)
@@ -484,7 +484,7 @@ class ArithEvaluator(object):
         val = self.Eval(node)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.MaybeStrArray, value_e.BashAssoc
+        if val.tag() in (value_e.BashArray, value_e.BashAssoc
                         ) and node.tag() == arith_expr_e.VarSub:
             vsub = cast(SimpleVarSub, node)
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
@@ -502,7 +502,7 @@ class ArithEvaluator(object):
     Returns:
       None for Undef  (e.g. empty cell)  TODO: Don't return 0!
       int for Str
-      List[int] for MaybeStrArray
+      List[int] for BashArray
       Dict[str, str] for BashAssoc (TODO: Should we support this?)
 
     NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
@@ -653,8 +653,8 @@ class ArithEvaluator(object):
                     left = self.Eval(node.left)
                     UP_left = left
                     with tagswitch(left) as case:
-                        if case(value_e.MaybeStrArray):
-                            array_val = cast(value.MaybeStrArray, UP_left)
+                        if case(value_e.BashArray):
+                            array_val = cast(value.BashArray, UP_left)
                             index = self.EvalToInt(node.right)
                             s = word_eval.GetArrayItem(array_val.strs, index)
 

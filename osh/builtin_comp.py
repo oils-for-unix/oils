@@ -428,9 +428,9 @@ class CompAdjust(vm._Builtin):
         # TODO: How does the user test a completion function programmatically?  Set
         # COMP_ARGV?
         val = self.mem.GetValue('COMP_ARGV')
-        if val.tag() != value_e.MaybeStrArray:
+        if val.tag() != value_e.BashArray:
             raise error.Usage("COMP_ARGV should be an array", loc.Missing)
-        comp_argv = cast(value.MaybeStrArray, val).strs
+        comp_argv = cast(value.BashArray, val).strs
 
         # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
         # "outside" of words.

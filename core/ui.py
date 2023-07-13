@@ -41,7 +41,7 @@ def ValType(val):
     # type: (value_t) -> str
     """For displaying type errors in the UI."""
 
-    # Displays 'value.MaybeStrArray' for now, maybe change it.
+    # Displays 'value.BashArray' for now, maybe change it.
     return StrFromC(value_str(val.tag()))
 
 
@@ -49,7 +49,7 @@ def CommandType(cmd):
     # type: (command_t) -> str
     """For displaying commands in the UI."""
 
-    # Displays 'value.MaybeStrArray' for now, maybe change it.
+    # Displays 'value.BashArray' for now, maybe change it.
     return StrFromC(command_str(cmd.tag()))
 
 

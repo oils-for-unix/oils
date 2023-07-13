@@ -149,8 +149,8 @@ def ToShellArray(val, blame_loc, prefix=''):
     """
     UP_val = val
     with tagswitch(val) as case2:
-        if case2(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
+        if case2(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
             strs = val.strs
 
         elif case2(value_e.List):
@@ -308,8 +308,8 @@ def ToBool(val):
             return len(val.s) != 0
 
         # OLD TYPES
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
+        elif case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
             return len(val.strs) != 0
 
         elif case(value_e.BashAssoc):
@@ -374,9 +374,9 @@ def ExactlyEqual(left, right):
             right = cast(value.Str, UP_right)
             return left.s == right.s
 
-        elif case(value_e.MaybeStrArray):
-            left = cast(value.MaybeStrArray, UP_left)
-            right = cast(value.MaybeStrArray, UP_right)
+        elif case(value_e.BashArray):
+            left = cast(value.BashArray, UP_left)
+            right = cast(value.BashArray, UP_right)
             if len(left.strs) != len(right.strs):
                 return False
 
@@ -440,8 +440,8 @@ def Contains(needle, haystack):
 
             return False
 
-        elif case(value_e.MaybeStrArray):
-            haystack = cast(value.MaybeStrArray, UP_haystack)
+        elif case(value_e.BashArray):
+            haystack = cast(value.BashArray, UP_haystack)
             if needle.tag() != value_e.Str:
                 raise error.InvalidType('Expected Str', loc.Missing)
 

@@ -67,7 +67,7 @@ def _PyObjToValue(val):
                 #typed_array.append(elem)
 
         #if is_shell_array:
-        #    return value.MaybeStrArray(shell_array)
+        #    return value.BashArray(shell_array)
         return value.List(typed_array)
 
     elif isinstance(val, dict):
@@ -140,8 +140,8 @@ def _ValueToPyObj(val):
             val = cast(value.Str, UP_val)
             return val.s
 
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
+        elif case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
             return val.strs
 
         elif case(value_e.List):

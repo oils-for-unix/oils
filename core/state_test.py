@@ -172,7 +172,7 @@ class MemTest(unittest.TestCase):
         # COMPREPLY=(1 2 3)
         # invariant to enforce: arrays can't be exported
         mem.SetValue(location.LName('COMPREPLY'),
-                     value.MaybeStrArray(['1', '2', '3']), scope_e.GlobalOnly)
+                     value.BashArray(['1', '2', '3']), scope_e.GlobalOnly)
         self.assertEqual(['1', '2', '3'],
                          mem.var_stack[0]['COMPREPLY'].val.strs)
 
@@ -232,7 +232,7 @@ class MemTest(unittest.TestCase):
         # a[1]=(x y z)  # illegal but doesn't parse anyway
         if 0:
             try:
-                mem.SetValue(lhs, value.MaybeStrArray(['x', 'y', 'z']),
+                mem.SetValue(lhs, value.BashArray(['x', 'y', 'z']),
                              scope_e.Dynamic)
             except error.FatalRuntime as e:
                 pass

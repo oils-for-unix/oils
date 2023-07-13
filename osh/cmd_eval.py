@@ -193,25 +193,25 @@ def PlusEquals(old_val, val):
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
 
-            elif tag == value_e.MaybeStrArray:
+            elif tag == value_e.BashArray:
                 e_die("Can't append array to string")
 
             else:
                 raise AssertionError()  # parsing should prevent this
 
-        elif case(value_e.MaybeStrArray):
+        elif case(value_e.BashArray):
             if tag == value_e.Str:
                 e_die("Can't append string to array")
 
-            elif tag == value_e.MaybeStrArray:
-                old_val = cast(value.MaybeStrArray, UP_old_val)
-                to_append = cast(value.MaybeStrArray, UP_val)
+            elif tag == value_e.BashArray:
+                old_val = cast(value.BashArray, UP_old_val)
+                to_append = cast(value.BashArray, UP_val)
 
                 # TODO: MUTATE the existing value for efficiency?
                 strs = []  # type: List[str]
                 strs.extend(old_val.strs)
                 strs.extend(to_append.strs)
-                val = value.MaybeStrArray(strs)
+                val = value.BashArray(strs)
 
             else:
                 raise AssertionError()  # parsing should prevent this
@@ -952,8 +952,8 @@ class CommandEvaluator(object):
                                 obj = place.obj
                                 UP_obj = obj
                                 with tagswitch(obj) as case:
-                                    if case(value_e.MaybeStrArray):
-                                        obj = cast(value.MaybeStrArray, UP_obj)
+                                    if case(value_e.BashArray):
+                                        obj = cast(value.BashArray, UP_obj)
                                         index = val_ops.ToInt(
                                             place.index,
                                             loc.Missing,
@@ -1983,7 +1983,7 @@ class CommandEvaluator(object):
 
                 n_params = len(sig.pos_params)
                 if sig.rest:
-                    leftover = value.MaybeStrArray(argv[n_params:])
+                    leftover = value.BashArray(argv[n_params:])
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,
                                       scope_e.LocalOnly)
                 else:

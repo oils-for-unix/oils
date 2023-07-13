@@ -28,7 +28,7 @@ def NewRecord(node_type):
 def NewLeaf(s, e_color):
     # type: (Optional[str], color_t) -> hnode.Leaf
 
-    # for repr of MaybeStrArray, which can have 'None'
+    # for repr of BashArray, which can have 'None'
     if s is None:
         return hnode.Leaf('_', color_e.OtherConst)
     else:

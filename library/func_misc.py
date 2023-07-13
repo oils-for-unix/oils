@@ -32,8 +32,8 @@ class Append(vm._Callable):
         to_append = pos_args[1]
 
         with tagswitch(li) as case:
-            if case(value_e.MaybeStrArray):
-                li = cast(value.MaybeStrArray, UP_li)
+            if case(value_e.BashArray):
+                li = cast(value.BashArray, UP_li)
                 s = val_ops.ToStr(to_append,
                                   loc.Missing,
                                   prefix='append builtin ')
@@ -62,8 +62,8 @@ class Pop(vm._Callable):
         UP_li = li
 
         with tagswitch(li) as case:
-            if case(value_e.MaybeStrArray):
-                li = cast(value.MaybeStrArray, UP_li)
+            if case(value_e.BashArray):
+                li = cast(value.BashArray, UP_li)
                 li.strs.pop()
 
             elif case(value_e.List):

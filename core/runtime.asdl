@@ -44,17 +44,15 @@ module runtime
     # A var bound to Undef is different than no binding because of dynamic scope.
     Undef
 
-    # Bash data model
   | Str(str s)
 
-    # TODO: rename to value.BashArray and use Dict[int, str]
     # "holes" in the array are represented by None
-  | MaybeStrArray(List[str] strs)
-    # d will be a dict
+    # TODO: Use Dict[int, str] representation
+  | BashArray(List[str] strs)
   | BashAssoc(Dict[str, str] d)
 
-    # DATA model for YSH follows JSON.  Note: YSH doesn't have an 'undefined'
-    # and 'null' like JS, just 'null'.
+    # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
+    # 'null' like JavaScript, just 'null'.
   | Null
   | Bool(bool b)
   | Int(int i)

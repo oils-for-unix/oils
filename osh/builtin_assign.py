@@ -139,7 +139,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if flag_x == '+' and cell.exported:
             continue
 
-        if flag_a and val.tag() != value_e.MaybeStrArray:
+        if flag_a and val.tag() != value_e.BashArray:
             continue
         if flag_A and val.tag() != value_e.BashAssoc:
             continue
@@ -153,7 +153,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('r')
             if cell.exported:
                 flags.append('x')
-            if val.tag() == value_e.MaybeStrArray:
+            if val.tag() == value_e.BashArray:
                 flags.append('a')
             elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
@@ -168,8 +168,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
             str_val = cast(value.Str, val)
             decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
 
-        elif val.tag() == value_e.MaybeStrArray:
-            array_val = cast(value.MaybeStrArray, val)
+        elif val.tag() == value_e.BashArray:
+            array_val = cast(value.BashArray, val)
 
             # mycpp rewrite: None in array_val.strs
             has_holes = False
@@ -301,17 +301,17 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
     Shared between NewVar and Readonly.
     """
-    if flag_a and rval is not None and rval.tag() != value_e.MaybeStrArray:
+    if flag_a and rval is not None and rval.tag() != value_e.BashArray:
         e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
     if flag_A and rval:
         # Special case: declare -A A=() is OK.  The () is changed to mean an empty
         # associative array.
-        if rval.tag() == value_e.MaybeStrArray:
-            array_val = cast(value.MaybeStrArray, rval)
+        if rval.tag() == value_e.BashArray:
+            array_val = cast(value.BashArray, rval)
             if len(array_val.strs) == 0:
                 return value.BashAssoc({})
-                #return value.MaybeStrArray([])
+                #return value.BashArray([])
 
         if rval.tag() != value_e.BashAssoc:
             e_usage("Got -A but RHS isn't an associative array",
@@ -343,7 +343,7 @@ class Readonly(vm._AssignBuiltin):
         for pair in cmd_val.pairs:
             if pair.rval is None:
                 if arg.a:
-                    rval = value.MaybeStrArray([])  # type: value_t
+                    rval = value.BashArray([])  # type: value_t
                 elif arg.A:
                     rval = value.BashAssoc({})
                 else:
@@ -452,8 +452,8 @@ class NewVar(vm._AssignBuiltin):
             if rval is None and (arg.a or arg.A):
                 old_val = self.mem.GetValue(pair.var_name)
                 if arg.a:
-                    if old_val.tag() != value_e.MaybeStrArray:
-                        rval = value.MaybeStrArray([])
+                    if old_val.tag() != value_e.BashArray:
+                        rval = value.BashArray([])
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
                         rval = value.BashAssoc({})

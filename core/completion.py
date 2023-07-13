@@ -562,7 +562,7 @@ class ShellFuncAction(CompletionAction):
                          self.func.name)
             return
 
-        if val.tag() != value_e.MaybeStrArray:
+        if val.tag() != value_e.BashArray:
             print_stderr('ERROR: COMPREPLY should be an array, got %s' %
                          value_str(val.tag()))
             return
@@ -570,7 +570,7 @@ class ShellFuncAction(CompletionAction):
         # TODO: Print structured value_t in C++.  This line is wrong:
         # self.debug('COMPREPLY %s' % val)
 
-        array_val = cast(value.MaybeStrArray, val)
+        array_val = cast(value.BashArray, val)
         for s in array_val.strs:
             yield s
 
