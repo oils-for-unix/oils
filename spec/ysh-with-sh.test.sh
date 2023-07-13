@@ -231,3 +231,14 @@ argv.py @sh_slice
 ['c d', 'e']
 ['copy', 'bash']
 ## END
+
+#### Concat ++ not defined on shell array
+
+declare -a a=(x y)
+declare -a b=(x y)
+
+= a ++ b
+
+## status: 3
+## STDOUT:
+## END

@@ -47,6 +47,7 @@ module runtime
     # DATA types: Str, Null, Bool, Int, Float, List, Dict
 
   | Str(str s)
+    # TODO: rename to value.BashArray and use Dict[int, str]
     # "holes" in the array are represented by None
   | MaybeStrArray(List[str] strs)
     # d will be a dict
@@ -228,3 +229,5 @@ module runtime
   # Hay "first word" namespace
   HayNode = (Dict[str, HayNode] children)
 }
+
+# vim: sw=2

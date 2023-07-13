@@ -564,19 +564,9 @@ class OilEvaluator(object):
                     else:
                         raise error.InvalidType('Expected String', loc.Missing)
 
-            elif lcase(value_e.MaybeStrArray):
-                left = cast(value.MaybeStrArray, UP_left)
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.MaybeStrArray):
-                        right = cast(value.MaybeStrArray, UP_right)
-                        return value.MaybeStrArray(left.strs + right.strs)
-
-                    else:
-                        raise error.InvalidType('Expected MaybeStrArray',
-                                                loc.Missing)
-
             else:
-                raise error.InvalidType('Expected List or String', loc.Missing)
+                raise error.InvalidType2(left, '++ expected Str or List',
+                                         loc.Missing)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -1065,16 +1055,9 @@ class OilEvaluator(object):
                     except KeyError:
                         raise error.Expr('dict entry not found', node.op)
 
-                elif case(value_e.AssocArray):
-                    o = cast(value.AssocArray, UP_o)
-                    try:
-                        result = value.Str(o.d[name])
-                    except KeyError:
-                        raise error.Expr('dict entry not found', node.op)
                 else:
-                    raise error.InvalidType(
-                        'd.key expected Dict or AssocArray, got %s' %
-                        value_str(o.tag()), loc.Missing)
+                    raise error.InvalidType2(o, 'd.key expected Dict',
+                                             loc.Missing)
 
             return result
 
@@ -1117,9 +1100,11 @@ class OilEvaluator(object):
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
-                        # TODO: Should use J8 lines
+                        # TODO: Should use QSN8 lines
                         strs = self.splitter.SplitForWordEval(stdout_str)
-                        return value.MaybeStrArray(strs)
+                        items = [value.Str(s)
+                                 for s in strs]  # type: List[value_t]
+                        return value.List(items)
                     else:
                         return value.Str(stdout_str)
 
@@ -1131,7 +1116,7 @@ class OilEvaluator(object):
                 #return value.MaybeStrArray(strs)
 
                 # It's equivalent to ['foo', 'bar']
-                items = [value.Str(s) for s in strs]  # type: List[value_t]
+                items = [value.Str(s) for s in strs]
                 return value.List(items)
 
             elif case(expr_e.DoubleQuoted):
