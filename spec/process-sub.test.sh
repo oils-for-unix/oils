@@ -75,8 +75,14 @@ hi
 ## END
 
 #### status code is available
+
+shopt --set parse_at
+
 cat <(seq 2; exit 2) <(seq 3; exit 3)
-echo status=${_process_sub_status[@]}
+
+case $SH in bash|zsh) exit ;; esac
+
+echo status @_process_sub_status
 echo done
 
 ## STDOUT:
@@ -85,7 +91,7 @@ echo done
 1
 2
 3
-status=2 3
+status 2 3
 done
 ## END
 ## N-I bash/zsh STDOUT:
@@ -94,58 +100,51 @@ done
 1
 2
 3
-status=
-done
 ## END
 
 #### shopt -s process_sub_fail
 
+case $SH in bash|zsh) exit ;; esac
+
+shopt --set parse_at
+
 cat <(echo a; exit 2) <(echo b; exit 3)
-echo status=$? ps=${_process_sub_status[@]}
+echo status=$? ps @_process_sub_status
 
 echo __
 shopt -s process_sub_fail
 
 cat <(echo a; exit 2) <(echo b; exit 3)
-echo status=$? ps=${_process_sub_status[@]}
+echo status=$? ps @_process_sub_status
 
 # Now exit because of it
 set -o errexit
 
 cat <(echo a; exit 2) <(echo b; exit 3)
-echo status=$? ps=${_process_sub_status[@]}
+echo status=$? ps @_process_sub_status
 
 ## status: 3
 ## STDOUT:
 a
 b
-status=0 ps=2 3
+status=0 ps 2 3
 __
 a
 b
-status=3 ps=2 3
+status=3 ps 2 3
 a
 b
 ## END
 ## N-I bash/zsh status: 0
 ## N-I bash/zsh STDOUT:
-a
-b
-status=0 ps=
-__
-a
-b
-status=0 ps=
-a
-b
-status=0 ps=
 ## END
 
 #### process subs and pipelines together
 
 # zsh is very similar to bash, but don't bother with the assertions
-case $SH in (zsh) exit ;; esac
+case $SH in bash|zsh) exit ;; esac
 
+shopt --set parse_at
 
 f() {
   cat <(seq 1; exit 1) | {
@@ -161,8 +160,8 @@ f() {
     (exit 4)
   }
   echo status=$?
-  echo process_sub=${_process_sub_status[@]}
-  echo pipeline=${_pipeline_status[@]}
+  echo process_sub @_process_sub_status
+  echo pipeline @_pipeline_status
   echo __
 }
 
@@ -175,23 +174,12 @@ f
 2
 3
 status=4
-process_sub=2 3
-pipeline=0 4
+process_sub 2 3
+pipeline 0 4
 __
 ## END
-## N-I bash STDOUT:
-1
-2
-1
-2
-3
-status=4
-process_sub=
-pipeline=
-__
+## N-I bash/zsh STDOUT:
 ## END
-## N-I zsh stdout-json: ""
-
 
 #### process sub in background &
 

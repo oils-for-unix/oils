@@ -19,8 +19,10 @@ shopt -u simple_word_eval
 
 #### %() array literal
 
+shopt --set parse_at
+
 var x = %(one two)
-echo "${x[@]}"
+echo @x
 
 ## STDOUT:
 one two
