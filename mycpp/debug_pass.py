@@ -5,8 +5,9 @@ from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import Expression, Statement
 from mypy.types import Type
 
-from typing import overload, Union, Optional, Any, Dict
+from typing import overload, Union, Optional, Dict
 
+import mypy
 from mycpp.crash import catch_errors
 from mycpp.util import log
 

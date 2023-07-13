@@ -3,17 +3,16 @@ cppgen.py - AST pass to that prints C++ code
 """
 import io
 import json  # for "C escaping"
-import os
-import sys
 
-from typing import overload, Union, Optional, Any, Dict
+from typing import overload, Union, Optional, Dict
 
+import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         Overloaded, CallableType, UnionType, UninhabitedType,
                         PartialType, TypeAliasType)
-from mypy.nodes import (Expression, Statement, Block, NameExpr, IndexExpr,
-                        MemberExpr, TupleExpr, ExpressionStmt, AssignmentStmt,
+from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr,
+                        MemberExpr, TupleExpr, ExpressionStmt,
                         IfStmt, StrExpr, SliceExpr, FuncDef, UnaryExpr, OpExpr,
                         ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
                         ListComprehension)
@@ -22,7 +21,7 @@ from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log
 
-from typing import Tuple
+from typing import Tuple, List
 
 T = None
 
@@ -447,21 +446,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             msg = msg % args
         self.f.write(ind_str + msg)
 
-    def CanBeOptional(self, t):
-        # To iterate over ASDL Optional[List[T]].  Right now we don't have
-        # strict Null checking.
-        if isinstance(t, UnionType):
-            if len(t.items) != 2:
-                self.report_error(o,
-                                  'Invalid union type to iterate over: %s' % t)
-                return
-            if not isinstance(t.items[1], NoneTyp):
-                self.report_error(o, 'Expected Optional, got %s' % t)
-                return
-            return t.items[0]
-
-        return t
-
     #
     # COPIED from IRBuilder
     #
@@ -697,7 +681,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         if o.callee.name == 'isinstance':
-            assert len(o.args) == 2, args
+            assert len(o.args) == 2, o.args
             obj = o.args[0]
             typ = o.args[1]
 
@@ -1436,7 +1420,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write('Alloc<%s>();\n' % c_type[:-1])
 
                 over_type = self.types[seq]
-                over_type = self.CanBeOptional(over_type)
 
                 if over_type.type.fullname == 'builtins.list':
                     c_type = GetCType(over_type)
@@ -1686,8 +1669,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         over_type = self.types[iterated_over]
         if isinstance(over_type, TypeAliasType):
             over_type = over_type.alias.target
-
-        over_type = self.CanBeOptional(over_type)
 
         #self.log('  iterating over type %s', over_type)
         #self.log('  iterating over type %s', over_type.type.fullname)

@@ -3,11 +3,11 @@ pass_state.py
 """
 from __future__ import print_function
 
-import sys
-
 from collections import defaultdict
 
 from mycpp.util import log
+
+_ = log
 
 
 class Virtual(object):
