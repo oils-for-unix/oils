@@ -400,10 +400,10 @@ four
 ## END
 
 #### parse_brace case
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
-var files = %(foo.py 'foo test.sh')
-for name in "${files[@]}" ; do
+var files = :| foo.py 'foo test.sh' |
+for name in (files) {
   case $name in
     *.py)
       echo python
@@ -412,7 +412,7 @@ for name in "${files[@]}" ; do
       echo shell
       ;;
   esac
-done
+}
 
 for name in @files {
   case (name) {
@@ -671,25 +671,25 @@ status=0 pipestatus=0 141
 
 #### printf | head regression (sigpipe_status_ok)
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 
 bad() {
   /usr/bin/printf '%65538s\n' foo | head -c 1
-  echo external on ${_pipeline_status[@]}
+  echo external on @_pipeline_status
 
   shopt --unset sigpipe_status_ok {
     /usr/bin/printf '%65538s\n' foo | head -c 1
   }
-  echo external off ${_pipeline_status[@]}
+  echo external off @_pipeline_status
 
   printf '%65538s\n' foo | head -c 1
-  echo builtin on ${_pipeline_status[@]}
+  echo builtin on @_pipeline_status
 
   shopt --unset sigpipe_status_ok {
     printf '%65538s\n' foo | head -c 1
   }
-  echo builtin off ${_pipeline_status[@]}
+  echo builtin off @_pipeline_status
 }
 
 bad

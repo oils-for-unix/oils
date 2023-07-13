@@ -142,8 +142,13 @@ if mylib.PYTHON:
 
     def IsPlainChar(ch):
         # type: (str) -> bool
-        return (ch in '.-_' or 'a' <= ch and ch <= 'z' or
-                'A' <= ch and ch <= 'Z' or '0' <= ch and ch <= '9')
+
+        # yapf: disable
+        return (ch in '.-_' or
+                'a' <= ch and ch <= 'z' or
+                'A' <= ch and ch <= 'Z' or
+                '0' <= ch and ch <= '9')
+        # yapf: enable
 
     # mycpp can't translate this format string
     def XEscape(ch):
@@ -500,6 +505,15 @@ if mylib.PYTHON:  # So we don't translate it
                                          # newline or tab
     ''', re.VERBOSE | re.DOTALL)  # . matches newline, a syntax error
 
+        def _CodePointToChar(code_point):
+            # type: (int) -> unicode
+            """
+            Workaround: unichr() is limited to 0x10000 in "narrow Python builds"
+            # https://stackoverflow.com/questions/7105874/valueerror-unichr-arg-not-in-range0x10000-narrow-python-build 
+            """
+            import struct
+            return struct.pack('i', code_point).decode('utf-32')
+
         def py_decode(s):
             # type: (str) -> str
             """Given a QSN literal in a string, return the corresponding byte
@@ -553,7 +567,12 @@ if mylib.PYTHON:  # So we don't translate it
 
                 elif m.group(3):
                     hex_str = m.group(3)[3:-1]  # \u{ }
-                    part = unichr(int(hex_str, 16)).encode('utf-8')
+
+                    code_point = int(hex_str, 16)
+
+                    ch = _CodePointToChar(code_point)
+                    #print('ch %r' % ch)
+                    part = ch.encode('utf-8')
 
                 elif m.group(4):
                     part = m.group(4)

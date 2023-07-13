@@ -1297,23 +1297,7 @@ class CommandEvaluator(object):
 
                     UP_val = val
                     with tagswitch(val) as case:
-                        if case(value_e.MaybeStrArray):
-                            val = cast(value.MaybeStrArray, UP_val)
-                            it2 = val_ops.ArrayIter(val.strs)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                i_name = location.LName(node.iter_names[0])
-                                name2 = location.LName(node.iter_names[1])
-                            else:
-                                # This is similar to a parse error
-                                e_die_status(
-                                    2,
-                                    'MaybeStrArray iteration expects at most 2 loop variables',
-                                    node.keyword)
-
-                        elif case(value_e.List):
+                        if case(value_e.List):
                             val = cast(value.List, UP_val)
                             it2 = val_ops.ListIterator(val)
 
@@ -1363,7 +1347,7 @@ class CommandEvaluator(object):
 
                         else:
                             raise error.InvalidType2(
-                                val, 'for loop expected Dict or List',
+                                val, 'for loop expected List or Dict',
                                 node.keyword)
                 else:
                     #log('iter list %s', iter_list)

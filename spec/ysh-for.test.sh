@@ -96,7 +96,7 @@ entry 1 age 40
 
 #### Equivalent of zip()
 
-var array = %(d e f)
+var array = :| d e f |
 
 for i, item in a b c {
   echo "$i $item $[array[i]]"
@@ -107,32 +107,6 @@ for i, item in a b c {
 1 b e
 2 c f
 ## END
-
-#### Iterate over shell data structures
-
-# TODO: use new style
-
-declare array=(one two three)
-for item in (array) {
-  echo $item
-}
-
-echo ---
-
-declare -A A=([k]=v [k2]=v2)  # iterate over keys
-for key in (A) {
-  echo $key
-}
-## STDOUT:
-one
-two
-three
----
-k
-k2
-## END
-
-
 
 #### parse_bare_word eliminates confusion
 

@@ -21,8 +21,8 @@ argv.py / @x @empty /
 
 #### empty array and simple_word_eval (regression test)
 shopt -s parse_at simple_word_eval
-var empty = %()
-echo len=${#empty[@]}
+var empty = :| |
+echo len=$[len(empty)]
 argv.py / @empty /
 
 ## STDOUT:
@@ -176,7 +176,7 @@ echo $x
 
 #### double quoted respects strict_array
 shopt -s strict:all
-var a = %(one two three)
+declare -a a=(one two three)
 var x = "-${a[@]}-"
 echo $x
 ## status: 1

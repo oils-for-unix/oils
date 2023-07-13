@@ -194,14 +194,40 @@ declare -a array=(a b)
 array[5]=c
 argv.py "${array[@]}"
 
-# TODO: Can make this like bash with value.BashArray
+# TODO: Should print this like this bash, with value.BashArray
 declare -a
 
 for i, item in (array) {
   echo "$i $item"
 }
 
+## status: 3
 ## STDOUT:
 ['a', 'b', 'c']
 array=(); array[0]=a array[1]=b array[5]=c
+## END
+
+#### Slice bash array isn't allowed
+
+shopt --set parse_at
+
+var ysh = :| ysh 'c d' e f |
+var yslice = ysh[1:3]
+argv.py @yslice
+
+declare -a bash=(bash 'c d' e f)
+
+# You can copy it and then slice it
+var ysh2 = :| copy "${bash[@]}" |
+var yslice = ysh2[0:2]
+argv.py @yslice
+
+# Note this
+var sh_slice = bash[1:3]
+argv.py @sh_slice
+
+## status: 3
+## STDOUT:
+['c d', 'e']
+['copy', 'bash']
 ## END

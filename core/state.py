@@ -2006,16 +2006,17 @@ class Mem(object):
             else:
                 return value.Str(self.this_dir[-1])  # top of stack
 
-        if name in ('PIPESTATUS', '_pipeline_status'):
-            pipe_strs = [str(i) for i in self.pipe_status[-1]
-                        ]  # type: List[str]
-            return value.MaybeStrArray(pipe_strs)
+        if name == 'PIPESTATUS':
+            strs = [str(i) for i in self.pipe_status[-1]]  # type: List[str]
+            return value.MaybeStrArray(strs)
+
+        if name == '_pipeline_status':
+            items = [value.Int(i) for i in self.pipe_status[-1]]  # type: List[value_t]
+            return value.List(items)
 
         if name == '_process_sub_status':  # Oil naming convention
-            # TODO: Shouldn't these be real integers?
-            sub_strs = [str(i) for i in self.process_sub_status[-1]
-                       ]  # type: List[str]
-            return value.MaybeStrArray(sub_strs)
+            items = [value.Int(i) for i in self.process_sub_status[-1]]
+            return value.List(items)
 
         if name == 'BASH_REMATCH':
             return value.MaybeStrArray(self.regex_matches[-1])  # top of stack
@@ -2026,14 +2027,14 @@ class Mem(object):
         if name == 'FUNCNAME':
             # bash wants it in reverse order.  This is a little inefficient but we're
             # not depending on deque().
-            strs = []  # type: List[str]
+            strs2 = []  # type: List[str]
             for frame in reversed(self.debug_stack):
                 if frame.func_name is not None:
-                    strs.append(frame.func_name)
+                    strs2.append(frame.func_name)
                 if frame.source_name is not None:
-                    strs.append('source')  # bash doesn't tell you the filename.
+                    strs2.append('source')  # bash doesn't tell you the filename.
                 # Temp stacks are ignored
-            return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
+            return value.MaybeStrArray(strs2)  # TODO: Reuse this object too?
 
         # This isn't the call source, it's the source of the function DEFINITION
         # (or the sourced # file itself).

@@ -66,10 +66,9 @@ def _PyObjToValue(val):
                 typed_array.append(_PyObjToValue(elem))
                 #typed_array.append(elem)
 
-        if is_shell_array:
-            return value.MaybeStrArray(shell_array)
-        else:
-            return value.List(typed_array)
+        #if is_shell_array:
+        #    return value.MaybeStrArray(shell_array)
+        return value.List(typed_array)
 
     elif isinstance(val, dict):
         is_shell_dict = True

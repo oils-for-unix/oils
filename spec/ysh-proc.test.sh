@@ -168,7 +168,7 @@ proc f {
   return $a
 }
 f
-## status: 1
+## status: 3
 ## STDOUT:
 ## END
 
