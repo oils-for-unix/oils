@@ -1107,7 +1107,9 @@ class CommandParser(object):
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
-        if typed_args is not None and kw_token and kw_token.id == Id.ControlFlow_Return:
+        if (typed_args is not None and
+            kw_token is not None and
+            kw_token.id == Id.ControlFlow_Return):
             # typed return (this is special from the other control flow types)
             if len(typed_args.positional) != 1:
                 p_die("Expected one argument passed to a typed return", typed_loc)
