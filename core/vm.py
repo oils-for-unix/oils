@@ -45,7 +45,7 @@ class ControlFlow(Exception):
     """
 
     def __init__(self, token, arg, value):
-        # type: (Token, Optional[int], Optional[value_t]) -> None
+        # type: (Token, int, Optional[value_t]) -> None
         """
     Args:
       token: the keyword token
@@ -54,8 +54,6 @@ class ControlFlow(Exception):
     """
         if value:
             assert token.id == Id.ControlFlow_Return, "Can only return a value"
-        else:
-            assert arg, "One of arg or value must be defined"
 
         self.token = token
         self.arg = arg
@@ -63,7 +61,7 @@ class ControlFlow(Exception):
 
     def IsReturn(self):
         # type: () -> bool
-        return self.token.id == Id.ControlFlow_Return and self.arg is not None
+        return self.token.id == Id.ControlFlow_Return and self.value is None
 
     def IsRetval(self):
         # type: () -> bool
