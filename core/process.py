@@ -1057,7 +1057,12 @@ class Process(Job):
         # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
-        self.job_control.MaybeTakeTerminal()
+        # Only take back the terminal if we gave it to this process in the first
+        # place. Otherwise we might accidentally take it back from another
+        # process running in the foreground, causing it to get stopped with
+        # SIGTTIN/SIGTTOU.
+        if self.job_control.Enabled() and posix.tcgetpgrp(self.job_control.shell_tty_fd) == posix.getpgid(self.pid):
+            self.job_control.MaybeTakeTerminal()
 
     def WhenDone(self, pid, status):
         # type: (int, int) -> None

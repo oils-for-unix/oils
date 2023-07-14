@@ -266,6 +266,28 @@ def suspend_status(sh):
   expect_prompt(sh)
 
 
+@register()
+def no_spurious_tty_take(sh):
+  'A background job getting stopped by SIGTTIN should not disrupt foreground processes'
+  expect_prompt(sh)
+
+  sh.sendline('cat &')
+  time.sleep(0.1)  # seems necessary
+
+  # background cat should have been stopped by SIGTTIN immediately, but we don't
+  # hear about it from wait() until the foreground job has been started because
+  # the shell was blocked in readline when the signal fired.
+  sh.sendline('python -c "import sys; print(sys.stdin.readline().strip() + \'bar\')"')
+  sh.expect('.*Stopped.*')
+
+  # foreground cat should not have been stopped.
+  sh.sendline('foo')
+  sh.expect('foobar')
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+
 if __name__ == '__main__':
   try:
     sys.exit(harness.main(sys.argv))
