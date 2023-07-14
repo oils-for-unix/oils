@@ -18,11 +18,11 @@ class IteratorTest(unittest.TestCase):
         it = val_ops.ArrayIter(a)
         self.assertEqual('a', it.FirstValue().s)
         self.assert_(not it.Done())
-        x = it.Next()
+        it.Next()
 
         self.assertEqual('b', it.FirstValue().s)
         self.assert_(not it.Done())
-        x = it.Next()
+        it.Next()
 
         self.assert_(it.Done())
 

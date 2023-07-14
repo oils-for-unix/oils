@@ -10,11 +10,9 @@ import sys
 
 from typing import List, Optional, Tuple
 
-from mypy import build
 from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
-from mypy.options import Options
 
 from mycpp import const_pass
 from mycpp import cppgen_pass
@@ -64,16 +62,6 @@ def get_mypy_config(
     mypy_options.extend(paths)
 
     sources, options = process_options(mypy_options)
-
-    # OSH PATCH
-    #if options.python_version[0] == 2:
-    if 0:
-        fail('Python 2 not supported')
-
-    # OSH Patch!
-    #if not options.strict_optional:
-    if 0:
-        fail('Disabling strict optional checking not supported')
 
     options.show_traceback = True
     # Needed to get types for all AST nodes
@@ -234,7 +222,7 @@ def main(argv):
 
     to_compile = filtered
 
-    import pickle
+    #import pickle
     if 0:
         for name, module in to_compile:
             log('to_compile %s', name)

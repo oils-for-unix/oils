@@ -9,6 +9,8 @@ import sys
 
 from build.ninja_lib import log, COMPILERS_VARIANTS
 
+_ = log
+
 def DefineTargets(ru):
 
   ru.py_binary(

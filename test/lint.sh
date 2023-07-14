@@ -14,6 +14,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
+source devtools/common.sh  # banner
 source devtools/run-task.sh  # run-task
 
 readonly -a CODE_DIRS=(asdl bin core data_lang frontend osh tools ysh)
@@ -117,8 +118,27 @@ find-long-lines() {
   find-src-files | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
+oils-lint() {
+  local lang=$1  # py2 or py3
+  shift
+
+  PYTHONPATH=.:~/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0 test/${lang}_lint.py "$@"
+  #PYTHONPATH=.:vendor/pyflakes-2.4.0 test/oils_lint.py "$@"
+}
+
+py2-lint() {
+  oils-lint py2 "$@"
+}
+
+py3-lint() {
+  oils-lint py3 "$@"
+}
+
 bin-flake8() {
   python2 -m flake8 "$@"
+
+  # Note: tried flake8 under Python 3, and many 'xrange' errors, etc.
+  #python3 -m flake8 "$@"
 }
 
 # Just do a single file
@@ -163,6 +183,30 @@ flake8-all() {
     --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 }
 
+py2() {
+  banner 'Linting Python 2 code'
+
+  # syntax_abbrev.py doesn't stand alone
+  py2-files-to-format | grep -v '_abbrev.py' | xargs $0 py2-lint
+}
+
+py3-files() {
+  for f in mycpp/*.py; do
+    echo $f
+  done
+}
+
+py3() {
+  banner 'Linting Python 3 code'
+
+  py3-files | xargs $0 py3-lint
+}
+
+all-py() {
+  py2
+  py3
+}
+
 #
 # More Python, including Python 3
 #
@@ -190,10 +234,7 @@ run-black() {
 }
 
 
-install-yapf() {
-  pip3 install yapf docformatter
-}
-
+# NOTE: test/format.sh installs and runs yapf for Debian 12 bookworm
 yapf-files() {
   python3 -m yapf -i "$@"
 }

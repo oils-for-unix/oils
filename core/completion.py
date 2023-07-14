@@ -51,11 +51,10 @@ from frontend import location
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
+from osh.string_ops import ShellQuoteB
+from osh import word_
 from pylib import os_path
 from pylib import path_stat
-from osh import word_
-from osh.string_ops import ShellQuoteB
-from mycpp import mylib
 
 import libc
 import posix_ as posix
@@ -562,7 +561,7 @@ class ShellFuncAction(CompletionAction):
                          self.func.name)
             return
 
-        if val.tag() != value_e.MaybeStrArray:
+        if val.tag() != value_e.BashArray:
             print_stderr('ERROR: COMPREPLY should be an array, got %s' %
                          value_str(val.tag()))
             return
@@ -570,7 +569,7 @@ class ShellFuncAction(CompletionAction):
         # TODO: Print structured value_t in C++.  This line is wrong:
         # self.debug('COMPREPLY %s' % val)
 
-        array_val = cast(value.MaybeStrArray, val)
+        array_val = cast(value.BashArray, val)
         for s in array_val.strs:
             yield s
 

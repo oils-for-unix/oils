@@ -5,10 +5,10 @@ Immutable string constants like 'StrFromC("foo")' are moved to the top level of
 the generated C++ program for efficiency.
 """
 import json
-import os
 
-from typing import overload, Union, Optional, Any, Dict, List
+from typing import overload, Union, Optional, Dict, List
 
+import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
                         ComparisonExpr, NameExpr, MemberExpr, IntExpr)

@@ -1397,7 +1397,7 @@ class WordParser(WordEmitter):
                 pairs.append(pair)
 
             # invariant List?
-            return word_part.AssocArrayLiteral(left_token, pairs, right_token)
+            return word_part.BashAssocLiteral(left_token, pairs, right_token)
 
         # Brace detection for arrays but NOT associative arrays
         words2 = braces.BraceDetectAll(words)

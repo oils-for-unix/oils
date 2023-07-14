@@ -149,8 +149,8 @@ def ToShellArray(val, blame_loc, prefix=''):
     """
     UP_val = val
     with tagswitch(val) as case2:
-        if case2(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
+        if case2(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
             strs = val.strs
 
         elif case2(value_e.List):
@@ -262,33 +262,6 @@ class DictIterator(_ContainerIter):
         return self.values[self.i]
 
 
-class AssocArrayIter(_ContainerIter):
-    """ for x in (mydict) { """
-
-    def __init__(self, val):
-        # type: (value.AssocArray) -> None
-        _ContainerIter.__init__(self)
-
-        # TODO: Don't materialize these Lists
-        self.keys = val.d.keys()  # type: List[str]
-        self.values = val.d.values()  # type: List[str]
-
-        self.n = len(val.d)
-        assert self.n == len(self.keys)
-
-    def Done(self):
-        # type: () -> int
-        return self.i == self.n
-
-    def FirstValue(self):
-        # type: () -> value_t
-        return value.Str(self.keys[self.i])
-
-    def SecondValue(self):
-        # type: () -> value_t
-        return value.Str(self.values[self.i])
-
-
 def ToBool(val):
     # type: (value_t) -> bool
     """Convert any value to a boolean.
@@ -308,12 +281,12 @@ def ToBool(val):
             return len(val.s) != 0
 
         # OLD TYPES
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
+        elif case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
             return len(val.strs) != 0
 
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
             return len(val.d) != 0
 
         elif case(value_e.Bool):
@@ -374,9 +347,9 @@ def ExactlyEqual(left, right):
             right = cast(value.Str, UP_right)
             return left.s == right.s
 
-        elif case(value_e.MaybeStrArray):
-            left = cast(value.MaybeStrArray, UP_left)
-            right = cast(value.MaybeStrArray, UP_right)
+        elif case(value_e.BashArray):
+            left = cast(value.BashArray, UP_left)
+            right = cast(value.BashArray, UP_right)
             if len(left.strs) != len(right.strs):
                 return False
 
@@ -398,7 +371,7 @@ def ExactlyEqual(left, right):
 
             return True
 
-        elif case(value_e.AssocArray):
+        elif case(value_e.BashAssoc):
             left = cast(value.Dict, UP_left)
             right = cast(value.Dict, UP_right)
             if len(left.d) != len(right.d):
@@ -440,8 +413,8 @@ def Contains(needle, haystack):
 
             return False
 
-        elif case(value_e.MaybeStrArray):
-            haystack = cast(value.MaybeStrArray, UP_haystack)
+        elif case(value_e.BashArray):
+            haystack = cast(value.BashArray, UP_haystack)
             if needle.tag() != value_e.Str:
                 raise error.InvalidType('Expected Str', loc.Missing)
 
@@ -460,8 +433,8 @@ def Contains(needle, haystack):
             needle = cast(value.Str, UP_needle)
             return needle.s in haystack.d
 
-        elif case(value_e.AssocArray):
-            haystack = cast(value.AssocArray, UP_haystack)
+        elif case(value_e.BashAssoc):
+            haystack = cast(value.BashAssoc, UP_haystack)
             if needle.tag() != value_e.Str:
                 raise error.InvalidType('Expected Str', loc.Missing)
 

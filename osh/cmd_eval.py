@@ -56,6 +56,7 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
+    value_str,
     cmd_value,
     cmd_value_e,
     RedirValue,
@@ -101,7 +102,6 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
-    from osh import word_eval
     from osh.builtin_trap import TrapState
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
@@ -180,34 +180,47 @@ def PlusEquals(old_val, val):
     UP_old_val = old_val
     UP_val = val
 
-    old_tag = old_val.tag()
     tag = val.tag()
 
-    if old_tag == value_e.Undef and tag == value_e.Str:
-        pass  # val is RHS
-    elif old_tag == value_e.Undef and tag == value_e.MaybeStrArray:
-        pass  # val is RHS
+    with tagswitch(old_val) as case:
+        if case(value_e.Undef):
+            pass  # val is RHS
 
-    elif old_tag == value_e.Str and tag == value_e.Str:
-        old_val = cast(value.Str, UP_old_val)
-        str_to_append = cast(value.Str, UP_val)
-        val = value.Str(old_val.s + str_to_append.s)
+        elif case(value_e.Str):
+            if tag == value_e.Str:
+                old_val = cast(value.Str, UP_old_val)
+                str_to_append = cast(value.Str, UP_val)
+                val = value.Str(old_val.s + str_to_append.s)
 
-    elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
-        e_die("Can't append array to string")
+            elif tag == value_e.BashArray:
+                e_die("Can't append array to string")
 
-    elif old_tag == value_e.MaybeStrArray and tag == value_e.Str:
-        e_die("Can't append string to array")
+            else:
+                raise AssertionError()  # parsing should prevent this
 
-    elif (old_tag == value_e.MaybeStrArray and tag == value_e.MaybeStrArray):
-        old_val = cast(value.MaybeStrArray, UP_old_val)
-        to_append = cast(value.MaybeStrArray, UP_val)
+        elif case(value_e.BashArray):
+            if tag == value_e.Str:
+                e_die("Can't append string to array")
 
-        # TODO: MUTATE the existing value for efficiency?
-        strs = []  # type: List[str]
-        strs.extend(old_val.strs)
-        strs.extend(to_append.strs)
-        val = value.MaybeStrArray(strs)
+            elif tag == value_e.BashArray:
+                old_val = cast(value.BashArray, UP_old_val)
+                to_append = cast(value.BashArray, UP_val)
+
+                # TODO: MUTATE the existing value for efficiency?
+                strs = []  # type: List[str]
+                strs.extend(old_val.strs)
+                strs.extend(to_append.strs)
+                val = value.BashArray(strs)
+
+            else:
+                raise AssertionError()  # parsing should prevent this
+
+        elif case(value_e.BashAssoc):
+            # TODO: Could try to match bash, it will append to ${A[0]}
+            pass
+
+        else:
+            e_die("Can't append to value of type %s" % value_str(old_val.tag()))
 
     return val
 
@@ -965,8 +978,8 @@ class CommandEvaluator(object):
                                 obj = place.obj
                                 UP_obj = obj
                                 with tagswitch(obj) as case:
-                                    if case(value_e.MaybeStrArray):
-                                        obj = cast(value.MaybeStrArray, UP_obj)
+                                    if case(value_e.BashArray):
+                                        obj = cast(value.BashArray, UP_obj)
                                         index = val_ops.ToInt(
                                             place.index,
                                             loc.Missing,
@@ -984,16 +997,16 @@ class CommandEvaluator(object):
                                             prefix='List index ')
                                         obj.items[index] = rval
 
-                                    elif case(value_e.AssocArray):
-                                        obj = cast(value.AssocArray, UP_obj)
+                                    elif case(value_e.BashAssoc):
+                                        obj = cast(value.BashAssoc, UP_obj)
                                         key = val_ops.ToStr(
                                             place.index,
                                             loc.Missing,
-                                            prefix='AssocArray index ')
+                                            prefix='BashAssoc index ')
                                         r = val_ops.ToStr(
                                             rval,
                                             loc.Missing,
-                                            prefix='AssocArray index ')
+                                            prefix='BashAssoc index ')
                                         obj.d[key] = r
 
                                     elif case(value_e.Dict):
@@ -1321,23 +1334,7 @@ class CommandEvaluator(object):
 
                     UP_val = val
                     with tagswitch(val) as case:
-                        if case(value_e.MaybeStrArray):
-                            val = cast(value.MaybeStrArray, UP_val)
-                            it2 = val_ops.ArrayIter(val.strs)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                i_name = location.LName(node.iter_names[0])
-                                name2 = location.LName(node.iter_names[1])
-                            else:
-                                # This is similar to a parse error
-                                e_die_status(
-                                    2,
-                                    'MaybeStrArray iteration expects at most 2 loop variables',
-                                    node.keyword)
-
-                        elif case(value_e.List):
+                        if case(value_e.List):
                             val = cast(value.List, UP_val)
                             it2 = val_ops.ListIterator(val)
 
@@ -1369,25 +1366,9 @@ class CommandEvaluator(object):
                             else:
                                 raise AssertionError()
 
-                        elif case(value_e.AssocArray):
-                            val = cast(value.AssocArray, UP_val)
-                            it2 = val_ops.AssocArrayIter(val)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                name1 = location.LName(node.iter_names[0])
-                                name2 = location.LName(node.iter_names[1])
-                            elif n == 3:
-                                i_name = location.LName(node.iter_names[0])
-                                name1 = location.LName(node.iter_names[1])
-                                name2 = location.LName(node.iter_names[2])
-                            else:
-                                raise AssertionError()
-
                         else:
                             raise error.InvalidType2(
-                                val, 'for loop expected Dict or List',
+                                val, 'for loop expected List or Dict',
                                 node.keyword)
                 else:
                     #log('iter list %s', iter_list)
@@ -2037,7 +2018,7 @@ class CommandEvaluator(object):
 
                 n_params = len(sig.pos_params)
                 if sig.rest:
-                    leftover = value.MaybeStrArray(argv[n_params:])
+                    leftover = value.BashArray(argv[n_params:])
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,
                                       scope_e.LocalOnly)
                 else:

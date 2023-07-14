@@ -14,7 +14,7 @@ except ImportError:
     import os
     posix = os
 
-from typing import Tuple, Any
+from typing import Tuple, Dict, Optional, Any
 
 # For conditional translation
 CPP = False

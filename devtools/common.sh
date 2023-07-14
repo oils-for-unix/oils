@@ -12,6 +12,7 @@ banner() {
   echo -----
 }
 
+# TODO: delete this function?
 mypy_() {
   local system=mypy
   local pip_global=/usr/local/bin/mypy
@@ -25,15 +26,3 @@ mypy_() {
     $system "$@"
   fi
 }
-
-typecheck() {
-  # we 'import libc' but the source is pyext/libc.{c,pyi}
-
-  echo "MYPY $@"
-
-  MYPYPATH='.:pyext' PYTHONPATH='.' mypy_ --py2 "$@"
-}
-
-readonly MYPY_FLAGS='--strict --no-strict-optional'
-readonly COMMENT_RE='^[ ]*#'
-

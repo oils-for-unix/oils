@@ -190,16 +190,16 @@ def _PrintShValue(val, buf):
             val = cast(value.Str, UP_val)
             result = qsn.maybe_shell_encode(val.s)
 
-        elif case(value_e.MaybeStrArray):
-            val = cast(value.MaybeStrArray, UP_val)
+        elif case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
             parts = ['(']
             for s in val.strs:
                 parts.append(qsn.maybe_shell_encode(s))
             parts.append(')')
             result = ' '.join(parts)
 
-        elif case(value_e.AssocArray):
-            val = cast(value.AssocArray, UP_val)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
             parts = ['(']
             for k, v in iteritems(val.d):
                 parts.append(

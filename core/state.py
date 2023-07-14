@@ -925,14 +925,14 @@ if mylib.PYTHON:
                     cell_json['type'] = 'Str'
                     cell_json['value'] = val.s
 
-                elif case(value_e.MaybeStrArray):
-                    val = cast(value.MaybeStrArray, cell.val)
-                    cell_json['type'] = 'MaybeStrArray'
+                elif case(value_e.BashArray):
+                    val = cast(value.BashArray, cell.val)
+                    cell_json['type'] = 'BashArray'
                     cell_json['value'] = val.strs
 
-                elif case(value_e.AssocArray):
-                    val = cast(value.AssocArray, cell.val)
-                    cell_json['type'] = 'AssocArray'
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, cell.val)
+                    cell_json['type'] = 'BashAssoc'
                     cell_json['value'] = val.d
 
             vars_json[name] = cell_json
@@ -1722,7 +1722,7 @@ class Mem(object):
                                                            ref_trail=ref_trail)
         return cell, name_map, cell_name
 
-    def IsAssocArray(self, name):
+    def IsBashAssoc(self, name):
         # type: (str) -> bool
         """Returns whether a name resolve to a cell with an associative array.
 
@@ -1732,7 +1732,7 @@ class Mem(object):
         cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(),
                                             False)
         if cell:
-            if cell.val.tag() == value_e.AssocArray:  # foo=([key]=value)
+            if cell.val.tag() == value_e.BashAssoc:  # foo=([key]=value)
                 return True
         return False
 
@@ -1886,8 +1886,8 @@ class Mem(object):
                         # s[1]=y  # invalid
                         e_die("Can't assign to items in a string", left_loc)
 
-                    elif case2(value_e.MaybeStrArray):
-                        cell_val = cast(value.MaybeStrArray, UP_cell_val)
+                    elif case2(value_e.BashArray):
+                        cell_val = cast(value.BashArray, UP_cell_val)
                         strs = cell_val.strs
 
                         n = len(strs)
@@ -1910,7 +1910,7 @@ class Mem(object):
                         return
 
                 # This could be an object, eggex object, etc.  It won't be
-                # AssocArray shouldn because we query IsAssocArray before evaluating
+                # BashAssoc shouldn because we query IsBashAssoc before evaluating
                 # sh_lhs_expr.  Could conslidate with s[i] case above
                 e_die(
                     "Value of type %s can't be indexed" % ui.ValType(cell.val),
@@ -1932,8 +1932,8 @@ class Mem(object):
                           left_loc)
 
                 # We already looked it up before making the lvalue
-                assert cell.val.tag() == value_e.AssocArray, cell
-                cell_val2 = cast(value.AssocArray, cell.val)
+                assert cell.val.tag() == value_e.BashAssoc, cell
+                cell_val2 = cast(value.BashAssoc, cell.val)
 
                 cell_val2.d[lval.key] = rval.s
 
@@ -1946,9 +1946,9 @@ class Mem(object):
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
         items.append(val.s)
-        new_value = value.MaybeStrArray(items)
+        new_value = value.BashArray(items)
 
-        # arrays can't be exported; can't have AssocArray flag
+        # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
         name_map[lval.name] = Cell(False, readonly, False, new_value)
 
@@ -1988,9 +1988,9 @@ class Mem(object):
 
         if name == 'ARGV':
             # TODO:
-            # - Reuse the MaybeStrArray?
+            # - Reuse the BashArray?
             # - @@ could be an alias for ARGV (in command mode, but not expr mode)
-            return value.MaybeStrArray(self.GetArgv())
+            return value.BashArray(self.GetArgv())
 
         # "Registers"
         if name == '_status':
@@ -2006,19 +2006,20 @@ class Mem(object):
             else:
                 return value.Str(self.this_dir[-1])  # top of stack
 
-        if name in ('PIPESTATUS', '_pipeline_status'):
-            pipe_strs = [str(i) for i in self.pipe_status[-1]
-                        ]  # type: List[str]
-            return value.MaybeStrArray(pipe_strs)
+        if name == 'PIPESTATUS':
+            strs = [str(i) for i in self.pipe_status[-1]]  # type: List[str]
+            return value.BashArray(strs)
+
+        if name == '_pipeline_status':
+            items = [value.Int(i) for i in self.pipe_status[-1]]  # type: List[value_t]
+            return value.List(items)
 
         if name == '_process_sub_status':  # Oil naming convention
-            # TODO: Shouldn't these be real integers?
-            sub_strs = [str(i) for i in self.process_sub_status[-1]
-                       ]  # type: List[str]
-            return value.MaybeStrArray(sub_strs)
+            items = [value.Int(i) for i in self.process_sub_status[-1]]
+            return value.List(items)
 
         if name == 'BASH_REMATCH':
-            return value.MaybeStrArray(self.regex_matches[-1])  # top of stack
+            return value.BashArray(self.regex_matches[-1])  # top of stack
 
         # Do lookup of system globals before looking at user variables.  Note: we
         # could optimize this at compile-time like $?.  That would break
@@ -2026,14 +2027,14 @@ class Mem(object):
         if name == 'FUNCNAME':
             # bash wants it in reverse order.  This is a little inefficient but we're
             # not depending on deque().
-            strs = []  # type: List[str]
+            strs2 = []  # type: List[str]
             for frame in reversed(self.debug_stack):
                 if frame.func_name is not None:
-                    strs.append(frame.func_name)
+                    strs2.append(frame.func_name)
                 if frame.source_name is not None:
-                    strs.append('source')  # bash doesn't tell you the filename.
+                    strs2.append('source')  # bash doesn't tell you the filename.
                 # Temp stacks are ignored
-            return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
+            return value.BashArray(strs2)  # TODO: Reuse this object too?
 
         # This isn't the call source, it's the source of the function DEFINITION
         # (or the sourced # file itself).
@@ -2042,7 +2043,7 @@ class Mem(object):
             for frame in reversed(self.debug_stack):
                 if frame.bash_source is not None:
                     strs.append(frame.bash_source)
-            return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
+            return value.BashArray(strs)  # TODO: Reuse this object too?
 
         # This is how bash source SHOULD be defined, but it's not!
         if 0:
@@ -2058,7 +2059,7 @@ class Mem(object):
                     source_str = ui.GetLineSourceString(self.arena,
                                                         self.current_tok.line)
                     strs.append(source_str)
-                return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
+                return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'BASH_LINENO':
             strs = []
@@ -2071,7 +2072,7 @@ class Mem(object):
                     continue
                 line_num = frame.call_tok.line.line_num
                 strs.append(str(line_num))
-            return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
+            return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'LINENO':
             assert self.current_tok is not None
@@ -2165,10 +2166,10 @@ class Mem(object):
 
                 val = cell.val
                 UP_val = val
-                if val.tag() != value_e.MaybeStrArray:
+                if val.tag() != value_e.BashArray:
                     raise error.Runtime("%r isn't an array" % var_name)
 
-                val = cast(value.MaybeStrArray, UP_val)
+                val = cast(value.BashArray, UP_val)
                 strs = val.strs
 
                 n = len(strs)
@@ -2197,11 +2198,11 @@ class Mem(object):
                 val = cell.val
                 UP_val = val
 
-                # note: never happens because of mem.IsAssocArray test for lvalue.Keyed
-                #if val.tag() != value_e.AssocArray:
+                # note: never happens because of mem.IsBashAssoc test for lvalue.Keyed
+                #if val.tag() != value_e.BashAssoc:
                 #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
-                val = cast(value.AssocArray, UP_val)
+                val = cast(value.BashAssoc, UP_val)
                 mylib.dict_erase(val.d, lval.key)
 
             else:
@@ -2252,7 +2253,7 @@ class Mem(object):
         for scope in self.var_stack:
             for name, cell in iteritems(scope):
                 # TODO: Disallow exporting at assignment time.  If an exported Str is
-                # changed to MaybeStrArray, also clear its 'exported' flag.
+                # changed to BashArray, also clear its 'exported' flag.
                 if cell.exported and cell.val.tag() == value_e.Str:
                     val = cast(value.Str, cell.val)
                     exported[name] = val.s
@@ -2388,7 +2389,7 @@ def BuiltinSetArray(mem, name, a):
     Used by compadjust, read -a, etc.
     """
     assert isinstance(a, list)
-    BuiltinSetValue(mem, location.LName(name), value.MaybeStrArray(a))
+    BuiltinSetValue(mem, location.LName(name), value.BashArray(a))
 
 
 def SetGlobalString(mem, name, s):
@@ -2403,7 +2404,7 @@ def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetValue(location.LName(name), value.MaybeStrArray(a),
+    mem.SetValue(location.LName(name), value.BashArray(a),
                  scope_e.GlobalOnly)
 
 

@@ -44,25 +44,20 @@ module runtime
     # A var bound to Undef is different than no binding because of dynamic scope.
     Undef
 
-    # DATA types: Str, Null, Bool, Int, Float, List, Dict
-
   | Str(str s)
-    # "holes" in the array are represented by None
-  | MaybeStrArray(List[str] strs)
-    # d will be a dict
-  | AssocArray(Dict[str, str] d)
 
-    # Explicit null for JSON; should be rarely used.  Note: the YSH language
-    # doesn't have an 'undefined' and 'null' like JS, just 'null'.
+    # "holes" in the array are represented by None
+    # TODO: Use Dict[int, str] representation
+  | BashArray(List[str] strs)
+  | BashAssoc(Dict[str, str] d)
+
+    # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
+    # 'null' like JavaScript, just 'null'.
   | Null
   | Bool(bool b)
   | Int(int i)
   | Float(float f)
-
-    -- TODO: remove MaybeStrArray in favor of this
   | List(List[value] items)
-
-    -- TODO: remove AssocArray in favor of this
   | Dict(Dict[str, value] d)
 
     # CODE types
@@ -91,7 +86,7 @@ module runtime
     # Internal detail?  Does it need to be a first class type, or maybe it can
     # double for a range?  It can't be serialized.
     # Might want for i in (1:n) { echo $i }, although it's inconsistent with shell ..
-  | Slice(IntBox? lower, IntBox? upper, IntBox? step)
+  | Slice(IntBox? lower, IntBox? upper)
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
@@ -228,3 +223,5 @@ module runtime
   # Hay "first word" namespace
   HayNode = (Dict[str, HayNode] children)
 }
+
+# vim: sw=2

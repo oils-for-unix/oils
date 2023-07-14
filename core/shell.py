@@ -75,7 +75,7 @@ import posix_ as posix
 from typing import List, Dict, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value, Proc
+    from _devbuild.gen.runtime_asdl import Proc
     from core import optview
     from frontend.py_readline import Readline
 

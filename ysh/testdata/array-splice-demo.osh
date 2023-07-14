@@ -3,20 +3,19 @@ shopt -s oil-parse-at static-word-eval
 
 myglobal=global
 
-var myarray = %($myglobal $'line\n' ${z:-default})
+var myarray = :| $myglobal $'line\n' ${z:-default} |
 spec/bin/argv.py @myarray
-echo len=${#myarray[@]}
+echo len=$[len(myarray)]
 echo
 
 append myarray _ '1 2' ${myglobal:-default}
 spec/bin/argv.py @myarray
-echo len=${#myarray[@]}
+echo len=$[len(myarray)]
 echo
 
-for item in "${myarray[@]}"; do
+for item in (myarray) {
   echo "  $item"
-done
+}
 
 # NOTE: This doesn't work for arrays
 #setvar myarray += %(more stuff)
-

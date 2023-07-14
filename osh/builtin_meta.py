@@ -26,13 +26,10 @@ from osh import cmd_eval
 _ = log
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
-from _devbuild.gen.syntax_asdl import loc
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value, Proc
+    from _devbuild.gen.runtime_asdl import Proc
     from frontend.parse_lib import ParseContext
     from core import optview
-    from core import process
-    from core import state
     from core import ui
     from osh.cmd_eval import CommandEvaluator
 

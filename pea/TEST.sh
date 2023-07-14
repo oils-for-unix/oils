@@ -41,6 +41,8 @@ parse-all() {
   time all-files | xargs --verbose -- $0 parse-one
 }
 
+# TODO: Fix INTERNAL ERROR with MyPy 0.782
+# We're using that for Python 2 support, but this is Python 3
 check-types() {
   #mypy_ test/py3_parse.py
 

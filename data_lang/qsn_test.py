@@ -13,10 +13,11 @@ from data_lang import qsn  # module under test
 
 
 class QStrTest(unittest.TestCase):
+
     def testFlags(self):
         self.assertEqual("a", qsn.maybe_shell_encode('a'))
-        self.assertEqual("'a'", qsn.maybe_shell_encode('a',
-                                                       flags=qsn.MUST_QUOTE))
+        self.assertEqual("'a'",
+                         qsn.maybe_shell_encode('a', flags=qsn.MUST_QUOTE))
 
     def testShellEncode(self):
         # We don't want \u{} in shell
@@ -53,7 +54,7 @@ class QStrTest(unittest.TestCase):
             print('---')
 
             actual = qsn.maybe_shell_encode(c)
-            print(actual)
+            print('ACTUAL', actual)
             self.assertEqual(expected, actual)
 
     def testEncodeDecode(self):
@@ -128,7 +129,8 @@ class QStrTest(unittest.TestCase):
         ]
         for c in UNICODE_CASES:
             print(repr(c))
-            s = unichr(c).encode('utf-8')  # what it should decode to
+            # what it should decode to
+            s = qsn._CodePointToChar(c).encode('utf-8')
 
             q = '\\u{%0x}' % c  # the QSTR encoding
 

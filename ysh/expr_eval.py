@@ -7,6 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
     re,
+    re_e,
     re_t,
     Token,
     word_part,
@@ -24,9 +25,6 @@ from _devbuild.gen.syntax_asdl import (
     place_expr_t,
     Attribute,
     Subscript,
-    re,
-    re_e,
-    re_t,
     class_literal_term,
     class_literal_term_e,
     class_literal_term_t,
@@ -42,10 +40,10 @@ from _devbuild.gen.runtime_asdl import (
     part_value,
     part_value_t,
     lvalue,
+    lvalue_t,
     value,
     value_e,
     value_t,
-    value_str,
     IntBox,
 )
 from core import error
@@ -68,7 +66,6 @@ import libc
 from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import lvalue, lvalue_t
     from _devbuild.gen.syntax_asdl import ArgList
     from core import ui
     from core.state import Mem
@@ -565,19 +562,9 @@ class OilEvaluator(object):
                     else:
                         raise error.InvalidType('Expected String', loc.Missing)
 
-            elif lcase(value_e.MaybeStrArray):
-                left = cast(value.MaybeStrArray, UP_left)
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.MaybeStrArray):
-                        right = cast(value.MaybeStrArray, UP_right)
-                        return value.MaybeStrArray(left.strs + right.strs)
-
-                    else:
-                        raise error.InvalidType('Expected MaybeStrArray',
-                                                loc.Missing)
-
             else:
-                raise error.InvalidType('Expected List or String', loc.Missing)
+                raise error.InvalidType2(left, '++ expected Str or List',
+                                         loc.Missing)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -637,7 +624,7 @@ class OilEvaluator(object):
 
             upper = IntBox(cast(value.Int, UP_upper).i)
 
-        return value.Slice(lower, upper, IntBox(1))
+        return value.Slice(lower, upper)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> bool
@@ -946,14 +933,16 @@ class OilEvaluator(object):
 
                         return cpython._PyObjToValue(ret)
                 else:
-                    raise NotImplementedError() # isinstance does not work in mycpp
+                    # isinstance does not work in mycpp
+                    raise NotImplementedError()
 
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)
                 f = func.callable
 
                 if mylib.PYTHON:
-                    assert isinstance(f, vm._Callable), "Bound funcs must be typed"
+                    assert isinstance(
+                        f, vm._Callable), "Bound funcs must be typed"
 
                 pos_args, named_args = self.EvalArgList2(node.args)
                 pos_args.insert(0, func.me)
@@ -963,7 +952,8 @@ class OilEvaluator(object):
                 return ret
 
             else:
-                raise error.InvalidType('Expected a function or method', loc.Missing)
+                raise error.InvalidType('Expected a function or method',
+                                        loc.Missing)
 
         raise AssertionError()
 
@@ -977,40 +967,40 @@ class OilEvaluator(object):
         UP_index = index
 
         with tagswitch(obj) as case:
-            if case(value_e.List):
+            if case(value_e.Str):
+                # Note: s[i] and s[i:j] are like Go, on bytes.  We may provide
+                # s->numBytes(), s->countRunes(), and iteration over runes.
+                obj = cast(value.Str, UP_obj)
+                with tagswitch(index) as case2:
+                    if case2(value_e.Slice):
+                        index = cast(value.Slice, index)
+
+                        lower = index.lower.i if index.lower else 0
+                        upper = index.upper.i if index.upper else len(obj.s)
+                        return value.Str(obj.s[lower:upper])
+
+                    elif case2(value_e.Int):
+                        index = cast(value.Int, index)
+                        try:
+                            return value.Str(obj.s[index.i])
+                        except IndexError:
+                            # TODO: expr.Subscript has no error location
+                            raise error.Expr('index out of range', loc.Missing)
+
+                    else:
+                        raise error.InvalidType('expected Slice or Int',
+                                                loc.Missing)
+
+            elif case(value_e.List):
                 obj = cast(value.List, UP_obj)
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, index)
 
-                        if mylib.PYTHON:
-                            # stride not supported in mycpp
-
-                            step = index.step.i if index.step else 1
-
-                            try:
-                                if index.lower and index.upper:
-                                    return value.List(
-                                        obj.items[index.lower.i:index.upper.
-                                                  i:step])
-
-                                elif index.lower:
-                                    return value.List(
-                                        obj.items[index.lower.i:len(obj.items
-                                                                    ):step])
-
-                                elif index.upper:
-                                    return value.List(
-                                        obj.items[:index.upper.i:step])
-
-                                else:
-                                    # l[:] == l
-                                    return value.List(list(obj.items))
-
-                            except IndexError:
-                                # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range',
-                                                 loc.Missing)
+                        lower = index.lower.i if index.lower else 0
+                        upper = index.upper.i if index.upper else len(
+                            obj.items)
+                        return value.List(obj.items[lower:upper])
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, index)
@@ -1025,108 +1015,6 @@ class OilEvaluator(object):
                                                  'expected Slice or Int',
                                                  loc.Missing)
 
-            elif case(value_e.MaybeStrArray):
-                obj = cast(value.MaybeStrArray, UP_obj)
-                with tagswitch(index) as case2:
-                    if case2(value_e.Slice):
-                        index = cast(value.Slice, index)
-                        if mylib.PYTHON:
-                            step = index.step.i if index.step else 1
-
-                            try:
-                                if index.lower and index.upper:
-                                    return value.MaybeStrArray(
-                                        obj.strs[index.lower.i:index.upper.
-                                                 i:step])
-
-                                elif index.lower:
-                                    return value.MaybeStrArray(
-                                        obj.strs[index.lower.i:len(obj.strs
-                                                                   ):step])
-
-                                elif index.upper:
-                                    return value.MaybeStrArray(
-                                        obj.strs[:index.upper.i:step])
-
-                                else:
-                                    # l[:] == l
-                                    return value.MaybeStrArray(list(obj.strs))
-
-                            except IndexError:
-                                # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range',
-                                                 loc.Missing)
-
-                    elif case2(value_e.Int):
-                        index = cast(value.Int, index)
-                        try:
-                            return value.Str(obj.strs[index.i])
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
-
-                    else:
-                        raise error.InvalidType2(
-                            index,
-                            'MaybeStrArray subscript expected Slice or Int',
-                            loc.Missing)
-
-            elif case(value_e.Str):
-                obj = cast(value.Str, UP_obj)
-                with tagswitch(index) as case2:
-                    if case2(value_e.Slice):
-                        index = cast(value.Slice, index)
-
-                        if mylib.PYTHON:
-                            step = index.step.i if index.step else 1
-
-                            try:
-                                if index.lower and index.upper:
-                                    return value.Str(obj.s[index.lower.i:index.
-                                                           upper.i:step])
-
-                                elif index.lower:
-                                    return value.Str(
-                                        obj.s[index.lower.i::step])
-
-                                elif index.upper:
-                                    return value.Str(
-                                        obj.s[:index.upper.i:step])
-
-                                else:
-                                    # l[:] == l
-                                    return obj
-
-                            except IndexError:
-                                # TODO: expr.Subscript has no error location
-                                raise error.Expr('index out of range',
-                                                 loc.Missing)
-
-                    elif case2(value_e.Int):
-                        index = cast(value.Int, index)
-                        try:
-                            return value.Str(obj.s[index.i])
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
-
-                    else:
-                        raise error.InvalidType('expected Slice or Int',
-                                                loc.Missing)
-
-            elif case(value_e.AssocArray):
-                obj = cast(value.AssocArray, UP_obj)
-                if index.tag() != value_e.Str:
-                    raise error.InvalidType(
-                        'expected String index for AssocArray', loc.Missing)
-
-                index = cast(value.Str, UP_index)
-                try:
-                    return value.Str(obj.d[index.s])
-                except KeyError:
-                    # TODO: expr.Subscript has no error location
-                    raise error.Expr('dict entry not found', loc.Missing)
-
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
                 if index.tag() != value_e.Str:
@@ -1140,7 +1028,8 @@ class OilEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.InvalidType2(obj, 'expected Dict or List', loc.Missing)
+        raise error.InvalidType2(obj, 'subscript expected Str, List, or Dict',
+                                 loc.Missing)
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
@@ -1156,7 +1045,8 @@ class OilEvaluator(object):
             recv = self.methods.get(ty)
             method = recv.get(name) if recv else None
             if not method:
-                raise error.InvalidType('Method %r does not exist on %r' % (name, ty), node.attr)
+                raise error.InvalidType(
+                    'Method %r does not exist on %r' % (name, ty), node.attr)
 
             return value.BoundFunc(o, method)
 
@@ -1170,16 +1060,9 @@ class OilEvaluator(object):
                     except KeyError:
                         raise error.Expr('dict entry not found', node.op)
 
-                elif case(value_e.AssocArray):
-                    o = cast(value.AssocArray, UP_o)
-                    try:
-                        result = value.Str(o.d[name])
-                    except KeyError:
-                        raise error.Expr('dict entry not found', node.op)
                 else:
-                    raise error.InvalidType(
-                        'd.key expected Dict or AssocArray, got %s' %
-                        value_str(o.tag()), loc.Missing)
+                    raise error.InvalidType2(o, 'd.key expected Dict',
+                                             loc.Missing)
 
             return result
 
@@ -1196,13 +1079,7 @@ class OilEvaluator(object):
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t
-        """This is a naive PyObject evaluator!  It uses the type dispatch of
-        the host Python interpreter.
-
-        Returns:
-          A Python object of ANY type.  Should be wrapped in value.Obj() for
-          storing in Mem.
-        """
+        """Turn an expression into a value."""
         if 0:
             print('_EvalExpr()')
             node.PrettyPrint()
@@ -1228,18 +1105,24 @@ class OilEvaluator(object):
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
-                        # TODO: Should use J8 lines
+                        # TODO: Should use QSN8 lines
                         strs = self.splitter.SplitForWordEval(stdout_str)
-                        return value.MaybeStrArray(strs)
+                        items = [value.Str(s)
+                                 for s in strs]  # type: List[value_t]
+                        return value.List(items)
                     else:
                         return value.Str(stdout_str)
 
-            elif case(expr_e.ShArrayLiteral):
+            elif case(expr_e.ShArrayLiteral):  # var x = :| foo *.py |
                 node = cast(ShArrayLiteral, UP_node)
                 words = braces.BraceExpandWords(node.words)
                 strs = self.word_ev.EvalWordSequence(words)
                 #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-                return value.MaybeStrArray(strs)
+                #return value.BashArray(strs)
+
+                # It's equivalent to ['foo', 'bar']
+                items = [value.Str(s) for s in strs]
+                return value.List(items)
 
             elif case(expr_e.DoubleQuoted):
                 node = cast(DoubleQuoted, UP_node)

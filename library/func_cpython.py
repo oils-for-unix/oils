@@ -198,8 +198,6 @@ def Init(mem):
 
     # Temporary: use xrange until we rewrite in YSH
     SetGlobalFunc(mem, 'range', lambda *args: list(xrange(*args)))
-    # For the 'step' param.
-    SetGlobalFunc(mem, 'slice', slice)
 
     SetGlobalFunc(mem, 'any', any)  # IN-YSH with Bool
     SetGlobalFunc(mem, 'all', all)  # IN-YSH with Bool

@@ -23,7 +23,7 @@ declare -a array
 array[3]=42
 pp cell array
 ## STDOUT:
-array = (Cell exported:F readonly:F nameref:F val:(value.MaybeStrArray strs:[_ _ _ 42]))
+array = (Cell exported:F readonly:F nameref:F val:(value.BashArray strs:[_ _ _ 42]))
 ## END
 
 

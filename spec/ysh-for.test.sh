@@ -1,6 +1,6 @@
 ## our_shell: ysh
 
-#### For loop over expression: list
+#### For loop over expression: List
 var mylist = [1, 2, 3]
 for item in (mylist) {
   echo "item $item"
@@ -12,14 +12,19 @@ item 2
 item 3
 ## END
 
-#### For loop over expression: dict
+#### For loop over expression: Dict, not BashAssoc
 
 var mydict = {name: 'bob', age: 40}
 for key in (mydict) {
   echo "key $key"
 }
 
+declare -A A=([name]=bob)
+for key in (A) {
+  echo "key $key"
+}
 
+## status: 3
 ## STDOUT:
 key name
 key age
@@ -66,7 +71,7 @@ for a, b, c, d in (['foo']) {
 }
 ## status: 2
 
-#### Expression for loop with index: list
+#### Expression for loop with index: List
 for i, item in (['spam', 'eggs']) {
   echo "$i $item"
 }
@@ -75,7 +80,7 @@ for i, item in (['spam', 'eggs']) {
 1 eggs
 ## END
 
-#### Expression for loop with index: dict (TODO: define dict iter order)
+#### Expression for loop with index: Dict (TODO: define dict iter order)
 for key, value in ({name: 'bob', age: 40}) {
   echo "pair $key $value"
 }
@@ -84,7 +89,7 @@ pair name bob
 pair age 40
 ## END
 
-#### dict: index key value loop (TODO: define dict iter order)
+#### Dict: index key value loop (TODO: define dict iter order)
 for i, key, value in ({name: 'bob', age: 40}) {
   echo "entry $i $key $value"
 }
@@ -96,7 +101,7 @@ entry 1 age 40
 
 #### Equivalent of zip()
 
-var array = %(d e f)
+var array = :| d e f |
 
 for i, item in a b c {
   echo "$i $item $[array[i]]"
@@ -107,32 +112,6 @@ for i, item in a b c {
 1 b e
 2 c f
 ## END
-
-#### Iterate over shell data structures
-
-# TODO: use new style
-
-declare array=(one two three)
-for item in (array) {
-  echo $item
-}
-
-echo ---
-
-declare -A A=([k]=v [k2]=v2)  # iterate over keys
-for key in (A) {
-  echo $key
-}
-## STDOUT:
-one
-two
-three
----
-k
-k2
-## END
-
-
 
 #### parse_bare_word eliminates confusion
 

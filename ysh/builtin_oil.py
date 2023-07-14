@@ -152,12 +152,12 @@ class Append(_Builtin):
 
         val = self.mem.GetValue(var_name)
 
-        # TODO: Get rid of value.MaybeStrArray
+        # TODO: Get rid of value.BashArray
         ok = False
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.MaybeStrArray):
-                val = cast(value.MaybeStrArray, UP_val)
+            if case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
                 val.strs.extend(arg_r.Rest())
                 ok = True
             elif case(value_e.List):
