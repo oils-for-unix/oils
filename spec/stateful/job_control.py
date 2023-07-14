@@ -275,14 +275,14 @@ def no_spurious_tty_take(sh):
   time.sleep(0.1)  # seems necessary
 
   # background cat should have been stopped by SIGTTIN immediately, but we don't
-  # hear about it from wait() until the foreground job has been started because
+  # hear about it from wait() until the foreground process has been started because
   # the shell was blocked in readline when the signal fired.
   sh.sendline('python2 -c "import sys; print(sys.stdin.readline().strip() + \'bar\')"')
   if 'osh' in sh.shell_label:
     # Quirk of osh. TODO: supress this print for background jobs?
     sh.expect('.*Stopped.*')
 
-  # foreground cat should not have been stopped.
+  # foreground procoess should not have been stopped.
   sh.sendline('foo')
   sh.expect('foobar')
 
