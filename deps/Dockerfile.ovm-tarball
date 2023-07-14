@@ -31,6 +31,7 @@ COPY Python-2.7.13/ /home/uke/tmp/Python-2.7.13/
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
+# For bootstrapping the OVM build
 RUN deps/from-tar.sh layer-cpython
 
 COPY test/spec-common.sh /home/uke/tmp/test/spec-common.sh
