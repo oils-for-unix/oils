@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import Proc
     from core import alloc
     from osh import sh_expr_eval
+    from osh.cmd_eval import Func
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
 # Python overwrites this to something Python-specific in Modules/readline.c, so
@@ -1129,8 +1130,25 @@ def InitInteractive(mem):
         SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
 
 
-class ctx_Call(object):
-    """For function calls."""
+class ctx_FuncCall(object):
+    """For func calls."""
+
+    def __init__(self, mem, func):
+        # type: (Mem, MutableOpts, Func, List[str]) -> None
+        mem.PushCall(func.name, func.name_loc, None)
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.PopCall()
+
+
+class ctx_ProcCall(object):
+    """For proc calls."""
 
     def __init__(self, mem, mutable_opts, proc, argv):
         # type: (Mem, MutableOpts, Proc, List[str]) -> None
@@ -1462,9 +1480,10 @@ class Mem(object):
     #
 
     def PushCall(self, func_name, def_tok, argv):
-        # type: (str, Token, List[str]) -> None
+        # type: (str, Token, Optional[List[str]]) -> None
         """For function calls."""
-        self.argv_stack.append(_ArgFrame(argv))
+        if argv:
+            self.argv_stack.append(_ArgFrame(argv))
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
 

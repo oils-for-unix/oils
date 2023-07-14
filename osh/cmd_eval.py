@@ -235,19 +235,42 @@ class Func(vm._Callable):
         self.named_params = named_params
         self.body = body
         self.cmd_ev = cmd_ev
+        self.mem = cmd_ev.mem
 
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        try:
-            self.cmd_ev._Execute(self.body)
+        if len(pos_args) != len(self.pos_params):
+            e_die("bad args TODO", loc.Missing)
 
-            return value.Null  # implicit return
-        except vm.ControlFlow as e:
-            if e.IsRetval():
-                return e.value
-            else:
-                e_die("Unexpected control flow in func: %s" % e, self.name_loc)
+        if len(named_args) != len(self.named_params):
+            e_die("bad args TODO", loc.Missing)
+
+        with state.ctx_FuncCall(self.cmd_ev.mem, self):
+            for i in xrange(0, len(pos_args)):
+                pos_arg = pos_args[i]
+                pos_param = self.pos_params[i]
+
+                arg_name = location.LName(lexer.TokenVal(pos_param.name))
+
+                self.mem.SetLocationToken(pos_param.name)
+                self.mem.SetValue(arg_name,
+                                  pos_arg,
+                                  scope_e.LocalOnly,
+                                  flags=_PackFlags(
+                                      Id.KW_Const, state.SetReadOnly))
+
+            # TODO: pass named args
+
+            try:
+                self.cmd_ev._Execute(self.body)
+
+                return value.Null  # implicit return
+            except vm.ControlFlow as e:
+                if e.IsRetval():
+                    return e.value
+                else:
+                    e_die("Unexpected control flow in func: %s" % e, self.name_loc)
 
 
 class ctx_LoopLevel(object):
@@ -1971,7 +1994,7 @@ class CommandEvaluator(object):
         else:
             proc_argv = argv
 
-        with state.ctx_Call(self.mem, self.mutable_opts, proc, proc_argv):
+        with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
             n_args = len(argv)
             UP_sig = sig
 
@@ -2047,6 +2070,10 @@ class CommandEvaluator(object):
                 raise
 
         return status
+
+    def EvalFunc(self, func):
+        # type: (command.Func) -> value_t
+        pass
 
     def EvalBlock(self, block):
         # type: (command_t) -> Dict[str, Cell]
