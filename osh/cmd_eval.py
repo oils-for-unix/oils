@@ -227,10 +227,10 @@ def PlusEquals(old_val, val):
 
 class Func(vm._Callable):
 
-    def __init__(self, name, name_loc, pos_params, named_params, body, cmd_ev):
-        # type: (str, loc_t, List[Param], List[Param], command_t, CommandEvaluator) -> None
+    def __init__(self, name, name_tok, pos_params, named_params, body, cmd_ev):
+        # type: (str, Token, List[Param], List[Param], command_t, CommandEvaluator) -> None
         self.name = name
-        self.name_loc = name_loc
+        self.name_tok = name_tok
         self.pos_params = pos_params
         self.named_params = named_params
         self.body = body
@@ -270,8 +270,9 @@ class Func(vm._Callable):
                 if e.IsRetval():
                     return e.value
                 else:
-                    e_die("Unexpected control flow in func: %s" % e, self.name_loc)
+                    e_die("Unexpected control flow in func: %s" % e, self.name_tok)
 
+        raise AssertionError('unreachable')
 
 class ctx_LoopLevel(object):
     """For checking for invalid control flow."""
@@ -2070,10 +2071,6 @@ class CommandEvaluator(object):
                 raise
 
         return status
-
-    def EvalFunc(self, func):
-        # type: (command.Func) -> value_t
-        pass
 
     def EvalBlock(self, block):
         # type: (command_t) -> Dict[str, Cell]

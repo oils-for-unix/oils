@@ -1134,8 +1134,8 @@ class ctx_FuncCall(object):
     """For func calls."""
 
     def __init__(self, mem, func):
-        # type: (Mem, MutableOpts, Func, List[str]) -> None
-        mem.PushCall(func.name, func.name_loc, None)
+        # type: (Mem, Func) -> None
+        mem.PushCall(func.name, func.name_tok, None)
         self.mem = mem
 
     def __enter__(self):
@@ -1144,7 +1144,7 @@ class ctx_FuncCall(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.PopCall()
+        self.mem.PopCall(False)
 
 
 class ctx_ProcCall(object):
@@ -1166,7 +1166,7 @@ class ctx_ProcCall(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.PopDynamicScope()
-        self.mem.PopCall()
+        self.mem.PopCall(True)
 
 
 class ctx_Temp(object):
@@ -1492,11 +1492,17 @@ class Mem(object):
         # bash uses this order: top of stack first.
         self._PushDebugStack(source_str, func_name, None)
 
-    def PopCall(self):
-        # type: () -> None
+    def PopCall(self, should_pop_argv_stack):
+        # type: (bool) -> None
+        """
+        Params
+          should_pop_argv_stack: Pass False if PushCall was given None for argv
+        """
         self._PopDebugStack()
         self.var_stack.pop()
-        self.argv_stack.pop()
+
+        if should_pop_argv_stack:
+            self.argv_stack.pop()
 
     def ShouldRunDebugTrap(self):
         # type: () -> bool

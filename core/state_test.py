@@ -39,7 +39,7 @@ class MemTest(unittest.TestCase):
 
         mem.PushCall('my-func', tok_a, ['a', 'b'])
         print(mem.GetValue('HOME'))
-        mem.PopCall()
+        mem.PopCall(True)
         print(mem.GetValue('NONEXISTENT'))
 
     def testSearchPath(self):
@@ -324,7 +324,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual([], mem.GetArgv())
         self.assertEqual(1, status)  # error
 
-        mem.PopCall()
+        mem.PopCall(True)
         self.assertEqual(['a', 'b'], mem.GetArgv())
 
     def testArgv2(self):
