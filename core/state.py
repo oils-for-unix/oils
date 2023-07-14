@@ -1482,7 +1482,7 @@ class Mem(object):
     def PushCall(self, func_name, def_tok, argv):
         # type: (str, Token, Optional[List[str]]) -> None
         """For function calls."""
-        if argv:
+        if argv is not None:
             self.argv_stack.append(_ArgFrame(argv))
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
