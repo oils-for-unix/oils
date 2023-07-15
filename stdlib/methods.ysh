@@ -1,0 +1,18 @@
+# Can we define methods in pure YSH?
+#
+# (mylist->find(42) !== -1)
+#
+#   instead of 
+#
+# ('42' in mylist)
+#
+# Because 'in' is for Dict
+
+func find (haystack List, needle) {
+  for i, x in (haystack) {
+    if (x === needle) {
+      return (i)
+    }
+  }
+  return (-1)
+}

@@ -296,37 +296,3 @@ yes1
 yes2
 ## END
 
-#### Collection membership
-shopt -s oil:upgrade
-
-var l = [3, 17, 1, {'foo': 'bar'}, 'bloop']
-var d = {'a': 1, 'b': false, 'c': 'hmmm'}
-
-if (17 in l) {
-  echo Int-in-List
-}
-if (4 in l) {
-  echo FAIL
-}
-if ('bloop' in l) {
-  echo Str-in-List
-}
-if ({'foo': 'bar'} in l) {
-  echo Dict-in-List
-}
-if ({'foo': 'baz'} in l) {
-  echo FAIL
-}
-if ('a' in d) {
-  echo Str-in-Dict
-}
-if ('d' in d) {
-  echo FAIL
-}
-
-## STDOUT:
-Int-in-List
-Str-in-List
-Dict-in-List
-Str-in-Dict
-## END
