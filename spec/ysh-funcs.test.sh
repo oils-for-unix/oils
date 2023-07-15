@@ -36,3 +36,10 @@ func t() { return 0 }
 ## status: 1
 ## STDOUT:
 ## END
+
+#### Redefining functions is not allowed
+func f() { return (0) }
+func f() { return (1) }
+## status: 1
+## STDOUT:
+## END

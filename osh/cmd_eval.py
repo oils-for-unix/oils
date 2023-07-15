@@ -1168,11 +1168,10 @@ class CommandEvaluator(object):
 
                 if mylib.PYTHON:
                     val = self.expr_ev.EvalExpr(node.val, node.keyword)
-                    raise vm.ControlFlow(node.keyword, -1, val)
                 else:
-                    # We have to return, but cannot evaluate expressions in the
-                    # native build yet. So we return value.Null for now.
-                    raise vm.ControlFlow(node.keyword, -1, value.Null)
+                    # FIXME: evaluate the argument once expr_ev is translated
+                    val = value.Null
+                raise vm.ControlFlow(node.keyword, -1, val)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
