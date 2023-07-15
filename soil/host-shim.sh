@@ -39,20 +39,20 @@ live-image-tag() {
       echo 'v-2023-04-18'
       ;;
     (cpp-spec)
-      # NEW image
-      echo 'v-2023-02-28f'
+      # Rebuild with wedges
+      echo 'v-2023-07-15'
       ;;
     (pea)
       # Rebuild with wedges
       echo 'v-2023-02-28e'
       ;;
     (cpp-small)
-      # Add ltrace package for test/ltrace.sh
-      echo 'v-2023-05-19'
+      # Rebuild with Docker, remove dead code
+      echo 'v-2023-07-15'
       ;;
     (clang)
       # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      echo 'v-2023-07-15'
       ;;
     (ovm-tarball)
       # Rebuild with SOME wedges, coudl have more

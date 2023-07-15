@@ -35,7 +35,7 @@ set -o pipefail
 set -o errexit
 
 source deps/from-apt.sh      # PY3_BUILD_DEPS
-source deps/podman.sh
+#source deps/podman.sh
 source devtools/run-task.sh  # run-task
 
 # Also in build/dev-shell.sh
