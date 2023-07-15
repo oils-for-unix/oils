@@ -8,6 +8,12 @@
 #
 # IMPORTANT: sourced by _build/oils.sh, so it must remain POSIX SHELL
 
+# Old location for python3
+readonly DEPS_DIR="$PWD/../oil_DEPS"
+if test -f $DEPS_DIR/python3; then
+  export PATH="$DEPS_DIR:$PATH"
+fi
+
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -29,8 +35,13 @@ if test -d $WEDGE_BLOATY_DIR; then
   export PATH="$WEDGE_BLOATY_DIR:$PATH"
 fi
 
+# TODO: always use wedge dirs
+readonly RE2C_DIR="$PWD/../oil_DEPS/re2c"
 readonly WEDGE_RE2C_DIR=$ROOT_WEDGE_DIR/pkg/re2c/3.0/bin
-if test -d $WEDGE_RE2C_DIR; then
+
+if test -d $RE2C_DIR; then
+  export PATH="$RE2C_DIR:$PATH"
+elif test -d $WEDGE_RE2C_DIR; then
   export PATH="$WEDGE_RE2C_DIR:$PATH"
 fi
 
@@ -76,9 +87,22 @@ export PYTHONPATH='.'
 
 readonly site_packages=lib/python3.10/site-packages
 
+# Old location.  We are NOT using the venv bin/active -- only pointing at its
+# libraries, because that's enough.
+readonly OLD_MYCPP_VENV=$DEPS_DIR/mycpp-venv/$site_packages
+if test -d "$OLD_MYCPP_VENV"; then
+  export PYTHONPATH="$OLD_MYCPP_VENV:$PYTHONPATH"
+fi
+
 readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/2023-03-04/$site_packages
 if test -d "$PY3_LIBS_WEDGE"; then
   export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"
+fi
+
+# Old location
+readonly OLD_MYPY_REPO=$DEPS_DIR/mypy  # also defined in mycpp/common-vars.sh
+if test -d "$OLD_MYPY_REPO"; then
+  export PYTHONPATH="$OLD_MYPY_REPO:$PYTHONPATH"
 fi
 
 # Containers copy it here
