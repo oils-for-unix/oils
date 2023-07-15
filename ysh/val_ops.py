@@ -338,9 +338,10 @@ def ExactlyEqual(left, right):
             return left.i == right.i
 
         elif case(value_e.Float):
-            left = cast(value.Float, UP_left)
-            right = cast(value.Float, UP_right)
-            return left.f == right.f
+            # Note: could provide floatEquals(), and suggest it
+            # Suggested idiom is abs(f1 - f2) < 0.1
+            raise error.InvalidType("Equality isn't defined on Float",
+                loc.Missing)
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
@@ -400,32 +401,16 @@ def ExactlyEqual(left, right):
 
 def Contains(needle, haystack):
     # type: (value_t, value_t) -> bool
-    """Haystack must be a collection type."""
+    """Haystack must be a Dict.
+
+    We should have mylist->find(x) !== -1 for searching through a List.
+    Things with different perf characteristics should look different.
+    """
 
     UP_needle = needle
     UP_haystack = haystack
     with tagswitch(haystack) as case:
-        if case(value_e.List):
-            haystack = cast(value.List, UP_haystack)
-            for item in haystack.items:
-                if ExactlyEqual(item, needle):
-                    return True
-
-            return False
-
-        elif case(value_e.BashArray):
-            haystack = cast(value.BashArray, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            for s in haystack.strs:
-                if s == needle.s:
-                    return True
-
-            return False
-
-        elif case(value_e.Dict):
+        if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
             if needle.tag() != value_e.Str:
                 raise error.InvalidType('Expected Str', loc.Missing)
@@ -433,16 +418,10 @@ def Contains(needle, haystack):
             needle = cast(value.Str, UP_needle)
             return needle.s in haystack.d
 
-        elif case(value_e.BashAssoc):
-            haystack = cast(value.BashAssoc, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            return needle.s in haystack.d
-
         else:
-            raise error.InvalidType('Expected List or Dict', loc.Missing)
+            raise error.InvalidType2(haystack, "'in' expected Dict",
+                loc.Missing)
+
 
     return False
 

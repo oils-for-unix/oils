@@ -14,10 +14,15 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
+source build/dev-shell.sh  # python2 and python3
 source devtools/common.sh  # banner
 source devtools/run-task.sh  # run-task
 
 readonly -a CODE_DIRS=(asdl bin core data_lang frontend osh tools ysh)
+
+#
+# C++
+#
 
 get-cpplint() {
   mkdir -p _tmp
@@ -118,6 +123,10 @@ find-long-lines() {
   find-src-files | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
+#
+# pyflakes-based lint
+#
+
 oils-lint() {
   local lang=$1  # py2 or py3
   shift
@@ -132,55 +141,6 @@ py2-lint() {
 
 py3-lint() {
   oils-lint py3 "$@"
-}
-
-bin-flake8() {
-  python2 -m flake8 "$@"
-
-  # Note: tried flake8 under Python 3, and many 'xrange' errors, etc.
-  #python3 -m flake8 "$@"
-}
-
-# Just do a single file
-flake8-one() {
-  bin-flake8 --ignore 'E111,E114,E226,E265' "$@"
-}
-
-flake8-all() {
-  local -a dirs=( "${CODE_DIRS[@]}" )
-
-  # astgen.py has a PROLOGUE which must have unused imports!
-  # opcode.py triggers a flake8 bug?  Complains about def_op() when it is
-  # defined.
-  # _abbrev.py modules are concatenated, and don't need to check on their own.
-  local -a exclude=(
-    --exclude 'tools/find,tools/xargs,opy/_*,opy/byterun,opy/tools/astgen.py,opy/lib/opcode.py,*/*_abbrev.py')
-
-  # Step 1: Stop the build if there are Python syntax errors, undefined names,
-  # unused imports
-  local fatal_errors='E901,E999,F821,F822,F823,F401'
-  bin-flake8 "${dirs[@]}" "${exclude[@]}" \
-    --count --select "$fatal_errors" --show-source --statistics
-
-  # Make unused variable fatal.  Hm there are some I want.
-  #scripts/count.sh oil-osh-files | grep -F '.py' | xargs $0 bin-flake8 --select F841
-
-  # Step 2: Style errors as warnings.
-
-  # disable:
-  # E226: missing whitespace around arithmetic -- I want to do i+1
-  # E302: expected two blank lines, found 1 (sometimes one is useful).
-  # E265: Although I agree with this style, some comments don't start with '# '
-  # E111,E114: we use 2 space indents, not 4
-
-  local ignored='E125,E701,E241,E121,E111,E114,E128,E262,E226,E302,E265,E290,E202,E203,C901,E261,E301,W293,E402,E116,E741,W391,E127'
-  # trailing whitespace, line too long, blank lines
-  local ignored_for_now='W291,E501,E303'
-
-  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
-  bin-flake8 "${dirs[@]}" "${exclude[@]}" \
-    --ignore "$ignored,$ignored_for_now" \
-    --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 }
 
 py2() {
@@ -211,10 +171,6 @@ all-py() {
 # More Python, including Python 3
 #
 
-install-black() {
-  ../oil_DEPS/python3 -m pip install black
-}
-
 mycpp-files() {
   for f in mycpp/*.py; do
     case $f in
@@ -226,13 +182,6 @@ mycpp-files() {
     echo $f
   done
 }
-
-# Black fixes indentation, but also turns all our single quotes into double
-# quotes
-run-black() {
-  mycpp-files | xargs --verbose -- ../oil_DEPS/python3 -m black
-}
-
 
 # NOTE: test/format.sh installs and runs yapf for Debian 12 bookworm
 yapf-files() {
@@ -280,7 +229,10 @@ soil-run() {
     return
   fi
 
-  flake8-all
+  #flake8-all
+
+  # Our new lint script
+  all-py
 
   check-shebangs
 }
@@ -290,7 +242,7 @@ soil-run() {
 #
 
 find-files-to-lint() {
-  ### Similar to find-prune / find-src-files, but used for Soil checks
+  ### Similar to find-prune / find-src-files
 
   # don't touch mycpp yet because it's in Python 3
   # build has build/dynamic_deps.py which needs the -S

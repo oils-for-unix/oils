@@ -12,7 +12,7 @@ source devtools/run-task.sh  # run-task
 
 readonly MYPY_FLAGS='--strict --no-strict-optional'
 
-# Note: similar to filters in build/dynamic-deps.sh
+# Note: similar to egrep filename filters in build/dynamic-deps.sh
 readonly COMMENT_RE='^[ ]*#'
 
 typecheck-files() {
@@ -47,8 +47,7 @@ check-all() {
   typecheck-oil 
 
   # Ad hoc list of additional files
-  # No more files for now.  Could do tools/osh2oil.py
-  # typecheck-more
+  typecheck-more
 }
 
 soil-run() {
@@ -60,8 +59,6 @@ soil-run() {
   ./NINJA-config.sh
 
   check-all
-
-  typecheck-more
 }
 
 run-task "$@"

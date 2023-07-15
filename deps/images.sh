@@ -33,8 +33,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source deps/podman.sh
+
+DOCKER=${DOCKER:-podman}
+
 # Build with this tag
-readonly LATEST_TAG='v-2023-05-19'
+readonly LATEST_TAG='v-2023-07-13'
 
 # BUGS in Docker.
 #
@@ -42,7 +46,7 @@ readonly LATEST_TAG='v-2023-05-19'
 
 # NOTE: This also clears the exec.cachemount
 prune() {
-  sudo docker builder prune -f
+  sudo $DOCKER builder prune -f
 }
 
 # https://stackoverflow.com/questions/62834806/docker-buildkit-cache-location-size-and-id
@@ -50,7 +54,7 @@ prune() {
 # It lives somewhere in /var/lib/docker/overlay2
 
 show-cachemount() {
-  sudo docker system df -v --format '{{ .BuildCache | json }}' \
+  sudo $DOCKER system df -v --format '{{ .BuildCache | json }}' \
     | jq '.[] | select(.CacheType == "exec.cachemount")' | tee _tmp/cachemount.txt
 
   cat _tmp/cachemount.txt | jq -r '.ID' | while read id; do
@@ -78,8 +82,13 @@ build() {
   #
   # It is more parallel and has colored output.
 
-  sudo DOCKER_BUILDKIT=1 \
-    docker build "${flags[@]}" \
+  # TODO: use --authfile and more
+  export-podman
+
+  #sudo -E DOCKER_BUILDKIT=1 \
+  # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
+  sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
+    $DOCKER build "${flags[@]}" \
     --tag "oilshell/soil-$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
 }
@@ -102,7 +111,7 @@ tag-all-latest() {
     echo "$tag $image"
 
     # syntax: source -> target
-    sudo docker tag oilshell/soil-$image:$tag oilshell/soil-$image:latest
+    sudo $DOCKER tag oilshell/soil-$image:$tag oilshell/soil-$image:latest
   done
 }
 
@@ -118,15 +127,21 @@ push-all-latest() {
 }
 
 list-tagged() {
-  sudo docker images 'oilshell/soil-*:v-*'
+  sudo $DOCKER images 'oilshell/soil-*:v-*'
 }
 
 push() {
   local name=${1:-dummy}
   local tag=${2:-$LATEST_TAG}
 
+  # TODO: replace with flags
+  export-podman
+
   local image="oilshell/soil-$name:$tag"
-  sudo docker push $image
+
+  # -E for export-podman vars
+  sudo -E $DOCKER push $image
+  #sudo -E $DOCKER --log-level=debug push $image
 }
 
 smoke() {
@@ -137,7 +152,7 @@ smoke() {
   #sudo docker run oilshell/soil-$name
   #sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
 
-  sudo docker run oilshell/soil-$name:$tag bash -c '
+  sudo $DOCKER run oilshell/soil-$name:$tag bash -c '
 echo "bash $BASH_VERSION"
 
 git --version
@@ -164,7 +179,7 @@ cmd() {
 
   shift 2
 
-  sudo docker run oilshell/soil-$name:$tag "$@"
+  sudo $DOCKER run oilshell/soil-$name:$tag "$@"
 }
 
 utf8() {
@@ -183,7 +198,7 @@ mount-test() {
   fi
 
   # mount Oil directory as /app
-  sudo docker run \
+  sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
     oilshell/soil-$name "${argv[@]}"
 }
@@ -194,7 +209,7 @@ image-history() {
 
   local image="oilshell/soil-$image_id"
 
-  sudo docker history $image:$tag
+  sudo $DOCKER history $image:$tag
 }
 
 save() {
@@ -207,7 +222,7 @@ save() {
   local out=_tmp/images/$image_id.tar 
 
   # Use > instead of -o so it doesn'th have root permissions
-  time sudo docker save $image:$tag > $out
+  time sudo $DOCKER save $image:$tag > $out
   ls -l -h $out
 }
 
@@ -227,10 +242,10 @@ layers() {
 
   # Gah this still prints 237M, not the exact number of bytes!
   # --format ' {{ .Size }} ' 
-  sudo docker history --no-trunc $image
+  sudo $DOCKER history --no-trunc $image
 
   echo $'Size\tVirtual Size'
-  sudo docker inspect $image \
+  sudo $DOCKER inspect $image \
     | jq --raw-output '.[0] | [.Size, .VirtualSize] | @tsv' \
     | commas
 }

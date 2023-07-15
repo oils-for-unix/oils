@@ -382,14 +382,25 @@ less
 great
 ## END
 
-#### in, not in
-var d = [1,2,3]
-var b = 1 in d
+#### "in" and "not in" on Dicts
+
+var d = {spam: 42, eggs: []}
+
+var b = 'spam' in d
 echo $b
-setvar b = 0 in d
+
+var b = 'zz' in d
 echo $b
-setvar b = 0 not in d
+
+var b = 'zz' not in d
 echo $b
+
+var L = [1, 2, 3]
+var b = 3 in L  # not allowed!
+
+echo should not get here
+
+## status: 3
 ## STDOUT:
 true
 false

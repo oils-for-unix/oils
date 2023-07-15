@@ -10,8 +10,19 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 USER uke
 
+# This installs MyPy directly from pip, at a version < 0.971
+# It might be better to just use the same frozen 0.780 branch
+# Yes, because that's what I do on my dev machine.  I don't install both.
+#
+# Also try to remove python3-dev package
+
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
 RUN deps/from-py.sh dev-minimal
+
+# Copy _build/deps-source -> /home/uke/wedge for now.
+COPY --chown=uke \
+  _build/deps-source/pyflakes/pyflakes-2.4.0/ \
+  /home/uke/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0/
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dev-minimal'"]

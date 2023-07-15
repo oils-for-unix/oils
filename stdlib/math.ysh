@@ -1,4 +1,17 @@
 
+
+# We recommend abs(float1 - float2) < 0.0001
+# instead of exact float equality
+
+func abs(x) {
+  if (x < 0) {
+    return (-x)
+  } else {
+    return (x)
+  }
+}
+
+
 # How to implement Python-like max in YSH?
 
 # max(5,6)  => 6

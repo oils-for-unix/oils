@@ -130,22 +130,27 @@ wild() {
 
 dev-minimal() {
   local -a packages=(
-    gcc  # for building Python extensions
-
+    # TODO: remove
     python2-dev  # for building Python extensions
+    python-setuptools  # Python 2, for flake8
+    python-pip  # flake8 typing
+
+    gcc  # for building Python extensions
     libreadline-dev
 
-    python-setuptools  # Python 2, for flake8
-
-    python-pip  # flake8 typing
     python3-setuptools  # mypy
     python3-pip
+    # 2023-07: somehow this became necessary to pip3 install typed_ast, a MyPy
+    # dep, which recently updated to version 1.5.5
+    python3-dev
 
     # Note: osh-minimal task needs shells; testing WITHOUT spec-bin shells
     busybox-static mksh zsh
 
     gawk
 
+    # 'ps' used by spec tests
+    procps
     # for oil-spec task
     jq
   )
