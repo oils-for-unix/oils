@@ -98,7 +98,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
     from _devbuild.gen.runtime_asdl import cmd_value_t, Cell, lvalue_t
-    from _devbuild.gen.syntax_asdl import Redir, EnvPair, Param
+    from _devbuild.gen.syntax_asdl import Redir, EnvPair
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
