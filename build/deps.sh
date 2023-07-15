@@ -337,13 +337,13 @@ install-wedges-py() {
 }
 
 container-wedges() {
-  export-podman
+  #export-podman
 
-  if false; then
+  #if false; then
     deps/wedge.sh build deps/source.medo/time-helper
     deps/wedge.sh build deps/source.medo/cmark/
     deps/wedge.sh build deps/source.medo/re2c/
-  fi
+  #fi
 
   deps/wedge.sh build deps/source.medo/bloaty/
   deps/wedge.sh build deps/source.medo/uftrace/

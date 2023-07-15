@@ -67,8 +67,9 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (dev-minimal)
-      # Rebuild with podman
-      echo 'v-2023-07-13'
+      # Rebuild with Docker, after rebuilding with podman
+      # Remove Docker eventually, but not yet
+      echo 'v-2023-07-15'
       ;;
 
     # Not run directly

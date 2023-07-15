@@ -35,10 +35,10 @@ set -o errexit
 
 source deps/podman.sh
 
-DOCKER=${DOCKER:-podman}
+DOCKER=${DOCKER:-docker}
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-07-13'
+readonly LATEST_TAG='v-2023-07-15'
 
 # BUGS in Docker.
 #
@@ -64,6 +64,11 @@ show-cachemount() {
   done
 }
 
+tag-common() {
+  local hash=$1  # get hash from $0 list-tagged
+  sudo $DOCKER tag $hash oilshell/soil-common:latest
+}
+
 build() {
   local name=${1:-dummy}
   local use_cache=${2:-}  # OFF by default
@@ -83,11 +88,11 @@ build() {
   # It is more parallel and has colored output.
 
   # TODO: use --authfile and more
-  export-podman
+  #export-podman
 
-  #sudo -E DOCKER_BUILDKIT=1 \
   # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
-  sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
+  #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
+  sudo -E DOCKER_BUILDKIT=1 \
     $DOCKER build "${flags[@]}" \
     --tag "oilshell/soil-$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
@@ -135,7 +140,7 @@ push() {
   local tag=${2:-$LATEST_TAG}
 
   # TODO: replace with flags
-  export-podman
+  #export-podman
 
   local image="oilshell/soil-$name:$tag"
 
