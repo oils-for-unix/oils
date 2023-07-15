@@ -338,9 +338,10 @@ def ExactlyEqual(left, right):
             return left.i == right.i
 
         elif case(value_e.Float):
-            left = cast(value.Float, UP_left)
-            right = cast(value.Float, UP_right)
-            return left.f == right.f
+            # Note: could provide floatEquals(), and suggest it
+            # Suggested idiom is abs(f1 - f2) < 0.1
+            raise error.InvalidType("Equality isn't defined on Float",
+                loc.Missing)
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
