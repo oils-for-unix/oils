@@ -240,11 +240,15 @@ class Func(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        if len(pos_args) != len(self.pos_params):
-            e_die("bad args TODO", loc.Missing)
+        nargs = len(pos_args)
+        expected = len(self.pos_params)
+        if nargs != expected:
+            raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.name_tok)
 
-        if len(named_args) != len(self.named_params):
-            e_die("bad args TODO", loc.Missing)
+        nargs = len(named_args)
+        expected = len(self.named_params)
+        if nargs != expected:
+            raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.name_tok)
 
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
             for i in xrange(0, len(pos_args)):
@@ -269,8 +273,10 @@ class Func(vm._Callable):
             except vm.ControlFlow as e:
                 if e.IsRetval():
                     return e.value
+                elif e.IsReturn():
+                    e_die("Unexpected proc return in func, use `return (expr)` instead", self.name_tok)
                 else:
-                    e_die("Unexpected control flow in func: %s" % e, self.name_tok)
+                    e_die("Unexpected control flow in func: %s" % e.token, self.name_tok)
 
         raise AssertionError('unreachable')
 
