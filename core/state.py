@@ -1135,7 +1135,7 @@ class ctx_FuncCall(object):
 
     def __init__(self, mem, func):
         # type: (Mem, Func) -> None
-        mem.PushCall(func.name, func.name_tok, None)
+        mem.PushCall(func.name, func.node.name, None)
         self.mem = mem
 
     def __enter__(self):
@@ -1495,7 +1495,7 @@ class Mem(object):
     def PopCall(self, should_pop_argv_stack):
         # type: (bool) -> None
         """
-        Params
+        Args:
           should_pop_argv_stack: Pass False if PushCall was given None for argv
         """
         self._PopDebugStack()

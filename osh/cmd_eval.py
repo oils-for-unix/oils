@@ -227,56 +227,49 @@ def PlusEquals(old_val, val):
 
 class Func(vm._Callable):
 
-    def __init__(self, name, name_tok, pos_params, named_params, body, cmd_ev):
-        # type: (str, Token, List[Param], List[Param], command_t, CommandEvaluator) -> None
-        self.name = name
-        self.name_tok = name_tok
-        self.pos_params = pos_params
-        self.named_params = named_params
-        self.body = body
+    def __init__(self, node, mem, cmd_ev):
+        # type: (command.Func, state.Mem, CommandEvaluator) -> None
+        self.name = lexer.TokenVal(node.name)
+        self.node = node
         self.cmd_ev = cmd_ev
-        self.mem = cmd_ev.mem
+        self.mem = mem
 
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-
         nargs = len(pos_args)
-        expected = len(self.pos_params)
+        expected = len(self.node.pos_params)
         if nargs != expected:
-            raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.name_tok)
+            raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
 
         nargs = len(named_args)
-        expected = len(self.named_params)
+        expected = len(self.node.named_params)
         if nargs != expected:
-            raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.name_tok)
+            raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
 
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
             for i in xrange(0, len(pos_args)):
                 pos_arg = pos_args[i]
-                pos_param = self.pos_params[i]
+                pos_param = self.node.pos_params[i]
 
                 arg_name = location.LName(lexer.TokenVal(pos_param.name))
 
                 self.mem.SetLocationToken(pos_param.name)
-                self.mem.SetValue(arg_name,
-                                  pos_arg,
-                                  scope_e.LocalOnly,
-                                  flags=_PackFlags(
-                                      Id.KW_Const, state.SetReadOnly))
+                self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly,
+                                  flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
 
             # TODO: pass named args
 
             try:
-                self.cmd_ev._Execute(self.body)
+                self.cmd_ev._Execute(self.node.body)
 
                 return value.Null  # implicit return
             except vm.ControlFlow as e:
                 if e.IsRetval():
                     return e.value
                 elif e.IsReturn():
-                    e_die("Unexpected proc return in func, use `return (expr)` instead", self.name_tok)
+                    e_die("Unexpected proc return in func, use `return (expr)` instead", e.token)
                 else:
-                    e_die("Unexpected control flow in func: %s" % e.token, self.name_tok)
+                    e_die("Unexpected control flow in func: %s" % e.token, e.token)
 
         raise AssertionError('unreachable')
 
@@ -1528,8 +1521,7 @@ class CommandEvaluator(object):
                         "Func %s was already defined (redefine_proc)" %
                         node.name, node.name)
 
-                self.funcs[name] = Func(name, node.name, node.pos_params,
-                                        node.named_params, node.body, self)
+                self.funcs[name] = Func(node, self.mem, self)
 
                 status = 0
 
