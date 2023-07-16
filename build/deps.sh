@@ -339,17 +339,22 @@ install-wedges-py() {
 container-wedges() {
   #export-podman
 
-  #if false; then
+  if false; then
     deps/wedge.sh build deps/source.medo/time-helper
     deps/wedge.sh build deps/source.medo/cmark/
     deps/wedge.sh build deps/source.medo/re2c/
-  #fi
+  fi
 
-  deps/wedge.sh build deps/source.medo/bloaty/
-  deps/wedge.sh build deps/source.medo/uftrace/
+  if false; then
+    deps/wedge.sh build deps/source.medo/bloaty/
+    deps/wedge.sh build deps/source.medo/uftrace/
+  fi
 
+  # For soil-benchmarks/ images
+  deps/wedge.sh build deps/source.medo/R-libs/
+
+  # Not sure if we need thsi
   #deps/wedge.sh build deps/source.medo/python3/
-  #deps/wedge.sh build deps/source.medo/R-libs/
 }
 
 run-task "$@"

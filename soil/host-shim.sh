@@ -27,24 +27,24 @@ live-image-tag() {
       echo 'v-2023-05-18c'
       ;;
     (wild)
-      # Rebuild with smaller common layer, without GCC
-      echo 'v-2023-02-28e'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (benchmarks)
-      # new R-libs version
-      echo 'v-2023-04-18'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (benchmarks2)
-      # add valgrind
-      echo 'v-2023-04-18'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (cpp-spec)
       # Rebuild with wedges
       echo 'v-2023-07-15'
       ;;
     (pea)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (cpp-small)
       # Rebuild with Docker, remove dead code
@@ -59,12 +59,12 @@ live-image-tag() {
       echo 'v-2023-02-28e'
       ;;
     (other-tests)
-      # new R-libs version
-      echo 'v-2023-04-18'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (dummy)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (dev-minimal)
       # Rebuild with Docker, after rebuilding with podman
