@@ -22,4 +22,6 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
+# TODO: Add osh-cpp so we can test ble.sh with it
+
 CMD ["sh", "-c", "echo 'hello from oilshell/app-tests'"]

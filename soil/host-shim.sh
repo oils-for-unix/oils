@@ -23,8 +23,8 @@ live-image-tag() {
 
   case $image_id in
     (app-tests)
-      # new ble.sh deps
-      echo 'v-2023-05-18c'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (wild)
       # freshen up
@@ -55,8 +55,8 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     (ovm-tarball)
-      # Rebuild with SOME wedges, coudl have more
-      echo 'v-2023-02-28e'
+      # freshen up, still need spec-bin wedge
+      echo 'v-2023-07-15'
       ;;
     (other-tests)
       # freshen up
