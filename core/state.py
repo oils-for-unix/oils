@@ -1987,10 +1987,8 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         if name == 'ARGV':
-            # TODO:
-            # - Reuse the BashArray?
-            # - @@ could be an alias for ARGV (in command mode, but not expr mode)
-            return value.BashArray(self.GetArgv())
+            items = [value.Str(s) for s in self.GetArgv()]  # type: List[value_t]
+            return value.List(items)
 
         # "Registers"
         if name == '_status':
@@ -2011,7 +2009,7 @@ class Mem(object):
             return value.BashArray(strs)
 
         if name == '_pipeline_status':
-            items = [value.Int(i) for i in self.pipe_status[-1]]  # type: List[value_t]
+            items = [value.Int(i) for i in self.pipe_status[-1]]
             return value.List(items)
 
         if name == '_process_sub_status':  # Oil naming convention

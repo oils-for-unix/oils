@@ -134,7 +134,7 @@ try {
   ls /bad | wc -l
 }
 echo p @_pipeline_status
-echo p @PIPESTATUS
+echo p ${PIPESTATUS[@]}
 echo _status=$_status  # 0 because pipefail is off
 
 echo ---
@@ -143,7 +143,7 @@ try {
   ls /bad | wc -l
 }
 echo p @_pipeline_status
-echo p @PIPESTATUS
+echo p ${PIPESTATUS[@]}
 echo _status=$_status  # changed to 2 because of pipefail
 
 ## STDOUT:

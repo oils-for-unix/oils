@@ -135,11 +135,11 @@ hi
 hi
 ## END
 
-#### ARGV is alias for "$@"
+#### ARGV is similar to "$@"
 shopt -s parse_at
 argv.py "$@"
 argv.py @ARGV
-argv.py "${ARGV[@]}"  # not useful, but it works!
+#argv.py "${ARGV[@]}"  # not useful, but it works!
 
 set -- 'a b' c
 argv.py "$@"
@@ -151,7 +151,6 @@ f() {
 }
 f 1 '2 3'
 ## STDOUT:
-[]
 []
 []
 ['a b', 'c']

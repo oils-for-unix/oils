@@ -1966,7 +1966,8 @@ class CommandEvaluator(object):
 
                 n_params = len(sig.pos_params)
                 if sig.rest:
-                    leftover = value.BashArray(argv[n_params:])
+                    items = [value.Str(s) for s in argv[n_params:]]  # type: List[value_t]
+                    leftover = value.List(items)
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,
                                       scope_e.LocalOnly)
                 else:
