@@ -37,7 +37,7 @@ main() {
   local working_dir=$PWD  # save for later
 
   cd "$bin_dest"
-  for link in osh oil; do
+  for link in osh oil ysh; do
     if ! rm "$bin_dest/$link"; then
       log "Couldn't remove $link symlink in $bin_dest"
     else
