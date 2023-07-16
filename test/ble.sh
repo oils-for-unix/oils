@@ -45,12 +45,44 @@ filter-ansi() {
 run-tests-osh-py() {
   cd $BASE_DIR
 
+  # Fork of oshrc.test-util, to make it take less time
+  local myscript=myscript
+
+  cat >$myscript <<'EOF'
+#shopt -s eval_unsafe_arith
+HISTFILE=$HOME/.osh_history
+
+# Disabled for now, takes quite awhile
+#	lib/test-canvas.sh \
+
+for script in \
+  out/ble.osh \
+	lib/test-main.sh \
+	lib/test-util.sh \
+	lib/test-decode.sh
+do
+  echo  
+  echo "Running $script"
+  echo
+
+  time . $script
+
+  echo  
+  echo "DONE Running $script"
+  echo
+done
+  
+exit
+EOF
+
   #wc -l oshrc.test-util
   #wc -l out/ble.osh
   #wc -l lib/test-util.sh
 
   # Shorter tests
-  ../../bin/osh -i --rcfile oshrc.test-util | filter-ansi
+  ../../bin/osh -i --rcfile $myscript | filter-ansi
+
+  #../../bin/osh -i --rcfile oshrc.test-util | filter-ansi
 
   # Longer tests
   # TODO: Run these with osh-cpp
