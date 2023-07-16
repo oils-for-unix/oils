@@ -71,3 +71,21 @@ echo $[dec(y)]
 2
 -2
 ## END
+
+#### Undefined var in function
+
+func g(x) {
+  var z = y  # make sure dynamic scope is off
+  return (x + z) 
+}
+
+func f() {
+  var y = 42  # if dynamic scope were on, g() would see this
+  return (g(0))
+}
+
+echo $[f()]
+
+## status: 1
+## STDOUT:
+## END
