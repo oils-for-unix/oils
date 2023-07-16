@@ -268,10 +268,11 @@ def suspend_status(sh):
 
 @register(skip_shells=['zsh'])
 def no_spurious_tty_take(sh):
-  'A background job getting stopped by SIGTTIN should not disrupt foreground processes'
+  'A background job getting stopped (e.g. by SIGTTIN) or exiting should not disrupt foreground processes'
   expect_prompt(sh)
 
-  sh.sendline('cat &')
+  sh.sendline('cat &') # stop
+  sh.sendline('sleep 1 &') # exit
   time.sleep(0.1)  # seems necessary
 
   # background cat should have been stopped by SIGTTIN immediately, but we don't
