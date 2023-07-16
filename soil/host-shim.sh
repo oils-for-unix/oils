@@ -23,52 +23,52 @@ live-image-tag() {
 
   case $image_id in
     (app-tests)
-      # new ble.sh deps
-      echo 'v-2023-05-18c'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (wild)
-      # Rebuild with smaller common layer, without GCC
-      echo 'v-2023-02-28e'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (benchmarks)
-      # new R-libs version
-      echo 'v-2023-04-18'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (benchmarks2)
-      # add valgrind
-      echo 'v-2023-04-18'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (cpp-spec)
-      # NEW image
-      echo 'v-2023-02-28f'
+      # Rebuild with wedges
+      echo 'v-2023-07-15'
       ;;
     (pea)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (cpp-small)
-      # Add ltrace package for test/ltrace.sh
-      echo 'v-2023-05-19'
+      # Rebuild with Docker, remove dead code
+      echo 'v-2023-07-15'
       ;;
     (clang)
       # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      echo 'v-2023-07-15'
       ;;
     (ovm-tarball)
-      # Rebuild with SOME wedges, coudl have more
-      echo 'v-2023-02-28e'
+      # freshen up, still need spec-bin wedge
+      echo 'v-2023-07-15'
       ;;
     (other-tests)
-      # new R-libs version
-      echo 'v-2023-04-18'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (dummy)
-      # Rebuild with wedges
-      echo 'v-2023-02-28e'
+      # freshen up
+      echo 'v-2023-07-15'
       ;;
     (dev-minimal)
-      # Rebuild with podman
-      echo 'v-2023-07-13'
+      # Use python3 wedge and mypy-0.780 repo
+      echo 'v-2023-07-15'
       ;;
 
     # Not run directly

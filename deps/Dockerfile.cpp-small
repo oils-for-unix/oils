@@ -25,11 +25,6 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
   /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
-# Install mycpp deps with python3 wedge
-COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh
-COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
-COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
-
 # Copy _build/deps-source -> /home/uke/wedge for now.
 COPY --chown=uke \
   _build/deps-source/mypy/mypy-0.780/ \

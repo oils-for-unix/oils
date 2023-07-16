@@ -27,16 +27,18 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
   /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
-# pexpect will use the python3 wedge; it can also use system Python
+# Copy _build/deps-source -> /home/uke/wedge for now.
+COPY --chown=uke \
+  _build/deps-source/mypy/mypy-0.780/ \
+  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
+COPY devtools/run-task.sh /home/uke/tmp/devtools/run-task.sh
+COPY build/deps.sh /home/uke/tmp/build/deps.sh
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
-COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
 
-RUN deps/from-py.sh pexpect
-
-# Install mycpp deps with python3 wedge
-COPY mycpp/common-vars.sh /home/uke/tmp/mycpp/common-vars.sh
-COPY deps/from-git.sh /home/uke/tmp/deps/from-git.sh
-
-RUN deps/from-git.sh layer-mycpp
+# Hack for now: pass a different MyPy dir
+# Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
+# RUNTIME with uke!
+RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp-spec'"]
