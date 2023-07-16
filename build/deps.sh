@@ -142,15 +142,18 @@ maybe-extract() {
 clone-mypy() {
   ### replaces deps/from-git
   local dest_dir=$1
+  local version=${2:-$MYPY_VERSION}
 
-  local dest=$dest_dir/mypy-$MYPY_VERSION
+  local dest=$dest_dir/mypy-$version
   if test -d $dest; then
     log "Not cloning because $dest exists"
     return
   fi
 
   # TODO: verify commit checksum
-  git clone --recursive --depth=50 --branch=release-$MYPY_VERSION \
+
+  # v$VERSION is a tag, not a branch
+  git clone --recursive --depth=50 --branch v$version \
     $MYPY_GIT_URL $dest
 }
 
@@ -211,8 +214,22 @@ fetch-py() {
   fetch py_only
 }
 
+mypy-new() {
+  local version=0.971
+  # Do the latest version for Python 2
+  clone-mypy $DEPS_SOURCE_DIR/mypy $version
+
+  local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$version
+  mkdir -p $dest_dir
+
+  cp --verbose --recursive --no-target-directory \
+    $DEPS_SOURCE_DIR/mypy/mypy-$version $dest_dir
+}
+
 wedge-exists() {
+  # TODO: Doesn't take into account ~/wedge/ vs. /wedge
   local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+
   if test -d $installed; then
     log "$installed already exists"
     return 0
@@ -226,9 +243,10 @@ wedge-exists() {
 #
 # _build/wedge/{absolute,relative}   # which one?
 #
-# It needs a BUILD DEPENDENCY on the python3 wedge, so you can do python3 -m
-# pip install.
+# It needs a BUILD DEPENDENCY on:
 
+# - the python3 wedge, so you can do python3 -m pip install.
+# - the mypy repo, which has test-requirements.txt
 
 install-py3-libs-in-venv() {
   local venv_dir=$1

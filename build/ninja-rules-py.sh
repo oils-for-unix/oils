@@ -249,26 +249,13 @@ MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
 out=$2
 shift 2
 
-#. $REPO_ROOT/mycpp/common-vars.sh  # for $MYCPP_VENV $MYPY_REPO
-
-# puts mycpp-venv/bin/ on $PATH to find python3
-# . $MYCPP_VENV/bin/activate  # so MyPy can import
-
-# This also modifies $PATH; do not combine
+# Modifies $PATH; do not combine
 . build/dev-shell.sh
 
 tmp=$out.tmp  # avoid creating partial files
 
-old_py3=$REPO_ROOT/../oil_DEPS/python3
-if test -f $old_py3; then
-  py3=$old_py3
-else
-  py3=python3
-fi 
-
-# PYTHONPATH="$REPO_ROOT:$MYPY_REPO" 
 MYPYPATH="$MYPYPATH" \
-  $py3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+  python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
 status=$?
 
 mv $tmp $out
