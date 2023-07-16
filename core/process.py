@@ -617,7 +617,6 @@ class SetPgid(ChildStateChange):
         # type: (Process) -> None
         try:
             posix.setpgid(proc.pid, self.pgid)
-            proc.pgid = self.pgid
         except (IOError, OSError) as e:
             print_stderr(
                 'osh: parent failed to set process group for PID %d to %d: %s' %
@@ -1021,8 +1020,7 @@ class Process(Job):
         for st in self.state_changes:
             st.ApplyFromParent(self)
 
-        if self.pgid == -1:
-            self.pgid = pid
+        self.pgid = posix.getpgid(pid)
 
         # Program invariant: We keep track of every child process!
         self.job_list.AddChildProcess(pid, self)
