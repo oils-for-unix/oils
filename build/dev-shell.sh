@@ -82,6 +82,7 @@ if test -d "$PY3_LIBS_WEDGE"; then
 fi
 
 readonly MYPY_VERSION=0.780
+# TODO: would be nice to upgrade to newer version
 #readonly MYPY_VERSION=0.971
 
 # Containers copy it here

@@ -932,9 +932,7 @@ class OilEvaluator(object):
                 func = cast(value.BoundFunc, UP_func)
                 f = func.callable
 
-                if mylib.PYTHON:
-                    assert isinstance(
-                        f, vm._Callable), "Bound funcs must be typed"
+                assert isinstance(f, vm._Callable), "Bound funcs must be typed"
 
                 pos_args, named_args = self.EvalArgList2(node.args)
                 pos_args.insert(0, func.me)
