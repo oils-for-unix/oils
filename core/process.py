@@ -617,6 +617,7 @@ class SetPgid(ChildStateChange):
         # type: (Process) -> None
         try:
             posix.setpgid(proc.pid, self.pgid)
+            proc.pgid = self.pgid
         except (IOError, OSError) as e:
             print_stderr(
                 'osh: parent failed to set process group for PID %d to %d: %s' %
@@ -921,6 +922,7 @@ class Process(Job):
         self.close_w = -1
 
         self.pid = -1
+        self.pgid = -1
         self.status = -1
 
     def Init_ParentPipeline(self, pi):
@@ -1019,6 +1021,9 @@ class Process(Job):
         for st in self.state_changes:
             st.ApplyFromParent(self)
 
+        if self.pgid == -1:
+            self.pgid = pid
+
         # Program invariant: We keep track of every child process!
         self.job_list.AddChildProcess(pid, self)
 
@@ -1057,12 +1062,7 @@ class Process(Job):
         # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
-        # Only take back the terminal if we gave it to this process in the first
-        # place. Otherwise we might accidentally take it back from another
-        # process running in the foreground, causing it to get stopped with
-        # SIGTTIN/SIGTTOU.
-        if self.job_control.Enabled() and posix.tcgetpgrp(self.job_control.shell_tty_fd) == posix.getpgid(self.pid):
-            self.job_control.MaybeTakeTerminal()
+        self.job_control.MaybeTakeTerminal(self.pgid)
 
     def WhenDone(self, pid, status):
         # type: (int, int) -> None
@@ -1075,7 +1075,7 @@ class Process(Job):
         if self.parent_pipeline:
             self.parent_pipeline.WhenDone(pid, status)
         else:
-            self.job_control.MaybeTakeTerminal()
+            self.job_control.MaybeTakeTerminal(self.pgid)
 
     def RunProcess(self, waiter, why):
         # type: (Waiter, trace_t) -> int
@@ -1320,7 +1320,7 @@ class Pipeline(Job):
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
             self.state = job_state_e.Done
-            self.job_control.MaybeTakeTerminal()
+            self.job_control.MaybeTakeTerminal(self.pids[0])
 
 
 def _JobStateStr(i):
@@ -1438,11 +1438,16 @@ class JobControl(object):
             e_die('osh: Failed to move process group %d to foreground: %s' %
                   (pgid, pyutil.strerror(e)))
 
-    def MaybeTakeTerminal(self):
-        # type: () -> None
+    def MaybeTakeTerminal(self, group):
+        # type: (int) -> None
         """If stdio is a TTY, return the main shell's process group to the
-        foreground."""
-        self.MaybeGiveTerminal(self.shell_pgid)
+        foreground only if the given group is running in the foreground."""
+        # Only take back the terminal if we gave it to this process in the first
+        # place. Otherwise we might accidentally take it back from another
+        # process running in the foreground, causing it to get stopped with
+        # SIGTTIN/SIGTTOU.
+        if self.Enabled() and posix.tcgetpgrp(self.shell_tty_fd) == group:
+            self.MaybeGiveTerminal(self.shell_pgid)
 
     def MaybeReturnTerminal(self):
         # type: () -> None
