@@ -43,3 +43,31 @@ func f() { return (1) }
 ## status: 1
 ## STDOUT:
 ## END
+
+#### Multiple func calls
+
+func inc(x) {
+  # increment
+
+  return (x + 1)
+}
+
+func dec(x) {
+  # decrement
+
+  return (x - 1)
+}
+
+echo $[inc(1)]
+echo $[inc(inc(1))]
+echo $[dec(inc(inc(1)))]
+
+var y = dec(dec(1))
+echo $[dec(y)]
+
+## STDOUT:
+2
+3
+2
+-2
+## END
