@@ -67,8 +67,7 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     (dev-minimal)
-      # Rebuild with Docker, after rebuilding with podman
-      # Remove Docker eventually, but not yet
+      # Use python3 wedge and mypy-0.780 repo
       echo 'v-2023-07-15'
       ;;
 

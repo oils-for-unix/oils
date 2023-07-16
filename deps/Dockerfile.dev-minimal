@@ -10,19 +10,28 @@ RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
 
 USER uke
 
-# This installs MyPy directly from pip, at a version < 0.971
-# It might be better to just use the same frozen 0.780 branch
-# Yes, because that's what I do on my dev machine.  I don't install both.
-#
-# Also try to remove python3-dev package
-
-COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
-COPY deps/from-py.sh /home/uke/tmp/deps/from-py.sh
-RUN deps/from-py.sh dev-minimal
+# Our own python3
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
+  /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
 # Copy _build/deps-source -> /home/uke/wedge for now.
 COPY --chown=uke \
   _build/deps-source/pyflakes/pyflakes-2.4.0/ \
   /home/uke/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0/
+
+# So we can run python3 -m mypy.  (Not just for mycpp)
+COPY --chown=uke \
+  _build/deps-source/mypy/mypy-0.780/ \
+  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
+COPY devtools/run-task.sh /home/uke/tmp/devtools/run-task.sh
+COPY build/deps.sh /home/uke/tmp/build/deps.sh
+COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
+
+# Hack for now: pass a different MyPy dir
+# Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
+# RUNTIME with uke!
+RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dev-minimal'"]
