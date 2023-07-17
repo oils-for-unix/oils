@@ -228,9 +228,9 @@ def PlusEquals(old_val, val):
 
 class Func(vm._Callable):
 
-    def __init__(self, node, mem, cmd_ev):
-        # type: (command.Func, state.Mem, CommandEvaluator) -> None
-        self.name = lexer.TokenVal(node.name)
+    def __init__(self, name, node, mem, cmd_ev):
+        # type: (str, command.Func, state.Mem, CommandEvaluator) -> None
+        self.name = name
         self.node = node
         self.cmd_ev = cmd_ev
         self.mem = mem
@@ -252,8 +252,6 @@ class Func(vm._Callable):
             pos_param = self.node.pos_params[i]
 
             arg_name = location.LName(lexer.TokenVal(pos_param.name))
-
-            self.mem.SetLocationToken(pos_param.name)
             self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
 
         # TODO: pass named args
@@ -1498,7 +1496,7 @@ class CommandEvaluator(object):
                         "Func %s was already defined (redefine_proc_func)" %
                         name, node.name)
 
-                self.funcs[name] = Func(node, self.mem, self)
+                self.funcs[name] = Func(name, node, self.mem, self)
 
                 status = 0
 
