@@ -22,8 +22,11 @@ typecheck-files() {
   # everything will be annotated anyway.  (that would require
   # re-adding assert-one-error and its associated cruft, though).
 
+  # NOTE: This got a lot slower once we started using the MyPy repo, instead of
+  # the optimized package from pip
+  # Consider installing the package again
   echo "MYPY $@"
-  MYPYPATH='.:pyext' python3 -m mypy --py2 --follow-imports=silent $MYPY_FLAGS "$@"
+  time MYPYPATH='.:pyext' python3 -m mypy --py2 --follow-imports=silent $MYPY_FLAGS "$@"
   echo
 }
 

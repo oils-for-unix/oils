@@ -149,17 +149,21 @@ def ToShellArray(val, blame_loc, prefix=''):
     """
     UP_val = val
     with tagswitch(val) as case2:
-        if case2(value_e.BashArray):
-            val = cast(value.BashArray, UP_val)
-            strs = val.strs
-
-        elif case2(value_e.List):
+        if case2(value_e.List):
             val = cast(value.List, UP_val)
-            strs = []
+            strs = []  # type: List[str]
             # Note: it would be nice to add the index to the error message
             # prefix, WITHOUT allocating a string for every item
             for item in val.items:
                 strs.append(Stringify(item, blame_loc, prefix=prefix))
+
+        # I thought about getting rid of this to keep OSH and YSH separate,
+        # but:
+        # - readarray/mapfile returns bash array (ysh-user-feedback depends on it)
+        # - ysh-options tests parse_at too
+        elif case2(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
+            strs = val.strs
 
         else:
             raise error.InvalidType2(val, "%sexpected List" % prefix,
@@ -341,7 +345,7 @@ def ExactlyEqual(left, right):
             # Note: could provide floatEquals(), and suggest it
             # Suggested idiom is abs(f1 - f2) < 0.1
             raise error.InvalidType("Equality isn't defined on Float",
-                loc.Missing)
+                                    loc.Missing)
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
@@ -420,8 +424,7 @@ def Contains(needle, haystack):
 
         else:
             raise error.InvalidType2(haystack, "'in' expected Dict",
-                loc.Missing)
-
+                                     loc.Missing)
 
     return False
 

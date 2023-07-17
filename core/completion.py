@@ -230,9 +230,9 @@ class Lookup(object):
     def GetSpecForName(self, argv0):
         # type: (str) -> Tuple[Optional[Dict[str, bool]], Optional[UserSpec]]
         """
-    Args:
-      argv0: A finished argv0 to lookup
-    """
+        Args:
+          argv0: A finished argv0 to lookup
+        """
         pair = self.lookup.get(argv0)  # NOTE: Could be ''
         if pair:
             # mycpp: rewrite of tuple return
@@ -270,9 +270,9 @@ class Api(object):
     def __init__(self, line, begin, end):
         # type: (str, int, int) -> None
         """
-    Args:
-      index: if -1, then we're running through compgen
-    """
+        Args:
+          index: if -1, then we're running through compgen
+        """
         self.line = line
         self.begin = begin
         self.end = end
@@ -308,10 +308,6 @@ class Api(object):
 
 
 class CompletionAction(object):
-    """Returns a list of words.
-
-    Function Literal words
-    """
 
     def __init__(self):
         # type: () -> None
@@ -337,7 +333,7 @@ class CompletionAction(object):
 
 
 class UsersAction(CompletionAction):
-    """Complete -A user."""
+    """complete -A user."""
 
     def __init__(self):
         # type: () -> None
@@ -367,7 +363,7 @@ class TestAction(CompletionAction):
 
 
 class DynamicWordsAction(CompletionAction):
-    """Compgen -W '$(echo one two three)'."""
+    """compgen -W '$(echo one two three)'."""
 
     def __init__(
             self,
@@ -476,10 +472,10 @@ class ShellFuncAction(CompletionAction):
     def __init__(self, cmd_ev, func, comp_lookup):
         # type: (CommandEvaluator, Proc, Lookup) -> None
         """
-    Args:
-      comp_lookup: For the 124 protocol: test if the user-defined function
-      registered a new UserSpec.
-    """
+        Args:
+          comp_lookup: For the 124 protocol: test if the user-defined function
+          registered a new UserSpec.
+        """
         self.cmd_ev = cmd_ev
         self.func = func
         self.comp_lookup = comp_lookup
@@ -575,7 +571,7 @@ class ShellFuncAction(CompletionAction):
 
 
 class VariablesAction(CompletionAction):
-    """Compgen -A variable."""
+    """compgen -A variable."""
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -588,7 +584,7 @@ class VariablesAction(CompletionAction):
 
 
 class ExternalCommandAction(CompletionAction):
-    """Complete commands in $PATH.
+    """complete commands in $PATH.
 
     This is PART of compgen -A command.
     """
@@ -596,9 +592,9 @@ class ExternalCommandAction(CompletionAction):
     def __init__(self, mem):
         # type: (Mem) -> None
         """
-    Args:
-      mem: for looking up Path
-    """
+        Args:
+          mem: for looking up Path
+        """
         self.mem = mem
         # Should we list everything executable in $PATH here?  And then whenever
         # $PATH is changed, regenerated it?
@@ -741,7 +737,7 @@ class UserSpec(object):
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[Tuple[str, bool]]
-        """Yield completion candidates."""
+        """yield completion candidates."""
         num_matches = 0
 
         for a in self.actions:
@@ -859,13 +855,13 @@ class RootCompleter(CompletionAction):
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
         """
-    Args:
-      comp: Callback args from readline.  Readline uses set_completer_delims to
-        tokenize the string.
+        Args:
+          comp: Callback args from readline.  Readline uses
+                set_completer_delims to tokenize the string.
 
-    Returns a list of matches relative to readline's completion_delims.
-    We have to post-process the output of various completers.
-    """
+        Returns a list of matches relative to readline's completion_delims.
+        We have to post-process the output of various completers.
+        """
         arena = self.parse_ctx.arena  # Used by inner functions
 
         # Pass the original line "out of band" to the completion callback.
@@ -1203,8 +1199,8 @@ class RootCompleter(CompletionAction):
         """Add trailing spaces / slashes to completion candidates, and time
         them.
 
-        NOTE: This post-processing MUST go here, and not in UserSpec, because it's
-        in READLINE in bash.  compgen doesn't see it.
+        NOTE: This post-processing MUST go here, and not in UserSpec, because
+        it's in READLINE in bash.  compgen doesn't see it.
         """
         self.debug_f.writeln('Completing %r ... (Ctrl-C to cancel)' % comp.line)
         start_time = time_.time()

@@ -9,8 +9,6 @@ state.py - Interpreter state
 """
 from __future__ import print_function
 
-import cStringIO
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
@@ -974,22 +972,6 @@ class DirStack(object):
         ret.extend(self.stack)
         ret.reverse()
         return ret
-
-
-# NOTE: not used!
-if mylib.PYTHON:
-
-    def _FormatStack(var_stack):
-        # type: (List[Any]) -> str
-        """Temporary debugging.
-
-        TODO: Turn this into a real JSON dump or something.
-        """
-        f = cStringIO.StringIO()
-        for i, entry in enumerate(var_stack):
-            f.write('[%d] %s' % (i, entry))
-            f.write('\n')
-        return f.getvalue()
 
 
 def _GetWorkingDir():
@@ -2012,10 +1994,8 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         if name == 'ARGV':
-            # TODO:
-            # - Reuse the BashArray?
-            # - @@ could be an alias for ARGV (in command mode, but not expr mode)
-            return value.BashArray(self.GetArgv())
+            items = [value.Str(s) for s in self.GetArgv()]  # type: List[value_t]
+            return value.List(items)
 
         # "Registers"
         if name == '_status':
@@ -2036,7 +2016,7 @@ class Mem(object):
             return value.BashArray(strs)
 
         if name == '_pipeline_status':
-            items = [value.Int(i) for i in self.pipe_status[-1]]  # type: List[value_t]
+            items = [value.Int(i) for i in self.pipe_status[-1]]
             return value.List(items)
 
         if name == '_process_sub_status':  # Oil naming convention

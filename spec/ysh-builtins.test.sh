@@ -4,9 +4,9 @@
 shopt -s parse_at
 a=(1 2)
 append :a '3 4' '5'
-argv.py @a
+argv.py "${a[@]}"
 append -- :a 6
-argv.py @a
+argv.py "${a[@]}"
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ['1', '2', '3 4', '5', '6']

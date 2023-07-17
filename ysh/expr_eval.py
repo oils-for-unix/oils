@@ -45,6 +45,7 @@ from _devbuild.gen.runtime_asdl import (
     value_e,
     value_t,
     IntBox,
+    Proc,
 )
 from core import error
 from core.error import e_die, e_die_status
@@ -201,7 +202,10 @@ class OilEvaluator(object):
                 raise error.Expr('Place expression eval error: %s' % str(e),
                                  blame_loc)
         else:
-            raise AssertionError()
+            # Pure C++ won't need to catch exceptions
+            with state.ctx_OilExpr(self.mutable_opts):
+                lval = self._EvalPlaceExpr(place)
+            return lval
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
@@ -244,7 +248,10 @@ class OilEvaluator(object):
                                  blame_loc)
 
         else:
-            raise AssertionError()
+            # Pure C++ won't need to catch exceptions
+            with state.ctx_OilExpr(self.mutable_opts):
+                val = self._EvalExpr(node)
+            return val
 
         # Note: IndexError and KeyError are handled in more specific places
 
@@ -495,7 +502,15 @@ class OilEvaluator(object):
         # type: (value_t, value_t) -> value.Int
         left_i = self._ValueToInteger(left)
         right_i = self._ValueToInteger(right)
-        return value.Int(left_i**right_i)
+
+        # Same as sh_expr_eval.py
+        if right_i < 0:
+            # TODO: error location
+            raise error.Expr("Exponent can't be less than zero", loc.Missing)
+        ret = 1
+        for i in xrange(right_i):
+            ret *= left_i
+        return value.Int(ret)
 
     def _ArithBitwise(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> value.Int
@@ -547,7 +562,9 @@ class OilEvaluator(object):
                 with tagswitch(right) as rcase:
                     if rcase(value_e.List):
                         right = cast(value.List, UP_right)
-                        return value.List(left.items + right.items)
+                        c = list(left.items)  # mycpp rewrite of L1 + L2
+                        c.extend(right.items)
+                        return value.List(c)
 
                     else:
                         raise error.InvalidType('Expected List', loc.Missing)
@@ -675,7 +692,8 @@ class OilEvaluator(object):
 
         left = self._EvalExpr(node.left)
         result = True  # Implicit and
-        for op, right_expr in zip(node.ops, node.comparators):
+        for i, op in enumerate(node.ops):
+            right_expr = node.comparators[i]
 
             right = self._EvalExpr(right_expr)
 
@@ -864,10 +882,14 @@ class OilEvaluator(object):
 
         return pos_args, kwargs
 
-    def EvalArgList2(self, args):
-        # type: (ArgList) -> Tuple[List[value_t], Dict[str, value_t]]
+    def EvalArgList2(self, args, me=None):
+        # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
         """For procs and args - TYPED """
         pos_args = []  # type: List[value_t]
+
+        if me:  # self/this argument
+            pos_args.append(me)
+
         for arg in args.positional:
             UP_arg = arg
 
@@ -938,14 +960,12 @@ class OilEvaluator(object):
 
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)
-                f = func.callable
 
-                if mylib.PYTHON:
-                    assert isinstance(
-                        f, vm._Callable), "Bound funcs must be typed"
+                #assert isinstance(func.callable, vm._Callable), "Bound funcs must be typed"
+                # Cast to work around ASDL limitation for now
+                f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = self.EvalArgList2(node.args)
-                pos_args.insert(0, func.me)
+                pos_args, named_args = self.EvalArgList2(node.args, me=func.me)
 
                 ret = f.Call(pos_args, named_args)
 
@@ -973,14 +993,14 @@ class OilEvaluator(object):
                 obj = cast(value.Str, UP_obj)
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
-                        index = cast(value.Slice, index)
+                        index = cast(value.Slice, UP_index)
 
                         lower = index.lower.i if index.lower else 0
                         upper = index.upper.i if index.upper else len(obj.s)
                         return value.Str(obj.s[lower:upper])
 
                     elif case2(value_e.Int):
-                        index = cast(value.Int, index)
+                        index = cast(value.Int, UP_index)
                         try:
                             return value.Str(obj.s[index.i])
                         except IndexError:
@@ -995,7 +1015,7 @@ class OilEvaluator(object):
                 obj = cast(value.List, UP_obj)
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
-                        index = cast(value.Slice, index)
+                        index = cast(value.Slice, UP_index)
 
                         lower = index.lower.i if index.lower else 0
                         upper = index.upper.i if index.upper else len(
@@ -1003,7 +1023,7 @@ class OilEvaluator(object):
                         return value.List(obj.items[lower:upper])
 
                     elif case2(value_e.Int):
-                        index = cast(value.Int, index)
+                        index = cast(value.Int, UP_index)
                         try:
                             return obj.items[index.i]
                         except IndexError:
@@ -1043,7 +1063,7 @@ class OilEvaluator(object):
             ty = o.tag()
 
             recv = self.methods.get(ty)
-            method = recv.get(name) if recv else None
+            method = recv.get(name) if recv is not None else None
             if not method:
                 raise error.InvalidType(
                     'Method %r does not exist on %r' % (name, ty), node.attr)
@@ -1172,12 +1192,14 @@ class OilEvaluator(object):
 
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
-                return value.List([self._EvalExpr(e) for e in node.elts])
+                items = [self._EvalExpr(e) for e in node.elts]
+                return value.List(items)
 
             elif case(expr_e.Tuple):
                 node = cast(expr.Tuple, UP_node)
                 # YSH language: Tuple syntax evaluates to LIST !
-                return value.List([self._EvalExpr(e) for e in node.elts])
+                items = [self._EvalExpr(e) for e in node.elts]
+                return value.List(items)
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)

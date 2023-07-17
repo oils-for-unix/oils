@@ -161,6 +161,10 @@ bool to_bool(Str* s) {
   return len(s) != 0;
 }
 
+double to_float(int i) {
+  return static_cast<double>(i);
+}
+
 double to_float(Str* s) {
   char* begin = s->data_;
   char* end = begin + len(s);

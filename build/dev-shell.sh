@@ -81,8 +81,12 @@ if test -d "$PY3_LIBS_WEDGE"; then
   export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"
 fi
 
+readonly MYPY_VERSION=0.780
+# TODO: would be nice to upgrade to newer version
+#readonly MYPY_VERSION=0.971
+
 # Containers copy it here
-readonly MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/0.780
+readonly MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
 if test -d "$MYPY_WEDGE"; then
   export PYTHONPATH="$MYPY_WEDGE:$PYTHONPATH"
 fi
