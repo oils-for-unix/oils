@@ -293,6 +293,10 @@ cpp-spec() {
     # to create _test/index.html
     gawk
 
+    # spec tests use these
+    procps
+    jq
+
     # for MyPy git clone https://.  TODO: remove when the build is hermetic
     ca-certificates
   )

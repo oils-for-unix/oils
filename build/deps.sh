@@ -34,6 +34,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/dev-shell.sh  # python3 in PATH
 source deps/from-apt.sh      # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
@@ -263,9 +264,6 @@ install-py3-libs-in-venv() {
 
 install-py3-libs() {
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
-
-  # Load it as the default python3
-  source build/dev-shell.sh
 
   local py3
   py3=$(command -v python3)

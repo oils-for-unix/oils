@@ -39,8 +39,8 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     (cpp-spec)
-      # Rebuild with wedges
-      echo 'v-2023-07-15'
+      # Rebuild with jq, procps
+      echo 'v-2023-07-17'
       ;;
     (pea)
       # freshen up
