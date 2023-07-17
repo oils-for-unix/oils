@@ -1,4 +1,5 @@
-# These are really lists
+## our_shell: ysh
+## oils_failures_allowed: 2
 
 #### basic array
 var x = %(1 2 3)

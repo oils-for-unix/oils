@@ -1,5 +1,9 @@
 # Test var / setvar / etc.
 
+## our_shell: ysh
+## oils_failures_allowed: 2
+
+
 # TODO: GetVar needs a mode where Obj[str] gets translated to value.Str?
 # Then all code will work.
 #

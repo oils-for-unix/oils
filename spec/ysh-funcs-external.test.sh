@@ -1,5 +1,5 @@
 ## our_shell: ysh
-
+## oils_failures_allowed: 3
 
 #### JSON func on top of proc
 

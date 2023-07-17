@@ -694,7 +694,7 @@ hay-meta() {
 #
 
 ysh-usage() {
-  sh-spec spec/ysh-usage.test.sh $YSH_LIST "$@"
+  run-file ysh-usage "$@"
 }
 
 ysh-unicode() {
@@ -702,17 +702,15 @@ ysh-unicode() {
 }
 
 ysh-bin() {
-  sh-spec spec/ysh-bin.test.sh $YSH_LIST "$@"
+  run-file ysh-bin "$@"
 }
 
 ysh-array() {
-  sh-spec spec/ysh-array.test.sh --oils-failures-allowed 2 \
-    $YSH_LIST "$@"
+  run-file ysh-array "$@"
 }
 
 ysh-assign() {
-  sh-spec spec/ysh-assign.test.sh --oils-failures-allowed 2 \
-    $YSH_LIST "$@"
+  run-file ysh-assign "$@"
 }
 
 ysh-blocks() {
@@ -721,8 +719,7 @@ ysh-blocks() {
 }
 
 ysh-bugs() {
-  sh-spec spec/ysh-bugs.test.sh --oils-failures-allowed 1 \
-    $YSH_LIST "$@"
+  run-file ysh-bugs "$@"
 }
 
 ysh-builtins() {
@@ -731,13 +728,11 @@ ysh-builtins() {
 }
 
 ysh-builtin-argparse() {
-  sh-spec spec/ysh-builtin-argparse.test.sh --oils-failures-allowed 2 \
-    $YSH_LIST "$@"
+  run-file ysh-builtin-argparse "$@"
 }
 
 ysh-builtin-describe() {
-  sh-spec spec/ysh-builtin-describe.test.sh --oils-failures-allowed 1 \
-    $YSH_LIST "$@"
+  run-file ysh-builtin-describe "$@"
 }
 
 # Related to errexit-oil
@@ -796,13 +791,11 @@ ysh-expr-compare() {
 }
 
 ysh-expr-sub() {
-  sh-spec spec/ysh-expr-sub.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-expr-sub "$@"
 }
 
 ysh-for() {
-  sh-spec spec/ysh-for.test.sh --oils-failures-allowed 1 \
-    $YSH_LIST "$@"
+  run-file ysh-for "$@"
 }
 
 ysh-methods() {
@@ -810,18 +803,15 @@ ysh-methods() {
 }
 
 ysh-funcs-builtin() {
-  sh-spec spec/ysh-funcs-builtin.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-funcs-builtin "$@"
 }
 
 ysh-funcs-external() {
-  sh-spec spec/ysh-funcs-external.test.sh --oils-failures-allowed 3 \
-    $YSH_LIST "$@"
+  run-file ysh-funcs-external "$@"
 }
 
 ysh-interactive() {
-  sh-spec spec/ysh-interactive.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-interactive "$@"
 }
 
 ysh-json() {
@@ -830,8 +820,7 @@ ysh-json() {
 }
 
 ysh-keywords() {
-  sh-spec spec/ysh-keywords.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-keywords "$@"
 }
 
 ysh-multiline() {
@@ -860,8 +849,7 @@ ysh-regex() {
 }
 
 ysh-reserved() {
-  sh-spec spec/ysh-reserved.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-reserved "$@"
 }
 
 ysh-scope() {
@@ -875,18 +863,15 @@ ysh-slice-range() {
 }
 
 ysh-string() {
-  sh-spec spec/ysh-string.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-string "$@"
 }
 
 ysh-special-vars() {
-  sh-spec spec/ysh-special-vars.test.sh --oils-failures-allowed 0 \
-    $YSH_LIST "$@"
+  run-file ysh-special-vars "$@"
 }
 
 ysh-tuple() {
-  sh-spec spec/ysh-tuple.test.sh --oils-failures-allowed 1 \
-    $YSH_LIST "$@"
+  run-file ysh-tuple "$@"
 }
 
 ysh-var-sub() {
@@ -909,8 +894,7 @@ ysh-xtrace() {
 }
 
 ysh-user-feedback() {
-  sh-spec spec/ysh-user-feedback.test.sh --oils-failures-allowed 1 \
-    $YSH_LIST "$@"
+  run-file ysh-user-feedback "$@"
 }
 
 #

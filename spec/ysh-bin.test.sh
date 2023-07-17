@@ -1,4 +1,6 @@
-# Smoke test for the bin/oil binary
+# Smoke test for the bin/ysh binary
+
+## our_shell: ysh
 
 #### Array func
 write @[split('foo bar')]

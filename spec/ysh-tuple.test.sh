@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 #### tuple literal and (( conflict
 if ((0,0) < (0,1)) { echo yes }

@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 # Hm can we do this entirely in user code, not as a builtin?
 

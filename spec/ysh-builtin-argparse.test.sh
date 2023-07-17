@@ -1,10 +1,12 @@
 ## our_shell: ysh
+## oils_failures_allowed: 2
 
 # Some thoughts before writing code.  Hm can we do this entirely in user code, not as a builtin?
 #
 # The following is as close as possible to the python argparse which seems to work well
 
-#### Argparse boolsche option and positional
+#### Argparse bool option and positional
+
 hay define ArgSpec
 hay define ArgSpec/Arg
 

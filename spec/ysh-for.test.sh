@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 #### For loop over expression: List
 var mylist = [1, 2, 3]
