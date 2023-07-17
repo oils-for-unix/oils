@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import Token
 from core import pyos
 from mycpp.mylib import log
 
-from typing import Dict, List, Any, Optional, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue, value_t
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
