@@ -283,7 +283,7 @@ g
 #### Procs defined inside compound statements (with redefine_proc)
 
 shopt --set oil:upgrade
-shopt --set redefine_proc
+shopt --set redefine_proc_func
 
 for x in 1 2 {
   proc p {
