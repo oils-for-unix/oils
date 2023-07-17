@@ -220,7 +220,8 @@ def PlusEquals(old_val, val):
             pass
 
         else:
-            e_die("Can't append to value of type %s" % value_str(old_val.tag()))
+            e_die("Can't append to value of type %s" %
+                  value_str(old_val.tag()))
 
     return val
 
@@ -638,10 +639,9 @@ class CommandEvaluator(object):
                 b = cond_status == 0
 
             elif case(condition_e.YshExpr):
-                if mylib.PYTHON:
-                    cond = cast(condition.YshExpr, UP_cond)
-                    obj = self.expr_ev.EvalExpr(cond.e, blame_tok)
-                    b = val_ops.ToBool(obj)
+                cond = cast(condition.YshExpr, UP_cond)
+                obj = self.expr_ev.EvalExpr(cond.e, blame_tok)
+                b = val_ops.ToBool(obj)
 
         return b
 
@@ -657,11 +657,8 @@ class CommandEvaluator(object):
                 return self.word_ev.EvalWordToString(arg.w)
 
             elif case(case_arg_e.YshExpr):
-                if mylib.PYTHON:
-                    arg = cast(case_arg.YshExpr, UP_arg)
-                    return self.expr_ev.EvalExpr(arg.e, blame)
-                else:
-                    return value.Null
+                arg = cast(case_arg.YshExpr, UP_arg)
+                return self.expr_ev.EvalExpr(arg.e, blame)
 
             else:
                 raise NotImplementedError()
@@ -857,175 +854,167 @@ class CommandEvaluator(object):
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
 
-                if mylib.PYTHON:
-                    # x = 'foo' in Hay blocks
-                    if node.keyword is None or node.keyword.id == Id.KW_Const:
-                        self.mem.SetLocationToken(
-                            node.lhs[0].name)  # point to var name
+                # x = 'foo' in Hay blocks
+                if node.keyword is None or node.keyword.id == Id.KW_Const:
+                    self.mem.SetLocationToken(
+                        node.lhs[0].name)  # point to var name
 
-                        # Note: there's only one LHS
-                        vd_lval = location.LName(
-                            node.lhs[0].name.tval)  # type: lvalue_t
-                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+                    # Note: there's only one LHS
+                    vd_lval = location.LName(
+                        node.lhs[0].name.tval)  # type: lvalue_t
+                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-                        self.mem.SetValue(vd_lval,
-                                          val,
-                                          scope_e.LocalOnly,
-                                          flags=_PackFlags(
-                                              Id.KW_Const, state.SetReadOnly))
+                    self.mem.SetValue(vd_lval,
+                                      val,
+                                      scope_e.LocalOnly,
+                                      flags=_PackFlags(Id.KW_Const,
+                                                       state.SetReadOnly))
 
-                    else:
-                        self.mem.SetLocationToken(node.keyword)  # point to var
+                else:
+                    self.mem.SetLocationToken(node.keyword)  # point to var
 
-                        # TODO: optimize this common case (but measure)
-                        assert len(node.lhs) == 1, node.lhs
+                    # TODO: optimize this common case (but measure)
+                    assert len(node.lhs) == 1, node.lhs
 
-                        vd_lval = location.LName(node.lhs[0].name.tval)
-                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                        self.mem.SetValue(vd_lval,
-                                          val,
-                                          scope_e.LocalOnly,
-                                          flags=_PackFlags(node.keyword.id))
+                    vd_lval = location.LName(node.lhs[0].name.tval)
+                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+                    self.mem.SetValue(vd_lval,
+                                      val,
+                                      scope_e.LocalOnly,
+                                      flags=_PackFlags(node.keyword.id))
 
-                # outside mylib.PYTHON
                 status = 0
 
             elif case(command_e.PlaceMutation):
 
-                if mylib.PYTHON:
-                    node = cast(command.PlaceMutation, UP_node)
-                    self.mem.SetLocationToken(
-                        node.keyword)  # point to setvar/set
+                node = cast(command.PlaceMutation, UP_node)
+                self.mem.SetLocationToken(node.keyword)  # point to setvar/set
 
-                    with switch(node.keyword.id) as case2:
-                        if case2(Id.KW_SetVar):
-                            which_scopes = scope_e.LocalOnly
-                        elif case2(Id.KW_SetGlobal):
-                            which_scopes = scope_e.GlobalOnly
-                        elif case2(Id.KW_SetRef):
-                            # The out param is LOCAL, but the nameref lookup is dynamic
-                            which_scopes = scope_e.LocalOnly
-                        else:
-                            raise AssertionError(node.keyword.id)
+                with switch(node.keyword.id) as case2:
+                    if case2(Id.KW_SetVar):
+                        which_scopes = scope_e.LocalOnly
+                    elif case2(Id.KW_SetGlobal):
+                        which_scopes = scope_e.GlobalOnly
+                    elif case2(Id.KW_SetRef):
+                        # The out param is LOCAL, but the nameref lookup is dynamic
+                        which_scopes = scope_e.LocalOnly
+                    else:
+                        raise AssertionError(node.keyword.id)
 
-                    if node.op.id == Id.Arith_Equal:
-                        right_val = self.expr_ev.EvalExpr(
-                            node.rhs, loc.Missing)
-                        UP_right_val = right_val
+                if node.op.id == Id.Arith_Equal:
+                    right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+                    UP_right_val = right_val
 
-                        places = None  # type: List[lvalue_t]
-                        rhs_vals = None  # type: List[value_t]
+                    places = None  # type: List[lvalue_t]
+                    rhs_vals = None  # type: List[value_t]
 
-                        num_lhs = len(node.lhs)
-                        if num_lhs == 1:
-                            places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
-                            rhs_vals = [right_val]
-                        else:
-                            if right_val.tag() != value_e.List:
-                                raise error.InvalidType2(
-                                    right_val, 'expected a List', loc.Missing)
-                            right_val = cast(value.List, UP_right_val)
+                    num_lhs = len(node.lhs)
+                    if num_lhs == 1:
+                        places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
+                        rhs_vals = [right_val]
+                    else:
+                        if right_val.tag() != value_e.List:
+                            raise error.InvalidType2(right_val,
+                                                     'expected a List',
+                                                     loc.Missing)
+                        right_val = cast(value.List, UP_right_val)
 
-                            num_rhs = len(right_val.items)
-                            if num_lhs != num_rhs:
-                                raise error.Expr(
-                                    '%d != %d' % (num_lhs, num_rhs),
-                                    loc.Missing)
+                        num_rhs = len(right_val.items)
+                        if num_lhs != num_rhs:
+                            raise error.Expr('%d != %d' % (num_lhs, num_rhs),
+                                             loc.Missing)
 
-                            places = []
-                            rhs_vals = []
-                            for i, lhs_val in enumerate(node.lhs):
-                                places.append(
-                                    self.expr_ev.EvalPlaceExpr(lhs_val))
-                                rhs_vals.append(right_val.items[i])
+                        places = []
+                        rhs_vals = []
+                        for i, lhs_val in enumerate(node.lhs):
+                            places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
+                            rhs_vals.append(right_val.items[i])
 
-                        for place, rval in zip(places, rhs_vals):
-                            UP_place = place
-                            tag = place.tag()
+                    for i, place in enumerate(places):
+                        rval = rhs_vals[i]
+                        UP_place = place
+                        tag = place.tag()
 
-                            if tag == lvalue_e.ObjIndex:
-                                # setvar mylist[0] = 42
-                                # setvar mydict['key'] = 42
-                                place = cast(lvalue.ObjIndex, UP_place)
+                        if tag == lvalue_e.ObjIndex:
+                            # setvar mylist[0] = 42
+                            # setvar mydict['key'] = 42
+                            place = cast(lvalue.ObjIndex, UP_place)
 
-                                obj = place.obj
-                                UP_obj = obj
-                                with tagswitch(obj) as case:
-                                    if case(value_e.BashArray):
-                                        obj = cast(value.BashArray, UP_obj)
-                                        index = val_ops.ToInt(
-                                            place.index,
-                                            loc.Missing,
-                                            prefix='List index ')
-                                        r = val_ops.ToStr(rval,
+                            obj = place.obj
+                            UP_obj = obj
+                            with tagswitch(obj) as case:
+                                if case(value_e.BashArray):
+                                    obj = cast(value.BashArray, UP_obj)
+                                    index = val_ops.ToInt(place.index,
                                                           loc.Missing,
                                                           prefix='List index ')
-                                        obj.strs[index] = r
+                                    r = val_ops.ToStr(rval,
+                                                      loc.Missing,
+                                                      prefix='List index ')
+                                    obj.strs[index] = r
 
-                                    elif case(value_e.List):
-                                        obj = cast(value.List, UP_obj)
-                                        index = val_ops.ToInt(
-                                            place.index,
-                                            loc.Missing,
-                                            prefix='List index ')
-                                        obj.items[index] = rval
+                                elif case(value_e.List):
+                                    obj = cast(value.List, UP_obj)
+                                    index = val_ops.ToInt(place.index,
+                                                          loc.Missing,
+                                                          prefix='List index ')
+                                    obj.items[index] = rval
 
-                                    elif case(value_e.BashAssoc):
-                                        obj = cast(value.BashAssoc, UP_obj)
-                                        key = val_ops.ToStr(
-                                            place.index,
-                                            loc.Missing,
-                                            prefix='BashAssoc index ')
-                                        r = val_ops.ToStr(
-                                            rval,
-                                            loc.Missing,
-                                            prefix='BashAssoc index ')
-                                        obj.d[key] = r
+                                elif case(value_e.BashAssoc):
+                                    obj = cast(value.BashAssoc, UP_obj)
+                                    key = val_ops.ToStr(
+                                        place.index,
+                                        loc.Missing,
+                                        prefix='BashAssoc index ')
+                                    r = val_ops.ToStr(
+                                        rval,
+                                        loc.Missing,
+                                        prefix='BashAssoc index ')
+                                    obj.d[key] = r
 
-                                    elif case(value_e.Dict):
-                                        obj = cast(value.Dict, UP_obj)
-                                        key = val_ops.ToStr(
-                                            place.index,
-                                            loc.Missing,
-                                            prefix='Dict index ')
-                                        obj.d[key] = rval
+                                elif case(value_e.Dict):
+                                    obj = cast(value.Dict, UP_obj)
+                                    key = val_ops.ToStr(place.index,
+                                                        loc.Missing,
+                                                        prefix='Dict index ')
+                                    obj.d[key] = rval
 
-                                    else:
-                                        raise error.InvalidType2(
-                                            obj,
-                                            "obj[index] expected List or Dict",
-                                            loc.Missing)
+                                else:
+                                    raise error.InvalidType2(
+                                        obj,
+                                        "obj[index] expected List or Dict",
+                                        loc.Missing)
 
-                                if node.keyword.id == Id.KW_SetRef:
-                                    e_die('setref obj[index] not implemented')
+                            if node.keyword.id == Id.KW_SetRef:
+                                e_die('setref obj[index] not implemented')
 
-                            else:
-                                #val = cpython._PyObjToValue(py_val)
-                                # top level variable
-                                self.mem.SetValue(place,
-                                                  rval,
-                                                  which_scopes,
-                                                  flags=_PackFlags(
-                                                      node.keyword.id))
+                        else:
+                            #val = cpython._PyObjToValue(py_val)
+                            # top level variable
+                            self.mem.SetValue(place,
+                                              rval,
+                                              which_scopes,
+                                              flags=_PackFlags(
+                                                  node.keyword.id))
 
-                    # TODO: Other augmented assignments
-                    elif node.op.id == Id.Arith_PlusEqual:
-                        # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
-                        # transformer and not the grammar.  We should do that too.
+                # TODO: Other augmented assignments
+                elif node.op.id == Id.Arith_PlusEqual:
+                    # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
+                    # transformer and not the grammar.  We should do that too.
 
-                        place2 = cast(place_expr.Var, node.lhs[0])
-                        pe_lval = location.LName(place2.name.tval)
-                        val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+                    place2 = cast(place_expr.Var, node.lhs[0])
+                    pe_lval = location.LName(place2.name.tval)
+                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-                        new_val = self.expr_ev.EvalPlusEquals(pe_lval, val)
+                    new_val = self.expr_ev.EvalPlusEquals(pe_lval, val)
 
-                        self.mem.SetValue(pe_lval,
-                                          new_val,
-                                          which_scopes,
-                                          flags=_PackFlags(node.keyword.id))
+                    self.mem.SetValue(pe_lval,
+                                      new_val,
+                                      which_scopes,
+                                      flags=_PackFlags(node.keyword.id))
 
-                    else:
-                        raise NotImplementedError(Id_str(node.op.id))
+                else:
+                    raise NotImplementedError(Id_str(node.op.id))
 
                 status = 0  # TODO: what should status be?
 
@@ -1289,10 +1278,7 @@ class CommandEvaluator(object):
 
                 it2 = None  # type: val_ops._ContainerIter
                 if iter_list is None:  # for_expr.YshExpr
-                    if mylib.PYTHON:
-                        val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
-                    else:
-                        val = value.Null  # Satisfy compiler
+                    val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
 
                     UP_val = val
                     with tagswitch(val) as case:
@@ -1434,16 +1420,16 @@ class CommandEvaluator(object):
                         proc_name, node.name)
 
                 defaults = None  # type: List[value_t]
-                if mylib.PYTHON:
-                    UP_sig = node.sig
-                    if UP_sig.tag() == proc_sig_e.Closed:
-                        sig = cast(proc_sig.Closed, UP_sig)
-                        defaults = [None] * len(sig.pos_params)
-                        for i, p in enumerate(sig.pos_params):
-                            if p.default_val:
-                                val = self.expr_ev.EvalExpr(
-                                    p.default_val, loc.Missing)
-                                defaults[i] = val
+                UP_sig = node.sig
+                if UP_sig.tag() == proc_sig_e.Closed:
+                    sig = cast(proc_sig.Closed, UP_sig)
+                    no_val = None  # type: value_t
+                    defaults = [no_val] * len(sig.pos_params)
+                    for i, p in enumerate(sig.pos_params):
+                        if p.default_val:
+                            val = self.expr_ev.EvalExpr(
+                                p.default_val, loc.Missing)
+                            defaults[i] = val
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
                                              node.body, defaults,
@@ -1496,27 +1482,27 @@ class CommandEvaluator(object):
                                     break
 
                         elif case(pat_e.YshExprs):
-                            if mylib.PYTHON:
-                                pat_exprs = cast(pat.YshExprs, case_arm.pattern)
+                            pat_exprs = cast(pat.YshExprs, case_arm.pattern)
 
-                                for pat_expr in pat_exprs.exprs:
-                                    expr_val = self.expr_ev.EvalExpr(pat_expr, case_arm.left)
+                            for pat_expr in pat_exprs.exprs:
+                                expr_val = self.expr_ev.EvalExpr(
+                                    pat_expr, case_arm.left)
 
-                                    if val_ops.ExactlyEqual(expr_val, to_match):
-                                        status = self._ExecuteList(case_arm.action)
-                                        matched = True
-                                        break
-
-                        elif case(pat_e.Eggex):
-                            if mylib.PYTHON:
-                                pat_eggex = cast(pat.Eggex, case_arm.pattern)
-                                eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
-                                eggex_val = value.Eggex(eggex, None)
-
-                                if val_ops.RegexMatch(to_match, eggex_val, self.mem):
+                                if val_ops.ExactlyEqual(expr_val, to_match):
                                     status = self._ExecuteList(case_arm.action)
                                     matched = True
                                     break
+
+                        elif case(pat_e.Eggex):
+                            pat_eggex = cast(pat.Eggex, case_arm.pattern)
+                            eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
+                            eggex_val = value.Eggex(eggex, None)
+
+                            if val_ops.RegexMatch(to_match, eggex_val,
+                                                  self.mem):
+                                status = self._ExecuteList(case_arm.action)
+                                matched = True
+                                break
 
                         elif case(pat_e.Else):
                             status = self._ExecuteList(case_arm.action)
@@ -1966,7 +1952,8 @@ class CommandEvaluator(object):
 
                 n_params = len(sig.pos_params)
                 if sig.rest:
-                    items = [value.Str(s) for s in argv[n_params:]]  # type: List[value_t]
+                    items = [value.Str(s)
+                             for s in argv[n_params:]]  # type: List[value_t]
                     leftover = value.List(items)
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,
                                       scope_e.LocalOnly)

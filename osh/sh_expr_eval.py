@@ -706,13 +706,9 @@ class ArithEvaluator(object):
                     ret = lhs % rhs
 
                 elif op_id == Id.Arith_DStar:
-                    # OVM is stripped of certain functions that are somehow necessary for
-                    # exponentiation.
-                    # Python/ovm_stub_pystrtod.c:21: PyOS_double_to_string: Assertion `0'
-                    # failed.
                     if rhs < 0:
-                        e_die("Exponent can't be less than zero"
-                             )  # TODO: error location
+                         # TODO: error location
+                        e_die("Exponent can't be less than zero", loc.Missing)
                     ret = 1
                     for i in xrange(rhs):
                         ret *= lhs

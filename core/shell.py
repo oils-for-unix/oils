@@ -628,11 +628,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
 
-    if mylib.PYTHON:
-        expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods,
-                                         splitter, errfmt)
-    else:
-        expr_ev = None
+    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods,
+                                     splitter, errfmt)
 
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)

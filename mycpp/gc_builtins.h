@@ -134,6 +134,9 @@ inline int to_int(bool b) {
 
 bool to_bool(Str* s);
 
+// Used by division operator
+double to_float(int i);
+
 // Used for floating point flags like read -t 0.1
 double to_float(Str* s);
 

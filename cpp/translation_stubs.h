@@ -17,7 +17,7 @@ namespace word_eval {
 class AbstractWordEvaluator;
 }
 
-#if 1
+#if 0
 namespace expr_eval {
 
 class OilEvaluator {

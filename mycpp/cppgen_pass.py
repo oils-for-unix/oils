@@ -497,7 +497,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         #self.log('')
-        self.log('mypyfile %s', o.fullname)
+        #self.log('mypyfile %s', o.fullname)
 
         mod_parts = o.fullname.split('.')
         if self.forward_decl:
