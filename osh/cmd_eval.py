@@ -263,13 +263,10 @@ class Func(vm._Callable):
                 self.cmd_ev._Execute(self.node.body)
 
                 return value.Null  # implicit return
-            except vm.ControlFlow as e:
-                if e.IsRetval():
-                    return e.value
-                elif e.IsReturn():
-                    e_die("Unexpected proc return in func, use `return (expr)` instead", e.token)
-                else:
-                    e_die("Unexpected control flow in func: %s" % e.token, e.token)
+            except vm.ValueControlFlow as e:
+                return e.value
+            except vm.IntControlFlow as e:
+                raise AssertionError('IntControlFlow in func')
 
         raise AssertionError('unreachable')
 
@@ -1171,7 +1168,7 @@ class CommandEvaluator(object):
                 else:
                     # FIXME: evaluate the argument once expr_ev is translated
                     val = value.Null
-                raise vm.ControlFlow(node.keyword, -1, val)
+                raise vm.ValueControlFlow(node.keyword, val)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
@@ -1219,7 +1216,7 @@ class CommandEvaluator(object):
                         raise util.UserExit(
                             arg)  # handled differently than other control flow
                     else:
-                        raise vm.ControlFlow(keyword, arg, None)
+                        raise vm.IntControlFlow(keyword, arg)
                 else:
                     msg = 'Invalid control flow at top level'
                     if self.exec_opts.strict_control_flow():
@@ -1303,7 +1300,7 @@ class CommandEvaluator(object):
                                 break
                             status = self._Execute(node.body)  # last one wins
 
-                        except vm.ControlFlow as e:
+                        except vm.IntControlFlow as e:
                             status = 0
                             action = e.HandleLoop()
                             if action == flow_e.Break:
@@ -1425,7 +1422,7 @@ class CommandEvaluator(object):
 
                         try:
                             status = self._Execute(node.body)  # last one wins
-                        except vm.ControlFlow as e:
+                        except vm.IntControlFlow as e:
                             status = 0
                             action = e.HandleLoop()
                             if action == flow_e.Break:
@@ -1459,7 +1456,7 @@ class CommandEvaluator(object):
 
                         try:
                             status = self._Execute(body)
-                        except vm.ControlFlow as e:
+                        except vm.IntControlFlow as e:
                             status = 0
                             action = e.HandleLoop()
                             if action == flow_e.Break:
@@ -1829,7 +1826,7 @@ class CommandEvaluator(object):
 
     def ExecuteAndCatch(self, node, cmd_flags=0):
         # type: (command_t, int) -> Tuple[bool, bool]
-        """Execute a subprogram, handling vm.ControlFlow and fatal exceptions.
+        """Execute a subprogram, handling vm.IntControlFlow and fatal exceptions.
 
         Args:
           node: LST subtree
@@ -1863,7 +1860,7 @@ class CommandEvaluator(object):
 
         try:
             status = self._Execute(node)
-        except vm.ControlFlow as e:
+        except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
                 raise  # 'eval break' and 'source return.sh', etc.
             else:
@@ -2054,7 +2051,7 @@ class CommandEvaluator(object):
             # Here doc causes a pipe and Process(SubProgramThunk).
             try:
                 status = self._Execute(proc.body)
-            except vm.ControlFlow as e:
+            except vm.IntControlFlow as e:
                 if e.IsReturn():
                     status = e.StatusCode()
                 else:
@@ -2083,7 +2080,7 @@ class CommandEvaluator(object):
         namespace_ = None  # type: Dict[str, Cell]
         try:
             self._Execute(block)  # can raise FatalRuntimeError, etc.
-        except vm.ControlFlow as e:  # A block is more like a function.
+        except vm.IntControlFlow as e:  # A block is more like a function.
             # return in a block
             if e.IsReturn():
                 status = e.StatusCode()
@@ -2113,7 +2110,7 @@ class CommandEvaluator(object):
         except error.FatalRuntime as e:
             self.errfmt.PrettyPrintError(e)
             status = e.ExitStatus()
-        except vm.ControlFlow as e:
+        except vm.IntControlFlow as e:
             # shouldn't be able to exit the shell from a completion hook!
             # TODO: Avoid overwriting the prompt!
             self.errfmt.Print_('Attempted to exit from completion hook.',

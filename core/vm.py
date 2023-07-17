@@ -44,32 +44,26 @@ class ControlFlow(Exception):
     | OilReturn(Token keyword, value val)
     """
 
-    def __init__(self, token, arg, value):
-        # type: (Token, int, Optional[value_t]) -> None
-        """
-    Args:
-      token: the keyword token
-      arg: exit code to 'return', or number of levels to break/continue
-      value: value_t to 'return' from a function
-    """
-        if value:
-            assert token.id == Id.ControlFlow_Return, "Can only return a value"
+    pass
 
+class IntControlFlow(Exception):
+
+    def __init__(self, token, arg):
+        # type: (Token, int) -> None
+        """
+        Args:
+          token: the keyword token
+          arg: exit code to 'return', or number of levels to break/continue
+        """
         self.token = token
         self.arg = arg
-        self.value = value
 
     def IsReturn(self):
         # type: () -> bool
-        return self.token.id == Id.ControlFlow_Return and self.value is None
-
-    def IsRetval(self):
-        # type: () -> bool
-        return self.token.id == Id.ControlFlow_Return and self.value is not None
+        return self.token.id == Id.ControlFlow_Return
 
     def IsBreak(self):
         # type: () -> bool
-
         return self.token.id == Id.ControlFlow_Break
 
     def IsContinue(self):
@@ -102,8 +96,24 @@ class ControlFlow(Exception):
 
     def __repr__(self):
         # type: () -> str
-        arg_or_val = str(self.arg) if self.arg else repr(self.value)
-        return '<ControlFlow %s %s>' % (self.token, arg_or_val)
+        return '<IntControlFlow %s %s>' % (self.token, self.arg)
+
+
+class ValueControlFlow(Exception):
+
+    def __init__(self, token, value):
+        # type: (Token, Optional[value_t]) -> None
+        """
+        Args:
+          token: the keyword token
+          value: value_t to 'return' from a function
+        """
+        self.token = token
+        self.value = value
+
+    def __repr__(self):
+        # type: () -> str
+        return '<ValueControlFlow %s %s>' % (self.token, self.value)
 
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):
