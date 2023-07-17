@@ -9,8 +9,6 @@ state.py - Interpreter state
 """
 from __future__ import print_function
 
-import cStringIO
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
@@ -973,22 +971,6 @@ class DirStack(object):
         ret.extend(self.stack)
         ret.reverse()
         return ret
-
-
-# NOTE: not used!
-if mylib.PYTHON:
-
-    def _FormatStack(var_stack):
-        # type: (List[Any]) -> str
-        """Temporary debugging.
-
-        TODO: Turn this into a real JSON dump or something.
-        """
-        f = cStringIO.StringIO()
-        for i, entry in enumerate(var_stack):
-            f.write('[%d] %s' % (i, entry))
-            f.write('\n')
-        return f.getvalue()
 
 
 def _GetWorkingDir():

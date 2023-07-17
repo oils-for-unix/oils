@@ -57,7 +57,6 @@ from frontend import consts
 from frontend import lexer
 from frontend import location
 from mycpp.mylib import log, tagswitch, NewDict
-from mycpp import mylib
 from osh import braces
 from osh import glob_
 from osh import string_ops

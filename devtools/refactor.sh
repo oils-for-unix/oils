@@ -214,6 +214,11 @@ loc-word() {
     fgrep -n 'loc.Word(' */*.py
 }
 
+mylib-python() {
+  show-usages _tmp/py \
+    egrep -n 'mylib.PYTHON' */*.py
+}
+
 asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
