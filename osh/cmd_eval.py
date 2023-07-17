@@ -1152,11 +1152,7 @@ class CommandEvaluator(object):
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
 
-                if mylib.PYTHON:
-                    val = self.expr_ev.EvalExpr(node.val, node.keyword)
-                else:
-                    # FIXME: evaluate the argument once expr_ev is translated
-                    val = value.Null
+                val = self.expr_ev.EvalExpr(node.val, node.keyword)
                 raise vm.ValueControlFlow(node.keyword, val)
 
             elif case(command_e.ControlFlow):
