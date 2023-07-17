@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_str
-from _devbuild.gen.types_asdl import lex_mode_e
+from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
     loc,
     SourceLine,
@@ -451,6 +451,24 @@ class ctx_VarChecker(object):
         self.var_checker.Pop()
 
 
+class ctx_CmdMode(object):
+
+    def __init__(self, cmd_parse, new_cmd_mode):
+        # type: (CommandParser, cmd_mode_t) -> None
+        self.cmd_parse = cmd_parse
+        self.prev_cmd_mode = cmd_parse.cmd_mode
+        cmd_parse.cmd_mode = new_cmd_mode
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.cmd_parse.cmd_mode = self.prev_cmd_mode
+
+
+
 SECONDARY_KEYWORDS = [
     Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else,
     Id.KW_Esac
@@ -528,6 +546,8 @@ class CommandParser(object):
         # conflict, because they use different CommandParser instances.  I think
         # this OK but you can imagine different behaviors.
         self.var_checker = VarChecker()
+
+        self.cmd_mode = cmd_mode_e.Normal  # type: cmd_mode_t
 
         self.Reset()
 
@@ -1111,6 +1131,9 @@ class CommandParser(object):
         if (typed_args is not None and kw_token is not None and
                 kw_token.id == Id.ControlFlow_Return):
             # typed return (this is special from the other control flow types)
+            if self.cmd_mode != cmd_mode_e.Func:
+                p_die("Unexpected typed return outside of a func",
+                      typed_loc)
             if len(typed_args.positional) != 1:
                 p_die("Expected one argument passed to a typed return",
                       typed_loc)
@@ -1139,6 +1162,10 @@ class CommandParser(object):
             else:
                 p_die('Unexpected argument to %r' % lexer.TokenVal(kw_token),
                       loc.Word(suffix_words[2]))
+
+            if (kw_token.id == Id.ControlFlow_Return and
+                    self.cmd_mode == cmd_mode_e.Func):
+                p_die("Unexpected shell_style return inside a func", kw_token)
 
             return command.ControlFlow(kw_token, arg_word)
 
@@ -2028,7 +2055,8 @@ class CommandParser(object):
         self.parse_ctx.ParseFunc(self.lexer, node)
 
         self._SetNext()
-        node.body = self.ParseBraceGroup()
+        with ctx_CmdMode(self, cmd_mode_e.Func):
+            node.body = self.ParseBraceGroup()
 
         return node
 

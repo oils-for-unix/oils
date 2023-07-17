@@ -33,7 +33,15 @@ func f(x) { return (x + 1) }
 func t() { return 0 }
 
 = t()
-## status: 1
+## status: 2
+## STDOUT:
+## END
+
+#### Typed return in a proc
+proc t() { return (0) }
+
+= t()
+## status: 2
 ## STDOUT:
 ## END
 

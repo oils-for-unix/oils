@@ -102,7 +102,7 @@ class IntControlFlow(Exception):
 class ValueControlFlow(Exception):
 
     def __init__(self, token, value):
-        # type: (Token, Optional[value_t]) -> None
+        # type: (Token, value_t) -> None
         """
         Args:
           token: the keyword token
