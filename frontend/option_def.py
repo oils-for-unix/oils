@@ -129,7 +129,7 @@ _BASIC_RUNTIME_OPTIONS = [
 
     # Can procs and shell functions be redefined?  On in OSH, off in YSH batch,
     # on in interactive shell
-    ('redefine_proc', True),
+    ('redefine_proc_func', True),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be

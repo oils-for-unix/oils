@@ -664,10 +664,10 @@ class MutableOpts(object):
         # type: () -> None
         self._Set(option_i.interactive, True)
 
-    def set_redefine_proc(self):
+    def set_redefine_proc_func(self):
         # type: () -> None
         """For interactive shells."""
-        self._Set(option_i.redefine_proc, True)
+        self._Set(option_i.redefine_proc_func, True)
 
     def set_redefine_module(self):
         # type: () -> None

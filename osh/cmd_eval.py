@@ -1455,10 +1455,10 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-                if node.name in self.procs and not self.exec_opts.redefine_proc(
+                if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
-                        "Function %s was already defined (redefine_proc)" %
+                        "Function %s was already defined (redefine_proc_func)" %
                         node.name, node.name_tok)
                 self.procs[node.name] = Proc(node.name, node.name_tok,
                                              proc_sig.Open, node.body, [],
@@ -1470,10 +1470,10 @@ class CommandEvaluator(object):
                 node = cast(command.Proc, UP_node)
 
                 proc_name = lexer.TokenVal(node.name)
-                if proc_name in self.procs and not self.exec_opts.redefine_proc(
+                if proc_name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
-                        "Proc %s was already defined (redefine_proc)" %
+                        "Proc %s was already defined (redefine_proc_func)" %
                         proc_name, node.name)
 
                 defaults = None  # type: List[value_t]
@@ -1498,10 +1498,10 @@ class CommandEvaluator(object):
                 node = cast(command.Func, UP_node)
 
                 name = lexer.TokenVal(node.name)
-                if name in self.funcs and not self.exec_opts.redefine_proc():
+                if name in self.funcs and not self.exec_opts.redefine_proc_func():
                     e_die(
-                        "Func %s was already defined (redefine_proc)" %
-                        node.name, node.name)
+                        "Func %s was already defined (redefine_proc_func)" %
+                        name, node.name)
 
                 self.funcs[name] = Func(node, self.mem, self)
 

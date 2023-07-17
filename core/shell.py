@@ -782,7 +782,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     if flag.headless:
         state.InitInteractive(mem)
-        mutable_opts.set_redefine_proc()
+        mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
 
         # This is like an interactive shell, so we copy some initialization from
@@ -820,7 +820,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         state.InitInteractive(mem)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
-        mutable_opts.set_redefine_proc()
+        mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
 
         if readline:
