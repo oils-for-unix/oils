@@ -1641,17 +1641,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(word_part.Splice, UP_part)
                 val = self.mem.GetValue(part.var_name)
 
-                if mylib.PYTHON:
-                    strs = self.expr_ev.SpliceValue(val, part)
-                else:
-                    strs = []
+                strs = self.expr_ev.SpliceValue(val, part)
                 part_vals.append(part_value.Array(strs))
 
             elif case(word_part_e.ExprSub):
                 part = cast(word_part.ExprSub, UP_part)
-                if mylib.PYTHON:
-                    part_val = self.expr_ev.EvalExprSub(part)
-                    part_vals.append(part_val)
+                part_val = self.expr_ev.EvalExprSub(part)
+                part_vals.append(part_val)
 
             else:
                 raise AssertionError(part.tag())
