@@ -382,6 +382,7 @@ class ShellExecutor(vm._Executor):
             pid = p.StartProcess(trace.Fork)
             self.mem.last_bg_pid = pid  # for $!
             self.job_list.AddJob(p)  # show in 'jobs' list
+            log('RunBackgroundJob pid %d', pid)
         return 0
 
     def RunPipeline(self, node, status_out):

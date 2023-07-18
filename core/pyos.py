@@ -34,15 +34,21 @@ def FlushStdout():
     sys.stdout.flush()
 
 
-def WaitPid():
-    # type: () -> Tuple[int, int]
+def WaitPid(waitpid_options):
+    # type: (int) -> Tuple[int, int]
+    """
+    Return value:
+      pid is 0 if WNOHANG passed, and nothing has changed state
+      status: value that can be parsed with WIFEXITED() etc.
+    """
     try:
         # Notes:
         # - The arg -1 makes it like wait(), which waits for any process.
         # - WUNTRACED is necessary to get stopped jobs.  What about WCONTINUED?
         # - We don't retry on EINTR, because the 'wait' builtin should be
         #   interruptable.
-        pid, status = posix.waitpid(-1, WUNTRACED)
+        # - waitpid_options can be WNOHANG
+        pid, status = posix.waitpid(-1, WUNTRACED | waitpid_options)
     except OSError as e:
         return -1, e.errno
 

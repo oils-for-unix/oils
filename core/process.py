@@ -1451,9 +1451,7 @@ class JobList(object):
     def __init__(self):
         # type: () -> None
 
-        # pid -> Job instance
-        # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict!
-        # This is for display in 'jobs' builtin and for %+ %1 lookup.
+        # job_id -> Job instance
         self.jobs = {}  # type: Dict[int, Job]
 
         # pid -> Process.  This is for STOP notification.
@@ -1486,10 +1484,10 @@ class JobList(object):
         # type: (int, Waiter) -> int
         if pid == self.last_stopped_pid:
             self.last_stopped_pid = -1
-        job = self.JobFromPid(pid)
+        pr = self.ProcessFromPid(pid)
         # needed for Wait() loop to work
-        job.state = job_state_e.Running
-        return job.Wait(waiter)
+        pr.state = job_state_e.Running
+        return pr.Wait(waiter)
 
     def WhenDone(self, pid):
         # type: (int) -> None
@@ -1499,7 +1497,13 @@ class JobList(object):
         if pid == self.last_stopped_pid:
             self.last_stopped_pid = -1
 
-        mylib.dict_erase(self.jobs, pid)
+        # TODO:
+        # Need to print "Done" line if it was a background job
+
+        log('WhenDone PID %d', pid)
+        log('jobs %s', self.jobs)
+        if pid in self.jobs:
+            log('Done PID %d')
 
     def AddJob(self, job):
         # type: (Job) -> int
@@ -1533,7 +1537,7 @@ class JobList(object):
         if mylib.PYTHON:
             self.debug_pipelines.append(pi)
 
-    def JobFromPid(self, pid):
+    def ProcessFromPid(self, pid):
         # type: (int) -> Process
         """For wait $PID.
 
@@ -1653,8 +1657,14 @@ class Waiter(object):
         self.tracer = tracer
         self.last_status = 127  # wait -n error code
 
-    def WaitForOne(self):
-        # type: () -> int
+    #def CheckForNotifications(self):
+    #    """
+    #    Called by main_loop::Interactive()
+    #    """
+    #    pid, status = pyos.WaitPid(WNOHANG)
+
+    def WaitForOne(self, waitpid_options=0):
+        # type: (int) -> int
         """Wait until the next process returns (or maybe Ctrl-C).
 
         Returns:
@@ -1689,8 +1699,10 @@ class Waiter(object):
         | Done(int pid, int status)  -- process done
         | EINTR(bool sigint)         -- may or may not retry
         """
-        pid, status = pyos.WaitPid()
-        if pid < 0:  # error case
+        pid, status = pyos.WaitPid(waitpid_options)
+        if pid == 0:  # WNOHANG passed, and no state changes
+            return W1_OK
+        elif pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
             if err_num == ECHILD:

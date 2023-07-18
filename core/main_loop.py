@@ -24,6 +24,7 @@ from mycpp.mylib import log, print_stderr, tagswitch
 
 import fanos
 import posix_ as posix
+from posix_ import WNOHANG
 
 from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -190,20 +191,19 @@ class Headless(object):
         return 0
 
 
-def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
-    # type: (arg_types.main, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
-
-    # TODO: Any could be _Attributes from frontend/args.py
+def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, waiter, errfmt):
+    # type: (arg_types.main, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, process.Waiter, ErrorFormatter) -> int
 
     status = 0
     done = False
     while not done:
         mylib.MaybeCollect()  # manual GC point
 
-        # - This loop has a an odd structure because we want to do cleanup after
-        # every 'break'.  (The ones without 'done = True' were 'continue')
+        # - This loop has a an odd structure because we want to do cleanup
+        #   after every 'break'.  (The ones without 'done = True' were
+        #   'continue')
         # - display.EraseLines() needs to be called BEFORE displaying anything, so
-        # it appears in all branches.
+        #   it appears in all branches.
 
         while True:  # ONLY EXECUTES ONCE
             quit = False
@@ -215,6 +215,10 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
                 with tagswitch(result) as case:
                     if case(parse_result_e.EmptyLine):
                         display.EraseLines()
+                        # POSIX shell behavior: waitpid(-1) and show job "Done"
+                        # messages
+                        r = waiter.WaitForOne(WNOHANG)
+                        log('WaitForOne %d', r)
                         quit = True
                     elif case(parse_result_e.Eof):
                         display.EraseLines()
@@ -269,6 +273,10 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
                 break
 
             status = cmd_ev.LastStatus()
+
+            r = waiter.WaitForOne(waitpid_options=WNOHANG)
+            log('WaitForOne after command %d', r)
+
             if is_return:
                 done = True
                 break

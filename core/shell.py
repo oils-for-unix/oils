@@ -885,7 +885,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
             prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
             try:
                 status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
-                                               prompt_plugin, errfmt)
+                                               prompt_plugin, waiter, errfmt)
             except util.UserExit as e:
                 status = e.status
 

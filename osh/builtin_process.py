@@ -180,22 +180,22 @@ class Exec(vm._Builtin):
 
 class Wait(vm._Builtin):
     """
-  wait: wait [-n] [id ...]
-      Wait for job completion and return exit status.
+    wait: wait [-n] [id ...]
+        Wait for job completion and return exit status.
 
-      Waits for each process identified by an ID, which may be a process ID or a
-      job specification, and reports its termination status.  If ID is not
-      given, waits for all currently active child processes, and the return
-      status is zero.  If ID is a a job specification, waits for all processes
-      in that job's pipeline.
+        Waits for each process identified by an ID, which may be a process ID or a
+        job specification, and reports its termination status.  If ID is not
+        given, waits for all currently active child processes, and the return
+        status is zero.  If ID is a a job specification, waits for all processes
+        in that job's pipeline.
 
-      If the -n option is supplied, waits for the next job to terminate and
-      returns its exit status.
+        If the -n option is supplied, waits for the next job to terminate and
+        returns its exit status.
 
-      Exit Status:
-      Returns the status of the last ID; fails if ID is invalid or an invalid
-      option is given.
-  """
+        Exit Status:
+        Returns the status of the last ID; fails if ID is invalid or an invalid
+        option is given.
+    """
 
     def __init__(self, waiter, job_list, mem, tracer, errfmt):
         # type: (Waiter, process.JobList, Mem, dev.Tracer, ErrorFormatter) -> None
@@ -280,13 +280,13 @@ class Wait(vm._Builtin):
                 raise error.Usage('expected PID or jobspec, got %r' % job_id,
                                   location)
 
-            job = self.job_list.JobFromPid(pid)
-            if job is None:
+            pr = self.job_list.ProcessFromPid(pid)
+            if pr is None:
                 self.errfmt.Print_("%d isn't a child of this shell" % pid,
                                    blame_loc=location)
                 return 127
 
-            wait_st = job.JobWait(self.waiter)
+            wait_st = pr.JobWait(self.waiter)
             UP_wait_st = wait_st
             with tagswitch(wait_st) as case:
                 if case(wait_status_e.Proc):
