@@ -25,13 +25,14 @@ wedge-make() {
   local makefile=$src_dir/check-deps/Makefile.check
 
   # look for libpython3.6m.so, not libpython3.6.so
-  sed -i 's/--modversion)$/--modversion)m/' $makefile
+  # 2023-07: not needed on Debian 12 Bookworm
+  if test -n "${UBUNTU_HACK:-}"; then
+    sed -i 's/--modversion)$/--modversion)m/' $makefile
 
-  # additionally, look for libpython3.6m.so.1.0 !!!
-
-  local c_file=$src_dir/utils/script-python.c
-
-  sed -i 's/".so"/".so.1.0"/' $c_file
+    # additionally, look for libpython3.6m.so.1.0 !!!
+    local c_file=$src_dir/utils/script-python.c
+    sed -i 's/".so"/".so.1.0"/' $c_file
+  fi
 
   pushd $build_dir
 
@@ -47,6 +48,10 @@ wedge-make() {
   # There is a misleading message at the beginning that says libpython OFF
   #
   # I tried --with-libpython, and it doesn't seem to affect it either way.
+
+  # 2023-07: Debian 12 Bookworm needs:
+  #
+  #     apt-get install pkgconfig 
 
   $src_dir/configure --prefix=$install_dir
   echo
@@ -93,3 +98,5 @@ wedge-smoke-test() {
   $uftrace replay hello
   $uftrace script -S $wedge_dir/plugin.py
 }
+
+# vim: filetype=sh

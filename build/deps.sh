@@ -348,6 +348,17 @@ install-wedges() {
   install-py3-libs
 }
 
+uftrace-wedge() {
+  ### built on demand; run $0 first
+
+  # BUG: doesn't detect python3
+  # WEDGE tells me that it depends on pkg-config
+  # 'apt-get install pkgconf' gets it
+  # TODO: Should use python3 WEDGE instead of SYSTEM python3?
+
+  deps/wedge.sh unboxed-build _build/deps-source/uftrace
+}
+
 install-wedges-py() {
   install-wedges py_only
 }
