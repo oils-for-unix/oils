@@ -622,10 +622,14 @@ class ShellExecutor(vm._Executor):
 
     def PushRedirects(self, redirects):
         # type: (List[RedirValue]) -> bool
+        if len(redirects) == 0:
+            return True
         return self.fd_state.Push(redirects)
 
-    def PopRedirects(self):
-        # type: () -> None
+    def PopRedirects(self, num_redirects):
+        # type: (int) -> None
+        if num_redirects == 0:
+            return
         self.fd_state.Pop()
 
     def PushProcessSub(self):

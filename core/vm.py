@@ -184,8 +184,8 @@ class _Executor(object):
         # type: (List[RedirValue]) -> bool
         return True
 
-    def PopRedirects(self):
-        # type: () -> None
+    def PopRedirects(self, num_redirects):
+        # type: (int) -> None
         pass
 
     def PushProcessSub(self):
@@ -254,9 +254,10 @@ class ctx_Redirect(object):
       { seq 3 > foo.txt; echo 4; } > bar.txt
     """
 
-    def __init__(self, shell_ex):
-        # type: (_Executor) -> None
+    def __init__(self, shell_ex, num_redirects):
+        # type: (_Executor, int) -> None
         self.shell_ex = shell_ex
+        self.num_redirects = num_redirects
 
     def __enter__(self):
         # type: () -> None
@@ -264,7 +265,7 @@ class ctx_Redirect(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.shell_ex.PopRedirects()
+        self.shell_ex.PopRedirects(self.num_redirects)
 
 
 class ctx_ProcessSub(object):

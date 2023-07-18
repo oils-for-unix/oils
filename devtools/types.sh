@@ -30,7 +30,7 @@ typecheck-files() {
   echo
 }
 
-typecheck-oil() {
+check-oils() {
   # TODO: remove --no-warn-unused-ignores and type: ignore in
   # osh/builtin_comp.py after help_.py import isn't conditional
 
@@ -39,7 +39,7 @@ typecheck-oil() {
 }
 
 # NOTE: Becoming obsolete as typecheck filters in build/dynamic-deps.sh are whittled down
-typecheck-more() {
+check-more() {
   egrep -v "$COMMENT_RE" devtools/typecheck-more.txt \
     | xargs -- $0 typecheck-files
 }
@@ -47,10 +47,10 @@ typecheck-more() {
 check-all() {
   ### Run this locally
 
-  typecheck-oil 
+  check-oils
 
   # Ad hoc list of additional files
-  typecheck-more
+  check-more
 }
 
 soil-run() {
