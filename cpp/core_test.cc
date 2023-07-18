@@ -144,7 +144,7 @@ TEST pyos_test() {
   ASSERT(t.at1() >= 0.0);
   ASSERT(t.at2() >= 0.0);
 
-  Tuple2<int, int> result = pyos::WaitPid();
+  Tuple2<int, int> result = pyos::WaitPid(0);
   ASSERT_EQ(-1, result.at0());  // no children to wait on
 
   // This test isn't hermetic but it should work in most places, including in a

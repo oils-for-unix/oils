@@ -876,6 +876,8 @@ class Job(object):
         # type: () -> None
         # Initial state with & or Ctrl-Z is Running.
         self.state = job_state_e.Running
+        self.job_id = -1
+        self.in_background = False
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -889,6 +891,16 @@ class Job(object):
         # type: (Waiter) -> wait_status_t
         """Wait for this process/pipeline to be stopped or finished."""
         raise NotImplementedError()
+
+    def SetBackground(self):
+        # type: () -> None
+        """Record that this job is running in the background."""
+        self.in_background = True
+
+    def SetForeground(self):
+        # type: () -> None
+        """Record that this job is running in the foreground."""
+        self.in_background = False
 
 
 class Process(Job):
@@ -1057,6 +1069,7 @@ class Process(Job):
         # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
+        self.SetBackground()
         self.job_control.MaybeTakeTerminal()
 
     def WhenDone(self, pid, status):
@@ -1070,6 +1083,18 @@ class Process(Job):
         if self.parent_pipeline:
             self.parent_pipeline.WhenDone(pid, status)
         else:
+            if self.job_id != -1:
+                # Job might have been brought to the foreground after being
+                # assigned a job ID.
+                if self.in_background:
+                    print_stderr('[%d] Done PID %d' % (self.job_id, self.pid))
+
+                self.job_list.RemoveJob(self.job_id)
+
+                # TODO: The `wait` builtin depends on the process object hanging
+                # around after completion. Fix that then uncomment this line.
+                # self.job_list.RemoveChildProcess(self.pid)
+
             self.job_control.MaybeTakeTerminal()
 
     def RunProcess(self, waiter, why):
@@ -1310,8 +1335,17 @@ class Pipeline(Job):
         if status == 141 and self.sigpipe_status_ok:
             status = 0
 
+        self.job_list.RemoveChildProcess(pid)
         self.pipe_status[i] = status
         if self.AllDone():
+            if self.job_id != -1:
+                # Job might have been brought to the foreground after being
+                # assigned a job ID.
+                if self.in_background:
+                    print_stderr('[%d] Done PGID %d' % (self.job_id, self.pids[0]))
+
+                self.job_list.RemoveJob(self.job_id)
+
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
             self.state = job_state_e.Done
@@ -1451,16 +1485,17 @@ class JobList(object):
     def __init__(self):
         # type: () -> None
 
-        # pid -> Job instance
-        # ERROR: This implication is incorrect, jobs are numbered from 1, 2, ... in the dict!
-        # This is for display in 'jobs' builtin and for %+ %1 lookup.
+        # job_id -> Job instance
         self.jobs = {}  # type: Dict[int, Job]
 
         # pid -> Process.  This is for STOP notification.
         self.child_procs = {}  # type: Dict[int, Process]
         self.debug_pipelines = []  # type: List[Pipeline]
 
+        # XXX: Use job IDs here instead? If we do, update RemoveJob() and
+        # RemoveChildProcess() accordingly.
         self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
+
         self.job_id = 1  # Strictly increasing
 
     def WhenStopped(self, pid):
@@ -1475,6 +1510,8 @@ class JobList(object):
         # And we can find what part of the pipeline it's in.
 
         self.last_stopped_pid = pid
+        pr = self.ProcessFromPid(pid)
+        pr.SetBackground()
 
     def GetLastStopped(self):
         # type: () -> int
@@ -1486,20 +1523,11 @@ class JobList(object):
         # type: (int, Waiter) -> int
         if pid == self.last_stopped_pid:
             self.last_stopped_pid = -1
-        job = self.JobFromPid(pid)
+        pr = self.ProcessFromPid(pid)
+        pr.SetForeground()
         # needed for Wait() loop to work
-        job.state = job_state_e.Running
-        return job.Wait(waiter)
-
-    def WhenDone(self, pid):
-        # type: (int) -> None
-        """Process and Pipeline can call this."""
-        # Problem: This only happens after an explicit wait().
-        # I think the main_loop in bash waits without blocking?
-        if pid == self.last_stopped_pid:
-            self.last_stopped_pid = -1
-
-        mylib.dict_erase(self.jobs, pid)
+        pr.state = job_state_e.Running
+        return pr.Wait(waiter)
 
     def AddJob(self, job):
         # type: (Job) -> int
@@ -1515,8 +1543,14 @@ class JobList(object):
         """
         job_id = self.job_id
         self.jobs[job_id] = job
+        job.job_id = job_id
         self.job_id += 1  # For now, the ID is ever-increasing.
         return job_id
+
+    def RemoveJob(self, job_id):
+        # type: (int) -> None
+        """Process and Pipeline can call this."""
+        mylib.dict_erase(self.jobs, job_id)
 
     def AddChildProcess(self, pid, proc):
         # type: (int, Process) -> None
@@ -1527,13 +1561,23 @@ class JobList(object):
         """
         self.child_procs[pid] = proc
 
+    def RemoveChildProcess(self, pid):
+        # type: (int) -> None
+        """Remove the child process with the given PID."""
+        # Problem: This only happens after an explicit wait().
+        # I think the main_loop in bash waits without blocking?
+        if self.last_stopped_pid == pid:
+            self.last_stopped_pid = -1
+
+        mylib.dict_erase(self.child_procs, pid)
+
     def AddPipeline(self, pi):
         # type: (Pipeline) -> None
         """For debugging only."""
         if mylib.PYTHON:
             self.debug_pipelines.append(pi)
 
-    def JobFromPid(self, pid):
+    def ProcessFromPid(self, pid):
         # type: (int) -> Process
         """For wait $PID.
 
@@ -1653,8 +1697,14 @@ class Waiter(object):
         self.tracer = tracer
         self.last_status = 127  # wait -n error code
 
-    def WaitForOne(self):
-        # type: () -> int
+    #def CheckForNotifications(self):
+    #    """
+    #    Called by main_loop::Interactive()
+    #    """
+    #    pid, status = pyos.WaitPid(WNOHANG)
+
+    def WaitForOne(self, waitpid_options=0):
+        # type: (int) -> int
         """Wait until the next process returns (or maybe Ctrl-C).
 
         Returns:
@@ -1689,8 +1739,10 @@ class Waiter(object):
         | Done(int pid, int status)  -- process done
         | EINTR(bool sigint)         -- may or may not retry
         """
-        pid, status = pyos.WaitPid()
-        if pid < 0:  # error case
+        pid, status = pyos.WaitPid(waitpid_options)
+        if pid == 0:  # WNOHANG passed, and no state changes
+            return W1_OK
+        elif pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
             if err_num == ECHILD:
@@ -1723,13 +1775,11 @@ class Waiter(object):
             if term_sig == SIGINT:
                 print('')
 
-            self.job_list.WhenDone(pid)
             proc.WhenDone(pid, status)
 
         elif WIFEXITED(status):
             status = WEXITSTATUS(status)
             #log('exit status: %s', status)
-            self.job_list.WhenDone(pid)
             proc.WhenDone(pid, status)
 
         elif WIFSTOPPED(status):
