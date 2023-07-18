@@ -82,7 +82,7 @@ release-ubuntu-deps() {
   # For the release to run test/report.R, you need r-base-core too.
   # cloc is used for line counts
   # valgrind/cachegrind for benchmarks
-  sudo apt install r-base-core cloc valgrind
+  sudo apt-get install r-base-core cloc valgrind
 }
 
 # 3/2021: For installing dplyr on Ubuntu Xenial 16.04 LTS, which has an old R version

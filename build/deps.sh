@@ -348,7 +348,8 @@ install-wedges() {
   install-py3-libs
 }
 
-uftrace-wedge() {
+# Host wedges end up in ~/wedge
+uftrace-host() {
   ### built on demand; run $0 first
 
   # BUG: doesn't detect python3
@@ -359,11 +360,17 @@ uftrace-wedge() {
   deps/wedge.sh unboxed-build _build/deps-source/uftrace
 }
 
+R-libs-host() {
+  deps/wedge.sh unboxed-build _build/deps-source/R-libs
+}
+
 install-wedges-py() {
   install-wedges py_only
 }
 
 container-wedges() {
+  ### These end up in _build/wedge/binary
+
   #export-podman
 
   if false; then

@@ -55,15 +55,7 @@ if test -d $SPEC_DIR; then
 fi
 
 R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
-user=$(whoami)  # somehow $USER is not available in CI
-
-if test $user = uke; then
-  # in the CI
-  export R_LIBS_USER=$R_LIBS_WEDGE
-else
-  # version matching on host doesn't work
-  export R_LIBS_USER=~/R
-fi
+export R_LIBS_USER=$R_LIBS_WEDGE
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
 export PYTHONPATH='.'
