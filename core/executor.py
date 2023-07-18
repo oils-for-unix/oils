@@ -621,20 +621,20 @@ class ShellExecutor(vm._Executor):
 
     def PushRedirects(self, redirects):
         # type: (List[RedirValue]) -> bool
-        if len(redirects) == 0:  # Optimization to avoid allocs
+        if len(redirects) == 0:  # Optimized to avoid allocs
             return True
         return self.fd_state.Push(redirects)
 
     def PopRedirects(self, num_redirects):
         # type: (int) -> None
-        if num_redirects == 0:  # Optimization to avoid allocs
+        if num_redirects == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Pop()
 
     def PushProcessSub(self):
         # type: () -> None
         if len(self.clean_frame_pool):
-            # Optimization to reuse frames
+            # Optimized to avoid allocs
             new_frame = self.clean_frame_pool.pop()
         else:
             new_frame = _ProcessSubFrame()
@@ -652,7 +652,7 @@ class ShellExecutor(vm._Executor):
         if frame.WasModified():
             frame.MaybeWaitOnProcessSubs(self.waiter, compound_st)
         else:
-            # Optimization to reuse frames
+            # Optimized to avoid allocs
             self.clean_frame_pool.append(frame)
 
         # Note: the 3 lists in _ProcessSubFrame are hot in our profiles.  It would

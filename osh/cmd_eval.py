@@ -314,6 +314,8 @@ class CommandEvaluator(object):
         self.loop_level = 0  # for detecting bad top-level break/continue
         self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
+        self.status_array_pool = []  # type: List[StatusArray]
+
     def CheckCircularDeps(self):
         # type: () -> None
         assert self.arith_ev is not None
@@ -1579,7 +1581,11 @@ class CommandEvaluator(object):
         # Optimization: These 2 records have rarely-used lists, so we don't pass
         # alloc_lists=True.  We create them on demand.
         cmd_st = CommandStatus.CreateNull()
-        process_sub_st = StatusArray.CreateNull()
+        if len(self.status_array_pool):
+            # Optimized to avoid allocs
+            process_sub_st = self.status_array_pool.pop()
+        else:
+            process_sub_st = StatusArray.CreateNull()
 
         errexit_loc = loc.Missing  # type: loc_t
         check_errexit = True
@@ -1648,7 +1654,10 @@ class CommandEvaluator(object):
                     status = 1
 
         # Compute status from _process_sub_status
-        if process_sub_st.codes is not None:
+        if process_sub_st.codes is None:
+            # Optimized to avoid allocs
+            self.status_array_pool.append(process_sub_st)
+        else:
             codes = process_sub_st.codes
             self.mem.SetProcessSubStatus(codes)
             if status == 0 and self.exec_opts.process_sub_fail():
