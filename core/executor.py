@@ -49,39 +49,37 @@ class _ProcessSubFrame(object):
         # These objects appear unconditionally in the main loop, and aren't
         # commonly used, so we manually optimize [] into None.
 
-        self.to_wait = None  # type: List[process.Process]
-        self.to_close = None  # type: List[int]  # file descriptors
-        self.locs = None  # type: List[loc_t]
+        self._to_wait = []  # type: List[process.Process]
+        self._to_close = []  # type: List[int]  # file descriptors
+        self._locs = []  # type: List[loc_t]
+        self._modified = False
+
+    def WasModified(self):
+        # type: () -> bool
+        return self._modified
 
     def Append(self, p, fd, status_loc):
         # type: (process.Process, int, loc_t) -> None
+        self._modified = True
 
-        if self.to_wait is None:
-            self.to_wait = [p]
-            self.to_close = [fd]
-            self.locs = [status_loc]
-        else:
-            self.to_wait.append(p)
-            self.to_close.append(fd)
-            self.locs.append(status_loc)
+        self._to_wait.append(p)
+        self._to_close.append(fd)
+        self._locs.append(status_loc)
 
     def MaybeWaitOnProcessSubs(self, waiter, status_array):
         # type: (process.Waiter, StatusArray) -> None
 
-        if self.to_wait is None:
-            return
-
         # Wait in the same order that they were evaluated.  That seems fine.
-        for fd in self.to_close:
+        for fd in self._to_close:
             posix.close(fd)
 
         codes = []  # type: List[int]
         locs = []  # type: List[loc_t]
-        for i, p in enumerate(self.to_wait):
+        for i, p in enumerate(self._to_wait):
             #log('waiting for %s', p)
             st = p.Wait(waiter)
             codes.append(st)
-            locs.append(self.locs[i])
+            locs.append(self._locs[i])
 
         status_array.codes = codes
         status_array.locs = locs
@@ -128,6 +126,7 @@ class ShellExecutor(vm._Executor):
         self.trap_state = trap_state
         self.errfmt = errfmt
         self.process_sub_stack = []  # type: List[_ProcessSubFrame]
+        self.clean_frame_pool = []  # type: List[_ProcessSubFrame]
 
         # When starting a pipeline in the foreground, we need to pass a handle to it
         # through the evaluation of the last node back to ourselves for execution.
@@ -622,19 +621,24 @@ class ShellExecutor(vm._Executor):
 
     def PushRedirects(self, redirects):
         # type: (List[RedirValue]) -> bool
-        if len(redirects) == 0:
+        if len(redirects) == 0:  # Optimization to avoid allocs
             return True
         return self.fd_state.Push(redirects)
 
     def PopRedirects(self, num_redirects):
         # type: (int) -> None
-        if num_redirects == 0:
+        if num_redirects == 0:  # Optimization to avoid allocs
             return
         self.fd_state.Pop()
 
     def PushProcessSub(self):
         # type: () -> None
-        self.process_sub_stack.append(_ProcessSubFrame())
+        if len(self.clean_frame_pool):
+            # Optimization to reuse frames
+            new_frame = self.clean_frame_pool.pop()
+        else:
+            new_frame = _ProcessSubFrame()
+        self.process_sub_stack.append(new_frame)
 
     def PopProcessSub(self, compound_st):
         # type: (StatusArray) -> None
@@ -645,7 +649,11 @@ class ShellExecutor(vm._Executor):
         error occurs first, but we always wait.
         """
         frame = self.process_sub_stack.pop()
-        frame.MaybeWaitOnProcessSubs(self.waiter, compound_st)
+        if frame.WasModified():
+            frame.MaybeWaitOnProcessSubs(self.waiter, compound_st)
+        else:
+            # Optimization to reuse frames
+            self.clean_frame_pool.append(frame)
 
         # Note: the 3 lists in _ProcessSubFrame are hot in our profiles.  It would
         # be nice to somehow "destroy" them here, rather than letting them become
