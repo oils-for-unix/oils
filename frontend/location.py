@@ -354,7 +354,7 @@ def LeftTokenForWord(w):
             w = cast(CompoundWord, UP_w)
             return LeftTokenForCompoundWord(w)
 
-        elif case(word_e.Token):
+        elif case(word_e.Operator):
             tok = cast(Token, UP_w)
             return tok
 
@@ -391,7 +391,7 @@ def RightTokenForWord(w):
                 # This is possible for empty brace sub alternative {a,b,}
                 return None
 
-        elif case(word_e.Token):
+        elif case(word_e.Operator):
             tok = cast(Token, UP_w)
             return tok
 

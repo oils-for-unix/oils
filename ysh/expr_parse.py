@@ -185,7 +185,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
             while not done:
                 w = w_parser.ReadWord(lex_mode_e.ShCommand)
                 with tagswitch(w) as case:
-                    if case(word_e.Token):
+                    if case(word_e.Operator):
                         tok = cast(Token, w)
                         if tok.id == Id.Right_ShArrayLiteral:
                             if left_tok.id != Id.Left_PercentParen:

@@ -2150,6 +2150,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         n = 0
         for i, w in enumerate(words):
+            # TODO: Call word_.OptimizedEval() before creating all these
+            # intermediate lists.  It should also help with the
+            # _EvalAssignBuiltin() shortcut.
+
             part_vals = []  # type: List[part_value_t]
             self._EvalWordToParts(w, part_vals, EXTGLOB_FILES)
 

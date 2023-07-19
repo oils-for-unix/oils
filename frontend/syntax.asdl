@@ -195,7 +195,7 @@ module syntax
 
   word = 
     # Returns from WordParser, but not generally stored in LST
-    Token %Token
+    Operator %Token
     # A Compound word can contain any word_part except the Braced*Part.
     # We could model this with another variant type but it incurs runtime
     # overhead and seems like overkill.  Note that DoubleQuoted can't

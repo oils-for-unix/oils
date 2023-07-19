@@ -584,7 +584,7 @@ class CommandParser(object):
 
             # Here docs only happen in command mode, so other kinds of newlines don't
             # count.
-            if w.tag() == word_e.Token:
+            if w.tag() == word_e.Operator:
                 tok = cast(Token, w)
                 if tok.id == Id.Op_Newline:
                     for h in self.pending_here_docs:

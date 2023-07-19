@@ -111,6 +111,20 @@ def _EvalWordPart(part):
             raise AssertionError(part.tag())
 
 
+def OptimizedEval(w):
+    # type: (CompoundWord) -> Optional[str]
+    """
+    TODO:
+    - Detect common case of CompoundWord([LiteralPart(Id.LitChars)])
+      For echo -e, test x -lt 0, etc.
+    - Store lexer.TokenVal() result in word_part.Literal(Token tok, str? sval)
+    - In EvalWordSequence2, append once to strs and locs, and short-circuit the
+      rest of the loop.  
+      - Do it in all public APIs: EvalWordTo{String,Pattern}()
+    """
+    pass
+
+
 def StaticEval(UP_w):
     # type: (word_t) -> Tuple[bool, str, bool]
     """Evaluate a Compound at PARSE TIME."""
@@ -444,7 +458,7 @@ def BraceToken(UP_w):
     may get a token, not a word.
     """
     with tagswitch(UP_w) as case:
-        if case(word_e.Token):
+        if case(word_e.Operator):
             tok = cast(Token, UP_w)
             assert tok.id in (Id.Lit_LBrace, Id.Lit_RBrace), tok
             return tok
@@ -478,7 +492,7 @@ def AsOperatorToken(word):
     This must only be called on a word which is known to be an operator
     (word.Token).
     """
-    assert word.tag() == word_e.Token, word
+    assert word.tag() == word_e.Operator, word
     return cast(Token, word)
 
 
@@ -489,7 +503,7 @@ def AsOperatorToken(word):
 
 def ArithId(w):
     # type: (word_t) -> Id_t
-    if w.tag() == word_e.Token:
+    if w.tag() == word_e.Operator:
         tok = cast(Token, w)
         return tok.id
 
@@ -505,7 +519,7 @@ def BoolId(w):
             w = cast(word.String, UP_w)
             return w.id
 
-        elif case(word_e.Token):
+        elif case(word_e.Operator):
             tok = cast(Token, UP_w)
             return tok.id
 
@@ -538,7 +552,7 @@ def CommandId(w):
     # type: (word_t) -> Id_t
     UP_w = w
     with tagswitch(w) as case:
-        if case(word_e.Token):
+        if case(word_e.Operator):
             tok = cast(Token, UP_w)
             return tok.id
 
@@ -572,7 +586,7 @@ def CommandId(w):
 def CommandKind(w):
     # type: (word_t) -> Kind_t
     """The CommandKind is for coarse-grained decisions in the CommandParser."""
-    if w.tag() == word_e.Token:
+    if w.tag() == word_e.Operator:
         tok = cast(Token, w)
         return consts.GetKind(tok.id)
 

@@ -1358,7 +1358,7 @@ class WordParser(WordEmitter):
         while not done:
             w = w_parser.ReadWord(lex_mode_e.ShCommand)
             with tagswitch(w) as case:
-                if case(word_e.Token):
+                if case(word_e.Operator):
                     tok = cast(Token, w)
                     if tok.id == Id.Right_ShArrayLiteral:
                         right_token = tok
