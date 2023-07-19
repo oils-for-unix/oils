@@ -1274,7 +1274,7 @@ class OilEvaluator(object):
             elif case(class_literal_term_e.Splice):
                 term = cast(class_literal_term.Splice, UP_term)
 
-                val = self._LookupVar(term.name.tval, term.name)
+                val = self._LookupVar(term.var_name, term.name)
                 s = val_ops.ToStr(val,
                                   term.name,
                                   prefix='Eggex char class splice ')
@@ -1381,7 +1381,7 @@ class OilEvaluator(object):
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
 
-                val = self._LookupVar(node.name.tval, node.name)
+                val = self._LookupVar(node.var_name, node.name)
                 UP_val = val
                 with tagswitch(val) as case:
                     if case(value_e.Str):
