@@ -482,8 +482,9 @@ class TildeEvaluator(object):
 class AbstractWordEvaluator(StringWordEvaluator):
     """Abstract base class for word evaluators.
 
-    Public entry points:   EvalWordToString   EvalForPlugin EvalRhsWord
-    EvalWordSequence   EvalWordSequence2
+    Public entry points:
+        EvalWordToString   EvalForPlugin   EvalRhsWord
+        EvalWordSequence   EvalWordSequence2
     """
 
     def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter,
@@ -1789,6 +1790,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
         assert UP_w.tag() == word_e.Compound, UP_w
         w = cast(CompoundWord, UP_w)
 
+        if eval_flags == 0:  # QUOTE_FNMATCH etc. breaks optimization
+            fast_str = word_.FastStrEval(w)
+            if fast_str is not None:
+                return value.Str(fast_str)
+
+            # Could we additionally optimize a=$b, if we know $b isn't an array
+            # etc.?
+
         part_vals = []  # type: List[part_value_t]
         for p in w.parts:
             # this doesn't use eval_flags, which is slightly confusing
@@ -2150,9 +2159,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         n = 0
         for i, w in enumerate(words):
-            # TODO: Call word_.OptimizedEval() before creating all these
-            # intermediate lists.  It should also help with the
-            # _EvalAssignBuiltin() shortcut.
+            fast_str = word_.FastStrEval(w)
+            if fast_str is not None:
+                strs.append(fast_str)
+                locs.append(w)
+
+                # e.g. the 'local' in 'local a=b c=d' will be here
+                if allow_assign and i == 0:
+                    builtin_id = consts.LookupAssignBuiltin(fast_str)
+                    if builtin_id != consts.NO_INDEX:
+                        return self._EvalAssignBuiltin(builtin_id, fast_str,
+                                                       words)
+                continue
 
             part_vals = []  # type: List[part_value_t]
             self._EvalWordToParts(w, part_vals, EXTGLOB_FILES)
@@ -2166,7 +2184,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #
             # But we don't want to evaluate the first word twice in the case of:
             #   $(some-command) --flag
-
             if allow_assign and i == 0 and len(part_vals) == 1:
                 val0 = part_vals[0]
                 UP_val0 = val0

@@ -17,10 +17,10 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     AssocPair,
 )
-from mycpp.mylib import log
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import tagswitch, StrFromC
+from mycpp.mylib import tagswitch, StrFromC, log
+from osh import word_compile
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -111,7 +111,7 @@ def _EvalWordPart(part):
             raise AssertionError(part.tag())
 
 
-def OptimizedEval(w):
+def FastStrEval(w):
     # type: (CompoundWord) -> Optional[str]
     """
     TODO:
@@ -122,7 +122,46 @@ def OptimizedEval(w):
       rest of the loop.  
       - Do it in all public APIs: EvalWordTo{String,Pattern}()
     """
-    pass
+    if len(w.parts) != 1:
+        return None
+
+    part0 = w.parts[0]
+    UP_part0 = part0
+    with tagswitch(part0) as case:
+        if case(word_part_e.Literal):
+            part0 = cast(Token, UP_part0)
+
+            if part0.id in (Id.Lit_Chars, Id.Lit_LBracket, Id.Lit_RBracket):
+                # Could add more tokens in this case
+                #   e.g. + is Lit_Other, and it's a Token in 'expr'
+                #   Right now it's Lit_Chars (e.g. ls -l) and [ and ] because I
+                #   know those are common
+                #   { } are not as common
+
+                #if part0.line is None:
+                #    log("part0 %s", part0)
+
+                # TODO: word_part.Literal should have lazy (str? sval) field
+
+                # TODO: instances created by lexer.DummyToken() don't have
+                # tok.line field, so they can't use lexer.TokenVal()
+                return part0.tval
+                #return lexer.TokenVal(part0)
+
+            else:
+                # e.g. Id.Lit_Star needs to be glob expanded
+                # TODO: Consider moving Id.Lit_Star etc. to Kind.MaybeGlob?
+                return None
+
+        elif case(word_part_e.SingleQuoted):
+            part0 = cast(SingleQuoted, UP_part0)
+            # TODO: SingleQuoted should have lazy (str? sval) field
+            return word_compile.EvalSingleQuoted(part0)
+
+        else:
+            # e.g. DoubleQuoted can't be optimized to a string, because it
+            # might have "$@" and such
+            return None
 
 
 def StaticEval(UP_w):

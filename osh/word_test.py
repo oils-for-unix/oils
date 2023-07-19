@@ -11,6 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from core import test_lib
 from mycpp.mylib import log
 from osh import cmd_parse  # reparse input
+from osh.cmd_parse_test import assertParseSimpleCommand
 from osh import word_parse_test  # parse words
 
 from osh import word_  # module under test
@@ -92,6 +93,29 @@ class WordTest(unittest.TestCase):
         # These don't parse, as they shouldn't.  But not the best error message.
         #w = assertReadWord(self, 'a[x]=(1 2 3)')
         #w = assertReadWord(self, 'a[x]+=(1 2 3)')
+
+    def testFastStrEval(self):
+        node = assertParseSimpleCommand(self, "ls 'my dir' $x foo/$bar ")
+
+        self.assertEqual(4, len(node.words))
+
+        ls_w = node.words[0]
+        w1 = node.words[1]
+        w2 = node.words[2]
+        w3 = node.words[3]
+
+        self.assertEqual('ls', word_.FastStrEval(ls_w))
+        self.assertEqual('my dir', word_.FastStrEval(w1))
+        self.assertEqual(None, word_.FastStrEval(w2))
+        self.assertEqual(None, word_.FastStrEval(w3))
+
+        # Special case for [ ]
+        node = assertParseSimpleCommand(self, '[ a -lt b ]')
+        self.assertEqual('[', word_.FastStrEval(node.words[0]))
+        self.assertEqual('a', word_.FastStrEval(node.words[1]))
+        self.assertEqual('-lt', word_.FastStrEval(node.words[2]))
+        self.assertEqual('b', word_.FastStrEval(node.words[3]))
+        self.assertEqual(']', word_.FastStrEval(node.words[4]))
 
 
 if __name__ == '__main__':
