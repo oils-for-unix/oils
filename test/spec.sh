@@ -723,8 +723,7 @@ ysh-bugs() {
 }
 
 ysh-builtins() {
-  sh-spec spec/ysh-builtins.test.sh --oils-failures-allowed 4 \
-    $OSH_LIST "$@"
+  run-file ysh-builtins "$@"
 }
 
 ysh-builtin-argparse() {

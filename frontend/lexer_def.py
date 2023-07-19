@@ -504,10 +504,6 @@ _C_STRING_COMMON = [
     R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
     R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
 
-    # This is an incompatible extension to make YSH strings "sane" and QSN
-    # compatible.  I don't want to have yet another string syntax!  A lint tool
-    # could get rid of the legacy stuff like \U.
-    _U_BRACED_CHAR,
     R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
     # Backslash that ends a line.  Note '.' doesn't match a newline character.

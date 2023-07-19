@@ -1293,15 +1293,12 @@ class OilEvaluator(object):
 
     def _EvalRegex(self, node):
         # type: (re_t) -> re_t
-        """Resolve the references in an eggex, e.g. Hex and $const in.
+        """Resolve references and eval constants in an Eggex
 
-        / Hex '.' $const "--$const" /
-
-        Some rules:
-
-        * Speck/Token (syntactic concepts) -> Primitive (logical)
-        * Splice -> Resolved
-        * All Strings -> Literal
+        Rules:
+          Splice => re_t   # like Hex and @const in  / Hex '.' @const /
+          Speck/Token (syntax) => Primitive (logical)
+          Chars and Strings => LiteralChars
         """
         UP_node = node
 

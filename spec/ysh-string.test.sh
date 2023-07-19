@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 2
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -146,7 +147,7 @@ two = 2 ""
 ]
 ## END
 
-#### Triple Single Quotes, Expression Mode
+#### Triple Single Quotes, Expression Mode (TODO: j""")
 
 var two = 2
 var three = 2
@@ -297,7 +298,7 @@ echo '''
 ## END
 
 
-#### $''' in command mode
+#### $''' in command mode (TODO: j""")
 
 echo $'''
   two = $two

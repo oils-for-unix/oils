@@ -605,11 +605,9 @@ module syntax
   | Capture(re child, Token? var_name)  
   | Backtracking(bool negated, Token name, re child)
 
-  # Regex Evaluation Shares the Same Structure, but uses slightly different
-  # nodes.
-  # - Token (syntactic concepts) -> Primitive (logical)
-  # - Splice -> re_t
-  # - All Strings -> Literal
+  # These nodes are never parsed; they're part of execution.
+  # Right now we do them in _EvalRegex, though many transformations could be
+  # done as constant evaluation.
 
   | Primitive(id id)  # . dot etc.
     # String substitutions are evaluated into literals

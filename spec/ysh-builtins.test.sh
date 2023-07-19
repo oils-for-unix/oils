@@ -1,4 +1,5 @@
-# Oil builtins
+
+## oils_failures_allowed: 6
 
 #### append onto a=(1 2)
 shopt -s parse_at
@@ -86,9 +87,6 @@ write __
 
 write --qsn $'one\ttwo\n'
 
-write __
-write --qsn $'\u{3bc}'
-
 
 ## STDOUT:
 foo
@@ -98,15 +96,21 @@ __
 ' 123 456'
 __
 'one\ttwo\n'
-__
+## END
+
+#### write --j8
+
+write --j8 j"\u{3bc}"
+
+## STDOUT:
 'μ'
 ## END
 
+#### write --j8 --unicode
 
-#### write --qsn --unicode
-write --qsn $'\u{3bc}'
-write --qsn --unicode u $'\u{3bc}'
-write --qsn --unicode x $'\u{3bc}'
+write --j8 $'\u{3bc}'
+write --j8 --unicode u $'\u{3bc}'
+write --j8 --unicode x $'\u{3bc}'
 
 ## STDOUT:
 'μ'

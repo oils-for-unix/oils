@@ -61,8 +61,9 @@ echo '\n'
 echo $'\n'
 
 # unicode works like this
-var unicode = $'mu = \u{3bc}'
-echo $unicode
+# var unicode = j"mu = \u{3bc}"
+# echo $unicode
+
 # but not like this
 # var unicode = 'mu = \u{3bc}' =>  Strings with backslashes should look like r'\n', c'\n' or $'\n'
 
