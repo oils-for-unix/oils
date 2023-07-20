@@ -2059,7 +2059,7 @@ class CommandParser(object):
             for param in node.pos_params:
                 self.var_checker.Check(Id.KW_Var, param.name)
             if node.pos_splat:
-                self.var_checker.Check(Id.KW_Var, sig.pos_splat)
+                self.var_checker.Check(Id.KW_Var, node.pos_splat)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):
