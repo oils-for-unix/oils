@@ -57,6 +57,8 @@ This is a supplement to the [main release page](index.html).
   errors.
 - [ysh-runtime-errors](more-tests.wwz/suite-logs/ysh-runtime-errors.txt).  YSH
   runtime errors.
+- [ysh-parse-errors](more-tests.wwz/suite-logs/ysh-parse-errors.txt).  YSH
+  parse errors.
 - [ysh-large](more-tests.wwz/suite-logs/ysh-large.txt)
 - [tea-large](more-tests.wwz/suite-logs/tea-large.txt)
 - [arena](more-tests.wwz/suite-logs/arena.txt).  Test an invariant of the parser.

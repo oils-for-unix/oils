@@ -225,6 +225,7 @@ readonly -a MORE_TESTS=(
   ysh-prettify
   parse-errors runtime-errors
   ysh-runtime-errors
+  ysh-parse-errors
   arena
   osh-usage oshc-deps
   syscall
