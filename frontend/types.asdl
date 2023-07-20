@@ -39,4 +39,9 @@ module types {
   # More possibilities
   # - printf formatting ${x %05d}.  I think that is mostly in expression mode
   #   like ${x|html} or ${x|title}
+
+  # Track the context of commands. Ie. are we in a func?
+  cmd_mode =
+    Normal  # Most contexts, such as: top-level, procs, etc.
+  | Func  # Inside a func f(...) { ... }
 }

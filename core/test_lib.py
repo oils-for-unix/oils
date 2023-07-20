@@ -194,6 +194,7 @@ def InitCommandEvaluator(parse_ctx=None,
     fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
     aliases = {} if aliases is None else aliases
     procs = {}
+    funcs = {}
     methods = {}
 
     compopt_state = completion.OptionState()
@@ -252,7 +253,7 @@ def InitCommandEvaluator(parse_ctx=None,
                                             tilde_ev, splitter, errfmt)
     signal_safe = pyos.InitSignalSafe()
     trap_state = builtin_trap.TrapState(signal_safe)
-    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, funcs,
                                        assign_builtins, arena, cmd_deps,
                                        trap_state, signal_safe)
 

@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import Proc
     from core import alloc
     from osh import sh_expr_eval
+    from osh.cmd_eval import Func
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
 # Python overwrites this to something Python-specific in Modules/readline.c, so
@@ -663,10 +664,10 @@ class MutableOpts(object):
         # type: () -> None
         self._Set(option_i.interactive, True)
 
-    def set_redefine_proc(self):
+    def set_redefine_proc_func(self):
         # type: () -> None
         """For interactive shells."""
-        self._Set(option_i.redefine_proc, True)
+        self._Set(option_i.redefine_proc_func, True)
 
     def set_redefine_module(self):
         # type: () -> None
@@ -1111,8 +1112,25 @@ def InitInteractive(mem):
         SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
 
 
-class ctx_Call(object):
-    """For function calls."""
+class ctx_FuncCall(object):
+    """For func calls."""
+
+    def __init__(self, mem, func):
+        # type: (Mem, Func) -> None
+        mem.PushCall(func.name, func.node.name, None)
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.PopCall(False)
+
+
+class ctx_ProcCall(object):
+    """For proc calls."""
 
     def __init__(self, mem, mutable_opts, proc, argv):
         # type: (Mem, MutableOpts, Proc, List[str]) -> None
@@ -1130,7 +1148,7 @@ class ctx_Call(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.PopDynamicScope()
-        self.mem.PopCall()
+        self.mem.PopCall(True)
 
 
 class ctx_Temp(object):
@@ -1444,9 +1462,10 @@ class Mem(object):
     #
 
     def PushCall(self, func_name, def_tok, argv):
-        # type: (str, Token, List[str]) -> None
+        # type: (str, Token, Optional[List[str]]) -> None
         """For function calls."""
-        self.argv_stack.append(_ArgFrame(argv))
+        if argv is not None:
+            self.argv_stack.append(_ArgFrame(argv))
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
 
@@ -1455,11 +1474,17 @@ class Mem(object):
         # bash uses this order: top of stack first.
         self._PushDebugStack(source_str, func_name, None)
 
-    def PopCall(self):
-        # type: () -> None
+    def PopCall(self, should_pop_argv_stack):
+        # type: (bool) -> None
+        """
+        Args:
+          should_pop_argv_stack: Pass False if PushCall was given None for argv
+        """
         self._PopDebugStack()
         self.var_stack.pop()
-        self.argv_stack.pop()
+
+        if should_pop_argv_stack:
+            self.argv_stack.pop()
 
     def ShouldRunDebugTrap(self):
         # type: () -> bool

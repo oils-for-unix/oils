@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_str
-from _devbuild.gen.types_asdl import lex_mode_e
+from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
     loc,
     SourceLine,
@@ -436,6 +436,7 @@ class VarChecker(object):
 
 
 class ctx_VarChecker(object):
+
     def __init__(self, var_checker, blame_tok):
         # type: (VarChecker, Token) -> None
         var_checker.Push(blame_tok)
@@ -448,6 +449,24 @@ class ctx_VarChecker(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.var_checker.Pop()
+
+
+class ctx_CmdMode(object):
+
+    def __init__(self, cmd_parse, new_cmd_mode):
+        # type: (CommandParser, cmd_mode_t) -> None
+        self.cmd_parse = cmd_parse
+        self.prev_cmd_mode = cmd_parse.cmd_mode
+        cmd_parse.cmd_mode = new_cmd_mode
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.cmd_parse.cmd_mode = self.prev_cmd_mode
+
 
 
 SECONDARY_KEYWORDS = [
@@ -527,6 +546,8 @@ class CommandParser(object):
         # conflict, because they use different CommandParser instances.  I think
         # this OK but you can imagine different behaviors.
         self.var_checker = VarChecker()
+
+        self.cmd_mode = cmd_mode_e.Normal  # type: cmd_mode_t
 
         self.Reset()
 
@@ -1106,6 +1127,21 @@ class CommandParser(object):
             return command.ShAssignment(left_tok, pairs, redirects)
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
+
+        if (typed_args is not None and kw_token is not None and
+                kw_token.id == Id.ControlFlow_Return):
+            # typed return (this is special from the other control flow types)
+            if self.cmd_mode != cmd_mode_e.Func:
+                p_die("Unexpected typed return outside of a func",
+                      typed_loc)
+            if len(typed_args.positional) != 1:
+                p_die("Expected one argument passed to a typed return",
+                      typed_loc)
+            if len(typed_args.named) != 0:
+                p_die("Expected no named arguments passed to a typed return",
+                      typed_loc)
+            return command.Retval(kw_token, typed_args.positional[0])
+
         if kind == Kind.ControlFlow:
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
@@ -1126,6 +1162,10 @@ class CommandParser(object):
             else:
                 p_die('Unexpected argument to %r' % lexer.TokenVal(kw_token),
                       loc.Word(suffix_words[2]))
+
+            if (kw_token.id == Id.ControlFlow_Return and
+                    self.cmd_mode == cmd_mode_e.Func):
+                p_die("Unexpected shell_style return inside a func", kw_token)
 
             return command.ControlFlow(kw_token, arg_word)
 
@@ -2001,6 +2041,32 @@ class CommandParser(object):
 
         return node
 
+    def ParseYshFunc(self):
+        # type: () -> command.Func
+        """
+        ysh_func: KW_Func Expr_Name '(' [func_params] [';' func_params] ')' brace_group
+
+        Looking at KW_Func
+        """
+        node = command.Func.CreateNull(alloc_lists=True)
+
+        keyword_tok = word_.AsKeywordToken(self.cur_word)
+        node.keyword = keyword_tok
+
+        with ctx_VarChecker(self.var_checker, keyword_tok):
+            self.parse_ctx.ParseFunc(self.lexer, node)
+
+            for param in node.pos_params:
+                self.var_checker.Check(Id.KW_Var, param.name)
+            if node.pos_splat:
+                self.var_checker.Check(Id.KW_Var, node.pos_splat)
+
+            self._SetNext()
+            with ctx_CmdMode(self, cmd_mode_e.Func):
+                node.body = self.ParseBraceGroup()
+
+        return node
+
     def ParseCoproc(self):
         # type: () -> command_t
         """
@@ -2095,9 +2161,15 @@ class CommandParser(object):
             # on.
             if self.parse_opts.parse_proc():
                 return self.ParseYshProc()
-            else:
-                p_die('Enable YSH to use procs (parse_proc)',
-                      loc.Word(self.cur_word))
+
+            # Otherwise silently pass. This is to support scripts like:
+            # $ bash -c 'proc() { echo p; }; proc'
+
+        if self.c_id == Id.KW_Func:  # func f(x) { ... }
+            if self.parse_opts.parse_func() and not self.parse_opts.parse_tea():
+                return self.ParseYshFunc()
+
+            # Otherwise silently pass, like for the procs.
 
         if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
             keyword_id = self.c_id
@@ -2128,8 +2200,8 @@ class CommandParser(object):
         # 'use'.
         if self.parse_opts.parse_tea():
             if self.c_id == Id.KW_Func:
-                out0 = command.Func.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseFunc(self.lexer, out0)
+                out0 = command.TeaFunc.CreateNull(alloc_lists=True)
+                self.parse_ctx.ParseTeaFunc(self.lexer, out0)
                 self._SetNext()
                 return out0
             if self.c_id == Id.KW_Data:

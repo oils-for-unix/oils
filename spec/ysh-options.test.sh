@@ -195,13 +195,14 @@ shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_equals
+shopt -s parse_func
 shopt -s parse_paren
 shopt -s parse_proc
 shopt -s parse_raw_string
 shopt -s parse_triple_quote
 shopt -s pipefail
 shopt -s process_sub_fail
-shopt -u redefine_proc
+shopt -u redefine_proc_func
 shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
 shopt -s verbose_errexit

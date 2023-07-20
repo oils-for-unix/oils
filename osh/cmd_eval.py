@@ -226,6 +226,48 @@ def PlusEquals(old_val, val):
     return val
 
 
+class Func(vm._Callable):
+
+    def __init__(self, name, node, mem, cmd_ev):
+        # type: (str, command.Func, state.Mem, CommandEvaluator) -> None
+        self.name = name
+        self.node = node
+        self.cmd_ev = cmd_ev
+        self.mem = mem
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        nargs = len(pos_args)
+        expected = len(self.node.pos_params)
+        if nargs != expected:
+            raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
+
+        nargs = len(named_args)
+        expected = len(self.node.named_params)
+        if nargs != expected:
+            raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
+
+        with state.ctx_FuncCall(self.cmd_ev.mem, self):
+            for i in xrange(0, len(pos_args)):
+                pos_arg = pos_args[i]
+                pos_param = self.node.pos_params[i]
+
+                arg_name = location.LName(lexer.TokenVal(pos_param.name))
+                self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
+
+            # TODO: pass named args
+
+            try:
+                self.cmd_ev._Execute(self.node.body)
+
+                return value.Null  # implicit return
+            except vm.ValueControlFlow as e:
+                return e.value
+            except vm.IntControlFlow as e:
+                raise AssertionError('IntControlFlow in func')
+
+        raise AssertionError('unreachable')
+
 class ctx_LoopLevel(object):
     """For checking for invalid control flow."""
 
@@ -273,6 +315,7 @@ class CommandEvaluator(object):
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
             procs,  # type: Dict[str, Proc]
+            funcs,  # type: Dict[str, vm._Callable]
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -300,6 +343,7 @@ class CommandEvaluator(object):
         self.exec_opts = exec_opts
         self.errfmt = errfmt
         self.procs = procs
+        self.funcs = funcs
         self.assign_builtins = assign_builtins
         self.arena = arena
 
@@ -1104,6 +1148,12 @@ class CommandEvaluator(object):
                 # TODO: What about exceptions?  They just throw?
                 status = 0
 
+            elif case(command_e.Retval):
+                node = cast(command.Retval, UP_node)
+
+                val = self.expr_ev.EvalExpr(node.val, node.keyword)
+                raise vm.ValueControlFlow(node.keyword, val)
+
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
                 keyword = node.keyword
@@ -1150,7 +1200,7 @@ class CommandEvaluator(object):
                         raise util.UserExit(
                             arg)  # handled differently than other control flow
                     else:
-                        raise vm.ControlFlow(keyword, arg)
+                        raise vm.IntControlFlow(keyword, arg)
                 else:
                     msg = 'Invalid control flow at top level'
                     if self.exec_opts.strict_control_flow():
@@ -1234,7 +1284,7 @@ class CommandEvaluator(object):
                                 break
                             status = self._Execute(node.body)  # last one wins
 
-                        except vm.ControlFlow as e:
+                        except vm.IntControlFlow as e:
                             status = 0
                             action = e.HandleLoop()
                             if action == flow_e.Break:
@@ -1353,7 +1403,7 @@ class CommandEvaluator(object):
 
                         try:
                             status = self._Execute(node.body)  # last one wins
-                        except vm.ControlFlow as e:
+                        except vm.IntControlFlow as e:
                             status = 0
                             action = e.HandleLoop()
                             if action == flow_e.Break:
@@ -1387,7 +1437,7 @@ class CommandEvaluator(object):
 
                         try:
                             status = self._Execute(body)
-                        except vm.ControlFlow as e:
+                        except vm.IntControlFlow as e:
                             status = 0
                             action = e.HandleLoop()
                             if action == flow_e.Break:
@@ -1400,10 +1450,10 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-                if node.name in self.procs and not self.exec_opts.redefine_proc(
+                if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
-                        "Function %s was already defined (redefine_proc)" %
+                        "Function %s was already defined (redefine_proc_func)" %
                         node.name, node.name_tok)
                 self.procs[node.name] = Proc(node.name, node.name_tok,
                                              proc_sig.Open, node.body, [],
@@ -1415,10 +1465,10 @@ class CommandEvaluator(object):
                 node = cast(command.Proc, UP_node)
 
                 proc_name = lexer.TokenVal(node.name)
-                if proc_name in self.procs and not self.exec_opts.redefine_proc(
+                if proc_name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
-                        "Proc %s was already defined (redefine_proc)" %
+                        "Proc %s was already defined (redefine_proc_func)" %
                         proc_name, node.name)
 
                 defaults = None  # type: List[value_t]
@@ -1436,6 +1486,19 @@ class CommandEvaluator(object):
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
                                              node.body, defaults,
                                              False)  # no dynamic scope
+
+                status = 0
+
+            elif case(command_e.Func):
+                node = cast(command.Func, UP_node)
+
+                name = lexer.TokenVal(node.name)
+                if name in self.funcs and not self.exec_opts.redefine_proc_func():
+                    e_die(
+                        "Func %s was already defined (redefine_proc_func)" %
+                        name, node.name)
+
+                self.funcs[name] = Func(name, node, self.mem, self)
 
                 status = 0
 
@@ -1751,7 +1814,7 @@ class CommandEvaluator(object):
 
     def ExecuteAndCatch(self, node, cmd_flags=0):
         # type: (command_t, int) -> Tuple[bool, bool]
-        """Execute a subprogram, handling vm.ControlFlow and fatal exceptions.
+        """Execute a subprogram, handling vm.IntControlFlow and fatal exceptions.
 
         Args:
           node: LST subtree
@@ -1785,7 +1848,7 @@ class CommandEvaluator(object):
 
         try:
             status = self._Execute(node)
-        except vm.ControlFlow as e:
+        except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
                 raise  # 'eval break' and 'source return.sh', etc.
             else:
@@ -1914,7 +1977,7 @@ class CommandEvaluator(object):
         else:
             proc_argv = argv
 
-        with state.ctx_Call(self.mem, self.mutable_opts, proc, proc_argv):
+        with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
             n_args = len(argv)
             UP_sig = sig
 
@@ -1978,7 +2041,7 @@ class CommandEvaluator(object):
             # Here doc causes a pipe and Process(SubProgramThunk).
             try:
                 status = self._Execute(proc.body)
-            except vm.ControlFlow as e:
+            except vm.IntControlFlow as e:
                 if e.IsReturn():
                     status = e.StatusCode()
                 else:
@@ -2007,7 +2070,7 @@ class CommandEvaluator(object):
         namespace_ = None  # type: Dict[str, Cell]
         try:
             self._Execute(block)  # can raise FatalRuntimeError, etc.
-        except vm.ControlFlow as e:  # A block is more like a function.
+        except vm.IntControlFlow as e:  # A block is more like a function.
             # return in a block
             if e.IsReturn():
                 status = e.StatusCode()
@@ -2037,7 +2100,7 @@ class CommandEvaluator(object):
         except error.FatalRuntime as e:
             self.errfmt.PrettyPrintError(e)
             status = e.ExitStatus()
-        except vm.ControlFlow as e:
+        except vm.IntControlFlow as e:
             # shouldn't be able to exit the shell from a completion hook!
             # TODO: Avoid overwriting the prompt!
             self.errfmt.Print_('Attempted to exit from completion hook.',

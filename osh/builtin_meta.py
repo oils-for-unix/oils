@@ -128,7 +128,7 @@ class Source(vm._Builtin):
                                     c_parser,
                                     self.errfmt,
                                     cmd_flags=cmd_eval.RaiseControlFlow)
-                            except vm.ControlFlow as e:
+                            except vm.IntControlFlow as e:
                                 if e.IsReturn():
                                     status = e.StatusCode()
                                 else:

@@ -45,7 +45,6 @@ from _devbuild.gen.runtime_asdl import (
     value_e,
     value_t,
     IntBox,
-    Proc,
 )
 from core import error
 from core.error import e_die, e_die_status
@@ -53,6 +52,7 @@ from core import state
 from core import vm
 from frontend import consts
 from frontend import match
+from frontend import lexer
 from frontend import location
 from osh import braces
 from osh import word_compile
@@ -100,7 +100,7 @@ class OilEvaluator(object):
             self,
             mem,  # type: Mem
             mutable_opts,  # type: state.MutableOpts
-            funcs,  # type: Dict[str, Proc]
+            funcs,  # type: Dict[str, vm._Callable]
             methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
             errfmt,  # type: ui.ErrorFormatter
@@ -916,9 +916,16 @@ class OilEvaluator(object):
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
 
-        # TODO:
-        # - look in a separate self.funcs namespace
-        # - node.func must be a expr.Var
+        if node.func.tag() == expr_e.Var:
+            var = cast(expr.Var, node.func)
+            var_name = lexer.TokenVal(var.name)
+            f = self.funcs.get(var_name)
+
+            if f:
+                pos_args, named_args = self.EvalArgList2(node.args)
+                ret = f.Call(pos_args, named_args)
+                return ret
+
         func = self._EvalExpr(node.func)
         UP_func = func
 

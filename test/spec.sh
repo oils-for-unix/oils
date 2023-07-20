@@ -801,6 +801,10 @@ ysh-methods() {
   run-file ysh-methods "$@"
 }
 
+ysh-funcs() {
+  run-file ysh-funcs "$@"
+}
+
 ysh-funcs-builtin() {
   run-file ysh-funcs-builtin "$@"
 }

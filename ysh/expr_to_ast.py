@@ -1124,8 +1124,34 @@ class Transformer(object):
 
         return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
-    def TeaFunc(self, pnode, out):
+    def YshFunc(self, pnode, out):
         # type: (PNode, command.Func) -> None
+        """Parse tree to LST
+
+        ysh_func: Expr_Name '(' [func_params] [';' func_params] ')'
+        """
+        assert pnode.typ == grammar_nt.ysh_func
+
+        out.name = pnode.GetChild(0).tok
+
+        pos = 2
+        typ = pnode.GetChild(pos).typ  # discriminate f(x) vs. f(; x=y)
+        if ISNONTERMINAL(typ):  # f(x)
+            assert typ == grammar_nt.func_params, pnode.GetChild(pos)
+            # every other one is a comma
+            out.pos_params, out.pos_splat = self._FuncParams(
+                pnode.GetChild(pos))
+            pos += 1
+
+        id_ = pnode.GetChild(pos).tok.id
+        if id_ == Id.Op_RParen:  # f()
+            return
+        elif id_ == Id.Op_Semi:  # f(; a)
+            out.named_params, out.named_splat = self._FuncParams(
+                pnode.GetChild(pos + 1))
+
+    def TeaFunc(self, pnode, out):
+        # type: (PNode, command.TeaFunc) -> None
         """Parse tree to LST
 
         tea_func:
@@ -1159,7 +1185,7 @@ class Transformer(object):
         out.body = self._Suite(pnode.GetChild(pos))
 
     def NamedFunc(self, pnode, out):
-        # type: (PNode, command.Func) -> None
+        # type: (PNode, command.TeaFunc) -> None
         """named_func: Expr_Name tea_func."""
         assert pnode.typ == grammar_nt.named_func
 

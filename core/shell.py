@@ -627,16 +627,14 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                            parse_ctx, errfmt)
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
-
-    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, procs, methods,
+    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, funcs, methods,
                                      splitter, errfmt)
-
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 
     assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
-    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
-                                       arena, cmd_deps, trap_state, signal_safe)
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, funcs,
+                                       assign_b, arena, cmd_deps, trap_state, signal_safe)
 
     AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
 
@@ -784,7 +782,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     if flag.headless:
         state.InitInteractive(mem)
-        mutable_opts.set_redefine_proc()
+        mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
 
         # This is like an interactive shell, so we copy some initialization from
@@ -822,7 +820,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         state.InitInteractive(mem)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
-        mutable_opts.set_redefine_proc()
+        mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
 
         if readline:

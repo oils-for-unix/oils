@@ -319,6 +319,7 @@ module syntax
     # Represents "bare assignment"
     # Token left is redundant with pairs[0].left
   | ShAssignment(Token left, List[AssignPair] pairs, List[Redir] redirects)
+  | Retval(Token keyword, expr val)
   | ControlFlow(Token keyword, word? arg_word)
     # ops are |  |&
   | Pipeline(Token? negated, List[command] children, List[Token] ops)
@@ -367,10 +368,14 @@ module syntax
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc(Token keyword, Token name, proc_sig sig, command body)
+  | Func(Token keyword, Token name,
+         List[Param] pos_params, Token? pos_splat,
+         List[Param] named_params, Token? named_splat,
+         command body)
 
   # Tea
 
-  | Func(Token name, 
+  | TeaFunc(Token name,
          List[Param] pos_params, Token? pos_splat,
          List[Param] named_params, Token? named_splat,
          List[type_expr] return_types, command body)
