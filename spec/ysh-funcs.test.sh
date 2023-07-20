@@ -143,3 +143,57 @@ func fib(n) {
 ## STDOUT:
 (Int)   55
 ## END
+
+#### Recursive functions with LRU Cache
+var cache = []
+var maxSize = 4
+
+func remove(l, i) {
+  for i in (range(i, len(l) - 1)) {
+    setvar l[i] = l[i + 1]
+  }
+
+  _ pop(l) # remove duplicate last element
+}
+
+func fib(n) {
+  for rev_idx, item in (reversed(cache)) {
+    if (item[0] === n) {
+      const idx = len(cache) - rev_idx + 1
+      _ remove(cache, idx)
+      _ append(cache, item)
+
+      echo hit: $[n]  # is this a side-effect?
+      return (item[1])
+    }
+  }
+
+  var result = 0
+  if (n < 2) {
+    setvar result = n
+  } else {
+    setvar result = fib(n - 1) + fib(n - 2)
+  }
+
+  if (len(cache) >= maxSize) {
+    _ remove(cache, 0)
+  }
+  _ append(cache, [n, result])
+
+  return (result)
+}
+
+= fib(10)
+= cache
+## STDOUT:
+hit: 1
+hit: 2
+hit: 3
+hit: 4
+hit: 5
+hit: 6
+hit: 7
+hit: 8
+(Int)   55
+(List)   [[7, 13], [9, 34], [8, 21], [10, 55]]
+## END
