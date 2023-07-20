@@ -69,6 +69,22 @@ test-return-args() {
   '
 }
 
+test-func-var-checker() {
+  set +o errexit
+
+  _should-parse '
+  func f(x) {
+    setvar x = True
+  }
+  '
+
+  _error-case '
+  func f() {
+    setvar x = True
+  }
+  '
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs
