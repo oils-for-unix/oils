@@ -97,3 +97,49 @@ echo $[f()]
 ## status: 1
 ## STDOUT:
 ## END
+
+#### Param binding semantics
+# value
+var x = 'foo'
+
+func f(x) {
+  setvar x = 'bar'
+}
+
+= x
+= f(x)
+= x
+
+# reference
+var y = ['a', 'b', 'c']
+
+func g(y) {
+  setvar y[0] = 'z'
+}
+
+= y
+= g(y)
+= y
+## STDOUT:
+(Str)   'foo'
+(NoneType)   None
+(Str)   'foo'
+(List)   ['a', 'b', 'c']
+(NoneType)   None
+(List)   ['z', 'b', 'c']
+## END
+
+#### Recursive functions
+func fib(n) {
+  # TODO: add assert n > 0
+  if (n < 2) {
+    return (n)
+  }
+
+  return (fib(n - 1) + fib(n - 2))
+}
+
+= fib(10)
+## STDOUT:
+(Int)   55
+## END

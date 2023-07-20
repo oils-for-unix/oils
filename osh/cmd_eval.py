@@ -247,16 +247,16 @@ class Func(vm._Callable):
         if nargs != expected:
             raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
 
-        for i in xrange(0, len(pos_args)):
-            pos_arg = pos_args[i]
-            pos_param = self.node.pos_params[i]
-
-            arg_name = location.LName(lexer.TokenVal(pos_param.name))
-            self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
-
-        # TODO: pass named args
-
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
+            for i in xrange(0, len(pos_args)):
+                pos_arg = pos_args[i]
+                pos_param = self.node.pos_params[i]
+
+                arg_name = location.LName(lexer.TokenVal(pos_param.name))
+                self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
+
+            # TODO: pass named args
+
             try:
                 self.cmd_ev._Execute(self.node.body)
 
