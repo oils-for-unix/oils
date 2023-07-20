@@ -2050,13 +2050,20 @@ class CommandParser(object):
         """
         node = command.Func.CreateNull(alloc_lists=True)
 
-        node.keyword = word_.AsKeywordToken(self.cur_word)
+        keyword_tok = word_.AsKeywordToken(self.cur_word)
+        node.keyword = keyword_tok
 
-        self.parse_ctx.ParseFunc(self.lexer, node)
+        with ctx_VarChecker(self.var_checker, keyword_tok):
+            self.parse_ctx.ParseFunc(self.lexer, node)
 
-        self._SetNext()
-        with ctx_CmdMode(self, cmd_mode_e.Func):
-            node.body = self.ParseBraceGroup()
+            for param in node.pos_params:
+                self.var_checker.Check(Id.KW_Var, param.name)
+            if node.pos_splat:
+                self.var_checker.Check(Id.KW_Var, sig.pos_splat)
+
+            self._SetNext()
+            with ctx_CmdMode(self, cmd_mode_e.Func):
+                node.body = self.ParseBraceGroup()
 
         return node
 
