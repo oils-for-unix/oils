@@ -188,9 +188,10 @@ class Constructor(_CompoundAST):
 
 
 class Sum(AST):
-    def __init__(self, types, generate=None):
+    def __init__(self, types, generate=None, deriving=None):
         self.types = types  # type: List[Constructor]
         self.generate = generate or []
+        self.deriving = deriving or []
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -199,6 +200,8 @@ class Sum(AST):
             t.Print(f, indent + 1)
         if self.generate:
             f.write('%s  generate %s\n' % (ind, self.generate))
+        if self.deriving:
+            f.write('%s  deriving %s\n' % (ind, self.deriving))
         f.write('%s}\n' % ind)
 
 

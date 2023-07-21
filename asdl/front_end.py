@@ -10,7 +10,7 @@ from asdl.util import log
 
 _ = log
 
-_KEYWORDS = ['use', 'module', 'generate']
+_KEYWORDS = ['use', 'module', 'generate', 'deriving']
 
 _TOKENS = [
     ('Keyword', ''),
@@ -249,6 +249,7 @@ class ASDLParser(object):
                     break
                 self._advance()
             generate = self._parse_optional_generate()
+            deriving = self._parse_optional_deriving()
 
             # Additional validation
             if generate is not None:
@@ -258,9 +259,9 @@ class ASDLParser(object):
                                               self.cur_token.lineno)
 
             if _SumIsSimple(sumlist):
-                return SimpleSum(sumlist, generate)
+                return SimpleSum(sumlist, generate, deriving)
             else:
-                return Sum(sumlist, generate)
+                return Sum(sumlist, generate, deriving)
 
     def _parse_type_expr(self):
         """One or two params:
@@ -348,12 +349,12 @@ class ASDLParser(object):
 
         list      : '[' list_inner? ']'
         """
-        generate = []
+        items = []
         self._match(TokenKind.LBracket)
         while self.cur_token.kind == TokenKind.Name:
             name = self._match(TokenKind.Name)
 
-            generate.append(name)
+            items.append(name)
 
             if self.cur_token.kind == TokenKind.RBracket:
                 break
@@ -361,11 +362,19 @@ class ASDLParser(object):
                 self._advance()
 
         self._match(TokenKind.RBracket)
-        return generate
+        return items
 
     def _parse_optional_generate(self):
         """Attributes = 'generate' list."""
         if self._at_keyword('generate'):
+            self._advance()
+            return self._parse_list()
+        else:
+            return None
+
+    def _parse_optional_deriving(self):
+        """Attributes = 'deriving' list."""
+        if self._at_keyword('deriving'):
             self._advance()
             return self._parse_list()
         else:

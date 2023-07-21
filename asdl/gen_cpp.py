@@ -340,7 +340,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.debug_info['%s_t' % sum_name] = int_to_type
 
         # This is the base class.
-        Emit('class %(sum_name)s_t {')
+        deriving = " : " + ", ".join(sum.deriving) if sum.deriving else "";
+        Emit('class %(sum_name)s_t%(deriving)s {')
         # Can't be constructed directly.  Note: this shows up in uftrace in debug
         # mode, e.g. when we intantiate Token.  Do we need it?
         Emit(' protected:')

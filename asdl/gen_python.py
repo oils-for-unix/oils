@@ -470,7 +470,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('', depth)
 
         # the base class, e.g. 'oil_cmd'
-        self.Emit('class %s_t(pybase.CompoundObj):' % sum_name, depth)
+        bases = ['pybase.CompoundObj']
+        bases.extend(sum.deriving)
+        self.Emit('class %s_t(%s):' % (sum_name, ", ".join(bases)), depth)
         self.Indent()
         depth = self.current_depth
 
