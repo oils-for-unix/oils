@@ -1,7 +1,6 @@
 """vm.py: Library for executing shell."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t, control_flow, control_flow_t,
                                         control_flow_e)
