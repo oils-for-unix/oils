@@ -87,6 +87,7 @@ STYLE_DEFAULT = 0
 STYLE_LONG = 1
 STYLE_PID_ONLY = 2
 
+POSITION_UNSET = -1
 POSITION_BACKGROUND = 0
 POSITION_FOREGROUND = 1
 
@@ -924,7 +925,7 @@ class Process(Job):
         self.close_w = -1
 
         self.pid = -1
-        self.pgid = -1
+        self.position = POSITION_UNSET
         self.status = -1
 
     def Init_ParentPipeline(self, pi):
@@ -1024,8 +1025,6 @@ class Process(Job):
         # racing in calls to tcsetpgrp() in the parent. See APUE sec. 9.2.
         for st in self.state_changes:
             st.ApplyFromParent(self)
-
-        self.pgid = posix.getpgid(pid)
 
         # Program invariant: We keep track of every child process!
         self.job_list.AddChildProcess(pid, self)
