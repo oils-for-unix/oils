@@ -87,6 +87,9 @@ STYLE_DEFAULT = 0
 STYLE_LONG = 1
 STYLE_PID_ONLY = 2
 
+POSITION_BACKGROUND = 0
+POSITION_FOREGROUND = 1
+
 
 class ctx_FileCloser(object):
     def __init__(self, f):
@@ -969,6 +972,8 @@ class Process(Job):
     def StartProcess(self, why):
         # type: (trace_t) -> int
         """Start this process with fork(), handling redirects."""
+        # Start in the background by default
+        self.SetPosition(POSITION_BACKGROUND)
         pid = posix.fork()
         if pid < 0:
             # When does this happen?
@@ -1060,7 +1065,9 @@ class Process(Job):
         # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
-        self.job_control.MaybeTakeTerminal(self.pgid)
+        if self.position == POSITION_FOREGROUND:
+            self.SetPosition(POSITION_BACKGROUND)
+            self.job_control.MaybeTakeTerminal()
 
     def WhenDone(self, pid, status):
         # type: (int, int) -> None
@@ -1072,8 +1079,8 @@ class Process(Job):
         self.state = job_state_e.Done
         if self.parent_pipeline:
             self.parent_pipeline.WhenDone(pid, status)
-        else:
-            self.job_control.MaybeTakeTerminal(self.pgid)
+        elif self.position == POSITION_FOREGROUND:
+            self.job_control.MaybeTakeTerminal()
 
     def RunProcess(self, waiter, why):
         # type: (Waiter, trace_t) -> int
@@ -1081,10 +1088,16 @@ class Process(Job):
         self.StartProcess(why)
         # ShellExecutor might be calling this for the last part of a pipeline.
         if self.parent_pipeline is None:
+            self.SetPosition(POSITION_FOREGROUND)
             # QUESTION: Can the PGID of a single process just be the PID?  i.e. avoid
             # calling getpgid()?
             self.job_control.MaybeGiveTerminal(posix.getpgid(self.pid))
+
         return self.Wait(waiter)
+
+    def SetPosition(self, position):
+        # type: (int) -> None
+        self.position = position
 
 
 class ctx_Pipe(object):
@@ -1318,7 +1331,8 @@ class Pipeline(Job):
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
             self.state = job_state_e.Done
-            self.job_control.MaybeTakeTerminal(self.pids[0])
+            # Pipelines are always in the foreground
+            self.job_control.MaybeTakeTerminal()
 
 
 def _JobStateStr(i):
@@ -1436,16 +1450,11 @@ class JobControl(object):
             e_die('osh: Failed to move process group %d to foreground: %s' %
                   (pgid, pyutil.strerror(e)))
 
-    def MaybeTakeTerminal(self, group):
-        # type: (int) -> None
+    def MaybeTakeTerminal(self):
+        # type: () -> None
         """If stdio is a TTY, return the main shell's process group to the
-        foreground only if the given group is running in the foreground."""
-        # Only take back the terminal if we gave it to this process in the first
-        # place. Otherwise we might accidentally take it back from another
-        # process running in the foreground, causing it to get stopped with
-        # SIGTTIN/SIGTTOU.
-        if self.Enabled() and posix.tcgetpgrp(self.shell_tty_fd) == group:
-            self.MaybeGiveTerminal(self.shell_pgid)
+        foreground."""
+        self.MaybeGiveTerminal(self.shell_pgid)
 
     def MaybeReturnTerminal(self):
         # type: () -> None
@@ -1495,6 +1504,7 @@ class JobList(object):
         if pid == self.last_stopped_pid:
             self.last_stopped_pid = -1
         job = self.JobFromPid(pid)
+        job.SetPosition(POSITION_FOREGROUND)
         # needed for Wait() loop to work
         job.state = job_state_e.Running
         return job.Wait(waiter)
