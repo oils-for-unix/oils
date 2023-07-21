@@ -5,7 +5,7 @@ builtin_meta.py - Builtins that call back into the interpreter.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
+from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus, control_flow
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
@@ -128,11 +128,8 @@ class Source(vm._Builtin):
                                     c_parser,
                                     self.errfmt,
                                     cmd_flags=cmd_eval.RaiseControlFlow)
-                            except vm.IntControlFlow as e:
-                                if e.IsReturn():
-                                    status = e.StatusCode()
-                                else:
-                                    raise
+                            except control_flow.Return as e:
+                                status = vm.ControlFlowStatusCode(e)
 
         return status
 

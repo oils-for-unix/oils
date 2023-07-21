@@ -222,6 +222,13 @@ module runtime
 
   # Hay "first word" namespace
   HayNode = (Dict[str, HayNode] children)
+
+  control_flow =
+    Break(Token keyword, int levels)
+  | Continue(Token keyword, int levels)
+  | Return(Token keyword, int code)
+  | Retval(Token keyword, value val)
+  deriving [Exception]
 }
 
 # vim: sw=2

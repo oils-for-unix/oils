@@ -3,12 +3,13 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
-                                        flow_t)
+                                        flow_t, control_flow, control_flow_t,
+                                        control_flow_e)
 from _devbuild.gen.syntax_asdl import Token
 from core import pyos
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue, value_t
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
@@ -24,97 +25,56 @@ if TYPE_CHECKING:
 
 _ = log
 
+def ControlFlowToken(cf):
+    # type: (control_flow_t) -> Token
+    """Get the keyword token of the control flow command."""
+    with tagswitch(cf) as case:
+        if case(control_flow_e.Break):
+            break_ = cast(control_flow.Break, cf)
+            return break_.keyword
 
-class ControlFlow(Exception):
-    """Internal exception for control flow.
+        elif case(control_flow_e.Continue):
+            continue_ = cast(control_flow.Continue, cf)
+            return continue_.keyword
 
-    Used by CommandEvaluator and 'source' builtin
+        elif case(control_flow_e.Return):
+            return_ = cast(control_flow.Return, cf)
+            return return_.keyword
 
-    break and continue are caught by loops, return is caught by functions.
+        elif case(control_flow_e.Retval):
+            retval = cast(control_flow.Retval, cf)
+            return retval.keyword
 
-    NOTE: I tried representing this in ASDL, but in Python the base class has to
-    be BaseException.  Also, 'Token' is in syntax.asdl but not runtime.asdl.
+        else:
+            raise AssertionError()
 
-    cflow =
-      -- break, continue, return, exit
-      Shell(Token keyword, int arg)
-      -- break, continue
-    | OilLoop(Token keyword)
-      -- return
-    | OilReturn(Token keyword, value val)
+def ControlFlowStatusCode(cf):
+    # type: (control_flow_t) -> int
+    """All shells except dash do this truncation.
+    Turn 257 into 1, and -1 into 255.
     """
+    assert cf.tag() == control_flow_e.Return, cf
+    ret = cast(control_flow.Return, cf)
+    return ret.code & 0xff
 
-    pass
-
-class IntControlFlow(Exception):
-
-    def __init__(self, token, arg):
-        # type: (Token, int) -> None
-        """
-        Args:
-          token: the keyword token
-          arg: exit code to 'return', or number of levels to break/continue
-        """
-        self.token = token
-        self.arg = arg
-
-    def IsReturn(self):
-        # type: () -> bool
-        return self.token.id == Id.ControlFlow_Return
-
-    def IsBreak(self):
-        # type: () -> bool
-        return self.token.id == Id.ControlFlow_Break
-
-    def IsContinue(self):
-        # type: () -> bool
-        return self.token.id == Id.ControlFlow_Continue
-
-    def StatusCode(self):
-        # type: () -> int
-        assert self.IsReturn()
-        # All shells except dash do this truncation.
-        # turn 257 into 1, and -1 into 255.
-        return self.arg & 0xff
-
-    def HandleLoop(self):
-        # type: () -> flow_t
-        """Mutates this exception and returns what the caller should do."""
-
-        if self.IsBreak():
-            self.arg -= 1
-            if self.arg == 0:
+def ControlFlowHandleLoop(cf):
+    # type: (control_flow_t) -> flow_t
+    """Mutates the exception and returns what the caller should do."""
+    with tagswitch(cf) as case:
+        if case(control_flow_e.Break):
+            break_ = cast(control_flow.Break, cf)
+            break_.levels -= 1
+            if break_.levels == 0:
                 return flow_e.Break  # caller should break out of loop
 
-        elif self.IsContinue():
-            self.arg -= 1
-            if self.arg == 0:
+        elif case(control_flow_e.Continue):
+            continue_ = cast(control_flow.Continue, cf)
+            continue_.levels -= 1
+            if continue_.levels == 0:
                 return flow_e.Nothing  # do nothing to continue
 
-        # return / break 2 / continue 2 need to pop up more
-        return flow_e.Raise
-
-    def __repr__(self):
-        # type: () -> str
-        return '<IntControlFlow %s %s>' % (self.token, self.arg)
-
-
-class ValueControlFlow(Exception):
-
-    def __init__(self, token, value):
-        # type: (Token, value_t) -> None
-        """
-        Args:
-          token: the keyword token
-          value: value_t to 'return' from a function
-        """
-        self.token = token
-        self.value = value
-
-    def __repr__(self):
-        # type: () -> str
-        return '<ValueControlFlow %s %s>' % (self.token, self.value)
-
+    # return / break 2 / continue 2 need to pop up more
+    return flow_e.Raise
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):
     # type: (state.Mem, NormalWordEvaluator, sh_expr_eval.UnsafeArith) -> None

@@ -66,6 +66,10 @@ from _devbuild.gen.runtime_asdl import (
     CommandStatus,
     StatusArray,
     Proc,
+    control_flow,
+    control_flow_t,
+    control_flow_e,
+    control_flow_str,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -261,10 +265,10 @@ class Func(vm._Callable):
                 self.cmd_ev._Execute(self.node.body)
 
                 return value.Null  # implicit return
-            except vm.ValueControlFlow as e:
-                return e.value
-            except vm.IntControlFlow as e:
-                raise AssertionError('IntControlFlow in func')
+            except control_flow.Retval as ret:
+                return ret.val
+            except control_flow_t as e:
+                raise AssertionError('Unexpected controlflow %r in func' % control_flow_str(e.tag()))
 
         raise AssertionError('unreachable')
 
@@ -1152,7 +1156,7 @@ class CommandEvaluator(object):
                 node = cast(command.Retval, UP_node)
 
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
-                raise vm.ValueControlFlow(node.keyword, val)
+                raise control_flow.Retval(node.keyword, val)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
@@ -1199,8 +1203,14 @@ class CommandEvaluator(object):
                     if keyword.id == Id.ControlFlow_Exit:
                         raise util.UserExit(
                             arg)  # handled differently than other control flow
+                    elif keyword.id == Id.ControlFlow_Break:
+                        raise control_flow.Break(keyword, arg)
+                    elif keyword.id == Id.ControlFlow_Continue:
+                        raise control_flow.Continue(keyword, arg)
+                    elif keyword.id == Id.ControlFlow_Return:
+                        raise control_flow.Return(keyword, arg)
                     else:
-                        raise vm.IntControlFlow(keyword, arg)
+                        raise AssertionError("Unhandled control flow keyword %r" % Id_str(keyword.id))
                 else:
                     msg = 'Invalid control flow at top level'
                     if self.exec_opts.strict_control_flow():
@@ -1284,9 +1294,9 @@ class CommandEvaluator(object):
                                 break
                             status = self._Execute(node.body)  # last one wins
 
-                        except vm.IntControlFlow as e:
+                        except control_flow_t as e:
                             status = 0
-                            action = e.HandleLoop()
+                            action = vm.ControlFlowHandleLoop(e)
                             if action == flow_e.Break:
                                 break
                             elif action == flow_e.Raise:
@@ -1403,9 +1413,9 @@ class CommandEvaluator(object):
 
                         try:
                             status = self._Execute(node.body)  # last one wins
-                        except vm.IntControlFlow as e:
+                        except control_flow_t as e:
                             status = 0
-                            action = e.HandleLoop()
+                            action = vm.ControlFlowHandleLoop(e)
                             if action == flow_e.Break:
                                 break
                             elif action == flow_e.Raise:
@@ -1437,9 +1447,9 @@ class CommandEvaluator(object):
 
                         try:
                             status = self._Execute(body)
-                        except vm.IntControlFlow as e:
+                        except control_flow_t as e:
                             status = 0
-                            action = e.HandleLoop()
+                            action = vm.ControlFlowHandleLoop(e)
                             if action == flow_e.Break:
                                 break
                             elif action == flow_e.Raise:
@@ -1848,14 +1858,15 @@ class CommandEvaluator(object):
 
         try:
             status = self._Execute(node)
-        except vm.IntControlFlow as e:
+        except control_flow_t as e:
             if cmd_flags & RaiseControlFlow:
                 raise  # 'eval break' and 'source return.sh', etc.
             else:
                 # Return at top level is OK, unlike in bash.
-                if e.IsReturn():
+                if e.tag() == control_flow_e.Return:
+                    ret = cast(control_flow.Return, e)
                     is_return = True
-                    status = e.StatusCode()
+                    status = vm.ControlFlowStatusCode(ret)
                 else:
                     # TODO: This error message is invalid.  Can also happen in eval.
                     # We need a flag.
@@ -1863,7 +1874,7 @@ class CommandEvaluator(object):
                     # Invalid control flow
                     self.errfmt.Print_(
                         "Loop and control flow can't be in different processes",
-                        blame_loc=e.token)
+                        blame_loc=vm.ControlFlowToken(e))
                     is_fatal = True
                     # All shells exit 0 here.  It could be hidden behind
                     # strict_control_flow if the incompatibility causes problems.
@@ -2041,14 +2052,13 @@ class CommandEvaluator(object):
             # Here doc causes a pipe and Process(SubProgramThunk).
             try:
                 status = self._Execute(proc.body)
-            except vm.IntControlFlow as e:
-                if e.IsReturn():
-                    status = e.StatusCode()
-                else:
-                    # break/continue used in the wrong place.
-                    e_die(
-                        'Unexpected %r (in function call)' %
-                        lexer.TokenVal(e.token), e.token)
+            except control_flow.Return as e:
+                status = vm.ControlFlowStatusCode(e)
+            except control_flow_t as e:
+                # break/continue used in the wrong place.
+                e_die(
+                    'Unexpected %r (in function call)' %
+                    control_flow_str(e.tag()), vm.ControlFlowToken(e))
             except error.FatalRuntime as e:
                 # Dump the stack before unwinding it
                 self.dumper.MaybeRecord(self, e)
@@ -2070,12 +2080,11 @@ class CommandEvaluator(object):
         namespace_ = None  # type: Dict[str, Cell]
         try:
             self._Execute(block)  # can raise FatalRuntimeError, etc.
-        except vm.IntControlFlow as e:  # A block is more like a function.
+        except control_flow.Return as e:  # A block is more like a function.
             # return in a block
-            if e.IsReturn():
-                status = e.StatusCode()
-            else:
-                e_die('Unexpected control flow in block', e.token)
+            status = vm.ControlFlowStatusCode(e)
+        except control_flow_t as e:
+            e_die('Unexpected control flow in block', vm.ControlFlowToken(e))
 
         namespace_ = self.mem.TopNamespace()
 
@@ -2100,11 +2109,11 @@ class CommandEvaluator(object):
         except error.FatalRuntime as e:
             self.errfmt.PrettyPrintError(e)
             status = e.ExitStatus()
-        except vm.IntControlFlow as e:
+        except control_flow_t as e:
             # shouldn't be able to exit the shell from a completion hook!
             # TODO: Avoid overwriting the prompt!
             self.errfmt.Print_('Attempted to exit from completion hook.',
-                               blame_loc=e.token)
+                               blame_loc=vm.ControlFlowToken(e))
 
             status = 1
         # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
