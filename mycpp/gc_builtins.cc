@@ -28,6 +28,18 @@ Str* str(int i) {
   return s;
 }
 
+// Do we need this API?  Or is mylib.InternedStr(Str* s, int start, int end)
+// better for getting values out of Token.line without allocating?
+//
+// e.g. mylib.InternedStr(tok.line, tok.start, tok.start+1)
+//
+// Also for SmallStr, we don't care about interning.  Only for HeapStr.
+
+Str* intern(Str* s) {
+  // TODO: put in table gHeap.interned_
+  return s;
+}
+
 // Print quoted string.  TODO: use C-style strings (YSTR)
 Str* repr(Str* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.

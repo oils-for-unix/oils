@@ -41,6 +41,11 @@ TEST int_test() {
 }
 
 TEST float_test() {
+  ASSERT_EQ(0.0f, to_float(0));
+  ASSERT_EQ(1.0f, to_float(1));
+  ASSERT_EQ(42.0f, to_float(42));
+  ASSERT_EQ(-42.0f, to_float(-42));
+
   ASSERT_EQ(0.0f, to_float(StrFromC("0.0")));
 
   ASSERT_EQ(0.25f, to_float(StrFromC("0.25")));
@@ -283,6 +288,15 @@ TEST hash_str_test() {
   PASS();
 }
 
+TEST intern_test() {
+  Str* s = StrFromC("foo");
+  Str* t = intern(s);
+
+  ASSERT(str_equals(s, t));
+
+  PASS();
+}
+
 TEST max_test() {
   ASSERT(max(-1, 0) == 0);
   ASSERT(max(0, -1) == max(-1, 0));
@@ -316,6 +330,7 @@ int main(int argc, char** argv) {
   RUN_TEST(exceptions_test);
 
   RUN_TEST(hash_str_test);
+  RUN_TEST(intern_test);
 
   RUN_TEST(max_test);
 

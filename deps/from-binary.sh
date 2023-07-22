@@ -31,6 +31,8 @@ download-clang() {
 extract-clang() {
   ### For developers
 
+  # TODO: retire ../oil_DEPS dir in favor of wedge
+  mkdir -p $DEPS_DIR
   pushd $DEPS_DIR
   time tar -x --xz < ../oil/_cache/clang+llvm-14.0.0*.tar.xz
   popd

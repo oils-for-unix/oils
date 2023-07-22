@@ -116,6 +116,8 @@ Str* repr(Str* s);
 
 Str* str(int i);
 
+Str* intern(Str* s);
+
 // Helper function: returns whether the string is a valid integer, and
 // populates the result.  (Also used by marksweep_heap.cc; could be moved
 // there)
