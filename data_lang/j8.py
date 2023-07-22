@@ -5,13 +5,20 @@ j8.py: J8 Notation and Related Utilities
 Callers:
 
 - the = operator
-- write --j8 (x)
-  - write --json
+- write (x)
+  - Flags --lines --j8 --json
 - read --j8 :x
   - read --json
-- write --j8-str (x) calls data_lang/j8_str.py directly
 
-TODO: Hook up CommandEvaluator, read, write
+TODO:
+
+- PrettyPrinter uses hnode.asdl?
+- Harmonize the API in data_lang/qsn.py 
+  - use mylib.BufWriter output
+  - use u_style.LiteralUtf8 instead of BIT8_UTF8, etc.
+
+- QSN maybe_shell_encode() is used for bash features
+  - Remove shell_compat which does \\x00 instead of \\0
 
 
 Meta-syntax:
@@ -25,6 +32,7 @@ Meta-syntax:
 
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
 
+from asdl import format as fmt
 from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, log
@@ -35,54 +43,131 @@ _ = log
 
 from typing import cast
 
-# Emit only JSON strings, not J8 strings
-JSON_ONLY = 1 << 0
 
-# {"key": <Dict 42> }
-# for = operator
-# default: raise exception
-DETECT_CYCLES = 1 << 1
+class PrettyPrinter(object):
+    """
+    For = operator.  Output to polymorphic ColorOutput 
 
-# {"key": (value.Slice start:3 end: 4) }
-# for = operator
-# default: raise exception
-NON_DATA_TYPES = 1 << 2
+    Also pp value (x, option = :x)
 
-# unicode options:
-# \u \x or raw UTF8
+    Features like asdl/format.py:
+    - line wrapping
+    - color
 
-# string prefix options
-#
-# "\n" or j"\n" etc.
-#
-# j"\u{123456}" always has the prefix?
+    Options:
+    - unicode.UEscape
+    - Float: It would be nice to separate the exact parts, like we do with
+      strings
+
+    Fixed behavior:
+    - j_prefix.WhenNecessary
+    - dialect.J8
+    - Prints <Dict #42> on cycles
+    - Prints ASDL (value.Expr ...) on non-data types
+    """
+    def __init__(self, max_col):
+        # type: (int) -> None
+        self.max_col = max_col
+
+        # To detect cycles: by printing or by an error
+        self.unique_objs = mylib.UniqueObjects()
+
+    def PrettyTree(self, val, f):
+        # type: (value_t, fmt.ColorOutput) -> None
+
+        # TODO: first convert to hnode.asdl types?
+
+        # Although we might want
+        # hnode.AlreadyShown = (str type, int unique_id)
+
+        pass
+
+    def Print(self, val, buf):
+        # type: (value_t, mylib.BufWriter) -> None
+
+        # Or print to stderr?
+        f = fmt.DetectConsoleOutput(mylib.Stdout())
+        self.PrettyTree(val, f)
+
+        # Then print those with ASDL
+        pass
 
 
 class Printer(object):
+    """
+    For write --j8 (x) .  Output to monomorphic mylib.BufWriter.
 
-    def __init__(self, flags, indent, max_width=0):
-        # type: (int, Optional[str], int) -> None
+    Options:
+    - Control over escaping: \\u \\x raw UTF-8
+    - Control over j prefix: when necessary, or always
+    - Control over strict JSON subset (--json vs --j8)
+    - Dumb indentation, not smart line wrapping
 
-        self.flags = flags
+    Maybe:
+    - float format, like %.3f ?
+
+    Fixed behavior:
+    - Always fails on cycles
+    - Always on non-data types
+
+    Conflict:
+
+    $ write -- foo bar j"\n"
+    foo
+    bar
+    <raw newline>
+
+    $ write --j8 foo bar j"\n"
+    "foo"
+    "bar"
+    j"\n"
+
+    # I guess this makes sense?  lines are escaped?
+    $ write --lines foo bar j"\n"
+    foo   # unquoted
+    bar
+    j"\n"
+
+    # inverse is read --line --j8 or read --lines j8
+
+    # One per line
+    $ write ({k: "v"}, [2, 3])
+    {"k": "v"}
+    [2, 3]
+    """
+    def __init__(self, options, indent):
+        # type: (int, Optional[str]) -> None
+        """
+        Args:
+          # These can all be packed into the same byte.  ASDL needs bit_set
+          # support I think?
+          options:
+            j_prefix.WhenJ8  # default,  
+            j_prefix.Always  # when do we need this?
+
+            u_style.LiteralUtf8         # raw or \\x
+            u_style.UEscape      # \\u{} or \\x
+            u_style.XEscapeOnly  # always \\x escape, NO DECODING
+            u_style.JsonEscape   # \\u1234 only - Implement LAST
+
+            dialect.J8  # default
+            dialect.Json
+
+            pretty.UnquotedKeys - ASDL uses this?
+
+          indent: if None, then we print everything on one line
+        """
+        self.options = options
+
         # can be 2 spaces '  ', 4 spaces '    ', tab '\t',  etc. ?
         self.indent = indent
-        self.max_width = max_width
-
-        # TODO: 
-        # - float format, like %.3f ?
-        # - Look at what options yajl has
 
         # To detect cycles: by printing or by an error
         self.unique_objs = mylib.UniqueObjects()
 
     def Print(self, val, buf):
         # type: (value_t, mylib.BufWriter) -> None
-        """
-        Args:
-            flags: see above
-            max_width: Use ASDL algorithm for pretty printing
-            indent: '  ' or '   ' or '\t', etc.?
-        """
+
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Null):

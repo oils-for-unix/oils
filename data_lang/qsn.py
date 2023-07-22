@@ -593,16 +593,3 @@ if mylib.PYTHON:  # So we don't translate it
                 raise RuntimeError('Missing closing quote')
 
             return ''.join(parts)
-
-
-#
-# QTT -- A Safe, Unix-y Interchange Format For Tables
-
-
-def maybe_qtt_encode(s, bit8_display):
-    # type: (str, int) -> str
-    """TSV2 needs different quoting rules?
-
-    Numbers like 0.3 and 0.3e1 would be ambiguous otherwise
-    """
-    raise NotImplementedError()

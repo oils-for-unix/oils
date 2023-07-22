@@ -1138,8 +1138,8 @@ class CommandEvaluator(object):
                         # typed
                         if 0:
                             buf = mylib.BufWriter()
-                            self.printer = j8.Printer(0, None)
-                            self.printer.Print(val, buf)
+                            prettyp = j8.PrettyPrinter()
+                            prettyp.Print(val, buf)
                             print(buf.getvalue())
 
                         # NOTE: It would be nice to unify this with 'repr', but there isn't a

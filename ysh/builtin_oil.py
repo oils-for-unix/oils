@@ -176,44 +176,6 @@ class Append(_Builtin):
         return 0
 
 
-class ArgParse(_Builtin):
-    """Getopts replacement.
-
-    argparse :grep_opts {   flag -v --invert Bool "Invert"   flag -A
-    --after Int "Lines after"   flag -t --timeout Float "Seconds to
-    wait" { default = 1.0 }
-
-      # / pattern file* /   arg 1 pattern "Regular expression"   arg 2-
-    file "Regular expression" } var opt = grep_opts.Parse(ARGV)
-    opt.invert opt.after opt.pattern opt.file
-    """
-
-    def __init__(self, mem, errfmt):
-        # type: (state.Mem, ErrorFormatter) -> None
-        _Builtin.__init__(self, mem, errfmt)
-
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-        return 0
-
-
-class Describe(_Builtin):
-    """Builtin test frameowrk.
-
-    TODO: Can this be user code?
-
-    It would test out Oil blocks well.
-    """
-
-    def __init__(self, mem, errfmt):
-        # type: (state.Mem, ErrorFormatter) -> None
-        _Builtin.__init__(self, mem, errfmt)
-
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-        return 0
-
-
 class Write(_Builtin):
     """
   write -- @strs
@@ -269,22 +231,3 @@ class Write(_Builtin):
             self.stdout_.write(arg.end)
 
         return 0
-
-
-class Qtt(_Builtin):
-    """QTT I/O.
-
-    cat foo.qtt | qtt read-rows {   # first reads schema line, and the
-    processes   # process _row } qtt write-row (mydict)
-
-    # Cut down a file and read it into memory as a dict cat foo.qtt |
-    select %(name age) | qtt read :filtered
-
-    # Literal by column # I guess it has to detect the types qtt write
-    ({name: %(foo bar), age: [10, 20]})
-
-    # Literal by row.  Will throw a syntax error. # Good for unit tests
-    and so forth. qtt tabify :x <<< ''' name  age:Int bob   20 carol 30
-    '''
-    """
-    pass

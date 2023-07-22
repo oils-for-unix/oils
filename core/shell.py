@@ -188,8 +188,6 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
     b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
     b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
     b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
-    b[builtin_i.argparse] = builtin_oil.ArgParse(mem, errfmt)
-    b[builtin_i.describe] = builtin_oil.Describe(mem, errfmt)
 
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
