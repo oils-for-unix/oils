@@ -281,6 +281,9 @@ def _encode_bytes_x(s, shell_compat, parts):
 
     For BIT8_X_ESCAPE.
     """
+
+    # TODO: mylib.BufWriter() instead of List[str] produces less GC pressure
+
     for byte in s:
         #log('byte %r', byte)
         # append to buffer

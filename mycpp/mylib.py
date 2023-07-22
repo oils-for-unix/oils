@@ -175,6 +175,87 @@ def log(msg, *args):
     print(msg, file=sys.stderr)
 
 
+class UniqueObjects(object):
+    """A set of objects identified by their address in memory
+
+    Python's id(obj) returns the address of any object.  But we don't simply
+    implement it, because it requires a uint64_t on 64-bit systems, while mycpp
+    only supports 'int'.
+
+    So we have a whole class.
+
+    Should be used for:
+
+    - Cycle detection when pretty printing, as Python's repr() does
+      - See CPython's Objects/object.c PyObject_Repr()
+      /* These methods are used to control infinite recursion in repr, str, print,
+          etc.  Container objects that may recursively contain themselves,
+          e.g. builtin dictionaries and lists, should use Py_ReprEnter() and
+          Py_ReprLeave() to avoid infinite recursion.
+          */
+      - e.g. dictobject.c dict_repr() calls Py_ReprEnter() to print {...}
+      - In Python 2.7 a GLOBAL VAR is used
+
+      - It also checks for STACK OVERFLOW
+
+    - Packle serialization
+    """
+    def __init__(self):
+        # 64-bit id() -> small integer ID
+        self.addresses = {}  # type: Dict[int, int]
+
+    def Contains(self, obj):
+        # type: (Any) -> bool
+        """ Convenience? """
+        return self.Get(obj) != -1
+
+    def MaybeAdd(self, obj):
+        # type: (Any) -> None
+        """ Convenience? """
+
+    # def AddNewObject(self, obj):
+    def Add(self, obj):
+        # type: (Any) -> None
+        """
+        Assert it isn't already there, and assign a new ID!
+
+        # Lib/pickle does:
+
+            self.memo[id(obj)] = memo_len, obj
+
+        I guess that's the object ID and a void*
+
+        Then it does:
+
+            x = self.memo.get(id(obj))
+
+        and
+
+            # If the object is already in the memo, this means it is
+            # recursive. In this case, throw away everything we put on the
+            # stack, and fetch the object back from the memo.
+            if id(obj) in self.memo:
+                write(POP + self.get(self.memo[id(obj)][0]))
+
+        BUT It only uses the numeric ID!
+        """
+        addr = id(obj)
+        assert addr not in self.addresses
+        self.addresses[addr] = len(self.addresses)
+
+    def Get(self, obj):
+        # type: (Any) -> int
+        """
+        Returns unique ID assigned
+
+        Returns -1 if it doesn't exist?
+        """
+        addr = id(obj)
+        return self.addresses.get(addr, -1)
+
+    # Note: self.memo.clear() doesn't appear to be used
+
+
 if 0:
     # Prototype of Unix file descriptor I/O, compared with FILE* libc I/O.
     # Doesn't seem like we need this now.

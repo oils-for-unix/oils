@@ -248,6 +248,34 @@ inline Writer* Stderr() {
   return gStderr;
 }
 
+class UniqueObjects {
+  // Can't be expressed in typed Python because we don't have uint64_t for
+  // addresses
+
+ public:
+  UniqueObjects() {
+  }
+  void Add(void* obj) {
+  }
+  int Get(void* obj) {
+    return -1;
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(UniqueObjects));
+  }
+
+  // SPECIAL CASE? We should never have a unique reference to an object?  So
+  // don't bother tracing
+  static constexpr uint32_t field_mask() {
+    return kZeroMask;
+  }
+
+ private:
+  // address -> small integer ID
+  Dict<void*, int> addresses_;
+};
+
 }  // namespace mylib
 
 #endif  // MYCPP_GC_MYLIB_H

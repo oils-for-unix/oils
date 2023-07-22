@@ -27,6 +27,30 @@ class MylibTest(unittest.TestCase):
         stderr.write('stderr ')
         stderr.writeln('stderr ')
 
+    def testUniqueObjects(self):
+        u = mylib.UniqueObjects()
+
+        foo = 'foo'
+        bar = 'bar'
+        d = {}
+
+        u.Add(foo)
+        u.Add(bar)
+        u.Add(d)
+
+        self.assertEqual(0, u.Get(foo))
+        self.assertEqual(1, u.Get(bar))
+        self.assertEqual(2, u.Get(d))
+        self.assertEqual(-1, u.Get('zzz'))
+
+        # Can't add it twice, caller is repsonsible for checking
+        try:
+            u.Add(foo)
+        except AssertionError:
+            pass
+        else:
+            self.fail('Expected assertion')
+
 
 if __name__ == '__main__':
     unittest.main()

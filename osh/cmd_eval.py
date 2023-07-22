@@ -77,6 +77,7 @@ from core import state
 from core import ui
 from core import util
 from core import vm
+from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -1134,6 +1135,13 @@ class CommandEvaluator(object):
                     obj = cpython._ValueToPyObj(val)
 
                     if node.keyword.id == Id.Lit_Equals:
+                        # typed
+                        if 0:
+                            buf = mylib.BufWriter()
+                            self.printer = j8.Printer(0, None)
+                            self.printer.Print(val, buf)
+                            print(buf.getvalue())
+
                         # NOTE: It would be nice to unify this with 'repr', but there isn't a
                         # good way to do it with the value/PyObject split.
                         class_name = obj.__class__.__name__
@@ -1144,6 +1152,7 @@ class CommandEvaluator(object):
                         # keywords don't flush.  So we have to beware of keywords that
                         # print.  TODO: Or avoid Python's print() altogether.
                         sys.stdout.flush()
+
 
                 # TODO: What about exceptions?  They just throw?
                 status = 0

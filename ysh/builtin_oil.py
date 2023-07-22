@@ -23,6 +23,7 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, Stdout
 from data_lang import qsn
+from data_lang import j8
 
 from typing import TYPE_CHECKING, cast, Dict, List
 if TYPE_CHECKING:
@@ -226,6 +227,7 @@ class Write(_Builtin):
         # type: (state.Mem, ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = Stdout()
+        self.printer = j8.Printer(0, indent=None)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -248,7 +250,12 @@ class Write(_Builtin):
                 self.stdout_.write(arg.sep)
             s = arg_r.Peek()
 
-            if arg.qsn:
+            if arg.j8:
+                buf = mylib.BufWriter()
+                self.printer.Print(value.Str(s), buf)
+                s = buf.getvalue()
+
+            elif arg.qsn:
                 s = qsn.maybe_encode(s, bit8_display)
 
             self.stdout_.write(s)

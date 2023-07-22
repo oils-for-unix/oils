@@ -389,6 +389,13 @@ WRITE_SPEC.LongFlag('--end',
                     default='\n',
                     help='Characters to terminate the whole invocation')
 WRITE_SPEC.ShortFlag('-n', args.Bool, help="Omit newline (synonym for -end '')")
+WRITE_SPEC.LongFlag('--j8',
+                    args.Bool,
+                    default=False,
+                    help='Write elements with J8 notation, one per line')
+# TODO: Do we need a --maybe-j8 format for strings?  Maybe --q8?
+
+# TODO: remove this
 WRITE_SPEC.LongFlag('--qsn',
                     args.Bool,
                     default=False,
