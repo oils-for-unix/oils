@@ -399,7 +399,8 @@ def _encode_runes(s, bit8_display, shell_compat, parts):
             elif byte == '\t':
                 out = '\\t'
             elif byte == '\0':
-                out = '\\x00' if shell_compat else '\\0'
+                out = '\\x00'
+                #out = '\\x00' if shell_compat else '\\0'
             elif IsUnprintableLow(byte):
                 # Even in utf-8 mode, don't print control chars literally!
                 # Also, somehow I think it's more readable to display \x01 than \u{1}.
