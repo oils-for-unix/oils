@@ -1129,9 +1129,9 @@ class CommandEvaluator(object):
             elif case(command_e.Expr):
                 node = cast(command.Expr, UP_node)
 
+                self.mem.SetLocationToken(node.keyword)
+                val = self.expr_ev.EvalExpr(node.e, loc.Missing)
                 if mylib.PYTHON:
-                    self.mem.SetLocationToken(node.keyword)
-                    val = self.expr_ev.EvalExpr(node.e, loc.Missing)
                     obj = cpython._ValueToPyObj(val)
 
                     if node.keyword.id == Id.Lit_Equals:

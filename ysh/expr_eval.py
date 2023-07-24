@@ -931,8 +931,8 @@ class OilEvaluator(object):
 
         with tagswitch(func) as case:
             if case(value_e.Func):
+                func = cast(value.Func, UP_func)
                 if mylib.PYTHON:
-                    func = cast(value.Func, UP_func)
                     f = func.callable
                     if isinstance(f, vm._Callable):  # typed
                         pos_args, named_args = self.EvalArgList2(node.args)
@@ -954,8 +954,15 @@ class OilEvaluator(object):
 
                         return cpython._PyObjToValue(ret)
                 else:
-                    # isinstance does not work in mycpp
-                    raise NotImplementedError()
+                    # C++ cast to work around ASDL 'any'
+                    f = cast(vm._Callable, func.callable)
+                    pos_args, named_args = self.EvalArgList2(node.args)
+                    #log('pos_args %s', pos_args)
+
+                    ret = f.Call(pos_args, named_args)
+
+                    #log('ret %s', ret)
+                    return ret
 
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)
