@@ -690,8 +690,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
     builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
-    if mylib.PYTHON:
-        builtins[builtin_i.json] = builtin_json.Json(mem, expr_ev, errfmt)
+    builtins[builtin_i.json] = builtin_json.Json(mem, expr_ev, errfmt)
 
     builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer,
                                                  errfmt)

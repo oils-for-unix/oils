@@ -112,15 +112,16 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            try:
-                obj = yajl.loads(contents)
-            except ValueError as e:
-                self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
-                return 1
+            if mylib.PYTHON:
+                try:
+                    obj = yajl.loads(contents)
+                except ValueError as e:
+                    self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
+                    return 1
 
-            # TODO: use token directly
-            val = cpython._PyObjToValue(obj)
-            self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
+                # TODO: use token directly
+                val = cpython._PyObjToValue(obj)
+                self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

@@ -95,7 +95,6 @@ pylib/path_stat.py
 library/func_cpython.py
 library/func_eggex.py
 
-ysh/builtin_json.py
 ysh/cpython.py
 #ysh/expr_eval.py
 

@@ -6,3 +6,6 @@ d879e6cdcfa96ccf5ca34bc52043069e8a1f908f
 
 # [asdl, core, ysh] Autoformat with yapf
 8139ff728b0913766974155ec4458f754ee3b42d
+
+# [reformat] data_lang/ dir
+217900e83c1b14840befcd473c3e0b5ecf3ef81f
