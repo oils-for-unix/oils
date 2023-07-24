@@ -301,7 +301,9 @@ def _encode_bytes_x(s, shell_compat, parts):
         elif byte == '\t':
             part = '\\t'
         elif byte == '\0':
-            part = '\\x00' if shell_compat else '\\0'
+            # never generate \0 - JSON and J8 don't have it
+            part = '\\x00'
+            #part = '\\x00' if shell_compat else '\\0'
 
         elif IsUnprintableLow(byte):
             # BIT8_UTF8 is used for shell, so print it with \x.
