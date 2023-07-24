@@ -160,14 +160,14 @@ if mylib.PYTHON:
         return r'\u{%x}' % rune
 
 
-def _encode(s, bit8_display, shell_compat, parts):
-    # type: (str, int, bool, List[str]) -> bool
+def _encode(s, bit8_display, parts):
+    # type: (str, int, List[str]) -> bool
     """Helper for maybe_shell_encode(), maybe_encode(), encode()"""
     if bit8_display == BIT8_X_ESCAPE:
-        _encode_bytes_x(s, shell_compat, parts)  # shell_compat
+        _encode_bytes_x(s, parts)
         return True
     else:
-        return _encode_runes(s, bit8_display, shell_compat, parts)
+        return _encode_runes(s, bit8_display, parts)
 
 
 def maybe_shell_encode(s, flags=0):
@@ -183,14 +183,18 @@ def maybe_shell_encode(s, flags=0):
     """
     # Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
 
-    # QSN constructs that shell doesn't understand:
-    #   \0 is ambiguous; needs to be \x00 (not \000)    TODO: Fix this
+    # Shell vs. J8
+    #   NUL byte: for shell, emit \x00 instead of \0, because if you emit '1'
+    #   after, it will be an octal escape \01.  Likewise, emitting 01 or 001
+    #   will cause \001 and \0001, both of which are octal escapes.  Neither
+    #   QSN or J8 has octal escapes like \0ddd.
     #
-    #   \u{3bc} is not understood.  This means taht bit8_display should be
-    #   BIT8_UTF8, not BIT8_U_ESCAPE.  In that mode, low bytes are \x01 instead
-    #   of \u{1}, and high bytes are *literal* UTF-8.
+    #   QSN understands \u{3bc}, but shell doesn't.  This means that
+    #   bit8_display should be BIT8_UTF8, not BIT8_U_ESCAPE.  In that mode, low
+    #   bytes are \x01 instead of \u{1}, and high bytes are *literal* UTF-8.
     #
-    # In shell, you can decode QSN with something like:
+    # If it weren't for \u{3bc}, you could decode J8 in shell with something
+    # like:
     #
     # echo -e "${q:1: -1}" | read -d ''
     # echo -e "${q:2: -1}" | read -d ''  # if it starts with $''
@@ -221,7 +225,7 @@ def maybe_shell_encode(s, flags=0):
     # should we also figure out the length?
     parts = []  # type: List[str]
 
-    valid_utf8 = _encode(s, bit8_display, True, parts)  # shell_compat
+    valid_utf8 = _encode(s, bit8_display, parts)
     if not valid_utf8 or quote == 2:
         prefix = "$'"  # $'' for \xff \u{3bc}, etc.
     else:
@@ -256,7 +260,7 @@ def maybe_encode(s, bit8_display=BIT8_UTF8):
 
     parts = []  # type: List[str]
     parts.append("'")
-    _encode(s, bit8_display, False, parts)
+    _encode(s, bit8_display, parts)
     parts.append("'")
     return ''.join(parts)
 
@@ -265,7 +269,7 @@ def encode(s, bit8_display=BIT8_UTF8):
     # type: (str, int) -> str
     parts = []  # type: List[str]
     parts.append("'")
-    _encode(s, bit8_display, False, parts)
+    _encode(s, bit8_display, parts)
     parts.append("'")
     return ''.join(parts)
 
@@ -275,8 +279,8 @@ def encode(s, bit8_display=BIT8_UTF8):
 #
 
 
-def _encode_bytes_x(s, shell_compat, parts):
-    # type: (str, bool, List[str]) -> None
+def _encode_bytes_x(s, parts):
+    # type: (str, List[str]) -> None
     """Simple encoder that doesn't do utf-8 decoding.
 
     For BIT8_X_ESCAPE.
@@ -298,7 +302,8 @@ def _encode_bytes_x(s, shell_compat, parts):
         elif byte == '\t':
             part = '\\t'
         elif byte == '\0':
-            part = '\\x00' if shell_compat else '\\0'
+            # never generate \0 - JSON and J8 don't have it
+            part = '\\x00'
 
         elif IsUnprintableLow(byte):
             # BIT8_UTF8 is used for shell, so print it with \x.
@@ -338,8 +343,8 @@ B4_3 = 6  # 3 bytes pending
 # Registers: r1, r2, r3
 
 
-def _encode_runes(s, bit8_display, shell_compat, parts):
-    # type: (str, int, bool, List[str]) -> bool
+def _encode_runes(s, bit8_display, parts):
+    # type: (str, int, List[str]) -> bool
     """Decode UTF-8 to Runes and Encode QSN."""
 
     valid_utf8 = True
@@ -394,7 +399,8 @@ def _encode_runes(s, bit8_display, shell_compat, parts):
             elif byte == '\t':
                 out = '\\t'
             elif byte == '\0':
-                out = '\\x00' if shell_compat else '\\0'
+                # Don't output \0 because bytes after can change its meaning
+                out = '\\x00'
             elif IsUnprintableLow(byte):
                 # Even in utf-8 mode, don't print control chars literally!
                 # Also, somehow I think it's more readable to display \x01 than \u{1}.
