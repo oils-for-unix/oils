@@ -53,8 +53,6 @@ typing.py
 
 library/func_cpython.py
 
-ysh/builtin_json.py
-
 # OrderedDict is polymorphic
 pylib/collections_.py
 

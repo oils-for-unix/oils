@@ -8,9 +8,10 @@ func identity(x) {
   return (x)
 }
 
-= identity("ysh")
+json write (identity("ysh"))
+
 ## STDOUT:
-(Str)   'ysh'
+"ysh"
 ## END
 
 #### Too many args
@@ -139,9 +140,9 @@ func fib(n) {
   return (fib(n - 1) + fib(n - 2))
 }
 
-= fib(10)
+json write (fib(10))
 ## STDOUT:
-(Int)   55
+55
 ## END
 
 #### Recursive functions with LRU Cache
@@ -183,8 +184,8 @@ func fib(n) {
   return (result)
 }
 
-= fib(10)
-= cache
+json write (fib(10))
+json write --pretty=F (cache)
 ## STDOUT:
 hit: 1
 hit: 2
@@ -194,6 +195,6 @@ hit: 5
 hit: 6
 hit: 7
 hit: 8
-(Int)   55
-(List)   [[7, 13], [9, 34], [8, 21], [10, 55]]
+55
+[[7,13],[9,34],[8,21],[10,55]]
 ## END

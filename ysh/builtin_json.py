@@ -8,11 +8,13 @@ from core.error import e_usage
 from core import pyos
 from core import state
 from core import vm
+from data_lang import j8
 from frontend import flag_spec
 from frontend import args
 from frontend import location
 from frontend import match
 from frontend import typed_args
+from mycpp import mylib
 from osh import builtin_misc
 from ysh import cpython
 
@@ -40,6 +42,8 @@ class Json(vm._Builtin):
         self.mem = mem
         self.expr_ev = expr_ev
         self.errfmt = errfmt
+        # TODO: restrict based on 'json' or 'j8'
+        self.printer = j8.Printer(0, None)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -60,20 +64,28 @@ class Json(vm._Builtin):
 
             expr = typed_args.RequiredExpr(cmd_val.typed_args)
             val = self.expr_ev.EvalExpr(expr, loc.Missing)
-            obj = cpython._ValueToPyObj(val)
 
-            if arg_jw.pretty:
-                indent = arg_jw.indent
-                extra_newline = False
-            else:
-                # How yajl works: if indent is -1, then everything is on one line.
-                indent = -1
-                extra_newline = True
-
-            j = yajl.dumps(obj, indent=indent)
-            sys.stdout.write(j)
-            if extra_newline:
+            if 0:
+                buf = mylib.BufWriter()
+                self.printer.Print(val, buf)
+                sys.stdout.write(buf.getvalue())
                 sys.stdout.write('\n')
+            else:
+
+                obj = cpython._ValueToPyObj(val)
+
+                if arg_jw.pretty:
+                    indent = arg_jw.indent
+                    extra_newline = False
+                else:
+                    # How yajl works: if indent is -1, then everything is on one line.
+                    indent = -1
+                    extra_newline = True
+
+                j = yajl.dumps(obj, indent=indent)
+                sys.stdout.write(j)
+                if extra_newline:
+                    sys.stdout.write('\n')
 
         elif action == 'read':
             attrs = flag_spec.Parse('json_read', arg_r)
