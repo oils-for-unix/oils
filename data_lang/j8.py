@@ -191,9 +191,16 @@ class Printer(object):
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
 
-                # Use QSN for now
-                out = qsn.encode(val.s)
-                buf.write(out)
+                buf.write('"')
+                valid_utf8 = qsn.EncodeRunes(val.s, qsn.BIT8_UTF8, buf)
+
+                # TODO: check errors
+                # Is it possible to have invalid UTF-8 but valid JSON?
+                # Surrogate pairs?
+                if not valid_utf8:
+                    pass
+
+                buf.write('"')
 
             elif case(value_e.List):
                 val = cast(value.List, UP_val)

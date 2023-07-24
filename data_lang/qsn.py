@@ -160,14 +160,14 @@ if mylib.PYTHON:
         return r'\u{%x}' % rune
 
 
-def _encode(s, bit8_display, parts):
-    # type: (str, int, List[str]) -> bool
+def _encode(s, bit8_display, buf):
+    # type: (str, int, mylib.BufWriter) -> bool
     """Helper for maybe_shell_encode(), maybe_encode(), encode()"""
     if bit8_display == BIT8_X_ESCAPE:
-        _encode_bytes_x(s, parts)
+        _encode_bytes_x(s, buf)
         return True
     else:
-        return _encode_runes(s, bit8_display, parts)
+        return EncodeRunes(s, bit8_display, buf)
 
 
 def maybe_shell_encode(s, flags=0):
@@ -225,7 +225,10 @@ def maybe_shell_encode(s, flags=0):
     # should we also figure out the length?
     parts = []  # type: List[str]
 
-    valid_utf8 = _encode(s, bit8_display, parts)
+    buf = mylib.BufWriter()
+    valid_utf8 = _encode(s, bit8_display, buf)
+    parts.append(buf.getvalue())
+
     if not valid_utf8 or quote == 2:
         prefix = "$'"  # $'' for \xff \u{3bc}, etc.
     else:
@@ -260,7 +263,9 @@ def maybe_encode(s, bit8_display=BIT8_UTF8):
 
     parts = []  # type: List[str]
     parts.append("'")
-    _encode(s, bit8_display, parts)
+    buf = mylib.BufWriter()
+    _encode(s, bit8_display, buf)
+    parts.append(buf.getvalue())
     parts.append("'")
     return ''.join(parts)
 
@@ -269,7 +274,11 @@ def encode(s, bit8_display=BIT8_UTF8):
     # type: (str, int) -> str
     parts = []  # type: List[str]
     parts.append("'")
-    _encode(s, bit8_display, parts)
+
+    buf = mylib.BufWriter()
+    _encode(s, bit8_display, buf)
+    parts.append(buf.getvalue())
+
     parts.append("'")
     return ''.join(parts)
 
@@ -279,8 +288,8 @@ def encode(s, bit8_display=BIT8_UTF8):
 #
 
 
-def _encode_bytes_x(s, parts):
-    # type: (str, List[str]) -> None
+def _encode_bytes_x(s, buf):
+    # type: (str, mylib.BufWriter) -> None
     """Simple encoder that doesn't do utf-8 decoding.
 
     For BIT8_X_ESCAPE.
@@ -314,7 +323,7 @@ def _encode_bytes_x(s, parts):
         else:  # a literal  character
             part = byte
 
-        parts.append(part)
+        buf.write(part)
 
 
 #
@@ -343,10 +352,16 @@ B4_3 = 6  # 3 bytes pending
 # Registers: r1, r2, r3
 
 
-def _encode_runes(s, bit8_display, parts):
-    # type: (str, int, List[str]) -> bool
-    """Decode UTF-8 to Runes and Encode QSN."""
+def EncodeRunes(s, bit8_display, buf):
+    # type: (str, int, mylib.BufWriter) -> bool
+    """Decode UTF-8 to Runes and Encode QSN.
 
+    Used for J8 as well.
+
+    TODO:
+    - Output \yff instead of \xff
+    - I suppose output legacy \v \b ?  What about \/ ?
+    """
     valid_utf8 = True
     state = Start
 
@@ -378,11 +393,11 @@ def _encode_runes(s, bit8_display, parts):
         if typ != Cont:
             if state >= B2_1:  # at least invalid 1 byte
                 valid_utf8 = False
-                parts.append(XEscape(r1))
+                buf.write(XEscape(r1))
             if state >= B3_2:  # at least 2 invalid bytes
-                parts.append(XEscape(r2))
+                buf.write(XEscape(r2))
             if state >= B4_3:  # 3 invalid bytes
-                parts.append(XEscape(r3))
+                buf.write(XEscape(r3))
 
         if typ == Ascii:
             state = Start
@@ -414,7 +429,7 @@ def _encode_runes(s, bit8_display, parts):
                 out = byte
 
             #log('byte %r out %r', byte, out)
-            parts.append(out)
+            buf.write(out)
 
         elif typ == Begin2:
             state = B2_1
@@ -428,12 +443,12 @@ def _encode_runes(s, bit8_display, parts):
 
         elif typ == Invalid:
             state = Start
-            parts.append(XEscape(byte))
+            buf.write(XEscape(byte))
             valid_utf8 = False
 
         elif typ == Cont:  # No char started, so no continuation bytes
             if state == Start:
-                parts.append(XEscape(byte))
+                buf.write(XEscape(byte))
                 valid_utf8 = False
 
             elif state == B2_1:
@@ -443,7 +458,7 @@ def _encode_runes(s, bit8_display, parts):
                     rune = ord(byte) & 0b00111111  # continuation byte is low
                     rune |= (ord(r1) & 0b00011111) << 6  # high
                     out = UEscape(rune)
-                parts.append(out)
+                buf.write(out)
 
                 state = Start
 
@@ -458,7 +473,7 @@ def _encode_runes(s, bit8_display, parts):
                     rune |= (ord(r2) & 0b00111111) << 6
                     rune |= (ord(r1) & 0b00001111) << 12
                     out = UEscape(rune)
-                parts.append(out)
+                buf.write(out)
 
                 state = Start
 
@@ -477,7 +492,7 @@ def _encode_runes(s, bit8_display, parts):
                     rune |= (ord(r2) & 0b00111111) << 12
                     rune |= (ord(r1) & 0b00000111) << 18
                     out = UEscape(rune)
-                parts.append(out)
+                buf.write(out)
                 state = Start
 
             else:
@@ -489,11 +504,11 @@ def _encode_runes(s, bit8_display, parts):
 
     if state >= B2_1:  # at least invalid 1 byte
         valid_utf8 = False
-        parts.append(XEscape(r1))
+        buf.write(XEscape(r1))
     if state >= B3_2:  # at least 2 invalid bytes
-        parts.append(XEscape(r2))
+        buf.write(XEscape(r2))
     if state >= B4_3:  # 3 invalid bytes
-        parts.append(XEscape(r3))
+        buf.write(XEscape(r3))
 
     return valid_utf8
 
