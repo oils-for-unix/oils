@@ -3,8 +3,12 @@
 #### NUL bytes with echo -e
 case $SH in (dash) exit ;; esac
 
-echo -e '\0'
-## stdout-repr: "\x00\n"
+echo -e '\0-'
+#echo -e '\x00-'
+#echo -e '\000-'
+
+## stdout-repr: "\x00-\n"
+## BUG zsh stdout-repr: "\x00\n"
 ## N-I dash stdout-json: ""
 
 #### NUL bytes in printf format
