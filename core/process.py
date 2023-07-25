@@ -1069,8 +1069,12 @@ class Process(Job):
         # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
-        self.SetBackground()
-        self.job_control.MaybeTakeTerminal()
+
+        self.job_list.last_stopped_pid = self.pid # for fg
+
+        if not self.in_background:
+            self.job_control.MaybeTakeTerminal()
+            self.SetBackground()
 
     def WhenDone(self, pid, status):
         # type: (int, int) -> None
@@ -1095,7 +1099,8 @@ class Process(Job):
                 # around after completion. Fix that then uncomment this line.
                 # self.job_list.RemoveChildProcess(self.pid)
 
-            self.job_control.MaybeTakeTerminal()
+            if not self.in_background:
+                self.job_control.MaybeTakeTerminal()
 
     def RunProcess(self, waiter, why):
         # type: (Waiter, trace_t) -> int
@@ -1349,7 +1354,8 @@ class Pipeline(Job):
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
             self.state = job_state_e.Done
-            self.job_control.MaybeTakeTerminal()
+            if not self.in_background:
+                self.job_control.MaybeTakeTerminal()
 
 
 def _JobStateStr(i):
@@ -1497,21 +1503,6 @@ class JobList(object):
         self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
 
         self.job_id = 1  # Strictly increasing
-
-    def WhenStopped(self, pid):
-        # type: (int) -> None
-
-        # TODO: Look up the PID.
-        # And display it in the table?
-        # What if it's not here?
-        # We need a table of processes state.
-        # Every time we do p.StartProcess() we need to record it, in case we get a
-        # notification that it stopped?  Then we look up what process it was.
-        # And we can find what part of the pipeline it's in.
-
-        self.last_stopped_pid = pid
-        pr = self.ProcessFromPid(pid)
-        pr.SetBackground()
 
     def GetLastStopped(self):
         # type: () -> int
@@ -1788,7 +1779,6 @@ class Waiter(object):
 
             print_stderr('')
             print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
-            self.job_list.WhenStopped(pid)  # show in 'jobs' list, enable 'fg'
             proc.WhenStopped(stop_sig)
 
         else:

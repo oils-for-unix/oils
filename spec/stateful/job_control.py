@@ -266,6 +266,32 @@ def suspend_status(sh):
   expect_prompt(sh)
 
 
+@register(skip_shells=['zsh'])
+def no_spurious_tty_take(sh):
+  'A background job getting stopped (e.g. by SIGTTIN) or exiting should not disrupt foreground processes'
+  expect_prompt(sh)
+
+  sh.sendline('cat &') # stop
+  sh.sendline('sleep 0.1 &') # exit
+  expect_prompt(sh)
+
+  # background cat should have been stopped by SIGTTIN immediately, but we don't
+  # hear about it from wait() until the foreground process has been started because
+  # the shell was blocked in readline when the signal fired.
+  sh.sendline('python2 -c "import sys; print(sys.stdin.readline().strip() + \'bar\')"')
+  time.sleep(0.1)  # seems necessary
+  if 'osh' in sh.shell_label:
+    # Quirk of osh. TODO: supress this print for background jobs?
+    sh.expect('.*Stopped.*')
+
+  # foreground procoess should not have been stopped.
+  sh.sendline('foo')
+  sh.expect('foobar')
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+
 if __name__ == '__main__':
   try:
     sys.exit(harness.main(sys.argv))
