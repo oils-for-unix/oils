@@ -159,17 +159,16 @@ class Printer(object):
         """
         self.options = options
 
-        self.compact = False
-
         # To detect cycles: by printing or by an error
         self.unique_objs = mylib.UniqueObjects()
 
         self.spaces = {0: ''}  # Dic
 
-    def _GetIndent(self, i):
-        if not i in self.spaces:
-            self.spaces[i] = i * ' '
-        return self.spaces[i]
+    def _GetIndent(self, num_spaces):
+        # type: (int) -> str
+        if not num_spaces in self.spaces:
+            self.spaces[num_spaces] = ' ' * num_spaces
+        return self.spaces[num_spaces]
 
     def Print(self, val, buf, indent, level=0):
         # type: (value_t, mylib.BufWriter, int, int) -> None
@@ -179,8 +178,21 @@ class Printer(object):
         """
         #log('indent %r level %d', indent, level)
 
-        bracket_indent = self._GetIndent(level * indent)
-        item_indent = self._GetIndent((level + 1) * indent)
+        # special value that means everything is on one line
+        # It's like
+        #    JSON.stringify(d, null, 0)
+        # except we use -1, not 0.  0 can still have newlines.
+
+        if indent == -1:
+            bracket_indent = ''
+            item_indent = ''
+            maybe_newline = ''
+            maybe_space = ''
+        else:
+            bracket_indent = self._GetIndent(level * indent)
+            item_indent = self._GetIndent((level + 1) * indent)
+            maybe_newline = '\n'
+            maybe_space = ' '  # after colon
 
         UP_val = val
         with tagswitch(val) as case:
@@ -219,71 +231,47 @@ class Printer(object):
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
 
-                if self.compact:
-                    buf.write('[')
-                    for i, item in enumerate(val.items):
-                        if i != 0:
-                            buf.write(', ')
+                buf.write('[')
+                buf.write(maybe_newline)
+                for i, item in enumerate(val.items):
+                    if i != 0:
+                        buf.write(',')
+                        buf.write(maybe_newline)
 
-                        self.Print(item, buf, indent, level+1)
-                    buf.write(']')
-                else:
-                    buf.write('[\n')
-                    for i, item in enumerate(val.items):
-                        if i != 0:
-                            buf.write(',\n')
+                    buf.write(item_indent)
+                    self.Print(item, buf, indent, level+1)
+                buf.write(maybe_newline)
 
-                        buf.write(item_indent)
-                        self.Print(item, buf, indent, level+1)
-                    buf.write('\n')
-
-                    buf.write(bracket_indent)
-                    buf.write(']')
+                buf.write(bracket_indent)
+                buf.write(']')
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
 
-                if self.compact:
-                    buf.write('{')
-                    i = 0
-                    for k, v in iteritems(val.d):
-                        if i != 0:
-                            buf.write(', ')
+                buf.write('{')
+                buf.write(maybe_newline)
+                i = 0
+                for k, v in iteritems(val.d):
+                    if i != 0:
+                        buf.write(',')
+                        buf.write(maybe_newline)
 
-                        buf.write('"')
-                        valid_utf8 = qsn.EncodeRunes(k, qsn.BIT8_UTF8, buf)
-                        # TODO: check errors
-                        if not valid_utf8:
-                            pass
-                        buf.write('": ')
-                        self.Print(v, buf, indent, level+1)
+                    buf.write(item_indent)
+                    buf.write('"')
+                    valid_utf8 = qsn.EncodeRunes(k, qsn.BIT8_UTF8, buf)
+                    # TODO: check errors
+                    if not valid_utf8:
+                        pass
+                    buf.write('":')
+                    buf.write(maybe_space)
 
-                        i += 1
-                    buf.write('}')
+                    self.Print(v, buf, indent, level+1)
 
-                else:
-                    buf.write('{\n')
-                    i = 0
-                    for k, v in iteritems(val.d):
-                        if i != 0:
-                            buf.write(',\n')
+                    i += 1
 
-                        buf.write(item_indent)
-                        buf.write('"')
-                        valid_utf8 = qsn.EncodeRunes(k, qsn.BIT8_UTF8, buf)
-                        # TODO: check errors
-                        if not valid_utf8:
-                            pass
-                        buf.write('": ')
-
-                        self.Print(v, buf, indent, level+1)
-
-                        i += 1
-
-                    buf.write('\n')
-
-                    buf.write(bracket_indent)
-                    buf.write('}')
+                buf.write(maybe_newline)
+                buf.write(bracket_indent)
+                buf.write('}')
 
             else:
                 # Print statically typed () depending on flags

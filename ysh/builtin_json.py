@@ -65,22 +65,22 @@ class Json(vm._Builtin):
             expr = typed_args.RequiredExpr(cmd_val.typed_args)
             val = self.expr_ev.EvalExpr(expr, loc.Missing)
 
+            if arg_jw.pretty:
+                indent = arg_jw.indent
+                extra_newline = False
+            else:
+                # How yajl works: if indent is -1, then everything is on one line.
+                indent = -1
+                extra_newline = True
+
             if 0:
                 buf = mylib.BufWriter()
-                self.printer.Print(val, buf, indent=arg_jw.indent)
+                self.printer.Print(val, buf, indent=indent)
                 sys.stdout.write(buf.getvalue())
                 sys.stdout.write('\n')
             else:
 
                 obj = cpython._ValueToPyObj(val)
-
-                if arg_jw.pretty:
-                    indent = arg_jw.indent
-                    extra_newline = False
-                else:
-                    # How yajl works: if indent is -1, then everything is on one line.
-                    indent = -1
-                    extra_newline = True
 
                 j = yajl.dumps(obj, indent=indent)
                 sys.stdout.write(j)
