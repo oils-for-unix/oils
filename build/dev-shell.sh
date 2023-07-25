@@ -54,8 +54,15 @@ if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
 fi
 
-R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
-export R_LIBS_USER=$R_LIBS_WEDGE
+if test -d ~/R; then
+  # 2023-07: Hack to keep using old versions on lenny.local
+  # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
+  # https://cran.r-project.org/web/packages/dplyr/index.html
+  export R_LIBS_USER=~/R
+else
+  R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
+  export R_LIBS_USER=$R_LIBS_WEDGE
+fi
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
 export PYTHONPATH='.'
