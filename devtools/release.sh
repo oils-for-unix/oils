@@ -18,7 +18,7 @@
 #
 # Run on each machine:
 #   $0 auto-machine1
-#   $0 auto-machine2
+#   $0 auto-machine2 ($0 dep-benchmarks first)
 #
 # In between:
 #   [switch benchmarks-data repo] commit src/oil-for-unix-* and push to flanders.
@@ -351,7 +351,7 @@ _install() {
   test/spec-bin.sh install-shells-with-apt
 
   # A subset of build/py.sh ubuntu-deps.  (Do we need build-essential?)
-  sudo apt install python-dev
+  #sudo apt install python-dev
 }
 
 _build-oils-benchmark-data() {
@@ -733,6 +733,10 @@ dep-smoosh() {
 }
 
 dep-benchmarks() {
+  ### Before auto-machine2
+
+  # 2023-07: Also need deps/from-tar.sh {configure,build}-cpython
+
   benchmarks/osh-runtime.sh download
   benchmarks/osh-runtime.sh extract
 

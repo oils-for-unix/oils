@@ -10,7 +10,7 @@ readonly __BENCHMARKS_COMMON_SH=1
 #readonly MACHINE1=flanders
 #readonly MACHINE2=lenny
 
-readonly MACHINE1=broome
+readonly MACHINE1=hoover
 readonly MACHINE2=lenny
 
 OIL_VERSION=$(head -n 1 oil-version.txt)

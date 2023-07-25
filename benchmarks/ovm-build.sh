@@ -64,7 +64,7 @@ EOF
 download() {
   mkdir -p $TAR_DIR
   tarballs | xargs -n 1 -I {} --verbose -- \
-    wget --directory $TAR_DIR 'https://www.oilshell.org/blob/ovm-build/{}'
+    wget --no-clobber --directory $TAR_DIR 'https://www.oilshell.org/blob/ovm-build/{}'
 }
 
 # Done MANUALLY.
