@@ -450,7 +450,7 @@ def main(argv):
                 print('\t%r  ->  %r' % (pat, token_id))
                 if is_regex:
                     #print re_tree
-                    out_pat = TranslateRegex(pat)
+                    _ = TranslateRegex(pat)
                     #print out_pat
 
             print()

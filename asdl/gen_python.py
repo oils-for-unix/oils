@@ -66,7 +66,6 @@ def _DefaultValue(typ, mypy_type):
         type_name = typ.type_name
 
         if type_name == 'Optional':
-            child_typ = typ.children[0]
             return "cast('%s', None)" % mypy_type
 
         if type_name == 'List':

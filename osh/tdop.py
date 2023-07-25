@@ -29,7 +29,6 @@ def IsIndexable(node):
 
     We also allow $a[i] and foo$x[i] (formerly parse_dynamic_arith)
     """
-    tag = node.tag()
     with tagswitch(node) as case:
         if case(arith_expr_e.VarSub, arith_expr_e.Word):
             return True

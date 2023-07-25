@@ -103,8 +103,6 @@ def _CharClassTermToEre(term, parts, special_char_flags):
     """special_char_flags: list of single int that is mutated."""
 
     UP_term = term
-    tag = term.tag()
-
     with tagswitch(term) as case:
         if case(char_class_term_e.Range):
             term = cast(char_class_term.Range, UP_term)

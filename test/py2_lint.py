@@ -52,7 +52,17 @@ class OilsReporter(reporter.Reporter):
         @param: A L{pyflakes.messages.Message}.
         """
         type_name = type(message).__name__
-        #print(type_name)
+
+        # Suppress some errors for now to reducenoise
+        if type_name == 'UnusedVariable':
+            if message.filename.endswith('_test.py'):
+                return
+
+            var_name = message.message_args[0]
+            if var_name == 'e':
+                return
+            if var_name.startswith('unused'):
+                return
 
         if type_name in FATAL_CLASS_NAMES:
             self.num_fatal_errors += 1

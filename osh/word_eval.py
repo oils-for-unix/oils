@@ -30,7 +30,6 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
-    value_str,
     part_value,
     part_value_e,
     part_value_t,
@@ -1890,7 +1889,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
             if tag == word_part_e.BashAssocLiteral:
                 part0 = cast(word_part.BashAssocLiteral, UP_part0)
                 d = NewDict()  # type: Dict[str, str]
-                n = len(part0.pairs)
                 for pair in part0.pairs:
                     k = self.EvalWordToString(pair.key)
                     v = self.EvalWordToString(pair.value)
@@ -2084,7 +2082,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
 
-        n = 0
         for i, w in enumerate(words):
             # No globbing in the first arg for command.Simple.
             if i == 0 and allow_assign:

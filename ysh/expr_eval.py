@@ -531,9 +531,6 @@ class OilEvaluator(object):
 
     def _ArithLogical(self, left, right, op_id):
         # type: (value_t, value_t, Id_t) -> value_t
-        UP_left = left
-        UP_right = right
-
         if op_id == Id.Expr_And:
             if val_ops.ToBool(left):
                 return right

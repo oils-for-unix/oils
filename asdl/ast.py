@@ -82,7 +82,6 @@ class NamedType(AST):
 
     def Print(self, f, indent):
         """Printed on one line."""
-        ind = indent * '  '
         f.write('NamedType %s' % (self.name))  # printed after field
         f.write(' (%r)' % self.resolved)
 
@@ -115,7 +114,6 @@ class ParameterizedType(AST):
 
     def Print(self, f, indent):
         """Printed on one line."""
-        ind = indent * '  '
         f.write('%s' % (self.type_name))  # printed after field
         if self.children:
             f.write(' [ ')

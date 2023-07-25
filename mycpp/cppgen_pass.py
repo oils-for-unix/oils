@@ -594,7 +594,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write(o.name)
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
-        t = self.types[o]
         if o.expr:
             is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
             is_module = isinstance(
@@ -2102,7 +2101,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.virtual.OnMethod(self.current_class_name, o.name)
             return
 
-        class_name = self.current_class_name
         func_name = o.name
 
         virtual = ''

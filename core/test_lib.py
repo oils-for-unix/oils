@@ -175,7 +175,6 @@ def InitCommandEvaluator(parse_ctx=None,
     opt_stacks = [None] * option_i.ARRAY_SIZE
     if parse_ctx:
         arena = parse_ctx.arena
-        parse_opts = parse_ctx.parse_opts
     else:
         parse_ctx = InitParseContext()
 

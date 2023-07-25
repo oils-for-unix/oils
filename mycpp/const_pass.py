@@ -39,7 +39,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent = 0
 
     def out(self, msg, *args):
-        ind_str = self.indent * '  '
         if args:
             msg = msg % args
         self.const_code.append(msg)

@@ -438,7 +438,6 @@ class NewVar(vm._AssignBuiltin):
         if arg.n == '-':
             flags |= state.SetNameref
 
-        flags_to_clear = 0
         if arg.x == '+':
             flags |= state.ClearExport
         if arg.r == '+':

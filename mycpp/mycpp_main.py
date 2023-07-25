@@ -194,7 +194,7 @@ def main(argv):
 
     # no-op
     for name in result.graph:
-        state = result.graph[name]
+        _ = result.graph[name]
 
     # GLOBAL Constant pass over all modules.  We want to collect duplicate
     # strings together.  And have globally unique IDs str0, str1, ... strN.
@@ -205,7 +205,7 @@ def main(argv):
     to_compile = list(ModulesToCompile(result, mod_names))
 
     # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
-    names = set(name for name, _ in to_compile)
+    #names = set(name for name, _ in to_compile)
 
     filtered = []
     seen = set()

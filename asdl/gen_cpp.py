@@ -415,8 +415,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 unmanaged_fields.append(f)
         all_fields = managed_fields + unmanaged_fields
 
-        line_break = '\n' + ' ' * 22  # wrapping/indent determined manually
-
         def FieldInitJoin(strs):
             # reflow doesn't work well here, so do it manually
             return ',\n        '.join(strs)
@@ -730,9 +728,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         for variant in sum.types:
             if variant.shared_type:
                 continue
-            super_name = '%s_t' % sum_name
             all_fields = variant.fields
-            tag = '%s_e::%s' % (sum_name, variant.name)
             class_name = '%s__%s' % (sum_name, variant.name)
             self._EmitPrettyPrintMethods(class_name, all_fields, variant)
 

@@ -585,7 +585,6 @@ class Cd(vm._Builtin):
 
         dest_dir, arg_loc = arg_r.Peek2()
         if dest_dir is None:
-            val = self.mem.GetValue('HOME')
             try:
                 dest_dir = state.GetString(self.mem, 'HOME')
             except error.Runtime as e:
