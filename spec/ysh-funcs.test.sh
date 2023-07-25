@@ -185,7 +185,9 @@ func fib(n) {
 }
 
 json write (fib(10))
-json write --pretty=F (cache)
+#json write --pretty=F (cache)
+json write (cache)
+
 ## STDOUT:
 hit: 1
 hit: 2
@@ -196,5 +198,22 @@ hit: 6
 hit: 7
 hit: 8
 55
-[[7,13],[9,34],[8,21],[10,55]]
+[
+  [
+    7,
+    13
+  ],
+  [
+    9,
+    34
+  ],
+  [
+    8,
+    21
+  ],
+  [
+    10,
+    55
+  ]
+]
 ## END

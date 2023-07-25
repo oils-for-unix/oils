@@ -189,7 +189,7 @@ class Write(_Builtin):
         # type: (state.Mem, ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = Stdout()
-        self.printer = j8.Printer(0, indent=None)
+        self.printer = j8.Printer(0)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -214,7 +214,7 @@ class Write(_Builtin):
 
             if arg.j8:
                 buf = mylib.BufWriter()
-                self.printer.Print(value.Str(s), buf)
+                self.printer.Print(value.Str(s), buf, -1)
                 s = buf.getvalue()
 
             elif arg.qsn:

@@ -14,7 +14,7 @@ json write (s)
 ## END
 
 #### json write ARRAY
-json write (%(foo.cc foo.h))
+json write (:|foo.cc foo.h|)
 json write --indent 0 (['foo.cc', 'foo.h'])
 ## STDOUT:
 [
@@ -24,6 +24,30 @@ json write --indent 0 (['foo.cc', 'foo.h'])
 [
 "foo.cc",
 "foo.h"
+]
+## END
+
+#### json write Dict
+json write ({k: 'v', k2: [4, 5]})
+
+json write ([{k: 'v', k2: 'v2'}, {}])
+
+## STDOUT:
+{
+  "k": "v",
+  "k2": [
+    4,
+    5
+  ]
+}
+[
+  {
+    "k": "v",
+    "k2": "v2"
+  },
+  {
+
+  }
 ]
 ## END
 

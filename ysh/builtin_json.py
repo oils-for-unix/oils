@@ -43,7 +43,7 @@ class Json(vm._Builtin):
         self.expr_ev = expr_ev
         self.errfmt = errfmt
         # TODO: restrict based on 'json' or 'j8'
-        self.printer = j8.Printer(0, None)
+        self.printer = j8.Printer(0)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -67,7 +67,7 @@ class Json(vm._Builtin):
 
             if 0:
                 buf = mylib.BufWriter()
-                self.printer.Print(val, buf)
+                self.printer.Print(val, buf, indent=arg_jw.indent)
                 sys.stdout.write(buf.getvalue())
                 sys.stdout.write('\n')
             else:

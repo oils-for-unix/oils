@@ -135,8 +135,8 @@ class Printer(object):
     {"k": "v"}
     [2, 3]
     """
-    def __init__(self, options, indent):
-        # type: (int, Optional[str]) -> None
+    def __init__(self, options):
+        # type: (int) -> None
         """
         Args:
           # These can all be packed into the same byte.  ASDL needs bit_set
@@ -159,14 +159,28 @@ class Printer(object):
         """
         self.options = options
 
-        # can be 2 spaces '  ', 4 spaces '    ', tab '\t',  etc. ?
-        self.indent = indent
+        self.compact = False
 
         # To detect cycles: by printing or by an error
         self.unique_objs = mylib.UniqueObjects()
 
-    def Print(self, val, buf):
-        # type: (value_t, mylib.BufWriter) -> None
+        self.spaces = {0: ''}  # Dic
+
+    def _GetIndent(self, i):
+        if not i in self.spaces:
+            self.spaces[i] = i * ' '
+        return self.spaces[i]
+
+    def Print(self, val, buf, indent, level=0):
+        # type: (value_t, mylib.BufWriter, int, int) -> None
+        """
+        Args:
+          indent: number of spaces, or -1 for everything on one line
+        """
+        #log('indent %r level %d', indent, level)
+
+        bracket_indent = self._GetIndent(level * indent)
+        item_indent = self._GetIndent((level + 1) * indent)
 
         UP_val = val
         with tagswitch(val) as case:
@@ -205,32 +219,71 @@ class Printer(object):
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
 
-                # TODO: respect indent
-                buf.write('[')
-                for i, item in enumerate(val.items):
-                    if i != 0:
-                        buf.write(', ')
+                if self.compact:
+                    buf.write('[')
+                    for i, item in enumerate(val.items):
+                        if i != 0:
+                            buf.write(', ')
 
-                    self.Print(item, buf)
-                buf.write(']')
+                        self.Print(item, buf, indent, level+1)
+                    buf.write(']')
+                else:
+                    buf.write('[\n')
+                    for i, item in enumerate(val.items):
+                        if i != 0:
+                            buf.write(',\n')
+
+                        buf.write(item_indent)
+                        self.Print(item, buf, indent, level+1)
+                    buf.write('\n')
+
+                    buf.write(bracket_indent)
+                    buf.write(']')
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
 
-                # TODO: respect indent
-                buf.write('{')
-                i = 0
-                for k, v in iteritems(val.d):
-                    if i != 0:
-                        buf.write(', ')
+                if self.compact:
+                    buf.write('{')
+                    i = 0
+                    for k, v in iteritems(val.d):
+                        if i != 0:
+                            buf.write(', ')
 
-                    buf.write(qsn.encode(k))
-                    buf.write(': ')
-                    self.Print(v, buf)
+                        buf.write('"')
+                        valid_utf8 = qsn.EncodeRunes(k, qsn.BIT8_UTF8, buf)
+                        # TODO: check errors
+                        if not valid_utf8:
+                            pass
+                        buf.write('": ')
+                        self.Print(v, buf, indent, level+1)
 
-                    i += 1
+                        i += 1
+                    buf.write('}')
 
-                buf.write('}')
+                else:
+                    buf.write('{\n')
+                    i = 0
+                    for k, v in iteritems(val.d):
+                        if i != 0:
+                            buf.write(',\n')
+
+                        buf.write(item_indent)
+                        buf.write('"')
+                        valid_utf8 = qsn.EncodeRunes(k, qsn.BIT8_UTF8, buf)
+                        # TODO: check errors
+                        if not valid_utf8:
+                            pass
+                        buf.write('": ')
+
+                        self.Print(v, buf, indent, level+1)
+
+                        i += 1
+
+                    buf.write('\n')
+
+                    buf.write(bracket_indent)
+                    buf.write('}')
 
             else:
                 # Print statically typed () depending on flags
