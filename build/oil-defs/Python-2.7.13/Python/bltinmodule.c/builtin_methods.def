@@ -25,6 +25,5 @@ static PyMethodDef builtin_methods[] = {
   {"setattr", builtin_setattr, METH_VARARGS},
   {"sorted", (PyCFunction)builtin_sorted, METH_VARARGS | METH_KEYWORDS},
   {"sum", builtin_sum, METH_VARARGS},
-  {"zip", builtin_zip, METH_VARARGS},
   {0},
 };
