@@ -367,7 +367,7 @@ def EncodeRunes(s, bit8_display, buf):
       - J8 behaves differently than JSON.  It will use bytes since \\u{1234} is
         for valid runes.
     - Detect overlong encodings -- there are invalid utf-8!
-      - So they should not be represented as \u{123456}; they should be \xff
+      - So they should not be represented as \\u{123456}; they should be \xff
 
     Probably should return a list of UTF-8 decode errors:
 
