@@ -27,6 +27,8 @@ core/state.py
 core/ui.py
 core/util.py
 core/vm.py
+data_lang/j8.py
+data_lang/j8_str.py
 data_lang/qsn.py
 data_lang/qsn_native.py
 frontend/args.py
@@ -84,6 +86,7 @@ pylib/os_path.py
 pylib/path_stat.py
 tea/tea_main.py
 tools/osh2oil.py
+ysh/builtin_json.py
 ysh/builtin_oil.py
 ysh/cpython.py
 ysh/expr_eval.py

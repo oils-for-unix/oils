@@ -1,5 +1,4 @@
-# Test out Oil's JSON support.
-
+## oils_failures_allowed: 1
 ## tags: dev-minimal
 
 #### json write STRING
@@ -146,6 +145,25 @@ echo status=$?
 ## STDOUT:
 ## END
 
+#### json write of data structure with cycle
+var L = [1, 2, 3]
+setvar L[0] = L
+
+# TODO: I guess it should exit with status 1 or 3
+json write (L)
+
+var d = {k: 'v'}
+setvar d.k1 = 'v2'
+
+# This makes it hang?  But not interactively
+#setvar d.k2 = d
+
+= d
+#json write (d)
+
+## STDOUT:
+## END
+
 #### j8 write
 
 # TODO: much better tests
@@ -157,3 +175,4 @@ j8 write ([3, "foo"])
   "foo"
 ]
 ## END
+
