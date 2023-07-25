@@ -37,13 +37,16 @@ class Json(vm._Builtin):
     --indent=2 controls multiline indentation
     """
 
-    def __init__(self, mem, expr_ev, errfmt):
-        # type: (state.Mem, expr_eval.OilEvaluator, ErrorFormatter) -> None
+    def __init__(self, mem, expr_ev, errfmt, is_j8):
+        # type: (state.Mem, expr_eval.OilEvaluator, ErrorFormatter, bool) -> None
         self.mem = mem
         self.expr_ev = expr_ev
         self.errfmt = errfmt
-        # TODO: restrict based on 'json' or 'j8'
-        self.printer = j8.Printer(0)
+        if is_j8:
+            self.printer = j8.Printer(0)
+        else:
+            # TODO: restrict to JSON with some flags
+            self.printer = j8.Printer(0)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -56,7 +59,11 @@ class Json(vm._Builtin):
         arg_r.Next()
 
         if action == 'write':
+            # NOTE slightly different flags
+            # json write --surrogate-ok $'\udc00'
+            # not valid for j8 write
             attrs = flag_spec.Parse('json_write', arg_r)
+
             arg_jw = arg_types.json_write(attrs.attrs)
 
             if not arg_r.AtEnd():

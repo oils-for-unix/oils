@@ -145,3 +145,15 @@ echo status=$?
 ## status: 1
 ## STDOUT:
 ## END
+
+#### j8 write
+
+# TODO: much better tests
+j8 write ([3, "foo"])
+
+## STDOUT:
+[
+  3,
+  "foo"
+]
+## END

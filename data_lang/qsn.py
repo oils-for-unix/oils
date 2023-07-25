@@ -59,9 +59,6 @@ Where does Oil Use QSN?
     - printf %q
     - ${var@Q} (not done yet)
 
-  TODO:
-  - for QTSV:  maybe_tsv_encode()
-
   Note that oil still needs string_ops.ShellQuoteB() for backslash shell
   quoting, e.g. for spaces.  Not technically related to QSN.
 
@@ -369,6 +366,19 @@ def EncodeRunes(s, bit8_display, buf):
       JavaScript.  Gah!
       - J8 behaves differently than JSON.  It will use bytes since \\u{1234} is
         for valid runes.
+    - Detect overlong encodings -- there are invalid utf-8!
+      - So they should not be represented as \u{123456}; they should be \xff
+
+    Probably should return a list of UTF-8 decode errors:
+
+    - Invalid start byte
+    - Invalid continuation byte
+    - Incomplete UTF-8 char
+    - Over-long UTF-8 encoding
+    - Decodes to invalid code point (surrogate)
+      - this changed in 2003; WTF-8 allows it
+
+    See osh/string_ops.py.
     """
     valid_utf8 = True
     state = Start

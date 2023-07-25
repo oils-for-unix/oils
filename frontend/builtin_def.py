@@ -50,7 +50,7 @@ _NORMAL_BUILTINS = [
     # YSH
     #
     'append',
-    'write', 'json', 'pp',
+    'write', 'json', 'j8', 'pp',
     'hay', 'haynode',
     'module', 'use',
 

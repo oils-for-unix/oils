@@ -181,10 +181,11 @@ def CountUtf8Chars(s):
 
 def AdvanceUtf8Chars(s, num_chars, byte_offset):
     # type: (str, int, int) -> int
-    """Advance a certain number of UTF-8 chars, beginning with the given byte
-    offset.  Returns a byte offset.
+    """Starting from byte offset, advance by N UTF-8 runes
 
-    If we got past the end of the string
+    Returns a byte offset.
+
+    Used for shell slicing.
     """
     num_bytes = len(s)
     i = byte_offset  # current byte position

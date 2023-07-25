@@ -193,7 +193,8 @@ def _AddShellOptions(spec):
 
 OSH_SPEC = FlagSpecAndMore('main', typed=True)
 
-OSH_SPEC.ShortFlag('-c', args.String, quit_parsing_flags=True)  # command string
+OSH_SPEC.ShortFlag('-c', args.String,
+                   quit_parsing_flags=True)  # command string
 OSH_SPEC.LongFlag('--help')
 OSH_SPEC.LongFlag('--version')
 
@@ -247,7 +248,8 @@ def _DefineCompletionFlags(spec):
     spec.ShortFlag(
         '-P',
         args.String,
-        help='Prefix is added at the beginning of each possible completion after '
+        help=
+        'Prefix is added at the beginning of each possible completion after '
         'all other options have been applied.')
     spec.ShortFlag('-S',
                    args.String,
@@ -339,8 +341,8 @@ COMPADJUST_SPEC = FlagSpecAndMore('compadjust', typed=True)
 COMPADJUST_SPEC.ShortFlag(
     '-n',
     args.String,
-    help='Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.'
-)
+    help=
+    'Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')
 COMPADJUST_SPEC.ShortFlag('-s',
                           help='Treat --foo=bar and --foo bar the same way.')
 
@@ -388,12 +390,14 @@ WRITE_SPEC.LongFlag('--end',
                     args.String,
                     default='\n',
                     help='Characters to terminate the whole invocation')
-WRITE_SPEC.ShortFlag('-n', args.Bool, help="Omit newline (synonym for -end '')")
+WRITE_SPEC.ShortFlag('-n',
+                     args.Bool,
+                     help="Omit newline (synonym for -end '')")
 WRITE_SPEC.LongFlag('--j8',
                     args.Bool,
                     default=False,
                     help='Write elements with J8 notation, one per line')
-# TODO: Do we need a --maybe-j8 format for strings?  Maybe --q8?
+# TODO: --jlines for conditional j"" prefix?  Like maybe_shell_encode()
 
 # TODO: remove this
 WRITE_SPEC.LongFlag('--qsn',
@@ -405,11 +409,7 @@ WRITE_SPEC.LongFlag('--qsn',
 # u means I want \u{1234}
 # raw is utf-8
 # might also want: maybe?
-WRITE_SPEC.LongFlag('--unicode', [
-    'raw',
-    'u',
-    'x',
-],
+WRITE_SPEC.LongFlag('--unicode', ['raw', 'u', 'x'],
                     default='raw',
                     help='Encode QSN with these options.  '
                     'x assumes an opaque byte string, while raw and u try to '
@@ -433,10 +433,24 @@ TEA_MAIN_SPEC.LongFlag('--translate', args.Bool)
 #
 
 JSON_WRITE_SPEC = FlagSpec('json_write')
+
+# TODO: --compact is probably better
+# --pretty=F is like JSON.stringify(d, null, 0)
 JSON_WRITE_SPEC.LongFlag('--pretty',
                          args.Bool,
                          default=True,
                          help='Whitespace in output (default true)')
+
+# JSON has the questionable decision of allowing (unpaired) surrogate like
+# \udc00.
+# When encoding, we try to catch the error on OUR side, rather than letting it
+# travel over the wire.  But you can disable this.
+JSON_WRITE_SPEC.LongFlag(
+    '--surrogate-ok',
+    args.Bool,
+    default=False,
+    help='Invalid UTF-8 can be encoded as surrogate like \\udc00')
+
 JSON_WRITE_SPEC.LongFlag('--indent',
                          args.Int,
                          default=2,
