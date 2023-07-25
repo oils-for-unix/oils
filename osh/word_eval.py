@@ -1066,8 +1066,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = value.Str(s)
 
             else:
-                raise AssertionError
-            #e_die("Can't index value of type",
+                raise AssertionError()
 
         return val
 
