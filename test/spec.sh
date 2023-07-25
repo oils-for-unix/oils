@@ -818,8 +818,7 @@ ysh-interactive() {
 }
 
 ysh-json() {
-  sh-spec spec/ysh-json.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-json "$@"
 }
 
 ysh-keywords() {
