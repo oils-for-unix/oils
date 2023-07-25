@@ -7,7 +7,7 @@
 
 source test/common.sh
 
-OIL=${OIL:-bin/oil}
+YSH=${YSH:-bin/ysh}
 
 banner() {
   echo
@@ -37,7 +37,7 @@ _error-case-X() {
 
   banner "$@"
   echo
-  $OIL -c "$@"
+  $YSH -c "$@"
 
   # NOTE: This works with osh, not others.
   local status=$?
@@ -59,7 +59,7 @@ _expr-error-case() {
 _should-run() {
   banner "$@"
   echo
-  $OIL -c "$@"
+  $YSH -c "$@"
 
   local status=$?
   if test $status != 0; then
@@ -79,6 +79,25 @@ test-undefined-vars() {
 
   _error-case 'var x = undef; echo $x'  # VarDecl
   _error-case 'setvar a = undef'  # PlaceMutation
+}
+
+test-word-eval-with-ysh-data() {
+  set +o errexit
+
+  _expr-error-case 'var d = {}; echo ${d:-}'
+
+  _osh-error-case-X 3 'var d = {}; echo ${#d}'
+
+  _osh-error-case-X 3 'var d = {}; echo ${d[0]}'
+
+  _osh-error-case-X 3 'var d = {}; echo ${d[@]:1:3}'
+
+  #_osh-error-case-X 3 'var d = {}; echo ${!d}'
+
+  #_osh-error-case-X 3 'var d = {}; echo ${!d[@]}'
+
+  #_osh-error-case-X 3 'var d = {}; echo ${d#prefix}'
+
 }
 
 test-ysh-word-eval() {

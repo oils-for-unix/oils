@@ -1,5 +1,4 @@
 ## our_shell: osh
-## oils_failures_allowed: 1
 # compare_shells: bash
 
 #### Can't use x+= on YSH Int (issue #840)
@@ -82,6 +81,7 @@ echo myint ${myint:-default}
 var a = [1, 2, 3]
 echo first ${a[0]}
 
+## status: 3
 ## STDOUT:
 ## END
 
