@@ -66,7 +66,9 @@ readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
 # Version 2.4.0 from 2021-10-06 was the last version that supported Python 2
 # https://github.com/PyCQA/pyflakes/blob/main/NEWS.rst
 readonly PYFLAKES_VERSION=2.4.0
-readonly PYFLAKES_URL='https://files.pythonhosted.org/packages/15/60/c577e54518086e98470e9088278247f4af1d39cb43bcbd731e2c307acd6a/pyflakes-2.4.0.tar.gz'
+#readonly PYFLAKES_URL='https://files.pythonhosted.org/packages/15/60/c577e54518086e98470e9088278247f4af1d39cb43bcbd731e2c307acd6a/pyflakes-2.4.0.tar.gz'
+# 2023-07: Mirrored to avoid network problem on broome during release
+readonly PYFLAKES_URL='https://www.oilshell.org/blob/pyflakes-2.4.0.tar.gz'
 
 readonly BLOATY_VERSION=1.1
 readonly BLOATY_URL='https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2'
@@ -209,6 +211,13 @@ fetch() {
     tree -L 2 $DEPS_SOURCE_DIR
     tree -L 2 $USER_WEDGE_DIR
   fi
+}
+
+mirror-pyflakes() {
+  ### Workaround for network error during release
+  scp \
+    $DEPS_SOURCE_DIR/pyflakes/"$(basename $PYFLAKES_URL)" \
+    oilshell.org:oilshell.org/blob/
 }
 
 fetch-py() {
