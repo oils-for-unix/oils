@@ -1,5 +1,5 @@
 ## our_shell: osh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 # compare_shells: bash
 
 #### Can't use x+= on YSH Int (issue #840)
@@ -72,6 +72,7 @@ var myint = 42
 
 echo myint ${myint:-default}
 
+## status: 3
 ## STDOUT:
 ## END
 

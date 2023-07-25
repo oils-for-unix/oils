@@ -198,8 +198,8 @@ def _BackslashEscape(s):
     return s.replace('\\', '\\\\')
 
 
-def _ValueToPartValue(val, quoted):
-    # type: (value_t, bool) -> part_value_t
+def _ValueToPartValue(val, quoted, part_loc):
+    # type: (value_t, bool, word_part_t) -> part_value_t
     """Helper for VarSub evaluation.
 
     Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
@@ -231,9 +231,9 @@ def _ValueToPartValue(val, quoted):
             return part_value.String(s, quoted, not quoted)
 
         else:
-            #raise AssertionError(val)
             raise error.InvalidType(
-                "Can't expand %s into word" % value_str(val.tag()), loc.Missing)
+                "Can't expand %s into word" % value_str(val.tag()),
+                loc.WordPart(part_loc))
 
     raise AssertionError('for -Wreturn-type in C++')
 
@@ -612,7 +612,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = cast(value.BashAssoc, UP_val)
                 is_falsey = len(val.d) == 0
             else:
-                raise NotImplementedError(val.tag())
+                # value.Eggex, etc. are all false
+                is_falsey = False
 
         if tok.id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
             if is_falsey:
@@ -1065,7 +1066,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = value.Str(s)
 
             else:
-                raise AssertionError(val.tag())
+                raise AssertionError
+            #e_die("Can't index value of type",
 
         return val
 
@@ -1298,8 +1300,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = self._EmptyStrOrError(val, part.token)
 
                 val = self._Length(val, part.token)
-                part_val = _ValueToPartValue(val,
-                                             False)  # assume it's not quoted
+                # assume it's not quoted
+                part_val = _ValueToPartValue(val, False, part)
                 part_vals.append(part_val)
                 return  # EARLY EXIT: nothing else can come after length
 
@@ -1386,7 +1388,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # For example, ${a} evaluates to value.Str(), but we want a
         # part_value.String().
-        part_val = _ValueToPartValue(val, quoted or quoted2)
+        part_val = _ValueToPartValue(val, quoted or quoted2, part)
         part_vals.append(part_val)
 
     def _ConcatPartVals(self, part_vals, location):
@@ -1469,7 +1471,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
                 val = array_val
 
-        v = _ValueToPartValue(val, quoted)
+        v = _ValueToPartValue(val, quoted, part)
         part_vals.append(v)
 
     def EvalSimpleVarSubToString(self, node):
