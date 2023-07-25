@@ -232,9 +232,8 @@ def _ValueToPartValue(val, quoted, part_loc):
             return part_value.String(s, quoted, not quoted)
 
         else:
-            raise error.InvalidType(
-                "Can't expand %s into word" % value_str(val.tag()),
-                loc.WordPart(part_loc))
+            raise error.InvalidType2(val, "Can't substitute into word",
+                                     loc.WordPart(part_loc))
 
     raise AssertionError('for -Wreturn-type in C++')
 
@@ -693,7 +692,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 return False
 
         else:
-            raise NotImplementedError(tok.id)
+            raise AssertionError(tok.id)
 
     def _Length(self, val, token):
         # type: (value_t, Token) -> value_t
@@ -766,7 +765,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 return value.BashArray(val.d.keys())
 
             else:
-                raise AssertionError()
+                raise error.InvalidType2(val, 'Keys op expected Str', token)
 
     def _EvalVarRef(self, val, blame_tok, quoted, vsub_state, vtest_place):
         # type: (value_t, Token, bool, VarSubState, VTestPlace) -> value_t
@@ -793,7 +792,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 e_die('Indirect expansion of assoc array')
 
             else:
-                raise NotImplementedError(val.tag())
+                raise error.InvalidType2(val, 'Var Ref op expected Str',
+                                         blame_tok)
 
     def _ApplyUnarySuffixOp(self, val, op):
         # type: (value_t, suffix_op.Unary) -> value_t
@@ -838,7 +838,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     new_val = value.BashArray(strs)
 
                 else:
-                    raise AssertionError(val.tag())
+                    raise error.InvalidType2(
+                        val, 'Unary op expected Str, BashArray, BashAssoc',
+                        op.op)
 
         else:
             raise AssertionError(Kind_str(op_kind))
@@ -895,7 +897,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = value.BashArray(strs)
 
             else:
-                raise AssertionError(val.tag())
+                raise error.InvalidType2(
+                    val, 'Pat Sub op expected Str, BashArray, BashAssoc',
+                    op.slash_tok)
+
         return val
 
     def _Slice(self, val, op, var_name, part):

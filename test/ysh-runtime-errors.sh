@@ -92,11 +92,13 @@ test-word-eval-with-ysh-data() {
 
   _osh-error-case-X 3 'var d = {}; echo ${d[@]:1:3}'
 
-  #_osh-error-case-X 3 'var d = {}; echo ${!d}'
+  _osh-error-case-X 3 'var d = {}; echo ${!d}'
 
-  #_osh-error-case-X 3 'var d = {}; echo ${!d[@]}'
+  _osh-error-case-X 3 'var d = {}; echo ${!d[@]}'
 
-  #_osh-error-case-X 3 'var d = {}; echo ${d#prefix}'
+  _osh-error-case-X 3 'var d = {}; echo ${d#prefix}'
+
+  _osh-error-case-X 3 'var d = {}; echo ${d//a/b}'
 
 }
 
