@@ -367,7 +367,7 @@ def EncodeRunes(s, bit8_display, buf):
     - Handle surrogate range.  Can you decode a JSON string with an unpaired
       surrogate like "\udc00" into Oils?  You can decode it in Python and
       JavaScript.  Gah!
-      - J8 behaves differently than JSON.  It will use bytes since \u{1234} is
+      - J8 behaves differently than JSON.  It will use bytes since \\u{1234} is
         for valid runes.
     """
     valid_utf8 = True

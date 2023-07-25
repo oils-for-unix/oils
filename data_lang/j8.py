@@ -37,8 +37,6 @@ from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, log
 
-from typing import Optional
-
 _ = log
 
 from typing import cast
