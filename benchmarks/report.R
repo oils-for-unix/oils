@@ -271,10 +271,10 @@ ParserReport = function(in_dir, out_dir) {
   if ("no-host" %in% distinct_hosts$host_label) {
 
     # We don't have all the shells
-    elapsed = NA
-    rate = NA
-    max_rss = NA
-    instructions = NA
+    elapsed = NULL
+    rate = NULL
+    max_rss = NULL
+    instructions = NULL
 
     joined_times %>%
       select(c(shell_label, elapsed_ms, user_ms, sys_ms, max_rss_MB,
@@ -289,8 +289,8 @@ ParserReport = function(in_dir, out_dir) {
 
   } else {
 
-    times_flat = NA
-    cachegrind_flat = NA
+    times_flat = NULL
+    cachegrind_flat = NULL
 
     # Elapsed seconds for each shell by platform and file
     joined_times %>%
@@ -371,17 +371,17 @@ ParserReport = function(in_dir, out_dir) {
   precision = ColumnPrecision(list(), default = 1)
   writeTsv(cachegrind_summary, file.path(out_dir, 'cachegrind_summary'), precision)
 
-  if (!is.na(times_flat)) {
+  if (!is.null(times_flat)) {
     precision = SamePrecision(0)
     writeTsv(times_flat, file.path(out_dir, 'times_flat'), precision)
   }
 
-  if (!is.na(cachegrind_flat)) {
+  if (!is.null(cachegrind_flat)) {
     precision = SamePrecision(0)
     writeTsv(cachegrind_flat, file.path(out_dir, 'cachegrind_flat'), precision)
   }
 
-  if (!is.na(elapsed)) {  # equivalent to no-host
+  if (!is.null(elapsed)) {  # equivalent to no-host
     # Round to nearest millisecond, but the ratio has a decimal point.
     precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)
     writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
