@@ -296,7 +296,7 @@ class Try(vm._Builtin):
                 status = e.ExitStatus()
             except error.ErrExit as e:
                 status = e.ExitStatus()
-            except error.FatalRuntime as e:
+            except error.UserError as e:
                 status = e.ExitStatus()
 
             self.mem.SetTryStatus(status)
@@ -369,7 +369,7 @@ class Error(vm._Builtin):
             else:
                 e_usage('Unexpected named argument %r' % arg.name, arg.name)
 
-        raise error.FatalRuntime(status, message, blame)
+        raise error.UserError(status, message, blame)
 
 
 class BoolStatus(vm._Builtin):
