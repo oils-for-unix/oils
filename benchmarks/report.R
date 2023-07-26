@@ -769,7 +769,7 @@ ComputeReport = function(in_dir, out_dir) {
   num_hosts = nrow(distinct_hosts)
 
   times %>%
-    select(-c(status, stdout_md5sum, host_hash, runtime_hash)) %>%
+    select(-c(status, stdout_md5sum, stdout_filename, host_hash, runtime_hash)) %>%
     mutate(runtime_label = ShellLabels(runtime_name, runtime_hash, num_hosts),
            elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
@@ -778,6 +778,14 @@ ComputeReport = function(in_dir, out_dir) {
     select(-c(runtime_name, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     arrange(host_name, task_name, arg1, arg2, user_ms) ->
     details
+
+  times %>%
+    mutate(
+      runtime_label = ShellLabels(runtime_name, runtime_hash, num_hosts),
+      stdout_md5sum_HREF = file.path('tmp', task_name, stdout_filename)) %>%
+    select(c(host_name, task_name, arg1, arg2, runtime_label,
+             stdout_md5sum, stdout_md5sum_HREF)) ->
+    stdout_files
 
   details %>% filter(task_name == 'hello') %>% select(-c(task_name)) -> hello
   details %>% filter(task_name == 'fib') %>% select(-c(task_name)) -> fib
@@ -790,6 +798,8 @@ ComputeReport = function(in_dir, out_dir) {
 
   precision = ColumnPrecision(list(max_rss_MB = 1), default = 0)
   writeTsv(details, file.path(out_dir, 'details'), precision)
+
+  writeTsv(stdout_files, file.path(out_dir, 'stdout_files'), precision)
 
   writeTsv(hello, file.path(out_dir, 'hello'), precision)
   writeTsv(fib, file.path(out_dir, 'fib'), precision)

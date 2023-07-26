@@ -271,7 +271,7 @@ task-all() {
     stdout_md5sum \
     host_name host_hash \
     runtime_name runtime_hash \
-    task_name arg1 arg2 > $times_tsv
+    task_name arg1 arg2 stdout_filename > $times_tsv
 
   local task_id=0
 
@@ -291,7 +291,7 @@ task-all() {
 
     #log "runtime=$runtime args=$args"
 
-    local stdout=stdout-$file-$arg1-$(basename $arg2).txt
+    local stdout_filename="stdout-$file-$arg1-$(basename $arg2).txt"
 
     # Measurement BUG!  This makes dash have the memory usage of bash!
     # It's better to get argv into the shell.
@@ -310,11 +310,12 @@ task-all() {
 
     # join args into a single field
     time-tsv -o $times_tsv --append \
-      --stdout $tmp_dir/$stdout \
+      --stdout $tmp_dir/$stdout_filename \
       --rusage \
       --field "$host" --field "$host_hash" \
       --field $runtime --field $runtime_hash \
-      --field "$task_name" --field "$arg1" --field "$arg2" -- \
+      --field "$task_name" --field "$arg1" --field "$arg2" \
+      --field "$stdout_filename" -- \
       "${cmd[@]}"
 
     task_id=$((task_id + 1))
@@ -431,6 +432,15 @@ soil-run() {
 
   # Make it run on one machine
   stage1 '' $single_machine
+
+  benchmarks/report.sh stage2 $BASE_DIR
+  benchmarks/report.sh stage3 $BASE_DIR
+}
+
+
+test-report() {
+  # Make it run on one machine
+  stage1 '' no-host
 
   benchmarks/report.sh stage2 $BASE_DIR
   benchmarks/report.sh stage3 $BASE_DIR
@@ -562,6 +572,12 @@ EOF
 EOF
 
   tsv2html $in_dir/details.tsv
+
+  cmark <<EOF
+### Stdout Files
+EOF
+
+  tsv2html $in_dir/stdout_files.tsv
 
 
   cat <<EOF
