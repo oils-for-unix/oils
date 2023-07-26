@@ -899,6 +899,10 @@ ysh-user-feedback() {
   run-file ysh-user-feedback "$@"
 }
 
+user-errors() {
+  run-file user-errors "$@"
+}
+
 #
 # More OSH
 #
