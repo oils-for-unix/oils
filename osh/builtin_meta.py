@@ -344,11 +344,11 @@ class Error(vm._Builtin):
 
         argc = len(cmd_val.argv)
         if argc != 1:
-            e_usage('Error received %d command arguments but wanted 0' % (argc - 1), blame)
+            e_usage('Expected 0 command arguments but received %d' % (argc - 1), blame)
 
         positional = cmd_val.typed_args.positional
         if len(positional) != 1:
-            e_usage('Expected a single error message as a positional argument', blame)
+            e_usage('Expected 1 positional argument but received %d' % len(positional), blame)
 
         message_val = self.expr_ev.EvalExpr(positional[0], blame)
         if message_val.tag() != value_e.Str:

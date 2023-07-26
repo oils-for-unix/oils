@@ -112,6 +112,12 @@ error (100, status=42)
 ## STDOUT:
 ## END
 
+#### Errors cannot take command args
+error uh-oh ('error', status=1)
+## status: 2
+## STDOUT:
+## END
+
 #### Errors cannot have a status of 0
 error ('error', status=0)
 ## status: 1
