@@ -99,3 +99,21 @@ error ('error', status=42, other=100)
 ## status: 2
 ## STDOUT:
 ## END
+
+#### Error expects an int status
+error ('error', status='a string?')
+## status: 3
+## STDOUT:
+## END
+
+#### Error expects a string message
+error (100, status=42)
+## status: 3
+## STDOUT:
+## END
+
+#### Errors cannot have a status of 0
+error ('error', status=0)
+## status: 1
+## STDOUT:
+## END

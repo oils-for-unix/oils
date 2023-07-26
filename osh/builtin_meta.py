@@ -12,7 +12,7 @@ from core import dev
 from core import error
 from core import main_loop
 from core import process
-from core.error import e_die_status, e_usage
+from core.error import e_die, e_die_status, e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
@@ -361,8 +361,11 @@ class Error(vm._Builtin):
             if lexer.TokenVal(arg.name) == "status":
                 status_val = self.expr_ev.EvalExpr(arg.value, arg.name)
                 if status_val.tag() != value_e.Int:
-                    raise error.TypeError2(status_val, 'expected an Int', arg.name)
+                    raise error.InvalidType2(status_val, 'expected an Int', arg.name)
                 status = cast(value.Int, status_val).i
+
+                if status == 0:
+                    e_die("Must be a non-zero integer", arg.name)
             else:
                 e_usage('Unexpected named argument %r' % arg.name, arg.name)
 
