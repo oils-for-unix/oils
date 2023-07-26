@@ -37,6 +37,9 @@ source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/compute
 
+# Stabilize 'sort' output across machines (ugh locales!)
+export LC_ALL=C
+
 TIMEFORMAT='%U'
 
 # task_name,iter,args
