@@ -10,7 +10,7 @@ from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.runtime_asdl import cmd_value, wait_status, wait_status_e
+from _devbuild.gen.runtime_asdl import cmd_value, job_state_e, wait_status, wait_status_e
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
@@ -69,20 +69,48 @@ class Fg(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        pid = self.job_list.GetLastStopped()
-        if pid == -1:
+        job_spec = '' # get current job by default
+        if len(cmd_val.argv) > 1:
+            job_spec = cmd_val.argv[1]
+
+        job = self.job_list.GetJobWithSpec(job_spec)
+        if job is None:
             log('No job to put in the foreground')
             return 1
 
+        pgid = job.ProcessGroupId()
         # TODO: Print job ID rather than the PID
-        log('Continue PID %d', pid)
+        log('Continue PID %d', pgid)
         # Put the job's process group back into the foreground. GiveTerminal() must
         # be called before sending SIGCONT or else the process might immediately get
         # suspsended again if it tries to read/write on the terminal.
-        pgid = posix.getpgid(pid)
         self.job_control.MaybeGiveTerminal(pgid)
+        job.SetForeground()
+        # needed for Wait() loop to work
+        job.state = job_state_e.Running
         posix.killpg(pgid, SIGCONT)
-        return self.job_list.WhenContinued(pid, self.waiter)
+
+        status = 1 # error
+        wait_st = job.JobWait(self.waiter)
+        UP_wait_st = wait_st
+        with tagswitch(wait_st) as case:
+            if case(wait_status_e.Proc):
+                wait_st = cast(wait_status.Proc, UP_wait_st)
+                status = wait_st.code
+
+            elif case(wait_status_e.Pipeline):
+                wait_st = cast(wait_status.Pipeline, UP_wait_st)
+                # TODO: handle PIPESTATUS?  Is this right?
+                status = wait_st.codes[-1]
+
+            elif case(wait_status_e.Cancelled):
+                wait_st = cast(wait_status.Cancelled, UP_wait_st)
+                status = 128 + wait_st.sig_num
+
+            else:
+                raise AssertionError()
+
+        return status
 
 
 class Bg(vm._Builtin):

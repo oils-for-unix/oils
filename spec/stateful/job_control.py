@@ -22,6 +22,8 @@ from test.spec_lib import log
 # Generated from C header file
 TIOCSIG = 0x40045436
 
+PYCAT = 'python2 -c "import sys; print(sys.stdin.readline().strip() + \'%s\')" &'
+
 
 def ctrl_c(sh):
   sh.sendcontrol('c')
@@ -290,6 +292,96 @@ def no_spurious_tty_take(sh):
 
   ctrl_c(sh)
   expect_prompt(sh)
+
+
+@register()
+def fg_current_previous(sh):
+  'Resume the special jobs: %- and %+'
+  expect_prompt(sh)
+
+  sh.sendline('sleep 1000 &') # will exit as soon as we're done with it
+
+  # Start two jobs. Both will get stopped by SIGTTIN when they try to read() on
+  # STDIN. According to POSIX, %- and %+ should always refer to stopped jobs if
+  # there are at least two of them.
+  sh.sendline(PYCAT % 'bar')
+  sh.sendline('cat &')
+
+  if 'osh' in sh.shell_label:
+    time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    sh.sendline('')
+    sh.sendline('')
+    sh.expect('.*Stopped.*')
+
+  # Bring back the newest stopped job
+  sh.sendline('fg %+')
+  sh.sendline('foo')
+  sh.expect('foo')
+  ctrl_z(sh)
+
+  # Bring back the second-newest stopped job
+  sh.sendline('fg %-')
+  sh.sendline('')
+  sh.expect('bar')
+
+  # Force cat to exit
+  ctrl_c(sh)
+
+  # Now that cat is gone, %- should refer to the running job
+  sh.sendline('fg %-')
+  sh.sendline('into the void')
+  time.sleep(0.5)
+  sh.expect('') # sleep should swallow whatever we write to stdin
+  ctrl_c(sh)
+
+  # %+ and %- should refer to the same thing now that there's only one job
+  sh.sendline('fg %+')
+  sh.sendline('woof')
+  sh.expect('woof')
+  ctrl_z(sh)
+  sh.sendline('fg %-')
+  sh.sendline('meow')
+  sh.expect('meow')
+  ctrl_c(sh)
+
+  expect_prompt(sh)
+
+
+@register(skip_shells=['dash'])
+def fg_job_id(sh):
+  'Resume jobs with integral job specs using `fg` builtin'
+  expect_prompt(sh)
+
+  sh.sendline(PYCAT % 'foo') # %1
+
+  sh.sendline(PYCAT % 'bar') # %2
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  if 'osh' in sh.shell_label:
+    sh.expect('.*Stopped.*')
+
+  sh.sendline(PYCAT % 'baz') # %3 and %-
+  time.sleep(0.1)
+  if 'osh' in sh.shell_label:
+    sh.expect('.*Stopped.*')
+
+  time.sleep(0.1)
+  if 'osh' in sh.shell_label:
+    sh.sendline('')
+    sh.expect('.*Stopped.*')
+
+  expect_prompt(sh)
+
+  sh.sendline('fg %1')
+  sh.sendline('')
+  sh.expect('foo')
+
+  sh.sendline('fg %3')
+  sh.sendline('')
+  sh.expect('baz')
+
+  sh.sendline('fg %2')
+  sh.sendline('')
+  sh.expect('bar')
 
 
 if __name__ == '__main__':

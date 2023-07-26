@@ -41,6 +41,7 @@ from osh import cmd_eval
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems, StrFromC
 
+import libc
 import posix_ as posix
 from posix_ import (
     # translated by mycpp and directly called!  No wrapper!
@@ -87,6 +88,8 @@ STYLE_DEFAULT = 0
 STYLE_LONG = 1
 STYLE_PID_ONLY = 2
 
+# To save on allocations in JobList::GetJobWithSpec()
+CURRENT_JOB_SPECS = ['', '%', '%%', '%+']
 
 class ctx_FileCloser(object):
     def __init__(self, f):
@@ -887,6 +890,11 @@ class Job(object):
         # type: () -> job_state_t
         return self.state
 
+    def ProcessGroupId(self):
+        # type: () -> int
+        """Return the process group ID associated with this job."""
+        raise NotImplementedError()
+
     def JobWait(self, waiter):
         # type: (Waiter) -> wait_status_t
         """Wait for this process/pipeline to be stopped or finished."""
@@ -947,6 +955,18 @@ class Process(Job):
         #s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
         #return '<Process %s%s>' % (self.thunk, s)
         return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
+
+    def ProcessGroupId(self):
+        # type: () -> int
+        """Returns the group ID of this process."""
+        # This should only ever be called AFTER the process has started
+        assert self.pid != -1
+        if self.parent_pipeline:
+            # XXX: Maybe we should die here instead? Unclear if this branch
+            # should even be reachable with the current builtins.
+            return self.parent_pipeline.ProcessGroupId()
+
+        return self.pid
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1070,7 +1090,9 @@ class Process(Job):
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
 
-        self.job_list.last_stopped_pid = self.pid # for fg
+        if self.job_id == -1:
+            # This process was started in the foreground
+            self.job_list.AddJob(self)
 
         if not self.in_background:
             self.job_control.MaybeTakeTerminal()
@@ -1154,6 +1176,13 @@ class Pipeline(Job):
         self.last_pipe = None  # type: Tuple[int, int]
 
         self.sigpipe_status_ok = sigpipe_status_ok
+
+    def ProcessGroupId(self):
+        # type: () -> int
+        """Returns the group ID of this pipeline."""
+        # This should only ever be called AFTER the pipeline has started
+        assert len(self.pids) > 0
+        return self.pids[0] # First process is the group leader
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1498,27 +1527,7 @@ class JobList(object):
         self.child_procs = {}  # type: Dict[int, Process]
         self.debug_pipelines = []  # type: List[Pipeline]
 
-        # XXX: Use job IDs here instead? If we do, update RemoveJob() and
-        # RemoveChildProcess() accordingly.
-        self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
-
         self.job_id = 1  # Strictly increasing
-
-    def GetLastStopped(self):
-        # type: () -> int
-
-        # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
-        return self.last_stopped_pid
-
-    def WhenContinued(self, pid, waiter):
-        # type: (int, Waiter) -> int
-        if pid == self.last_stopped_pid:
-            self.last_stopped_pid = -1
-        pr = self.ProcessFromPid(pid)
-        pr.SetForeground()
-        # needed for Wait() loop to work
-        pr.state = job_state_e.Running
-        return pr.Wait(waiter)
 
     def AddJob(self, job):
         # type: (Job) -> int
@@ -1543,6 +1552,11 @@ class JobList(object):
         """Process and Pipeline can call this."""
         mylib.dict_erase(self.jobs, job_id)
 
+        # Reset job counter when all jobs finish to compatability with bash and
+        # others.
+        if len(self.jobs) == 0:
+            self.job_id = 1
+
     def AddChildProcess(self, pid, proc):
         # type: (int, Process) -> None
         """Every child process should be added here as soon as we know its PID.
@@ -1555,11 +1569,6 @@ class JobList(object):
     def RemoveChildProcess(self, pid):
         # type: (int) -> None
         """Remove the child process with the given PID."""
-        # Problem: This only happens after an explicit wait().
-        # I think the main_loop in bash waits without blocking?
-        if self.last_stopped_pid == pid:
-            self.last_stopped_pid = -1
-
         mylib.dict_erase(self.child_procs, pid)
 
     def AddPipeline(self, pi):
@@ -1576,6 +1585,88 @@ class JobList(object):
         syntax, e.g. %1.  Not a great interface.
         """
         return self.child_procs.get(pid)
+
+    def GetCurrentAndPreviousJobs(self):
+        # type: () -> Tuple[Optional[Job], Optional[Job]]
+        """Return the "current" and "previous" jobs (AKA `%+` and `%-`).
+
+        See the POSIX specification for the `jobs` builtin for details:
+        https://pubs.opengroup.org/onlinepubs/007904875/utilities/jobs.html
+
+        IMPORTANT NOTE: This method assumes that the jobs list will not change
+        during its execution! This assumption holds for now because we only ever
+        update the jobs list from the main loop after WaitPid() informs us of a
+        change. If we implement `set -b` and install a signal handler for
+        SIGCHLD we should be careful to synchronize it with this function.  The
+        unsafety of mutating GC data structures from a signal handler should
+        make this a non-issue, but if bugs related to this appear this note may
+        be helpful...
+        """
+        # Split all active jobs by state and sort each group by decreasing job
+        # ID to approximate newness.
+        stopped_jobs = [] # type: List[Job]
+        running_jobs = [] # type: List[Job]
+        for i in xrange(0, self.job_id):
+            job = self.jobs.get(i, None)
+            if not job:
+                continue
+
+            if job.state == job_state_e.Stopped:
+                stopped_jobs.append(job)
+
+            elif job.state == job_state_e.Running:
+                running_jobs.append(job)
+
+        current = None # type: Optional[Job]
+        previous = None # type: Optional[Job]
+        # POSIX says: If there is any suspended job, then the current job shall
+        # be a suspended job. If there are at least two suspended jobs, then the
+        # previous job also shall be a suspended job.
+        #
+        # So, we will only return running jobs from here if there are no recent
+        # stopped jobs.
+        if len(stopped_jobs) > 0:
+            current = stopped_jobs.pop()
+
+        if len(stopped_jobs) > 0:
+            previous = stopped_jobs.pop()
+
+        if len(running_jobs) > 0 and not current:
+            current = running_jobs.pop()
+
+        if len(running_jobs) > 0 and not previous:
+            previous = running_jobs.pop()
+
+        if not previous:
+            previous = current
+
+        return current, previous
+
+
+    def GetJobWithSpec(self, job_spec):
+        # type: (str) -> Optional[Job]
+        """Parse the given job spec and return the matching job. If there is no
+        matching job, this function returns None.
+
+        See the POSIX spec for the `jobs` builtin for details about job specs:
+        https://pubs.opengroup.org/onlinepubs/007904875/utilities/jobs.html
+        """
+        if job_spec in CURRENT_JOB_SPECS:
+            current, _ = self.GetCurrentAndPreviousJobs()
+            return current
+
+        if job_spec == '%-':
+            _, previous = self.GetCurrentAndPreviousJobs()
+            return previous
+
+        # TODO: Add support for job specs based on prefixes of process argv.
+        m = libc.regex_match(r'^%([0-9]+)$', job_spec)
+        if m and len(m) > 1:
+            job_id = int(m[1])
+            if job_id in self.jobs:
+                return self.jobs[job_id]
+
+        return None
 
     def DisplayJobs(self, style):
         # type: (int) -> None

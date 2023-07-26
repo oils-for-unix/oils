@@ -378,7 +378,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
 > wait
 > wait
 [1] Done PID 12345
-[2] Done PID 12345
+[1] Done PID 12345
 | fork 12345
 | fork 12345
 ## END
