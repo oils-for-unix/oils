@@ -78,8 +78,12 @@ ensure-smooth-build() {
   # Stray files can mess up the unit tests
   devtools/git.sh error-if-untracked
 
+  build/clean.sh
+
   sudo -k; sudo true  # clear and re-cache credentials
 
+  # Install with root privileges
+  _install
 }
 
 # For redoing a release.  This is everything until you have to 'git pull' the
@@ -316,7 +320,6 @@ build-and-test() {
   # Before doing anything
   test/lint.sh soil-run
 
-  build/clean.sh
   build/py.sh all
   test/unit.sh run-for-release  # Python unit tests
 
@@ -364,10 +367,10 @@ _build-oils-benchmark-data() {
 benchmark-build() {
   ### Build function on machine 2.
 
+  build/clean.sh
   if test -n "$HAVE_ROOT"; then
     _install
   fi
-  build/clean.sh
   build/py.sh all
   _release-build
 }

@@ -373,6 +373,10 @@ R-libs-host() {
   deps/wedge.sh unboxed-build _build/deps-source/R-libs
 }
 
+bloaty-host() {
+  deps/wedge.sh unboxed-build _build/deps-source/bloaty
+}
+
 install-wedges-py() {
   install-wedges py_only
 }
