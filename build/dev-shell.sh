@@ -75,8 +75,12 @@ export PYTHONPATH='.'
 
 readonly site_packages=lib/python3.10/site-packages
 
+#readonly PY3_LIBS_VERSION=2023-07-27
+# Use older version because containers aren't rebuild.  TODO: fix this
+readonly PY3_LIBS_VERSION=2023-03-04
+
 # Note: Version should match the one in build/deps.sh
-readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/2023-07-27/$site_packages
+readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
 # Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
 # can't work in one shot
 export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"

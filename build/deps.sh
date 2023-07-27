@@ -35,7 +35,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/dev-shell.sh  # python3 in PATH
+source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
 source deps/from-apt.sh      # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
@@ -59,8 +59,6 @@ readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.t
 
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
-
-readonly PY3_LIBS_VERSION=2023-07-27
 
 readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
 
