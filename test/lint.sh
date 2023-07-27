@@ -37,55 +37,6 @@ cpplint() {
     -readability/todo,-legal/copyright,-build/header_guard,-build/include,-whitespace/comments "$@"
 }
 
-clang-format() {
-  # See //.clang-format for the style config.
-  $CLANG_DIR/bin/clang-format --style=file "$@"
-}
-
-readonly -a CPP_FILES=(
-  {asdl,core}/*.cc
-  benchmarks/*.c
-  cpp/*.{c,cc,h}
-  mycpp/*.{cc,h} 
-  mycpp/demo/*.{cc,h}
-  demo/*.c
-
-  # Could add pyext, but they have sort of a Python style
-  # pyext/fanos.c
-)
-
-cpp-files() {
-  shopt -s nullglob
-  for file in "${CPP_FILES[@]}"; do
-
-    echo $file
-  done
-}
-
-format-cpp() {
-  # see build/common.sh
-  if test -n "$CLANG_IS_MISSING"; then
-    log ''
-    log "  *** $0: Did not find $CLANG_DIR_1"
-    log "  *** Run deps/from-binary.sh to get it"
-    log ''
-    return 1
-  fi
-
-  cpp-files | egrep -v 'greatest.h' | xargs -- $0 clang-format -i 
-  git diff
-}
-
-test-asdl-format() {
-  ### Test how clang-format would like our generated code
-
-  local file=${1:-_gen/asdl/hnode.asdl.h}
-
-  local tmp=_tmp/hnode
-  clang-format $file > $tmp
-  diff -u $file $tmp
-}
-
 #
 # Python
 #
