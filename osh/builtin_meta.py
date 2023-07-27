@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus, value_e, value
-from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import dev
 from core import error
@@ -340,7 +340,7 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        blame = loc.Word(cmd_val.arg_locs[0])
+        blame = cmd_val.arg_locs[0]
 
         argc = len(cmd_val.argv)
         if argc != 1:
