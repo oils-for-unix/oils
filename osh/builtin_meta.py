@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus, value_e, value
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
 from core import error
