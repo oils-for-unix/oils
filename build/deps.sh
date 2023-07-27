@@ -280,8 +280,19 @@ install-py3-libs-in-venv() {
   time python3 -m pip install -r $mypy_dir/test-requirements.txt
 
   # pexpect: for spec/stateful/*.py
-  # yapf: all devs should on the same version
-  python3 -m pip install pexpect yapf
+  python3 -m pip install pexpect
+
+  # TODO:
+  # - Do something like this 'pip download' in build/deps.sh fetch
+  # - Then create a WEDGE which installs it
+  #   - However note that this is NOT source code; there is binary code, e.g.
+  #   in lxml-*.whl
+  if false; then
+    local pip_dir=_tmp/pip
+    mkdir -p $pip_dir
+    python3 -m pip download -d $pip_dir -r $mypy_dir/test-requirements.txt
+    python3 -m pip download -d $pip_dir pexpect
+  fi
 }
 
 install-py3-libs() {

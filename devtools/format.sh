@@ -8,6 +8,10 @@
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 . build/dev-shell.sh  # python3 in $PATH
+
+# Hack to prevent interference.  TODO: Make a seperate wedge for yapf.
+unset PYTHONPATH
+
 . build/common.sh  # $CLANG_DIR
 
 set -o nounset
@@ -19,13 +23,35 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 # Python
 #
 
+readonly YAPF_VENV='_tmp/yapf-venv'
+
+install-yapf() {
+  local venv=$YAPF_VENV
+
+  rm -r -f -v $venv
+
+  python3 -m venv $venv
+
+  . $venv/bin/activate
+
+  # 0.40.1 is the 2023-06-20 release
+  #
+  # Pin the version so formatting is stable!
+
+  python3 -m pip install 'yapf == 0.40.1'
+
+  yapf-version
+}
+
 yapf-version() {
+  . $YAPF_VENV/bin/activate
   python3 -m yapf --version
 }
 
 # For now, run yapf on specific files.  TODO: could query git for the files
 # that are are different from master branch, and run it on those.
 yapf-files() {
+  . $YAPF_VENV/bin/activate
   python3 -m yapf -i "$@"
 }
 
