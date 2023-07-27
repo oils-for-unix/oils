@@ -240,7 +240,10 @@ class Func(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         nargs = len(pos_args)
         expected = len(self.node.pos_params)
-        if nargs != expected and not self.node.pos_splat:
+        if self.node.pos_splat:
+            if nargs < expected:
+                raise error.InvalidType("%s() expects at least %d arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
+        elif nargs != expected:
             raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
 
         nargs = len(named_args)

@@ -248,6 +248,16 @@ _ f(1, 2, 3, 4)
 (List)   [1, 2, [3, 4]]
 ## END
 
+#### Varadic arguments, too few args
+func f(a, b, ...args) {
+  = [a, b, args]
+}
+
+_ f(1)
+## status: 3
+## STDOUT:
+## END
+
 #### Userland max
 func mymax (...args) {
   if (len(args) === 0) {
