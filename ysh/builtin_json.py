@@ -38,7 +38,7 @@ class Json(vm._Builtin):
     """
 
     def __init__(self, mem, expr_ev, errfmt, is_j8):
-        # type: (state.Mem, expr_eval.OilEvaluator, ErrorFormatter, bool) -> None
+        # type: (state.Mem, expr_eval.ExprEvaluator, ErrorFormatter, bool) -> None
         self.mem = mem
         self.expr_ev = expr_ev
         self.errfmt = errfmt

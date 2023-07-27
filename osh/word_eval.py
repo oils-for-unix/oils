@@ -401,7 +401,7 @@ def _PerformSlice(
 
 
 class StringWordEvaluator(object):
-    """For use by the _ExprEvaluator."""
+    """Interface used by ArithEvaluator / BoolEvaluator"""
 
     def __init__(self):
         # type: () -> None
@@ -493,7 +493,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                  errfmt):
         # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
         self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
-        self.expr_ev = None  # type: expr_eval.OilEvaluator
+        self.expr_ev = None  # type: expr_eval.ExprEvaluator
         self.prompt_ev = None  # type: prompt.Evaluator
 
         self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith

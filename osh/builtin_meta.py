@@ -335,7 +335,7 @@ class Try(vm._Builtin):
 class Error(vm._Builtin):
 
     def __init__(self, expr_ev):
-        # type: (expr_eval.OilEvaluator) -> None
+        # type: (expr_eval.ExprEvaluator) -> None
         self.expr_ev = expr_ev
 
     def Run(self, cmd_val):

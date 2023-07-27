@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from osh import sh_expr_eval
     from osh.sh_expr_eval import ArithEvaluator
     from osh.sh_expr_eval import BoolEvaluator
-    from ysh.expr_eval import OilEvaluator
+    from ysh.expr_eval import ExprEvaluator
     from osh.word_eval import NormalWordEvaluator
     from osh.cmd_eval import CommandEvaluator
     from osh import prompt
@@ -125,7 +125,7 @@ def InitUnsafeArith(mem, word_ev, unsafe_arith):
 
 def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                      prompt_ev, tracer):
-    # type: (ArithEvaluator, BoolEvaluator, OilEvaluator, NormalWordEvaluator, CommandEvaluator, _Executor, prompt.Evaluator, dev.Tracer) -> None
+    # type: (ArithEvaluator, BoolEvaluator, ExprEvaluator, NormalWordEvaluator, CommandEvaluator, _Executor, prompt.Evaluator, dev.Tracer) -> None
     """Wire up mutually recursive evaluators and runtime objects."""
     arith_ev.word_ev = word_ev
     bool_ev.word_ev = word_ev

@@ -135,7 +135,7 @@ domain-specific languages and code generation.
     | [_gen/frontend/match.re2c.h](source-code.wwz/_gen/frontend/match.re2c.h)
 - [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
   for OSH and YSH.
-- [oil_lang/grammar.pgen2](source-code.wwz/ysh/grammar.pgen2). The
+- [ysh/grammar.pgen2](source-code.wwz/ysh/grammar.pgen2). The
   expression grammar for YSH.  In contrast, the OSH parsers are hand-written.
 
 Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.

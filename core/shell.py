@@ -178,7 +178,7 @@ class ShellOptHook(state.OptHook):
 
 
 def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
-    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.OilEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
+    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.ExprEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
 
     b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
     b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
@@ -626,7 +626,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                            parse_ctx, errfmt)
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
-    expr_ev = expr_eval.OilEvaluator(mem, mutable_opts, funcs, methods,
+    expr_ev = expr_eval.ExprEvaluator(mem, mutable_opts, funcs, methods,
                                      splitter, errfmt)
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)

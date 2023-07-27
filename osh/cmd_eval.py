@@ -350,7 +350,7 @@ class CommandEvaluator(object):
         self.shell_ex = None  # type: _Executor
         self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
         self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
-        self.expr_ev = None  # type: expr_eval.OilEvaluator
+        self.expr_ev = None  # type: expr_eval.ExprEvaluator
         self.word_ev = None  # type: word_eval.AbstractWordEvaluator
         self.tracer = None  # type: dev.Tracer
 

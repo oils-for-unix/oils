@@ -87,7 +87,7 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
     return val
 
 
-class OilEvaluator(object):
+class ExprEvaluator(object):
     """Shared between arith and bool evaluators.
 
     They both:
