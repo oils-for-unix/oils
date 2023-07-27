@@ -221,8 +221,7 @@ def PlusEquals(old_val, val):
             pass
 
         else:
-            e_die("Can't append to value of type %s" %
-                  value_str(old_val.tag()))
+            e_die("Can't append to value of type %s" % value_str(old_val.tag()))
 
     return val
 
@@ -240,21 +239,36 @@ class Func(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         nargs = len(pos_args)
         expected = len(self.node.pos_params)
-        if nargs != expected:
-            raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
+        if self.node.pos_splat:
+            if nargs < expected:
+                raise error.InvalidType(
+                    "%s() expects at least %d arguments but %d were given" %
+                    (self.name, expected, nargs), self.node.keyword)
+        elif nargs != expected:
+            raise error.InvalidType(
+                "%s() expects %d arguments but %d were given" %
+                (self.name, expected, nargs), self.node.keyword)
 
         nargs = len(named_args)
         expected = len(self.node.named_params)
         if nargs != expected:
-            raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
+            raise error.InvalidType(
+                "%s() expects %d named arguments but %d were given" %
+                (self.name, expected, nargs), self.node.keyword)
 
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
-            for i in xrange(0, len(pos_args)):
+            nargs = len(self.node.pos_params)
+            for i in xrange(0, nargs):
                 pos_arg = pos_args[i]
                 pos_param = self.node.pos_params[i]
 
                 arg_name = location.LName(lexer.TokenVal(pos_param.name))
                 self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
+
+            if self.node.pos_splat:
+                other_args = value.List(pos_args[nargs:])
+                arg_name = location.LName(lexer.TokenVal(self.node.pos_splat))
+                self.mem.SetValue(arg_name, other_args, scope_e.LocalOnly)
 
             # TODO: pass named args
 
@@ -268,6 +282,7 @@ class Func(vm._Callable):
                 raise AssertionError('IntControlFlow in func')
 
         raise AssertionError('unreachable')
+
 
 class ctx_LoopLevel(object):
     """For checking for invalid control flow."""
@@ -802,8 +817,8 @@ class CommandEvaluator(object):
                     if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                         # Special builtins have their temp env persisted.
                         self._EvalTempEnv(node.more_env, 0)
-                        status = self._RunSimpleCommand(
-                            cmd_val, cmd_st, node.do_fork)
+                        status = self._RunSimpleCommand(cmd_val, cmd_st,
+                                                        node.do_fork)
                     else:
                         with state.ctx_Temp(self.mem):
                             self._EvalTempEnv(node.more_env, state.SetExport)
@@ -1013,10 +1028,9 @@ class CommandEvaluator(object):
                                         place.index,
                                         loc.Missing,
                                         prefix='BashAssoc index ')
-                                    r = val_ops.ToStr(
-                                        rval,
-                                        loc.Missing,
-                                        prefix='BashAssoc index ')
+                                    r = val_ops.ToStr(rval,
+                                                      loc.Missing,
+                                                      prefix='BashAssoc index ')
                                     obj.d[key] = r
 
                                 elif case(value_e.Dict):
@@ -1028,8 +1042,7 @@ class CommandEvaluator(object):
 
                                 else:
                                     raise error.InvalidType2(
-                                        obj,
-                                        "obj[index] expected List or Dict",
+                                        obj, "obj[index] expected List or Dict",
                                         loc.Missing)
 
                             if node.keyword.id == Id.KW_SetRef:
@@ -1041,8 +1054,7 @@ class CommandEvaluator(object):
                             self.mem.SetValue(place,
                                               rval,
                                               which_scopes,
-                                              flags=_PackFlags(
-                                                  node.keyword.id))
+                                              flags=_PackFlags(node.keyword.id))
 
                 # TODO: Other augmented assignments
                 elif node.op.id == Id.Arith_PlusEqual:
@@ -1153,7 +1165,6 @@ class CommandEvaluator(object):
                         # print.  TODO: Or avoid Python's print() altogether.
                         sys.stdout.flush()
 
-
                 # TODO: What about exceptions?  They just throw?
                 status = 0
 
@@ -1175,7 +1186,7 @@ class CommandEvaluator(object):
                     # break/continue at top level.  It has the side effect of making
                     # 'return ""' valid, which shells other than zsh fail on.
                     if len(str_val.s
-                           ) == 0 and not self.exec_opts.strict_control_flow():
+                          ) == 0 and not self.exec_opts.strict_control_flow():
                         arg = 0
                     else:
                         try:
@@ -1199,9 +1210,9 @@ class CommandEvaluator(object):
                 # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
                 # from a sourced script, it makes sense to return from a main script.
                 ok = True
-                if (keyword.id
-                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue)
-                        and self.loop_level == 0):
+                if (keyword.id in (Id.ControlFlow_Break,
+                                   Id.ControlFlow_Continue) and
+                        self.loop_level == 0):
                     ok = False
 
                 if ok:
@@ -1465,8 +1476,7 @@ class CommandEvaluator(object):
                         "Function %s was already defined (redefine_proc_func)" %
                         node.name, node.name_tok)
                 self.procs[node.name] = Proc(node.name, node.name_tok,
-                                             proc_sig.Open, node.body, [],
-                                             True)
+                                             proc_sig.Open, node.body, [], True)
 
                 status = 0
 
@@ -1488,8 +1498,8 @@ class CommandEvaluator(object):
                     defaults = [no_val] * len(sig.pos_params)
                     for i, p in enumerate(sig.pos_params):
                         if p.default_val:
-                            val = self.expr_ev.EvalExpr(
-                                p.default_val, loc.Missing)
+                            val = self.expr_ev.EvalExpr(p.default_val,
+                                                        loc.Missing)
                             defaults[i] = val
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
@@ -1502,7 +1512,8 @@ class CommandEvaluator(object):
                 node = cast(command.Func, UP_node)
 
                 name = lexer.TokenVal(node.name)
-                if name in self.funcs and not self.exec_opts.redefine_proc_func():
+                if name in self.funcs and not self.exec_opts.redefine_proc_func(
+                ):
                     e_die(
                         "Func %s was already defined (redefine_proc_func)" %
                         name, node.name)
@@ -1602,8 +1613,7 @@ class CommandEvaluator(object):
                 status = self._Execute(node.pipeline)
                 e_real, e_user, e_sys = pyos.Time()
                 # note: mycpp doesn't support %.3f
-                libc.print_time(e_real - s_real, e_user - s_user,
-                                e_sys - s_sys)
+                libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
 
             else:
                 raise NotImplementedError(node.tag())
@@ -1683,8 +1693,7 @@ class CommandEvaluator(object):
                         except error.FailGlob as e:
                             if not e.HasLocation():  # Last resort!
                                 e.location = self.mem.CurrentLocation()
-                            self.errfmt.PrettyPrintError(e,
-                                                         prefix='failglob: ')
+                            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                             status = 1
                             check_errexit = True
 
@@ -2033,8 +2042,8 @@ class CommandEvaluator(object):
 
                 n_params = len(sig.pos_params)
                 if sig.rest:
-                    items = [value.Str(s)
-                             for s in argv[n_params:]]  # type: List[value_t]
+                    items = [value.Str(s) for s in argv[n_params:]
+                            ]  # type: List[value_t]
                     leftover = value.List(items)
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,
                                       scope_e.LocalOnly)

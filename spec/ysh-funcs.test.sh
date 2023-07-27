@@ -217,3 +217,80 @@ hit: 8
   ]
 ]
 ## END
+
+#### Varadic arguments, no other args
+func f(...args) {
+  = args
+}
+
+_ f()
+_ f(1)
+_ f(1, 2)
+_ f(1, 2, 3)
+## STDOUT:
+(List)   []
+(List)   [1]
+(List)   [1, 2]
+(List)   [1, 2, 3]
+## END
+
+#### Varadic arguments, other args
+func f(a, b, ...args) {
+  = [a, b, args]
+}
+
+_ f(1, 2)
+_ f(1, 2, 3)
+_ f(1, 2, 3, 4)
+## STDOUT:
+(List)   [1, 2, []]
+(List)   [1, 2, [3]]
+(List)   [1, 2, [3, 4]]
+## END
+
+#### Varadic arguments, too few args
+func f(a, b, ...args) {
+  = [a, b, args]
+}
+
+_ f(1)
+## status: 3
+## STDOUT:
+## END
+
+#### Userland max
+func mymax (...args) {
+  if (len(args) === 0) {
+    error ('Requires 1 arg')
+  } elif (len(args) === 1) {
+    # TODO: assert List
+    var mylist = args[0]
+    var max = mylist[0]
+
+    for item in (mylist) {
+      if (item > max) {
+        setvar max = item
+      }
+    }
+
+    return (max)
+  } elif (len(args) === 2) {
+    if (args[0] >= args[1]) {
+      return (args[0])
+    } else {
+      return (args[1])
+    }
+  } else {
+    # max(1, 2, 3) doesn't work in YSH, but does in Python
+    error ('too many')
+  }
+}
+
+= mymax(5,6)  # => 6
+= mymax([5,6,7])  # => 7
+= mymax(5,6,7,8)  # error
+## status: 1
+## STDOUT:
+(Int)   6
+(Int)   7
+## END
