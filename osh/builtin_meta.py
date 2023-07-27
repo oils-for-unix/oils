@@ -5,27 +5,29 @@ builtin_meta.py - Builtins that call back into the interpreter.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
+from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus, value_e, value
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
 from core import error
 from core import main_loop
 from core import process
-from core.error import e_die_status, e_usage
+from core.error import e_die, e_die_status, e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import consts
+from frontend import lexer
 from frontend import reader
 from frontend import typed_args
 from mycpp.mylib import log
 from osh import cmd_eval
+from ysh import expr_eval
 
 _ = log
 
-from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import Proc
     from frontend.parse_lib import ParseContext
@@ -294,6 +296,8 @@ class Try(vm._Builtin):
                 status = e.ExitStatus()
             except error.ErrExit as e:
                 status = e.ExitStatus()
+            except error.UserError as e:
+                status = e.ExitStatus()
 
             self.mem.SetTryStatus(status)
             return 0
@@ -326,6 +330,49 @@ class Try(vm._Builtin):
         # special variable
         self.mem.SetTryStatus(status)
         return 0
+
+
+class Error(vm._Builtin):
+
+    def __init__(self, expr_ev):
+        # type: (expr_eval.OilEvaluator) -> None
+        self.expr_ev = expr_ev
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        blame = cmd_val.arg_locs[0]
+
+        argc = len(cmd_val.argv)
+        if argc != 1:
+            e_usage('Expected 0 command arguments but received %d' % (argc - 1), blame)
+
+        if not cmd_val.typed_args:
+            e_usage('Expected an error argument but received no typed args', blame)
+
+        positional = cmd_val.typed_args.positional
+        if len(positional) != 1:
+            e_usage('Expected 1 positional argument but received %d' % len(positional), blame)
+
+        message_val = self.expr_ev.EvalExpr(positional[0], blame)
+        if message_val.tag() != value_e.Str:
+            raise error.InvalidType2(message_val, 'expected a Str', blame)
+        message = cast(value.Str, message_val).s
+
+        named = cmd_val.typed_args.named
+        status = 1
+        for arg in named:
+            if lexer.TokenVal(arg.name) == "status":
+                status_val = self.expr_ev.EvalExpr(arg.value, arg.name)
+                if status_val.tag() != value_e.Int:
+                    raise error.InvalidType2(status_val, 'expected an Int', arg.name)
+                status = cast(value.Int, status_val).i
+
+                if status == 0:
+                    e_die("Must be a non-zero integer", arg.name)
+            else:
+                e_usage('Unexpected named argument %r' % arg.name, arg.name)
+
+        raise error.UserError(status, message, blame)
 
 
 class BoolStatus(vm._Builtin):

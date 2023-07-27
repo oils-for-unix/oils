@@ -177,8 +177,8 @@ class ShellOptHook(state.OptHook):
         return True
 
 
-def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
-    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
+def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
+    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.OilEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
 
     b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
     b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
@@ -188,6 +188,7 @@ def AddOil(b, mem, search_path, cmd_ev, errfmt, procs, arena):
     b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
     b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
     b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
+    b[builtin_i.error] = builtin_meta.Error(expr_ev)
 
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
@@ -634,7 +635,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, funcs,
                                        assign_b, arena, cmd_deps, trap_state, signal_safe)
 
-    AddOil(builtins, mem, search_path, cmd_ev, errfmt, procs, arena)
+    AddOil(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)
 
     if mylib.PYTHON:
         parse_config = func_hay.ParseHay(fd_state, parse_ctx, errfmt)

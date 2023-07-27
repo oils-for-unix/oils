@@ -164,6 +164,14 @@ class Expr(FatalRuntime):
         FatalRuntime.__init__(self, 3, msg, location)
 
 
+class UserError(FatalRuntime):
+    """An exception created by users with the `error` builtin."""
+
+    def __init__(self, status, msg, location):
+        # type: (int, str, loc_t) -> None
+        FatalRuntime.__init__(self, status, msg, location)
+
+
 class InvalidType(Expr):
     """e.g. ~ on a bool or float, 'not' on an int."""
 
