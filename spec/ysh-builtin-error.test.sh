@@ -1,436 +1,125 @@
-#### try usage error
+# spec/ysh-builtin-error
 
-# Irony: we can't fail that hard here because errexit is disabled before
-# we enable it.
-# TODO: We could special case this perhaps
+## our_shell: ysh
+## oils_failures_allowed: 1
 
-try
-echo status=$?
+#### User errors behave like builtin errors
+func divide(a, b) {
+  if (b === 0) {
+    error ('divide by zero', status=3)
+  }
 
-try -z
-echo status=$?
-
-try --zoo
-echo status=$?
-
-# -- is allowed
-try -- echo hi
-
-## STDOUT:
-status=2
-status=2
-status=2
-hi
-## END
-
-#### try sets _status
-myproc() {
-  echo 'myproc'
-  return 42
+  return (a / b)
 }
 
-try myproc
-echo dollar=$?
-echo _status=$_status
-
-( exit 9 )
-echo dollar=$?
-echo _status=$_status
-
-## STDOUT:
-myproc
-dollar=0
-_status=42
-dollar=9
-_status=42
-## END
-
-
-#### try with and without errexit
-shopt --set parse_brace parse_proc
-
-myproc() {
-  echo before
-  false
-  echo after
-}
-
-try myproc
+# errors can be caught with try
+try { = divide(42, 0) }
 echo status=$_status
 
-echo ---
-try {
-  echo 'block'
-  myproc
+= divide(42, 0)  # sets status to 3
+## status: 3
+## STDOUT:
+status=3
+## END
+
+#### Error messages can be read in userspace
+func divide(a, b) {
+  if (b === 0) {
+    error ('divide by zero', status=3)
+  }
+
+  return (a / b)
 }
+
+try { = divide(42, 0) }
 echo status=$_status
-
-echo ===
-set -o errexit
-
-try myproc
-echo status=$_status
-
-echo ---
-try {
-  echo 'block'
-  myproc
-}
-echo status=$_status
-
+echo message=$_error_message
 ## STDOUT:
-before
-status=1
----
-block
-before
-status=1
-===
-before
-status=1
----
-block
-before
-status=1
+status=3
+message=divide by zero
 ## END
 
-#### try takes a block
-shopt --set parse_brace
+#### Errors within multiple functions
+func inverse(x) {
+  if (x === 0) {
+    error ('0 does not have an inverse')  # default status is 1
+  }
 
-myproc() {
-  echo 'myproc'
-  return 42
+  return (1 / x)
 }
 
-try {
-  myproc
-}
-echo dollar=$?
-echo _status=$_status
-
-# It works the same with errexit
-set -o errexit
-
-try {
-  myproc
-}
-echo dollar=$?
-echo _status=$_status
-
-## STDOUT:
-myproc
-dollar=0
-_status=42
-myproc
-dollar=0
-_status=42
-## END
-
-#### try with _pipeline_status and PIPESTATUS
-shopt --set parse_brace parse_at
-set -o errexit
-
-try {
-  ls /bad | wc -l
-}
-echo p @_pipeline_status
-echo p ${PIPESTATUS[@]}
-echo _status=$_status  # 0 because pipefail is off
-
-echo ---
-set -o pipefail
-try {
-  ls /bad | wc -l
-}
-echo p @_pipeline_status
-echo p ${PIPESTATUS[@]}
-echo _status=$_status  # changed to 2 because of pipefail
-
-## STDOUT:
-0
-p 2 0
-p 2 0
-_status=0
----
-0
-p 2 0
-p 2 0
-_status=2
-## END
-
-#### try with _process_sub_status
-shopt --set parse_brace parse_at
-set -o errexit
-
-touch right.txt
-
-try {
-  diff -q <(sort OOPS) <(sort right.txt)
-}
-echo p @_process_sub_status
-echo _status=$_status
-
-echo ---
-shopt --set process_sub_fail
-try {
-  diff -q <(sort OOPS) <(sort right.txt)
-}
-echo p @_process_sub_status
-echo _status=$_status  # changed to 2 because of process_sub_fail
-
-## STDOUT:
-p 2 0
-_status=0
----
-p 2 0
-_status=2
-## END
-
-#### try error handling idioms
-shopt --set parse_paren parse_brace parse_at
-
-myproc() {
-  return 42
+func invertList(list) {
+  var result = []
+  for item in (list) {
+    _ append(result, inverse(item))
+  }
+  return (result)
 }
 
-try myproc
-if (_status === 0) {
-  echo 'OK'
-}
-
-try myproc
-if (_status !== 0) {
-  echo 'fail'
-}
-
-try {
-  ls /nonexistent | wc -l
-}
-# make sure it's integer comparison
-if (_pipeline_status[0] !== 0) {
-  echo 'pipeline failed:' @_pipeline_status
-}
-
-try {
-  diff <(sort XX) <(sort YY)
-}
-# make sure it's integer comparison
-if (_process_sub_status[0] !== 0) {
-  echo 'process sub failed:' @_process_sub_status
-}
-
-## STDOUT:
-fail
-0
-pipeline failed: 2 0
-process sub failed: 2 2
-## END
-
-#### try can handled failed var, setvar, etc.
-shopt --set parse_brace parse_proc
-
-try {
-  echo hi
-  var x = 1 / 0
-  echo 'should not get here'
-}
-echo div $_status
-
-try {
-  var a = []
-  setvar item = a[1]
-  echo 'should not get here'
-}
-echo index $_status
-
-try {
-  var d = {}
-  setvar item = d['mykey']
-  echo 'should not get here'
-}
-echo key $_status
-
-try {
-  setvar item = d->mykey
-  echo 'should not get here'
-}
-echo arrow $_status
-
-## STDOUT:
-hi
-div 3
-index 3
-key 3
-arrow 3
-## END
-
-# nothing on stderr because it's caught!
-
-## STDERR:
-## END
-
-#### try can handled failed expr sub
-shopt --set parse_brace parse_proc
-
-try {
-  echo hi
-
-  var d = {}
-  echo "result = $[d->BAD]"
-  echo 'should not get here'
-}
-echo _status=$_status
-## STDOUT:
-hi
-_status=3
-## END
-## STDERR:
-## END
-
-#### try with failed command sub within expression 
-shopt --set parse_brace parse_proc
-
-try {
-  echo hi
-  var x = $(exit 42)  # errexit
-  echo bye
-}
-echo try $_status
-
-# Note that there's no way to retrieve this status WITHOUT try
-# var x = $(exit 42)  # errexit
-
-## STDOUT:
-hi
-try 42
-## END
-
-#### try allows command sub (bug #1608)
-shopt --set ysh:all
-
-try {
-  var x = $(echo hi)
-}
-echo $x
-
-## STDOUT:
-hi
-## END
-
-#### Uncaught expression error exits status 3
-$SH -c '
-shopt --set parse_proc
-
-# errexit does not need to be!
-
-var x = 42 / 0
-echo inside=$?
-'
-echo outside=$?
-## STDOUT:
-outside=3
-## END
-
-#### boolstatus with external command
-
-set -o errexit
-
-echo hi > file.txt
-
-if boolstatus grep pat file.txt; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-# file doesn't exist
-if boolstatus grep pat BAD; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-echo DONE
-## status: 2
-## STDOUT:
-no match
-## END
-
-#### boolstatus disallows procs with strict_errexit
-set -o errexit
-shopt -s strict_errexit
-
-echo hi > file.txt
-
-not-found() {
-  echo not-found
-  grep pat file.txt
-  echo not-found
-}
-
-bad() {
-  echo bad
-  grep pat BAD  # exits with code 2
-  echo bad
-}
-
-if boolstatus not-found; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-if boolstatus bad; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
+= invertList([1, 2, 0])
 ## status: 1
 ## STDOUT:
 ## END
 
-#### boolstatus can call a function without strict_errexit (not recommended)
-set -o errexit
-
-echo hi > file.txt
-
-not-found() {
-  echo not-found
-  grep pat file.txt
-  local status=$?
-  if test "$status" -ne 0; then
-    return $status
-  fi
-  echo not-found
+#### Impact of errors on var declaration
+func alwaysError() {
+  error ("it's an error", status=100)
 }
 
-bad() {
-  echo bad
-  grep pat BAD  # exits with code 2
-  local status=$?
-  if test "$status" -ne 0; then
-    return $status
-  fi
-  echo bad
+try {
+  var mylist = [1 + 2, alwaysError()]
+
+  echo this will never be printed
 }
-
-if boolstatus not-found; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-if boolstatus bad; then
-  echo 'match'
-else 
-  echo 'no match'
-fi
-
-## status: 2
+= mylist  # undefined! status becomes 1
+## status: 1
 ## STDOUT:
-not-found
-no match
-bad
 ## END
 
+#### Error defaults status to 1
+error ('some error')
+## status: 1
+## STDOUT:
+## END
+
+#### Error expects a positional argument
+error (status=42)
+## status: 2
+## STDOUT:
+## END
+
+#### Error will object to an incorrect named arg
+error ('error', status_typo=42)
+## status: 2
+## STDOUT:
+## END
+
+#### Error will object to an extraneous named arg
+error ('error', status=42, other=100)
+## status: 2
+## STDOUT:
+## END
+
+#### Error expects an int status
+error ('error', status='a string?')
+## status: 3
+## STDOUT:
+## END
+
+#### Error expects a string message
+error (100, status=42)
+## status: 3
+## STDOUT:
+## END
+
+#### Errors cannot take command args
+error uh-oh ('error', status=1)
+## status: 2
+## STDOUT:
+## END
+
+#### Errors cannot have a status of 0
+error ('error', status=0)
+## status: 1
+## STDOUT:
+## END
