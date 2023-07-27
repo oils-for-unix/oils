@@ -240,7 +240,7 @@ class Func(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         nargs = len(pos_args)
         expected = len(self.node.pos_params)
-        if nargs != expected:
+        if nargs != expected and not self.node.pos_splat:
             raise error.InvalidType("%s() expects %d arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
 
         nargs = len(named_args)
@@ -249,12 +249,18 @@ class Func(vm._Callable):
             raise error.InvalidType("%s() expects %d named arguments but %d were given" % (self.name, expected, nargs), self.node.keyword)
 
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
-            for i in xrange(0, len(pos_args)):
+            nargs = len(self.node.pos_params)
+            for i in xrange(0, nargs):
                 pos_arg = pos_args[i]
                 pos_param = self.node.pos_params[i]
 
                 arg_name = location.LName(lexer.TokenVal(pos_param.name))
                 self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
+
+            if self.node.pos_splat:
+                other_args = value.List(pos_args[nargs:])
+                arg_name = location.LName(lexer.TokenVal(self.node.pos_splat))
+                self.mem.SetValue(arg_name, other_args, scope_e.LocalOnly)
 
             # TODO: pass named args
 
