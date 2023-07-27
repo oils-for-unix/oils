@@ -20,9 +20,9 @@ fi
 
 # put 'python3' in $PATH
 readonly WEDGE_PY3_DIR=$ROOT_WEDGE_DIR/pkg/python3/3.10.4/bin
-if test -d $WEDGE_PY3_DIR; then
-  export PATH="$WEDGE_PY3_DIR:$PATH"
-fi
+# Unconditionally add it to PATH; otherwise build/deps.sh install-wedges won't
+# work
+export PATH="$WEDGE_PY3_DIR:$PATH"
 
 readonly WEDGE_BLOATY_DIR=$ROOT_WEDGE_DIR/pkg/bloaty/1.1  # not in bin
 if test -d $WEDGE_BLOATY_DIR; then
@@ -75,10 +75,11 @@ export PYTHONPATH='.'
 
 readonly site_packages=lib/python3.10/site-packages
 
-readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/2023-03-04/$site_packages
-if test -d "$PY3_LIBS_WEDGE"; then
-  export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"
-fi
+# Note: Version should match the one in build/deps.sh
+readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/2023-07-27/$site_packages
+# Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
+# can't work in one shot
+export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"
 
 MYPY_VERSION=0.780
 # TODO: would be nice to upgrade to newer version

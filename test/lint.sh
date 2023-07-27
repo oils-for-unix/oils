@@ -183,16 +183,6 @@ mycpp-files() {
   done
 }
 
-# NOTE: test/format.sh installs and runs yapf for Debian 12 bookworm
-yapf-files() {
-  python3 -m yapf -i "$@"
-}
-
-run-yapf-3() {
-  ### Run yapf on Python 3 code
-  mycpp-files | xargs $0 yapf-files
-}
-
 py2-files-to-format() {
   for dir in "${CODE_DIRS[@]}"; do
     for name in $dir/*.py; do
@@ -201,16 +191,9 @@ py2-files-to-format() {
   done | grep -v 'NINJA_subgraph'  # leave out for now
 }
 
-run-yapf-2() {
-  ### Run yapf on Python 2 code
-
-  # These files originally had 4 space indentation, but it got inconsistent
-  time py2-files-to-format \
-    | xargs --verbose -- python3 -m yapf -i --style='{based_on_style: google: indent_width: 4}'
-}
-
 run-docformatter() {
   ### Format docstrings
+
   # Only done as a ONE OFF to indent docstrings after yapf-2
   # Because it tends to mangle comments, e.g. grammar comments in
   # ysh/expr_to_ast.py

@@ -8,6 +8,7 @@
 # Examples:
 #   build/deps.sh fetch
 #   build/deps.sh install-wedges
+#   build/deps.sh rm-oils-crap  # rm /wedge ~/wedge to start over
 #
 # - re2c
 # - cmark
@@ -59,7 +60,7 @@ readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.t
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
 
-readonly PY3_LIBS_VERSION=2023-03-04
+readonly PY3_LIBS_VERSION=2023-07-27
 
 readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
 
@@ -84,6 +85,14 @@ die() {
   log "$@"
   exit 1
 }
+
+rm-oils-crap() {
+  ### When you want to start over
+
+  rm -r -f -v ~/wedge
+  sudo rm -r -f -v /wedge
+}
+
 
 install-ubuntu-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
@@ -264,11 +273,17 @@ install-py3-libs-in-venv() {
 
   source $venv_dir/bin/activate  # enter virtualenv
 
-  # Needed for spec/stateful/*.py
-  python3 -m pip install pexpect
+  # 2023-07 bug fix: have to install MyPy deps FIRST, THEN yapf.  Otherwise
+  # we get an error from pip:
+  # "ERROR: pip's dependency resolver does not currently take into account all
+  # the packages that are installed."
 
   # for mycpp/
   time python3 -m pip install -r $mypy_dir/test-requirements.txt
+
+  # pexpect: for spec/stateful/*.py
+  # yapf: all devs should on the same version
+  python3 -m pip install pexpect yapf
 }
 
 install-py3-libs() {
