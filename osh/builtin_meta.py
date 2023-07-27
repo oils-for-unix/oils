@@ -346,6 +346,9 @@ class Error(vm._Builtin):
         if argc != 1:
             e_usage('Expected 0 command arguments but received %d' % (argc - 1), blame)
 
+        if not cmd_val.typed_args:
+            e_usage('Expected an error argument but received no typed args', blame)
+
         positional = cmd_val.typed_args.positional
         if len(positional) != 1:
             e_usage('Expected 1 positional argument but received %d' % len(positional), blame)

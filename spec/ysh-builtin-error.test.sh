@@ -118,6 +118,12 @@ error uh-oh ('error', status=1)
 ## STDOUT:
 ## END
 
+#### Error must take arguments
+error
+## status: 2
+## STDOUT:
+## END
+
 #### Errors cannot have a status of 0
 error ('error', status=0)
 ## status: 1
