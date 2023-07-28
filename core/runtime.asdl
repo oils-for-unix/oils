@@ -60,9 +60,9 @@ module runtime
   | List(List[value] items)
   | Dict(Dict[str, value] d)
 
-    # CODE types
-    #   unevaluated: Eggex, Expr, Template, Command/Block
-    #   callable, in separate namespaces: Func, BoundFunc, Proc
+  # CODE types
+  #   unevaluated: Eggex, Expr, Template, Command/Block
+  #   callable, in separate namespaces: Func, BoundFunc, Proc
 
     # / d+ /
   | Eggex(re expr, str? as_ere)
@@ -70,7 +70,7 @@ module runtime
     # ^[42 + a[i]]
   | Expr(expr e)
     # ^"$1 and $2"
-  | Template(DoubleQuoted eq)
+  | Template(DoubleQuoted dq)
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | Block(command body)  # TODO: rename Command or Cmd
 
@@ -83,10 +83,16 @@ module runtime
     # Reflect on Proc, e.g. find location info for its file!
   | Proc(any p)
 
-    # Internal detail?  Does it need to be a first class type, or maybe it can
-    # double for a range?  It can't be serialized.
-    # Might want for i in (1:n) { echo $i }, although it's inconsistent with shell ..
+  #
+  # Internal details
+  #
+
+    # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
   | Slice(IntBox? lower, IntBox? upper)
+
+    # for i in (1:n) { echo $i }  # both ends are required
+  | Range(int lower, int upper)
+
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.  TODO: also use for lvalue/place.

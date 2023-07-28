@@ -15,13 +15,11 @@ source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segements
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.15.0'
+readonly PREV_VERSION='0.16.0'
 
 # adapted from release-version.sh
 _git-changelog-body() {
-  local prev_branch=$1
-  local cur_branch=$2
-  shift 2
+  local commit=$1
 
   # - a trick for HTML escaping (avoid XSS): surround %s with unlikely bytes,
   #   \x00 and \x01.  Then pipe Python to escape.
@@ -36,18 +34,26 @@ _git-changelog-body() {
     <td class="subject">%x00%s%x01</td>
   </tr>'
   git log \
-    $prev_branch..$cur_branch \
     --reverse \
     --pretty="format:$format" \
     --date=short \
-    "$@" \
+    -n 1 \
+    $commit \
   | escape-segments
 }
 
 contrib-commit-table() {
-  # show commits not made by me
-  _git-changelog-body release/$PREV_VERSION release/$OIL_VERSION \
-    --author 'Andy Chu' --author 'andychu' --author 'Andy C' --invert-grep
+  # Filter out my commits, then pass back to git log
+
+  # 2023-07: Deoptimized due to git breakage
+  # https://stackoverflow.com/questions/6889830/equivalence-of-git-log-exclude-author
+
+  git log --format='%H %an' "release/$PREV_VERSION..release/$OIL_VERSION" |
+    grep -v 'Andy C' |
+    cut -d ' ' -f 1  |
+    xargs -n 1 $0 _git-changelog-body
+
+    #xargs -n 1 -- git log -n 1
 }
 
 fetch-issues() {

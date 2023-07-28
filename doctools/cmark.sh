@@ -28,17 +28,15 @@ readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 #
 # https://pypi.org/project/Pygments/#history
 #
-# Installing through pip doesn't work.  Tarballs are better...  TODO: Put this
-# in 'toil'.
+# 7/2023: Download the wheel file
+# doctools/oil_doc.py OPTIONALLY uses this
+#
+# It's only used in the blog, so let's just put it in the oilshell.org repo,
+# not the oil repo
 
-# https://github.com/robotframework/RIDE/issues/2161
-install-pygments() {
-  #sudo -H pip install -U --force 'pygments==2.5.1'
-
-  # Why the heck does this install pygments 2.6.1 ?
-  # pip install 'pygments==2.5.1'
-
-  echo TODO
+download-old-pygments() {
+  wget --directory _tmp --no-clobber \
+    'https://files.pythonhosted.org/packages/be/39/32da3184734730c0e4d3fa3b2b5872104668ad6dc1b5a73d8e477e5fe967/Pygments-2.5.2-py2.py3-none-any.whl'
 }
 
 demo-theirs() {
