@@ -668,6 +668,11 @@ class CommandParser(object):
             return next_id
 
         while True:
+            print("content: %r" % self.lexer.line_lexer.src_line.content)
+            print("          " + " " * self.lexer.line_lexer.line_pos + "^")
+            print("This is a %s" % Id_str(next_id))
+            #print(self.lexer.line_lexer.src_line.content[self.lexer.line_lexer.line_pos])
+
             # Feed the next line into the lexer
             self.lexer.MoveToNextLine()
             next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
