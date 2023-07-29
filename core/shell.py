@@ -467,12 +467,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     if flag.one_pass_parse and not exec_opts.noexec():
         raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
 
-    # -n is equivalent to --tool syntax-tree
-    # flag.tool is '' if nothing is passed
-    tool_name = 'syntax-tree' if exec_opts.noexec() else flag.tool
-
     # Tools always use one pass parse
-    one_pass_parse = True if len(tool_name) else flag.one_pass_parse
+    # Note: osh --tool syntax-tree is like osh -n --one-pass-parse
+    one_pass_parse = True if len(flag.tool) else flag.one_pass_parse
 
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
@@ -920,6 +917,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     #
     # Tools that use the OSH/YSH parsing mode, etc.
     #
+
+    # flag.tool is '' if nothing is passed
+    # osh --tool syntax-tree is equivalent to osh -n --one-pass-parse
+    tool_name = 'syntax-tree' if exec_opts.noexec() else flag.tool
 
     if len(tool_name):
         arena.SaveTokens()
