@@ -226,7 +226,7 @@ readonly HAVE_ROOT=1
 readonly -a MORE_TESTS=(
   process-table
   gold 
-  ysh-prettify
+  ysh-ify
   parse-errors runtime-errors
   ysh-runtime-errors
   ysh-parse-errors

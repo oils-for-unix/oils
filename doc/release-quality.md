@@ -68,7 +68,7 @@ This is a supplement to the [main release page](index.html).
 - How many processes does Oils start compared to other shells?
   - [syscall/by-code](more-tests.wwz/syscall/by-code.txt)
     | [syscall/by-input](more-tests.wwz/syscall/by-input.txt)
-- [ysh-prettify Tests](more-tests.wwz/suite-logs/ysh-prettify.txt).  Test OSH to YSH
+- [ysh-ify Tests](more-tests.wwz/suite-logs/ysh-ify.txt).  Test OSH to YSH
   translation.
 
 [Smoosh]: http://shell.cs.pomona.edu/
