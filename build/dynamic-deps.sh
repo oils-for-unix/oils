@@ -61,7 +61,6 @@ mycpp/mylib.py
 
 # TODO: move or remove these
 tools/deps.py
-tools/tools_main.py
 tools/readlink.py
 EOF
 

@@ -67,6 +67,7 @@ from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
+from tools import deps
 from tools import osh2oil
 
 import libc
@@ -728,7 +729,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
             else:
                 stdin_ = mylib.Stdin()
                 # --tool never starts a prompt
-                if flag.tool is None and stdin_.isatty():
+                if len(flag.tool) == 0 and stdin_.isatty():
                     src = source.Interactive
                     line_reader = reader.InteractiveLineReader(
                         arena, prompt_ev, hist_ev, readline, prompt_state)
@@ -937,11 +938,18 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         elif tool_name == 'tokens':
             osh2oil.PrintTokens(arena)
 
+        elif tool_name == 'arena':  # for test/arena.sh
+            osh2oil.PrintArena(arena)
+
         elif tool_name == 'ysh-ify':
             osh2oil.PrintAsOil(arena, node)
 
+        elif tool_name == 'deps':
+            if mylib.PYTHON:
+                deps.Deps(node)
+
         else:
-            raise AssertionError(repr(tool_name))  # flag parser validated it
+            raise AssertionError(tool_name)  # flag parser validated it
 
         return 0
 

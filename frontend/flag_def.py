@@ -200,7 +200,13 @@ MAIN_SPEC.LongFlag('--version')
 
 # --tool ysh-ify, etc.
 # default is ''
-MAIN_SPEC.LongFlag('--tool', ['tokens', 'syntax-tree', 'ysh-ify'])
+#
+# More ideas for tools
+#   undefined-vars - a static analysis pass
+#   parse-glob - to debug parsing
+#   parse-printf
+MAIN_SPEC.LongFlag('--tool', ['tokens', 'arena', 'syntax-tree', 'ysh-ify',
+                              'deps'])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op
