@@ -1245,6 +1245,34 @@ ysh_case() {
   set +o errexit
 
   _ysh-should-parse '
+  case (x) {
+    (else) { = 1; }
+  }
+  '
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { echo 1 }
+  }
+  '
+
+  if true; then
+    _ysh-should-parse '
+    case (x) {
+      (else) { echo 1 } 
+    }
+    '
+
+    _ysh-should-parse '
+    case (x) {
+      (else) { = 1 }
+    }
+    '
+
+    return  # TEMP: remove me
+  fi
+
+  _ysh-should-parse '
   case (foo) { (else) { echo } }
   '
 
@@ -1254,15 +1282,11 @@ ysh_case() {
   }
   '
 
-  # TODO: Make this case parse
-  if false; then
-    # parse_bare_word
-    _ysh-should-parse '
-    case (foo) {
-      (obj.attr) { echo "python" }
-    }
-    '
-  fi
+  _ysh-should-parse '
+  case (foo) {
+    (obj.attr) { echo "python" }
+  }
+  '
 
   _ysh-should-parse '
   case (foo) {
