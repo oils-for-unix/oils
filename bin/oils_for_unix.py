@@ -31,7 +31,6 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 from osh import builtin_misc
 from pylib import os_path
-from tools import tools_main
 
 if mylib.PYTHON:
     from tea import tea_main
@@ -146,19 +145,8 @@ def AppBundleMain(argv):
         return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
 
     elif applet == 'oshc':
-        # TODO: ysh-format is probably the only thing we will expose.
-
-        arg_r.Next()
-        main_argv = arg_r.Rest()
-        try:
-            if mylib.PYTHON:
-                return tools_main.OshCommandMain(main_argv)
-            else:
-                print_stderr('oshc not translated')
-                return 2
-        except error.Usage as e:
-            print_stderr('oshc usage error: %s' % e.msg)
-            return 2
+        # Moved to --tool
+        raise AssertionError()
 
     elif applet == 'tea':
         arg_r.Next()

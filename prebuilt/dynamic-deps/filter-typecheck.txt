@@ -4,5 +4,4 @@ library/func_cpython.py
 pylib/collections_.py
 mycpp/mylib.py
 tools/deps.py
-tools/tools_main.py
 tools/readlink.py

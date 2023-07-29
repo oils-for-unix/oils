@@ -15,40 +15,12 @@ source test/common.sh
 
 # Compare osh code on stdin (fd 0) and expected oil code on fd 3.
 assert-deps() {
-  bin/oshc deps | diff -u /dev/fd/3 - || fail
-}
-
-test-usage() {
-  set +o errexit
-
-  # missing required subcommand
-  bin/oshc
-  test $? -eq 2 || fail
-
-  bin/oshc invalid
-  test $? -eq 2 || fail
-
-  # Syntax error
-  echo '<' | bin/oshc deps 
-  test $? -eq 2 || fail
-
-  # File not found
-  bin/oshc deps nonexistent.txt
-  test $? -eq 2 || fail
-
-  return
-
-  # Doesn't work yet
-  echo --
-  bin/oshc --help
-  test $? -eq 0 || fail
-
-  set -o errexit
+  bin/osh --tool deps | diff -u /dev/fd/3 - || fail
 }
 
 test-ourselves() {
   ### This shows an errror but doesn't exit 0
-  bin/oshc deps $0
+  bin/osh --tool deps $0
   test $? -eq 0 || fail
 }
 

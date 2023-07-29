@@ -19,7 +19,7 @@ prettify-one() {
   local file=$1
 
   set +o errexit
-  bin/oshc translate "$file"
+  bin/osh --tool ysh-ify "$file"
   local status=$?
   set +o errexit
 
@@ -72,7 +72,7 @@ check-osh2ysh() {
   fi
 
   local tmp=$TEMP_DIR/actual.ysh
-  echo "$osh_str" | bin/oshc translate | tee $tmp
+  echo "$osh_str" | bin/osh --tool ysh-ify | tee $tmp
 
   echo "$ysh_str" | diff -u $tmp -
   echo 'OK'

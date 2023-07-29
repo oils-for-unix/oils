@@ -114,6 +114,10 @@ class Arena(object):
         # reuse these instances in many line_span instances
         self.source_instances = []  # type: List[source_t]
 
+    def SaveTokens(self):
+        # type: () -> None
+        self.save_tokens = True
+
     def PushSource(self, src):
         # type: (source_t) -> None
         self.source_instances.append(src)

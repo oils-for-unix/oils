@@ -191,47 +191,60 @@ def _AddShellOptions(spec):
         # modified.
 
 
-OSH_SPEC = FlagSpecAndMore('main', typed=True)
+MAIN_SPEC = FlagSpecAndMore('main', typed=True)
 
-OSH_SPEC.ShortFlag('-c', args.String,
+MAIN_SPEC.ShortFlag('-c', args.String,
                    quit_parsing_flags=True)  # command string
-OSH_SPEC.LongFlag('--help')
-OSH_SPEC.LongFlag('--version')
+MAIN_SPEC.LongFlag('--help')
+MAIN_SPEC.LongFlag('--version')
 
-OSH_SPEC.ShortFlag('-i')  # interactive
-OSH_SPEC.ShortFlag('-l')  # login - currently no-op
-OSH_SPEC.LongFlag('--login')  # login - currently no-op
-OSH_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
+# --tool ysh-ify, etc.
+# default is ''
+#
+# More ideas for tools
+#   undefined-vars - a static analysis pass
+#   parse-glob - to debug parsing
+#   parse-printf
+MAIN_SPEC.LongFlag('--tool', ['tokens', 'arena', 'syntax-tree', 'ysh-ify',
+                              'deps'])
+
+MAIN_SPEC.ShortFlag('-i')  # interactive
+MAIN_SPEC.ShortFlag('-l')  # login - currently no-op
+MAIN_SPEC.LongFlag('--login')  # login - currently no-op
+MAIN_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
 
 # TODO: -h too
 # the output format when passing -n
-OSH_SPEC.LongFlag(
+MAIN_SPEC.LongFlag(
     '--ast-format',
     ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
     default='abbrev-text')
 
 # Defines completion style.
-OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
+MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
 # TODO: Add option for YSH prompt style?  RHS prompt?
 
-# Don't reparse a[x+1] and ``.  Only valid in -n mode.
-OSH_SPEC.LongFlag('--one-pass-parse')
+# $SH -n won't reparse a[x+1] and ``.  Note that $SH --tool automatically turns
+# it on.
+# TODO: Do we only need this for the "arena invariant"?  e.g. test/arena.sh I
+# think we can REMOVE it if we get rid of the arena.
+MAIN_SPEC.LongFlag('--one-pass-parse')
 
-OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
-OSH_SPEC.LongFlag('--debug-file', args.String)
-OSH_SPEC.LongFlag('--xtrace-to-debug-file')
+MAIN_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
+MAIN_SPEC.LongFlag('--debug-file', args.String)
+MAIN_SPEC.LongFlag('--xtrace-to-debug-file')
 
 # This flag has is named like bash's equivalent.  We got rid of --norc because
 # it can simply by --rcfile /dev/null.
-OSH_SPEC.LongFlag('--rcfile', args.String)
-OSH_SPEC.LongFlag('--rcdir', args.String)
-OSH_SPEC.LongFlag('--norc')
+MAIN_SPEC.LongFlag('--rcfile', args.String)
+MAIN_SPEC.LongFlag('--rcdir', args.String)
+MAIN_SPEC.LongFlag('--norc')
 
 # e.g. to pass data on stdin but pretend that it came from a .hay file
-OSH_SPEC.LongFlag('--location-str', args.String)
-OSH_SPEC.LongFlag('--location-start-line', args.Int)
+MAIN_SPEC.LongFlag('--location-str', args.String)
+MAIN_SPEC.LongFlag('--location-start-line', args.Int)
 
-_AddShellOptions(OSH_SPEC)
+_AddShellOptions(MAIN_SPEC)
 
 SET_SPEC = FlagSpecAndMore('set', typed=True)
 _AddShellOptions(SET_SPEC)
