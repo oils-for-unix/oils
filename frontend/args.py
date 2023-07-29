@@ -268,7 +268,7 @@ class _Action(object):
           prefix: '-' or '+'
           suffix: ',' for -d,
           arg_r: Reader() (rename to Input or InputReader?)
-          out: _Attributes() -- thet hing we want to set
+          out: _Attributes() -- the thing we want to set
 
         Returns:
           True if flag parsing should be aborted.

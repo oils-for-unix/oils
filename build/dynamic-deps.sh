@@ -96,7 +96,6 @@ library/func_cpython.py
 library/func_eggex.py
 
 ysh/cpython.py
-#ysh/expr_eval.py
 
 # should be py_bool_stat.py, because it's ported by hand to C++
 osh/bool_stat.py

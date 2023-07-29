@@ -162,7 +162,7 @@ def _Default(arg_type, arg_default=None):
     elif arg_type == args.String:
         default = value.Undef  # e.g. read -d '' is NOT the default
     elif isinstance(arg_type, list):
-        default = value.Str('')  # This isn't valid
+        default = value.Str('')  # note: it's not None
     else:
         raise AssertionError(arg_type)
     return default

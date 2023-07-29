@@ -67,6 +67,7 @@ from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
+from tools import osh2oil
 
 import libc
 
@@ -465,11 +466,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     if flag.one_pass_parse and not exec_opts.noexec():
         raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
+
+    # -n is equivalent to --tool syntax-tree
+    # flag.tool is '' if nothing is passed
+    tool_name = 'syntax-tree' if exec_opts.noexec() else flag.tool
+
+    # Tools always use one pass parse
+    one_pass_parse = True if len(tool_name) else flag.one_pass_parse
+
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
                                        aliases,
                                        oil_grammar,
-                                       one_pass_parse=flag.one_pass_parse)
+                                       one_pass_parse=one_pass_parse)
 
     # Three ParseContext instances SHARE aliases.
     comp_arena = alloc.Arena()
@@ -721,7 +730,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                 # Not setting '-i' flag for now.  Some people's bashrc may want it?
             else:
                 stdin_ = mylib.Stdin()
-                if stdin_.isatty():
+                # --tool never starts a prompt
+                if flag.tool is None and stdin_.isatty():
                     src = source.Interactive
                     line_reader = reader.InteractiveLineReader(
                         arena, prompt_ev, hist_ev, readline, prompt_state)
@@ -756,7 +766,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     config_dir = '.config/oils'
     rc_paths = []  # type: List[str]
-    if not flag.norc:
+    if not flag.norc and (flag.headless or exec_opts.interactive()):
         # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
         rc_path = flag.rcfile
         if rc_path is None:
@@ -907,28 +917,47 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         print_stderr('%s warning: --rcdir ignored in non-interactive shell' %
                      lang)
 
-    if exec_opts.noexec():
-        status = 0
+    #
+    # Tools that use the OSH/YSH parsing mode, etc.
+    #
+
+    if len(tool_name):
+        arena.SaveTokens()
+
         try:
             node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:
             errfmt.PrettyPrintError(e)
-            status = 2
+            return 2
 
-        if status == 0:
+        if tool_name == 'syntax-tree':
             ui.PrintAst(node, flag)
-    else:
-        with state.ctx_ThisDir(mem, script_name):
-            try:
-                status = main_loop.Batch(cmd_ev,
-                                         c_parser,
-                                         errfmt,
-                                         cmd_flags=cmd_eval.IsMainProgram)
-            except util.UserExit as e:
-                status = e.status
-        mut_status = IntParamBox(status)
-        cmd_ev.MaybeRunExitTrap(mut_status)
-        status = mut_status.i
+
+        elif tool_name == 'tokens':
+            osh2oil.PrintTokens(arena)
+
+        elif tool_name == 'ysh-ify':
+            osh2oil.PrintAsOil(arena, node)
+
+        else:
+            raise AssertionError(repr(tool_name))  # flag parser validated it
+
+        return 0
+
+    # 
+    # Run a shell script
+    # 
+
+    with state.ctx_ThisDir(mem, script_name):
+        try:
+            status = main_loop.Batch(cmd_ev,
+                                     c_parser,
+                                     errfmt,
+                                     cmd_flags=cmd_eval.IsMainProgram)
+        except util.UserExit as e:
+            status = e.status
+    mut_status = IntParamBox(status)
+    cmd_ev.MaybeRunExitTrap(mut_status)
 
     # NOTE: We haven't closed the file opened with fd_state.Open
-    return status
+    return mut_status.i
