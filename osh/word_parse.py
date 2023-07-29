@@ -1130,9 +1130,10 @@ class WordParser(WordEmitter):
         """
         enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
                                                         grammar_nt.command_expr)
-        if last_token.id == Id.Op_RBrace:
-            last_token.id = Id.Lit_RBrace
-        self.buffered_word = last_token
+
+        if last_token.id == Id.Op_RBrace or last_token.id == Id.Op_Semi:
+            self.lexer.MaybeUnreadOne()
+
         return enode
 
     def ParseProc(self, node):

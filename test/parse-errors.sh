@@ -1256,19 +1256,18 @@ ysh_case() {
   }
   '
 
-  if true; then
+  _ysh-should-parse '
+  case (x) {
+    (else) { = 1 }
+  }
+  '
+
+  if false; then
     _ysh-should-parse '
     case (x) {
       (else) { echo 1 } 
     }
     '
-
-    _ysh-should-parse '
-    case (x) {
-      (else) { = 1 }
-    }
-    '
-
     return  # TEMP: remove me
   fi
 
