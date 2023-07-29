@@ -7,7 +7,6 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import command_e, for_iter_e, pat_e
-from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_str
 from core import error
 from core import state
 from core import test_lib
