@@ -68,7 +68,7 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
 from tools import deps
-from tools import osh2oil
+from tools import ysh_ify
 
 import libc
 
@@ -936,13 +936,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
             ui.PrintAst(node, flag)
 
         elif tool_name == 'tokens':
-            osh2oil.PrintTokens(arena)
+            ysh_ify.PrintTokens(arena)
 
         elif tool_name == 'arena':  # for test/arena.sh
-            osh2oil.PrintArena(arena)
+            ysh_ify.PrintArena(arena)
 
         elif tool_name == 'ysh-ify':
-            osh2oil.PrintAsOil(arena, node)
+            ysh_ify.PrintAsOil(arena, node)
 
         elif tool_name == 'deps':
             if mylib.PYTHON:

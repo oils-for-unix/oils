@@ -63,7 +63,7 @@ This is a supplement to the [main release page](index.html).
 - [tea-large](more-tests.wwz/suite-logs/tea-large.txt)
 - [arena](more-tests.wwz/suite-logs/arena.txt).  Test an invariant of the parser.
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
-- [oshc-deps](more-tests.wwz/suite-logs/oshc-deps.txt).  Tests for a subcommand in
+- [tools-deps](more-tests.wwz/suite-logs/tools-deps.txt).  Tests for a subcommand in
   progress.
 - How many processes does Oils start compared to other shells?
   - [syscall/by-code](more-tests.wwz/syscall/by-code.txt)

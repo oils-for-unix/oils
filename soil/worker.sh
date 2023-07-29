@@ -238,7 +238,7 @@ syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.t
 osh-spec          test/spec-py.sh osh-all-serial            _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
-oshc-deps         test/oshc-deps.sh soil-run             -
+tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      devtools/release.sh test-oil-tar       -
 docs              build/doc.sh soil-run                  _release/VERSION/index.html

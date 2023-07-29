@@ -150,7 +150,7 @@ auto-machine2() {
 #           gold.txt
 #           parse-errors.txt
 #           runtime-errors.txt
-#           oshc-deps.txt
+#           tools-deps.txt
 #           osh-usage.txt
 #           arena.txt
 #         tarball/  # log of building and running the tarball?
@@ -231,7 +231,7 @@ readonly -a MORE_TESTS=(
   ysh-runtime-errors
   ysh-parse-errors
   arena
-  osh-usage oshc-deps
+  osh-usage tools-deps
   syscall
 )
 
