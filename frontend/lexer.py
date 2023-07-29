@@ -256,7 +256,6 @@ class LineLexer(object):
                                 tok_val)
 
         self.line_pos = end_pos
-        print(t)
         return t
 
 

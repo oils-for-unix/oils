@@ -1406,7 +1406,7 @@ class ParserInteractionsTest(unittest.TestCase):
 
         c_parser.ParseBraceGroup()
 
-        if 1:
+        if 0:
             self._dumpLexerState(lexer)
 
         # We should be at the end of the line:
@@ -1427,7 +1427,7 @@ class ParserInteractionsTest(unittest.TestCase):
 
         c_parser.ParseBraceGroup()
 
-        if 1:
+        if 0:
             self._dumpLexerState(lexer)
 
         # We should be at the end of the line:
