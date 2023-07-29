@@ -5,9 +5,11 @@ cmd_parse_test.py: Tests for cmd_parse.py
 
 import unittest
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import command_e, for_iter_e, pat_e
+from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_str
 from core import error
+from core import state
 from core import test_lib
 from core import ui
 
@@ -1365,6 +1367,78 @@ done
 
     def testForLoopEof(self):
         err = _assert_ParseCommandListError(self, "for x in 1 2 $(")
+
+
+class ParserInteractionsTest(unittest.TestCase):
+
+    def _dumpLexerState(self, lexer):
+        print("----")
+        print(lexer.line_lexer.src_line.content)
+        print(" " * lexer.line_lexer.line_pos + "^ We are here")
+        print("----")
+
+    def testBraceGroup(self):
+        code_str = '{ echo hello; } '
+
+        c_parser = test_lib.InitCommandParser(code_str)
+        lexer = c_parser.lexer
+
+        c_parser.ParseBraceGroup()
+
+        if 0:
+            self._dumpLexerState(lexer)
+
+        # We should be at the end of the line:
+        # '{ echo hello; } '
+        #                  ^ Which is here
+        self.assertEqual(len(lexer.line_lexer.src_line.content),
+                         lexer.line_lexer.line_pos)
+
+        next_id = c_parser.w_parser.LookPastSpace()
+        self.assertEqual(next_id, Id.Unknown_Tok, Id_str(next_id))
+
+    def testYSHBraceGroup(self):
+        code_str = '{ echo hello } '
+
+        c_parser = test_lib.InitCommandParser(code_str)
+        c_parser.parse_opts = state.MakeOilOpts()  # place parser in YSH mode
+        lexer = c_parser.lexer
+
+        c_parser.ParseBraceGroup()
+
+        if 1:
+            self._dumpLexerState(lexer)
+
+        # We should be at the end of the line:
+        # '{ echo hello; } '
+        #                  ^ Which is here
+        self.assertEqual(len(lexer.line_lexer.src_line.content),
+                         lexer.line_lexer.line_pos)
+
+        next_id = c_parser.w_parser.LookPastSpace()
+        self.assertEqual(next_id, Id.Unknown_Tok)
+
+    def testCmd2Expr2Cmd(self):
+        code_str = '{ = hello } '
+
+        c_parser = test_lib.InitCommandParser(code_str)
+        c_parser.parse_opts = state.MakeOilOpts()  # place parser in YSH mode
+        lexer = c_parser.lexer
+
+        c_parser.ParseBraceGroup()
+
+        if 1:
+            self._dumpLexerState(lexer)
+
+        # We should be at the end of the line:
+        # '{ echo hello; } '
+        #                  ^ Which is here
+        self.assertEqual(len(lexer.line_lexer.src_line.content),
+                         lexer.line_lexer.line_pos)
+
+        next_id = c_parser.w_parser.LookPastSpace()
+        self.assertEqual(next_id, Id.Unknown_Tok)
+
 
 
 if __name__ == '__main__':
