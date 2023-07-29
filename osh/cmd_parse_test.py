@@ -1408,9 +1408,6 @@ class ParserInteractionsTest(unittest.TestCase):
         if 0:
             self._dumpLexerState(lexer)
 
-        # We should be at the end of the line:
-        # '{ echo hello; } '
-        #                  ^ Which is here
         self.assertEqual(len(lexer.line_lexer.src_line.content),
                          lexer.line_lexer.line_pos)
 
@@ -1429,9 +1426,6 @@ class ParserInteractionsTest(unittest.TestCase):
         if 0:
             self._dumpLexerState(lexer)
 
-        # We should be at the end of the line:
-        # '{ echo hello; } '
-        #                  ^ Which is here
         self.assertEqual(len(lexer.line_lexer.src_line.content),
                          lexer.line_lexer.line_pos)
 
