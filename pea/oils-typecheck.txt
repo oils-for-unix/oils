@@ -85,7 +85,7 @@ pylib/cgi.py
 pylib/os_path.py
 pylib/path_stat.py
 tea/tea_main.py
-tools/osh2oil.py
+tools/ysh_ify.py
 ysh/builtin_json.py
 ysh/builtin_oil.py
 ysh/cpython.py
