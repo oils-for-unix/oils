@@ -1133,6 +1133,8 @@ class WordParser(WordEmitter):
 
         if last_token.id == Id.Op_RBrace or last_token.id == Id.Op_Semi:
             self.lexer.MaybeUnreadOne()
+        else:
+            self.buffered_word = last_token
 
         return enode
 
