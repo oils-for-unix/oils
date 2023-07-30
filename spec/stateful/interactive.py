@@ -37,6 +37,7 @@ def bg_proc_notify(sh):
   expect_prompt(sh)
 
   sh.sendline('sleep 0.1 &')
+  sh.sendline('sleep 0.3 &')
 
   if sh.shell_label == 'bash':
     # e.g. [1] 12345
@@ -47,9 +48,10 @@ def bg_proc_notify(sh):
   expect_prompt(sh)
 
   # Wait until after it stops and then hit enter
-  time.sleep(0.2)
+  time.sleep(0.4)
   sh.sendline('')
-
+  sh.expect(r'.*Done.*')
+  sh.sendline('')
   sh.expect(r'.*Done.*')
 
   sh.sendline('echo status=$?')

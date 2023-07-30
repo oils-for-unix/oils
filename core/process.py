@@ -1527,7 +1527,11 @@ class JobList(object):
         self.child_procs = {}  # type: Dict[int, Process]
         self.debug_pipelines = []  # type: List[Pipeline]
 
-        self.job_id = 1  # Strictly increasing
+        # Counter used to assign IDs to jobs. It is incremented every time a job
+        # is created. Once all active jobs are done it is reset to 1. I'm not
+        # sure if this reset behavior is mandated by POSIX, but other shells do
+        # it, so we mimick for the sake of compatability.
+        self.job_id = 1
 
     def AddJob(self, job):
         # type: (Job) -> int
@@ -1544,7 +1548,7 @@ class JobList(object):
         job_id = self.job_id
         self.jobs[job_id] = job
         job.job_id = job_id
-        self.job_id += 1  # For now, the ID is ever-increasing.
+        self.job_id += 1
         return job_id
 
     def RemoveJob(self, job_id):
@@ -1552,8 +1556,6 @@ class JobList(object):
         """Process and Pipeline can call this."""
         mylib.dict_erase(self.jobs, job_id)
 
-        # Reset job counter when all jobs finish to compatability with bash and
-        # others.
         if len(self.jobs) == 0:
             self.job_id = 1
 

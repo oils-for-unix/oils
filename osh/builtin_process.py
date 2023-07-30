@@ -90,7 +90,7 @@ class Fg(vm._Builtin):
         job.state = job_state_e.Running
         posix.killpg(pgid, SIGCONT)
 
-        status = 1 # error
+        status = -1
         wait_st = job.JobWait(self.waiter)
         UP_wait_st = wait_st
         with tagswitch(wait_st) as case:
