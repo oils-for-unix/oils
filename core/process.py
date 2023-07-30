@@ -1781,12 +1781,6 @@ class Waiter(object):
         self.tracer = tracer
         self.last_status = 127  # wait -n error code
 
-    #def CheckForNotifications(self):
-    #    """
-    #    Called by main_loop::Interactive()
-    #    """
-    #    pid, status = pyos.WaitPid(WNOHANG)
-
     def WaitForOne(self, waitpid_options=0):
         # type: (int) -> int
         """Wait until the next process returns (or maybe Ctrl-C).
