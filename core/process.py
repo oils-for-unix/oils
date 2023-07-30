@@ -1749,6 +1749,7 @@ class JobList(object):
 # Some WaitForOne() return values
 W1_OK = -2  # waitpid(-1) returned
 W1_ECHILD = -3  # no processes to wait for
+W1_AGAIN = -4 # WNOHANG was passed and there were no state changes
 
 
 class Waiter(object):
@@ -1819,7 +1820,7 @@ class Waiter(object):
         """
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:  # WNOHANG passed, and no state changes
-            return W1_OK
+            return W1_AGAIN
         elif pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))

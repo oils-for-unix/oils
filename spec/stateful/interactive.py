@@ -55,12 +55,7 @@ def bg_proc_notify(sh):
   # Wait until after it stops and then hit enter
   time.sleep(0.4)
   sh.sendline('')
-  if 'osh' in sh.shell_label:
-      sh.expect(r'.*Done.*')
-      sh.sendline('')
-      sh.expect(r'.*Done.*')
-  else:
-      sh.expect(r'.*Done.*Done.*')
+  sh.expect(r'.*Done.*Done.*')
 
   sh.sendline('echo status=$?')
   sh.expect('status=0')
@@ -83,11 +78,6 @@ def bg_pipeline_notify(sh):
 
   time.sleep(0.2)
   sh.sendline('')
-  if 'osh' in sh.shell_label:
-      # need to wake up from wait() twice in osh
-      # TODO: can we avoid this? how do bash and others handle this?
-      expect_prompt(sh)
-      sh.sendline('')
 
   sh.expect(r'.*Done.*')
 
