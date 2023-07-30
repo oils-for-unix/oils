@@ -37,8 +37,13 @@ def bg_proc_notify(sh):
   expect_prompt(sh)
 
   sh.sendline('sleep 0.1 &')
-  sh.sendline('sleep 0.3 &')
+  if sh.shell_label == 'bash':
+    # e.g. [1] 12345
+    # not using trailing + because pexpect doc warns about that case
+    # dash doesn't print this
+    sh.expect(r'\[\d+\]')
 
+  sh.sendline('sleep 0.2 &')
   if sh.shell_label == 'bash':
     # e.g. [1] 12345
     # not using trailing + because pexpect doc warns about that case
@@ -50,9 +55,12 @@ def bg_proc_notify(sh):
   # Wait until after it stops and then hit enter
   time.sleep(0.4)
   sh.sendline('')
-  sh.expect(r'.*Done.*')
-  sh.sendline('')
-  sh.expect(r'.*Done.*')
+  if 'osh' in sh.shell_label:
+      sh.expect(r'.*Done.*')
+      sh.sendline('')
+      sh.expect(r'.*Done.*')
+  else:
+      sh.expect(r'.*Done.*Done.*')
 
   sh.sendline('echo status=$?')
   sh.expect('status=0')
