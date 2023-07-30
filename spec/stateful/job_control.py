@@ -22,7 +22,7 @@ from test.spec_lib import log
 # Generated from C header file
 TIOCSIG = 0x40045436
 
-PYCAT = 'python2 -c "import sys; print(sys.stdin.readline().strip() + \'%s\')" &'
+PYCAT = 'python2 -c "import sys; print(sys.stdin.readline().strip() + \'%s\')"'
 
 
 def ctrl_c(sh):
@@ -280,8 +280,8 @@ def no_spurious_tty_take(sh):
   # background cat should have been stopped by SIGTTIN immediately, but we don't
   # hear about it from wait() until the foreground process has been started because
   # the shell was blocked in readline when the signal fired.
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
   sh.sendline(PYCAT % 'bar')
-  time.sleep(0.1)  # seems necessary
   if 'osh' in sh.shell_label:
     # Quirk of osh. TODO: supress this print for background jobs?
     sh.expect('.*Stopped.*')
@@ -299,47 +299,67 @@ def fg_current_previous(sh):
   'Resume the special jobs: %- and %+'
   expect_prompt(sh)
 
-  sh.sendline('sleep 1000 &') # will exit as soon as we're done with it
+  sh.sendline('sleep 1000 &') # will be terminated as soon as we're done with it
 
   # Start two jobs. Both will get stopped by SIGTTIN when they try to read() on
   # STDIN. According to POSIX, %- and %+ should always refer to stopped jobs if
   # there are at least two of them.
-  sh.sendline(PYCAT % 'bar')
-  sh.sendline('cat &')
+  sh.sendline((PYCAT % 'bar') + ' &')
 
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  sh.sendline('cat &')
   if 'osh' in sh.shell_label:
-    time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
-    sh.sendline('')
+    sh.expect('.*Stopped.*')
+
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  if 'osh' in sh.shell_label:
     sh.sendline('')
     sh.expect('.*Stopped.*')
 
   # Bring back the newest stopped job
   sh.sendline('fg %+')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
   sh.sendline('foo')
   sh.expect('foo')
   ctrl_z(sh)
 
   # Bring back the second-newest stopped job
   sh.sendline('fg %-')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
   sh.sendline('')
   sh.expect('bar')
 
   # Force cat to exit
   ctrl_c(sh)
+  expect_prompt(sh)
+  time.sleep(0.1) # wait for cat job to go away
 
   # Now that cat is gone, %- should refer to the running job
   sh.sendline('fg %-')
-  sh.sendline('into the void')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
+  sh.sendline('true')
   time.sleep(0.5)
   sh.expect('') # sleep should swallow whatever we write to stdin
   ctrl_c(sh)
 
   # %+ and %- should refer to the same thing now that there's only one job
   sh.sendline('fg %+')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
   sh.sendline('woof')
   sh.expect('woof')
   ctrl_z(sh)
   sh.sendline('fg %-')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
   sh.sendline('meow')
   sh.expect('meow')
   ctrl_c(sh)
@@ -352,15 +372,15 @@ def fg_job_id(sh):
   'Resume jobs with integral job specs using `fg` builtin'
   expect_prompt(sh)
 
-  sh.sendline(PYCAT % 'foo') # %1
+  sh.sendline((PYCAT % 'foo') + ' &') # %1
 
-  sh.sendline(PYCAT % 'bar') # %2
   time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  sh.sendline((PYCAT % 'bar') + ' &') # %2
   if 'osh' in sh.shell_label:
     sh.expect('.*Stopped.*')
 
-  sh.sendline(PYCAT % 'baz') # %3 and %-
   time.sleep(0.1)
+  sh.sendline((PYCAT % 'baz') + ' &') # %3 and %-
   if 'osh' in sh.shell_label:
     sh.expect('.*Stopped.*')
 
@@ -369,6 +389,7 @@ def fg_job_id(sh):
     sh.sendline('')
     sh.expect('.*Stopped.*')
 
+  sh.sendline('')
   expect_prompt(sh)
 
   sh.sendline('fg %1')
