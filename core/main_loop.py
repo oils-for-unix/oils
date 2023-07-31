@@ -217,9 +217,7 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, waiter, errfmt):
                         display.EraseLines()
                         # POSIX shell behavior: waitpid(-1) and show job "Done"
                         # messages
-                        r = waiter.WaitForOne(waitpid_options=WNOHANG)
-                        while r == process.W1_OK:
-                            r = waiter.WaitForOne(waitpid_options=WNOHANG)
+                        waiter.PollNotifications()
                         quit = True
                     elif case(parse_result_e.Eof):
                         display.EraseLines()
@@ -275,7 +273,7 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, waiter, errfmt):
 
             status = cmd_ev.LastStatus()
 
-            r = waiter.WaitForOne(waitpid_options=WNOHANG)
+            waiter.PollNotifications()
 
             if is_return:
                 done = True

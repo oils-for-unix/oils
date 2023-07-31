@@ -1875,3 +1875,11 @@ class Waiter(object):
         self.last_status = status  # for wait -n
         self.tracer.OnProcessEnd(pid, status)
         return W1_OK
+
+    def PollNotifications(self):
+        # type: () -> None
+        """
+        Process all pending state changes.
+        """
+        while self.WaitForOne(waitpid_options=posix.WNOHANG) == W1_OK:
+            continue
