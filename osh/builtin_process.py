@@ -22,7 +22,7 @@ from frontend import typed_args
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core.state import Mem, SearchPath
@@ -294,27 +294,26 @@ class Wait(vm._Builtin):
         for i, job_id in enumerate(job_ids):
             location = arg_locs[i]
 
-            # The % syntax is sort of like ! history sub syntax, with various queries.
-            # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
-            if job_id.startswith('%'):
-                raise error.Usage(
-                    "doesn't support bash-style jobspecs (got %r)" % job_id,
-                    location)
+            job = None # type: Optional[process.Job]
+            if job_id == '' or job_id.startswith('%'):
+                job = self.job_list.GetJobWithSpec(job_id)
 
-            # Does it look like a PID?
-            try:
-                pid = int(job_id)
-            except ValueError:
-                raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                                  location)
+            if job is None:
+                # Does it look like a PID?
+                try:
+                    pid = int(job_id)
+                except ValueError:
+                    raise error.Usage('expected PID or jobspec, got %r' % job_id,
+                                      location)
 
-            pr = self.job_list.ProcessFromPid(pid)
-            if pr is None:
-                self.errfmt.Print_("%d isn't a child of this shell" % pid,
+                job = self.job_list.ProcessFromPid(pid)
+
+            if job is None:
+                self.errfmt.Print_("%s isn't a child of this shell" % job_id,
                                    blame_loc=location)
                 return 127
 
-            wait_st = pr.JobWait(self.waiter)
+            wait_st = job.JobWait(self.waiter)
             UP_wait_st = wait_st
             with tagswitch(wait_st) as case:
                 if case(wait_status_e.Proc):

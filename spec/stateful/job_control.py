@@ -405,6 +405,28 @@ def fg_job_id(sh):
   sh.expect('bar')
 
 
+@register()
+def wait_job_spec(sh):
+  'Wait using a job spec'
+  expect_prompt(sh)
+
+  sh.sendline('(sleep 2; exit 11) &')
+  sh.sendline('(sleep 1; exit 22) &')
+  sh.sendline('(sleep 3; exit 33) &')
+
+  time.sleep(1)
+  sh.sendline('wait %2; echo status=$?')
+  sh.expect('status=22')
+
+  time.sleep(1)
+  sh.sendline('wait %-; echo status=$?')
+  sh.expect('status=11')
+
+  time.sleep(1)
+  sh.sendline('wait %+; echo status=$?')
+  sh.expect('status=33')
+
+
 if __name__ == '__main__':
   try:
     sys.exit(harness.main(sys.argv))
