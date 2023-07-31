@@ -24,7 +24,6 @@ from mycpp.mylib import log, print_stderr, tagswitch
 
 import fanos
 import posix_ as posix
-from posix_ import WNOHANG
 
 from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
