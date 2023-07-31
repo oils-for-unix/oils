@@ -51,6 +51,7 @@ from posix_ import (
     WEXITSTATUS,
     WSTOPSIG,
     WTERMSIG,
+    WNOHANG,
     O_APPEND,
     O_CREAT,
     O_NONBLOCK,
@@ -1881,5 +1882,5 @@ class Waiter(object):
         """
         Process all pending state changes.
         """
-        while self.WaitForOne(waitpid_options=posix.WNOHANG) == W1_OK:
+        while self.WaitForOne(waitpid_options=WNOHANG) == W1_OK:
             continue
