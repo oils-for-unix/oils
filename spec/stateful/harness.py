@@ -48,20 +48,21 @@ def stop_process__hack(name, sig_num=signal.SIGSTOP):
 # Mutated by each test file.
 CASES = []
 
-def register(skip_shells=None):
-  if skip_shells is None:
-    skip_shells = []
+def register(skip_shells=None, not_impl_shells=None):
+  skip_shells = skip_shells or []
+  not_impl_shells = not_impl_shells or []
 
   def decorator(func):
-    CASES.append((func.__doc__, func, skip_shells))
+    CASES.append((func.__doc__, func, skip_shells, not_impl_shells))
     return func
   return decorator
 
 
 class Result(object):
   SKIP = 1
-  OK = 2
-  FAIL = 3
+  NI = 2
+  OK = 3
+  FAIL = 4
 
 
 class TestRunner(object):
@@ -135,23 +136,32 @@ class TestRunner(object):
       raise AssertionError(result)
 
   def RunCases(self, cases, case_predicate, shell_pairs, result_table, flaky):
-    for case_num, (desc, func, skip_shells) in enumerate(cases):
+    for case_num, (desc, func, skip_shells, not_impl_shells) in enumerate(cases):
       if not case_predicate(case_num, desc):
         continue
 
       result_row = [case_num]
 
       for shell_label, shell_path in shell_pairs:
-        skip = shell_label in skip_shells
-        skip_str = 'SKIP' if skip else ''
+        skip_str = ''
+        if shell_label in skip_shells:
+          skip_str = 'SKIP'
+        if shell_label in not_impl_shells:
+          skip_str = 'N-I'
 
         print()
         print('%s\t%d\t%s\t%s' % (skip_str, case_num, shell_label, desc))
         print()
         sys.stdout.flush()  # prevent interleaving
 
-        if skip:
+        if shell_label in skip_shells:
           result_row.append(Result.SKIP)
+          flaky[case_num, shell_label] = -1
+          continue
+
+        # N-I is just like SKIP, but it's displayed differently
+        if shell_label in not_impl_shells:
+          result_row.append(Result.NI)
           flaky[case_num, shell_label] = -1
           continue
 
@@ -216,6 +226,9 @@ def PrintResults(shell_pairs, result_table, flaky, num_retries, f):
 
       if cell == Result.SKIP:
         f.write('SKIP\t')
+
+      elif cell == Result.NI:
+        f.write('N-I\t')
 
       elif cell == Result.FAIL:
         # Don't count C++ failures right now
@@ -317,7 +330,7 @@ def main(argv):
 
   # List test cases and return
   if opts.do_list:
-    for i, (desc, _, _) in enumerate(CASES):
+    for i, (desc, _, _, _) in enumerate(CASES):
       print('%d\t%s' % (i, desc))
     return
 
@@ -370,3 +383,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: sw=2

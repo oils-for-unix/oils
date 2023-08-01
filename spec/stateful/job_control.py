@@ -196,9 +196,14 @@ def stopped_process(sh):
   expect_no_job(sh)
 
 
-@register()
+# OSH doesn't support this because of the lastpipe issue
+# Note: it would be nice to print a message on Ctrl-Z like zsh does:
+# "job can't be suspended"
+
+@register(not_impl_shells=['osh', 'osh-cpp'])
 def stopped_pipeline(sh):
-  'Resuming a stopped pipeline (issue 1087)'
+  'Suspend and resume a pipeline (issue 1087)'
+
   expect_prompt(sh)
 
   sh.sendline('sleep 10 | cat | cat')
