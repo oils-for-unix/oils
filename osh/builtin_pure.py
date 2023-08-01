@@ -66,6 +66,7 @@ class Boolean(vm._Builtin):
 
 
 class Alias(vm._Builtin):
+
     def __init__(self, aliases, errfmt):
         # type: (Dict[str, str], ui.ErrorFormatter) -> None
         self.aliases = aliases
@@ -103,6 +104,7 @@ class Alias(vm._Builtin):
 
 
 class UnAlias(vm._Builtin):
+
     def __init__(self, aliases, errfmt):
         # type: (Dict[str, str], ui.ErrorFormatter) -> None
         self.aliases = aliases
@@ -140,6 +142,7 @@ def SetOptionsFromFlags(exec_opts, opt_changes, shopt_changes):
 
 
 class Set(vm._Builtin):
+
     def __init__(self, exec_opts, mem):
         # type: (MutableOpts, Mem) -> None
         self.exec_opts = exec_opts
@@ -192,6 +195,7 @@ class Set(vm._Builtin):
 
 
 class Shopt(vm._Builtin):
+
     def __init__(self, mutable_opts, cmd_ev):
         # type: (MutableOpts, CommandEvaluator) -> None
         self.mutable_opts = mutable_opts
@@ -271,6 +275,7 @@ class Shopt(vm._Builtin):
 
 
 class Hash(vm._Builtin):
+
     def __init__(self, search_path):
         # type: (SearchPath) -> None
         self.search_path = search_path
@@ -654,6 +659,7 @@ class Use(vm._Builtin):
 
 
 class Shvar(vm._Builtin):
+
     def __init__(self, mem, search_path, cmd_ev):
         # type: (state.Mem, SearchPath, CommandEvaluator) -> None
         self.mem = mem
@@ -694,6 +700,7 @@ class Shvar(vm._Builtin):
 
 
 class PushRegisters(vm._Builtin):
+
     def __init__(self, mem, cmd_ev):
         # type: (state.Mem, CommandEvaluator) -> None
         self.mem = mem
@@ -817,7 +824,8 @@ class HayNode(vm._Builtin):
                 line = brace_group.left.line
 
                 # for the user to pass back to --location-str
-                result['location_str'] = value.Str(ui.GetLineSourceString(line))
+                result['location_str'] = value.Str(
+                    ui.GetLineSourceString(line))
                 result['location_start_line'] = value.Int(line.line_num)
 
                 # Between { and }
@@ -862,6 +870,7 @@ class HayNode(vm._Builtin):
 
 _HAY_ACTION_ERROR = "builtin expects 'define', 'reset' or 'pp'"
 
+
 class Hay(vm._Builtin):
     """hay builtin
 
@@ -870,6 +879,7 @@ class Hay(vm._Builtin):
     hay pp
     hay reset
     """
+
     def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
         # type: (state.Hay, MutableOpts, state.Mem, CommandEvaluator) -> None
         self.hay_state = hay_state
@@ -931,8 +941,7 @@ class Hay(vm._Builtin):
             result = self.hay_state.Result()
 
             val = value.Dict(result)
-            self.mem.SetValue(location.LName(var_name), val,
-                              scope_e.LocalOnly)
+            self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
 
         elif action == 'reset':
             self.hay_state.Reset()
