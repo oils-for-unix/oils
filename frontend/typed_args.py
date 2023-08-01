@@ -128,11 +128,11 @@ class Reader(object):
 
     ### Typed named args
 
-    def NamedStr(self, param_name, default):
+    def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
         pass
 
-    def NamedInt(self, param_name, default):
+    def NamedInt(self, param_name, default_):
         # type: (str, int) -> int
         pass
 

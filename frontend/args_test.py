@@ -5,7 +5,7 @@ args_test.py: Tests for args.py
 
 import unittest
 
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, value
 from _devbuild.gen.syntax_asdl import loc, loc_t
 from core import error
 from frontend import flag_spec
@@ -61,9 +61,9 @@ class ArgsTest(unittest.TestCase):
         arg = args.ParseMore(s, arg_r)
 
         self.assertEqual(['foo', '--help'], arg_r.Rest())
-        self.assertEqual('echo hi', arg.c)
-        self.assertEqual(None, arg.help)
-        self.assertEqual(None, arg.i)
+        self.assertEqual('echo hi', arg.attrs['c'].s)
+        self.assertEqual(False, arg.attrs['help'].b)
+        self.assertEqual(value.Undef, arg.attrs['i'])
 
         self.assertEqual([('errexit', True), ('nounset', True)],
                          arg.opt_changes)
@@ -72,7 +72,7 @@ class ArgsTest(unittest.TestCase):
         arg = args.ParseMore(s, arg_r)
 
         self.assertEqual(['foo'], arg_r.Rest())
-        self.assertEqual(None, arg.i)
+        self.assertEqual(value.Undef, arg.attrs['i'])
         self.assertEqual([('errexit', False), ('nounset', False),
                           ('pipefail', True)], arg.opt_changes)
 
@@ -81,10 +81,10 @@ class ArgsTest(unittest.TestCase):
             'bashrcdir'
         ])
         arg = args.ParseMore(s, arg_r)
-        self.assertEqual('echo hi', arg.c)
-        self.assertEqual(True, arg.help)
-        self.assertEqual('bashrc', arg.rcfile)
-        self.assertEqual('bashrcdir', arg.rcdir)
+        self.assertEqual('echo hi', arg.attrs['c'].s)
+        self.assertEqual(True, arg.attrs['help'].b)
+        self.assertEqual('bashrc', arg.attrs['rcfile'].s)
+        self.assertEqual('bashrcdir', arg.attrs['rcdir'].s)
 
         # This is an odd syntax!
         arg_r = args.Reader(['-euo', 'pipefail'])
@@ -122,7 +122,7 @@ class ArgsTest(unittest.TestCase):
 
         arg_r = args.Reader(['--ast-format', 'text'])
         arg = args.ParseMore(s, arg_r)
-        self.assertEqual('text', arg.ast_format)
+        self.assertEqual('text', arg.attrs['ast_format'].s)
 
         self.assertRaises(error.Usage, args.Parse, s,
                           args.Reader(['--ast-format', 'oops']))
@@ -139,34 +139,34 @@ class ArgsTest(unittest.TestCase):
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-f', 'foo', 'bar']))
         self.assertEqual(1, i - 1)
-        self.assertEqual(True, arg.f)
+        self.assertEqual(True, arg.attrs['f'].b)
         #self.assertEqual(False, arg.n)
-        self.assertEqual(False, arg.n)
+        self.assertEqual(False, arg.attrs['n'].b)
 
         self.assertRaises(error.Usage, _ParseCmdVal, s,
                           _MakeBuiltinArgv(['-f', '-d']))
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-d', ' ', 'foo']))
         self.assertEqual(2, i - 1)
-        self.assertEqual(' ', arg.d)
+        self.assertEqual(' ', arg.attrs['d'].s)
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-d,', 'foo']))
         self.assertEqual(1, i - 1)
-        self.assertEqual(',', arg.d)
+        self.assertEqual(',', arg.attrs['d'].s)
         #self.assertEqual(False, arg.r)
-        self.assertEqual(None, arg.r)
+        self.assertEqual(value.Undef, arg.attrs['r'])
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-d,', '-r', '-x']))
         self.assertEqual(4, i)
-        self.assertEqual(',', arg.d)
-        self.assertEqual('-', arg.r)
-        self.assertEqual('-', arg.x)
+        self.assertEqual(',', arg.attrs['d'].s)
+        self.assertEqual('-', arg.attrs['r'].s)
+        self.assertEqual('-', arg.attrs['x'].s)
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-d,', '+rx']))
         self.assertEqual(3, i)
-        self.assertEqual(',', arg.d)
-        self.assertEqual('+', arg.r)
-        self.assertEqual('+', arg.x)
+        self.assertEqual(',', arg.attrs['d'].s)
+        self.assertEqual('+', arg.attrs['r'].s)
+        self.assertEqual('+', arg.attrs['x'].s)
 
     def testReadFlagSpec(self):
         s = flag_spec._FlagSpec()
@@ -175,17 +175,17 @@ class ArgsTest(unittest.TestCase):
         s.ShortFlag('-p', args.String)  # prompt string
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-r', 'foo']))
-        self.assertEqual(True, arg.r)
+        self.assertEqual(True, arg.attrs['r'].b)
         self.assertEqual(1, i - 1)
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-p', '>']))
-        self.assertEqual(False, arg.r)
-        self.assertEqual('>', arg.p)
+        self.assertEqual(False, arg.attrs['r'].b)
+        self.assertEqual('>', arg.attrs['p'].s)
         self.assertEqual(2, i - 1)
 
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-rp', '>']))
-        self.assertEqual(True, arg.r)
-        self.assertEqual('>', arg.p)
+        self.assertEqual(True, arg.attrs['r'].b)
+        self.assertEqual('>', arg.attrs['p'].s)
         self.assertEqual(2, i - 1)
 
         # REALLY ANNOYING: The first r is a flag, the second R is the prompt!  Only
@@ -194,13 +194,13 @@ class ArgsTest(unittest.TestCase):
         # read -p line
         #
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-rpr']))
-        self.assertEqual(True, arg.r)
-        self.assertEqual('r', arg.p)
+        self.assertEqual(True, arg.attrs['r'].b)
+        self.assertEqual('r', arg.attrs['p'].s)
         self.assertEqual(1, i - 1)
 
         argv = ['-t1.5', '>']
         arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(argv))
-        self.assertEqual(1.5, arg.t)
+        self.assertEqual(1.5, arg.attrs['t'].f)
         self.assertEqual(1, i - 1)
 
         # Invalid flag 'z'
@@ -214,22 +214,20 @@ class ArgsTest(unittest.TestCase):
 
         arg_r = _MakeReader(['-e', '-n', 'foo'])
         arg = args.ParseLikeEcho(s, arg_r)
-        self.assertEqual(True, arg.e)
-        self.assertEqual(True, arg.n)
+        self.assertEqual(True, arg.attrs['e'].b)
+        self.assertEqual(True, arg.attrs['n'].b)
         self.assertEqual(3, arg_r.i)
 
         arg_r = _MakeReader(['-en', 'foo'])
         arg = args.ParseLikeEcho(s, arg_r)
-        self.assertEqual(True, arg.e)
-        self.assertEqual(True, arg.n)
+        self.assertEqual(True, arg.attrs['e'].b)
+        self.assertEqual(True, arg.attrs['n'].b)
         self.assertEqual(2, arg_r.i)
 
         arg_r = _MakeReader(['-ez', 'foo'])
         arg = args.ParseLikeEcho(s, arg_r)
-        #self.assertEqual(False, arg.e)
-        #self.assertEqual(False, arg.n)
-        self.assertEqual(False, arg.e)
-        self.assertEqual(False, arg.n)
+        self.assertEqual(False, arg.attrs['e'].b)
+        self.assertEqual(False, arg.attrs['n'].b)
         self.assertEqual(1, arg_r.i)
 
 

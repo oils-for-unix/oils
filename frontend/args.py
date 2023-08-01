@@ -57,7 +57,6 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
 
 from core.error import e_usage
-from mycpp import mylib
 from mycpp.mylib import log, tagswitch, iteritems
 
 _ = log
@@ -106,7 +105,7 @@ class _Attributes(object):
         name = name.replace('-', '_')
         self.attrs[name] = val
 
-        if mylib.PYTHON:
+        if 0:
             # Backward compatibility!
             with tagswitch(val) as case:
                 if case(value_e.Undef):
@@ -127,27 +126,6 @@ class _Attributes(object):
     def __repr__(self):
         # type: () -> str
         return '<_Attributes %s>' % self.__dict__
-
-
-if mylib.PYTHON:
-
-    def PyToValue(py_val):
-        # type: (Any) -> value_t
-
-        if py_val is None:
-            val = value.Undef  # type: value_t
-        elif isinstance(py_val, bool):
-            val = value.Bool(py_val)
-        elif isinstance(py_val, int):
-            val = value.Int(py_val)
-        elif isinstance(py_val, float):
-            val = value.Float(py_val)  # TODO: ASDL needs float primitive
-        elif isinstance(py_val, str):
-            val = value.Str(py_val)
-        else:
-            raise AssertionError(py_val)
-
-        return val
 
 
 class Reader(object):

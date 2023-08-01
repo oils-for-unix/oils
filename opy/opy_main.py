@@ -29,7 +29,6 @@ from pgen2 import driver, parse, pgen, grammar
 from pgen2 import token
 from pgen2 import tokenize
 
-from frontend import flag_spec
 from frontend import args
 from core import error
 from core import pyutil
@@ -267,7 +266,6 @@ GRAMMAR_REL_PATH = '_build/opy/py27.grammar.marshal'
 def OpyCommandMain(argv):
   """Dispatch to the right action."""
 
-  # TODO: Use core/flag_spec.
   #opts, argv = Options().parse_args(argv)
 
   try:
@@ -302,16 +300,15 @@ def OpyCommandMain(argv):
     # tool.
     compiler = None
 
-  # TODO: Also have a run_spec for 'opyc run'.
-  compile_spec = flag_spec.FlagSpec('opy')
-  compile_spec.LongFlag(
-      '--emit-docstring', args.Bool, default=True,
+  c_parser = optparse.OptionParser()
+  c_parser.add_option(
+      '--emit-docstring', default=True,
       help='Whether to emit docstrings')
-  compile_spec.LongFlag(
-      '--fast-ops', args.Bool, default=True,
+  c_parser.add_option(
+      '--fast-ops', default=True,
       help='Whether to emit LOAD_FAST, STORE_FAST, etc.')
-  compile_spec.LongFlag(
-      '--oil-subset', args.Bool, default=False,
+  c_parser.add_option(
+      '--oil-subset', action='store_true', default=False,
       help='Only allow the constructs necessary to implement'
       'Oil. Example: using multiple inheritance will abort '
       'compilation.')
@@ -395,23 +392,20 @@ def OpyCommandMain(argv):
     printer.Print(pnode)
 
   elif action == 'ast':  # output AST
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    py_path = arg_r.ReadRequired('Expected path to Python input')
+    opt, args = c_parser.parse_args(argv)
+    py_path = args[0]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='ast')
 
   elif action == 'symbols':  # output symbols
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    py_path = arg_r.ReadRequired('Expected path to Python input')
+    opt, args = c_parser.parse_args(argv)
+    py_path = args[0]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='symbols')
 
   elif action == 'cfg':  # output Control Flow Graph
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    py_path = arg_r.ReadRequired('Expected path to Python input')
+    opt, args = c_parser.parse_args(argv)
+    py_path = args[0]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='cfg')
 
@@ -419,10 +413,9 @@ def OpyCommandMain(argv):
     # spec.Arg('action', ['foo', 'bar'])
     # But that leads to some duplication.
 
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    py_path = arg_r.ReadRequired('Expected path to Python input')
-    out_path = arg_r.ReadRequired('Expected output path')
+    opt, args = c_parser.parse_args(argv)
+    py_path = args[0]
+    out_path = args[1]
 
     with open(py_path) as f:
       co = compiler.Compile(f, opt, 'exec')
@@ -439,10 +432,9 @@ def OpyCommandMain(argv):
     # NOTE: obsolete
     from ovm2 import oheap2
 
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    py_path = arg_r.ReadRequired('Expected path to Python input')
-    out_path = arg_r.ReadRequired('Expected output path')
+    opt, args = c_parser.parse_args(argv)
+    py_path = args[0]
+    out_path = args[1]
 
     # Compile to Python bytecode (TODO: remove ovm_codegen.py)
     mode = 'exec'
@@ -466,9 +458,9 @@ def OpyCommandMain(argv):
     log('Wrote only the bytecode to %r', out_path)
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    py_expr = arg_r.ReadRequired('Expected Python expression')
+
+    opt, args = c_parser.parse_args(argv)
+    py_expr = args[0]
 
     f = skeleton.StringInput(py_expr, '<eval input>')
     co = compiler.Compile(f, opt, 'eval')
@@ -505,9 +497,9 @@ def OpyCommandMain(argv):
     out.Close()
 
   elif action == 'dis':
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-    path = arg_r.ReadRequired('Expected path')
+    opt, args = c_parser.parse_args(argv)
+    path = args[0]
+
     v = dis_tool.Visitor()
 
     if path.endswith('.py'):
@@ -546,11 +538,9 @@ def OpyCommandMain(argv):
     #logging.basicConfig(level=level)
     #logging.basicConfig(level=logging.DEBUG)
 
-    arg_r = args.Reader(argv)
-    opt = args.Parse(compile_spec, arg_r)
-
-    opy_argv = arg_r.Rest()  # ensure we have argv[0]!
-    py_path = arg_r.ReadRequired('Expected path to Python input')
+    opt, args = c_parser.parse_args(argv)
+    opy_argv = args  # including args[0]
+    py_path = args[0]
 
     if py_path.endswith('.py'):
       with open(py_path) as f:

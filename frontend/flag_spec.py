@@ -32,10 +32,10 @@ def FlagSpec(builtin_name):
     return arg_spec
 
 
-def FlagSpecAndMore(name, typed=False):
+def FlagSpecAndMore(name, typed=True):
     # type: (str, bool) -> _FlagSpecAndMore
     """For set, bin/oil.py ("main"), compgen -A, complete -A, etc."""
-    arg_spec = _FlagSpecAndMore(typed=typed)
+    arg_spec = _FlagSpecAndMore()
     FLAG_SPEC_AND_MORE[name] = arg_spec
     return arg_spec
 
@@ -279,14 +279,14 @@ class _FlagSpecAndMore(object):
       spec.Parse(...)
     """
 
-    def __init__(self, typed=False):
+    def __init__(self, typed=True):
         # type: (bool) -> None
-        self.typed = typed
 
-        self.actions_short = {
-        }  # type: Dict[str, args._Action]  # {'-c': _Action}
-        self.actions_long = {
-        }  # type: Dict[str, args._Action]  # {'--rcfile': _Action}
+        # {'-c': _Action}
+        self.actions_short = {}  # type: Dict[str, args._Action]  
+
+        # {'--rcfile': _Action}
+        self.actions_long = {}  # type: Dict[str, args._Action] 
         self.plus_flags = []  # type: List[str]
         self.defaults = {}  # type: Dict[str, value_t]
 
@@ -327,10 +327,7 @@ class _FlagSpecAndMore(object):
             self.actions_short[char] = _MakeAction(
                 arg_type, char, quit_parsing_flags=quit_parsing_flags)
 
-        if self.typed:
-            self.defaults[char] = _Default(arg_type, arg_default=default)
-        else:
-            self.defaults[char] = args.PyToValue(default)
+        self.defaults[char] = _Default(arg_type, arg_default=default)
         self.fields[char] = typ
 
     def LongFlag(
@@ -352,11 +349,7 @@ class _FlagSpecAndMore(object):
             self.actions_long[name] = _MakeAction(arg_type, name)
 
         attr_name = name.replace('-', '_')
-        if self.typed:
-            self.defaults[attr_name] = _Default(arg_type, arg_default=default)
-            #log('%s DEFAULT %s', attr_name, self.defaults[attr_name])
-        else:
-            self.defaults[attr_name] = args.PyToValue(default)
+        self.defaults[attr_name] = _Default(arg_type, arg_default=default)
         self.fields[attr_name] = typ
 
     def Option(self, short_flag, name, help=None):
