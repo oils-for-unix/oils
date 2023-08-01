@@ -1575,8 +1575,8 @@ class CommandParser(object):
             discriminant = self.w_parser.NewlineOkForYshCase()
 
         ate = self._Eat(Id.Op_RBrace)
-        ate.id = Id.Lit_RBrace
-        arms_end = word_.BraceToken(ate)
+        arms_end = word_.AsOperatorToken(ate)
+        arms_end.id = Id.Lit_RBrace
 
         return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
 
