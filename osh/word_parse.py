@@ -48,7 +48,7 @@ lex_mode_e.VSub_ArgDQ
 """
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
@@ -1168,6 +1168,44 @@ class WordParser(WordEmitter):
         self.buffered_word = last_token
 
         return pat
+
+    def NewlineOkForYshCase(self):
+        # type: () -> Id_t
+        """Check for optional newline and consume it.
+
+        This is a special case of `_NewlineOk` which fixed some "off-by-one" issues
+        which crop up while parsing Ysh Case Arms. For more details, see
+        #oil-dev > Progress On YSH Case Grammar on zulip.
+
+        Returns a token id, first_id_out, which is filled with the choice of
+
+             word { echo word }
+             (3)  { echo expr }
+             /e/  { echo eggex }
+           }        # right brace
+        """
+        while True:
+            next_id = self.lexer.LookAheadOne(lex_mode_e.Expr)
+
+            # Cannot lookahead past lines
+            if next_id == Id.Unknown_Tok:
+                self.lexer.MoveToNextLine()
+                continue
+
+            next_kind = consts.GetKind(next_id)
+            if next_id != Id.Op_Newline and next_kind != Kind.Ignored:
+                break
+
+            self.lexer.Read(lex_mode_e.Expr)
+
+        if next_id in (Id.Op_RBrace, Id.Op_LParen, Id.Arith_Slash):
+            self._SetNext(lex_mode_e.Expr)  # Continue in expression mode
+        else:
+            #  Consume the trailing Op_Newline
+            self._SetNext(lex_mode_e.ShCommand)
+            self._GetToken()
+
+        return next_id
 
     def ParseImport(self, node):
         # type: (command.Import) -> None

@@ -645,53 +645,6 @@ class CommandParser(object):
         if self.c_id == Id.Op_Newline:
             self._SetNext()
 
-    def _NewlineOkForYshCase(self):
-        # type: () -> Id_t
-        """Check for optional newline and consume it.
-
-        This is a special case of `_NewlineOk` which fixed some "off-by-one" issues
-        which crop up while parsing Ysh Case Arms. For more details, see
-        #oil-dev > Progress On YSH Case Grammar on zulip.
-
-        Returns a token id, first_id_out, which is filled with the choice of
-
-             word { echo word }
-             (3)  { echo expr }
-             /e/  { echo eggex }
-           }        # right brace
-        """
-        next_id = self.w_parser.LookPastSpace()
-
-        if next_id != Id.Op_Newline:
-            # We are not at a newline, preform a normal lookahead
-            next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
-            return next_id
-
-        while True:
-            if 0:
-                print("content: %r" % self.lexer.line_lexer.src_line.content)
-                print("          " + " " * self.lexer.line_lexer.line_pos + "^")
-                print("This is a %s" % Id_str(next_id))
-
-            # Feed the next line into the lexer
-            self.lexer.MoveToNextLine()
-            next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
-
-            if next_id != Id.Op_Newline:
-                break
-
-            # Skip past the newline token
-            next_ = self.lexer.Read(lex_mode_e.Expr)
-            assert next_.id == Id.Op_Newline, Id_str(next_.id)
-
-        # Now synchronize the word parser and continue
-        self._SetNext()  # move to Id.Op_Newline; we looked ahead to it
-        self._GetWord(
-        )  # causes ReadWord(), which may or may not change lexer state
-        self._SetNext()  # move PAST Id.Op_Newline
-
-        return next_id
-
     def _AtSecondaryKeyword(self):
         # type: () -> bool
         self._GetWord()
@@ -1611,7 +1564,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Lit_LBrace)
         arms_start = word_.BraceToken(ate)
 
-        discriminant = self._NewlineOkForYshCase()
+        discriminant = self.w_parser.NewlineOkForYshCase()
 
         # Note: for now, zero arms are accepted, just like POSIX case $x in esac
         arms = []  # type: List[CaseArm]
@@ -1619,9 +1572,10 @@ class CommandParser(object):
             arm = self.ParseYshCaseArm(discriminant)
             arms.append(arm)
 
-            discriminant = self._NewlineOkForYshCase()
+            discriminant = self.w_parser.NewlineOkForYshCase()
 
-        ate = self._Eat(Id.Lit_RBrace)
+        ate = self._Eat(Id.Op_RBrace)
+        ate.id = Id.Lit_RBrace
         arms_end = word_.BraceToken(ate)
 
         return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
