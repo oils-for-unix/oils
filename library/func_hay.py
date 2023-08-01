@@ -9,12 +9,14 @@ from core import error
 from core import main_loop
 from core import state
 from core import ui
+from core import vm
 from frontend import reader
+from frontend import typed_args
 from mycpp import mylib
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, cast, Any, Dict
+from typing import TYPE_CHECKING, cast, Any, List, Dict
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import value_t
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
     from osh import cmd_eval
 
 
-class ParseHay(object):
+class ParseHay(vm._Callable):
     """parseHay()"""
 
     def __init__(self, fd_state, parse_ctx, errfmt):
@@ -32,7 +34,7 @@ class ParseHay(object):
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
 
-    def Call(self, path):
+    def _Call(self, path):
         # type: (str) -> value_t
 
         call_loc = loc.Missing  # TODO: location info
@@ -65,8 +67,17 @@ class ParseHay(object):
         # Wrap in expr.Block?
         return value.Block(node)
 
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-class EvalHay(object):
+        spec = typed_args.Spec([value_e.Str], {})
+        spec.AssertArgs("parseHay", pos_args, named_args)
+
+        string = cast(value.Str, pos_args[0]).s
+        return self._Call(string)
+
+
+class EvalHay(vm._Callable):
     """evalHay()"""
 
     def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
@@ -76,7 +87,7 @@ class EvalHay(object):
         self.mem = mem
         self.cmd_ev = cmd_ev
 
-    def Call(self, val):
+    def _Call(self, val):
         # type: (value_t) -> Dict[str, value_t]
 
         call_loc = loc.Missing
@@ -93,26 +104,43 @@ class EvalHay(object):
         # Note: we should discourage the unvalidated top namesapce for files?  It
         # needs more validation.
 
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-class BlockAsStr(object):
+        # TODO: check args
+        return value.Dict(self._Call(pos_args[0]))
+
+
+class BlockAsStr(vm._Callable):
     """block_as_str()"""
 
     def __init__(self, arena):
         # type: (alloc.Arena) -> None
         self.arena = arena
 
-    def Call(self, block):
+    def _Call(self, block):
         # type: (value_t) -> value_t
         return block
 
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        return self._Call(pos_args[0])
 
-class HayFunc(object):
+
+class HayFunc(vm._Callable):
     """_hay() register"""
 
     def __init__(self, hay_state):
         # type: (state.Hay) -> None
         self.hay_state = hay_state
 
-    def Call(self):
+    def _Call(self):
         # type: () -> Dict[str, value_t]
         return self.hay_state.HayRegister()
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        # TODO: check args
+        return value.Dict(self._Call())
+
