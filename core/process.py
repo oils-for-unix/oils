@@ -1574,10 +1574,10 @@ class JobList(object):
         """Remove the child process with the given PID."""
         mylib.dict_erase(self.child_procs, pid)
 
-    def AddPipeline(self, pi):
-        # type: (Pipeline) -> None
-        """For debugging only."""
-        if mylib.PYTHON:
+    if mylib.PYTHON:
+        def AddPipeline(self, pi):
+            # type: (Pipeline) -> None
+            """For debugging only."""
             self.debug_pipelines.append(pi)
 
     def ProcessFromPid(self, pid):

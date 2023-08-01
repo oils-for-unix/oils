@@ -390,7 +390,7 @@ class ShellExecutor(vm._Executor):
 
         pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
                               self.job_control, self.job_list)
-        self.job_list.AddPipeline(pi)
+        #self.job_list.AddPipeline(pi)
 
         # initialized with CommandStatus.CreateNull()
         pipe_locs = []  # type: List[loc_t]

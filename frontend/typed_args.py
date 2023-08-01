@@ -54,11 +54,64 @@ class Spec(object):
 
 
 class Reader(object):
+    """
+    func f(a Str) {
+
+        is equivalent to
+
+        t = typed_args.Reader(pos_args, named_args)
+        a = t.PosStr()
+        t.Done()  # checks for no more args
+
+    func f(a Str, b Int, ...args; c=0, d='foo', ...named) {
+
+        is equivalent to
+
+        t = typed_args.Reader(pos_args, named_args)
+        a = t.PosStr()
+        b = t.PosInt()
+        args = t.RestPos()
+
+        t.NamedInt('c', 0)
+        t.NamedStr('d', 'foo')
+        named = t.RestNamed()
+
+        t.Done()
+
+    procs have more options:
+
+    proc p(a, b; a Str, b Int; c=0; block) {
+
+        is equivalent to
+
+        t = typed_args.Reader(argv, pos_args, named_args)
+
+        a = t.Word()
+        b = t.Word()
+
+        t.NamedInt('c', 0)
+
+        block = t.Block()
+
+        t.Done()
+    """
 
     def __init__(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> None
         self.pos_args = pos_args
         self.named_args = named_args
+
+    ### Words: untyped args for procs
+
+    def Word(self):
+        # type: () -> str
+        pass
+
+    def RestWords(self):
+        # type: () -> List[str]
+        pass
+
+    ### Typed positional args
 
     # TODO: may need location info
     def PosStr(self):
@@ -69,12 +122,44 @@ class Reader(object):
         # type: () -> int
         pass
 
-    def NamedStr(self, param_name):
-        # type: (str) -> str
+    def RestPos(self):
+        # type: () -> List[value_t]
         pass
 
-    def NamedInt(self, param_name):
-        # type: (str) -> int
+    ### Typed named args
+
+    def NamedStr(self, param_name, default):
+        # type: (str, str) -> str
+        pass
+
+    def NamedInt(self, param_name, default):
+        # type: (str, int) -> int
+        pass
+
+    def RestNamed(self):
+        # type: () -> Dict[str, value_t]
+        pass
+
+    def Block(self):
+        # type: () -> command_t
+        """
+        Block arg for proc
+        """
+
+        # TODO: is this BraceGroup?
+        pass
+
+    def Done(self):
+        # type: () -> None
+        """
+        Check that no extra arguments were passed
+
+        4 checks: words, pos, named, block
+
+        It's a little weird that we report all errors at the end, but no
+        problem
+        """
+        # Note: Python throws TypeError on mismatch
         pass
 
 
