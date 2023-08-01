@@ -10,7 +10,7 @@ from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.runtime_asdl import cmd_value, wait_status, wait_status_e
+from _devbuild.gen.runtime_asdl import cmd_value, job_state_e, wait_status, wait_status_e
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
@@ -22,7 +22,7 @@ from frontend import typed_args
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core.state import Mem, SearchPath
@@ -69,20 +69,48 @@ class Fg(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        pid = self.job_list.GetLastStopped()
-        if pid == -1:
+        job_spec = '' # get current job by default
+        if len(cmd_val.argv) > 1:
+            job_spec = cmd_val.argv[1]
+
+        job = self.job_list.GetJobWithSpec(job_spec)
+        if job is None:
             log('No job to put in the foreground')
             return 1
 
+        pgid = job.ProcessGroupId()
         # TODO: Print job ID rather than the PID
-        log('Continue PID %d', pid)
+        log('Continue PID %d', pgid)
         # Put the job's process group back into the foreground. GiveTerminal() must
         # be called before sending SIGCONT or else the process might immediately get
         # suspsended again if it tries to read/write on the terminal.
-        pgid = posix.getpgid(pid)
         self.job_control.MaybeGiveTerminal(pgid)
+        job.SetForeground()
+        # needed for Wait() loop to work
+        job.state = job_state_e.Running
         posix.killpg(pgid, SIGCONT)
-        return self.job_list.WhenContinued(pid, self.waiter)
+
+        status = -1
+        wait_st = job.JobWait(self.waiter)
+        UP_wait_st = wait_st
+        with tagswitch(wait_st) as case:
+            if case(wait_status_e.Proc):
+                wait_st = cast(wait_status.Proc, UP_wait_st)
+                status = wait_st.code
+
+            elif case(wait_status_e.Pipeline):
+                wait_st = cast(wait_status.Pipeline, UP_wait_st)
+                # TODO: handle PIPESTATUS?  Is this right?
+                status = wait_st.codes[-1]
+
+            elif case(wait_status_e.Cancelled):
+                wait_st = cast(wait_status.Cancelled, UP_wait_st)
+                status = 128 + wait_st.sig_num
+
+            else:
+                raise AssertionError()
+
+        return status
 
 
 class Bg(vm._Builtin):
@@ -180,22 +208,22 @@ class Exec(vm._Builtin):
 
 class Wait(vm._Builtin):
     """
-  wait: wait [-n] [id ...]
-      Wait for job completion and return exit status.
+    wait: wait [-n] [id ...]
+        Wait for job completion and return exit status.
 
-      Waits for each process identified by an ID, which may be a process ID or a
-      job specification, and reports its termination status.  If ID is not
-      given, waits for all currently active child processes, and the return
-      status is zero.  If ID is a a job specification, waits for all processes
-      in that job's pipeline.
+        Waits for each process identified by an ID, which may be a process ID or a
+        job specification, and reports its termination status.  If ID is not
+        given, waits for all currently active child processes, and the return
+        status is zero.  If ID is a a job specification, waits for all processes
+        in that job's pipeline.
 
-      If the -n option is supplied, waits for the next job to terminate and
-      returns its exit status.
+        If the -n option is supplied, waits for the next job to terminate and
+        returns its exit status.
 
-      Exit Status:
-      Returns the status of the last ID; fails if ID is invalid or an invalid
-      option is given.
-  """
+        Exit Status:
+        Returns the status of the last ID; fails if ID is invalid or an invalid
+        option is given.
+    """
 
     def __init__(self, waiter, job_list, mem, tracer, errfmt):
         # type: (Waiter, process.JobList, Mem, dev.Tracer, ErrorFormatter) -> None
@@ -266,23 +294,22 @@ class Wait(vm._Builtin):
         for i, job_id in enumerate(job_ids):
             location = arg_locs[i]
 
-            # The % syntax is sort of like ! history sub syntax, with various queries.
-            # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
-            if job_id.startswith('%'):
-                raise error.Usage(
-                    "doesn't support bash-style jobspecs (got %r)" % job_id,
-                    location)
+            job = None # type: Optional[process.Job]
+            if job_id == '' or job_id.startswith('%'):
+                job = self.job_list.GetJobWithSpec(job_id)
 
-            # Does it look like a PID?
-            try:
-                pid = int(job_id)
-            except ValueError:
-                raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                                  location)
-
-            job = self.job_list.JobFromPid(pid)
             if job is None:
-                self.errfmt.Print_("%d isn't a child of this shell" % pid,
+                # Does it look like a PID?
+                try:
+                    pid = int(job_id)
+                except ValueError:
+                    raise error.Usage('expected PID or jobspec, got %r' % job_id,
+                                      location)
+
+                job = self.job_list.ProcessFromPid(pid)
+
+            if job is None:
+                self.errfmt.Print_("%s isn't a child of this shell" % job_id,
                                    blame_loc=location)
                 return 127
 

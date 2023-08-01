@@ -26,7 +26,7 @@ _ = log
 
 def SetGlobalFunc(mem, name, func):
     # type: (state.Mem, str, Union[Callable, type]) -> None
-    """Used by bin/oil.py to set split(), etc."""
+    """Used by core/shell.py to set split(), etc."""
     assert isinstance(func, vm._Callable) or callable(func), func
 
     # TODO: Fix this location info
@@ -132,18 +132,6 @@ def Init2(mem, splitter, globber):
 
     # glob() builtin
     SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
-
-
-def Init3(mem, config_parser, eval_to_dict, block_as_str, hay_result):
-    # type: (state.Mem, func_hay.ParseHay, func_hay.EvalHay, func_hay.BlockAsStr, func_hay.HayResult) -> None
-    SetGlobalFunc(mem, 'parse_hay', config_parser.Call)
-    SetGlobalFunc(mem, 'eval_hay', eval_to_dict.Call)
-
-    # For interactive debugging.  'eval_hay()' and 'hay eval' are the main APIs.
-    SetGlobalFunc(mem, '_hay', hay_result.Call)
-
-    # for upper case TASK blocks: command_t -> Str
-    SetGlobalFunc(mem, 'block_as_str', block_as_str.Call)
 
 
 def Init(mem):

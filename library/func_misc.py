@@ -8,7 +8,7 @@ from _devbuild.gen.runtime_asdl import value, value_t, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import vm
-from library.util import ArgsSpec
+from frontend import typed_args
 from mycpp.mylib import log, tagswitch
 from ysh import val_ops
 
@@ -85,7 +85,7 @@ class StartsWith(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = ArgsSpec([value_e.Str, value_e.Str], {})
+        spec = typed_args.Spec([value_e.Str, value_e.Str], {})
         spec.AssertArgs("startswith", pos_args, named_args)
 
         string = cast(value.Str, pos_args[0]).s
@@ -104,7 +104,7 @@ class Strip(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = ArgsSpec([value_e.Str], {})
+        spec = typed_args.Spec([value_e.Str], {})
         spec.AssertArgs("strip", pos_args, named_args)
 
         string = cast(value.Str, pos_args[0]).s
@@ -122,7 +122,7 @@ class Upper(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = ArgsSpec([value_e.Str], {})
+        spec = typed_args.Spec([value_e.Str], {})
         spec.AssertArgs("upper", pos_args, named_args)
 
         string = cast(value.Str, pos_args[0]).s
@@ -140,7 +140,7 @@ class Keys(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = ArgsSpec([value_e.Dict], {})
+        spec = typed_args.Spec([value_e.Dict], {})
         spec.AssertArgs("keys", pos_args, named_args)
 
         dictionary = cast(value.Dict, pos_args[0]).d

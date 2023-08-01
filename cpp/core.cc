@@ -26,9 +26,9 @@ namespace pyos {
 
 SignalSafe* gSignalSafe = nullptr;
 
-Tuple2<int, int> WaitPid() {
+Tuple2<int, int> WaitPid(int waitpid_options) {
   int status;
-  int result = ::waitpid(-1, &status, WUNTRACED);
+  int result = ::waitpid(-1, &status, WUNTRACED | waitpid_options);
   if (result < 0) {
     if (errno == EINTR && gSignalSafe->PollSigInt()) {
       throw Alloc<KeyboardInterrupt>();

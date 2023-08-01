@@ -1,13 +1,13 @@
 #!/usr/bin/env python2
 """
-osh2oil_test.py: Tests for osh2oil.py
+ysh_ify_test.py: Tests for ysh_ify.py
 """
 
 import unittest
 
 from _devbuild.gen.runtime_asdl import word_style_e
 from osh import word_
-from tools import osh2oil  # module under test
+from tools import ysh_ify  # module under test
 
 from osh.word_parse_test import _assertReadWord
 
@@ -19,7 +19,7 @@ def assertStyle(test, expected_style, word_str):
     if new_word is not None:
         w = new_word
 
-    actual = osh2oil._GetRhsStyle(w)
+    actual = ysh_ify._GetRhsStyle(w)
     test.assertEqual(expected_style, actual)
 
 

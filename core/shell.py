@@ -38,8 +38,9 @@ from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
 
-from library import func_hay
 from library import func_cpython
+from library import func_hay
+from library import func_init
 from library import func_misc
 
 from ysh import expr_eval
@@ -68,7 +69,7 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr
 from pylib import os_path
 from tools import deps
-from tools import osh2oil
+from tools import ysh_ify
 
 import libc
 
@@ -282,11 +283,9 @@ def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex,
     builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
     builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev,
                                                 shell_ex, errfmt)
-    if mylib.PYTHON:
-        builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem,
-                                                   cmd_ev)
-        builtins[builtin_i.haynode] = builtin_pure.HayNode(
-            hay_state, mem, cmd_ev)
+    builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem,
+                                               cmd_ev)
+    builtins[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
 
 
 def AddMethods(methods):
@@ -644,14 +643,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
     AddOil(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)
 
-    if mylib.PYTHON:
-        parse_config = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
-        eval_to_dict = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
-        block_as_str = func_hay.BlockAsStr(arena)
+    parse_hay = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
+    eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
+    block_as_str = func_hay.BlockAsStr(arena)
+    hay_func = func_hay.HayFunc(hay_state)
 
-        hay_func = func_hay.HayFunc(hay_state)
-        func_cpython.Init3(mem, parse_config, eval_to_dict, block_as_str,
-                           hay_func)
+    func_init.SetGlobalFunc(mem, 'parse_hay', parse_hay)
+    func_init.SetGlobalFunc(mem, 'eval_hay', eval_hay)
+    func_init.SetGlobalFunc(mem, 'block_as_str', block_as_str)
+    func_init.SetGlobalFunc(mem, '_hay', hay_func)
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
@@ -890,7 +890,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
             prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
             try:
                 status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
-                                               prompt_plugin, errfmt)
+                                               prompt_plugin, waiter, errfmt)
             except util.UserExit as e:
                 status = e.status
 
@@ -936,13 +936,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
             ui.PrintAst(node, flag)
 
         elif tool_name == 'tokens':
-            osh2oil.PrintTokens(arena)
+            ysh_ify.PrintTokens(arena)
 
         elif tool_name == 'arena':  # for test/arena.sh
-            osh2oil.PrintArena(arena)
+            ysh_ify.PrintArena(arena)
 
         elif tool_name == 'ysh-ify':
-            osh2oil.PrintAsOil(arena, node)
+            ysh_ify.PrintAsOil(arena, node)
 
         elif tool_name == 'deps':
             if mylib.PYTHON:
