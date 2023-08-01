@@ -414,25 +414,23 @@ class Hay(object):
         node = self._MakeOutputNode()
         self.result_stack = [node]
 
-    if mylib.PYTHON:  # TODO: hay results should be a value_t tree
+    def AppendResult(self, d):
+        # type: (Dict[str, value_t]) -> None
+        """Called by haynode builtin."""
+        UP_children = self.result_stack[-1]['children']
+        assert UP_children.tag() == value_e.List, UP_children
+        children = cast(value.List, UP_children)
+        children.items.append(value.Dict(d))
 
-        def AppendResult(self, d):
-            # type: (Dict[str, value_t]) -> None
-            """Called by haynode builtin."""
-            UP_children = self.result_stack[-1]['children']
-            assert UP_children.tag() == value_e.List, UP_children
-            children = cast(value.List, UP_children)
-            children.items.append(value.Dict(d))
+    def Result(self):
+        # type: () -> Dict[str, value_t]
+        """Called by hay eval and eval_hay()"""
+        return self.output
 
-        def Result(self):
-            # type: () -> Dict[str, value_t]
-            """Called by hay eval and eval_hay()"""
-            return self.output
-
-        def HayRegister(self):
-            # type: () -> Dict[str, value_t]
-            """Called by _hay() function."""
-            return self.result_stack[0]
+    def HayRegister(self):
+        # type: () -> Dict[str, value_t]
+        """Called by _hay() function."""
+        return self.result_stack[0]
 
     def Resolve(self, first_word):
         # type: (str) -> bool
@@ -489,8 +487,7 @@ class Hay(object):
         self.def_stack.pop()
         self.cur_defs = self.def_stack[-1]
 
-        if mylib.PYTHON:
-            self.result_stack.pop()
+        self.result_stack.pop()
 
 
 class OptHook(object):

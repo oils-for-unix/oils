@@ -76,27 +76,22 @@ class EvalHay(object):
         self.mem = mem
         self.cmd_ev = cmd_ev
 
-    if mylib.PYTHON:
-        # Hard to translate the Dict[str, Any]
+    def Call(self, val):
+        # type: (value_t) -> Dict[str, value_t]
 
-        def Call(self, block):
-            # type: (value_t) -> Dict[str, Any]
+        call_loc = loc.Missing
+        if val.tag() != value_e.Block:
+            raise error.Expr('Expected a block, got %s' % val, call_loc)
 
-            call_loc = loc.Missing
-            if block.tag() != value_e.Block:
-                raise error.Expr('Expected a block, got %s' % block, call_loc)
+        block = cast(value.Block, val)
+        with state.ctx_HayEval(self.hay_state, self.mutable_opts,
+                               self.mem):
+            unused = self.cmd_ev.EvalBlock(block.body)
 
-            UP_block = block
-            block = cast(value.Block, UP_block)
+        return self.hay_state.Result()
 
-            with state.ctx_HayEval(self.hay_state, self.mutable_opts,
-                                   self.mem):
-                unused = self.cmd_ev.EvalBlock(block.body)
-
-            return self.hay_state.Result()
-
-            # Note: we should discourage the unvalidated top namesapce for files?  It
-            # needs more validation.
+        # Note: we should discourage the unvalidated top namesapce for files?  It
+        # needs more validation.
 
 
 class BlockAsStr(object):
@@ -118,8 +113,6 @@ class HayFunc(object):
         # type: (state.Hay) -> None
         self.hay_state = hay_state
 
-    if mylib.PYTHON:
-
-        def Call(self):
-            # type: () -> Dict[str, Any]
-            return self.hay_state.HayRegister()
+    def Call(self):
+        # type: () -> Dict[str, value_t]
+        return self.hay_state.HayRegister()

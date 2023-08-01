@@ -282,11 +282,9 @@ def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex,
     builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
     builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev,
                                                 shell_ex, errfmt)
-    if mylib.PYTHON:
-        builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem,
-                                                   cmd_ev)
-        builtins[builtin_i.haynode] = builtin_pure.HayNode(
-            hay_state, mem, cmd_ev)
+    builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem,
+                                               cmd_ev)
+    builtins[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
 
 
 def AddMethods(methods):
