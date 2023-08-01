@@ -364,6 +364,7 @@ class ShellExecutor(vm._Executor):
                 pi.Add(p)
 
             pi.StartPipeline(self.waiter)
+            pi.SetBackground()
             last_pid = pi.LastPid()
             self.mem.last_bg_pid = last_pid  # for $!
 
@@ -378,6 +379,7 @@ class ShellExecutor(vm._Executor):
             if self.job_control.Enabled():
                 p.AddStateChange(process.SetPgid(process.OWN_LEADER))
 
+            p.SetBackground()
             pid = p.StartProcess(trace.Fork)
             self.mem.last_bg_pid = pid  # for $!
             self.job_list.AddJob(p)  # show in 'jobs' list

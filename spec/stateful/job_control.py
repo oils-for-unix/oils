@@ -22,6 +22,8 @@ from test.spec_lib import log
 # Generated from C header file
 TIOCSIG = 0x40045436
 
+PYCAT = 'python2 -c "import sys; print(sys.stdin.readline().strip() + \'%s\')"'
+
 
 def ctrl_c(sh):
   sh.sendcontrol('c')
@@ -264,6 +266,165 @@ def suspend_status(sh):
   sh.sendline('echo status=$?')
   sh.expect('status=148')
   expect_prompt(sh)
+
+
+@register(skip_shells=['zsh'])
+def no_spurious_tty_take(sh):
+  'A background job getting stopped (e.g. by SIGTTIN) or exiting should not disrupt foreground processes'
+  expect_prompt(sh)
+
+  sh.sendline('cat &') # stop
+  sh.sendline('sleep 0.1 &') # exit
+  expect_prompt(sh)
+
+  # background cat should have been stopped by SIGTTIN immediately, but we don't
+  # hear about it from wait() until the foreground process has been started because
+  # the shell was blocked in readline when the signal fired.
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  sh.sendline(PYCAT % 'bar')
+  if 'osh' in sh.shell_label:
+    # Quirk of osh. TODO: supress this print for background jobs?
+    sh.expect('.*Stopped.*')
+
+  # foreground procoess should not have been stopped.
+  sh.sendline('foo')
+  sh.expect('foobar')
+
+  ctrl_c(sh)
+  expect_prompt(sh)
+
+
+@register()
+def fg_current_previous(sh):
+  'Resume the special jobs: %- and %+'
+  expect_prompt(sh)
+
+  sh.sendline('sleep 1000 &') # will be terminated as soon as we're done with it
+
+  # Start two jobs. Both will get stopped by SIGTTIN when they try to read() on
+  # STDIN. According to POSIX, %- and %+ should always refer to stopped jobs if
+  # there are at least two of them.
+  sh.sendline((PYCAT % 'bar') + ' &')
+
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  sh.sendline('cat &')
+  if 'osh' in sh.shell_label:
+    sh.expect('.*Stopped.*')
+
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  if 'osh' in sh.shell_label:
+    sh.sendline('')
+    sh.expect('.*Stopped.*')
+
+  # Bring back the newest stopped job
+  sh.sendline('fg %+')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
+  sh.sendline('foo')
+  sh.expect('foo')
+  ctrl_z(sh)
+
+  # Bring back the second-newest stopped job
+  sh.sendline('fg %-')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
+  sh.sendline('')
+  sh.expect('bar')
+
+  # Force cat to exit
+  ctrl_c(sh)
+  expect_prompt(sh)
+  time.sleep(0.1) # wait for cat job to go away
+
+  # Now that cat is gone, %- should refer to the running job
+  sh.sendline('fg %-')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
+  sh.sendline('true')
+  time.sleep(0.5)
+  sh.expect('') # sleep should swallow whatever we write to stdin
+  ctrl_c(sh)
+
+  # %+ and %- should refer to the same thing now that there's only one job
+  sh.sendline('fg %+')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
+  sh.sendline('woof')
+  sh.expect('woof')
+  ctrl_z(sh)
+  sh.sendline('fg %-')
+  if 'osh' in sh.shell_label:
+    sh.expect(r'Continue PID \d+')
+
+  sh.sendline('meow')
+  sh.expect('meow')
+  ctrl_c(sh)
+
+  expect_prompt(sh)
+
+
+@register(skip_shells=['dash'])
+def fg_job_id(sh):
+  'Resume jobs with integral job specs using `fg` builtin'
+  expect_prompt(sh)
+
+  sh.sendline((PYCAT % 'foo') + ' &') # %1
+
+  time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+  sh.sendline((PYCAT % 'bar') + ' &') # %2
+  if 'osh' in sh.shell_label:
+    sh.expect('.*Stopped.*')
+
+  time.sleep(0.1)
+  sh.sendline((PYCAT % 'baz') + ' &') # %3 and %-
+  if 'osh' in sh.shell_label:
+    sh.expect('.*Stopped.*')
+
+  time.sleep(0.1)
+  if 'osh' in sh.shell_label:
+    sh.sendline('')
+    sh.expect('.*Stopped.*')
+
+  sh.sendline('')
+  expect_prompt(sh)
+
+  sh.sendline('fg %1')
+  sh.sendline('')
+  sh.expect('foo')
+
+  sh.sendline('fg %3')
+  sh.sendline('')
+  sh.expect('baz')
+
+  sh.sendline('fg %2')
+  sh.sendline('')
+  sh.expect('bar')
+
+
+@register()
+def wait_job_spec(sh):
+  'Wait using a job spec'
+  expect_prompt(sh)
+
+  sh.sendline('(sleep 2; exit 11) &')
+  sh.sendline('(sleep 1; exit 22) &')
+  sh.sendline('(sleep 3; exit 33) &')
+
+  time.sleep(1)
+  sh.sendline('wait %2; echo status=$?')
+  sh.expect('status=22')
+
+  time.sleep(1)
+  sh.sendline('wait %-; echo status=$?')
+  sh.expect('status=11')
+
+  time.sleep(1)
+  sh.sendline('wait %+; echo status=$?')
+  sh.expect('status=33')
 
 
 if __name__ == '__main__':
