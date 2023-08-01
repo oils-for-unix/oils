@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-"""funcs.py."""
+"""func_hay.py."""
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e

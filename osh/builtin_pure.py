@@ -41,7 +41,7 @@ from mycpp import mylib
 from mycpp.mylib import iteritems, NewDict, print_stderr
 from osh import word_compile
 
-from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from core.state import MutableOpts, Mem, SearchPath
@@ -784,10 +784,10 @@ if mylib.PYTHON:
                 hay_name = None  # don't validate
 
             # Should we call hay_state.AddChild() so it can be mutated?
-            result = NewDict()
+            result = NewDict()  # type: Dict[str, value_t]
 
             node_type, _ = arg_r.Peek2()
-            result['type'] = node_type
+            result['type'] = value.Str(node_type)
 
             arg_r.Next()
             arguments = arg_r.Rest()
@@ -800,7 +800,8 @@ if mylib.PYTHON:
                 e_usage('expected at least 1 arg, or a literal block { }',
                         arg0_loc)
 
-            result['args'] = arguments
+            items = [value.Str(s) for s in arguments]  # type: List[value_t]
+            result['args'] = value.List(items)
 
             if node_type.isupper():  # TASK build { ... }
                 if lit_block is None:
@@ -818,15 +819,15 @@ if mylib.PYTHON:
                     line = brace_group.left.line
 
                     # for the user to pass back to --location-str
-                    result['location_str'] = ui.GetLineSourceString(line)
-                    result['location_start_line'] = line.line_num
+                    result['location_str'] = value.Str(ui.GetLineSourceString(line))
+                    result['location_start_line'] = value.Int(line.line_num)
 
                     # Between { and }
                     code_str = alloc.SnipCodeBlock(brace_group.left,
                                                    brace_group.right,
                                                    lit_block.lines)
 
-                    result['code_str'] = code_str
+                    result['code_str'] = value.Str(code_str)
 
                 # Append after validation
                 self.hay_state.AppendResult(result)
@@ -836,7 +837,7 @@ if mylib.PYTHON:
                 self.hay_state.AppendResult(result)
 
                 if lit_block:  # 'package foo' is OK
-                    result['children'] = []
+                    result['children'] = value.List([])
 
                     # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
                     with state.ctx_Temp(self.mem):
@@ -846,7 +847,7 @@ if mylib.PYTHON:
                             block_attrs = self.cmd_ev.EvalBlock(
                                 lit_block.brace_group)
 
-                    attrs = NewDict()  # type: Dict[str, Any]
+                    attrs = NewDict()  # type: Dict[str, value_t]
                     for name, cell in iteritems(block_attrs):
 
                         # User can hide variables with _ suffix
@@ -854,13 +855,9 @@ if mylib.PYTHON:
                         if name.endswith('_'):
                             continue
 
-                        val = cell.val
+                        attrs[name] = cell.val
 
-                        from ysh import cpython
-                        py_obj = cpython._ValueToPyObj(val)
-                        attrs[name] = py_obj
-
-                    result['attrs'] = attrs
+                    result['attrs'] = value.Dict(attrs)
 
             return 0
 
@@ -913,7 +910,7 @@ if mylib.PYTHON:
             elif action == 'eval':
                 # hay eval :myvar { ... }
                 #
-                # - turn on oil:all
+                # - turn on ysh:all
                 # - set _running_hay -- so that hay "first words" are visible
                 # - then set the variable name to the result
 
@@ -934,8 +931,7 @@ if mylib.PYTHON:
 
                 result = self.hay_state.Result()
 
-                from ysh import cpython
-                val = cpython._PyObjToValue(result)
+                val = value.Dict(result)
                 self.mem.SetValue(location.LName(var_name), val,
                                   scope_e.LocalOnly)
 

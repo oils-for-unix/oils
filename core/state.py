@@ -385,14 +385,14 @@ class Hay(object):
         self.def_stack = [self.root_defs]
 
         node = self._MakeOutputNode()
-        self.result_stack = [node]  # type: List[Dict[str, Any]]
-        self.output = None  # type: Dict[str, Any]
+        self.result_stack = [node]  # type: List[Dict[str, value_t]]
+        self.output = None  # type: Dict[str, value_t]
 
     def _MakeOutputNode(self):
-        # type: () -> Dict[str, Any]
-        d = NewDict()
-        d['source'] = None
-        d['children'] = []
+        # type: () -> Dict[str, value_t]
+        d = NewDict()  # type: Dict[str, value_t]
+        d['source'] = value.Null
+        d['children'] = value.List([])
         return d
 
     def PushEval(self):
@@ -417,17 +417,20 @@ class Hay(object):
     if mylib.PYTHON:  # TODO: hay results should be a value_t tree
 
         def AppendResult(self, d):
-            # type: (Dict[str, Any]) -> None
+            # type: (Dict[str, value_t]) -> None
             """Called by haynode builtin."""
-            self.result_stack[-1]['children'].append(d)
+            UP_children = self.result_stack[-1]['children']
+            assert UP_children.tag() == value_e.List, UP_children
+            children = cast(value.List, UP_children)
+            children.items.append(value.Dict(d))
 
         def Result(self):
-            # type: () -> Dict[str, Any]
+            # type: () -> Dict[str, value_t]
             """Called by hay eval and eval_hay()"""
             return self.output
 
         def HayRegister(self):
-            # type: () -> Dict[str, Any]
+            # type: () -> Dict[str, value_t]
             """Called by _hay() function."""
             return self.result_stack[0]
 
@@ -458,13 +461,18 @@ class Hay(object):
 
     def Push(self, hay_name):
         # type: (Optional[str]) -> None
-        """Package cppunit { }   # pushes a namespace haynode package cppunit {
+        """
+        Package cppunit {
+        }   # pushes a namespace
 
+        haynode package cppunit {
         }   # just assumes every TYPE 'package' is valid.
         """
-        if mylib.PYTHON:
-            top = self.result_stack[-1]
-            self.result_stack.append(top['children'][-1])
+        top = self.result_stack[-1]
+        # TODO: Store this more efficiently?  See osh/builtin_pure.py
+        children = cast(value.List, top['children'])
+        last_child = cast(value.Dict, children.items[-1])
+        self.result_stack.append(last_child.d)
 
         #log('> PUSH')
         if hay_name is None:
