@@ -644,20 +644,18 @@ case (x) {
         self.assertEqual(1, len(node.arms))
         self.assertEqual(pat_e.Else, node.arms[0].pattern.tag())
 
-        if 0:
-            node = assert_ParseCommandLine(
-                self, """\
-  case (x) {
-    (2) | (3) { echo hi; }
-  }
-  """)
-            self.assertEqual(command_e.Case, node.tag())
-            self.assertEqual(1, len(node.arms))
-            pattern = node.arms[0].pattern
-            self.assertEqual(pat_e.YshExprs, pattern.tag())
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+(2) | (3) { echo hi; }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+        pattern = node.arms[0].pattern
+        self.assertEqual(pat_e.YshExprs, pattern.tag())
 
-            # TODO: Fix this test!
-            self.assertEqual(2, len(pattern.exprs))
+        self.assertEqual(2, len(pattern.exprs))
 
         node = assert_ParseCommandLine(
             self, """\
