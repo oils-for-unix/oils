@@ -309,8 +309,6 @@ class Wait(vm._Builtin):
                 job = self.job_list.ProcessFromPid(pid)
 
             if job is None:
-                self.errfmt.Print_("%s isn't a child of this shell" % job_id,
-                                   blame_loc=location)
                 return 127
 
             wait_st = job.JobWait(self.waiter)
