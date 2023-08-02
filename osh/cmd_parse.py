@@ -1518,12 +1518,12 @@ class CommandParser(object):
         the next "discriminant" for the next token, so it makes more sense to
         handle it there.
         """
-        left_tok = location.LeftTokenForWord(self.cur_word)  # pat
-
+        left_tok = None  # type: Token
         pattern = None  # type: pat_t
+
         if discriminant in (Id.Op_LParen, Id.Arith_Slash):
             # pat_exprs, pat_else or pat_eggex
-            pattern = self.w_parser.ParseYshCasePattern()
+            pattern, left_tok = self.w_parser.ParseYshCasePattern()
         else:
             # pat_words
             pat_words = []  # type: List[word_t]
@@ -1533,6 +1533,9 @@ class CommandParser(object):
                     p_die('Expected case pattern', loc.Word(self.cur_word))
                 pat_words.append(self.cur_word)
                 self._SetNext()
+
+                if not left_tok:
+                    left_tok = location.LeftTokenForWord(self.cur_word)
 
                 self._NewlineOk()
 

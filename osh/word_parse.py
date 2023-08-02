@@ -1160,14 +1160,14 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.ShCommand)  # TODO: Do we need this?
 
     def ParseYshCasePattern(self):
-        # type: () -> pat_t
-        pat, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
+        # type: () -> Tuple[pat_t, Token]
+        pat, left_tok, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
 
         if last_token.id == Id.Op_LBrace:
             last_token.id = Id.Lit_LBrace
         self.buffered_word = last_token
 
-        return pat
+        return pat, left_tok
 
     def NewlineOkForYshCase(self):
         # type: () -> Id_t
