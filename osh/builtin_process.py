@@ -290,8 +290,7 @@ class Wait(vm._Builtin):
         # Get list of jobs.  Then we need to check if they are ALL stopped.
         # Returns the exit code of the last one on the COMMAND LINE, not the exit
         # code of last one to FINISH.
-        status = 1  # error
-        jobs = [] # List[process.Job]
+        jobs = [] # type: List[process.Job]
         for i, job_id in enumerate(job_ids):
             location = arg_locs[i]
 
@@ -314,6 +313,7 @@ class Wait(vm._Builtin):
 
             jobs.append(job)
 
+        status = 1  # error
         for job in jobs:
             wait_st = job.JobWait(self.waiter)
             UP_wait_st = wait_st
