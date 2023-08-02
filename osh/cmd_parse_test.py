@@ -687,6 +687,55 @@ case (x) {
         pattern1 = node.arms[1].pattern
         self.assertEqual(pat_e.Eggex, pattern1.tag())
 
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  word { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Lit_Chars, arm.left.id)
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  /'eggex'/ { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Arith_Slash, arm.left.id)
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  ('expr') { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Op_LParen, arm.left.id)
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  (else) { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Op_LParen, arm.left.id)
+
+
     def testParseWhile(self):
         node = assert_ParseCommandList(
             self, """\
