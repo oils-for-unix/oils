@@ -4,9 +4,7 @@ from __future__ import print_function
 
 import unittest
 
-#from _devbuild.gen.id_kind_asdl import Kind
 from _devbuild.gen.syntax_asdl import source
-from _devbuild.gen import grammar_nt
 
 from core import alloc
 from core import error
