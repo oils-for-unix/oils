@@ -22,7 +22,7 @@ from frontend import typed_args
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, List, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core.state import Mem, SearchPath
@@ -291,6 +291,7 @@ class Wait(vm._Builtin):
         # Returns the exit code of the last one on the COMMAND LINE, not the exit
         # code of last one to FINISH.
         status = 1  # error
+        jobs = [] # List[process.Job]
         for i, job_id in enumerate(job_ids):
             location = arg_locs[i]
 
@@ -311,6 +312,9 @@ class Wait(vm._Builtin):
             if job is None:
                 return 127
 
+            jobs.append(job)
+
+        for job in jobs:
             wait_st = job.JobWait(self.waiter)
             UP_wait_st = wait_st
             with tagswitch(wait_st) as case:
