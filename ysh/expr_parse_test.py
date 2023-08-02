@@ -6,6 +6,7 @@ import unittest
 
 #from _devbuild.gen.id_kind_asdl import Kind
 from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen import grammar_nt
 
 from core import alloc
 from core import error
@@ -130,12 +131,32 @@ EOF)
             node = self._ParseYshExpression(c)
 
     def testLexer(self):
-        # NOTE: Kind.Expr for Oil doesn't have LexerPairs
-        #pairs = ID_SPEC.LexerPairs(Kind.Arith)
-        pairs = []
-        for p in pairs:
-            #print(p)
-            pass
+        CASES = [
+            ("= x }", 4),
+            ("= x;}", 3),
+            ("= x; }", 3),
+            ("echo $x;}", 8),
+            ("echo $x; }", 8),
+            ("= x\n}", 4),
+            ("echo $x\n}", 8),
+        ]
+
+        for code_str, end_pos in CASES:
+            line_reader = reader.StringLineReader(code_str, self.arena)
+            cmd_parser = self.parse_ctx.MakeOshParser(line_reader)
+            lexer = cmd_parser.lexer
+
+            node = cmd_parser.ParseCommand()
+
+            # Assert that we are at the RBrace. Ie,
+            # 'x }\n'
+            #    ^
+            self.assertEqual(end_pos, lexer.line_lexer.line_pos)
+
+            print("-----")
+            print("%r" % lexer.line_lexer.src_line.content)
+            print(" " * (lexer.line_lexer.line_pos + 1) + "^")
+            print("-----")
 
 
 if __name__ == '__main__':
