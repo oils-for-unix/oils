@@ -1276,6 +1276,13 @@ ysh_case() {
   '
 
   _ysh-should-parse '
+  case (3) {
+    (3) { echo hi }
+    # comment line
+  }
+  '
+
+  _ysh-should-parse '
   case (x) {
     (else) { echo 1 } 
   }
