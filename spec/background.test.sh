@@ -87,11 +87,11 @@ echo "status=$?"
 pid1=$!
 { sleep 0.07; exit 7; } &
 pid2=$!
-wait $pid1
-echo "status=$?"
 wait $pid2
 echo "status=$?"
-## stdout-json: "status=9\nstatus=7\n"
+wait $pid1
+echo "status=$?"
+## stdout-json: "status=7\nstatus=9\n"
 
 #### Wait on multiple specific IDs returns last status
 { sleep 0.08; exit 8; } &
