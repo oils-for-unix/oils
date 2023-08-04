@@ -1577,6 +1577,9 @@ class CommandParser(object):
 
             discriminant = self.w_parser.NewlineOkForYshCase()
 
+        # NewlineOkForYshCase leaves the lexer in lex_mode_e.Expr. So the '}'
+        # token is read as an Id.Op_RBrace, but we need to store this as a
+        # Id.Lit_RBrace.
         ate = self._Eat(Id.Op_RBrace)
         arms_end = word_.AsOperatorToken(ate)
         arms_end.id = Id.Lit_RBrace

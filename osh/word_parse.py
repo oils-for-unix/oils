@@ -1131,10 +1131,18 @@ class WordParser(WordEmitter):
         enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
                                                         grammar_nt.command_expr)
 
-        if last_token.id == Id.Op_RBrace or last_token.id == Id.Op_Semi:
-            self.lexer.MaybeUnreadOne()
-        else:
-            self.buffered_word = last_token
+        # In some cases, such as the case statement, we expect *the lexer* to be
+        # pointing at the token right after the expression. But the expression
+        # parser must have read to the `last_token`. Unreading places the lexer
+        # back in the expected state. Ie:
+        #
+        # case (x) {                           case (x) {
+        #   (else) { = x }                       (else) { = x }
+        #                 ^ The lexer is here                 ^ Unread to here
+        # }                                    }
+        assert last_token.id in (Id.Op_Newline, Id.Eof_Real, Id.Op_Semi,
+                                 Id.Op_RBrace), last_token
+        self.lexer.MaybeUnreadOne()
 
         return enode
 
@@ -1177,7 +1185,7 @@ class WordParser(WordEmitter):
         which crop up while parsing Ysh Case Arms. For more details, see
         #oil-dev > Progress On YSH Case Grammar on zulip.
 
-        Returns a token id, first_id_out, which is filled with the choice of
+        Returns a token id which is filled with the choice of
 
              word { echo word }
              (3)  { echo expr }
