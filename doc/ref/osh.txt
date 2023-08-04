@@ -13,3 +13,6 @@ Chapters:
     special
     plugin
  
+To see topics in a chapter:
+
+    help osh-$chapter

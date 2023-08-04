@@ -29,7 +29,7 @@ feature is **unimplemented**.
   Overview (<a class="group-link" href="ysh-help.html#overview">overview</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
   [Usage]         bundle-usage   ysh-usage
   [Oil Lexing]    docstring ###   multiline-command ...
 ```
@@ -38,7 +38,7 @@ feature is **unimplemented**.
   Command Language (<a class="group-link" href="ysh-help.html#command-lang">command-lang</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
                   proc-def      proc p (x, out Ref, @rest, e Expr, b Block) { c }
                   X func-def    func f(x; opt1, opt2) { return (x + 1) }
                   X ysh-return  return (myexpr)
@@ -56,7 +56,7 @@ feature is **unimplemented**.
   Expression Language and Assignments (<a class="group-link" href="ysh-help.html#expr-lang">expr-lang</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
   [Keywords]      const   var   setvar   setglobal   setref
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
@@ -99,7 +99,7 @@ feature is **unimplemented**.
   Word Language (<a class="group-link" href="ysh-help.html#word-lang">word-lang</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
                   expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
@@ -113,7 +113,7 @@ feature is **unimplemented**.
   Builtin Commands (<a class="group-link" href="ysh-help.html#builtins">builtins</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
   [Memory]        append                 Add elements to end of array
                   X argparse             getopts replacement, sets OPT
                   X setref               Builtin to replac ekeyword
@@ -155,7 +155,7 @@ X [External Lang] BEGIN   END   when (awk)
   Shell Options (<a class="group-link" href="ysh-help.html#option">option</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
   [Option Groups] strict:all   ysh:upgrade   ysh:all
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
@@ -218,7 +218,7 @@ X [External Lang] BEGIN   END   when (awk)
   Environment Variables (<a class="group-link" href="ysh-help.html#env">env</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 ```
 
@@ -226,7 +226,7 @@ X [External Lang] BEGIN   END   when (awk)
   Special Variables (<a class="group-link" href="ysh-help.html#special">special</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-ysh
   [History]       YSH_HISTFILE
   [Shell Vars]    ARGV   X ENV   X OPT
                   X _ESCAPE   _DIALECT
@@ -246,14 +246,14 @@ X [Types]         Null   Bool   Int   Float   Str   List   Dict
 
 Access silently mutated globals:
 
-```oil-help-topics
+```chapter-links-ysh
   [Pattern]       _match()   X _start()   X _end()
 X [Wok]           _field()
 ```
 
 Functions and Methods:
 
-```oil-help-topics
+```chapter-links-ysh
   [Collections]   len()
 X [String]        find(eggex)   replace(eggex, template)   join() 
                   split()             $IFS, awk algorithm, regex

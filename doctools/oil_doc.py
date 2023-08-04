@@ -262,9 +262,9 @@ class HelpTopicsPlugin(_Plugin):
   """
   Highlight blocks of help-index.md.
   """
-  def __init__(self, s, start_pos, end_pos, lang):
+  def __init__(self, s, start_pos, end_pos, chapter):
     _Plugin.__init__(self, s, start_pos, end_pos)
-    self.lang = lang
+    self.chapter = chapter
 
   def PrintHighlighted(self, out):
     from doctools import make_help
@@ -275,7 +275,7 @@ class HelpTopicsPlugin(_Plugin):
       # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
-      html_line = make_help.HighlightLine(self.lang, line)
+      html_line = make_help.HighlightLine(self.chapter, line)
 
       if html_line is not None:
         out.PrintUntil(pos)
@@ -438,20 +438,15 @@ def HighlightCode(s, default_highlighter):
               # TODO: Write an Oil syntax highlighter.
               pass
 
-            elif css_class == 'language-osh-help-topics':
+            elif css_class.startswith('language-chapter-links-'):
+              n = len('language-chapter-links-')
+              chapter = css_class[n:]
+              #log('chap %s', chapter)
+
               # TODO: Link to osh-help.html, instead of oil-help.html
               out.PrintUntil(code_start_pos)
 
-              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, 'osh')
-              plugin.PrintHighlighted(out)
-
-              out.SkipTo(slash_code_left)
-
-            elif css_class == 'language-oil-help-topics':
-
-              out.PrintUntil(code_start_pos)
-
-              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, 'oil')
+              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, chapter)
               plugin.PrintHighlighted(out)
 
               out.SkipTo(slash_code_left)
@@ -616,3 +611,6 @@ def main(argv):
 
 if __name__ == '__main__':
   main(sys.argv)
+
+
+# vim: sw=2

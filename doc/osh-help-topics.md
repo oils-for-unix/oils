@@ -41,7 +41,7 @@ feature is **unimplemented**.
   Overview (<a class="group-link" href="osh-help.html#overview">overview</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Usage]         osh-usage   config   startup   line-editing   prompt
   [Lexing]        comment #   line-continuation \
 ```
@@ -50,7 +50,7 @@ feature is **unimplemented**.
   Command Language (<a class="group-link" href="osh-help.html#command-lang">command-lang</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
@@ -69,7 +69,7 @@ feature is **unimplemented**.
   Assignments and Expressions (<a class="group-link" href="osh-help.html#assign">assign</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Literals]      sh-array      array=(a b c)   array[1]=B   "${a[@]}"
                   sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Operators]     sh-assign     str='xyz'
@@ -82,7 +82,7 @@ feature is **unimplemented**.
   Word Language (<a class="group-link" href="osh-help.html#word-lang">word-lang</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`   @(split command)
                   var-sub       ${var}   $0   $9   
@@ -101,7 +101,7 @@ feature is **unimplemented**.
   Other Shell Sublanguages (<a class="group-link" href="osh-help.html#sublang">sublang</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   sh-numbers    0xFF  0755  etc.
                   sh-arith      1 + 2*3   a *= 2
@@ -126,7 +126,7 @@ feature is **unimplemented**.
   Builtin Commands (<a class="group-link" href="osh-help.html#builtins">builtins</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [I/O]           read   echo   printf
                   readarray   mapfile
   [Run Code]      source .   eval   trap
@@ -148,7 +148,7 @@ X [Unsupported]   enable
   Shell Options (<a class="group-link" href="osh-help.html#option">option</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   nullglob   failglob   dashglob
   [Debugging]     xtrace   X verbose   X extdebug
@@ -160,7 +160,7 @@ X [Unsupported]   enable
   Environment Variables (<a class="group-link" href="osh-help.html#env">env</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH
 ```
@@ -170,7 +170,7 @@ X [Unsupported]   enable
   Special Variables (<a class="group-link" href="osh-help.html#special">special</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Other Special] BASH_REMATCH   @PIPESTATUS
   [Platform]      HOSTNAME   OSTYPE
@@ -195,7 +195,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   Plugins and Hooks (<a class="group-link" href="osh-help.html#plugin">plugin</a>)
 </h2>
 
-```osh-help-topics
+```chapter-links-osh
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4

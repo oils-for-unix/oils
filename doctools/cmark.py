@@ -271,26 +271,32 @@ def _ApplyInsertions(lines, insertions, out_file):
 
 
 def Render(opts, meta, in_file, out_file, use_fastlex=True):
+
+  # First convert to HTML
   html = md2html(in_file.read())
 
+  # Now process HTML with oil_doc
   if use_fastlex:
     # Note: extract code BEFORE doing the HTML highlighting.
     if opts.code_block_output:
       with open(opts.code_block_output, 'w') as f:
-        f.write('# %s: code blocks extracted from Markdown/HTML\n\n' % opts.code_block_output)
+        f.write('# %s: code blocks extracted from Markdown/HTML\n\n' %
+                opts.code_block_output)
         text = oil_doc.ExtractCode(html, f)
 
     html = oil_doc.RemoveComments(html)
 
-    # Hack for allowing tables without <p> in cells, which CommonMark seems to require?
+    # Hack for allowing tables without <p> in cells, which CommonMark seems to
+    # require?
     html = html.replace('<p><pstrip>', '')
     html = html.replace('</pstrip></p>', '')
 
-    # Stages of transformation.
+    # Expand $xref, etc.
     html = oil_doc.ExpandLinks(html)
 
-    if 1:
-      html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
+    # <code> blocks
+    # Including class=language-oil-help-topics
+    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
@@ -310,7 +316,8 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
     out_file.write(html)  # Pass through
     return
 
-  insertions = _MakeTocAndAnchors(opts, toc_tags, parser.headings, parser.toc_begin_line)
+  insertions = _MakeTocAndAnchors(opts, toc_tags, parser.headings,
+                                  parser.toc_begin_line)
 
   log('')
   log('*** Text Insertions:')
@@ -386,3 +393,5 @@ def main(argv):
 
 if __name__ == '__main__':
   main(sys.argv)
+
+# vim: sw=2
