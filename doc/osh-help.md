@@ -1053,13 +1053,17 @@ Unimplemented.
 
 #### help
 
-    help oil             # list Oil language help topics
-    help osh             # list OSH language help topics
+    help                   # list chapters for osh or ysh
+    help osh               # same but more explicit
 
-    help TOPIC           # show help on a given topic
+    help command-lang      # list sections in chapter
+    help osh-command-lang  # same but more explicit
 
-    help osh-usage       # same as osh --help
-    help oil-usage       # same as oil --help
+    help TOPIC             # show help on a given topic
+
+    help usage             # same as osh --help, ysh --help
+    help osh-usage         # more explicit
+    help ysh-usage         # more explicit
 
 View on the web:
 

@@ -364,8 +364,10 @@ readonly CODE_DIR=_devbuild/gen
 cards-from-indices() {
   ### Make help cards
 
-  _make-help cards-from-index > $TEXT_DIR/osh < $HTML_DIR/doc/osh-help-topics.html
-  _make-help cards-from-index > $TEXT_DIR/ysh < $HTML_DIR/doc/ysh-help-topics.html
+  for sh in osh ysh; do
+    _make-help cards-from-index $sh $TEXT_DIR \
+      < $HTML_DIR/doc/$sh-help-topics.html
+  done
 }
 
 cards-from-chapters() {
@@ -438,6 +440,9 @@ all-help() {
 
   cards-from-indices
   cards-from-chapters
+
+  cp -v doc/ref/osh.txt $TEXT_DIR/osh
+  cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
 
   # Better sorting
   #LANG=C ls -l $TEXT_DIR

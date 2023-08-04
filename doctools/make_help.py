@@ -361,6 +361,8 @@ def main(argv):
   action = argv[1]
 
   if action == 'cards-from-index':
+    sh = argv[2]  # osh or ysh
+    out_prefix = argv[3]
 
     f = sys.stdout
     groups = []
@@ -369,9 +371,14 @@ def main(argv):
       #log('group_desc = %r', group_desc)
       #log('text = %r', text)
 
-      f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
-      f.write(text)
-      f.write('\n')  # extra
+      topic = '%s-%s' % (sh, group_id)  # e.g. ysh-overview
+
+      path = os.path.join(out_prefix, topic)
+      with open(path, 'w') as f:
+        f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
+        f.write(text)
+        f.write('\n')  # extra
+      log('  Wrote %s', path)
       groups.append(group_id)
 
     log('  (doctools/make_help) -> %d groups', len(groups))
