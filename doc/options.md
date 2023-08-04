@@ -3,19 +3,21 @@ in_progress: yes
 default_highlighter: oil-sh
 ---
 
-Global Shell Options: Turning OSH into Oil
+Global Shell Options: Turning OSH into YSH
 ==========================================
+
+(Until 2023, YSH was called the "Oil language".  This doc will be updated.)
 
 This document describes global shell options, which look like this:
 
-    shopt --set strict_backslash  # Oil style
-    shopt --set ysh:upgrade         # A whole group of options
+    shopt --set strict_backslash  # YSH style
+    shopt --set ysh:upgrade       # A whole group of options
     set -o errexit                # Bourne shell style
 
-They can affect parsing or execution, and are used to gradually turn the [OSH
-language]($xref:osh-language) into the [Oil language]($xref:oil-language).
+They can affect parsing or execution, and are used to gradually turn the
+[OSH]($xref:OSH) into the [YSH]($xref:YSH).
 
-For example, Oil doesn't have word splitting on whitespace.  Instead, it use
+For example, YSH doesn't have word splitting on whitespace.  Instead, it use
 [Simple Word Evaluation](simple-word-eval.html).  (Blog: [Oil Doesn't Require
 Quoting
 Everywhere](https://www.oilshell.org/blog/2021/04/simple-word-eval.html)).
@@ -48,7 +50,7 @@ other shells**, but OSH will act as sort of a "runtime linter":
 If you want to upgrade a script, and don't care about running under other
 shells, use this:
 
-    # Start enabling Oil syntax and semantics
+    # Start enabling YSH syntax and semantics
     shopt --set ysh:upgrade
 
 This second line may break a few things, but is designed to be an easy upgrade.

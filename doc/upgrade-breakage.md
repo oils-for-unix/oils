@@ -2,7 +2,7 @@
 default_highlighter: oil-sh
 ---
 
-What Breaks When You Upgrade to Oil
+What Breaks When You Upgrade to YSH
 ===================================
 
 Only a few things break when you put this at the top of a shell script:
@@ -37,7 +37,7 @@ Now onto the breakages.  Most of them are **unlikely**, but worth noting.
 Code like `if ( ls /tmp )` is valid shell, but it's almost always a misuse of
 the language.  Parentheses mean **subshell**, not grouping as in C or Python.
 
-In Oil:
+In YSH:
 
 - Use `if (x > 0)` for true/false expressions
 - Use the `forkwait` builtin for subshells, which are uncommon.  (It's like
@@ -66,7 +66,7 @@ Better:
 
 ### `@()` is spliced command sub, not extended glob 
 
-Oil doesn't have implicit word splitting, so we want `@(seq 3)` to be
+YSH doesn't have implicit word splitting, so we want `@(seq 3)` to be
 consistent with `$(hostname)`.  They're related in the same way that `@myarray`
 and `$mystr` are.
 
@@ -76,7 +76,7 @@ No:
 
     echo @(*.cc|*.h)
 
-Use this Oil alias instead:
+Use this YSH alias instead:
 
     echo ,(*.cc|*.h)
 
@@ -84,20 +84,20 @@ Use this Oil alias instead:
 
 ### `r'c:\Users\'` is a raw string, not joined strings
 
-The meaning of `\` within string literals can be confusing, so Oil
+The meaning of `\` within string literals can be confusing, so YSH
 distinguishes them like this:
 
 - `$'foo\n'` 
   - The `$` prefix means that C-style backslash escapes are respected.
 - `r'c:\Users\'` 
   - The `r` prefix means the backslashes are literal.
-  - In shell this is written `'c:\Users\'`.  Oil accepts this in command mode
+  - In shell this is written `'c:\Users\'`.  YSH accepts this in command mode
     for compatibility, but not expression mode.
 
 The prefix **changes** the meaning of commands like:
 
     echo r'foo'
-    # => foo in Oil
+    # => foo in YSH
     # => rfoo in shell, because of implicit joining
 
 Instead, write `'rfoo'` if that's what you mean.
@@ -131,7 +131,7 @@ instead.
 
 ### With `ysh:upgrade` Options
 
-Option `parse_at`.  In Oil, `@` is used to splice arrays.  To pass a string
+Option `parse_at`.  In YSH, `@` is used to splice arrays.  To pass a string
 `@foo` to a command, quote it like `'@foo'`.
 
 Option `parse_brace`.  Braces after commands start block arguments.  To change
@@ -142,9 +142,9 @@ attribute.  To pass `=` to a command `x`, quote it like `x '='`.
 
 ### Unconditionally
 
-- To avoid confusion with Oil's `=` operator, a word like `=x` can't be the first word in a command.
+- To avoid confusion with YSH's `=` operator, a word like `=x` can't be the first word in a command.
   To invoke such commands, quote them like `'=x'`.
-- Oil has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
+- YSH has new keywords like `proc`, `const`, `var`, and `setvar`.  To use them
   as command names, quote them like `'proc'`.
 
 There is very little reason to use commands like `'=x'` and `'proc'`, so you
@@ -153,11 +153,11 @@ will likely never run into this!
 ## Summary
 
 This concludes the list of features that's broken when you upgrade from OSH to
-Oil.  We tried to keep this list as small as possible.
+YSH.  We tried to keep this list as small as possible.
 
 There are other features that are **discouraged**, like `$(( x + 1 ))`, `(( i++
 ))`, `[[ $s =~ $pat ]]`, and `${s%%prefix}`.  These have better alternatives in
-the Oil expression language, but they can still be used.  See [Oil vs. Shell
+the YSH expression language, but they can still be used.  See [YSH vs. Shell
 Idioms](idioms.html).
 
 Also related: [Known Differences Between OSH and Other

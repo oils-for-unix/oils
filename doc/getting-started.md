@@ -26,7 +26,7 @@ to more documentation.
 
 ## Setup
 
-### Downloading Oil
+### Downloading Oils
 
 The [releases page](https://www.oilshell.org/releases.html) links to source
 tarballs for every release.  It also links to the documentation tree, which
@@ -81,8 +81,7 @@ generally don't teach the quirks that OSH disallows.  For example, much of the
 information and advice in [BashGuide][] can be used without worrying about
 which shell you're using.  See the end of this manual for more resources.
 
-For this reason, we're focusing efforts on documenting the [Oil
-language][oil-language].
+For this reason, we're focusing efforts on documenting [YSH][].
 
 ## What Is Expected to Run Under OSH
 
