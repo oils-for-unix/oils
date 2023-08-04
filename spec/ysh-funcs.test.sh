@@ -4,11 +4,11 @@
 ## oils_failures_allowed: 0
 
 #### Identity function
-func identity(x) {
+func id(x) {
   return (x)
 }
 
-json write (identity("ysh"))
+json write (id("ysh"))
 
 ## STDOUT:
 "ysh"
@@ -46,11 +46,69 @@ proc t() { return (0) }
 ## STDOUT:
 ## END
 
-#### Redefining functions is not allowed
+#### Redefining functions is not allowed (with shopt -u redefine_proc_func)
+shopt -u redefine_proc_func
 func f() { return (0) }
 func f() { return (1) }
 ## status: 1
 ## STDOUT:
+## END
+
+#### Redefining functions is allowed (with shopt -s redefine_proc_func)
+shopt -s redefine_proc_func
+func f() { return (0) }
+func f() { return (1) }
+## status: 0
+## STDOUT:
+## END
+
+#### Functions cannot redefine readonly vars (even with shopt -s redefine_proc_func)
+shopt -s redefine_proc_func
+const f = 0
+func f() { return (1) }
+## status: 1
+## STDOUT:
+## END
+
+#### Functions can redefine non-readonly vars
+var f = 0
+func f() { return (1) }
+## status: 0
+## STDOUT:
+## END
+
+#### Vars cannot redefine functions (even with shopt -s redefine_proc_func)
+shopt -s redefine_proc_func
+func f() { return (1) }
+const f = 0
+## status: 1
+## STDOUT:
+## END
+
+#### Functions do not lift their inner definitions out of scope
+func f() {
+  func g() { return (1) }
+  echo "g()=$[g()]"
+}
+
+echo "g()=$[g()]"  # Undefined variable 'g'
+## status: 1
+## STDOUT:
+## END
+
+#### Calling functions still does not lift their inner definitions out of scope
+func f() {
+  func g() { return (1) }
+  echo "g()=$[g()]"
+}
+
+# If we set scope_e.GlobalOnly, then this would define g so that is may be used below
+_ f()
+
+echo "g()=$[g()]"  # Undefined variable 'g'
+## status: 1
+## STDOUT:
+g()=1
 ## END
 
 #### Multiple func calls
@@ -293,4 +351,118 @@ func mymax (...args) {
 ## STDOUT:
 (Int)   6
 (Int)   7
+## END
+
+#### Functions share a namespace with variables
+func f(x) {
+  return (x * x)
+}
+
+var g = f
+echo "g(2) -> $[g(2)]"
+## STDOUT:
+g(2) -> 4
+## END
+
+#### We can store funcs in dictionaries
+func dog_speak() {
+  echo "Woof"
+}
+
+func dog_type() {
+  return ("DOG")
+}
+
+const Dog = {
+  speak: dog_speak,
+  type: dog_type,
+}
+
+func cat_speak() {
+  echo "Meow"
+}
+
+func cat_type() {
+  return ("CAT")
+}
+
+const Cat = {
+  speak: cat_speak,
+  type: cat_type,
+}
+
+# First class "modules"!
+const animals = [Dog, Cat]
+for animal in (animals) {
+  var type = animal.type()
+  echo This is a $type
+  _ animal.speak()
+}
+## STDOUT:
+This is a DOG
+Woof
+This is a CAT
+Meow
+## END
+
+#### Functions can be returned, but they do not capture
+func build(x) {
+  func f(x) {
+    return (x)
+  }
+
+  return (f)
+}
+
+var g = build(1)
+json write (g(2))
+## STDOUT:
+2
+## END
+
+#### Functions can be shadowed
+func mysum(items) {
+  var mysum = 0
+  for x in (items) {
+    setvar mysum += x
+  }
+  return (mysum)
+}
+
+echo 1 + 2 + 3 = $[mysum([1, 2, 3])]
+
+func inAnotherScope() {
+  # variable mysum has not yet shadowed func mysum in evaluation
+  var mysum = mysum([1, 2, 3])
+  echo mysum=$mysum
+}
+_ inAnotherScope()
+
+# We need a scope otherwise we'd overwrite `mysum` in the global scope
+var mysum = mysum([1, 2, 3])  # will raise status=1
+## status: 1
+## STDOUT:
+1 + 2 + 3 = 6
+mysum=6
+## END
+
+#### Function names cannot be redeclared
+# Behaves like: const f = ...
+func f(x) {
+  return (x)
+}
+
+var f = "some val"
+## status: 1
+## STDOUT:
+## END
+
+#### Functions cannot be mutated
+func f(x) {
+  return (x)
+}
+
+setvar f = "some val"
+## status: 1
+## STDOUT:
 ## END
