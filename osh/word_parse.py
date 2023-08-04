@@ -1142,7 +1142,9 @@ class WordParser(WordEmitter):
         # }                                    }
         assert last_token.id in (Id.Op_Newline, Id.Eof_Real, Id.Op_Semi,
                                  Id.Op_RBrace), last_token
-        self.lexer.MaybeUnreadOne()
+        if last_token.id != Id.Eof_Real:
+            # Eof_Real is the only token we cannot unread
+            self.lexer.MaybeUnreadOne()
 
         return enode
 
