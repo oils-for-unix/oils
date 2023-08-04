@@ -653,7 +653,7 @@ SINGLE_LINE = 3
 
 def _PrintDirStack(dir_stack, style, home_dir):
     # type: (DirStack, int, Optional[str]) -> None
-    """Helper for 'dirs'."""
+    """ Helper for 'dirs' builtin """
 
     if style == WITH_LINE_NUMBERS:
         for i, entry in enumerate(dir_stack.Iter()):
@@ -711,10 +711,7 @@ class Pushd(vm._Builtin):
 
 def _PopDirStack(label, mem, dir_stack, errfmt, out_errs):
     # type: (str, Mem, DirStack, ErrorFormatter, List[bool]) -> bool
-    """Helper for popd and cd { ...
-
-    }.
-    """
+    """ Helper for popd and cd { ... } """
     dest_dir = dir_stack.Pop()
     if dest_dir is None:
         errfmt.Print_('%s: directory stack is empty' % label)
@@ -818,7 +815,6 @@ class Pwd(vm._Builtin):
 
 
 # TODO: Need $VERSION inside all pages?
-
 
 # Needs a different _ResourceLoader to translate
 class Help(vm._Builtin):

@@ -360,7 +360,8 @@ def HelpTopics(s):
 def main(argv):
   action = argv[1]
 
-  if action == 'topics':
+  if action == 'cards-from-index':
+
     f = sys.stdout
     groups = []
     for group_id, group_desc, text in HelpTopics(sys.stdin.read()):
@@ -375,8 +376,7 @@ def main(argv):
 
     log('  (doctools/make_help) -> %d groups', len(groups))
 
-  elif action == 'cards':
-    # Split help into cards.
+  elif action == 'cards-from-chapter':
 
     out_dir = argv[2]
     py_out = argv[3]
@@ -459,3 +459,6 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+
+# vim: sw=2

@@ -361,19 +361,21 @@ readonly CODE_DIR=_devbuild/gen
 # TODO:
 # - change to sh- vs oil- prefix, e.g. for arith
 
-help-topics() {
-  _make-help topics > $TEXT_DIR/osh < $HTML_DIR/doc/osh-help-topics.html
-  _make-help topics > $TEXT_DIR/ysh < $HTML_DIR/doc/ysh-help-topics.html
+cards-from-indices() {
+  ### Make help cards
+
+  _make-help cards-from-index > $TEXT_DIR/osh < $HTML_DIR/doc/osh-help-topics.html
+  _make-help cards-from-index > $TEXT_DIR/ysh < $HTML_DIR/doc/ysh-help-topics.html
 }
 
-help-cards() {
+cards-from-chapters() {
   ### Do all cards at once
 
   local py_out=$CODE_DIR/help_.py
 
   # TODO: We need to re-indent <code> blocks here, etc.
 
-  _make-help cards $TEXT_DIR $py_out \
+  _make-help cards-from-chapter $TEXT_DIR $py_out \
     $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/ysh-help.html
 }
 
@@ -434,9 +436,8 @@ all-help() {
   split-and-render doc/osh-help-topics.md
   split-and-render doc/osh-help.md
 
-  #help-index-cards
-  help-topics
-  help-cards
+  cards-from-indices
+  cards-from-chapters
 
   # Better sorting
   #LANG=C ls -l $TEXT_DIR

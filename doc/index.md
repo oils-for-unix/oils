@@ -3,10 +3,10 @@ in_progress: yes
 all_docs_url: -
 ---
 
-Oil Documentation
-=================
+Oils Documentation
+==================
 
-The Oil project aims to transform Unix shell into a better programming
+The Oils project aims to transform Unix shell into a better programming
 language.  It's **our upgrade path from bash**.  It's for Python and JavaScript
 programmers who avoid shell.
 
@@ -15,10 +15,10 @@ programmers who avoid shell.
 
 ## Preliminaries
 
-- [Why Use Oil?](/why.html)  This document is on the home page.
-- [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
+- [Why Use Oils?](/why.html)  This document is on the home page.
+- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
   tarball.
-- [A Tour of the Oil Project](project-tour.html).  It's a big project with
+- [A Tour of the Oils Project](project-tour.html).  It's a big project with
   several components to understand!
 - [Getting Started](getting-started.html).
 
@@ -39,9 +39,9 @@ Reference:
 ## YSH is a New Shell
 
 - [A Tour of YSH](ysh-tour.html).
-- [Oil vs. Shell Idioms](idioms.html).  Idioms that are nicer in Oil than shell.
-- [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  When you turn
-  on Oil, there are some shell constructs you can no longer use.  We try to
+- [YSH vs. Shell Idioms](idioms.html).  Idioms that are nicer in YSH than shell.
+- [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  When you turn
+  on YSH, there are some shell constructs you can no longer use.  We try to
   minimize the length of this list.
 - [Hay - Custom Languages for Unix Systems](hay.html).  Use Ruby-like
   blocks to declare data and interleaved code.
@@ -51,7 +51,7 @@ Reference:
 
 Reference:
 
-- [Oil Help Topics](oil-help-topics.html) (incomplete).  This document
+- [YSH Help Topics](ysh-help-topics.html) (incomplete).  This document
   underlies the `help` builtin.
 
 ### Language Design
@@ -60,9 +60,9 @@ Reference:
 - [Language Influences](language-influences.html)
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).
-- [Oil Language vs. Shell](oil-vs-shell.html).  How does Oil differ from
+- [YSH vs. Shell](oil-vs-shell.html).  How does YSH differ from
   Bourne/POSIX shell?
-- [Oil vs. Python](oil-vs-python.html).  How do Oil's expressions differ from
+- [YSH vs. Python](oil-vs-python.html).  How do YSH expressions differ from
   Python?
 
 ### The Command Language
@@ -72,7 +72,7 @@ I/O, control flow, and abstraction.
 
 - [Command Language](command-language.html): Simple commands, redirects,
   control flow, etc.
-- [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
+- [YSH Keywords](oil-keywords.html). New keywords for assignment, etc.
 - Pipeline Idioms.  An essential part of shell that deserves its own document.
 - [Procs, Blocks, and Funcs](proc-block-func.html)
 - [Modules](modules.html).  Separating programs into files.
@@ -84,13 +84,13 @@ I/O, control flow, and abstraction.
 - [Word Language](word-language.html).  Substitution, splicing, globbing, brace
   expansion, etc.
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
-  - [Unicode](unicode.html).  Oil supports and prefers UTF-8.
+  - [Unicode](unicode.html).  Oils supports and prefers UTF-8.
 - [Special Variables](oil-special-vars.html).  Registers?
 - [Simple Word Evaluation](simple-word-eval.html).  Written for shell experts.
 
 ### The Expression Language
 
-Oil has typed **expressions**, like Python and JavaScript.
+YSH has typed **expressions**, like Python and JavaScript.
 
 - [Expression Language](expression-language.html).  Types, literals, and
   operators.
@@ -98,10 +98,10 @@ Oil has typed **expressions**, like Python and JavaScript.
 
 ## Languages for Data (Interchange Formats)
 
-Oil supports these languages for data, which are complementary to languages for
+YSH supports these languages for data, which are complementary to languages for
 code.
 
-- [JSON](json.html): Currently supported only in the Python prototype of Oil.
+- [JSON](json.html): Currently supported only in the Python prototype of YSH.
 - [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
   format for byte strings.
   - [Framing](framing.html)
@@ -112,27 +112,27 @@ code.
 
 - [Interpreter State](interpreter-state.html).  What's inside a shell
   interpreter?
-  - [Options](options.html).  Parsing and runtime options turn OSH into Oil.
+  - [Options](options.html).  Parsing and runtime options turn OSH into YSH.
   - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Process Model](process-model.html).  The shell language is a thin layer over
   the Unix kernel.
-- [Tracing Execution](xtrace.html).  Oil enhances shell's `set -x`.
+- [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
 - Errors
-  - [Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html)
+  - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
   - [Error List](errors.html) 
-- [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
+- [YSH Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
   - [IO Builtins](io-builtins.html)
-- [Headless Mode](headless.html).  For alternative UIs on top of Oil.
+- [Headless Mode](headless.html).  For alternative UIs on top of YSH.
 
 
 ## For Contributors
 
-- [README.md](README.html).  If you want to modify Oil, start here.  We
+- [README.md](README.html).  If you want to modify Oils, start here.  We
   welcome contributions!
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
 ### Internal Details
 
-- [Notes on Oil's Architecture](architecture-notes.html)
+- [Notes on Oils Architecture](architecture-notes.html)
   - [Parser Architecture](parser-architecture.html)
