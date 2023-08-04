@@ -29,9 +29,9 @@ feature is **unimplemented**.
   Overview (<a class="group-link" href="ysh-help.html#overview">overview</a>)
 </h2>
 
-```chapter-links-ysh
+```chapter-links-front-end
   [Usage]         bundle-usage   ysh-usage
-  [Oil Lexing]    docstring ###   multiline-command ...
+  [Oil Lexing]    doc-comment ###   multiline-command ...
 ```
 
 <h2 id="command-lang">

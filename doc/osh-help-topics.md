@@ -37,11 +37,11 @@ feature is **unimplemented**.
 
 &nbsp;
 
-<h2 id="overview">
-  Overview (<a class="group-link" href="osh-help.html#overview">overview</a>)
+<h2 id="front-end">
+  Front End (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-front-end
   [Usage]         osh-usage   config   startup   line-editing   prompt
   [Lexing]        comment #   line-continuation \
 ```

@@ -444,6 +444,9 @@ all-help() {
   cp -v doc/ref/osh.txt $TEXT_DIR/osh
   cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
 
+  all-ref
+
+
   # Better sorting
   #LANG=C ls -l $TEXT_DIR
 }

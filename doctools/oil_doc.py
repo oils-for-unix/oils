@@ -443,7 +443,6 @@ def HighlightCode(s, default_highlighter):
               chapter = css_class[n:]
               #log('chap %s', chapter)
 
-              # TODO: Link to osh-help.html, instead of oil-help.html
               out.PrintUntil(code_start_pos)
 
               plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, chapter)
