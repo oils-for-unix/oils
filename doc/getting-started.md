@@ -5,27 +5,22 @@ default_highlighter: oil-sh
 Getting Started
 ===============
 
-There are many ways to use Oil!
+There are many ways to use Oils!
 
 - You can use it *interactively*, or you can write "shell scripts" with it.
   Shell is the best language for *ad hoc* automation.
 - You can use it in *compatible* mode with `bin/osh`, or in *legacy-free* mode
   with `bin/ysh`.
 
-As of 2021, the [OSH language][osh-language] is mature, and the [Oil
-language][oil-language] is under development.  The interactive shell exists,
-but it will be spartan until clients for the "[headless
-shell](headless.html)" appear.  (You should still try it!)
+As of 2023, [OSH][] is mature, and [YSH][YSH] is under development.  See [blog
+posts tagged #FAQ][blog-faqs] for more detail.
 
-See [blog posts tagged #FAQ][blog-faqs] for more detail.
+[OSH]: https://www.oilshell.org/cross-ref.html?tag=OSH#OSH
+[YSH]: https://www.oilshell.org/cross-ref.html?tag=YSH#YSH
 
-[oil-language]: https://www.oilshell.org/cross-ref.html?tag=oil-language#oil-language
-[osh-language]: https://www.oilshell.org/cross-ref.html?tag=osh-language#osh-language
+This doc walks you through setting up Oils, explains some concepts, and links
+to more documentation.
 
-This doc walks you through setting up Oil, explains some concepts, and links to
-more documentation.
-
-<!-- cmark.py expands this -->
 <div id="toc">
 </div>
 
@@ -41,23 +36,22 @@ includes this page.
 
 After running the instructions in [INSTALL](INSTALL.html), run:
 
-    mkdir -p ~/.config/oils
-
-OSH will create `osh_history` there to store your command history.
+    mkdir -p ~/.config/oils       # for oshrc and yshrc
+    mkdir -p ~/.local/share/oils  # for osh_history
 
 ### Initialization with `rc` Files
 
-You can also create your own startup files in this directory:
+Note that
 
-- `bin/osh` runs `~/.config/oil/oshrc`
-- `bin/ysh` runs `~/.config/oil/yshrc`
+- `bin/osh` runs `~/.config/oils/oshrc`
+- `bin/ysh` runs `~/.config/oils/yshrc`
 
 These are the **only** files that are "sourced".  Other shells [have a
 confusing initialization sequence involving many files][mess] ([original][]).
 It's very hard to tell when and if `/etc/profile`, `~/.bashrc`,
 `~/.bash_profile`, etc. are executed.
 
-OSH and Oil intentionally avoid this.  If you want those files, simply `source`
+OSH and YSH intentionally avoid this.  If you want those files, simply `source`
 them in your `oshrc`.
 
 [mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
@@ -69,7 +63,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 ## Tips
 
-- If you get tired of typing `~/.config/oil/oshrc`, symlink it to `~/.oshrc`.
+- If you get tired of typing `~/.config/oils/oshrc`, symlink it to `~/.oshrc`.
 
 ### Troubleshooting
 
