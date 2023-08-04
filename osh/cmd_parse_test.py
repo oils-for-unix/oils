@@ -5,9 +5,10 @@ cmd_parse_test.py: Tests for cmd_parse.py
 
 import unittest
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import command_e, for_iter_e, pat_e
 from core import error
+from core import state
 from core import test_lib
 from core import ui
 
@@ -643,20 +644,18 @@ case (x) {
         self.assertEqual(1, len(node.arms))
         self.assertEqual(pat_e.Else, node.arms[0].pattern.tag())
 
-        if 0:
-            node = assert_ParseCommandLine(
-                self, """\
-  case (x) {
-    (2) | (3) { echo hi; }
-  }
-  """)
-            self.assertEqual(command_e.Case, node.tag())
-            self.assertEqual(1, len(node.arms))
-            pattern = node.arms[0].pattern
-            self.assertEqual(pat_e.YshExprs, pattern.tag())
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+(2) | (3) { echo hi; }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+        pattern = node.arms[0].pattern
+        self.assertEqual(pat_e.YshExprs, pattern.tag())
 
-            # TODO: Fix this test!
-            self.assertEqual(2, len(pattern.exprs))
+        self.assertEqual(2, len(pattern.exprs))
 
         node = assert_ParseCommandLine(
             self, """\
@@ -685,6 +684,55 @@ case (x) {
 
         pattern1 = node.arms[1].pattern
         self.assertEqual(pat_e.Eggex, pattern1.tag())
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  word { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Lit_Chars, arm.left.id)
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  /'eggex'/ { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Arith_Slash, arm.left.id)
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  ('expr') { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Op_LParen, arm.left.id)
+
+        node = assert_ParseCommandLine(
+            self, """\
+case (x) {
+  (else) { = x }
+}
+""")
+        self.assertEqual(command_e.Case, node.tag())
+        self.assertEqual(1, len(node.arms))
+
+        arm = node.arms[0]
+        self.assertEqual(Id.Op_LParen, arm.left.id)
+
 
     def testParseWhile(self):
         node = assert_ParseCommandList(
@@ -1365,6 +1413,72 @@ done
 
     def testForLoopEof(self):
         err = _assert_ParseCommandListError(self, "for x in 1 2 $(")
+
+
+class ParserInteractionsTest(unittest.TestCase):
+
+    def _dumpLexerState(self, lexer):
+        print("----")
+        print(lexer.line_lexer.src_line.content)
+        print(" " * lexer.line_lexer.line_pos + "^ We are here")
+        print("----")
+
+    def testBraceGroup(self):
+        code_str = '{ echo hello; } '
+
+        c_parser = test_lib.InitCommandParser(code_str)
+        lexer = c_parser.lexer
+
+        c_parser.ParseBraceGroup()
+
+        if 0:
+            self._dumpLexerState(lexer)
+
+        # We should be at the end of the line:
+        # '{ echo hello; } '
+        #                  ^ Which is here
+        self.assertEqual(len(lexer.line_lexer.src_line.content),
+                         lexer.line_lexer.line_pos)
+
+        next_id = c_parser.w_parser.LookPastSpace()
+        self.assertEqual(next_id, Id.Unknown_Tok, Id_str(next_id))
+
+    def testYSHBraceGroup(self):
+        code_str = '{ echo hello } '
+
+        c_parser = test_lib.InitCommandParser(code_str)
+        c_parser.parse_opts = state.MakeOilOpts()  # place parser in YSH mode
+        lexer = c_parser.lexer
+
+        c_parser.ParseBraceGroup()
+
+        if 0:
+            self._dumpLexerState(lexer)
+
+        self.assertEqual(len(lexer.line_lexer.src_line.content),
+                         lexer.line_lexer.line_pos)
+
+        next_id = c_parser.w_parser.LookPastSpace()
+        self.assertEqual(next_id, Id.Unknown_Tok)
+
+    def testCmd2Expr2Cmd(self):
+        code_str = '{ = hello } '
+
+        c_parser = test_lib.InitCommandParser(code_str)
+        c_parser.parse_opts = state.MakeOilOpts()  # place parser in YSH mode
+        lexer = c_parser.lexer
+
+        c_parser.ParseBraceGroup()
+
+        if 0:
+            self._dumpLexerState(lexer)
+
+        self.assertEqual(len(lexer.line_lexer.src_line.content),
+                         lexer.line_lexer.line_pos)
+
+        next_id = c_parser.w_parser.LookPastSpace()
+        self.assertEqual(next_id, Id.Unknown_Tok)
+
 
 
 if __name__ == '__main__':

@@ -1130,9 +1130,22 @@ class WordParser(WordEmitter):
         """
         enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
                                                         grammar_nt.command_expr)
-        if last_token.id == Id.Op_RBrace:
-            last_token.id = Id.Lit_RBrace
-        self.buffered_word = last_token
+
+        # In some cases, such as the case statement, we expect *the lexer* to be
+        # pointing at the token right after the expression. But the expression
+        # parser must have read to the `last_token`. Unreading places the lexer
+        # back in the expected state. Ie:
+        #
+        # case (x) {                           case (x) {
+        #   (else) { = x }                       (else) { = x }
+        #                 ^ The lexer is here                 ^ Unread to here
+        # }                                    }
+        assert last_token.id in (Id.Op_Newline, Id.Eof_Real, Id.Op_Semi,
+                                 Id.Op_RBrace), last_token
+        if last_token.id != Id.Eof_Real:
+            # Eof_Real is the only token we cannot unread
+            self.lexer.MaybeUnreadOne()
+
         return enode
 
     def ParseProc(self, node):
@@ -1157,14 +1170,52 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.ShCommand)  # TODO: Do we need this?
 
     def ParseYshCasePattern(self):
-        # type: () -> pat_t
-        pat, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
+        # type: () -> Tuple[pat_t, Token]
+        pat, left_tok, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
 
         if last_token.id == Id.Op_LBrace:
             last_token.id = Id.Lit_LBrace
         self.buffered_word = last_token
 
-        return pat
+        return pat, left_tok
+
+    def NewlineOkForYshCase(self):
+        # type: () -> Id_t
+        """Check for optional newline and consume it.
+
+        This is a special case of `_NewlineOk` which fixed some "off-by-one" issues
+        which crop up while parsing Ysh Case Arms. For more details, see
+        #oil-dev > Progress On YSH Case Grammar on zulip.
+
+        Returns a token id which is filled with the choice of
+
+             word { echo word }
+             (3)  { echo expr }
+             /e/  { echo eggex }
+           }        # right brace
+        """
+        while True:
+            next_id = self.lexer.LookAheadOne(lex_mode_e.Expr)
+
+            # Cannot lookahead past lines
+            if next_id == Id.Unknown_Tok:
+                self.lexer.MoveToNextLine()
+                continue
+
+            next_kind = consts.GetKind(next_id)
+            if next_id != Id.Op_Newline and next_kind != Kind.Ignored:
+                break
+
+            self.lexer.Read(lex_mode_e.Expr)
+
+        if next_id in (Id.Op_RBrace, Id.Op_LParen, Id.Arith_Slash):
+            self._SetNext(lex_mode_e.Expr)  # Continue in expression mode
+        else:
+            #  Consume the trailing Op_Newline
+            self._SetNext(lex_mode_e.ShCommand)
+            self._GetToken()
+
+        return next_id
 
     def ParseImport(self, node):
         # type: (command.Import) -> None

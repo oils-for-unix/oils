@@ -376,19 +376,20 @@ class ParseContext(object):
         return lvalue, iterable, last_token
 
     def ParseYshCasePattern(self, lexer):
-        # type: (Lexer) -> Tuple[pat_t, Token]
+        # type: (Lexer) -> Tuple[pat_t, Token, Token]
         """(6) | (7), / dot* '.py' /, (else), etc.
 
-        Alongside the pattern, this returns the LBrace token at the start of the
-        case arm body.
+        Alongside the pattern, this returns the first token in the pattern and
+        the LBrace token at the start of the case arm body.
         """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_case_pat)
 
+            left_tok = pnode.GetChild(0).tok
             pattern = self.tr.YshCasePattern(pnode)
 
-        return pattern, last_token
+        return pattern, left_tok, last_token
 
     def ParseProc(self, lexer, out):
         # type: (Lexer, command.Proc) -> Token

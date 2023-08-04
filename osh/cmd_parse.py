@@ -10,7 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
     loc,
@@ -644,48 +644,6 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id == Id.Op_Newline:
             self._SetNext()
-
-    def _NewlineOkForYshCase(self):
-        # type: () -> Id_t
-        """Check for optional newline and consume it.
-
-        This is a special case of `_NewlineOk` which fixed some "off-by-one" issues
-        which crop up while parsing Ysh Case Arms. For more details, see
-        #oil-dev > Progress On YSH Case Grammar on zulip.
-
-        Returns a token id, first_id_out, which is filled with the choice of
-
-             word { echo word }
-             (3)  { echo expr }
-             /e/  { echo eggex }
-           }        # right brace
-        """
-        next_id = self.w_parser.LookPastSpace()
-
-        if next_id != Id.Op_Newline:
-            # We are not at a newline, preform a normal lookahead
-            next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
-            return next_id
-
-        while True:
-            # Feed the next line into the lexer
-            self.lexer.MoveToNextLine()
-            next_id = self.lexer.LookPastSpace(lex_mode_e.Expr)
-
-            if next_id != Id.Op_Newline:
-                break
-
-            # Skip past the newline token
-            next_ = self.lexer.Read(lex_mode_e.Expr)
-            assert next_.id == Id.Op_Newline, Id_str(next_.id)
-
-        # Now synchronize the word parser and continue
-        self._SetNext()  # move to Id.Op_Newline; we looked ahead to it
-        self._GetWord(
-        )  # causes ReadWord(), which may or may not change lexer state
-        self._SetNext()  # move PAST Id.Op_Newline
-
-        return next_id
 
     def _AtSecondaryKeyword(self):
         # type: () -> bool
@@ -1560,12 +1518,12 @@ class CommandParser(object):
         the next "discriminant" for the next token, so it makes more sense to
         handle it there.
         """
-        left_tok = location.LeftTokenForWord(self.cur_word)  # pat
-
+        left_tok = None  # type: Token
         pattern = None  # type: pat_t
+
         if discriminant in (Id.Op_LParen, Id.Arith_Slash):
             # pat_exprs, pat_else or pat_eggex
-            pattern = self.w_parser.ParseYshCasePattern()
+            pattern, left_tok = self.w_parser.ParseYshCasePattern()
         else:
             # pat_words
             pat_words = []  # type: List[word_t]
@@ -1575,6 +1533,9 @@ class CommandParser(object):
                     p_die('Expected case pattern', loc.Word(self.cur_word))
                 pat_words.append(self.cur_word)
                 self._SetNext()
+
+                if not left_tok:
+                    left_tok = location.LeftTokenForWord(self.cur_word)
 
                 self._NewlineOk()
 
@@ -1606,7 +1567,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Lit_LBrace)
         arms_start = word_.BraceToken(ate)
 
-        discriminant = self._NewlineOkForYshCase()
+        discriminant = self.w_parser.NewlineOkForYshCase()
 
         # Note: for now, zero arms are accepted, just like POSIX case $x in esac
         arms = []  # type: List[CaseArm]
@@ -1614,10 +1575,14 @@ class CommandParser(object):
             arm = self.ParseYshCaseArm(discriminant)
             arms.append(arm)
 
-            discriminant = self._NewlineOkForYshCase()
+            discriminant = self.w_parser.NewlineOkForYshCase()
 
-        ate = self._Eat(Id.Lit_RBrace)
-        arms_end = word_.BraceToken(ate)
+        # NewlineOkForYshCase leaves the lexer in lex_mode_e.Expr. So the '}'
+        # token is read as an Id.Op_RBrace, but we need to store this as a
+        # Id.Lit_RBrace.
+        ate = self._Eat(Id.Op_RBrace)
+        arms_end = word_.AsOperatorToken(ate)
+        arms_end.id = Id.Lit_RBrace
 
         return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
 
