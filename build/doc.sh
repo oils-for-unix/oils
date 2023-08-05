@@ -110,6 +110,7 @@ readonly MARKDOWN_DOCS=(
   options
 
   old/index
+  old/legacy-array
   old/ysh-keywords
   old/proc-block-func
   old/modules
