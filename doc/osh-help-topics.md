@@ -3,39 +3,16 @@ in_progress: yes
 css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 ---
 
-OSH Help Topics
+Index of OSH Topics
 ===============
 
-<!--
-IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
+These are links to topics in the [Oils Reference](ref/index.html).
 
-Special rules:
-- [] at start of line is a section
-- X for deprecated
-- three spaces separating words to be highlighted
+(Sibling: [Index of YSH Topics](ysh-help-topics.html))
 
-TODO: There should be a character for "no links past here?"
-- or <span></span>
-- this should be turned GREEN?
--->
+<div id="toc">
+</div>
 
-This is the online help for the OSH language.  It underlies the `help` builtin.
-
-For example, typing `help if` in the shell shows you how to use the `if`
-statement.  A link to this same text appears in the [`command-lang`](#command-lang)
-**group** below, under the `[Conditional]` **section**.
-
-To view this index inside the shell, use:
-
-    help osh
-
-An <span style="color: darkred">X</span> next to a help topic means that the
-feature is **unimplemented**.
-
-- Down: [OSH Help on One Big Page](osh-help.html)
-- Lateral: [YSH Help Topics](ysh-help-topics.html)
-
-&nbsp;
 
 <h2 id="front-end">
   Front End (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)

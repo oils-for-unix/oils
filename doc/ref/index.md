@@ -18,15 +18,19 @@ This reference has N chapters:
 1. [Command Language](chap-cmd-lang.html)
 1. [Word Language](chap-word-lang.html)
 1. [OSH Assignment](chap-osh-assign.html)
-1. [YSH Expression Language](chap-expr-lang.html)
 1. [Builtin Commands](chap-builtin-cmd.html)
+1. [Global Shell Options](chap-option.html)
+1. [Special Variables](chap-special-var.html)
 1. ...
+1. [YSH Expression Language](chap-expr-lang.html)
+1. [YSH Types and Methods](chap-type-method.html)
+1. [Builtin Functions](chap-builtin-func.html)
 1. [Data Languages](chap-data-lang.html)
 
 Which are linked from these indices:
 
-- [OSH Reference Index](../osh-help-topics.html)
-- [YSH Reference Index](../ysh-help-topics.html)
+- [Index of OSH Topics](../osh-help-topics.html)
+- [Index of YSH Topics](../ysh-help-topics.html)
 
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.

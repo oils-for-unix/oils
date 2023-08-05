@@ -3,30 +3,19 @@ in_progress: yes
 css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 ---
 
-YSH Help Topics
-===============
+Index of YSH Topics
+===
 
-This is the online help for YSH.  It underlies the `help` builtin.
+These are links to topics in the [Oils Reference](ref/index.html).
 
-For example, typing `help proc` in the shell shows you how to use the `proc`
-statement.  A link to this same text appears in the
-[`command-lang`](#command-lang) **group** below.
+(Sibling: [Index of OSH Topics](osh-help-topics.html))
 
-To view this index inside the shell, use:
-
-    help oil
-
-An <span style="color: darkred">X</span> next to a help topic means that the
-feature is **unimplemented**.
-
-- Down: [YSH Help on One Big Page](ysh-help.html)
-- Lateral: [OSH Help Topics](osh-help-topics.html)
-
-&nbsp;
+<div id="toc">
+</div>
 
 
 <h2 id="front-end">
-  Overview (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)
+  Front End (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)
 </h2>
 
 ```chapter-links-front-end
@@ -153,10 +142,10 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="ysh-help.html#option">option</a>)
+  Shell Options (<a class="group-link" href="ref/chap-option.html">option</a>)
 </h2>
 
-```chapter-links-ysh
+```chapter-links-option
   [Option Groups] strict:all   ysh:upgrade   ysh:all
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
@@ -216,45 +205,57 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="env">
-  Environment Variables (<a class="group-link" href="ysh-help.html#env">env</a>)
+  Environment Variables (<a class="group-link" href="ref/chap-env-var.html">env-var</a>)
 </h2>
 
-```chapter-links-ysh
+```chapter-links-env-var
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 ```
 
-<h2 id="special">
-  Special Variables (<a class="group-link" href="ysh-help.html#special">special</a>)
+<h2 id="special-var">
+  Special Variables (<a class="group-link" href="ref/chap-special-var.html">special-var</a>)
 </h2>
 
-```chapter-links-ysh
+```chapter-links-special-var
   [History]       YSH_HISTFILE
   [Shell Vars]    ARGV   X ENV   X OPT
                   X _ESCAPE   _DIALECT
                   _this_dir
-  [Platform]      OIL_VERSION
+  [Platform]      OILS_VERSION
   [Exit Status]   _status   _pipeline_status   _process_sub_status
   [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
-X [Types]         Null   Bool   Int   Float   Str   List   Dict
-                  Eggex   Template   Expr   Command   Proc   Func
 ```
 
-<h2 id="lib">
-  Builtin Functions (<a class="group-link" href="ysh-help.html#lib">lib</a>)
+<h2 id="type-method">
+  Builtin Types and Methods (<a class="group-link" href="ref/chap-type-method.html">type-method</a>)
 </h2>
 
-Access silently mutated globals:
-
-```chapter-links-ysh
-  [Pattern]       _match()   X _start()   X _end()
-X [Wok]           _field()
+```chapter-links-type-method
+  [Null]      x
+  [Bool]      fromStr()
+  [Int]       fromStr()
+  [Str]       toJ8()
+  [List]      x
+  [Dict]      x
+  [Eggex]     x
+  [Template]  x
+  [Expr]      x
+  [Command]   x
+  [Proc]      x
+  [Func]      x
+  [Slice]     x
+  [Range]     x
 ```
 
-Functions and Methods:
+<h2 id="builtin-func">
+  Builtin Functions (<a class="group-link" href="ref/chap-builtin-func.html">builtin-func</a>)
+</h2>
 
-```chapter-links-ysh
+```chapter-links-builtin-func
+  [Pattern]       _match()   X _start()   X _end()
+X [Wok]           _field()
   [Collections]   len()
 X [String]        find(eggex)   replace(eggex, template)   join() 
                   split()             $IFS, awk algorithm, regex
