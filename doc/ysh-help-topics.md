@@ -97,24 +97,24 @@ feature is **unimplemented**.
 ```
 
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="ysh-help.html#word-lang">word-lang</a>)
+  Word Language (<a class="group-link" href="ref/chap-word-lang.html">word-lang</a>)
 </h2>
 
-```chapter-links-ysh
-                  expr-sub      echo $[42 + a[i]]
+```chapter-links-word-lang
+  [String Lit]    X multi-str   """  r'''  j"""
+                  X j8-str      j"byte \y00 unicode \u{123456}"
+  [Expression]    expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
-                  X multi-str   """  r'''  j"""
-                  X J8 strings  j"byte \y00 unicode \u{123456}"
-                  X ysh-printf  ${x %.3f}
+  [Formatting]    X ysh-printf  ${x %.3f}
                   X ysh-format  ${x|html}
 ```
 
-<h2 id="builtins">
-  Builtin Commands (<a class="group-link" href="ysh-help.html#builtins">builtins</a>)
+<h2 id="builtin-cmd">
+  Builtin Commands (<a class="group-link" href="ref/chap-builtin-cmd">builtin-cmd</a>)
 </h2>
 
-```chapter-links-ysh
+```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
                   X argparse             getopts replacement, sets OPT
                   X setref               Builtin to replac ekeyword

@@ -3,8 +3,8 @@ in_progress: yes
 all_docs_url: -
 ---
 
-Oils Documentation
-==================
+All Docs on Oils
+================
 
 The Oils project aims to transform Unix shell into a better programming
 language.  It's **our upgrade path from bash**.  It's for Python and JavaScript
@@ -12,6 +12,14 @@ programmers who avoid shell.
 
 <div id="toc">
 </div>
+
+## Reference (incomplete)
+
+- [Oils Reference](ref/index.html) - These docs underlie `help` builtin, and
+  are also published online.
+- Links to topics within each chapter:
+  - [OSH Help Topics](osh-help-topics.html)
+  - [YSH Help Topics](ysh-help-topics.html)
 
 ## Preliminaries
 
@@ -31,10 +39,6 @@ These docs are for advanced users:
 - [Quirks](quirks.html) for compatibility.
 - [Shell Language Idioms](shell-idioms.html).
 
-Reference:
-
-- [OSH Help Topics](osh-help-topics.html) (incomplete).  This document
-  underlies the `help` builtin.
 
 ## YSH is a New Shell
 
@@ -48,11 +52,6 @@ Reference:
 - [YSH Language FAQ](ysh-faq.html).  Common questions about the
   language.
 - [Warts](warts.html).  Mostly for compatibility.
-
-Reference:
-
-- [YSH Help Topics](ysh-help-topics.html) (incomplete).  This document
-  underlies the `help` builtin.
 
 ### Language Design
 
