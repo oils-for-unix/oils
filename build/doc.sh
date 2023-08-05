@@ -384,7 +384,7 @@ cards-from-chapters() {
   local py_out=$CODE_DIR/fixme.py
   # h3
   _make-help cards-from-chapter $TEXT_DIR $py_out h3 \
-    $HTML_DIR/doc/ref/chap-front-end.html
+    $HTML_DIR/doc/ref/chap-*.html
 }
 
 tour() {

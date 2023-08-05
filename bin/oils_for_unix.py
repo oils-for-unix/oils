@@ -115,7 +115,7 @@ def AppBundleMain(argv):
         if first_arg in ('-h', '--help'):
             errfmt = None  # type: ui.ErrorFormatter
             help_builtin = builtin_misc.Help(loader, errfmt)
-            help_builtin.Run(shell.MakeBuiltinArgv(['bundle-usage']))
+            help_builtin.Run(shell.MakeBuiltinArgv(['oils-usage']))
             return 0
 
         if first_arg in ('-V', '--version'):

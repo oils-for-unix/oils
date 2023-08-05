@@ -15,7 +15,7 @@ Oils Reference
 This reference has N chapters:
 
 1. [Front End](chap-front-end.html)
-1. [Command Language](TODO)
+1. [Command Language](chap-cmd-lang.html)
 1. ...
 1. [Data Languages](chap-data-lang.html)
 

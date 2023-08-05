@@ -46,11 +46,11 @@ feature is **unimplemented**.
   [Lexing]        comment #   line-continuation \
 ```
 
-<h2 id="command-lang">
-  Command Language (<a class="group-link" href="osh-help.html#command-lang">command-lang</a>)
+<h2 id="cmd-lang">
+  Command Language (<a class="group-link" href="ref/chap-cmd-lang.html">cmd-lang</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-cmd-lang
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[

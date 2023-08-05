@@ -5,15 +5,18 @@ body_css_class: width40 help-body
 default_highlighter: oil-sh
 ---
 
-Oils Reference: Front End
+Front End
 ===
+
+This chapter in the [Oils Reference](index.html) describes command line usage
+and lexing.
 
 <div id="toc">
 </div>
 
-## Usage
+<h2 id="usage">Command Line Usage</h3>
 
-<h3 id="bundle-usage" class="osh-ysh-topic">App Bundle Usage</h3>
+<h3 id="oils-usage" class="osh-ysh-topic">oils-usage</h3>
 
 <!-- pre-formatted for help builtin -->
 
@@ -33,7 +36,7 @@ Otherwise, the command name can be passed as the first argument, e.g.:
     oils-for-unix ysh -c 'echo hi'
 ```
 
-<h3 id="osh-usage" class="osh-topic"><code>bin/osh</code> Usage</h3>
+<h3 id="osh-usage" class="osh-topic">osh-usage</h3>
 
 <!-- pre-formatted for help builtin -->
 
@@ -61,7 +64,7 @@ osh accepts POSIX sh flags, with these additions:
   --ast-format   what format the AST should be in
 ```
 
-<h3 id="ysh-usage" class="ysh-topic"><code>bin/ysh</code> Usage</h3>
+<h3 id="ysh-usage" class="ysh-topic">ysh-usage</h3>
 
 <!-- pre-formatted for help builtin -->
 
@@ -81,7 +84,7 @@ Usage: ysh FLAG* SCRIPT ARG*
 ```
 
 
-<h3 id="config" class="osh-ysh-topic">Configuring the Shell</h3>
+<h3 id="config" class="osh-ysh-topic">config</h3>
 
 If the --rcfile flag is specified, that file will be executed on startup.
 Otherwise:
@@ -100,19 +103,19 @@ Otherwise:
 
 Pass --norc to disable the startup directory.
 
-<h3 id="startup" class="osh-ysh-topic">Startup Files</h3>
+<h3 id="startup" class="osh-ysh-topic">startup</h3>
 
 History is read?
 
 ## Lexing
 
-<h3 id="comment" class="osh-ysh-topic">Comments</h3>
+<h3 id="comment" class="osh-ysh-topic">comment</h3>
 
 A comment starts with `#` and goes until the end of the line.
 
     echo hi  # print a greeting
 
-<h3 id="line-continuation" class="osh-ysh-topic">Line Continuation</h3>
+<h3 id="line-continuation" class="osh-ysh-topic">line-continuation</h3>
 
 A backslash `\` at the end of a line continues the line without executing it:
 
@@ -120,7 +123,7 @@ A backslash `\` at the end of a line continues the line without executing it:
        /usr/lib \
        ~/src        # A single command split over three lines
 
-<h3 id="doc-comment" class="ysh-topic">Doc Comments</h3>
+<h3 id="doc-comment" class="ysh-topic">doc-comment</h3>
 
 Doc comments look like this:
 
@@ -129,7 +132,7 @@ Doc comments look like this:
       echo hi
     }
 
-<h3 id="multiline-command" class="ysh-topic">Multi-Line Command</h3>
+<h3 id="multiline-command" class="ysh-topic">multiline-command</h3>
 
 The ... prefix starts a single command over multiple lines.  It allows writing
 long commands without \ continuation lines, and the resulting limitations on

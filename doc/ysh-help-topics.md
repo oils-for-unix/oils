@@ -25,8 +25,8 @@ feature is **unimplemented**.
 &nbsp;
 
 
-<h2 id="overview">
-  Overview (<a class="group-link" href="ysh-help.html#overview">overview</a>)
+<h2 id="front-end">
+  Overview (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)
 </h2>
 
 ```chapter-links-front-end
@@ -34,22 +34,23 @@ feature is **unimplemented**.
   [Oil Lexing]    doc-comment ###   multiline-command ...
 ```
 
-<h2 id="command-lang">
-  Command Language (<a class="group-link" href="ysh-help.html#command-lang">command-lang</a>)
+<h2 id="cmd-lang">
+  Command Language (<a class="group-link" href="ref/chap-cmd-lang.html">cmd-lang</a>)
 </h2>
 
-```chapter-links-ysh
-                  proc-def      proc p (x, out Ref, @rest, e Expr, b Block) { c }
-                  X func-def    func f(x; opt1, opt2) { return (x + 1) }
-                  X ysh-return  return (myexpr)
-                  X ysh-case    case (x) { *.py { echo 'python' } }
-                  ysh-if        if (x > 0) { echo }
-                  ysh-while     while (x > 0) { echo }
-                  ysh-for       for i, item in (mylist) { echo }
+```chapter-links-cmd-lang
+  [Commands]      proc-def      proc p (out Ref; pos, ...rest; n=0; b Block) {
+                  func-def      func f(x; opt1, opt2) { return (x + 1) }
+                  ysh-return    return (myexpr)
+                  error         error (status=3)
                   equal =       = 1 + 2*3
-                  underscore _  _ mylist.append(42)
-                  typed-arg     json write (x)
+                  underscore _  _ mylist->append(42)
+  [YSH Simple]    typed-arg     json write (x)
                   block-arg     cd /tmp { echo $PWD }
+  [Conditional]   ysh-case      case (x) { *.py { echo 'python' } }
+                  ysh-if        if (x > 0) { echo }
+  [Iteration]     ysh-while     while (x > 0) { echo }
+                  ysh-for       for i, item in (mylist) { echo }
 ```
 
 <h2 id="expr-lang">
