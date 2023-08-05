@@ -54,10 +54,10 @@ feature is **unimplemented**.
 ```
 
 <h2 id="expr-lang">
-  Expression Language and Assignments (<a class="group-link" href="ysh-help.html#expr-lang">expr-lang</a>)
+  Expression Language and Assignments (<a class="group-link" href="ref/chap-expr-lang.html">expr-lang</a>)
 </h2>
 
-```chapter-links-ysh
+```chapter-links-expr-lang
   [Keywords]      const   var   setvar   setglobal   setref
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10

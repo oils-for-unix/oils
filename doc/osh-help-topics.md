@@ -65,11 +65,11 @@ feature is **unimplemented**.
   [Other Command] dparen ((   time   X coproc   X select
 ```
 
-<h2 id="assign">
-  Assignments and Expressions (<a class="group-link" href="osh-help.html#assign">assign</a>)
+<h2 id="osh-assign">
+  Assignments and Expressions (<a class="group-link" href="ref/chap-osh-assign.html">osh-assign</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-osh-assign
   [Literals]      sh-array      array=(a b c)   array[1]=B   "${a[@]}"
                   sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Operators]     sh-assign     str='xyz'

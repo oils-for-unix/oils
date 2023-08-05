@@ -21,46 +21,6 @@ It generates both HTML and text for the 'help' builtin.
 <div id="toc">
 </div>
 
-<h2 id="assign">Assigning Variables</h2>
-
-### Operators
-
-#### sh-assign
-
-#### sh-append
-
-### Compound Data
-
-#### sh-array
-
-Array literals in shell accept any sequence of words, just like a command does:
-
-    ls $mystr "$@" *.py
-
-    # Put it in an array
-    a=(ls $mystr "$@" *.py)
-
-In Oil, use [oil-array]($oil-help).
-
-#### sh-assoc
-
-In Oil, use [oil-dict]($oil-help).
-
-### Builtins
-
-#### local
-
-#### export
-
-#### unset
-
-#### shift
-
-#### declare
-
-#### typeset
-
-Alias for [declare]($osh-help).
 
 <h2 id="word">Word Language</h2>
 
@@ -735,9 +695,11 @@ Help terminology:
     Chapter:        An HTML doc that's part of the reference
                     May apply to OSH, YSH or both
     Section:        <h2> in a chapter
-    Topic:          <h3> in a chapter, with name like 'doc-comment'
-                    May apply to OSH, YSH or both
+    Topic:          Text with globally unique name like 'doc-comment'
+                    <h3> in a chapter; may apply to OSH, YSH or both
     Card:           Each topic is exported as a "card"
+                    Either as inline text, or a URL to rendered HTML
+                    There may also be a URL to bash docs
 
 All docs, including this reference:
 
