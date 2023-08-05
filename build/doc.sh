@@ -75,14 +75,12 @@ readonly MARKDOWN_DOCS=(
   # polished
   getting-started
   known-differences
-  errors
   error-handling
   json
   hay
   simple-word-eval
   quirks
   warts
-  variables
   eggex
   upgrade-breakage
   qsn
@@ -110,14 +108,19 @@ readonly MARKDOWN_DOCS=(
   ysh-tour
 
   options
-  oil-keywords
+
+  old/index
+  old/ysh-keywords
+  old/proc-block-func
+  old/modules
+  old/expression-language
+  old/word-language
+  old/errors
+
   oil-builtins
   command-vs-expression-mode
 
-  expression-language
-  word-language
 
-  proc-block-func
   io-builtins
   unicode
   framing
@@ -125,7 +128,6 @@ readonly MARKDOWN_DOCS=(
   headless
   completion
   strings
-  modules
 
   # Internal stuff
   variable-scope

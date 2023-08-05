@@ -1,5 +1,6 @@
 ---
 in_progress: yes
+css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 ---
 
 List of Errors in the OSH Interpreter

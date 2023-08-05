@@ -23,13 +23,20 @@ programmers who avoid shell.
 - [Getting Started](getting-started.html).  How do I use the shell?
 - [FAQ on Documentation](faq-doc.html).  Where do I find docs?
 
-## Reference (incomplete)
+## Reference
+
+Like many other docs, this is still in progress:
 
 - [Oils Reference](ref/index.html) - These docs underlie `help` builtin, and
   are also published online.
 - Links to topics within each chapter:
-  - [Index of OSH Topics](osh-help-topics.html)
-  - [Index of YSH Topics](ysh-help-topics.html)
+  - [Index of OSH Topics](ref/index-osh.html)
+  - [Index of YSH Topics](ref/index-ysh.html)
+
+## Interactive Shell
+
+- [Headless Mode](headless.html).  For alternative UIs on top of YSH.
+- [Completion](completion.html) (doc in progress).  We emulate bash completion.
 
 ## OSH is a Compatible Shell
 
@@ -47,13 +54,10 @@ These docs are for advanced users:
 - [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  When you turn
   on YSH, there are some shell constructs you can no longer use.  We try to
   minimize the length of this list.
-- [Hay - Custom Languages for Unix Systems](hay.html).  Use Ruby-like
-  blocks to declare data and interleaved code.
 - [YSH Language FAQ](ysh-faq.html).  Common questions about the
   language.
-- [Warts](warts.html).  Mostly for compatibility.
 
-### Language Design
+### Design Concepts, Comparisons
 
 - [A Feel For YSH Syntax](syntax-feelings.html)
 - [Language Influences](language-influences.html)
@@ -63,36 +67,28 @@ These docs are for advanced users:
   Bourne/POSIX shell?
 - [YSH vs. Python](oil-vs-python.html).  How do YSH expressions differ from
   Python?
+- [Warts](warts.html).  Mostly for compatibility.
 
-### The Command Language
+YSH has 3 main sublanguages:
 
-**Commands** are made of words, keywords, and other operators.  They're for
-I/O, control flow, and abstraction.
+- **Command** language, which now consistently uses `{ }` for blocks.
+  - [Hay - Custom Languages for Unix Systems](hay.html).  Use Ruby-like
+    blocks to declare data and interleaved code.
+- **Word** language.
+  - [Simple Word Evaluation](simple-word-eval.html).  Written for shell
+    experts.
+- **Expression** language on typed data.
+  - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
 
-- [YSH Keywords](oil-keywords.html). New keywords for assignment, etc.
-- Pipeline Idioms.  An essential part of shell that deserves its own document.
-- [Procs, Blocks, and Funcs](proc-block-func.html)
-- [Modules](modules.html).  Separating programs into files.
+Crosscutting issues:
 
-### The Word Language
-
-**Words** are expressions for strings, and arrays of strings.
-
-- [Word Language](word-language.html).  Substitution, splicing, globbing, brace
-  expansion, etc.
+- [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
   - [Unicode](unicode.html).  Oils supports and prefers UTF-8.
-- [Simple Word Evaluation](simple-word-eval.html).  Written for shell experts.
+- [YSH Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
+  - [IO Builtins](io-builtins.html)
 
-### The Expression Language
-
-YSH has typed **expressions**, like Python and JavaScript.
-
-- [Expression Language](expression-language.html).  Types, literals, and
-  operators.
-- [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
-
-## Languages for Data (Interchange Formats)
+## Data Languages Avoid Ad-Hoc Parsing
 
 YSH supports these languages for data, which are complementary to languages for
 code.
@@ -104,22 +100,18 @@ code.
 - [QTT](qtt.html): Quoted, Typed Tables.  An extension of TSV, built on top of
   QSN.
 
-## The Shared Runtime
+## The Shared Oils Runtime
+
+- [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
+- [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
+- [Options](options.html).  Parsing and runtime options turn OSH into YSH.
+
+Internal details:
 
 - [Interpreter State](interpreter-state.html).  What's inside a shell
   interpreter?
-  - [Options](options.html).  Parsing and runtime options turn OSH into YSH.
-  - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Process Model](process-model.html).  The shell language is a thin layer over
   the Unix kernel.
-- [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
-- Errors
-  - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
-  - [Error List](errors.html) 
-- [YSH Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
-  - [IO Builtins](io-builtins.html)
-- [Headless Mode](headless.html).  For alternative UIs on top of YSH.
-
 
 ## For Contributors
 
@@ -127,8 +119,11 @@ code.
   welcome contributions!
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
+- [Old Docs](old/index.html).  Drafts that may never be completed.
 
-### Internal Details
+Internal Architecture:
 
 - [Notes on Oils Architecture](architecture-notes.html)
   - [Parser Architecture](parser-architecture.html)
+
+<!-- vim: set sw=2: -->

@@ -1,6 +1,7 @@
 ---
 in_progress: yes
 default_highlighter: oil-sh
+css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 ---
 
 Procs, Blocks, and Funcs
