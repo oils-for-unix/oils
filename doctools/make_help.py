@@ -391,7 +391,8 @@ def main(argv):
 
     out_dir = argv[2]
     py_out = argv[3]
-    pages = argv[4:]
+    tag_level = argv[4]  # h4 or h3
+    pages = argv[5:]
 
     topics = []
     seen = set()
@@ -402,7 +403,7 @@ def main(argv):
       cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
       for tag, topic_id, heading, text in cards:
-        if tag != 'h4':
+        if tag != tag_level:
           continue  # Skip h2 and h3 for now
 
         #log('topic_id = %r', topic_id)

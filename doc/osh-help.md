@@ -989,8 +989,9 @@ Unimplemented.
 
 #### help
 
-    help                   # list chapters for osh or ysh
-    help osh               # same but more explicit
+    help                   # this help
+    help osh               # chapters for osh or ysh
+    help ysh
 
     help command-lang      # list sections in chapter
     help osh-command-lang  # same but more explicit
@@ -1001,7 +1002,7 @@ Unimplemented.
     help osh-usage         # more explicit
     help ysh-usage         # more explicit
 
-View on the web:
+All docs, including this reference:
 
     https://www.oilshell.org/release/$VERSION/doc/
 

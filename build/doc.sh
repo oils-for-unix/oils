@@ -377,8 +377,13 @@ cards-from-chapters() {
 
   # TODO: We need to re-indent <code> blocks here, etc.
 
-  _make-help cards-from-chapter $TEXT_DIR $py_out \
+  # h4 tag for these
+  _make-help cards-from-chapter $TEXT_DIR $py_out h4 \
     $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/ysh-help.html
+
+  # h3
+  _make-help cards-from-chapter $TEXT_DIR $py_out h3 \
+    $HTML_DIR/doc/ref/chap-front-end.html
 }
 
 tour() {
@@ -438,14 +443,14 @@ all-help() {
   split-and-render doc/osh-help-topics.md
   split-and-render doc/osh-help.md
 
+  # Make the chapters
+  all-ref
+
   cards-from-indices
   cards-from-chapters
 
   cp -v doc/ref/osh.txt $TEXT_DIR/osh
   cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
-
-  all-ref
-
 
   # Better sorting
   #LANG=C ls -l $TEXT_DIR
