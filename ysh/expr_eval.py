@@ -52,7 +52,6 @@ from core import state
 from core import vm
 from frontend import consts
 from frontend import match
-from frontend import lexer
 from frontend import location
 from osh import braces
 from osh import word_compile
