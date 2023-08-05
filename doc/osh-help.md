@@ -729,6 +729,16 @@ Examples:
     help osh-usage     # identical to osh --help
     help ysh-usage     # ditto
 
+Help terminology:
+
+    Oils Reference: underlies 'help' builtin, and published as HTML
+    Chapter:        An HTML doc that's part of the reference
+                    May apply to OSH, YSH or both
+    Section:        <h2> in a chapter
+    Topic:          <h3> in a chapter, with name like 'doc-comment'
+                    May apply to OSH, YSH or both
+    Card:           Each topic is exported as a "card"
+
 All docs, including this reference:
 
     https://www.oilshell.org/release/$VERSION/doc/
