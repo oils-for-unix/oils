@@ -21,70 +21,6 @@ It generates both HTML and text for the 'help' builtin.
 <div id="toc">
 </div>
 
-<h2 id="overview">Overview</h2>
-
-### Usage
-
-<h4 id="osh-usage"><code>bin/osh</code> Usage</h4>
-
-    Usage: osh [OPTION]... SCRIPT [ARG]...
-           osh [OPTION]... -c COMMAND [ARG]...
-
-The command line accepted by `bin/osh` is compatible with `/bin/sh` and `bash`.
-
-    osh -c 'echo hi'
-    osh myscript.sh
-    echo 'echo hi' | osh
-
-It also has a few enhancements:
-
-    osh -n -c 'hello'                    # pretty-print the AST
-    osh --ast-format text -n -c 'hello'  # print it full
-
-osh accepts POSIX sh flags, with these additions:
-
-  -n             parse the program but don't execute it.  Print the AST.
-  --ast-format   what format the AST should be in
-
-<h4 id="config">Configuring the Shell</h4>
-
-If the --rcfile flag is specified, that file will be executed on startup.
-Otherwise:
-
-- `bin/osh` runs `~/.config/oils/oshrc`
-- `bin/ysh` runs `~/.config/oils/yshrc`
-
-Pass --rcfile /dev/null or --norc to disable the startup file.
-
-If the --rcdir flag is specified, files in that folder will be executed on
-startup.
-Otherwise:
-
-- `bin/osh` runs everything in `~/.config/oils/oshrc.d/`
-- `bin/ysh` runs everything in `~/.config/oils/yshrc.d/`
-
-Pass --norc to disable the startup directory.
-
-<h4 id="startup">Startup Files</h4>
-
-History is read?
-
-### Lexing
-
-#### comment
-
-A comment starts with `#` and goes until the end of the line.
-
-    echo hi  # print a greeting
-
-#### line-continuation
-
-A backslash `\` at the end of a line continues the line without executing it:
-
-    ls /usr/bin \
-       /usr/lib \
-       ~/src        # A single command split over three lines
-
 <h2 id="command-lang">Command Language</h2>
 
 ### Commands
@@ -1053,8 +989,9 @@ Unimplemented.
 
 #### help
 
-    help                   # list chapters for osh or ysh
-    help osh               # same but more explicit
+    help                   # this help
+    help osh               # chapters for osh or ysh
+    help ysh
 
     help command-lang      # list sections in chapter
     help osh-command-lang  # same but more explicit
@@ -1065,7 +1002,7 @@ Unimplemented.
     help osh-usage         # more explicit
     help ysh-usage         # more explicit
 
-View on the web:
+All docs, including this reference:
 
     https://www.oilshell.org/release/$VERSION/doc/
 

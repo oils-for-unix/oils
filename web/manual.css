@@ -39,7 +39,6 @@ h4 {
   padding-top: 1em;  /* separate sections */
 }
 
-
 /* inline code 
  *
  * BUG FIX: Selector is 'p code' and not 'code' because markdown generates
@@ -50,3 +49,4 @@ p code, li code, h2 code, h3 code, div code {
   background-color: #eee;
   padding: 4px;
 }
+

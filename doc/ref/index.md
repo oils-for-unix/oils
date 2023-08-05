@@ -3,114 +3,80 @@ in_progress: yes
 default_highlighter: oil-sh
 ---
 
-Oil Reference
+Oils Reference
 =============
 
-Design:
-
-- Online HTML
-- Linked From 'help' builtin
-- Supplants faq-doc.md
-- Linked to from `{osh,oil}-topics.md` 
-  - Do we need some kind of 'setvalue' HTML instruction there?
-  - `<setvalue name=foo value="value" />`
-- doc/ref might be better?
-
-Table of contents / index:
-
-- [Oil Topics](oil-topics.html)
-- [OSH Topics](osh-topics.html)
 
 <div id="toc">
 </div>
 
-## Two of Four Kinds of Docs
+## Online HTML
 
-- Tutorial -- learning oriented
-- How To -- task oriented
-- Explanation -- design docs
-- Reference
+This reference has N chapters:
 
-## Organization
+1. [Front End](chap-front-end.html)
+1. [Command Language](TODO)
+1. ...
+1. [Data Languages](chap-data-lang.html)
 
-### Directory Structure
+Which are linked from these indices:
 
-    doc/
-      ref/
-        index.html          # this page
-        command-lang.html   # reference page
+- [OSH Reference Index](../osh-help-topics.html)
+- [YSH Reference Index](../ysh-help-topics.html)
 
-      # design docs at the top level
-      error-handling.html
-      index.html            # narrative ot index of docs
+The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
+YSH.
+
+Or go back to [All Oils Documentation](../index.html).
+
+
+## `help` builtin command
+
+When you type `help` in OSH or YSH, the command shows some of this material,
+and prints hyperlinks to it.
+
+## Directory Structures
+
+### Source Code
+
+    doc/  # all docs
+      index.md  # index of docs
+      getting-started.md
+      ...
+
+      ref/                    # the reference
+        index.md              # this page
+        chap-command-lang.md  # chapter
+        ...
+
+        osh-index.md          # TODO
+        ysh-index.md          # TODO
+
 
 ### URLs
 
-    /release/$VERSION/doc/ref/option.html#strict_errexit
+URLs mirror the source code:
 
-    /release/$VERSION/doc/ref/builtin.html#compgen
+    /release/$VERSION/doc/
+      index.html
+      getting-started.html
+      ...
 
-These are h3 tags.
+      ref/
+        index.html
+        chap-command-lang.html
+        osh-index.html
+        ysh-index.html
 
-What about the h2 tags -- do we do anything with them?
+With internal anchors:
 
-- h2 tags:
-  - OSH or Oil
-  - Category of Builtin (Shell State, Child Process)
-  - Category of Option
+    ref/chap-option.html#strict_errexit
 
-&nbsp;
-
-- Later: alphabetical list of options
-
-### Help
-
-    help strict_errexit
-    help compgen
-
-They link directly
-         
-## List of Reference Documents
-
-Note that h3 tags are the topics.
-
-Union of `{osh,oil}-help-topics`
-
-
-- ref-overview -- usage, config, startup
-  - todo: change this into ref-usage?  Or just a non-reference document?
-
-&nbsp;
-
-- OSH
-  - command-lang
-  - assign
-  - word-lang
-  - other-sublang
-  - builtins or builtin
-  - option
-  - env -- environment variables
-  - special - special variables
-  - plugin -- hooks for code
-- Oil
-  - expr-lang
-  - enhanced
-    - command-lang, word-lang, builtins, options
-    - env, special
-  - lib -- standard library functions
-
-# OSH or Oil?
-
-- TODO: Figure out good POSIX shell and bash resources.
-  - Most of the reference will just link to them, at least at first.
-
-- Some differences:
-  - arithmetic is statically parsed
-  - Extended globs cleaned up
-  - Brace expansion affected by `shopt -s parse_brace`.
-
+    ref/chap-builtin.html#compgen
 
 ## TODO
+
+- Later: alphabetical list of options
 
 ### Link Shortcuts For Writing Docs
 
@@ -130,24 +96,3 @@ Or maybe:
 Like say you want all the `[[` language stuff together, and you want to create
 a link, but not explain it all.
 
-### Refactor Docs
-
-- Language
-  - word-language -> ref/word-lang.md
-  - command-language -> ref/command-lang.md
-
-- Help Topics
-  - osh-help-topics -> ref/osh-topics.md
-  - oil-help-topics -> ref/oil-topics.md
-
-- Help Body
-  - osh-help.md -> ref/{builtin,option,...}.md
-  - oil-help.md -> ref/{builtin,option,...}.md
-
-- Index
-  - doc/index.md   -- This needs some rewriting with the new reference.
-
-
-## Related Links
-
-- [Doc Overview](../index.html)

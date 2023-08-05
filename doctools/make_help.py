@@ -101,6 +101,11 @@ def HighlightLine(chapter, line):
   f = cStringIO.StringIO()
   out = html.Output(line, f)
 
+  if chapter in ('osh', 'ysh'):
+    html_page = '%s-help.html' % chapter
+  else:
+    html_page = 'ref/chap-%s.html' % chapter
+
   pos = 0 # position within line
 
   if line.startswith('X '):
@@ -119,7 +124,7 @@ def HighlightLine(chapter, line):
     href = _StringToHref(m.group(1))
 
     out.PrintUntil(m.start(1))
-    out.Print('<a href="%s-help.html#%s" class="level2">' % (chapter, href))
+    out.Print('<a href="%s#%s" class="level2">' % (html_page, href))
     out.PrintUntil(m.end(1))  # anchor
     out.Print('</a>')
 
@@ -148,7 +153,7 @@ def HighlightLine(chapter, line):
     topic = m.group(2)
 
     out.PrintUntil(m.start(2))
-    out.Print('<a href="%s-help.html#%s">' % (chapter, topic))
+    out.Print('<a href="%s#%s">' % (html_page, topic))
     out.PrintUntil(m.end(2))
     out.Print('</a>')
 
@@ -386,7 +391,8 @@ def main(argv):
 
     out_dir = argv[2]
     py_out = argv[3]
-    pages = argv[4:]
+    tag_level = argv[4]  # h4 or h3
+    pages = argv[5:]
 
     topics = []
     seen = set()
@@ -397,7 +403,7 @@ def main(argv):
       cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
       for tag, topic_id, heading, text in cards:
-        if tag != 'h4':
+        if tag != tag_level:
           continue  # Skip h2 and h3 for now
 
         #log('topic_id = %r', topic_id)

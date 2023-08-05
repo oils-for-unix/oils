@@ -7,8 +7,12 @@
   font-size: 1em;
   /* margin-left: 2em; */
   padding: 1em; 
-  background-color: lavender;
+  /* background-color: lavender; */
+
+  color: black;  /* different than blog */
 }
+
+/* TODO: remove h4 */
 
 .help-body h4 {
   font-size: 1em;
@@ -19,3 +23,20 @@
 
   color: darkblue;  /* different than blog */
 }
+
+.osh-topic {
+  border-left: solid;
+  border-color: brown;
+}
+
+.osh-ysh-topic {
+  border-left: solid;
+  border-right: solid;
+  border-color: darkgreen;
+}
+
+.ysh-topic {
+  border-right: solid;
+  border-color: darkcyan;
+}
+
