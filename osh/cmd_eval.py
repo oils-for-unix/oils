@@ -1528,7 +1528,8 @@ class CommandEvaluator(object):
                 self.mem.SetLocationToken(node.name)
 
                 val = value.Func(Func(name, node, self.mem, self))
-                self.mem.SetValue(lval, val, scope_e.LocalOnly, _PackFlags(Id.KW_Func, state.SetReadOnly))
+                self.mem.SetValue(lval, val, scope_e.LocalOnly,
+                                  _PackFlags(Id.KW_Func, state.SetReadOnly))
 
                 status = 0
 

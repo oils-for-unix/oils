@@ -437,7 +437,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         func_cpython.Init(mem)
 
     procs = {}  # type: Dict[str, Proc]
-    # NOTE: funcs are defined in the normal variable namespace
+    # NOTE: funcs are defined in the common variable namespace
 
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
