@@ -101,10 +101,7 @@ def HighlightLine(chapter, line):
   f = cStringIO.StringIO()
   out = html.Output(line, f)
 
-  if chapter in ('osh', 'ysh'):
-    html_page = '%s-help.html' % chapter
-  else:
-    html_page = 'ref/chap-%s.html' % chapter
+  html_page = 'chap-%s.html' % chapter
 
   pos = 0 # position within line
 

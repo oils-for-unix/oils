@@ -1,21 +1,21 @@
 ---
 in_progress: yes
-css_files: ../web/base.css ../web/help-index.css ../web/toc.css
+css_files: ../../web/base.css ../../web/help-index.css ../../web/toc.css
 ---
 
 Index of YSH Topics
 ===
 
-These are links to topics in the [Oils Reference](ref/index.html).
+These are links to topics in the [Oils Reference](index.html).
 
-(Sibling: [Index of OSH Topics](osh-help-topics.html))
+(Sibling: [Index of OSH Topics](index-osh.html))
 
 <div id="toc">
 </div>
 
 
 <h2 id="front-end">
-  Front End (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)
+  Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
 </h2>
 
 ```chapter-links-front-end
@@ -24,7 +24,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="cmd-lang">
-  Command Language (<a class="group-link" href="ref/chap-cmd-lang.html">cmd-lang</a>)
+  Command Language (<a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>)
 </h2>
 
 ```chapter-links-cmd-lang
@@ -43,7 +43,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="expr-lang">
-  Expression Language and Assignments (<a class="group-link" href="ref/chap-expr-lang.html">expr-lang</a>)
+  Expression Language and Assignments (<a class="group-link" href="chap-expr-lang.html">expr-lang</a>)
 </h2>
 
 ```chapter-links-expr-lang
@@ -86,7 +86,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="ref/chap-word-lang.html">word-lang</a>)
+  Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
 </h2>
 
 ```chapter-links-word-lang
@@ -100,7 +100,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="ref/chap-builtin-cmd">builtin-cmd</a>)
+  Builtin Commands (<a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>)
 </h2>
 
 ```chapter-links-builtin-cmd
@@ -142,7 +142,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="ref/chap-option.html">option</a>)
+  Shell Options (<a class="group-link" href="chap-option.html">option</a>)
 </h2>
 
 ```chapter-links-option
@@ -205,7 +205,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <h2 id="special-var">
-  Special Variables (<a class="group-link" href="ref/chap-special-var.html">special-var</a>)
+  Special Variables (<a class="group-link" href="chap-special-var.html">special-var</a>)
 </h2>
 
 ```chapter-links-special-var
@@ -222,7 +222,7 @@ X [Builtin Sub]   _buffer
 ```
 
 <h2 id="type-method">
-  Builtin Types and Methods (<a class="group-link" href="ref/chap-type-method.html">type-method</a>)
+  Builtin Types and Methods (<a class="group-link" href="chap-type-method.html">type-method</a>)
 </h2>
 
 ```chapter-links-type-method
@@ -243,7 +243,7 @@ X [Builtin Sub]   _buffer
 ```
 
 <h2 id="builtin-func">
-  Builtin Functions (<a class="group-link" href="ref/chap-builtin-func.html">builtin-func</a>)
+  Builtin Functions (<a class="group-link" href="chap-builtin-func.html">builtin-func</a>)
 </h2>
 
 ```chapter-links-builtin-func

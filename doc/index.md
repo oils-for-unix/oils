@@ -13,6 +13,16 @@ programmers who avoid shell.
 <div id="toc">
 </div>
 
+
+## Preliminaries
+
+- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
+  tarball.
+- [A Tour of the Oils Project](project-tour.html).  It's a big project with
+  several components to understand!
+- [Getting Started](getting-started.html).  How do I use the shell?
+- [FAQ on Documentation](faq-doc.html).  Where do I find docs?
+
 ## Reference (incomplete)
 
 - [Oils Reference](ref/index.html) - These docs underlie `help` builtin, and
@@ -20,15 +30,6 @@ programmers who avoid shell.
 - Links to topics within each chapter:
   - [Index of OSH Topics](osh-help-topics.html)
   - [Index of YSH Topics](ysh-help-topics.html)
-
-## Preliminaries
-
-- [Why Use Oils?](/why.html)  This document is on the home page.
-- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
-  tarball.
-- [A Tour of the Oils Project](project-tour.html).  It's a big project with
-  several components to understand!
-- [Getting Started](getting-started.html).
 
 ## OSH is a Compatible Shell
 
@@ -68,8 +69,6 @@ These docs are for advanced users:
 **Commands** are made of words, keywords, and other operators.  They're for
 I/O, control flow, and abstraction.
 
-- [Command Language](command-language.html): Simple commands, redirects,
-  control flow, etc.
 - [YSH Keywords](oil-keywords.html). New keywords for assignment, etc.
 - Pipeline Idioms.  An essential part of shell that deserves its own document.
 - [Procs, Blocks, and Funcs](proc-block-func.html)
@@ -83,7 +82,6 @@ I/O, control flow, and abstraction.
   expansion, etc.
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
   - [Unicode](unicode.html).  Oils supports and prefers UTF-8.
-- [Special Variables](oil-special-vars.html).  Registers?
 - [Simple Word Evaluation](simple-word-eval.html).  Written for shell experts.
 
 ### The Expression Language

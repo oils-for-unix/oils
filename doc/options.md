@@ -301,12 +301,8 @@ doc](error-handling.html).
 
 ### Complete List
 
-These documents have a short description of each option:
-
-- [OSH Help Topics > option](osh-help-topics.html#option)
-- [Oil Help Topics > option](oil-help-topics.html#option)
-
-(TODO: they all need descriptions.)
+See the [Chapter on Global Shell Options](ref/chap-option.html) in the
+reference.
 
 ## FAQ: Aren't Global Variables Bad?
 

@@ -1,21 +1,21 @@
 ---
 in_progress: yes
-css_files: ../web/base.css ../web/help-index.css ../web/toc.css
+css_files: ../../web/base.css ../../web/help-index.css ../../web/toc.css
 ---
 
 Index of OSH Topics
 ===============
 
-These are links to topics in the [Oils Reference](ref/index.html).
+These are links to topics in the [Oils Reference](index.html).
 
-(Sibling: [Index of YSH Topics](ysh-help-topics.html))
+(Sibling: [Index of YSH Topics](index-ysh.html))
 
 <div id="toc">
 </div>
 
 
 <h2 id="front-end">
-  Front End (<a class="group-link" href="ref/chap-front-end.html">front-end</a>)
+  Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
 </h2>
 
 ```chapter-links-front-end
@@ -24,7 +24,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="cmd-lang">
-  Command Language (<a class="group-link" href="ref/chap-cmd-lang.html">cmd-lang</a>)
+  Command Language (<a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>)
 </h2>
 
 ```chapter-links-cmd-lang
@@ -43,7 +43,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="osh-assign">
-  Assignments and Expressions (<a class="group-link" href="ref/chap-osh-assign.html">osh-assign</a>)
+  Assignments and Expressions (<a class="group-link" href="chap-osh-assign.html">osh-assign</a>)
 </h2>
 
 ```chapter-links-osh-assign
@@ -56,7 +56,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="ref/chap-word-lang.html">word-lang</a>)
+  Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
 </h2>
 
 ```chapter-links-word-lang
@@ -75,7 +75,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="mini-lang">
-  Other Mini Languages (<a class="group-link" href="ref/chap-mini-lang.html">mini-lang</a>)
+  Other Mini Languages (<a class="group-link" href="chap-mini-lang.html">mini-lang</a>)
 </h2>
 
 ```chapter-links-mini-lang
@@ -100,7 +100,7 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="ref/chap-builtin-cmd.html">builtin-cmd</a>)
+  Builtin Commands (<a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>)
 </h2>
 
 ```chapter-links-builtin-cmd
@@ -122,7 +122,7 @@ X [Unsupported]   enable
 ```
 
 <h2 id="option">
-  Global Shell Options (<a class="group-link" href="ref/chap-option.html">option</a>)
+  Global Shell Options (<a class="group-link" href="chap-option.html">option</a>)
 </h2>
 
 ```chapter-links-option
@@ -134,7 +134,7 @@ X [Unsupported]   enable
 ```
 
 <h2 id="special-var">
-  Special Variables (<a class="group-link" href="ref/chap-special-var.html">special-var</a>)
+  Special Variables (<a class="group-link" href="chap-special-var.html">special-var</a>)
 </h2>
 
 ```chapter-links-osh
@@ -161,7 +161,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 ```
 
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="ref/chap-plugin.html">plugin</a>)
+  Plugins and Hooks (<a class="group-link" href="chap-plugin.html">plugin</a>)
 </h2>
 
 ```chapter-links-plugin

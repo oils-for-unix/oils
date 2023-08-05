@@ -14,6 +14,29 @@ for both OSH and YSH.
 <div id="toc">
 </div>
 
+## Quick Sketch: What's a Command?
+
+OSH:
+
+    print-files() {
+      for name in *.py; do
+        if test -x "$name"; then
+          echo "$name is executable"
+        fi
+      done
+    }
+
+YSH:
+
+    proc print-files {
+      for name in *.py {
+        if test -x $name {  # no quotes needed
+          echo "$name is executable"
+        }
+      }
+    }
+  
+
 <h2 id="Commands">Commands</h2>
 
 <h3 id="simple-command" class="osh-ysh-topic">simple-command</h3>
@@ -409,3 +432,4 @@ Blocks can be passed to builtins (and procs eventually):
 
 Compare with [sh-block]($osh-help).
 
+# vim: sw=2

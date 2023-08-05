@@ -32,8 +32,8 @@ This reference has 13 chapters:
 
 Topics in the chapters are linked from these indices:
 
-- [Index of OSH Topics](../osh-help-topics.html)
-- [Index of YSH Topics](../ysh-help-topics.html)
+- [Index of OSH Topics](index-osh.html)
+- [Index of YSH Topics](index-ysh.html)
 
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.

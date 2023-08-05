@@ -114,11 +114,9 @@ readonly MARKDOWN_DOCS=(
   oil-builtins
   command-vs-expression-mode
 
-  command-language
   expression-language
   word-language
 
-  oil-special-vars
   proc-block-func
   io-builtins
   unicode
@@ -366,7 +364,7 @@ cards-from-indices() {
 
   for sh in osh ysh; do
     _make-help cards-from-index $sh $TEXT_DIR \
-      < $HTML_DIR/doc/$sh-help-topics.html
+      < $HTML_DIR/doc/ref/index-$sh.html
   done
 }
 
@@ -431,8 +429,8 @@ all-help() {
   rm -f $TEXT_DIR/*
   make-dirs
 
-  split-and-render doc/ysh-help-topics.md
-  split-and-render doc/osh-help-topics.md
+  split-and-render doc/ref/index-ysh.md
+  split-and-render doc/ref/index-osh.md
 
   # Make the chapters
   all-ref
