@@ -20,6 +20,7 @@ These are links to topics in the [Oils Reference](index.html).
 
 ```chapter-links-front-end
   [Usage]         osh-usage   config   startup   line-editing   prompt
+                  exit-codes
   [Lexing]        comment #   line-continuation \
 ```
 
