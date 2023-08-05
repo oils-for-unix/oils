@@ -18,8 +18,8 @@ programmers who avoid shell.
 - [Oils Reference](ref/index.html) - These docs underlie `help` builtin, and
   are also published online.
 - Links to topics within each chapter:
-  - [OSH Help Topics](osh-help-topics.html)
-  - [YSH Help Topics](ysh-help-topics.html)
+  - [Index of OSH Topics](osh-help-topics.html)
+  - [Index of YSH Topics](ysh-help-topics.html)
 
 ## Preliminaries
 
@@ -38,7 +38,6 @@ These docs are for advanced users:
   other shells.  
 - [Quirks](quirks.html) for compatibility.
 - [Shell Language Idioms](shell-idioms.html).
-
 
 ## YSH is a New Shell
 

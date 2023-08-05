@@ -34,3 +34,69 @@ for OSH and YSH.
 
 ### ysh-format
 
+
+## Quotes
+
+### quotes
+
+- Single quotes
+- Double Quotes
+- C-style strings: `$'\n'`
+
+Also see [oil-string]($oil-help).
+
+## Substitutions
+
+### com-sub
+
+Evaluates to the stdout of a command.  If a trailing newline is returned, it's
+stripped:
+
+    $ hostname
+    example.com
+
+    $ x=$(hostname)
+    $ echo $x
+    example.com
+
+### var-sub
+
+Evaluates to the value of a variable:
+
+    $ x=X
+    $ echo $x ${x}
+    X X
+
+### arith-sub
+
+Shell has C-style arithmetic:
+
+    $ echo $(( 1 + 2*3 ))
+    7
+
+### tilde-sub
+
+Used as a shortcut for a user's home directory:
+
+    ~/src     # my home dir
+    ~bob/src  # user bob's home dir
+
+## Var Ops
+
+### op-test
+
+### op-strip
+
+### op-replace
+
+### op-index
+
+    ${a[i+1]}
+
+### op-slice
+
+### op-format
+
+${x@P} evaluates x as a prompt string, e.g. the string that would be printed if
+PS1=$x.
+

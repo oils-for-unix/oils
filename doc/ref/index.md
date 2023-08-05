@@ -1,42 +1,42 @@
 ---
-in_progress: yes
 default_highlighter: oil-sh
 ---
 
 Oils Reference
 =============
 
+A guide to everything in Oils (in progress).
+
+Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
 
 <div id="toc">
 </div>
 
 ## Online HTML
 
-This reference has N chapters:
+This reference has 13 chapters:
 
 1. [Front End](chap-front-end.html)
 1. [Command Language](chap-cmd-lang.html)
 1. [Word Language](chap-word-lang.html)
 1. [OSH Assignment](chap-osh-assign.html)
+1. [Mini Languages](chap-mini-lang.html)
 1. [Builtin Commands](chap-builtin-cmd.html)
 1. [Global Shell Options](chap-option.html)
 1. [Special Variables](chap-special-var.html)
-1. ...
+1. [Plugins and Hooks](chap-plugin.html)
 1. [YSH Expression Language](chap-expr-lang.html)
 1. [YSH Types and Methods](chap-type-method.html)
 1. [Builtin Functions](chap-builtin-func.html)
 1. [Data Languages](chap-data-lang.html)
 
-Which are linked from these indices:
+Topics in the chapters are linked from these indices:
 
 - [Index of OSH Topics](../osh-help-topics.html)
 - [Index of YSH Topics](../ysh-help-topics.html)
 
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.
-
-Or go back to [All Oils Documentation](../index.html).
-
 
 ## `help` builtin command
 
@@ -45,25 +45,26 @@ and prints hyperlinks to it.
 
 ## Directory Structures
 
-### Source Code
+How are the docs organized?  The source code is simply a tree of Markdown
+files:
 
-    doc/  # all docs
-      index.md  # index of docs
+    doc/
+      index.md             # All Docs on Oils
       getting-started.md
       ...
 
-      ref/                    # the reference
-        index.md              # this page
-        chap-command-lang.md  # chapter
+      ref/
+        index.md           # this page, the Oils Reference
+        index-osh.md       # link to OSH topics
+        index-ysh.md       # link to YSH topics
+
+        chap-cmd-lang.md   # chapter on the command language
         ...
+        osh.txt            # Plain text help "card"
+        ysh.txt
 
-        osh-index.md          # TODO
-        ysh-index.md          # TODO
 
-
-### URLs
-
-URLs mirror the source code:
+And the URLs mirror the source code:
 
     /release/$VERSION/doc/
       index.html
@@ -72,35 +73,13 @@ URLs mirror the source code:
 
       ref/
         index.html
-        chap-command-lang.html
-        osh-index.html
-        ysh-index.html
+        index-osh.html
+        index-ysh.html
 
-With internal anchors:
+        chap-cmd-lang.html
+        ...
 
-    ref/chap-option.html#strict_errexit
+You can link to topics with internal anchors:
 
-    ref/chap-builtin.html#compgen
-
-## TODO
-
-- Later: alphabetical list of options
-
-### Link Shortcuts For Writing Docs
-
-- ($command-lang:for)
-- ($option:strict_errexit)
-- ($builtin:compgen)
-
-Or maybe:
-
-- ($ref-c:for)
-- ($ref-opt:strict_errexit)
-- ($ref-builtin:compgen)
-- ($ref-word:brace)
-
-### Multiple headings without messing up HTML?
-
-Like say you want all the `[[` language stuff together, and you want to create
-a link, but not explain it all.
-
+- [chap-option.html#parse_at](chap-option.html#parse_at)
+- [chap-builtin-cmd.html#compgen](chap-builtin-cmd.html#compgen)

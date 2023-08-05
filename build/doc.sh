@@ -373,12 +373,6 @@ cards-from-indices() {
 cards-from-chapters() {
   ### Do all cards at once
 
-  # TODO: unify the list of help topics
-  local py_out=$CODE_DIR/ignored.py
-  # h4 tag for these
-  _make-help cards-from-chapter $TEXT_DIR $py_out h4 \
-    $HTML_DIR/doc/osh-help.html
-
   local py_out=$CODE_DIR/help_.py
   # h3
   _make-help cards-from-chapter $TEXT_DIR $py_out h3 \
@@ -439,7 +433,6 @@ all-help() {
 
   split-and-render doc/ysh-help-topics.md
   split-and-render doc/osh-help-topics.md
-  split-and-render doc/osh-help.md
 
   # Make the chapters
   all-ref

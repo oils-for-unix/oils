@@ -7,12 +7,12 @@ contents.  Type:
 
 Where $chapter is one of:
 
-    overview
+    front-end
     command-lang
     expr-lang
     word-lang
-    builtins
+    builtin-cmd
     option
-    env
-    special
-    lib
+    special-var
+    type-method
+    builtin-func

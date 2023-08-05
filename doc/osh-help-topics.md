@@ -56,10 +56,10 @@ These are links to topics in the [Oils Reference](ref/index.html).
 ```
 
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="osh-help.html#word-lang">word-lang</a>)
+  Word Language (<a class="group-link" href="ref/chap-word-lang.html">word-lang</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-word-lang
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`   @(split command)
                   var-sub       ${var}   $0   $9   
@@ -74,11 +74,11 @@ These are links to topics in the [Oils Reference](ref/index.html).
                   op-format     ${x@P}
 ```
 
-<h2 id="sublang">
-  Other Shell Sublanguages (<a class="group-link" href="osh-help.html#sublang">sublang</a>)
+<h2 id="mini-lang">
+  Other Mini Languages (<a class="group-link" href="ref/chap-mini-lang.html">mini-lang</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-mini-lang
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   sh-numbers    0xFF  0755  etc.
                   sh-arith      1 + 2*3   a *= 2
@@ -99,11 +99,11 @@ These are links to topics in the [Oils Reference](ref/index.html).
                   char-escapes  \t  \c  \x00  \u03bc
 ```
 
-<h2 id="builtins">
-  Builtin Commands (<a class="group-link" href="osh-help.html#builtins">builtins</a>)
+<h2 id="builtin-cmd">
+  Builtin Commands (<a class="group-link" href="ref/chap-builtin-cmd.html">builtin-cmd</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-builtin-cmd
   [I/O]           read   echo   printf
                   readarray   mapfile
   [Run Code]      source .   eval   trap
@@ -122,10 +122,10 @@ X [Unsupported]   enable
 ```
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="osh-help.html#option">option</a>)
+  Global Shell Options (<a class="group-link" href="ref/chap-option.html">option</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-option
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   nullglob   failglob   dashglob
   [Debugging]     xtrace   X verbose   X extdebug
@@ -133,21 +133,13 @@ X [Unsupported]   enable
   [Other Option]  X noclobber
 ```
 
-<h2 id="env">
-  Environment Variables (<a class="group-link" href="osh-help.html#env">env</a>)
+<h2 id="special-var">
+  Special Variables (<a class="group-link" href="ref/chap-special-var.html">special-var</a>)
 </h2>
 
 ```chapter-links-osh
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH
-```
-
-
-<h2 id="special">
-  Special Variables (<a class="group-link" href="osh-help.html#special">special</a>)
-</h2>
-
-```chapter-links-osh
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Other Special] BASH_REMATCH   @PIPESTATUS
   [Platform]      HOSTNAME   OSTYPE
@@ -169,10 +161,10 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 ```
 
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="osh-help.html#plugin">plugin</a>)
+  Plugins and Hooks (<a class="group-link" href="ref/chap-plugin.html">plugin</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-plugin
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4

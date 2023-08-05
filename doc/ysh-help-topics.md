@@ -204,19 +204,12 @@ X [External Lang] BEGIN   END   when (awk)
                   dynamic_scope          To implement 'proc'
 ```
 
-<h2 id="env">
-  Environment Variables (<a class="group-link" href="ref/chap-env-var.html">env-var</a>)
-</h2>
-
-```chapter-links-env-var
-  [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
-```
-
 <h2 id="special-var">
   Special Variables (<a class="group-link" href="ref/chap-special-var.html">special-var</a>)
 </h2>
 
 ```chapter-links-special-var
+  [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
   [History]       YSH_HISTFILE
   [Shell Vars]    ARGV   X ENV   X OPT
                   X _ESCAPE   _DIALECT

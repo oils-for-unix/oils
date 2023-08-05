@@ -133,3 +133,45 @@ TODO:
 
 ### parse_equals
 
+## Errors
+
+## Globbing
+
+### nullglob
+
+Normally, when no files match  a glob, the glob itself is returned:
+
+    $ echo L *.py R  # no Python files in this dir
+    L *.py R
+
+With nullglob on, the glob expands to no arguments:
+
+    shopt -s nullglob
+    $ echo L *.py R
+    L R
+
+(This option is in GNU bash as well.)
+
+### dashglob
+
+Do globs return results that start with `-`?  It's on by default in `bin/osh`,
+but off when Oil is enabled.
+
+Turning it off prevents a command like `rm *` from being confused by a file
+called `-rf`.
+
+    $ touch -- myfile -rf
+
+    $ echo *
+    -rf myfile
+
+    $ shopt -u dashglob
+    $ echo *
+    myfile
+
+## Debugging
+
+## Interactive
+
+## Other Option
+

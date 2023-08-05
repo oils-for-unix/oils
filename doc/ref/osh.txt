@@ -7,13 +7,12 @@ contents.  Type:
 
 Where $chapter is one of:
 
-    overview
+    front-end
     command-lang
-    assign
+    osh-assign
     word-lang
-    sublang
-    builtins
+    min-lang
+    builtin-cmd
     option
-    env
-    special
+    special-var
     plugin
