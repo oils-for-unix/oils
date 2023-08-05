@@ -373,14 +373,15 @@ cards-from-indices() {
 cards-from-chapters() {
   ### Do all cards at once
 
-  local py_out=$CODE_DIR/help_.py
-
   # TODO: We need to re-indent <code> blocks here, etc.
 
+  local py_out=$CODE_DIR/help_.py
   # h4 tag for these
   _make-help cards-from-chapter $TEXT_DIR $py_out h4 \
     $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/ysh-help.html
 
+  # TODO: unify the list of help topics
+  local py_out=$CODE_DIR/fixme.py
   # h3
   _make-help cards-from-chapter $TEXT_DIR $py_out h3 \
     $HTML_DIR/doc/ref/chap-front-end.html
