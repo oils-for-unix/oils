@@ -18,8 +18,6 @@ programmers who avoid shell.
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
   tarball.
-- [A Tour of the Oils Project](project-tour.html).  It's a big project with
-  several components to understand!
 - [Getting Started](getting-started.html).  How do I use the shell?
 - [FAQ on Documentation](faq-doc.html).  Where do I find docs?
 
@@ -42,31 +40,38 @@ Like many other docs, this is still in progress:
 
 These docs are for advanced users:
 
-- [Known Differences](known-differences.html) lists differences between OSH and
-  other shells.  
-- [Quirks](quirks.html) for compatibility.
-- [Shell Language Idioms](shell-idioms.html).
+- [Known Differences Between OSH and Other Shells](known-differences.html)
+- [OSH Quirks](quirks.html) for compatibility.
+- [Shell Language Idioms](shell-idioms.html) has some advice for using any
+  shell, not just Oils.
 
 ## YSH is a New Shell
 
-- [A Tour of YSH](ysh-tour.html).
-- [YSH vs. Shell Idioms](idioms.html).  Idioms that are nicer in YSH than shell.
+- [A Tour of YSH](ysh-tour.html).  Explains YSH from scratch, without referring
+  to shell's legacy.
 - [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  When you turn
   on YSH, there are some shell constructs you can no longer use.  We try to
   minimize the length of this list.
 - [YSH Language FAQ](ysh-faq.html).  Common questions about the
   language.
 
-### Design Concepts, Comparisons
+### Comparisons
 
-- [A Feel For YSH Syntax](syntax-feelings.html)
-- [Language Influences](language-influences.html)
-- [Syntactic Concepts](syntactic-concepts.html)
-  - [Command vs. Expression Mode](command-vs-expression-mode.html).
-- [YSH vs. Shell](oil-vs-shell.html).  How does YSH differ from
-  Bourne/POSIX shell?
-- [YSH vs. Python](oil-vs-python.html).  How do YSH expressions differ from
+- [YSH vs. Shell Idioms](idioms.html).  A list of code snipets.
+- [YSH vs. Shell](ysh-vs-shell.html).  High-level descriptions: how does YSH
+  differ from Bourne/POSIX shell?
+- [YSH vs. Python](ysh-vs-python.html).  How do YSH expressions differ from
   Python?
+
+### Design Concepts
+
+- [YSH Language Influences](language-influences.html) - Shell, Python,
+  JavaScript, Lisp, ...
+- Syntax
+  - [A Feel For YSH Syntax](syntax-feelings.html)
+  - [Syntactic Concepts](syntactic-concepts.html) may help you remember the
+    language.
+  - [Command vs. Expression Mode](command-vs-expression-mode.html).
 - [Warts](warts.html).  Mostly for compatibility.
 
 YSH has 3 main sublanguages:
@@ -80,18 +85,19 @@ YSH has 3 main sublanguages:
 - **Expression** language on typed data.
   - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
 
-Crosscutting issues:
+Crosscutting design issues:
 
-- [Variable Declaration, Mutation, and Scope](variables.html)
+- [Variable Declaration, Mutation, and Scope](variable-scope.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
   - [Unicode](unicode.html).  Oils supports and prefers UTF-8.
-- [YSH Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
-  - [IO Builtins](io-builtins.html)
+- [YSH I/O Builtins](io-builtins.html)
 
 ## Data Languages Avoid Ad-Hoc Parsing
 
 YSH supports these languages for data, which are complementary to languages for
 code.
+
+<!-- TODO: J8 Notation -->
 
 - [JSON](json.html): Currently supported only in the Python prototype of YSH.
 - [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable

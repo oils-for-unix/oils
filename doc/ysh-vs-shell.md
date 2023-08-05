@@ -2,13 +2,12 @@
 in_progress: true
 ---
 
-Oil Language vs. Shell
+YSH vs. Shell
 ==========================
 
-This doc aims to help shell users understand Oil.
+This doc aims to help shell users understand YSH
 
-If you don't know shell, see [A Tour of the Oil
-Language](oil-language-tour.html).
+If you don't want to read a comparison, see [A Tour of YSH](ysh-tour.html).
 
 <div id="toc">
 </div>

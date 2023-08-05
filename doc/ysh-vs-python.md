@@ -2,10 +2,10 @@
 in_progress: true
 ---
 
-Oil Expressions vs. Python
+YSH Expressions vs. Python
 ==========================
 
-Oil's expression language borrows heavily from Python.  In fact, it literally
+The YSH expression language borrows heavily from Python.  In fact, it literally
 started with Python's `Grammar/Grammar` file.
 
 This doc describes some differences, which may help Python users learn Oil.

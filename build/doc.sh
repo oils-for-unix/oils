@@ -83,17 +83,22 @@ readonly MARKDOWN_DOCS=(
   warts
   eggex
   upgrade-breakage
+  ysh-tour
+
+  # Data language
   qsn
+  qtt
 
   doc-toolchain
   doc-plugins
   idioms
   shell-idioms
   ysh-faq
-  qtt
+
   language-influences
-  oil-vs-python
-  oil-vs-shell
+  ysh-vs-python
+  ysh-vs-shell
+
   syntactic-concepts
   syntax-feelings
 
@@ -104,12 +109,10 @@ readonly MARKDOWN_DOCS=(
   index
   faq-doc
 
-  project-tour
-  ysh-tour
-
   options
 
   old/index
+  old/project-tour
   old/legacy-array
   old/ysh-keywords
   old/proc-block-func
@@ -117,8 +120,8 @@ readonly MARKDOWN_DOCS=(
   old/expression-language
   old/word-language
   old/errors
+  old/ysh-builtins
 
-  oil-builtins
   command-vs-expression-mode
 
 

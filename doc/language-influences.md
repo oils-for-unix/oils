@@ -2,10 +2,10 @@
 default_highlighter: oil-sh
 ---
 
-Oil Language Influences
+YSH Language Influences
 =======================
 
-Almost all syntax in Oil comes from another language.  This doc lists some of
+Almost all syntax in YSH comes from another language.  This doc lists some of
 those influences.
 
 It's mostly trivia for the curious, but it may help you remember the syntax.

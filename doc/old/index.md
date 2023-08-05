@@ -6,11 +6,16 @@ css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 Old Docs
 ========
 
+- [A Tour of the Oils Project](project-tour.html).  It's a big project with
+  several components!
+
 ## OSH
 
 - [Legacy Array](legacy-array.html)
 
 ## YSH
+
+[YSH Builtins](ysh-builtins.html) (Shell builtins aren't discussed.)
 
 ### The Command Language
 
