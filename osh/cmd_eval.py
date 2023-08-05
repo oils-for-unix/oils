@@ -331,7 +331,6 @@ class CommandEvaluator(object):
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
             procs,  # type: Dict[str, Proc]
-            funcs,  # type: Dict[str, vm._Callable]
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -359,7 +358,6 @@ class CommandEvaluator(object):
         self.exec_opts = exec_opts
         self.errfmt = errfmt
         self.procs = procs
-        self.funcs = funcs
         self.assign_builtins = assign_builtins
         self.arena = arena
 

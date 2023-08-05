@@ -437,10 +437,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         func_cpython.Init(mem)
 
     procs = {}  # type: Dict[str, Proc]
-
-    # TODO: rename funcs module
-    # e.g. max() sum() etc.
-    funcs = {}  # type: Dict[str, vm._Callable]
+    # NOTE: funcs are defined in the normal variable namespace
 
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
@@ -632,13 +629,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                            parse_ctx, errfmt)
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
-    expr_ev = expr_eval.ExprEvaluator(mem, mutable_opts, funcs, methods,
-                                     splitter, errfmt)
+    expr_ev = expr_eval.ExprEvaluator(mem, mutable_opts, methods, splitter,
+                                      errfmt)
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 
     assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
-    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, funcs,
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                        assign_b, arena, cmd_deps, trap_state, signal_safe)
 
     AddOil(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)

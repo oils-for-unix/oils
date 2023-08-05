@@ -100,7 +100,6 @@ class ExprEvaluator(object):
             self,
             mem,  # type: Mem
             mutable_opts,  # type: state.MutableOpts
-            funcs,  # type: Dict[str, vm._Callable]
             methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
             errfmt,  # type: ui.ErrorFormatter
@@ -111,7 +110,6 @@ class ExprEvaluator(object):
 
         self.mem = mem
         self.mutable_opts = mutable_opts
-        self.funcs = funcs
         self.methods = methods
         self.splitter = splitter
         self.errfmt = errfmt
@@ -912,16 +910,6 @@ class ExprEvaluator(object):
 
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
-
-        if node.func.tag() == expr_e.Var:
-            var = cast(expr.Var, node.func)
-            var_name = lexer.TokenVal(var.name)
-            f = self.funcs.get(var_name)
-
-            if f:
-                pos_args, named_args = self.EvalArgList2(node.args)
-                ret = f.Call(pos_args, named_args)
-                return ret
 
         func = self._EvalExpr(node.func)
         UP_func = func
