@@ -1512,13 +1512,25 @@ class CommandEvaluator(object):
                 node = cast(command.Func, UP_node)
 
                 name = lexer.TokenVal(node.name)
-                if name in self.funcs and not self.exec_opts.redefine_proc_func(
-                ):
-                    e_die(
-                        "Func %s was already defined (redefine_proc_func)" %
-                        name, node.name)
+                lval = location.LName(name)
 
-                self.funcs[name] = Func(name, node, self.mem, self)
+                # Check that we haven't already defined a function
+                cell = self.mem.GetCell(name, scope_e.LocalOnly)
+                if cell and cell.val.tag() == value_e.Func:
+                    if self.exec_opts.redefine_proc_func():
+                        cell.readonly = False  # Ensure we can unset the value
+                        did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
+                        assert did_unset, name
+                    else:
+                        e_die(
+                            "Func %s was already defined (redefine_proc_func)" %
+                            name, node.name)
+
+                # Needed in case the func is an existing variable name
+                self.mem.SetLocationToken(node.name)
+
+                val = value.Func(Func(name, node, self.mem, self))
+                self.mem.SetValue(lval, val, scope_e.LocalOnly, _PackFlags(Id.KW_Func, state.SetReadOnly))
 
                 status = 0
 
