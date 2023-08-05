@@ -15,21 +15,36 @@ Oils Reference: Front End
 
 <h3 id="bundle-usage" class="osh-ysh-topic">App Bundle Usage</h3>
 
-    Usage: oils-for-unix MAIN_NAME [ARG]...
-           MAIN_NAME [ARG]...
+<!-- pre-formatted for help builtin -->
 
-oils-for-unix behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
-then it behaves like that binary.  Otherwise, the binary name can be passed as
-the first argument, e.g.:
+```
+oils-for-unix is an executable that contains OSH, YSH, and more.
 
-    oils-for-unix osh -c 'echo hi'
+Usage: oils-for-unix MAIN_NAME ARG*
+       MAIN_NAME ARG*
+
+It behaves like busybox.  If it's invoked through a symlink like 'osh', then it
+behaves like that command.
+
+    ysh -c 'echo hi'
+
+Otherwise, the command name can be passed as the first argument, e.g.:
+
+    oils-for-unix ysh -c 'echo hi'
+```
 
 <h3 id="osh-usage" class="osh-topic"><code>bin/osh</code> Usage</h3>
 
-    Usage: osh [OPTION]... SCRIPT [ARG]...
-           osh [OPTION]... -c COMMAND [ARG]...
+<!-- pre-formatted for help builtin -->
 
-The command line accepted by `bin/osh` is compatible with `/bin/sh` and `bash`.
+```
+osh is compatible with POSIX shell, bash, and more.
+
+Usage: osh FLAG* SCRIPT ARG*
+       osh FLAG* -c COMMAND ARG*
+       osh FLAG*
+
+The command line accepted by `bin/osh` is compatible with /bin/sh and bash.
 
     osh -c 'echo hi'
     osh myscript.sh
@@ -44,11 +59,18 @@ osh accepts POSIX sh flags, with these additions:
 
   -n             parse the program but don't execute it.  Print the AST.
   --ast-format   what format the AST should be in
+```
 
 <h3 id="ysh-usage" class="ysh-topic"><code>bin/ysh</code> Usage</h3>
 
-    Usage: ysh [OPTION]... SCRIPT [ARG]...
-           ysh [OPTION]... -c COMMAND [ARG]...
+<!-- pre-formatted for help builtin -->
+
+```
+ysh is the shell with data tYpes, influenced by pYthon, JavaScript, Lisp, ...
+
+Usage: ysh FLAG* SCRIPT ARG*
+       ysh FLAG* -c COMMAND ARG*
+       ysh FLAG*
 
 `bin/ysh` is the same as `bin/osh` with a the `ysh:all` option group set.  So
 `bin/ysh` also accepts shell flags.
@@ -56,6 +78,7 @@ osh accepts POSIX sh flags, with these additions:
     ysh -c 'echo hi'
     ysh myscript.ysh
     echo 'echo hi' | ysh
+```
 
 
 <h3 id="config" class="osh-ysh-topic">Configuring the Shell</h3>

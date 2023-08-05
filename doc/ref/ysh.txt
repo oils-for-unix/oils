@@ -1,6 +1,11 @@
 YSH Reference
 
-Chapters:
+The reference is divided in to "chapters", each of which has its own table of
+contents.  Type:
+
+    help ysh-$chapter
+
+Where $chapter is one of:
 
     overview
     command-lang
@@ -11,7 +16,3 @@ Chapters:
     env
     special
     lib
-
-To see topics in a chapter:
-
-    help ysh-$chapter

@@ -989,14 +989,21 @@ Unimplemented.
 
 #### help
 
+<!-- pre-formatted for help builtin -->
+
+```
+The help builtin
+
+Usage: help TOPIC?
+
+Examples:
+
     help                   # this help
     help osh               # chapters for osh or ysh
     help ysh
 
     help command-lang      # list sections in chapter
     help osh-command-lang  # same but more explicit
-
-    help TOPIC             # show help on a given topic
 
     help usage             # same as osh --help, ysh --help
     help osh-usage         # more explicit
@@ -1005,6 +1012,7 @@ Unimplemented.
 All docs, including this reference:
 
     https://www.oilshell.org/release/$VERSION/doc/
+```
 
 #### hash
 

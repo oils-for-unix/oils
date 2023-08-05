@@ -1,6 +1,11 @@
 OSH Reference
 
-Chapters:
+The reference is divided in to "chapters", each of which has its own table of
+contents.  Type:
+
+    help osh-$chapter
+
+Where $chapter is one of:
 
     overview
     command-lang
@@ -12,7 +17,3 @@ Chapters:
     env
     special
     plugin
- 
-To see topics in a chapter:
-
-    help osh-$chapter
