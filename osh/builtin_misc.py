@@ -814,8 +814,6 @@ class Pwd(vm._Builtin):
         return 0
 
 
-# TODO: Need $VERSION inside all pages?
-
 # Needs a different _ResourceLoader to translate
 class Help(vm._Builtin):
     def __init__(self, loader, errfmt):
@@ -861,6 +859,11 @@ class Help(vm._Builtin):
             return 1
 
         print(contents)
+
+        # TODO: Only print this if it's not an embedded card
+        version_str = pyutil.GetVersion(self.loader)
+        #print('    https://www.oilshell.org/release/%s/doc/ref/chap-TODO#%s' % (version_str, topic))
+
         return 0
 
 

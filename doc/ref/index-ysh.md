@@ -8,7 +8,7 @@ Index of YSH Topics
 
 These are links to topics in the [Oils Reference](index.html).
 
-(Sibling: [Index of OSH Topics](index-osh.html))
+Siblings: [OSH Topics](index-osh.html), [Data Topics](index-data.html)
 
 <div id="toc">
 </div>

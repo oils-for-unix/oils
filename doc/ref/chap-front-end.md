@@ -60,8 +60,8 @@ It also has a few enhancements:
 
 osh accepts POSIX sh flags, with these additions:
 
-  -n             parse the program but don't execute it.  Print the AST.
-  --ast-format   what format the AST should be in
+    -n             parse the program but don't execute it.  Print the AST.
+    --ast-format   what format the AST should be in
 ```
 
 <h3 id="ysh-usage" class="ysh-topic">ysh-usage</h3>

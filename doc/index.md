@@ -29,6 +29,7 @@ Like many other docs, the reference is still in progress:
 - Links to topics within each chapter:
   - [Index of OSH Topics](ref/index-osh.html)
   - [Index of YSH Topics](ref/index-ysh.html)
+  - [Index of Data Topics](ref/index-data.html)
 
 ## Interactive Shell
 
@@ -44,7 +45,7 @@ These docs are for advanced users:
 - [Shell Language Idioms](shell-idioms.html) has some advice for using any
   shell, not just Oils.
 
-## YSH is a New Shell
+## YSH is a Powerful Shell with Data Types
 
 - [A Tour of YSH](ysh-tour.html).  Explains YSH from scratch, without referring
   to shell's legacy.
@@ -93,8 +94,9 @@ Crosscutting design issues:
 
 ## Data Languages Avoid Ad-Hoc Parsing
 
-YSH supports these languages for data, which are complementary to languages for
-code.
+YSH programs "talk about" these data languages / interchange formats
+/ protocols.  In-memory data structures are *in service* of exterior data
+languages, **not** the other way around.
 
 <!-- TODO: J8 Notation -->
 
@@ -102,8 +104,11 @@ code.
 - [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
   format for byte strings.
   - [Framing](framing.html)
-- [QTT](qtt.html): Quoted, Typed Tables.  An extension of TSV, built on top of
-  QSN.
+
+TODO:
+
+- J8 Notation
+- Packle
 
 ## The Shared Oils Runtime
 
@@ -124,7 +129,7 @@ Internal details:
   welcome contributions!
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
-- [Old Docs](old/index.html).  Drafts that may never be completed.
+- [Old Docs](old/index.html).  Drafts that may be deleted.
 
 Internal Architecture:
 

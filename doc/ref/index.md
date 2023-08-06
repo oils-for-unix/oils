@@ -18,6 +18,7 @@ Start from one of these indexes:
 
 - [Index of OSH Topics](index-osh.html)
 - [Index of YSH Topics](index-ysh.html)
+- [Index of Data Topics](index-data.html)
 
 They link to **topics** within these 13 chapters:
 

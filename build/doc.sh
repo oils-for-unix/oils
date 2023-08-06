@@ -366,7 +366,7 @@ readonly CODE_DIR=_devbuild/gen
 cards-from-indices() {
   ### Make help cards
 
-  for lang in osh ysh j8; do
+  for lang in osh ysh data; do
     _make-help cards-from-index $lang $TEXT_DIR \
       < $HTML_DIR/doc/ref/index-$lang.html
   done
