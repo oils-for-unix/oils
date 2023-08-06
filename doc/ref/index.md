@@ -14,13 +14,12 @@ Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
 
 ## Online HTML
 
-Start from one of these indexes:
+Oils consists of two major "modes" for shell:
 
-- [Index of OSH Topics](index-osh.html)
-- [Index of YSH Topics](index-ysh.html)
-- [Index of Data Topics](index-data.html)
+- [Index of OSH Topics](index-osh.html) - Compatible
+- [Index of YSH Topics](index-ysh.html) - New and Powerful
 
-They link to **topics** within these 13 chapters:
+They link to **topics** within these 12 chapters:
 
 1. [Front End](chap-front-end.html)
 1. [Command Language](chap-cmd-lang.html)
@@ -34,10 +33,14 @@ They link to **topics** within these 13 chapters:
 1. [YSH Expression Language](chap-expr-lang.html)
 1. [YSH Types and Methods](chap-type-method.html)
 1. [Builtin Functions](chap-builtin-func.html)
-1. [Data Languages](chap-data-lang.html)
 
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.
+
+- [Index of Data Topics](index-data.html) - Oils also has data languages.
+
+13. [J8 Notation](chap-data-lang.html)
+1. Packle (TODO)
 
 ## `help` builtin command
 

@@ -89,6 +89,8 @@ This is for reference.
 
 ### incomplete-seq   
 
+### overlong
+
 ### bad-code-point
 
 e.g. decoded to something in the surrogate range

@@ -13,9 +13,7 @@ Siblings: [OSH Topics](index-osh.html), [YSH Topics](index-ysh.html)
 <div id="toc">
 </div>
 
-<h2 id="j8-str">J8 Notation</h2>
-
-Encoding: All J8 notation is UTF-8.
+<h2 id="j8-notation">J8 Notation</h2>
 
 ```chapter-links-data-lang
   [J8 Strings]   json-escape \n   surrogate-pair
@@ -25,6 +23,8 @@ Encoding: All J8 notation is UTF-8.
   [UTF8 Errors]  bad-byte   expected-start   expected-cont
                  incomplete-seq   overlong   bad-code-point
 ```
+
+All J8 notation is UTF-8.
 
 <h2 id="packle">Packle</h2>
 

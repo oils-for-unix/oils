@@ -206,9 +206,7 @@ class Splitter(HTMLParser.HTMLParser):
       if self.cur_group:
         self.out.append(self.cur_group)
 
-      values = [v for k, v in attrs if k == 'id']
-      id_value = values[0] if len(values) == 1 else None
-      self.cur_group = (tag, id_value, [], [])
+      self.cur_group = (tag, attrs, [], [])
 
     self.log('[%d] <> %s %s', self.indent, tag, attrs)
     self.indent += 1
@@ -293,18 +291,16 @@ def SplitIntoCards(heading_tags, contents):
   sp.feed(contents)
   sp.end()
 
-  for tag, id_value, heading_parts, parts in groups:
+  for tag, attrs, heading_parts, parts in groups:
     heading = ''.join(heading_parts).strip()
 
     # Don't strip leading space?
     text = ''.join(parts)
     text = text.strip('\n') + '\n'
 
-    topic_id = id_value if id_value else heading.replace(' ', '-')
-
     #log('text = %r', text[:10])
 
-    yield tag, topic_id, heading, text
+    yield tag, attrs, heading, text
 
   #log('make_help.py: Parsed %d parts', len(groups))
 
@@ -359,6 +355,95 @@ def HelpTopics(s):
     pos = end_pos
 
 
+class Node(object):
+  """To visualize doc structure."""
+
+  def __init__(self, name):
+    self.name = name
+    self.children = []
+
+
+def PrintTree(node, indent=0):
+  print('%s%s' % (indent * '  ', node.name))
+  for ch in node.children:
+    PrintTree(ch, indent+1)
+
+
+def CardsFromChapters(out_dir, tag_level, pages):
+  # TODO:
+  # - we only need a few fixed cards
+  # - turn this into a dict with sections
+  topics = []
+
+  root_node = Node('/')
+  cur_h2_node = None
+
+  seen = set()
+  for page_path in pages:
+    with open(page_path) as f:
+      contents = f.read()
+
+    page_name = os.path.basename(page_path)
+    page_node = Node(page_name)
+
+    cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
+
+    for tag, attrs, heading, text in cards:
+      values = [v for k, v in attrs if k == 'id']
+      id_value = values[0] if len(values) == 1 else None
+
+      topic_id = id_value if id_value else heading.replace(' ', '-')
+
+      # Debug Tree
+      if attrs:
+        a_str = ', '.join('%s=%s' % pair for pair in attrs)
+        a_str = '(%s)' % a_str
+      else:
+        a_str = ''
+
+      if tag == 'h2':
+        h2 = Node('%s %s' % (heading, a_str))
+        page_node.children.append(h2)
+        cur_h2_node = h2
+      elif tag == 'h3':
+        h3 = Node('%s %s' % (heading, a_str))
+        cur_h2_node.children.append(h3)
+
+      if tag != tag_level:
+        continue  # we only care about h3 now
+
+      if 0:
+        log('tag = %r', tag)
+        log('topic_id = %r', topic_id)
+        log('heading = %r', heading)
+        log('text = %r', text[:20])
+
+      # indices start with _
+      path = os.path.join(out_dir, topic_id)
+      with open(path, 'w') as f:
+        f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
+        f.write(text)
+
+      topics.append(topic_id)
+      if topic_id in seen:
+        log('Warning: %r is a duplicate topic', topic_id)
+      seen.add(topic_id)
+
+    root_node.children.append(page_node)
+
+  # 89 sections, 257 topics/cards
+  # Also want stats about which ones are done
+  num_sections = sum(len(child.children) for child in root_node.children)
+
+  log('%d pages -> (doctools/make_help) -> %d <h3> cards from %d <h2> sections to %s',
+      len(pages), len(topics), num_sections, out_dir)
+
+  if 0:
+    PrintTree(root_node)
+
+  return topics
+
+
 def main(argv):
   action = argv[1]
 
@@ -392,38 +477,7 @@ def main(argv):
     tag_level = argv[4]  # h4 or h3
     pages = argv[5:]
 
-    # TODO:
-    # - we only need a few fixed cards
-    # - turn this into a dict with sections
-    topics = []
-
-    seen = set()
-    for page_path in pages:
-      with open(page_path) as f:
-        contents = f.read()
-
-      cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
-
-      for tag, topic_id, heading, text in cards:
-        if tag != tag_level:
-          continue  # we only care about h3 now
-
-        #log('topic_id = %r', topic_id)
-        #log('heading = %r', heading)
-
-        # indices start with _
-        path = os.path.join(out_dir, topic_id)
-        with open(path, 'w') as f:
-          f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
-          f.write(text)
-
-        topics.append(topic_id)
-        if topic_id in seen:
-          log('Warning: %r is duplicated', topic_id)
-        seen.add(topic_id)
-
-    log('%s -> (doctools/make_help) -> %d cards in %s', ' '.join(pages), len(topics), out_dir)
-
+    topics = CardsFromChapters(out_dir, tag_level, pages)
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topics))
 
