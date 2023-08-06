@@ -276,12 +276,6 @@ all-redirects() {
   done
 }
 
-all-ref() {
-  for d in doc/ref/*.md; do
-    split-and-render $d '' '../../web'
-  done
-}
-
 # TODO: This could use some CSS.
 man-page() {
   local root_dir=${1:-_release/VERSION}
@@ -373,11 +367,10 @@ cards-from-indices() {
 }
 
 cards-from-chapters() {
-  ### Do all cards at once
+  ### Turn h3 topics into cards
 
   local py_out=$CODE_DIR/help_.py
-  # h3
-  _make-help cards-from-chapter $TEXT_DIR $py_out h3 \
+  _make-help cards-from-chapters $TEXT_DIR $py_out h3 \
     $HTML_DIR/doc/ref/chap-*.html
 }
 
@@ -433,15 +426,17 @@ all-help() {
   rm -f $TEXT_DIR/*
   make-dirs
 
-  split-and-render doc/ref/index-ysh.md
-  split-and-render doc/ref/index-osh.md
+  # Make the indexes and chapters
+  for d in doc/ref/*.md; do
+    split-and-render $d '' '../../web'
+  done
 
-  # Make the chapters
-  all-ref
-
+  # Text cards
   cards-from-indices
+  # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
   cards-from-chapters
 
+  # Special cards
   cp -v doc/ref/osh.txt $TEXT_DIR/osh
   cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
 

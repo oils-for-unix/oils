@@ -1,6 +1,7 @@
 ---
 in_progress: yes
-css_files: ../../web/base.css ../../web/help-index.css ../../web/toc.css
+body_css_class: width40 help-body
+default_highlighter: oil-sh
 ---
 
 Data Languages
@@ -80,23 +81,19 @@ The primitives:
 
 This is for reference.
 
+### bad-byte   
 
-### bad-start-byte
+### expected-start   
 
-### bad-cont-byte
+### expected-cont
 
-### incomplete
-
-### overlong
+### incomplete-seq   
 
 ### bad-code-point
 
-e.g. something in the surrogate range
-
-
+e.g. decoded to something in the surrogate range
 
 [JSON]: https://json.org
-
 
 # Packle
 

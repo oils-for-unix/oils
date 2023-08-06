@@ -385,14 +385,16 @@ def main(argv):
 
     log('  (doctools/make_help) -> %d groups', len(groups))
 
-  elif action == 'cards-from-chapter':
+  elif action == 'cards-from-chapters':
 
     out_dir = argv[2]
     py_out = argv[3]
     tag_level = argv[4]  # h4 or h3
     pages = argv[5:]
 
-    # TODO: turn this into a dict with sections
+    # TODO:
+    # - we only need a few fixed cards
+    # - turn this into a dict with sections
     topics = []
 
     seen = set()

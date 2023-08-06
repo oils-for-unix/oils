@@ -1,6 +1,6 @@
 ---
 in_progress: yes
-css_files: ../../web/base.css ../../web/help-index.css ../../web/toc.css
+css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 ---
 
 Index of OSH Topics

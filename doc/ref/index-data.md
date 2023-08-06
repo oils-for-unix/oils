@@ -1,6 +1,6 @@
 ---
 in_progress: yes
-css_files: ../../web/base.css ../../web/help-index.css ../../web/toc.css
+css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 ---
 
 Index of Data Topics
@@ -22,8 +22,8 @@ Encoding: All J8 notation is UTF-8.
                  j8-escape \yff   j-prefix j""
   [JSON8]        Null   Bool   Int   Float   Str   List   Dict
   [TSV8]         column-attrs   column-types
-  [UTF8 Errors]  bad-start-byte   bad-cont-byte   incomplete   overlong
-                 bad-code-point
+  [UTF8 Errors]  bad-byte   expected-start   expected-cont
+                 incomplete-seq   overlong   bad-code-point
 ```
 
 <h2 id="packle">Packle</h2>
