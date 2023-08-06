@@ -251,7 +251,7 @@ These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
       mycpp-venv/     # MyPy binaries deps in a VirtualEnv
 
       py3/            # for mycpp and pea/
-      cpython-full/   # for boostrapping Oil-CPython
+      cpython-full/   # for bootstrapping Oil-CPython
 
 
 ### Build System for End Users version.

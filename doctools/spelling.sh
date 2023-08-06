@@ -72,7 +72,8 @@ clean() {
 }
 
 check-tree() {
-  local base_dir=$1
+  local subdir=$1
+  shift
 
   # Depends on build/doc.sh all-markdown
   doc-to-text "$@"
@@ -82,10 +83,10 @@ check-tree() {
   echo
 
   # For curiousity: word count by file
-  find $BASE_DIR -name '*.words' | xargs wc -l | sort -n
+  find $BASE_DIR/$subdir -name '*.words' | xargs wc -l | sort -n
 
   # Use alphabetical order
-  find $BASE_DIR -name '*.words' | sort | xargs \
+  find $BASE_DIR/$subdir -name '*.words' | sort | xargs \
     $0 spelling check --known-words /usr/share/dict/words
 }
 
@@ -96,12 +97,18 @@ check-one() {
 }
 
 check-oil-docs() {
-  check-tree _release/VERSION/doc/*.html
+  local dir=_release/VERSION/doc
+  check-tree $dir $dir/*.html
+}
+
+check-doc-ref() {
+  local dir=_release/VERSION/doc/ref
+  check-tree $dir $dir/*.html
 }
 
 check-blog() {
   # Omit drafts starting with _
-  check-tree _site/blog/20??/*/[^_]*.html
+  check-tree _site/blog _site/blog/20??/*/[^_]*.html
 }
 
 "$@"

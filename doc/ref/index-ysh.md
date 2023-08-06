@@ -106,7 +106,7 @@ These are links to topics in the [Oils Reference](index.html).
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
                   X argparse             getopts replacement, sets OPT
-                  X setref               Builtin to replac ekeyword
+                  X setref               Builtin to replace keyword
                   pp                     Pretty print interpreter state
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status

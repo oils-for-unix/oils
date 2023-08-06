@@ -8,26 +8,20 @@ Start here if you can't find something!
 
 ## How are the docs organized?
 
-While we write the documentation, there are two different starting points:
+Start at one of these pages:
 
-1. [/release/$VERSION/](../index.html) lists the docs that are ready to read,
-   right below the downloads.
-1. [/release/$VERSION/doc/](index.html) is a tour through all docs, some of
-   which are in progress.
-1. [/release/$VERSION/doc/ref/](ref/index.html) is the Oils reference.
+1. The release home page at [/release/$VERSION/](../index.html) lists the docs
+   that are ready to read, below the downloads.
+1. **All Docs** at [/release/$VERSION/doc/](index.html) shows all docs, some of
+   which are in progress.  Examples:
+   - [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
+   - [Oil Fixes Shell's Error Handling](error-handling.html)
+1. The **Oils Reference** at [/release/$VERSION/doc/ref/](ref/index.html) has
+   two indexes:
+   - [Index of OSH Topics](ref/index-osh.html)
+   - [Index of YSH Topics](ref/index-ysh.html)
 
-It has two indexes:
-
-- [Index of OSH Topics](ref/index-osh.html)
-- [Index of YSH Topics](ref/index-ysh.html)
-
-
-There are various design docs, like:
-
-- [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
-- [Oil Fixes Shell's Error Handling](error-handling.html)
-
-Outside of [/release/$VERSION/](../index.html):
+Outside of the release tree:
 
 - [The blog](https://www.oilshell.org/blog/) has useful background information,
   although older posts are more likely to have incorrect information.

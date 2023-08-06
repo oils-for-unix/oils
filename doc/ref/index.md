@@ -14,7 +14,12 @@ Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
 
 ## Online HTML
 
-This reference has 13 chapters:
+Start from one of these indexes:
+
+- [Index of OSH Topics](index-osh.html)
+- [Index of YSH Topics](index-ysh.html)
+
+They link to **topics** within these 13 chapters:
 
 1. [Front End](chap-front-end.html)
 1. [Command Language](chap-cmd-lang.html)
@@ -29,11 +34,6 @@ This reference has 13 chapters:
 1. [YSH Types and Methods](chap-type-method.html)
 1. [Builtin Functions](chap-builtin-func.html)
 1. [Data Languages](chap-data-lang.html)
-
-Topics in the chapters are linked from these indices:
-
-- [Index of OSH Topics](index-osh.html)
-- [Index of YSH Topics](index-ysh.html)
 
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.

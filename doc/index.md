@@ -3,27 +3,26 @@ in_progress: yes
 all_docs_url: -
 ---
 
-All Docs on Oils
-================
+All Docs
+========
 
-The Oils project aims to transform Unix shell into a better programming
-language.  It's **our upgrade path from bash**.  It's for Python and JavaScript
-programmers who avoid shell.
+Oils is **our upgrade path from bash** to a better language and runtime.  This
+page links to all the documentation.
 
 <div id="toc">
 </div>
-
 
 ## Preliminaries
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
   tarball.
 - [Getting Started](getting-started.html).  How do I use the shell?
-- [FAQ on Documentation](faq-doc.html).  Where do I find docs?
+- [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
+  something**.
 
 ## Reference
 
-Like many other docs, this is still in progress:
+Like many other docs, the reference is still in progress:
 
 - [Oils Reference](ref/index.html) - These docs underlie `help` builtin, and
   are also published online.
@@ -131,5 +130,12 @@ Internal Architecture:
 
 - [Notes on Oils Architecture](architecture-notes.html)
   - [Parser Architecture](parser-architecture.html)
+
+## More
+
+- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).
+- [The blog](https://www.oilshell.org/blog/) has useful background information,
+  although older posts are more likely to have incorrect information.
+- [The home page](https://www.oilshell.org/) has links to docs for new users.
 
 <!-- vim: set sw=2: -->
