@@ -12,10 +12,12 @@ page links to all the documentation.
 <div id="toc">
 </div>
 
+&dagger; means a doc is not ready to read yet.
+
 ## Preliminaries
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
-  tarball.
+  tarball.  <!-- TODO: C++ tarball -->
 - [Getting Started](getting-started.html).  How do I use the shell?
 - [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
   something**.
@@ -24,17 +26,17 @@ page links to all the documentation.
 
 Like many other docs, the reference is still in progress:
 
-- [Oils Reference](ref/index.html) - These docs underlie `help` builtin, and
+- [Oils Reference](ref/index.html) &dagger; - These docs underlie `help` builtin, and
   are also published online.
 - Links to topics within each chapter:
-  - [Index of OSH Topics](ref/index-osh.html)
-  - [Index of YSH Topics](ref/index-ysh.html)
-  - [Index of Data Topics](ref/index-data.html)
+  - [Index of OSH Topics](ref/index-osh.html) &dagger;
+  - [Index of YSH Topics](ref/index-ysh.html) &dagger;
+  - [Index of Data Topics](ref/index-data.html) &dagger;
 
 ## Interactive Shell
 
 - [Headless Mode](headless.html).  For alternative UIs on top of YSH.
-- [Completion](completion.html) (doc in progress).  We emulate bash completion.
+- [Completion](completion.html) &dagger;.  We emulate bash completion.
 
 ## OSH is a Compatible Shell
 
@@ -45,7 +47,7 @@ These docs are for advanced users:
 - [Shell Language Idioms](shell-idioms.html) has some advice for using any
   shell, not just Oils.
 
-## YSH is a Powerful Shell with Data Types
+## YSH is a Shell with Structured Data
 
 - [A Tour of YSH](ysh-tour.html).  Explains YSH from scratch, without referring
   to shell's legacy.
@@ -58,10 +60,10 @@ These docs are for advanced users:
 ### Comparisons
 
 - [YSH vs. Shell Idioms](idioms.html).  A list of code snipets.
-- [YSH vs. Shell](ysh-vs-shell.html).  High-level descriptions: how does YSH
+- [YSH vs. Shell](ysh-vs-shell.html) &dagger;.  High-level descriptions: how does YSH
   differ from Bourne/POSIX shell?
-- [YSH vs. Python](ysh-vs-python.html).  How do YSH expressions differ from
-  Python?
+- [YSH vs. Python](ysh-vs-python.html) &dagger;.  How do YSH expressions differ
+  from Python?
 
 ### Design Concepts
 
@@ -87,16 +89,16 @@ YSH has 3 main sublanguages:
 
 Crosscutting design issues:
 
-- [Variable Declaration, Mutation, and Scope](variable-scope.html)
-- [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html)
-  - [Unicode](unicode.html).  Oils supports and prefers UTF-8.
-- [YSH I/O Builtins](io-builtins.html)
+- [Variable Declaration, Mutation, and Scope](variables.html)
+- [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
+  - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
+- [YSH I/O Builtins](io-builtins.html) &dagger;
 
 ## Data Languages Avoid Ad-Hoc Parsing
 
-YSH programs "talk about" these data languages / interchange formats
-/ protocols.  In-memory data structures are *in service* of exterior data
-languages, **not** the other way around.
+YSH programs "talk about" these data languages, also called interchange formats
+or protocols.  In-memory data structures are *in service* of data languages on
+the wire, **not** the other way around.
 
 <!-- TODO: J8 Notation -->
 
@@ -107,21 +109,21 @@ languages, **not** the other way around.
 
 TODO:
 
-- J8 Notation
-- Packle
+- J8 Notation &dagger;
+- Packle &dagger;
 
 ## The Shared Oils Runtime
 
 - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
 - [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
-- [Options](options.html).  Parsing and runtime options turn OSH into YSH.
+- [Options](options.html) &dagger;.  Parsing and runtime options turn OSH into YSH.
 
 Internal details:
 
-- [Interpreter State](interpreter-state.html).  What's inside a shell
+- [Interpreter State](interpreter-state.html) &dagger;.  What's inside a shell
   interpreter?
-- [Process Model](process-model.html).  The shell language is a thin layer over
-  the Unix kernel.
+- [Process Model](process-model.html) &dagger;.  The shell language is a thin
+  layer over the Unix kernel.
 
 ## For Contributors
 

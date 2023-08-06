@@ -67,12 +67,10 @@ These docs are **ready to read** (though there may be obsolete references to "Oi
   | [Syntactic Concepts](doc/syntactic-concepts.html) 
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
   | [Language Influences](doc/language-influences.html)
-- Interchange Formats:
-  - [QSN](doc/qsn.html)
 
 More:
 
-- [All Docs](doc/) is an index of all docs.
+- [**All Docs**](doc/) about Oils (in progress).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oil.  These versions may not be up-to-date.

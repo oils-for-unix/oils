@@ -130,9 +130,9 @@ readonly MARKDOWN_DOCS=(
   headless
   completion
   strings
+  variables
 
   # Internal stuff
-  variable-scope
   interpreter-state
   process-model
   architecture-notes

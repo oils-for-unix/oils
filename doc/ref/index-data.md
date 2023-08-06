@@ -18,21 +18,18 @@ Siblings: [OSH Topics](index-osh.html), [YSH Topics](index-ysh.html)
 Encoding: All J8 notation is UTF-8.
 
 ```chapter-links-data-lang
-  [J8 Strings]   json-escape \n   j8-escape \yff   j-prefix j""
+  [J8 Strings]   json-escape \n   surrogate-pair
+                 j8-escape \yff   j-prefix j""
   [JSON8]        Null   Bool   Int   Float   Str   List   Dict
   [TSV8]         column-attrs   column-types
+  [UTF8 Errors]  bad-start-byte   bad-cont-byte   incomplete   overlong
+                 bad-code-point
 ```
 
 <h2 id="packle">Packle</h2>
 
+TODO: It seems like this needs its own chapter.
 
 ```chapter-links-data-lang
   [Packle]   Null   Bool   Int   Float   Str   List   Dict
-```
-
-<h2 id="utf-8">UTF-8</h2>
-
-```chapter-links-data-lang
-  [Errors]   bad-start-byte   bad-cont-byte   incomplete   overlong
-             bad-code-point
 ```

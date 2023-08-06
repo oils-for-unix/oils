@@ -19,6 +19,13 @@ This is a quick reference, not the official spec.
 
 ### json-escape \n   
 
+### surrogate-pair
+
+Inherited from JSON
+
+See [Surrogate Pair Blog
+Post](https://www.oilshell.org/blog/2023/06/surrogate-pair.html).
+
 ### j8-escape \yff   
 
 ### j-prefix j""
@@ -69,18 +76,10 @@ The primitives:
 
 
 
-## Packle
-
-- Binary data represented length-prefixed without encode/decode
-- Exact float representation
-- Represent graphs, not just trees.  ("JSON key sharing")
-
-
-## UTF-8
+## UTF8 Errors
 
 This is for reference.
 
-## Errors
 
 ### bad-start-byte
 
@@ -96,6 +95,12 @@ e.g. something in the surrogate range
 
 
 
+[JSON]: https://json.org
 
 
+# Packle
+
+- Binary data represented length-prefixed without encode/decode
+- Exact float representation
+- Represent graphs, not just trees.  ("JSON key sharing")
 
