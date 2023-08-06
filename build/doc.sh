@@ -101,6 +101,7 @@ readonly MARKDOWN_DOCS=(
 
   syntactic-concepts
   syntax-feelings
+  command-vs-expression-mode
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
@@ -121,9 +122,6 @@ readonly MARKDOWN_DOCS=(
   old/word-language
   old/errors
   old/ysh-builtins
-
-  command-vs-expression-mode
-
 
   io-builtins
   unicode
@@ -368,9 +366,9 @@ readonly CODE_DIR=_devbuild/gen
 cards-from-indices() {
   ### Make help cards
 
-  for sh in osh ysh; do
-    _make-help cards-from-index $sh $TEXT_DIR \
-      < $HTML_DIR/doc/ref/index-$sh.html
+  for lang in osh ysh j8; do
+    _make-help cards-from-index $lang $TEXT_DIR \
+      < $HTML_DIR/doc/ref/index-$lang.html
   done
 }
 

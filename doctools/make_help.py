@@ -334,16 +334,17 @@ def HelpTopics(s):
         h2_start_right = end_pos
 
         open_tag_right = end_pos
-        group_topic_id = tag_lexer.GetAttr('id')
-        assert group_topic_id, 'Expected id= in %r' % tag_lexer.TagString()
+        section_id  = tag_lexer.GetAttr('id')
+        assert section_id, 'Expected id= in %r' % tag_lexer.TagString()
 
         h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
 
         anchor_html = s[h2_start_right : h2_end_left]
         paren_pos = anchor_html.find('(')
-        assert paren_pos != -1, anchor_html
-
-        group_name = anchor_html[: paren_pos].strip()
+        if paren_pos == -1:
+          section_name = anchor_html
+        else:
+          section_name = anchor_html[: paren_pos].strip()
 
         # Now find the <code></code> span
         _, code_start_right = html.ReadUntilStartTag(it, tag_lexer, 'code')
@@ -353,7 +354,7 @@ def HelpTopics(s):
         code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
 
         text = html.ToText(s, code_start_right, code_end_left)
-        yield group_topic_id, group_name, text
+        yield section_id, section_name, text
 
     pos = end_pos
 
@@ -391,7 +392,9 @@ def main(argv):
     tag_level = argv[4]  # h4 or h3
     pages = argv[5:]
 
+    # TODO: turn this into a dict with sections
     topics = []
+
     seen = set()
     for page_path in pages:
       with open(page_path) as f:
@@ -401,7 +404,7 @@ def main(argv):
 
       for tag, topic_id, heading, text in cards:
         if tag != tag_level:
-          continue  # Skip h2 and h3 for now
+          continue  # we only care about h3 now
 
         #log('topic_id = %r', topic_id)
         #log('heading = %r', heading)
