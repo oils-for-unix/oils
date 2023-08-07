@@ -9,18 +9,27 @@ from core import error
 from core import shell
 from core import pyos
 from core import pyutil
+from core import ui
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 from mycpp.mylib import print_stderr, log
+from osh import builtin_misc
 
 unused2 = flag_def
 
-from typing import List
+from typing import List, Dict
 
 
 def main(argv):
     # type: (List[str]) -> int
     loader = pyutil.GetResourceLoader()
+
+    # TODO: for a pure build, remove deps on osh/builtin_misc, and maybe
+    # core/ui
+    errfmt = ui.ErrorFormatter()
+    topic_meta = None  # type: Dict[str, str]
+    help_builtin = builtin_misc.Help(loader, topic_meta, errfmt)
+
     login_shell = False
 
     environ = pyos.Environ()
@@ -29,7 +38,8 @@ def main(argv):
     arg_r = args.Reader(argv, [missing] * len(argv))
 
     try:
-        status = shell.Main('osh', arg_r, environ, login_shell, loader, None)
+        status = shell.Main('osh', arg_r, environ, login_shell, loader,
+                            help_builtin, None)
         return status
     except error.Usage as e:
         #builtin.Help(['oil-usage'], util.GetResourceLoader())

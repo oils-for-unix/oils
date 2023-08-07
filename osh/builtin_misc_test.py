@@ -6,7 +6,10 @@ from __future__ import print_function
 
 import unittest
 
-from _devbuild.gen.help_meta import TOPICS
+try:
+    from _devbuild.gen.help_meta import TOPICS
+except ImportError:
+    TOPICS = None  # minimal dev build
 from core import pyutil
 from frontend import flag_def  # side effect: flags are defined!
 
