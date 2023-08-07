@@ -31,12 +31,12 @@ if TYPE_CHECKING:
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
 
-HELP_TOPICS = []  # type: List[str]
+TOPIC_META = {}  # type: Dict[str, str]
 
 if mylib.PYTHON:
     try:
         from _devbuild.gen import help_meta  # type: ignore
-        HELP_TOPICS = help_meta.TopicMetadata()
+        TOPIC_META = help_meta.TopicMetadata()
     except ImportError:
         # This happens in the 'minimal' dev build
         pass
@@ -102,16 +102,19 @@ class SpecBuilder(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      cmd_ev: CommandEvaluator for compgen -F
-      parse_ctx, word_ev, splitter: for compgen -W
-    """
+        Args:
+          cmd_ev: CommandEvaluator for compgen -F
+          parse_ctx, word_ev, splitter: for compgen -W
+        """
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.word_ev = word_ev
         self.splitter = splitter
         self.comp_lookup = comp_lookup
         self.errfmt = errfmt
+
+        # lazily initialized
+        self.help_topics = None  # type: List[str]
 
     def Build(self, argv, attrs, base_opts):
         # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
@@ -180,8 +183,10 @@ class SpecBuilder(object):
                 a = completion.VariablesAction(cmd_ev.mem)
 
             elif name == 'helptopic':
-                # Note: it would be nice to have 'helpgroup' for help -i too
-                a = _FixedWordsAction(HELP_TOPICS)
+                # Lazy initialization
+                if self.help_topics is None:
+                    self.help_topics = TOPIC_META.keys()
+                a = _FixedWordsAction(self.help_topics)
 
             elif name == 'setopt':
                 a = _FixedWordsAction(consts.SET_OPTION_NAMES)

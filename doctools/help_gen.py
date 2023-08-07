@@ -478,15 +478,16 @@ def main(argv):
     pages = argv[5:]
 
     topics, debug_info = CardsFromChapters(out_dir, 'h3', pages)
+    topic_dict = dict((topic_id, '') for topic_id in topics)
     with open(py_out, 'w') as f:
-      f.write('TOPICS = %s\n' % pprint.pformat(topics))
+      f.write('TOPICS = %s\n' % pprint.pformat(topic_dict))
 
       f.write('''
 
-from typing import List
+from typing import Dict
 
 def TopicMetadata():
-  # type: () -> List[str]
+  # type: () -> Dict[str, str]
   return TOPICS
 ''')
 
