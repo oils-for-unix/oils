@@ -373,9 +373,12 @@ cards-from-indices() {
 cards-from-chapters() {
   ### Turn h3 topics into cards
 
-  local py_out=$CODE_DIR/help_.py
+  local py_out=$CODE_DIR/help_meta.py
 
-  _make-help cards-from-chapters $TEXT_DIR $py_out h3 \
+  mkdir -p _gen/frontend
+  local cc_prefix=_gen/frontend/help_meta
+
+  _make-help cards-from-chapters $TEXT_DIR $py_out $cc_prefix \
     $HTML_DIR/doc/ref/chap-*.html
 }
 

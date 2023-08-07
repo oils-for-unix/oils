@@ -474,12 +474,44 @@ def main(argv):
 
     out_dir = argv[2]
     py_out = argv[3]
-    tag_level = argv[4]  # h4 or h3
+    cc_prefix = argv[4]
     pages = argv[5:]
 
-    topics, debug_info = CardsFromChapters(out_dir, tag_level, pages)
+    topics, debug_info = CardsFromChapters(out_dir, 'h3', pages)
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topics))
+
+      f.write('''
+
+from typing import List
+
+def TopicMetadata():
+  # type: () -> List[str]
+  return TOPICS
+''')
+
+    h_path = cc_prefix + '.h'
+    cc_path = cc_prefix + '.cc'
+
+    with open(h_path, 'w') as f:
+      f.write('''
+#include "mycpp/runtime.h"
+
+namespace help_meta {
+List<Str*>* TopicMetadata();
+}
+''')
+
+    with open(cc_path, 'w') as f:
+      f.write('''
+#include "mycpp/runtime.h"
+
+namespace help_meta {
+List<Str*>* TopicMetadata() {
+  return nullptr;
+}
+}
+''')
 
   elif action == 'ref-check':
     from doctools import cmark

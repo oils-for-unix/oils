@@ -5,17 +5,19 @@ builtin_comp.py - Completion builtins
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
+from _devbuild.gen import help_meta
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import value, value_e
 from core import completion
 from core import error
+from core import state
 from core import ui
 from core import vm
+from mycpp import mylib
 from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
-from core import state
 
 _ = log
 
@@ -24,26 +26,11 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, Proc
     from core.completion import Lookup, OptionState, Api, UserSpec
     from core.ui import ErrorFormatter
-    from core.state import Mem
     from frontend.args import _Attributes
     from frontend.parse_lib import ParseContext
     from osh.cmd_eval import CommandEvaluator
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
-
-HELP_TOPICS = []  # type: List[str]
-
-from mycpp import mylib
-if mylib.PYTHON:
-    # - Catch ImportEror because we don't want libcmark.so dependency for
-    #   build/py.sh minimal
-    # - For now, ignore a type error in minimal build.
-    # - TODO: Rewrite help builtin and remove dep on CommonMark
-    try:
-        from _devbuild.gen import help_  # type: ignore
-        HELP_TOPICS = help_.TOPICS
-    except ImportError:
-        pass
 
 
 class _FixedWordsAction(completion.CompletionAction):
@@ -185,7 +172,7 @@ class SpecBuilder(object):
 
             elif name == 'helptopic':
                 # Note: it would be nice to have 'helpgroup' for help -i too
-                a = _FixedWordsAction(HELP_TOPICS)
+                a = _FixedWordsAction(help_meta.TopicMetadata())
 
             elif name == 'setopt':
                 a = _FixedWordsAction(consts.SET_OPTION_NAMES)
@@ -407,7 +394,7 @@ class CompAdjust(vm._Builtin):
     """
 
     def __init__(self, mem):
-        # type: (Mem) -> None
+        # type: (state.Mem) -> None
         self.mem = mem
 
     def Run(self, cmd_val):
