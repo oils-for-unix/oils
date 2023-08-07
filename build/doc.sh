@@ -60,8 +60,8 @@ _build-timestamp() {
 # - in deployment script
 
 # Run with environment variable
-_make-help() {
-  PYTHONPATH=. doctools/make_help.py "$@"
+help-gen() {
+  PYTHONPATH=. doctools/help_gen.py "$@"
 }
 
 cmark() {
@@ -365,7 +365,7 @@ cards-from-indices() {
   ### Make help cards
 
   for lang in osh ysh data; do
-    _make-help cards-from-index $lang $TEXT_DIR \
+    help-gen cards-from-index $lang $TEXT_DIR \
       < $HTML_DIR/doc/ref/index-$lang.html
   done
 }
@@ -378,14 +378,14 @@ cards-from-chapters() {
   mkdir -p _gen/frontend
   local cc_prefix=_gen/frontend/help_meta
 
-  _make-help cards-from-chapters $TEXT_DIR $py_out $cc_prefix \
+  help-gen cards-from-chapters $TEXT_DIR $py_out $cc_prefix \
     $HTML_DIR/doc/ref/chap-*.html
 }
 
 ref-check() {
   ### Check indexes and chapters against each other
 
-  PYTHONPATH=. doctools/make_help.py ref-check \
+  help-gen ref-check \
     doc/ref/index-*.md \
     _release/VERSION/doc/ref/chap-*.html
 }

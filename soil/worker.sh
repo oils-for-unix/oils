@@ -76,8 +76,8 @@ dev-minimal-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info             soil/diagnose.sh os-info                     -
+dump-env            soil/diagnose.sh dump-env                    -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
@@ -207,8 +207,8 @@ cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info                 soil/diagnose.sh os-info    -
+dump-env                soil/diagnose.sh dump-env   -
 build-minimal           build/py.sh minimal                             -
 ninja-config            soil/worker.sh ninja-config                     -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
@@ -229,8 +229,8 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info           soil/diagnose.sh os-info    -
+dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
@@ -267,8 +267,8 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info                soil/diagnose.sh os-info    -
+dump-env               soil/diagnose.sh dump-env   -
 build-minimal          build/py.sh minimal                        -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -

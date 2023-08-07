@@ -5,7 +5,6 @@ builtin_comp.py - Completion builtins
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen import help_meta
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import value, value_e
 from core import completion
@@ -31,6 +30,16 @@ if TYPE_CHECKING:
     from osh.cmd_eval import CommandEvaluator
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
+
+HELP_TOPICS = []  # type: List[str]
+
+if mylib.PYTHON:
+    try:
+        from _devbuild.gen import help_meta
+        HELP_TOPICS = help_meta.TopicMetadata()
+    except ImportError:
+        # This happens in the 'minimal' dev build
+        pass
 
 
 class _FixedWordsAction(completion.CompletionAction):
@@ -172,7 +181,7 @@ class SpecBuilder(object):
 
             elif name == 'helptopic':
                 # Note: it would be nice to have 'helpgroup' for help -i too
-                a = _FixedWordsAction(help_meta.TopicMetadata())
+                a = _FixedWordsAction(HELP_TOPICS)
 
             elif name == 'setopt':
                 a = _FixedWordsAction(consts.SET_OPTION_NAMES)

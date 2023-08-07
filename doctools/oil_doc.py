@@ -267,7 +267,7 @@ class HelpTopicsPlugin(_Plugin):
     self.chapter = chapter
 
   def PrintHighlighted(self, out):
-    from doctools import make_help
+    from doctools import help_gen
 
     debug_out = []
 
@@ -277,7 +277,7 @@ class HelpTopicsPlugin(_Plugin):
       # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
-      html_line = make_help.IndexLineToHtml(self.chapter, line, debug_out)
+      html_line = help_gen.IndexLineToHtml(self.chapter, line, debug_out)
 
       if html_line is not None:
         out.PrintUntil(pos)
