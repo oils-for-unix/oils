@@ -736,7 +736,9 @@ Unimplemented.
 
 ## Introspection
 
-### help
+<h3 id="help" class="osh-topic ysh-topic" oils-embed="1">
+  help
+</h3>
 
 <!-- pre-formatted for help builtin -->
 

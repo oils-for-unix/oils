@@ -31,17 +31,6 @@ if TYPE_CHECKING:
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
 
-TOPIC_META = {}  # type: Dict[str, str]
-
-if mylib.PYTHON:
-    try:
-        from _devbuild.gen import help_meta  # type: ignore
-        TOPIC_META = help_meta.TopicMetadata()
-    except ImportError:
-        # This happens in the 'minimal' dev build
-        pass
-
-
 class _FixedWordsAction(completion.CompletionAction):
     def __init__(self, d):
         # type: (List[str]) -> None
@@ -98,6 +87,7 @@ class SpecBuilder(object):
             word_ev,  # type: NormalWordEvaluator
             splitter,  # type: SplitContext
             comp_lookup,  # type: Lookup
+            help_data,  # type: Dict[str, str]
             errfmt  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
@@ -111,10 +101,13 @@ class SpecBuilder(object):
         self.word_ev = word_ev
         self.splitter = splitter
         self.comp_lookup = comp_lookup
+
+        self.help_data = help_data
+        # lazily initialized
+        self.topic_list = None  # type: List[str]
+
         self.errfmt = errfmt
 
-        # lazily initialized
-        self.help_topics = None  # type: List[str]
 
     def Build(self, argv, attrs, base_opts):
         # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
@@ -184,9 +177,9 @@ class SpecBuilder(object):
 
             elif name == 'helptopic':
                 # Lazy initialization
-                if self.help_topics is None:
-                    self.help_topics = TOPIC_META.keys()
-                a = _FixedWordsAction(self.help_topics)
+                if self.topic_list is None:
+                    self.topic_list = self.help_data.keys()
+                a = _FixedWordsAction(self.topic_list)
 
             elif name == 'setopt':
                 a = _FixedWordsAction(consts.SET_OPTION_NAMES)

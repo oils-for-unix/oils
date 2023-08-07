@@ -145,7 +145,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
 
     with alloc.ctx_Location(arena, source.SourcedFile(rc_path, loc.Missing)):
         # TODO: handle status, e.g. 2 for ParseError
-        status = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
+        unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
     f.close()
 
@@ -361,8 +361,8 @@ class ShellFiles(object):
             #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
 
-def Main(lang, arg_r, environ, login_shell, loader, readline):
-    # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
+def Main(lang, arg_r, environ, login_shell, loader, help_builtin, readline):
+    # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, builtin_misc.Help, Optional[Readline]) -> int
     """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
     Args:
@@ -393,9 +393,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     flag = arg_types.main(attrs.attrs)
 
     arena = alloc.Arena()
-    errfmt = ui.ErrorFormatter()
+    errfmt = help_builtin.errfmt
 
-    help_builtin = builtin_misc.Help(loader, errfmt)
     if flag.help:
         help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
         return 0
@@ -691,7 +690,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
              hay_state, errfmt)
 
     spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup, errfmt)
+                                            splitter, comp_lookup,
+                                            help_builtin.help_data, errfmt)
     complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
     builtins[builtin_i.complete] = complete_builtin
     builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)

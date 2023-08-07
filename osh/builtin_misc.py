@@ -36,7 +36,7 @@ from pylib import os_path
 import libc
 import posix_ as posix
 
-from typing import Tuple, List, Optional, Any, TYPE_CHECKING
+from typing import Tuple, List, Dict, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import span_t
     from core.pyutil import _ResourceLoader
@@ -816,17 +816,11 @@ class Pwd(vm._Builtin):
 
 # Needs a different _ResourceLoader to translate
 class Help(vm._Builtin):
-    def __init__(self, loader, errfmt):
-        # type: (_ResourceLoader, ErrorFormatter) -> None
+    def __init__(self, loader, help_data, errfmt):
+        # type: (_ResourceLoader, Dict[str, str], ErrorFormatter) -> None
         self.loader = loader
+        self.help_data = help_data
         self.errfmt = errfmt
-
-    def _Groups(self):
-        # type: () -> List[str]
-        # TODO: cache this?
-        contents = self.loader.Get('_devbuild/help/groups.txt')
-        groups = contents.splitlines(False)  # no newlines
-        return groups
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -834,14 +828,29 @@ class Help(vm._Builtin):
         attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
         #arg = arg_types.help(attrs.attrs)
 
-        topic, blame_loc = arg_r.Peek2()
-        if topic is None:
-            topic = 'help'
+        topic_id, blame_loc = arg_r.Peek2()
+        if topic_id is None:
+            topic_id = 'help'
         else:
             arg_r.Next()
 
+        prefix = 'https://www.oilshell.org/release'
+        version_str = pyutil.GetVersion(self.loader)
+        if 0:
+            prefix = 'file:///home/andy/git/oilshell/oil/_release'
+            version_str = 'VERSION'
+
+        chapter_name = self.help_data.get(topic_id)
+
+        # If we have a chapter name, it's not embedded in the binary.  So just
+        # print the URL.
+        if chapter_name is not None and len(chapter_name):
+            print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix, version_str,
+                                                    chapter_name, topic_id))
+            return 0
+
         try:
-            contents = self.loader.Get('_devbuild/help/%s' % topic)
+            contents = self.loader.Get('_devbuild/help/%s' % topic_id)
         except (IOError, OSError):
             # Notes:
             # 1. bash suggests:
@@ -855,14 +864,10 @@ class Help(vm._Builtin):
 
             # 3. This is mostly an interactive command.  Is it obnoxious to
             # quote the line of code?
-            self.errfmt.Print_('no help topics match %r' % topic, blame_loc)
+            self.errfmt.Print_('no help topics match %r' % topic_id, blame_loc)
             return 1
 
         print(contents)
-
-        # TODO: Only print this if it's not an embedded card
-        version_str = pyutil.GetVersion(self.loader)
-        #print('    https://www.oilshell.org/release/%s/doc/ref/chap-TODO#%s' % (version_str, topic))
 
         return 0
 

@@ -15,12 +15,14 @@ and lexing.
 
 <h2 id="usage">Command Line Usage</h3>
 
-<h3 id="oils-usage" class="osh-ysh-topic">oils-usage</h3>
+<h3 id="oils-usage" class="osh-ysh-topic" oils-embed="1">
+  oils-usage
+</h3>
 
 <!-- pre-formatted for help builtin -->
 
 ```
-oils-for-unix is an executable that contains OSH, YSH, and more.
+bin/oils-for-unix is an executable that contains OSH, YSH, and more.
 
 Usage: oils-for-unix MAIN_NAME ARG*
        MAIN_NAME ARG*
@@ -35,12 +37,14 @@ Otherwise, the command name can be passed as the first argument, e.g.:
     oils-for-unix ysh -c 'echo hi'
 ```
 
-<h3 id="osh-usage" class="osh-topic">osh-usage</h3>
+<h3 id="osh-usage" class="osh-topic" oils-embed="1">
+  osh-usage
+</h3>
 
 <!-- pre-formatted for help builtin -->
 
 ```
-osh is compatible with POSIX shell, bash, and more.
+bin/osh is compatible with POSIX shell, bash, and other shells.
 
 Usage: osh FLAG* SCRIPT ARG*
        osh FLAG* -c COMMAND ARG*
@@ -63,12 +67,14 @@ osh accepts POSIX sh flags, with these additions:
     --ast-format   what format the AST should be in
 ```
 
-<h3 id="ysh-usage" class="ysh-topic">ysh-usage</h3>
+<h3 id="ysh-usage" class="ysh-topic" oils-embed="1">
+  ysh-usage
+</h3>
 
 <!-- pre-formatted for help builtin -->
 
 ```
-ysh is the shell with data tYpes, influenced by pYthon, JavaScript, Lisp, ...
+bin/ysh is the shell with data tYpes, influenced by pYthon, JavaScript, ...
 
 Usage: ysh FLAG* SCRIPT ARG*
        ysh FLAG* -c COMMAND ARG*

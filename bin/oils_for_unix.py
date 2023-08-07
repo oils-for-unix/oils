@@ -25,6 +25,7 @@ from core import error
 from core import shell
 from core import pyos
 from core import pyutil
+from core import ui
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib
@@ -38,9 +39,18 @@ if mylib.PYTHON:
 
 import fanos
 
-from typing import List, TYPE_CHECKING
-if TYPE_CHECKING:
-    from core import ui
+from typing import List, Dict
+
+
+TOPIC_META = {}  # type: Dict[str, str]
+
+if mylib.PYTHON:
+    try:
+        from _devbuild.gen import help_meta  # type: ignore
+        TOPIC_META = help_meta.TopicMetadata()
+    except ImportError:
+        # This happens in the 'minimal' dev build
+        pass
 
 
 def CaperDispatch():
@@ -68,7 +78,7 @@ def CaperDispatch():
         elif command == 'SETENV':
             pass
         elif command == 'MAIN':
-            argv = ['TODO']
+            #argv = ['TODO']
             # I think we need to factor the oil.{py,ovm} condition out and call it like this:
             # MainDispatch(main_name, argv) or
             # MainDispatch(main_name, arg_r)
@@ -88,6 +98,9 @@ def AppBundleMain(argv):
 
     # NOTE: This has a side effect of deleting _OVM_* from the environment!
     loader = pyutil.GetResourceLoader()
+
+    errfmt = ui.ErrorFormatter()
+    help_builtin = builtin_misc.Help(loader, TOPIC_META, errfmt)
 
     b = os_path.basename(argv[0])
     main_name, ext = os_path.splitext(b)
@@ -113,8 +126,6 @@ def AppBundleMain(argv):
 
         # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
         if first_arg in ('-h', '--help'):
-            errfmt = None  # type: ui.ErrorFormatter
-            help_builtin = builtin_misc.Help(loader, errfmt)
             help_builtin.Run(shell.MakeBuiltinArgv(['oils-usage']))
             return 0
 
@@ -139,10 +150,12 @@ def AppBundleMain(argv):
     environ = pyos.Environ()
 
     if applet in ('ysh', 'oil'):
-        return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
+        return shell.Main('ysh', arg_r, environ, login_shell, loader,
+                          help_builtin, readline)
 
     elif applet.endswith('sh'):  # sh, osh, bash imply OSH
-        return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
+        return shell.Main('osh', arg_r, environ, login_shell, loader,
+                          help_builtin, readline)
 
     elif applet == 'oshc':
         # Moved to --tool

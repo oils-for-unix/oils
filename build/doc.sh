@@ -456,6 +456,13 @@ all-help() {
   cp -v doc/ref/osh.txt $TEXT_DIR/osh
   cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
 
+  if command -v pysum; then
+    # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
+    # compress it.
+    echo 'Size of embedded help:'
+    ls -l $TEXT_DIR | tee /dev/stderr | awk '{print $5}' | pysum
+  fi
+
   # Better sorting
   #LANG=C ls -l $TEXT_DIR
 }

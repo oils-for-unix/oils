@@ -46,7 +46,6 @@ import pprint
 import re
 import sys
 
-from core import ansi
 from doctools import html_lib
 from doctools.util import log
 from lazylex import html
@@ -385,31 +384,36 @@ def CardsFromIndex(sh, out_prefix):
 
     path = os.path.join(out_prefix, topic)
     with open(path, 'w') as f:
-      f.write('%s %s %s\n\n' % (ansi.REVERSE, section_name, ansi.RESET))
+      f.write('(%s) %s\n\n' % (section_id, section_name))
       f.write(text)
-      f.write('\n')  # extra
+      #f.write('\n')  # extra
     log('  Wrote %s', path)
     sections.append(section_id)
 
   log('  (doctools/make_help) -> %d sections -> %s', len(sections), out_prefix)
 
 
-def CardsFromChapters(out_dir, tag_level, pages):
+def CardsFromChapters(out_dir, tag_level, paths):
   # TODO:
   # - we only need a few fixed cards
   # - turn this into a dict with sections
-  topics = []
+  topics = {}
 
   root_node = DocNode('/')
   cur_h2_node = None
 
   seen = set()
-  for page_path in pages:
-    with open(page_path) as f:
+  for path in paths:
+    with open(path) as f:
       contents = f.read()
 
-    page_name = os.path.basename(page_path)
-    page_node = DocNode(page_name)
+    filename = os.path.basename(path)
+
+    tmp, _ = os.path.splitext(filename)
+    assert tmp.startswith('chap-')
+    chapter_name = tmp[len('chap-'):]
+
+    page_node = DocNode(filename)
 
     cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
@@ -436,13 +440,18 @@ def CardsFromChapters(out_dir, tag_level, pages):
         log('heading = %r', heading)
         log('text = %r', text[:20])
 
-      # indices start with _
-      path = os.path.join(out_dir, topic_id)
-      with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
-        f.write(text)
+      embed = ('oils-embed', '1') in attrs
 
-      topics.append(topic_id)
+      if out_dir is not None and embed:
+        # indices start with _
+        path = os.path.join(out_dir, topic_id)
+        with open(path, 'w') as f:
+          f.write('(%s)\n\n' % topic_id)
+          f.write(text)
+
+      # help builtin will show URL if there's a chapter name
+      topics[topic_id] = '' if embed else chapter_name
+
       if topic_id in seen:
         log('Warning: %r is a duplicate topic', topic_id)
       seen.add(topic_id)
@@ -453,8 +462,8 @@ def CardsFromChapters(out_dir, tag_level, pages):
   # Also want stats about which ones are done
   num_sections = sum(len(child.children) for child in root_node.children)
 
-  log('%d pages -> (doctools/make_help) -> %d <h3> cards from %d <h2> sections to %s',
-      len(pages), len(topics), num_sections, out_dir)
+  log('%d chapters -> (doctools/make_help) -> %d <h3> cards from %d <h2> sections to %s',
+      len(paths), len(topics), num_sections, out_dir)
 
   return topics, root_node
 
@@ -477,8 +486,7 @@ def main(argv):
     cc_prefix = argv[4]
     pages = argv[5:]
 
-    topics, debug_info = CardsFromChapters(out_dir, 'h3', pages)
-    topic_dict = dict((topic_id, '') for topic_id in topics)
+    topic_dict, debug_info = CardsFromChapters(out_dir, 'h3', pages)
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topic_dict))
 
@@ -546,8 +554,8 @@ List<Str*>* TopicMetadata() {
       else:
         raise RuntimeError('Expected index-* or chap-*, got %r' % filename)
 
-    out_dir = '_tmp/doctools'  # UNUSED
-    topics, chap_tree = CardsFromChapters(out_dir, 'h3', chapters)
+    # out_dir=None so we don't write anything
+    topics, chap_tree = CardsFromChapters(None, 'h3', chapters)
     #print(topics)
 
     ref_check.Check(index_debug_info, chap_tree)

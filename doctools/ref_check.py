@@ -51,7 +51,8 @@ def Check(index_debug_info, chap_tree):
   index_topic_set = set(topics)
   log('  num unique topics = %d', len(index_topic_set))
 
-  #PrintTree(chap_tree, sys.stdout)
+  if 1:
+    PrintTree(chap_tree, sys.stdout)
 
   num_chapters = 0
   num_sections = 0
@@ -104,8 +105,6 @@ def Check(index_debug_info, chap_tree):
   for topic_id, chaps in chap_topics.iteritems():
     if len(chaps) > 1:
       print('%s %s' % (topic_id, chaps))
-
-
 
 
 # vim: sw=2
