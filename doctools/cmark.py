@@ -271,7 +271,6 @@ def _ApplyInsertions(lines, insertions, out_file):
 
 
 def Render(opts, meta, in_file, out_file, use_fastlex=True):
-
   # First convert to HTML
   html = md2html(in_file.read())
 
@@ -296,7 +295,14 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
 
     # <code> blocks
     # Including class=language-oil-help-topics
-    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
+    debug_out = []
+    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'),
+                                 debug_out=debug_out)
+
+    # Pass to highlight code.  Or could make another pass.
+    if len(debug_out) and opts.debug_output:
+      with open(opts.debug_output, 'w') as f:
+        json.dump(debug_out, f, indent=2)
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
@@ -348,8 +354,12 @@ def Options():
 
   p.add_option(
       '--code-block-output', dest='code_block_output',
-      default=False,
+      default=None,
       help='Extract and print code blocks to this file')
+  p.add_option(
+      '--debug-output', dest='debug_output',
+      default=None,
+      help='JSON debug output to this file')
 
   return p
 

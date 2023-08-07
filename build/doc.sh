@@ -181,10 +181,24 @@ split-and-render() {
   #head _tmp/doc/*
   #return
 
+  # for ysh-tour code blocks
   local code_out=_tmp/code-blocks/$rel_path.txt
-  mkdir -v -p $(dirname $code_out)
 
-  cmark --code-block-output $code_out ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
+  # for doc/ref/index-* link info
+  local debug_out=_tmp/doctools/$rel_path.json
+  mkdir -v -p $(dirname $code_out) $(dirname $debug_out)
+
+  # code block output for verifying 'tour' info
+  # TODO: 
+  # - JSON debug info for ref/index-*
+  #   - languages-chapter-links- is actually a code block
+  # - code blocks could be an array of JSON too?  That might make more sense
+
+  cmark \
+    --code-block-output $code_out \
+    --debug-output $debug_out \
+    ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
+
   log "$tmp_prefix -> (doctools/cmark) -> $out"
 }
 
@@ -370,8 +384,16 @@ cards-from-chapters() {
   ### Turn h3 topics into cards
 
   local py_out=$CODE_DIR/help_.py
-  _make-help cards-from-chapters $TEXT_DIR $py_out h3 \
+
+  mkdir -p _tmp/doctools
+  local debug_out=_tmp/doctools/chapter-links.json
+
+  _make-help cards-from-chapters $TEXT_DIR $py_out $debug_out h3 \
     $HTML_DIR/doc/ref/chap-*.html
+}
+
+ref-check() {
+  doctools/ref_check.py _tmp/doctools/doc/ref/*.json
 }
 
 tour() {

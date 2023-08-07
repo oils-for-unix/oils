@@ -87,7 +87,7 @@ _NOT_A_TOPIC = ['compatible', 'egrep']
 
 X_LEFT_SPAN = '<span style="color: darkred">'
 
-def HighlightLine(chapter, line):
+def IndexLineToHtml(chapter, line, debug_out):
   """Convert a line of text to HTML.
 
   Topics are highlighted and X made red.
@@ -118,7 +118,8 @@ def HighlightLine(chapter, line):
   # Highlight [Section] at the start of a line.
   m = SECTION_RE.match(line, pos)
   if m:
-    href = _StringToHref(m.group(1))
+    section_name = m.group(1)
+    href = _StringToHref(section_name)
 
     out.PrintUntil(m.start(1))
     out.Print('<a href="%s#%s" class="level2">' % (html_page, href))
@@ -126,6 +127,11 @@ def HighlightLine(chapter, line):
     out.Print('</a>')
 
     pos = m.end(0)  # ADVANCE
+  else:
+    section_name = None
+
+  line_info = {'section': section_name, 'topics': []}
+  debug_out.append(line_info)
 
   _WHITESPACE = re.compile(r'[ ]+')
   m = _WHITESPACE.match(line, pos)
@@ -148,6 +154,7 @@ def HighlightLine(chapter, line):
 
     # The linked topic
     topic = m.group(2)
+    line_info['topics'].append(topic)
 
     out.PrintUntil(m.start(2))
     out.Print('<a href="%s#%s">' % (html_page, topic))
@@ -307,8 +314,9 @@ def SplitIntoCards(heading_tags, contents):
 
 def HelpTopics(s):
   """
-  Given an HTML page like {osh,ysh}-help.html,
-  Yield groups (id, desc, block of text)
+  Given an HTML page like index-{osh,ysh}.html,
+
+  Yield groups (section_id, section_name, block of text)
   """
   tag_lexer = html.TagLexer(s)
 
@@ -355,7 +363,7 @@ def HelpTopics(s):
     pos = end_pos
 
 
-class Node(object):
+class DocNode(object):
   """To visualize doc structure."""
 
   def __init__(self, name):
@@ -363,10 +371,41 @@ class Node(object):
     self.children = []
 
 
-def PrintTree(node, indent=0):
-  print('%s%s' % (indent * '  ', node.name))
+def PrintTree(node, f, indent=0):
+  print('%s%s' % (indent * '  ', node.name), file=f)
   for ch in node.children:
-    PrintTree(ch, indent+1)
+    PrintTree(ch, f, indent+1)
+
+
+def PrintJsonTree(node, f, indent=0):
+  # TODO: machine format
+  # Or make this pickle?
+
+  print('%s%s' % (indent * '  ', node.name), file=f)
+  for ch in node.children:
+    PrintJsonTree(ch, f, indent+1)
+
+
+def CardsFromIndex(sh, out_prefix):
+  sections = []
+  for section_id, section_name, text in HelpTopics(sys.stdin.read()):
+    if 0:
+      log('section_id = %r', section_id)
+      log('section_name = %r', section_name)
+      log('')
+      #log('text = %r', text[:20])
+
+    topic = '%s-%s' % (sh, section_id)  # e.g. ysh-overview
+
+    path = os.path.join(out_prefix, topic)
+    with open(path, 'w') as f:
+      f.write('%s %s %s\n\n' % (ansi.REVERSE, section_name, ansi.RESET))
+      f.write(text)
+      f.write('\n')  # extra
+    log('  Wrote %s', path)
+    sections.append(section_id)
+
+  log('  (doctools/make_help) -> %d sections -> %s', len(sections), out_prefix)
 
 
 def CardsFromChapters(out_dir, tag_level, pages):
@@ -375,7 +414,7 @@ def CardsFromChapters(out_dir, tag_level, pages):
   # - turn this into a dict with sections
   topics = []
 
-  root_node = Node('/')
+  root_node = DocNode('/')
   cur_h2_node = None
 
   seen = set()
@@ -384,7 +423,7 @@ def CardsFromChapters(out_dir, tag_level, pages):
       contents = f.read()
 
     page_name = os.path.basename(page_path)
-    page_node = Node(page_name)
+    page_node = DocNode(page_name)
 
     cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
@@ -402,11 +441,11 @@ def CardsFromChapters(out_dir, tag_level, pages):
         a_str = ''
 
       if tag == 'h2':
-        h2 = Node('%s %s' % (heading, a_str))
+        h2 = DocNode('%s %s' % (heading, a_str))
         page_node.children.append(h2)
         cur_h2_node = h2
       elif tag == 'h3':
-        h3 = Node('%s %s' % (heading, a_str))
+        h3 = DocNode('%s %s' % (heading, a_str))
         cur_h2_node.children.append(h3)
 
       if tag != tag_level:
@@ -438,10 +477,7 @@ def CardsFromChapters(out_dir, tag_level, pages):
   log('%d pages -> (doctools/make_help) -> %d <h3> cards from %d <h2> sections to %s',
       len(pages), len(topics), num_sections, out_dir)
 
-  if 0:
-    PrintTree(root_node)
-
-  return topics
+  return topics, root_node
 
 
 def main(argv):
@@ -451,35 +487,24 @@ def main(argv):
     sh = argv[2]  # osh or ysh
     out_prefix = argv[3]
 
-    f = sys.stdout
-    groups = []
-    for group_id, group_desc, text in HelpTopics(sys.stdin.read()):
-      #log('group_id = %r', group_id)
-      #log('group_desc = %r', group_desc)
-      #log('text = %r', text)
-
-      topic = '%s-%s' % (sh, group_id)  # e.g. ysh-overview
-
-      path = os.path.join(out_prefix, topic)
-      with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
-        f.write(text)
-        f.write('\n')  # extra
-      log('  Wrote %s', path)
-      groups.append(group_id)
-
-    log('  (doctools/make_help) -> %d groups', len(groups))
+    CardsFromIndex(sh, out_prefix)
 
   elif action == 'cards-from-chapters':
 
     out_dir = argv[2]
     py_out = argv[3]
-    tag_level = argv[4]  # h4 or h3
-    pages = argv[5:]
+    debug_out = argv[4]
+    tag_level = argv[5]  # h4 or h3
+    pages = argv[6:]
 
-    topics = CardsFromChapters(out_dir, tag_level, pages)
+    topics, debug_info = CardsFromChapters(out_dir, tag_level, pages)
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topics))
+
+    with open(debug_out, 'w') as f:
+      #PrintTree(debug_info, f)
+      PrintJsonTree(debug_info, f)
+
 
     # Process pages first, so you can parse 
     # <h4 class="discouarged oil-language osh-only bash ksh posix"></h4>
