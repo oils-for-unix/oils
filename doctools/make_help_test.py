@@ -25,7 +25,7 @@ class MakeHelpTest(unittest.TestCase):
 
     line = '  [Overview] hello   there   X not-impl'
 
-    print(make_help.HighlightLine('osh', line))
+    print(make_help.IndexLineToHtml('osh', line, []))
 
   def testSplitIntoCards(self):
     contents = """

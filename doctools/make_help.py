@@ -487,6 +487,8 @@ def main(argv):
     sh = argv[2]  # osh or ysh
     out_prefix = argv[3]
 
+    # Read HTML from stdin
+    # TODO: could pass a list of files to speed it up
     CardsFromIndex(sh, out_prefix)
 
   elif action == 'cards-from-chapters':
@@ -505,42 +507,16 @@ def main(argv):
       #PrintTree(debug_info, f)
       PrintJsonTree(debug_info, f)
 
-
-    # Process pages first, so you can parse 
-    # <h4 class="discouarged oil-language osh-only bash ksh posix"></h4>
+  elif action == 'ref-check':
+    # TODO: check all docs
     #
-    # And then the cards can be highlighted?  Or at least have the markup to be
-    # able to do so.
+    # 1. Render() on index-*, which can have debug output for the
+    #    language-chapter-links-*
     #
-    # help index intro
-    # help -color=0 index intro  # no color
+    # 2. CardsFromChapters() on chap-*, which gives you debug_Info above
     #
-    # Highlight tags with two different colors
-    # help -tag=oil-language -tag bash index intro  # no color
-
-    # Make text for the app bundle.  HTML is made by build/doc.sh
-
-    # names are <h4 id="if" keywords="elif fi">...</h2>
-
-    # NOTE: This has to go through MARKDOWN to parse:
-    # `code` and indented
-
-    # TODO:
-    # - read help.md
-    # - split <h4></h4>
-    #   - how?  From beginning of <h4> until next <h> tag?
-    # - assign it an ID for TOPIC_LOOKUP
-    #   - either the prettified name, or or an explicit id=""
-    #   - like doctools/cmark.py
-    # - then parse the HTML
-    #   - turn <code></code> into INVERTED
-    #   - turn <a> into UNDERLINE
-    #     - and then add at the bottom
-    #   - process
-    #     - $quick-ref:for
-    #     - $cross-ref:bash
-
-    # then output TOPIC_LOOKUP
+    # 3. Ref Check
+    pass
 
   else:
     raise RuntimeError('Invalid action %r' % action)
