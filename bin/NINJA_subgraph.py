@@ -59,7 +59,7 @@ def NinjaGraph(ru):
 
           '//frontend/arg_types',
           '//frontend/consts',
-          '//frontend/help_meta',
+          #'//frontend/help_meta',
           '//frontend/id_kind.asdl',
           '//frontend/option.asdl',
           '//frontend/signal',

@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-make_help_test.py: Tests for make_help.py
+help_gen_test.py: Tests for help_gen.py
 """
 from __future__ import print_function
 
@@ -8,7 +8,7 @@ import os
 import unittest
 from cStringIO import StringIO
 
-import make_help  # module under test
+from doctools import help_gen  # module under test
 
 
 class MakeHelpTest(unittest.TestCase):
@@ -25,7 +25,7 @@ class MakeHelpTest(unittest.TestCase):
 
     line = '  [Overview] hello   there   X not-impl'
 
-    print(make_help.IndexLineToHtml('osh', line, []))
+    print(help_gen.IndexLineToHtml('osh', line, []))
 
   def testSplitIntoCards(self):
     contents = """
@@ -45,7 +45,7 @@ oil literals
 
 %(a b)
 """
-    cards = make_help.SplitIntoCards(['h2', 'h3', 'h4'], contents)
+    cards = help_gen.SplitIntoCards(['h2', 'h3', 'h4'], contents)
     print(list(cards))
 
 

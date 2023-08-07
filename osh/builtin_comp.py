@@ -35,7 +35,7 @@ HELP_TOPICS = []  # type: List[str]
 
 if mylib.PYTHON:
     try:
-        from _devbuild.gen import help_meta
+        from _devbuild.gen import help_meta  # type: ignore
         HELP_TOPICS = help_meta.TopicMetadata()
     except ImportError:
         # This happens in the 'minimal' dev build
