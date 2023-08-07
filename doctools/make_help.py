@@ -371,21 +371,6 @@ class DocNode(object):
     self.children = []
 
 
-def PrintTree(node, f, indent=0):
-  print('%s%s' % (indent * '  ', node.name), file=f)
-  for ch in node.children:
-    PrintTree(ch, f, indent+1)
-
-
-def PrintJsonTree(node, f, indent=0):
-  # TODO: machine format
-  # Or make this pickle?
-
-  print('%s%s' % (indent * '  ', node.name), file=f)
-  for ch in node.children:
-    PrintJsonTree(ch, f, indent+1)
-
-
 def CardsFromIndex(sh, out_prefix):
   sections = []
   for section_id, section_name, text in HelpTopics(sys.stdin.read()):
@@ -495,28 +480,54 @@ def main(argv):
 
     out_dir = argv[2]
     py_out = argv[3]
-    debug_out = argv[4]
-    tag_level = argv[5]  # h4 or h3
-    pages = argv[6:]
+    tag_level = argv[4]  # h4 or h3
+    pages = argv[5:]
 
     topics, debug_info = CardsFromChapters(out_dir, tag_level, pages)
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topics))
 
-    with open(debug_out, 'w') as f:
-      #PrintTree(debug_info, f)
-      PrintJsonTree(debug_info, f)
-
   elif action == 'ref-check':
+    from doctools import cmark
+    from doctools import oil_doc
+    from doctools import ref_check
+
+    chapters = []
+    index_debug_info = []
+
+    for path in argv[2:]:
+      filename = os.path.basename(path)
+
+      if filename.endswith('.md'):
+        assert filename.startswith('index-'), path
+
+        # First convert to HTML
+        with open(path) as in_file:
+          html = cmark.md2html(in_file.read())
+
+        # Now highlight code, which # which gives debug output for the
+        # language-chapter-links-*
+        html = oil_doc.HighlightCode(html, None,
+                                     debug_out=index_debug_info)
+
+      elif filename.endswith('.html'):
+        assert filename.startswith('chap-'), path
+
+        # . CardsFromChapters() on chap-*, which gives you debug_Info above
+        chapters.append(path)
+
+      else:
+        raise RuntimeError('Expected index-* or chap-*, got %r' % filename)
+
+    out_dir = '_tmp/doctools'  # UNUSED
+    topics, chap_tree = CardsFromChapters(out_dir, 'h3', chapters)
+    #print(topics)
+
+    ref_check.Check(index_debug_info, chap_tree)
+
+
     # TODO: check all docs
-    #
-    # 1. Render() on index-*, which can have debug output for the
-    #    language-chapter-links-*
-    #
-    # 2. CardsFromChapters() on chap-*, which gives you debug_Info above
-    #
     # 3. Ref Check
-    pass
 
   else:
     raise RuntimeError('Invalid action %r' % action)

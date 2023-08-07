@@ -7,16 +7,21 @@ from __future__ import print_function
 import json
 import sys
 
-def main(argv):
-  for path in argv[1:]:
-    print(path)
-    with open(path) as f:
-      d = json.load(f)
-      print(d)
+
+def PrintTree(node, f, indent=0):
+  """
+  Print DocNode tree in make_help.py
+  """
+  print('%s%s' % (indent * '  ', node.name), file=f)
+  for ch in node.children:
+    PrintTree(ch, f, indent+1)
 
 
-if __name__ == '__main__':
-  main(sys.argv)
+def Check(index_debug_info, chap_tree):
 
+  from pprint import pprint
+  pprint(index_debug_info)
+
+  PrintTree(chap_tree, sys.stdout)
 
 # vim: sw=2
