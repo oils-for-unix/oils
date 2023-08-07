@@ -18,7 +18,7 @@ This is a quick reference, not the official spec.
 
 ## J8 Strings
 
-### json-escape \n   
+<h3 id="json-escape">json-escape \n</h3>
 
 ### surrogate-pair
 
@@ -27,7 +27,7 @@ Inherited from JSON
 See [Surrogate Pair Blog
 Post](https://www.oilshell.org/blog/2023/06/surrogate-pair.html).
 
-### j8-escape \yff   
+<h3 id="j8-escape">j8-escape \yff</h3>
 
 ### j-prefix j""
 

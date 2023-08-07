@@ -366,8 +366,9 @@ def HelpTopics(s):
 class DocNode(object):
   """To visualize doc structure."""
 
-  def __init__(self, name):
+  def __init__(self, name, attrs=None):
     self.name = name
+    self.attrs = attrs  # for h2 and h3 links
     self.children = []
 
 
@@ -418,19 +419,12 @@ def CardsFromChapters(out_dir, tag_level, pages):
 
       topic_id = id_value if id_value else heading.replace(' ', '-')
 
-      # Debug Tree
-      if attrs:
-        a_str = ', '.join('%s=%s' % pair for pair in attrs)
-        a_str = '(%s)' % a_str
-      else:
-        a_str = ''
-
       if tag == 'h2':
-        h2 = DocNode('%s %s' % (heading, a_str))
+        h2 = DocNode(heading, attrs=attrs)
         page_node.children.append(h2)
         cur_h2_node = h2
       elif tag == 'h3':
-        h3 = DocNode('%s %s' % (heading, a_str))
+        h3 = DocNode(heading, attrs=attrs)
         cur_h2_node.children.append(h3)
 
       if tag != tag_level:
