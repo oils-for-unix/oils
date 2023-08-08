@@ -123,7 +123,7 @@ def MakeLexer(rules):
 
 
 LEXER = [
-  # TODO: instead of nongreedy matches, the loop can just fo .find('-->') and
+  # TODO: instead of nongreedy matches, the loop can just do .find('-->') and
   # .find('?>')
 
   # Actually non-greedy matches are regular and can be matched in linear time

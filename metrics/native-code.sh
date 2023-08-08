@@ -30,7 +30,7 @@ print-symbols() {
   echo
 
   # Top symbols
-  # fastlex_MatchToken is 21.2 KiB.  That doesn't seem to large compared ot
+  # fastlex_MatchToken is 21.2 KiB.  That doesn't seem to large compared to
   # the 14K line output?
   bloaty -d symbols $obj
   echo
@@ -95,7 +95,7 @@ collect-and-report() {
 
   symbols $opt > $base_dir/symbols.tsv
 
-  # Really 'transation units', but bloaty gives it that name.
+  # Really 'translation units', but bloaty gives it that name.
   compileunits $dbg > $base_dir/compileunits.tsv
 
   head $base_dir/symbols.tsv $base_dir/compileunits.tsv

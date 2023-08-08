@@ -39,7 +39,7 @@ audit() {
 
   echo
   echo --
-  # Search for special complation var usage
+  # Search for special completion var usage
   grep -E --color 'COMP_[A-Z]+' $file
 
   echo

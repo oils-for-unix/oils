@@ -826,7 +826,7 @@ class MutableOpts(object):
         # type: (List[str]) -> None
         """For 'shopt -p'."""
 
-        # Respect option gropus.
+        # Respect option groups.
         opt_nums = []  # type: List[int]
         for opt_name in opt_names:
             opt_group = consts.OptionGroupNum(opt_name)

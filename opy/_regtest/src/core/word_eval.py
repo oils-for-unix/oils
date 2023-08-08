@@ -769,7 +769,7 @@ class _WordEvaluator(object):
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
       return runtime.StrArray(strs)
 
-    # If RHS doens't look like a=( ... ), then it must be a string.
+    # If RHS doesn't look like a=( ... ), then it must be a string.
     return self.EvalWordToString(word)
 
   def _EvalWordFrame(self, frame, argv):

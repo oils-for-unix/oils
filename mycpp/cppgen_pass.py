@@ -1493,7 +1493,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if self.current_method_name in ('__init__', 'Reset'):
                 # Collect statements that look like self.foo = 1
                 # Only do this in __init__ so that a derived class mutating a field
-                # from the base calss doesn't cause duplicate C++ fields.  (C++
+                # from the base class doesn't cause duplicate C++ fields.  (C++
                 # allows two fields of the same name!)
                 #
                 # HACK for WordParser: also include Reset().  We could change them

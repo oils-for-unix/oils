@@ -761,7 +761,7 @@ class OilPrinter(object):
         #print(left_spid, rparen_spid, dsemi_spid)
 
         self.cursor.PrintUntil(left_spid)
-        # Hm maybe keep | because it's semi-deprecated?  You acn use
+        # Hm maybe keep | because it's semi-deprecated?  You can use
         # reload|force-reload {
         # }
         # e/reload|force-reload/ {
@@ -1063,7 +1063,7 @@ class OilPrinter(object):
         self.cursor.PrintUntil(spid + 1)
 
       elif op_id == Id.VSub_Bang:  # $!
-        self.f.write('$BgPid')  # Job most recently placed in backgroudn
+        self.f.write('$BgPid')  # Job most recently placed in background
         self.cursor.SkipUntil(spid + 1)
 
       elif op_id == Id.VSub_At:  # $@

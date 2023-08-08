@@ -926,7 +926,7 @@ class VirtualMachine(object):
         #    We should do something smarter.
 
         # This check is broken!
-        # next() and send()  that is a native python function.  We dO NOt need
+        # next() and send()  that is a native python function.  We DO NOT need
         # to wrap it.
 
         do_wrap = False
