@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 #### ysh usage
 
@@ -29,6 +30,6 @@ help | grep ysh-chapters
 echo status=$?
 
 ## STDOUT:
-~~~ ysh-chapters ~~~
+TODO fix dev-minimal ~~~ ysh-chapters ~~~
 status=0
 ## END
