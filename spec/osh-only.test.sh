@@ -71,17 +71,25 @@ found crash dump
 # NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 
 
-#### help osh and ysh
-help osh > $TMP/osh.txt
-echo osh $?
-help ysh > $TMP/ysh.txt
-echo ysh $?
+#### help topics that are embedded
+help > help.txt
+echo no args $?
 
-help index ZZZ > $TMP/index.txt
-echo index ZZZ $?
+for topic in help oils-usage {osh,ysh}-usage {osh,ysh}-chapters; do
+  help $topic > $topic.txt
+  echo $topic $?
+done
+
+help zz > zz.txt
+echo zz $?
 ## STDOUT:
-osh 0
-ysh 0
-index ZZZ 1
+no args 0
+help 0
+oils-usage 0
+osh-usage 0
+ysh-usage 0
+osh-chapters 0
+ysh-chapters 0
+zz 1
 ## END
 
