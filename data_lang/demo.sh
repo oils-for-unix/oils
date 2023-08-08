@@ -141,7 +141,7 @@ test-errors() {
   grep z "$byte_then_char" || true
   grep z "$char_then_byte" || true
 
-  # python doens't print it smehow?
+  # python doesn't print it somehow?
   banner 'python'
   # BUG: Python prints terminal sequences
   #python "$BOLD" || true

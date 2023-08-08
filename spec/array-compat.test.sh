@@ -156,7 +156,7 @@ status=1
 ## N-I mksh STDOUT:
 ## END
 
-#### value.BashArray internal represention - Assoc (ordering is a problem)
+#### value.BashArray internal representation - Assoc (ordering is a problem)
 
 case $SH in mksh) exit ;; esac
 

@@ -600,7 +600,7 @@ class WordParser(WordEmitter):
 
     def _ReadSingleQuoted(self, left_token, lex_mode):
         # type: (Token, lex_mode_t) -> SingleQuoted
-        """Interal method to read a word_part."""
+        """Internal method to read a word_part."""
         tokens = []  # type: List[Token]
         # In command mode, we never disallow backslashes like '\'
         self.ReadSingleQuoted(lex_mode, left_token, tokens, False)

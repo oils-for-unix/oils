@@ -511,7 +511,7 @@ class OHeap {
 
     // NOTE: This should be a Cell because we want to freeze it!
 
-    // This sould be a pointer to a slab.  TODO: So we need a function to
+    // This should be a pointer to a slab.  TODO: So we need a function to
     // allocate a slab with 3 fields?  code, globals, defaults are essential.
     // THen it could be small.
     //

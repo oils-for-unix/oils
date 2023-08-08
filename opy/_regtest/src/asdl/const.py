@@ -20,7 +20,7 @@ DEFAULT_INT_WIDTH = 3  # 24 bits
 # extension on demand.  (24 bits to 32 or 64).  As far as I can tell, sign
 # extension requires a branch, at least in portable C (on the sign bit).
 #
-# Thes second option is semantically cleaner.  But it needlessly
+# The second option is semantically cleaner.  But it needlessly
 # inflates the size of both the source code and the data.  Instead of having a
 # single "inline" integer, we would need a reference to another value.
 #
