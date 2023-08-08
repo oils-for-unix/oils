@@ -511,7 +511,7 @@ class CommandParser(object):
         ls
         >out.txt
 
-        >out.txt FOO=bar   # this touches the file, and hten
+        >out.txt FOO=bar   # this touches the file
 
     Or any sequence:
         ls foo bar
