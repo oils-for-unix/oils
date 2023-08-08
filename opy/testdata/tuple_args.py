@@ -2,7 +2,7 @@
 from __future__ import print_function
 """
 tuple_args.py: Testing out this little-known feature of Python, which compiler2
-suppports.
+supports.
 """
 
 # Python 3 no longer supports this!

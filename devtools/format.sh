@@ -9,7 +9,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 . build/dev-shell.sh  # python3 in $PATH
 
-# Hack to prevent interference.  TODO: Make a seperate wedge for yapf.
+# Hack to prevent interference.  TODO: Make a separate wedge for yapf.
 unset PYTHONPATH
 
 . build/common.sh  # $CLANG_DIR

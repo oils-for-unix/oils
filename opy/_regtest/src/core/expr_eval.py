@@ -45,7 +45,7 @@ def _StringToInteger(s, word=None):
 
   0xAB -- hex constant
   010 -- octable constant
-  64#z -- arbitary base constant
+  64#z -- arbitrary base constant
   bare word: variable
   quoted word: string
 
@@ -544,7 +544,7 @@ class BoolEvaluator(_ExprEvaluator):
       op_id = node.op_id
 
       s1 = self._EvalCompoundWord(node.left)
-      # Whehter to glob escape
+      # Whether to glob escape
       do_fnmatch = op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
                              Id.BoolBinary_GlobNEqual)
       s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch)

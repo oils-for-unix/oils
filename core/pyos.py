@@ -46,7 +46,7 @@ def WaitPid(waitpid_options):
         # - The arg -1 makes it like wait(), which waits for any process.
         # - WUNTRACED is necessary to get stopped jobs.  What about WCONTINUED?
         # - We don't retry on EINTR, because the 'wait' builtin should be
-        #   interruptable.
+        #   interruptible.
         # - waitpid_options can be WNOHANG
         pid, status = posix.waitpid(-1, WUNTRACED | waitpid_options)
     except OSError as e:
@@ -113,7 +113,7 @@ def ReadLine():
     # type: () -> str
     """Read a line from stdin.
 
-    This is a SLOW PYTHON implementation taht calls read(0, 1) too many times.  I
+    This is a SLOW PYTHON implementation that calls read(0, 1) too many times.  I
     tried to write libc.stdin_readline() which uses the getline() function, but
     somehow that makes spec/oil-builtins.test.sh fail.  We use Python's
     f.readline() in frontend/reader.py FileLineReader with f == stdin.
@@ -362,8 +362,8 @@ class SignalSafe(object):
         # `self.pending_signals`. In the worst case the signal handler might write to
         # `new_queue` and the corresponding trap handler won't get executed
         # until the main loop calls this function again.
-        # NOTE: It's important to distinguish between signal-saftey an
-        # thread-saftey here. Signals run in the same process context as the main
+        # NOTE: It's important to distinguish between signal-safety an
+        # thread-safety here. Signals run in the same process context as the main
         # loop, while concurrent threads do not and would have to worry about
         # cache-coherence and instruction reordering.
         new_queue = []  #  type: List[int]

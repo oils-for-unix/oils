@@ -96,7 +96,7 @@ install-ubuntu-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
   # python2-dev is no longer available on Debian 12
-  # python-dev als seems gone
+  # python-dev also seems gone
   #
   # g++: essential
   # libreadline-dev: needed for the build/prepare.sh Python build.
@@ -424,7 +424,7 @@ container-wedges() {
   # For soil-benchmarks/ images
   deps/wedge.sh build deps/source.medo/R-libs/
 
-  # Not sure if we need thsi
+  # Not sure if we need this
   #deps/wedge.sh build deps/source.medo/python3/
 }
 

@@ -9,7 +9,7 @@ b = 1
 
 while 1:  # Slightly easier to compile than 'while True:'
 
-  # Artifical change to test 'continue'
+  # Artificial change to test 'continue'
   if i == 0:
     i = i + 1
     continue

@@ -99,7 +99,7 @@ TEST string_collection_test() {
 
   // NOTE(Jesse): Technically UB.  If the collector hits between when the roots
   // go out of scope in the above block we'll get a UAF here.  ASAN should
-  // detect this but we currently have no way of programatically verifying that
+  // detect this but we currently have no way of programmatically verifying that
   // ASAN detects bugs.  AFAIK asan is not 100% reliable, so maybe that's a
   // path fraught with peril anyhow.
   //

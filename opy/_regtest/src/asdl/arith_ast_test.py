@@ -14,7 +14,7 @@ from asdl import encode
 
 from asdl import arith_ast  # module under test
 
-# Sanity check.  Doesn't pass because this unit test exposes implementatio
+# Sanity check.  Doesn't pass because this unit test exposes implementation
 # details, like the concrete classes.
 #from _tmp import arith_ast_asdl as arith_ast
 

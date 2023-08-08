@@ -31,6 +31,21 @@ if TYPE_CHECKING:
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
 
+HELP_TOPICS = []  # type: List[str]
+
+from mycpp import mylib
+if mylib.PYTHON:
+    # - Catch ImportError because we don't want libcmark.so dependency for
+    #   build/py.sh minimal
+    # - For now, ignore a type error in minimal build.
+    # - TODO: Rewrite help builtin and remove dep on CommonMark
+    try:
+        from _devbuild.gen import help_  # type: ignore
+        HELP_TOPICS = help_.TOPICS
+    except ImportError:
+        pass
+
+
 class _FixedWordsAction(completion.CompletionAction):
     def __init__(self, d):
         # type: (List[str]) -> None

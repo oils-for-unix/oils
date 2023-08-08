@@ -5,7 +5,7 @@
 # Usage:
 #   benchmarks/report.R OUT_DIR [TIMES_CSV...]
 
-# Supress warnings about functions masked from 'package:stats' and 'package:base'
+# Suppress warnings about functions masked from 'package:stats' and 'package:base'
 #   filter, lag
 #   intersect, setdiff, setequal, union
 library(dplyr, warn.conflicts = FALSE)
@@ -1199,7 +1199,7 @@ Percent = function(n, total) {
 }
 
 PrettyPrintLong = function(d) {
-  tr = t(d)  # tranpose
+  tr = t(d)  # transpose
 
   row_names = rownames(tr)
 

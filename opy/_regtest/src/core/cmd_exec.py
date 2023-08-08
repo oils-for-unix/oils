@@ -65,7 +65,7 @@ e_die = util.e_die
 
 
 class _ControlFlow(RuntimeError):
-  """Internal execption for control flow.
+  """Internal exception for control flow.
 
   break and continue are caught by loops, return is caught by functions.
   """
@@ -468,7 +468,7 @@ class Executor(object):
         raise AssertionError('Unknown redirect op')
 
     elif n.tag == redir_e.HereDoc:
-      # TODO: decay shoudl be controlled by an option
+      # TODO: decay should be controlled by an option
       val = self.word_ev.EvalWordToString(n.body, decay=True)
       if val.tag != value_e.Str:   # TODO: This error never fires
         util.warn("Here doc body should be a string, got %s", val)

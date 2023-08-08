@@ -121,7 +121,7 @@ class ArithTest(unittest.TestCase):
         #testEvalExpr(['2', '-', '5', '<', '-3-'], True)
         #testEvalExpr(['2', '-', '5', '<', '-2-'], False)
 
-        # Arithemetic compare
+        # Arithmetic compare
         testEvalExpr(['-3', '<', '-2'], True)
         # String compare
         #testEvalExpr(['-3', '<', '-2-'], False)

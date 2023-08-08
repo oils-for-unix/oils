@@ -19,7 +19,7 @@ assert-deps() {
 }
 
 test-ourselves() {
-  ### This shows an errror but doesn't exit 0
+  ### This shows an error but doesn't exit 0
   bin/osh --tool deps $0
   test $? -eq 0 || fail
 }

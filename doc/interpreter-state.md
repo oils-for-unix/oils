@@ -103,7 +103,7 @@ TODO
 later: Oil adds references to data structures on the heap, which may be recurisve.
 -->
 
-### Enviroment Variables Become Global Variables
+### Environment Variables Become Global Variables
 
 On initialization, environment variables like `PYTHONPATH=.` are copied into
 the shell's memory as global variables, with the `export` flag set.

@@ -1487,7 +1487,7 @@ def generateArgList(arglist):
             extra.extend(misc.flatten(elt))
             count = count + 1
         else:
-            raise ValueError, "unexpect argument type:", elt
+            raise ValueError, "unexpected argument type:", elt
     return args + extra, count
 
 def findOp(node):

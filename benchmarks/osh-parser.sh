@@ -427,7 +427,7 @@ EOF
   fi
 
   if test -f $in_dir/elapsed.csv; then
-    cmark <<< '#### Elasped Time (milliseconds)'
+    cmark <<< '#### Elapsed Time (milliseconds)'
     echo
     csv2html $in_dir/elapsed.csv
   fi

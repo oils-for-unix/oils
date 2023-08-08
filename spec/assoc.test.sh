@@ -8,7 +8,7 @@
 #
 # Associtative Arrays are COMPLETELY bash-specific.  mksh doesn't even come
 # close.  So I will probably not implement them, or implement something
-# slightly different, because the semantics are just wierd.
+# slightly different, because the semantics are just weird.
 
 # http://www.gnu.org/software/bash/manual/html_node/Arrays.html
 # TODO: Need a SETUP section.
@@ -459,7 +459,7 @@ echo ${a["k2"]}
 [k2]=-a-
 ## END
 
-#### declare -A A=() alowed
+#### declare -A A=() allowed
 set -o nounset
 shopt -s strict_arith || true
 

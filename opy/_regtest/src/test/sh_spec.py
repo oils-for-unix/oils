@@ -512,7 +512,7 @@ def RunCases(cases, case_predicate, shells, env, out):
       result_row.append(cell_result)
 
       if cell_result == Result.FAIL:
-        # Special logic: don't count osh_ALT beacuse its failures will be
+        # Special logic: don't count osh_ALT because its failures will be
         # counted in the delta.
         if sh_label != 'osh_ALT':
           stats['num_failed'] += 1

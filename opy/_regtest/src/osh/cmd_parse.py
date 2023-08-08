@@ -474,7 +474,7 @@ class CommandParser(object):
 
     assign_kw      : Declare | Export | Local | Readonly
 
-    # Without any words it is parsed as a command, not an assigment
+    # Without any words it is parsed as a command, not an assignment
     assign_listing : assign_kw
 
     # Now we have something to do (might be changing assignment flags too)
@@ -1097,7 +1097,7 @@ class CommandParser(object):
       return None
     self._Next()  # skip function name
 
-    # Must be true beacuse of lookahead
+    # Must be true because of lookahead
     if not self._Peek(): return None
     assert self.c_id == Id.Op_LParen, self.cur_word
 
@@ -1310,7 +1310,7 @@ class CommandParser(object):
       child = self.ParseCommand()
       if not child:
         self.AddErrorContext('Error parsing command after pipe')
-        # TODO: Return partial pipeline here?  All signatures shouldbe (ok,
+        # TODO: Return partial pipeline here?  All signatures should (ok,
         # node).  Only the completion uses the node when ok is False.
         return None
       children.append(child)

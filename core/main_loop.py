@@ -297,7 +297,7 @@ def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, waiter, errfmt):
 
         # TODO: Replace this with a shell hook?  with 'trap', or it could be just
         # like command_not_found.  The hook can be 'echo $?' or something more
-        # complicated, i.e. with timetamps.
+        # complicated, i.e. with timestamps.
         if flag.print_status:
             print('STATUS\t%r' % status)
 
@@ -311,7 +311,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
     Returns:
       int status, e.g. 2 on parse error
 
-    Can this be combined with interative loop?  Differences:
+    Can this be combined with interactive loop?  Differences:
 
     - Handling of parse errors.
     - Have to detect here docs at the end?

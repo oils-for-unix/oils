@@ -1,4 +1,4 @@
-# TODO-depreate: Code we want to get rid of!
+# TODO-deprecate: Code we want to get rid of!
 
 
 #### oil:upgrade as alias for ysh:upgrade

@@ -338,7 +338,7 @@ def LooksLikeArithVar(UP_w):
 
     NOTE: This can't be combined with DetectShAssignment because VarLike and
     ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
-    confused between array assigments foo=(1 2) and function calls foo(1, 2).
+    confused between array assignments foo=(1 2) and function calls foo(1, 2).
     """
     if UP_w.tag() != word_e.Compound:
         return None

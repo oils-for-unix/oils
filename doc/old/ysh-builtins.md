@@ -6,7 +6,7 @@ default_highlighter: oil-sh
 Oil Builtins
 ============
 
-<!-- TODO: This doc could be an alternative categorization to the auto-genrated
+<!-- TODO: This doc could be an alternative categorization to the auto-generated
      builtin-index.md ? -->
 
 This is an **overview** of [shell builtins]($xref:shell-builtin) that are

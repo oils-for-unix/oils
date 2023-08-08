@@ -108,7 +108,7 @@ def _MakeWordFrames(part_vals):
   return frames
 
 
-# TODO: This could be _MakeWordFrames and then sep.join().  It's redunant.
+# TODO: This could be _MakeWordFrames and then sep.join().  It's redundant.
 def _DecayPartValuesToString(part_vals, join_char):
   # Decay ${a=x"$@"x} to string.
   out = []

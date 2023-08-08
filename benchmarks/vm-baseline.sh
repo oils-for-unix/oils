@@ -28,7 +28,7 @@ measure() {
   # TODO:
   # print-tasks should:
   # - use the whole shell path like _bin/osh
-  # - the host name shoudl be a column
+  # - the host name should be a column
   # - the join ID can be a file, and construct the task name from that
   # - Then maybe use tsv_columns_from_files.py like we do with cachegrind
 

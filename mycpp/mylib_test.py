@@ -43,7 +43,7 @@ class MylibTest(unittest.TestCase):
         self.assertEqual(2, u.Get(d))
         self.assertEqual(-1, u.Get('zzz'))
 
-        # Can't add it twice, caller is repsonsible for checking
+        # Can't add it twice, caller is responsible for checking
         try:
             u.Add(foo)
         except AssertionError:

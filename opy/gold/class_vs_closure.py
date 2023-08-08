@@ -13,7 +13,7 @@ Class is implemented with type(), and then the constructor creates a namespace
 with __dict__ and so forth.  Access through 'self'.  LOAD_FAST self, where self
 is a local variable.
 
-There was one language that made it explicit.  Skew lanaguage?
+There was one language that made it explicit.  Skew language?
 
 
 # {} is for static language of types/data.  : is for language of

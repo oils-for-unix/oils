@@ -124,7 +124,7 @@ def main(argv):
     # - Does it appear in the dictionary?  Problem: most computer terms
     # - Does it appear only once or twice in the whole corpus?
     # - Is the edit distance very close to a dictinoary word?
-    #   - e.g. subsitutions is a typo
+    #   - e.g. substitutions is a typo
 
   else:
     raise RuntimeError('Invalid action %r' % action)

@@ -558,7 +558,7 @@ class Stats(object):
     if cell_result == Result.TIMEOUT:
       c['num_timeout'] += 1
     elif cell_result == Result.FAIL:
-      # Special logic: don't count osh_ALT beacuse its failures will be
+      # Special logic: don't count osh_ALT because its failures will be
       # counted in the delta.
       if sh_label not in OTHER_OSH + OTHER_YSH:
         c['num_failed'] += 1

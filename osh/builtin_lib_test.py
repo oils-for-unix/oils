@@ -53,7 +53,7 @@ echo bye
 """)
 
         # Delete single history item.
-        # This functionlity is *silent*
+        # This functionality is *silent*
         # so call history again after
         # this to feed the test assertion
 
@@ -71,7 +71,7 @@ echo bye
 """)
 
         # Clear history
-        # This functionlity is *silent*
+        # This functionality is *silent*
         # so call history again after
         # this to feed the test assertion
 

@@ -82,7 +82,7 @@ _NOT_A_TOPIC = ['compatible', 'egrep']
 
 # BUGS:
 # - Continuation lines: hacked with ...
-# - Some X before puncutation aren't highlighted
+# - Some X before punctuation aren't highlighted
 
 X_LEFT_SPAN = '<span style="color: darkred">'
 

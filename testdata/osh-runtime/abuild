@@ -115,7 +115,7 @@ print_version() {
 	msg "$program $program_version"
 }
 
-# check if apkbuild is basicly sane
+# check if apkbuild is basically sane
 default_sanitycheck() {
 	local i= j= suggestion=
 	msg "Checking sanity of $APKBUILD..."
@@ -190,7 +190,7 @@ default_sanitycheck() {
 				|| die "${i##*/} is missing in checksums"
 
 			# verify that our source does not have git tag version
-			# name as tarball (typicallly github)
+			# name as tarball (typically github)
 			if is_remote "$i" && [ "${i#*::}" = "$i" ]; then
 				case ${i##*/} in
 				v$pkgver.tar.*|$pkgver.tar.*)

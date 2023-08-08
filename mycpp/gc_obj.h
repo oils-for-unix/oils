@@ -36,7 +36,7 @@ const unsigned kZeroMask = 0;  // for types with no pointers
 const int kMaxObjId = (1 << 30) - 1;  // 30 bit object ID
 const int kIsGlobal = kMaxObjId;      // for debugging, not strictly needed
 
-const int kUndefinedId = 0;  // Unitialized object ID
+const int kUndefinedId = 0;  // Uninitialized object ID
 
 // Every GC-managed object is preceded in memory by an ObjHeader.
 // TODO: ./configure could detect endian-ness, and reorder the fields in
@@ -48,7 +48,7 @@ struct ObjHeader {
   // Depending on heap_tag, up to 24 fields or 2**24 = 16 Mi pointers to scan
   unsigned u_mask_npointers : 24;
 #else
-  unsigned field_mask : 24;  // Cheney needs field_maks AND obj_len
+  unsigned field_mask : 24;  // Cheney needs field_mask AND obj_len
 #endif
 
 #if defined(MARK_SWEEP) || defined(BUMP_LEAK)
