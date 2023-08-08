@@ -18,7 +18,7 @@ TEST for_test_coverage() {
   Str* version = pyutil::GetVersion(loader);
   ASSERT(len(version) > 3);
 
-  pyutil::ShowAppVersion(loader);
+  pyutil::PrintVersionDetails(loader);
 
   PASS();
 }

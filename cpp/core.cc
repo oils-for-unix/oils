@@ -339,7 +339,8 @@ Str* GetVersion(_ResourceLoader* loader) {
 }
 
 void PrintVersionDetails(_ResourceLoader* loader) {
-  // No details yet in C++
+  // TODO: I would like the CPU, OS, compiler
+  // How do we get those?  Look at CPython
   ;
 }
 
