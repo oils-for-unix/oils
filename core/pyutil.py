@@ -192,10 +192,7 @@ def ShowAppVersion(loader):
     # We removed sys.executable from sysmodule.c.
     py_impl = 'CPython' if hasattr(sys, 'executable') else 'OVM'
 
-    version_str = GetVersion(loader)
-
     # Call it OSH because "Oil" is deprecated
-    print('OSH version %s' % version_str)
     print('Release Date: %s' % release_date)
     print('Arch: %s' % machine)
     print('OS: %s' % system)

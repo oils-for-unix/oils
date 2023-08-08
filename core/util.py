@@ -11,6 +11,7 @@ util.py - Common infrastructure.
 from __future__ import print_function
 
 from core import ansi
+from core import pyutil
 from mycpp import mylib
 
 from typing import TYPE_CHECKING
@@ -108,3 +109,10 @@ def PrintEmbeddedHelp(loader, topic_id, f):
     f.write(contents)
     f.write('\n')
     return True  # found
+
+
+def PrintVersionLine(loader, f):
+    # type: (pyutil._ResourceLoader, mylib.Writer) -> None
+    v = pyutil.GetVersion(loader)
+    f.write('Oils %s\t\thttps://www.oilshell.org/\n' % v)
+

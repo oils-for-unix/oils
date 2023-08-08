@@ -749,9 +749,7 @@ Examples:
 
     help               # this help
     help echo          # help on the 'echo' builtin
-
-    help osh-cmd-lang  # list sections in chapter
-    help ysh-cmd-lang  # ditto for ysh
+    help com-sub       # help on command sub $(date)
 
     help oils-usage    # identical to oils-for-unix --help
     help osh-usage     #              osh --help

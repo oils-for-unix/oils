@@ -235,7 +235,7 @@ Where $CHAPTER is one of:
     command-lang
     osh-assign
     word-lang
-    min-lang
+    mini-lang
     builtin-cmd
     option
     special-var

@@ -111,7 +111,10 @@ def AppBundleMain(argv):
 
         # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
         if first_arg in ('-h', '--help'):
-            assert util.PrintEmbeddedHelp(loader, 'oils-usage', mylib.Stdout())
+            f = mylib.Stdout()
+            util.PrintVersionLine(loader, f)
+            f.write('\n')
+            assert util.PrintEmbeddedHelp(loader, 'oils-usage', f)
             return 0
 
         if first_arg in ('-V', '--version'):
