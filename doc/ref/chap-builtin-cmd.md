@@ -743,38 +743,19 @@ Unimplemented.
 <!-- pre-formatted for help builtin -->
 
 ```
-The help builtin
-
 Usage: help TOPIC?
 
 Examples:
 
     help               # this help
-
-    help osh           # list chapters for osh
-    help ysh           #           ... and ysh
+    help echo          # help on the 'echo' builtin
 
     help osh-cmd-lang  # list sections in chapter
-    help ysh-cmd-lang  # ditto
+    help ysh-cmd-lang  # ditto for ysh
 
-    help osh-usage     # identical to osh --help
-    help ysh-usage     # ditto
-
-Help terminology:
-
-    Oils Reference: underlies 'help' builtin, and published as HTML
-    Chapter:        An HTML doc that's part of the reference
-                    May apply to OSH, YSH or both
-    Section:        <h2> in a chapter
-    Topic:          Text with globally unique name like 'doc-comment'
-                    <h3> in a chapter; may apply to OSH, YSH or both
-    Card:           Each topic is exported as a "card"
-                    Either as inline text, or a URL to rendered HTML
-                    There may also be a URL to bash docs
-
-All docs, including this reference:
-
-    https://www.oilshell.org/release/$VERSION/doc/
+    help oils-usage    # identical to oils-for-unix --help
+    help osh-usage     #              osh --help
+    help ysh-usage     #              ysh --help
 ```
 
 ### hash

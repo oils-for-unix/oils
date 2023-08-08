@@ -452,10 +452,6 @@ all-help() {
   # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
   cards-from-chapters
 
-  # Special cards
-  cp -v doc/ref/osh.txt $TEXT_DIR/osh
-  cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
-
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
     # compress it.

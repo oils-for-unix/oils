@@ -46,7 +46,8 @@ class BuiltinTest(unittest.TestCase):
         # generated?  Because I don't want to deal with a C toolchain for it.
 
         loader = pyutil.GetResourceLoader()
-        builtin_misc.Help([], TOPICS, loader)
+        errfmt = None
+        builtin_misc.Help(loader, TOPICS, errfmt)
 
 
 if __name__ == '__main__':

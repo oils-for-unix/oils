@@ -47,7 +47,21 @@ YSH.
 When you type `help` in OSH or YSH, the command shows some of this material,
 and prints hyperlinks to it.
 
-## Directory Structures
+### More About This Reference
+
+### Terminology
+
+- *Oils Reference* - underlies 'help' builtin, and published as HTML
+- *Chapter* - An HTML doc that's part of the reference
+  - May apply to OSH, YSH or both
+- *Section* - `<h2>` in a chapter
+- *Topic* - Text with globally unique name like 'doc-comment'
+  - `<h3>` in a chapter; may apply to OSH, YSH or both
+- *Card* - Each topic is exported as a "card"
+  - Either as inline text, or a URL to rendered HTML
+  - There may also be a URL to bash docs
+
+### Directory Structures
 
 How are the docs organized?  The source code is simply a tree of Markdown
 files:

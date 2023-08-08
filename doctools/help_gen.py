@@ -384,7 +384,7 @@ def CardsFromIndex(sh, out_prefix):
 
     path = os.path.join(out_prefix, topic)
     with open(path, 'w') as f:
-      f.write('(%s) %s\n\n' % (section_id, section_name))
+      f.write('%s\n\n' % section_name)  # section_id is printed dynamically
       f.write(text)
       #f.write('\n')  # extra
     log('  Wrote %s', path)
@@ -446,7 +446,6 @@ def CardsFromChapters(out_dir, tag_level, paths):
         # indices start with _
         path = os.path.join(out_dir, topic_id)
         with open(path, 'w') as f:
-          f.write('(%s)\n\n' % topic_id)
           f.write(text)
 
       # help builtin will show URL if there's a chapter name

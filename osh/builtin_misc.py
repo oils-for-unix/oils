@@ -14,8 +14,9 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (span_e, cmd_value, value, scope_e)
-from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.syntax_asdl import source, loc, loc_t
 from core import alloc
+from core import ansi
 from core import error
 from core.error import e_usage, e_die, e_die_status
 from core import pyos
@@ -56,7 +57,6 @@ _ = log
 class Times(vm._Builtin):
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         vm._Builtin.__init__(self)
 
     def Run(self, cmd_val):
@@ -821,21 +821,17 @@ class Help(vm._Builtin):
         self.loader = loader
         self.help_data = help_data
         self.errfmt = errfmt
+        self.version_str = pyutil.GetVersion(self.loader)
 
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
+    def _Header(self, topic_id):
+        # type: (str) -> None
+        print('%s %s %s' % (ansi.REVERSE, topic_id, ansi.RESET))
+        print('')
 
-        attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
-        #arg = arg_types.help(attrs.attrs)
-
-        topic_id, blame_loc = arg_r.Peek2()
-        if topic_id is None:
-            topic_id = 'help'
-        else:
-            arg_r.Next()
+    def _ShowTopic(self, topic_id, blame_loc):
+        # type: (str, loc_t) -> int
 
         prefix = 'https://www.oilshell.org/release'
-        version_str = pyutil.GetVersion(self.loader)
         if 0:
             prefix = 'file:///home/andy/git/oilshell/oil/_release'
             version_str = 'VERSION'
@@ -845,8 +841,11 @@ class Help(vm._Builtin):
         # If we have a chapter name, it's not embedded in the binary.  So just
         # print the URL.
         if chapter_name is not None and len(chapter_name):
-            print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix, version_str,
-                                                    chapter_name, topic_id))
+            self._Header(topic_id)
+            print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix,
+                                                         self.version_str,
+                                                         chapter_name,
+                                                         topic_id))
             return 0
 
         try:
@@ -867,9 +866,32 @@ class Help(vm._Builtin):
             self.errfmt.Print_('no help topics match %r' % topic_id, blame_loc)
             return 1
 
+        self._Header(topic_id)
         print(contents)
-
         return 0
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
+        #arg = arg_types.help(attrs.attrs)
+
+        topic_id, blame_loc = arg_r.Peek2()
+        if topic_id is None:
+            assert self._ShowTopic('help', blame_loc) == 0
+
+            # TODO: use self.lang
+            assert self._ShowTopic('osh-chapters', blame_loc) == 0
+
+            print('All docs: https://www.oilshell.org/release/%s/doc/' %
+                  self.version_str)
+            print('')
+
+            return 0
+        else:
+            arg_r.Next()
+
+        return self._ShowTopic(topic_id, blame_loc)
 
 
 class Cat(vm._Builtin):

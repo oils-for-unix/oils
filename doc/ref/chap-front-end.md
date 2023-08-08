@@ -214,3 +214,63 @@ Long pipelines and and-or chains:
      || error "oops"
      ;
 
+## Help Chapters
+
+<h3 id="osh-chapters" class="osh-topic" oils-embed="1">
+  osh-chapters
+</h3>
+
+<!-- shown at the bottom of 'help' -->
+
+```
+The reference is divided in to "chapters", each of which has its own table of
+contents.  Type:
+
+    help osh-$CHAPTER
+
+Where $CHAPTER is one of:
+
+    front-end
+    command-lang
+    osh-assign
+    word-lang
+    min-lang
+    builtin-cmd
+    option
+    special-var
+    plugin
+
+Example:
+
+    help osh-word-lang
+```
+
+
+<h3 id="ysh-chapters" class="ysh-topic" oils-embed="1">
+  ysh-chapters
+</h3>
+
+<!-- shown at the bottom of 'help' -->
+
+```
+The reference is divided in to "chapters", each of which has its own table of
+contents.  Type:
+
+    help ysh-$CHAPTER
+
+Where $CHAPTER is one of:
+
+    front-end
+    command-lang
+    expr-lang
+    word-lang
+    builtin-cmd
+    option
+    special-var
+    type-method
+    builtin-func
+
+Example:
+
+    help ysh-expr-lang
+```
