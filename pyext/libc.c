@@ -168,7 +168,7 @@ func_regex_parse(PyObject *self, PyObject *args) {
   }
   regex_t pat;
   // This is an extended regular expression rather than a basic one, i.e. we
-  // use 'a*' instaed of 'a\*'.
+  // use 'a*' instead of 'a\*'.
   int status = regcomp(&pat, pattern, REG_EXTENDED);
   if (status != 0) {
     char error_string[80];

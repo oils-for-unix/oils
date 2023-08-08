@@ -5,13 +5,13 @@
 
 #include "mycpp/runtime.h"
 
-// hacky foward decl
+// hacky forward decl
 namespace completion {
 class ReadlineCallback;
 Str* ExecuteReadlineCallback(ReadlineCallback*, Str*, int);
 }  // namespace completion
 
-// hacky foward decl
+// hacky forward decl
 namespace comp_ui {
 class _IDisplay;
 void ExecutePrintCandidates(_IDisplay*, Str*, List<Str*>*, int);

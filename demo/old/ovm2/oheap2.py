@@ -131,7 +131,7 @@ class Encoder(object):
     Write slabs as bytes, and then patch offsets in cells?
     Write all the cells
     Write the root object at the front of the file?  Or do it at the end?
-    OHeap writes it at the beginnig after
+    OHeap writes it at the beginning after
   """
 
   def __init__(self):

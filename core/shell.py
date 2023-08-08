@@ -885,7 +885,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         process.InitInteractiveShell()  # Set signal handlers
 
         # The interactive shell leads a process group which controls the terminal.
-        # It MUST give up the termianl afterward, otherwise we get SIGTTIN /
+        # It MUST give up the terminal afterward, otherwise we get SIGTTIN /
         # SIGTTOU bugs.
         with process.ctx_TerminalControl(job_control, errfmt):
 

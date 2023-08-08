@@ -175,7 +175,7 @@ op_chars() { argv "$@"; }
 complete -F complete_op_chars op_chars
 
 # Aha but this does the right thing!  I think OSH should do this all the time!
-# User-defined functions shouldn't be repsonsible for quoting.
+# User-defined functions shouldn't be responsible for quoting.
 op_chars_filenames() { argv "$@"; }
 complete -F complete_op_chars -o filenames op_chars_filenames
 

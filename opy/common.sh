@@ -31,7 +31,7 @@ opy_() {
 # NOTES:
 # - Exclude _devbuild/cpython-full, but include _devbuild/gen.
 # - must exclude opy/testdata/, because some of it can't be compiled
-# Has some similiarity to test/lint.sh, but not the same.
+# Has some similarity to test/lint.sh, but not the same.
 oil-python-sources() {
   local repo_root=$1
   local fmt=${2:-'%P\n'}

@@ -346,7 +346,7 @@ class ExprParser(object):
             # - Id.Unknown_Tok could say "This character is invalid"
 
             # ParseError has a "too much input" case but I haven't been able to
-            # tickle it.  Mabye it's because of the Eof tokens?
+            # tickle it.  Maybe it's because of the Eof tokens?
 
             p_die(
                 'Syntax error in expression (near %s)' % ui.PrettyId(e.tok.id),

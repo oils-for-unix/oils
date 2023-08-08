@@ -12,7 +12,7 @@ cat <<< $'one\ntwo\n'
 ## N-I dash status: 2
 
 #### Here redirect with explicit descriptor
-# A space betwen 0 and <<EOF causes it to pass '0' as an arg to cat.
+# A space between 0 and <<EOF causes it to pass '0' as an arg to cat.
 cat 0<<EOF
 one
 EOF

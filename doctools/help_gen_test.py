@@ -29,7 +29,7 @@ class MakeHelpTest(unittest.TestCase):
 
   def testSplitIntoCards(self):
     contents = """
-<h2>Oil Expression Langauge</h2>
+<h2>Oil Expression Language</h2>
 
 expr
 

@@ -21,7 +21,7 @@ Technically we don't even need alignment?  I guess the reason is to increase
 address space.  If 1, then we have 16MiB of code.  If 4, then we have 64 MiB.
 
 Everything is decoded on the fly, or is a char*, which I don't think has to be
-aligned (because the natural alignment woudl be 1 byte anyway.)
+aligned (because the natural alignment would be 1 byte anyway.)
 """
 from __future__ import print_function
 

@@ -308,7 +308,7 @@ class ArithEvaluator(object):
         0xAB -- hex constant
         042  -- octal constant
         42   -- decimal constant
-        64#z -- arbitary base constant
+        64#z -- arbitrary base constant
 
         bare word: variable
         quoted word: string (not done?)

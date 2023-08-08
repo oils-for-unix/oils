@@ -127,7 +127,7 @@ comment is OK
 
 
 # Notes:
-# - MakeParserForCommandSub() instantiates a new WordParser, so we can safetly
+# - MakeParserForCommandSub() instantiates a new WordParser, so we can safely
 # change state in the top-level one only
 # - BoolParser is called for [[ ]] and uses the same self.w_parser.  I think
 # that's OK?

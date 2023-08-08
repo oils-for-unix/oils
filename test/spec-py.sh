@@ -2,7 +2,7 @@
 #
 # Compare Python implementation with other shells.
 #
-# Contrast with test/spec-cpp.sh, which compares the Python adn C++ version.
+# Contrast with test/spec-cpp.sh, which compares the Python and C++ version.
 #
 # Usage:
 #   test/spec-py.sh <function name>
@@ -71,7 +71,7 @@ interactive-osh() {
   ### Run spec files tagged 'interactive' in soil/interactive, which uses a terminal
   # This repeats what 'compare-py' does.
 
-  # Doesn't seem to triggger "Stopped" bug, but it hangs in the CI unless serial
+  # Doesn't seem to trigger "Stopped" bug, but it hangs in the CI unless serial
 
   # pass '1' to make it serial.  default is N-1 CPUS in test/spec-common.sh
   local max_procs=${1:-1}

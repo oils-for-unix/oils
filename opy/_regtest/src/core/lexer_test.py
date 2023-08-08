@@ -38,7 +38,7 @@ class TokenTest(unittest.TestCase):
 
   def testLineId(self):
     # TODO: Test that the lexer gives line_ids when passed an arena.
-    # This might be more relevant if we start deallocating memroy.
+    # This might be more relevant if we start deallocating memory.
     pass
 
 

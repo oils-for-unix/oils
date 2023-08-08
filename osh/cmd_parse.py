@@ -847,7 +847,7 @@ class CommandParser(object):
         echo 3'
         MULTILINE
 
-        NOTE: dash handles aliases in a totally diferrent way.  It has a global
+        NOTE: dash handles aliases in a totally different way.  It has a global
         variable checkkwd in parser.c.  It assigns it all over the grammar, like
         this:
 
@@ -977,7 +977,7 @@ class CommandParser(object):
 
         assign_kw      : Declare | Export | Local | Readonly
 
-        # Without any words it is parsed as a command, not an assigment
+        # Without any words it is parsed as a command, not an assignment
         assign_listing : assign_kw
 
         # Now we have something to do (might be changing assignment flags too)
@@ -1706,7 +1706,7 @@ class CommandParser(object):
         I think we might need strict_brace so that foo{ is disallowed.  It has to
         be foo\{ or foo{a,b}.  Or just turn that on with parse_brace?  After you
         form ANY CompoundWord, make sure it's balanced for Lit_LBrace and
-        Lit_RBrace?  Maybe this is pre-parsing step in teh WordParser?
+        Lit_RBrace?  Maybe this is pre-parsing step in the WordParser?
         """
         if_node = command.If.CreateNull(alloc_lists=True)
         if_node.if_kw = if_kw
@@ -2196,7 +2196,7 @@ class CommandParser(object):
                          Id.KW_If, Id.KW_Case, Id.KW_Time):
             return self.ParseCompoundCommand()
 
-        # Sytnax error for '}' starting a line, which all shells disallow.
+        # Syntax error for '}' starting a line, which all shells disallow.
         if self.c_id == Id.Lit_RBrace:
             p_die('Unexpected right brace', loc.Word(self.cur_word))
 

@@ -108,7 +108,7 @@ HTML has two levels:
   - Although it should generate arbitrary `<div name="val">` instead.  This
     allow natural plugins.  You can write `<div>` in Markdown, but it's
     annoying to manually escape `<` to `&gt;`, e.g. in graphviz or TeX.
-  HTML is analgous to shell.  A web site is a directory tree of text files!
+  HTML is analogous to shell.  A web site is a directory tree of text files!
   - It's better than the Snip `-->` syntax, which didn't play well with syntax
     highlighting.
 - Composable grammars: Is this the basis for Pulp?

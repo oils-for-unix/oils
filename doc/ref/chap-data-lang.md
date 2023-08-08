@@ -53,7 +53,7 @@ optional J prefix.
 
 ## TSV8
 
-These are the J8 Primtives (Bool, Int, Float, Str), separated by tabs.
+These are the J8 Primitives (Bool, Int, Float, Str), separated by tabs.
 
 
 ### column-attrs   

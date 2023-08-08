@@ -101,7 +101,7 @@ class EvalHay(vm._Callable):
 
         return self.hay_state.Result()
 
-        # Note: we should discourage the unvalidated top namesapce for files?  It
+        # Note: we should discourage the unvalidated top namespace for files?  It
         # needs more validation.
 
     def Call(self, pos_args, named_args):

@@ -141,7 +141,7 @@ def _InitGlobals():
     symbol.factor,
     ])
 
-  # Do this first beause NT_OFFSET (non-terminal offset) conflicts with
+  # Do this first because NT_OFFSET (non-terminal offset) conflicts with
   # file_input.
   for k, v in token.tok_name.items():
       _names[k] = v
@@ -1350,13 +1350,13 @@ class Transformer(object):
 
             if node[0]==token.STAR:
                 if star_node is not None:
-                    raise SyntaxError, 'already have the varargs indentifier'
+                    raise SyntaxError, 'already have the varargs identifier'
                 star_node = self.com_node(nodelist[i+1])
                 i = i + 3
                 continue
             elif node[0]==token.DOUBLESTAR:
                 if dstar_node is not None:
-                    raise SyntaxError, 'already have the kwargs indentifier'
+                    raise SyntaxError, 'already have the kwargs identifier'
                 dstar_node = self.com_node(nodelist[i+1])
                 i = i + 3
                 continue

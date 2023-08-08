@@ -182,7 +182,7 @@ join-modules() {
 
   # Filter out comments, print the first line.
   #
-  # TODO: I don't want to depend on egrep and GNU flags on the target sytems?
+  # TODO: I don't want to depend on egrep and GNU flags on the target systems?
   # Ship this file I guess.
   egrep --no-filename --only-matching '^[a-zA-Z0-9_\.]+' $static $discovered \
     | sort | uniq

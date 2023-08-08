@@ -55,7 +55,7 @@ simple-demo() {
   # In ksh or zsh, the pipes to and from the co-process are accessed with >&p
   # and <&p.
   # But in bash, the file descriptors of the pipe from the co-process and the
-  # other pipe to the co-proccess are returned in the $COPROC array
+  # other pipe to the co-process are returned in the $COPROC array
   # (respectively ${COPROC[0]} and ${COPROC[1]}.
 
   argv ${COPROC[@]}

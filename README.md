@@ -274,7 +274,7 @@ These files make the slow "Oils Python" build, which is very different than the
     configure
     install
 
-These files are for teh C++ `oils-for-unix` tarball (in progress):
+These files are for the C++ `oils-for-unix` tarball (in progress):
 
     _build/
       oils.sh

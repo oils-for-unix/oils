@@ -690,7 +690,7 @@ find . -type f -a -print0 | { read -r -d ''; echo "[$REPLY]"; }
 
 #### redirection from directory is non-fatal error)
 
-# This tickles an infinite loop bug in our version of mksh!  TODO: ugprade the
+# This tickles an infinite loop bug in our version of mksh!  TODO: upgrade the
 # version and enable this
 case $SH in (mksh) return ;; esac
 

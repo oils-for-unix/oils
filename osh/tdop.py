@@ -117,7 +117,7 @@ def LeftError(p, t, left, rbp):
 def LeftBinaryOp(p, w, left, rbp):
     # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
     """Normal binary operator like 1+2 or 2*3, etc."""
-    # TODO: w shoudl be a Token, and we should extract the token from it.
+    # TODO: w should be a Token, and we should extract the token from it.
     return arith_expr.Binary(word_.ArithId(w), left, p.ParseUntil(rbp))
 
 

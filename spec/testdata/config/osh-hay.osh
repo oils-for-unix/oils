@@ -16,7 +16,7 @@ Foo {
   echo `echo backticks`
   eval 'echo eval'
 
-  # At parse time, all the lines must be contigous
+  # At parse time, all the lines must be contiguous
 
   TASK {
     echo `echo task backticks`

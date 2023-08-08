@@ -84,7 +84,7 @@ test-programs() {
   ls --escape
   echo
   # Test out error message
-  # It's basicallly correct, but ugly.  There are too many segments, and
+  # It's basically correct, but ugly.  There are too many segments, and
   # there's an unnecessary leading ''.
   # QSN is shorter and more consistent.
 

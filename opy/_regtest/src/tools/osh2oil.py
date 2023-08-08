@@ -762,7 +762,7 @@ class OilPrinter(object):
 
         self.cursor.PrintUntil(left_spid)
         # Hm maybe keep | because it's semi-deprecated?  You acn use
-        # reload|force-relaod {
+        # reload|force-reload {
         # }
         # e/reload|force-reload/ {
         # }
@@ -836,7 +836,7 @@ class OilPrinter(object):
       # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
       # conversion to string.
 
-      # For now, jsut stub it out
+      # For now, just stub it out
       self.DoWordInCommand(node, local_symbols)
 
   def DoWordInCommand(self, node, local_symbols):

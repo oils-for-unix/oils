@@ -1130,7 +1130,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.begin_index:
             self.accept(o.begin_index)
         else:
-            self.write('0')  # implicit begining
+            self.write('0')  # implicit beginning
 
         if o.end_index:
             self.write(', ')

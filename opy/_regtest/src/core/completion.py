@@ -458,7 +458,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
       # CommandSub.  Or honestly you can just reuse it for now.  Can you pass
       # the same cmd_exec in?  What about side effects?  I guess it can't
       # really have any.  It can only have them on the file system.  Hm.
-      # Defining funcitons?  Yeah if you complete partial functions that could
+      # Defining functions?  Yeah if you complete partial functions that could
       # be bad.  That is, you could change the name of the function.
 
       argv = []
@@ -521,7 +521,7 @@ def _GetCompletionType(w_parser, c_parser, ev, status_out):
   #   1. Look at c_parser.LastCompletionState()
   #   2. If it is $ or ${, complete var names
   #
-  #   Is there any case where we shoudl fall back on buf.split()?
+  #   Is there any case where we should fall back on buf.split()?
 
   # Now parse it.  And then look at the AST, but don't eval?  Or actually we
   # CAN eval, but we probably don't want to.

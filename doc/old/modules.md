@@ -66,7 +66,7 @@ Executable file.  Top level the same 4, plus `oil-main` at the bottom.
 
     oil-main  # dispatch to arguments in this module, except ones beginning with .
 
-## Usage Guidlines
+## Usage Guidelines
 
 - Distinguish between `.oil` files that are executable programs, and those that
   are libraries

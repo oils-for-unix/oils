@@ -81,7 +81,7 @@ Dynamic bytecodes that will go away, because names are statically resolved:
 
 Other Removed:
 
-- `DELETE_NAME`: Namesapces are static
+- `DELETE_NAME`: Namespaces are static
 - Might be unnecessary for our purposes: `YIELD_FROM`
 - `EXEC_STMT`: I want a different interface to the compiler, for
   metaprogramming purposes.

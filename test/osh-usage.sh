@@ -111,7 +111,7 @@ test-osh-interactive() {
   echo ';echo OIL OIL' | $OSH -i
   assert $? -eq 2
 
-  # Bug fix: c_parser.Peek() in main_loop.InteractiveLoop can raise execptions
+  # Bug fix: c_parser.Peek() in main_loop.InteractiveLoop can raise exceptions
   echo 'v=`echo \"`' | $OSH -i
   assert $? -eq 0
 }

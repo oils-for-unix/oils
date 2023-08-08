@@ -36,7 +36,7 @@ That means:
     core/lexer_gen.py for re2c.
 
 For example, [^']+ is not valid.  [^'\0]+ is correct.  Otherwise we would read
-unitialized memory past the sentinel.
+uninitialized memory past the sentinel.
 
 Python's regex engine knows where the end of the input string is, so it
 doesn't require need a sentinel like \0.

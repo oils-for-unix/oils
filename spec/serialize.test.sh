@@ -192,7 +192,7 @@ case $SH in (zsh|ash) exit ;; esac
 
 zz=$'one\ntwo \u03bc'
 
-# wierdly, quoted and unquoted aren't different
+# weirdly, quoted and unquoted aren't different
 echo ${zz@Q}
 echo "${zz@Q}"
 ## STDOUT:

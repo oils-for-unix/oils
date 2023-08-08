@@ -391,7 +391,7 @@ class Symbols(object):
     #return
 
     # Still missing: non-enum ASDL types?  Why?  CompoundObj?
-    # command_e is there, but command and SimpleCommmand aren't.
+    # command_e is there, but command and SimpleCommand aren't.
     # it's because we do 
     # ast.command_e vs. ast.SimpleCommand
     # in both cases ast is a osh/meta _AsdlModule?

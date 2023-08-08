@@ -572,7 +572,7 @@ def InitReadline(
     # This determines the boundaries you get back from get_begidx() and
     # get_endidx() at completion time!
     # We could be more conservative and set it to ' ', but then cases like
-    # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
+    # 'ls|w<TAB>' would try to complete the whole thing, instead of just 'w'.
     #
     # Note that this should not affect the OSH completion algorithm.  It only
     # affects what we pass back to readline and what readline displays to the
