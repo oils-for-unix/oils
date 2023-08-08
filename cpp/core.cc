@@ -338,15 +338,9 @@ Str* GetVersion(_ResourceLoader* loader) {
   return consts::gVersion;
 }
 
-void ShowAppVersion(_ResourceLoader* loader) {
-  // Simple --version text.
-  // osh --version is more elaborate, with compiler and so forth.
-  // python -V is similarly simple.
-
-  printf("Oils for Unix %s\n", consts::gVersion->data_);
-  printf("\n");
-  printf("    https://oils-for-unix.org/\n");
-  printf("\n");
+void PrintVersionDetails(_ResourceLoader* loader) {
+  // No details yet in C++
+  ;
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {

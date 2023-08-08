@@ -405,16 +405,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     arena = alloc.Arena()
     errfmt = ui.ErrorFormatter()
 
-    stdout_ = mylib.Stdout()
     if flag.help:
-        util.PrintVersionLine(loader, stdout_)
-        stdout_.write('\n')
-        assert util.PrintEmbeddedHelp(loader, '%s-usage' % lang, stdout_)
+        util.HelpFlag(loader, '%s-usage' % lang, mylib.Stdout())
         return 0
     if flag.version:
-        util.PrintVersionLine(loader, stdout_)
-        stdout_.write('\n')
-        pyutil.ShowAppVersion(loader)
+        util.VersionFlag(loader, mylib.Stdout())
         return 0
 
     no_str = None  # type: str

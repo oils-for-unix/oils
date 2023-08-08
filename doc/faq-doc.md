@@ -17,9 +17,10 @@ Start at one of these pages:
    - [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
    - [Oil Fixes Shell's Error Handling](error-handling.html)
 1. The **Oils Reference** at [/release/$VERSION/doc/ref/](ref/index.html) has
-   two indexes:
+   three indexes:
    - [Index of OSH Topics](ref/index-osh.html)
    - [Index of YSH Topics](ref/index-ysh.html)
+   - [Index of Data Topics](ref/index-data.html)
 
 Outside of the release tree:
 

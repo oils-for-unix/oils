@@ -72,7 +72,9 @@ More terminology:
 The source code is simply a tree of Markdown files:
 
     doc/
-      index.md             # All Docs on Oils
+      release-index.md     # /release/$VERSION/
+
+      index.md             # All Docs on Oils, /release/$VERSION/doc/
       getting-started.md
       ...
 
@@ -80,27 +82,29 @@ The source code is simply a tree of Markdown files:
         index.md           # this page, the Oils Reference
         index-osh.md       # link to OSH topics
         index-ysh.md       # link to YSH topics
+        index-data.md
 
         chap-cmd-lang.md   # chapter on the command language
         ...
-        osh.txt            # Plain text help "card"
-        ysh.txt
 
 
-And the URLs mirror the source code:
+And the URLs basically mirror the source code:
 
-    /release/$VERSION/doc/
+    /release/$VERSION/
       index.html
-      getting-started.html
-      ...
-
-      ref/
+      doc/
         index.html
-        index-osh.html
-        index-ysh.html
-
-        chap-cmd-lang.html
+        getting-started.html
         ...
+
+        ref/
+          index.html
+          index-osh.html
+          index-ysh.html
+          index-data.html
+
+          chap-cmd-lang.html
+          ...
 
 You can link to topics with internal anchors:
 

@@ -157,7 +157,7 @@ def GetVersion(loader):
     return version_str
 
 
-def ShowAppVersion(loader):
+def PrintVersionDetails(loader):
     # type: (_ResourceLoader) -> None
     """Show version and platform information."""
     try:
