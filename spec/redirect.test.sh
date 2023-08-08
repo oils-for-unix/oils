@@ -597,7 +597,7 @@ status=0
 
 #### can't mention big file descriptor
 echo hi 9>&1
-# 23 is the max descriptor fo rmksh
+# 23 is the max descriptor for mksh
 #echo hi 24>&1
 echo hi 99>&1
 echo hi 100>&1
