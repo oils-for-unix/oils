@@ -47,7 +47,7 @@ class BuiltinTest(unittest.TestCase):
 
         loader = pyutil.GetResourceLoader()
         errfmt = None
-        builtin_misc.Help(loader, TOPICS, errfmt)
+        builtin_misc.Help('ysh', loader, TOPICS, errfmt)
 
 
 if __name__ == '__main__':

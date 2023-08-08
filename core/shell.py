@@ -82,6 +82,16 @@ if TYPE_CHECKING:
     from core import optview
     from frontend.py_readline import Readline
 
+TOPIC_META = {}  # type: Dict[str, str]
+
+if mylib.PYTHON:
+    try:
+        from _devbuild.gen import help_meta  # type: ignore
+        TOPIC_META = help_meta.TopicMetadata()
+    except ImportError:
+        # This happens in the 'minimal' dev build
+        pass
+
 
 def MakeBuiltinArgv(argv1):
     # type: (List[str]) -> cmd_value.Argv
@@ -361,8 +371,8 @@ class ShellFiles(object):
             #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
 
-def Main(lang, arg_r, environ, login_shell, loader, help_builtin, readline):
-    # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, builtin_misc.Help, Optional[Readline]) -> int
+def Main(lang, arg_r, environ, login_shell, loader, readline):
+    # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
     """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
     Args:
@@ -393,10 +403,10 @@ def Main(lang, arg_r, environ, login_shell, loader, help_builtin, readline):
     flag = arg_types.main(attrs.attrs)
 
     arena = alloc.Arena()
-    errfmt = help_builtin.errfmt
+    errfmt = ui.ErrorFormatter()
 
     if flag.help:
-        help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
+        assert util.PrintEmbeddedHelp(loader, '%s-usage' % lang, mylib.Stdout())
         return 0
     if flag.version:
         pyutil.ShowAppVersion(loader)
@@ -616,7 +626,9 @@ def Main(lang, arg_r, environ, login_shell, loader, help_builtin, readline):
     AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_control,
                job_list, waiter, tracer, search_path, errfmt)
 
-    builtins[builtin_i.help] = help_builtin
+    help_data = TOPIC_META
+    builtins[builtin_i.help] = builtin_misc.Help(lang, loader, help_data,
+                                                 errfmt)
 
     # Interactive, depend on readline
     builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
@@ -691,7 +703,7 @@ def Main(lang, arg_r, environ, login_shell, loader, help_builtin, readline):
 
     spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
                                             splitter, comp_lookup,
-                                            help_builtin.help_data, errfmt)
+                                            help_data, errfmt)
     complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
     builtins[builtin_i.complete] = complete_builtin
     builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)

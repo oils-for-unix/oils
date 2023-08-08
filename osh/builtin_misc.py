@@ -16,12 +16,12 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (span_e, cmd_value, value, scope_e)
 from _devbuild.gen.syntax_asdl import source, loc, loc_t
 from core import alloc
-from core import ansi
 from core import error
 from core.error import e_usage, e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
+from core import util
 from core import ui
 from core import vm
 from data_lang import qsn_native
@@ -816,17 +816,14 @@ class Pwd(vm._Builtin):
 
 # Needs a different _ResourceLoader to translate
 class Help(vm._Builtin):
-    def __init__(self, loader, help_data, errfmt):
-        # type: (_ResourceLoader, Dict[str, str], ErrorFormatter) -> None
+    def __init__(self, lang, loader, help_data, errfmt):
+        # type: (str, _ResourceLoader, Dict[str, str], ErrorFormatter) -> None
+        self.lang = lang
         self.loader = loader
         self.help_data = help_data
         self.errfmt = errfmt
         self.version_str = pyutil.GetVersion(self.loader)
-
-    def _Header(self, topic_id):
-        # type: (str) -> None
-        print('%s %s %s' % (ansi.REVERSE, topic_id, ansi.RESET))
-        print('')
+        self.f = mylib.Stdout()
 
     def _ShowTopic(self, topic_id, blame_loc):
         # type: (str, loc_t) -> int
@@ -841,16 +838,15 @@ class Help(vm._Builtin):
         # If we have a chapter name, it's not embedded in the binary.  So just
         # print the URL.
         if chapter_name is not None and len(chapter_name):
-            self._Header(topic_id)
+            util.PrintTopicHeader(topic_id, self.f)
             print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix,
                                                          self.version_str,
                                                          chapter_name,
                                                          topic_id))
             return 0
 
-        try:
-            contents = self.loader.Get('_devbuild/help/%s' % topic_id)
-        except (IOError, OSError):
+        found = util.PrintEmbeddedHelp(self.loader, topic_id, self.f)
+        if not found:
             # Notes:
             # 1. bash suggests:
             # man -k zzz
@@ -866,8 +862,6 @@ class Help(vm._Builtin):
             self.errfmt.Print_('no help topics match %r' % topic_id, blame_loc)
             return 1
 
-        self._Header(topic_id)
-        print(contents)
         return 0
 
     def Run(self, cmd_val):
@@ -880,8 +874,8 @@ class Help(vm._Builtin):
         if topic_id is None:
             assert self._ShowTopic('help', blame_loc) == 0
 
-            # TODO: use self.lang
-            assert self._ShowTopic('osh-chapters', blame_loc) == 0
+            # e.g. ysh-chapters
+            assert self._ShowTopic('%s-chapters' % self.lang, blame_loc) == 0
 
             print('All docs: https://www.oilshell.org/release/%s/doc/' %
                   self.version_str)

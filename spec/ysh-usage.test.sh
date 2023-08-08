@@ -20,3 +20,15 @@ cat err.txt | fgrep -o -- '-- [ stdin ]:11: Unexpected'
 line 10
 -- [ stdin ]:11: Unexpected
 ## END
+
+#### help shows 'ysh-chapters' topic
+
+# doesn't show ANSI text unless TTY
+help | grep ysh-chapters
+
+echo status=$?
+
+## STDOUT:
+~~~ ysh-chapters ~~~
+status=0
+## END

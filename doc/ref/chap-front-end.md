@@ -27,14 +27,15 @@ bin/oils-for-unix is an executable that contains OSH, YSH, and more.
 Usage: oils-for-unix MAIN_NAME ARG*
        MAIN_NAME ARG*
 
-It behaves like busybox.  If it's invoked through a symlink like 'osh', then it
-behaves like that command.
+It behaves like busybox.  The command name can be passed as the first argument:
+
+    oils-for-unix ysh -c 'echo hi'
+
+More commonly, it's invoked through a symlink like 'ysh', which causes it to
+behave like that command:
 
     ysh -c 'echo hi'
 
-Otherwise, the command name can be passed as the first argument, e.g.:
-
-    oils-for-unix ysh -c 'echo hi'
 ```
 
 <h3 id="osh-usage" class="osh-topic" oils-embed="1">

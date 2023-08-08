@@ -25,12 +25,11 @@ from core import error
 from core import shell
 from core import pyos
 from core import pyutil
-from core import ui
+from core import util
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
-from osh import builtin_misc
 from pylib import os_path
 
 if mylib.PYTHON:
@@ -39,18 +38,7 @@ if mylib.PYTHON:
 
 import fanos
 
-from typing import List, Dict
-
-
-TOPIC_META = {}  # type: Dict[str, str]
-
-if mylib.PYTHON:
-    try:
-        from _devbuild.gen import help_meta  # type: ignore
-        TOPIC_META = help_meta.TopicMetadata()
-    except ImportError:
-        # This happens in the 'minimal' dev build
-        pass
+from typing import List
 
 
 def CaperDispatch():
@@ -99,9 +87,6 @@ def AppBundleMain(argv):
     # NOTE: This has a side effect of deleting _OVM_* from the environment!
     loader = pyutil.GetResourceLoader()
 
-    errfmt = ui.ErrorFormatter()
-    help_builtin = builtin_misc.Help(loader, TOPIC_META, errfmt)
-
     b = os_path.basename(argv[0])
     main_name, ext = os_path.splitext(b)
 
@@ -126,7 +111,7 @@ def AppBundleMain(argv):
 
         # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
         if first_arg in ('-h', '--help'):
-            help_builtin.Run(shell.MakeBuiltinArgv(['oils-usage']))
+            assert util.PrintEmbeddedHelp(loader, 'oils-usage', mylib.Stdout())
             return 0
 
         if first_arg in ('-V', '--version'):
@@ -150,12 +135,10 @@ def AppBundleMain(argv):
     environ = pyos.Environ()
 
     if applet in ('ysh', 'oil'):
-        return shell.Main('ysh', arg_r, environ, login_shell, loader,
-                          help_builtin, readline)
+        return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
 
     elif applet.endswith('sh'):  # sh, osh, bash imply OSH
-        return shell.Main('osh', arg_r, environ, login_shell, loader,
-                          help_builtin, readline)
+        return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
 
     elif applet == 'oshc':
         # Moved to --tool
