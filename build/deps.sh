@@ -342,6 +342,10 @@ install-wedges() {
     deps/wedge.sh unboxed-build _build/deps-source/re2c/
   fi
 
+  if ! wedge-exists python2 $PY2_VERSION; then
+    deps/wedge.sh unboxed-build _build/deps-source/python2/
+  fi
+
   if test -n "$py_only"; then
     log "Installed dependencies for 'build/py.sh'"
     return
@@ -354,10 +358,6 @@ install-wedges() {
 
     cp --verbose --recursive --no-target-directory \
       $DEPS_SOURCE_DIR/pyflakes/pyflakes-$PYFLAKES_VERSION $dest_dir
-  fi
-
-  if ! wedge-exists python2 $PY2_VERSION; then
-    deps/wedge.sh unboxed-build _build/deps-source/python2/
   fi
 
   # TODO: make the Python build faster by using all your cores?
@@ -406,14 +406,17 @@ install-wedges-py() {
 }
 
 container-wedges() {
-  ### These end up in _build/wedge/binary
+  ### Build wedges that are copied into containers, not run on host
+  
+  # These end up in _build/wedge/binary
 
   #export-podman
 
-  if false; then
+  if true; then
     deps/wedge.sh build deps/source.medo/time-helper
     deps/wedge.sh build deps/source.medo/cmark/
     deps/wedge.sh build deps/source.medo/re2c/
+    deps/wedge.sh build deps/source.medo/python3/
   fi
 
   if false; then
@@ -421,11 +424,11 @@ container-wedges() {
     deps/wedge.sh build deps/source.medo/uftrace/
   fi
 
-  # For soil-benchmarks/ images
-  deps/wedge.sh build deps/source.medo/R-libs/
+  if false; then
+    # For soil-benchmarks/ images
+    deps/wedge.sh build deps/source.medo/R-libs/
+  fi
 
-  # Not sure if we need thsi
-  #deps/wedge.sh build deps/source.medo/python3/
 }
 
 run-task "$@"

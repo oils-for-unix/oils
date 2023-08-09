@@ -185,8 +185,7 @@ cpp-small-tasks() {
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
-build-minimal    build/py.sh minimal                   -
-ninja-config     soil/worker.sh ninja-config           -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh soil-run              -
 headless         client/run.sh soil-run-cpp            -
@@ -209,8 +208,7 @@ cpp-coverage-tasks() {
   cat <<EOF
 os-info                 soil/diagnose.sh os-info    -
 dump-env                soil/diagnose.sh dump-env   -
-build-minimal           build/py.sh minimal                             -
-ninja-config            soil/worker.sh ninja-config                     -
+py-all-and-ninja        soil/worker.sh py-all-and-ninja                 -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/TEST.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
