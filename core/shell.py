@@ -82,10 +82,15 @@ if TYPE_CHECKING:
     from core import optview
     from frontend.py_readline import Readline
 
-try:
-    from _devbuild.gen.help_meta import TOPIC_META  # type: ignore
-except ImportError:
-    TOPIC_META = {}
+TOPIC_META = {}  # type: Dict[str, str]
+
+if mylib.PYTHON:
+    try:
+        from _devbuild.gen import help_meta  # type: ignore
+        TOPIC_META = help_meta.TopicMetadata()
+    except ImportError:
+        # This happens in the 'minimal' dev build
+        pass
 
 
 def MakeBuiltinArgv(argv1):
