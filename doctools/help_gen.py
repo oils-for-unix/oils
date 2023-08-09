@@ -506,7 +506,7 @@ def TopicMetadata():
 #include "mycpp/runtime.h"
 
 namespace help_meta {
-List<Str*>* TopicMetadata();
+Dict<Str*, Str*>* TopicMetadata();
 }
 ''')
 
@@ -515,7 +515,7 @@ List<Str*>* TopicMetadata();
 #include "mycpp/runtime.h"
 
 namespace help_meta {
-List<Str*>* TopicMetadata() {
+Dict<Str*, Str*>* TopicMetadata() {
   return nullptr;
 }
 }

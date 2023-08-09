@@ -82,15 +82,11 @@ if TYPE_CHECKING:
     from core import optview
     from frontend.py_readline import Readline
 
-TOPIC_META = {}  # type: Dict[str, str]
-
 if mylib.PYTHON:
     try:
         from _devbuild.gen import help_meta  # type: ignore
-        TOPIC_META = help_meta.TopicMetadata()
     except ImportError:
-        # This happens in the 'minimal' dev build
-        pass
+        help_meta = None
 
 
 def MakeBuiltinArgv(argv1):
@@ -626,7 +622,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_control,
                job_list, waiter, tracer, search_path, errfmt)
 
-    help_data = TOPIC_META
+    if mylib.PYTHON:
+        if help_meta:
+            help_data = help_meta.TopicMetadata()
+        else:
+            help_data = {}  # minimal build
+    else:
+        help_data = help_meta.TopicMetadata()
     builtins[builtin_i.help] = builtin_misc.Help(lang, loader, help_data,
                                                  errfmt)
 

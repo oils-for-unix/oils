@@ -396,6 +396,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
 
+        # HACK for conditional import inside mylib.PYTHON
+        # in core/shell.py
+        self.imported_names.add('help_meta')
+
         # So we can report multiple at once
         # module path, line number, message
         self.errors_keep_going: List[Tuple[str, int, str]] = []
