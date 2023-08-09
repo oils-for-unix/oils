@@ -14,7 +14,7 @@ gstr = 'foo'  # type: str
 glist_int = [1, 2]  # type: List[int]
 glist_str = ['spam', 'eggs']  # type: List[str]
 
-#gdict = {'a': 42, 'b': 43}  # type: Dict[str, int]
+gdict = {'a': 42, 'b': 43}  # type: Dict[str, int]
 
 
 def ListDemo():
@@ -68,6 +68,8 @@ def ListDemo():
   no_str = None  # type: Optional[str]
   blank = [no_str] * n
   log("len(blank) = %d", len(blank))
+
+  #log('gdict["a"] = %d', gdict['a'])
 
 
 class Point(object):

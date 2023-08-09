@@ -113,6 +113,12 @@ struct ObjHeader {
     return {kNotInPool, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
             kUndefinedId};
   }
+
+  // Used by GLOBAL_STR, GLOBAL_LIST, GLOBAL_DICT
+  static constexpr ObjHeader Global(uint8_t type_tag) {
+    // Note: cheney_heap causes overflow warning; delete it
+    return {kNotInPool, type_tag, kZeroMask, HeapTag::Global, kIsGlobal};
+  }
 };
 
 // TODO: we could determine the max of all objects statically!

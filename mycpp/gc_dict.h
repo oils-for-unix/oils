@@ -35,6 +35,19 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   return result;
 }
 
+// GlobalDict is layout-compatible with Dict (unit tests assert this), and it
+// can be a true C global (incurs zero startup time)
+
+template <typename K, typename V, int N>
+class GlobalDict {
+ public:
+  int len_;
+  int capacity_;
+  GlobalSlab<int, N>* entry_;  // TODO: should be sized differently
+  GlobalSlab<K, N>* keys_;
+  GlobalSlab<V, N>* values_;
+};
+
 template <class K, class V>
 class Dict {
   // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,

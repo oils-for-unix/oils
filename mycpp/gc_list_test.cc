@@ -130,12 +130,11 @@ TEST test_list_gc_header() {
 
 // Manual initialization.  This helped me write the GLOBAL_LIST() macro.
 GcGlobal<GlobalSlab<int, 3>> _gSlab = {
-    {0, kZeroMask, HeapTag::Global, kUndefinedId}, {5, 6, 7}};
+    .header = {0, kZeroMask, HeapTag::Global, kUndefinedId},
+    {.items_ = {5, 6, 7}}};
 GcGlobal<GlobalList<int, 3>> _gList = {
-    {0, kZeroMask, HeapTag::Global, kUndefinedId},
-    {3,  // len
-     3,  // capacity
-     &_gSlab.obj}};
+    .header = {0, kZeroMask, HeapTag::Global, kUndefinedId},
+    {.len_ = 3, .capacity_ = 3, .slab_ = &_gSlab.obj}};
 List<int>* gList = reinterpret_cast<List<int>*>(&_gList.obj);
 
 GLOBAL_LIST(int, 4, gList2, {5 COMMA 4 COMMA 3 COMMA 2});

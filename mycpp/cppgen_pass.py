@@ -1249,12 +1249,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 item_type = lval_type.args[0]
                 item_c_type = GetCType(item_type)
 
-                # Then a pointer to it
+                # Any constant strings will have already been written
+                # TODO: Assert that every item is a constant?
                 self.write('GLOBAL_LIST(%s, %d, %s, ', item_c_type,
                            len(o.rvalue.items), lval.name)
 
-                # TODO: Assert that every item is a constant?
-                # COMMA for macro
                 self._WriteListElements(o.rvalue, sep=' COMMA ')
 
                 self.write(');\n')
