@@ -19,6 +19,7 @@
 #include <unistd.h>        // getuid(), environ
 
 #include "_gen/frontend/consts.h"  // gVersion
+#include "cpp/embedded_file.h"
 
 extern char** environ;
 
@@ -325,9 +326,16 @@ Str* ChArrayToString(List<int>* ch_array) {
   return result;
 }
 
-// TODO: Should eliminate _ResourceLoader
 Str* _ResourceLoader::Get(Str* path) {
-  return StrFromC("TODO");
+  TextFile* t = gEmbeddedFiles;  // start of generated data
+  while (t->rel_path != nullptr) {
+    if (str_equals(t->rel_path, path)) {
+      return t->contents;
+    }
+    t++;
+  }
+  // Emulate Python
+  throw Alloc<IOError>(ENOENT);
 }
 
 _ResourceLoader* GetResourceLoader() {
