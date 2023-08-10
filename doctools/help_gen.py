@@ -467,6 +467,72 @@ def CardsFromChapters(out_dir, tag_level, paths):
   return topics, root_node
 
 
+class StrPool(object):
+  def __init__(self):
+    self.var_names = {}
+    self.global_strs = []
+    self.unique_id = 1
+
+  def Add(self, s):
+    if s in self.var_names:
+      return
+
+    var_name = 'gStr%d' % self.unique_id
+    self.unique_id += 1
+
+    import json
+    # Use JSON as approximation for C++ string
+    self.global_strs.append('GLOBAL_STR(%s, %s)' % (var_name, json.dumps(s)))
+
+    self.var_names[s] = var_name
+
+
+def WriteTopicDict(topic_dict, header_f, cc_f):
+  header_f.write('''
+#include "mycpp/runtime.h"
+
+namespace help_meta {
+Dict<Str*, Str*>* TopicMetadata();
+}
+''')
+
+  pool = StrPool()
+
+  for k, v in topic_dict.iteritems():
+    pool.Add(k)
+    if v is not None:
+      pool.Add(v)
+    #log('%s %s', k, v)
+
+  num_items = len(topic_dict)
+  key_names = []
+  val_names = []
+
+  for k, v in topic_dict.iteritems():
+    key_names.append(pool.var_names[k])
+    if v is None:
+      v_str = 'nullptr'
+    else:
+      v_str = pool.var_names[v]
+    val_names.append(v_str)
+
+  cc_f.write('''
+#include "mycpp/runtime.h"
+
+namespace help_meta {
+
+%s
+
+GLOBAL_DICT(gTopics, Str*, Str*, %d, {%s}, {%s});
+
+Dict<Str*, Str*>* TopicMetadata() {
+  return gTopics;
+}
+}
+''' % ('\n'.join(pool.global_strs), num_items, ' COMMA '.join(key_names),
+       ' COMMA '.join(val_names)))
+
+
 def main(argv):
   action = argv[1]
 
@@ -486,6 +552,9 @@ def main(argv):
     pages = argv[5:]
 
     topic_dict, debug_info = CardsFromChapters(out_dir, 'h3', pages)
+
+    # Write topic dict as Python and C++
+
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topic_dict))
 
@@ -501,25 +570,9 @@ def TopicMetadata():
     h_path = cc_prefix + '.h'
     cc_path = cc_prefix + '.cc'
 
-    with open(h_path, 'w') as f:
-      f.write('''
-#include "mycpp/runtime.h"
-
-namespace help_meta {
-Dict<Str*, Str*>* TopicMetadata();
-}
-''')
-
-    with open(cc_path, 'w') as f:
-      f.write('''
-#include "mycpp/runtime.h"
-
-namespace help_meta {
-Dict<Str*, Str*>* TopicMetadata() {
-  return nullptr;
-}
-}
-''')
+    with open(h_path, 'w') as header_f:
+      with open(cc_path, 'w') as cc_f:
+        WriteTopicDict(topic_dict, header_f, cc_f)
 
   elif action == 'ref-check':
     from doctools import cmark
