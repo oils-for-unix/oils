@@ -213,7 +213,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(item)
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
-        pass
+        for k, v in o.items:
+            self.accept(k)
+            self.accept(v)
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
         for item in o.items:

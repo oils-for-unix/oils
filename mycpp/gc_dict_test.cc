@@ -467,10 +467,18 @@ TEST test_tuple_key() {
 
 GLOBAL_DICT(int, int, 2, gDict, {42 COMMA 43}, {1 COMMA 2});
 
+GLOBAL_DICT(Str*, Str*, 2, gStrDict, {kStrFoo COMMA kStrBar},
+            {kStrBar COMMA kStrFoo});
+
 TEST test_global_dict() {
   log("gDict len = %d", len(gDict));
+  ASSERT_EQ(2, len(gDict));
   ASSERT_EQ(1, gDict->index_(42));
   ASSERT_EQ(2, gDict->index_(43));
+
+  log("gStrDict len = %d", len(gStrDict));
+  ASSERT_EQ(kStrFoo, gStrDict->index_(kStrBar));
+  ASSERT_EQ(kStrBar, gStrDict->index_(kStrFoo));
 
   PASS();
 }
