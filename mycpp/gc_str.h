@@ -75,6 +75,7 @@ class Str {
   }
 
   int len_;
+  int hash_value_;
   char data_[1];  // flexible array
 
  private:
@@ -147,6 +148,7 @@ class GlobalStr {
   // buffer of size N).  For initializing global constant instances.
  public:
   int len_;
+  int hash_value_;
   const char data_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
@@ -159,11 +161,13 @@ class GlobalStr {
 //
 // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
+//
+// TODO: Can we hash values at compile time so they can be in the intern table?
 
-#define GLOBAL_STR(name, val)                   \
-  GcGlobal<GlobalStr<sizeof(val)>> _##name = {  \
-      ObjHeader::Global(TypeTag::Str),          \
-      {.len_ = sizeof(val) - 1, .data_ = val}}; \
+#define GLOBAL_STR(name, val)                                     \
+  GcGlobal<GlobalStr<sizeof(val)>> _##name = {                    \
+      ObjHeader::Global(TypeTag::Str),                            \
+      {.len_ = sizeof(val) - 1, .hash_value_ = 0, .data_ = val}}; \
   Str* name = reinterpret_cast<Str*>(&_##name.obj);
 
 #endif  // MYCPP_GC_STR_H

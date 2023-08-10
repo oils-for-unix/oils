@@ -16,6 +16,7 @@
   static_assert(offsetof(Str, field) == offsetof(GlobalStr<1>, field), \
                 "Str and GlobalStr should be consistent");
 ASSERT_GLOBAL_STR(len_);
+ASSERT_GLOBAL_STR(hash_value_);
 ASSERT_GLOBAL_STR(data_);
 
 static_assert(offsetof(Slab<int>, items_) ==
