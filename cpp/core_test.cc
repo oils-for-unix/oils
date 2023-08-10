@@ -7,18 +7,48 @@
 #include <sys/utsname.h>  // uname
 #include <unistd.h>       // getpid(), getuid(), environ
 
+#include "cpp/embedded_file.h"
 #include "cpp/stdlib.h"         // posix::getcwd
 #include "mycpp/gc_builtins.h"  // IOError_OSError
 #include "vendor/greatest.h"
 
 TEST for_test_coverage() {
   pyos::FlushStdout();
+
+  PASS();
+}
+
+GLOBAL_STR(k1, "k1");
+GLOBAL_STR(v1, "v1");
+GLOBAL_STR(k2, "k2");
+GLOBAL_STR(v2, "v2");
+
+TextFile tmp[] = {
+    {.rel_path = k1, .contents = v1},
+    {.rel_path = k2, .contents = v2},
+    {.rel_path = nullptr, .contents = nullptr},
+};
+
+TextFile* gEmbeddedFiles = tmp;  // array to pointer
+
+TEST loader_test() {
   auto loader = pyutil::GetResourceLoader();
 
   Str* version = pyutil::GetVersion(loader);
   ASSERT(len(version) > 3);
 
   pyutil::PrintVersionDetails(loader);
+
+  ASSERT_EQ(v1, loader->Get(k1));
+  ASSERT_EQ(v2, loader->Get(k2));
+
+  bool caught = false;
+  try {
+    loader->Get(kEmptyString);
+  } catch (IOError*) {
+    caught = true;
+  }
+  ASSERT(caught);
 
   PASS();
 }
@@ -358,6 +388,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(for_test_coverage);
+  RUN_TEST(loader_test);
   RUN_TEST(exceptions_test);
   RUN_TEST(environ_test);
   RUN_TEST(user_home_dir_test);
