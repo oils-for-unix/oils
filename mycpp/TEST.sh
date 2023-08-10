@@ -255,12 +255,6 @@ test-runtime() {
     run-test-bin $bin
   done
 
-  for config in cxx-asan+cheney $ubsan_compiler-ubsan+cheney; do
-    local bin=_bin/$config/mycpp/cheney_heap_test
-    ninja $bin
-    run-test-bin $bin
-  done
-
   # Run other tests with all variants
 
   unit $ubsan_compiler ubsan

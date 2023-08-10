@@ -7,14 +7,10 @@
 
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
-                          // Cheney: Don't copy or scan.
 const int Opaque = 1;     // e.g. List<int>, Str
                           // Mark and sweep, but don't trace children
-                          // Cheney: Copy, but don't scan.
 const int FixedSize = 2;  // Consult field_mask for children
 const int Scanned = 3;    // Scan a contiguous range of children
-
-const int Forwarded = 4;  // For the Cheney algorithm.
 };                        // namespace HeapTag
 
 // These tags are mainly for debugging.  Oils is a statically typed program, so
@@ -46,20 +42,11 @@ const int kUndefinedId = 0;  // Unitialized object ID
 struct ObjHeader {
   unsigned in_pool : 1;
   unsigned type_tag : 7;  // TypeTag, ASDL variant / shared variant
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   // Depending on heap_tag, up to 24 fields or 2**24 = 16 Mi pointers to scan
   unsigned u_mask_npointers : 24;
-#else
-  unsigned field_mask : 24;  // Cheney needs field_maks AND obj_len
-#endif
 
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
   unsigned heap_tag : 2;  // HeapTag::Opaque, etc.
   unsigned obj_id : 30;   // 1 Gi unique objects
-#else
-  unsigned heap_tag : 3;     // Cheney also needs HeapTag::Forwarded
-  unsigned obj_len : 29;     // Cheney: number of bytes to copy
-#endif
 
   // Returns the address of the GC managed object associated with this header.
   // Note: this relies on there being no padding between the header and the
@@ -118,7 +105,6 @@ struct ObjHeader {
 
   // Used by GLOBAL_STR, GLOBAL_LIST, GLOBAL_DICT
   static constexpr ObjHeader Global(uint8_t type_tag) {
-    // Note: cheney_heap causes overflow warning; delete it
     return {kNotInPool, type_tag, kZeroMask, HeapTag::Global, kIsGlobal};
   }
 };
@@ -126,16 +112,8 @@ struct ObjHeader {
 // TODO: we could determine the max of all objects statically!
 const int kFieldMaskBits = 24;
 
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
-  #define FIELD_MASK(header) (header).u_mask_npointers
-  #define NUM_POINTERS(header) (header).u_mask_npointers
-
-#else
-  #define FIELD_MASK(header) (header).field_mask
-                             // TODO: derive from obj_len
-  #define NUM_POINTERS(header) \
-    ((header.obj_len - kSlabHeaderSize) / sizeof(void*))
-#endif
+#define FIELD_MASK(header) (header).u_mask_npointers
+#define NUM_POINTERS(header) (header).u_mask_npointers
 
 // A RawObject* is like a void*. We use it to represent GC managed objects.
 struct RawObject;

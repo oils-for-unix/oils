@@ -80,36 +80,13 @@ TEST api_test() {
 TEST string_collection_test() {
   Str *test_str = StrFromC("foo");
 
-  {
-    // NOTE(Jesse): This causes a crash when this gets compiled against the
-    // cheney collector w/ GC_ALWAYS.  I did verify it doesn't crash with
-    // the marksweep allocator but didn't want to figure out how to tell the
-    // build system to not compile these tests against the cheney collector
-    //
-    /* ASSERT(are_equal(test_str, StrFromC("foo"))); */
+  StackRoots _roots({&test_str});
 
-    StackRoots _roots({&test_str});
-
-    ASSERT(are_equal(test_str, StrFromC("foo")));
-
-    gHeap.Collect();
-
-    ASSERT(are_equal(test_str, StrFromC("foo")));
-  }
-
-  // NOTE(Jesse): Technically UB.  If the collector hits between when the roots
-  // go out of scope in the above block we'll get a UAF here.  ASAN should
-  // detect this but we currently have no way of programatically verifying that
-  // ASAN detects bugs.  AFAIK asan is not 100% reliable, so maybe that's a
-  // path fraught with peril anyhow.
-  //
-  /* ASSERT(are_equal(test_str, StrFromC("foo"))); */
+  ASSERT(are_equal(test_str, StrFromC("foo")));
 
   gHeap.Collect();
 
-  // NOTE(Jesse): ASAN detects UAF here when I tested by toggling this on
-  //
-  // ASSERT(are_equal(test_str, StrFromC("foo")));
+  ASSERT(are_equal(test_str, StrFromC("foo")));
 
   PASS();
 }

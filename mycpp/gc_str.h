@@ -95,13 +95,6 @@ inline void Str::MaybeShrink(int str_len) {
 
 inline int len(const Str* s) {
   return s->len_;
-
-  // For Cheney, it's possible we could use this startegy of computing it from
-  // the object length.
-#if 0
-  DCHECK(s->header_.obj_len >= kStrHeaderSize - 1);
-  return s->header_.obj_len - kStrHeaderSize - 1;
-#endif
 }
 
 Str* StrFormat(const char* fmt, ...);

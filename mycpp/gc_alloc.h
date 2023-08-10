@@ -17,9 +17,6 @@ extern BumpLeakHeap gHeap;
 #elif defined(MARK_SWEEP)
   #include "mycpp/mark_sweep_heap.h"
 extern MarkSweepHeap gHeap;
-#elif defined(CHENEY_GC)
-  #include "mycpp/cheney_heap.h"
-extern CheneyHeap gHeap;
 #endif
 
 #define VALIDATE_ROOTS 0
@@ -144,14 +141,10 @@ inline Str* NewStr(int len) {
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
 
   auto s = new (header->ObjectAddress()) Str();
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
+
   s->data_[len] = '\0';  // NUL terminate
   s->len_ = len;
   s->hash_value_ = -1;  // this could be a valid hash value
-#else
-  // reversed in len() to derive string length
-  header->obj_len = kStrHeaderSize + len + 1;
-#endif
 
 #if MARK_SWEEP
   header->obj_id = obj_id;
