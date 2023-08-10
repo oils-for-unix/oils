@@ -40,7 +40,7 @@ class Point {
 
   static constexpr ObjHeader obj_header() {
     // type_tag is 42
-    return ObjHeader{kNotInPool, 42};
+    return ObjHeader::Global(42);
   }
 };
 

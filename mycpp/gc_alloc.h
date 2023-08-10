@@ -100,8 +100,8 @@ T* Alloc(Args&&... args) {
   constexpr size_t num_bytes = sizeof(ObjHeader) + sizeof(T);
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
@@ -109,7 +109,7 @@ T* Alloc(Args&&... args) {
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   void* obj = header->ObjectAddress();
@@ -133,8 +133,8 @@ inline Str* NewStr(int len) {
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
@@ -149,7 +149,7 @@ inline Str* NewStr(int len) {
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   return s;
@@ -163,8 +163,8 @@ inline Str* OverAllocatedStr(int len) {
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
@@ -175,7 +175,7 @@ inline Str* OverAllocatedStr(int len) {
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   return s;
@@ -207,8 +207,8 @@ inline Slab<T>* NewSlab(int len) {
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
@@ -221,7 +221,7 @@ inline Slab<T>* NewSlab(int len) {
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   return slab;

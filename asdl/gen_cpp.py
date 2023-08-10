@@ -721,9 +721,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 self.Emit('')
                 self.Emit('GcGlobal<%s__%s> g%s__%s = ' %
                           (sum_name, variant_name, sum_name, variant_name))
-                self.Emit(
-                    '  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};'
-                    % (sum_name, variant_name))
+                self.Emit('  { ObjHeader::Global(%s_e::%s) };' % (sum_name,
+                                                                  variant_name))
 
         for variant in sum.types:
             if variant.shared_type:

@@ -211,7 +211,7 @@ class MarkSweepHeap {
     global_roots_.push_back(reinterpret_cast<RawObject*>(root));
   }
 
-  void* Allocate(size_t num_bytes, int* obj_id, bool* in_pool);
+  void* Allocate(size_t num_bytes, int* obj_id, int* pool_id);
 
 #if 0
   void* Reallocate(void* p, size_t num_bytes);

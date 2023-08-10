@@ -3,8 +3,6 @@
 
 #include <stdint.h>  // uint8_t
 
-#include <utility>
-
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
 const int Opaque = 1;     // e.g. List<int>, Str
@@ -31,7 +29,7 @@ const int kInPool = 1;
 
 const unsigned kZeroMask = 0;  // for types with no pointers
 
-const int kMaxObjId = (1 << 30) - 1;  // 30 bit object ID
+const int kMaxObjId = (1 << 28) - 1;  // 28 bits means 512 Mi objects per pool
 const int kIsGlobal = kMaxObjId;      // for debugging, not strictly needed
 
 const int kUndefinedId = 0;  // Unitialized object ID
@@ -40,13 +38,13 @@ const int kUndefinedId = 0;  // Unitialized object ID
 // TODO: ./configure could detect endian-ness, and reorder the fields in
 // ObjHeader.  See mycpp/demo/gc_header.cc.
 struct ObjHeader {
-  unsigned in_pool : 1;
-  unsigned type_tag : 7;  // TypeTag, ASDL variant / shared variant
+  unsigned type_tag : 8;  // TypeTag, ASDL variant / shared variant
   // Depending on heap_tag, up to 24 fields or 2**24 = 16 Mi pointers to scan
   unsigned u_mask_npointers : 24;
 
   unsigned heap_tag : 2;  // HeapTag::Opaque, etc.
-  unsigned obj_id : 30;   // 1 Gi unique objects
+  unsigned pool_id : 2;   // 0 for malloc(), or 1 2 3 for fixed sized pools
+  unsigned obj_id : 28;   // 1 Gi unique objects
 
   // Returns the address of the GC managed object associated with this header.
   // Note: this relies on there being no padding between the header and the
@@ -66,51 +64,48 @@ struct ObjHeader {
 
   // Used by hand-written and generated classes
   static constexpr ObjHeader ClassFixed(uint32_t field_mask, uint32_t obj_len) {
-    return {kNotInPool, TypeTag::OtherClass, field_mask, HeapTag::FixedSize,
+    return {TypeTag::OtherClass, field_mask, HeapTag::FixedSize, kNotInPool,
             kUndefinedId};
   }
 
   // Classes with no inheritance (e.g. used by mycpp)
   static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
                                           uint32_t obj_len) {
-    return {kNotInPool, TypeTag::OtherClass, num_pointers, HeapTag::Scanned,
+    return {TypeTag::OtherClass, num_pointers, HeapTag::Scanned, kNotInPool,
             kUndefinedId};
   }
 
   // Used by frontend/flag_gen.py.  TODO: Sort fields and use GC_CLASS_SCANNED
   static constexpr ObjHeader Class(uint8_t heap_tag, uint32_t field_mask,
                                    uint32_t obj_len) {
-    return {kNotInPool, TypeTag::OtherClass, field_mask, heap_tag,
+    return {TypeTag::OtherClass, field_mask, heap_tag, kNotInPool,
             kUndefinedId};
   }
 
   // Used by ASDL.
   static constexpr ObjHeader AsdlClass(uint8_t type_tag,
                                        uint32_t num_pointers) {
-    return {kNotInPool, type_tag, num_pointers, HeapTag::Scanned, kUndefinedId};
+    return {type_tag, num_pointers, HeapTag::Scanned, kNotInPool, kUndefinedId};
   }
 
   static constexpr ObjHeader Str() {
-    return {kNotInPool, TypeTag::Str, kZeroMask, HeapTag::Opaque, kUndefinedId};
+    return {TypeTag::Str, kZeroMask, HeapTag::Opaque, kNotInPool, kUndefinedId};
   }
 
   static constexpr ObjHeader Slab(uint8_t heap_tag, uint32_t num_pointers) {
-    return {kNotInPool, TypeTag::Slab, num_pointers, heap_tag, kUndefinedId};
+    return {TypeTag::Slab, num_pointers, heap_tag, kNotInPool, kUndefinedId};
   }
 
   static constexpr ObjHeader Tuple(uint32_t field_mask, uint32_t obj_len) {
-    return {kNotInPool, TypeTag::Tuple, field_mask, HeapTag::FixedSize,
+    return {TypeTag::Tuple, field_mask, HeapTag::FixedSize, kNotInPool,
             kUndefinedId};
   }
 
   // Used by GLOBAL_STR, GLOBAL_LIST, GLOBAL_DICT
   static constexpr ObjHeader Global(uint8_t type_tag) {
-    return {kNotInPool, type_tag, kZeroMask, HeapTag::Global, kIsGlobal};
+    return {type_tag, kZeroMask, HeapTag::Global, kNotInPool, kIsGlobal};
   }
 };
-
-// TODO: we could determine the max of all objects statically!
-const int kFieldMaskBits = 24;
 
 #define FIELD_MASK(header) (header).u_mask_npointers
 #define NUM_POINTERS(header) (header).u_mask_npointers
@@ -162,6 +157,9 @@ using GcGlobal = typename GcGlobalImpl<T>::Internal::type;
 
 // The "homogeneous" layout of objects with HeapTag::FixedSize.  LayoutFixed is
 // for casting; it isn't a real type.
+
+// TODO: we could determine the max of all objects statically!
+const int kFieldMaskBits = 24;
 
 struct LayoutFixed {
   // only the entries denoted in field_mask will be valid

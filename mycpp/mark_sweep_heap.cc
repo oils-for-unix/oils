@@ -64,14 +64,14 @@ BumpLeakHeap gBumpLeak;
 
 // Allocate and update stats
 // TODO: Make this interface nicer.
-void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
+void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, int* pool_id) {
   // log("Allocate %d", num_bytes);
   #ifndef NO_POOL_ALLOC
   if (num_bytes <= pool_.kMaxObjSize) {
-    *in_pool = true;
+    *pool_id = 1;
     return pool_.Allocate(obj_id);
   }
-  *in_pool = false;
+  *pool_id = 0;  // malloc(), not a pool
   #endif
 
   // These only work with GC off -- OILS_GC_THRESHOLD=[big]
@@ -138,7 +138,7 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
 
   int obj_id = header->obj_id;
   #ifndef NO_POOL_ALLOC
-  if (header->in_pool) {
+  if (header->pool_id != 0) {
     if (pool_.IsMarked(obj_id)) {
       return;
     }
