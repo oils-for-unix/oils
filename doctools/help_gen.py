@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 """
-make_help.py
+help_gen.py
 
 Ideas for HTML -> ANSI converter:
 
@@ -449,7 +449,7 @@ def CardsFromChapters(out_dir, tag_level, paths):
           f.write(text)
 
       # help builtin will show URL if there's a chapter name
-      topics[topic_id] = '' if embed else chapter_name
+      topics[topic_id] = None if embed else chapter_name
 
       if topic_id in seen:
         log('Warning: %r is a duplicate topic', topic_id)

@@ -837,7 +837,7 @@ class Help(vm._Builtin):
 
         # If we have a chapter name, it's not embedded in the binary.  So just
         # print the URL.
-        if chapter_name is not None and len(chapter_name):
+        if chapter_name is not None:
             util.PrintTopicHeader(topic_id, self.f)
             print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix,
                                                          self.version_str,

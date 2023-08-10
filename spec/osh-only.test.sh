@@ -93,3 +93,16 @@ ysh-chapters 0
 zz 1
 ## END
 
+#### help topics that are linked
+help com-sub | grep -o chap-word-lang.html
+echo status=$?
+
+help read | grep -o chap-builtin-cmd.html
+echo status=$?
+
+## STDOUT:
+chap-word-lang.html
+status=0
+chap-builtin-cmd.html
+status=0
+## END
