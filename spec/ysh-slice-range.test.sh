@@ -125,16 +125,6 @@ var t3 = mytable[:2, %(name age)]
 (Str)   'TODO: Table Slicing'
 ## END
 
-#### Index a list with a range, not a slice.  TODO: Figure out semantics
-shopt -s oil:all
-var mylist = [1,2,3,4,5]
-var r = 1:3
-var myslice = mylist[r]
-## status: 3
-## STDOUT:
-TODO
-## END
-
 #### List(0:3) should copy the list?
 shopt -s oil:all
 var mylist = List(0:3)
