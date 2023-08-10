@@ -79,7 +79,7 @@ setglobal_compile_flags() {
   fi
 
   case $variant in
-    *+bumpleak|*+bumproot|*+cheney)
+    *+bumpleak|*+bumproot)
       ;;
     *)
       flags="$flags -D MARK_SWEEP"
@@ -146,10 +146,6 @@ setglobal_compile_flags() {
   case $variant in
     *+gcalways)
       flags="$flags -D GC_ALWAYS"
-      ;;
-
-    *+cheney)
-      flags="$flags -D CHENEY_GC"
       ;;
 
     *+tcmalloc)
