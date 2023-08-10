@@ -290,3 +290,4 @@ class Parser(object):
 
         """
         # TODO: feed it to lexer first, then parser
+        return None

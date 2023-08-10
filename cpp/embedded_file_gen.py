@@ -20,7 +20,7 @@ def main(argv):
 
   # Invoked with _devbuild/help/* stdlib/*.ysh 
 
-  log('paths %s', paths)
+  #log('paths %s', paths)
 
   out_f.write('''
 #include "cpp/embedded_file.h"
