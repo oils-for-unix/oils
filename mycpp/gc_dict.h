@@ -54,7 +54,7 @@ class GlobalDict {
 
 #define GLOBAL_DICT(K, V, N, name, keys, vals)                                 \
   GcGlobal<GlobalSlab<int, N>> _entry_##name = {                               \
-      ObjHeader::Global(TypeTag::Slab), {.items_ = {0}}};                      \
+      ObjHeader::Global(TypeTag::Slab), {.items_ = {}}};                       \
   GcGlobal<GlobalSlab<K, N>> _keys_##name = {ObjHeader::Global(TypeTag::Slab), \
                                              {.items_ = keys}};                \
   GcGlobal<GlobalSlab<V, N>> _vals_##name = {ObjHeader::Global(TypeTag::Slab), \

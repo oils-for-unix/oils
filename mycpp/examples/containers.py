@@ -14,6 +14,7 @@ gstr = 'foo'  # type: str
 glist_int = [1, 2]  # type: List[int]
 glist_str = ['spam', 'eggs']  # type: List[str]
 
+gEmptyDict = {}  # type: Dict[str, str]
 gdict = {'a': 42, 'b': 43}  # type: Dict[str, int]
 gdict_is = {5: 'foo', 6: 'bar', 7: 'spam'}  # type: Dict[int, str]
 gdict_ss = {'foo': 'foo'}
@@ -71,6 +72,7 @@ def ListDemo():
   blank = [no_str] * n
   log("len(blank) = %d", len(blank))
 
+  log('len gEmptyDict = %d', len(gEmptyDict))
   log('len gdict = %d', len(gdict))
   log('len gdict_is = %d', len(gdict_is))
   log('len gdict_ss = %d', len(gdict_ss))
