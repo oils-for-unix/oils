@@ -1251,8 +1251,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 # Any constant strings will have already been written
                 # TODO: Assert that every item is a constant?
-                self.write('GLOBAL_LIST(%s, %d, %s, ', item_c_type,
-                           len(o.rvalue.items), lval.name)
+                self.write('GLOBAL_LIST(%s, %s, %d, ', lval.name, item_c_type,
+                           len(o.rvalue.items))
 
                 self._WriteListElements(o.rvalue.items, sep=' COMMA ')
 
@@ -1268,8 +1268,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 val_c_type = GetCType(val_type)
 
                 dict_expr = o.rvalue
-                self.write('GLOBAL_DICT(%s, %s, %d, %s, ', key_c_type,
-                           val_c_type, len(dict_expr.items), lval.name)
+                self.write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
+                           key_c_type, val_c_type, len(dict_expr.items))
 
                 keys = [k for k, _ in dict_expr.items]
                 values = [v for _, v in dict_expr.items]

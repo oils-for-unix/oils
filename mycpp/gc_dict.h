@@ -52,7 +52,7 @@ class GlobalDict {
 // We should probably update the runtime code to allow a nullptr?  For linear
 // search?
 
-#define GLOBAL_DICT(K, V, N, name, keys, vals)                                 \
+#define GLOBAL_DICT(name, K, V, N, keys, vals)                                 \
   GcGlobal<GlobalSlab<int, N>> _entry_##name = {                               \
       ObjHeader::Global(TypeTag::Slab), {.items_ = {}}};                       \
   GcGlobal<GlobalSlab<K, N>> _keys_##name = {ObjHeader::Global(TypeTag::Slab), \

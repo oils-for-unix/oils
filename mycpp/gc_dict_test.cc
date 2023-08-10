@@ -465,9 +465,9 @@ TEST test_tuple_key() {
   PASS();
 }
 
-GLOBAL_DICT(int, int, 2, gDict, {42 COMMA 43}, {1 COMMA 2});
+GLOBAL_DICT(gDict, int, int, 2, {42 COMMA 43}, {1 COMMA 2});
 
-GLOBAL_DICT(Str*, Str*, 2, gStrDict, {kStrFoo COMMA kStrBar},
+GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
             {kStrBar COMMA kStrFoo});
 
 TEST test_global_dict() {

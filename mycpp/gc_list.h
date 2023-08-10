@@ -22,7 +22,7 @@ class GlobalList {
   GlobalSlab<T, N>* slab_;
 };
 
-#define GLOBAL_LIST(T, N, name, array)                                         \
+#define GLOBAL_LIST(name, T, N, array)                                         \
   GcGlobal<GlobalSlab<T, N>> _slab_##name = {ObjHeader::Global(TypeTag::Slab), \
                                              {.items_ = array}};               \
   GcGlobal<GlobalList<T, N>> _list_##name = {                                  \
