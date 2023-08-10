@@ -971,7 +971,7 @@ UftraceTaskReport = function(env, task_name, summaries) {
   slabs = task_env$slabs
   reserve = task_env$reserve
 
-  string_overhead = 13
+  string_overhead = 17  # GC header (8) + len (4) + hash value (4) + NUL (1)
   strings %>% mutate(obj_len = str_len + string_overhead) -> strings
 
   # TODO: Output these totals PER WORKLOAD, e.g. parsing big/small, executing
@@ -1045,8 +1045,8 @@ UftraceTaskReport = function(env, task_name, summaries) {
            percent = n_less_than * 100.0 / num_strings) ->
     string_lengths
 
-  strs_7_bytes_or_less = string_lengths %>% filter(str_len == 7) %>% select(percent)
-  strs_15_bytes_or_less = string_lengths %>% filter(str_len == 15) %>% select(percent)
+  strs_6_bytes_or_less = string_lengths %>% filter(str_len == 6) %>% select(percent)
+  strs_14_bytes_or_less = string_lengths %>% filter(str_len == 14) %>% select(percent)
 
   # Parse workload
   # 62% of strings <= 6 bytes
@@ -1148,8 +1148,8 @@ UftraceTaskReport = function(env, task_name, summaries) {
                  allocs_48_bytes_or_less = sprintf('%.1f%%', allocs_48_bytes_or_less),
                  allocs_64_bytes_or_less = sprintf('%.1f%%', allocs_64_bytes_or_less),
 
-                 strs_7_bytes_or_less = sprintf('%.1f%%', strs_7_bytes_or_less),
-                 strs_15_bytes_or_less = sprintf('%.1f%%', strs_15_bytes_or_less),
+                 strs_6_bytes_or_less = sprintf('%.1f%%', strs_6_bytes_or_less),
+                 strs_14_bytes_or_less = sprintf('%.1f%%', strs_14_bytes_or_less),
                  )
   summaries$stats[[task_name]] = stats
 
