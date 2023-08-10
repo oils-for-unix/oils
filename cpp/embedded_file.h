@@ -8,8 +8,8 @@
 #include "mycpp/gc_str.h"
 
 struct TextFile {
-  Str* rel_path;
-  Str* contents;
+  const char* rel_path;
+  Str* contents;  // GC string to avoid copying on return
 };
 
 // Linear search; last one has nullptr entries

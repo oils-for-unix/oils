@@ -18,18 +18,16 @@ TEST for_test_coverage() {
   PASS();
 }
 
-GLOBAL_STR(k1, "k1");
 GLOBAL_STR(v1, "v1");
-GLOBAL_STR(k2, "k2");
 GLOBAL_STR(v2, "v2");
 
-TextFile tmp[] = {
-    {.rel_path = k1, .contents = v1},
-    {.rel_path = k2, .contents = v2},
+TextFile gTmp[] = {
+    {.rel_path = "k1", .contents = v1},
+    {.rel_path = "k2", .contents = v2},
     {.rel_path = nullptr, .contents = nullptr},
 };
 
-TextFile* gEmbeddedFiles = tmp;  // array to pointer
+TextFile* gEmbeddedFiles = gTmp;  // turn array into pointer
 
 TEST loader_test() {
   auto loader = pyutil::GetResourceLoader();
@@ -39,8 +37,8 @@ TEST loader_test() {
 
   pyutil::PrintVersionDetails(loader);
 
-  ASSERT_EQ(v1, loader->Get(k1));
-  ASSERT_EQ(v2, loader->Get(k2));
+  ASSERT_EQ(v1, loader->Get(StrFromC("k1")));
+  ASSERT_EQ(v2, loader->Get(StrFromC("k2")));
 
   bool caught = false;
   try {

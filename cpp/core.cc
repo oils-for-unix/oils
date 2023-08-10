@@ -329,7 +329,7 @@ Str* ChArrayToString(List<int>* ch_array) {
 Str* _ResourceLoader::Get(Str* path) {
   TextFile* t = gEmbeddedFiles;  // start of generated data
   while (t->rel_path != nullptr) {
-    if (str_equals(t->rel_path, path)) {
+    if (strcmp(t->rel_path, path->data_) == 0) {
       return t->contents;
     }
     t++;

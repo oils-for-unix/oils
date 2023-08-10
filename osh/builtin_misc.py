@@ -872,10 +872,12 @@ class Help(vm._Builtin):
 
         topic_id, blame_loc = arg_r.Peek2()
         if topic_id is None:
-            assert self._ShowTopic('help', blame_loc) == 0
+            found = self._ShowTopic('help', blame_loc) == 0
+            assert found
 
             # e.g. ysh-chapters
-            assert self._ShowTopic('%s-chapters' % self.lang, blame_loc) == 0
+            found = self._ShowTopic('%s-chapters' % self.lang, blame_loc) == 0
+            assert found
 
             print('All docs: https://www.oilshell.org/release/%s/doc/' %
                   self.version_str)

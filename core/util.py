@@ -121,7 +121,9 @@ def HelpFlag(loader, topic_id, f):
     # type: (pyutil._ResourceLoader, str, mylib.Writer) -> None
     _PrintVersionLine(loader, f)
     f.write('\n')
-    assert PrintEmbeddedHelp(loader, topic_id, f)
+    found = PrintEmbeddedHelp(loader, topic_id, f)
+    # Note: could assert this in C++ too
+    assert found, 'Missing %s' % topic_id
 
 
 def VersionFlag(loader, f):
