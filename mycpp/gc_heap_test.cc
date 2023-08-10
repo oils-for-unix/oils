@@ -11,8 +11,12 @@
 // https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
 
 // The structures must be layout compatible!  Protect against typos.
-static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_),
-              "Str and GlobalStr should be consistent");
+
+#define ASSERT_GLOBAL_STR(field)                                       \
+  static_assert(offsetof(Str, field) == offsetof(GlobalStr<1>, field), \
+                "Str and GlobalStr should be consistent");
+ASSERT_GLOBAL_STR(len_);
+ASSERT_GLOBAL_STR(data_);
 
 static_assert(offsetof(Slab<int>, items_) ==
                   offsetof(GlobalSlab<int COMMA 1>, items_),

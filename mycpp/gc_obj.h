@@ -17,8 +17,8 @@ const int Scanned = 3;    // Scan a contiguous range of children
 const int Forwarded = 4;  // For the Cheney algorithm.
 };                        // namespace HeapTag
 
-// These tags are mainly for debugging.  Oil is a statically typed
-// program, so we don't need runtime types in general.
+// These tags are mainly for debugging.  Oils is a statically typed program, so
+// we don't need runtime types in general.
 // This "enum" starts from the end of the valid type_tag range.
 // asdl/gen_cpp.py starts from 1 for variants, or 64 for shared variants.
 namespace TypeTag {
@@ -26,6 +26,8 @@ const int OtherClass = 127;  // non-ASDL class
 const int Str = 126;         // asserted in dynamic StrFormat()
 const int Slab = 125;
 const int Tuple = 124;
+const int List = 123;
+const int Dict = 122;
 };  // namespace TypeTag
 
 const int kNotInPool = 0;
