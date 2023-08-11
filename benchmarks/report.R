@@ -989,11 +989,11 @@ UftraceTaskReport = function(env, task_name, summaries) {
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
 
-  allocs_16_bytes_or_less = alloc_sizes %>% filter(obj_len == 16) %>% select(percent)
   allocs_24_bytes_or_less = alloc_sizes %>% filter(obj_len == 24) %>% select(percent)
-  allocs_32_bytes_or_less = alloc_sizes %>% filter(obj_len == 32) %>% select(percent)
   allocs_48_bytes_or_less = alloc_sizes %>% filter(obj_len == 48) %>% select(percent)
-  allocs_64_bytes_or_less = alloc_sizes %>% filter(obj_len == 64) %>% select(percent)
+  allocs_96_bytes_or_less = alloc_sizes %>% filter(obj_len == 96) %>% select(percent)
+  allocs_192_bytes_or_less = alloc_sizes %>% filter(obj_len == 192) %>% select(percent)
+
   Log('Percentage of allocs less than 32 bytes: %.1f', allocs_32_bytes_or_less)
 
   options(tibble.print_min=25)
@@ -1142,11 +1142,10 @@ UftraceTaskReport = function(env, task_name, summaries) {
                  percent_list_bytes = Percent(total_list_bytes, total_bytes),
                  percent_string_bytes = Percent(total_string_bytes, total_bytes),
 
-                 allocs_16_bytes_or_less = sprintf('%.1f%%', allocs_16_bytes_or_less),
                  allocs_24_bytes_or_less = sprintf('%.1f%%', allocs_24_bytes_or_less),
-                 allocs_32_bytes_or_less = sprintf('%.1f%%', allocs_32_bytes_or_less),
                  allocs_48_bytes_or_less = sprintf('%.1f%%', allocs_48_bytes_or_less),
-                 allocs_64_bytes_or_less = sprintf('%.1f%%', allocs_64_bytes_or_less),
+                 allocs_96_bytes_or_less = sprintf('%.1f%%', allocs_96_bytes_or_less),
+                 allocs_192_bytes_or_less = sprintf('%.1f%%', allocs_192_bytes_or_less),
 
                  strs_6_bytes_or_less = sprintf('%.1f%%', strs_6_bytes_or_less),
                  strs_14_bytes_or_less = sprintf('%.1f%%', strs_14_bytes_or_less),
