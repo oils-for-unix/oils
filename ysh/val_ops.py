@@ -232,7 +232,7 @@ class RangeIterator(_ContainerIter):
 
     def Done(self):
         # type: () -> int
-        return self.i == self.val.upper
+        return self.i >= self.val.upper
 
     def FirstValue(self):
         # type: () -> value_t

@@ -101,6 +101,26 @@ var b = a[:]
 (List)   [1, 2, 3]
 ## END
 
+#### Iterate over range
+for i in (1:5) {
+    echo $[i]
+}
+## STDOUT:
+1
+2
+3
+4
+## END
+
+#### Loops over bogus ranges terminate
+# Regression test for bug found during dev. Loops over backwards ranges should
+# terminate immediately.
+for i in (5:1) {
+    echo $[i]
+}
+## STDOUT:
+## END
+
 #### Slices with Multiple Dimensions (for QTT)
 
 qtt pretty :mytable <<< '''
