@@ -994,7 +994,7 @@ UftraceTaskReport = function(env, task_name, summaries) {
   allocs_96_bytes_or_less = alloc_sizes %>% filter(obj_len == 96) %>% select(percent)
   allocs_192_bytes_or_less = alloc_sizes %>% filter(obj_len == 192) %>% select(percent)
 
-  Log('Percentage of allocs less than 32 bytes: %.1f', allocs_32_bytes_or_less)
+  Log('Percentage of allocs less than 48 bytes: %.1f', allocs_48_bytes_or_less)
 
   options(tibble.print_min=25)
 
