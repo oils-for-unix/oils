@@ -1398,7 +1398,7 @@ class CommandEvaluator(object):
                             else:
                                 e_die_status(
                                     2,
-                                    'Ranger iteration expects at most 2 loop variables',
+                                    'Range iteration expects at most 2 loop variables',
                                     node.keyword)
 
                         else:
