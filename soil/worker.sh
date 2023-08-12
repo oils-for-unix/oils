@@ -173,6 +173,7 @@ py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 osh-all          test/spec-cpp.sh osh-all              _tmp/spec/osh-cpp/compare.html
 ysh-all          test/spec-cpp.sh ysh-all              _tmp/spec/ysh-cpp/compare.html
+ysh-py         test/spec-py.sh ysh-all-serial          _tmp/spec/ysh-py/index.html
 EOF
 }
 
@@ -233,7 +234,6 @@ yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
-ysh-spec          test/spec-py.sh ysh-all-serial         _tmp/spec/ysh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
