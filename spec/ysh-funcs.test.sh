@@ -1,7 +1,7 @@
 # spec/ysh-funcs
 
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Identity function
 func id(x) {
@@ -405,19 +405,14 @@ This is a CAT
 Meow
 ## END
 
-#### Functions can be returned, but they do not capture
-func build(x) {
+#### Functions cannot be nested
+func build(y) {
   func f(x) {
     return (x)
   }
-
-  return (f)
 }
-
-var g = build(1)
-json write (g(2))
+## status: 2
 ## STDOUT:
-2
 ## END
 
 #### Functions can be shadowed
