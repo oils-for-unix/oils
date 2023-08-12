@@ -89,7 +89,6 @@ parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run            -
-ysh-spec            test/spec-py.sh ysh-all-serial               _tmp/spec/ysh-py/index.html
 tea-spec            test/spec-py.sh tea-all-serial               _tmp/spec/tea/index.html
 ysh-large           ysh/run.sh soil-run                          -
 tea-large           tea/run.sh soil-run                          -
@@ -233,7 +232,8 @@ py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
-osh-spec          test/spec-py.sh osh-all-serial            _tmp/spec/osh-py/index.html
+osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
+ysh-spec          test/spec-py.sh ysh-all-serial         _tmp/spec/ysh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
