@@ -388,8 +388,8 @@ class OilMethodFilter(object):
 
     #log('= %s %s', def_name, method_name)
 
-    # If it doesn't appear in the .py source, it can't be used.  (Execption: it
-    # coudl be used in C source with dynamic lookup?  But I don't think CPython
+    # If it doesn't appear in the .py source, it can't be used.  (Exception: it
+    # could be used in C source with dynamic lookup?  But I don't think CPython
     # does that.)
     #if method_name not in self.py_names:
     if 0:

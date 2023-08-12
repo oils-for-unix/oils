@@ -35,6 +35,40 @@ List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
   return result;
 }
 
+// GlobalDict is layout-compatible with Dict (unit tests assert this), and it
+// can be a true C global (incurs zero startup time)
+
+template <typename K, typename V, int N>
+class GlobalDict {
+ public:
+  int len_;
+  int capacity_;
+  GlobalSlab<int, N>* entry_;  // TODO: should be sized differently
+  GlobalSlab<K, N>* keys_;
+  GlobalSlab<V, N>* values_;
+};
+
+// TODO: when we implement entry_, it shouldn't be the zero slab
+// We should probably update the runtime code to allow a nullptr?  For linear
+// search?
+
+#define GLOBAL_DICT(name, K, V, N, keys, vals)                                 \
+  GcGlobal<GlobalSlab<int, N>> _entry_##name = {                               \
+      ObjHeader::Global(TypeTag::Slab), {.items_ = {}}};                       \
+  GcGlobal<GlobalSlab<K, N>> _keys_##name = {ObjHeader::Global(TypeTag::Slab), \
+                                             {.items_ = keys}};                \
+  GcGlobal<GlobalSlab<V, N>> _vals_##name = {ObjHeader::Global(TypeTag::Slab), \
+                                             {.items_ = vals}};                \
+  GcGlobal<GlobalDict<K, V, N>> _dict_##name = {                               \
+      ObjHeader::Global(TypeTag::Dict),                                        \
+      {.len_ = N,                                                              \
+       .capacity_ = N,                                                         \
+       .entry_ = &_entry_##name.obj,                                           \
+       .keys_ = &_keys_##name.obj,                                             \
+       .values_ = &_vals_##name.obj},                                          \
+  };                                                                           \
+  Dict<K, V>* name = reinterpret_cast<Dict<K, V>*>(&_dict_##name.obj);
+
 template <class K, class V>
 class Dict {
   // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,

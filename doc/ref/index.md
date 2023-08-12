@@ -1,98 +1,112 @@
 ---
-in_progress: yes
 default_highlighter: oil-sh
 ---
 
 Oils Reference
 =============
 
+A guide to everything in Oils (in progress).
+
+Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
 
 <div id="toc">
 </div>
 
 ## Online HTML
 
-This reference has N chapters:
+Oils consists of two major "modes" for shell:
+
+- [Index of OSH Topics](index-osh.html) - Compatible
+- [Index of YSH Topics](index-ysh.html) - New and Powerful
+
+They link to **topics** within these 12 chapters:
 
 1. [Front End](chap-front-end.html)
-1. [Command Language](TODO)
-1. ...
-1. [Data Languages](chap-data-lang.html)
-
-Which are linked from these indices:
-
-- [OSH Reference Index](../osh-help-topics.html)
-- [YSH Reference Index](../ysh-help-topics.html)
+1. [Command Language](chap-cmd-lang.html)
+1. [Word Language](chap-word-lang.html)
+1. [OSH Assignment](chap-osh-assign.html)
+1. [Mini Languages](chap-mini-lang.html)
+1. [Builtin Commands](chap-builtin-cmd.html)
+1. [Global Shell Options](chap-option.html)
+1. [Special Variables](chap-special-var.html)
+1. [Plugins and Hooks](chap-plugin.html)
+1. [YSH Expression Language](chap-expr-lang.html)
+1. [YSH Types and Methods](chap-type-method.html)
+1. [Builtin Functions](chap-builtin-func.html)
 
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.
 
-Or go back to [All Oils Documentation](../index.html).
+- [Index of Data Topics](index-data.html) - Oils also has data languages.
 
+13. [J8 Notation](chap-data-lang.html)
+1. Packle (TODO)
 
 ## `help` builtin command
 
 When you type `help` in OSH or YSH, the command shows some of this material,
 and prints hyperlinks to it.
 
-## Directory Structures
+## More About This Reference
 
-### Source Code
+### Terminology
 
-    doc/  # all docs
-      index.md  # index of docs
+There are 3 levels in this tree of docs, which underlies the `help` builtin:
+
+1. *Chapter* - An HTML doc that's part of the reference.  May apply to OSH, YSH
+   or both.
+1. *Section* - An `<h2>` heading in a chapter
+1. *Topic* - An `<h3>` heading in a chapter.  
+   - It has text with a **globally unique** name like `doc-comment`.
+   - May apply to OSH, YSH or both.
+
+More terminology:
+
+- *Table of Contents* - a doc that links to topics, within chapters.
+- *Card* - Topics maybe be exported as `help` builtin "cards", either as inline
+  text, or a URL to online HTML.  A card may also have a URL to POSIX or bash
+  docs.
+
+### Directory Structures
+
+The source code is simply a tree of Markdown files:
+
+    doc/
+      release-index.md     # /release/$VERSION/
+
+      index.md             # All Docs on Oils, /release/$VERSION/doc/
       getting-started.md
       ...
 
-      ref/                    # the reference
-        index.md              # this page
-        chap-command-lang.md  # chapter
+      ref/
+        index.md           # this page, the Oils Reference
+        index-osh.md       # link to OSH topics
+        index-ysh.md       # link to YSH topics
+        index-data.md
+
+        chap-cmd-lang.md   # chapter on the command language
         ...
 
-        osh-index.md          # TODO
-        ysh-index.md          # TODO
 
+And the URLs basically mirror the source code:
 
-### URLs
-
-URLs mirror the source code:
-
-    /release/$VERSION/doc/
+    /release/$VERSION/
       index.html
-      getting-started.html
-      ...
-
-      ref/
+      doc/
         index.html
-        chap-command-lang.html
-        osh-index.html
-        ysh-index.html
+        getting-started.html
+        ...
 
-With internal anchors:
+        ref/
+          index.html
+          index-osh.html
+          index-ysh.html
+          index-data.html
 
-    ref/chap-option.html#strict_errexit
+          chap-cmd-lang.html
+          ...
 
-    ref/chap-builtin.html#compgen
+You can link to topics with internal anchors:
 
-## TODO
-
-- Later: alphabetical list of options
-
-### Link Shortcuts For Writing Docs
-
-- ($command-lang:for)
-- ($option:strict_errexit)
-- ($builtin:compgen)
-
-Or maybe:
-
-- ($ref-c:for)
-- ($ref-opt:strict_errexit)
-- ($ref-builtin:compgen)
-- ($ref-word:brace)
-
-### Multiple headings without messing up HTML?
-
-Like say you want all the `[[` language stuff together, and you want to create
-a link, but not explain it all.
-
+- [chap-option.html#parse_at](chap-option.html#parse_at)
+- [chap-builtin-cmd.html#compgen](chap-builtin-cmd.html#compgen)

@@ -140,7 +140,7 @@ def TableOfContents(f):
   # case
   # if
 
-  # Basically any line that begins with ^# ^### or ^##### is speical?
+  # Basically any line that begins with ^# ^### or ^##### is special?
   # <h1> <h2> <h3>
   # Still need links
 

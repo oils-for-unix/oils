@@ -42,8 +42,7 @@ is the new, fast C++ build.
 
 ## Documentation
 
-The [Doc Overview](doc/) links to all docs.  Here is the subset of them that
-are **ready to read**:
+These docs are **ready to read** (though there may be obsolete references to "Oil" rather than "YSH"):
 
 - [Getting Started](doc/getting-started.html)
 - [FAQ on Documentation](doc/faq-doc.html).  **Look here if you can't find
@@ -68,15 +67,11 @@ are **ready to read**:
   | [Syntactic Concepts](doc/syntactic-concepts.html) 
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
   | [Language Influences](doc/language-influences.html)
-- Interchange Formats:
-  - [QSN](doc/qsn.html)
 
-More docs:
+More:
 
-- [OSH Help Topics](doc/osh-help-topics.html) (in progress)
-  | [YSH Help Topics](doc/ysh-help-topics.html) (in progress).
+- [**All Docs**](doc/) about Oils (in progress).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oil.  These versions may not be up-to-date.
-
 

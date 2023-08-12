@@ -1,19 +1,18 @@
 #!/usr/bin/env python2
-"""Osh_eval.py."""
+"""osh_eval.py."""
 from __future__ import print_function
 
 import sys
 
 from _devbuild.gen.syntax_asdl import CompoundWord
-from core import error
 from core import shell
 from core import pyos
 from core import pyutil
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
-from mycpp.mylib import print_stderr, log
+from mycpp.mylib import print_stderr
 
-unused2 = flag_def
+unused = flag_def
 
 from typing import List
 
@@ -21,6 +20,7 @@ from typing import List
 def main(argv):
     # type: (List[str]) -> int
     loader = pyutil.GetResourceLoader()
+
     login_shell = False
 
     environ = pyos.Environ()
@@ -31,10 +31,6 @@ def main(argv):
     try:
         status = shell.Main('osh', arg_r, environ, login_shell, loader, None)
         return status
-    except error.Usage as e:
-        #builtin.Help(['oil-usage'], util.GetResourceLoader())
-        log('oils: %s', e.msg)
-        return 2
     except RuntimeError as e:
         if 0:
             import traceback

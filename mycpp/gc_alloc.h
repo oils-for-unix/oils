@@ -17,9 +17,6 @@ extern BumpLeakHeap gHeap;
 #elif defined(MARK_SWEEP)
   #include "mycpp/mark_sweep_heap.h"
 extern MarkSweepHeap gHeap;
-#elif defined(CHENEY_GC)
-  #include "mycpp/cheney_heap.h"
-extern CheneyHeap gHeap;
 #endif
 
 #define VALIDATE_ROOTS 0
@@ -103,8 +100,8 @@ T* Alloc(Args&&... args) {
   constexpr size_t num_bytes = sizeof(ObjHeader) + sizeof(T);
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
@@ -112,7 +109,7 @@ T* Alloc(Args&&... args) {
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   void* obj = header->ObjectAddress();
@@ -136,26 +133,23 @@ inline Str* NewStr(int len) {
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
 
   auto s = new (header->ObjectAddress()) Str();
-#if defined(MARK_SWEEP) || defined(BUMP_LEAK)
+
   s->data_[len] = '\0';  // NUL terminate
   s->len_ = len;
-#else
-  // reversed in len() to derive string length
-  header->obj_len = kStrHeaderSize + len + 1;
-#endif
+  s->hash_value_ = -1;  // this could be a valid hash value
 
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   return s;
@@ -169,17 +163,19 @@ inline Str* OverAllocatedStr(int len) {
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
   auto s = new (header->ObjectAddress()) Str();
+  s->hash_value_ = -1;  // this could be a valid hash value
+
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   return s;
@@ -211,8 +207,8 @@ inline Slab<T>* NewSlab(int len) {
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
-  bool in_pool;
-  void* place = gHeap.Allocate(num_bytes, &obj_id, &in_pool);
+  int pool_id;
+  void* place = gHeap.Allocate(num_bytes, &obj_id, &pool_id);
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
@@ -225,7 +221,7 @@ inline Slab<T>* NewSlab(int len) {
 #if MARK_SWEEP
   header->obj_id = obj_id;
   #ifndef NO_POOL_ALLOC
-  header->in_pool = in_pool;
+  header->pool_id = pool_id;
   #endif
 #endif
   return slab;

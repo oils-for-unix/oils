@@ -14,13 +14,14 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (span_e, cmd_value, value, scope_e)
-from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.syntax_asdl import source, loc, loc_t
 from core import alloc
 from core import error
 from core.error import e_usage, e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
+from core import util
 from core import ui
 from core import vm
 from data_lang import qsn_native
@@ -36,7 +37,7 @@ from pylib import os_path
 import libc
 import posix_ as posix
 
-from typing import Tuple, List, Optional, Any, TYPE_CHECKING
+from typing import Tuple, List, Dict, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import span_t
     from core.pyutil import _ResourceLoader
@@ -56,7 +57,6 @@ _ = log
 class Times(vm._Builtin):
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         vm._Builtin.__init__(self)
 
     def Run(self, cmd_val):
@@ -814,37 +814,39 @@ class Pwd(vm._Builtin):
         return 0
 
 
-# TODO: Need $VERSION inside all pages?
-
 # Needs a different _ResourceLoader to translate
 class Help(vm._Builtin):
-    def __init__(self, loader, errfmt):
-        # type: (_ResourceLoader, ErrorFormatter) -> None
+    def __init__(self, lang, loader, help_data, errfmt):
+        # type: (str, _ResourceLoader, Dict[str, str], ErrorFormatter) -> None
+        self.lang = lang
         self.loader = loader
+        self.help_data = help_data
         self.errfmt = errfmt
+        self.version_str = pyutil.GetVersion(self.loader)
+        self.f = mylib.Stdout()
 
-    def _Groups(self):
-        # type: () -> List[str]
-        # TODO: cache this?
-        contents = self.loader.Get('_devbuild/help/groups.txt')
-        groups = contents.splitlines(False)  # no newlines
-        return groups
+    def _ShowTopic(self, topic_id, blame_loc):
+        # type: (str, loc_t) -> int
 
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
+        prefix = 'https://www.oilshell.org/release'
+        if 0:
+            prefix = 'file:///home/andy/git/oilshell/oil/_release'
+            version_str = 'VERSION'
 
-        attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
-        #arg = arg_types.help(attrs.attrs)
+        chapter_name = self.help_data.get(topic_id)
 
-        topic, blame_loc = arg_r.Peek2()
-        if topic is None:
-            topic = 'help'
-        else:
-            arg_r.Next()
+        # If we have a chapter name, it's not embedded in the binary.  So just
+        # print the URL.
+        if chapter_name is not None:
+            util.PrintTopicHeader(topic_id, self.f)
+            print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix,
+                                                         self.version_str,
+                                                         chapter_name,
+                                                         topic_id))
+            return 0
 
-        try:
-            contents = self.loader.Get('_devbuild/help/%s' % topic)
-        except (IOError, OSError):
+        found = util.PrintEmbeddedHelp(self.loader, topic_id, self.f)
+        if not found:
             # Notes:
             # 1. bash suggests:
             # man -k zzz
@@ -857,11 +859,35 @@ class Help(vm._Builtin):
 
             # 3. This is mostly an interactive command.  Is it obnoxious to
             # quote the line of code?
-            self.errfmt.Print_('no help topics match %r' % topic, blame_loc)
+            self.errfmt.Print_('no help topics match %r' % topic_id, blame_loc)
             return 1
 
-        print(contents)
         return 0
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
+        #arg = arg_types.help(attrs.attrs)
+
+        topic_id, blame_loc = arg_r.Peek2()
+        if topic_id is None:
+            found = self._ShowTopic('help', blame_loc) == 0
+            assert found
+
+            # e.g. ysh-chapters
+            found = self._ShowTopic('%s-chapters' % self.lang, blame_loc) == 0
+            assert found
+
+            print('All docs: https://www.oilshell.org/release/%s/doc/' %
+                  self.version_str)
+            print('')
+
+            return 0
+        else:
+            arg_r.Next()
+
+        return self._ShowTopic(topic_id, blame_loc)
 
 
 class Cat(vm._Builtin):

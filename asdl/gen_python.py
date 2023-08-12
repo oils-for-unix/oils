@@ -522,7 +522,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             if variant.shared_type:
                 continue  # Don't generate a class for shared types.
             if len(variant.fields) == 0:
-                # We must use the old-style nameing here, ie. command__NoOp, in order
+                # We must use the old-style naming here, ie. command__NoOp, in order
                 # to support zero field variants as constants.
                 class_name = '%s__%s' % (sum_name, variant.name)
                 self._GenClass(variant, class_name, (sum_name + '_t',), i + 1)

@@ -467,6 +467,8 @@ all() {
   # requires re2c: deps/from-tar.sh layer-re2c
   fastlex
   time-helper
+
+  # help topics and chapter links are extracted from doc/ref
   build/doc.sh all-help
 }
 

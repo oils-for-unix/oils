@@ -82,6 +82,12 @@ if TYPE_CHECKING:
     from core import optview
     from frontend.py_readline import Readline
 
+if mylib.PYTHON:
+    try:
+        from _devbuild.gen import help_meta  # type: ignore
+    except ImportError:
+        help_meta = None
+
 
 def MakeBuiltinArgv(argv1):
     # type: (List[str]) -> cmd_value.Argv
@@ -145,7 +151,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
 
     with alloc.ctx_Location(arena, source.SourcedFile(rc_path, loc.Missing)):
         # TODO: handle status, e.g. 2 for ParseError
-        status = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
+        unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
     f.close()
 
@@ -395,12 +401,11 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     arena = alloc.Arena()
     errfmt = ui.ErrorFormatter()
 
-    help_builtin = builtin_misc.Help(loader, errfmt)
     if flag.help:
-        help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
+        util.HelpFlag(loader, '%s-usage' % lang, mylib.Stdout())
         return 0
     if flag.version:
-        pyutil.ShowAppVersion(loader)
+        util.VersionFlag(loader, mylib.Stdout())
         return 0
 
     no_str = None  # type: str
@@ -614,7 +619,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_control,
                job_list, waiter, tracer, search_path, errfmt)
 
-    builtins[builtin_i.help] = help_builtin
+    if mylib.PYTHON:
+        if help_meta:
+            help_data = help_meta.TopicMetadata()
+        else:
+            help_data = {}  # minimal build
+    else:
+        help_data = help_meta.TopicMetadata()
+    builtins[builtin_i.help] = builtin_misc.Help(lang, loader, help_data,
+                                                 errfmt)
 
     # Interactive, depend on readline
     builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
@@ -688,7 +701,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
              hay_state, errfmt)
 
     spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup, errfmt)
+                                            splitter, comp_lookup,
+                                            help_data, errfmt)
     complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
     builtins[builtin_i.complete] = complete_builtin
     builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
@@ -868,7 +882,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         process.InitInteractiveShell()  # Set signal handlers
 
         # The interactive shell leads a process group which controls the terminal.
-        # It MUST give up the termianl afterward, otherwise we get SIGTTIN /
+        # It MUST give up the terminal afterward, otherwise we get SIGTTIN /
         # SIGTTOU bugs.
         with process.ctx_TerminalControl(job_control, errfmt):
 

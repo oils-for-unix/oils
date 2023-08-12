@@ -18,6 +18,11 @@ USER uke
 COPY --chown=uke _cache/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz \
   /home/uke/oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 
+# cmark
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
+  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+
 # re2c
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \

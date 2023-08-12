@@ -8,6 +8,7 @@
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
+#include "_gen/frontend/help_meta.h"
 #include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
 #include "_gen/frontend/option.asdl.h"
 #include "_gen/frontend/signal.h"

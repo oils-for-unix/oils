@@ -33,7 +33,7 @@ Slower than OSH parser!
 ----------
 
 Did a bunch of major simplifications.  Hm seems to be no faster?  Slightly
-slower.  Not sure if this is signifiant.
+slower.  Not sure if this is significant.
 
 Lisa.
 

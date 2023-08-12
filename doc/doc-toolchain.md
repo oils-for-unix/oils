@@ -110,14 +110,7 @@ Again see [doc-plugins.md][] for examples.
 
 ## The Help Toolchain Renders to HTML and ANSI
 
-TODO: Describe how this works.  We have a plugin for the table of contents.
-
-It's published to the web as well as underlying the `help` builtin.  TODO:
-Render to ANSI.
-
-We also split `{osh,oil}-help.md` into "cards".
-
-Table of contents: `{osh,oil}-help-topics.md`.
+This is done with `doctools/`
 
 ## Code Location
 

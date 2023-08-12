@@ -64,7 +64,7 @@ def parse_process_tree(f, runner_pid):
     print('malformed ps output', file=sys.stderr)
     sys.exit(1)
 
-  # first proceses is the test harness
+  # first process is the test harness
   root = procs[runner_pid]
   root.assert_child_count(1)
   return root.children[0]

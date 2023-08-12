@@ -347,7 +347,7 @@ echo "$@"
 set -- --
 echo "$@"
 
-# note: zsh is diffferent, and yash is totally different
+# note: zsh is different, and yash is totally different
 ## STDOUT:
 a b
 a b

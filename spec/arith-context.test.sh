@@ -55,7 +55,7 @@ echo ${s:zero} ${s:zero+0} ${s:zero+1:zero+1}
 
 #### Ambiguous colon in slice
 s='abcd'
-echo $(( 0 < 1 ? 2 : 0 ))  # evalutes to 2
+echo $(( 0 < 1 ? 2 : 0 ))  # evaluates to 2
 echo ${s: 0 < 1 ? 2 : 0 : 1}  # 2:1 -- TRICKY THREE COLONS
 ## stdout-json: "2\nc\n"
 ## BUG mksh stdout-json: "2\n"
@@ -75,7 +75,7 @@ echo $a $((1 + (2*3)))
 echo $a $((1 + (2 * (3+4))))
 ## stdout: 15 15
 
-#### ExprSub $[] happpens to behave the same on simple cases
+#### ExprSub $[] happens to behave the same on simple cases
 echo $[1 + 2] "$[3 * 4]"
 ## stdout: 3 12
 ## N-I mksh stdout: $[1 + 2] $[3 * 4]

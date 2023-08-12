@@ -179,6 +179,8 @@ class ExprEvaluator(object):
             else:
                 raise NotImplementedError(place)
 
+        raise AssertionError()  # silence C++ compiler
+
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
@@ -476,6 +478,8 @@ class ExprEvaluator(object):
             else:
                 raise error.InvalidType('Expected Int or Float', loc.Missing)
 
+        raise AssertionError()  # silence C++ compiler
+
     def _ArithDivideInt(self, left, right):
         # type: (value_t, value_t) -> value.Int
         left_i = self._ValueToInteger(left)
@@ -679,6 +683,8 @@ class ExprEvaluator(object):
             else:
                 raise error.InvalidType('Expected Int or Float operands',
                                         loc.Missing)
+
+        raise AssertionError()  # silence C++ compiler
 
     def _EvalCompare(self, node):
         # type: (expr.Compare) -> value_t

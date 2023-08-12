@@ -19,6 +19,7 @@
 #include <unistd.h>        // getuid(), environ
 
 #include "_gen/frontend/consts.h"  // gVersion
+#include "cpp/embedded_file.h"
 
 extern char** environ;
 
@@ -325,9 +326,16 @@ Str* ChArrayToString(List<int>* ch_array) {
   return result;
 }
 
-// TODO: Should eliminate _ResourceLoader
 Str* _ResourceLoader::Get(Str* path) {
-  return StrFromC("TODO");
+  TextFile* t = gEmbeddedFiles;  // start of generated data
+  while (t->rel_path != nullptr) {
+    if (strcmp(t->rel_path, path->data_) == 0) {
+      return t->contents;
+    }
+    t++;
+  }
+  // Emulate Python
+  throw Alloc<IOError>(ENOENT);
 }
 
 _ResourceLoader* GetResourceLoader() {
@@ -338,15 +346,10 @@ Str* GetVersion(_ResourceLoader* loader) {
   return consts::gVersion;
 }
 
-void ShowAppVersion(_ResourceLoader* loader) {
-  // Simple --version text.
-  // osh --version is more elaborate, with compiler and so forth.
-  // python -V is similarly simple.
-
-  printf("Oils for Unix %s\n", consts::gVersion->data_);
-  printf("\n");
-  printf("    https://oils-for-unix.org/\n");
-  printf("\n");
+void PrintVersionDetails(_ResourceLoader* loader) {
+  // TODO: I would like the CPU, OS, compiler
+  // How do we get those?  Look at CPython
+  ;
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {

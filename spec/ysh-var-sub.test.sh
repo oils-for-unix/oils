@@ -1,4 +1,4 @@
-# oil-var-sub.test.sh
+## oils_failures_allowed: 4
 
 #### ${x|html}
 x='echo hi 2>&1'

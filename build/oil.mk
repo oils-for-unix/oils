@@ -27,7 +27,7 @@ _build/oil/py-to-compile.txt: _build/detected-config.sh build/dynamic_deps.py
 OIL_BYTECODE_DEPS := \
 	_build/release-date.txt \
 	build/oil-manifest.txt \
-	_devbuild/gen/help_.py
+	_devbuild/gen/help_meta.py
 
 # NOTES:
 # - _devbuild/gen/osh_help.py is a minor hack to depend on the entire

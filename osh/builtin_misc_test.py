@@ -6,6 +6,10 @@ from __future__ import print_function
 
 import unittest
 
+try:
+    from _devbuild.gen.help_meta import TOPICS
+except ImportError:
+    TOPICS = None  # minimal dev build
 from core import pyutil
 from frontend import flag_def  # side effect: flags are defined!
 
@@ -42,7 +46,8 @@ class BuiltinTest(unittest.TestCase):
         # generated?  Because I don't want to deal with a C toolchain for it.
 
         loader = pyutil.GetResourceLoader()
-        builtin_misc.Help([], loader)
+        errfmt = None
+        builtin_misc.Help('ysh', loader, TOPICS, errfmt)
 
 
 if __name__ == '__main__':

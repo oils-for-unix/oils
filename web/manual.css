@@ -50,3 +50,48 @@ p code, li code, h2 code, h3 code, div code {
   padding: 4px;
 }
 
+/* for doc/ref */
+
+.help-body h3 {
+  /* Make it block and use normal spacing
+   * TODO: It would be nice to use the spacing of the manual
+   */
+
+  font-size: 1em;
+  /* margin-left: 2em; */
+  padding: 1em; 
+
+  color: black;
+}
+
+.osh-topic {
+  border-left: solid;
+  border-color: brown;
+}
+
+.osh-ysh-topic {
+  border-left: solid;
+  border-right: solid;
+  border-color: darkgreen;
+}
+
+.ysh-topic {
+  border-right: solid;
+  border-color: darkcyan;
+}
+
+  border-left: solid;
+  border-color: brown;
+}
+
+.osh-ysh-topic {
+  border-left: solid;
+  border-right: solid;
+  border-color: darkgreen;
+}
+
+.ysh-topic {
+  border-right: solid;
+  border-color: darkcyan;
+}
+

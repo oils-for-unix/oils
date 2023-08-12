@@ -77,7 +77,7 @@ def InitLexer(s, arena):
 # - MakeParserForCommandSub(reader, lexer) -- arena is inside lexer/reader
 # - MakeParserForCompletion(code_str)  # no arena?  no errors?
 # - MakeWordParserForHereDoc(lines, arena)  # arena is lost
-#   - althoguh you want to AddLine
+#   - although you want to AddLine
 #   - line_id = arena.AddLine()
 
 

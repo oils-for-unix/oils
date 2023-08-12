@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-Example of MyPy's ability to downcast a var under the same name in a functino.
+Example of MyPy's ability to downcast a var under the same name in a function.
 
 Our ASDL code gen will rely on this.
 """

@@ -11,8 +11,8 @@
 #include "mycpp/gc_builtins.h"  // ValueError
 #include "mycpp/gc_slab.h"
 
-// GlobalList layout-compatible with List (unit tests assert this), and it can
-// be a true C global (incurs zero startup time)
+// GlobalList is layout-compatible with List (unit tests assert this), and it
+// can be a true C global (incurs zero startup time)
 
 template <typename T, int N>
 class GlobalList {
@@ -21,6 +21,14 @@ class GlobalList {
   int capacity_;
   GlobalSlab<T, N>* slab_;
 };
+
+#define GLOBAL_LIST(name, T, N, array)                                         \
+  GcGlobal<GlobalSlab<T, N>> _slab_##name = {ObjHeader::Global(TypeTag::Slab), \
+                                             {.items_ = array}};               \
+  GcGlobal<GlobalList<T, N>> _list_##name = {                                  \
+      ObjHeader::Global(TypeTag::List),                                        \
+      {.len_ = N, .capacity_ = N, .slab_ = &_slab_##name.obj}};                \
+  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);
 
 template <typename T>
 class List {
@@ -424,14 +432,6 @@ List<T>* list(List<T>* other) {
   result->extend(other);
   return result;
 }
-
-#define GLOBAL_LIST(T, N, name, array)                                \
-  GcGlobal<GlobalSlab<T, N>> _slab_##name = {                         \
-      {kNotInPool, 0, kZeroMask, HeapTag::Global, kIsGlobal}, array}; \
-  GcGlobal<GlobalList<T, N>> _list_##name = {                         \
-      {kNotInPool, 0, kZeroMask, HeapTag::Global, kIsGlobal},         \
-      {N, N, &_slab_##name.obj}};                                     \
-  List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);
 
 template <class T>
 class ListIter {

@@ -35,7 +35,7 @@ class Visitor(object):
                 #log('Visiting child array %s', name)
                 for item in child:
                     # We have to check for compound objects on an INSTANCE basis, not a
-                    # type basis, because sums can look liek this:
+                    # type basis, because sums can look like this:
                     # iterable = IterArgv | IterArray(word* words)
                     # We visit the latter but not the former.
                     if isinstance(item, pybase.CompoundObj):

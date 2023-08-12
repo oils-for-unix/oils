@@ -11,16 +11,37 @@
 // https://stackoverflow.com/questions/53850100/warning-offset-of-on-non-standard-layout-type-derivedclass
 
 // The structures must be layout compatible!  Protect against typos.
-static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_),
-              "Str and GlobalStr should be consistent");
+
+#define ASSERT_GLOBAL_STR(field)                                       \
+  static_assert(offsetof(Str, field) == offsetof(GlobalStr<1>, field), \
+                "Str and GlobalStr should be consistent");
+ASSERT_GLOBAL_STR(len_);
+ASSERT_GLOBAL_STR(hash_value_);
+ASSERT_GLOBAL_STR(data_);
 
 static_assert(offsetof(Slab<int>, items_) ==
                   offsetof(GlobalSlab<int COMMA 1>, items_),
               "Slab and GlobalSlab should be consistent");
 
-static_assert(offsetof(List<int>, slab_) ==
-                  offsetof(GlobalList<int COMMA 1>, slab_),
-              "List and GlobalList should be consistent");
+#define ASSERT_GLOBAL_LIST(field)                                             \
+  static_assert(                                                              \
+      offsetof(List<int>, field) == offsetof(GlobalList<int COMMA 1>, field), \
+      "List and GlobalList should be consistent");
+
+ASSERT_GLOBAL_LIST(len_);
+ASSERT_GLOBAL_LIST(capacity_);
+ASSERT_GLOBAL_LIST(slab_);
+
+#define ASSERT_GLOBAL_DICT(field)                                       \
+  static_assert(offsetof(Dict<int COMMA int>, field) ==                 \
+                    offsetof(GlobalDict<int COMMA int COMMA 1>, field), \
+                "Dict and GlobalDict should be consistent");
+
+ASSERT_GLOBAL_DICT(len_);
+ASSERT_GLOBAL_DICT(capacity_);
+ASSERT_GLOBAL_DICT(entry_);
+ASSERT_GLOBAL_DICT(keys_);
+ASSERT_GLOBAL_DICT(values_);
 
 void ShowSlab(void* obj) {
   auto slab = reinterpret_cast<Slab<void*>*>(obj);

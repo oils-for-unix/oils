@@ -290,7 +290,7 @@ class FdState(object):
             fd2 = cast(redir_loc.Fd, UP_loc).fd
 
             if fd1 == fd2:
-                # The user could have asked for it to be open on descrptor 3, but open()
+                # The user could have asked for it to be open on descriptor 3, but open()
                 # already returned 3, e.g. echo 3>out.txt
                 return NO_FD
 
@@ -1260,7 +1260,7 @@ class Pipeline(Job):
 
             pid = proc.StartProcess(trace.PipelinePart)
             if i == 0 and pgid != INVALID_PGID:
-                # Mimick bash and use the PID of the first process as the group for the
+                # Mimic bash and use the PID of the first process as the group for the
                 # whole pipeline.
                 pgid = pid
 
@@ -1528,7 +1528,7 @@ class JobList(object):
         # Counter used to assign IDs to jobs. It is incremented every time a job
         # is created. Once all active jobs are done it is reset to 1. I'm not
         # sure if this reset behavior is mandated by POSIX, but other shells do
-        # it, so we mimick for the sake of compatability.
+        # it, so we mimic for the sake of compatibility.
         self.job_id = 1
 
     def AddJob(self, job):
@@ -1738,7 +1738,7 @@ class JobList(object):
         Used by 'wait' and 'wait -n'.
         """
         count = 0
-        for _, job in iteritems(self.jobs):  # mycpp rewite: from itervalues()
+        for _, job in iteritems(self.jobs):  # mycpp rewrite: from itervalues()
             if job.State() == job_state_e.Running:
                 count += 1
         return count

@@ -2,7 +2,7 @@
 default_highlighter: oil-sh
 ---
 
-Oil vs. Shell Idioms
+YSH vs. Shell Idioms
 ====================
 
 This is an informal, lightly-organized list of recommended idioms for the [Oil

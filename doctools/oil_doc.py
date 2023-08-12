@@ -267,15 +267,17 @@ class HelpTopicsPlugin(_Plugin):
     self.chapter = chapter
 
   def PrintHighlighted(self, out):
-    from doctools import make_help
+    from doctools import help_gen
+
+    debug_out = []
 
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
-      # NOTE: HighlightLine accepts an HTML ESCAPED line.  It's valid to just
+      # NOTE: IndexLineToHtml accepts an HTML ESCAPED line.  It's valid to just
       # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
-      html_line = make_help.HighlightLine(self.chapter, line)
+      html_line = help_gen.IndexLineToHtml(self.chapter, line, debug_out)
 
       if html_line is not None:
         out.PrintUntil(pos)
@@ -283,6 +285,8 @@ class HelpTopicsPlugin(_Plugin):
         out.SkipTo(line_end)
 
       pos = line_end
+
+    return debug_out
 
 
 class PygmentsPlugin(_Plugin):
@@ -356,7 +360,7 @@ def SimpleHighlightCode(s):
 
 
 
-def HighlightCode(s, default_highlighter):
+def HighlightCode(s, default_highlighter, debug_out=None):
   """
   Algorithm:
   1. Collect what's inside <pre><code> ...
@@ -364,6 +368,9 @@ def HighlightCode(s, default_highlighter):
   3. If the line looks like a shell prompt and command, highlight them with
      <span>
   """
+  if debug_out is None:
+    debug_out = []
+
   f = cStringIO.StringIO()
   out = html.Output(s, f)
 
@@ -434,7 +441,7 @@ def HighlightCode(s, default_highlighter):
 
               out.SkipTo(slash_code_left)
 
-            elif css_class == 'language-oil':
+            elif css_class == 'language-ysh':
               # TODO: Write an Oil syntax highlighter.
               pass
 
@@ -446,7 +453,8 @@ def HighlightCode(s, default_highlighter):
               out.PrintUntil(code_start_pos)
 
               plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, chapter)
-              plugin.PrintHighlighted(out)
+              block_debug_info = plugin.PrintHighlighted(out)
+              debug_out.append(block_debug_info)
 
               out.SkipTo(slash_code_left)
 

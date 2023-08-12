@@ -159,7 +159,6 @@ LineReader* open(Str* path);
 
 class Writer {
  public:
-  // subclasses mutate the mask (and can set obj_len length for Cheney)
   Writer() {
   }
   virtual void write(Str* s) = 0;

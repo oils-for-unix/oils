@@ -63,11 +63,9 @@ soil-run() {
 
   ./NINJA-config.sh
 
-  # Keep the Cheney build compiling
   ninja _bin/cxx-dbg/oils-for-unix \
         _bin/cxx-asan/oils-for-unix \
-        _bin/cxx-opt/oils-for-unix.stripped \
-        _bin/cxx-opt+cheney/oils-for-unix
+        _bin/cxx-opt/oils-for-unix.stripped
 }
 
 oil-slice-demo() {

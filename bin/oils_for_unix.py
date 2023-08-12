@@ -25,11 +25,11 @@ from core import error
 from core import shell
 from core import pyos
 from core import pyutil
+from core import util
 from frontend import args
 from frontend import py_readline
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
-from osh import builtin_misc
 from pylib import os_path
 
 if mylib.PYTHON:
@@ -38,9 +38,7 @@ if mylib.PYTHON:
 
 import fanos
 
-from typing import List, TYPE_CHECKING
-if TYPE_CHECKING:
-    from core import ui
+from typing import List
 
 
 def CaperDispatch():
@@ -68,7 +66,7 @@ def CaperDispatch():
         elif command == 'SETENV':
             pass
         elif command == 'MAIN':
-            argv = ['TODO']
+            #argv = ['TODO']
             # I think we need to factor the oil.{py,ovm} condition out and call it like this:
             # MainDispatch(main_name, argv) or
             # MainDispatch(main_name, arg_r)
@@ -113,13 +111,11 @@ def AppBundleMain(argv):
 
         # Special flags to the top level binary: bin/oil.py --help, ---caper, etc.
         if first_arg in ('-h', '--help'):
-            errfmt = None  # type: ui.ErrorFormatter
-            help_builtin = builtin_misc.Help(loader, errfmt)
-            help_builtin.Run(shell.MakeBuiltinArgv(['bundle-usage']))
+            util.HelpFlag(loader, 'oils-usage', mylib.Stdout())
             return 0
 
         if first_arg in ('-V', '--version'):
-            pyutil.ShowAppVersion(loader)
+            util.VersionFlag(loader, mylib.Stdout())
             return 0
 
         # This has THREE dashes since it isn't a normal flag

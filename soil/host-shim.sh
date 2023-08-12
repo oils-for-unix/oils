@@ -52,7 +52,7 @@ live-image-tag() {
       ;;
     (clang)
       # Rebuild with wedges
-      echo 'v-2023-07-15'
+      echo 'v-2023-08-09'
       ;;
     (ovm-tarball)
       # freshen up, still need spec-bin wedge

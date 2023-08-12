@@ -158,7 +158,7 @@ class _GlobParser(object):
         # type: () -> List[glob_part_t]
         """
     Returns:
-      a CharClass if the parse suceeds, or a Literal if fails.  In the latter
+      a CharClass if the parse succeeds, or a Literal if fails.  In the latter
       case, we also append a warning.
     """
         first_token = glob_part.Literal(self.token_type, self.token_val)

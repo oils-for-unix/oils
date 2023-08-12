@@ -187,7 +187,7 @@ if TYPE_CHECKING:
 class ParseContext(object):
     """Context shared between the mutually recursive Command and Word parsers.
 
-    In constrast, STATE is stored in the CommandParser and WordParser
+    In contrast, STATE is stored in the CommandParser and WordParser
     instances.
     """
 

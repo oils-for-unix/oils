@@ -56,7 +56,7 @@ int MarkSweepHeap::MaybeCollect() {
   return result;
 }
 
-  #if defined(BUMP_SMALL) || defined(BUMP_BIG)
+  #if defined(BUMP_SMALL)
     #include "mycpp/bump_leak_heap.h"
 
 BumpLeakHeap gBumpLeak;
@@ -64,25 +64,25 @@ BumpLeakHeap gBumpLeak;
 
 // Allocate and update stats
 // TODO: Make this interface nicer.
-void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, bool* in_pool) {
+void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, int* pool_id) {
   // log("Allocate %d", num_bytes);
   #ifndef NO_POOL_ALLOC
-  if (num_bytes <= pool_.kMaxObjSize) {
-    *in_pool = true;
-    return pool_.Allocate(obj_id);
+  if (num_bytes <= pool1_.kMaxObjSize) {
+    *pool_id = 1;
+    return pool1_.Allocate(obj_id);
   }
-  *in_pool = false;
+  if (num_bytes <= pool2_.kMaxObjSize) {
+    *pool_id = 2;
+    return pool2_.Allocate(obj_id);
+  }
+  *pool_id = 0;  // malloc(), not a pool
   #endif
 
+  // Does the pool allocator approximate a bump allocator?  Use pool2_
+  // threshold of 48 bytes.
   // These only work with GC off -- OILS_GC_THRESHOLD=[big]
   #ifdef BUMP_SMALL
-  if (num_bytes <= 32) {
-    return gBumpLeak.Allocate(num_bytes);
-  }
-  #endif
-
-  #ifdef BUMP_BIG
-  if (num_bytes > 32) {
+  if (num_bytes <= 48) {
     return gBumpLeak.Allocate(num_bytes);
   }
   #endif
@@ -138,11 +138,16 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
 
   int obj_id = header->obj_id;
   #ifndef NO_POOL_ALLOC
-  if (header->in_pool) {
-    if (pool_.IsMarked(obj_id)) {
+  if (header->pool_id == 1) {
+    if (pool1_.IsMarked(obj_id)) {
       return;
     }
-    pool_.Mark(obj_id);
+    pool1_.Mark(obj_id);
+  } else if (header->pool_id == 2) {
+    if (pool2_.IsMarked(obj_id)) {
+      return;
+    }
+    pool2_.Mark(obj_id);
   } else
   #endif
   {
@@ -208,7 +213,8 @@ void MarkSweepHeap::TraceChildren() {
 
 void MarkSweepHeap::Sweep() {
   #ifndef NO_POOL_ALLOC
-  pool_.Sweep();
+  pool1_.Sweep();
+  pool2_.Sweep();
   #endif
 
   int last_live_index = 0;
@@ -255,7 +261,8 @@ int MarkSweepHeap::Collect() {
   // Resize it
   mark_set_.ReInit(greatest_obj_id_);
   #ifndef NO_POOL_ALLOC
-  pool_.PrepareForGc();
+  pool1_.PrepareForGc();
+  pool2_.PrepareForGc();
   #endif
 
   // Mark roots.
@@ -328,16 +335,17 @@ void MarkSweepHeap::PrintStats(int fd) {
 
   #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num allocated    = %10d\n",
-          num_allocated_ + pool_.num_allocated());
+          num_allocated_ + pool1_.num_allocated() + pool2_.num_allocated());
   dprintf(fd, "  num in heap      = %10d\n", num_allocated_);
   #else
   dprintf(fd, "  num allocated    = %10d\n", num_allocated_);
   #endif
 
   #ifndef NO_POOL_ALLOC
-  dprintf(fd, "  num in pool      = %10d\n", pool_.num_allocated());
+  dprintf(fd, "  num in pool 1    = %10d\n", pool1_.num_allocated());
+  dprintf(fd, "  num in pool 2    = %10d\n", pool2_.num_allocated());
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n",
-          bytes_allocated_ + pool_.bytes_allocated());
+          bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
   #else
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n", bytes_allocated_);
   #endif
@@ -393,7 +401,8 @@ void MarkSweepHeap::FreeEverything() {
     free(obj);
   }
   #ifndef NO_POOL_ALLOC
-  pool_.Free();
+  pool1_.Free();
+  pool2_.Free();
   #endif
 }
 

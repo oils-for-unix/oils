@@ -40,7 +40,7 @@ echo 'out of bounds'
 # Stride not supported
 #= myarray[1:4:2]
 
-# Now try omitting smoe
+# Now try omitting some
 #= myarray[1:4:2]
 ## STDOUT:
 (Str)   '2'
@@ -93,7 +93,7 @@ echo $val
 3
 ## END
 
-#### Copy wtih a[:]
+#### Copy with a[:]
 var a = [1,2,3]
 var b = a[:]
 = b

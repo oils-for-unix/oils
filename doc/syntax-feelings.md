@@ -322,14 +322,12 @@ Shell arithmetic is also discouraged in favor of Oil arithmetic:
 
 - [Syntactic Concepts in the Oil Language](syntactic-concepts.html)
 - [Language Influences](language-influences.html)
-- [Oil Help Topics](oil-help-topics.html).  A comprehensive list of language
-  constructs (in progress).
 
 ## Appendix: Table of Sigil Pairs
 
 This table is mainly for Oil language designers.  Many constructs aren't
-implemented, but we reserve space for them.  The [Oil
-Help](oil-help-topics.html) is a better reference for users.
+implemented, but we reserve space for them.  The [Oils
+Reference](ref/index.html) is more complete.
 
     Example      Description        What's Inside  Where Valid  Notes
 

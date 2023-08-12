@@ -23,7 +23,7 @@ generator adds and extra rule for \0.
 
 For example, use [^'\0]+ instead of [^']+ .
 
-If this rule isn't followed, we would read unitialized memory past the
+If this rule isn't followed, we would read uninitialized memory past the
 sentinel.  Python's regex engine knows where the end of the input string is, so
 it doesn't require need a sentinel like \0.
 """
@@ -398,7 +398,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     _TILDE_LIKE,  # bash weirdness: RHS of [[ x =~ ~ ]] is expanded
     _SIGNIFICANT_SPACE,
 
-    # Normally, \x evalutes to x.  But quoted regex metacharacters like \* should
+    # Normally, \x evaluates to x.  But quoted regex metacharacters like \* should
     # evaluate to \*.  Compare with ( | ).
     R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
 
@@ -834,7 +834,7 @@ LOOKS_LIKE_INTEGER = _WHITESPACE + '-?' + _DECIMAL_INT_RE + _WHITESPACE
 # This is the same as far as I can tell?
 
 # This is a hand-written re2c rule to "refine" the _SIMPLE_FLOAT_RE token to
-# include undescores: 1_000.234_567
+# include underscores: 1_000.234_567
 
 LEXER_REFINEMENTS = {
     (lex_mode_e.Expr, Id.Expr_Float):

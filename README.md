@@ -1,18 +1,29 @@
-Oil Source Code
-===============
+Oils Source Code
+================
 
 [![Build
 Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oilshell/oil/actions/workflows/all-builds.yml) <a href="https://gitpod.io/from-referrer/">
   <img src="https://img.shields.io/badge/Contribute%20with-Gitpod-908a85?logo=gitpod" alt="Contribute with Gitpod" />
 </a>
 
+[Oils][] is our upgrade path from bash to a better language and runtime!  
 
+- [OSH][] runs your existing shell scripts.
+- [YSH][] is for Python and JavaScript users who avoid shell.
 
-[Oil][] is a new Unix shell.  It's our upgrade path from bash to a better
-language and runtime!  It's also for Python and JavaScript users who avoid
-shell.  ([Why Create a New Unix Shell?][why])
+(The project was [slightly renamed][rename] in March 2023, so there are still
+old references to "Oil".  Feel free to send pull requests with corrections!)
 
-[Oil]: https://www.oilshell.org/
+[Oils]: https://www.oilshell.org/
+
+[OSH]: https://www.oilshell.org/cross-ref.html#OSH
+[YSH]: https://www.oilshell.org/cross-ref.html#YSH
+
+[rename]: https://www.oilshell.org/blog/2023/03/rename.html
+
+[Oils 2023 FAQ][faq-2023] / [Why Create a New Unix Shell?][why]
+
+[faq-2023]: https://www.oilshell.org/blog/2023/03/faq.html
 [why]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
 
 It's written in Python, so the code is short and easy to change.  But we
@@ -28,7 +39,7 @@ This README is at the root of the [git repo][git-repo].
 
 ## Contributing
 
-* Try making the **dev build** of Oil with the instructions on the
+* Try making the **dev build** of Oils with the instructions on the
   [Contributing][] page.  This should take 1 to 5 minutes if you have a Linux
   machine.
 * If it doesn't, let us know.  You can post on the `#oil-dev` channel of
@@ -53,8 +64,7 @@ Python program that you can quickly run and change!  Try it interactively:
     hello world
 
 - Try running a shell script you wrote with `bin/osh myscript.sh`.
-- Try the [Oil language](https://www.oilshell.org/cross-ref.html#oil-language)
-  with `bin/oil`.
+- Try [YSH][] with `bin/ysh`.
 
 Let us know if any of these things don't work!  [The continuous
 build](http://travis-ci.oilshell.org/) tests them at every commit.
@@ -70,7 +80,7 @@ the release tarballs on OS X.)
 
 ### Important: We Accept Small Contributions!
 
-Oil is full of [many ideas](https://www.oilshell.org/blog/), which may be
+Oils is full of [many ideas](https://www.oilshell.org/blog/), which may be
 intimidating at first.
 
 But the bar to contribution is very low.  It's basically a medium size Python
@@ -84,7 +94,7 @@ It's great for prototyping.
 - You only have to make your code work **in Python**.  Plain Python programs
   are easy to modify.  The semi-automated translation to C++ is a separate
   step, although it often just works. 
-- You can **influence the design** of the Oil language.  If you have an itch to
+- You can **influence the design** of [YSH][].  If you have an itch to
   scratch, be ambitious.  For example, you might want to show us how to
   implement [nonlinear pipelines](https://github.com/oilshell/oil/issues/843).
 
@@ -111,16 +121,17 @@ Try this to show a summary of what's in the repo and their line counts:
 
 ### A Collection of Interpreters
 
-Oil is naturally structured as a set of mutually recursive parsers and
+Oils is naturally structured as a set of mutually recursive parsers and
 evaluators.  These interpreters are specified at a high-level: with regular
 languages, Zephyr ASDL, and a statically-typed subset of Python.
 
     bin/              # Main entry points like bin/osh (source in bin/oils_for_unix.py)
     frontend/         # Input and lexing common to OSH and YSH
     osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
-    oil_lang/         # Oil parser and evaluator
+    ysh/              # YSH parser and evaluator
     data_lang/        # Languages based on JSON
-    core/             # Other code shared between Oil and OSH
+    library/          # Builtin commands and functions
+    core/             # Other code shared between OSH and YSH
     pyext/            # Python extension modules, e.g. libc.c
     pylib/            # Borrowed from the Python standard library.
     tools/            # User-facing tools, e.g. the osh2oil translator
@@ -139,7 +150,7 @@ Here are the tools that transform that high-level code to efficient code:
 ### Native Code and Build System
 
 We have native code to support both the dev build (running under CPython) and
-the oil-native build (pure C++):
+the `oils-for-unix` build (pure C++):
 
     NINJA-config.sh   # Generates build.ninja
 
@@ -192,7 +203,7 @@ shell, of course!
     metrics/          # Metrics don't change between machines (e.g. code size)
     client/           # Demonstration of OSH as a headless server.
     deps/             # Dev dependencies and Docker images
-    devtools/         # For Oil developers (not end users)
+    devtools/         # For Oils developers (not end users)
       release.sh      # The (large) release process.
       services/       # talk to cloud services
     demo/             # Demonstrations of bash/shell features.  Could be
@@ -241,7 +252,7 @@ above create and use these dirs.
 ### Build Dependencies in `../oil_DEPS`
 
 These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
-"parallel" to Oil because it works better with container bind mounds.
+"parallel" to Oils because it works better with container bind mounds.
 
     ../oil_DEPS/
       re2c/           # to build the lexer
@@ -251,43 +262,43 @@ These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
       mycpp-venv/     # MyPy binaries deps in a VirtualEnv
 
       py3/            # for mycpp and pea/
-      cpython-full/   # for boostrapping Oil-CPython
+      cpython-full/   # for bootstrapping Oils-CPython
 
 
 ### Build System for End Users version.
 
-These files make the slow "Oil Python" build, which is very different than the
-**developer build** of Oil.
+These files make the slow "Oils Python" build, which is very different than the
+**developer build** of Oils.
 
     Makefile
     configure
     install
 
-These files are for `oil-native` (in progress):
+These files are for the C++ `oils-for-unix` tarball (in progress):
 
     _build/
-      oil-native.sh
+      oils.sh
 
 ### Doc Sources
 
     doc/              # A mix of docs
     doctools/         # Tools that use lazylex/ to transform Markdown/HTML
     lazylex/          # An HTML lexer which doctools/ builds upon.
-    README.md         # This page, which is For Oil developers
+    README.md         # This page, which is For Oils developers
 
     LICENSE.txt       # For end users
     INSTALL.txt
 
 ## More info
 
+There are README files in many subdirectories, like
+[mycpp/README.md](mycpp/README.md).
+
 * [The blog][blog] has updates on the project status.
-* [Oil Home Page](https://www.oilshell.org/)
+* [Oils Home Page](https://www.oilshell.org/)
 * [oilshell.zulipchat.com][] is for any kind of discussion
 * Subscribe for updates:
   * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
   * [@oilshellblog on Twitter](https://twitter.com/oilshellblog)
 
 
-## Python Files Not Translated to C++
-
-See `build/dynamic-deps.sh`.

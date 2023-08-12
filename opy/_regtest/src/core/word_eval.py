@@ -108,7 +108,7 @@ def _MakeWordFrames(part_vals):
   return frames
 
 
-# TODO: This could be _MakeWordFrames and then sep.join().  It's redunant.
+# TODO: This could be _MakeWordFrames and then sep.join().  It's redundant.
 def _DecayPartValuesToString(part_vals, join_char):
   # Decay ${a=x"$@"x} to string.
   out = []
@@ -769,7 +769,7 @@ class _WordEvaluator(object):
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
       return runtime.StrArray(strs)
 
-    # If RHS doens't look like a=( ... ), then it must be a string.
+    # If RHS doesn't look like a=( ... ), then it must be a string.
     return self.EvalWordToString(word)
 
   def _EvalWordFrame(self, frame, argv):

@@ -76,8 +76,8 @@ dev-minimal-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info             soil/diagnose.sh os-info                     -
+dump-env            soil/diagnose.sh dump-env                    -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
@@ -89,7 +89,6 @@ parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run            -
-ysh-spec            test/spec-py.sh ysh-all-serial               _tmp/spec/ysh-py/index.html
 tea-spec            test/spec-py.sh tea-all-serial               _tmp/spec/tea/index.html
 ysh-large           ysh/run.sh soil-run                          -
 tea-large           tea/run.sh soil-run                          -
@@ -174,6 +173,7 @@ py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
 osh-all          test/spec-cpp.sh osh-all              _tmp/spec/osh-cpp/compare.html
 ysh-all          test/spec-cpp.sh ysh-all              _tmp/spec/ysh-cpp/compare.html
+ysh-py         test/spec-py.sh ysh-all-serial          _tmp/spec/ysh-py/index.html
 EOF
 }
 
@@ -185,8 +185,7 @@ cpp-small-tasks() {
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
-build-minimal    build/py.sh minimal                   -
-ninja-config     soil/worker.sh ninja-config           -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh soil-run              -
 headless         client/run.sh soil-run-cpp            -
@@ -207,10 +206,9 @@ cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
-build-minimal           build/py.sh minimal                             -
-ninja-config            soil/worker.sh ninja-config                     -
+os-info                 soil/diagnose.sh os-info    -
+dump-env                soil/diagnose.sh dump-env   -
+py-all-and-ninja        soil/worker.sh py-all-and-ninja                 -
 extract-clang           deps/from-binary.sh extract-clang-in-container  -
 mycpp-unit-coverage     mycpp/TEST.sh unit-test-coverage                _test/clang-coverage/mycpp/html/index.html
 mycpp-examples-coverage mycpp/TEST.sh examples-coverage                 _test/clang-coverage/mycpp/examples/html/index.html
@@ -229,13 +227,13 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info           soil/diagnose.sh os-info    -
+dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
 yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
-osh-spec          test/spec-py.sh osh-all-serial            _tmp/spec/osh-py/index.html
+osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
@@ -267,8 +265,8 @@ EOF
 # Probably should start using a shell test framework too.
 other-tests-tasks() {
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
+os-info                soil/diagnose.sh os-info    -
+dump-env               soil/diagnose.sh dump-env   -
 build-minimal          build/py.sh minimal                        -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -

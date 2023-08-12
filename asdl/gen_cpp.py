@@ -342,7 +342,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # This is the base class.
         Emit('class %(sum_name)s_t {')
         # Can't be constructed directly.  Note: this shows up in uftrace in debug
-        # mode, e.g. when we intantiate Token.  Do we need it?
+        # mode, e.g. when we instantiate Token.  Do we need it?
         Emit(' protected:')
         Emit('  %s_t() {' % sum_name)
         Emit('  }')
@@ -721,9 +721,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 self.Emit('')
                 self.Emit('GcGlobal<%s__%s> g%s__%s = ' %
                           (sum_name, variant_name, sum_name, variant_name))
-                self.Emit(
-                    '  {{kNotInPool, %s_e::%s, kZeroMask, HeapTag::Global, kIsGlobal}};'
-                    % (sum_name, variant_name))
+                self.Emit('  { ObjHeader::Global(%s_e::%s) };' % (sum_name,
+                                                                  variant_name))
 
         for variant in sum.types:
             if variant.shared_type:

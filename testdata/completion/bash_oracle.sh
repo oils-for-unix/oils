@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Test our _init_completion builtin against the bash_completion implementaiton.
+# Test our _init_completion builtin against the bash_completion implementation.
 #
 # Usage:
 #   testdata/completion/bash_oracle.sh <function name>

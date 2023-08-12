@@ -216,7 +216,7 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
 #
 # - # shortest prefix - [:1], [:2], [:3] until it matches
 # - ## longest prefix - [:-1] [:-2], [:3].  Works because fnmatch does not
-#                       match prefixes, it matches EXATLY.
+#                       match prefixes, it matches EXACTLY.
 # - % shortest suffix - [-1:] [-2:] [-3:] ...
 # - %% longest suffix - [1:] [2:] [3:]
 #

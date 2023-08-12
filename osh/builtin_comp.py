@@ -9,13 +9,14 @@ from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import value, value_e
 from core import completion
 from core import error
+from core import state
 from core import ui
 from core import vm
+from mycpp import mylib
 from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
-from core import state
 
 _ = log
 
@@ -24,27 +25,11 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, Proc
     from core.completion import Lookup, OptionState, Api, UserSpec
     from core.ui import ErrorFormatter
-    from core.state import Mem
     from frontend.args import _Attributes
     from frontend.parse_lib import ParseContext
     from osh.cmd_eval import CommandEvaluator
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
-
-HELP_TOPICS = []  # type: List[str]
-
-from mycpp import mylib
-if mylib.PYTHON:
-    # - Catch ImportEror because we don't want libcmark.so dependency for
-    #   build/py.sh minimal
-    # - For now, ignore a type error in minimal build.
-    # - TODO: Rewrite help builtin and remove dep on CommonMark
-    try:
-        from _devbuild.gen import help_  # type: ignore
-        HELP_TOPICS = help_.TOPICS
-    except ImportError:
-        pass
-
 
 class _FixedWordsAction(completion.CompletionAction):
     def __init__(self, d):
@@ -102,20 +87,27 @@ class SpecBuilder(object):
             word_ev,  # type: NormalWordEvaluator
             splitter,  # type: SplitContext
             comp_lookup,  # type: Lookup
+            help_data,  # type: Dict[str, str]
             errfmt  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         """
-    Args:
-      cmd_ev: CommandEvaluator for compgen -F
-      parse_ctx, word_ev, splitter: for compgen -W
-    """
+        Args:
+          cmd_ev: CommandEvaluator for compgen -F
+          parse_ctx, word_ev, splitter: for compgen -W
+        """
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.word_ev = word_ev
         self.splitter = splitter
         self.comp_lookup = comp_lookup
+
+        self.help_data = help_data
+        # lazily initialized
+        self.topic_list = None  # type: List[str]
+
         self.errfmt = errfmt
+
 
     def Build(self, argv, attrs, base_opts):
         # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
@@ -184,8 +176,10 @@ class SpecBuilder(object):
                 a = completion.VariablesAction(cmd_ev.mem)
 
             elif name == 'helptopic':
-                # Note: it would be nice to have 'helpgroup' for help -i too
-                a = _FixedWordsAction(HELP_TOPICS)
+                # Lazy initialization
+                if self.topic_list is None:
+                    self.topic_list = self.help_data.keys()
+                a = _FixedWordsAction(self.topic_list)
 
             elif name == 'setopt':
                 a = _FixedWordsAction(consts.SET_OPTION_NAMES)
@@ -407,7 +401,7 @@ class CompAdjust(vm._Builtin):
     """
 
     def __init__(self, mem):
-        # type: (Mem) -> None
+        # type: (state.Mem) -> None
         self.mem = mem
 
     def Run(self, cmd_val):

@@ -1,7 +1,3 @@
----
-in_progress: yes
----
-
 FAQ on Documentation
 ====================
 
@@ -12,25 +8,21 @@ Start here if you can't find something!
 
 ## How are the docs organized?
 
-While we write the documentation, there are two different starting points:
+Start at one of these pages:
 
-1. [/release/$VERSION/](../index.html) lists the docs that are ready to read,
-   right below the downloads.
-2. [/release/$VERSION/doc/](index.html) is a tour through all docs, some of
-   which are in progress.
+1. The release home page at [/release/$VERSION/](../index.html) lists the docs
+   that are ready to read, below the downloads.
+1. **All Docs** at [/release/$VERSION/doc/](index.html) shows all docs, some of
+   which are in progress.  Examples:
+   - [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
+   - [Oil Fixes Shell's Error Handling](error-handling.html)
+1. The **Oils Reference** at [/release/$VERSION/doc/ref/](ref/index.html) has
+   three indexes:
+   - [Index of OSH Topics](ref/index-osh.html)
+   - [Index of YSH Topics](ref/index-ysh.html)
+   - [Index of Data Topics](ref/index-data.html)
 
-There's also an incomplete reference, separated by compatible features and new
-features:
-
-- [OSH Help Topics](osh-help-topics.html) links to [OSH Help](osh-help.html) (big doc)
-- [Oil Help Topics](oil-help-topics.html) links to [Oil Help](oil-help.html) (big doc)
-
-And there are various design docs, like:
-
-- [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
-- [Oil Fixes Shell's Error Handling](error-handling.html)
-
-Outside of [/release/$VERSION/](../index.html):
+Outside of the release tree:
 
 - [The blog](https://www.oilshell.org/blog/) has useful background information,
   although older posts are more likely to have incorrect information.
@@ -40,26 +32,20 @@ Outside of [/release/$VERSION/](../index.html):
 
 ### A list of all shell builtins?
 
-Right now it's split between the OSH and Oil references.
+See the [Chapter on Builtin Commands](ref/chap-builtin-cmd.html) in the reference.
 
-- [OSH Help Topics > builtins](osh-help-topics.html#builtins)
-- [Oil Help Topics > builtins](oil-help-topics.html#builtins)
+### A list of all YSH functions?
 
-### A list of all Oil funcs?
-
-- [Oil Help Topics > lib](oil-help-topics.html#lib).  This design is not yet
-  done.
+See the [Chapter on Builtin Functions](ref/chap-builtin-func.html) in the reference.
 
 ### A list of all operators?
 
-They are split between the "sublanguages" of OSH and Oil:
+They are split between the "sublanguages" of OSH and YSH:
 
-- [Oil Help Topics > expr-lang](oil-help-topics.html#expr-lang) for the new Oil
-  expression language
-- [OSH Help Topics > word-lang](osh-help-topics.html#word-lang) for `${x}` and
-  so forth
-- [OSH Help Topics > sublang](osh-help-topics.html#sublang) for other shell
-  sublanguages
+- [Expression Language](ref/chap-expr-lang.html) for the YSH expression
+  language
+- [Word Language](ref/chap-word-lang.html) for `${x}` and so forth
+- [Mini Languages](ref/chap-mini-lang.html) for other shell sublanguages.
 
 ## I still can't find what I'm looking for.
 

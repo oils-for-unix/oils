@@ -1401,7 +1401,7 @@ EOF
     """)
 
     def testHereDocCommandSub(self):
-        # Originall from spec/09-here-doc.sh.
+        # Originally from spec/09-here-doc.sh.
         err = _assert_ParseCommandListError(
             self, """\
 for x in 1 2 $(cat <<EOF

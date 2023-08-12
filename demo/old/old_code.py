@@ -68,14 +68,14 @@ class DynamicTdopParser(TdopParser):
 #
 
 
-# Possible optmization for later:
+# Possible optimization for later:
 def _TreeCount(tree_word):
   """Count output size for allocation purposes.
 
   We can count the number of words expanded into, and the max number of parts
   in a word.
 
-  Every word can have a differnt number of parts, e.g. -{'a'b,c}- expands into
+  Every word can have a different number of parts, e.g. -{'a'b,c}- expands into
   words of 4 parts, then 3 parts.
   """
   # TODO: Copy the structure of _BraceExpand and _BraceExpandOne.

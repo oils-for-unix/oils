@@ -80,36 +80,13 @@ TEST api_test() {
 TEST string_collection_test() {
   Str *test_str = StrFromC("foo");
 
-  {
-    // NOTE(Jesse): This causes a crash when this gets compiled against the
-    // cheney collector w/ GC_ALWAYS.  I did verify it doesn't crash with
-    // the marksweep allocator but didn't want to figure out how to tell the
-    // build system to not compile these tests against the cheney collector
-    //
-    /* ASSERT(are_equal(test_str, StrFromC("foo"))); */
+  StackRoots _roots({&test_str});
 
-    StackRoots _roots({&test_str});
-
-    ASSERT(are_equal(test_str, StrFromC("foo")));
-
-    gHeap.Collect();
-
-    ASSERT(are_equal(test_str, StrFromC("foo")));
-  }
-
-  // NOTE(Jesse): Technically UB.  If the collector hits between when the roots
-  // go out of scope in the above block we'll get a UAF here.  ASAN should
-  // detect this but we currently have no way of programatically verifying that
-  // ASAN detects bugs.  AFAIK asan is not 100% reliable, so maybe that's a
-  // path fraught with peril anyhow.
-  //
-  /* ASSERT(are_equal(test_str, StrFromC("foo"))); */
+  ASSERT(are_equal(test_str, StrFromC("foo")));
 
   gHeap.Collect();
 
-  // NOTE(Jesse): ASAN detects UAF here when I tested by toggling this on
-  //
-  // ASSERT(are_equal(test_str, StrFromC("foo")));
+  ASSERT(are_equal(test_str, StrFromC("foo")));
 
   PASS();
 }
@@ -260,10 +237,38 @@ TEST pool_marked_objs_are_kept_alive() {
   PASS();
 }
 
+TEST pool_size() {
+  MarkSweepHeap heap;
+  log("pool1 kMaxObjSize %d", heap.pool1_.kMaxObjSize);
+  log("pool1 kBlockSize %d", heap.pool1_.kBlockSize);
+
+  log("pool2 kMaxObjSize %d", heap.pool2_.kMaxObjSize);
+  log("pool2 kBlockSize %d", heap.pool2_.kBlockSize);
+
+  // It may do malloc(sizeof(Block)) each time, e.g. 4080 bytes
+  for (int i = 0; i < 200; ++i) {
+    int obj_id = 0;
+    heap.pool1_.Allocate(&obj_id);
+    // log("pool1 obj_id = %d", obj_id);
+  }
+
+  for (int i = 0; i < 200; ++i) {
+    int obj_id = 0;
+    heap.pool2_.Allocate(&obj_id);
+    // log("pool2 obj_id = %d", obj_id);
+  }
+
+  heap.pool1_.Free();
+  heap.pool2_.Free();
+
+  PASS();
+}
+
 SUITE(pool_alloc) {
   RUN_TEST(pool_sanity_check);
   RUN_TEST(pool_sweep);
   RUN_TEST(pool_marked_objs_are_kept_alive);
+  RUN_TEST(pool_size);
 }
 
 GREATEST_MAIN_DEFS();

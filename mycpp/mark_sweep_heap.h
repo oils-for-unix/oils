@@ -74,6 +74,7 @@ template <int CellsPerBlock, size_t CellSize>
 class Pool {
  public:
   static constexpr size_t kMaxObjSize = CellSize;
+  static constexpr int kBlockSize = CellSize * CellsPerBlock;
 
   Pool() = default;
 
@@ -175,8 +176,6 @@ class Pool {
   };
   static_assert(CellSize >= sizeof(FreeCell), "CellSize is too small");
 
-  static constexpr int kBlockSize = CellSize * CellsPerBlock;
-
   // Whether a GC is underway, for asserting that calls are in order.
   bool gc_underway_ = false;
 
@@ -211,7 +210,7 @@ class MarkSweepHeap {
     global_roots_.push_back(reinterpret_cast<RawObject*>(root));
   }
 
-  void* Allocate(size_t num_bytes, int* obj_id, bool* in_pool);
+  void* Allocate(size_t num_bytes, int* obj_id, int* pool_id);
 
 #if 0
   void* Reallocate(void* p, size_t num_bytes);
@@ -232,7 +231,8 @@ class MarkSweepHeap {
   int num_live() {
     return num_live_
 #ifndef NO_POOL_ALLOC
-           + pool_.num_live()
+           + pool1_.num_live()
+           + pool2_.num_live()
 #endif
         ;
   }
@@ -264,7 +264,10 @@ class MarkSweepHeap {
   double total_gc_millis_ = 0.0;
 
 #ifndef NO_POOL_ALLOC
-  Pool<128, 32> pool_;
+  // 4096 / 24 bytes = 170 cells (rounded), 4080 bytes
+  // 4096 / 48 bytes =  85 cells (rounded), 4080 bytes
+  Pool<170, 24> pool1_;
+  Pool<85, 48> pool2_;
 #endif
 
   std::vector<RawObject**> roots_;

@@ -54,7 +54,6 @@ html-report() {
     --ignore-filename-regex '_gen/' \
     --ignore-filename-regex 'mycpp/demo' \
     --ignore-filename-regex 'mycpp/examples' \
-    --ignore-filename-regex 'mycpp/cheney' \
     --ignore-filename-regex 'prebuilt/' \
   )
 

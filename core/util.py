@@ -10,7 +10,14 @@ util.py - Common infrastructure.
 """
 from __future__ import print_function
 
+from core import ansi
+from core import pyutil
 from mycpp import mylib
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core import pyutil
 
 
 class UserExit(Exception):
@@ -79,3 +86,48 @@ class DebugFile(_DebugFile):
         # type: () -> bool
         """Used by node.PrettyPrint()."""
         return self.f.isatty()
+
+
+def PrintTopicHeader(topic_id, f):
+    # type: (str, mylib.Writer) -> None
+    if f.isatty():
+        f.write('%s %s %s\n' % (ansi.REVERSE, topic_id, ansi.RESET))
+    else:
+        f.write('~~~ %s ~~~\n' % topic_id)
+
+    f.write('\n')
+
+
+def PrintEmbeddedHelp(loader, topic_id, f):
+    # type: (pyutil._ResourceLoader, str, mylib.Writer) -> bool
+    try:
+        contents = loader.Get('_devbuild/help/%s' % topic_id)
+    except (IOError, OSError):
+        return False
+
+    PrintTopicHeader(topic_id, f)
+    f.write(contents)
+    f.write('\n')
+    return True  # found
+
+
+def _PrintVersionLine(loader, f):
+    # type: (pyutil._ResourceLoader, mylib.Writer) -> None
+    v = pyutil.GetVersion(loader)
+    f.write('Oils %s\t\thttps://www.oilshell.org/\n' % v)
+
+
+def HelpFlag(loader, topic_id, f):
+    # type: (pyutil._ResourceLoader, str, mylib.Writer) -> None
+    _PrintVersionLine(loader, f)
+    f.write('\n')
+    found = PrintEmbeddedHelp(loader, topic_id, f)
+    # Note: could assert this in C++ too
+    assert found, 'Missing %s' % topic_id
+
+
+def VersionFlag(loader, f):
+    # type: (pyutil._ResourceLoader, mylib.Writer) -> None
+    _PrintVersionLine(loader, f)
+    f.write('\n')
+    pyutil.PrintVersionDetails(loader)

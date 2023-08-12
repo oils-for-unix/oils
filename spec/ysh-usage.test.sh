@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 #### ysh usage
 
@@ -20,3 +21,9 @@ cat err.txt | fgrep -o -- '-- [ stdin ]:11: Unexpected'
 line 10
 -- [ stdin ]:11: Unexpected
 ## END
+
+#### --debug-file
+$SH --debug-file $TMP/debug.txt -c 'true'
+grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
+## stdout: yes
+

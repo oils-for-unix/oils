@@ -465,6 +465,24 @@ TEST test_tuple_key() {
   PASS();
 }
 
+GLOBAL_DICT(gDict, int, int, 2, {42 COMMA 43}, {1 COMMA 2});
+
+GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
+            {kStrBar COMMA kStrFoo});
+
+TEST test_global_dict() {
+  log("gDict len = %d", len(gDict));
+  ASSERT_EQ(2, len(gDict));
+  ASSERT_EQ(1, gDict->index_(42));
+  ASSERT_EQ(2, gDict->index_(43));
+
+  log("gStrDict len = %d", len(gStrDict));
+  ASSERT_EQ(kStrFoo, gStrDict->index_(kStrBar));
+  ASSERT_EQ(kStrBar, gStrDict->index_(kStrFoo));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -479,6 +497,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_tuple_construct);
   RUN_TEST(test_update_dict);
   RUN_TEST(test_tuple_key);
+  RUN_TEST(test_global_dict);
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);

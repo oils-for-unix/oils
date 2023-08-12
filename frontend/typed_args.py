@@ -105,49 +105,48 @@ class Reader(object):
 
     def Word(self):
         # type: () -> str
-        pass
+        return None  # TODO
 
     def RestWords(self):
         # type: () -> List[str]
-        pass
+        return None  # TODO
 
     ### Typed positional args
 
     # TODO: may need location info
     def PosStr(self):
         # type: () -> str
-        pass
+        return None  # TODO
 
     def PosInt(self):
         # type: () -> int
-        pass
+        return -1  # TODO
 
     def RestPos(self):
         # type: () -> List[value_t]
-        pass
+        return None  # TODO
 
     ### Typed named args
 
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
-        pass
+        return None  # TODO
 
     def NamedInt(self, param_name, default_):
         # type: (str, int) -> int
-        pass
+        return -1  # TODO
 
     def RestNamed(self):
         # type: () -> Dict[str, value_t]
-        pass
+        return None  # TODO
 
     def Block(self):
         # type: () -> command_t
         """
         Block arg for proc
         """
-
         # TODO: is this BraceGroup?
-        pass
+        return None  # TODO
 
     def Done(self):
         # type: () -> None

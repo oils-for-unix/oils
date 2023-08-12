@@ -22,6 +22,7 @@ option-gen() { py-tool frontend.option_gen; }
 grammar-gen() { py-tool ysh.grammar_gen; }
 arith-parse-gen() { py-tool osh.arith_parse_gen; }
 signal-gen() { py-tool frontend.signal_gen; }
+embedded-file-gen() { py-tool cpp.embedded_file_gen; }
 
 osh-eval() {
   ### Old binary
@@ -86,6 +87,7 @@ main() {
   grammar-gen
   arith-parse-gen
   signal-gen
+  embedded-file-gen
 
   # Explicit dependencies for translating and type checking
   # Baked into mycpp/NINJA.

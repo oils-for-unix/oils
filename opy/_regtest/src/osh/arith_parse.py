@@ -107,7 +107,7 @@ def MakeShellSpec():
   http://en.cppreference.com/w/c/language/operator_precedence
 
   Bash has a table in expr.c, but it's not as cmoplete (missing grouping () and
-  array[1]).  Although it has the ** exponentation operator, not in C.
+  array[1]).  Although it has the ** exponentiation operator, not in C.
 
   - Extensions:
     - function calls f(a,b)

@@ -110,6 +110,18 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
 ## Translation Notes
 
+### WARNING: Assumptions Not Checked
+
+We translate top level constants to statically initialized C data structures
+(zero startup cost):
+
+    gStr = 'foo'   
+    gList = [1, 2]  # type: List[int]
+    gDict = {'bar': 42}  # type: Dict[str, int]
+
+Even though `List` and `Dict` are mutable in general, you should **NOT** mutate
+these global instances!  The C++ code will break at runtime.
+
 ### "Creative Hacks"
 
 - `with tagswitch(d) as case` &rarr; `switch / case`

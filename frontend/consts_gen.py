@@ -188,7 +188,7 @@ def GenStrList(l, name, out):
         element_globals.append(global_name)
 
     lit = ' COMMA '.join(element_globals)
-    out('GLOBAL_LIST(Str*, %d, %s, {%s});\n', len(l), name, lit)
+    out('GLOBAL_LIST(%s, Str*, %d, {%s});\n', name, len(l), lit)
 
 
 def main(argv):
@@ -385,7 +385,7 @@ int NO_INDEX = 0;  // duplicated from frontend/consts.py
             for name in LIST_INT:
                 val = getattr(consts, name)
                 val_str = ' COMMA '.join(str(i) for i in val)
-                out('GLOBAL_LIST(int, %d, %s, {%s});', len(val), name, val_str)
+                out('GLOBAL_LIST(%s, int, %d, {%s});', name, len(val), val_str)
 
             out("""\
 

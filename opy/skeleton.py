@@ -31,7 +31,7 @@ class _ModuleContext(object):
 
   def __init__(self, filename, comp_opt, scopes, futures=()):
     self.filename = filename
-    self.comp_opt = comp_opt  # copmilation options
+    self.comp_opt = comp_opt  # compilation options
     self.scopes = scopes
     self.futures = futures
 

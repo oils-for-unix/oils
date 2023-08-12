@@ -270,8 +270,14 @@ def InitCommandEvaluator(parse_ctx=None,
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                         prompt_ev, tracer)
 
+    try:
+        from _devbuild.gen.help_meta import TOPICS
+    except ImportError:
+        TOPICS = None  # minimal dev build
     spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup, errfmt)
+                                            splitter, comp_lookup, TOPICS,
+                                            errfmt)
+
     # Add some builtins that depend on the executor!
     complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
     builtins[builtin_i.complete] = complete_builtin

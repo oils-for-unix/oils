@@ -716,7 +716,7 @@ class WordParser(object):
       error_stack = c_parser.Error()
       self.error_stack.extend(error_stack)
       print(self.error_stack)
-      self.AddErrorContext('Error parsing commmand list in command sub')
+      self.AddErrorContext('Error parsing command list in command sub')
       return None
 
     # Hm this creates its own word parser, which is thrown away?

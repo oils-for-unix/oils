@@ -402,7 +402,7 @@ class Hay(object):
         node = self._MakeOutputNode()
         self.result_stack = [node]
 
-        self.output = None  # remove last reuslt
+        self.output = None  # remove last result
 
     def PopEval(self):
         # type: () -> None
@@ -826,7 +826,7 @@ class MutableOpts(object):
         # type: (List[str]) -> None
         """For 'shopt -p'."""
 
-        # Respect option gropus.
+        # Respect option groups.
         opt_nums = []  # type: List[int]
         for opt_name in opt_names:
             opt_group = consts.OptionGroupNum(opt_name)
@@ -1981,7 +1981,7 @@ class Mem(object):
 
     def GetValue(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> value_t
-        """Used by the WordEvaluator, ArithEvalutor, ysh/expr_eval.py, etc.
+        """Used by the WordEvaluator, ArithEvaluator, ysh/expr_eval.py, etc.
 
         TODO:
         - Many of these should be value.Int, not value.Str

@@ -4,7 +4,7 @@ ovm.py
 
 TODO:
 
-  Define a VM that doens't use exceptions for control flow!
+  Define a VM that doesn't use exceptions for control flow!
 """
 
 import operator  # for + - * / etc.

@@ -24,7 +24,7 @@ class FormatTest(unittest.TestCase):
     fmt.PrintTree(tree, ast_f)
 
     # Hm this prints 'Plus'.  Doesn't print the class or the number.
-    # But those aren't intrinsic.  These are mostly used for ther IDENTITY.
+    # But those aren't intrinsic.  These are mostly used for their IDENTITY.
     # I think the ASDL_TYPE field contains the relevant info.  Yes!
     pretty_str = f.getvalue()
     print(pretty_str)

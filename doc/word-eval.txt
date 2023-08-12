@@ -220,7 +220,7 @@ FOR EACH WORD
 
    
 4. Elide certain frames.  IFS is whitespace && everything is unquoted and
-everythign is IFS
+everything is IFS
 
   $a$b
 

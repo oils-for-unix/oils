@@ -58,7 +58,7 @@ shell, which evolved over many decades.
 For example, `:` means something different in each of these lines:
 
     PATH=/bin:/usr/bin          # Literal string
-    echo ${x:-default}          # Part of an opeartor
+    echo ${x:-default}          # Part of an operator
     echo $(( x > y ? 42 : 0 ))  # Arithmetic Operator
     var myslice = a[3:5]        # Oil expression
 

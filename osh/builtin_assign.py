@@ -501,7 +501,7 @@ class Unset(vm._Builtin):
         try:
             found = self.mem.Unset(lval, scope_e.Shopt)
         except error.Runtime as e:
-            # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
+            # note: in bash, myreadonly=X fails, but declare myreadonly=X doesn't
             # fail because it's a builtin.  So I guess the same is true of 'unset'.
             msg = e.UserErrorString()
             self.errfmt.Print_(msg, blame_loc=location)

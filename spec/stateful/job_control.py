@@ -288,10 +288,10 @@ def no_spurious_tty_take(sh):
   time.sleep(0.1) # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
   sh.sendline(PYCAT % 'bar')
   if 'osh' in sh.shell_label:
-    # Quirk of osh. TODO: supress this print for background jobs?
+    # Quirk of osh. TODO: suppress this print for background jobs?
     sh.expect('.*Stopped.*')
 
-  # foreground procoess should not have been stopped.
+  # foreground process should not have been stopped.
   sh.sendline('foo')
   sh.expect('foobar')
 

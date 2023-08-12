@@ -89,10 +89,6 @@ prompt() {
   run-file prompt "$@"
 }
 
-osh-only() {
-  run-file osh-only "$@"
-}
-
 bugs() {
   run-file bugs "$@"
 }
@@ -877,8 +873,7 @@ ysh-tuple() {
 }
 
 ysh-var-sub() {
-  sh-spec spec/ysh-var-sub.test.sh --oils-failures-allowed 4 \
-    $OSH_LIST "$@"
+  run-file ysh-var-sub "$@"
 }
 
 ysh-with-sh() {
@@ -886,13 +881,11 @@ ysh-with-sh() {
 }
 
 ysh-word-eval() {
-  sh-spec spec/ysh-word-eval.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-word-eval "$@"
 }
 
 ysh-xtrace() {
-  sh-spec spec/ysh-xtrace.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-xtrace "$@"
 }
 
 ysh-user-feedback() {
@@ -902,6 +895,15 @@ ysh-user-feedback() {
 ysh-builtin-error() {
   run-file ysh-builtin-error "$@"
 }
+
+ysh-builtin-help() {
+  run-file ysh-builtin-help "$@"
+}
+
+ysh-dev() {
+  run-file ysh-dev "$@"
+}
+
 
 #
 # More OSH

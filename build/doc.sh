@@ -60,8 +60,8 @@ _build-timestamp() {
 # - in deployment script
 
 # Run with environment variable
-_make-help() {
-  PYTHONPATH=. doctools/make_help.py "$@"
+help-gen() {
+  PYTHONPATH=. doctools/help_gen.py "$@"
 }
 
 cmark() {
@@ -75,29 +75,33 @@ readonly MARKDOWN_DOCS=(
   # polished
   getting-started
   known-differences
-  errors
   error-handling
   json
   hay
   simple-word-eval
   quirks
   warts
-  variables
   eggex
   upgrade-breakage
+  ysh-tour
+
+  # Data language
   qsn
+  qtt
 
   doc-toolchain
   doc-plugins
   idioms
   shell-idioms
   ysh-faq
-  qtt
+
   language-influences
-  oil-vs-python
-  oil-vs-shell
+  ysh-vs-python
+  ysh-vs-shell
+
   syntactic-concepts
   syntax-feelings
+  command-vs-expression-mode
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
@@ -106,20 +110,19 @@ readonly MARKDOWN_DOCS=(
   index
   faq-doc
 
-  project-tour
-  ysh-tour
-
   options
-  oil-keywords
-  oil-builtins
-  command-vs-expression-mode
 
-  command-language
-  expression-language
-  word-language
+  old/index
+  old/project-tour
+  old/legacy-array
+  old/ysh-keywords
+  old/proc-block-func
+  old/modules
+  old/expression-language
+  old/word-language
+  old/errors
+  old/ysh-builtins
 
-  oil-special-vars
-  proc-block-func
   io-builtins
   unicode
   framing
@@ -127,10 +130,9 @@ readonly MARKDOWN_DOCS=(
   headless
   completion
   strings
-  modules
+  variables
 
   # Internal stuff
-  variable-scope
   interpreter-state
   process-model
   architecture-notes
@@ -179,10 +181,14 @@ split-and-render() {
   #head _tmp/doc/*
   #return
 
+  # for ysh-tour code blocks
   local code_out=_tmp/code-blocks/$rel_path.txt
   mkdir -v -p $(dirname $code_out)
 
-  cmark --code-block-output $code_out ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
+  cmark \
+    --code-block-output $code_out \
+    ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
+
   log "$tmp_prefix -> (doctools/cmark) -> $out"
 }
 
@@ -274,12 +280,6 @@ all-redirects() {
   done
 }
 
-all-ref() {
-  for d in doc/ref/*.md; do
-    split-and-render $d '' '../../web'
-  done
-}
-
 # TODO: This could use some CSS.
 man-page() {
   local root_dir=${1:-_release/VERSION}
@@ -364,27 +364,30 @@ readonly CODE_DIR=_devbuild/gen
 cards-from-indices() {
   ### Make help cards
 
-  for sh in osh ysh; do
-    _make-help cards-from-index $sh $TEXT_DIR \
-      < $HTML_DIR/doc/$sh-help-topics.html
+  for lang in osh ysh data; do
+    help-gen cards-from-index $lang $TEXT_DIR \
+      < $HTML_DIR/doc/ref/index-$lang.html
   done
 }
 
 cards-from-chapters() {
-  ### Do all cards at once
+  ### Turn h3 topics into cards
 
-  # TODO: We need to re-indent <code> blocks here, etc.
+  local py_out=$CODE_DIR/help_meta.py
 
-  local py_out=$CODE_DIR/help_.py
-  # h4 tag for these
-  _make-help cards-from-chapter $TEXT_DIR $py_out h4 \
-    $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/ysh-help.html
+  mkdir -p _gen/frontend
+  local cc_prefix=_gen/frontend/help_meta
 
-  # TODO: unify the list of help topics
-  local py_out=$CODE_DIR/fixme.py
-  # h3
-  _make-help cards-from-chapter $TEXT_DIR $py_out h3 \
-    $HTML_DIR/doc/ref/chap-front-end.html
+  help-gen cards-from-chapters $TEXT_DIR $py_out $cc_prefix \
+    $HTML_DIR/doc/ref/chap-*.html
+}
+
+ref-check() {
+  ### Check indexes and chapters against each other
+
+  help-gen ref-check \
+    doc/ref/index-*.md \
+    _release/VERSION/doc/ref/chap-*.html
 }
 
 tour() {
@@ -439,19 +442,22 @@ all-help() {
   rm -f $TEXT_DIR/*
   make-dirs
 
-  split-and-render doc/ysh-help-topics.md
-  split-and-render doc/ysh-help.md
-  split-and-render doc/osh-help-topics.md
-  split-and-render doc/osh-help.md
+  # Make the indexes and chapters
+  for d in doc/ref/*.md; do
+    split-and-render $d '' '../../web'
+  done
 
-  # Make the chapters
-  all-ref
-
+  # Text cards
   cards-from-indices
+  # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
   cards-from-chapters
 
-  cp -v doc/ref/osh.txt $TEXT_DIR/osh
-  cp -v doc/ref/ysh.txt $TEXT_DIR/ysh
+  if command -v pysum; then
+    # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
+    # compress it.
+    echo 'Size of embedded help:'
+    ls -l $TEXT_DIR | tee /dev/stderr | awk '{print $5}' | pysum
+  fi
 
   # Better sorting
   #LANG=C ls -l $TEXT_DIR

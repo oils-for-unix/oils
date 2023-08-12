@@ -174,7 +174,7 @@ class TocExtractor(HTMLParser.HTMLParser):
       self._AppendText(data)
 
   def _AppendText(self, text):
-    """Accumlate text of the last heading."""
+    """Accumulate text of the last heading."""
     _, _, _, _, text_parts = self.headings[-1]
     text_parts.append(text)
 
@@ -270,7 +270,9 @@ def _ApplyInsertions(lines, insertions, out_file):
     out_file.write(line)
 
 
-def Render(opts, meta, in_file, out_file, use_fastlex=True):
+def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
+  if debug_out is None:
+    debug_out = []
 
   # First convert to HTML
   html = md2html(in_file.read())
@@ -296,7 +298,8 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True):
 
     # <code> blocks
     # Including class=language-oil-help-topics
-    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'))
+    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'),
+                                 debug_out=debug_out)
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
@@ -348,7 +351,7 @@ def Options():
 
   p.add_option(
       '--code-block-output', dest='code_block_output',
-      default=False,
+      default=None,
       help='Extract and print code blocks to this file')
 
   return p

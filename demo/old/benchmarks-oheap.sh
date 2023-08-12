@@ -37,7 +37,7 @@ encode-all() {
     $0 encode-one
 }
 
-# Out of curiousity, compress oheap and originals.
+# Out of curiosity, compress oheap and originals.
 
 compress-oheap() {
   local c_dir=$BASE_DIR/oheap-compressed

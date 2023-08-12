@@ -37,7 +37,7 @@ setvar en2fr["cat"] = "chat"
 (List)   ['hello', 'friend', 'cat']
 ## END
 
-#### Seperation of -> attr and () calling
+#### Separation of -> attr and () calling
 const check = "abc"->startswith
 = check("a")
 ## status: 0

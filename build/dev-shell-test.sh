@@ -50,7 +50,7 @@ test-cli() {
 test-python2() {
   banner "Testing python2"
 
-  # Can't do this beacuse of vendor/typing.py issue.
+  # Can't do this because of vendor/typing.py issue.
   # log "Testing oils_for_unix.py"
   # bin/oils_for_unix.py --help | head -n 2
 

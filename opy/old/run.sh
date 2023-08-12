@@ -135,7 +135,7 @@ compare-opy-tree() {
   #diff -u _tmp/opy-{stdlib,stdlib2}/MD5.txt || true
 
   # Hm even two stdlib runs are different!
-  # TODO: find the smallest ones that are differet
+  # TODO: find the smallest ones that are different
 
   # Same strings output
   compare-files _tmp/opy-{stdlib,stdlib2}/pytree.pyc

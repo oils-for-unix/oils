@@ -11,11 +11,10 @@ from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         Overloaded, CallableType, UnionType, UninhabitedType,
                         PartialType, TypeAliasType)
-from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr,
-                        MemberExpr, TupleExpr, ExpressionStmt,
-                        IfStmt, StrExpr, SliceExpr, FuncDef, UnaryExpr, OpExpr,
-                        ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
-                        ListComprehension)
+from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
+                        TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
+                        FuncDef, UnaryExpr, OpExpr, ComparisonExpr, CallExpr,
+                        IntExpr, ListExpr, DictExpr, ListComprehension)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
@@ -395,6 +394,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_method_name = None
 
         self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
+
+        # HACK for conditional import inside mylib.PYTHON
+        # in core/shell.py
+        self.imported_names.add('help_meta')
 
         # So we can report multiple at once
         # module path, line number, message
@@ -1019,10 +1022,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write(op_str)
         self.accept(o.expr)
 
-    def _WriteListElements(self, o, sep=', '):
+    def _WriteListElements(self, items, sep=', '):
         # sep may be 'COMMA' for a macro
         self.write('{')
-        for i, item in enumerate(o.items):
+        for i, item in enumerate(items):
             if i != 0:
                 self.write(sep)
             self.accept(item)
@@ -1044,7 +1047,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
             self.write('NewList<%s>(std::initializer_list<%s>' %
                        (item_c_type, item_c_type))
-            self._WriteListElements(o)
+            self._WriteListElements(o.items)
             self.write(')')
 
     def _WriteDictElements(self, o, key_type, val_type):
@@ -1127,7 +1130,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.begin_index:
             self.accept(o.begin_index)
         else:
-            self.write('0')  # implicit begining
+            self.write('0')  # implicit beginning
 
         if o.end_index:
             self.write(', ')
@@ -1135,7 +1138,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if o.stride:
             if not o.begin_index or not o.end_index:
-                raise AssertionError('Stride only supported with beginning and ending index')
+                raise AssertionError(
+                    'Stride only supported with beginning and ending index')
 
             self.write(', ')
             self.accept(o.stride)
@@ -1240,44 +1244,40 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             lval_type = self.types[lval]
 
             # Global
-            #   L = [1, 2]  # type: List
+            #   L = [1, 2]  # type: List[int]
             if isinstance(o.rvalue, ListExpr):
                 item_type = lval_type.args[0]
                 item_c_type = GetCType(item_type)
 
-                # Then a pointer to it
-                self.write('GLOBAL_LIST(%s, %d, %s, ', item_c_type,
-                           len(o.rvalue.items), lval.name)
-
+                # Any constant strings will have already been written
                 # TODO: Assert that every item is a constant?
-                # COMMA for macro
-                self._WriteListElements(o.rvalue, sep=' COMMA ')
+                self.write('GLOBAL_LIST(%s, %s, %d, ', lval.name, item_c_type,
+                           len(o.rvalue.items))
+
+                self._WriteListElements(o.rvalue.items, sep=' COMMA ')
 
                 self.write(');\n')
                 return
 
             # Global
-            #   D = {}  # type: Dict
-            # TODO: Use GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
-            # to get HeapTag::Global
+            #   D = {"foo": "bar"}  # type: Dict[str, str]
             if isinstance(o.rvalue, DictExpr):
                 key_type, val_type = lval_type.args
 
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
 
-                temp_name = 'gdict%d' % self.unique_id
-                self.unique_id += 1
+                dict_expr = o.rvalue
+                self.write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
+                           key_c_type, val_c_type, len(dict_expr.items))
 
-                # Value
-                self.write('Dict<%s, %s> %s(', key_c_type, val_c_type,
-                           temp_name)
-                self._WriteDictElements(o.rvalue, key_type, val_type)
+                keys = [k for k, _ in dict_expr.items]
+                values = [v for _, v in dict_expr.items]
+
+                self._WriteListElements(keys, sep=' COMMA ')
+                self.write(', ')
+                self._WriteListElements(values, sep=' COMMA ')
                 self.write(');\n')
-
-                # Then a pointer to it
-                self.write('Dict<%s, %s>* %s = &%s;\n', key_c_type, val_c_type,
-                           lval.name, temp_name)
                 return
 
             # TODO: Change to GLOBAL_ASDL_INSTANCE(name, Token, ...) to get HeapTag::Global
@@ -1493,7 +1493,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if self.current_method_name in ('__init__', 'Reset'):
                 # Collect statements that look like self.foo = 1
                 # Only do this in __init__ so that a derived class mutating a field
-                # from the base calss doesn't cause duplicate C++ fields.  (C++
+                # from the base class doesn't cause duplicate C++ fields.  (C++
                 # allows two fields of the same name!)
                 #
                 # HACK for WordParser: also include Reset().  We could change them
