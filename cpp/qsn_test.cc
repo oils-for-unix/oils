@@ -14,6 +14,8 @@ TEST qsn_test() {
 
   ASSERT(qsn::IsUnprintableLow(StrFromC("\x01")));
   ASSERT(!qsn::IsUnprintableLow(StrFromC(" ")));
+  ASSERT(!qsn::IsUnprintableLow(StrFromC("\xce")));
+  ASSERT(!qsn::IsUnprintableLow(StrFromC("\xbc")));
 
   ASSERT(qsn::IsUnprintableHigh(StrFromC("\xff")));
   ASSERT(!qsn::IsUnprintableHigh(StrFromC("\x01")));
@@ -21,6 +23,10 @@ TEST qsn_test() {
   ASSERT(qsn::IsPlainChar(StrFromC("a")));
   ASSERT(qsn::IsPlainChar(StrFromC("-")));
   ASSERT(!qsn::IsPlainChar(StrFromC(" ")));
+
+  // UTF-8 bytes for mu
+  ASSERT(!qsn::IsPlainChar(StrFromC("\xce")));
+  ASSERT(!qsn::IsPlainChar(StrFromC("\xbc")));
 
   PASS();
 }
@@ -32,10 +38,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  // Can stress test it like this
-  for (int i = 0; i < 10; ++i) {
-    RUN_TEST(qsn_test);
-  }
+  RUN_TEST(qsn_test);
 
   gHeap.CleanProcessExit();
 

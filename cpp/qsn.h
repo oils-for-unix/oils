@@ -9,20 +9,21 @@ namespace qsn {
 
 inline bool IsUnprintableLow(Str* ch) {
   assert(len(ch) == 1);
-  return ch->data_[0] < ' ';
+  uint8_t c = ch->data_[0];  // explicit conversion necessary
+  return c < ' ';
 }
 
 inline bool IsUnprintableHigh(Str* ch) {
   assert(len(ch) == 1);
   // 255 should not be -1!
   // log("ch->data_[0] %d", ch->data_[0]);
-  unsigned char c = static_cast<unsigned char>(ch->data_[0]);
+  uint8_t c = ch->data_[0];  // explicit conversion necessary
   return c >= 0x7f;
 }
 
 inline bool IsPlainChar(Str* ch) {
   assert(len(ch) == 1);
-  uint8_t c = ch->data_[0];
+  uint8_t c = ch->data_[0];  // explicit conversion necessary
   switch (c) {
   case '.':
   case '-':

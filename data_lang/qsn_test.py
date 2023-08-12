@@ -23,8 +23,10 @@ class QStrTest(unittest.TestCase):
         # We don't want \u{} in shell
         self.assertEqual("$'\\x01'", qsn.maybe_shell_encode('\x01'))
 
-        # We don't want \0 because shell uses \000
-        #self.assertEqual("$'\\x00'", qsn.maybe_shell_encode('\0'))
+        print(qsn.maybe_shell_encode('\xce\xbc'))
+
+        # We don't want \0 because shell also has \000
+        self.assertEqual("$'\\x00'", qsn.maybe_shell_encode('\0'))
 
         # backslash handling
         self.assertEqual(r"$'\\'", qsn.maybe_shell_encode('\\'))

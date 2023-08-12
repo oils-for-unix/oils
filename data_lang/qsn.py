@@ -84,14 +84,12 @@ backslashes are doubled.
 """
 from __future__ import print_function
 
-# Problem: ASDL depends on this module.  It breaks ASDL tests if we import
-# 'core'.
-#from mycpp.mylib import log
+from mycpp.mylib import log
 from mycpp import mylib
 
 from typing import List
 
-#_ = log
+_ = log
 
 # Note: this used to be in asdl/pretty.py.  But I think it's better to use
 # byteiter() here.
@@ -209,6 +207,7 @@ def maybe_shell_encode(s, flags=0):
             if not must_quote and IsPlainChar(ch):
                 continue  # quote is still 0
 
+            #log('quote = 1 %r', ch)
             quote = 1
 
             if ch in '\\\'\r\n\t\0' or IsUnprintableLow(ch):
