@@ -74,7 +74,7 @@ Readline::Readline()
       latest_line_() {
 #if HAVE_READLINE
   using_history();
-  rl_readline_name = "oil";
+  rl_readline_name = "oils";
   /* Force rebind of TAB to insert-tab */
   rl_bind_key('\t', rl_insert);
   /* Bind both ESC-TAB and ESC-ESC to the completion function */
@@ -115,7 +115,10 @@ void Readline::read_history_file(Str* path) {
   if (path != nullptr) {
     p = path->data();
   }
-  read_history(p);
+  int err_num = read_history(p);
+  if (err_num) {
+    throw Alloc<IOError>(err_num);
+  }
 #else
   assert(0);  // not implemented
 #endif
@@ -127,7 +130,10 @@ void Readline::write_history_file(Str* path) {
   if (path != nullptr) {
     p = path->data();
   }
-  write_history(p);
+  int err_num = write_history(p);
+  if (err_num) {
+    throw Alloc<IOError>(err_num);
+  }
 #else
   assert(0);  // not implemented
 #endif
@@ -194,6 +200,9 @@ void Readline::clear_history() {
 void Readline::remove_history_item(int pos) {
 #if HAVE_READLINE
   HIST_ENTRY* entry = remove_history(pos);
+  if (!entry) {
+    throw Alloc<ValueError>(StrFormat("No history item at position %d", pos));
+  }
   histdata_t data = free_history_entry(entry);
   free(data);
 #else

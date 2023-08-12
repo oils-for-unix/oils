@@ -966,7 +966,7 @@ setup_readline(void)
 
     using_history();
 
-    rl_readline_name = "python";
+    rl_readline_name = "oils";
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
     /* Allow $if term= in .inputrc to work */
     rl_terminal_name = getenv("TERM");

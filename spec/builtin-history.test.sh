@@ -126,9 +126,10 @@ status=1
 
 #### history -d to delete history item
 
+rm -f myhist
 export HISTFILE=myhist
 
-$SH --norc -i <<EOF
+$SH --norc -i <<'EOF'
 
 echo 42
 echo 43
@@ -144,6 +145,8 @@ history -d -1
 echo status=$?
 history -d -2
 echo status=$?
+history -d 99
+echo status=$?
 
 case $SH in bash) echo '^D' ;; esac
 
@@ -154,8 +157,20 @@ EOF
 43
 44
 status=0
+status=2
+status=2
+status=2
+^D
+## END
+
+## OK bash STDOUT:
+42
+43
+44
 status=0
-status=0
+status=1
+status=1
+status=1
 ^D
 ## END
 
