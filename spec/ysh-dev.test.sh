@@ -1,9 +1,4 @@
 
-#### --debug-file
-$SH --debug-file $TMP/debug.txt -c 'true'
-grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
-## stdout: yes
-
 #### crash dump
 
 rm -f $TMP/*.json
@@ -70,39 +65,3 @@ found crash dump
 
 # NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 
-
-#### help topics that are embedded
-help > help.txt
-echo no args $?
-
-for topic in help oils-usage {osh,ysh}-usage {osh,ysh}-chapters; do
-  help $topic > $topic.txt
-  echo $topic $?
-done
-
-help zz > zz.txt
-echo zz $?
-## STDOUT:
-no args 0
-help 0
-oils-usage 0
-osh-usage 0
-ysh-usage 0
-osh-chapters 0
-ysh-chapters 0
-zz 1
-## END
-
-#### help topics that are linked
-help com-sub | grep -o chap-word-lang.html
-echo status=$?
-
-help read | grep -o chap-builtin-cmd.html
-echo status=$?
-
-## STDOUT:
-chap-word-lang.html
-status=0
-chap-builtin-cmd.html
-status=0
-## END

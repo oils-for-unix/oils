@@ -89,10 +89,6 @@ prompt() {
   run-file prompt "$@"
 }
 
-osh-only() {
-  run-file osh-only "$@"
-}
-
 bugs() {
   run-file bugs "$@"
 }
@@ -902,6 +898,15 @@ ysh-user-feedback() {
 ysh-builtin-error() {
   run-file ysh-builtin-error "$@"
 }
+
+ysh-builtin-help() {
+  run-file ysh-builtin-help "$@"
+}
+
+ysh-dev() {
+  run-file ysh-dev "$@"
+}
+
 
 #
 # More OSH

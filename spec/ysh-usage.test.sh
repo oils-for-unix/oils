@@ -22,14 +22,8 @@ line 10
 -- [ stdin ]:11: Unexpected
 ## END
 
-#### help shows 'ysh-chapters' topic
+#### --debug-file
+$SH --debug-file $TMP/debug.txt -c 'true'
+grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
+## stdout: yes
 
-# doesn't show ANSI text unless TTY
-help | grep ysh-chapters
-
-echo status=$?
-
-## STDOUT:
-TODO fix dev-minimal ~~~ ysh-chapters ~~~
-status=0
-## END
