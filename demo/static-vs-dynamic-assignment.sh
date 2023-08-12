@@ -42,7 +42,7 @@ demo() {
   # Doh, this is parsed by bash and zsh too!  And mksh somewhat supports it.
   #
   # So how do we re-run the parser?  Or should we omit this for now?
-  # Don't allow dynamic a[x] assigments?  But 3 shells all implement it.
+  # Don't allow dynamic a[x] assignments?  But 3 shells all implement it.
 
   local e='array[1+1]=42'
   local "$e"     # This is a SINGLE assignment to a

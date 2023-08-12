@@ -205,7 +205,7 @@ class Arena(object):
 
         Used for ALIAS expansion, which happens in the PARSER.
 
-        The argument to aliases can span multiple lines, like htis:
+        The argument to aliases can span multiple lines, like this:
 
         $ myalias '1     2     3'
         """

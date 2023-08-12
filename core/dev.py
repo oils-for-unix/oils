@@ -57,7 +57,7 @@ class CrashDumper(object):
 
     debug info for the source?  Or does that come elsewhere?
 
-    Yeah I think you sould have two separate files.
+    Yeah I think you should have two separate files.
     - debug info for a given piece of code (needs hash)
       - this could just be the raw source files?  Does it need anything else?
       - I think it needs a hash so the VM dump can refer to it.

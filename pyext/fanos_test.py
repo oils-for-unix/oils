@@ -141,7 +141,7 @@ class FanosTest(unittest.TestCase):
     left, right = socket.socketpair()
 
     # TODO: test invalid netstring cases
-    # Instead of RuntimeError they sould be fanos.error?
+    # Instead of RuntimeError they should be fanos.error?
     # Instead of 'OK' you return
     # 'fanos ERROR: Invalid netstring'
 

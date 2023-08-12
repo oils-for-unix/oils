@@ -468,7 +468,7 @@ import_names: import_name (comma_newline import_name)* [import_name]
 tea_import: sq_string [ 'as' Expr_Name ] ['(' [Op_Newline] [import_names] ')'] end_import
 
 # Top level:
-# delarations of constants -- with const only?
+# declarations of constants -- with const only?
 # maybe only const?
 # use, data, enum, class, func.  That's it?  OK.
 

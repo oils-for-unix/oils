@@ -334,7 +334,7 @@ if test -z foo { echo if } elif test -z '' { echo 1 }; if test -n foo { echo 2 }
 echo 'sh syntax'
 if test -z foo; then echo if; elif test -z ''; then echo 1; fi; if test -n foo { echo 2 };
 
-# NOTE: This is not alowed because it's like a brace group!
+# NOTE: This is not allowed because it's like a brace group!
 # if test -n foo; { 
 
 ## STDOUT:

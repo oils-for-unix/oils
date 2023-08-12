@@ -679,7 +679,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif tok.id in (Id.VTest_ColonQMark, Id.VTest_QMark):
             if is_falsey:
-                # The arg is the error mesage
+                # The arg is the error message
                 error_part_vals = []  # type: List[part_value_t]
                 self._EvalRhsWordToParts(op.arg_word, error_part_vals,
                                          eval_flags)

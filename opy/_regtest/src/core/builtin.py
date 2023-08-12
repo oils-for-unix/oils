@@ -281,7 +281,7 @@ def Wait(argv, waiter, job_state, mem):
 
   # Get list of jobs.  Then we need to check if they are ALL stopped.
   # Returns the exit code of the last one on the COMMAND LINE, not the exit
-  # code of last one to FINSIH.
+  # code of last one to FINISH.
 
   status = 1  # error
   for pid in pids:

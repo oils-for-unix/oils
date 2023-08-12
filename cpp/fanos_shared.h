@@ -5,7 +5,7 @@
 //
 // This library is shared between cpp/ and pyext/.
 
-// Callers should initalize
+// Callers should initialize
 //   FanosError to { 0, NULL }, and
 //   FanosResult to { NULL, FANOS_INVALID_LEN }
 

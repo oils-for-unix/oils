@@ -1550,7 +1550,7 @@ class Trace(object):
 
 
 def _MakeGroupFromRootSection(root_section, undefined_str):
-  """Construct a dictinary { template name -> Template() instance }
+  """Construct a dictionary { template name -> Template() instance }
 
   Args:
     root_section: _Section instance -- root of the original parse tree

@@ -86,7 +86,7 @@ BYTECODE_ZIP := bytecode-opy.zip
 
 HAVE_OBJCOPY := $(shell command -v objcopy 2>/dev/null)
 
-# For faster tesing of builds
+# For faster testing of builds
 #default: _bin/oil.ovm-dbg
 
 # What the end user should build when they type 'make'.

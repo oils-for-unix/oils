@@ -84,7 +84,7 @@ test-programs() {
   ls --escape
   echo
   # Test out error message
-  # It's basicallly correct, but ugly.  There are too many segments, and
+  # It's basically correct, but ugly.  There are too many segments, and
   # there's an unnecessary leading ''.
   # QSN is shorter and more consistent.
 
@@ -141,7 +141,7 @@ test-errors() {
   grep z "$byte_then_char" || true
   grep z "$char_then_byte" || true
 
-  # python doens't print it smehow?
+  # python doesn't print it somehow?
   banner 'python'
   # BUG: Python prints terminal sequences
   #python "$BOLD" || true

@@ -1649,7 +1649,7 @@ oils_issue_1118() {
       echo hi
     }
 
-    # The $ causes a wierd error
+    # The $ causes a weird error
     if ($snippet["status"] === 0) {
       echo hi
     }
@@ -1695,7 +1695,7 @@ trap_parse_error() {
   '
 }
 
-# Note: PROMPT_COMAND and PS1 are hard to trigger in this framework
+# Note: PROMPT_COMMAND and PS1 are hard to trigger in this framework
 
 cases-in-strings() {
   set +o errexit

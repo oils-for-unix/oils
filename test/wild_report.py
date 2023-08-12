@@ -668,7 +668,7 @@ def SumStats(stdin, in_dir, not_shell, not_osh, root_node, failures):
     osh2oil_failed, st['osh2oil_proc_secs'] = _ReadTaskFile(
         osh2oil_task_path)
 
-    # Only count translation failures if the parse suceeded!
+    # Only count translation failures if the parse succeeded!
     st['osh2oil_failed'] = osh2oil_failed if not parse_failed else 0
 
     with open(raw_base + '__osh2oil.stderr.txt') as f:

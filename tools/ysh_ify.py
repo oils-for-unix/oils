@@ -668,7 +668,7 @@ class OilPrinter(object):
 
                 if node.cond.tag() == condition_e.Shell:
                     commands = cast(condition.Shell, node.cond).commands
-                    # Skip the semi-colon in the condition, which is ususally a Sentence
+                    # Skip the semi-colon in the condition, which is usually a Sentence
                     if len(commands) == 1 and commands[0].tag(
                     ) == command_e.Sentence:
                         sentence = cast(command.Sentence, commands[0])
@@ -880,7 +880,7 @@ class OilPrinter(object):
                     # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
                     # conversion to string.
 
-                    # For now, jsut stub it out
+                    # For now, just stub it out
                     self.DoWordInCommand(node, local_symbols)
 
     def DoWordInCommand(self, node, local_symbols):

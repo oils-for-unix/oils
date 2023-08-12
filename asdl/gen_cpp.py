@@ -342,7 +342,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # This is the base class.
         Emit('class %(sum_name)s_t {')
         # Can't be constructed directly.  Note: this shows up in uftrace in debug
-        # mode, e.g. when we intantiate Token.  Do we need it?
+        # mode, e.g. when we instantiate Token.  Do we need it?
         Emit(' protected:')
         Emit('  %s_t() {' % sum_name)
         Emit('  }')

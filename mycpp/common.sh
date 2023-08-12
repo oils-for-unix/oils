@@ -16,7 +16,7 @@ source mycpp/common-vars.sh
 maybe-our-python3() {
   ### Run a command line with Python 3
 
-  # Use Python 3.10 from deps/from-tar if available.  Otherwise use the sytsem
+  # Use Python 3.10 from deps/from-tar if available.  Otherwise use the system
   # python3.
 
   local py3_ours='../oil_DEPS/python3'

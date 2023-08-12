@@ -147,7 +147,7 @@ if (_status !== 0) {
 
 ### general
 
-### use command subsitution to assign the result of a command to a variable
+### use command substitution to assign the result of a command to a variable
 var year = $(date -u +"%Y")
 echo $year
 

@@ -82,7 +82,7 @@ check-tree() {
   echo 'Word Counts'
   echo
 
-  # For curiousity: word count by file
+  # For curiosity: word count by file
   find $BASE_DIR/$subdir -name '*.words' | xargs wc -l | sort -n
 
   # Use alphabetical order

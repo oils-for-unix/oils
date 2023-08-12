@@ -298,7 +298,7 @@ TRUE
 TRUE
 ## END
 
-#  osh fails wth runtime error
+#  osh fails with runtime error
 ## OK osh status: 1
 ## OK osh STDOUT:
 ## END

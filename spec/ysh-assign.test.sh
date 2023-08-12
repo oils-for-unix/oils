@@ -221,7 +221,7 @@ x=xx
 
 #### var x, y = 1, 2 is NOT allowed
 
-# The syntax consistent with JavaScript woudl be
+# The syntax consistent with JavaScript would be
 # var x = 1, y = 2;
 
 var x, y = 1, 2

@@ -11,7 +11,7 @@ PY2 = sys.version[0] == '2'
 # This uses Python3 keyword-only syntax!
 #def log(msg, *args, file=sys.stdout):
 #
-# WHY oh WHY didn't they rename print to something else, like say().  You haev
+# WHY oh WHY didn't they rename print to something else, like say().  You have
 # to do something like this to hide "if PY2" because it doesn't even parse.
 
 #s = getattr(__builtins__, 'print')

@@ -37,10 +37,10 @@ readonly CLANGXX=$CLANG_DIR/bin/clang++
 # I'm not sure if there's a GCC version of this?
 export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
 
-# ThreadSanitizer doesn't always give us all locaitons, but this doesn't help
+# ThreadSanitizer doesn't always give us all locations, but this doesn't help
 # export TSAN_SYMBOLIZER_PATH=$ASAN_SYMBOLIZER_PATH
 
-# equivalent of 'cc' for C++ langauge
+# equivalent of 'cc' for C++ language
 # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc
 CXX=${CXX:-'c++'}
 

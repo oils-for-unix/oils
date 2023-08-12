@@ -5,7 +5,7 @@ We don't want the side effects of importing tempfile, which imports random,
 which opens /dev/urandom!
 """
 
-# Removed quote arg since C++ doesn't suport keyword args, and we don't use it
+# Removed quote arg since C++ doesn't support keyword args, and we don't use it
 # in Oil proper.
 
 def escape(s):

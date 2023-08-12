@@ -598,7 +598,7 @@ control over error messages.
     oil --location-str 'foo.hay' --location-start-line 42 -- stage2.oil
 
 Set them to the values of fields `location_str` and `location_start_line` in
-the result of `SHELL` node evalution.
+the result of `SHELL` node evaluation.
 
 ### Debian `.d` Dirs
 

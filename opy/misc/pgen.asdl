@@ -1,5 +1,5 @@
 -- AST for pgen grammar.
--- Constrast with asdl.asdl
+-- Contrast with asdl.asdl
 
 module pgen
 {

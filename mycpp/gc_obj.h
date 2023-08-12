@@ -32,7 +32,7 @@ const unsigned kZeroMask = 0;  // for types with no pointers
 const int kMaxObjId = (1 << 28) - 1;  // 28 bits means 512 Mi objects per pool
 const int kIsGlobal = kMaxObjId;      // for debugging, not strictly needed
 
-const int kUndefinedId = 0;  // Unitialized object ID
+const int kUndefinedId = 0;  // Uninitialized object ID
 
 // Every GC-managed object is preceded in memory by an ObjHeader.
 // TODO: ./configure could detect endian-ness, and reorder the fields in

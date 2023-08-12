@@ -122,7 +122,7 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
     throw Alloc<OSError>(errno);
   }
 
-  // ::execve() never returns on succcess
+  // ::execve() never returns on success
   FAIL(kShouldNotGetHere);
 }
 
@@ -188,7 +188,7 @@ time_t time() {
 
 // NOTE(Jesse): time_t is specified to be an arithmetic type by C++. On most
 // systems it's a 64-bit integer.  64 bits is used because 32 will overflow in
-// 2038.  Someone on a comittee somewhere thought of that when moving to
+// 2038.  Someone on a committee somewhere thought of that when moving to
 // 64-bit architectures to prevent breaking ABI again; on 32-bit systems it's
 // usually 32 bits.  Point being, using anything but the time_t typedef here
 // could (unlikely, but possible) produce weird behavior.

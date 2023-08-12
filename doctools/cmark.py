@@ -174,7 +174,7 @@ class TocExtractor(HTMLParser.HTMLParser):
       self._AppendText(data)
 
   def _AppendText(self, text):
-    """Accumlate text of the last heading."""
+    """Accumulate text of the last heading."""
     _, _, _, _, text_parts = self.headings[-1]
     text_parts.append(text)
 

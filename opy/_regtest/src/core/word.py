@@ -149,7 +149,7 @@ def LeftMostSpanForPart(part):
     return part.spids[0]
 
   elif part.tag == word_part_e.ExtGlobPart:
-    # This is the smae as part.op.span_id, but we want to be consistent with
+    # This is the same as part.op.span_id, but we want to be consistent with
     # left/right.  Not sure I want to add a right token just for the spid.
     return part.spids[0]
     #return part.op.span_id  # e.g. @( is the left-most token
@@ -384,7 +384,7 @@ def AsArithVarName(w):
 
   NOTE: This can't be combined with LooksLikeAssignment because VarLike and
   ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
-  confused between array assigments foo=(1 2) and function calls foo(1, 2).
+  confused between array assignments foo=(1 2) and function calls foo(1, 2).
   """
   assert w.tag == word_e.CompoundWord
 
@@ -558,7 +558,7 @@ def CommandKind(w):
   if w.tag == word_e.TokenWord:
     return LookupKind(w.token.id)
 
-  # NOTE: This is a bit inconsistent with CommandId, because we never retur
+  # NOTE: This is a bit inconsistent with CommandId, because we never return
   # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.
   return Kind.Word
 

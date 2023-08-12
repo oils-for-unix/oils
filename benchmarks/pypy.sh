@@ -33,7 +33,7 @@ parse-with-cpython() {
 
 # ~4.8 seconds
 # NOTE: We could run it in a loop to see if the JIT warms up, but that would
-# only be for curiousity.  Most shell processes are short-lived, so it's the
+# only be for curiosity.  Most shell processes are short-lived, so it's the
 # wrong thing to optimize for.
 parse-with-pypy() {
   parse-abuild $PYPY

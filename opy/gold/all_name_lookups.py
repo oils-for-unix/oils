@@ -29,7 +29,7 @@ def myfunc():
   # CALL_FUNCTION -- should be INIT_INSTANCE
   obj = class_vs_closure.Adder(42)
 
-  obj.method(5)  # LOAD_FAST and hten LOAD_ATTR for method
+  obj.method(5)  # LOAD_FAST and then LOAD_ATTR for method
                  # CALL_FUNCTION (should be CALL_METHOD)
 
 

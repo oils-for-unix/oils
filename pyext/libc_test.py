@@ -43,7 +43,7 @@ class LibcTest(unittest.TestCase):
         ('\\!', '!', 1),
 
         # What if we also escape extended glob chars?
-        # Extra escaping is OK, so we shoudl ALWAYS escape them.
+        # Extra escaping is OK, so we should ALWAYS escape them.
         ('\\(', '(', 1),
         ('\\(', 'x', 0),
         ('\\(', '\\', 0),

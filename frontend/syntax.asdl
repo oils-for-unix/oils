@@ -271,7 +271,7 @@ module syntax
       Token? right
   )
 
-  # The argument to match agains in a case command
+  # The argument to match against in a case command
   # In YSH-style case commands we match against an `expr`, but in sh-style case
   # commands we match against a word.
   case_arg =
