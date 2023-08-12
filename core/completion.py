@@ -50,7 +50,7 @@ from frontend import consts
 from frontend import location
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import print_stderr, log
+from mycpp.mylib import print_stderr, iteritems, log
 from osh.string_ops import ShellQuoteB
 from osh import word_
 from pylib import os_path
@@ -168,20 +168,28 @@ class OptionState(object):
         self.dynamic_opts = None  # type: Dict[str, bool]
 
 
+def _PrintOpts(opts, f):
+    # type: (Dict[str, bool], mylib.BufWriter) -> None
+    f.write('  (')
+    for k, v in iteritems(opts):
+        f.write(' %s=%s' % (k, '1' if v else '0'))
+    f.write(' )\n')
+
+
 class Lookup(object):
     """Stores completion hooks registered by the user."""
 
     def __init__(self):
         # type: () -> None
-        # command name -> UserSpec
+
         # Pseudo-commands __first and __fallback are for -E and -D.
         do_nothing = (_DEFAULT_OPTS,
                       UserSpec([], [], [], DefaultPredicate(), '', '')
-                     )  # type: Tuple[Optional[Dict[str, bool]], UserSpec]
+                     )  # type: Tuple[Dict[str, bool], UserSpec]
         self.lookup = {
             '__fallback': do_nothing,
             '__first': do_nothing,
-        }  # type: Dict[str, Tuple[Optional[Dict[str, bool]], UserSpec]]
+        }  # type: Dict[str, Tuple[Dict[str, bool], UserSpec]]
 
         # for the 124 protocol
         self.commands_with_spec_changes = []  # type: List[str]
@@ -196,13 +204,31 @@ class Lookup(object):
 
     def PrintSpecs(self):
         # type: () -> None
-        """For 'complete' without args."""
+        """ For complete -p """
+
+        # TODO: This format could be nicer / round-trippable?
+
+        f = mylib.BufWriter()
+
+        f.write('[Commands]\n')
         for name in sorted(self.lookup):
             base_opts, user_spec = self.lookup[name]
-            print('%-15s %s  %s' % (name, base_opts, user_spec))
-        print('---')
+
+            f.write('%s:\n' % name)
+            _PrintOpts(base_opts, f)
+
+            user_spec.PrintSpec(f)
+
+        f.write('[Patterns]\n')
         for pat, base_opts, spec in self.patterns:
-            print('%s %s %s' % (pat, base_opts, spec))
+            #print('%s %s %s' % (pat, base_opts, spec))
+            f.write('%s:\n' % pat)
+            _PrintOpts(base_opts, f)
+
+            user_spec.PrintSpec(f)
+
+        # Print to stderr since it's not parse-able
+        print_stderr(f.getvalue())
 
     def ClearCommandsChanged(self):
         # type: () -> None
@@ -228,7 +254,7 @@ class Lookup(object):
         self.patterns.append((glob_pat, base_opts, user_spec))
 
     def GetSpecForName(self, argv0):
-        # type: (str) -> Tuple[Optional[Dict[str, bool]], Optional[UserSpec]]
+        # type: (str) -> Tuple[Dict[str, bool], UserSpec]
         """
         Args:
           argv0: A finished argv0 to lookup
@@ -327,6 +353,10 @@ class CompletionAction(object):
         # type: () -> bool
         return False
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('???CompletionAction ')
+
     def __repr__(self):
         # type: () -> str
         return self.__class__.__name__
@@ -346,6 +376,10 @@ class UsersAction(CompletionAction):
             if name.startswith(comp.to_complete):
                 yield name
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('UserAction ')
+
 
 class TestAction(CompletionAction):
     def __init__(self, words, delay=0.0):
@@ -360,6 +394,10 @@ class TestAction(CompletionAction):
                 if self.delay != 0.0:
                     time_.sleep(self.delay)
                 yield w
+
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('TestAction ')
 
 
 class DynamicWordsAction(CompletionAction):
@@ -392,6 +430,10 @@ class DynamicWordsAction(CompletionAction):
             if c.startswith(comp.to_complete):
                 yield c
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('DynamicWordsAction ')
+
 
 class FileSystemAction(CompletionAction):
     """Complete paths from the file system.
@@ -412,6 +454,10 @@ class FileSystemAction(CompletionAction):
     def IsFileSystemAction(self):
         # type: () -> bool
         return True
+
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('FileSystemAction ')
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
@@ -480,16 +526,15 @@ class ShellFuncAction(CompletionAction):
         self.func = func
         self.comp_lookup = comp_lookup
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+
+        f.write('[ShellFuncAction %s] ' % self.func.name)
+
     # mycpp: rewrite of isinstance()
     def IsShellFuncAction(self):
         # type: () -> bool
         return True
-
-    def __repr__(self):
-        # type: () -> str
-
-        # TODO: Add file and line number here!
-        return '<ShellFuncAction %s>' % (self.func.name,)
 
     def debug(self, msg):
         # type: (str) -> None
@@ -582,6 +627,12 @@ class VariablesAction(CompletionAction):
         for var_name in self.mem.VarNames():
             yield var_name
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+
+        f.write('VariablesAction ')
+
+
 
 class ExternalCommandAction(CompletionAction):
     """complete commands in $PATH.
@@ -613,6 +664,11 @@ class ExternalCommandAction(CompletionAction):
         # you are reading blocks of metadata.  But I guess /bin on many systems is
         # huge, and will require lots of sys calls.
         self.cache = {}  # type: Dict[Tuple[str, int], List[str]]
+
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+
+        f.write('ExternalCommandAction ')
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
@@ -670,6 +726,11 @@ class _Predicate(object):
         # type: (str) -> bool
         raise NotImplementedError()
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+
+        f.write('???Predicate ')
+
 
 class DefaultPredicate(_Predicate):
     def __init__(self):
@@ -679,6 +740,11 @@ class DefaultPredicate(_Predicate):
     def Evaluate(self, candidate):
         # type: (str) -> bool
         return True
+
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+
+        f.write('DefaultPredicate ')
 
 
 class GlobPredicate(_Predicate):
@@ -710,9 +776,13 @@ class GlobPredicate(_Predicate):
         # type: () -> str
         return '<GlobPredicate %s %r>' % (self.include, self.glob_pat)
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('GlobPredicate ')
+
 
 class UserSpec(object):
-    """The user configuration for completion.
+    """Completion config for a set of commands (or complete -D -E)
 
     - The compgen builtin exposes this DIRECTLY.
     - Readline must call ReadlineCallback, which uses RootCompleter.
@@ -734,6 +804,30 @@ class UserSpec(object):
         self.predicate = predicate  # for -X
         self.prefix = prefix
         self.suffix = suffix
+
+    def PrintSpec(self, f):
+        # type: (mylib.BufWriter) -> None
+        """ Print with indentation of 2 """
+        f.write('  actions: ')
+        for a in self.actions:
+            a.Print(f)
+        f.write('\n')
+
+        f.write('  extra: ')
+        for a in self.extra_actions:
+            a.Print(f)
+        f.write('\n')
+
+        f.write('  else: ')
+        for a in self.else_actions:
+            a.Print(f)
+        f.write('\n')
+
+        self.predicate.Print(f)
+        f.write('\n')
+
+        f.write('  prefix: %s\n' % self.prefix)
+        f.write('  suffix: %s\n' % self.prefix)
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[Tuple[str, bool]]
@@ -776,25 +870,6 @@ class UserSpec(object):
         # That's OK -- we just truncate the line at the cursor?
         # Hm actually zsh does something smarter, and which is probably preferable.
         # It completes the word that
-
-    def __str__(self):
-        # type: () -> str
-        parts = ['(UserSpec']
-        if mylib.PYTHON:
-            if self.actions:
-                parts.append(str(self.actions))
-            if self.extra_actions:
-                parts.append('extra=%s' % self.extra_actions)
-            if self.else_actions:
-                parts.append('else=%s' % self.else_actions)
-            if not isinstance(self.predicate, DefaultPredicate):
-                parts.append('pred = %s' % self.predicate)
-            if self.prefix:
-                parts.append('prefix=%r' % self.prefix)
-            if self.suffix:
-                parts.append('suffix=%r' % self.suffix)
-
-        return ' '.join(parts) + ')'
 
 
 # Helpers for Matches()

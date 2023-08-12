@@ -191,7 +191,7 @@ def _AddShellOptions(spec):
         # modified.
 
 
-MAIN_SPEC = FlagSpecAndMore('main', typed=True)
+MAIN_SPEC = FlagSpecAndMore('main')
 
 MAIN_SPEC.ShortFlag('-c', args.String,
                    quit_parsing_flags=True)  # command string
@@ -246,7 +246,7 @@ MAIN_SPEC.LongFlag('--location-start-line', args.Int)
 
 _AddShellOptions(MAIN_SPEC)
 
-SET_SPEC = FlagSpecAndMore('set', typed=True)
+SET_SPEC = FlagSpecAndMore('set')
 _AddShellOptions(SET_SPEC)
 
 #
@@ -329,7 +329,7 @@ def _DefineCompletionActions(spec):
     spec.Action(None, 'stopped')
 
 
-COMPLETE_SPEC = FlagSpecAndMore('complete', typed=True)
+COMPLETE_SPEC = FlagSpecAndMore('complete')
 
 _DefineCompletionFlags(COMPLETE_SPEC)
 _DefineCompletionOptions(COMPLETE_SPEC)
@@ -338,18 +338,22 @@ _DefineCompletionActions(COMPLETE_SPEC)
 COMPLETE_SPEC.ShortFlag('-E', help='Define the compspec for an empty line')
 COMPLETE_SPEC.ShortFlag(
     '-D', help='Define the compspec that applies when nothing else matches')
+# I would like this to be less compatible
+# Field name conflicts with 'print' keyword
+#COMPLETE_SPEC.LongFlag(
+#    '--print', help='Print spec')
 
-COMPGEN_SPEC = FlagSpecAndMore('compgen', typed=True)  # for -o and -A
+COMPGEN_SPEC = FlagSpecAndMore('compgen')  # for -o and -A
 
 # TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
 _DefineCompletionFlags(COMPGEN_SPEC)
 _DefineCompletionOptions(COMPGEN_SPEC)
 _DefineCompletionActions(COMPGEN_SPEC)
 
-COMPOPT_SPEC = FlagSpecAndMore('compopt', typed=True)  # for -o
+COMPOPT_SPEC = FlagSpecAndMore('compopt')  # for -o
 _DefineCompletionOptions(COMPOPT_SPEC)
 
-COMPADJUST_SPEC = FlagSpecAndMore('compadjust', typed=True)
+COMPADJUST_SPEC = FlagSpecAndMore('compadjust')
 
 COMPADJUST_SPEC.ShortFlag(
     '-n',

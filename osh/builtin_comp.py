@@ -42,6 +42,10 @@ class _FixedWordsAction(completion.CompletionAction):
             if name.startswith(comp.to_complete):
                 yield name
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('FixedWordsAction ')
+
 
 class _DynamicProcDictAction(completion.CompletionAction):
     """For completing from proc and aliases dicts, which are mutable.
@@ -60,6 +64,10 @@ class _DynamicProcDictAction(completion.CompletionAction):
             if name.startswith(comp.to_complete):
                 yield name
 
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('DynamicProcDictAction ')
+
 
 class _DynamicStrDictAction(completion.CompletionAction):
     """For completing from proc and aliases dicts, which are mutable.
@@ -77,6 +85,10 @@ class _DynamicStrDictAction(completion.CompletionAction):
         for name in sorted(self.d):
             if name.startswith(comp.to_complete):
                 yield name
+
+    def Print(self, f):
+        # type: (mylib.BufWriter) -> None
+        f.write('DynamicStrDictAction ')
 
 
 class SpecBuilder(object):
@@ -288,7 +300,6 @@ class Complete(vm._Builtin):
             if len(cmd_val.argv) == 1:  # nothing passed at all
                 assert cmd_val.argv[0] == 'complete'
 
-                # TODO: crashes in C++
                 self.comp_lookup.PrintSpecs()
                 return 0
             else:

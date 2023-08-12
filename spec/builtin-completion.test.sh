@@ -10,11 +10,11 @@ complete
 
 complete -W 'foo bar' mycommand
 
-complete
+complete -p
 
 complete -F myfunc other
 
-complete -p
+complete
 
 ## STDOUT:
 complete -W 'foo bar' mycommand

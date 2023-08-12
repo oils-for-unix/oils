@@ -185,7 +185,6 @@ class _ContainerIter(object):
 
     def Next(self):
         # type: () -> None
-        """Returns whether iteration is done"""
         self.i += 1
 
     def Done(self):
