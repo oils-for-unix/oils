@@ -228,15 +228,14 @@ class RangeIterator(_ContainerIter):
         # type: (value.Range) -> None
         _ContainerIter.__init__(self)
         self.val = val
-        self.i = val.lower
 
     def Done(self):
         # type: () -> int
-        return self.i >= self.val.upper
+        return self.val.lower + self.i >= self.val.upper
 
     def FirstValue(self):
         # type: () -> value_t
-        return value.Int(self.i)
+        return value.Int(self.val.lower + self.i)
 
 
 class ListIterator(_ContainerIter):

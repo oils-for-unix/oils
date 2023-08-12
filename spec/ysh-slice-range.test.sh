@@ -105,11 +105,17 @@ var b = a[:]
 for i in (1:5) {
     echo $[i]
 }
+for i, n in (1:4) {
+    echo "$[i], $[n]"
+}
 ## STDOUT:
 1
 2
 3
 4
+0, 1
+1, 2
+2, 3
 ## END
 
 #### Loops over bogus ranges terminate

@@ -646,8 +646,7 @@ class ExprEvaluator(object):
     def _EvalRange(self, node):
         # type: (expr.Range) -> value_t
 
-        if not node.lower:
-            raise error.Expr('Missing range lower bound', loc.Missing)
+        assert node.lower is not None
 
         UP_lower = self._EvalExpr(node.lower)
         if UP_lower.tag() != value_e.Int:
@@ -656,8 +655,7 @@ class ExprEvaluator(object):
 
         lower = cast(value.Int, UP_lower)
 
-        if not node.upper:
-            raise error.Expr('Missing range upper bound', loc.Missing)
+        assert node.upper is not None
 
         UP_upper = self._EvalExpr(node.upper)
         if UP_upper.tag() != value_e.Int:

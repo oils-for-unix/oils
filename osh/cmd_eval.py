@@ -1389,7 +1389,17 @@ class CommandEvaluator(object):
                         elif case(value_e.Range):
                             val = cast(value.Range, UP_val)
                             it2 = val_ops.RangeIterator(val)
-                            name1 = location.LName(node.iter_names[0])
+
+                            if n == 1:
+                                name1 = location.LName(node.iter_names[0])
+                            elif n == 2:
+                                i_name = location.LName(node.iter_names[0])
+                                name1 = location.LName(node.iter_names[1])
+                            else:
+                                e_die_status(
+                                    2,
+                                    'Ranger iteration expects at most 2 loop variables',
+                                    node.keyword)
 
                         else:
                             raise error.InvalidType2(
