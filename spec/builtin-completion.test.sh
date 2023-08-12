@@ -1,4 +1,56 @@
 
+## oils_failures_allowed: 2
+## compare_shells: bash
+
+#### complete with no args and complete -p both print completion spec
+
+set -e
+
+complete
+
+complete -W 'foo bar' mycommand
+
+complete
+
+complete -F myfunc other
+
+complete -p
+
+## STDOUT:
+complete -W 'foo bar' mycommand
+complete -W 'foo bar' mycommand
+complete -F myfunc other
+## END
+
+#### complete -F f is usage error
+
+#complete -F f cmd
+
+# Alias for complete -p
+complete > /dev/null  # ignore OSH output for now
+echo status=$?
+
+# But this is an error
+complete -F f
+echo status=$?
+
+## STDOUT:
+status=0
+status=2
+## END
+
+#### complete with nonexistent function
+complete -F invalidZZ -D
+echo status=$?
+## stdout: status=2
+## BUG bash stdout: status=0
+
+#### complete with no action
+complete foo
+echo status=$?
+## stdout: status=2
+## BUG bash stdout: status=0
+
 #### -A function prints functions
 add () { expr 4 + 4; }
 div () { expr 6 / 2; }
@@ -217,18 +269,6 @@ status=0
 while
 status=0
 ## END
-
-#### complete with nonexistent function
-complete -F invalidZZ -D
-echo status=$?
-## stdout: status=2
-## BUG bash stdout: status=0
-
-#### complete with no action
-complete foo
-echo status=$?
-## stdout: status=2
-## BUG bash stdout: status=0
 
 #### -o filenames and -o nospace have no effect with compgen 
 # they are POSTPROCESSING.

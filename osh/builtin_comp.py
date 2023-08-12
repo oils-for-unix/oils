@@ -108,7 +108,6 @@ class SpecBuilder(object):
 
         self.errfmt = errfmt
 
-
     def Build(self, argv, attrs, base_opts):
         # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
         """Given flags to complete/compgen, return a UserSpec."""
@@ -280,14 +279,21 @@ class Complete(vm._Builtin):
         commands = arg_r.Rest()
 
         if arg.D:
-            commands.append(
-                '__fallback')  # if the command doesn't match anything
+            # if the command doesn't match anything
+            commands.append('__fallback')
         if arg.E:
             commands.append('__first')  # empty line
 
         if len(commands) == 0:
-            self.comp_lookup.PrintSpecs()
-            return 0
+            if len(cmd_val.argv) == 1:  # nothing passed at all
+                assert cmd_val.argv[0] == 'complete'
+
+                # TODO: crashes in C++
+                self.comp_lookup.PrintSpecs()
+                return 0
+            else:
+                # complete -F f is an error
+                raise error.Usage('expected 1 or more commands', loc.Missing)
 
         base_opts = dict(attrs.opt_changes)
         try:
@@ -295,6 +301,7 @@ class Complete(vm._Builtin):
         except error.Parse as e:
             # error printed above
             return 2
+
         for command in commands:
             self.comp_lookup.RegisterName(command, base_opts, user_spec)
 

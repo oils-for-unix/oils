@@ -265,10 +265,8 @@ vars-special() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
-# This is bash/OSH only
 builtin-completion() {
-  sh-spec spec/builtin-completion.test.sh --oils-failures-allowed 1 \
-    $BASH $OSH_LIST "$@"
+  run-file builtin-completion "$@"
 }
 
 builtin-special() {
