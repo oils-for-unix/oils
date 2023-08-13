@@ -9,6 +9,8 @@ J8 Notation
 J8 Notation is a set of interchange formats for **Bytes, Strings, Records, and
 Tables**.  It's built on JSON, and compatible with it in many ways.
 
+See [ref/index-data.html](ref/index-data.html) for the reference.
+
 <!-- TODO: fix CSS -->
 
 It's available in OSH and YSH, but should be implemented in all languages.
@@ -19,43 +21,43 @@ TODO:
   byte strings vs. unicode strings.  J8 is more expressive.)
 - Diagrams of Evolution: JSON and strings -> J8 / JSON8/ TSV8
 - Venn Diagrams of Data Language Relationships
-  - Every JSTR is valid YSTR
-  - Every JSON is valid YSON
-  - If you add the left "gutter" column, every TSV is valid YTSV.
-  - Every YTSV is also syntactically valid TSV.  For example, you can import it
+  - Every JSON string is valid J8 string
+  - All JSON is valid JSON8
+  - If you add the left "gutter" column, every TSV is valid TSV8.
+  - Every TSV8 is also syntactically valid TSV.  For example, you can import it
     into a spreadsheet, and remove/ignore the gutter column and type row.
   - TODO: make a screenshot and test it
 - YSH relationships
-  - Every YSTR is valid in YSH
-  - YSON with YSTR in **distinguished form** is valid in YSH
-    - `"$foo"` is something different in shell, so we need `y"$foo"`.
+  - Every J8 string is valid in YSH, with `j""`
+  - YSON with J8 string in **distinguished form** is valid in YSH
+    - `"$foo"` is something different in shell, so we need `j"$foo"`.
 
 ## Review of JSON
 
 See <https://json.org>
 
-```oil-help-topics
+```
   [primitive]     null   true   false
   [number]        42  -1.2e-4
-  [string]        "hello\n", see JSTR
+  [string]        "hello\n", see J8 Strings
   [array]         [1, 2, 3]
   [object]        {"key": 42}
 ```
 
-### JSTR is a name for JSON strings
+### JSON Strings
 
-```oil-help-topics
+```
   [escaped]       \"  \\  \/  \b  \f  \n  \r  \t
   [unicode]       \u1234
 ```
 
-- Important: JSTR can't contain literal tabs!  That is good for YTSV.
+- Important: JSON strings can't contain literal tabs!  That is good for TSV8.
 
 TODO: Do we need JNUM a name for JSON numbers? 
 
-## YSTR - Byte strings which may be UTF-8 encoded
+## J8 string - Byte strings which may be UTF-8 encoded
 
-```oil-help-topics
+```
   [unicode]       \u{123456} to add UTF-8.  No surrogates.
   [byte]          \y00 - because \x00 mistakenly means \u0000
   [escaped]       does adding \' make sense?  Probably not
@@ -64,38 +66,38 @@ TODO: Do we need JNUM a name for JSON numbers?
 Examples:
 
 ```
-"no y prefix needed"
-y"but accepted"  # similar to !yson and !ytsv prefixes
-y"nul byte \y00, unicode \u{123456}"
+"no j prefix needed"
+j"but accepted"  # similar to !json8 and !tsv8 prefixes
+j"nul byte \y00, unicode \u{123456}"
 ```
 
-Smooth form:
+Compatible form:
 
-- The `y` prefix is present if and only if `\y` or `\u{}` is in the string.
+- The `j` prefix is present if and only if `\y` or `\u{}` is in the string.
 
 Distinguished form:
 
-- The `y` prefix is always present.
+- The `j` prefix is always present.
 
-## YSON - Records built on YSTR
+## YSON - Records built on J8 string
 
 Examples:
 
 ```
-!yson  # optional prefix to distinguish from JSON
-{ name: "Bob",
-  age: 30,
-  signature: y"\y00\y01",
+!json8  # optional prefix to distinguish from JSON
+{ "name": "Bob",
+  "age": 30,
+  "signature": j"\y00\y01",
 }
 ```
 
 ```
-!yson  # on multiple lines
+!json8  # on multiple lines
 []
 
-!yson {}  # on a single line
+!json8 {}  # on a single line
 
-!yson [1]
+!json8 [1]
 
 ```
 
@@ -116,15 +118,15 @@ TODO: Look at https://json5.org/ extensions as well
 
 Smooth form:
 
-- YSTR are all in Smooth form
-- No `!yson` prefix.
+- J8 string are all in Smooth form
+- No `!json8` prefix.
 - Obeys JSON's stricter syntax
   - no trailing commas
   - comments stripped
 
 Distinguished form
 
-- The `!yson` prefix is present.
+- The `!json8` prefix is present.
 
 Canonical form?  The shortest form?
 
@@ -149,25 +151,25 @@ Restrictions:
 - There's no escaping, so unprintable bytes result in an unprintable TSV file.
 
 
-## YTSV - Tables built on YSTR
+## TSV8 - Tables built on J8 string
 
 Example:
 
 ```
-!ytsv   age     name    
+!tsv8   age     name    
 !type   Int     Str     # optional types
 !other  x       y       # more column metadata
         30      alice
         40      bob
         50      "a\tb"
-        60      y"nul \y00"
+        60      j"nul \y00"
 ```
 
-```oil-help-topics
+```
   [Bool]      false   true
   [Int]       same as YSON / YNUM / JNUM
   [Float]     same as YSON / YNUM / JNUM
-  [Str]       YSTR
+  [Str]       J8 string
 ```
 
 - Null Issues:
@@ -198,5 +200,5 @@ Canonical form:
     - But probably all other punctuation like `+` and `=`.
   - Probably cells with `" "`
 
-YTSV is always distinguished by leading `!ytsv`.
+TSV8 is always distinguished by leading `!tsv8`.
 
