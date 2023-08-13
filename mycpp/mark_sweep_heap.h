@@ -264,10 +264,12 @@ class MarkSweepHeap {
   double total_gc_millis_ = 0.0;
 
 #ifndef NO_POOL_ALLOC
-  // 4096 / 24 bytes = 170 cells (rounded), 4080 bytes
-  // 4096 / 48 bytes =  85 cells (rounded), 4080 bytes
-  Pool<170, 24> pool1_;
-  Pool<85, 48> pool2_;
+  // 16,384 / 24 bytes = 682 cells (rounded), 16,368 bytes
+  // 16,384 / 48 bytes = 341 cells (rounded), 16,368 bytes
+  // Conveniently, the glibc malloc header is 16 bytes, giving exactly 16 Ki
+  // differences
+  Pool<682, 24> pool1_;
+  Pool<341, 48> pool2_;
 #endif
 
   std::vector<RawObject**> roots_;

@@ -143,9 +143,18 @@ TEST malloc_address_test() {
   // 4. diff = 8
   // 5. diff = 8
 
+  // 2023-08: If I pass 4096, I get 4112, so 16 byte diff
+  // 2023-08: If I pass 4080, I get 4096
+
+  // int alloc_size = 24 * 682;  // 16368 is close to 16384 - 16 bytes again
+  int alloc_size = 48 * 341;  // heap 2 is the same size
+
+  //int alloc_size = 4080;
+  //int alloc_size = 1;
+
   char *p[20];
   for (int i = 0; i < 20; ++i) {
-    p[i] = static_cast<char *>(malloc(1));
+    p[i] = static_cast<char *>(malloc(alloc_size));
     if (i != 0) {
       char *prev = p[i - 1];
       log("%2d. diff = %d", i, p[i] - prev);
