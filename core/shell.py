@@ -408,6 +408,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         util.VersionFlag(loader, mylib.Stdout())
         return 0
 
+    if flag.tool == 'cat-em':
+        paths = arg_r.Rest()
+
+        status = 0
+        for p in paths:
+            try:
+                contents = loader.Get(p)
+                print(contents)
+            except (OSError, IOError):
+                print_stderr("cat-em: %r not found" % p)
+                status = 1
+        return status
+
     no_str = None  # type: str
 
     debug_stack = []  # type: List[state.DebugFrame]

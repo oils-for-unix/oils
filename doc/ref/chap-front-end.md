@@ -159,7 +159,7 @@ Hint: The `boolstatus` builtin ensures that false and error aren't confused:
       echo 'foo exists'
     }
 
-See [Oil Fixes Shell's Error Handling](../error-handling.html) for more detail.
+See [YSH Fixes Shell's Error Handling](../error-handling.html) for more detail.
 
 ## Lexing
 
@@ -214,6 +214,15 @@ Long pipelines and and-or chains:
      && ls /lib
      || error "oops"
      ;
+
+## Tools
+
+### cat-em
+
+Print files embedded in the `oils-for-unix` binary to stdout.  Example:
+
+    osh --tool cat-em stdlib/math.ysh stdlib/other.ysh
+
 
 ## Help Chapters
 
@@ -275,3 +284,6 @@ Example:
 
     help ysh-expr-lang
 ```
+
+<!-- h4 needed to end last card: ysh-chapters -->
+<h4></h4>

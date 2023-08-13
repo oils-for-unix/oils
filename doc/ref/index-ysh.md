@@ -21,6 +21,7 @@ Siblings: [OSH Topics](index-osh.html), [Data Topics](index-data.html)
 ```chapter-links-front-end
   [Usage]         bundle-usage   ysh-usage
   [Oil Lexing]    doc-comment ###   multiline-command ...
+  [Tools]         cat-em
 ```
 
 <h2 id="cmd-lang">

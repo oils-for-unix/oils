@@ -65,3 +65,22 @@ found crash dump
 
 # NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 
+
+#### --tool cat-em
+
+$SH --tool cat-em zzZZ
+echo status=$?
+
+$SH --tool cat-em stdlib/math.ysh > /dev/null
+echo status=$?
+
+$SH --tool cat-em zzZZ stdlib/math.ysh > /dev/null
+echo status=$?
+
+## STDOUT:
+status=1
+status=0
+status=1
+## END
+
+

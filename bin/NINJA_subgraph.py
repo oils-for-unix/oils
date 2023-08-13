@@ -32,6 +32,7 @@ def NinjaGraph(ru):
   # ultimately depend on doc/ref/*.md
   # We could probably create a _build/ninja-stamp/HELP file and so forth
   files = glob.glob('_devbuild/help/*')
+  files.extend(glob.glob('stdlib/*.ysh'))
 
   n.build(['_gen/bin/text_files.cc'], 'embedded-file-gen', files,
           implicit=['_bin/shwrap/embedded_file_gen'])
