@@ -101,6 +101,32 @@ var b = a[:]
 (List)   [1, 2, 3]
 ## END
 
+#### Iterate over range
+for i in (1:5) {
+    echo $[i]
+}
+for i, n in (1:4) {
+    echo "$[i], $[n]"
+}
+## STDOUT:
+1
+2
+3
+4
+0, 1
+1, 2
+2, 3
+## END
+
+#### Loops over bogus ranges terminate
+# Regression test for bug found during dev. Loops over backwards ranges should
+# terminate immediately.
+for i in (5:1) {
+    echo $[i]
+}
+## STDOUT:
+## END
+
 #### Slices with Multiple Dimensions (for QTT)
 
 qtt pretty :mytable <<< '''
@@ -123,16 +149,6 @@ var t3 = mytable[:2, %(name age)]
 ## STDOUT:
 (Str)   'TODO: Table Slicing'
 (Str)   'TODO: Table Slicing'
-## END
-
-#### Index a list with a range, not a slice.  TODO: Figure out semantics
-shopt -s oil:all
-var mylist = [1,2,3,4,5]
-var r = 1:3
-var myslice = mylist[r]
-## status: 3
-## STDOUT:
-TODO
 ## END
 
 #### List(0:3) should copy the list?

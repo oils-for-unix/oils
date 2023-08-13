@@ -518,7 +518,7 @@ module syntax
 
     # Ranges are written 1:2, with first class expression syntax. There is no
     # step as in Python. Use range(0, 10, step=2) for that.
-  #| Range(expr lower, expr upper)
+  | Range(expr lower, expr upper)
 
     # Slices occur within [] only.  Unlike ranges, the start/end can be #
     # implicit.  Like ranges, denote a step with slice(0, 10, step=2).

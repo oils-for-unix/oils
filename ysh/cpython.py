@@ -70,6 +70,15 @@ def _PyObjToValue(val):
         #    return value.BashArray(shell_array)
         return value.List(typed_array)
 
+    elif isinstance(val, xrange):
+        # awkward, but should go away once everything is typed...
+        l = list(val)
+        if len(l) > 1:
+            return value.Range(l[0], l[-1])
+
+        # Empty range
+        return value.Range(0, 0)
+
     elif isinstance(val, dict):
         is_shell_dict = True
 
@@ -161,6 +170,10 @@ def _ValueToPyObj(val):
 
         elif case(value_e.Eggex):
             return val  # passthrough
+
+        elif case(value_e.Range):
+            val = cast(value.Range, UP_val)
+            return xrange(val.lower, val.upper)
 
         elif case(value_e.Func):
             val = cast(value.Func, UP_val)

@@ -104,9 +104,9 @@ false
 #### sum()
 var start = 42
 
-write $[sum( range(3) )]
-write $[sum( range(3), start)]
-write $[sum( range(0), start)]
+write $[sum( 0:3 )]
+write $[sum( 0:3, start)]
+write $[sum( 0:0, start)]
 ## STDOUT:
 3
 45
@@ -114,7 +114,7 @@ write $[sum( range(0), start)]
 ## END
 
 #### reversed()
-var x = reversed(range(3))
+var x = reversed(0:3)
 write @x
 ## STDOUT:
 2

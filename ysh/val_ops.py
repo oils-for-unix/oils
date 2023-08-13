@@ -221,6 +221,23 @@ class ArrayIter(_ContainerIter):
         return value.Str(self.strs[self.i])
 
 
+class RangeIterator(_ContainerIter):
+    """ for x in (m:n) { """
+
+    def __init__(self, val):
+        # type: (value.Range) -> None
+        _ContainerIter.__init__(self)
+        self.val = val
+
+    def Done(self):
+        # type: () -> int
+        return self.val.lower + self.i >= self.val.upper
+
+    def FirstValue(self):
+        # type: () -> value_t
+        return value.Int(self.val.lower + self.i)
+
+
 class ListIterator(_ContainerIter):
     """ for x in (mylist) { """
 

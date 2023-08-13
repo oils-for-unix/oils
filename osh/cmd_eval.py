@@ -1386,6 +1386,21 @@ class CommandEvaluator(object):
                             else:
                                 raise AssertionError()
 
+                        elif case(value_e.Range):
+                            val = cast(value.Range, UP_val)
+                            it2 = val_ops.RangeIterator(val)
+
+                            if n == 1:
+                                name1 = location.LName(node.iter_names[0])
+                            elif n == 2:
+                                i_name = location.LName(node.iter_names[0])
+                                name1 = location.LName(node.iter_names[1])
+                            else:
+                                e_die_status(
+                                    2,
+                                    'Range iteration expects at most 2 loop variables',
+                                    node.keyword)
+
                         else:
                             raise error.InvalidType2(
                                 val, 'for loop expected List or Dict',

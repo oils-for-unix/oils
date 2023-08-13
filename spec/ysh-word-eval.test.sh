@@ -92,18 +92,9 @@ true
 3.14
 ## END
 
-#### @[range()]
-shopt -s oil:all
-write @[range(10, 15, 2)]
-## STDOUT:
-10
-12
-14
-## END
-
 #### Wrong sigil with $range() is runtime error
 shopt -s oil:upgrade
-echo $[range(10, 15, 2)]
+echo $[10:15]
 echo 'should not get here'
 ## status: 3
 ## STDOUT:
@@ -119,7 +110,7 @@ write -- @mylist
 
 write -- ___
 
-var list2 = [range]
+var list2 = [List]
 write -- @list2
 
 ## status: 3
