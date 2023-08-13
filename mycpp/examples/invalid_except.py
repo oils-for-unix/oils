@@ -30,3 +30,11 @@ def run_tests():
     print('hi')
   except (IOError, OSError) as e:
     pass
+
+  # Invalid finally, not except
+  try:
+    print('hi')
+  finally:
+    print('finally')
+
+

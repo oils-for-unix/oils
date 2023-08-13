@@ -227,7 +227,7 @@ test-invalid-examples() {
         expected_status=3
         ;;
       */invalid_except.py)
-        expected_status=2
+        expected_status=3
         ;;
     esac
 

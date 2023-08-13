@@ -60,7 +60,8 @@ import libc
 import posix_ as posix
 from posix_ import X_OK  # translated directly to C macro
 
-from typing import (Dict, Tuple, List, Iterator, Optional, cast, TYPE_CHECKING)
+from typing import (Dict, Tuple, List, Iterator, Optional, Any, cast,
+                    TYPE_CHECKING)
 if TYPE_CHECKING:
     from core.comp_ui import State
     from core.state import Mem
@@ -166,6 +167,22 @@ class OptionState(object):
         self.currently_completing = False
         # should be SET to a COPY of the registration options by the completer.
         self.dynamic_opts = None  # type: Dict[str, bool]
+
+
+class ctx_Completing(object):
+
+    def __init__(self, compopt_state):
+        # type: (OptionState) -> None
+        compopt_state.currently_completing = True
+        self.compopt_state = compopt_state
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.compopt_state.currently_completing = False
 
 
 def _PrintOpts(opts, f):
@@ -823,6 +840,7 @@ class UserSpec(object):
             a.Print(f)
         f.write('\n')
 
+        f.write('  predicate: ')
         self.predicate.Print(f)
         f.write('\n')
 
@@ -1233,8 +1251,7 @@ class RootCompleter(CompletionAction):
         # it.
         dynamic_opts = {}  # type: Dict[str, bool]
         self.compopt_state.dynamic_opts = dynamic_opts
-        self.compopt_state.currently_completing = True
-        try:
+        with ctx_Completing(self.compopt_state):
             done = False
             while not done:
                 done = True  # exhausted candidates without getting a retry
@@ -1260,8 +1277,6 @@ class RootCompleter(CompletionAction):
                         if not user_spec:
                             base_opts, user_spec = self.comp_lookup.GetFallback(
                             )
-        finally:
-            self.compopt_state.currently_completing = False
 
     def _PostProcess(
             self,

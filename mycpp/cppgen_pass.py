@@ -2775,10 +2775,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
             self.report_error(o, 'try/else not supported')
 
-        # TODO: remove finally from core/process.py and other places, then turn
-        # this on
-        #if o.finally_body:
-        #  raise AssertionError('try/finally not supported')
+        if o.finally_body:
+            self.report_error(o, 'try/finally not supported')
 
     def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> T:
         self.report_error(
