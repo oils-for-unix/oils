@@ -669,18 +669,15 @@ html-demo() {
 #
 
 hay() {
-  sh-spec spec/hay.test.sh --oils-failures-allowed 2 \
-    $OSH_LIST "$@"
+  run-file hay "$@"
 }
 
 hay-isolation() {
-  sh-spec spec/hay-isolation.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file hay-isolation "$@"
 }
 
 hay-meta() {
-  sh-spec spec/hay-meta.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file hay-meta "$@"
 }
 
 #
@@ -708,8 +705,7 @@ ysh-assign() {
 }
 
 ysh-blocks() {
-  sh-spec spec/ysh-blocks.test.sh --oils-failures-allowed 4 \
-    $OSH_LIST "$@"
+  run-file ysh-blocks "$@"
 }
 
 ysh-bugs() {
@@ -730,23 +726,19 @@ ysh-builtin-describe() {
 
 # Related to errexit-oil
 ysh-builtin-error() {
-  sh-spec spec/ysh-builtin-error.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-builtin-error "$@"
 }
 
 ysh-builtin-pp() {
-  sh-spec spec/ysh-builtin-pp.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-builtin-pp "$@"
 }
 
 ysh-builtin-process() {
-  sh-spec spec/ysh-builtin-process.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-builtin-process "$@"
 }
 
 ysh-builtin-shopt() {
-  sh-spec spec/ysh-builtin-shopt.test.sh --oils-failures-allowed 1 \
-    $OSH_LIST "$@"
+  run-file ysh-builtin-shopt "$@"
 }
 
 ysh-case() {
@@ -754,19 +746,15 @@ ysh-case() {
 }
 
 ysh-command-sub() {
-  sh-spec spec/ysh-command-sub.test.sh \
-    $OSH_LIST "$@"
+  run-file ysh-command-sub "$@"
 }
 
 ysh-demo() {
-  # Using OSH for minimalism
-  sh-spec spec/ysh-demo.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-demo "$@"
 }
 
 ysh-expr() {
-  sh-spec spec/ysh-expr.test.sh --oils-failures-allowed 1 \
-    $OSH_LIST "$@"
+  run-file ysh-expr "$@"
 }
 
 ysh-expr-bool() {
@@ -774,13 +762,11 @@ ysh-expr-bool() {
 }
 
 ysh-expr-arith() {
-  sh-spec spec/ysh-expr-arith.test.sh --oils-failures-allowed 2 \
-    $OSH_LIST "$@"
+  run-file ysh-expr-arith "$@"
 }
 
 ysh-expr-compare() {
-  sh-spec spec/ysh-expr-compare.test.sh --oils-failures-allowed 2 \
-    $OSH_LIST "$@"
+  run-file ysh-expr-compare "$@"
 }
 
 ysh-expr-sub() {
@@ -820,28 +806,23 @@ ysh-keywords() {
 }
 
 ysh-multiline() {
-  sh-spec spec/ysh-multiline.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-multiline "$@"
 }
 
 ysh-options() {
-  sh-spec spec/ysh-options.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-options "$@"
 }
 
 ysh-options-assign() {
-  sh-spec spec/ysh-options-assign.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-options-assign "$@"
 }
 
 ysh-proc() {
-  sh-spec spec/ysh-proc.test.sh --oils-failures-allowed 0 \
-    $OSH_LIST "$@"
+  run-file ysh-proc "$@"
 }
 
 ysh-regex() {
-  sh-spec spec/ysh-regex.test.sh --oils-failures-allowed 4 \
-    $OSH_LIST "$@"
+  run-file ysh-regex "$@"
 }
 
 ysh-reserved() {
@@ -849,13 +830,11 @@ ysh-reserved() {
 }
 
 ysh-scope() {
-  sh-spec spec/ysh-scope.test.sh --oils-failures-allowed 1 \
-    $OSH_LIST "$@"
+  run-file ysh-scope "$@"
 }
 
 ysh-slice-range() {
-  sh-spec spec/ysh-slice-range.test.sh --oils-failures-allowed 1 \
-    $OSH_LIST "$@"
+  run-file ysh-slice-range "$@"
 }
 
 ysh-string() {

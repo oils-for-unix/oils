@@ -1,5 +1,4 @@
-# Oil Blocks
-
+## oils_failures_allowed: 4
 
 #### cd with block
 shopt -s oil:all

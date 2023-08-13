@@ -1,3 +1,4 @@
+## oils_failures_allowed: 1
 
 #### shopt supports long flags
 shopt -p nullglob

@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 # Test a[1]
 
 #### precedence of 1:3 vs comparison

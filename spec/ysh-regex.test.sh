@@ -1,4 +1,4 @@
-# Test out Oil's regular expression syntax.
+## oils_failures_allowed: 4
 
 #### /^.$/
 shopt -s oil:all

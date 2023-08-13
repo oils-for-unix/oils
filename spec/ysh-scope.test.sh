@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 # Demonstrations for users.  Could go in docs.
 
 #### GetValue scope and shopt --unset dynamic_scope

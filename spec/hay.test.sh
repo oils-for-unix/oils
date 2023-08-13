@@ -1,6 +1,6 @@
-# Configuration
-#
 # Hay: Hay Ain't YAML
+
+## oils_failures_allowed: 2
 
 #### use bin
 use

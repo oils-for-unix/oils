@@ -1,4 +1,4 @@
-# spec/oil-expr-arith
+## oils_failures_allowed: 2
 
 #### Addition, with conversion from string
 

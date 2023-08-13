@@ -1,4 +1,4 @@
-# spec/oil-expr-compare
+## oils_failures_allowed: 2
 
 #### Exact equality with === and !==
 shopt -s oil:all

@@ -1,4 +1,4 @@
-# Test Oil expressions
+## oils_failures_allowed: 1
 
 #### command sub $(echo hi)
 var x = $(echo hi)
