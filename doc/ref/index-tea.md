@@ -31,7 +31,7 @@ language and eggex (for lexers).
   Functions and Data (<a class="group-link" href="tea-help.html#func-data">func-data</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-tea
                   func      func inc(p, p2=0; n=0, ...named) { echo 'hi' }
                   data      data Point(x Int, y Int)
                   enum      enum Tree { Leaf(x Int), Node(left Tree, right Tree) }
@@ -48,7 +48,7 @@ language and eggex (for lexers).
   Builtin Data Types (<a class="group-link" href="tea-help.html#types">types</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-tea
   [Literals]      Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
                   X Symbol      %foo
                   Bool          True   False   None
@@ -73,7 +73,7 @@ language and eggex (for lexers).
   Mods / Objects (<a class="group-link" href="tea-help.html#mod">mod</a>)
 </h2>
 
-```oil-help-topics
+```chapter-links-tea
   [Objects]       class         bundle state and behavior (aka module)
                   extends       inheritance
                   self          pseudo-keyword

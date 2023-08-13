@@ -1,3 +1,6 @@
+## oils_failures_allowed: 1
+## compare_shells: bash
+
 #### $SHELL set to login shell
 
 sh=$(which $SH)

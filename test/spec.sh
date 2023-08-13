@@ -244,20 +244,17 @@ builtin-trap() {
 }
 
 builtin-trap-bash() {
-  sh-spec spec/builtin-trap-bash.test.sh --oils-failures-allowed 1 \
-    $BASH $OSH_LIST "$@"
+  run-file builtin-trap-bash "$@"
 }
 
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
-  sh-spec spec/builtin-bash.test.sh --oils-failures-allowed 4 \
-    $BASH $OSH_LIST "$@"
+  run-file builtin-bash "$@"
 }
 
 vars-bash() {
-  sh-spec spec/vars-bash.test.sh --oils-failures-allowed 1 \
-    $BASH $OSH_LIST "$@"
+  run-file vars-bash "$@"
 }
 
 vars-special() {
@@ -349,8 +346,7 @@ posix() {
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --oils-failures-allowed 0 \
-    $BASH $OSH_LIST "$@"
+  run-file introspect "$@"
 }
 
 tilde() {
@@ -382,8 +378,7 @@ var-op-slice() {
 }
 
 var-op-bash() {
-  sh-spec spec/var-op-bash.test.sh --oils-failures-allowed 5 \
-    $BASH $OSH_LIST "$@"
+  run-file var-op-bash "$@"
 }
 
 var-op-strip() {
@@ -464,7 +459,7 @@ array-compat() {
 }
 
 type-compat() {
-  sh-spec spec/type-compat.test.sh $BASH $OSH_LIST "$@"
+  run-file type-compat "$@"
 }
 
 # += is not POSIX and not in dash.
@@ -474,8 +469,7 @@ append() {
 
 # associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh --oils-failures-allowed 3 \
-    $BASH $OSH_LIST "$@"
+  run-file assoc "$@"
 }
 
 # ZSH also has associative arrays
@@ -525,15 +519,13 @@ extglob-match() {
 }
 
 nocasematch-match() {
-  sh-spec spec/nocasematch-match.test.sh --oils-failures-allowed 3 \
-    $BASH $OSH_LIST "$@"
+  run-file nocasematch-match "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.
 # mksh has completely different behavior for this syntax.  Not worth testing.
 var-ref() {
-  sh-spec spec/var-ref.test.sh --oils-failures-allowed 0 \
-    $BASH $OSH_LIST "$@"
+  run-file var-ref "$@"
 }
 
 # declare / local -n
@@ -887,8 +879,7 @@ ysh-dev() {
 #
 
 nix-idioms() {
-  sh-spec spec/nix-idioms.test.sh --oils-failures-allowed 2 \
-    $BASH $OSH_LIST "$@"
+  run-file nix-idioms "$@"
 }
 
 ble-idioms() {

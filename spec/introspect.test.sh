@@ -1,4 +1,5 @@
-#
+## compare_shells: bash
+
 # Test call stack introspection.  There are a bunch of special variables
 # defined here:
 #

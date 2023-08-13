@@ -1,4 +1,5 @@
-#
+## compare_shells: bash
+
 # Var refs are done with ${!a}
 #
 # local/declare -n is tested in spec/named-ref.test.sh.

@@ -1,4 +1,6 @@
-#
+## compare_shells: bash
+## oils_failures_allowed: 3
+
 # Tests nocasematch matching
 
 #### [[ equality matching

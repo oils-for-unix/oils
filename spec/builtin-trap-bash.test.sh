@@ -1,4 +1,5 @@
-# builtin-trap-bash.test.sh
+## oils_failures_allowed: 1
+## compare_shells: bash
 
 # Notes on bash semantics:
 
