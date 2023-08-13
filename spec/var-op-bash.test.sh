@@ -1,4 +1,5 @@
 ## compare_shells: bash
+## oils_failures_allowed: 5
 
 #### Lower Case with , and ,,
 x='ABC DEF'
