@@ -4,7 +4,7 @@ func_misc.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_t, value_e
+from _devbuild.gen.runtime_asdl import value, value_str, value_t, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import vm
@@ -147,3 +147,44 @@ class Keys(vm._Callable):
 
         keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
         return value.List(keys)
+
+
+class Len(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        n_args = len(pos_args)
+        if n_args != 1:
+            raise error.InvalidType("len() expects exactly one argument but %d were given" %
+                          n_args, loc.Missing)
+
+        x = pos_args[0]
+        UP_x = x
+
+        with tagswitch(x) as case:
+            if case(value_e.BashArray):
+                x = cast(value.BashArray, UP_x)
+                return value.Int(len(x.strs))
+
+            elif case(value_e.BashAssoc):
+                x = cast(value.BashAssoc, UP_x)
+                return value.Int(len(x.d))
+
+            elif case(value_e.List):
+                x = cast(value.List, UP_x)
+                return value.Int(len(x.items))
+
+            elif case(value_e.Dict):
+                x = cast(value.Dict, UP_x)
+                return value.Int(len(x.d))
+
+            elif case(value_e.Str):
+                x = cast(value.Str, UP_x)
+                return value.Int(len(x.s))
+
+        raise error.InvalidType('%s has no length' % value_str(x.tag()), loc.Missing)

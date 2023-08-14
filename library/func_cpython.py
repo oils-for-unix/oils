@@ -174,7 +174,7 @@ def Init(mem):
     # For compositionality and testing
     SetGlobalFunc(mem, 'identity', lambda x: x)  # IN-YSH
 
-    SetGlobalFunc(mem, 'len', len)
+    SetGlobalFunc(mem, 'len', func_misc.Len())
     SetGlobalFunc(mem, 'max', max)  # IN-YSH with <
     SetGlobalFunc(mem, 'min', min)  # IN-YSH
     # NOTE: cmp() deprecated in Python 3
