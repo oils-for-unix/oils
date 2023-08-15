@@ -322,22 +322,6 @@ def Init(mem):
     # - Python code gen, etc.
     # - JavaScript can use # JSON.
 
-    # NOTE:
-    # json and qtt are styled as BUILTINS
-    #   python: json.load, json.dump
-    #   js: JSON.parse, JSON.stringify
-    #   Oil:
-    #     json read :x < foo.json
-    #     qtt read :x < foo.qtt
-
-    # This loads a STRING into mytable?  Or maybe it's tagged with a type so you
-    # can slice differently?
-    #
-    # qtt prettify :mytable < '''
-    # name age:Int
-    # bob  40
-    # '''
-
     #
     # Awk
     #

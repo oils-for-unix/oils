@@ -228,17 +228,19 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-type-method
   [Null]      x
-  [Bool]      fromStr()
-  [Int]       fromStr()
-  [Str]       toJ8()
-  [List]      x
-  [Dict]      x
+  [Bool]      fromStr() for TSV8
+  [Int attr]  fromStr()  # base 2, 8, 10, 16, ...
+  [Float]     fromStr()
+  [Str]       fromJ8()  fromJson()  fromRunes()
+  [List]      append()   pop()   extend()   index()
+              insert()   remove()
+  [Dict]      keys()   values()   get()   erase()
   [Eggex]     x
   [Template]  x
   [Expr]      x
   [Command]   x
-  [Proc]      x
-  [Func]      x
+  [Proc]      export()
+  [Func]      export()
   [Slice]     x
   [Range]     x
 ```
@@ -248,20 +250,26 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-builtin-func
+  [Values]        len()   type() 
+  [Math]          abs()   sum()   max()   min()   round()
+X [Int]           ord()   chr()
+X [Str]           find(eggex)   replace(eggex, template)
+                  startsWith()   endsWith()
+                  strip()   lstrip()   rstrip()  # set of chars, prefix suffix
+                  upper()   lower()  # ascii or unicode
+X [Codecs]        quoteUrl()  quoteHtml()  quoteSh()   quoteC()
+                  quoteMake()   quoteNinja()
+  [Collections]   reversed()
+                  join()   split()  # $IFS, awk algorithm, regex
+                  copy()   deepCopy()
   [Pattern]       _match()   X _start()   X _end()
-X [Wok]           _field()
-  [Collections]   len()
-X [String]        find(eggex)   replace(eggex, template)   join() 
-                  split()             $IFS, awk algorithm, regex
+X [Serialize]     toJ8()   fromJ8()
+                  toJson()   fromJson()
   [Word]          glob()   maybe()
-  [Arrays]        X index()   append()   extend()
-  [Assoc Arrays]  keys()   values()
-  [Introspection] shvar_get()   VM.funcs()   VM.procs()
-                  VM.types()
-X [Hay Config]    parse_hay()   eval_hay()   block_as_str()   
-X [Better Syntax] lstrip()   rstrip()   lstripglob()   rstripglob()
-                  upper()   lower()
-                  strftime()
-X [Codecs]        posix-sh-str   html-utf8
-X [Hashing]       sha1   sha256 (etc.)
+  [Introspection] shvar_get()   VM.procs()   VM.types()
+                  evalExpr()
+  [Hay Config]    parse_hay()   eval_hay()   block_as_str()   
+X [Date Time]     strftime()
+X [Wok]           _field()
+X [Hashing]       sha1dc()   sha256()
 ```

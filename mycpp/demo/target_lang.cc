@@ -870,6 +870,12 @@ class Concrete : public Reader1, public Reader2, public Writer2 {
   }
 };
 
+class Concrete1 : public Reader1 {
+};
+
+class Concrete2 : public Reader1, public Reader2 {
+};
+
 /*
  Would be something like
 
@@ -888,7 +894,21 @@ class Concrete : public Reader1, public Reader2, public Writer2 {
  */
 
 TEST tea_interface() {
-  Concrete* c = new Concrete();
+  Concrete val;
+
+  // 8 bytes
+  log("sizeof(Concrete1) = %d", sizeof(Concrete1));
+  // 16 bytes
+  log("sizeof(Concrete2) = %d", sizeof(Concrete2));
+
+  // 24 bytes because it has 3 vtables?
+  // Hm yes, this idea doesn't scale because objects become bloated with
+  // vtables.  Though interestingly 2 different vtables can point to the same
+  // concrete Read() method.
+  log("sizeof(Concrete) = %d", sizeof(Concrete));
+  log("sizeof(val) = %d", sizeof(val));
+
+  Concrete* c = &val;
   c->Read(3);
 
   Reader1* r1 = c;
