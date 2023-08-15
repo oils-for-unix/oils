@@ -833,6 +833,76 @@ TEST tea_macros_demo() {
   PASS();
 }
 
+// DEMO of putting PURE interfaces with CALLERS, like Go and TypeScript
+// structural types
+
+// First package
+class Reader1 {
+ public:
+  virtual int Read(int n) = 0;
+};
+
+// Second package
+class Reader2 {
+ public:
+  virtual int Read(int n) = 0;
+};
+
+class Writer2 {
+ public:
+  virtual int Write(int n) = 0;
+};
+
+// Tea could calculate implicit interfaces globally, and then emit these
+// explicit inheritance relationships
+
+// Multiply inheriting from abstract methods seems fine!
+class Concrete : public Reader1, public Reader2, public Writer2 {
+ public:
+  virtual int Read(int n) {
+    printf("Concrete Read(%d)\n", n);
+    return 0;
+  }
+
+  virtual int Write(int n) {
+    printf("Concrete Write(%d)\n", n);
+    return 0;
+  }
+};
+
+/*
+ Would be something like
+
+ interface Reader1 {
+   func Read(n Int) -> Int
+ }
+ interface Reader2 {
+   func Read(n Int) -> Int
+ }
+ class Concrete {
+   func Read(n Int) -> Int{
+     log("echo")
+     return 0
+   }
+ }
+ */
+
+TEST tea_interface() {
+  Concrete* c = new Concrete();
+  c->Read(3);
+
+  Reader1* r1 = c;
+  r1->Read(4);
+
+  Reader2* r2 = c;
+  r2->Read(5);
+
+  Writer2* w = c;
+  w->Write(6);
+
+  PASS();
+}
+
 namespace runtime_asdl {
 
 class lvalue_t {};
@@ -958,6 +1028,7 @@ int main(int argc, char** argv) {
   RUN_TEST(param_passing_demo);
 
   RUN_TEST(tea_macros_demo);
+  RUN_TEST(tea_interface);
 
   RUN_TEST(asdl_namespace_demo);
 
