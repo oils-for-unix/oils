@@ -3,12 +3,12 @@ in_progress: yes
 css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 ---
 
-Index of OSH Topics
+OSH Table of Contents
 ===============
 
 These are links to topics in the [Oils Reference](index.html).
 
-Siblings: [YSH Topics](index-ysh.html), [Data Topics](index-data.html)
+Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 
 <div id="toc">
 </div>

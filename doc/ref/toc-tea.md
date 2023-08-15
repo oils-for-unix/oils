@@ -3,7 +3,7 @@ in_progress: yes
 css_files: ../web/base.css ../web/ref-index.css ../web/toc.css
 ---
 
-Tea Help Topics
+Tea Table of Contents
 ===============
 
 <!--

@@ -358,15 +358,12 @@ readonly TEXT_DIR=_devbuild/help
 readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
 
-# TODO:
-# - change to sh- vs oil- prefix, e.g. for arith
-
 cards-from-indices() {
   ### Make help cards
 
   for lang in osh ysh data; do
     help-gen cards-from-index $lang $TEXT_DIR \
-      < $HTML_DIR/doc/ref/index-$lang.html
+      < $HTML_DIR/doc/ref/toc-$lang.html
   done
 }
 
@@ -386,7 +383,7 @@ ref-check() {
   ### Check indexes and chapters against each other
 
   help-gen ref-check \
-    doc/ref/index-*.md \
+    doc/ref/toc-*.md \
     _release/VERSION/doc/ref/chap-*.html
 }
 

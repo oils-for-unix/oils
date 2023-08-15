@@ -16,8 +16,8 @@ Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
 
 Oils consists of two major "modes" for shell:
 
-- [Index of OSH Topics](index-osh.html) - Compatible
-- [Index of YSH Topics](index-ysh.html) - New and Powerful
+- [OSH Table of Contents](toc-osh.html) - Compatible
+- [YSH Table of Contents](toc-ysh.html) - New and Powerful
 
 They link to **topics** within these 12 chapters:
 
@@ -37,7 +37,7 @@ They link to **topics** within these 12 chapters:
 The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
 YSH.
 
-- [Index of Data Topics](index-data.html) - Oils also has data languages.
+- [Data Notation Table of Contents](toc-data.html) - Oils also has data languages.
 
 13. [J8 Notation](chap-data-lang.html)
 1. Packle (TODO)
@@ -80,9 +80,9 @@ The source code is simply a tree of Markdown files:
 
       ref/
         index.md           # this page, the Oils Reference
-        index-osh.md       # link to OSH topics
-        index-ysh.md       # link to YSH topics
-        index-data.md
+        toc-osh.md       # link to OSH topics
+        toc-ysh.md       # link to YSH topics
+        toc-data.md
 
         chap-cmd-lang.md   # chapter on the command language
         ...
@@ -99,9 +99,9 @@ And the URLs basically mirror the source code:
 
         ref/
           index.html
-          index-osh.html
-          index-ysh.html
-          index-data.html
+          toc-osh.html
+          toc-ysh.html
+          toc-data.html
 
           chap-cmd-lang.html
           ...

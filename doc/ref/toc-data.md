@@ -3,12 +3,12 @@ in_progress: yes
 css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 ---
 
-Index of Data Topics
+Data Notation Table of Contents
 ===
 
 These are links to topics in the [Oils Reference](index.html).
 
-Siblings: [OSH Topics](index-osh.html), [YSH Topics](index-ysh.html)
+Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
 
 <div id="toc">
 </div>

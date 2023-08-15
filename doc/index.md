@@ -29,9 +29,9 @@ Like many other docs, the reference is still in progress:
 - [Oils Reference](ref/index.html) &dagger; - These docs underlie `help` builtin, and
   are also published online.
 - Links to topics within each chapter:
-  - [Index of OSH Topics](ref/index-osh.html) &dagger;
-  - [Index of YSH Topics](ref/index-ysh.html) &dagger;
-  - [Index of Data Topics](ref/index-data.html) &dagger;
+  - [OSH Table of Contents](ref/toc-osh.html) &dagger;
+  - [YSH Table of Contents](ref/toc-ysh.html) &dagger;
+  - [Data Notation Table of Contents](ref/toc-data.html) &dagger;
 
 ## Interactive Shell
 
