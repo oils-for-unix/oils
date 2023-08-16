@@ -14,7 +14,7 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
                                         lvalue_e, lvalue_t, scope_e, scope_t,
                                         HayNode, Cell)
-from _devbuild.gen.syntax_asdl import loc, Token
+from _devbuild.gen.syntax_asdl import loc, loc_t, Token
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
@@ -1417,8 +1417,11 @@ class Mem(object):
         self.current_tok = tok
 
     def CurrentLocation(self):
-        # type: () -> Token
-        return self.current_tok
+        # type: () -> loc_t
+        if self.current_tok:
+            return self.current_tok
+
+        return loc.Missing
 
     #
     # Status Variable Stack (for isolating $PS1 and $PS4)

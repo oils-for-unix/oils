@@ -68,7 +68,7 @@ echo $length
 3
 ## END
 
-#### Length in two different contexts
+#### Length doesn't apply to BashArray
 x=(a b c)
 x[10]=A
 x[20]=B
@@ -76,13 +76,12 @@ x[20]=B
 # shell style: length is 5
 echo shell=${#x[@]}
 
-# Oil function call: length is 20.  I think that makes sense?  It's just a
-# different notion of length.
-echo oil=$[len(x)]
+# Length could be 20, but we may change the representation to Dict[int, str]
+echo ysh=$[len(x)]
 
+## status: 3
 ## STDOUT:
 shell=5
-oil=21
 ## END
 
 #### $[len(x)] inside strings

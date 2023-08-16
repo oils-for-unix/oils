@@ -105,14 +105,18 @@ git-branch-merged | while read --line {
   }
 } | readarray -t :branches
 
-if (len(branches) === 0) {
+# TODO: I think we want read --lines :branches ?  Then we don't need this
+# conversion.
+var branchList = :| "${branches[@]}" |
+
+if (len(branchList) === 0) {
   echo "No merged branches"
 } else {
-  write git branch -D @branches
+  write git branch -D @branchList
 }
 
 # With "append".  Hm read --lines isn't bad.
-var branches2 = %()
+var branches2 = :| |
 git-branch-merged | while read --line {
   var line2 = _line->strip()  # removing leading space
   if (line2 !== 'master' and not line2->startswith('*')) {

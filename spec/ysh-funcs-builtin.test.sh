@@ -2,7 +2,7 @@
 
 # TODO: Test that there are exceptions when there are too many args, etc.
 
-#### Bool()
+#### Bool() - should this be Bool.fromObj()?
 var a = Bool( :|| )
 var b = Bool( :|foo| )
 write $a $b
@@ -11,7 +11,7 @@ false
 true
 ## END
 
-#### Int()
+#### Int() - should this be Int.fromStr() ?
 var a = Int("3")
 var b = Int("-35")
 write $a $b
@@ -25,7 +25,7 @@ echo 'should not get here'
 -35
 ## END
 
-#### Float()
+#### Float() - should this be Float.fromStr() ?
 # TODO: This needs a lot more testing, for precision, etc.
 var a = Float("1.2")
 var b = Float("3.4")
@@ -33,24 +33,6 @@ write $a $b
 ## STDOUT:
 1.2
 3.4
-## END
-
-#### Str()
-# TODO: more testing
-var a = Str(5)
-var b = Str(42)
-write $a $b
-## STDOUT:
-5
-42
-## END
-
-#### Dict()
-# TODO: more testing
-var a = Dict()
-write $[len(a)]
-## STDOUT:
-0
 ## END
 
 #### join()
