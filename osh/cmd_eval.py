@@ -1168,6 +1168,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
+                self.mem.SetLocationToken(node.keyword)
 
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
                 raise vm.ValueControlFlow(node.keyword, val)
@@ -1175,6 +1176,7 @@ class CommandEvaluator(object):
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
                 keyword = node.keyword
+                self.mem.SetLocationToken(node.keyword)
 
                 if node.arg_word:  # Evaluate the argument
                     str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1289,6 +1291,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
+                self.mem.SetLocationToken(node.keyword)
                 status = 0
 
                 with ctx_LoopLevel(self):
@@ -1483,6 +1486,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
+                self.mem.SetLocationToken(node.name_tok)
                 if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
@@ -1496,6 +1500,7 @@ class CommandEvaluator(object):
             elif case(command_e.Proc):
                 node = cast(command.Proc, UP_node)
 
+                self.mem.SetLocationToken(node.name)
                 proc_name = lexer.TokenVal(node.name)
                 if proc_name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
@@ -1552,6 +1557,7 @@ class CommandEvaluator(object):
                 node = cast(command.If, UP_node)
                 done = False
                 for if_arm in node.arms:
+                    self.mem.SetLocationToken(if_arm.keyword)
                     b = self._EvalCondition(if_arm.cond, if_arm.keyword)
                     if b:
                         status = self._ExecuteList(if_arm.action)
