@@ -167,15 +167,7 @@ class Len(vm._Callable):
         UP_x = x
 
         with tagswitch(x) as case:
-            if case(value_e.BashArray):
-                x = cast(value.BashArray, UP_x)
-                return value.Int(len(x.strs))
-
-            elif case(value_e.BashAssoc):
-                x = cast(value.BashAssoc, UP_x)
-                return value.Int(len(x.d))
-
-            elif case(value_e.List):
+            if case(value_e.List):
                 x = cast(value.List, UP_x)
                 return value.Int(len(x.items))
 
