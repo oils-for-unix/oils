@@ -675,6 +675,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'eval_hay', eval_hay)
     func_init.SetGlobalFunc(mem, 'block_as_str', block_as_str)
     func_init.SetGlobalFunc(mem, '_hay', hay_func)
+    func_init.SetGlobalFunc(mem, 'len', func_misc.Len())
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
