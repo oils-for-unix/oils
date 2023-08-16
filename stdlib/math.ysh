@@ -3,7 +3,8 @@
 # We recommend abs(float1 - float2) < 0.0001
 # instead of exact float equality
 
-func abs(x) {
+# This causes a name collision with `abs`. The rename is a work around for now.
+func abs_(x) {
   if (x < 0) {
     return (-x)
   } else {

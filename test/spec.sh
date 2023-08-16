@@ -676,6 +676,10 @@ hay-meta() {
 # Oil Language
 #
 
+ysh-source() {
+  run-file ysh-source "$@"
+}
+
 ysh-usage() {
   run-file ysh-usage "$@"
 }
