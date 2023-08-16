@@ -31,10 +31,11 @@ from typing import Dict, List, Tuple, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import Proc
     from frontend import args
-    from frontend.parse_lib import CommandParser, ParseContext
+    from frontend.parse_lib import ParseContext
     from core import optview
     from core import ui
     from osh.cmd_eval import CommandEvaluator
+    from osh.cmd_parse import CommandParser
 
 
 class Eval(vm._Builtin):
