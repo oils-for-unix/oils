@@ -52,7 +52,8 @@ UNSET_SPEC.ShortFlag('-f')
 
 # Unused because there are no flags!  Just --.
 EVAL_SPEC = FlagSpec('eval')
-EVAL_SPEC = FlagSpec('source')
+SOURCE_SPEC = FlagSpec('source')
+SOURCE_SPEC.LongFlag('--builtin')
 
 COMMAND_SPEC = FlagSpec('command')
 COMMAND_SPEC.ShortFlag('-v')

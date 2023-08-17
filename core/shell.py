@@ -705,7 +705,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     builtins[builtin_i.readarray] = mapfile
 
     source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
-                                         fd_state, tracer, errfmt)
+                                         fd_state, tracer, errfmt, loader)
     builtins[builtin_i.source] = source_builtin
     builtins[builtin_i.dot] = source_builtin
 

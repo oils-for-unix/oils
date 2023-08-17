@@ -22,6 +22,7 @@ from frontend import lexer
 from frontend import reader
 from frontend import typed_args
 from mycpp.mylib import log
+from pylib import os_path
 from osh import cmd_eval
 from ysh import expr_eval
 
@@ -30,10 +31,12 @@ _ = log
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import Proc
+    from frontend import args
     from frontend.parse_lib import ParseContext
     from core import optview
     from core import ui
     from osh.cmd_eval import CommandEvaluator
+    from osh.cmd_parse import CommandParser
 
 
 class Eval(vm._Builtin):
@@ -75,8 +78,8 @@ class Eval(vm._Builtin):
 
 class Source(vm._Builtin):
     def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, tracer,
-                 errfmt):
-        # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, dev.Tracer, ui.ErrorFormatter) -> None
+                 errfmt, loader):
+        # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, dev.Tracer, ui.ErrorFormatter, pyutil._ResourceLoader) -> None
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.search_path = search_path
@@ -84,57 +87,80 @@ class Source(vm._Builtin):
         self.fd_state = fd_state
         self.tracer = tracer
         self.errfmt = errfmt
+        self.loader = loader
 
         self.mem = cmd_ev.mem
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        call_loc = cmd_val.arg_locs[0]
-        _, arg_r = flag_spec.ParseCmdVal('source', cmd_val)
+        attrs, arg_r = flag_spec.ParseCmdVal('source', cmd_val)
+        arg = arg_types.source(attrs.attrs)
 
         path = arg_r.Peek()
         if path is None:
             e_usage('missing required argument', loc.Missing)
         arg_r.Next()
 
-        resolved = self.search_path.Lookup(path, exec_required=False)
-        if resolved is None:
-            resolved = path
+        if arg.builtin:
+            try:
+                path = os_path.join("stdlib", path)
+                contents = self.loader.Get(path)
+            except (IOError, OSError):
+                self.errfmt.Print_(
+                    'source --builtin %r failed: No such builtin file' % path,
+                    blame_loc=cmd_val.arg_locs[2])
+                return 2
 
-        try:
-            f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
-        except (IOError, OSError) as e:
-            self.errfmt.Print_('source %r failed: %s' %
-                               (path, pyutil.strerror(e)),
-                               blame_loc=cmd_val.arg_locs[1])
-            return 1
+            line_reader = reader.StringLineReader(contents, self.arena)
+            c_parser = self.parse_ctx.MakeOshParser(line_reader)
+            return self._Exec(cmd_val, arg_r, path, c_parser)
 
-        line_reader = reader.FileLineReader(f, self.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        else:
+            resolved = self.search_path.Lookup(path, exec_required=False)
+            if resolved is None:
+                resolved = path
+
+            try:
+                f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
+            except (IOError, OSError) as e:
+                self.errfmt.Print_('source %r failed: %s' %
+                                   (path, pyutil.strerror(e)),
+                                   blame_loc=cmd_val.arg_locs[1])
+                return 1
+
+            line_reader = reader.FileLineReader(f, self.arena)
+            c_parser = self.parse_ctx.MakeOshParser(line_reader)
+
+            with process.ctx_FileCloser(f):
+                return self._Exec(cmd_val, arg_r, path, c_parser)
+
+    def _Exec(self, cmd_val, arg_r, path, c_parser):
+        # type: (cmd_value.Argv, args.Reader, str, CommandParser) -> int
+        call_loc = cmd_val.arg_locs[0]
 
         # A sourced module CAN have a new arguments array, but it always shares
         # the same variable scope as the caller.  The caller could be at either a
         # global or a local scope.
 
         # TODO: I wonder if we compose the enter/exit methods more easily.
-        with process.ctx_FileCloser(f):
-            with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
-                source_argv = arg_r.Rest()
-                with state.ctx_Source(self.mem, path, source_argv):
-                    with state.ctx_ThisDir(self.mem, path):
-                        src = source.SourcedFile(path, call_loc)
-                        with alloc.ctx_Location(self.arena, src):
-                            try:
-                                status = main_loop.Batch(
-                                    self.cmd_ev,
-                                    c_parser,
-                                    self.errfmt,
-                                    cmd_flags=cmd_eval.RaiseControlFlow)
-                            except vm.IntControlFlow as e:
-                                if e.IsReturn():
-                                    status = e.StatusCode()
-                                else:
-                                    raise
+
+        with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
+            source_argv = arg_r.Rest()
+            with state.ctx_Source(self.mem, path, source_argv):
+                with state.ctx_ThisDir(self.mem, path):
+                    src = source.SourcedFile(path, call_loc)
+                    with alloc.ctx_Location(self.arena, src):
+                        try:
+                            status = main_loop.Batch(
+                                self.cmd_ev,
+                                c_parser,
+                                self.errfmt,
+                                cmd_flags=cmd_eval.RaiseControlFlow)
+                        except vm.IntControlFlow as e:
+                            if e.IsReturn():
+                                status = e.StatusCode()
+                            else:
+                                raise
 
         return status
 
