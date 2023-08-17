@@ -101,7 +101,14 @@ class Source(vm._Builtin):
         arg_r.Next()
 
         if arg.builtin:
-            contents = self.loader.Get(path)
+            try:
+                contents = self.loader.Get(path)
+            except IOError:
+                self.errfmt.Print_(
+                    'source --builtin %r failed: No such builtin file' % path,
+                    blame_loc=cmd_val.arg_locs[2])
+                return 2
+
             line_reader = reader.StringLineReader(contents, self.arena)
             c_parser = self.parse_ctx.MakeOshParser(line_reader)
             return self._Exec(cmd_val, arg_r, path, c_parser)
