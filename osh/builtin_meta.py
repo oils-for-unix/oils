@@ -102,6 +102,7 @@ class Source(vm._Builtin):
 
         if arg.builtin:
             try:
+                path = pyutil.os_path.join("stdlib", path)
                 contents = self.loader.Get(path)
             except IOError:
                 self.errfmt.Print_(
