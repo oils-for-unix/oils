@@ -22,6 +22,7 @@ from frontend import lexer
 from frontend import reader
 from frontend import typed_args
 from mycpp.mylib import log
+from pylib import os_path
 from osh import cmd_eval
 from ysh import expr_eval
 
@@ -102,9 +103,9 @@ class Source(vm._Builtin):
 
         if arg.builtin:
             try:
-                path = pyutil.os_path.join("stdlib", path)
+                path = os_path.join("stdlib", path)
                 contents = self.loader.Get(path)
-            except IOError:
+            except (IOError, OSError):
                 self.errfmt.Print_(
                     'source --builtin %r failed: No such builtin file' % path,
                     blame_loc=cmd_val.arg_locs[2])
