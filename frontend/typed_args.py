@@ -8,6 +8,7 @@ from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
 from core import error
 from core.error import e_usage
 from mycpp.mylib import tagswitch
+from ysh import val_ops
 
 from typing import Optional, Dict, List, cast
 
@@ -113,18 +114,71 @@ class Reader(object):
 
     ### Typed positional args
 
-    # TODO: may need location info
     def PosStr(self):
         # type: () -> str
-        return None  # TODO
+        try:
+            arg = self.pos_args.pop(0)
+        except IndexError:
+            # TODO: may need location info
+            raise error.InvalidType('No arguments left', loc.Missing)
+
+        return val_ops.MustBeStr(arg).s
 
     def PosInt(self):
         # type: () -> int
-        return -1  # TODO
+        try:
+            arg = self.pos_args.pop(0)
+        except IndexError:
+            # TODO: may need location info
+            raise error.InvalidType('No arguments left', loc.Missing)
+
+        return val_ops.MustBeInt(arg).i
+
+    def PosFloat(self):
+        # type: () -> float
+        try:
+            arg = self.pos_args.pop(0)
+        except IndexError:
+            # TODO: may need location info
+            raise error.InvalidType('No arguments left', loc.Missing)
+
+        return val_ops.MustBeFloat(arg).f
+
+    def PosList(self):
+        # type: () -> List[value_t]
+        try:
+            arg = self.pos_args.pop(0)
+        except IndexError:
+            # TODO: may need location info
+            raise error.InvalidType('No arguments left', loc.Missing)
+
+        return val_ops.MustBeList(arg).items
+
+    def PosDict(self):
+        # type: () -> Dict[str, value_t]
+        try:
+            arg = self.pos_args.pop(0)
+        except IndexError:
+            # TODO: may need location info
+            raise error.InvalidType('No arguments left', loc.Missing)
+
+        return val_ops.MustBeDict(arg).d
+
+    def PosValue(self):
+        # type: () -> value_t
+        try:
+            arg = self.pos_args.pop(0)
+        except IndexError:
+            # TODO: may need location info
+            raise error.InvalidType('No arguments left', loc.Missing)
+
+        return arg
 
     def RestPos(self):
         # type: () -> List[value_t]
-        return None  # TODO
+        ret = self.pos_args
+        self.pos_args = []
+        return ret
 
     ### Typed named args
 
@@ -159,7 +213,11 @@ class Reader(object):
         problem
         """
         # Note: Python throws TypeError on mismatch
-        pass
+        if len(self.pos_args):
+            raise error.InvalidType('Still have %d args left' % len(self.pos_args), loc.Missing)
+
+        if len(self.named_args):
+            raise error.InvalidType('Still have %d named args left' % len(self.pos_args), loc.Missing)
 
 
 def DoesNotAccept(arg_list):

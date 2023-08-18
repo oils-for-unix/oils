@@ -54,6 +54,17 @@ def MustBeInt(val):
         'expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
 
 
+def MustBeFloat(val):
+    # type: (value_t) -> value.Float
+    UP_val = val
+    if val.tag() == value_e.Float:
+        val = cast(value.Float, UP_val)
+        return val
+
+    raise error.InvalidType(
+        'expected value.Float, but got %s' % value_str(val.tag()), loc.Missing)
+
+
 def MustBeStr(val):
     # type: (value_t) -> value.Str
     UP_val = val
@@ -74,6 +85,17 @@ def MustBeList(val):
 
     raise error.InvalidType(
         'expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
+
+
+def MustBeDict(val):
+    # type: (value_t) -> value.Dict
+    UP_val = val
+    if val.tag() == value_e.Dict:
+        val = cast(value.Dict, UP_val)
+        return val
+
+    raise error.InvalidType(
+        'expected value.Dict, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def MustBeFunc(val):
