@@ -9,7 +9,6 @@ from core import error
 from core import vm
 from mycpp.mylib import log
 from frontend import lexer
-from library import func_eggex
 from library import func_misc
 from ysh import cpython
 from ysh import expr_eval
@@ -147,10 +146,6 @@ def Init(mem):
     # NOTE: split() is set in main(), since it depends on the Splitter() object /
     # $IFS.
     # TODO: How to ask for Python's split algorithm?  Or Awk's?
-
-    SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
-    SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
-    SetGlobalFunc(mem, '_end', func_eggex.End(mem))
 
     SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
 

@@ -39,6 +39,7 @@ from frontend import reader
 from frontend import parse_lib
 
 from library import func_cpython
+from library import func_eggex
 from library import func_hay
 from library import func_init
 from library import func_misc
@@ -677,6 +678,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'block_as_str', block_as_str)
     func_init.SetGlobalFunc(mem, '_hay', hay_func)
     func_init.SetGlobalFunc(mem, 'len', func_misc.Len())
+    func_init.SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
+    func_init.SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
+    func_init.SetGlobalFunc(mem, '_end', func_eggex.End(mem))
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

@@ -4,14 +4,15 @@ func_eggex.py
 """
 from __future__ import print_function
 
-import sys
+from _devbuild.gen.runtime_asdl import value, value_t
+from core import error, state, vm
+from frontend import typed_args
+from ysh import val_ops
 
-from core import state
-
-from typing import Any
+from typing import List, Dict
 
 
-class Match(object):
+class Match(vm._Callable):
     """_match(0) or _match():   get the whole match _match(1) ..
 
     _match(N):  submatch
@@ -19,49 +20,51 @@ class Match(object):
 
     def __init__(self, mem):
         # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
-        # type: (Any) -> Any
-        if len(args) == 0:
-            return self.mem.GetMatch(0)
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+        r = typed_args.Reader(pos_args, named_args)
+        arg = 0
+        if len(pos_args):
+            arg = r.PosInt()
+            r.Done()
 
-        if len(args) == 1:
-            arg = args[0]
-            if isinstance(arg, int):
-                s = self.mem.GetMatch(arg)
-                # Oil code doesn't deal well with exceptions!
-                #if s is None:
-                #  raise IndexError('No such group')
-                return s
+        # TODO: Support strings
+        s = self.mem.GetMatch(arg)
+        # Oil code doesn't deal well with exceptions!
+        #if s is None:
+        #  raise IndexError('No such group')
+        if s is not None:
+            return value.Str(s)
 
-            # TODO: Support strings
-            raise TypeError('Expected an integer, got %r' % arg)
-
-        raise TypeError('Too many arguments')
+        return value.Null
 
 
-class Start(object):
+class Start(vm._Callable):
     """Same signature as _match(), but for start positions."""
 
     def __init__(self, mem):
         # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
-        # type: (Any) -> Any
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
         raise NotImplementedError('_start')
 
 
-class End(object):
+class End(vm._Callable):
     """Same signature as _match(), but for end positions."""
 
     def __init__(self, mem):
         # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
         self.mem = mem
 
-    def __call__(self, *args):
-        # type: (Any) -> Any
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
         raise NotImplementedError('_end')
 
 
