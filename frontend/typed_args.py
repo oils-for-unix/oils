@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
                                        expr_e, expr_t, CommandSub)
 from core import error
 from core.error import e_usage
-from mycpp.mylib import tagswitch
+from mycpp.mylib import dict_erase, tagswitch
 from ysh import val_ops
 
 from typing import Optional, Dict, List, cast
@@ -184,15 +184,54 @@ class Reader(object):
 
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
-        return None  # TODO
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeStr(self.named_args[param_name]).s
+        dict_erase(self.named_args, param_name)
+        return ret
 
     def NamedInt(self, param_name, default_):
         # type: (str, int) -> int
-        return -1  # TODO
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeInt(self.named_args[param_name]).i
+        dict_erase(self.named_args, param_name)
+        return ret
+
+    def NamedFloat(self, param_name, default_):
+        # type: (str, float) -> float
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeFloat(self.named_args[param_name]).f
+        dict_erase(self.named_args, param_name)
+        return ret
+
+    def NamedList(self, param_name, default_):
+        # type: (str, List[value_t]) -> List[value_t]
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeList(self.named_args[param_name]).items
+        dict_erase(self.named_args, param_name)
+        return ret
+
+    def NamedDict(self, param_name, default_):
+        # type: (str, Dict[str, value_t]) -> Dict[str, value_t]
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeDict(self.named_args[param_name]).d
+        dict_erase(self.named_args, param_name)
+        return ret
 
     def RestNamed(self):
         # type: () -> Dict[str, value_t]
-        return None  # TODO
+        ret = self.named_args
+        self.named_args = {}
+        return ret
 
     def Block(self):
         # type: () -> command_t
