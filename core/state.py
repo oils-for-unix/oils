@@ -1305,7 +1305,7 @@ class Mem(object):
 
         self.pwd = None  # type: Optional[str]
 
-        self.current_tok = None  # type: Optional[Token]
+        self.token_for_line = None  # type: Optional[Token]
 
         self.last_arg = ''  # $_ is initially empty, NOT unset
         self.line_num = value.Str('')
@@ -1394,32 +1394,37 @@ class Mem(object):
         """For $_"""
         self.last_arg = s
 
-    def SetLocationToken(self, tok):
+    def SetTokenForLine(self, tok):
         # type: (Token) -> None
-        """Set the current source location, for BASH_SOURCE, BASH_LINENO,
-        LINENO, etc.
+        """Set a token to compute $LINENO
 
-        It's also set on SimpleCommand, ShAssignment, ((, [[, etc. and
-        used as a fallback when e_die() didn't set any location
-        information.
+        This means it should be set on SimpleCommand, ShAssignment, ((, [[,
+        case, etc. -- anything that evaluates a word.  Example: there was a bug
+        with 'case $LINENO'
+
+        This token also used as a "least-specific" / fallback location for
+        errors in ExecuteAndCatch().
+
+        Although most of that should be taken over by 'with ui.ctx_Location()`,
+        for the errfmt.
         """
         if self.running_debug_trap:
             return
 
         if tok.span_id == runtime.NO_SPID:
             # NOTE: This happened in the osh-runtime benchmark for yash.
-            log('Warning: span_id undefined in SetLocationToken')
+            log('Warning: span_id undefined in SetTokenForLine')
 
             #import traceback
             #traceback.print_stack()
             return
 
-        self.current_tok = tok
+        self.token_for_line = tok
 
-    def CurrentLocation(self):
+    def GetLocationForLine(self):
         # type: () -> loc_t
-        if self.current_tok:
-            return self.current_tok
+        if self.token_for_line:
+            return self.token_for_line
 
         return loc.Missing
 
@@ -1545,7 +1550,7 @@ class Mem(object):
 
     def _PushDebugStack(self, bash_source, func_name, source_name):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
-        # self.current_tok is set before every SimpleCommand, ShAssignment, [[, ((,
+        # self.token_for_line is set before every SimpleCommand, ShAssignment, [[, ((,
         # etc.  Function calls and 'source' are both SimpleCommand.
 
         # These integers are handles/pointers, for use in CrashDumper.
@@ -1555,7 +1560,7 @@ class Mem(object):
         # The stack is a 5-tuple, where func_name and source_name are optional.  If
         # both are unset, then it's a "temp frame".
         self.debug_stack.append(
-            DebugFrame(bash_source, func_name, source_name, self.current_tok,
+            DebugFrame(bash_source, func_name, source_name, self.token_for_line,
                        argv_i, var_i))
 
     def _PopDebugStack(self):
@@ -2070,7 +2075,7 @@ class Mem(object):
                         strs.append('-')  # Bash does this to line up with main?
                         continue
                     source_str = ui.GetLineSourceString(self.arena,
-                                                        self.current_tok.line)
+                                                        self.token_for_line.line)
                     strs.append(source_str)
                 return value.BashArray(strs)  # TODO: Reuse this object too?
 
@@ -2088,10 +2093,10 @@ class Mem(object):
             return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'LINENO':
-            assert self.current_tok is not None
+            assert self.token_for_line is not None
             # Reuse object with mutation
             # TODO: maybe use interned GetLineNumStr?
-            self.line_num.s = str(self.current_tok.line.line_num)
+            self.line_num.s = str(self.token_for_line.line.line_num)
             return self.line_num
 
         if name == 'BASHPID':  # TODO: Oil name for it

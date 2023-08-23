@@ -348,7 +348,7 @@ class ErrorFormatter(object):
         # type: (_ErrorWithLocation, str) -> None
         """Print an exception that was caught, with a code quotation.
 
-        Unlike other methods, this doesn't use the CurrentLocation()
+        Unlike other methods, this doesn't use the GetLocationForLine()
         fallback. That only applies to builtins; instead we check
         e.HasLocation() at a higher level, in CommandEvaluator.
         """
