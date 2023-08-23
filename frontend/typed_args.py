@@ -2,7 +2,7 @@
 """Typed_args.py."""
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_t, value_str
+from _devbuild.gen.runtime_asdl import value_t
 from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
                                        expr_e, expr_t, CommandSub)
 from core import error
