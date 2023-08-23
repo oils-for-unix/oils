@@ -53,7 +53,7 @@ class BumpLeakHeap {
   void PrintStats(int fd);
 
   void CleanProcessExit();
-  void FastProcessExit();
+  void ProcessExit();
 
   bool is_initialized_ = true;  // mark/sweep doesn't need to be initialized
 
