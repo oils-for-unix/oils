@@ -111,6 +111,7 @@ class Reader(object):
         return val_ops.MustBeDict(arg).d
 
     def PosValue(self):
+        # type: () -> value_t
         return self._GetNextPos()
 
     def RestPos(self):
