@@ -175,7 +175,7 @@ class Trap(vm._Builtin):
 
         # TODO: the SPID should be passed through argv.
         src = source.ArgvWord('trap', loc.Missing)
-        with alloc.ctx_Location(self.arena, src):
+        with alloc.ctx_SourceCode(self.arena, src):
             try:
                 node = main_loop.ParseWholeFile(c_parser)
             except error.Parse as e:

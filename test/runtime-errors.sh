@@ -1034,6 +1034,26 @@ EOF
   assert $? -eq 0
 }
 
+fallback_locations() {
+  # Redirect
+  _error-case 'echo hi > /'
+
+  _error-case 's=x; (( s[0] ))' 
+
+  _error-case 's=x; (( s[0] = 42 ))' 
+
+  _error-case 'set -u; (( undef ))'
+
+  _error-case '(( 3 ** -2 ))'
+  echo
+
+  # DBracket
+  _error-case 'set -u; [[ $undef =~ . ]]'
+
+  # No good fallback info here, we need it
+  _error-case '[[ $x =~ $(( 3 ** -2 )) ]]'
+}
+
 #
 # TEST DRIVER
 #
@@ -1091,7 +1111,7 @@ all() {
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell \
     bool_status bool_status_simple \
-    qsn_decode; do
+    qsn_decode fallback_locations; do
 
     _run_test $t ''  # don't assert status
   done

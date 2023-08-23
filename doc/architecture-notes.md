@@ -104,6 +104,25 @@ Idea:
 - vtparse is another good example
 -->
 
+## Error Locations and Fallbacks
+
+- `_Executor::RunBuiltin` catches `error.Usage`.  If there's no location, use fallback.
+- CommandEvaluator
+  - `ExecuteAndCatch` uses fallback
+  - `_RunAssignBuiltin` uses the fallback, also for `error.Usage`
+  - `Failglob` uses it
+
+Other:
+
+- `ui.ctx_Location`
+- `ErrorFormatter:Print_` will use something from `ctx_Location`
+  - It has its own CurrentLocation() thing
+  - Oh maybe we should use this for expressions?
+
+TODO:
+
+- Rename `alloc.ctx_Location`
+
 ## Other Topics
 
 - [Dependency Injection]($xref:dependency-injection)

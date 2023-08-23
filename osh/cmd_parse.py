@@ -229,7 +229,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
         # a[i+1]= is a place
         src = source.Reparsed('array place', left_token, close_token)
-        with alloc.ctx_Location(arena, src):
+        with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 
         tmp3 = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
@@ -941,7 +941,7 @@ class CommandParser(object):
         # The interaction between COMPLETION and ALIASES requires special care.
         # See docstring of BeginAliasExpansion() in parse_lib.py.
         src = source.Alias(first_word_str, argv0_loc)
-        with alloc.ctx_Location(arena, src):
+        with alloc.ctx_SourceCode(arena, src):
             with parse_lib.ctx_Alias(self.parse_ctx.trail):
                 try:
                     # _ParseCommandTerm() handles multiline commands, compound commands, etc.

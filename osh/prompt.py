@@ -294,7 +294,7 @@ class UserPlugin(object):
 
             # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
             src = source.Variable(PROMPT_COMMAND, loc.Missing)
-            with alloc.ctx_Location(self.arena, src):
+            with alloc.ctx_SourceCode(self.arena, src):
                 try:
                     node = main_loop.ParseWholeFile(c_parser)
                 except error.Parse as e:

@@ -58,7 +58,7 @@ class ParseHay(vm._Callable):
         # TODO: Should there be a separate config file source?
         src = source.SourcedFile(path, call_loc)
         try:
-            with alloc.ctx_Location(arena, src):
+            with alloc.ctx_SourceCode(arena, src):
                 node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:
             self.errfmt.PrettyPrintError(e)

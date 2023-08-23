@@ -326,7 +326,7 @@ class Read(vm._Builtin):
             # in echo -e.  We just make it Id.Unknown_Tok?
             try:
                 # TODO: read should know about stdin, and redirects, and pipelines?
-                with alloc.ctx_Location(arena, source.Stdin('')):
+                with alloc.ctx_SourceCode(arena, source.Stdin('')):
                     tokens = qsn_native.Parse(lexer)
             except error.Parse as e:
                 self.errfmt.PrettyPrintError(e)

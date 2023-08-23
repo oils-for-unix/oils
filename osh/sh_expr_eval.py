@@ -216,7 +216,7 @@ class UnsafeArith(object):
 
         a_parser = self.parse_ctx.MakeArithParser(s)
 
-        with alloc.ctx_Location(self.arena,
+        with alloc.ctx_SourceCode(self.arena,
                                 source.ArgvWord('dynamic place', location)):
             try:
                 anode = a_parser.Parse()
@@ -264,7 +264,7 @@ class UnsafeArith(object):
         w_parser = self.parse_ctx.MakeWordParser(lexer, line_reader)
 
         src = source.VarRef(blame_tok)
-        with alloc.ctx_Location(self.arena, src):
+        with alloc.ctx_SourceCode(self.arena, src):
             try:
                 bvs_part = w_parser.ParseVarRef()
             except error.Parse as e:
@@ -376,7 +376,7 @@ class ArithEvaluator(object):
                 a_parser = self.parse_ctx.MakeArithParser(s)
 
                 # TODO: Fill in the variable name
-                with alloc.ctx_Location(arena, source.Variable(None,
+                with alloc.ctx_SourceCode(arena, source.Variable(None,
                                                                blame_loc)):
                     try:
                         node2 = a_parser.Parse()  # may raise error.Parse

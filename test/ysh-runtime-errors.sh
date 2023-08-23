@@ -185,6 +185,24 @@ test-user-reported() {
   '
 }
 
+test-fallback-locations() {
+  # Melvin noticed bug here
+  _expr-error-case 'if (len(42)) { echo hi }'
+
+  # Be even more specific
+  _expr-error-case 'if (1 + len(42)) { echo hi }'
+
+  # From Aidan's PR -- redefinition
+  _error-case 'const f = 42; func f() { echo hi }'
+
+  # ForEach eval
+  _expr-error-case 'for x in $[2 + len(42)] { echo hi }'
+
+  _expr-error-case 'case (len(42)) { pat { echo hi } }'
+
+  _expr-error-case 'case "$[len(42)]" in pat) echo hi ;; esac'
+}
+
 test-EvalExpr-calls() {
   ### Test everywhere expr_ev.EvalExpr() is invoked
 
