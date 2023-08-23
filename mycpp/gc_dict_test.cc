@@ -8,8 +8,14 @@ GLOBAL_STR(kStrBar, "bar");
 
 TEST test_dict_init() {
   Str* s = StrFromC("foo");
+  Str* s2 = StrFromC("bar");
+
   Dict<int, Str*>* d = NewDict<int, Str*>({42}, {s});
   ASSERT_EQ(s, d->index_(42));
+
+  Dict<Str*, int>* d2 = NewDict<Str*, int>({s, s2}, {43, 99});
+  ASSERT_EQ(43, d2->index_(s));
+  ASSERT_EQ(99, d2->index_(s2));
 
   PASS();
 }

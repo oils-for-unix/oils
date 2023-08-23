@@ -85,6 +85,7 @@ class Dict {
         values_(nullptr) {
   }
 
+#if 0
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
       : len_(0),
         capacity_(0),
@@ -92,6 +93,7 @@ class Dict {
         keys_(nullptr),
         values_(nullptr) {
   }
+#endif
 
   // This relies on the fact that containers of 4-byte ints are reduced by 2
   // items, which is greater than (or equal to) the reduction of any other
