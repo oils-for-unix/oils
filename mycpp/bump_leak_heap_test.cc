@@ -39,7 +39,7 @@ TEST for_code_coverage() {
 
   h.PrintStats(STDERR_FILENO);
 
-  h.FastProcessExit();
+  h.ProcessExit();
   h.CleanProcessExit();
 
   PASS();
