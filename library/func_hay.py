@@ -70,9 +70,9 @@ class ParseHay(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        reader = typed_args.Reader(pos_args, named_args)
-        string = reader.PosStr()
-        reader.Done()
+        arg_reader = typed_args.Reader(pos_args, named_args)
+        string = arg_reader.PosStr()
+        arg_reader.Done()
         return self._Call(string)
 
 
