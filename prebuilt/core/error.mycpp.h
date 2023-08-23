@@ -6,6 +6,8 @@
 #include "_gen/asdl/hnode.asdl.h"
 #include "cpp/qsn.h"
 #include "mycpp/runtime.h"
+
+#include "_gen/core/runtime.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 namespace error {  // forward declare
 
@@ -19,7 +21,10 @@ namespace error {  // forward declare
   class Strict;
   class ErrExit;
   class Expr;
+  class UserError;
   class InvalidType;
+  class InvalidType2;
+  class InvalidType3;
 
 }  // forward declare namespace error
 
@@ -184,6 +189,21 @@ class Expr : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(Expr)
 };
 
+class UserError : public FatalRuntime {
+ public:
+  UserError(int status, Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return FatalRuntime::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(UserError));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(UserError)
+};
+
 class InvalidType : public Expr {
  public:
   InvalidType(Str* msg, syntax_asdl::loc_t* location);
@@ -197,6 +217,36 @@ class InvalidType : public Expr {
   }
 
   DISALLOW_COPY_AND_ASSIGN(InvalidType)
+};
+
+class InvalidType2 : public InvalidType {
+ public:
+  InvalidType2(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return InvalidType::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType2));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(InvalidType2)
+};
+
+class InvalidType3 : public InvalidType {
+ public:
+  InvalidType3(runtime_asdl::value_t* left_val, runtime_asdl::value_t* right_val, Str* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return InvalidType::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType3));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(InvalidType3)
 };
 
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);

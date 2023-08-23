@@ -81,23 +81,21 @@ GLOBAL_STR(str72, "\t");
 GLOBAL_STR(str73, "\\t");
 GLOBAL_STR(str74, "\u0000");
 GLOBAL_STR(str75, "\\x00");
-GLOBAL_STR(str76, "\\0");
+GLOBAL_STR(str76, "");
 GLOBAL_STR(str77, "");
 GLOBAL_STR(str78, "");
-GLOBAL_STR(str79, "");
-GLOBAL_STR(str80, "\\");
-GLOBAL_STR(str81, "\\\\");
-GLOBAL_STR(str82, "'");
-GLOBAL_STR(str83, "\\'");
-GLOBAL_STR(str84, "\n");
-GLOBAL_STR(str85, "\\n");
-GLOBAL_STR(str86, "\r");
-GLOBAL_STR(str87, "\\r");
-GLOBAL_STR(str88, "\t");
-GLOBAL_STR(str89, "\\t");
-GLOBAL_STR(str90, "\u0000");
-GLOBAL_STR(str91, "\\x00");
-GLOBAL_STR(str92, "\\0");
+GLOBAL_STR(str79, "\\");
+GLOBAL_STR(str80, "\\\\");
+GLOBAL_STR(str81, "'");
+GLOBAL_STR(str82, "\\'");
+GLOBAL_STR(str83, "\n");
+GLOBAL_STR(str84, "\\n");
+GLOBAL_STR(str85, "\r");
+GLOBAL_STR(str86, "\\r");
+GLOBAL_STR(str87, "\t");
+GLOBAL_STR(str88, "\\t");
+GLOBAL_STR(str89, "\u0000");
+GLOBAL_STR(str90, "\\x00");
 
 namespace ansi {  // forward declare
 
@@ -141,11 +139,11 @@ extern int BIT8_UTF8;
 extern int BIT8_U_ESCAPE;
 extern int BIT8_X_ESCAPE;
 extern int MUST_QUOTE;
-bool _encode(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts);
+bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf);
 Str* maybe_shell_encode(Str* s, int flags = 0);
 Str* maybe_encode(Str* s, int bit8_display = BIT8_UTF8);
 Str* encode(Str* s, int bit8_display = BIT8_UTF8);
-void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts);
+void _encode_bytes_x(Str* s, mylib::BufWriter* buf);
 extern int Ascii;
 extern int Begin2;
 extern int Begin3;
@@ -159,8 +157,7 @@ extern int B4_1;
 extern int B3_2;
 extern int B4_2;
 extern int B4_3;
-bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts);
-Str* maybe_qtt_encode(Str* s, int bit8_display);
+bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf);
 
 
 }  // declare namespace qsn
@@ -746,15 +743,15 @@ int BIT8_U_ESCAPE = 1;
 int BIT8_X_ESCAPE = 2;
 int MUST_QUOTE = 4;
 
-bool _encode(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts) {
-  StackRoots _roots({&s, &parts});
+bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf) {
+  StackRoots _roots({&s, &buf});
 
   if (bit8_display == BIT8_X_ESCAPE) {
-    _encode_bytes_x(s, shell_compat, parts);
+    _encode_bytes_x(s, buf);
     return true;
   }
   else {
-    return _encode_runes(s, bit8_display, shell_compat, parts);
+    return EncodeRunes(s, bit8_display, buf);
   }
 }
 
@@ -763,9 +760,10 @@ Str* maybe_shell_encode(Str* s, int flags) {
   int must_quote;
   int bit8_display;
   List<Str*>* parts = nullptr;
+  mylib::BufWriter* buf = nullptr;
   bool valid_utf8;
   Str* prefix = nullptr;
-  StackRoots _roots({&s, &parts, &prefix});
+  StackRoots _roots({&s, &parts, &buf, &prefix});
 
   quote = 0;
   must_quote = (flags & 4);
@@ -791,7 +789,9 @@ Str* maybe_shell_encode(Str* s, int flags) {
     return s;
   }
   parts = Alloc<List<Str*>>();
-  valid_utf8 = _encode(s, bit8_display, true, parts);
+  buf = Alloc<mylib::BufWriter>();
+  valid_utf8 = _encode(s, bit8_display, buf);
+  parts->append(buf->getvalue());
   if ((!valid_utf8 or quote == 2)) {
     prefix = str54;
   }
@@ -805,7 +805,8 @@ Str* maybe_shell_encode(Str* s, int flags) {
 Str* maybe_encode(Str* s, int bit8_display) {
   int quote;
   List<Str*>* parts = nullptr;
-  StackRoots _roots({&s, &parts});
+  mylib::BufWriter* buf = nullptr;
+  StackRoots _roots({&s, &parts, &buf});
 
   quote = 0;
   if (len(s) == 0) {
@@ -826,25 +827,30 @@ Str* maybe_encode(Str* s, int bit8_display) {
   }
   parts = Alloc<List<Str*>>();
   parts->append(str58);
-  _encode(s, bit8_display, false, parts);
+  buf = Alloc<mylib::BufWriter>();
+  _encode(s, bit8_display, buf);
+  parts->append(buf->getvalue());
   parts->append(str59);
   return str60->join(parts);
 }
 
 Str* encode(Str* s, int bit8_display) {
   List<Str*>* parts = nullptr;
-  StackRoots _roots({&s, &parts});
+  mylib::BufWriter* buf = nullptr;
+  StackRoots _roots({&s, &parts, &buf});
 
   parts = Alloc<List<Str*>>();
   parts->append(str61);
-  _encode(s, bit8_display, false, parts);
+  buf = Alloc<mylib::BufWriter>();
+  _encode(s, bit8_display, buf);
+  parts->append(buf->getvalue());
   parts->append(str62);
   return str63->join(parts);
 }
 
-void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
+void _encode_bytes_x(Str* s, mylib::BufWriter* buf) {
   Str* part = nullptr;
-  StackRoots _roots({&s, &parts, &part});
+  StackRoots _roots({&s, &buf, &part});
 
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
@@ -870,7 +876,7 @@ void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
             }
             else {
               if (str_equals(byte, str74)) {
-                part = shell_compat ? str75 : str76;
+                part = str75;
               }
               else {
                 if (IsUnprintableLow(byte)) {
@@ -890,7 +896,7 @@ void _encode_bytes_x(Str* s, bool shell_compat, List<Str*>* parts) {
         }
       }
     }
-    parts->append(part);
+    buf->write(part);
   }
 }
 int Ascii = 0;
@@ -907,7 +913,7 @@ int B3_2 = 4;
 int B4_2 = 5;
 int B4_3 = 6;
 
-bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* parts) {
+bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
   bool valid_utf8;
   int state;
   Str* r1 = nullptr;
@@ -917,13 +923,13 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
   int typ;
   Str* out = nullptr;
   int rune;
-  StackRoots _roots({&s, &parts, &r1, &r2, &r3, &out});
+  StackRoots _roots({&s, &buf, &r1, &r2, &r3, &out});
 
   valid_utf8 = true;
   state = Start;
-  r1 = str77;
-  r2 = str78;
-  r3 = str79;
+  r1 = str76;
+  r2 = str77;
+  r3 = str78;
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
     StackRoots _for({&byte  });
@@ -957,39 +963,39 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
     if (typ != Cont) {
       if (state >= B2_1) {
         valid_utf8 = false;
-        parts->append(XEscape(r1));
+        buf->write(XEscape(r1));
       }
       if (state >= B3_2) {
-        parts->append(XEscape(r2));
+        buf->write(XEscape(r2));
       }
       if (state >= B4_3) {
-        parts->append(XEscape(r3));
+        buf->write(XEscape(r3));
       }
     }
     if (typ == Ascii) {
       state = Start;
-      if (str_equals(byte, str80)) {
-        out = str81;
+      if (str_equals(byte, str79)) {
+        out = str80;
       }
       else {
-        if (str_equals(byte, str82)) {
-          out = str83;
+        if (str_equals(byte, str81)) {
+          out = str82;
         }
         else {
-          if (str_equals(byte, str84)) {
-            out = str85;
+          if (str_equals(byte, str83)) {
+            out = str84;
           }
           else {
-            if (str_equals(byte, str86)) {
-              out = str87;
+            if (str_equals(byte, str85)) {
+              out = str86;
             }
             else {
-              if (str_equals(byte, str88)) {
-                out = str89;
+              if (str_equals(byte, str87)) {
+                out = str88;
               }
               else {
-                if (str_equals(byte, str90)) {
-                  out = shell_compat ? str91 : str92;
+                if (str_equals(byte, str89)) {
+                  out = str90;
                 }
                 else {
                   if (IsUnprintableLow(byte)) {
@@ -1009,7 +1015,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
           }
         }
       }
-      parts->append(out);
+      buf->write(out);
     }
     else {
       if (typ == Begin2) {
@@ -1029,13 +1035,13 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
           else {
             if (typ == Invalid) {
               state = Start;
-              parts->append(XEscape(byte));
+              buf->write(XEscape(byte));
               valid_utf8 = false;
             }
             else {
               if (typ == Cont) {
                 if (state == Start) {
-                  parts->append(XEscape(byte));
+                  buf->write(XEscape(byte));
                   valid_utf8 = false;
                 }
                 else {
@@ -1048,7 +1054,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                       rune |= ((ord(r1) & 31) << 6);
                       out = UEscape(rune);
                     }
-                    parts->append(out);
+                    buf->write(out);
                     state = Start;
                   }
                   else {
@@ -1067,7 +1073,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                           rune |= ((ord(r1) & 15) << 12);
                           out = UEscape(rune);
                         }
-                        parts->append(out);
+                        buf->write(out);
                         state = Start;
                       }
                       else {
@@ -1092,7 +1098,7 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
                                 rune |= ((ord(r1) & 7) << 18);
                                 out = UEscape(rune);
                               }
-                              parts->append(out);
+                              buf->write(out);
                               state = Start;
                             }
                             else {
@@ -1116,21 +1122,15 @@ bool _encode_runes(Str* s, int bit8_display, bool shell_compat, List<Str*>* part
   }
   if (state >= B2_1) {
     valid_utf8 = false;
-    parts->append(XEscape(r1));
+    buf->write(XEscape(r1));
   }
   if (state >= B3_2) {
-    parts->append(XEscape(r2));
+    buf->write(XEscape(r2));
   }
   if (state >= B4_3) {
-    parts->append(XEscape(r3));
+    buf->write(XEscape(r3));
   }
   return valid_utf8;
-}
-
-Str* maybe_qtt_encode(Str* s, int bit8_display) {
-  StackRoots _roots({&s});
-
-  FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
 }  // define namespace qsn

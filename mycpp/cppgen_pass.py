@@ -1060,10 +1060,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         key_c_type = GetCType(key_type)
         val_c_type = GetCType(val_type)
 
-        # Use NewDict<K, V> not Alloc<K, V>
-        # Could we go back to Alloc<K, V> ?
-
-        self.write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
+        self.write('Alloc<%s>(' % c_type)
+        #self.write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
         if o.items:
             keys = [k for k, _ in o.items]
             values = [v for _, v in o.items]
@@ -1329,7 +1327,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
 
-                self.write_ind('auto* %s = NewDict<%s, %s>();\n', lval.name,
+                self.write_ind('auto* %s = Alloc<Dict<%s, %s>>();\n', lval.name,
                                key_c_type, val_c_type)
                 return
 
