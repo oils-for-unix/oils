@@ -13,47 +13,6 @@ from ysh import val_ops
 from typing import Optional, Dict, List, cast
 
 
-class Spec(object):
-    """Utility to express argument specifications (runtime typechecking)."""
-
-    def __init__(self, pos_args, named_args):
-        # type: (List[int], Dict[str, int]) -> None
-        """Empty constructor for mycpp."""
-        self.pos_args = pos_args
-        self.named_args = named_args
-
-    def AssertArgs(self, func_name, pos_args, named_args):
-        # type: (str, List[value_t], Dict[str, value_t]) -> None
-        """Assert any type differences between the spec and the given args."""
-        nargs = len(pos_args)
-        expected = len(self.pos_args)
-        if nargs != expected:
-            raise error.InvalidType(
-                "%s() expects %d arguments but %d were given" %
-                (func_name, expected, nargs), loc.Missing)
-
-        nargs = len(named_args)
-        expected = len(self.named_args)
-        if len(named_args) != 0:
-            raise error.InvalidType(
-                "%s() expects %d named arguments but %d were given" %
-                (func_name, expected, nargs), loc.Missing)
-
-        for i in xrange(len(pos_args)):
-            expected = self.pos_args[i]
-            got = pos_args[i]
-            if got.tag() != expected:
-                msg = "%s() expected %s" % (func_name, value_str(expected))
-                raise error.InvalidType2(got, msg, loc.Missing)
-
-        for name in named_args:
-            expected = self.named_args[name]
-            got = named_args[name]
-            if got.tag() != expected:
-                msg = "%s() expected %s" % (func_name, value_str(expected))
-                raise error.InvalidType2(got, msg, loc.Missing)
-
-
 class Reader(object):
     """
     func f(a Str) {
