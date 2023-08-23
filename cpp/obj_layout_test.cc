@@ -149,8 +149,8 @@ TEST malloc_address_test() {
   // int alloc_size = 24 * 682;  // 16368 is close to 16384 - 16 bytes again
   int alloc_size = 48 * 341;  // heap 2 is the same size
 
-  //int alloc_size = 4080;
-  //int alloc_size = 1;
+  // int alloc_size = 4080;
+  // int alloc_size = 1;
 
   char *p[20];
   for (int i = 0; i < 20; ++i) {

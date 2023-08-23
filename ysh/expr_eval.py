@@ -49,6 +49,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core.error import e_die, e_die_status
 from core import state
+from core import ui
 from core import vm
 from frontend import consts
 from frontend import match
@@ -1085,7 +1086,7 @@ class ExprEvaluator(object):
             method = recv.get(name) if recv is not None else None
             if not method:
                 raise error.InvalidType(
-                    'Method %r does not exist on %r' % (name, ty), node.attr)
+                    'Method %r does not exist on type %s' % (name, ui.ValType(o)), node.attr)
 
             return value.BoundFunc(o, method)
 

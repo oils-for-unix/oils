@@ -870,11 +870,9 @@ class Concrete : public Reader1, public Reader2, public Writer2 {
   }
 };
 
-class Concrete1 : public Reader1 {
-};
+class Concrete1 : public Reader1 {};
 
-class Concrete2 : public Reader1, public Reader2 {
-};
+class Concrete2 : public Reader1, public Reader2 {};
 
 /*
  Would be something like

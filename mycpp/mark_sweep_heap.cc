@@ -344,8 +344,9 @@ void MarkSweepHeap::PrintStats(int fd) {
   #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num in pool 1    = %10d\n", pool1_.num_allocated());
   dprintf(fd, "  num in pool 2    = %10d\n", pool2_.num_allocated());
-  dprintf(fd, "bytes allocated    = %10" PRId64 "\n",
-          bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
+  dprintf(
+      fd, "bytes allocated    = %10" PRId64 "\n",
+      bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
   #else
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n", bytes_allocated_);
   #endif
@@ -418,12 +419,17 @@ void MarkSweepHeap::CleanProcessExit() {
 }
 
 // for the main binary
-void MarkSweepHeap::FastProcessExit() {
+void MarkSweepHeap::ProcessExit() {
+  #ifdef CLEAN_PROCESS_EXIT
+  FreeEverything();
+  #else
   char* e = getenv("OILS_GC_ON_EXIT");
   // don't collect by default; OILS_GC_ON_EXIT=1 overrides
   if (e && strcmp(e, "1") == 0) {
     FreeEverything();
   }
+  #endif
+
   MaybePrintStats();
 }
 

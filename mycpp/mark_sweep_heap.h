@@ -225,14 +225,13 @@ class MarkSweepHeap {
 
   void PrintStats(int fd);  // public for testing
 
-  void CleanProcessExit();  // do one last GC so ASAN passes
-  void FastProcessExit();   // let the OS clean up
+  void CleanProcessExit();  // do one last GC, used in unit tests
+  void ProcessExit();       // main() lets OS clean up, except ASAN variant
 
   int num_live() {
     return num_live_
 #ifndef NO_POOL_ALLOC
-           + pool1_.num_live()
-           + pool2_.num_live()
+           + pool1_.num_live() + pool2_.num_live()
 #endif
         ;
   }

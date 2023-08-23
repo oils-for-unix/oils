@@ -49,7 +49,7 @@ def CommandType(cmd):
     # type: (command_t) -> str
     """For displaying commands in the UI."""
 
-    # Displays 'value.BashArray' for now, maybe change it.
+    # Displays 'command.Simple' for now, maybe change it.
     return StrFromC(command_str(cmd.tag()))
 
 
