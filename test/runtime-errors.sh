@@ -1052,6 +1052,15 @@ fallback_locations() {
 
   # No good fallback info here, we need it
   _error-case '[[ $x =~ $(( 3 ** -2 )) ]]'
+
+  _error-case-2 'type -x'  # correctly points to -x
+  _error-case-2 'use x'
+
+  #_error-case-2 'write --qsn'
+  _error-case-2 'read --qsn'
+
+  # Assign builtin
+  _error-case-2 'export -f'
 }
 
 #

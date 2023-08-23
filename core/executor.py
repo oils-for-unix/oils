@@ -193,13 +193,8 @@ class ShellExecutor(vm._Executor):
                     assert isinstance(status, int)
                 except error.Usage as e:
                     arg0 = cmd_val.argv[0]
-                    # Fill in default location.  e.g. osh/state.py raises UsageError
-                    # without location
-                    location = e.location  # type: loc_t
-                    if not e.HasLocation():
-                        location = self.errfmt.CurrentLocation()
                     # e.g. 'type' doesn't accept flag '-x'
-                    self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, location)
+                    self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
                     status = 2  # consistent error code for usage error
 
         return status

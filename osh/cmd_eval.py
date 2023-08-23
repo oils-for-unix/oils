@@ -400,8 +400,6 @@ class CommandEvaluator(object):
                     status = builtin_func.Run(cmd_val)
                 except error.Usage as e:  # Copied from RunBuiltin
                     arg0 = cmd_val.argv[0]
-                    if not e.HasLocation():  # fill in default location.
-                        e.location = self.errfmt.CurrentLocation()
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
                     status = 2  # consistent error code for usage error
 
