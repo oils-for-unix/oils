@@ -100,6 +100,7 @@ class Reader(object):
     def __init__(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> None
         self.pos_args = pos_args
+        self.pos_consumed = 0
         self.named_args = named_args
 
     ### Words: untyped args for procs
@@ -114,65 +115,44 @@ class Reader(object):
 
     ### Typed positional args
 
+    def _GetNextPos(self):
+        # type: () -> value_t
+        if len(self.pos_args) == 0:
+            # TODO: may need location info
+            raise error.InvalidType(
+                'Expected at least %d arguments, but only got %d' %
+                (self.pos_consumed + 1, self.pos_consumed), loc.Missing)
+
+        self.pos_consumed += 1
+        return self.pos_args.pop(0)
+
     def PosStr(self):
         # type: () -> str
-        try:
-            arg = self.pos_args.pop(0)
-        except IndexError:
-            # TODO: may need location info
-            raise error.InvalidType('No arguments left', loc.Missing)
-
+        arg = self._GetNextPos()
         return val_ops.MustBeStr(arg).s
 
     def PosInt(self):
         # type: () -> int
-        try:
-            arg = self.pos_args.pop(0)
-        except IndexError:
-            # TODO: may need location info
-            raise error.InvalidType('No arguments left', loc.Missing)
-
+        arg = self._GetNextPos()
         return val_ops.MustBeInt(arg).i
 
     def PosFloat(self):
         # type: () -> float
-        try:
-            arg = self.pos_args.pop(0)
-        except IndexError:
-            # TODO: may need location info
-            raise error.InvalidType('No arguments left', loc.Missing)
-
+        arg = self._GetNextPos()
         return val_ops.MustBeFloat(arg).f
 
     def PosList(self):
         # type: () -> List[value_t]
-        try:
-            arg = self.pos_args.pop(0)
-        except IndexError:
-            # TODO: may need location info
-            raise error.InvalidType('No arguments left', loc.Missing)
-
+        arg = self._GetNextPos()
         return val_ops.MustBeList(arg).items
 
     def PosDict(self):
         # type: () -> Dict[str, value_t]
-        try:
-            arg = self.pos_args.pop(0)
-        except IndexError:
-            # TODO: may need location info
-            raise error.InvalidType('No arguments left', loc.Missing)
-
+        arg = self._GetNextPos()
         return val_ops.MustBeDict(arg).d
 
     def PosValue(self):
-        # type: () -> value_t
-        try:
-            arg = self.pos_args.pop(0)
-        except IndexError:
-            # TODO: may need location info
-            raise error.InvalidType('No arguments left', loc.Missing)
-
-        return arg
+        return self._GetNextPos()
 
     def RestPos(self):
         # type: () -> List[value_t]
@@ -253,10 +233,13 @@ class Reader(object):
         """
         # Note: Python throws TypeError on mismatch
         if len(self.pos_args):
-            raise error.InvalidType('Still have %d args left' % len(self.pos_args), loc.Missing)
+            raise error.InvalidType('Expected %d arguments, but got %d' %
+                                    (self.pos_consumed, self.pos_consumed +
+                                     len(self.pos_args)), loc.Missing)
 
         if len(self.named_args):
-            raise error.InvalidType('Still have %d named args left' % len(self.pos_args), loc.Missing)
+            bad_args = ','.join(self.named_args.keys())
+            raise error.InvalidType('Got unexpected named args: %s' % bad_args, loc.Missing)
 
 
 def DoesNotAccept(arg_list):

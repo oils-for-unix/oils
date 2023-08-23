@@ -14,6 +14,10 @@ from typing import cast
 
 class TypedArgsTest(unittest.TestCase):
     def testReaderPosArgs(self):
+        # Not enough args...
+        reader = typed_args.Reader([], {})
+        self.assertRaises(error.InvalidType, reader.PosStr)
+
         pos_args = [
             value.Int(0xc0ffee),
             value.Str('foo'),
@@ -24,11 +28,16 @@ class TypedArgsTest(unittest.TestCase):
             value.Int(0xbeef),
             value.Str('bar'),
         ]
-        reader = typed_args.Reader(pos_args, {})
+        reader = typed_args.Reader(list(pos_args), {})
 
         # Haven't processed any args yet...
         self.assertRaises(error.InvalidType, reader.Done)
 
+        # Arg is wrong type...
+        self.assertRaises(error.InvalidType, reader.PosStr)
+
+        # Normal operation from here on
+        reader = typed_args.Reader(pos_args, {})
         arg = reader.PosInt()
         self.assertEqual(0xc0ffee, arg)
 
