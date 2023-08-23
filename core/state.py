@@ -1306,6 +1306,7 @@ class Mem(object):
         self.pwd = None  # type: Optional[str]
 
         self.token_for_line = None  # type: Optional[Token]
+        self.loc_for_expr = loc.Missing  # type: loc_t
 
         self.last_arg = ''  # $_ is initially empty, NOT unset
         self.line_num = value.Str('')
@@ -1421,9 +1422,22 @@ class Mem(object):
 
         self.token_for_line = tok
 
-    def GetLocationForLine(self):
+    def SetLocationForExpr(self, blame_loc):
+        # type: (loc_t) -> None
+        """
+        A more specific fallback location, like the $[ in 
+
+            echo $[len(42)]
+        """
+        self.loc_for_expr = blame_loc
+
+    def GetFallbackLocation(self):
         # type: () -> loc_t
-        if self.token_for_line:
+
+        if self.loc_for_expr != loc.Missing:  # more specific
+            return self.loc_for_expr
+
+        if self.token_for_line:  # less specific
             return self.token_for_line
 
         return loc.Missing

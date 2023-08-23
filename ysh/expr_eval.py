@@ -209,7 +209,7 @@ class ExprEvaluator(object):
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
 
-        val = self.EvalExpr(part.child, loc.Missing)
+        val = self.EvalExpr(part.child, part.left)
 
         if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
             s = val_ops.Stringify(val, loc.WordPart(part))
@@ -232,6 +232,7 @@ class ExprEvaluator(object):
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit is on."""
+        self.mem.SetLocationForExpr(blame_loc)
         if mylib.PYTHON:
             try:
                 with state.ctx_OilExpr(self.mutable_opts):

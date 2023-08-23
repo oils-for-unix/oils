@@ -254,6 +254,7 @@ module syntax
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
   | YshExpr(expr e)                # if (x > 0) { echo hi }
+                                   # TODO: add more specific blame location
 
   # Each arm tests one word against multiple words
   # shell:  *.cc|*.h) echo C++ ;;

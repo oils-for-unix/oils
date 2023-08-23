@@ -1724,7 +1724,7 @@ class CommandEvaluator(object):
                             check_errexit = cmd_st.check_errexit
                         except error.FailGlob as e:
                             if not e.HasLocation():  # Last resort!
-                                e.location = self.mem.GetLocationForLine()
+                                e.location = self.mem.GetFallbackLocation()
                             self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                             status = 1
                             check_errexit = True
@@ -1935,7 +1935,7 @@ class CommandEvaluator(object):
             self.dumper.MaybeRecord(self, err)
 
             if not err.HasLocation():  # Last resort!
-                err.location = self.mem.GetLocationForLine()
+                err.location = self.mem.GetFallbackLocation()
 
             if is_errexit:
                 if self.exec_opts.verbose_errexit():
