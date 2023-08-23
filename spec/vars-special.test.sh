@@ -29,6 +29,7 @@ sh=$(which $SH)
 old_path=$PATH
 unset PATH
 
+# BUG: when sh=bin/osh, we can't run bin/oils_for_unix.py
 $sh -c 'echo $PATH' > path.txt
 
 PATH=$old_path
@@ -353,6 +354,17 @@ echo $b1 $b2
 2 2
 ## END
 
+#### $LINENO in case
+case $LINENO in
+  1) echo 'got line 1' ;;
+  *) echo line=$LINENO
+esac
+## STDOUT:
+got line 1
+## END
+## BUG mksh STDOUT:
+line=3
+## END
 
 #### $_ with simple command and evaluation
 

@@ -1570,9 +1570,11 @@ class CommandEvaluator(object):
 
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
-                to_match = self._EvalCaseArg(node.to_match, node.case_kw)
 
+                # Must set location before evaluating anything
                 self.mem.SetLocationToken(node.case_kw)
+
+                to_match = self._EvalCaseArg(node.to_match, node.case_kw)
                 self._MaybeRunDebugTrap()
 
                 status = 0  # If there are no arms, it should be zero?

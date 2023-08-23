@@ -106,22 +106,16 @@ Idea:
 
 ## Error Locations and Fallbacks
 
-- `_Executor::RunBuiltin` catches `error.Usage`.  If there's no location, use fallback.
-- CommandEvaluator
-  - `ExecuteAndCatch` uses fallback
-  - `_RunAssignBuiltin` uses the fallback, also for `error.Usage`
-  - `Failglob` uses it
+- `ExecuteAndCatch` uses mem.CurrentLocation()
+- `Failglob` uses mem.CurrentLocation()
+- `mem.GetVar $LINENO` uses current_tok, but it can be buggy
+  - this is difference than BASH_LINENO, which is for the call stack!
 
 Other:
 
 - `ui.ctx_Location`
-- `ErrorFormatter:Print_` will use something from `ctx_Location`
-  - It has its own CurrentLocation() thing
-  - Oh maybe we should use this for expressions?
-
-TODO:
-
-- Rename `alloc.ctx_Location`
+  - So builtins can call `errfmt.Print_()` without locations
+- `alloc.ctx_SourceCode` for assigning `source_t` to tokens
 
 ## Other Topics
 

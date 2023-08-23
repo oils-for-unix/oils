@@ -308,27 +308,20 @@ class ErrorFormatter(object):
     # A stack used for the current builtin.  A fallback for UsageError.
     # TODO: Should we have PushBuiltinName?  Then we can have a consistent style
     # like foo.sh:1: (compopt) Not currently executing.
-
-    def CurrentLocation(self):
-        # type: () -> loc_t
-        if len(self.loc_stack):
-            return self.loc_stack[-1]
-        else:
+    def _FallbackLocation(self, blame_loc):
+        # type: (Optional[loc_t]) -> loc_t
+        if blame_loc is None or blame_loc.tag() == loc_e.Missing:
+            if len(self.loc_stack):
+                return self.loc_stack[-1]
             return loc.Missing
+
+        return blame_loc
 
     def PrefixPrint(self, msg, prefix, blame_loc):
         # type: (str, str, loc_t) -> None
         """Print a hard-coded message with a prefix, and quote code."""
         _PrintWithLocation(prefix, msg, self._FallbackLocation(blame_loc),
                            show_code=True)
-
-    def _FallbackLocation(self, blame_loc):
-        # type: (Optional[loc_t]) -> loc_t
-        if blame_loc is None:
-            return self.CurrentLocation()
-        if blame_loc.tag() == loc_e.Missing:
-            blame_loc = self.CurrentLocation()
-        return blame_loc
 
     def Print_(self, msg, blame_loc=None):
         # type: (str, loc_t) -> None
