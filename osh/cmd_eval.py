@@ -911,12 +911,10 @@ class CommandEvaluator(object):
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
+                self.mem.SetTokenForLine(node.keyword)  # point to var
 
                 # x = 'foo' in Hay blocks
                 if node.keyword is None or node.keyword.id == Id.KW_Const:
-                    self.mem.SetTokenForLine(
-                        node.lhs[0].name)  # point to var name
-
                     # Note: there's only one LHS
                     vd_lval = location.LName(
                         node.lhs[0].name.tval)  # type: lvalue_t
@@ -929,8 +927,6 @@ class CommandEvaluator(object):
                                                        state.SetReadOnly))
 
                 else:
-                    self.mem.SetTokenForLine(node.keyword)  # point to var
-
                     # TODO: optimize this common case (but measure)
                     assert len(node.lhs) == 1, node.lhs
 
@@ -944,7 +940,6 @@ class CommandEvaluator(object):
                 status = 0
 
             elif case(command_e.PlaceMutation):
-
                 node = cast(command.PlaceMutation, UP_node)
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
@@ -1075,13 +1070,14 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
+                assert len(node.pairs) >= 1, node
+                pairs = node.pairs
+                self.mem.SetTokenForLine(pairs[0].left)
 
                 # x=y is 'neutered' inside 'proc'
                 which_scopes = self.mem.ScopesForWriting()
 
-                for pair in node.pairs:
-                    self.mem.SetTokenForLine(pair.left)
-
+                for pair in pairs:
                     if pair.op == assign_op_e.PlusEqual:
                         assert pair.rhs, pair.rhs  # I don't think a+= is valid?
                         rhs = self.word_ev.EvalRhsWord(pair.rhs)

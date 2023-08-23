@@ -198,9 +198,15 @@ test-fallback-locations() {
   # ForEach eval
   _expr-error-case 'for x in $[2 + len(42)] { echo hi }'
 
+  _expr-error-case 'while (len(42)) { echo hi }'
+
   _expr-error-case 'case (len(42)) { pat { echo hi } }'
 
   _expr-error-case 'case "$[len(42)]" in pat) echo hi ;; esac'
+
+  _expr-error-case 'var x = 3 + len(42)'
+  _expr-error-case 'const x = 3 + len(42)'
+  _expr-error-case 'setvar x = 3 + len(42)'
 }
 
 test-EvalExpr-calls() {

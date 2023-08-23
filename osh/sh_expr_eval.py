@@ -693,22 +693,20 @@ class ArithEvaluator(object):
                     ret = lhs * rhs
                 elif op_id == Id.Arith_Slash:
                     if rhs == 0:
-                        # TODO: blame / operator
                         e_die('Divide by zero', loc.Arith(node.right))
 
                     ret = lhs / rhs
 
                 elif op_id == Id.Arith_Percent:
                     if rhs == 0:
-                        # TODO: blame / operator
                         e_die('Divide by zero', loc.Arith(node.right))
 
                     ret = lhs % rhs
 
                 elif op_id == Id.Arith_DStar:
                     if rhs < 0:
-                         # TODO: error location
-                        e_die("Exponent can't be less than zero", loc.Missing)
+                        e_die("Exponent can't be a negative number",
+                              loc.Arith(node.right))
                     ret = 1
                     for i in xrange(rhs):
                         ret *= lhs

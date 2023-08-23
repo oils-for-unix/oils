@@ -1061,6 +1061,12 @@ fallback_locations() {
 
   # Assign builtin
   _error-case-2 'export -f'
+
+  _error-case 's=$(true) y=$(( 3 ** -2 ))'
+
+  _error-case 'if s=$(true) y=$(( 3 ** -2 )); then echo hi; fi'
+
+  echo done
 }
 
 #
