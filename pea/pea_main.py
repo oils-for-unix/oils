@@ -14,7 +14,6 @@ import os
 from pprint import pprint
 import sys
 import time
-import marshal
 import pickle
 
 import typing
@@ -397,12 +396,17 @@ def main(argv: list[str]) -> int:
     log('Parsed %d files and their type comments', len(files))
     prog.PrintStats()
 
+    # Note: can't use marshal here, because it only accepts simple types
     pickle.dump(prog.py_files, sys.stdout.buffer)
     log('Dumped pickle')
 
   elif action == 'load-pickles':
-    py_files = pickle.load(sys.stdin.buffer)
-    log('Loaded pickle with %d files', len(py_files))
+    while True:
+      try:
+        py_files = pickle.load(sys.stdin.buffer)
+      except EOFError:
+        break
+      log('Loaded pickle with %d files', len(py_files))
 
   else:
     raise RuntimeError('Invalid action %r' % action)
@@ -416,3 +420,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: sw=2

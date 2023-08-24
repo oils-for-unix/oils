@@ -73,6 +73,18 @@ parse-all() {
 # user    0m1.362s
 # sys     0m0.145s
 
+batch-size() {
+  local num_files=$1
+
+  local num_procs
+  num_procs=$(nproc)
+
+  # Use (p-1) as a fudge so we don't end up more batches than processors
+  local files_per_process=$(( num_files / (num_procs - 1) ))
+
+  echo "$num_procs $files_per_process"
+}
+
 test-par() {
   ### Test out parallelism of Python processes
 
@@ -81,25 +93,23 @@ test-par() {
 
   # 103 files
 
-  # try different batch sizes.  
-  local p=$(( $(nproc) ))
+  shopt -s lastpipe
+  batch-size $num_files | read num_procs optimal
 
-  echo "Parsing $num_files files with $p parallel processes"
-  echo
-
-  # 12 files at a time does well compared to the fastest
-  local optimal=$(( num_files / (p - 1) ))
+  echo "Parsing $num_files files with $num_procs parallel processes"
   echo "Optimal batch size is $optimal"
+
   echo
 
   echo 'All at once:'
   time parse-all > /dev/null 2>&1
   echo
 
-  # 5 is meant to be very suboptimal
+  # 5 is meant to be suboptimal
   for n in 50 30 20 10 5 $optimal; do
     echo "batch size $n"
-    time all-files | xargs --verbose -P $p -n $n -- $0 parse-one > /dev/null 2>&1
+    time all-files | xargs --verbose -P $num_procs -n $n -- \
+      $0 parse-one > /dev/null 2>&1
     echo
   done
 }
@@ -121,15 +131,61 @@ test-par() {
 #
 # What if we compress the generated ASDL?  Those are very repetitive.
 
-test-pickle() {
-  mkdir -p _tmp
-  time all-files | xargs --verbose -- $0 pea-main dump-pickles > _tmp/p
+# Problem statement:
 
-  ls -l -h _tmp/p
+_serial-pickle() {
+  mkdir -p _tmp
+  local tmp=_tmp/serial
+
+  time all-files | xargs --verbose -- $0 pea-main dump-pickles > $tmp
+
+  ls -l -h $tmp
 
   echo 'loading'
-  time pea-main load-pickles < _tmp/p
+  time pea-main load-pickles < $tmp
 }
+
+# 1.07 seconds
+serial-pickle() { time $0 _serial-pickle; }
+
+pickle-one() {
+  pea-main dump-pickles "$@" > _tmp/p/$$
+}
+
+_par-pickle() {
+  local files
+  num_files=$(all-files | wc -l)
+
+  shopt -s lastpipe
+  batch-size $num_files | read num_procs optimal
+
+  local dir=_tmp/p
+  rm -r -f -v $dir
+  mkdir -p $dir
+
+  time all-files | xargs --verbose -P $num_procs -n $optimal -- $0 pickle-one
+
+  ls -l -h $dir
+
+  # This takes 410-430 ms?  Wow that's slow.
+  time cat $dir/* | pea-main load-pickles
+}
+
+# Can get this down to ~700 ms
+par-pickle() { time $0 _par-pickle; }
+
+# Only 47 ms!
+# I want the overhead to be less than 1 second:
+#   1. parallel parsing + pickle
+#   2. serial unpickle + type check
+#   3. starting the process
+#
+# So unpickling is slow.
+
+osh-overhead() {
+  time bin/osh -c 'echo hi'
+}
+
 
 # MyPy dev version takes 10.2 seconds the first time (without their mypyc
 # speedups)
