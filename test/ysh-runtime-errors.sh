@@ -214,6 +214,11 @@ test-fallback-locations() {
 
   _expr-error-case 'setvar x = "s" + 5'
   _expr-error-case 'while ("s" + 5) { echo yes } '
+
+  #_expr-error-case 'func f(x) { return (x) }; var x = f([1,2])(3); echo $x'
+
+  # Really bad one
+  _expr-error-case 'func f(x) { return (x) }; var x = f([1,2])[1](3); echo $x'
 }
 
 test-EvalExpr-calls() {

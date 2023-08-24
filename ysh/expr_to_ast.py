@@ -192,14 +192,12 @@ class Transformer(object):
 
     def _Trailer(self, base, p_trailer):
         # type: (expr_t, PNode) -> expr_t
-        """Trailer: ( '(' [arglist] ')' | '[' subscriptlist ']'.
-
-        | '.' NAME | '->' NAME | '::' NAME
-        )
+        """
+        Trailer: ( '(' [arglist] ')' | '[' subscriptlist ']'
+                 | '.' NAME | '->' NAME | '::' NAME
+                 )
         """
         op_tok = p_trailer.GetChild(0).tok
-
-        # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
         if op_tok.id == Id.Op_LParen:
             lparen = op_tok

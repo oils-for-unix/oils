@@ -1935,7 +1935,9 @@ class CommandEvaluator(object):
             self.dumper.MaybeRecord(self, err)
 
             if not err.HasLocation():  # Last resort!
+                #log('Missing location')
                 err.location = self.mem.GetFallbackLocation()
+                #log('%s', err.location)
 
             if is_errexit:
                 if self.exec_opts.verbose_errexit():
