@@ -361,20 +361,6 @@ class ParseContext(object):
 
         return ast_node, last_token
 
-    def ParseYshForExpr(self, lexer, start_symbol):
-        # type: (Lexer, int) -> Tuple[List[NameType], expr_t, Token]
-        """for (x Int, y Int in foo)"""
-        e_parser = self._YshParser()
-        with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, start_symbol)
-
-            if 0:
-                self.p_printer.Print(pnode)
-
-            lvalue, iterable = self.tr.OilForExpr(pnode)
-
-        return lvalue, iterable, last_token
-
     def ParseYshCasePattern(self, lexer):
         # type: (Lexer) -> Tuple[pat_t, Token, Token]
         """(6) | (7), / dot* '.py' /, (else), etc.

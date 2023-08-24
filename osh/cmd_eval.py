@@ -1318,7 +1318,7 @@ class CommandEvaluator(object):
 
                 # for YSH loop
                 iter_expr = None  # type: expr_t
-                #iter_blame = None  # type: Token
+                expr_blame = None  # type: loc_t
 
                 iterable = node.iterable
                 UP_iterable = iterable
@@ -1335,7 +1335,7 @@ class CommandEvaluator(object):
                     elif case(for_iter_e.YshExpr):
                         iterable = cast(for_iter.YshExpr, UP_iterable)
                         iter_expr = iterable.e
-                        iter_expr_blame = iterable.blame
+                        expr_blame = iterable.blame
 
                 n = len(node.iter_names)
                 assert n > 0
@@ -1347,7 +1347,7 @@ class CommandEvaluator(object):
 
                 it2 = None  # type: val_ops._ContainerIter
                 if iter_list is None:  # for_expr.YshExpr
-                    val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
+                    val = self.expr_ev.EvalExpr(iter_expr, expr_blame)
 
                     UP_val = val
                     with tagswitch(val) as case:

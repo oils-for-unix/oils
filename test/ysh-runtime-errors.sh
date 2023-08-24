@@ -195,18 +195,25 @@ test-fallback-locations() {
   # From Aidan's PR -- redefinition
   _error-case 'const f = 42; func f() { echo hi }'
 
-  # ForEach eval
+  # ForEach shell
   _expr-error-case 'for x in $[2 + len(42)] { echo hi }'
+
+  # ForEach YSH
+  _expr-error-case 'for x in (len(42)) { echo hi }'
 
   _expr-error-case 'while (len(42)) { echo hi }'
 
-  _expr-error-case 'case (len(42)) { pat { echo hi } }'
+  _expr-error-case 'case (len(42)) { pat { echo argument } }'
+  _expr-error-case 'case (42) { (len(42)) { echo arm } }'
 
   _expr-error-case 'case "$[len(42)]" in pat) echo hi ;; esac'
 
   _expr-error-case 'var x = 3 + len(42)'
   _expr-error-case 'const x = 3 + len(42)'
   _expr-error-case 'setvar x = 3 + len(42)'
+
+  _expr-error-case 'setvar x = "s" + 5'
+  _expr-error-case 'while ("s" + 5) { echo yes } '
 }
 
 test-EvalExpr-calls() {
