@@ -911,7 +911,8 @@ class CommandEvaluator(object):
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
-                self.mem.SetTokenForLine(node.keyword)  # point to var
+                # Point to var name (bare assignment has no keyword)
+                self.mem.SetTokenForLine(node.lhs[0].name)
 
                 # x = 'foo' in Hay blocks
                 if node.keyword is None or node.keyword.id == Id.KW_Const:
