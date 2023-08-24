@@ -153,6 +153,12 @@ test-ysh-expr-eval() {
   # Wrong index type
   _expr-error-case 'var d = {}; setvar d[42] = 3'
   _expr-error-case 'var L = []; setvar L["key"] = 3'
+
+  _expr-error-case 'var L = []; var slice = L["foo": "bar"]'
+
+  _expr-error-case '= 3 < 4.0'
+  _expr-error-case '= 3 < true'
+  _expr-error-case '= "a" < "b"'
 }
 
 test-user-reported() {
