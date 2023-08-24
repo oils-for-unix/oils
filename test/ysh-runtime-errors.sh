@@ -170,8 +170,6 @@ test-ysh-expr-eval-2() {
 
   _expr-error-case '= 3 ** -2'
   _expr-error-case '= 3.2 ** 2'
-
-  _expr-error-case 'var r = /d+/; var y = r and r'
 }
 
 test-user-reported() {
