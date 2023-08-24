@@ -177,31 +177,31 @@ show-usages() {
   wc -l $out
 }
 
-# 2023-04: 87 left
+# 2023-08: 91 left
 tval-all() {
   show-usages _tmp/tval-all \
     grep -n -w tval */*.py
 }
 
-# 2023-04: 26 left
+# 2023-08: 28 left
 tval-eval() {
   show-usages _tmp/tval-eval \
     grep -n -w tval */*_eval.py
 }
 
-# 2023-05: 101 left
+# 2023-08: 72 left
 spid-all() {
   show-usages _tmp/spid-all \
     egrep -n 'span_id|spid' */*.py
 }
 
-# 2023-05: 4 left
+# 2023-08: 4 left
 spid-sig() {
   show-usages _tmp/spid-sig \
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-# 2023-05: 18 usages
+# 2023-08: 14 usages
 no-spid() {
   show-usages _tmp/no-spid \
     egrep -n 'runtime.NO_SPID' */*.py
@@ -212,6 +212,12 @@ loc-word() {
   # should NOT wrap CompoundWord
   show-usages _tmp/loc-word \
     fgrep -n 'loc.Word(' */*.py
+}
+
+# 2023-08: 155
+loc-missing() {
+  show-usages _tmp/loc-m \
+    egrep -n 'loc.Missing' */*.py
 }
 
 mylib-python() {

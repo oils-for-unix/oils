@@ -617,19 +617,43 @@ andy
 ## END
 
 #### a ++ b for string/list concatenation
+shopt -s parse_brace
+
 var i = 'abc'
 var j = 'de'
 var k = i ++ j
-echo $k
+echo string $k
+
 
 var a = [1, 2]
 var b = [3]
 var c = a ++ b
-echo len=$[len(c)]
+echo list len=$[len(c)]
+
+echo ---
+
+try {
+  = 'ab' ++ 3
+}
+echo Str Int $_status
+
+try {
+  = [1, 2] ++ 3
+}
+echo List Int $_status
+
+try {
+  = 3 ++ 'ab'
+}
+echo Int Str $_status
 
 ## STDOUT:
-abcde
-len=3
+string abcde
+list len=3
+---
+Str Int 3
+List Int 3
+Int Str 3
 ## END
 
 #### s ~~ glob and s !~~ glob
