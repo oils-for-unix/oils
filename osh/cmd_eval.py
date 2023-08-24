@@ -1550,15 +1550,18 @@ class CommandEvaluator(object):
 
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
+                # No SetTokenForLine() because
+                # - $LINENO can't appear directly in 'if'
+                # - 'if' doesn't directly cause errors
+                # It will be taken care of by command.Simple, condition, etc.
+
                 done = False
                 for if_arm in node.arms:
-                    self.mem.SetTokenForLine(if_arm.keyword)
                     b = self._EvalCondition(if_arm.cond, if_arm.keyword)
                     if b:
                         status = self._ExecuteList(if_arm.action)
                         done = True
                         break
-                # TODO: The compiler should flatten this
                 if not done and node.else_action is not None:
                     status = self._ExecuteList(node.else_action)
 
@@ -1568,7 +1571,7 @@ class CommandEvaluator(object):
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
 
-                # Must set location before evaluating anything
+                # Must set location for 'case $LINENO'
                 self.mem.SetTokenForLine(node.case_kw)
 
                 to_match = self._EvalCaseArg(node.to_match, node.case_kw)

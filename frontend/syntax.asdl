@@ -364,8 +364,8 @@ module syntax
   | BareDecl(Token lhs, expr rhs)
     # var, const
   | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
-    # setvar/set, auto.
-  | PlaceMutation(Token? keyword, List[place_expr] lhs, Token op, expr rhs)
+    # setvar, maybe 'auto' later
+  | PlaceMutation(Token keyword, List[place_expr] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc(Token keyword, Token name, proc_sig sig, command body)
