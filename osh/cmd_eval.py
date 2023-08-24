@@ -1169,8 +1169,9 @@ class CommandEvaluator(object):
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
+
                 keyword = node.keyword
-                self.mem.SetTokenForLine(node.keyword)
+                self.mem.SetTokenForLine(keyword)
 
                 if node.arg_word:  # Evaluate the argument
                     str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1480,7 +1481,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-                self.mem.SetTokenForLine(node.name_tok)
+
                 if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
@@ -1494,7 +1495,6 @@ class CommandEvaluator(object):
             elif case(command_e.Proc):
                 node = cast(command.Proc, UP_node)
 
-                self.mem.SetTokenForLine(node.name)
                 proc_name = lexer.TokenVal(node.name)
                 if proc_name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):

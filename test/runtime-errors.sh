@@ -1066,6 +1066,14 @@ fallback_locations() {
 
   _error-case 'if s=$(true) y=$(( 3 ** -2 )); then echo hi; fi'
 
+  _error-case 'shopt -s strict_arith; x=a; echo $(( x ))'
+  _error-case 'shopt -s strict_arith; x=a; echo $(( $x ))'
+  _error-case 'shopt -s strict_arith; x=a; [[ $x -gt 3 ]]'
+  _error-case 'shopt -s strict_arith; shopt -u eval_unsafe_arith; x=a; [[ $x -gt 3 ]]'
+
+  _error-case 'shopt -s strict_arith; x=0xgg; echo $(( x ))'
+
+
   echo done
 }
 
