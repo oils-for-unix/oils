@@ -8,11 +8,14 @@ import ast
 from ast import AST, stmt, Module, ClassDef, FunctionDef, Assign
 import collections
 from dataclasses import dataclass
+import io
 import optparse
 import os
 from pprint import pprint
 import sys
 import time
+import marshal
+import pickle
 
 import typing
 from typing import Optional, Any
@@ -86,6 +89,7 @@ class Program:
 
   def PrintStats(self) -> None:
     pprint(self.stats, stream=sys.stderr)
+    print('', file=sys.stderr)
 
 
 class TypeSyntaxError(Exception):
@@ -330,7 +334,6 @@ def main(argv: list[str]) -> int:
       return 1
     log('Parsed %d files and their type comments', len(files))
     prog.PrintStats()
-    print()
 
     # This is the first pass
 
@@ -343,7 +346,8 @@ def main(argv: list[str]) -> int:
     log('Collected %d constants', len(const_lookup))
 
     # TODO: respect header_out for these two passes
-    out_f = sys.stdout
+    #out_f = sys.stdout
+    out_f = io.StringIO()
 
     # ForwardDeclPass: module -> class
     # TODO: Move trivial ForwardDeclPass into ParsePass, BEFORE constants,
@@ -355,7 +359,6 @@ def main(argv: list[str]) -> int:
 
     log('Wrote forward declarations') 
     prog.PrintStats()
-    print()
 
     try:
       # PrototypesPass: module -> class/method, func
@@ -366,7 +369,6 @@ def main(argv: list[str]) -> int:
 
       log('Wrote prototypes') 
       prog.PrintStats()
-      print()
 
       # ImplPass: module -> class/method, func; then probably a fully recursive thing
 
@@ -376,7 +378,6 @@ def main(argv: list[str]) -> int:
 
       log('Wrote implementation') 
       prog.PrintStats()
-      print()
 
     except TypeSyntaxError as e:
       log('Type comment syntax error on line %d of %s: %r',
@@ -384,6 +385,24 @@ def main(argv: list[str]) -> int:
       return 1
 
     log('Done')
+
+  elif action == 'dump-pickles':
+    files = argv[2:]
+
+    prog = Program()
+    log('Pea begin')
+
+    if not ParseFiles(files, prog):
+      return 1
+    log('Parsed %d files and their type comments', len(files))
+    prog.PrintStats()
+
+    pickle.dump(prog.py_files, sys.stdout.buffer)
+    log('Dumped pickle')
+
+  elif action == 'load-pickles':
+    py_files = pickle.load(sys.stdin.buffer)
+    log('Loaded pickle with %d files', len(py_files))
 
   else:
     raise RuntimeError('Invalid action %r' % action)

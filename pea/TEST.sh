@@ -13,15 +13,18 @@ source test/common.sh  # run-test-funcs
 source devtools/common.sh
 source build/dev-shell.sh  # find python3 in /wedge PATH component
 
+pea-main() {
+  pea/pea_main.py "$@"
+}
+
 parse-one() {
-  # Use PY3 because Python 3.8 and above has type comments
-  PYTHONPATH=. python3 pea/pea_main.py parse "$@"
+  pea-main parse "$@"
 }
 
 translate-cpp() {
   ### Used by mycpp/NINJA-steps.sh
 
-  PYTHONPATH=. python3 pea/pea_main.py cpp "$@"
+  pea-main cpp "$@"
 }
 
 all-files() {
@@ -38,7 +41,7 @@ all-files() {
 }
 
 parse-all() {
-  time all-files | xargs --verbose -- $0 parse-one
+  time all-files | xargs --verbose -- $0 pea-main parse
 }
 
 # Good illustration of "distributing your overhead"
@@ -70,7 +73,7 @@ parse-all() {
 # user    0m1.362s
 # sys     0m0.145s
 
-parallel-test() {
+test-par() {
   ### Test out parallelism of Python processes
 
   local files
@@ -101,6 +104,33 @@ parallel-test() {
   done
 }
 
+# - 0.40 secs to parse
+# - 0.56 secs pickle, so that's 160 ms
+# Then
+#
+# - 0.39 secs load pickle
+#
+# That's definitely slower than I want.  It's 6.6 MB of data.
+#
+# So 
+# - parallel parsing can be done in <300 ms
+# - parallel pickling
+# - serial unpickling (reduce) in 390 ms
+#
+# So now we're at ~700 ms or so.  Can we type check in 300 ms in pure Python?
+#
+# What if we compress the generated ASDL?  Those are very repetitive.
+
+test-pickle() {
+  mkdir -p _tmp
+  time all-files | xargs --verbose -- $0 pea-main dump-pickles > _tmp/p
+
+  ls -l -h _tmp/p
+
+  echo 'loading'
+  time pea-main load-pickles < _tmp/p
+}
+
 # MyPy dev version takes 10.2 seconds the first time (without their mypyc
 # speedups)
 #
@@ -117,8 +147,6 @@ parallel-test() {
 mypy-compare() {
   devtools/types.sh check-oils
 }
-
-
 
 # TODO: Fix INTERNAL ERROR with MyPy 0.782
 # We're using that for Python 2 support, but this is Python 3
