@@ -476,24 +476,6 @@ class ExprEvaluator(object):
 
         raise AssertionError()  # silence C++ compiler
 
-    def _ArithDivideInt(self, left, right):
-        # type: (value_t, value_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
-        if right_i == 0:
-            raise ZeroDivisionError()
-
-        return value.Int(left_i // right_i)
-
-    def _ArithModulus(self, left, right):
-        # type: (value_t, value_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
-        if right_i == 0:
-            raise ZeroDivisionError()
-
-        return value.Int(left_i % right_i)
-
     def _ArithExponentiate(self, left, right):
         # type: (value_t, value_t) -> value.Int
         left_i = self._ValueToInteger(left)
@@ -587,12 +569,21 @@ class ExprEvaluator(object):
             try:
                 return self._ArithNumeric(left, right, node.op.id)
             except ZeroDivisionError:
-                raise error.Expr('divide by zero', node.op)
+                raise error.Expr('Divide by zero', node.op)
 
         if node.op.id == Id.Expr_DSlash:
-            return self._ArithDivideInt(left, right)
+            left_i = self._ValueToInteger(left)
+            right_i = self._ValueToInteger(right)
+            if right_i == 0:
+                raise error.Expr('Divide by zero', node.op)
+            return value.Int(left_i // right_i)
+
         if node.op.id == Id.Arith_Percent:
-            return self._ArithModulus(left, right)
+            left_i = self._ValueToInteger(left)
+            right_i = self._ValueToInteger(right)
+            if right_i == 0:
+                raise error.Expr('Divide by zero', node.op)
+            return value.Int(left_i % right_i)
 
         if node.op.id == Id.Arith_DStar:  # Exponentiation
             return self._ArithExponentiate(left, right)
@@ -856,6 +847,7 @@ class ExprEvaluator(object):
         for i, value_expr in enumerate(node.values):
             if value_expr.tag() == expr_e.Implicit:
                 if keys[i].tag() != value_e.Str:
+                    # TODO: expr.Dict needs {
                     raise error.InvalidType('Dict keys must be strings',
                                             loc.Missing)
 
@@ -1100,7 +1092,7 @@ class ExprEvaluator(object):
 
                 else:
                     raise error.InvalidType2(o, 'd.key expected Dict',
-                                             loc.Missing)
+                                             node.op)
 
             return result
 

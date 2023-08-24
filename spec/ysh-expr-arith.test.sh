@@ -47,6 +47,30 @@ write -- $m $n $p
 25
 ## END
 
+#### Division by zero
+shopt -s parse_brace
+
+try {
+  = 42 / 0
+}
+echo "status / is $_status"
+
+try {
+  = 42 // 0
+}
+echo "status // is $_status"
+
+try {
+  = 42 % 0
+}
+echo "status % is $_status"
+
+## STDOUT:
+status / is 3
+status // is 3
+status % is 3
+## END
+
 #### Unary Operations
 
 var a = ~1

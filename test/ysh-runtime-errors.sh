@@ -154,11 +154,19 @@ test-ysh-expr-eval() {
   _expr-error-case 'var d = {}; setvar d[42] = 3'
   _expr-error-case 'var L = []; setvar L["key"] = 3'
 
+}
+
+test-ysh-expr-eval-2() {
   _expr-error-case 'var L = []; var slice = L["foo": "bar"]'
 
   _expr-error-case '= 3 < 4.0'
   _expr-error-case '= 3 < true'
   _expr-error-case '= "a" < "b"'
+
+  _expr-error-case 'var key = 42; var d = {[key]: 3}'
+
+  _expr-error-case 'var d = {}; var a = d.a'
+  _expr-error-case 'var d = []; var a = d.a'
 }
 
 test-user-reported() {
