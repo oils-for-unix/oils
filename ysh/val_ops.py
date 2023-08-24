@@ -51,7 +51,7 @@ def MustBeInt(val):
         return val
 
     raise error.InvalidType(
-        'expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
+        'Expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def MustBeFloat(val):
@@ -62,7 +62,7 @@ def MustBeFloat(val):
         return val
 
     raise error.InvalidType(
-        'expected value.Float, but got %s' % value_str(val.tag()), loc.Missing)
+        'Expected value.Float, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def MustBeStr(val):
@@ -73,7 +73,7 @@ def MustBeStr(val):
         return val
 
     raise error.InvalidType(
-        'expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
+        'Expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def MustBeList(val):
@@ -84,7 +84,7 @@ def MustBeList(val):
         return val
 
     raise error.InvalidType(
-        'expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
+        'Expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def MustBeDict(val):
@@ -95,7 +95,7 @@ def MustBeDict(val):
         return val
 
     raise error.InvalidType(
-        'expected value.Dict, but got %s' % value_str(val.tag()), loc.Missing)
+        'Expected value.Dict, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def MustBeFunc(val):
@@ -106,7 +106,7 @@ def MustBeFunc(val):
         return val
 
     raise error.InvalidType(
-        'expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
+        'Expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
 
 
 def Stringify(val, blame_loc, prefix=''):
