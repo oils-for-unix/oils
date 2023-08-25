@@ -109,10 +109,10 @@ test-ysh-word-eval() {
   _expr-error-case 'echo $[maybe("foo")]'
 
   # Wrong sigil
-  _expr-error-case 'echo $[identity({key: "val"})]'
+  _expr-error-case 'source --builtin funcs.ysh; echo $[identity({key: "val"})]'
 
   # this should be consistent
-  _expr-error-case 'write -- @[identity([{key: "val"}])]'
+  _expr-error-case 'source --builtin funcs.ysh; write -- @[identity([{key: "val"}])]'
 
   _expr-error-case 'const x = [1, 2]; echo $x'
 
