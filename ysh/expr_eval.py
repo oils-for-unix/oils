@@ -35,6 +35,8 @@ from _devbuild.gen.syntax_asdl import (
     CharCode,
 )
 from _devbuild.gen.runtime_asdl import (
+    coerced_e,
+    coerced_t,
     scope_e,
     scope_t,
     part_value,
@@ -57,7 +59,7 @@ from frontend import location
 from osh import braces
 from osh import word_compile
 from mycpp import mylib
-from mycpp.mylib import log, NewDict, tagswitch
+from mycpp.mylib import log, NewDict, switch, tagswitch
 from ysh import cpython
 from ysh import val_ops
 
@@ -374,101 +376,100 @@ class ExprEvaluator(object):
 
         raise NotImplementedError(node.op.id)
 
+    def _ConvertToNumber(self, val):
+        # type: (value_t) -> Tuple[coerced_t, int, float]
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Int):
+                val = cast(value.Int, UP_val)
+                return coerced_e.Int, val.i, float(val.i)
+
+            elif case(value_e.Float):
+                val = cast(value.Float, UP_val)
+                return coerced_e.Float, -1, val.f
+
+            elif case(value_e.Str):
+                val = cast(value.Str, UP_val)
+                if match.LooksLikeInteger(val.s):
+                    i = int(val.s)
+                    f = float(i)  # convert from int to float
+                    return coerced_e.Int, i, f
+
+                if match.LooksLikeFloat(val.s):
+                    return coerced_e.Float, -1, float(val.s)
+
+        return coerced_e.Neither, -1, -1.0
+
+    def _ConvertForBinaryOp(self, left, right):
+        # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+        """
+        Returns one of
+          value_e.Int, value_e.Float
+          2 ints
+          2 floats that
+
+        Depending on which ones are valid
+        """
+        c1, i1, f1 = self._ConvertToNumber(left)
+        c2, i2, f2 = self._ConvertToNumber(right)
+
+        # (Int, Int)
+        if c1 == coerced_e.Int and c2 == coerced_e.Int:
+            return coerced_e.Int, i1, i2, -1.0, -1.0
+
+        # (Int, Float), (Float, Int), (Float, Float)
+        elif (
+            c1 == coerced_e.Int and c2 == coerced_e.Float or
+            c1 == coerced_e.Float and c2 == coerced_e.Int or
+            c1 == coerced_e.Float and c2 == coerced_e.Float):
+
+            return coerced_e.Float, -1, -1, f1, f2
+
+        else:
+            # No operation is valid
+            return coerced_e.Neither, -1, -1, -1.0, -1.0
+
     def _ArithNumeric(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> value_t
         """
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
-        left = self._ValueToNumber(left)
-        right = self._ValueToNumber(right)
-        UP_left = left
-        UP_right = right
+        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
 
-        with tagswitch(left) as lcase:
-            if lcase(value_e.Int):
-                left = cast(value.Int, UP_left)
+        with switch(c) as case:
+            if case(coerced_e.Int):
+                if op == Id.Arith_Plus:
+                    return value.Int(i1 + i2)
+                elif op == Id.Arith_Minus:
+                    return value.Int(i1 - i2)
+                elif op == Id.Arith_Star:
+                    return value.Int(i1 * i2)
+                elif op == Id.Arith_Slash:
+                    if i2 == 0:
+                        raise ZeroDivisionError()
+                    return value.Float(f1 / f2)
+                else:
+                    raise AssertionError()
 
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.Int):
-                        right = cast(value.Int, UP_right)
+            elif case(coerced_e.Float):
+                if op == Id.Arith_Plus:
+                    return value.Float(f1 + f2)
+                elif op == Id.Arith_Minus:
+                    return value.Float(f1 - f2)
+                elif op == Id.Arith_Star:
+                    return value.Float(f1 * f2)
+                elif op == Id.Arith_Slash:
+                    if f2 == 0.0:
+                        raise ZeroDivisionError()
+                    return value.Float(f1 / f2)
+                else:
+                    raise AssertionError()
 
-                        if op == Id.Arith_Plus:
-                            return value.Int(left.i + right.i)
-                        elif op == Id.Arith_Minus:
-                            return value.Int(left.i - right.i)
-                        elif op == Id.Arith_Star:
-                            return value.Int(left.i * right.i)
-                        elif op == Id.Arith_Slash:
-                            if right.i == 0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(float(left.i) / float(right.i))
-                        else:
-                            raise NotImplementedError(op)
-
-                    elif rcase(value_e.Float):
-                        right = cast(value.Float, UP_right)
-                        if op == Id.Arith_Plus:
-                            return value.Float(left.i + right.f)
-                        elif op == Id.Arith_Minus:
-                            return value.Float(left.i - right.f)
-                        elif op == Id.Arith_Star:
-                            return value.Float(left.i * right.f)
-                        elif op == Id.Arith_Slash:
-                            if right.f == 0.0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(left.i / right.f)
-                        else:
-                            raise NotImplementedError(op)
-
-                    else:
-                        raise error.InvalidType('Expected Int or Float',
-                                                loc.Missing)
-
-            elif lcase(value_e.Float):
-                left = cast(value.Float, UP_left)
-
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.Int):
-                        right = cast(value.Int, UP_right)
-                        if op == Id.Arith_Plus:
-                            return value.Float(left.f + right.i)
-                        elif op == Id.Arith_Minus:
-                            return value.Float(left.f - right.i)
-                        elif op == Id.Arith_Star:
-                            return value.Float(left.f * right.i)
-                        elif op == Id.Arith_Slash:
-                            if right.i == 0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(left.f / right.i)
-                        else:
-                            raise NotImplementedError(op)
-
-                    elif rcase(value_e.Float):
-                        right = cast(value.Float, UP_right)
-                        if op == Id.Arith_Plus:
-                            return value.Float(left.f + right.f)
-                        elif op == Id.Arith_Minus:
-                            return value.Float(left.f - right.f)
-                        elif op == Id.Arith_Star:
-                            return value.Float(left.f * right.f)
-                        elif op == Id.Arith_Slash:
-                            if right.f == 0.0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(left.f / right.f)
-                        else:
-                            raise NotImplementedError(op)
-
-                    else:
-                        raise error.InvalidType('Expected Int or Float',
-                                                loc.Missing)
-
-            else:
-                raise error.InvalidType('Expected Int or Float', loc.Missing)
+            elif case(coerced_e.Neither):
+                raise error.InvalidType(
+                    'Binary operator expected numbers, got %s and %s' %
+                    (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
         raise AssertionError()  # silence C++ compiler
 
