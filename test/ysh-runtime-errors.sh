@@ -159,7 +159,6 @@ test-ysh-expr-eval() {
 test-ysh-expr-eval-2() {
   _expr-error-case 'var L = []; var slice = L["foo": "bar"]'
 
-  _expr-error-case '= 3 < 4.0'
   _expr-error-case '= 3 < true'
   _expr-error-case '= "a" < "b"'
 

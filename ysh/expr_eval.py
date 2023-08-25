@@ -451,24 +451,6 @@ class ExprEvaluator(object):
                 'Binary operator expected numbers, got %s and %s' %
                 (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
-    def _ArithBitwise(self, left, right, op):
-        # type: (value_t, value_t, Id_t) -> value.Int
-        left_i = self._ConvertToInt(left)
-        right_i = self._ConvertToInt(right)
-
-        if op == Id.Arith_Amp:
-            return value.Int(left_i & right_i)
-        elif op == Id.Arith_Pipe:
-            return value.Int(left_i | right_i)
-        elif op == Id.Arith_Caret:
-            return value.Int(left_i ^ right_i)
-        elif op == Id.Arith_DGreat:
-            return value.Int(left_i >> right_i)
-        elif op == Id.Arith_DLess:
-            return value.Int(left_i << right_i)
-
-        raise NotImplementedError()
-
     def _Concat(self, left, right):
         # type: (value_t, value_t) -> value_t
         UP_left = left
@@ -490,8 +472,8 @@ class ExprEvaluator(object):
 
         else:
             raise error.InvalidType(
-                    'Expected Str ++ Str or List ++ List, got %s ++ %s' %
-                    (ui.ValType(left), ui.ValType(right)), loc.Missing)
+                'Expected Str ++ Str or List ++ List, got %s ++ %s' %
+                (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -527,37 +509,44 @@ class ExprEvaluator(object):
                 raise error.Expr('Divide by zero', node.op)
 
         # Everything below has 2 integer operands
+        i1 = self._ConvertToInt(left)
+        i2 = self._ConvertToInt(right)
+
         if op_id == Id.Expr_DSlash:  # a // b
-            left_i = self._ConvertToInt(left)
-            right_i = self._ConvertToInt(right)
-            if right_i == 0:
+            if i2 == 0:
                 raise error.Expr('Divide by zero', node.op)
-            return value.Int(left_i // right_i)
+            return value.Int(i1 // i2)
 
         if op_id == Id.Arith_Percent:  # a % b
-            left_i = self._ConvertToInt(left)
-            right_i = self._ConvertToInt(right)
-            if right_i == 0:
+            if i2 == 0:
                 raise error.Expr('Divide by zero', node.op)
-            return value.Int(left_i % right_i)
+            return value.Int(i1 % i2)
 
         if op_id == Id.Arith_DStar:  # a ** b
-            left_i = self._ConvertToInt(left)
-            right_i = self._ConvertToInt(right)
-
             # Same as sh_expr_eval.py
-            if right_i < 0:
+            if i2 < 0:
                 raise error.Expr("Exponent can't be a negative number",
                                  node.op)
             ret = 1
-            for i in xrange(right_i):
-                ret *= left_i
+            for i in xrange(i2):
+                ret *= i1
             return value.Int(ret)
 
         # Bitwise
-        if op_id in \
-          (Id.Arith_Amp, Id.Arith_Pipe, Id.Arith_Caret, Id.Arith_DGreat, Id.Arith_DLess):
-            return self._ArithBitwise(left, right, op_id)
+        if op_id == Id.Arith_Amp:
+            return value.Int(i1 & i2)
+
+        if op_id == Id.Arith_Pipe:
+            return value.Int(i1 | i2)
+
+        if op_id == Id.Arith_Caret:
+            return value.Int(i1 ^ i2)
+
+        if op_id == Id.Arith_DGreat:
+            return value.Int(i1 >> i2)
+
+        if op_id == Id.Arith_DLess:
+            return value.Int(i1 << i2)
 
         raise NotImplementedError(op_id)
 
@@ -593,8 +582,7 @@ class ExprEvaluator(object):
         UP_lower = self._EvalExpr(node.lower)
         if UP_lower.tag() != value_e.Int:
             # TODO: add location op to expr.Range
-            raise error.InvalidType('Range indices must be Ints',
-                                    loc.Missing)
+            raise error.InvalidType('Range indices must be Ints', loc.Missing)
 
         lower = cast(value.Int, UP_lower)
 
@@ -602,8 +590,7 @@ class ExprEvaluator(object):
 
         UP_upper = self._EvalExpr(node.upper)
         if UP_upper.tag() != value_e.Int:
-            raise error.InvalidType('Range indices must be Ints',
-                                    loc.Missing)
+            raise error.InvalidType('Range indices must be Ints', loc.Missing)
 
         upper = cast(value.Int, UP_upper)
 
@@ -772,14 +759,6 @@ class ExprEvaluator(object):
             left = right
 
         return value.Bool(result)
-
-    def _EvalIfExp(self, node):
-        # type: (expr.IfExp) -> value_t
-        b = val_ops.ToBool(self._EvalExpr(node.test))
-        if b:
-            return self._EvalExpr(node.body)
-        else:
-            return self._EvalExpr(node.orelse)
 
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
@@ -1019,7 +998,8 @@ class ExprEvaluator(object):
             method = recv.get(name) if recv is not None else None
             if not method:
                 raise error.InvalidType(
-                    'Method %r does not exist on type %s' % (name, ui.ValType(o)), node.attr)
+                    'Method %r does not exist on type %s' %
+                    (name, ui.ValType(o)), node.attr)
 
             return value.BoundFunc(o, method)
 
@@ -1034,8 +1014,7 @@ class ExprEvaluator(object):
                         raise error.Expr('dict entry not found', node.op)
 
                 else:
-                    raise error.InvalidType2(o, 'd.key expected Dict',
-                                             node.op)
+                    raise error.InvalidType2(o, 'd.key expected Dict', node.op)
 
             return result
 
@@ -1145,7 +1124,11 @@ class ExprEvaluator(object):
 
             elif case(expr_e.IfExp):
                 node = cast(expr.IfExp, UP_node)
-                return self._EvalIfExp(node)
+                b = val_ops.ToBool(self._EvalExpr(node.test))
+                if b:
+                    return self._EvalExpr(node.body)
+                else:
+                    return self._EvalExpr(node.orelse)
 
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
@@ -1384,5 +1367,6 @@ class ExprEvaluator(object):
             new_node.PrettyPrint()
             print()
         return new_node
+
 
 # vim: sw=4
