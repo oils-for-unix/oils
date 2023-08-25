@@ -354,7 +354,8 @@ class ExprEvaluator(object):
                     return value.Float(-child.f)
 
                 else:
-                    raise error.InvalidType('Expected Int or Float', node.op)
+                    raise error.InvalidType2(child, 'Expected Int or Float',
+                                             node.op)
 
         if node.op.id == Id.Arith_Tilde:
             UP_child = child
@@ -368,13 +369,8 @@ class ExprEvaluator(object):
 
         if node.op.id == Id.Expr_Not:
             UP_child = child
-            with tagswitch(child) as case:
-                if case(value_e.Bool):
-                    child = cast(value.Bool, UP_child)
-                    return value.Bool(not child.b)
-
-                else:
-                    raise error.InvalidType('Expected Bool', node.op)
+            b = val_ops.ToBool(child)
+            return value.Bool(False if b else True)
 
         raise NotImplementedError(node.op.id)
 
