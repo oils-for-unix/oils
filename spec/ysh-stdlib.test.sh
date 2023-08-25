@@ -4,7 +4,7 @@
 ## oils_failures_allowed: 0
 
 #### identity
-source --builtin math.ysh
+source --builtin funcs.ysh
 
 for x in (['a', 1, null, { foo: 'bar' }, [40, 2]]) {
   json write (identity(x))

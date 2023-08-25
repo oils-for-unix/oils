@@ -1,9 +1,3 @@
-func identity(x) {
-  ## The identity function. Returns it's argument.
-
-  return (x)
-}
-
 func _select(list, cmp) {
   ## Internal helper for `max` and `min`.
   ##
