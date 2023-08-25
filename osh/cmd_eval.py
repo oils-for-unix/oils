@@ -40,7 +40,6 @@ from _devbuild.gen.syntax_asdl import (
     ArgList,
     assign_op_e,
     expr_t,
-    place_expr,
     proc_sig,
     proc_sig_e,
     redir_param,
@@ -1048,18 +1047,19 @@ class CommandEvaluator(object):
                                               which_scopes,
                                               flags=_PackFlags(node.keyword.id))
 
-                # TODO: Other augmented assignments
+                # TODO: Eval other augmented assignments.   Do we need "kind"
+                # here?
                 elif node.op.id == Id.Arith_PlusEqual:
-                    # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
-                    # transformer and not the grammar.  We should do that too.
+                    # Checked in the parser
+                    assert len(node.lhs) == 1
 
-                    place2 = cast(place_expr.Var, node.lhs[0])
-                    pe_lval = location.LName(place2.name.tval)
+                    aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
                     val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-                    new_val = self.expr_ev.EvalPlusEquals(pe_lval, val)
+                    new_val = self.expr_ev.EvalPlusEquals(aug_lval, val,
+                                                          node.op)
 
-                    self.mem.SetValue(pe_lval,
+                    self.mem.SetValue(aug_lval,
                                       new_val,
                                       which_scopes,
                                       flags=_PackFlags(node.keyword.id))

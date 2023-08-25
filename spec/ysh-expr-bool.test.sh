@@ -1,3 +1,25 @@
+#### not operator behaves like Python
+
+# consistent with if statement, ternary if, and, or
+
+= not "s"
+= not 3
+= not 4.5
+= not {}
+= not []
+= not false
+= not true
+
+## STDOUT:
+(Bool)   False
+(Bool)   False
+(Bool)   False
+(Bool)   True
+(Bool)   True
+(Bool)   True
+(Bool)   False
+## END
+
 #### not, and, or
 
 var a = not true

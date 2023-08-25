@@ -1,5 +1,4 @@
 #### Binary operators, with conversions from string
-shopt -s parse_brace
 
 echo ' i  i' $[1 + 2]
 echo 'si  i' $['1' + 2]
@@ -122,18 +121,6 @@ false
 
 #### unary - applied to bool is not allowed
 = ~false
-## status: 3
-## STDOUT:
-## END
-
-#### unary 'not' applied to int is not allowed
-= not 1
-## status: 3
-## STDOUT:
-## END
-
-#### unary 'not' applied to float is not allowed
-= not 1.
 ## status: 3
 ## STDOUT:
 ## END

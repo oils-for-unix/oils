@@ -11,7 +11,39 @@ set -o errexit
 
 source test/common.sh  # run-test-funcs
 source devtools/common.sh
+
 source build/dev-shell.sh  # find python3 in /wedge PATH component
+
+# This is just like the yapf problem in devtools/format.sh !
+# Pea needs a newer version of MyPy -- one that supports 'math'
+unset PYTHONPATH
+export PYTHONPATH=.
+
+readonly MYPY_VENV='_tmp/mypy-venv'
+
+install-mypy() {
+  local venv=$MYPY_VENV
+
+  rm -r -f -v $venv
+
+  python3 -m venv $venv
+
+  . $venv/bin/activate
+
+  python3 -m pip install mypy
+
+  # Says 1.5.1 (compiled: yes)
+  mypy-version
+}
+
+mypy-version() {
+  . $MYPY_VENV/bin/activate
+  python3 -m mypy --version
+}
+
+#
+# Run Pea
+#
 
 pea-main() {
   pea/pea_main.py "$@"
@@ -85,8 +117,8 @@ batch-size() {
   echo "$num_procs $files_per_process"
 }
 
-test-par() {
-  ### Test out parallelism of Python processes
+demo-par() {
+  ### Demo parallelism of Python processes
 
   local files
   num_files=$(all-files | wc -l)
@@ -172,7 +204,66 @@ _par-pickle() {
 }
 
 # Can get this down to ~700 ms
+#
+# Note parsing serially in a single process is 410 ms !!!  So this is NOT a win
+# unless we have more work besides parsing to parallelize.
+# 
+# We can extract constants and forward declarations in parallel I suppose.
+#
+# BUT immutable string constants have to be de-duplciated!  Though I guess that
+# is a natural 'reduce' step.
+#
+# And we can even do implementation and prototypes in parallel too?
+#
+# I think the entire algorithm can be OPTIMISTIC without serialized type
+# checking?
+#
+# I think 
+#
+# a = 5
+# b = a  # do not know the type without a global algorithm
+#
+# Or I guess you can do type checking within a function.  Functions require
+# signatures.  So yes let's do that in parallel.
+#
+# --
+#
+# The ideal way to do this would be to split Oils up into MODULES, like
+#
+# _debuild/
+# core/
+# data_lang/
+# frontend/
+# osh/
+# ysh/
+# library/
+# Smaller: pgen2/ pylib/ tea/ tools/
+#
+# And modules are acyclic, and can compile on their own with dependencies.  If
+# you pick random .py files and spit out header files, I think they won't compile.
+# The forward declarations and constants will work, but the prototype won't.
+
 par-pickle() { time $0 _par-pickle; }
+
+sum1() {
+  awk '{ sum += $1 } END { print sum }'
+}
+
+sum-sizes() {
+  xargs -I {} -- find {} -printf '%s %p\n' | sum1
+}
+
+size-ratio() {
+  # all-files
+  # echo _tmp/p/*
+
+  # 1.96 MB of source code
+  all-files | sum-sizes
+
+  # 7.13 MB of pickle files
+  # Weirdly echo _tmp/p/* doesn't work here
+  for f in _tmp/p/*; do echo $f; done | sum-sizes
+}
 
 # Only 47 ms!
 # I want the overhead to be less than 1 second:
@@ -204,16 +295,15 @@ mypy-compare() {
   devtools/types.sh check-oils
 }
 
-# TODO: Fix INTERNAL ERROR with MyPy 0.782
-# We're using that for Python 2 support, but this is Python 3
 check-types() {
-  #mypy_ test/py3_parse.py
 
-  # Note: not using mycpp/common.sh maybe-our-python3
+  # install-mypy creates this.  May not be present in CI machine.
+  local activate=$MYPY_VENV/bin/activate
+  if test -f $activate; then
+    . $activate
+  fi
 
-  #local py3=../oil_DEPS/python3
-
-  python3 -m mypy --strict pea/pea_main.py
+  time python3 -m mypy --strict pea/pea_main.py
 }
 
 test-translate() {

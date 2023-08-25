@@ -102,7 +102,7 @@ one
 ## END
 
 
-#### Equality of ~== with Float (deferred)
+#### ~== on Float - TODO floatEquals()
 shopt -s oil:all
 
 if (42 ~== 42.0) {
@@ -128,6 +128,43 @@ if (42 ~== '43.0') {
 ## STDOUT:
 ## END
 
+#### Comparison converts from Str -> Int or Float
+echo ' i  i' $[1 < 2]
+echo 'si  i' $['1' < 2]
+echo ' i si' $[1 < '2']
+echo ---
+
+echo ' f  f' $[2.5 > 1.5]
+echo 'sf  f' $['2.5' > 1.5]
+echo ' f sf' $[2.5 > '1.5']
+echo ---
+
+echo ' i  f' $[4 <= 1.5]
+echo 'si  f' $['4' <= 1.5]
+echo ' i sf' $[4 <= '1.5']
+echo ---
+
+echo ' f  i' $[5.0 >= 2]
+echo 'sf  i' $['5.0' >= 2]
+echo ' f si' $[5.0 >= '2']
+
+## STDOUT:
+ i  i true
+si  i true
+ i si true
+---
+ f  f true
+sf  f true
+ f sf true
+---
+ i  f false
+si  f false
+ i sf false
+---
+ f  i true
+sf  i true
+ f si true
+## END
 
 #### Comparison of Int 
 shopt -s oil:upgrade

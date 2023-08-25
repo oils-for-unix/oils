@@ -2,7 +2,7 @@
 """expr_eval.py."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
@@ -35,11 +35,14 @@ from _devbuild.gen.syntax_asdl import (
     CharCode,
 )
 from _devbuild.gen.runtime_asdl import (
+    coerced_e,
+    coerced_t,
     scope_e,
     scope_t,
     part_value,
     part_value_t,
     lvalue,
+    lvalue_e,
     lvalue_t,
     value,
     value_e,
@@ -57,7 +60,7 @@ from frontend import location
 from osh import braces
 from osh import word_compile
 from mycpp import mylib
-from mycpp.mylib import log, NewDict, tagswitch
+from mycpp.mylib import log, NewDict, switch, tagswitch
 from ysh import cpython
 from ysh import val_ops
 
@@ -123,11 +126,24 @@ class ExprEvaluator(object):
         # type: (str, loc_t) -> value_t
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
-    def EvalPlusEquals(self, lval, rhs_val):
-        # type: (lvalue.Named, value_t) -> value_t
+    def EvalPlusEquals(self, lval, rhs_val, op):
+        # type: (lvalue_t, value_t, Token) -> value_t
         """Called by CommandEvaluator."""
-        lhs_val = self._LookupVar(lval.name, lval.blame_loc)
-        return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
+
+        # TODO: Handle other augmented assignment
+        #
+        # It might be nice to do auto d[x] += 1 too
+
+        UP_lval = lval
+        with tagswitch(lval) as case:
+            if case(lvalue_e.Named):
+                lval = cast(lvalue.Named, UP_lval)
+                lhs_val = self._LookupVar(lval.name, lval.blame_loc)
+                return self._ArithNumeric(lhs_val, rhs_val, op)
+            else:
+                # TODO: Handle other lvalue, like sh_expr_eval.OldValue() But
+                # this is for YSH values, not value.BashArray etc.
+                raise AssertionError()
 
     def EvalLHS(self, node):
         # type: (expr_t) -> lvalue_t
@@ -255,7 +271,7 @@ class ExprEvaluator(object):
 
         # Note: IndexError and KeyError are handled in more specific places
 
-    def _ValueToInteger(self, val):
+    def _ConvertToInt(self, val):
         # type: (value_t) -> int
         UP_val = val
         with tagswitch(val) as case:
@@ -272,23 +288,55 @@ class ExprEvaluator(object):
 
         raise error.InvalidType2(val, 'Expected Int', loc.Missing)
 
-    def _ValueToNumber(self, val):
-        # type: (value_t) -> value_t
-        """If val looks like Int or Float, convert it to that type.
-
-        Otherwise return it untouched.
-        """
+    def _ConvertToNumber(self, val):
+        # type: (value_t) -> Tuple[coerced_t, int, float]
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.Str):
+            if case(value_e.Int):
+                val = cast(value.Int, UP_val)
+                return coerced_e.Int, val.i, -1.0
+
+            elif case(value_e.Float):
+                val = cast(value.Float, UP_val)
+                return coerced_e.Float, -1, val.f
+
+            elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 if match.LooksLikeInteger(val.s):
-                    return value.Int(int(val.s))
+                    return coerced_e.Int, int(val.s), -1.0
 
                 if match.LooksLikeFloat(val.s):
-                    return value.Float(float(val.s))
+                    return coerced_e.Float, -1, float(val.s)
 
-        return val
+        return coerced_e.Neither, -1, -1.0
+
+    def _ConvertForBinaryOp(self, left, right):
+        # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+        """
+        Returns one of
+          value_e.Int or value_e.Float
+          2 ints or 2 floats
+
+        To indicate which values the operation should be done on
+        """
+        c1, i1, f1 = self._ConvertToNumber(left)
+        c2, i2, f2 = self._ConvertToNumber(right)
+
+        if c1 == coerced_e.Int and c2 == coerced_e.Int:
+            return coerced_e.Int, i1, i2, -1.0, -1.0
+
+        elif c1 == coerced_e.Int and c2 == coerced_e.Float:
+            return coerced_e.Float, -1, -1, float(i1), f2
+
+        elif c1 == coerced_e.Float and c2 == coerced_e.Int:
+            return coerced_e.Float, -1, -1, f1, float(i2)
+
+        elif c1 == coerced_e.Float and c2 == coerced_e.Float:
+            return coerced_e.Float, -1, -1, f1, f2
+
+        else:
+            # No operation is valid
+            return coerced_e.Neither, -1, -1, -1.0, -1.0
 
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
@@ -354,7 +402,8 @@ class ExprEvaluator(object):
                     return value.Float(-child.f)
 
                 else:
-                    raise error.InvalidType('Expected Int or Float', node.op)
+                    raise error.InvalidType2(child, 'Expected Int or Float',
+                                             node.op)
 
         if node.op.id == Id.Arith_Tilde:
             UP_child = child
@@ -368,131 +417,55 @@ class ExprEvaluator(object):
 
         if node.op.id == Id.Expr_Not:
             UP_child = child
-            with tagswitch(child) as case:
-                if case(value_e.Bool):
-                    child = cast(value.Bool, UP_child)
-                    return value.Bool(not child.b)
-
-                else:
-                    raise error.InvalidType('Expected Bool', node.op)
+            b = val_ops.ToBool(child)
+            return value.Bool(False if b else True)
 
         raise NotImplementedError(node.op.id)
 
     def _ArithNumeric(self, left, right, op):
-        # type: (value_t, value_t, Id_t) -> value_t
+        # type: (value_t, value_t, Token) -> value_t
         """
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
-        left = self._ValueToNumber(left)
-        right = self._ValueToNumber(right)
-        UP_left = left
-        UP_right = right
+        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
 
-        with tagswitch(left) as lcase:
-            if lcase(value_e.Int):
-                left = cast(value.Int, UP_left)
+        op_id = op.id
 
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.Int):
-                        right = cast(value.Int, UP_right)
+        if c == coerced_e.Int:
+            with switch(op_id) as case:
+                if case(Id.Arith_Plus, Id.Arith_PlusEqual):
+                    return value.Int(i1 + i2)
+                elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
+                    return value.Int(i1 - i2)
+                elif case(Id.Arith_Star, Id.Arith_StarEqual):
+                    return value.Int(i1 * i2)
+                elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
+                    if i2 == 0:
+                        raise ZeroDivisionError()
+                    return value.Float(float(i1) / float(i2))
+                else:
+                    raise AssertionError()
 
-                        if op == Id.Arith_Plus:
-                            return value.Int(left.i + right.i)
-                        elif op == Id.Arith_Minus:
-                            return value.Int(left.i - right.i)
-                        elif op == Id.Arith_Star:
-                            return value.Int(left.i * right.i)
-                        elif op == Id.Arith_Slash:
-                            if right.i == 0:
-                                raise ZeroDivisionError()
+        elif c == coerced_e.Float:
+            with switch(op_id) as case:
+                if case(Id.Arith_Plus, Id.Arith_PlusEqual):
+                    return value.Float(f1 + f2)
+                elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
+                    return value.Float(f1 - f2)
+                elif case(Id.Arith_Star, Id.Arith_StarEqual):
+                    return value.Float(f1 * f2)
+                elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
+                    if f2 == 0.0:
+                        raise ZeroDivisionError()
+                    return value.Float(f1 / f2)
+                else:
+                    raise AssertionError()
 
-                            return value.Float(float(left.i) / float(right.i))
-                        else:
-                            raise NotImplementedError(op)
-
-                    elif rcase(value_e.Float):
-                        right = cast(value.Float, UP_right)
-                        if op == Id.Arith_Plus:
-                            return value.Float(left.i + right.f)
-                        elif op == Id.Arith_Minus:
-                            return value.Float(left.i - right.f)
-                        elif op == Id.Arith_Star:
-                            return value.Float(left.i * right.f)
-                        elif op == Id.Arith_Slash:
-                            if right.f == 0.0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(left.i / right.f)
-                        else:
-                            raise NotImplementedError(op)
-
-                    else:
-                        raise error.InvalidType('Expected Int or Float',
-                                                loc.Missing)
-
-            elif lcase(value_e.Float):
-                left = cast(value.Float, UP_left)
-
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.Int):
-                        right = cast(value.Int, UP_right)
-                        if op == Id.Arith_Plus:
-                            return value.Float(left.f + right.i)
-                        elif op == Id.Arith_Minus:
-                            return value.Float(left.f - right.i)
-                        elif op == Id.Arith_Star:
-                            return value.Float(left.f * right.i)
-                        elif op == Id.Arith_Slash:
-                            if right.i == 0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(left.f / right.i)
-                        else:
-                            raise NotImplementedError(op)
-
-                    elif rcase(value_e.Float):
-                        right = cast(value.Float, UP_right)
-                        if op == Id.Arith_Plus:
-                            return value.Float(left.f + right.f)
-                        elif op == Id.Arith_Minus:
-                            return value.Float(left.f - right.f)
-                        elif op == Id.Arith_Star:
-                            return value.Float(left.f * right.f)
-                        elif op == Id.Arith_Slash:
-                            if right.f == 0.0:
-                                raise ZeroDivisionError()
-
-                            return value.Float(left.f / right.f)
-                        else:
-                            raise NotImplementedError(op)
-
-                    else:
-                        raise error.InvalidType('Expected Int or Float',
-                                                loc.Missing)
-
-            else:
-                raise error.InvalidType('Expected Int or Float', loc.Missing)
-
-        raise AssertionError()  # silence C++ compiler
-
-    def _ArithBitwise(self, left, right, op):
-        # type: (value_t, value_t, Id_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
-
-        if op == Id.Arith_Amp:
-            return value.Int(left_i & right_i)
-        elif op == Id.Arith_Pipe:
-            return value.Int(left_i | right_i)
-        elif op == Id.Arith_Caret:
-            return value.Int(left_i ^ right_i)
-        elif op == Id.Arith_DGreat:
-            return value.Int(left_i >> right_i)
-        elif op == Id.Arith_DLess:
-            return value.Int(left_i << right_i)
-
-        raise NotImplementedError()
+        else:
+            raise error.InvalidType(
+                'Binary operator expected numbers, got %s and %s' %
+                (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
     def _Concat(self, left, right):
         # type: (value_t, value_t) -> value_t
@@ -515,8 +488,8 @@ class ExprEvaluator(object):
 
         else:
             raise error.InvalidType(
-                    'Expected Str ++ Str or List ++ List, got %s ++ %s' %
-                    (ui.ValType(left), ui.ValType(right)), loc.Missing)
+                'Expected Str ++ Str or List ++ List, got %s ++ %s' %
+                (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -547,42 +520,49 @@ class ExprEvaluator(object):
         if op_id in \
           (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
             try:
-                return self._ArithNumeric(left, right, op_id)
+                return self._ArithNumeric(left, right, node.op)
             except ZeroDivisionError:
                 raise error.Expr('Divide by zero', node.op)
 
         # Everything below has 2 integer operands
+        i1 = self._ConvertToInt(left)
+        i2 = self._ConvertToInt(right)
+
         if op_id == Id.Expr_DSlash:  # a // b
-            left_i = self._ValueToInteger(left)
-            right_i = self._ValueToInteger(right)
-            if right_i == 0:
+            if i2 == 0:
                 raise error.Expr('Divide by zero', node.op)
-            return value.Int(left_i // right_i)
+            return value.Int(i1 // i2)
 
         if op_id == Id.Arith_Percent:  # a % b
-            left_i = self._ValueToInteger(left)
-            right_i = self._ValueToInteger(right)
-            if right_i == 0:
+            if i2 == 0:
                 raise error.Expr('Divide by zero', node.op)
-            return value.Int(left_i % right_i)
+            return value.Int(i1 % i2)
 
         if op_id == Id.Arith_DStar:  # a ** b
-            left_i = self._ValueToInteger(left)
-            right_i = self._ValueToInteger(right)
-
             # Same as sh_expr_eval.py
-            if right_i < 0:
+            if i2 < 0:
                 raise error.Expr("Exponent can't be a negative number",
                                  node.op)
             ret = 1
-            for i in xrange(right_i):
-                ret *= left_i
+            for i in xrange(i2):
+                ret *= i1
             return value.Int(ret)
 
         # Bitwise
-        if op_id in \
-          (Id.Arith_Amp, Id.Arith_Pipe, Id.Arith_Caret, Id.Arith_DGreat, Id.Arith_DLess):
-            return self._ArithBitwise(left, right, op_id)
+        if op_id == Id.Arith_Amp:
+            return value.Int(i1 & i2)
+
+        if op_id == Id.Arith_Pipe:
+            return value.Int(i1 | i2)
+
+        if op_id == Id.Arith_Caret:
+            return value.Int(i1 ^ i2)
+
+        if op_id == Id.Arith_DGreat:
+            return value.Int(i1 >> i2)
+
+        if op_id == Id.Arith_DLess:
+            return value.Int(i1 << i2)
 
         raise NotImplementedError(op_id)
 
@@ -618,8 +598,7 @@ class ExprEvaluator(object):
         UP_lower = self._EvalExpr(node.lower)
         if UP_lower.tag() != value_e.Int:
             # TODO: add location op to expr.Range
-            raise error.InvalidType('Range indices must be Ints',
-                                    loc.Missing)
+            raise error.InvalidType('Range indices must be Ints', loc.Missing)
 
         lower = cast(value.Int, UP_lower)
 
@@ -627,8 +606,7 @@ class ExprEvaluator(object):
 
         UP_upper = self._EvalExpr(node.upper)
         if UP_upper.tag() != value_e.Int:
-            raise error.InvalidType('Range indices must be Ints',
-                                    loc.Missing)
+            raise error.InvalidType('Range indices must be Ints', loc.Missing)
 
         upper = cast(value.Int, UP_upper)
 
@@ -636,50 +614,39 @@ class ExprEvaluator(object):
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
-        left = self._ValueToNumber(left)
-        right = self._ValueToNumber(right)
-        UP_left = left
-        UP_right = right
-
-        if left.tag() != right.tag():
-            raise error.InvalidType3(
-                    left, right, 'Comparison expected the same type', op)
+        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
 
         op_id = op.id
-        with tagswitch(left) as case:
-            if case(value_e.Int):
-                left = cast(value.Int, UP_left)
-                right = cast(value.Int, UP_right)
-                if op_id == Id.Arith_Less:
-                    return left.i < right.i
-                elif op_id == Id.Arith_Great:
-                    return left.i > right.i
-                elif op_id == Id.Arith_LessEqual:
-                    return left.i <= right.i
-                elif op_id == Id.Arith_GreatEqual:
-                    return left.i >= right.i
+        if c == coerced_e.Int:
+            with switch(op_id) as case:
+                if case(Id.Arith_Less):
+                    return i1 < i2
+                elif case(Id.Arith_Great):
+                    return i1 > i2
+                elif case(Id.Arith_LessEqual):
+                    return i1 <= i2
+                elif case(Id.Arith_GreatEqual):
+                    return i1 >= i2
                 else:
                     raise AssertionError()
 
-            elif case(value_e.Float):
-                left = cast(value.Float, UP_left)
-                right = cast(value.Float, UP_right)
-                if op_id == Id.Arith_Less:
-                    return left.f < right.f
-                elif op_id == Id.Arith_Great:
-                    return left.f > right.f
-                elif op_id == Id.Arith_LessEqual:
-                    return left.f <= right.f
-                elif op_id == Id.Arith_GreatEqual:
-                    return left.f >= right.f
+        elif c == coerced_e.Float:
+            with switch(op_id) as case:
+                if case(Id.Arith_Less):
+                    return f1 < f2
+                elif case(Id.Arith_Great):
+                    return f1 > f2
+                elif case(Id.Arith_LessEqual):
+                    return f1 <= f2
+                elif case(Id.Arith_GreatEqual):
+                    return f1 >= f2
                 else:
                     raise AssertionError()
 
-            else:
-                raise error.InvalidType2(
-                    left, 'Comparison expected Int or Float', op)
-
-        raise AssertionError()  # silence C++ compiler
+        else:
+            raise error.InvalidType(
+                'Comparison operator expected numbers, got %s and %s' %
+                (ui.ValType(left), ui.ValType(right)), op)
 
     def _EvalCompare(self, node):
         # type: (expr.Compare) -> value_t
@@ -714,12 +681,11 @@ class ExprEvaluator(object):
             elif op.id == Id.Expr_Is:
                 if left.tag() != right.tag():
                     raise error.InvalidType('Mismatched types', op)
-
                 result = left is right
+
             elif op.id == Id.Node_IsNot:
                 if left.tag() != right.tag():
                     raise error.InvalidType('Mismatched types', op)
-
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
@@ -809,14 +775,6 @@ class ExprEvaluator(object):
             left = right
 
         return value.Bool(result)
-
-    def _EvalIfExp(self, node):
-        # type: (expr.IfExp) -> value_t
-        b = val_ops.ToBool(self._EvalExpr(node.test))
-        if b:
-            return self._EvalExpr(node.body)
-        else:
-            return self._EvalExpr(node.orelse)
 
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
@@ -962,8 +920,8 @@ class ExprEvaluator(object):
                 return ret
 
             else:
-                raise error.InvalidType('Expected a function or method',
-                                        node.args.left)
+                raise error.InvalidType2(func, 'Expected a function or method',
+                                         node.args.left)
 
         raise AssertionError()
 
@@ -1056,7 +1014,8 @@ class ExprEvaluator(object):
             method = recv.get(name) if recv is not None else None
             if not method:
                 raise error.InvalidType(
-                    'Method %r does not exist on type %s' % (name, ui.ValType(o)), node.attr)
+                    'Method %r does not exist on type %s' %
+                    (name, ui.ValType(o)), node.attr)
 
             return value.BoundFunc(o, method)
 
@@ -1071,8 +1030,7 @@ class ExprEvaluator(object):
                         raise error.Expr('dict entry not found', node.op)
 
                 else:
-                    raise error.InvalidType2(o, 'd.key expected Dict',
-                                             node.op)
+                    raise error.InvalidType2(o, 'd.key expected Dict', node.op)
 
             return result
 
@@ -1182,7 +1140,11 @@ class ExprEvaluator(object):
 
             elif case(expr_e.IfExp):
                 node = cast(expr.IfExp, UP_node)
-                return self._EvalIfExp(node)
+                b = val_ops.ToBool(self._EvalExpr(node.test))
+                if b:
+                    return self._EvalExpr(node.body)
+                else:
+                    return self._EvalExpr(node.orelse)
 
             elif case(expr_e.List):
                 node = cast(expr.List, UP_node)
