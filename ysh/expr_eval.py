@@ -257,7 +257,7 @@ class ExprEvaluator(object):
 
         # Note: IndexError and KeyError are handled in more specific places
 
-    def _ValueToInteger(self, val):
+    def _ConvertToInt(self, val):
         # type: (value_t) -> int
         UP_val = val
         with tagswitch(val) as case:
@@ -273,24 +273,6 @@ class ExprEvaluator(object):
                     raise ValueError("%r doesn't look like an integer" % val.s)
 
         raise error.InvalidType2(val, 'Expected Int', loc.Missing)
-
-    def _ValueToNumber(self, val):
-        # type: (value_t) -> value_t
-        """If val looks like Int or Float, convert it to that type.
-
-        Otherwise return it untouched.
-        """
-        UP_val = val
-        with tagswitch(val) as case:
-            if case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                if match.LooksLikeInteger(val.s):
-                    return value.Int(int(val.s))
-
-                if match.LooksLikeFloat(val.s):
-                    return value.Float(float(val.s))
-
-        return val
 
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
@@ -471,8 +453,8 @@ class ExprEvaluator(object):
 
     def _ArithBitwise(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
+        left_i = self._ConvertToInt(left)
+        right_i = self._ConvertToInt(right)
 
         if op == Id.Arith_Amp:
             return value.Int(left_i & right_i)
@@ -546,22 +528,22 @@ class ExprEvaluator(object):
 
         # Everything below has 2 integer operands
         if op_id == Id.Expr_DSlash:  # a // b
-            left_i = self._ValueToInteger(left)
-            right_i = self._ValueToInteger(right)
+            left_i = self._ConvertToInt(left)
+            right_i = self._ConvertToInt(right)
             if right_i == 0:
                 raise error.Expr('Divide by zero', node.op)
             return value.Int(left_i // right_i)
 
         if op_id == Id.Arith_Percent:  # a % b
-            left_i = self._ValueToInteger(left)
-            right_i = self._ValueToInteger(right)
+            left_i = self._ConvertToInt(left)
+            right_i = self._ConvertToInt(right)
             if right_i == 0:
                 raise error.Expr('Divide by zero', node.op)
             return value.Int(left_i % right_i)
 
         if op_id == Id.Arith_DStar:  # a ** b
-            left_i = self._ValueToInteger(left)
-            right_i = self._ValueToInteger(right)
+            left_i = self._ConvertToInt(left)
+            right_i = self._ConvertToInt(right)
 
             # Same as sh_expr_eval.py
             if right_i < 0:
@@ -629,50 +611,39 @@ class ExprEvaluator(object):
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
-        left = self._ValueToNumber(left)
-        right = self._ValueToNumber(right)
-        UP_left = left
-        UP_right = right
-
-        if left.tag() != right.tag():
-            raise error.InvalidType3(
-                    left, right, 'Comparison expected the same type', op)
+        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
 
         op_id = op.id
-        with tagswitch(left) as case:
-            if case(value_e.Int):
-                left = cast(value.Int, UP_left)
-                right = cast(value.Int, UP_right)
-                if op_id == Id.Arith_Less:
-                    return left.i < right.i
-                elif op_id == Id.Arith_Great:
-                    return left.i > right.i
-                elif op_id == Id.Arith_LessEqual:
-                    return left.i <= right.i
-                elif op_id == Id.Arith_GreatEqual:
-                    return left.i >= right.i
+        if c == coerced_e.Int:
+            with switch(op_id) as case:
+                if case(Id.Arith_Less):
+                    return i1 < i2
+                elif case(Id.Arith_Great):
+                    return i1 > i2
+                elif case(Id.Arith_LessEqual):
+                    return i1 <= i2
+                elif case(Id.Arith_GreatEqual):
+                    return i1 >= i2
                 else:
                     raise AssertionError()
 
-            elif case(value_e.Float):
-                left = cast(value.Float, UP_left)
-                right = cast(value.Float, UP_right)
-                if op_id == Id.Arith_Less:
-                    return left.f < right.f
-                elif op_id == Id.Arith_Great:
-                    return left.f > right.f
-                elif op_id == Id.Arith_LessEqual:
-                    return left.f <= right.f
-                elif op_id == Id.Arith_GreatEqual:
-                    return left.f >= right.f
+        elif c == coerced_e.Float:
+            with switch(op_id) as case:
+                if case(Id.Arith_Less):
+                    return f1 < f2
+                elif case(Id.Arith_Great):
+                    return f1 > f2
+                elif case(Id.Arith_LessEqual):
+                    return f1 <= f2
+                elif case(Id.Arith_GreatEqual):
+                    return f1 >= f2
                 else:
                     raise AssertionError()
 
-            else:
-                raise error.InvalidType2(
-                    left, 'Comparison expected Int or Float', op)
-
-        raise AssertionError()  # silence C++ compiler
+        else:
+            raise error.InvalidType(
+                'Comparison operator expected numbers, got %s and %s' %
+                (ui.ValType(left), ui.ValType(right)), op)
 
     def _EvalCompare(self, node):
         # type: (expr.Compare) -> value_t
@@ -1413,6 +1384,5 @@ class ExprEvaluator(object):
             new_node.PrettyPrint()
             print()
         return new_node
-
 
 # vim: sw=4

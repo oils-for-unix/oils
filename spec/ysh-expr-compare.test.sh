@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Exact equality with === and !==
 shopt -s oil:all
@@ -157,16 +157,14 @@ si  i true
 sf  f true
  f sf true
 ---
- i  f 6.0
-si  f 6.0
- i sf 6.0
+ i  f false
+si  f false
+ i sf false
 ---
- f  i 2.5
-sf  i 2.5
- f si 2.5
+ f  i true
+sf  i true
+ f si true
 ## END
-
-
 
 #### Comparison of Int 
 shopt -s oil:upgrade
