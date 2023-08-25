@@ -3,13 +3,27 @@
 #include "mycpp/gc_mylib.h"
 #include "vendor/greatest.h"
 
+// Convenience function
+template <typename K, typename V>
+Dict<K, V>* NewDict() {
+  return Alloc<Dict<K, V>>();
+}
+
 GLOBAL_STR(kStrFoo, "foo");
 GLOBAL_STR(kStrBar, "bar");
 
 TEST test_dict_init() {
   Str* s = StrFromC("foo");
-  Dict<int, Str*>* d = NewDict<int, Str*>({42}, {s});
+  Str* s2 = StrFromC("bar");
+
+  Dict<int, Str*>* d = Alloc<Dict<int, Str*>>(std::initializer_list<int>{42},
+                                              std::initializer_list<Str*>{s});
   ASSERT_EQ(s, d->index_(42));
+
+  Dict<Str*, int>* d2 = Alloc<Dict<Str*, int>>(
+      std::initializer_list<Str*>{s, s2}, std::initializer_list<int>{43, 99});
+  ASSERT_EQ(43, d2->index_(s));
+  ASSERT_EQ(99, d2->index_(s2));
 
   PASS();
 }
@@ -235,8 +249,8 @@ TEST test_dict_internals() {
   StackRoots _roots6({&two});
 
   auto dict3 =
-      NewDict<int, Str*>(std::initializer_list<int>{1, 2},
-                         std::initializer_list<Str*>{kEmptyString, two});
+      Alloc<Dict<int, Str*>>(std::initializer_list<int>{1, 2},
+                             std::initializer_list<Str*>{kEmptyString, two});
   StackRoots _roots7({&dict3});
 
   ASSERT_EQ_FMT(2, len(dict3), "%d");

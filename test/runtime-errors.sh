@@ -1034,6 +1034,49 @@ EOF
   assert $? -eq 0
 }
 
+fallback_locations() {
+  # Redirect
+  _error-case 'echo hi > /'
+
+  _error-case 's=x; (( s[0] ))' 
+
+  _error-case 's=x; (( s[0] = 42 ))' 
+
+  _error-case 'set -u; (( undef ))'
+
+  _error-case '(( 3 ** -2 ))'
+  echo
+
+  # DBracket
+  _error-case 'set -u; [[ $undef =~ . ]]'
+
+  # No good fallback info here, we need it
+  _error-case '[[ $x =~ $(( 3 ** -2 )) ]]'
+
+  _error-case-2 'type -x'  # correctly points to -x
+  _error-case-2 'use x'
+
+  #_error-case-2 'write --qsn'
+  _error-case-2 'read --qsn'
+
+  # Assign builtin
+  _error-case-2 'export -f'
+
+  _error-case 's=$(true) y=$(( 3 ** -2 ))'
+
+  _error-case 'if s=$(true) y=$(( 3 ** -2 )); then echo hi; fi'
+
+  _error-case 'shopt -s strict_arith; x=a; echo $(( x ))'
+  _error-case 'shopt -s strict_arith; x=a; echo $(( $x ))'
+  _error-case 'shopt -s strict_arith; x=a; [[ $x -gt 3 ]]'
+  _error-case 'shopt -s strict_arith; shopt -u eval_unsafe_arith; x=a; [[ $x -gt 3 ]]'
+
+  _error-case 'shopt -s strict_arith; x=0xgg; echo $(( x ))'
+
+
+  echo done
+}
+
 #
 # TEST DRIVER
 #
@@ -1091,7 +1134,7 @@ all() {
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell \
     bool_status bool_status_simple \
-    qsn_decode; do
+    qsn_decode fallback_locations; do
 
     _run_test $t ''  # don't assert status
   done

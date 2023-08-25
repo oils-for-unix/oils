@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 
   int status = $main_namespace::main(args);
 
-  gHeap.FastProcessExit();
+  gHeap.ProcessExit();
 
   return status;
 }

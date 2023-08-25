@@ -400,8 +400,6 @@ class CommandEvaluator(object):
                     status = builtin_func.Run(cmd_val)
                 except error.Usage as e:  # Copied from RunBuiltin
                     arg0 = cmd_val.argv[0]
-                    if not e.HasLocation():  # fill in default location.
-                        e.location = self.errfmt.CurrentLocation()
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
                     status = 2  # consistent error code for usage error
 
@@ -476,7 +474,7 @@ class CommandEvaluator(object):
                 arg_word = cast(CompoundWord, UP_arg)
 
                 # note: needed for redirect like 'echo foo > x$LINENO'
-                self.mem.SetLocationToken(r.op)
+                self.mem.SetTokenForLine(r.op)
 
                 redir_type = consts.RedirArgType(
                     r.op.id)  # could be static in the LST?
@@ -743,7 +741,7 @@ class CommandEvaluator(object):
                 # Note that for '> $LINENO' the location token is set in _EvalRedirect.
                 # TODO: blame_tok should always be set.
                 if node.blame_tok is not None:
-                    self.mem.SetLocationToken(node.blame_tok)
+                    self.mem.SetTokenForLine(node.blame_tok)
 
                 self._MaybeRunDebugTrap()
 
@@ -831,7 +829,7 @@ class CommandEvaluator(object):
                 # Expanded aliases need redirects and env bindings from the calling
                 # context, as well as redirects in the expansion!
 
-                # TODO: SetLocationToken to OUTSIDE?  Don't bother with stuff inside
+                # TODO: SetTokenForLine to OUTSIDE?  Don't bother with stuff inside
                 # expansion, since aliases are discouraged.
 
                 if len(node.more_env):
@@ -889,7 +887,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.DBracket):
                 node = cast(command.DBracket, UP_node)
-                self.mem.SetLocationToken(node.left)
+                self.mem.SetTokenForLine(node.left)
                 self._MaybeRunDebugTrap()
 
                 self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -901,7 +899,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.DParen):
                 node = cast(command.DParen, UP_node)
-                self.mem.SetLocationToken(node.left)
+                self.mem.SetTokenForLine(node.left)
                 self._MaybeRunDebugTrap()
 
                 self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -913,12 +911,11 @@ class CommandEvaluator(object):
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
+                # Point to var name (bare assignment has no keyword)
+                self.mem.SetTokenForLine(node.lhs[0].name)
 
                 # x = 'foo' in Hay blocks
                 if node.keyword is None or node.keyword.id == Id.KW_Const:
-                    self.mem.SetLocationToken(
-                        node.lhs[0].name)  # point to var name
-
                     # Note: there's only one LHS
                     vd_lval = location.LName(
                         node.lhs[0].name.tval)  # type: lvalue_t
@@ -931,8 +928,6 @@ class CommandEvaluator(object):
                                                        state.SetReadOnly))
 
                 else:
-                    self.mem.SetLocationToken(node.keyword)  # point to var
-
                     # TODO: optimize this common case (but measure)
                     assert len(node.lhs) == 1, node.lhs
 
@@ -946,9 +941,8 @@ class CommandEvaluator(object):
                 status = 0
 
             elif case(command_e.PlaceMutation):
-
                 node = cast(command.PlaceMutation, UP_node)
-                self.mem.SetLocationToken(node.keyword)  # point to setvar/set
+                self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
                 with switch(node.keyword.id) as case2:
                     if case2(Id.KW_SetVar):
@@ -1077,13 +1071,14 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
+                assert len(node.pairs) >= 1, node
+                pairs = node.pairs
+                self.mem.SetTokenForLine(pairs[0].left)
 
                 # x=y is 'neutered' inside 'proc'
                 which_scopes = self.mem.ScopesForWriting()
 
-                for pair in node.pairs:
-                    self.mem.SetLocationToken(pair.left)
-
+                for pair in pairs:
                     if pair.op == assign_op_e.PlusEqual:
                         assert pair.rhs, pair.rhs  # I don't think a+= is valid?
                         rhs = self.word_ev.EvalRhsWord(pair.rhs)
@@ -1139,7 +1134,7 @@ class CommandEvaluator(object):
             elif case(command_e.Expr):
                 node = cast(command.Expr, UP_node)
 
-                self.mem.SetLocationToken(node.keyword)
+                self.mem.SetTokenForLine(node.keyword)
                 val = self.expr_ev.EvalExpr(node.e, loc.Missing)
                 if mylib.PYTHON:
                     obj = cpython._ValueToPyObj(val)
@@ -1168,15 +1163,16 @@ class CommandEvaluator(object):
 
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
-                self.mem.SetLocationToken(node.keyword)
+                self.mem.SetTokenForLine(node.keyword)
 
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
                 raise vm.ValueControlFlow(node.keyword, val)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
+
                 keyword = node.keyword
-                self.mem.SetLocationToken(node.keyword)
+                self.mem.SetTokenForLine(keyword)
 
                 if node.arg_word:  # Evaluate the argument
                     str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1291,7 +1287,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
-                self.mem.SetLocationToken(node.keyword)
+                self.mem.SetTokenForLine(node.keyword)
                 status = 0
 
                 with ctx_LoopLevel(self):
@@ -1315,14 +1311,14 @@ class CommandEvaluator(object):
 
             elif case(command_e.ForEach):
                 node = cast(command.ForEach, UP_node)
-                self.mem.SetLocationToken(node.keyword)  # for x in $LINENO
+                self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
 
                 # for the 2 kinds of shell loop
                 iter_list = None  # type: List[str]
 
                 # for YSH loop
                 iter_expr = None  # type: expr_t
-                #iter_blame = None  # type: Token
+                expr_blame = None  # type: loc_t
 
                 iterable = node.iterable
                 UP_iterable = iterable
@@ -1339,7 +1335,7 @@ class CommandEvaluator(object):
                     elif case(for_iter_e.YshExpr):
                         iterable = cast(for_iter.YshExpr, UP_iterable)
                         iter_expr = iterable.e
-                        iter_expr_blame = iterable.blame
+                        expr_blame = iterable.blame
 
                 n = len(node.iter_names)
                 assert n > 0
@@ -1351,7 +1347,7 @@ class CommandEvaluator(object):
 
                 it2 = None  # type: val_ops._ContainerIter
                 if iter_list is None:  # for_expr.YshExpr
-                    val = self.expr_ev.EvalExpr(iter_expr, loc.Missing)
+                    val = self.expr_ev.EvalExpr(iter_expr, expr_blame)
 
                     UP_val = val
                     with tagswitch(val) as case:
@@ -1450,7 +1446,7 @@ class CommandEvaluator(object):
             elif case(command_e.ForExpr):
                 node = cast(command.ForExpr, UP_node)
 
-                self.mem.SetLocationToken(node.keyword)
+                self.mem.SetTokenForLine(node.keyword)
                 #self._MaybeRunDebugTrap()
 
                 status = 0
@@ -1486,7 +1482,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-                self.mem.SetLocationToken(node.name_tok)
+
                 if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
@@ -1500,7 +1496,6 @@ class CommandEvaluator(object):
             elif case(command_e.Proc):
                 node = cast(command.Proc, UP_node)
 
-                self.mem.SetLocationToken(node.name)
                 proc_name = lexer.TokenVal(node.name)
                 if proc_name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
@@ -1545,7 +1540,7 @@ class CommandEvaluator(object):
                             name, node.name)
 
                 # Needed in case the func is an existing variable name
-                self.mem.SetLocationToken(node.name)
+                self.mem.SetTokenForLine(node.name)
 
                 val = value.Func(Func(name, node, self.mem, self))
                 self.mem.SetValue(lval, val, scope_e.LocalOnly,
@@ -1555,15 +1550,18 @@ class CommandEvaluator(object):
 
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
+                # No SetTokenForLine() because
+                # - $LINENO can't appear directly in 'if'
+                # - 'if' doesn't directly cause errors
+                # It will be taken care of by command.Simple, condition, etc.
+
                 done = False
                 for if_arm in node.arms:
-                    self.mem.SetLocationToken(if_arm.keyword)
                     b = self._EvalCondition(if_arm.cond, if_arm.keyword)
                     if b:
                         status = self._ExecuteList(if_arm.action)
                         done = True
                         break
-                # TODO: The compiler should flatten this
                 if not done and node.else_action is not None:
                     status = self._ExecuteList(node.else_action)
 
@@ -1572,9 +1570,11 @@ class CommandEvaluator(object):
 
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
-                to_match = self._EvalCaseArg(node.to_match, node.case_kw)
 
-                self.mem.SetLocationToken(node.case_kw)
+                # Must set location for 'case $LINENO'
+                self.mem.SetTokenForLine(node.case_kw)
+
+                to_match = self._EvalCaseArg(node.to_match, node.case_kw)
                 self._MaybeRunDebugTrap()
 
                 status = 0  # If there are no arms, it should be zero?
@@ -1724,7 +1724,7 @@ class CommandEvaluator(object):
                             check_errexit = cmd_st.check_errexit
                         except error.FailGlob as e:
                             if not e.HasLocation():  # Last resort!
-                                e.location = self.mem.CurrentLocation()
+                                e.location = self.mem.GetFallbackLocation()
                             self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                             status = 1
                             check_errexit = True
@@ -1935,7 +1935,9 @@ class CommandEvaluator(object):
             self.dumper.MaybeRecord(self, err)
 
             if not err.HasLocation():  # Last resort!
-                err.location = self.mem.CurrentLocation()
+                #log('Missing location')
+                err.location = self.mem.GetFallbackLocation()
+                #log('%s', err.location)
 
             if is_errexit:
                 if self.exec_opts.verbose_errexit():
@@ -1992,7 +1994,7 @@ class CommandEvaluator(object):
             with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
                 with state.ctx_Registers(self.mem):  # prevent setting $? etc.
                     with state.ctx_DebugTrap(
-                            self.mem):  # for SetLocationToken $LINENO
+                            self.mem):  # for SetTokenForLine $LINENO
                         # Don't catch util.UserExit, etc.
                         self._Execute(node)
 

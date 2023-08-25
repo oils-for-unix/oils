@@ -7,7 +7,7 @@
 TEST for_code_coverage() {
   // Add coverage for some methods
 
-  gHeap.FastProcessExit();
+  gHeap.ProcessExit();
 
   PASS();
 }

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Exact equality with === and !==
 shopt -s oil:all
@@ -252,7 +252,8 @@ echo 'should not get here'
 
 
 #### Chained Comparisons
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
+
 if (1 < 2 < 3) {
   echo '123'
 }
@@ -271,13 +272,7 @@ if (1 < 2 < 2) {
 no
 ## END
 
-#### Tuple comparison is not allowed
-
-# TODO:
-# - tuples aren't hashable, so I think they shouldn't be comparable
-# - and probably should just be removed from the language.  JS doesn't have
-#   them
-#   - I think records and destructuring would be better
+#### List / "Tuple" comparison is not allowed
 
 shopt -s oil:upgrade
 
@@ -289,10 +284,25 @@ if (t2 > t1) { echo yes1 }
 if (t3 > t1) { echo yes2 }
 if ( (0,0) > t1) { echo yes3 }
 
-# NOTE: ((0,0)  causes problems -- it looks like a shell statement!
-#if ( (0,0) > t1) { echo yes3 }
+## status: 3
 ## STDOUT:
-yes1
-yes2
+## END
+
+#### Ternary op behaves like if statement
+shopt -s ysh:upgrade
+
+if ([1]) {
+  var y = 42
+} else {
+  var y = 0
+}
+echo y=$y
+
+var x = 42 if [1] else 0
+echo x=$x
+
+## STDOUT:
+y=42
+x=42
 ## END
 

@@ -71,7 +71,7 @@ void BumpLeakHeap::CleanProcessExit() {
   PrintStats(STDERR_FILENO);
 }
 
-void BumpLeakHeap::FastProcessExit() {
+void BumpLeakHeap::ProcessExit() {
   PrintStats(STDERR_FILENO);
 }
 #endif

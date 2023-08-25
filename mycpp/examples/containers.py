@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-mycpp/examples/container.py
+mycpp/examples/containers.py
 """
 from __future__ import print_function
 
@@ -23,9 +23,6 @@ gdict_ss = {'foo': 'foo'}
 def ListDemo():
   # type: () -> None
   intlist = []  # type: List[int]
-               # NOTE: this annotation is required, or MyPy has a partial type.
-               # I thoguht it would be able to infer it from expressions below.
-
   intlist.append(1)
   intlist.append(2)
   intlist.append(3)
@@ -35,8 +32,8 @@ def ListDemo():
 
   # turned into intlist->set(1, 42)
   intlist[1] = 42
-
   log("len(intlist) = %d", len(intlist))
+
   for i in intlist:
     log("i = %d", i)
 
@@ -60,26 +57,15 @@ def ListDemo():
   log('a? %d', 'a' in strlist)
   log('foo? %d', 'foo' in strlist)
 
-  #strlist.pop()
-  #strlist.pop()
-  x = strlist.pop()
   log("len(strlist) = %d", len(strlist))
-  # seg fault
-  #log("x = %s", x)
 
-  n = 3
+  x = strlist.pop()
+  log("x = %s", x)
+
+  # repeat string
   no_str = None  # type: Optional[str]
-  blank = [no_str] * n
+  blank = [no_str] * 3
   log("len(blank) = %d", len(blank))
-
-  log('len gEmptyDict = %d', len(gEmptyDict))
-  log('len gdict = %d', len(gdict))
-  log('len gdict_is = %d', len(gdict_is))
-  log('len gdict_ss = %d', len(gdict_ss))
-
-  #log('gdict["a"] = %d', gdict['a'])
-  #log('gdict_is[5] = %s', gdict_is[5])
-  #log('gdict_ss["foo"] = %s', gdict_ss['foo'])
 
 
 class Point(object):
@@ -152,6 +138,23 @@ def DictDemo():
   for k, v in iteritems(ordered):
     log("%s %d", k, v)
 
+  # This is a proper type error
+  # withargs = NewDict({'s': 42})  # type: Dict[str, int]
+
+  log('len gEmptyDict = %d', len(gEmptyDict))
+  log('len gdict = %d', len(gdict))
+  log('len gdict_is = %d', len(gdict_is))
+  log('len gdict_ss = %d', len(gdict_ss))
+
+  log('gdict["a"] = %d', gdict['a'])
+  log('gdict_is[5] = %s', gdict_is[5])
+  log('gdict_ss["foo"] = %s', gdict_ss['foo'])
+
+  lit = {'foo': 42, 'bar': 43}
+  log('foo = %d', lit['foo'])
+  if 'bar' in lit:
+    log('bar is a member')
+
 
 def run_tests():
   # type: () -> None
@@ -161,6 +164,7 @@ def run_tests():
   TupleDemo()
   log('')
   DictDemo()
+  log('')
 
 
 def run_benchmarks():

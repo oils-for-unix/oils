@@ -229,7 +229,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
         # a[i+1]= is a place
         src = source.Reparsed('array place', left_token, close_token)
-        with alloc.ctx_Location(arena, src):
+        with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 
         tmp3 = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
@@ -941,7 +941,7 @@ class CommandParser(object):
         # The interaction between COMPLETION and ALIASES requires special care.
         # See docstring of BeginAliasExpansion() in parse_lib.py.
         src = source.Alias(first_word_str, argv0_loc)
-        with alloc.ctx_Location(arena, src):
+        with alloc.ctx_SourceCode(arena, src):
             with parse_lib.ctx_Alias(self.parse_ctx.trail):
                 try:
                     # _ParseCommandTerm() handles multiline commands, compound commands, etc.
@@ -1314,12 +1314,17 @@ class CommandParser(object):
 
         self._GetWord()
         if self.c_id == Id.KW_In:
+            # Ideally we would want ( not 'in'.  But we still have to fix the bug
+            # where we require a SPACE between in and (
+            #   for x in(y)   # should be accepted, but isn't
+
+            expr_blame = word_.AsKeywordToken(self.cur_word)
 
             self._SetNext()  # skip in
             if self.w_parser.LookPastSpace() == Id.Op_LParen:
                 enode, last_token = self.parse_ctx.ParseYshExpr(
                     self.lexer, grammar_nt.oil_expr)
-                node.iterable = for_iter.YshExpr(enode, last_token)
+                node.iterable = for_iter.YshExpr(enode, expr_blame)
 
                 # For simplicity, we don't accept for x in (obj); do ...
                 self._GetWord()

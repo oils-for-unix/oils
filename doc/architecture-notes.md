@@ -104,6 +104,19 @@ Idea:
 - vtparse is another good example
 -->
 
+## Error Locations and Fallbacks
+
+- `ExecuteAndCatch` uses mem.CurrentLocation()
+- `Failglob` uses mem.CurrentLocation()
+- `mem.GetVar $LINENO` uses current_tok, but it can be buggy
+  - this is difference than BASH_LINENO, which is for the call stack!
+
+Other:
+
+- `ui.ctx_Location`
+  - So builtins can call `errfmt.Print_()` without locations
+- `alloc.ctx_SourceCode` for assigning `source_t` to tokens
+
 ## Other Topics
 
 - [Dependency Injection]($xref:dependency-injection)

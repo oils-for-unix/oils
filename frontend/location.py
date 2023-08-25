@@ -31,6 +31,7 @@ from _devbuild.gen.syntax_asdl import (
     CommandSub,
     BracedVarSub,
     BraceGroup,
+    arith_expr,
     arith_expr_e,
     arith_expr_t,
 )
@@ -176,12 +177,30 @@ def TokenForArith(node):
     with tagswitch(node) as case:
         if case(arith_expr_e.VarSub):
             vsub = cast(SimpleVarSub, UP_node)
+            # $(( x ))
             return vsub.left
+
         elif case(arith_expr_e.Word):
             w = cast(CompoundWord, UP_node)
             return LeftTokenForWord(w)
 
-        # TODO: Fill in other cases
+        elif case(arith_expr_e.Unary):
+            node = cast(arith_expr.Unary, UP_node)
+            return TokenForArith(node.child)
+
+        elif case(arith_expr_e.Binary):
+            node = cast(arith_expr.Binary, UP_node)
+
+            # TODO: should blame op
+            # blaming left is arbitrary, but better than nothing
+            return TokenForArith(node.left)
+
+        elif case(arith_expr_e.TernaryOp):
+            node = cast(arith_expr.TernaryOp, UP_node)
+
+            # TODO: should blame op
+            # blaming cond is arbitrary, but better than nothing
+            return TokenForArith(node.cond)
 
     return None
 

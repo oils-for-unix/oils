@@ -91,6 +91,13 @@ class Dict {
         entry_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
+    assert(keys.size() == values.size());
+    auto v = values.begin();  // This simulates a "zip" loop
+    for (auto key : keys) {
+      // note: calls reserve(), and maybe allocate
+      this->set(key, *v);
+      ++v;
+    }
   }
 
   // This relies on the fact that containers of 4-byte ints are reduced by 2
@@ -176,7 +183,8 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return haystack->position_of_key(needle) != -1;
 }
 
-// TODO: Remove one of these styles using mycpp code gen
+#if 0
+// mylib.NewDict() translates to this
 template <typename K, typename V>
 Dict<K, V>* NewDict() {
   return Alloc<Dict<K, V>>();
@@ -189,12 +197,14 @@ Dict<K, V>* NewDict(std::initializer_list<K> keys,
   auto self = Alloc<Dict<K, V>>();
   auto v = values.begin();  // This simulates a "zip" loop
   for (auto key : keys) {
+    // note: calls reserve(), and maybe allocate
     self->set(key, *v);
     ++v;
   }
 
   return self;
 }
+#endif
 
 template <typename K, typename V>
 void Dict<K, V>::reserve(int n) {
@@ -401,7 +411,7 @@ class DictIter {
 // dict(l) converts a list of (k, v) tuples into a dict
 template <typename K, typename V>
 Dict<K, V>* dict(List<Tuple2<K, V>*>* l) {
-  auto ret = NewDict<K, V>();
+  auto ret = Alloc<Dict<K, V>>();
   ret->reserve(len(l));
   for (ListIter<Tuple2<K, V>*> it(l); !it.Done(); it.Next()) {
     ret->set(it.Value()->at0(), it.Value()->at1());

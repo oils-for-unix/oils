@@ -49,6 +49,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core.error import e_die, e_die_status
 from core import state
+from core import ui
 from core import vm
 from frontend import consts
 from frontend import match
@@ -125,7 +126,7 @@ class ExprEvaluator(object):
     def EvalPlusEquals(self, lval, rhs_val):
         # type: (lvalue.Named, value_t) -> value_t
         """Called by CommandEvaluator."""
-        lhs_val = self._LookupVar(lval.name, loc.Missing)
+        lhs_val = self._LookupVar(lval.name, lval.blame_loc)
         return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
 
     def EvalLHS(self, node):
@@ -208,7 +209,7 @@ class ExprEvaluator(object):
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
 
-        val = self.EvalExpr(part.child, loc.Missing)
+        val = self.EvalExpr(part.child, part.left)
 
         if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
             s = val_ops.Stringify(val, loc.WordPart(part))
@@ -231,6 +232,7 @@ class ExprEvaluator(object):
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit is on."""
+        self.mem.SetLocationForExpr(blame_loc)
         if mylib.PYTHON:
             try:
                 with state.ctx_OilExpr(self.mutable_opts):
@@ -272,10 +274,9 @@ class ExprEvaluator(object):
 
     def _ValueToNumber(self, val):
         # type: (value_t) -> value_t
-        """If val is a number-looking string, it will be converted to the
-        appropriate type.
+        """If val looks like Int or Float, convert it to that type.
 
-        Otherwise val is returned untouched.
+        Otherwise return it untouched.
         """
         UP_val = val
         with tagswitch(val) as case:
@@ -353,9 +354,7 @@ class ExprEvaluator(object):
                     return value.Float(-child.f)
 
                 else:
-                    # TODO: want location of operand
-                    raise error.InvalidType('Expected Int or Float',
-                                            loc.Missing)
+                    raise error.InvalidType('Expected Int or Float', node.op)
 
         if node.op.id == Id.Arith_Tilde:
             UP_child = child
@@ -365,9 +364,7 @@ class ExprEvaluator(object):
                     return value.Int(~child.i)
 
                 else:
-                    # TODO: want location of operand
-                    raise error.InvalidType2(child, 'Expected Int',
-                                             loc.Missing)
+                    raise error.InvalidType2(child, 'Expected Int', node.op)
 
         if node.op.id == Id.Expr_Not:
             UP_child = child
@@ -377,8 +374,7 @@ class ExprEvaluator(object):
                     return value.Bool(not child.b)
 
                 else:
-                    # TODO: want location of operand
-                    raise error.InvalidType('Expected Bool', loc.Missing)
+                    raise error.InvalidType('Expected Bool', node.op)
 
         raise NotImplementedError(node.op.id)
 
@@ -480,38 +476,6 @@ class ExprEvaluator(object):
 
         raise AssertionError()  # silence C++ compiler
 
-    def _ArithDivideInt(self, left, right):
-        # type: (value_t, value_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
-        if right_i == 0:
-            raise ZeroDivisionError()
-
-        return value.Int(left_i // right_i)
-
-    def _ArithModulus(self, left, right):
-        # type: (value_t, value_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
-        if right_i == 0:
-            raise ZeroDivisionError()
-
-        return value.Int(left_i % right_i)
-
-    def _ArithExponentiate(self, left, right):
-        # type: (value_t, value_t) -> value.Int
-        left_i = self._ValueToInteger(left)
-        right_i = self._ValueToInteger(right)
-
-        # Same as sh_expr_eval.py
-        if right_i < 0:
-            # TODO: error location
-            raise error.Expr("Exponent can't be less than zero", loc.Missing)
-        ret = 1
-        for i in xrange(right_i):
-            ret *= left_i
-        return value.Int(ret)
-
     def _ArithBitwise(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> value.Int
         left_i = self._ValueToInteger(left)
@@ -530,55 +494,29 @@ class ExprEvaluator(object):
 
         raise NotImplementedError()
 
-    def _ArithLogical(self, left, right, op_id):
-        # type: (value_t, value_t, Id_t) -> value_t
-        if op_id == Id.Expr_And:
-            if val_ops.ToBool(left):
-                return right
-            else:
-                return left
-
-        elif op_id == Id.Expr_Or:
-            if val_ops.ToBool(left):
-                return left
-            else:
-                return right
-
-        else:
-            raise AssertionError(op_id)
-
     def _Concat(self, left, right):
         # type: (value_t, value_t) -> value_t
         UP_left = left
         UP_right = right
 
-        with tagswitch(left) as lcase:
-            if lcase(value_e.List):
-                left = cast(value.List, UP_left)
+        if left.tag() == value_e.Str and right.tag() == value_e.Str:
+            left = cast(value.Str, UP_left)
+            right = cast(value.Str, UP_right)
 
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.List):
-                        right = cast(value.List, UP_right)
-                        c = list(left.items)  # mycpp rewrite of L1 + L2
-                        c.extend(right.items)
-                        return value.List(c)
+            return value.Str(left.s + right.s)
 
-                    else:
-                        raise error.InvalidType('Expected List', loc.Missing)
+        elif left.tag() == value_e.List and right.tag() == value_e.List:
+            left = cast(value.List, UP_left)
+            right = cast(value.List, UP_right)
 
-            elif lcase(value_e.Str):
-                left = cast(value.Str, UP_left)
-                with tagswitch(right) as rcase:
-                    if rcase(value_e.Str):
-                        right = cast(value.Str, UP_right)
-                        return value.Str(left.s + right.s)
+            c = list(left.items)  # mycpp rewrite of L1 + L2
+            c.extend(right.items)
+            return value.List(c)
 
-                    else:
-                        raise error.InvalidType('Expected String', loc.Missing)
-
-            else:
-                raise error.InvalidType2(left, '++ expected Str or List',
-                                         loc.Missing)
+        else:
+            raise error.InvalidType(
+                    'Expected Str ++ Str or List ++ List, got %s ++ %s' %
+                    (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -586,36 +524,67 @@ class ExprEvaluator(object):
         left = self._EvalExpr(node.left)
         right = self._EvalExpr(node.right)
 
-        if node.op.id in \
-          (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
-            try:
-                return self._ArithNumeric(left, right, node.op.id)
-            except ZeroDivisionError:
-                raise error.Expr('divide by zero', node.op)
-
-        if node.op.id == Id.Expr_DSlash:
-            return self._ArithDivideInt(left, right)
-        if node.op.id == Id.Arith_Percent:
-            return self._ArithModulus(left, right)
-
-        if node.op.id == Id.Arith_DStar:  # Exponentiation
-            return self._ArithExponentiate(left, right)
-
-        if node.op.id == Id.Arith_DPlus:
-            # list or string concatenation
-            # dicts can have duplicates, so don't mess with that
-            return self._Concat(left, right)
-
-        # Bitwise
-        if node.op.id in \
-          (Id.Arith_Amp, Id.Arith_Pipe, Id.Arith_Caret, Id.Arith_DGreat, Id.Arith_DLess):
-            return self._ArithBitwise(left, right, node.op.id)
+        op_id = node.op.id
 
         # Logical
-        if node.op.id in (Id.Expr_And, Id.Expr_Or):
-            return self._ArithLogical(left, right, node.op.id)
+        if op_id == Id.Expr_And:
+            if val_ops.ToBool(left):  # no errors
+                return right
+            else:
+                return left
 
-        raise NotImplementedError(node.op.id)
+        if op_id == Id.Expr_Or:
+            if val_ops.ToBool(left):
+                return left
+            else:
+                return right
+
+        # Str or List
+        if op_id == Id.Arith_DPlus:  # a ++ b to concat
+            return self._Concat(left, right)
+
+        # Int or Float
+        if op_id in \
+          (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
+            try:
+                return self._ArithNumeric(left, right, op_id)
+            except ZeroDivisionError:
+                raise error.Expr('Divide by zero', node.op)
+
+        # Everything below has 2 integer operands
+        if op_id == Id.Expr_DSlash:  # a // b
+            left_i = self._ValueToInteger(left)
+            right_i = self._ValueToInteger(right)
+            if right_i == 0:
+                raise error.Expr('Divide by zero', node.op)
+            return value.Int(left_i // right_i)
+
+        if op_id == Id.Arith_Percent:  # a % b
+            left_i = self._ValueToInteger(left)
+            right_i = self._ValueToInteger(right)
+            if right_i == 0:
+                raise error.Expr('Divide by zero', node.op)
+            return value.Int(left_i % right_i)
+
+        if op_id == Id.Arith_DStar:  # a ** b
+            left_i = self._ValueToInteger(left)
+            right_i = self._ValueToInteger(right)
+
+            # Same as sh_expr_eval.py
+            if right_i < 0:
+                raise error.Expr("Exponent can't be a negative number",
+                                 node.op)
+            ret = 1
+            for i in xrange(right_i):
+                ret *= left_i
+            return value.Int(ret)
+
+        # Bitwise
+        if op_id in \
+          (Id.Arith_Amp, Id.Arith_Pipe, Id.Arith_Caret, Id.Arith_DGreat, Id.Arith_DLess):
+            return self._ArithBitwise(left, right, op_id)
+
+        raise NotImplementedError(op_id)
 
     def _EvalSlice(self, node):
         # type: (expr.Slice) -> value_t
@@ -625,6 +594,7 @@ class ExprEvaluator(object):
         if node.lower:
             UP_lower = self._EvalExpr(node.lower)
             if UP_lower.tag() != value_e.Int:
+                # TODO: add location op to expr.Slice
                 raise error.InvalidType('Slice indices must be Ints',
                                         loc.Missing)
 
@@ -647,6 +617,7 @@ class ExprEvaluator(object):
 
         UP_lower = self._EvalExpr(node.lower)
         if UP_lower.tag() != value_e.Int:
+            # TODO: add location op to expr.Range
             raise error.InvalidType('Range indices must be Ints',
                                     loc.Missing)
 
@@ -664,27 +635,28 @@ class ExprEvaluator(object):
         return value.Range(lower.i, upper.i)
 
     def _CompareNumeric(self, left, right, op):
-        # type: (value_t, value_t, Id_t) -> bool
+        # type: (value_t, value_t, Token) -> bool
         left = self._ValueToNumber(left)
         right = self._ValueToNumber(right)
         UP_left = left
         UP_right = right
 
         if left.tag() != right.tag():
-            raise error.InvalidType3(left, right, 'Mismatched types',
-                                     loc.Missing)
+            raise error.InvalidType3(
+                    left, right, 'Comparison expected the same type', op)
 
+        op_id = op.id
         with tagswitch(left) as case:
             if case(value_e.Int):
                 left = cast(value.Int, UP_left)
                 right = cast(value.Int, UP_right)
-                if op == Id.Arith_Less:
+                if op_id == Id.Arith_Less:
                     return left.i < right.i
-                elif op == Id.Arith_Great:
+                elif op_id == Id.Arith_Great:
                     return left.i > right.i
-                elif op == Id.Arith_LessEqual:
+                elif op_id == Id.Arith_LessEqual:
                     return left.i <= right.i
-                elif op == Id.Arith_GreatEqual:
+                elif op_id == Id.Arith_GreatEqual:
                     return left.i >= right.i
                 else:
                     raise AssertionError()
@@ -692,20 +664,20 @@ class ExprEvaluator(object):
             elif case(value_e.Float):
                 left = cast(value.Float, UP_left)
                 right = cast(value.Float, UP_right)
-                if op == Id.Arith_Less:
+                if op_id == Id.Arith_Less:
                     return left.f < right.f
-                elif op == Id.Arith_Great:
+                elif op_id == Id.Arith_Great:
                     return left.f > right.f
-                elif op == Id.Arith_LessEqual:
+                elif op_id == Id.Arith_LessEqual:
                     return left.f <= right.f
-                elif op == Id.Arith_GreatEqual:
+                elif op_id == Id.Arith_GreatEqual:
                     return left.f >= right.f
                 else:
                     raise AssertionError()
 
             else:
-                raise error.InvalidType('Expected Int or Float operands',
-                                        loc.Missing)
+                raise error.InvalidType2(
+                    left, 'Comparison expected Int or Float', op)
 
         raise AssertionError()  # silence C++ compiler
 
@@ -721,7 +693,7 @@ class ExprEvaluator(object):
 
             if op.id in \
               (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual):
-                result = self._CompareNumeric(left, right, op.id)
+                result = self._CompareNumeric(left, right, op)
 
             elif op.id == Id.Expr_TEqual:
                 if left.tag() != right.tag():
@@ -840,10 +812,8 @@ class ExprEvaluator(object):
 
     def _EvalIfExp(self, node):
         # type: (expr.IfExp) -> value_t
-        UP_b = self._EvalExpr(node.test)
-        assert UP_b.tag() == value_e.Bool
-        b = cast(value.Bool, UP_b)
-        if b.b:
+        b = val_ops.ToBool(self._EvalExpr(node.test))
+        if b:
             return self._EvalExpr(node.body)
         else:
             return self._EvalExpr(node.orelse)
@@ -857,6 +827,7 @@ class ExprEvaluator(object):
         for i, value_expr in enumerate(node.values):
             if value_expr.tag() == expr_e.Implicit:
                 if keys[i].tag() != value_e.Str:
+                    # TODO: expr.Dict needs {
                     raise error.InvalidType('Dict keys must be strings',
                                             loc.Missing)
 
@@ -992,7 +963,7 @@ class ExprEvaluator(object):
 
             else:
                 raise error.InvalidType('Expected a function or method',
-                                        loc.Missing)
+                                        node.args.left)
 
         raise AssertionError()
 
@@ -1085,7 +1056,7 @@ class ExprEvaluator(object):
             method = recv.get(name) if recv is not None else None
             if not method:
                 raise error.InvalidType(
-                    'Method %r does not exist on %r' % (name, ty), node.attr)
+                    'Method %r does not exist on type %s' % (name, ui.ValType(o)), node.attr)
 
             return value.BoundFunc(o, method)
 
@@ -1101,7 +1072,7 @@ class ExprEvaluator(object):
 
                 else:
                     raise error.InvalidType2(o, 'd.key expected Dict',
-                                             loc.Missing)
+                                             node.op)
 
             return result
 

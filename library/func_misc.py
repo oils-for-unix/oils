@@ -85,11 +85,10 @@ class StartsWith(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = typed_args.Spec([value_e.Str, value_e.Str], {})
-        spec.AssertArgs("startswith", pos_args, named_args)
-
-        string = cast(value.Str, pos_args[0]).s
-        match = cast(value.Str, pos_args[1]).s
+        arg_reader = typed_args.Reader(pos_args, named_args)
+        string = arg_reader.PosStr()
+        match = arg_reader.PosStr()
+        arg_reader.Done()
 
         res = string.startswith(match)
         return value.Bool(res)
@@ -104,10 +103,9 @@ class Strip(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = typed_args.Spec([value_e.Str], {})
-        spec.AssertArgs("strip", pos_args, named_args)
-
-        string = cast(value.Str, pos_args[0]).s
+        arg_reader = typed_args.Reader(pos_args, named_args)
+        string = arg_reader.PosStr()
+        arg_reader.Done()
 
         res = string.strip()
         return value.Str(res)
@@ -122,10 +120,9 @@ class Upper(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = typed_args.Spec([value_e.Str], {})
-        spec.AssertArgs("upper", pos_args, named_args)
-
-        string = cast(value.Str, pos_args[0]).s
+        arg_reader = typed_args.Reader(pos_args, named_args)
+        string = arg_reader.PosStr()
+        arg_reader.Done()
 
         res = string.upper()
         return value.Str(res)
@@ -140,10 +137,9 @@ class Keys(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        spec = typed_args.Spec([value_e.Dict], {})
-        spec.AssertArgs("keys", pos_args, named_args)
-
-        dictionary = cast(value.Dict, pos_args[0]).d
+        arg_reader = typed_args.Reader(pos_args, named_args)
+        dictionary = arg_reader.PosDict()
+        arg_reader.Done()
 
         keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
         return value.List(keys)
@@ -158,14 +154,11 @@ class Len(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        n_args = len(pos_args)
-        if n_args != 1:
-            raise error.InvalidType("len() expects exactly one argument but %d were given" %
-                          n_args, loc.Missing)
+        arg_reader = typed_args.Reader(pos_args, named_args)
+        x = arg_reader.PosValue()
+        arg_reader.Done()
 
-        x = pos_args[0]
         UP_x = x
-
         with tagswitch(x) as case:
             if case(value_e.List):
                 x = cast(value.List, UP_x)

@@ -49,7 +49,7 @@ def CommandType(cmd):
     # type: (command_t) -> str
     """For displaying commands in the UI."""
 
-    # Displays 'value.BashArray' for now, maybe change it.
+    # Displays 'command.Simple' for now, maybe change it.
     return StrFromC(command_str(cmd.tag()))
 
 
@@ -308,26 +308,20 @@ class ErrorFormatter(object):
     # A stack used for the current builtin.  A fallback for UsageError.
     # TODO: Should we have PushBuiltinName?  Then we can have a consistent style
     # like foo.sh:1: (compopt) Not currently executing.
-
-    def CurrentLocation(self):
-        # type: () -> loc_t
-        if len(self.loc_stack):
-            return self.loc_stack[-1]
-        else:
+    def _FallbackLocation(self, blame_loc):
+        # type: (Optional[loc_t]) -> loc_t
+        if blame_loc is None or blame_loc.tag() == loc_e.Missing:
+            if len(self.loc_stack):
+                return self.loc_stack[-1]
             return loc.Missing
+
+        return blame_loc
 
     def PrefixPrint(self, msg, prefix, blame_loc):
         # type: (str, str, loc_t) -> None
         """Print a hard-coded message with a prefix, and quote code."""
-        _PrintWithLocation(prefix, msg, blame_loc, show_code=True)
-
-    def _FallbackLocation(self, blame_loc):
-        # type: (Optional[loc_t]) -> loc_t
-        if blame_loc is None:
-            return self.CurrentLocation()
-        if blame_loc.tag() == loc_e.Missing:
-            blame_loc = self.CurrentLocation()
-        return blame_loc
+        _PrintWithLocation(prefix, msg, self._FallbackLocation(blame_loc),
+                           show_code=True)
 
     def Print_(self, msg, blame_loc=None):
         # type: (str, loc_t) -> None
@@ -354,7 +348,7 @@ class ErrorFormatter(object):
         # type: (_ErrorWithLocation, str) -> None
         """Print an exception that was caught, with a code quotation.
 
-        Unlike other methods, this doesn't use the CurrentLocation()
+        Unlike other methods, this doesn't use the GetLocationForLine()
         fallback. That only applies to builtins; instead we check
         e.HasLocation() at a higher level, in CommandEvaluator.
         """

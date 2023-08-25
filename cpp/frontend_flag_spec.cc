@@ -134,6 +134,12 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
   }
 }
 
+// Convenience function
+template <typename K, typename V>
+Dict<K, V>* NewDict() {
+  return Alloc<Dict<K, V>>();
+}
+
 // "Inflate" the static C data into a heap-allocated ASDL data structure.
 //
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?

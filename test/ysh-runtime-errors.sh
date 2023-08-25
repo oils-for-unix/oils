@@ -153,6 +153,23 @@ test-ysh-expr-eval() {
   # Wrong index type
   _expr-error-case 'var d = {}; setvar d[42] = 3'
   _expr-error-case 'var L = []; setvar L["key"] = 3'
+
+}
+
+test-ysh-expr-eval-2() {
+  _expr-error-case 'var L = []; var slice = L["foo": "bar"]'
+
+  _expr-error-case '= 3 < 4.0'
+  _expr-error-case '= 3 < true'
+  _expr-error-case '= "a" < "b"'
+
+  _expr-error-case 'var key = 42; var d = {[key]: 3}'
+
+  _expr-error-case 'var d = {}; var a = d.a'
+  _expr-error-case 'var d = []; var a = d.a'
+
+  _expr-error-case '= 3 ** -2'
+  _expr-error-case '= 3.2 ** 2'
 }
 
 test-user-reported() {
@@ -183,6 +200,42 @@ test-user-reported() {
     setvar count += 1
   }
   '
+}
+
+test-fallback-locations() {
+  # Melvin noticed bug here
+  _expr-error-case 'if (len(42)) { echo hi }'
+
+  # Be even more specific
+  _expr-error-case 'if (1 + len(42)) { echo hi }'
+
+  # From Aidan's PR -- redefinition
+  _error-case 'const f = 42; func f() { echo hi }'
+
+  # ForEach shell
+  _expr-error-case 'for x in $[2 + len(42)] { echo hi }'
+
+  # ForEach YSH
+  _expr-error-case 'for x in (len(42)) { echo hi }'
+
+  _expr-error-case 'while (len(42)) { echo hi }'
+
+  _expr-error-case 'case (len(42)) { pat { echo argument } }'
+  _expr-error-case 'case (42) { (len(42)) { echo arm } }'
+
+  _expr-error-case 'case "$[len(42)]" in pat) echo hi ;; esac'
+
+  _expr-error-case 'var x = 3 + len(42)'
+  _expr-error-case 'const x = 3 + len(42)'
+  _expr-error-case 'setvar x = 3 + len(42)'
+
+  _expr-error-case 'setvar x = "s" + 5'
+  _expr-error-case 'while ("s" + 5) { echo yes } '
+
+  #_expr-error-case 'func f(x) { return (x) }; var x = f([1,2])(3); echo $x'
+
+  # Really bad one
+  _expr-error-case 'func f(x) { return (x) }; var x = f([1,2])[1](3); echo $x'
 }
 
 test-EvalExpr-calls() {

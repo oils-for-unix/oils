@@ -81,7 +81,7 @@ Str* ReadLine() {
 }
 
 Dict<Str*, Str*>* Environ() {
-  auto d = NewDict<Str*, Str*>();
+  auto d = Alloc<Dict<Str*, Str*>>();
 
   for (char** env = environ; *env; ++env) {
     char* pair = *env;

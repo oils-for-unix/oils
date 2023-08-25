@@ -1050,30 +1050,29 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self._WriteListElements(o.items)
             self.write(')')
 
-    def _WriteDictElements(self, o, key_type, val_type):
-        # Ran into a limit of C++ type inference.  Somehow you need
-        # std::initializer_list{} here, not just {}
-        self.write('std::initializer_list<%s>{' % GetCType(key_type))
-        for i, item in enumerate(o.items):
-            pass
-        self.write('}, ')
-
-        self.write('std::initializer_list<%s>{' % GetCType(val_type))
-        # TODO: values
-        self.write('}')
-
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
         dict_type = self.types[o]
-        key_type = dict_type.args[0]
-        val_type = dict_type.args[1]
-
         c_type = GetCType(dict_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
+        key_type, val_type = dict_type.args
+        key_c_type = GetCType(key_type)
+        val_c_type = GetCType(val_type)
+
         self.write('Alloc<%s>(' % c_type)
+        #self.write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
         if o.items:
-            self._WriteDictElements(o, key_type, val_type)
+            keys = [k for k, _ in o.items]
+            values = [v for _, v in o.items]
+
+            self.write('std::initializer_list<%s>' % key_c_type)
+            self._WriteListElements(keys)
+            self.write(', ')
+
+            self.write('std::initializer_list<%s>' % val_c_type)
+            self._WriteListElements(values)
+
         self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
@@ -1277,6 +1276,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self._WriteListElements(keys, sep=' COMMA ')
                 self.write(', ')
                 self._WriteListElements(values, sep=' COMMA ')
+
                 self.write(');\n')
                 return
 
@@ -1308,25 +1308,32 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if isinstance(o.rvalue, CallExpr):
             #    d = NewDict()  # type: Dict[int, int]
             # -> auto* d = NewDict<int, int>();
-            if o.rvalue.callee.name == 'NewDict':
+            #
+            # - NewDict exists in Python, it makes ordered dictionaries
+            # - We translate it here because we need type inference
+            #
+            # I think we could get rid of NewDict in C++, and have it only in
+            # Python.  
+            #
+            # We used to have the "allocating in a constructor" rooting
+            # problem, but I believe that's gone now.
 
+            callee = o.rvalue.callee
+
+            if callee.name == 'NewDict':
                 lval_type = self.types[lval]
-
                 key_type, val_type = lval_type.args
 
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
 
-                self.write_ind('auto* %s = NewDict<%s, %s>();\n', lval.name,
+                self.write_ind('auto* %s = Alloc<Dict<%s, %s>>();\n', lval.name,
                                key_c_type, val_c_type)
-                # Doesn't take elememnts
-                #self._WriteDictElements(o.rvalue, key_type, val_type)
-                #self.write(');\n')
                 return
 
             #    src = cast(source__SourcedFile, src)
             # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
-            if o.rvalue.callee.name == 'cast':
+            if callee.name == 'cast':
                 assert isinstance(lval, NameExpr)
                 call = o.rvalue
                 type_expr = call.args[0]

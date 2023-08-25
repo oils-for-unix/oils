@@ -155,8 +155,8 @@ TEST dicts_test() {
   log("m.ss = %p", m->ss);
   log("m.ib = %p", m->ib);
 
-  m->ss = NewDict<Str*, Str*>();
-  m->ib = NewDict<int, bool>();
+  m->ss = Alloc<Dict<Str*, Str*>>();
+  m->ib = Alloc<Dict<int, bool>>();
 
   m->ss->set(StrFromC("foo"), StrFromC("bar"));
 

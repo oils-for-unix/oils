@@ -94,7 +94,8 @@ setglobal_compile_flags() {
       ;;
 
     asan*)
-      flags="$flags -O0 -g -fsanitize=address"
+      # CLEAN_PROCESS_EXIT avoids spurious memory leaks
+      flags="$flags -O0 -g -fsanitize=address -D CLEAN_PROCESS_EXIT"
       ;;
 
     tsan*)

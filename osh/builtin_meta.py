@@ -69,7 +69,7 @@ class Eval(vm._Builtin):
 
         src = source.ArgvWord('eval', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
-            with alloc.ctx_Location(self.arena, src):
+            with alloc.ctx_SourceCode(self.arena, src):
                 return main_loop.Batch(self.cmd_ev,
                                        c_parser,
                                        self.errfmt,
@@ -149,7 +149,7 @@ class Source(vm._Builtin):
             with state.ctx_Source(self.mem, path, source_argv):
                 with state.ctx_ThisDir(self.mem, path):
                     src = source.SourcedFile(path, call_loc)
-                    with alloc.ctx_Location(self.arena, src):
+                    with alloc.ctx_SourceCode(self.arena, src):
                         try:
                             status = main_loop.Batch(
                                 self.cmd_ev,

@@ -92,7 +92,9 @@ core-error() {
     prebuilt/core/error.mycpp \
     $TEMP_DIR/core/error.mycpp.h \
     CORE_ERROR_MYCPP_H \
-    '#include "_gen/frontend/syntax.asdl.h"' \
+    '
+#include "_gen/core/runtime.asdl.h"
+#include "_gen/frontend/syntax.asdl.h"' \
     --to-header core.error \
     core/error.py
 }

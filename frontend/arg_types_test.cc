@@ -7,7 +7,7 @@ using runtime_asdl::value;
 TEST opaque_test() {
   // struct for command -v is HeapTag::Opaque
 
-  auto attrs = NewDict<Str*, runtime_asdl::value_t*>();
+  auto attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   StackRoots _r({&attrs});
 
   auto b = Alloc<value::Bool>(true);
@@ -28,7 +28,7 @@ TEST opaque_test() {
 TEST pointer_test() {
   // struct for printf -v is has Str*
 
-  auto attrs = NewDict<Str*, runtime_asdl::value_t*>();
+  auto attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
   StackRoots _r({&attrs});
 
   auto s = Alloc<value::Str>(StrFromC("hi %s"));

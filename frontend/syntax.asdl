@@ -254,6 +254,7 @@ module syntax
   condition = 
     Shell(List[command] commands)  # if false; true; then echo hi; fi
   | YshExpr(expr e)                # if (x > 0) { echo hi }
+                                   # TODO: add more specific blame location
 
   # Each arm tests one word against multiple words
   # shell:  *.cc|*.h) echo C++ ;;
@@ -363,8 +364,8 @@ module syntax
   | BareDecl(Token lhs, expr rhs)
     # var, const
   | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
-    # setvar/set, auto.
-  | PlaceMutation(Token? keyword, List[place_expr] lhs, Token op, expr rhs)
+    # setvar, maybe 'auto' later
+  | PlaceMutation(Token keyword, List[place_expr] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc(Token keyword, Token name, proc_sig sig, command body)

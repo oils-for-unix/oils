@@ -2,55 +2,15 @@
 """Typed_args.py."""
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_t, value_str
+from _devbuild.gen.runtime_asdl import value_t
 from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
                                        expr_e, expr_t, CommandSub)
 from core import error
 from core.error import e_usage
-from mycpp.mylib import tagswitch
+from mycpp.mylib import dict_erase, tagswitch
+from ysh import val_ops
 
 from typing import Optional, Dict, List, cast
-
-
-class Spec(object):
-    """Utility to express argument specifications (runtime typechecking)."""
-
-    def __init__(self, pos_args, named_args):
-        # type: (List[int], Dict[str, int]) -> None
-        """Empty constructor for mycpp."""
-        self.pos_args = pos_args
-        self.named_args = named_args
-
-    def AssertArgs(self, func_name, pos_args, named_args):
-        # type: (str, List[value_t], Dict[str, value_t]) -> None
-        """Assert any type differences between the spec and the given args."""
-        nargs = len(pos_args)
-        expected = len(self.pos_args)
-        if nargs != expected:
-            raise error.InvalidType(
-                "%s() expects %d arguments but %d were given" %
-                (func_name, expected, nargs), loc.Missing)
-
-        nargs = len(named_args)
-        expected = len(self.named_args)
-        if len(named_args) != 0:
-            raise error.InvalidType(
-                "%s() expects %d named arguments but %d were given" %
-                (func_name, expected, nargs), loc.Missing)
-
-        for i in xrange(len(pos_args)):
-            expected = self.pos_args[i]
-            got = pos_args[i]
-            if got.tag() != expected:
-                msg = "%s() expected %s" % (func_name, value_str(expected))
-                raise error.InvalidType2(got, msg, loc.Missing)
-
-        for name in named_args:
-            expected = self.named_args[name]
-            got = named_args[name]
-            if got.tag() != expected:
-                msg = "%s() expected %s" % (func_name, value_str(expected))
-                raise error.InvalidType2(got, msg, loc.Missing)
 
 
 class Reader(object):
@@ -99,6 +59,7 @@ class Reader(object):
     def __init__(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> None
         self.pos_args = pos_args
+        self.pos_consumed = 0
         self.named_args = named_args
 
     ### Words: untyped args for procs
@@ -113,32 +74,104 @@ class Reader(object):
 
     ### Typed positional args
 
-    # TODO: may need location info
+    def _GetNextPos(self):
+        # type: () -> value_t
+        if len(self.pos_args) == 0:
+            # TODO: may need location info
+            raise error.InvalidType(
+                'Expected at least %d arguments, but only got %d' %
+                (self.pos_consumed + 1, self.pos_consumed), loc.Missing)
+
+        self.pos_consumed += 1
+        return self.pos_args.pop(0)
+
     def PosStr(self):
         # type: () -> str
-        return None  # TODO
+        arg = self._GetNextPos()
+        return val_ops.MustBeStr(arg).s
 
     def PosInt(self):
         # type: () -> int
-        return -1  # TODO
+        arg = self._GetNextPos()
+        return val_ops.MustBeInt(arg).i
+
+    def PosFloat(self):
+        # type: () -> float
+        arg = self._GetNextPos()
+        return val_ops.MustBeFloat(arg).f
+
+    def PosList(self):
+        # type: () -> List[value_t]
+        arg = self._GetNextPos()
+        return val_ops.MustBeList(arg).items
+
+    def PosDict(self):
+        # type: () -> Dict[str, value_t]
+        arg = self._GetNextPos()
+        return val_ops.MustBeDict(arg).d
+
+    def PosValue(self):
+        # type: () -> value_t
+        return self._GetNextPos()
 
     def RestPos(self):
         # type: () -> List[value_t]
-        return None  # TODO
+        ret = self.pos_args
+        self.pos_args = []
+        return ret
 
     ### Typed named args
 
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
-        return None  # TODO
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeStr(self.named_args[param_name]).s
+        dict_erase(self.named_args, param_name)
+        return ret
 
     def NamedInt(self, param_name, default_):
         # type: (str, int) -> int
-        return -1  # TODO
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeInt(self.named_args[param_name]).i
+        dict_erase(self.named_args, param_name)
+        return ret
+
+    def NamedFloat(self, param_name, default_):
+        # type: (str, float) -> float
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeFloat(self.named_args[param_name]).f
+        dict_erase(self.named_args, param_name)
+        return ret
+
+    def NamedList(self, param_name, default_):
+        # type: (str, List[value_t]) -> List[value_t]
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeList(self.named_args[param_name]).items
+        dict_erase(self.named_args, param_name)
+        return ret
+
+    def NamedDict(self, param_name, default_):
+        # type: (str, Dict[str, value_t]) -> Dict[str, value_t]
+        if param_name not in self.named_args:
+            return default_
+
+        ret = val_ops.MustBeDict(self.named_args[param_name]).d
+        dict_erase(self.named_args, param_name)
+        return ret
 
     def RestNamed(self):
         # type: () -> Dict[str, value_t]
-        return None  # TODO
+        ret = self.named_args
+        self.named_args = {}
+        return ret
 
     def Block(self):
         # type: () -> command_t
@@ -159,7 +192,14 @@ class Reader(object):
         problem
         """
         # Note: Python throws TypeError on mismatch
-        pass
+        if len(self.pos_args):
+            raise error.InvalidType('Expected %d arguments, but got %d' %
+                                    (self.pos_consumed, self.pos_consumed +
+                                     len(self.pos_args)), loc.Missing)
+
+        if len(self.named_args):
+            bad_args = ','.join(self.named_args.keys())
+            raise error.InvalidType('Got unexpected named args: %s' % bad_args, loc.Missing)
 
 
 def DoesNotAccept(arg_list):
