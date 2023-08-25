@@ -710,12 +710,11 @@ class ExprEvaluator(object):
             elif op.id == Id.Expr_Is:
                 if left.tag() != right.tag():
                     raise error.InvalidType('Mismatched types', op)
-
                 result = left is right
+
             elif op.id == Id.Node_IsNot:
                 if left.tag() != right.tag():
                     raise error.InvalidType('Mismatched types', op)
-
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
@@ -958,8 +957,8 @@ class ExprEvaluator(object):
                 return ret
 
             else:
-                raise error.InvalidType('Expected a function or method',
-                                        node.args.left)
+                raise error.InvalidType2(func, 'Expected a function or method',
+                                         node.args.left)
 
         raise AssertionError()
 

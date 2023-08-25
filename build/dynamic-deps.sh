@@ -217,7 +217,7 @@ mycpp-example-parse() {
 
 pea-hack() {
   # Leave out help_.py for Soil
-  grep -v '_devbuild/gen/help_.py' $DIR/bin.oils_for_unix/typecheck.txt \
+  grep -v '_devbuild/gen/help_meta.py' $DIR/bin.oils_for_unix/typecheck.txt \
     > pea/oils-typecheck.txt
 }
 

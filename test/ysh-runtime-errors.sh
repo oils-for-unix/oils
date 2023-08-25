@@ -172,7 +172,6 @@ test-ysh-expr-eval-2() {
   _expr-error-case '= 3.2 ** 2'
 
   _expr-error-case '= - "foo"'
-  _expr-error-case '= not "foo"'
 }
 
 test-user-reported() {

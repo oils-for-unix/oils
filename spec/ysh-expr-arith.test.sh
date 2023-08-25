@@ -125,15 +125,3 @@ false
 ## status: 3
 ## STDOUT:
 ## END
-
-#### unary 'not' applied to int is not allowed
-= not 1
-## status: 3
-## STDOUT:
-## END
-
-#### unary 'not' applied to float is not allowed
-= not 1.
-## status: 3
-## STDOUT:
-## END

@@ -17,7 +17,7 @@ source build/dev-shell.sh  # find python3 in /wedge PATH component
 # This is just like the yapf problem in devtools/format.sh !
 # Pea needs a newer version of MyPy -- one that supports 'math'
 unset PYTHONPATH
-PYTHONPATH=.
+export PYTHONPATH=.
 
 readonly MYPY_VENV='_tmp/mypy-venv'
 
@@ -117,8 +117,8 @@ batch-size() {
   echo "$num_procs $files_per_process"
 }
 
-test-par() {
-  ### Test out parallelism of Python processes
+demo-par() {
+  ### Demo parallelism of Python processes
 
   local files
   num_files=$(all-files | wc -l)

@@ -11,10 +11,10 @@ from dataclasses import dataclass
 import io
 import optparse
 import os
+import pickle
 from pprint import pprint
 import sys
 import time
-import pickle
 
 import typing
 from typing import Optional, Any

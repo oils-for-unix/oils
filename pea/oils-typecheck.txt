@@ -49,6 +49,7 @@ frontend/signal_def.py
 frontend/typed_args.py
 library/func_eggex.py
 library/func_hay.py
+library/func_init.py
 library/func_misc.py
 osh/arith_parse.py
 osh/bool_parse.py
