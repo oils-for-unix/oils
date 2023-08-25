@@ -144,5 +144,4 @@ class Tuple5 {
   E e_;
 };
 
-
 #endif  // MYCPP_GC_TUPLE_H

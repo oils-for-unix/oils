@@ -28,6 +28,30 @@ Str* str(int i) {
   return s;
 }
 
+// TODO:
+// - This could use a fancy exact algorithm, not libc
+// - Does libc depend on locale?
+Str* str(double d) {
+  char buf[64];  // overestimate, but we use snprintf() to be safe
+
+  // Problem:
+  // %f prints 3.0000000 and 3.500000
+  // %g prints 3 and 3.5
+  //
+  // We want literal syntax to indicate float, so add '.'
+
+  int n = sizeof(buf) - 2;  // in case we add '.0'
+  int length = snprintf(buf, n, "%g", d);
+
+  if (!strchr(buf, '.')) {  // 12345 -> 12345.0
+    buf[length] = '.';
+    buf[length + 1] = '0';
+    buf[length + 2] = '\0';
+  }
+
+  return StrFromC(buf);
+}
+
 // Do we need this API?  Or is mylib.InternedStr(Str* s, int start, int end)
 // better for getting values out of Token.line without allocating?
 //

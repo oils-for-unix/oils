@@ -116,6 +116,8 @@ Str* repr(Str* s);
 
 Str* str(int i);
 
+Str* str(double d);
+
 Str* intern(Str* s);
 
 // Helper function: returns whether the string is a valid integer, and

@@ -206,6 +206,19 @@ TEST int_to_str_test() {
   PASS();
 }
 
+TEST float_to_str_test() {
+  Str* s = str(3.0);
+  ASSERT(str_equals0("3.0", s));
+  log("s = %s", s->data_);
+
+  double f = 3.5;
+  s = str(f);
+  ASSERT(str_equals0("3.5", s));
+  log("s = %s", s->data_);
+
+  PASS();
+}
+
 TEST comparators_test() {
   log("maybe_str_equals()");
   ASSERT(maybe_str_equals(kEmptyString, kEmptyString));
@@ -324,6 +337,7 @@ int main(int argc, char** argv) {
   RUN_TEST(StringToInteger_test);
   RUN_TEST(str_to_int_test);
   RUN_TEST(int_to_str_test);
+  RUN_TEST(float_to_str_test);
 
   RUN_TEST(comparators_test);
 
