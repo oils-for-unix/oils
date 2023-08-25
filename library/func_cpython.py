@@ -171,15 +171,9 @@ def Init(mem):
 
     # NOTE: IN-YSH means we can move it to YSH itself
 
-    # For compositionality and testing
-    SetGlobalFunc(mem, 'identity', lambda x: x)  # IN-YSH
-
-    SetGlobalFunc(mem, 'max', max)  # IN-YSH with <
-    SetGlobalFunc(mem, 'min', min)  # IN-YSH
     # NOTE: cmp() deprecated in Python 3
 
     # Utilities
-    SetGlobalFunc(mem, 'abs', abs)  # IN-YSH with <
     # round()
     # divmod() - probably useful?  Look at the implementation
 
