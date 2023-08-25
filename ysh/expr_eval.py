@@ -382,7 +382,7 @@ class ExprEvaluator(object):
         with tagswitch(val) as case:
             if case(value_e.Int):
                 val = cast(value.Int, UP_val)
-                return coerced_e.Int, val.i, float(val.i)
+                return coerced_e.Int, val.i, -1.0
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
@@ -391,9 +391,7 @@ class ExprEvaluator(object):
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 if match.LooksLikeInteger(val.s):
-                    i = int(val.s)
-                    f = float(i)  # convert from int to float
-                    return coerced_e.Int, i, f
+                    return coerced_e.Int, int(val.s), -1.0
 
                 if match.LooksLikeFloat(val.s):
                     return coerced_e.Float, -1, float(val.s)
@@ -404,32 +402,31 @@ class ExprEvaluator(object):
         # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
         """
         Returns one of
-          value_e.Int, value_e.Float
-          2 ints
-          2 floats that
+          value_e.Int or value_e.Float
+          2 ints or 2 floats
 
-        Depending on which ones are valid
+        To indicate which values the operation should be done on
         """
         c1, i1, f1 = self._ConvertToNumber(left)
         c2, i2, f2 = self._ConvertToNumber(right)
 
-        # (Int, Int)
         if c1 == coerced_e.Int and c2 == coerced_e.Int:
             return coerced_e.Int, i1, i2, -1.0, -1.0
 
-        # (Int, Float), (Float, Int), (Float, Float)
-        elif (
-            c1 == coerced_e.Int and c2 == coerced_e.Float or
-            c1 == coerced_e.Float and c2 == coerced_e.Int or
-            c1 == coerced_e.Float and c2 == coerced_e.Float):
+        elif c1 == coerced_e.Int and c2 == coerced_e.Float:
+            return coerced_e.Float, -1, -1, float(i1), f2
 
+        elif c1 == coerced_e.Float and c2 == coerced_e.Int:
+            return coerced_e.Float, -1, -1, f1, float(i2)
+
+        elif c1 == coerced_e.Float and c2 == coerced_e.Float:
             return coerced_e.Float, -1, -1, f1, f2
 
         else:
             # No operation is valid
             return coerced_e.Neither, -1, -1, -1.0, -1.0
 
-    def _ArithNumeric(self, left, right, op):
+    def _ArithNumeric(self, left, right, op_id):
         # type: (value_t, value_t, Id_t) -> value_t
         """
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
@@ -437,41 +434,40 @@ class ExprEvaluator(object):
         """
         c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
 
-        with switch(c) as case:
-            if case(coerced_e.Int):
-                if op == Id.Arith_Plus:
+        if c == coerced_e.Int:
+            with switch(op_id) as case:
+                if case(Id.Arith_Plus):
                     return value.Int(i1 + i2)
-                elif op == Id.Arith_Minus:
+                elif case(Id.Arith_Minus):
                     return value.Int(i1 - i2)
-                elif op == Id.Arith_Star:
+                elif case(Id.Arith_Star):
                     return value.Int(i1 * i2)
-                elif op == Id.Arith_Slash:
+                elif case(Id.Arith_Slash):
                     if i2 == 0:
                         raise ZeroDivisionError()
-                    return value.Float(f1 / f2)
+                    return value.Float(float(i1) / float(i2))
                 else:
                     raise AssertionError()
 
-            elif case(coerced_e.Float):
-                if op == Id.Arith_Plus:
+        elif c == coerced_e.Float:
+            with switch(op_id) as case:
+                if case(Id.Arith_Plus):
                     return value.Float(f1 + f2)
-                elif op == Id.Arith_Minus:
+                elif case(Id.Arith_Minus):
                     return value.Float(f1 - f2)
-                elif op == Id.Arith_Star:
+                elif case(Id.Arith_Star):
                     return value.Float(f1 * f2)
-                elif op == Id.Arith_Slash:
+                elif case(Id.Arith_Slash):
                     if f2 == 0.0:
                         raise ZeroDivisionError()
                     return value.Float(f1 / f2)
                 else:
                     raise AssertionError()
 
-            elif case(coerced_e.Neither):
-                raise error.InvalidType(
-                    'Binary operator expected numbers, got %s and %s' %
-                    (ui.ValType(left), ui.ValType(right)), loc.Missing)
-
-        raise AssertionError()  # silence C++ compiler
+        else:
+            raise error.InvalidType(
+                'Binary operator expected numbers, got %s and %s' %
+                (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
     def _ArithBitwise(self, left, right, op):
         # type: (value_t, value_t, Id_t) -> value.Int
