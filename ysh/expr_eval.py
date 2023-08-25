@@ -2,7 +2,7 @@
 """expr_eval.py."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
@@ -42,6 +42,7 @@ from _devbuild.gen.runtime_asdl import (
     part_value,
     part_value_t,
     lvalue,
+    lvalue_e,
     lvalue_t,
     value,
     value_e,
@@ -125,11 +126,24 @@ class ExprEvaluator(object):
         # type: (str, loc_t) -> value_t
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
-    def EvalPlusEquals(self, lval, rhs_val):
-        # type: (lvalue.Named, value_t) -> value_t
+    def EvalPlusEquals(self, lval, rhs_val, op):
+        # type: (lvalue_t, value_t, Token) -> value_t
         """Called by CommandEvaluator."""
-        lhs_val = self._LookupVar(lval.name, lval.blame_loc)
-        return self._ArithNumeric(lhs_val, rhs_val, Id.Arith_Plus)
+
+        # TODO: Handle other augmented assignment
+        #
+        # It might be nice to do auto d[x] += 1 too
+
+        UP_lval = lval
+        with tagswitch(lval) as case:
+            if case(lvalue_e.Named):
+                lval = cast(lvalue.Named, UP_lval)
+                lhs_val = self._LookupVar(lval.name, lval.blame_loc)
+                return self._ArithNumeric(lhs_val, rhs_val, op)
+            else:
+                # TODO: Handle other lvalue, like sh_expr_eval.OldValue() But
+                # this is for YSH values, not value.BashArray etc.
+                raise AssertionError()
 
     def EvalLHS(self, node):
         # type: (expr_t) -> lvalue_t
@@ -274,6 +288,56 @@ class ExprEvaluator(object):
 
         raise error.InvalidType2(val, 'Expected Int', loc.Missing)
 
+    def _ConvertToNumber(self, val):
+        # type: (value_t) -> Tuple[coerced_t, int, float]
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Int):
+                val = cast(value.Int, UP_val)
+                return coerced_e.Int, val.i, -1.0
+
+            elif case(value_e.Float):
+                val = cast(value.Float, UP_val)
+                return coerced_e.Float, -1, val.f
+
+            elif case(value_e.Str):
+                val = cast(value.Str, UP_val)
+                if match.LooksLikeInteger(val.s):
+                    return coerced_e.Int, int(val.s), -1.0
+
+                if match.LooksLikeFloat(val.s):
+                    return coerced_e.Float, -1, float(val.s)
+
+        return coerced_e.Neither, -1, -1.0
+
+    def _ConvertForBinaryOp(self, left, right):
+        # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+        """
+        Returns one of
+          value_e.Int or value_e.Float
+          2 ints or 2 floats
+
+        To indicate which values the operation should be done on
+        """
+        c1, i1, f1 = self._ConvertToNumber(left)
+        c2, i2, f2 = self._ConvertToNumber(right)
+
+        if c1 == coerced_e.Int and c2 == coerced_e.Int:
+            return coerced_e.Int, i1, i2, -1.0, -1.0
+
+        elif c1 == coerced_e.Int and c2 == coerced_e.Float:
+            return coerced_e.Float, -1, -1, float(i1), f2
+
+        elif c1 == coerced_e.Float and c2 == coerced_e.Int:
+            return coerced_e.Float, -1, -1, f1, float(i2)
+
+        elif c1 == coerced_e.Float and c2 == coerced_e.Float:
+            return coerced_e.Float, -1, -1, f1, f2
+
+        else:
+            # No operation is valid
+            return coerced_e.Neither, -1, -1, -1.0, -1.0
+
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
 
@@ -358,73 +422,25 @@ class ExprEvaluator(object):
 
         raise NotImplementedError(node.op.id)
 
-    def _ConvertToNumber(self, val):
-        # type: (value_t) -> Tuple[coerced_t, int, float]
-        UP_val = val
-        with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return coerced_e.Int, val.i, -1.0
-
-            elif case(value_e.Float):
-                val = cast(value.Float, UP_val)
-                return coerced_e.Float, -1, val.f
-
-            elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                if match.LooksLikeInteger(val.s):
-                    return coerced_e.Int, int(val.s), -1.0
-
-                if match.LooksLikeFloat(val.s):
-                    return coerced_e.Float, -1, float(val.s)
-
-        return coerced_e.Neither, -1, -1.0
-
-    def _ConvertForBinaryOp(self, left, right):
-        # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
-        """
-        Returns one of
-          value_e.Int or value_e.Float
-          2 ints or 2 floats
-
-        To indicate which values the operation should be done on
-        """
-        c1, i1, f1 = self._ConvertToNumber(left)
-        c2, i2, f2 = self._ConvertToNumber(right)
-
-        if c1 == coerced_e.Int and c2 == coerced_e.Int:
-            return coerced_e.Int, i1, i2, -1.0, -1.0
-
-        elif c1 == coerced_e.Int and c2 == coerced_e.Float:
-            return coerced_e.Float, -1, -1, float(i1), f2
-
-        elif c1 == coerced_e.Float and c2 == coerced_e.Int:
-            return coerced_e.Float, -1, -1, f1, float(i2)
-
-        elif c1 == coerced_e.Float and c2 == coerced_e.Float:
-            return coerced_e.Float, -1, -1, f1, f2
-
-        else:
-            # No operation is valid
-            return coerced_e.Neither, -1, -1, -1.0, -1.0
-
-    def _ArithNumeric(self, left, right, op_id):
-        # type: (value_t, value_t, Id_t) -> value_t
+    def _ArithNumeric(self, left, right, op):
+        # type: (value_t, value_t, Token) -> value_t
         """
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
         c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
 
+        op_id = op.id
+
         if c == coerced_e.Int:
             with switch(op_id) as case:
-                if case(Id.Arith_Plus):
+                if case(Id.Arith_Plus, Id.Arith_PlusEqual):
                     return value.Int(i1 + i2)
-                elif case(Id.Arith_Minus):
+                elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
                     return value.Int(i1 - i2)
-                elif case(Id.Arith_Star):
+                elif case(Id.Arith_Star, Id.Arith_StarEqual):
                     return value.Int(i1 * i2)
-                elif case(Id.Arith_Slash):
+                elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if i2 == 0:
                         raise ZeroDivisionError()
                     return value.Float(float(i1) / float(i2))
@@ -433,13 +449,13 @@ class ExprEvaluator(object):
 
         elif c == coerced_e.Float:
             with switch(op_id) as case:
-                if case(Id.Arith_Plus):
+                if case(Id.Arith_Plus, Id.Arith_PlusEqual):
                     return value.Float(f1 + f2)
-                elif case(Id.Arith_Minus):
+                elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
                     return value.Float(f1 - f2)
-                elif case(Id.Arith_Star):
+                elif case(Id.Arith_Star, Id.Arith_StarEqual):
                     return value.Float(f1 * f2)
-                elif case(Id.Arith_Slash):
+                elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if f2 == 0.0:
                         raise ZeroDivisionError()
                     return value.Float(f1 / f2)
@@ -504,7 +520,7 @@ class ExprEvaluator(object):
         if op_id in \
           (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
             try:
-                return self._ArithNumeric(left, right, op_id)
+                return self._ArithNumeric(left, right, node.op)
             except ZeroDivisionError:
                 raise error.Expr('Divide by zero', node.op)
 

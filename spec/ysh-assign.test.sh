@@ -1,7 +1,7 @@
 # Test var / setvar / etc.
 
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 
 # TODO: GetVar needs a mode where Obj[str] gets translated to value.Str?
@@ -73,6 +73,43 @@ setvar x += '9'
 (Str)   '42'
 (Int)   46
 (Int)   55
+## END
+
+#### Augmented assignment with floats
+
+var x = 42
+
+setvar x += 1.5
+echo $x
+
+setvar x += '1.5'
+echo $x
+
+setvar x += '3'
+echo $x
+## STDOUT:
+43.5
+45.0
+48.0
+## END
+
+#### Augmented assignment of dict entries
+
+var d = {x: 42}
+
+setvar d['x'] += 1.5
+echo $[d.x]
+
+setvar d.x += '1.5'
+echo $[d.x]
+
+setvar d.x += '3'
+echo $[d.x]
+
+## STDOUT:
+43.5
+45.0
+48.0
 ## END
 
 #### Augmented assignment doesn't work with multiple LHS
