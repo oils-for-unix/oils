@@ -720,6 +720,107 @@ class CommandEvaluator(object):
             else:
                 raise NotImplementedError()
 
+    def _EvalPlaceMutation(self, node):
+        # type: (command.PlaceMutation) -> None
+
+        with switch(node.keyword.id) as case2:
+            if case2(Id.KW_SetVar):
+                which_scopes = scope_e.LocalOnly
+            elif case2(Id.KW_SetGlobal):
+                which_scopes = scope_e.GlobalOnly
+            elif case2(Id.KW_SetRef):
+                # The out param is LOCAL, but the nameref lookup is dynamic
+                which_scopes = scope_e.LocalOnly
+            else:
+                raise AssertionError(node.keyword.id)
+
+        if node.op.id == Id.Arith_Equal:
+            right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+            UP_right_val = right_val
+
+            places = None  # type: List[lvalue_t]
+            rhs_vals = None  # type: List[value_t]
+
+            num_lhs = len(node.lhs)
+            if num_lhs == 1:
+                places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
+                rhs_vals = [right_val]
+            else:
+                items = val_ops.ToList(
+                    right_val, 'Destructuring assignment expected List',
+                    node.keyword)
+
+                num_rhs = len(items)
+                if num_lhs != num_rhs:
+                    raise error.Expr('%d != %d' % (num_lhs, num_rhs),
+                                     loc.Missing)
+
+                places = []
+                rhs_vals = []
+                for i, lhs_val in enumerate(node.lhs):
+                    places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
+                    rhs_vals.append(items[i])
+
+            for i, place in enumerate(places):
+                rval = rhs_vals[i]
+                UP_place = place
+
+                # setvar mylist[0] = 42
+                # setvar mydict['key'] = 42
+                if place.tag() == lvalue_e.ObjIndex:
+                    place = cast(lvalue.ObjIndex, UP_place)
+
+                    obj = place.obj
+                    UP_obj = obj
+                    with tagswitch(obj) as case:
+                        if case(value_e.List):
+                            obj = cast(value.List, UP_obj)
+                            index = val_ops.ToInt(place.index,
+                                                  'List index should be Int',
+                                                  loc.Missing)
+                            obj.items[index] = rval
+
+                        elif case(value_e.Dict):
+                            obj = cast(value.Dict, UP_obj)
+                            key = val_ops.ToStr(place.index,
+                                                'Dict index should be Str',
+                                                loc.Missing)
+                            obj.d[key] = rval
+
+                        else:
+                            raise error.TypeErr(
+                                obj, "obj[index] expected List or Dict",
+                                loc.Missing)
+
+                    if node.keyword.id == Id.KW_SetRef:
+                        e_die('setref obj[index] not implemented')
+
+                else:
+                    # top level variable
+                    self.mem.SetValue(place,
+                                      rval,
+                                      which_scopes,
+                                      flags=_PackFlags(node.keyword.id))
+
+        # TODO: Eval other augmented assignments.   Do we need "kind"
+        # here?
+        elif node.op.id == Id.Arith_PlusEqual:
+            # Checked in the parser
+            assert len(node.lhs) == 1
+
+            aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
+            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+
+            new_val = self.expr_ev.EvalPlusEquals(aug_lval, val, node.op)
+
+            self.mem.SetValue(aug_lval,
+                              new_val,
+                              which_scopes,
+                              flags=_PackFlags(node.keyword.id))
+
+        else:
+            raise NotImplementedError(Id_str(node.op.id))
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -943,111 +1044,8 @@ class CommandEvaluator(object):
                 node = cast(command.PlaceMutation, UP_node)
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
-                with switch(node.keyword.id) as case2:
-                    if case2(Id.KW_SetVar):
-                        which_scopes = scope_e.LocalOnly
-                    elif case2(Id.KW_SetGlobal):
-                        which_scopes = scope_e.GlobalOnly
-                    elif case2(Id.KW_SetRef):
-                        # The out param is LOCAL, but the nameref lookup is dynamic
-                        which_scopes = scope_e.LocalOnly
-                    else:
-                        raise AssertionError(node.keyword.id)
-
-                if node.op.id == Id.Arith_Equal:
-                    right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                    UP_right_val = right_val
-
-                    places = None  # type: List[lvalue_t]
-                    rhs_vals = None  # type: List[value_t]
-
-                    num_lhs = len(node.lhs)
-                    if num_lhs == 1:
-                        places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
-                        rhs_vals = [right_val]
-                    else:
-                        if right_val.tag() != value_e.List:
-                            raise error.TypeErr(right_val, 'expected a List',
-                                                loc.Missing)
-                        right_val = cast(value.List, UP_right_val)
-
-                        num_rhs = len(right_val.items)
-                        if num_lhs != num_rhs:
-                            raise error.Expr('%d != %d' % (num_lhs, num_rhs),
-                                             loc.Missing)
-
-                        places = []
-                        rhs_vals = []
-                        for i, lhs_val in enumerate(node.lhs):
-                            places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
-                            rhs_vals.append(right_val.items[i])
-
-                    for i, place in enumerate(places):
-                        rval = rhs_vals[i]
-                        UP_place = place
-
-                        # setvar mylist[0] = 42
-                        # setvar mydict['key'] = 42
-                        if place.tag() == lvalue_e.ObjIndex:
-                            place = cast(lvalue.ObjIndex, UP_place)
-
-                            obj = place.obj
-                            UP_obj = obj
-                            with tagswitch(obj) as case:
-                                if case(value_e.List):
-                                    obj = cast(value.List, UP_obj)
-                                    index = val_ops.ToInt(
-                                        place.index,
-                                        'List index should be Int',
-                                        loc.Missing)
-                                    obj.items[index] = rval
-
-                                elif case(value_e.Dict):
-                                    obj = cast(value.Dict, UP_obj)
-                                    key = val_ops.ToStr(
-                                        place.index,
-                                        'Dict index should be Str',
-                                        loc.Missing)
-                                    obj.d[key] = rval
-
-                                else:
-                                    raise error.TypeErr(
-                                        obj,
-                                        "obj[index] expected List or Dict",
-                                        loc.Missing)
-
-                            if node.keyword.id == Id.KW_SetRef:
-                                e_die('setref obj[index] not implemented')
-
-                        else:
-                            # top level variable
-                            self.mem.SetValue(place,
-                                              rval,
-                                              which_scopes,
-                                              flags=_PackFlags(
-                                                  node.keyword.id))
-
-                # TODO: Eval other augmented assignments.   Do we need "kind"
-                # here?
-                elif node.op.id == Id.Arith_PlusEqual:
-                    # Checked in the parser
-                    assert len(node.lhs) == 1
-
-                    aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
-                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-
-                    new_val = self.expr_ev.EvalPlusEquals(
-                        aug_lval, val, node.op)
-
-                    self.mem.SetValue(aug_lval,
-                                      new_val,
-                                      which_scopes,
-                                      flags=_PackFlags(node.keyword.id))
-
-                else:
-                    raise NotImplementedError(Id_str(node.op.id))
-
-                status = 0  # TODO: what should status be?
+                self._EvalPlaceMutation(node)
+                status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
