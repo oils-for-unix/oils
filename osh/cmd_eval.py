@@ -985,37 +985,16 @@ class CommandEvaluator(object):
                     for i, place in enumerate(places):
                         rval = rhs_vals[i]
                         UP_place = place
-                        tag = place.tag()
 
-                        if tag == lvalue_e.ObjIndex:
-                            # setvar mylist[0] = 42
-                            # setvar mydict['key'] = 42
+                        # setvar mylist[0] = 42
+                        # setvar mydict['key'] = 42
+                        if place.tag() == lvalue_e.ObjIndex:
                             place = cast(lvalue.ObjIndex, UP_place)
 
                             obj = place.obj
                             UP_obj = obj
                             with tagswitch(obj) as case:
-                                if case(value_e.BashArray):
-                                    obj = cast(value.BashArray, UP_obj)
-                                    index = val_ops.ToInt(
-                                        place.index,
-                                        'BashArray index should be Int',
-                                        loc.Missing)
-                                    r = val_ops.ToStr(
-                                        rval, 'RHS should be Str', loc.Missing)
-                                    obj.strs[index] = r
-
-                                elif case(value_e.BashAssoc):
-                                    obj = cast(value.BashAssoc, UP_obj)
-                                    key = val_ops.ToStr(
-                                        place.index, 'BashAssoc index ',
-                                        loc.Missing)
-                                    r = val_ops.ToStr(
-                                        rval, 'BashAssoc index should be Str',
-                                        loc.Missing)
-                                    obj.d[key] = r
-
-                                elif case(value_e.List):
+                                if case(value_e.List):
                                     obj = cast(value.List, UP_obj)
                                     index = val_ops.ToInt(
                                         place.index,
