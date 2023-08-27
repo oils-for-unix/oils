@@ -429,7 +429,7 @@ class ExprEvaluator(object):
                     return value.Int(i1 * i2)
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if i2 == 0:
-                        raise ZeroDivisionError()
+                        raise error.Expr('Divide by zero', op)
                     return value.Float(float(i1) / float(i2))
                 else:
                     raise AssertionError()
@@ -444,7 +444,7 @@ class ExprEvaluator(object):
                     return value.Float(f1 * f2)
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if f2 == 0.0:
-                        raise ZeroDivisionError()
+                        raise error.Expr('Divide by zero', op)
                     return value.Float(f1 / f2)
                 else:
                     raise AssertionError()
@@ -504,12 +504,9 @@ class ExprEvaluator(object):
             return self._Concat(left, right)
 
         # Int or Float
-        if op_id in \
-          (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
-            try:
-                return self._ArithNumeric(left, right, node.op)
-            except ZeroDivisionError:
-                raise error.Expr('Divide by zero', node.op)
+        if op_id in (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
+                     Id.Arith_Slash):
+            return self._ArithNumeric(left, right, node.op)
 
         # Everything below has 2 integer operands
         i1 = _ConvertToInt(left, 'Left operand should be Int', node.op)
@@ -552,37 +549,6 @@ class ExprEvaluator(object):
             return value.Int(i1 << i2)
 
         raise NotImplementedError(op_id)
-
-    def _EvalSlice(self, node):
-        # type: (expr.Slice) -> value_t
-
-        lower = None  # type: Optional[IntBox]
-        upper = None  # type: Optional[IntBox]
-
-        if node.lower:
-            msg = 'Slice begin should be Int'
-            i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
-            lower = IntBox(i)
-
-        if node.upper:
-            msg = 'Slice end should be Int'
-            i = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
-            upper = IntBox(i)
-
-        return value.Slice(lower, upper)
-
-    def _EvalRange(self, node):
-        # type: (expr.Range) -> value_t
-        assert node.lower is not None
-        assert node.upper is not None
-
-        msg = 'Range begin should be Int'
-        i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
-
-        msg = 'Range end should be Int'
-        j = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
-
-        return value.Range(i, j)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
@@ -747,31 +713,6 @@ class ExprEvaluator(object):
             left = right
 
         return value.Bool(result)
-
-    def _EvalDict(self, node):
-        # type: (expr.Dict) -> value_t
-
-        kvals = [self._EvalExpr(e) for e in node.keys]
-        values = []  # type: List[value_t]
-
-        for i, value_expr in enumerate(node.values):
-            if value_expr.tag() == expr_e.Implicit:  # {key}
-                # Enforced by parser.  Key is expr.Const
-                assert kvals[i].tag() == value_e.Str, kvals[i]
-                key = cast(value.Str, kvals[i])
-                v = self._LookupVar(key.s, loc.Missing)
-            else:
-                v = self._EvalExpr(value_expr)
-
-            values.append(v)
-
-        d = NewDict()  # type: Dict[str, value_t]
-        for i, kval in enumerate(kvals):
-            k = val_ops.ToStr(kval, 'Dict keys must be strings',
-                                  loc.Missing)
-            d[k] = values[i]
-
-        return value.Dict(d)
 
     def EvalArgList(self, args):
         # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
@@ -973,8 +914,8 @@ class ExprEvaluator(object):
         o = self._EvalExpr(node.obj)
         UP_o = o
 
-        id_ = node.op.id
-        if id_ == Id.Expr_RArrow:
+        op_id = node.op.id
+        if op_id == Id.Expr_RArrow:
             name = node.attr.tval
             ty = o.tag()
 
@@ -987,7 +928,7 @@ class ExprEvaluator(object):
 
             return value.BoundFunc(o, method)
 
-        if id_ == Id.Expr_Dot:  # d.key is like d['key']
+        if op_id == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval
             with tagswitch(o) as case:
                 if case(value_e.Dict):
@@ -1003,8 +944,8 @@ class ExprEvaluator(object):
 
             return result
 
-        if id_ == Id.Expr_DColon:  # StaticName::member
-            raise NotImplementedError(id_)
+        if op_id == Id.Expr_DColon:  # StaticName::member
+            raise NotImplementedError(op_id)
 
             # TODO: We should prevent virtual lookup here?  This is a pure static
             # namespace lookup?
@@ -1012,7 +953,7 @@ class ExprEvaluator(object):
             # Maybe we can just check that it's a module?  And modules don't lookup
             # in a supertype or __class__, etc.
 
-        raise AssertionError(id_)
+        raise AssertionError(op_id)
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t
@@ -1097,11 +1038,37 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Slice):  # a[:0]
                 node = cast(expr.Slice, UP_node)
-                return self._EvalSlice(node)
+
+                lower = None  # type: Optional[IntBox]
+                upper = None  # type: Optional[IntBox]
+
+                if node.lower:
+                    msg = 'Slice begin should be Int'
+                    i = val_ops.ToInt(self._EvalExpr(node.lower), msg,
+                                      loc.Missing)
+                    lower = IntBox(i)
+
+                if node.upper:
+                    msg = 'Slice end should be Int'
+                    i = val_ops.ToInt(self._EvalExpr(node.upper), msg,
+                                      loc.Missing)
+                    upper = IntBox(i)
+
+                return value.Slice(lower, upper)
 
             elif case(expr_e.Range):
                 node = cast(expr.Range, UP_node)
-                return self._EvalRange(node)
+
+                assert node.lower is not None
+                assert node.upper is not None
+
+                msg = 'Range begin should be Int'
+                i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
+
+                msg = 'Range end should be Int'
+                j = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
+
+                return value.Range(i, j)
 
             elif case(expr_e.Compare):
                 node = cast(expr.Compare, UP_node)
@@ -1128,7 +1095,28 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)
-                return self._EvalDict(node)
+
+                kvals = [self._EvalExpr(e) for e in node.keys]
+                values = []  # type: List[value_t]
+
+                for i, value_expr in enumerate(node.values):
+                    if value_expr.tag() == expr_e.Implicit:  # {key}
+                        # Enforced by parser.  Key is expr.Const
+                        assert kvals[i].tag() == value_e.Str, kvals[i]
+                        key = cast(value.Str, kvals[i])
+                        v = self._LookupVar(key.s, loc.Missing)
+                    else:
+                        v = self._EvalExpr(value_expr)
+
+                    values.append(v)
+
+                d = NewDict()  # type: Dict[str, value_t]
+                for i, kval in enumerate(kvals):
+                    k = val_ops.ToStr(kval, 'Dict keys must be strings',
+                                      loc.Missing)
+                    d[k] = values[i]
+
+                return value.Dict(d)
 
             elif case(expr_e.ListComp):
                 e_die_status(
@@ -1208,9 +1196,8 @@ class ExprEvaluator(object):
                 term = cast(class_literal_term.Splice, UP_term)
 
                 val = self._LookupVar(term.var_name, term.name)
-                s = val_ops.ToStr(val,
-                                      'Eggex char class splice expected Str',
-                                      term.name)
+                s = val_ops.ToStr(val, 'Eggex char class splice expected Str',
+                                  term.name)
                 char_code_tok = term.name
 
         assert s is not None, term
