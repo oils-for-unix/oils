@@ -26,7 +26,7 @@ def ToInt(val, blame_loc, prefix=''):
         val = cast(value.Int, UP_val)
         return val.i
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         '%sexpected value.Int, but got %s' % (prefix, value_str(val.tag())),
         blame_loc)
 
@@ -38,7 +38,7 @@ def ToStr(val, blame_loc, prefix=''):
         val = cast(value.Str, UP_val)
         return val.s
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         '%sexpected value.Str, but got %s' % (prefix, value_str(val.tag())),
         blame_loc)
 
@@ -50,7 +50,7 @@ def MustBeInt(val):
         val = cast(value.Int, UP_val)
         return val
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         'Expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
 
 
@@ -61,7 +61,7 @@ def MustBeFloat(val):
         val = cast(value.Float, UP_val)
         return val
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         'Expected value.Float, but got %s' % value_str(val.tag()), loc.Missing)
 
 
@@ -72,7 +72,7 @@ def MustBeStr(val):
         val = cast(value.Str, UP_val)
         return val
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         'Expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
 
 
@@ -83,7 +83,7 @@ def MustBeList(val):
         val = cast(value.List, UP_val)
         return val
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         'Expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
 
 
@@ -94,7 +94,7 @@ def MustBeDict(val):
         val = cast(value.Dict, UP_val)
         return val
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         'Expected value.Dict, but got %s' % value_str(val.tag()), loc.Missing)
 
 
@@ -105,7 +105,7 @@ def MustBeFunc(val):
         val = cast(value.Func, UP_val)
         return val
 
-    raise error.InvalidType(
+    raise error.TypeErrVerbose(
         'Expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
 
 
@@ -151,7 +151,7 @@ def Stringify(val, blame_loc, prefix=''):
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
         else:
-            raise error.InvalidType2(
+            raise error.TypeErr(
                 val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
                 blame_loc)
 
@@ -188,7 +188,7 @@ def ToShellArray(val, blame_loc, prefix=''):
             strs = val.strs
 
         else:
-            raise error.InvalidType2(val, "%sexpected List" % prefix,
+            raise error.TypeErr(val, "%sexpected List" % prefix,
                                      blame_loc)
 
     return strs
@@ -382,7 +382,7 @@ def ExactlyEqual(left, right):
         elif case(value_e.Float):
             # Note: could provide floatEquals(), and suggest it
             # Suggested idiom is abs(f1 - f2) < 0.1
-            raise error.InvalidType("Equality isn't defined on Float",
+            raise error.TypeErrVerbose("Equality isn't defined on Float",
                                     loc.Missing)
 
         elif case(value_e.Str):
@@ -455,13 +455,13 @@ def Contains(needle, haystack):
         if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
             if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
+                raise error.TypeErrVerbose('Expected Str', loc.Missing)
 
             needle = cast(value.Str, UP_needle)
             return needle.s in haystack.d
 
         else:
-            raise error.InvalidType2(haystack, "'in' expected Dict",
+            raise error.TypeErr(haystack, "'in' expected Dict",
                                      loc.Missing)
 
     return False
@@ -483,7 +483,7 @@ def RegexMatch(left, right, mem):
             right = cast(value.Eggex, UP_right)
             right_s = regex_translate.AsPosixEre(right)
         else:
-            raise error.InvalidType2(right,
+            raise error.TypeErr(right,
                                      'Expected Str or Regex for RHS of ~',
                                      loc.Missing)
 
@@ -494,7 +494,7 @@ def RegexMatch(left, right, mem):
             left = cast(value.Str, UP_left)
             left_s = left.s
         else:
-            raise error.InvalidType('LHS must be a string', loc.Missing)
+            raise error.TypeErrVerbose('LHS must be a string', loc.Missing)
 
     # TODO:
     # - libc_regex_match should populate _start() and _end() too (out params?)

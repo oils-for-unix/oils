@@ -78,7 +78,7 @@ class Reader(object):
         # type: () -> value_t
         if len(self.pos_args) == 0:
             # TODO: may need location info
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Expected at least %d arguments, but only got %d' %
                 (self.pos_consumed + 1, self.pos_consumed), loc.Missing)
 
@@ -193,13 +193,13 @@ class Reader(object):
         """
         # Note: Python throws TypeError on mismatch
         if len(self.pos_args):
-            raise error.InvalidType('Expected %d arguments, but got %d' %
+            raise error.TypeErrVerbose('Expected %d arguments, but got %d' %
                                     (self.pos_consumed, self.pos_consumed +
                                      len(self.pos_args)), loc.Missing)
 
         if len(self.named_args):
             bad_args = ','.join(self.named_args.keys())
-            raise error.InvalidType('Got unexpected named args: %s' % bad_args, loc.Missing)
+            raise error.TypeErrVerbose('Got unexpected named args: %s' % bad_args, loc.Missing)
 
 
 def DoesNotAccept(arg_list):

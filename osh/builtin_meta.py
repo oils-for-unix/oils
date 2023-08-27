@@ -381,7 +381,7 @@ class Error(vm._Builtin):
 
         message_val = self.expr_ev.EvalExpr(positional[0], blame)
         if message_val.tag() != value_e.Str:
-            raise error.InvalidType2(message_val, 'expected a Str', blame)
+            raise error.TypeErr(message_val, 'expected a Str', blame)
         message = cast(value.Str, message_val).s
 
         named = cmd_val.typed_args.named
@@ -390,7 +390,7 @@ class Error(vm._Builtin):
             if lexer.TokenVal(arg.name) == "status":
                 status_val = self.expr_ev.EvalExpr(arg.value, arg.name)
                 if status_val.tag() != value_e.Int:
-                    raise error.InvalidType2(status_val, 'expected an Int', arg.name)
+                    raise error.TypeErr(status_val, 'expected an Int', arg.name)
                 status = cast(value.Int, status_val).i
 
                 if status == 0:

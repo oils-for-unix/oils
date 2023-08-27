@@ -169,7 +169,7 @@ class Append(_Builtin):
                 ok = True
 
         if not ok:
-            # consider exit code 3 like error.InvalidType?
+            # consider exit code 3 like error.TypeErrVerbose?
             self.errfmt.Print_("%r isn't a List" % var_name, blame_loc=var_loc)
             return 1
 

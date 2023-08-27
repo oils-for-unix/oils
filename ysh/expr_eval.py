@@ -286,7 +286,7 @@ class ExprEvaluator(object):
                 else:
                     raise ValueError("%r doesn't look like an integer" % val.s)
 
-        raise error.InvalidType2(val, 'Expected Int', loc.Missing)
+        raise error.TypeErr(val, 'Expected Int', loc.Missing)
 
     def _ConvertToNumber(self, val):
         # type: (value_t) -> Tuple[coerced_t, int, float]
@@ -396,8 +396,7 @@ class ExprEvaluator(object):
                 return value.Int(-i1)
             if c1 == coerced_e.Float:
                 return value.Float(-f1)
-            raise error.InvalidType2(val, 'Negation expected Int or Float',
-                                     node.op)
+            raise error.TypeErr(val, 'Negation expected Int or Float', node.op)
 
         if node.op.id == Id.Arith_Tilde:
             i = self._ConvertToInt(val)
@@ -450,7 +449,7 @@ class ExprEvaluator(object):
                     raise AssertionError()
 
         else:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Binary operator expected numbers, got %s and %s' %
                 (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
@@ -474,7 +473,7 @@ class ExprEvaluator(object):
             return value.List(c)
 
         else:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Expected Str ++ Str or List ++ List, got %s ++ %s' %
                 (ui.ValType(left), ui.ValType(right)), loc.Missing)
 
@@ -562,16 +561,16 @@ class ExprEvaluator(object):
             UP_lower = self._EvalExpr(node.lower)
             if UP_lower.tag() != value_e.Int:
                 # TODO: add location op to expr.Slice
-                raise error.InvalidType('Slice indices must be Ints',
-                                        loc.Missing)
+                raise error.TypeErrVerbose('Slice indices must be Ints',
+                                           loc.Missing)
 
             lower = IntBox(cast(value.Int, UP_lower).i)
 
         if node.upper:
             UP_upper = self._EvalExpr(node.upper)
             if UP_upper.tag() != value_e.Int:
-                raise error.InvalidType('Slice indices must be Ints',
-                                        loc.Missing)
+                raise error.TypeErrVerbose('Slice indices must be Ints',
+                                           loc.Missing)
 
             upper = IntBox(cast(value.Int, UP_upper).i)
 
@@ -585,7 +584,8 @@ class ExprEvaluator(object):
         UP_lower = self._EvalExpr(node.lower)
         if UP_lower.tag() != value_e.Int:
             # TODO: add location op to expr.Range
-            raise error.InvalidType('Range indices must be Ints', loc.Missing)
+            raise error.TypeErrVerbose('Range indices must be Ints',
+                                       loc.Missing)
 
         lower = cast(value.Int, UP_lower)
 
@@ -593,7 +593,8 @@ class ExprEvaluator(object):
 
         UP_upper = self._EvalExpr(node.upper)
         if UP_upper.tag() != value_e.Int:
-            raise error.InvalidType('Range indices must be Ints', loc.Missing)
+            raise error.TypeErrVerbose('Range indices must be Ints',
+                                       loc.Missing)
 
         upper = cast(value.Int, UP_upper)
 
@@ -631,7 +632,7 @@ class ExprEvaluator(object):
                     raise AssertionError()
 
         else:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Comparison operator expected numbers, got %s and %s' %
                 (ui.ValType(left), ui.ValType(right)), op)
 
@@ -667,21 +668,21 @@ class ExprEvaluator(object):
 
             elif op.id == Id.Expr_Is:
                 if left.tag() != right.tag():
-                    raise error.InvalidType('Mismatched types', op)
+                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is right
 
             elif op.id == Id.Node_IsNot:
                 if left.tag() != right.tag():
-                    raise error.InvalidType('Mismatched types', op)
+                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
                 # no extglob in Oil language; use eggex
                 if left.tag() != value_e.Str:
-                    raise error.InvalidType('LHS must be Str', op)
+                    raise error.TypeErrVerbose('LHS must be Str', op)
 
                 if right.tag() != value_e.Str:
-                    raise error.InvalidType('RHS must be Str', op)
+                    raise error.TypeErrVerbose('RHS must be Str', op)
 
                 UP_left = left
                 UP_right = right
@@ -691,10 +692,10 @@ class ExprEvaluator(object):
 
             elif op.id == Id.Expr_NotDTilde:
                 if left.tag() != value_e.Str:
-                    raise error.InvalidType('LHS must be Str', op)
+                    raise error.TypeErrVerbose('LHS must be Str', op)
 
                 if right.tag() != value_e.Str:
-                    raise error.InvalidType('RHS must be Str', op)
+                    raise error.TypeErrVerbose('RHS must be Str', op)
 
                 UP_left = left
                 UP_right = right
@@ -773,8 +774,8 @@ class ExprEvaluator(object):
             if value_expr.tag() == expr_e.Implicit:
                 if keys[i].tag() != value_e.Str:
                     # TODO: expr.Dict needs {
-                    raise error.InvalidType('Dict keys must be strings',
-                                            loc.Missing)
+                    raise error.TypeErrVerbose('Dict keys must be strings',
+                                               loc.Missing)
 
                 s = cast(value.Str, keys[i])
                 v = self._LookupVar(s.s, loc.Missing)  # {name}
@@ -786,8 +787,8 @@ class ExprEvaluator(object):
         d = NewDict()  # type: Dict[str, value_t]
         for i, k in enumerate(keys):
             if k.tag() != value_e.Str:
-                raise error.InvalidType('Dict keys must be strings',
-                                        loc.Missing)
+                raise error.TypeErrVerbose('Dict keys must be strings',
+                                           loc.Missing)
             s = cast(value.Str, k)
             d[s.s] = values[i]
 
@@ -907,8 +908,8 @@ class ExprEvaluator(object):
                 return ret
 
             else:
-                raise error.InvalidType2(func, 'Expected a function or method',
-                                         node.args.left)
+                raise error.TypeErr(func, 'Expected a function or method',
+                                    node.args.left)
 
         raise AssertionError()
 
@@ -943,8 +944,8 @@ class ExprEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType('expected Slice or Int',
-                                                loc.Missing)
+                        raise error.TypeErr(index, 'Str index expected Int or Slice',
+                                            loc.Missing)
 
             elif case(value_e.List):
                 obj = cast(value.List, UP_obj)
@@ -966,15 +967,14 @@ class ExprEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType2(index,
-                                                 'expected Slice or Int',
-                                                 loc.Missing)
+                        raise error.TypeErr(index, 'List index expected Int or Slice',
+                                            loc.Missing)
 
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
                 if index.tag() != value_e.Str:
-                    raise error.InvalidType('expected String index for Dict',
-                                            loc.Missing)
+                    raise error.TypeErr(index, 'Dict index expected Str',
+                                        loc.Missing)
 
                 index = cast(value.Str, UP_index)
                 try:
@@ -983,8 +983,8 @@ class ExprEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.InvalidType2(obj, 'subscript expected Str, List, or Dict',
-                                 loc.Missing)
+        raise error.TypeErr(obj, 'subscript expected Str, List, or Dict',
+                            loc.Missing)
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
@@ -1000,7 +1000,7 @@ class ExprEvaluator(object):
             recv = self.methods.get(ty)
             method = recv.get(name) if recv is not None else None
             if not method:
-                raise error.InvalidType(
+                raise error.TypeErrVerbose(
                     'Method %r does not exist on type %s' %
                     (name, ui.ValType(o)), node.attr)
 
@@ -1017,7 +1017,7 @@ class ExprEvaluator(object):
                         raise error.Expr('dict entry not found', node.op)
 
                 else:
-                    raise error.InvalidType2(o, 'd.key expected Dict', node.op)
+                    raise error.TypeErr(o, 'd.key expected Dict', node.op)
 
             return result
 
@@ -1347,7 +1347,7 @@ class ExprEvaluator(object):
                         to_splice = val.expr
 
                     else:
-                        raise error.InvalidType2(
+                        raise error.TypeErr(
                             val, 'Eggex splice expected Str or Eggex',
                             node.name)
                 return to_splice

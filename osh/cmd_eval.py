@@ -226,6 +226,7 @@ def PlusEquals(old_val, val):
 
 
 class Func(vm._Callable):
+    """A user-defined function."""
 
     def __init__(self, name, node, mem, cmd_ev):
         # type: (str, command.Func, state.Mem, CommandEvaluator) -> None
@@ -240,18 +241,18 @@ class Func(vm._Callable):
         expected = len(self.node.pos_params)
         if self.node.pos_splat:
             if nargs < expected:
-                raise error.InvalidType(
+                raise error.TypeErrVerbose(
                     "%s() expects at least %d arguments but %d were given" %
                     (self.name, expected, nargs), self.node.keyword)
         elif nargs != expected:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 "%s() expects %d arguments but %d were given" %
                 (self.name, expected, nargs), self.node.keyword)
 
         nargs = len(named_args)
         expected = len(self.node.named_params)
         if nargs != expected:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 "%s() expects %d named arguments but %d were given" %
                 (self.name, expected, nargs), self.node.keyword)
 
@@ -967,7 +968,7 @@ class CommandEvaluator(object):
                         rhs_vals = [right_val]
                     else:
                         if right_val.tag() != value_e.List:
-                            raise error.InvalidType2(right_val,
+                            raise error.TypeErr(right_val,
                                                      'expected a List',
                                                      loc.Missing)
                         right_val = cast(value.List, UP_right_val)
@@ -1032,7 +1033,7 @@ class CommandEvaluator(object):
                                     obj.d[key] = rval
 
                                 else:
-                                    raise error.InvalidType2(
+                                    raise error.TypeErr(
                                         obj, "obj[index] expected List or Dict",
                                         loc.Missing)
 
@@ -1399,7 +1400,7 @@ class CommandEvaluator(object):
                                     node.keyword)
 
                         else:
-                            raise error.InvalidType2(
+                            raise error.TypeErr(
                                 val, 'for loop expected List or Dict',
                                 node.keyword)
                 else:

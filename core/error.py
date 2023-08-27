@@ -172,7 +172,7 @@ class UserError(FatalRuntime):
         FatalRuntime.__init__(self, status, msg, location)
 
 
-class InvalidType(Expr):
+class TypeErrVerbose(Expr):
     """e.g. ~ on a bool or float, 'not' on an int."""
 
     def __init__(self, msg, location):
@@ -180,23 +180,13 @@ class InvalidType(Expr):
         Expr.__init__(self, msg, location)
 
 
-class InvalidType2(InvalidType):
+class TypeErr(TypeErrVerbose):
 
     def __init__(self, actual_val, msg, location):
         # type: (value_t, str, loc_t) -> None
-        InvalidType.__init__(
-            self, "Invalid type %s: %s" %
-            (StrFromC(value_str(actual_val.tag())), msg), location)
-
-
-class InvalidType3(InvalidType):
-
-    def __init__(self, left_val, right_val, msg, location):
-        # type: (value_t, value_t, str, loc_t) -> None
-        InvalidType.__init__(
-            self, "%s != %s: %s" % (StrFromC(value_str(
-                left_val.tag())), StrFromC(value_str(right_val.tag())), msg),
-            location)
+        TypeErrVerbose.__init__(
+            self, "%s, got %s" %
+            (msg, StrFromC(value_str(actual_val.tag()))), location)
 
 
 def e_usage(msg, location):

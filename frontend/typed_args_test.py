@@ -16,7 +16,7 @@ class TypedArgsTest(unittest.TestCase):
     def testReaderPosArgs(self):
         # Not enough args...
         reader = typed_args.Reader([], {})
-        self.assertRaises(error.InvalidType, reader.PosStr)
+        self.assertRaises(error.TypeErrVerbose, reader.PosStr)
 
         pos_args = [
             value.Int(0xc0ffee),
@@ -31,10 +31,10 @@ class TypedArgsTest(unittest.TestCase):
         reader = typed_args.Reader(list(pos_args), {})
 
         # Haven't processed any args yet...
-        self.assertRaises(error.InvalidType, reader.Done)
+        self.assertRaises(error.TypeErrVerbose, reader.Done)
 
         # Arg is wrong type...
-        self.assertRaises(error.InvalidType, reader.PosStr)
+        self.assertRaises(error.TypeErrVerbose, reader.PosStr)
 
         # Normal operation from here on
         reader = typed_args.Reader(pos_args, {})
@@ -80,7 +80,7 @@ class TypedArgsTest(unittest.TestCase):
         reader = typed_args.Reader([], kwargs)
 
         # Haven't processed any args yet...
-        self.assertRaises(error.InvalidType, reader.Done)
+        self.assertRaises(error.TypeErrVerbose, reader.Done)
 
         arg = reader.NamedInt('hot', -1)
         self.assertEqual(0xc0ffee, arg)

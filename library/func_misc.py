@@ -43,7 +43,7 @@ class Append(vm._Callable):
                 li = cast(value.List, UP_li)
                 li.items.append(to_append)
             else:
-                raise error.InvalidType('append() expected List', loc.Missing)
+                raise error.TypeErr(li, 'append() expected List', loc.Missing)
 
         # Equivalent to no return value?
         return value.Null
@@ -70,7 +70,7 @@ class Pop(vm._Callable):
                 li = cast(value.List, UP_li)
                 li.items.pop()
             else:
-                raise error.InvalidType('append() expected List', loc.Missing)
+                raise error.TypeErr(li, 'pop() expected List', loc.Missing)
 
         # Equivalent to no return value?
         return value.Null
@@ -172,4 +172,4 @@ class Len(vm._Callable):
                 x = cast(value.Str, UP_x)
                 return value.Int(len(x.s))
 
-        raise error.InvalidType('%s has no length' % value_str(x.tag()), loc.Missing)
+        raise error.TypeErrVerbose('%s has no length' % value_str(x.tag()), loc.Missing)
