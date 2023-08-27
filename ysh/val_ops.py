@@ -5,7 +5,7 @@ val_ops.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 
 from core import error
 from mycpp.mylib import tagswitch
@@ -65,6 +65,16 @@ def ToDict(val, msg, blame_loc):
     if val.tag() == value_e.Dict:
         val = cast(value.Dict, UP_val)
         return val.d
+
+    raise error.TypeErr(val, msg, blame_loc)
+
+
+def ToCommand(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> command_t
+    UP_val = val
+    if val.tag() == value_e.Block:
+        val = cast(value.Block, UP_val)
+        return val.body
 
     raise error.TypeErr(val, msg, blame_loc)
 

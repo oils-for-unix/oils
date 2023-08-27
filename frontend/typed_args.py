@@ -115,6 +115,12 @@ class Reader(object):
         msg = 'Arg %d should be a Dict' % self.pos_consumed
         return val_ops.ToDict(arg, msg, loc.Missing)
 
+    def PosCommand(self):
+        # type: () -> command_t
+        arg = self._GetNextPos()
+        msg = 'Arg %d should be a Command' % self.pos_consumed
+        return val_ops.ToCommand(arg, msg, loc.Missing)
+
     def PosValue(self):
         # type: () -> value_t
         return self._GetNextPos()

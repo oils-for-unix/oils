@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e
-from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.syntax_asdl import source, loc, command_t
 from core import alloc
 from core import error
 from core import main_loop
@@ -86,17 +86,12 @@ class EvalHay(vm._Callable):
         self.mem = mem
         self.cmd_ev = cmd_ev
 
-    def _Call(self, val):
-        # type: (value_t) -> Dict[str, value_t]
+    def _Call(self, cmd):
+        # type: (command_t) -> Dict[str, value_t]
 
-        call_loc = loc.Missing
-        if val.tag() != value_e.Block:
-            raise error.Expr('Expected a block, got %s' % val, call_loc)
-
-        block = cast(value.Block, val)
         with state.ctx_HayEval(self.hay_state, self.mutable_opts,
                                self.mem):
-            unused = self.cmd_ev.EvalBlock(block.body)
+            unused = self.cmd_ev.EvalBlock(cmd)
 
         return self.hay_state.Result()
 
@@ -106,12 +101,19 @@ class EvalHay(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        # TODO: check args
-        return value.Dict(self._Call(pos_args[0]))
+        r = typed_args.Reader(pos_args, named_args)
+        cmd = r.PosCommand()
+        r.Done()
+        return value.Dict(self._Call(cmd))
 
 
 class BlockAsStr(vm._Callable):
-    """block_as_str()"""
+    """block_as_str
+
+    TODO:
+    - I think this should be cmd->exportAsJson() or something
+    - maybe not toJson(), because that's a bit cavalier?
+    """
 
     def __init__(self, arena):
         # type: (alloc.Arena) -> None
