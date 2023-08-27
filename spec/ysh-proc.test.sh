@@ -150,7 +150,7 @@ f a b
 # With varargs and block
 shopt --set parse_proc
 
-proc g(x, y, ...rest; block = null) {
+proc g(x, y, ...rest; block) {
   echo G
 }
 g a b c d

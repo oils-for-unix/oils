@@ -85,6 +85,12 @@ test-func-var-checker() {
   '
 }
 
+test-proc-sig() {
+  _should-parse 'proc p () { echo hi }'
+  _should-parse 'proc p (a) { echo hi }'
+  _should-parse 'proc p (out Ref) { echo hi }'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

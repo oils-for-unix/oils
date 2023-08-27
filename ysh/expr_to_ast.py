@@ -39,12 +39,13 @@ from _devbuild.gen.syntax_asdl import (
     Param,
     NamedArg,
     ArgList,
-    ProcParam,
+    #ProcParam,
     Variant,
     variant_type,
     variant_type_t,
     pat,
     pat_t,
+    type_expr,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -892,106 +893,83 @@ class Transformer(object):
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> type_expr_t
+        """
+        type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
+        """
         assert pnode.typ == grammar_nt.type_expr, pnode.typ
-        return None
+
+        #self.p_printer.Print(pnode)
+
+        tok = pnode.GetChild(0).tok
+        name = tok.tval
+
+        n = pnode.NumChildren()
+        if n == 1:
+            return type_expr.Simple(tok, name)
+
+        type_params = []  # type: List[type_expr_t]
+        i = 2
+        while i < n:
+            p = self._TypeExpr(pnode.GetChild(i))
+            type_params.append(p)
+            i += 2  # skip comma
+
+        return type_expr.Compound(tok, name, type_params)
 
     def _TypeExprList(self, pnode):
         # type: (PNode) -> List[type_expr_t]
+        """
+        For return value annotation?
+        """
         assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
         return None
 
-    def _ProcParam(self, pnode):
-        # type: (PNode) -> Tuple[Optional[Token], Token, Optional[Token], Optional[expr_t]]
-        """
-        proc_param:
-          # old
-          ':' Expr_Name |
-
-          '...' Expr_Name
-          # type is either Expr or Block 
-          Expr_Name [ Expr_Name ] ['=' expr]  
-        """
-        assert pnode.typ == grammar_nt.proc_param
-
-        tok0 = pnode.GetChild(0).tok
-        n = pnode.NumChildren()
-
-        prefix = None  # type: Optional[Token]
-        name = None  # type: Optional[Token]
-        typ = None  # type: Optional[Token]
-        default_val = None  # type: Optional[expr_t]
-        if tok0.id in (Id.Arith_Colon, Id.Expr_At, Id.Expr_Ellipsis):
-            prefix = tok0
-            name = pnode.GetChild(1).tok
-            return prefix, name, typ, default_val
-
-        name = pnode.GetChild(0).tok
-        if n == 1:
-            return prefix, name, typ, default_val
-
-        i = 1
-        tok1 = pnode.GetChild(1).tok
-        if tok1.id == Id.Expr_Name:
-            typ = tok1
-            i += 1
-
-        if i + 1 == n - 1:
-            assert pnode.GetChild(i).tok.id == Id.Arith_Equal
-            default_val = self.Expr(pnode.GetChild(i + 1))
-        return prefix, name, typ, default_val
-
-    def _ProcParams(self, p_node):
-        # type: (PNode) -> proc_sig_t
-        """proc_params: (proc_param ',')* [ proc_param  [','] ]"""
-        n = p_node.NumChildren()
-
-        pos_params = []  # type: List[ProcParam]
-        rest = None  # type: Optional[Token]
-
-        state = 0
-
-        i = 0
-        while i < n:
-            prefix, name, typ, default_val = self._ProcParam(p_node.GetChild(i))
-
-            # TODO: enforce the order of params.  It should look like
-            # untyped* rest? typed*, which is while / if / while!
-            if prefix and prefix.id in (Id.Expr_At, Id.Expr_Ellipsis):
-                rest = name
-            else:
-                if typ and typ.tval not in ('Ref', 'Expr', 'Block'):
-                    p_die('proc param types should be Ref, Expr, or Block', typ)
-                pos_params.append(ProcParam(name, typ, default_val))
-
-            i += 2
-
-        return proc_sig.Closed(pos_params, rest)
-
     def _FuncParam(self, pnode):
         # type: (PNode) -> Param
-        """func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name."""
+        """
+        func_param: Expr_Name [type_expr] ['=' expr]
+        """
         assert pnode.typ == grammar_nt.func_param
 
         tok0 = pnode.GetChild(0).tok
         n = pnode.NumChildren()
 
-        if tok0.id == Id.Expr_Name:
-            default_val = None  # type: expr_t
-            type_ = None  # type: type_expr_t
-            if n > 1 and pnode.GetChild(
-                    1).tok.id == Id.Arith_Equal:  # f(x = 1+2*3)
-                default_val = self.Expr(pnode.GetChild(2))
-            elif n > 2 and pnode.GetChild(
-                    2).tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
-                default_val = self.Expr(pnode.GetChild(3))
-            prefix_tok = None  # type: Token
-            return Param(prefix_tok, tok0, type_, default_val)
+        assert tok0.id == Id.Expr_Name, tok0
 
-        raise AssertionError(Id_str(tok0.id))
+        # TODO: remove?
+        prefix_tok = None  # type: Token
+
+        default_val = None  # type: expr_t
+        type_ = None  # type: type_expr_t
+
+        #self.p_printer.Print(pnode)
+
+        if n == 1:
+            # proc p(a)
+            pass
+
+        elif n == 2:
+            # proc p(a Int)
+            type_ = self._TypeExpr(pnode.GetChild(1))
+
+        elif n == 3:
+            # proc p(a = 3)
+            default_val = self.Expr(pnode.GetChild(2))
+
+        elif n == 4:
+            # proc p(a Int = 3)
+            type_ = self._TypeExpr(pnode.GetChild(1))
+            default_val = self.Expr(pnode.GetChild(3))
+
+        return Param(prefix_tok, tok0, type_, default_val)
 
     def _FuncParams(self, p_node):
         # type: (PNode) -> Tuple[List[Param], Optional[Token]]
-        """func_params: [func_param] (',' func_param)* [',' '...' Expr_Name]"""
+        """
+        func_params:
+          (func_param ',')*
+          [ (func_param | '...' Expr_Name) [,] ]
+        """
         params = []  # type: List[Param]
         splat = None  # type: Optional[Token]
 
@@ -1008,18 +986,19 @@ class Transformer(object):
     def Proc(self, pnode):
         # type: (PNode) -> proc_sig_t
         """
-        oil_proc: (
-          [ '('
-            [proc_params]
-            # optional block arg, with no type
-            [';' Expr_Name ['=' expr] ]
-            ')'
+        ysh_proc: (
+          [ '(' 
+                  [ func_params ]         # word params, with defaults
+            [ ';' [ func_params ] ]       # positional typed params, with defaults
+            [ ';' [ func_params ] ]       # named params, with defaults
+            [ ';' Expr_Name ]             # optional block param, with no type or default
+            ')'  
           ]
           '{'  # opening { for pgen2
         )
         """
         typ = pnode.typ
-        assert typ == grammar_nt.oil_proc
+        assert typ == grammar_nt.ysh_proc
 
         #self.p_printer.Print(pnode)
 
@@ -1029,8 +1008,14 @@ class Transformer(object):
         elif n == 3:  # proc f () {
             sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
         else:
-            sig = self._ProcParams(pnode.GetChild(1))
-            # TODO: process keyword args and block args
+            sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+
+            sig.words, sig.rest_words = self._FuncParams(pnode.GetChild(1))
+            #sig.typed, sig.rest_typed = self._FuncParams(pnode.GetChild(2))
+            #sig.named, sig.rest_named = self._FuncParams(pnode.GetChild(3))
+
+            # TODO:
+            sig.block_param = None
 
         return sig
 

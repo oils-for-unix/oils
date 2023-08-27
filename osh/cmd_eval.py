@@ -48,6 +48,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter_e,
     pat,
     pat_e,
+    type_expr, type_expr_e,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue,
@@ -1487,8 +1488,8 @@ class CommandEvaluator(object):
                 if UP_sig.tag() == proc_sig_e.Closed:
                     sig = cast(proc_sig.Closed, UP_sig)
                     no_val = None  # type: value_t
-                    defaults = [no_val] * len(sig.pos_params)
-                    for i, p in enumerate(sig.pos_params):
+                    defaults = [no_val] * len(sig.words)
+                    for i, p in enumerate(sig.words):
                         if p.default_val:
                             val = self.expr_ev.EvalExpr(
                                 p.default_val, loc.Missing)
@@ -2016,8 +2017,15 @@ class CommandEvaluator(object):
 
             if UP_sig.tag() == proc_sig_e.Closed:  # proc is-closed ()
                 sig = cast(proc_sig.Closed, UP_sig)
-                for i, p in enumerate(sig.pos_params):
-                    is_out_param = p.type is not None and p.type.tval == 'Ref'
+                for i, p in enumerate(sig.words):
+
+                    # proc p(out Ref)
+                    is_out_param = False
+                    if p.type is not None:
+                        if p.type.tag() == type_expr_e.Simple:
+                            typ = cast(type_expr.Simple, p.type)
+                            if typ.tok.tval == 'Ref':
+                                is_out_param = True
 
                     param_name = p.name.tval
                     if i < n_args:
@@ -2055,12 +2063,12 @@ class CommandEvaluator(object):
                                       scope_e.LocalOnly,
                                       flags=flags)
 
-                n_params = len(sig.pos_params)
-                if sig.rest:
+                n_params = len(sig.words)
+                if sig.rest_words:
                     items = [value.Str(s)
                              for s in argv[n_params:]]  # type: List[value_t]
                     leftover = value.List(items)
-                    self.mem.SetValue(location.LName(sig.rest.tval), leftover,
+                    self.mem.SetValue(location.LName(sig.rest_words.tval), leftover,
                                       scope_e.LocalOnly)
                 else:
                     if n_args > n_params:

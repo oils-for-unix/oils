@@ -325,40 +325,22 @@ command_expr: testlist end_stmt
 oil_expr_sub: testlist ']'
 
 # Signatures for proc and func.
-# 
-# Examples:
-#   func print(msg Str, v = 0, ...args; n1 Int = 0, ...kwargs) Int {
-#     echo hi
-#   }
-#   proc rule (src, dest, ...args; n1 Int = 0, ...kwargs; block = null) {
-#     echo hi
-#   }
 
-# Differences:
-# - procs can have a third section after ; -- the block arg, which may be
-#   required or optional
-# - return types
-#   func: optional list
-#   proc: disallowed -- it's always int
-
-proc_param: (
-    # TODO: Make this like func_params: ... must come last
-    '...' Expr_Name |
-    Expr_Name [Expr_Name] ['=' expr]  # type is either Expr or Block
-)
-
-proc_params: (proc_param ',')* [ proc_param  [','] ]
-
-# Note: we might have proc name-with-hyphens, so we can't parse the name in
+# Note: 'proc name-with-hyphens' is allowed, so we can't parse the name in
 # expression mode.
-oil_proc: (
-  [ '(' [ proc_params ]           # positional params
-    [ ';' [ proc_params ] ]           # keyword params
-    [ ';' Expr_Name ['=' expr] ]  # optional block param, with no type
+ysh_proc: (
+  [ '(' 
+          [ func_params ]    # word params, with defaults
+    [ ';' [ func_params ] ]  # positional typed params, with defaults
+    [ ';' [ func_params ] ]  # named params, with defaults
+    [ ';' Expr_Name ]        # optional block param, with no type or default
     ')'  
   ]
   '{'  # opening { for pgen2
 )
+
+# YSH entry point
+ysh_func: Expr_Name '(' [func_params] [';' func_params] ')'
 
 func_param: Expr_Name [type_expr] ['=' expr]
 
@@ -427,9 +409,6 @@ tea_func: (
   suite
 )
 named_func: Expr_Name tea_func
-
-# YSH entry point
-ysh_func: Expr_Name '(' [func_params] [';' func_params] ')'
 
 # TODO: Methods differ from functions:
 #  super() can be the first arg

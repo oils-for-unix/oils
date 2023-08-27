@@ -13,15 +13,18 @@ Args :spec {
   flag -v --verbose (Bool)
   arg src
   arg dst
+
+  rest more  # allow more args
 }
+json write (spec)
+
 var argv = ['-v', 'src/path', 'dst/path']
 
-# Gah we don't have destructuring assignment?
-# Also need to define :spec
-
-var arg = parseArgs(spec, argv)
-
+# TODO: need destructuring with var
 # var arg, i = parseArgs(spec, argv)
+
+var result = parseArgs(spec, argv)
+setvar arg, i = result
 
 json write (arg)
 json write (i)

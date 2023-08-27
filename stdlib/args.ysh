@@ -16,7 +16,21 @@
 # var arg, i = parseArgs(spec, ARGV)
 #
 # echo "Verbose $[arg.verbose]"
+
+
+# TODO: how to register these as Args ?
 #
+# var proc_bindings = {}
+# var var_bindings = {}
+# eval ()
+
+proc _Args_flag {
+  echo 'flag'
+}
+
+proc _Args_arg {
+  echo 'arg'
+}
 
 proc Args(spec Ref ; ; block) {
   # TODO: evaluate block somehow
@@ -25,10 +39,24 @@ proc Args(spec Ref ; ; block) {
   #
   # You have to put 'flag' and 'arg' in scope
 
-  echo hi
+  # Flags have these fields
+  # default type is Bool
+  var flag = {short: '', long: '', type: null, default: '', help: ''}
+
+  # Args have these fields
+  #
+  # I think all args are required -- you can ARGV[i:] if you want something else
+  #
+  # Default type is string
+  var arg = {name: '', type: null, help: ''}
+
+  # May also have program name, etc.
+  var result = {flags: [], args: []}
 
   #= spec
   #= block
+
+  setref spec = result
 }
 
 func parseArgs(spec, argv) {

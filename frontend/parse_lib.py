@@ -382,7 +382,7 @@ class ParseContext(object):
         """proc f(x, y, @args) {"""
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_proc)
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_proc)
 
             if 0:
                 self.p_printer.Print(pnode)
