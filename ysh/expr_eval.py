@@ -90,6 +90,74 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
     return val
 
 
+def _ConvertToInt(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> int
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            return val.i
+
+        elif case(value_e.Str):
+            val = cast(value.Str, UP_val)
+            if match.LooksLikeInteger(val.s):
+                return int(val.s)
+
+    raise error.TypeErr(val, msg, blame_loc)
+
+
+def _ConvertToNumber(val):
+    # type: (value_t) -> Tuple[coerced_t, int, float]
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            return coerced_e.Int, val.i, -1.0
+
+        elif case(value_e.Float):
+            val = cast(value.Float, UP_val)
+            return coerced_e.Float, -1, val.f
+
+        elif case(value_e.Str):
+            val = cast(value.Str, UP_val)
+            if match.LooksLikeInteger(val.s):
+                return coerced_e.Int, int(val.s), -1.0
+
+            if match.LooksLikeFloat(val.s):
+                return coerced_e.Float, -1, float(val.s)
+
+    return coerced_e.Neither, -1, -1.0
+
+
+def _ConvertForBinaryOp(left, right):
+    # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+    """
+    Returns one of
+      value_e.Int or value_e.Float
+      2 ints or 2 floats
+
+    To indicate which values the operation should be done on
+    """
+    c1, i1, f1 = _ConvertToNumber(left)
+    c2, i2, f2 = _ConvertToNumber(right)
+
+    if c1 == coerced_e.Int and c2 == coerced_e.Int:
+        return coerced_e.Int, i1, i2, -1.0, -1.0
+
+    elif c1 == coerced_e.Int and c2 == coerced_e.Float:
+        return coerced_e.Float, -1, -1, float(i1), f2
+
+    elif c1 == coerced_e.Float and c2 == coerced_e.Int:
+        return coerced_e.Float, -1, -1, f1, float(i2)
+
+    elif c1 == coerced_e.Float and c2 == coerced_e.Float:
+        return coerced_e.Float, -1, -1, f1, f2
+
+    else:
+        # No operation is valid
+        return coerced_e.Neither, -1, -1, -1.0, -1.0
+
+
 class ExprEvaluator(object):
     """Shared between arith and bool evaluators.
 
@@ -271,73 +339,6 @@ class ExprEvaluator(object):
 
         # Note: IndexError and KeyError are handled in more specific places
 
-    def _ConvertToInt(self, val):
-        # type: (value_t) -> int
-        UP_val = val
-        with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return val.i
-
-            elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                if match.LooksLikeInteger(val.s):
-                    return int(val.s)
-                else:
-                    raise ValueError("%r doesn't look like an integer" % val.s)
-
-        raise error.TypeErr(val, 'Expected Int', loc.Missing)
-
-    def _ConvertToNumber(self, val):
-        # type: (value_t) -> Tuple[coerced_t, int, float]
-        UP_val = val
-        with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return coerced_e.Int, val.i, -1.0
-
-            elif case(value_e.Float):
-                val = cast(value.Float, UP_val)
-                return coerced_e.Float, -1, val.f
-
-            elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                if match.LooksLikeInteger(val.s):
-                    return coerced_e.Int, int(val.s), -1.0
-
-                if match.LooksLikeFloat(val.s):
-                    return coerced_e.Float, -1, float(val.s)
-
-        return coerced_e.Neither, -1, -1.0
-
-    def _ConvertForBinaryOp(self, left, right):
-        # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
-        """
-        Returns one of
-          value_e.Int or value_e.Float
-          2 ints or 2 floats
-
-        To indicate which values the operation should be done on
-        """
-        c1, i1, f1 = self._ConvertToNumber(left)
-        c2, i2, f2 = self._ConvertToNumber(right)
-
-        if c1 == coerced_e.Int and c2 == coerced_e.Int:
-            return coerced_e.Int, i1, i2, -1.0, -1.0
-
-        elif c1 == coerced_e.Int and c2 == coerced_e.Float:
-            return coerced_e.Float, -1, -1, float(i1), f2
-
-        elif c1 == coerced_e.Float and c2 == coerced_e.Int:
-            return coerced_e.Float, -1, -1, f1, float(i2)
-
-        elif c1 == coerced_e.Float and c2 == coerced_e.Float:
-            return coerced_e.Float, -1, -1, f1, f2
-
-        else:
-            # No operation is valid
-            return coerced_e.Neither, -1, -1, -1.0, -1.0
-
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
 
@@ -391,7 +392,7 @@ class ExprEvaluator(object):
         # type: (expr.Unary) -> value_t
         val = self._EvalExpr(node.child)
         if node.op.id == Id.Arith_Minus:
-            c1, i1, f1 = self._ConvertToNumber(val)
+            c1, i1, f1 = _ConvertToNumber(val)
             if c1 == coerced_e.Int:
                 return value.Int(-i1)
             if c1 == coerced_e.Float:
@@ -399,7 +400,7 @@ class ExprEvaluator(object):
             raise error.TypeErr(val, 'Negation expected Int or Float', node.op)
 
         if node.op.id == Id.Arith_Tilde:
-            i = self._ConvertToInt(val)
+            i = _ConvertToInt(val, '~ expected Int', node.op)
             return value.Int(~i)
 
         if node.op.id == Id.Expr_Not:
@@ -414,7 +415,7 @@ class ExprEvaluator(object):
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
-        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
 
         op_id = op.id
 
@@ -511,8 +512,8 @@ class ExprEvaluator(object):
                 raise error.Expr('Divide by zero', node.op)
 
         # Everything below has 2 integer operands
-        i1 = self._ConvertToInt(left)
-        i2 = self._ConvertToInt(right)
+        i1 = _ConvertToInt(left, 'Left operand should be Int', node.op)
+        i2 = _ConvertToInt(right, 'Right operand should be Int', node.op)
 
         if op_id == Id.Expr_DSlash:  # a // b
             if i2 == 0:
@@ -585,7 +586,7 @@ class ExprEvaluator(object):
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
-        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
 
         op_id = op.id
         if c == coerced_e.Int:

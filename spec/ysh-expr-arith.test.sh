@@ -49,6 +49,7 @@ echo $i
 
 
 #### Operations That Convert to Integer: // % **
+shopt -s parse_brace
 
 var m = ' 5 ' // 2
 
@@ -58,10 +59,22 @@ var p = ' 5 ' ** 2
 
 write -- $m $n $p
 
+try {
+  var z = 'a' // 3
+}
+echo _status $_status
+
+try {
+  var z = 'z' % 3
+}
+echo _status $_status
+
 ## STDOUT:
 2
 1
 25
+_status 3
+_status 3
 ## END
 
 #### Division by zero
