@@ -11,7 +11,7 @@ from core import error
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
-from typing import TYPE_CHECKING, cast, List, Optional
+from typing import TYPE_CHECKING, cast, Dict, List, Optional
 
 import libc
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def ToInt(val, blame_loc, prefix=''):
-    # type: (value_t, loc_t, Optional[str]) -> int
+    # type: (value_t, loc_t, str) -> int
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
@@ -30,7 +30,7 @@ def ToInt(val, blame_loc, prefix=''):
 
 
 def ToStr(val, blame_loc, prefix=''):
-    # type: (value_t, loc_t, Optional[str]) -> str
+    # type: (value_t, loc_t, str) -> str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
@@ -40,51 +40,51 @@ def ToStr(val, blame_loc, prefix=''):
 
 
 def MustBeInt(val, msg):
-    # type: (value_t, str) -> value.Int
+    # type: (value_t, str) -> int
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
-        return val
+        return val.i
 
     raise error.TypeErr(val, msg, loc.Missing)
 
 
 def MustBeFloat(val):
-    # type: (value_t) -> value.Float
+    # type: (value_t) -> float
     UP_val = val
     if val.tag() == value_e.Float:
         val = cast(value.Float, UP_val)
-        return val
+        return val.f
 
     raise error.TypeErr(val, 'Expected Float', loc.Missing)
 
 
 def MustBeStr(val, msg):
-    # type: (value_t, str) -> value.Str
+    # type: (value_t, str) -> str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
-        return val
+        return val.s
 
     raise error.TypeErr(val, msg, loc.Missing)
 
 
 def MustBeList(val):
-    # type: (value_t) -> value.List
+    # type: (value_t) -> List[value_t]
     UP_val = val
     if val.tag() == value_e.List:
         val = cast(value.List, UP_val)
-        return val
+        return val.items
 
     raise error.TypeErr(val, 'Expected List', loc.Missing)
 
 
 def MustBeDict(val):
-    # type: (value_t) -> value.Dict
+    # type: (value_t) -> Dict[str, value_t]
     UP_val = val
     if val.tag() == value_e.Dict:
         val = cast(value.Dict, UP_val)
-        return val
+        return val.d
 
     raise error.TypeErr(val, 'Expected Dict', loc.Missing)
 
@@ -444,8 +444,8 @@ def Contains(needle, haystack):
     with tagswitch(haystack) as case:
         if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
-            val = MustBeStr(needle, "LHS of 'in' should be Str")
-            return val.s in haystack.d
+            s = MustBeStr(needle, "LHS of 'in' should be Str")
+            return s in haystack.d
 
         else:
             raise error.TypeErr(haystack, "RHS of 'in' should be Dict",

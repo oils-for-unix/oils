@@ -560,12 +560,12 @@ class ExprEvaluator(object):
 
         if node.lower:
             msg = 'Slice begin should be Int'
-            i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg).i
+            i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg)
             lower = IntBox(i)
 
         if node.upper:
             msg = 'Slice end should be Int'
-            i = val_ops.MustBeInt(self._EvalExpr(node.upper), msg).i
+            i = val_ops.MustBeInt(self._EvalExpr(node.upper), msg)
             upper = IntBox(i)
 
         return value.Slice(lower, upper)
@@ -576,10 +576,10 @@ class ExprEvaluator(object):
         assert node.upper is not None
 
         msg = 'Range begin should be Int'
-        i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg).i
+        i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg)
 
         msg = 'Range end should be Int'
-        j = val_ops.MustBeInt(self._EvalExpr(node.upper), msg).i
+        j = val_ops.MustBeInt(self._EvalExpr(node.upper), msg)
 
         return value.Range(i, j)
 
@@ -767,7 +767,7 @@ class ExprEvaluator(object):
         d = NewDict()  # type: Dict[str, value_t]
         for i, kval in enumerate(kvals):
             k = val_ops.MustBeStr(kval, 'Dict keys must be strings')
-            d[k.s] = values[i]
+            d[k] = values[i]
 
         return value.Dict(d)
 

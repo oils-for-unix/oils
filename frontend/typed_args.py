@@ -89,28 +89,28 @@ class Reader(object):
         # type: () -> str
         arg = self._GetNextPos()
         msg = 'Arg %d should be a Str' % self.pos_consumed
-        return val_ops.MustBeStr(arg, msg).s
+        return val_ops.MustBeStr(arg, msg)
 
     def PosInt(self):
         # type: () -> int
         arg = self._GetNextPos()
         msg = 'Arg %d should be an Int' % self.pos_consumed
-        return val_ops.MustBeInt(arg, msg).i
+        return val_ops.MustBeInt(arg, msg)
 
     def PosFloat(self):
         # type: () -> float
         arg = self._GetNextPos()
-        return val_ops.MustBeFloat(arg).f
+        return val_ops.MustBeFloat(arg)
 
     def PosList(self):
         # type: () -> List[value_t]
         arg = self._GetNextPos()
-        return val_ops.MustBeList(arg).items
+        return val_ops.MustBeList(arg)
 
     def PosDict(self):
         # type: () -> Dict[str, value_t]
         arg = self._GetNextPos()
-        return val_ops.MustBeDict(arg).d
+        return val_ops.MustBeDict(arg)
 
     def PosValue(self):
         # type: () -> value_t
@@ -130,7 +130,7 @@ class Reader(object):
             return default_
 
         msg = 'Named arg %r should be a Str' % param_name
-        ret = val_ops.MustBeStr(self.named_args[param_name], msg).s
+        ret = val_ops.MustBeStr(self.named_args[param_name], msg)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -140,7 +140,7 @@ class Reader(object):
             return default_
 
         msg = 'Named arg %r should be an Int' % param_name
-        ret = val_ops.MustBeInt(self.named_args[param_name], msg).i
+        ret = val_ops.MustBeInt(self.named_args[param_name], msg)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -149,7 +149,7 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeFloat(self.named_args[param_name]).f
+        ret = val_ops.MustBeFloat(self.named_args[param_name])
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -158,7 +158,7 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeList(self.named_args[param_name]).items
+        ret = val_ops.MustBeList(self.named_args[param_name])
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -167,7 +167,7 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeDict(self.named_args[param_name]).d
+        ret = val_ops.MustBeDict(self.named_args[param_name])
         dict_erase(self.named_args, param_name)
         return ret
 
