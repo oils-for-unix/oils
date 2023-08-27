@@ -5,11 +5,7 @@
 
 #### Describe Prototype
 
-hay define argparse
-
-# Oops, we're running into this problem ...
-
-hay define argparse/flag
+source --builtin testing.ysh
 
 proc p {
   echo STDOUT
@@ -30,6 +26,17 @@ describe p {
 
     cat out
     cat err
+
+    # Oh man the here docs are still useful here because of 'diff' interface
+    # Multiline strings don't quite do it
+
+    diff out - <<< '''
+    STDOUT
+    '''
+
+    diff err - <<< '''
+    STDERR
+    '''
   }
 }
 

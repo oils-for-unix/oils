@@ -1,0 +1,39 @@
+# args.ysh
+#
+# Usage:
+#   source --builtin args.sh
+#
+# Args :spec {
+#   flag -v --verbose "Verbosely"  # default is Bool, false
+#   flag -P --max-procs (
+#     Int, default=-1,
+#     desc="Run at most P processes at a time"
+#   )
+#   arg src (desc="Source")
+#   arg src (desc="Dest")
+# }
+#
+# var arg, i = parseArgs(spec, ARGV)
+#
+# echo "Verbose $[arg.verbose]"
+#
+
+proc Args(spec Ref ; ; block) {
+  # TODO: evaluate block somehow
+  #
+  # eval ( ) function does it I guess?
+  #
+  # You have to put 'flag' and 'arg' in scope
+
+  echo hi
+
+  #= spec
+  #= block
+}
+
+func parseArgs(spec, argv) {
+  var i = 0
+  var arg = {}
+
+  return ([arg, i])
+}
