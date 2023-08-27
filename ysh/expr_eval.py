@@ -983,7 +983,7 @@ class ExprEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.TypeErr(obj, 'subscript expected Str, List, or Dict',
+        raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
                             loc.Missing)
 
     def _EvalAttribute(self, node):
@@ -1017,7 +1017,8 @@ class ExprEvaluator(object):
                         raise error.Expr('dict entry not found', node.op)
 
                 else:
-                    raise error.TypeErr(o, 'd.key expected Dict', node.op)
+                    raise error.TypeErr(o, 'Dot operator expected Dict',
+                                        node.op)
 
             return result
 

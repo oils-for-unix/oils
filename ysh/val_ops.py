@@ -26,9 +26,7 @@ def ToInt(val, blame_loc, prefix=''):
         val = cast(value.Int, UP_val)
         return val.i
 
-    raise error.TypeErrVerbose(
-        '%sexpected value.Int, but got %s' % (prefix, value_str(val.tag())),
-        blame_loc)
+    raise error.TypeErr(val, '%sexpected Int' % prefix, blame_loc)
 
 
 def ToStr(val, blame_loc, prefix=''):
@@ -38,9 +36,7 @@ def ToStr(val, blame_loc, prefix=''):
         val = cast(value.Str, UP_val)
         return val.s
 
-    raise error.TypeErrVerbose(
-        '%sexpected value.Str, but got %s' % (prefix, value_str(val.tag())),
-        blame_loc)
+    raise error.TypeErr(val, '%sexpected Str' % prefix, blame_loc)
 
 
 def MustBeInt(val):
@@ -50,8 +46,7 @@ def MustBeInt(val):
         val = cast(value.Int, UP_val)
         return val
 
-    raise error.TypeErrVerbose(
-        'Expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, 'Expected Int', loc.Missing)
 
 
 def MustBeFloat(val):
@@ -61,19 +56,17 @@ def MustBeFloat(val):
         val = cast(value.Float, UP_val)
         return val
 
-    raise error.TypeErrVerbose(
-        'Expected value.Float, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, 'Expected Float', loc.Missing)
 
 
-def MustBeStr(val):
-    # type: (value_t) -> value.Str
+def MustBeStr(val, msg):
+    # type: (value_t, str) -> value.Str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
         return val
 
-    raise error.TypeErrVerbose(
-        'Expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, msg, loc.Missing)
 
 
 def MustBeList(val):
@@ -83,8 +76,7 @@ def MustBeList(val):
         val = cast(value.List, UP_val)
         return val
 
-    raise error.TypeErrVerbose(
-        'Expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, 'Expected List', loc.Missing)
 
 
 def MustBeDict(val):
@@ -94,8 +86,7 @@ def MustBeDict(val):
         val = cast(value.Dict, UP_val)
         return val
 
-    raise error.TypeErrVerbose(
-        'Expected value.Dict, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, 'Expected Dict', loc.Missing)
 
 
 def MustBeFunc(val):
@@ -105,8 +96,7 @@ def MustBeFunc(val):
         val = cast(value.Func, UP_val)
         return val
 
-    raise error.TypeErrVerbose(
-        'Expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, 'Expected Func', loc.Missing)
 
 
 def Stringify(val, blame_loc, prefix=''):
@@ -383,7 +373,7 @@ def ExactlyEqual(left, right):
             # Note: could provide floatEquals(), and suggest it
             # Suggested idiom is abs(f1 - f2) < 0.1
             raise error.TypeErrVerbose("Equality isn't defined on Float",
-                                    loc.Missing)
+                                       loc.Missing)
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
@@ -454,15 +444,12 @@ def Contains(needle, haystack):
     with tagswitch(haystack) as case:
         if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.TypeErrVerbose('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            return needle.s in haystack.d
+            val = MustBeStr(needle, "LHS of 'in' should be Str")
+            return val.s in haystack.d
 
         else:
-            raise error.TypeErr(haystack, "'in' expected Dict",
-                                     loc.Missing)
+            raise error.TypeErr(haystack, "RHS of 'in' should be Dict",
+                                loc.Missing)
 
     return False
 

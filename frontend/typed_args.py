@@ -88,7 +88,8 @@ class Reader(object):
     def PosStr(self):
         # type: () -> str
         arg = self._GetNextPos()
-        return val_ops.MustBeStr(arg).s
+        msg = 'Positional arg %d should be Str' % self.pos_consumed
+        return val_ops.MustBeStr(arg, msg).s
 
     def PosInt(self):
         # type: () -> int
@@ -127,7 +128,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeStr(self.named_args[param_name]).s
+        msg = 'Named arg %r should be Str' % param_name
+        ret = val_ops.MustBeStr(self.named_args[param_name], msg).s
         dict_erase(self.named_args, param_name)
         return ret
 
