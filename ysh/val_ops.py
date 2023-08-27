@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from core import state
 
 
-def MustBeInt(val, msg, blame_loc):
+def ToInt(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> int
     UP_val = val
     if val.tag() == value_e.Int:
@@ -29,7 +29,7 @@ def MustBeInt(val, msg, blame_loc):
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeFloat(val, msg, blame_loc):
+def ToFloat(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> float
     UP_val = val
     if val.tag() == value_e.Float:
@@ -39,7 +39,7 @@ def MustBeFloat(val, msg, blame_loc):
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeStr(val, msg, blame_loc):
+def ToStr(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> str
     UP_val = val
     if val.tag() == value_e.Str:
@@ -49,7 +49,7 @@ def MustBeStr(val, msg, blame_loc):
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeList(val, msg, blame_loc):
+def ToList(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> List[value_t]
     UP_val = val
     if val.tag() == value_e.List:
@@ -59,7 +59,7 @@ def MustBeList(val, msg, blame_loc):
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeDict(val, msg, blame_loc):
+def ToDict(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> Dict[str, value_t]
     UP_val = val
     if val.tag() == value_e.Dict:
@@ -413,7 +413,7 @@ def Contains(needle, haystack):
     with tagswitch(haystack) as case:
         if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
-            s = MustBeStr(needle, "LHS of 'in' should be Str", loc.Missing)
+            s = ToStr(needle, "LHS of 'in' should be Str", loc.Missing)
             return s in haystack.d
 
         else:

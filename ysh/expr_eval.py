@@ -560,12 +560,12 @@ class ExprEvaluator(object):
 
         if node.lower:
             msg = 'Slice begin should be Int'
-            i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg, loc.Missing)
+            i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
             lower = IntBox(i)
 
         if node.upper:
             msg = 'Slice end should be Int'
-            i = val_ops.MustBeInt(self._EvalExpr(node.upper), msg, loc.Missing)
+            i = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
             upper = IntBox(i)
 
         return value.Slice(lower, upper)
@@ -576,10 +576,10 @@ class ExprEvaluator(object):
         assert node.upper is not None
 
         msg = 'Range begin should be Int'
-        i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg, loc.Missing)
+        i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
 
         msg = 'Range end should be Int'
-        j = val_ops.MustBeInt(self._EvalExpr(node.upper), msg, loc.Missing)
+        j = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
 
         return value.Range(i, j)
 
@@ -766,7 +766,7 @@ class ExprEvaluator(object):
 
         d = NewDict()  # type: Dict[str, value_t]
         for i, kval in enumerate(kvals):
-            k = val_ops.MustBeStr(kval, 'Dict keys must be strings',
+            k = val_ops.ToStr(kval, 'Dict keys must be strings',
                                   loc.Missing)
             d[k] = values[i]
 
@@ -1207,7 +1207,7 @@ class ExprEvaluator(object):
                 term = cast(class_literal_term.Splice, UP_term)
 
                 val = self._LookupVar(term.var_name, term.name)
-                s = val_ops.MustBeStr(val,
+                s = val_ops.ToStr(val,
                                       'Eggex char class splice expected Str',
                                       term.name)
                 char_code_tok = term.name

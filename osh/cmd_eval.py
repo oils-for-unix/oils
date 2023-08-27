@@ -997,27 +997,27 @@ class CommandEvaluator(object):
                             with tagswitch(obj) as case:
                                 if case(value_e.BashArray):
                                     obj = cast(value.BashArray, UP_obj)
-                                    index = val_ops.MustBeInt(
+                                    index = val_ops.ToInt(
                                         place.index,
                                         'BashArray index should be Int',
                                         loc.Missing)
-                                    r = val_ops.MustBeStr(
+                                    r = val_ops.ToStr(
                                         rval, 'RHS should be Str', loc.Missing)
                                     obj.strs[index] = r
 
                                 elif case(value_e.BashAssoc):
                                     obj = cast(value.BashAssoc, UP_obj)
-                                    key = val_ops.MustBeStr(
+                                    key = val_ops.ToStr(
                                         place.index, 'BashAssoc index ',
                                         loc.Missing)
-                                    r = val_ops.MustBeStr(
+                                    r = val_ops.ToStr(
                                         rval, 'BashAssoc index should be Str',
                                         loc.Missing)
                                     obj.d[key] = r
 
                                 elif case(value_e.List):
                                     obj = cast(value.List, UP_obj)
-                                    index = val_ops.MustBeInt(
+                                    index = val_ops.ToInt(
                                         place.index,
                                         'List index should be Int',
                                         loc.Missing)
@@ -1025,7 +1025,7 @@ class CommandEvaluator(object):
 
                                 elif case(value_e.Dict):
                                     obj = cast(value.Dict, UP_obj)
-                                    key = val_ops.MustBeStr(
+                                    key = val_ops.ToStr(
                                         place.index,
                                         'Dict index should be Str',
                                         loc.Missing)
