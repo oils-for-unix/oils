@@ -19,26 +19,6 @@ if TYPE_CHECKING:
     from core import state
 
 
-def ToInt(val, blame_loc, prefix=''):
-    # type: (value_t, loc_t, str) -> int
-    UP_val = val
-    if val.tag() == value_e.Int:
-        val = cast(value.Int, UP_val)
-        return val.i
-
-    raise error.TypeErr(val, '%sexpected Int' % prefix, blame_loc)
-
-
-def ToStr(val, blame_loc, prefix=''):
-    # type: (value_t, loc_t, str) -> str
-    UP_val = val
-    if val.tag() == value_e.Str:
-        val = cast(value.Str, UP_val)
-        return val.s
-
-    raise error.TypeErr(val, '%sexpected Str' % prefix, blame_loc)
-
-
 def MustBeInt(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> int
     UP_val = val
@@ -168,8 +148,7 @@ def ToShellArray(val, blame_loc, prefix=''):
             strs = val.strs
 
         else:
-            raise error.TypeErr(val, "%sexpected List" % prefix,
-                                     blame_loc)
+            raise error.TypeErr(val, "%sexpected List" % prefix, blame_loc)
 
     return strs
 
@@ -460,9 +439,8 @@ def RegexMatch(left, right, mem):
             right = cast(value.Eggex, UP_right)
             right_s = regex_translate.AsPosixEre(right)
         else:
-            raise error.TypeErr(right,
-                                     'Expected Str or Regex for RHS of ~',
-                                     loc.Missing)
+            raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
+                                loc.Missing)
 
     UP_left = left
     left_s = None  # type: str

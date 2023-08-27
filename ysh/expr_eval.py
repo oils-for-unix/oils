@@ -922,7 +922,8 @@ class ExprEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.TypeErr(index, 'Str index expected Int or Slice',
+                        raise error.TypeErr(index,
+                                            'Str index expected Int or Slice',
                                             loc.Missing)
 
             elif case(value_e.List):
@@ -945,8 +946,9 @@ class ExprEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.TypeErr(index, 'List index expected Int or Slice',
-                                            loc.Missing)
+                        raise error.TypeErr(
+                            index, 'List index expected Int or Slice',
+                            loc.Missing)
 
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
@@ -1205,9 +1207,9 @@ class ExprEvaluator(object):
                 term = cast(class_literal_term.Splice, UP_term)
 
                 val = self._LookupVar(term.var_name, term.name)
-                s = val_ops.ToStr(val,
-                                  term.name,
-                                  prefix='Eggex char class splice ')
+                s = val_ops.MustBeStr(val,
+                                      'Eggex char class splice expected Str',
+                                      term.name)
                 char_code_tok = term.name
 
         assert s is not None, term

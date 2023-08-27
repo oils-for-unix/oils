@@ -26,24 +26,12 @@ class Append(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        li = pos_args[0]
-        UP_li = li
+        r = typed_args.Reader(pos_args, named_args)
+        items = r.PosList()
+        to_append = r.PosValue()
+        r.Done()
 
-        to_append = pos_args[1]
-
-        with tagswitch(li) as case:
-            if case(value_e.BashArray):
-                li = cast(value.BashArray, UP_li)
-                s = val_ops.ToStr(to_append,
-                                  loc.Missing,
-                                  prefix='append builtin ')
-                li.strs.append(s)
-
-            elif case(value_e.List):
-                li = cast(value.List, UP_li)
-                li.items.append(to_append)
-            else:
-                raise error.TypeErr(li, 'append() expected List', loc.Missing)
+        items.append(to_append)
 
         # Equivalent to no return value?
         return value.Null
@@ -58,21 +46,12 @@ class Pop(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        li = pos_args[0]
-        UP_li = li
+        r = typed_args.Reader(pos_args, named_args)
+        items = r.PosList()
+        r.Done()
 
-        with tagswitch(li) as case:
-            if case(value_e.BashArray):
-                li = cast(value.BashArray, UP_li)
-                li.strs.pop()
+        items.pop()
 
-            elif case(value_e.List):
-                li = cast(value.List, UP_li)
-                li.items.pop()
-            else:
-                raise error.TypeErr(li, 'pop() expected List', loc.Missing)
-
-        # Equivalent to no return value?
         return value.Null
 
 
@@ -174,4 +153,3 @@ class Len(vm._Callable):
 
         raise error.TypeErr(x, 'len() expected Str, List, or Dict',
                             loc.Missing)
-

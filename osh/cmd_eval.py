@@ -812,8 +812,8 @@ class CommandEvaluator(object):
                     if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                         # Special builtins have their temp env persisted.
                         self._EvalTempEnv(node.more_env, 0)
-                        status = self._RunSimpleCommand(cmd_val, cmd_st,
-                                                        node.do_fork)
+                        status = self._RunSimpleCommand(
+                            cmd_val, cmd_st, node.do_fork)
                     else:
                         with state.ctx_Temp(self.mem):
                             self._EvalTempEnv(node.more_env, state.SetExport)
@@ -967,9 +967,8 @@ class CommandEvaluator(object):
                         rhs_vals = [right_val]
                     else:
                         if right_val.tag() != value_e.List:
-                            raise error.TypeErr(right_val,
-                                                     'expected a List',
-                                                     loc.Missing)
+                            raise error.TypeErr(right_val, 'expected a List',
+                                                loc.Missing)
                         right_val = cast(value.List, UP_right_val)
 
                         num_rhs = len(right_val.items)
@@ -998,54 +997,56 @@ class CommandEvaluator(object):
                             with tagswitch(obj) as case:
                                 if case(value_e.BashArray):
                                     obj = cast(value.BashArray, UP_obj)
-                                    index = val_ops.ToInt(place.index,
-                                                          loc.Missing,
-                                                          prefix='List index ')
-                                    r = val_ops.ToStr(rval,
-                                                      loc.Missing,
-                                                      prefix='List index ')
+                                    index = val_ops.MustBeInt(
+                                        place.index,
+                                        'BashArray index should be Int',
+                                        loc.Missing)
+                                    r = val_ops.MustBeStr(
+                                        rval, 'RHS should be Str', loc.Missing)
                                     obj.strs[index] = r
-
-                                elif case(value_e.List):
-                                    obj = cast(value.List, UP_obj)
-                                    index = val_ops.ToInt(place.index,
-                                                          loc.Missing,
-                                                          prefix='List index ')
-                                    obj.items[index] = rval
 
                                 elif case(value_e.BashAssoc):
                                     obj = cast(value.BashAssoc, UP_obj)
-                                    key = val_ops.ToStr(
-                                        place.index,
-                                        loc.Missing,
-                                        prefix='BashAssoc index ')
-                                    r = val_ops.ToStr(rval,
-                                                      loc.Missing,
-                                                      prefix='BashAssoc index ')
+                                    key = val_ops.MustBeStr(
+                                        place.index, 'BashAssoc index ',
+                                        loc.Missing)
+                                    r = val_ops.MustBeStr(
+                                        rval, 'BashAssoc index should be Str',
+                                        loc.Missing)
                                     obj.d[key] = r
+
+                                elif case(value_e.List):
+                                    obj = cast(value.List, UP_obj)
+                                    index = val_ops.MustBeInt(
+                                        place.index,
+                                        'List index should be Int',
+                                        loc.Missing)
+                                    obj.items[index] = rval
 
                                 elif case(value_e.Dict):
                                     obj = cast(value.Dict, UP_obj)
-                                    key = val_ops.ToStr(place.index,
-                                                        loc.Missing,
-                                                        prefix='Dict index ')
+                                    key = val_ops.MustBeStr(
+                                        place.index,
+                                        'Dict index should be Str',
+                                        loc.Missing)
                                     obj.d[key] = rval
 
                                 else:
                                     raise error.TypeErr(
-                                        obj, "obj[index] expected List or Dict",
+                                        obj,
+                                        "obj[index] expected List or Dict",
                                         loc.Missing)
 
                             if node.keyword.id == Id.KW_SetRef:
                                 e_die('setref obj[index] not implemented')
 
                         else:
-                            #val = cpython._PyObjToValue(py_val)
                             # top level variable
                             self.mem.SetValue(place,
                                               rval,
                                               which_scopes,
-                                              flags=_PackFlags(node.keyword.id))
+                                              flags=_PackFlags(
+                                                  node.keyword.id))
 
                 # TODO: Eval other augmented assignments.   Do we need "kind"
                 # here?
@@ -1056,8 +1057,8 @@ class CommandEvaluator(object):
                     aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
                     val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-                    new_val = self.expr_ev.EvalPlusEquals(aug_lval, val,
-                                                          node.op)
+                    new_val = self.expr_ev.EvalPlusEquals(
+                        aug_lval, val, node.op)
 
                     self.mem.SetValue(aug_lval,
                                       new_val,
@@ -1182,7 +1183,7 @@ class CommandEvaluator(object):
                     # break/continue at top level.  It has the side effect of making
                     # 'return ""' valid, which shells other than zsh fail on.
                     if len(str_val.s
-                          ) == 0 and not self.exec_opts.strict_control_flow():
+                           ) == 0 and not self.exec_opts.strict_control_flow():
                         arg = 0
                     else:
                         try:
@@ -1206,9 +1207,9 @@ class CommandEvaluator(object):
                 # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
                 # from a sourced script, it makes sense to return from a main script.
                 ok = True
-                if (keyword.id in (Id.ControlFlow_Break,
-                                   Id.ControlFlow_Continue) and
-                        self.loop_level == 0):
+                if (keyword.id
+                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue)
+                        and self.loop_level == 0):
                     ok = False
 
                 if ok:
@@ -1486,10 +1487,11 @@ class CommandEvaluator(object):
                 if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
-                        "Function %s was already defined (redefine_proc_func)" %
-                        node.name, node.name_tok)
+                        "Function %s was already defined (redefine_proc_func)"
+                        % node.name, node.name_tok)
                 self.procs[node.name] = Proc(node.name, node.name_tok,
-                                             proc_sig.Open, node.body, [], True)
+                                             proc_sig.Open, node.body, [],
+                                             True)
 
                 status = 0
 
@@ -1511,8 +1513,8 @@ class CommandEvaluator(object):
                     defaults = [no_val] * len(sig.pos_params)
                     for i, p in enumerate(sig.pos_params):
                         if p.default_val:
-                            val = self.expr_ev.EvalExpr(p.default_val,
-                                                        loc.Missing)
+                            val = self.expr_ev.EvalExpr(
+                                p.default_val, loc.Missing)
                             defaults[i] = val
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
@@ -1536,8 +1538,8 @@ class CommandEvaluator(object):
                         assert did_unset, name
                     else:
                         e_die(
-                            "Func %s was already defined (redefine_proc_func)" %
-                            name, node.name)
+                            "Func %s was already defined (redefine_proc_func)"
+                            % name, node.name)
 
                 # Needed in case the func is an existing variable name
                 self.mem.SetTokenForLine(node.name)
@@ -1645,7 +1647,8 @@ class CommandEvaluator(object):
                 status = self._Execute(node.pipeline)
                 e_real, e_user, e_sys = pyos.Time()
                 # note: mycpp doesn't support %.3f
-                libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
+                libc.print_time(e_real - s_real, e_user - s_user,
+                                e_sys - s_sys)
 
             else:
                 raise NotImplementedError(node.tag())
@@ -1725,7 +1728,8 @@ class CommandEvaluator(object):
                         except error.FailGlob as e:
                             if not e.HasLocation():  # Last resort!
                                 e.location = self.mem.GetFallbackLocation()
-                            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                            self.errfmt.PrettyPrintError(e,
+                                                         prefix='failglob: ')
                             status = 1
                             check_errexit = True
 
@@ -2076,8 +2080,8 @@ class CommandEvaluator(object):
 
                 n_params = len(sig.pos_params)
                 if sig.rest:
-                    items = [value.Str(s) for s in argv[n_params:]
-                            ]  # type: List[value_t]
+                    items = [value.Str(s)
+                             for s in argv[n_params:]]  # type: List[value_t]
                     leftover = value.List(items)
                     self.mem.SetValue(location.LName(sig.rest.tval), leftover,
                                       scope_e.LocalOnly)
