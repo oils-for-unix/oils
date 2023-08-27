@@ -107,13 +107,37 @@ write -- $a $b $c $d
 false
 ## END
 
-#### unary ~ applied to bool is not allowed
+
+#### unary minus on strings
+json write (-3)
+json write (-'4')
+json write (-'5.5')
+## STDOUT:
+-3
+-4
+-5.5
+## END
+
+#### unary ~ complement on strings
+json write (~3)
+json write (~'4')
+json write (~' 5 ')
+# Not accepted
+json write (~'5.5')
+
+## STDOUT:
+-3
+-4
+-5.5
+## END
+
+#### unary ~ doesn't work on bool
 = ~false
 ## status: 3
 ## STDOUT:
 ## END
 
-#### unary ~ applied to float is not allowed
+#### unary ~ doesn't work on float
 = ~1.
 ## status: 3
 ## STDOUT:
