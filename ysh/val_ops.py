@@ -39,64 +39,54 @@ def ToStr(val, blame_loc, prefix=''):
     raise error.TypeErr(val, '%sexpected Str' % prefix, blame_loc)
 
 
-def MustBeInt(val, msg):
-    # type: (value_t, str) -> int
+def MustBeInt(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> int
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
         return val.i
 
-    raise error.TypeErr(val, msg, loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeFloat(val):
-    # type: (value_t) -> float
+def MustBeFloat(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> float
     UP_val = val
     if val.tag() == value_e.Float:
         val = cast(value.Float, UP_val)
         return val.f
 
-    raise error.TypeErr(val, 'Expected Float', loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeStr(val, msg):
-    # type: (value_t, str) -> str
+def MustBeStr(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
         return val.s
 
-    raise error.TypeErr(val, msg, loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeList(val):
-    # type: (value_t) -> List[value_t]
+def MustBeList(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> List[value_t]
     UP_val = val
     if val.tag() == value_e.List:
         val = cast(value.List, UP_val)
         return val.items
 
-    raise error.TypeErr(val, 'Expected List', loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeDict(val):
-    # type: (value_t) -> Dict[str, value_t]
+def MustBeDict(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> Dict[str, value_t]
     UP_val = val
     if val.tag() == value_e.Dict:
         val = cast(value.Dict, UP_val)
         return val.d
 
-    raise error.TypeErr(val, 'Expected Dict', loc.Missing)
-
-
-def MustBeFunc(val):
-    # type: (value_t) -> value.Func
-    UP_val = val
-    if val.tag() == value_e.Func:
-        val = cast(value.Func, UP_val)
-        return val
-
-    raise error.TypeErr(val, 'Expected Func', loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
 def Stringify(val, blame_loc, prefix=''):
@@ -444,7 +434,7 @@ def Contains(needle, haystack):
     with tagswitch(haystack) as case:
         if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
-            s = MustBeStr(needle, "LHS of 'in' should be Str")
+            s = MustBeStr(needle, "LHS of 'in' should be Str", loc.Missing)
             return s in haystack.d
 
         else:
