@@ -84,7 +84,6 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
     # Lookup WITHOUT dynamic scope.
     val = mem.GetValue(var_name, which_scopes=which_scopes)
     if val.tag() == value_e.Undef:
-        # TODO: Location info
         e_die('Undefined variable %r' % var_name, var_loc)
 
     return val
@@ -452,10 +451,10 @@ class ExprEvaluator(object):
         else:
             raise error.TypeErrVerbose(
                 'Binary operator expected numbers, got %s and %s' %
-                (ui.ValType(left), ui.ValType(right)), loc.Missing)
+                (ui.ValType(left), ui.ValType(right)), op)
 
-    def _Concat(self, left, right):
-        # type: (value_t, value_t) -> value_t
+    def _Concat(self, left, right, op):
+        # type: (value_t, value_t, Token) -> value_t
         UP_left = left
         UP_right = right
 
@@ -476,7 +475,7 @@ class ExprEvaluator(object):
         else:
             raise error.TypeErrVerbose(
                 'Expected Str ++ Str or List ++ List, got %s ++ %s' %
-                (ui.ValType(left), ui.ValType(right)), loc.Missing)
+                (ui.ValType(left), ui.ValType(right)), op)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -501,7 +500,7 @@ class ExprEvaluator(object):
 
         # Str or List
         if op_id == Id.Arith_DPlus:  # a ++ b to concat
-            return self._Concat(left, right)
+            return self._Concat(left, right, node.op)
 
         # Int or Float
         if op_id in (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
@@ -596,8 +595,8 @@ class ExprEvaluator(object):
 
             right = self._EvalExpr(right_expr)
 
-            if op.id in \
-              (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual):
+            if op.id in (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual,
+                         Id.Arith_GreatEqual):
                 result = self._CompareNumeric(left, right, op)
 
             elif op.id == Id.Expr_TEqual:
@@ -714,7 +713,7 @@ class ExprEvaluator(object):
 
         return value.Bool(result)
 
-    def EvalArgList(self, args):
+    def _EvalArgListUntyped(self, args):
         # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
         """For procs and funcs - UNTYPED"""
         pos_args = []  # type: List[Any]
@@ -741,7 +740,7 @@ class ExprEvaluator(object):
 
         return pos_args, kwargs
 
-    def EvalArgList2(self, args, me=None):
+    def _EvalArgList(self, args, me=None):
         # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
         """For procs and args - TYPED """
         pos_args = []  # type: List[value_t]
@@ -785,7 +784,7 @@ class ExprEvaluator(object):
                 if mylib.PYTHON:
                     f = func.callable
                     if isinstance(f, vm._Callable):  # typed
-                        pos_args, named_args = self.EvalArgList2(node.args)
+                        pos_args, named_args = self._EvalArgList(node.args)
                         #log('pos_args %s', pos_args)
 
                         ret = f.Call(pos_args, named_args)
@@ -793,7 +792,7 @@ class ExprEvaluator(object):
                         #log('ret %s', ret)
                         return ret
                     else:
-                        u_pos_args, u_named_args = self.EvalArgList(node.args)
+                        u_pos_args, u_named_args = self._EvalArgListUntyped(node.args)
                         #log('ARGS %s', u_pos_args)
                         #ret = f(*u_pos_args, **u_named_args)
 
@@ -806,7 +805,7 @@ class ExprEvaluator(object):
                 else:
                     # C++ cast to work around ASDL 'any'
                     f = cast(vm._Callable, func.callable)
-                    pos_args, named_args = self.EvalArgList2(node.args)
+                    pos_args, named_args = self._EvalArgList(node.args)
                     #log('pos_args %s', pos_args)
 
                     ret = f.Call(pos_args, named_args)
@@ -821,7 +820,7 @@ class ExprEvaluator(object):
                 # Cast to work around ASDL limitation for now
                 f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = self.EvalArgList2(node.args, me=func.me)
+                pos_args, named_args = self._EvalArgList(node.args, me=func.me)
 
                 ret = f.Call(pos_args, named_args)
 
