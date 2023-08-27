@@ -112,6 +112,11 @@ false
 json write (-3)
 json write (-'4')
 json write (-'5.5')
+
+# Not accepted
+json write (-'abc')
+
+## status: 3
 ## STDOUT:
 -3
 -4

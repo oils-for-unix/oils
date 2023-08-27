@@ -392,18 +392,13 @@ class ExprEvaluator(object):
         child = self._EvalExpr(node.child)
         if node.op.id == Id.Arith_Minus:
             UP_child = child
-            with tagswitch(child) as case:
-                if case(value_e.Int):
-                    child = cast(value.Int, UP_child)
-                    return value.Int(-child.i)
-
-                elif case(value_e.Float):
-                    child = cast(value.Float, UP_child)
-                    return value.Float(-child.f)
-
-                else:
-                    raise error.InvalidType2(child, 'Expected Int or Float',
-                                             node.op)
+            c1, i1, f1 = self._ConvertToNumber(child)
+            if c1 == coerced_e.Int:
+                return value.Int(-i1)
+            if c1 == coerced_e.Float:
+                return value.Float(-f1)
+            raise error.InvalidType2(child, 'Negation expected Int or Float',
+                                     node.op)
 
         if node.op.id == Id.Arith_Tilde:
             UP_child = child
