@@ -124,16 +124,17 @@ json write (-'abc')
 ## END
 
 #### unary ~ complement on strings
-json write (~3)
-json write (~'4')
-json write (~' 5 ')
+json write (~0)
+json write (~'1')
+json write (~' 2 ')
 # Not accepted
-json write (~'5.5')
+json write (~'3.5')
 
+## status: 3
 ## STDOUT:
+-1
+-2
 -3
--4
--5.5
 ## END
 
 #### unary ~ doesn't work on bool

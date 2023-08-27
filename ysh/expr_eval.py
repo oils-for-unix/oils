@@ -389,30 +389,22 @@ class ExprEvaluator(object):
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
-        child = self._EvalExpr(node.child)
+        val = self._EvalExpr(node.child)
         if node.op.id == Id.Arith_Minus:
-            UP_child = child
-            c1, i1, f1 = self._ConvertToNumber(child)
+            c1, i1, f1 = self._ConvertToNumber(val)
             if c1 == coerced_e.Int:
                 return value.Int(-i1)
             if c1 == coerced_e.Float:
                 return value.Float(-f1)
-            raise error.InvalidType2(child, 'Negation expected Int or Float',
+            raise error.InvalidType2(val, 'Negation expected Int or Float',
                                      node.op)
 
         if node.op.id == Id.Arith_Tilde:
-            UP_child = child
-            with tagswitch(child) as case:
-                if case(value_e.Int):
-                    child = cast(value.Int, UP_child)
-                    return value.Int(~child.i)
-
-                else:
-                    raise error.InvalidType2(child, 'Expected Int', node.op)
+            i = self._ConvertToInt(val)
+            return value.Int(~i)
 
         if node.op.id == Id.Expr_Not:
-            UP_child = child
-            b = val_ops.ToBool(child)
+            b = val_ops.ToBool(val)
             return value.Bool(False if b else True)
 
         raise NotImplementedError(node.op.id)
