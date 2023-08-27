@@ -38,8 +38,7 @@ import time as time_
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
                                        redir_param_e, Token)
-from _devbuild.gen.runtime_asdl import (value, value_e, value_str, scope_e,
-                                        Proc)
+from _devbuild.gen.runtime_asdl import value, value_e, scope_e, Proc
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core import pyos
@@ -621,7 +620,7 @@ class ShellFuncAction(CompletionAction):
 
         if val.tag() != value_e.BashArray:
             print_stderr('ERROR: COMPREPLY should be an array, got %s' %
-                         value_str(val.tag()))
+                         ui.ValType(val))
             return
 
         # TODO: Print structured value_t in C++.  This line is wrong:

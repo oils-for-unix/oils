@@ -55,7 +55,6 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
-    value_str,
     cmd_value,
     cmd_value_e,
     RedirValue,
@@ -220,7 +219,7 @@ def PlusEquals(old_val, val):
             pass
 
         else:
-            e_die("Can't append to value of type %s" % value_str(old_val.tag()))
+            e_die("Can't append to value of type %s" % ui.ValType(old_val))
 
     return val
 

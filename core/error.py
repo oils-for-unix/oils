@@ -2,8 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc
-from _devbuild.gen.runtime_asdl import value_t, value_str
-from mycpp.mylib import StrFromC
+from _devbuild.gen.runtime_asdl import value_t
+from core import ui
 
 from typing import TYPE_CHECKING, NoReturn
 if TYPE_CHECKING:
@@ -186,7 +186,7 @@ class TypeErr(TypeErrVerbose):
         # type: (value_t, str, loc_t) -> None
         TypeErrVerbose.__init__(
             self, "%s, got %s" %
-            (msg, StrFromC(value_str(actual_val.tag()))), location)
+            (msg, ui.ValType(actual_val)), location)
 
 
 def e_usage(msg, location):

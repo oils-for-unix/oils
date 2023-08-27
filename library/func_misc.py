@@ -172,4 +172,6 @@ class Len(vm._Callable):
                 x = cast(value.Str, UP_x)
                 return value.Int(len(x.s))
 
-        raise error.TypeErrVerbose('%s has no length' % value_str(x.tag()), loc.Missing)
+        raise error.TypeErr(x, 'len() expected Str, List, or Dict',
+                            loc.Missing)
+
