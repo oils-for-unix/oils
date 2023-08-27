@@ -749,31 +749,25 @@ class ExprEvaluator(object):
 
     def _EvalDict(self, node):
         # type: (expr.Dict) -> value_t
-        # NOTE: some keys are expr.Const
-        keys = [self._EvalExpr(e) for e in node.keys]
 
+        kvals = [self._EvalExpr(e) for e in node.keys]
         values = []  # type: List[value_t]
-        for i, value_expr in enumerate(node.values):
-            if value_expr.tag() == expr_e.Implicit:
-                if keys[i].tag() != value_e.Str:
-                    # TODO: expr.Dict needs {
-                    raise error.TypeErrVerbose('Dict keys must be strings',
-                                               loc.Missing)
 
-                s = cast(value.Str, keys[i])
-                v = self._LookupVar(s.s, loc.Missing)  # {name}
+        for i, value_expr in enumerate(node.values):
+            if value_expr.tag() == expr_e.Implicit:  # {key}
+                # Enforced by parser.  Key is expr.Const
+                assert kvals[i].tag() == value_e.Str, kvals[i]
+                key = cast(value.Str, kvals[i])
+                v = self._LookupVar(key.s, loc.Missing)
             else:
                 v = self._EvalExpr(value_expr)
 
             values.append(v)
 
         d = NewDict()  # type: Dict[str, value_t]
-        for i, k in enumerate(keys):
-            if k.tag() != value_e.Str:
-                raise error.TypeErrVerbose('Dict keys must be strings',
-                                           loc.Missing)
-            s = cast(value.Str, k)
-            d[s.s] = values[i]
+        for i, kval in enumerate(kvals):
+            k = val_ops.MustBeStr(kval, 'Dict keys must be strings')
+            d[k.s] = values[i]
 
         return value.Dict(d)
 
