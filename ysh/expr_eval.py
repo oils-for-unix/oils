@@ -557,48 +557,31 @@ class ExprEvaluator(object):
 
         lower = None  # type: Optional[IntBox]
         upper = None  # type: Optional[IntBox]
-        if node.lower:
-            UP_lower = self._EvalExpr(node.lower)
-            if UP_lower.tag() != value_e.Int:
-                # TODO: add location op to expr.Slice
-                raise error.TypeErrVerbose('Slice indices must be Ints',
-                                           loc.Missing)
 
-            lower = IntBox(cast(value.Int, UP_lower).i)
+        if node.lower:
+            msg = 'Slice begin should be Int'
+            i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg).i
+            lower = IntBox(i)
 
         if node.upper:
-            UP_upper = self._EvalExpr(node.upper)
-            if UP_upper.tag() != value_e.Int:
-                raise error.TypeErrVerbose('Slice indices must be Ints',
-                                           loc.Missing)
-
-            upper = IntBox(cast(value.Int, UP_upper).i)
+            msg = 'Slice end should be Int'
+            i = val_ops.MustBeInt(self._EvalExpr(node.upper), msg).i
+            upper = IntBox(i)
 
         return value.Slice(lower, upper)
 
     def _EvalRange(self, node):
         # type: (expr.Range) -> value_t
-
         assert node.lower is not None
-
-        UP_lower = self._EvalExpr(node.lower)
-        if UP_lower.tag() != value_e.Int:
-            # TODO: add location op to expr.Range
-            raise error.TypeErrVerbose('Range indices must be Ints',
-                                       loc.Missing)
-
-        lower = cast(value.Int, UP_lower)
-
         assert node.upper is not None
 
-        UP_upper = self._EvalExpr(node.upper)
-        if UP_upper.tag() != value_e.Int:
-            raise error.TypeErrVerbose('Range indices must be Ints',
-                                       loc.Missing)
+        msg = 'Range begin should be Int'
+        i = val_ops.MustBeInt(self._EvalExpr(node.lower), msg).i
 
-        upper = cast(value.Int, UP_upper)
+        msg = 'Range end should be Int'
+        j = val_ops.MustBeInt(self._EvalExpr(node.upper), msg).i
 
-        return value.Range(lower.i, upper.i)
+        return value.Range(i, j)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool

@@ -88,13 +88,14 @@ class Reader(object):
     def PosStr(self):
         # type: () -> str
         arg = self._GetNextPos()
-        msg = 'Positional arg %d should be Str' % self.pos_consumed
+        msg = 'Arg %d should be a Str' % self.pos_consumed
         return val_ops.MustBeStr(arg, msg).s
 
     def PosInt(self):
         # type: () -> int
         arg = self._GetNextPos()
-        return val_ops.MustBeInt(arg).i
+        msg = 'Arg %d should be an Int' % self.pos_consumed
+        return val_ops.MustBeInt(arg, msg).i
 
     def PosFloat(self):
         # type: () -> float
@@ -128,7 +129,7 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        msg = 'Named arg %r should be Str' % param_name
+        msg = 'Named arg %r should be a Str' % param_name
         ret = val_ops.MustBeStr(self.named_args[param_name], msg).s
         dict_erase(self.named_args, param_name)
         return ret
@@ -138,7 +139,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeInt(self.named_args[param_name]).i
+        msg = 'Named arg %r should be an Int' % param_name
+        ret = val_ops.MustBeInt(self.named_args[param_name], msg).i
         dict_erase(self.named_args, param_name)
         return ret
 

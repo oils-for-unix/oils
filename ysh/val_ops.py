@@ -4,7 +4,7 @@ val_ops.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t
+from _devbuild.gen.runtime_asdl import value, value_e, value_t
 from _devbuild.gen.syntax_asdl import loc, loc_t
 
 from core import error
@@ -39,14 +39,14 @@ def ToStr(val, blame_loc, prefix=''):
     raise error.TypeErr(val, '%sexpected Str' % prefix, blame_loc)
 
 
-def MustBeInt(val):
-    # type: (value_t) -> value.Int
+def MustBeInt(val, msg):
+    # type: (value_t, str) -> value.Int
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
         return val
 
-    raise error.TypeErr(val, 'Expected Int', loc.Missing)
+    raise error.TypeErr(val, msg, loc.Missing)
 
 
 def MustBeFloat(val):
