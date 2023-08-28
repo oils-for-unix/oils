@@ -97,6 +97,10 @@ test-proc-sig() {
   _should-parse 'proc p (a) { echo hi }'
   _should-parse 'proc p (out Ref) { echo hi }'
 
+  # doesn't make sense I think -- they're all strings.  Types don't do any
+  # dynamic validation, except 'out Ref' does change semantics
+  _error-case 'proc p (a Int) { echo hi }'
+
   _error-case 'proc p (w, ...) { echo hi }'
 
   _should-parse 'proc p (w, ...rest) { echo hi }'
@@ -132,6 +136,17 @@ test-proc-sig() {
   _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
   _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; {block}) { echo hi }'
+}
+
+test-func-sig() {
+  _error-case 'func f { echo hi }'
+
+  _should-parse 'func f () { echo hi }'
+
+  _should-parse 'func f (a List[Int] = [3,4]) { echo hi }'
+  _should-parse 'func f (a, b, ...rest; c) { echo hi }'
+  _should-parse 'func f (a, b, ...rest; c, ...rest) { echo hi }'
+  _error-case 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
 }
 
 soil-run() {

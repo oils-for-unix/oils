@@ -48,7 +48,6 @@ from _devbuild.gen.syntax_asdl import (
     for_iter_e,
     pat,
     pat_e,
-    type_expr, type_expr_e,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue,
@@ -2020,12 +2019,7 @@ class CommandEvaluator(object):
                 for i, p in enumerate(sig.words):
 
                     # proc p(out Ref)
-                    is_out_param = False
-                    if p.type is not None:
-                        if p.type.tag() == type_expr_e.Simple:
-                            typ = cast(type_expr.Simple, p.type)
-                            if typ.tok.tval == 'Ref':
-                                is_out_param = True
+                    is_out_param = (p.type is not None and p.type.name == 'Ref')
 
                     param_name = p.name.tval
                     if i < n_args:

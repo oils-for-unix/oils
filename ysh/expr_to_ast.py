@@ -30,7 +30,6 @@ from _devbuild.gen.syntax_asdl import (
     place_expr,
     place_expr_e,
     place_expr_t,
-    type_expr_t,
     Comprehension,
     Subscript,
     Attribute,
@@ -39,13 +38,12 @@ from _devbuild.gen.syntax_asdl import (
     Param,
     NamedArg,
     ArgList,
-    #ProcParam,
     Variant,
     variant_type,
     variant_type_t,
     pat,
     pat_t,
-    type_expr,
+    TypeExpr,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -892,7 +890,7 @@ class Transformer(object):
         self._Arglist(p, arglist)
 
     def _TypeExpr(self, pnode):
-        # type: (PNode) -> type_expr_t
+        # type: (PNode) -> TypeExpr
         """
         type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
         """
@@ -900,24 +898,26 @@ class Transformer(object):
 
         #self.p_printer.Print(pnode)
 
-        tok = pnode.GetChild(0).tok
-        name = tok.tval
+        ty = TypeExpr.CreateNull()  # don't allocate children
+
+        ty.tok = pnode.GetChild(0).tok
+        ty.name = ty.tok.tval  # TODO: TokenVal()
 
         n = pnode.NumChildren()
         if n == 1:
-            return type_expr.Simple(tok, name)
+            return ty
 
-        type_params = []  # type: List[type_expr_t]
+        ty.params = []
         i = 2
         while i < n:
             p = self._TypeExpr(pnode.GetChild(i))
-            type_params.append(p)
+            ty.params.append(p)
             i += 2  # skip comma
 
-        return type_expr.Compound(tok, name, type_params)
+        return ty
 
     def _TypeExprList(self, pnode):
-        # type: (PNode) -> List[type_expr_t]
+        # type: (PNode) -> List[TypeExpr]
         """
         For return value annotation?
         """
@@ -940,7 +940,7 @@ class Transformer(object):
         prefix_tok = None  # type: Token
 
         default_val = None  # type: expr_t
-        type_ = None  # type: type_expr_t
+        type_ = None  # type: TypeExpr
 
         #self.p_printer.Print(pnode)
 
@@ -1014,6 +1014,7 @@ class Transformer(object):
         # proc f( three param groups, and block group )
         sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
 
+        # Word args
         i = 1 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
@@ -1021,6 +1022,14 @@ class Transformer(object):
             i += 2
         else:
             i += 1
+
+        for word in sig.words:
+            if word.type:
+                if word.type.name not in ('Str', 'Ref'):
+                    p_die('Word params may only have type Str or Ref',
+                          word.type.tok)
+                if word.type.params is not None:
+                    p_die('Unexpected type parameters', word.type.tok)
 
         #log('i %d n %d', i, n)
         if i >= n:

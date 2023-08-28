@@ -24,8 +24,6 @@
 
 # Possible refactorings:
 #
-#   # More %Token as first class variants:
-#   type_expr = Atom %Token | ...
 #   printf_part = Literal %Token | ...
 #
 #   # %CompoundWord as first class variant:
@@ -379,7 +377,7 @@ module syntax
   | TeaFunc(Token name,
          List[Param] pos_params, Token? pos_splat,
          List[Param] named_params, Token? named_splat,
-         List[type_expr] return_types, command body)
+         List[TypeExpr] return_types, command body)
   | Data(Token name, List[Param] params)
   | Enum(Token name, List[Variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)
@@ -414,7 +412,7 @@ module syntax
 
   # prefix is : for out param, ... for splat
   # procs only have types Ref, Expr, Block (and Str is implicit)
-  Param = (Token? prefix, Token name, type_expr? type, expr? default_val)
+  Param = (Token? prefix, Token name, TypeExpr? type, expr? default_val)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
@@ -441,19 +439,19 @@ module syntax
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)
 
   #
-  # OIL LANGUAGE
+  # YSH Language
   #
   # Copied and modified from Python-3.7/Parser/Python.asdl !
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
-  # type expressions:   Int   Array[Int]   Dict[Str, Any]
-  type_expr =
-    Simple(Token tok, str name)
-  | Compound(Token tok, str name, List[type_expr] params)
+  # Type expressions:   Int   List[Int]   Dict[Str, Any]
+  # Do we have Func[Int, Int => Int] ?  I guess we can parse that into this
+  # system.
+  TypeExpr = (Token tok, str name, List[TypeExpr] params)
 
   # LHS binding in loops, list comprehensions, and var/const
-  NameType = (Token name, type_expr? typ)
+  NameType = (Token name, TypeExpr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   Comprehension = (List[NameType] lhs, expr iter, expr? cond)
