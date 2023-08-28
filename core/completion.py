@@ -954,8 +954,6 @@ class RootCompleter(CompletionAction):
         Returns a list of matches relative to readline's completion_delims.
         We have to post-process the output of various completers.
         """
-        arena = self.parse_ctx.arena  # Used by inner functions
-
         # Pass the original line "out of band" to the completion callback.
         line_until_tab = comp.line[:comp.end]
         self.comp_ui_state.line_until_tab = line_until_tab

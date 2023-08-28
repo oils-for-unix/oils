@@ -678,7 +678,6 @@ class CommandEvaluator(object):
 
         if node.op.id == Id.Arith_Equal:
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-            UP_right_val = right_val
 
             places = None  # type: List[lvalue_t]
             rhs_vals = None  # type: List[value_t]

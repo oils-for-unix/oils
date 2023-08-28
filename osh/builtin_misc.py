@@ -829,9 +829,11 @@ class Help(vm._Builtin):
         # type: (str, loc_t) -> int
 
         prefix = 'https://www.oilshell.org/release'
+
+        # For local preview
         if 0:
             prefix = 'file:///home/andy/git/oilshell/oil/_release'
-            version_str = 'VERSION'
+            self.version_str = 'VERSION'
 
         chapter_name = self.help_data.get(topic_id)
 

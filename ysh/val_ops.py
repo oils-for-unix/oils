@@ -417,8 +417,6 @@ def Contains(needle, haystack):
     We should have mylist->find(x) !== -1 for searching through a List.
     Things with different perf characteristics should look different.
     """
-
-    UP_needle = needle
     UP_haystack = haystack
     with tagswitch(haystack) as case:
         if case(value_e.Dict):

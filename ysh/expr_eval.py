@@ -70,7 +70,6 @@ from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import ArgList
-    from core import ui
     from core.state import Mem
     from osh.word_eval import AbstractWordEvaluator
     from osh import split

@@ -214,7 +214,6 @@ class Transformer(object):
         if op_tok.id == Id.Op_LBracket:
             p_args = p_trailer.GetChild(1)
             assert p_args.typ == grammar_nt.subscriptlist
-            indices = []  # type: List[expr_t]
             n = p_args.NumChildren()
             if n > 1:
                 p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
@@ -1411,8 +1410,6 @@ class Transformer(object):
         typ = first.typ
 
         if ISNONTERMINAL(typ):
-            p_child = p_node.GetChild(0)
-
             n = p_node.NumChildren()
 
             if n == 1 and typ == grammar_nt.range_char:
