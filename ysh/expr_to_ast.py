@@ -936,9 +936,6 @@ class Transformer(object):
 
         assert tok0.id == Id.Expr_Name, tok0
 
-        # TODO: remove?
-        prefix_tok = None  # type: Token
-
         default_val = None  # type: expr_t
         type_ = None  # type: TypeExpr
 
@@ -961,7 +958,7 @@ class Transformer(object):
             type_ = self._TypeExpr(pnode.GetChild(1))
             default_val = self.Expr(pnode.GetChild(3))
 
-        return Param(prefix_tok, tok0, type_, default_val)
+        return Param(tok0, type_, default_val)
 
     def _ParamGroup(self, p_node):
         # type: (PNode) -> Tuple[List[Param], Optional[Token]]

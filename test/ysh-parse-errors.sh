@@ -85,12 +85,14 @@ test-func-var-checker() {
   '
 }
 
-# Extra constraints on each param group
-# - word arg types can only be Ref?
-#   - or implicit Str could be allowed
-# - named args must have defaults
-#   - because they can always be omitted
-#   - TODO: write some Julia test cases
+# Extra constraints on param groups:
+# - word arg types can only be Str or Ref
+# - no constraints on positional or keyword args?
+#   - they have optional types, and optional default vals
+# - block param:
+#   - there can only be one
+#   - no rest param either
+#   - default value is null only?
 
 test-proc-sig() {
   _should-parse 'proc p () { echo hi }'

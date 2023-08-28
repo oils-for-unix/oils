@@ -402,6 +402,8 @@ module syntax
 
   ImportName = (Token name, Token? alias)
 
+  Param = (Token name, TypeExpr? type, expr? default_val)
+
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
@@ -409,10 +411,6 @@ module syntax
            List[Param] typed, Token? rest_typed,
            List[Param] named, Token? rest_named,
            Token? block_param)
-
-  # prefix is : for out param, ... for splat
-  # procs only have types Ref, Expr, Block (and Str is implicit)
-  Param = (Token? prefix, Token name, TypeExpr? type, expr? default_val)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
