@@ -34,28 +34,32 @@ class UserFunc(vm._Callable):
 
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-        nargs = len(pos_args)
-        expected = len(self.node.pos_params)
+        num_args = len(pos_args)
+        num_params = len(self.node.pos_params)
+
+        # TODO: this is the wrong location
+        blame_loc = self.node.keyword
+
         if self.node.rest_of_pos:
-            if nargs < expected:
+            if num_args < num_params:
                 raise error.TypeErrVerbose(
                     "%s() expects at least %d arguments but %d were given" %
-                    (self.name, expected, nargs), self.node.keyword)
-        elif nargs != expected:
+                    (self.name, num_params, num_args), blame_loc)
+        elif num_args != num_params:
             raise error.TypeErrVerbose(
                 "%s() expects %d arguments but %d were given" %
-                (self.name, expected, nargs), self.node.keyword)
+                (self.name, num_params, num_args), blame_loc)
 
-        nargs = len(named_args)
-        expected = len(self.node.named_params)
-        if nargs != expected:
+        num_args = len(named_args)
+        num_params = len(self.node.named_params)
+        if num_args != num_params:
             raise error.TypeErrVerbose(
                 "%s() expects %d named arguments but %d were given" %
-                (self.name, expected, nargs), self.node.keyword)
+                (self.name, num_params, num_args), blame_loc)
 
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
-            nargs = len(self.node.pos_params)
-            for i in xrange(0, nargs):
+            num_args = len(self.node.pos_params)
+            for i in xrange(0, num_args):
                 pos_arg = pos_args[i]
                 pos_param = self.node.pos_params[i]
 
@@ -63,7 +67,7 @@ class UserFunc(vm._Callable):
                 self.mem.SetValue(param_name, pos_arg, scope_e.LocalOnly)
 
             if self.node.rest_of_pos:
-                other_args = value.List(pos_args[nargs:])
+                other_args = value.List(pos_args[num_args:])
                 param_name = location.LName(lexer.TokenVal(self.node.rest_of_pos))
                 self.mem.SetValue(param_name, other_args, scope_e.LocalOnly)
 

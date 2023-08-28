@@ -16,9 +16,6 @@ from mycpp import mylib
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from core import pyutil
-
 
 class UserExit(Exception):
     """For explicit 'exit'."""

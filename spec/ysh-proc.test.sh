@@ -1,4 +1,4 @@
-# Oil Functions
+## oils_failures_allowed: 1
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -73,7 +73,7 @@ f
 x=foo
 ## END
 
-#### Proc with explicit args
+#### Proc with word params
 shopt --set parse_proc
 
 # doesn't require oil:all
@@ -90,7 +90,7 @@ a b c
 status=42
 ## END
 
-#### Proc with varargs
+#### Proc with ... "rest" word params 
 
 # TODO: opts goes with this
 # var opt = grep_opts.parse(ARGV)
@@ -114,8 +114,8 @@ c
 status=0
 ## END
 
-#### varargs 2
-shopt -s oil:all
+#### word rest params 2
+shopt --set ysh:all
 
 proc f(first, ...rest) {  # @ means "the rest of the arguments"
   write --sep ' ' -- $first
@@ -126,6 +126,26 @@ f a b c
 a
 b c
 ## END
+
+#### proc with typed args
+shopt --set ysh:upgrade
+
+# TODO: default args can only be mutable
+
+proc p (a; mylist, mydict; a Int = 3) {
+  json write (mylist)
+  json write (mydict)
+  json write (a)
+}
+
+p WORD ([1,2,3], {name: 'bob'})
+
+p a (:| a b |, {bob}, a = 5)
+
+## STDOUT:
+[1, 2, 3]
+## END
+
 
 #### Proc name-with-hyphen
 shopt --set parse_proc
