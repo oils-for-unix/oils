@@ -399,7 +399,7 @@ py-source() {
   py-asdl-examples
 
   # Needed on Travis.
-  oil-grammar
+  ysh-grammar
   find-grammar
   demo-grammar  # for mycpp/examples/pgen2_demo
 }
@@ -433,7 +433,7 @@ on #oil-dev)
 EOF
 }
 
-oil-grammar() {
+ysh-grammar() {
   mkdir -p _gen/ysh
   touch _gen/__init__.py _gen/ysh/__init__.py
 

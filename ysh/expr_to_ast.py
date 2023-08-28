@@ -924,12 +924,12 @@ class Transformer(object):
         assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
         return None
 
-    def _FuncParam(self, pnode):
+    def _Param(self, pnode):
         # type: (PNode) -> Param
         """
-        func_param: Expr_Name [type_expr] ['=' expr]
+        param: Expr_Name [type_expr] ['=' expr]
         """
-        assert pnode.typ == grammar_nt.func_param
+        assert pnode.typ == grammar_nt.param
 
         tok0 = pnode.GetChild(0).tok
         n = pnode.NumChildren()
@@ -963,12 +963,12 @@ class Transformer(object):
 
         return Param(prefix_tok, tok0, type_, default_val)
 
-    def _FuncParams(self, p_node):
+    def _ParamGroup(self, p_node):
         # type: (PNode) -> Tuple[List[Param], Optional[Token]]
         """
-        func_params:
-          (func_param ',')*
-          [ (func_param | '...' Expr_Name) [,] ]
+        param_group:
+          (param ',')*
+          [ (param | '...' Expr_Name) [,] ]
         """
         params = []  # type: List[Param]
         splat = None  # type: Optional[Token]
@@ -977,7 +977,7 @@ class Transformer(object):
         for i in xrange(n):
             p = p_node.GetChild(i)
             if ISNONTERMINAL(p.typ):
-                params.append(self._FuncParam(p))
+                params.append(self._Param(p))
             elif p.tok.id == Id.Expr_Ellipsis:
                 splat = p_node.GetChild(i + 1).tok
 
@@ -988,9 +988,9 @@ class Transformer(object):
         """
         ysh_proc: (
           [ '(' 
-                  [ func_params ]         # word params, with defaults
-            [ ';' [ func_params ] ]       # positional typed params, with defaults
-            [ ';' [ func_params ] ]       # named params, with defaults
+                  [ param_group ]         # word params, with defaults
+            [ ';' [ param_group ] ]       # positional typed params, with defaults
+            [ ';' [ param_group ] ]       # named params, with defaults
             [ ';' Expr_Name ]             # optional block param, with no type or default
             ')'  
           ]
@@ -1012,9 +1012,9 @@ class Transformer(object):
         else:
             closed = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
 
-            closed.words, closed.rest_words = self._FuncParams(pnode.GetChild(1))
-            #sig.typed, sig.rest_typed = self._FuncParams(pnode.GetChild(2))
-            #sig.named, sig.rest_named = self._FuncParams(pnode.GetChild(3))
+            closed.words, closed.rest_words = self._ParamGroup(pnode.GetChild(1))
+            #sig.typed, sig.rest_typed = self._ParamGroup(pnode.GetChild(2))
+            #sig.named, sig.rest_named = self._ParamGroup(pnode.GetChild(3))
 
             # TODO:
             closed.block_param = None
@@ -1108,7 +1108,7 @@ class Transformer(object):
         # type: (PNode, command.Func) -> None
         """Parse tree to LST
 
-        ysh_func: Expr_Name '(' [func_params] [';' func_params] ')'
+        ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
         """
         assert pnode.typ == grammar_nt.ysh_func
 
@@ -1117,9 +1117,9 @@ class Transformer(object):
         pos = 2
         typ = pnode.GetChild(pos).typ  # discriminate f(x) vs. f(; x=y)
         if ISNONTERMINAL(typ):  # f(x)
-            assert typ == grammar_nt.func_params, pnode.GetChild(pos)
+            assert typ == grammar_nt.param_group, pnode.GetChild(pos)
             # every other one is a comma
-            out.pos_params, out.pos_splat = self._FuncParams(
+            out.pos_params, out.pos_splat = self._ParamGroup(
                 pnode.GetChild(pos))
             pos += 1
 
@@ -1127,7 +1127,7 @@ class Transformer(object):
         if id_ == Id.Op_RParen:  # f()
             return
         elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._FuncParams(
+            out.named_params, out.named_splat = self._ParamGroup(
                 pnode.GetChild(pos + 1))
 
     def TeaFunc(self, pnode, out):
@@ -1135,7 +1135,7 @@ class Transformer(object):
         """Parse tree to LST
 
         tea_func:
-          '(' [func_params] [';' func_params] ')' [type_expr_list] suite 
+          '(' [param_group] [';' param_group] ')' [type_expr_list] suite 
         """
         assert pnode.typ == grammar_nt.tea_func
         assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
@@ -1143,10 +1143,10 @@ class Transformer(object):
         pos = 1
         typ2 = pnode.GetChild(pos).typ
         if ISNONTERMINAL(typ2):
-            assert typ2 == grammar_nt.func_params, pnode.GetChild(
+            assert typ2 == grammar_nt.param_group, pnode.GetChild(
                 pos)  # f(x, y)
             # every other one is a comma
-            out.pos_params, out.pos_splat = self._FuncParams(
+            out.pos_params, out.pos_splat = self._ParamGroup(
                 pnode.GetChild(pos))
             pos += 1
 
@@ -1154,7 +1154,7 @@ class Transformer(object):
         if id_ == Id.Op_RParen:  # f()
             pos += 1
         elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._FuncParams(
+            out.named_params, out.named_splat = self._ParamGroup(
                 pnode.GetChild(pos + 1))
             pos += 3
 
@@ -1174,12 +1174,12 @@ class Transformer(object):
 
     def _DataParams(self, p_node):
         # type: (PNode) -> List[Param]
-        """data_params: (func_param ',')* [ func_param [','] ]"""
+        """data_params: (param ',')* [ param [','] ]"""
         params = []  # type: List[Param]
 
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):
-            params.append(self._FuncParam(p_node.GetChild(i)))
+            params.append(self._Param(p_node.GetChild(i)))
 
         return params
 

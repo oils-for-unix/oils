@@ -89,6 +89,36 @@ test-proc-sig() {
   _should-parse 'proc p () { echo hi }'
   _should-parse 'proc p (a) { echo hi }'
   _should-parse 'proc p (out Ref) { echo hi }'
+
+  _error-case 'proc p (w, ...) { echo hi }'
+
+  # Hm I guess this is fine
+  _should-parse 'proc p (; ;) { echo hi }'
+
+  #_should-parse 'proc p (; ; ; block) { echo hi }'
+
+  _should-parse 'proc p (w, ...rest) { echo hi }'
+  _should-parse 'proc p (w, ...rest; t) { echo hi }'
+
+  _should-parse 'func p (p, ...rest) { echo hi }'
+
+  _should-parse 'func p (p, ...rest; n, ...rest) { echo hi }'
+  _should-parse 'func p (p, ...rest; n, ...rest,) { echo hi }'
+
+  _error-case 'func p (p, ...rest; n, ...rest, z) { echo hi }'
+  _error-case 'func p (p, ...rest; n, ...rest; ) { echo hi }'
+
+  _should-parse 'proc p (w, ...rest; pos, ...rest) { echo hi }'
+
+  _should-parse 'proc p (w, ...rest; pos, ...rest; named=3, ...rest) { echo hi }'
+
+  _should-parse 'proc p (w=1, v=2; p=3, q=4; n=5, m=6) { echo hi }'
+
+  _error-case 'proc p (w Int Int) { echo hi }'
+
+  _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
+
+  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; block) { echo hi }'
 }
 
 soil-run() {
