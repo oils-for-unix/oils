@@ -743,6 +743,9 @@ class ExprEvaluator(object):
     def _EvalArgList(self, args, me=None):
         # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
         """For procs and args - TYPED """
+
+        # TODO: CommandEvaluator.RunProc is similar
+
         pos_args = []  # type: List[value_t]
 
         if me:  # self/this argument
@@ -784,6 +787,8 @@ class ExprEvaluator(object):
                 if mylib.PYTHON:
                     f = func.callable
                     if isinstance(f, vm._Callable):  # typed
+                        # TODO: consider using typed_args.Reader
+
                         pos_args, named_args = self._EvalArgList(node.args)
                         #log('pos_args %s', pos_args)
 

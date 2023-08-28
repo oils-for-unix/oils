@@ -146,7 +146,7 @@ module syntax
   # - no 'Token right' for now, doesn't appear to be used
   ShArrayLiteral = (Token left, List[word] words, Token right)
 
-  # For both proc and func
+  # Currently used for func
   # Note that ...pos is expr.Spread.  TODO: Make NamedArg consistent
   ArgList = (
      Token left, List[expr] positional, List[NamedArg] named, Token right

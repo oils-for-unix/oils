@@ -67,6 +67,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
+from core import code
 from core import dev
 from core import error
 from core.error import e_die, e_die_status
@@ -222,65 +223,6 @@ def PlusEquals(old_val, val):
             e_die("Can't append to value of type %s" % ui.ValType(old_val))
 
     return val
-
-
-class Func(vm._Callable):
-    """A user-defined function."""
-
-    def __init__(self, name, node, mem, cmd_ev):
-        # type: (str, command.Func, state.Mem, CommandEvaluator) -> None
-        self.name = name
-        self.node = node
-        self.cmd_ev = cmd_ev
-        self.mem = mem
-
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
-        nargs = len(pos_args)
-        expected = len(self.node.pos_params)
-        if self.node.pos_splat:
-            if nargs < expected:
-                raise error.TypeErrVerbose(
-                    "%s() expects at least %d arguments but %d were given" %
-                    (self.name, expected, nargs), self.node.keyword)
-        elif nargs != expected:
-            raise error.TypeErrVerbose(
-                "%s() expects %d arguments but %d were given" %
-                (self.name, expected, nargs), self.node.keyword)
-
-        nargs = len(named_args)
-        expected = len(self.node.named_params)
-        if nargs != expected:
-            raise error.TypeErrVerbose(
-                "%s() expects %d named arguments but %d were given" %
-                (self.name, expected, nargs), self.node.keyword)
-
-        with state.ctx_FuncCall(self.cmd_ev.mem, self):
-            nargs = len(self.node.pos_params)
-            for i in xrange(0, nargs):
-                pos_arg = pos_args[i]
-                pos_param = self.node.pos_params[i]
-
-                arg_name = location.LName(lexer.TokenVal(pos_param.name))
-                self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
-
-            if self.node.pos_splat:
-                other_args = value.List(pos_args[nargs:])
-                arg_name = location.LName(lexer.TokenVal(self.node.pos_splat))
-                self.mem.SetValue(arg_name, other_args, scope_e.LocalOnly)
-
-            # TODO: pass named args
-
-            try:
-                self.cmd_ev._Execute(self.node.body)
-
-                return value.Null  # implicit return
-            except vm.ValueControlFlow as e:
-                return e.value
-            except vm.IntControlFlow as e:
-                raise AssertionError('IntControlFlow in func')
-
-        raise AssertionError('unreachable')
 
 
 class ctx_LoopLevel(object):
@@ -1521,7 +1463,7 @@ class CommandEvaluator(object):
                 # Needed in case the func is an existing variable name
                 self.mem.SetTokenForLine(node.name)
 
-                val = value.Func(Func(name, node, self.mem, self))
+                val = value.Func(code.UserFunc(name, node, self.mem, self))
                 self.mem.SetValue(lval, val, scope_e.LocalOnly,
                                   _PackFlags(Id.KW_Func, state.SetReadOnly))
 
@@ -1999,7 +1941,7 @@ class CommandEvaluator(object):
 
     def RunProc(self, proc, argv, arg0_loc):
         # type: (Proc, List[str], loc_t) -> int
-        """Run a shell "functions".
+        """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
         """
@@ -2010,67 +1952,11 @@ class CommandEvaluator(object):
         else:
             proc_argv = argv
 
+        # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            n_args = len(argv)
-            UP_sig = sig
-
-            if UP_sig.tag() == proc_sig_e.Closed:  # proc is-closed ()
-                sig = cast(proc_sig.Closed, UP_sig)
-                for i, p in enumerate(sig.words):
-
-                    # proc p(out Ref)
-                    is_out_param = (p.type is not None and p.type.name == 'Ref')
-
-                    param_name = p.name.tval
-                    if i < n_args:
-                        arg_str = argv[i]
-
-                        # If we have myproc(p), and call it with myproc :arg, then bind
-                        # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
-                        # has a prefix REMOVED.
-                        #
-                        # This helps eliminate "nameref cycles".
-                        if is_out_param:
-                            param_name = '__' + param_name
-
-                            if not arg_str.startswith(':'):
-                                # TODO: Point to the exact argument
-                                e_die(
-                                    'Invalid argument %r.  Expected a name starting with :'
-                                    % arg_str)
-                            arg_str = arg_str[1:]
-
-                        val = value.Str(arg_str)  # type: value_t
-                    else:
-                        val = proc.defaults[i]
-                        if val is None:
-                            e_die("No value provided for param %r" %
-                                  p.name.tval)
-
-                    if is_out_param:
-                        flags = state.SetNameref
-                    else:
-                        flags = 0
-
-                    self.mem.SetValue(location.LName(param_name),
-                                      val,
-                                      scope_e.LocalOnly,
-                                      flags=flags)
-
-                n_params = len(sig.words)
-                if sig.rest_words:
-                    items = [value.Str(s)
-                             for s in argv[n_params:]]  # type: List[value_t]
-                    leftover = value.List(items)
-                    self.mem.SetValue(location.LName(sig.rest_words.tval), leftover,
-                                      scope_e.LocalOnly)
-                else:
-                    if n_args > n_params:
-                        self.errfmt.Print_(
-                            "proc %r expected %d arguments, but got %d" %
-                            (proc.name, n_params, n_args), arg0_loc)
-                        # This should be status 2 because it's like a usage error.
-                        return 2
+            status = code.BindProcArgs(proc, argv, arg0_loc, self.mem, self.errfmt)
+            if status != 0:
+                return status
 
             # Redirects still valid for functions.
             # Here doc causes a pipe and Process(SubProgramThunk).
@@ -2129,6 +2015,7 @@ class CommandEvaluator(object):
 
     def RunFuncForCompletion(self, proc, argv):
         # type: (Proc, List[str]) -> int
+
         # TODO: Change this to run YSH procs and funcs too
         try:
             status = self.RunProc(proc, argv, loc.Missing)
@@ -2144,6 +2031,5 @@ class CommandEvaluator(object):
             status = 1
         # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
         return status
-
 
 # vim: sw=4

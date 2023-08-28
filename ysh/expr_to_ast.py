@@ -969,16 +969,21 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.param_group, p_node
 
+        #self.p_printer.Print(p_node)
+
         params = []  # type: List[Param]
         splat = None  # type: Optional[Token]
 
         n = p_node.NumChildren()
-        for i in xrange(n):
-            p = p_node.GetChild(i)
-            if ISNONTERMINAL(p.typ):
-                params.append(self._Param(p))
-            elif p.tok.id == Id.Expr_Ellipsis:
+        i = 0
+        while i < n:
+            child = p_node.GetChild(i)
+            if child.typ == grammar_nt.param:
+                params.append(self._Param(child))
+            elif child.tok.id == Id.Expr_Ellipsis:
                 splat = p_node.GetChild(i + 1).tok
+            i += 2
+            #log('i %d n %d', i, n)
 
         return params, splat
 

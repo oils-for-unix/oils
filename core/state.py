@@ -42,8 +42,8 @@ if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
     from _devbuild.gen.runtime_asdl import Proc
     from core import alloc
+    from core import code
     from osh import sh_expr_eval
-    from osh.cmd_eval import Func
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
 # Python overwrites this to something Python-specific in Modules/readline.c, so
@@ -1121,7 +1121,7 @@ class ctx_FuncCall(object):
     """For func calls."""
 
     def __init__(self, mem, func):
-        # type: (Mem, Func) -> None
+        # type: (Mem, code.UserFunc) -> None
         mem.PushCall(func.name, func.node.name, None)
         self.mem = mem
 
