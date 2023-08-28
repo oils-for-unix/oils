@@ -145,6 +145,10 @@ test-proc-sig() {
 
   # Only Command type
   _should-parse 'proc p ( ; ; ; b Command) { echo hi }'
+
+  # bad param
+  _error-case 'proc p ( ; ; ; b Command[Int]) { echo hi }'
+
   _should-parse 'proc p ( ; ; ; ) { echo hi }'
 }
 

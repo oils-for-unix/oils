@@ -1998,9 +1998,12 @@ class CommandParser(object):
 
                 # Treat params as variables.
                 for param in sig.word_params:
-                    self.var_checker.Check(Id.KW_Var, param.name)
+                    # TODO: Check() should not look at tval
+                    name_tok = param.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
                 if sig.rest_of_words:
-                    self.var_checker.Check(Id.KW_Var, sig.rest_of_words)
+                    name_tok = sig.rest_of_words.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
                     # We COULD register __out here but it would require a different API.
                     #if param.prefix and param.prefix.id == Id.Arith_Colon:
                     #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
@@ -2027,9 +2030,11 @@ class CommandParser(object):
             self.parse_ctx.ParseFunc(self.lexer, node)
 
             for param in node.pos_params:
-                self.var_checker.Check(Id.KW_Var, param.name)
+                name_tok = param.blame_tok
+                self.var_checker.Check(Id.KW_Var, name_tok)
             if node.rest_of_pos:
-                self.var_checker.Check(Id.KW_Var, node.rest_of_pos)
+                name_tok = node.rest_of_pos.blame_tok
+                self.var_checker.Check(Id.KW_Var, name_tok)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):

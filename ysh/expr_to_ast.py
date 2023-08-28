@@ -36,6 +36,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig,
     proc_sig_t,
     Param,
+    RestParam,
     NamedArg,
     ArgList,
     Variant,
@@ -931,10 +932,10 @@ class Transformer(object):
         """
         assert pnode.typ == grammar_nt.param
 
-        tok0 = pnode.GetChild(0).tok
+        name_tok = pnode.GetChild(0).tok
         n = pnode.NumChildren()
 
-        assert tok0.id == Id.Expr_Name, tok0
+        assert name_tok.id == Id.Expr_Name, name_tok
 
         default_val = None  # type: expr_t
         type_ = None  # type: TypeExpr
@@ -958,10 +959,10 @@ class Transformer(object):
             type_ = self._TypeExpr(pnode.GetChild(1))
             default_val = self.Expr(pnode.GetChild(3))
 
-        return Param(tok0, type_, default_val)
+        return Param(name_tok, lexer.TokenVal(name_tok), type_, default_val)
 
     def _ParamGroup(self, p_node):
-        # type: (PNode) -> Tuple[List[Param], Optional[Token]]
+        # type: (PNode) -> Tuple[List[Param], Optional[RestParam]]
         """
         param_group:
           (param ',')*
@@ -972,7 +973,7 @@ class Transformer(object):
         #self.p_printer.Print(p_node)
 
         params = []  # type: List[Param]
-        rest_of = None  # type: Optional[Token]
+        rest_of = None  # type: Optional[RestParam]
 
         n = p_node.NumChildren()
         i = 0
@@ -981,7 +982,8 @@ class Transformer(object):
             if child.typ == grammar_nt.param:
                 params.append(self._Param(child))
             elif child.tok.id == Id.Expr_Ellipsis:
-                rest_of = p_node.GetChild(i + 1).tok
+                tok = p_node.GetChild(i + 1).tok
+                rest_of = RestParam(tok, lexer.TokenVal(tok))
             i += 2
             #log('i %d n %d', i, n)
 
@@ -1068,17 +1070,19 @@ class Transformer(object):
         if child.typ == grammar_nt.param_group:
             params, rest = self._ParamGroup(p_node.GetChild(i))
             if len(params) > 1:
-                p_die('Only 1 block param is allowed', params[1].name)
+                p_die('Only 1 block param is allowed', params[1].blame_tok)
             if rest:
-                p_die("Rest param isn't allowed for blocks", rest)
+                p_die("Rest param isn't allowed for blocks", rest.blame_tok)
 
             if len(params) > 0:
-                block_name = params[0].name
                 if params[0].type:
                     if params[0].type.name != 'Command':
                         p_die('Block param must have type Command',
                               params[0].type.tok)
-                sig.block_param = block_name
+                    if params[0].type.params is not None:
+                        p_die('Unexpected type parameters', params[0].type.tok)
+
+                sig.block_param = RestParam(params[0].blame_tok, params[0].name)
 
         return sig
 

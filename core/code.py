@@ -11,7 +11,6 @@ from core import error
 from core.error import e_die
 from core import state
 from core import vm
-from frontend import lexer
 from frontend import location
 
 from typing import List, Dict, cast, TYPE_CHECKING
@@ -37,7 +36,9 @@ class UserFunc(vm._Callable):
         num_args = len(pos_args)
         num_params = len(self.node.pos_params)
 
-        # TODO: this is the wrong location
+        # TODO: this is the location of 'func', not the CALL.  Should add that
+        # location to typed_args.Reader
+
         blame_loc = self.node.keyword
 
         if self.node.rest_of_pos:
@@ -57,18 +58,20 @@ class UserFunc(vm._Callable):
                 "%s() expects %d named arguments but %d were given" %
                 (self.name, num_params, num_args), blame_loc)
 
+        # Push a new stack frame
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
+
             num_args = len(self.node.pos_params)
             for i in xrange(0, num_args):
                 pos_arg = pos_args[i]
                 pos_param = self.node.pos_params[i]
 
-                param_name = location.LName(lexer.TokenVal(pos_param.name))
+                param_name = location.LName(pos_param.name)
                 self.mem.SetValue(param_name, pos_arg, scope_e.LocalOnly)
 
             if self.node.rest_of_pos:
                 other_args = value.List(pos_args[num_args:])
-                param_name = location.LName(lexer.TokenVal(self.node.rest_of_pos))
+                param_name = location.LName(self.node.rest_of_pos.name)
                 self.mem.SetValue(param_name, other_args, scope_e.LocalOnly)
 
             # TODO: pass named args
@@ -100,7 +103,7 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
         # proc p(out Ref)
         is_out_param = (p.type is not None and p.type.name == 'Ref')
 
-        param_name = p.name.tval
+        param_name = p.name
         if i < n_args:
             arg_str = argv[i]
 
@@ -123,7 +126,7 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
         else:
             val = proc.defaults[i]
             if val is None:
-                e_die("No value provided for param %r" % p.name.tval)
+                e_die("No value provided for param %r" % p.name, p.blame_tok)
 
         if is_out_param:
             flags = state.SetNameref
@@ -139,7 +142,7 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
     if sig.rest_of_words:
         items = [value.Str(s) for s in argv[n_params:]]  # type: List[value_t]
         leftover = value.List(items)
-        mem.SetValue(location.LName(sig.rest_of_words.tval), leftover,
+        mem.SetValue(location.LName(sig.rest_of_words.name), leftover,
                      scope_e.LocalOnly)
     else:
         if n_args > n_params:

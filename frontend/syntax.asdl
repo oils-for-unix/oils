@@ -368,15 +368,15 @@ module syntax
   | Expr(Token keyword, expr e)
   | Proc(Token keyword, Token name, proc_sig sig, command body)
   | Func(Token keyword, Token name,
-         List[Param] pos_params, Token? rest_of_pos,
-         List[Param] named_params, Token? rest_of_named,
+         List[Param] pos_params, RestParam? rest_of_pos,
+         List[Param] named_params, RestParam? rest_of_named,
          command body)
 
   # Tea
 
   | TeaFunc(Token name,
-         List[Param] pos_params, Token? pos_splat,
-         List[Param] named_params, Token? named_splat,
+         List[Param] pos_params, RestParam? pos_splat,
+         List[Param] named_params, RestParam? named_splat,
          List[TypeExpr] return_types, command body)
   | Data(Token name, List[Param] params)
   | Enum(Token name, List[Variant] variants)
@@ -402,15 +402,16 @@ module syntax
 
   ImportName = (Token name, Token? alias)
 
-  Param = (Token name, TypeExpr? type, expr? default_val)
+  Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
+  RestParam = (Token blame_tok, str name)
 
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
-  | Closed(List[Param] word_params, Token? rest_of_words,
-           List[Param] pos_params, Token? rest_of_pos,
-           List[Param] named_params, Token? rest_of_named,
-           Token? block_param)
+  | Closed(List[Param] word_params, RestParam? rest_of_words,
+           List[Param] pos_params, RestParam? rest_of_pos,
+           List[Param] named_params, RestParam? rest_of_named,
+           RestParam? block_param)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
