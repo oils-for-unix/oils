@@ -717,7 +717,7 @@ class ExprEvaluator(object):
         # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
         """For procs and funcs - UNTYPED"""
         pos_args = []  # type: List[Any]
-        for arg in args.positional:
+        for arg in args.pos_args:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:
@@ -751,7 +751,7 @@ class ExprEvaluator(object):
         if me:  # self/this argument
             pos_args.append(me)
 
-        for arg in args.positional:
+        for arg in args.pos_args:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:

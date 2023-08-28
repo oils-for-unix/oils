@@ -146,10 +146,10 @@ module syntax
   # - no 'Token right' for now, doesn't appear to be used
   ShArrayLiteral = (Token left, List[word] words, Token right)
 
-  # Currently used for func
-  # Note that ...pos is expr.Spread.  TODO: Make NamedArg consistent
+  # Unevaluated, typed arguments for func and proc.
+  # Note that ...arg is expr.Spread.
   ArgList = (
-     Token left, List[expr] positional, List[NamedArg] named, Token right
+     Token left, List[expr] pos_args, List[NamedArg] named_args, Token right
   )
 
   AssocPair = (CompoundWord key, CompoundWord value)
@@ -368,8 +368,8 @@ module syntax
   | Expr(Token keyword, expr e)
   | Proc(Token keyword, Token name, proc_sig sig, command body)
   | Func(Token keyword, Token name,
-         List[Param] pos_params, Token? pos_splat,
-         List[Param] named_params, Token? named_splat,
+         List[Param] pos_params, Token? rest_of_pos,
+         List[Param] named_params, Token? rest_of_named,
          command body)
 
   # Tea
@@ -407,9 +407,9 @@ module syntax
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
-  | Closed(List[Param] words, Token? rest_words,
-           List[Param] typed, Token? rest_typed,
-           List[Param] named, Token? rest_named,
+  | Closed(List[Param] word_params, Token? rest_of_words,
+           List[Param] pos_params, Token? rest_of_pos,
+           List[Param] named_params, Token? rest_of_named,
            Token? block_param)
 
   #
@@ -454,7 +454,7 @@ module syntax
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   Comprehension = (List[NameType] lhs, expr iter, expr? cond)
 
-  # named arguments supplied to call.  token is null for f(; ...named).
+  # Named arguments supplied to call.  Token is null for f(; ...named).
   NamedArg = (Token? name, expr value)
 
   # Subscripts are lists of expressions

@@ -375,18 +375,17 @@ class Error(vm._Builtin):
         if not cmd_val.typed_args:
             e_usage('Expected an error argument but received no typed args', blame)
 
-        positional = cmd_val.typed_args.positional
-        if len(positional) != 1:
-            e_usage('Expected 1 positional argument but received %d' % len(positional), blame)
+        pos_args = cmd_val.typed_args.pos_args
+        if len(pos_args) != 1:
+            e_usage('Expected 1 positional argument but received %d' % len(pos_args), blame)
 
-        message_val = self.expr_ev.EvalExpr(positional[0], blame)
+        message_val = self.expr_ev.EvalExpr(pos_args[0], blame)
         if message_val.tag() != value_e.Str:
             raise error.TypeErr(message_val, 'expected a Str', blame)
         message = cast(value.Str, message_val).s
 
-        named = cmd_val.typed_args.named
         status = 1
-        for arg in named:
+        for arg in cmd_val.typed_args.named_args:
             if lexer.TokenVal(arg.name) == "status":
                 status_val = self.expr_ev.EvalExpr(arg.value, arg.name)
                 if status_val.tag() != value_e.Int:

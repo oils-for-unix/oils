@@ -821,12 +821,12 @@ class CommandEvaluator(object):
                     if node.typed_args:
                         orig = node.typed_args
                         # COPY positional args because we may append an arg
-                        typed_args = ArgList(orig.left, list(orig.positional),
-                                             orig.named, orig.right)
+                        typed_args = ArgList(orig.left, list(orig.pos_args),
+                                             orig.named_args, orig.right)
 
                         # the block is the last argument
                         if node.block:
-                            typed_args.positional.append(node.block)
+                            typed_args.pos_args.append(node.block)
                             # ArgList already has a spid in this case
                     else:
                         if node.block:
@@ -1426,11 +1426,15 @@ class CommandEvaluator(object):
 
                 defaults = None  # type: List[value_t]
                 UP_sig = node.sig
+
+                # Hm this has the same pitfall as Python -- a mutable default
+                # arg.  Maybe whitelist Bool, Int, Float, Str.
+
                 if UP_sig.tag() == proc_sig_e.Closed:
                     sig = cast(proc_sig.Closed, UP_sig)
                     no_val = None  # type: value_t
-                    defaults = [no_val] * len(sig.words)
-                    for i, p in enumerate(sig.words):
+                    defaults = [no_val] * len(sig.word_params)
+                    for i, p in enumerate(sig.word_params):
                         if p.default_val:
                             val = self.expr_ev.EvalExpr(
                                 p.default_val, loc.Missing)

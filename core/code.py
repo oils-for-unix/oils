@@ -36,7 +36,7 @@ class UserFunc(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
         nargs = len(pos_args)
         expected = len(self.node.pos_params)
-        if self.node.pos_splat:
+        if self.node.rest_of_pos:
             if nargs < expected:
                 raise error.TypeErrVerbose(
                     "%s() expects at least %d arguments but %d were given" %
@@ -59,13 +59,13 @@ class UserFunc(vm._Callable):
                 pos_arg = pos_args[i]
                 pos_param = self.node.pos_params[i]
 
-                arg_name = location.LName(lexer.TokenVal(pos_param.name))
-                self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
+                param_name = location.LName(lexer.TokenVal(pos_param.name))
+                self.mem.SetValue(param_name, pos_arg, scope_e.LocalOnly)
 
-            if self.node.pos_splat:
+            if self.node.rest_of_pos:
                 other_args = value.List(pos_args[nargs:])
-                arg_name = location.LName(lexer.TokenVal(self.node.pos_splat))
-                self.mem.SetValue(arg_name, other_args, scope_e.LocalOnly)
+                param_name = location.LName(lexer.TokenVal(self.node.rest_of_pos))
+                self.mem.SetValue(param_name, other_args, scope_e.LocalOnly)
 
             # TODO: pass named args
 
@@ -91,7 +91,7 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
     sig = cast(proc_sig.Closed, UP_sig)
 
     n_args = len(argv)
-    for i, p in enumerate(sig.words):
+    for i, p in enumerate(sig.word_params):
 
         # proc p(out Ref)
         is_out_param = (p.type is not None and p.type.name == 'Ref')
@@ -119,23 +119,23 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
         else:
             val = proc.defaults[i]
             if val is None:
-                e_die("No value provided for param %r" %
-                      p.name.tval)
+                e_die("No value provided for param %r" % p.name.tval)
 
         if is_out_param:
             flags = state.SetNameref
         else:
             flags = 0
 
-        mem.SetValue(location.LName(param_name), val, scope_e.LocalOnly,
+        mem.SetValue(location.LName(param_name),
+                     val,
+                     scope_e.LocalOnly,
                      flags=flags)
 
-    n_params = len(sig.words)
-    if sig.rest_words:
-        items = [value.Str(s)
-                 for s in argv[n_params:]]  # type: List[value_t]
+    n_params = len(sig.word_params)
+    if sig.rest_of_words:
+        items = [value.Str(s) for s in argv[n_params:]]  # type: List[value_t]
         leftover = value.List(items)
-        mem.SetValue(location.LName(sig.rest_words.tval), leftover,
+        mem.SetValue(location.LName(sig.rest_of_words.tval), leftover,
                      scope_e.LocalOnly)
     else:
         if n_args > n_params:

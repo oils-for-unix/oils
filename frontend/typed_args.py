@@ -229,12 +229,12 @@ def RequiredExpr(arg_list):
     if arg_list is None:
         e_usage('Expected an expression', loc.Missing)
 
-    n = len(arg_list.positional)
+    n = len(arg_list.pos_args)
     if n == 0:
         e_usage('Expected an expression', arg_list.left)
 
     elif n == 1:
-        return arg_list.positional[0]
+        return arg_list.pos_args[0]
 
     else:
         e_usage('Too many typed args (expected one expression)', arg_list.left)
@@ -254,12 +254,12 @@ def GetOneBlock(arg_list):
     if arg_list is None:
         return None
 
-    n = len(arg_list.positional)
+    n = len(arg_list.pos_args)
     if n == 0:
         return None
 
     elif n == 1:
-        arg = arg_list.positional[0]
+        arg = arg_list.pos_args[0]
         UP_arg = arg
 
         # Could we somehow consolidate these?
@@ -293,12 +293,12 @@ def GetLiteralBlock(arg_list):
     if arg_list is None:
         return None
 
-    n = len(arg_list.positional)
+    n = len(arg_list.pos_args)
     if n == 0:
         return None
 
     elif n == 1:
-        arg = arg_list.positional[0]
+        arg = arg_list.pos_args[0]
         if arg.tag() == expr_e.BlockArg:
             return cast(BlockArg, arg)
         else:

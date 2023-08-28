@@ -1092,13 +1092,13 @@ class CommandParser(object):
             if self.cmd_mode != cmd_mode_e.Func:
                 p_die("Unexpected typed return outside of a func",
                       typed_loc)
-            if len(typed_args.positional) != 1:
+            if len(typed_args.pos_args) != 1:
                 p_die("Expected one argument passed to a typed return",
                       typed_loc)
-            if len(typed_args.named) != 0:
+            if len(typed_args.named_args) != 0:
                 p_die("Expected no named arguments passed to a typed return",
                       typed_loc)
-            return command.Retval(kw_token, typed_args.positional[0])
+            return command.Retval(kw_token, typed_args.pos_args[0])
 
         if kind == Kind.ControlFlow:
             if typed_loc is not None:
@@ -1997,10 +1997,10 @@ class CommandParser(object):
                 sig = cast(proc_sig.Closed, node.sig)
 
                 # Treat params as variables.
-                for param in sig.words:
+                for param in sig.word_params:
                     self.var_checker.Check(Id.KW_Var, param.name)
-                if sig.rest_words:
-                    self.var_checker.Check(Id.KW_Var, sig.rest_words)
+                if sig.rest_of_words:
+                    self.var_checker.Check(Id.KW_Var, sig.rest_of_words)
                     # We COULD register __out here but it would require a different API.
                     #if param.prefix and param.prefix.id == Id.Arith_Colon:
                     #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
@@ -2028,8 +2028,8 @@ class CommandParser(object):
 
             for param in node.pos_params:
                 self.var_checker.Check(Id.KW_Var, param.name)
-            if node.pos_splat:
-                self.var_checker.Check(Id.KW_Var, node.pos_splat)
+            if node.rest_of_pos:
+                self.var_checker.Check(Id.KW_Var, node.rest_of_pos)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):
