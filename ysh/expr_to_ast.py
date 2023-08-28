@@ -970,6 +970,8 @@ class Transformer(object):
           (param ',')*
           [ (param | '...' Expr_Name) [,] ]
         """
+        assert p_node.typ == grammar_nt.param_group, p_node
+
         params = []  # type: List[Param]
         splat = None  # type: Optional[Token]
 
@@ -983,7 +985,7 @@ class Transformer(object):
 
         return params, splat
 
-    def Proc(self, pnode):
+    def Proc(self, p_node):
         # type: (PNode) -> proc_sig_t
         """
         ysh_proc: (
@@ -997,29 +999,58 @@ class Transformer(object):
           '{'  # opening { for pgen2
         )
         """
-        typ = pnode.typ
+        typ = p_node.typ
         assert typ == grammar_nt.ysh_proc
 
-        #self.p_printer.Print(pnode)
+        #self.p_printer.Print(p_node)
 
-        sig = None  # type: proc_sig_t
-
-        n = pnode.NumChildren()
+        n = p_node.NumChildren()
         if n == 1:  # proc f {
-            sig = proc_sig.Open
-        elif n == 3:  # proc f () {
+            return proc_sig.Open
+
+        if n == 3:  # proc f () {
             sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+
+        # proc f( three param groups, and block group )
+        sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+
+        i = 1 
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            sig.words, sig.rest_words = self._ParamGroup(p_node.GetChild(i))
+            i += 2
         else:
-            closed = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+            i += 1
 
-            closed.words, closed.rest_words = self._ParamGroup(pnode.GetChild(1))
-            #sig.typed, sig.rest_typed = self._ParamGroup(pnode.GetChild(2))
-            #sig.named, sig.rest_named = self._ParamGroup(pnode.GetChild(3))
+        #log('i %d n %d', i, n)
+        if i >= n:
+            return sig
 
-            # TODO:
-            closed.block_param = None
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            sig.typed, sig.rest_typed = self._ParamGroup(p_node.GetChild(i))
+            i += 2
+        else:
+            i += 1
 
-            sig = closed
+        #log('i %d n %d', i, n)
+        if i >= n:
+            return sig
+
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            sig.named, sig.rest_named = self._ParamGroup(p_node.GetChild(i))
+            i += 3  # skip past ; {
+        else:
+            i += 2  # skip past {
+
+        #log('i %d n %d', i, n)
+        if i >= n:
+            return sig
+
+        child = p_node.GetChild(i)
+        assert child.tok.id == Id.Expr_Name, child.tok
+        sig.block_param = child.tok
 
         return sig
 

@@ -85,6 +85,13 @@ test-func-var-checker() {
   '
 }
 
+# Extra constraints on each param group
+# - word arg types can only be Ref?
+#   - or implicit Str could be allowed
+# - named args must have defaults
+#   - because they can always be omitted
+#   - TODO: write some Julia test cases
+
 test-proc-sig() {
   _should-parse 'proc p () { echo hi }'
   _should-parse 'proc p (a) { echo hi }'
@@ -92,10 +99,16 @@ test-proc-sig() {
 
   _error-case 'proc p (w, ...) { echo hi }'
 
-  # Hm I guess this is fine
-  _should-parse 'proc p (; ;) { echo hi }'
+  _should-parse 'proc p (w, ...rest) { echo hi }'
 
-  #_should-parse 'proc p (; ; ; block) { echo hi }'
+  # Hm I guess this is fine
+  _should-parse 'proc p (; n Int=3) { echo hi }'
+
+  _should-parse 'proc p (out Ref; n Int=3) { echo hi }'
+
+  _should-parse 'proc p (; ; n Int=3) { echo hi }'
+
+  _should-parse 'proc p ( ; ; ; {block}) { echo hi }'
 
   _should-parse 'proc p (w, ...rest) { echo hi }'
   _should-parse 'proc p (w, ...rest; t) { echo hi }'
@@ -118,7 +131,7 @@ test-proc-sig() {
 
   _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; block) { echo hi }'
+  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; {block}) { echo hi }'
 }
 
 soil-run() {

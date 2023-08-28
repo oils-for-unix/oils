@@ -410,7 +410,7 @@ module syntax
   | Closed(List[Param] words, Token? rest_words,
            List[Param] typed, Token? rest_typed,
            List[Param] named, Token? rest_named,
-           Param? block_param)
+           Token? block_param)
 
   # prefix is : for out param, ... for splat
   # procs only have types Ref, Expr, Block (and Str is implicit)

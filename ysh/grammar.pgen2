@@ -333,12 +333,11 @@ ysh_proc: (
           [ param_group ]    # word params, with defaults
     [ ';' [ param_group ] ]  # positional typed params, with defaults
     [ ';' [ param_group ] ]  # named params, with defaults
+    [ ';' '{' Expr_Name '}' ]        # optional block param, with no type or default
 
     # This causes a pgen2 error?  It doesn't know which branch to take
-    # We could have a different separator like | ?
-    # Or we can validate it after the fact?
+    # So we have the extra {block} syntax
     #[ ';' Expr_Name ]        # optional block param, with no type or default
-    [ ';' [ param_group ] ]  # optional block
     ')'  
   ]
   '{'  # opening { for pgen2
