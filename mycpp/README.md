@@ -108,9 +108,9 @@ More work in this pass:
 
 Note: I really wish we were not using visitors, but that's inherited from MyPy.
 
-## Translation Notes
+## WARNING: Assumptions Not Checked
 
-### WARNING: Assumptions Not Checked
+### Global Constants Can't Be Mutated
 
 We translate top level constants to statically initialized C data structures
 (zero startup cost):
@@ -121,6 +121,36 @@ We translate top level constants to statically initialized C data structures
 
 Even though `List` and `Dict` are mutable in general, you should **NOT** mutate
 these global instances!  The C++ code will break at runtime.
+
+### Gotcha about Returning Variants (Subclasses) of a type
+
+MyPy will accept this code:
+
+```
+if cond:
+  sig = proc_sig.Open  # type: proc_sig_t
+                       # bad because mycpp HOISTS this
+else:
+  sig = proc_sig.Closed.CreateNull()
+  sig.words = words    # assignment fails
+return sig
+```
+
+It will translate to C++, but fail to compile.  Instead, rewrite it like this:
+
+```
+sig = None  # type: proc_sig_t
+if cond:
+  sig = proc_sig.Open  # type: proc_sig_t
+                       # bad because mycpp HOISTS this
+else:
+  closed = proc_sig.Closed.CreateNull()
+  closed.words = words    # assignment fails
+  sig = closed
+return sig
+```
+
+## More Translation Notes
 
 ### "Creative Hacks"
 

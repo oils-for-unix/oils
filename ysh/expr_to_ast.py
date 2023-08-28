@@ -1002,20 +1002,24 @@ class Transformer(object):
 
         #self.p_printer.Print(pnode)
 
+        sig = None  # type: proc_sig_t
+
         n = pnode.NumChildren()
         if n == 1:  # proc f {
-            sig = proc_sig.Open  # type: proc_sig_t
+            sig = proc_sig.Open
         elif n == 3:  # proc f () {
             sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
         else:
-            sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+            closed = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
 
-            sig.words, sig.rest_words = self._FuncParams(pnode.GetChild(1))
+            closed.words, closed.rest_words = self._FuncParams(pnode.GetChild(1))
             #sig.typed, sig.rest_typed = self._FuncParams(pnode.GetChild(2))
             #sig.named, sig.rest_named = self._FuncParams(pnode.GetChild(3))
 
             # TODO:
-            sig.block_param = None
+            closed.block_param = None
+
+            sig = closed
 
         return sig
 
