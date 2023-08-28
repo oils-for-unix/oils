@@ -1020,6 +1020,7 @@ class Transformer(object):
         else:
             i += 1
 
+        # Validate word args
         for word in sig.words:
             if word.type:
                 if word.type.name not in ('Str', 'Ref'):
@@ -1032,6 +1033,7 @@ class Transformer(object):
         if i >= n:
             return sig
 
+        # Positional args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
             sig.typed, sig.rest_typed = self._ParamGroup(p_node.GetChild(i))
@@ -1043,20 +1045,33 @@ class Transformer(object):
         if i >= n:
             return sig
 
+        # Keyword args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
             sig.named, sig.rest_named = self._ParamGroup(p_node.GetChild(i))
-            i += 3  # skip past ; {
+            i += 2
         else:
-            i += 2  # skip past {
+            i += 1
 
         #log('i %d n %d', i, n)
         if i >= n:
             return sig
 
         child = p_node.GetChild(i)
-        assert child.tok.id == Id.Expr_Name, child.tok
-        sig.block_param = child.tok
+        if child.typ == grammar_nt.param_group:
+            params, rest = self._ParamGroup(p_node.GetChild(i))
+            if len(params) > 1:
+                p_die('Only 1 block param is allowed', params[1].name)
+            if rest:
+                p_die("Rest param isn't allowed for blocks", rest)
+
+            if len(params) > 0:
+                block_name = params[0].name
+                if params[0].type:
+                    if params[0].type.name != 'Command':
+                        p_die('Block param must have type Command',
+                              params[0].type.tok)
+                sig.block_param = block_name
 
         return sig
 

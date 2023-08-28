@@ -114,7 +114,7 @@ test-proc-sig() {
 
   _should-parse 'proc p (; ; n Int=3) { echo hi }'
 
-  _should-parse 'proc p ( ; ; ; {block}) { echo hi }'
+  _should-parse 'proc p ( ; ; ; block) { echo hi }'
 
   _should-parse 'proc p (w, ...rest) { echo hi }'
   _should-parse 'proc p (w, ...rest; t) { echo hi }'
@@ -137,7 +137,15 @@ test-proc-sig() {
 
   _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; {block}) { echo hi }'
+  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; block) { echo hi }'
+
+  _error-case 'proc p ( ; ; ; b1, b2) { echo hi }'
+  _error-case 'proc p ( ; ; ; b1, ...rest) { echo hi }'
+  _error-case 'proc p ( ; ; ; b1 Str) { echo hi }'
+
+  # Only Command type
+  _should-parse 'proc p ( ; ; ; b Command) { echo hi }'
+  _should-parse 'proc p ( ; ; ; ) { echo hi }'
 }
 
 test-func-sig() {
