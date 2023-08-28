@@ -156,6 +156,47 @@ def DictDemo():
     log('bar is a member')
 
 
+def ContainsDemo():
+  # type: () -> None
+
+  # List
+
+  x = 4
+  if x in [3,4,5]:
+    print('345 yes')
+  else:
+    print('345 no')
+
+  if x in [3,5,7]:
+    print('357 yes')
+  else:
+    print('357 no')
+
+  # Tuple is optimized
+  x = 4
+  if x in (3,4,5):
+    print('tu 345 yes')
+  else:
+    print('tu 345 no')
+
+  if x in (3,5,7):
+    print('tu 357 yes')
+  else:
+    print('tu 357 no')
+
+  s = "hi"
+  if s in ("hi", "bye"):
+    print('hi yes')
+  else:
+    print('hi no')
+
+  # BUG FIX: 'not in' had a bug
+  if s not in ("hi", "bye"):
+    print('hi yes')
+  else:
+    print('hi no')
+
+
 def run_tests():
   # type: () -> None
 
@@ -164,6 +205,8 @@ def run_tests():
   TupleDemo()
   log('')
   DictDemo()
+  log('')
+  ContainsDemo()
   log('')
 
 
