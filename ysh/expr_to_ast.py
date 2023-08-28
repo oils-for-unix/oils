@@ -1156,31 +1156,34 @@ class Transformer(object):
 
         return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
-    def YshFunc(self, pnode, out):
+    def YshFunc(self, p_node, out):
         # type: (PNode, command.Func) -> None
         """Parse tree to LST
 
         ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
         """
-        assert pnode.typ == grammar_nt.ysh_func
+        assert p_node.typ == grammar_nt.ysh_func
 
-        out.name = pnode.GetChild(0).tok
+        #self.p_printer.Print(p_node)
 
-        pos = 2
-        typ = pnode.GetChild(pos).typ  # discriminate f(x) vs. f(; x=y)
-        if ISNONTERMINAL(typ):  # f(x)
-            assert typ == grammar_nt.param_group, pnode.GetChild(pos)
-            # every other one is a comma
-            out.pos_params, out.pos_splat = self._ParamGroup(
-                pnode.GetChild(pos))
-            pos += 1
+        out.name = p_node.GetChild(0).tok
 
-        id_ = pnode.GetChild(pos).tok.id
-        if id_ == Id.Op_RParen:  # f()
+        n = p_node.NumChildren()
+        i = 2  # after (
+
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            out.pos_params, out.pos_splat = self._ParamGroup(child)
+            i += 2  # skip past ;
+        else:
+            i += 1
+
+        if i >= n:
             return
-        elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._ParamGroup(
-                pnode.GetChild(pos + 1))
+
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            out.named_params, out.named_splat = self._ParamGroup(child)
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.TeaFunc) -> None
@@ -1191,6 +1194,8 @@ class Transformer(object):
         """
         assert pnode.typ == grammar_nt.tea_func
         assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
+
+        # TODO: Simplify this in the style of YshFunc() above
 
         pos = 1
         typ2 = pnode.GetChild(pos).typ
