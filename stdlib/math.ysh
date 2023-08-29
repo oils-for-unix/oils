@@ -39,7 +39,7 @@ func max(...args) {
         return (args[1])
       }
     }
-    (else) { error ("max expects 1 or 2 args") }
+    (else) { error ("max expects 1 or 2 args", status=3) }
   }
 }
 
@@ -64,7 +64,7 @@ func min(...args) {
         return (args[1])
       }
     }
-    (else) { error ("min expects 1 or 2 args") }
+    (else) { error ("min expects 1 or 2 args", status=3) }
   }
 }
 

@@ -46,8 +46,8 @@ echo status=$_status
 3
 status=3
 status=0
-status=1
-status=1
+status=3
+status=3
 ## END
 
 #### min
@@ -73,8 +73,8 @@ echo status=$_status
 1
 status=3
 status=0
-status=1
-status=1
+status=3
+status=3
 ## END
 
 #### abs
