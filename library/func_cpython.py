@@ -34,29 +34,6 @@ def SetGlobalFunc(mem, name, func):
                  scope_e.GlobalOnly)
 
 
-def _Join(array, delim=''):
-    """func join(items List[Str]) Str ..."""
-    # default is not ' '?
-    return delim.join(array)
-
-
-def _Maybe(obj):
-    """func join(items List[Str]) Str ..."""
-    if obj is None:
-        return []
-
-    # TODO: Need proper span IDs
-    if not isinstance(obj, str):
-        raise error.Expr('maybe() passed arg of invalid type %r' %
-                         obj.__class__.__name__)
-
-    s = obj
-    if len(s):
-        return [s]
-    else:
-        return []
-
-
 def _Extend(L, arg):
     L.extend(arg)
 
@@ -140,12 +117,6 @@ def Init(mem):
     #
     # Oil
     #
-
-    SetGlobalFunc(mem, 'join', _Join)
-    SetGlobalFunc(mem, 'maybe', _Maybe)
-    # NOTE: split() is set in main(), since it depends on the Splitter() object /
-    # $IFS.
-    # TODO: How to ask for Python's split algorithm?  Or Awk's?
 
     SetGlobalFunc(mem, 'shvar_get', _Shvar_get(mem))
 

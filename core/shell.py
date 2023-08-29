@@ -681,6 +681,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
     func_init.SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
     func_init.SetGlobalFunc(mem, '_end', func_eggex.End(mem))
+    func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
+    func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
