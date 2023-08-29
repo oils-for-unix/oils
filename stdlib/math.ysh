@@ -1,4 +1,4 @@
-func _select(list, cmp) {
+func __math_select(list, cmp) {
   ## Internal helper for `max` and `min`.
   ##
   ## NOTE: If `list` is empty, then an error is thrown.
@@ -31,7 +31,7 @@ func max(...args) {
   ##   max([1, 2, 3])  # => 3
 
   case (len(args)) {
-    (1) { return (_select(args[0], max)) }
+    (1) { return (__math_select(args[0], max)) }
     (2) {
       if (args[0] > args[1]) {
         return (args[0])
@@ -56,7 +56,7 @@ func min(...args) {
   ##   max([1, 2, 3])  # => 1
 
   case (len(args)) {
-    (1) { return (_select(args[0], min)) }
+    (1) { return (__math_select(args[0], min)) }
     (2) {
       if (args[0] < args[1]) {
         return (args[0])
