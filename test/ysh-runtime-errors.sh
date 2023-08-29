@@ -399,6 +399,16 @@ EOF
   '
 }
 
+test-proc-ref-param() {
+  _error-case '
+  proc p (out Ref) {
+    setref out = "yo"
+  }
+  p :x
+  p y
+  '
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs
