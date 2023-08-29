@@ -1,0 +1,8 @@
+
+# main.ysh
+
+source $_this_dir/lib.ysh
+
+if is-main; then
+  echo 'hi from main.ysh'
+fi

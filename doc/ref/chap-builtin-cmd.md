@@ -151,7 +151,20 @@ Use it like this in executable files:
 
 And like this in libraries:
 
-    module myfile.oil || return 0   
+    module myfile.ysh || return 0   
+
+### is-main
+
+The `is-main` builtin returns 1 (false) if the current file was executed with
+the `source` builtin.
+
+In the "main" file, including `-c` or `stdin` input, it returns 0 (true).
+
+Use it like this:
+
+    if is-main {
+      runproc @ARGV
+    }
 
 ### use
 

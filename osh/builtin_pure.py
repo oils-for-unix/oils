@@ -581,7 +581,7 @@ class IsMain(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        return 5
+        return 0 if self.mem.is_main else 1
 
 
 class Module(vm._Builtin):

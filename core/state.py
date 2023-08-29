@@ -141,6 +141,10 @@ class ctx_Source(object):
         self.mem = mem
         self.argv = argv
 
+        # Whenever we're sourcing, the 'is-main' builtin will return 1 (false)
+        self.to_restore = self.mem.is_main
+        self.mem.is_main = False
+
     def __enter__(self):
         # type: () -> None
         pass
@@ -148,6 +152,8 @@ class ctx_Source(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mem.PopSource(self.argv)
+
+        self.mem.is_main = self.to_restore
 
 
 class ctx_DebugTrap(object):
@@ -1338,6 +1344,7 @@ class Mem(object):
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
         self.running_debug_trap = False  # set by ctx_DebugTrap()
+        self.is_main = True  # we start out in main
 
     def __repr__(self):
         # type: () -> str

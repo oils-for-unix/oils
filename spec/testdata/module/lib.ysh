@@ -1,0 +1,7 @@
+# lib.ysh
+
+if is-main; then
+  echo 'hi from lib.ysh'
+else
+  echo 'lib.ysh is not the main module'
+fi
