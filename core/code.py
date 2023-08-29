@@ -63,7 +63,7 @@ class UserFunc(vm._Callable):
         # Push a new stack frame
         with state.ctx_FuncCall(self.cmd_ev.mem, self):
 
-            # TODO: Handle defaults args.  Evaluate them here or elsewhere?
+            # TODO: Handle default args.  Evaluate them here or elsewhere?
 
             num_args = len(self.node.pos_params)
             for i in xrange(0, num_args):
@@ -133,6 +133,8 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
             val = value.Str(arg_str)  # type: value_t
             #log('%s -> %s', param_name, val)
         else:
+            # default args were evaluated on definition
+
             val = proc.defaults[i]
             if val is None:
                 e_die("No value provided for param %r" % p.name, p.blame_tok)

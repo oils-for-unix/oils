@@ -68,6 +68,39 @@ echo "$message" | grep -o "directory stack"
 directory stack
 ## END
 
+#### cd replaces the lowest entry on the directory stack!
+
+# stable temp dir
+dir=/tmp/oils-spec/builtin-dirs
+
+mkdir -p $dir
+cd $dir
+
+pushd /tmp >/dev/null
+echo pushd=$?
+
+dirs
+
+cd /
+echo cd=$?
+
+dirs
+
+popd >/dev/null
+echo popd=$?
+
+popd >/dev/null
+echo popd=$?
+
+## STDOUT:
+pushd=0
+/tmp /tmp/oils-spec/builtin-dirs
+cd=0
+/ /tmp/oils-spec/builtin-dirs
+popd=0
+popd=1
+## END
+
 #### dirs builtin
 cd /
 dirs

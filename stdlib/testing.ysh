@@ -13,14 +13,16 @@
 #   run-tests @ARGV   # --filter
 # }
 
+module stdlib/testing || return 0
 
-# is 'cond Expr' lazily evaluated?
-# Or all proc arguments are autoomatically lazy, except words?
+source --builtin args.ysh
 
-proc assert (; cond ) {
+# Opt in to lazy evaluation
+
+proc assert ( ; cond LAZY ) {
   echo hi
 
-  # TODO: This is a builtin cond
+  # TODO: evalExpr() builtin
   var val = evalExpr(cond) 
   if (not val) {
     # TODO: if it's an expr.Binary
@@ -38,13 +40,24 @@ proc assert (; cond ) {
   }
 }
 
+# What happens when there are duplicate test IDs?
+#
+# Also I think filter by "$test_id/$case_id"
+
+proc __it (case_id ; ; ; block) {
+  # This uses a clean directory
+  echo TODO
+}
 
 # is this accessible to users?
 # It can contain a global list of things to run
 
-var _describe = []
+# Naming convention: a proc named 'describe' mutates a global named _describe?
+# Or maybe _describe_list ?
 
-proc describe (...desc; ; cmd) {
+var _describe_list = []
+
+proc describe (test_id ; ; ; block) {
   echo describe
   = desc
 
@@ -56,17 +69,27 @@ proc describe (...desc; ; cmd) {
   # Need to clean this up
   # append (_describe, cmd)  # does NOT work!
 
-  _ append(_describe, cmd)
+  _ append(_describe_list, block)
 }
 
-proc run-tests (...argv) {
+# Problem: this creates a global variable?
+Args :spec {
+  flag --filter 'Regex of test descriptions'
+}
+
+proc run-tests {
+
+  # TODO: fix this crap
+  var opt = null
+  var i = null
+  setvar opt, i = parseArgs(spec, ARGV)
+
   # TODO:
   # - parse --filter foo, which you can use eggex for!
 
   for cmd in (_describe) {
     # TODO: print filename and 'describe' name?
     try {
-
       eval (cmd)
     }
     if (_status !== 0) {
@@ -74,4 +97,3 @@ proc run-tests (...argv) {
     }
   }
 }
-

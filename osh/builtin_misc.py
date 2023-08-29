@@ -641,7 +641,7 @@ class Cd(vm._Builtin):
 
         else:  # No block
             state.ExportGlobalString(self.mem, 'OLDPWD', pwd)
-            self.dir_stack.Reset()  # for pushd/popd/dirs
+            self.dir_stack.Replace(real_dest_dir)  # for pushd/popd/dirs
 
         return 0
 

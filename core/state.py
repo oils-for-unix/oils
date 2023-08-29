@@ -954,8 +954,14 @@ class DirStack(object):
 
     def Reset(self):
         # type: () -> None
+        """ For dirs -c """
         del self.stack[:]
         self.stack.append(posix.getcwd())
+
+    def Replace(self, d):
+        # type: (str) -> None
+        """ For cd / """
+        self.stack[-1] = d
 
     def Push(self, entry):
         # type: (str) -> None

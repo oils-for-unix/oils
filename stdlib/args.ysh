@@ -5,17 +5,24 @@
 #
 # Args :spec {
 #   flag -v --verbose "Verbosely"  # default is Bool, false
-#   flag -P --max-procs (
-#     Int, default=-1,
-#     desc="Run at most P processes at a time"
-#   )
-#   arg src (desc="Source")
-#   arg src (desc="Dest")
+#
+#   flag -P --max-procs '''
+#     Run at most P processes at a time
+#     ''' (Int, default=-1)
+#
+#   flag -i --invert '''
+#     Long multiline
+#     Description
+#     ''' (Bool, default = true)
+#
+#   arg src 'Source'
+#   arg src 'Dest'
+#   arg times 'Foo' (Int)
 # }
 #
-# var arg, i = parseArgs(spec, ARGV)
+# var opt, i = parseArgs(spec, ARGV)
 #
-# echo "Verbose $[arg.verbose]"
+# echo "Verbose $[opt.verbose]"
 
 
 # TODO: how to register these as Args ?
@@ -24,19 +31,108 @@
 # var var_bindings = {}
 # eval ()
 
-proc _Args_flag {
-  echo 'flag'
+
+# How to make this private to a file?  Or is redefine_func_proc enough?
+#
+# Also it would be nice if we can setref a variable?
+
+proc __flag (...strs ; type ; default Any = null) {
+
+  var short = ''
+  var long = ''
+  if (strs[0].startsWith('-')) {
+    setvar short = strs[0]
+  }
+
+  case (len(strs)) {
+    (1) {
+      echo
+    }
+    (2) {
+      echo
+    }
+  }
+
+  var result = {short, long, type, default}
+
+  # TODO:
+  # - need :: because vars start with _
+  # - It would be nice if _this was a magic param?
+  #   - it would be nice if 'flag' was a "method" on something?
+  #   - that's what it's doing, it's mutating "self"
+  #   - _this is the thing we're currently creating
+
+  _ _this.flags->append(result)
+
+  var this = getvar('_this', scope='dynamic')
+  _ this.flags->append(result)
 }
 
-proc _Args_arg {
+proc __arg (name, desc ; type ; default Any = null) {
+  # Type is always string?  Or support conversion?
+  # I guess there's no reason not to
+  #
+  # Int or Float
+
   echo 'arg'
 }
 
-proc Args(spec Ref ; ; block) {
-  # TODO: evaluate block somehow
-  #
-  # eval ( ) function does it I guess?
-  #
+# TODO: create a builtin?
+func getProc(x) {
+  return (x)
+}
+# TODO: builtin?
+# Is this different than shvar?  How?
+# Is it a global or a local?
+
+# Maybe we can rename shvar IFS=: (foo={}) { }
+#
+# - shvar does LocalOnly
+# - but 'proc arg' will push a new stack frame?
+#   - so we need something like setref?
+#
+
+proc bind-vars (; ; ...bindings; block) {
+  echo
+}
+
+hay define Documented
+
+Documented {  # Do we inherit the name of the proc?  Or $path/$procName?
+
+  # Do we want a longer way of documenting APIs?
+  # Document every argument?
+  # I like Go's docs
+  desc = '''
+  These are my docs
+  '''
+
+  proc p {
+    echo
+  }
+
+}
+
+proc Args(spec Ref ; ; ; block) {
+
+  var more_procs = {
+    flag: getProc('__flag'),
+    arg: getProc('__arg'),
+  }
+
+  var this = {}
+
+  # _this is part of this frame -- it's a duplicate that callers can look up I
+  # guess
+  # Well then all you need is getvar() ?  You don't even need bind-vars?
+  bind-vars (_this=this) {
+    # So now 'arg' and 'flag' can see _this?
+
+    # TODO: more_procs vs. replace procs?
+    eval (block, procs=more_procs)
+  }
+  = this
+
   # You have to put 'flag' and 'arg' in scope
 
   # Flags have these fields
