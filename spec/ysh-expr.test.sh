@@ -97,6 +97,10 @@ echo -$[len(s)]-
 ## END
 
 #### Func with multiple args in multiple contexts
+shopt --set ysh:upgrade  # needed for math.ysh
+
+source --builtin math.ysh
+
 var x = max(1+2, 3+4)
 echo $x $[max(1+2, 3+4)]
 
@@ -106,6 +110,10 @@ echo $x $[max(1+2, 3+4)]
 
 
 #### Trailing Comma in Param list
+shopt --set ysh:upgrade  # needed for math.ysh
+
+source --builtin math.ysh
+
 var x = max(1+2, 3+4,)
 echo $x $[max(1+2, 3+4,)]
 

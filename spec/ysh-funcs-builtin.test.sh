@@ -50,6 +50,8 @@ argv.py $z
 
 #### abs
 
+source --builtin math.ysh
+
 # Also test smooshing
 write $[abs(-5)]$[abs(-0)]$[abs(5)]
 write $[abs(-5)] $[abs(-0)] $[abs(5)]

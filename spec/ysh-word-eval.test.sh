@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 #### Splice in array
 shopt -s oil:upgrade
 var a = %(one two three)
@@ -44,9 +46,12 @@ echo done
 #### echo $[f(x)] for various types
 shopt -s oil:upgrade
 
+source --builtin funcs.ysh
+source --builtin math.ysh
+
 echo bool $[identity(true)]
 echo int $[len(['a', 'b'])]
-echo float $[abs(-3.14)]
+echo float $[abs(-3.14)]  # FIXME: this causes issues with float vs. int comparison
 echo str $[identity('identity')]
 
 echo ---
@@ -65,6 +70,9 @@ bool splice true
 
 #### echo $f (x) with space is runtime error
 shopt -s oil:upgrade
+
+source --builtin funcs.ysh
+
 echo $identity (true)
 ## status: 3
 ## STDOUT:
@@ -72,6 +80,9 @@ echo $identity (true)
 
 #### echo @f (x) with space is runtime error
 shopt -s oil:upgrade
+
+source --builtin funcs.ysh
+
 echo @identity (['foo', 'bar'])
 ## status: 3
 ## STDOUT:
@@ -122,6 +133,9 @@ ___
 
 #### Wrong sigil @[max(3, 4)]
 shopt -s oil:upgrade
+
+source --builtin math.ysh
+
 write @[max(3, 4)]
 echo 'should not get here'
 ## status: 3

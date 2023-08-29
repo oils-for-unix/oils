@@ -1,0 +1,5 @@
+func identity(x) {
+  ## The identity function. Returns its argument.
+
+  return (x)
+}
