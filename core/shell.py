@@ -684,6 +684,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
     func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
 
+    # Do we want to make these methods?
+    #
+    # _ mylist->append('x')
+    # _ mylist->pop()
+    #
+    # It does help
+    func_init.SetGlobalFunc(mem, 'append', func_misc.Append())
+    func_init.SetGlobalFunc(mem, 'pop', func_misc.Pop())
+
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
 

@@ -153,16 +153,6 @@ def Init(mem):
     # List/array methods
     #
 
-    # Do we want to make these methods?
-    #
-    # _ mylist->append('x')
-    # _ mylist->pop()
-    #
-    # It does help
-
-    SetGlobalFunc(mem, 'append', func_misc.Append())
-    SetGlobalFunc(mem, 'pop', func_misc.Pop())
-
     SetGlobalFunc(mem, 'extend', _Extend)
 
     # count, index, insert, remove
