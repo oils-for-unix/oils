@@ -2,17 +2,17 @@
 
 #### _this_dir in main and oshrc
 
-$SH $REPO_ROOT/spec/testdata/module/this_dir.oil
+$SH $REPO_ROOT/spec/testdata/module/this_dir.ysh
 
 echo interactive
 
-$SH -i --rcfile $REPO_ROOT/spec/testdata/module/this_dir.oil -c 'echo -c'
+$SH -i --rcfile $REPO_ROOT/spec/testdata/module/this_dir.ysh -c 'echo -c'
 
 ## STDOUT:
-hi from this_dir.oil
+hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
 interactive
-hi from this_dir.oil
+hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
 -c
 ## END
@@ -26,25 +26,25 @@ not yet
 
 
 #### _this_dir in sourced module
-source $REPO_ROOT/spec/testdata/module/this_dir.oil
+source $REPO_ROOT/spec/testdata/module/this_dir.ysh
 ## STDOUT:
-hi from this_dir.oil
+hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
 ## END
 
 
 #### _this_dir not affected by 'cd'
 cd /tmp
-source $REPO_ROOT/spec/testdata/module/this_dir.oil
+source $REPO_ROOT/spec/testdata/module/this_dir.ysh
 ## STDOUT:
-hi from this_dir.oil
+hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
 ## END
 
 #### _this_dir used with relative path
 cd $REPO_ROOT
-source spec/testdata/module/this_dir.oil
+source spec/testdata/module/this_dir.ysh
 ## STDOUT:
-hi from this_dir.oil
+hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
 ## END

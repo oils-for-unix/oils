@@ -1,7 +1,7 @@
 
-echo 'hi from this_dir.oil'
+echo 'hi from this_dir.ysh'
 
 write -n '$_this_dir = '
 echo $_this_dir | sed 's;.*/oil/;REPLACED/oil/;'
 
-source $_this_dir/empty.oil
+source $_this_dir/empty.ysh

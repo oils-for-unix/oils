@@ -753,8 +753,8 @@ second
 #### redefine_proc is on in interactive shell
 
 $SH -O oil:all -i --rcfile /dev/null -c "
-source $REPO_ROOT/spec/testdata/module/common.oil
-source $REPO_ROOT/spec/testdata/module/redefinition.oil
+source $REPO_ROOT/spec/testdata/module/common.ysh
+source $REPO_ROOT/spec/testdata/module/redefinition.ysh
 log hi
 "
 ## STDOUT:
@@ -769,8 +769,8 @@ hi
 #### redefine_module is on in interactive shell
 
 $SH -O oil:all -i --rcfile /dev/null -c "
-source $REPO_ROOT/spec/testdata/module/common.oil
-source $REPO_ROOT/spec/testdata/module/common.oil
+source $REPO_ROOT/spec/testdata/module/common.ysh
+source $REPO_ROOT/spec/testdata/module/common.ysh
 log hi
 " 2>stderr.txt
 echo status=$?

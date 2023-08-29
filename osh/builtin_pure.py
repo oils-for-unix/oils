@@ -571,6 +571,19 @@ class Echo(vm._Builtin):
         return 0
 
 
+class IsMain(vm._Builtin):
+    """is-main builtin.
+    """
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        self.mem = mem
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        return 5
+
+
 class Module(vm._Builtin):
     """module builtin.
 

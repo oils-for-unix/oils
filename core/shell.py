@@ -219,6 +219,7 @@ def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
 
     b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
     b[builtin_i.module] = builtin_pure.Module(modules, mem.exec_opts, errfmt)
+    b[builtin_i.is_main] = builtin_pure.IsMain(mem)
 
 
 def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):

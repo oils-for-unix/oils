@@ -716,6 +716,10 @@ ysh-builtins() {
   run-file ysh-builtins "$@"
 }
 
+ysh-builtin-module() {
+  run-file ysh-builtin-module "$@"
+}
+
 ysh-builtin-argparse() {
   run-file ysh-builtin-argparse "$@"
 }

@@ -63,9 +63,6 @@ _NORMAL_BUILTINS = [
 
     'runproc',
     'boolstatus',
-
-    'argparse',  # not implemented
-    'describe',  # not implemented
 ]
 # yapf: enable
 
@@ -123,22 +120,21 @@ def _Init(b):
 
     for name in ["readonly", "local", "declare", "typeset"]:
         b.Add(name, kind='assign')
-    b.Add('export', enum_name='export_', kind='assign')
+    b.Add('export', enum_name='export_', kind='assign')  # C++ keyword conflict
 
-    # Normal builtins
-
-    # Slight variants
-    b.Add('test')
-    b.Add('[', enum_name='bracket')
-
-    b.Add('true', enum_name='true_')
-    b.Add('false', enum_name='false_')
+    b.Add('true', enum_name='true_')  # C++ Keywords
+    b.Add('false', enum_name='false_')  
     b.Add('try', enum_name='try_')
 
     for name in _NORMAL_BUILTINS:
         b.Add(name)
 
+    # Slight variants
+    b.Add('test')
+    b.Add('[', enum_name='bracket')
+
     b.Add('push-registers', enum_name='push_registers')
+    b.Add('is-main', enum_name='is_main')
 
     # Implementation detail of $(<file)
     # TODO: change to 'internal cat' (issue 1013)
