@@ -70,7 +70,6 @@ from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import ArgList
-    from core import ui
     from core.state import Mem
     from osh.word_eval import AbstractWordEvaluator
     from osh import split
@@ -84,10 +83,77 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
     # Lookup WITHOUT dynamic scope.
     val = mem.GetValue(var_name, which_scopes=which_scopes)
     if val.tag() == value_e.Undef:
-        # TODO: Location info
         e_die('Undefined variable %r' % var_name, var_loc)
 
     return val
+
+
+def _ConvertToInt(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> int
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            return val.i
+
+        elif case(value_e.Str):
+            val = cast(value.Str, UP_val)
+            if match.LooksLikeInteger(val.s):
+                return int(val.s)
+
+    raise error.TypeErr(val, msg, blame_loc)
+
+
+def _ConvertToNumber(val):
+    # type: (value_t) -> Tuple[coerced_t, int, float]
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.Int):
+            val = cast(value.Int, UP_val)
+            return coerced_e.Int, val.i, -1.0
+
+        elif case(value_e.Float):
+            val = cast(value.Float, UP_val)
+            return coerced_e.Float, -1, val.f
+
+        elif case(value_e.Str):
+            val = cast(value.Str, UP_val)
+            if match.LooksLikeInteger(val.s):
+                return coerced_e.Int, int(val.s), -1.0
+
+            if match.LooksLikeFloat(val.s):
+                return coerced_e.Float, -1, float(val.s)
+
+    return coerced_e.Neither, -1, -1.0
+
+
+def _ConvertForBinaryOp(left, right):
+    # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+    """
+    Returns one of
+      value_e.Int or value_e.Float
+      2 ints or 2 floats
+
+    To indicate which values the operation should be done on
+    """
+    c1, i1, f1 = _ConvertToNumber(left)
+    c2, i2, f2 = _ConvertToNumber(right)
+
+    if c1 == coerced_e.Int and c2 == coerced_e.Int:
+        return coerced_e.Int, i1, i2, -1.0, -1.0
+
+    elif c1 == coerced_e.Int and c2 == coerced_e.Float:
+        return coerced_e.Float, -1, -1, float(i1), f2
+
+    elif c1 == coerced_e.Float and c2 == coerced_e.Int:
+        return coerced_e.Float, -1, -1, f1, float(i2)
+
+    elif c1 == coerced_e.Float and c2 == coerced_e.Float:
+        return coerced_e.Float, -1, -1, f1, f2
+
+    else:
+        # No operation is valid
+        return coerced_e.Neither, -1, -1, -1.0, -1.0
 
 
 class ExprEvaluator(object):
@@ -271,73 +337,6 @@ class ExprEvaluator(object):
 
         # Note: IndexError and KeyError are handled in more specific places
 
-    def _ConvertToInt(self, val):
-        # type: (value_t) -> int
-        UP_val = val
-        with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return val.i
-
-            elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                if match.LooksLikeInteger(val.s):
-                    return int(val.s)
-                else:
-                    raise ValueError("%r doesn't look like an integer" % val.s)
-
-        raise error.InvalidType2(val, 'Expected Int', loc.Missing)
-
-    def _ConvertToNumber(self, val):
-        # type: (value_t) -> Tuple[coerced_t, int, float]
-        UP_val = val
-        with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return coerced_e.Int, val.i, -1.0
-
-            elif case(value_e.Float):
-                val = cast(value.Float, UP_val)
-                return coerced_e.Float, -1, val.f
-
-            elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                if match.LooksLikeInteger(val.s):
-                    return coerced_e.Int, int(val.s), -1.0
-
-                if match.LooksLikeFloat(val.s):
-                    return coerced_e.Float, -1, float(val.s)
-
-        return coerced_e.Neither, -1, -1.0
-
-    def _ConvertForBinaryOp(self, left, right):
-        # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
-        """
-        Returns one of
-          value_e.Int or value_e.Float
-          2 ints or 2 floats
-
-        To indicate which values the operation should be done on
-        """
-        c1, i1, f1 = self._ConvertToNumber(left)
-        c2, i2, f2 = self._ConvertToNumber(right)
-
-        if c1 == coerced_e.Int and c2 == coerced_e.Int:
-            return coerced_e.Int, i1, i2, -1.0, -1.0
-
-        elif c1 == coerced_e.Int and c2 == coerced_e.Float:
-            return coerced_e.Float, -1, -1, float(i1), f2
-
-        elif c1 == coerced_e.Float and c2 == coerced_e.Int:
-            return coerced_e.Float, -1, -1, f1, float(i2)
-
-        elif c1 == coerced_e.Float and c2 == coerced_e.Float:
-            return coerced_e.Float, -1, -1, f1, f2
-
-        else:
-            # No operation is valid
-            return coerced_e.Neither, -1, -1, -1.0, -1.0
-
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
 
@@ -389,35 +388,21 @@ class ExprEvaluator(object):
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
-        child = self._EvalExpr(node.child)
+        val = self._EvalExpr(node.child)
         if node.op.id == Id.Arith_Minus:
-            UP_child = child
-            with tagswitch(child) as case:
-                if case(value_e.Int):
-                    child = cast(value.Int, UP_child)
-                    return value.Int(-child.i)
-
-                elif case(value_e.Float):
-                    child = cast(value.Float, UP_child)
-                    return value.Float(-child.f)
-
-                else:
-                    raise error.InvalidType2(child, 'Expected Int or Float',
-                                             node.op)
+            c1, i1, f1 = _ConvertToNumber(val)
+            if c1 == coerced_e.Int:
+                return value.Int(-i1)
+            if c1 == coerced_e.Float:
+                return value.Float(-f1)
+            raise error.TypeErr(val, 'Negation expected Int or Float', node.op)
 
         if node.op.id == Id.Arith_Tilde:
-            UP_child = child
-            with tagswitch(child) as case:
-                if case(value_e.Int):
-                    child = cast(value.Int, UP_child)
-                    return value.Int(~child.i)
-
-                else:
-                    raise error.InvalidType2(child, 'Expected Int', node.op)
+            i = _ConvertToInt(val, '~ expected Int', node.op)
+            return value.Int(~i)
 
         if node.op.id == Id.Expr_Not:
-            UP_child = child
-            b = val_ops.ToBool(child)
+            b = val_ops.ToBool(val)
             return value.Bool(False if b else True)
 
         raise NotImplementedError(node.op.id)
@@ -428,7 +413,7 @@ class ExprEvaluator(object):
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
-        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
 
         op_id = op.id
 
@@ -442,7 +427,7 @@ class ExprEvaluator(object):
                     return value.Int(i1 * i2)
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if i2 == 0:
-                        raise ZeroDivisionError()
+                        raise error.Expr('Divide by zero', op)
                     return value.Float(float(i1) / float(i2))
                 else:
                     raise AssertionError()
@@ -457,18 +442,18 @@ class ExprEvaluator(object):
                     return value.Float(f1 * f2)
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if f2 == 0.0:
-                        raise ZeroDivisionError()
+                        raise error.Expr('Divide by zero', op)
                     return value.Float(f1 / f2)
                 else:
                     raise AssertionError()
 
         else:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Binary operator expected numbers, got %s and %s' %
-                (ui.ValType(left), ui.ValType(right)), loc.Missing)
+                (ui.ValType(left), ui.ValType(right)), op)
 
-    def _Concat(self, left, right):
-        # type: (value_t, value_t) -> value_t
+    def _Concat(self, left, right, op):
+        # type: (value_t, value_t, Token) -> value_t
         UP_left = left
         UP_right = right
 
@@ -487,9 +472,9 @@ class ExprEvaluator(object):
             return value.List(c)
 
         else:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Expected Str ++ Str or List ++ List, got %s ++ %s' %
-                (ui.ValType(left), ui.ValType(right)), loc.Missing)
+                (ui.ValType(left), ui.ValType(right)), op)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -514,19 +499,16 @@ class ExprEvaluator(object):
 
         # Str or List
         if op_id == Id.Arith_DPlus:  # a ++ b to concat
-            return self._Concat(left, right)
+            return self._Concat(left, right, node.op)
 
         # Int or Float
-        if op_id in \
-          (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star, Id.Arith_Slash):
-            try:
-                return self._ArithNumeric(left, right, node.op)
-            except ZeroDivisionError:
-                raise error.Expr('Divide by zero', node.op)
+        if op_id in (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
+                     Id.Arith_Slash):
+            return self._ArithNumeric(left, right, node.op)
 
         # Everything below has 2 integer operands
-        i1 = self._ConvertToInt(left)
-        i2 = self._ConvertToInt(right)
+        i1 = _ConvertToInt(left, 'Left operand should be Int', node.op)
+        i2 = _ConvertToInt(right, 'Right operand should be Int', node.op)
 
         if op_id == Id.Expr_DSlash:  # a // b
             if i2 == 0:
@@ -566,55 +548,9 @@ class ExprEvaluator(object):
 
         raise NotImplementedError(op_id)
 
-    def _EvalSlice(self, node):
-        # type: (expr.Slice) -> value_t
-
-        lower = None  # type: Optional[IntBox]
-        upper = None  # type: Optional[IntBox]
-        if node.lower:
-            UP_lower = self._EvalExpr(node.lower)
-            if UP_lower.tag() != value_e.Int:
-                # TODO: add location op to expr.Slice
-                raise error.InvalidType('Slice indices must be Ints',
-                                        loc.Missing)
-
-            lower = IntBox(cast(value.Int, UP_lower).i)
-
-        if node.upper:
-            UP_upper = self._EvalExpr(node.upper)
-            if UP_upper.tag() != value_e.Int:
-                raise error.InvalidType('Slice indices must be Ints',
-                                        loc.Missing)
-
-            upper = IntBox(cast(value.Int, UP_upper).i)
-
-        return value.Slice(lower, upper)
-
-    def _EvalRange(self, node):
-        # type: (expr.Range) -> value_t
-
-        assert node.lower is not None
-
-        UP_lower = self._EvalExpr(node.lower)
-        if UP_lower.tag() != value_e.Int:
-            # TODO: add location op to expr.Range
-            raise error.InvalidType('Range indices must be Ints', loc.Missing)
-
-        lower = cast(value.Int, UP_lower)
-
-        assert node.upper is not None
-
-        UP_upper = self._EvalExpr(node.upper)
-        if UP_upper.tag() != value_e.Int:
-            raise error.InvalidType('Range indices must be Ints', loc.Missing)
-
-        upper = cast(value.Int, UP_upper)
-
-        return value.Range(lower.i, upper.i)
-
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
-        c, i1, i2, f1, f2 = self._ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
 
         op_id = op.id
         if c == coerced_e.Int:
@@ -644,7 +580,7 @@ class ExprEvaluator(object):
                     raise AssertionError()
 
         else:
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Comparison operator expected numbers, got %s and %s' %
                 (ui.ValType(left), ui.ValType(right)), op)
 
@@ -658,8 +594,8 @@ class ExprEvaluator(object):
 
             right = self._EvalExpr(right_expr)
 
-            if op.id in \
-              (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual):
+            if op.id in (Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual,
+                         Id.Arith_GreatEqual):
                 result = self._CompareNumeric(left, right, op)
 
             elif op.id == Id.Expr_TEqual:
@@ -680,21 +616,21 @@ class ExprEvaluator(object):
 
             elif op.id == Id.Expr_Is:
                 if left.tag() != right.tag():
-                    raise error.InvalidType('Mismatched types', op)
+                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is right
 
             elif op.id == Id.Node_IsNot:
                 if left.tag() != right.tag():
-                    raise error.InvalidType('Mismatched types', op)
+                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
                 # no extglob in Oil language; use eggex
                 if left.tag() != value_e.Str:
-                    raise error.InvalidType('LHS must be Str', op)
+                    raise error.TypeErrVerbose('LHS must be Str', op)
 
                 if right.tag() != value_e.Str:
-                    raise error.InvalidType('RHS must be Str', op)
+                    raise error.TypeErrVerbose('RHS must be Str', op)
 
                 UP_left = left
                 UP_right = right
@@ -704,10 +640,10 @@ class ExprEvaluator(object):
 
             elif op.id == Id.Expr_NotDTilde:
                 if left.tag() != value_e.Str:
-                    raise error.InvalidType('LHS must be Str', op)
+                    raise error.TypeErrVerbose('LHS must be Str', op)
 
                 if right.tag() != value_e.Str:
-                    raise error.InvalidType('RHS must be Str', op)
+                    raise error.TypeErrVerbose('RHS must be Str', op)
 
                 UP_left = left
                 UP_right = right
@@ -776,41 +712,11 @@ class ExprEvaluator(object):
 
         return value.Bool(result)
 
-    def _EvalDict(self, node):
-        # type: (expr.Dict) -> value_t
-        # NOTE: some keys are expr.Const
-        keys = [self._EvalExpr(e) for e in node.keys]
-
-        values = []  # type: List[value_t]
-        for i, value_expr in enumerate(node.values):
-            if value_expr.tag() == expr_e.Implicit:
-                if keys[i].tag() != value_e.Str:
-                    # TODO: expr.Dict needs {
-                    raise error.InvalidType('Dict keys must be strings',
-                                            loc.Missing)
-
-                s = cast(value.Str, keys[i])
-                v = self._LookupVar(s.s, loc.Missing)  # {name}
-            else:
-                v = self._EvalExpr(value_expr)
-
-            values.append(v)
-
-        d = NewDict()  # type: Dict[str, value_t]
-        for i, k in enumerate(keys):
-            if k.tag() != value_e.Str:
-                raise error.InvalidType('Dict keys must be strings',
-                                        loc.Missing)
-            s = cast(value.Str, k)
-            d[s.s] = values[i]
-
-        return value.Dict(d)
-
-    def EvalArgList(self, args):
+    def _EvalArgListUntyped(self, args):
         # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
         """For procs and funcs - UNTYPED"""
         pos_args = []  # type: List[Any]
-        for arg in args.positional:
+        for arg in args.pos_args:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:
@@ -833,15 +739,18 @@ class ExprEvaluator(object):
 
         return pos_args, kwargs
 
-    def EvalArgList2(self, args, me=None):
+    def _EvalArgList(self, args, me=None):
         # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
         """For procs and args - TYPED """
+
+        # TODO: CommandEvaluator.RunProc is similar
+
         pos_args = []  # type: List[value_t]
 
         if me:  # self/this argument
             pos_args.append(me)
 
-        for arg in args.positional:
+        for arg in args.pos_args:
             UP_arg = arg
 
             if arg.tag() == expr_e.Spread:
@@ -877,7 +786,9 @@ class ExprEvaluator(object):
                 if mylib.PYTHON:
                     f = func.callable
                     if isinstance(f, vm._Callable):  # typed
-                        pos_args, named_args = self.EvalArgList2(node.args)
+                        # TODO: consider using typed_args.Reader
+
+                        pos_args, named_args = self._EvalArgList(node.args)
                         #log('pos_args %s', pos_args)
 
                         ret = f.Call(pos_args, named_args)
@@ -885,7 +796,7 @@ class ExprEvaluator(object):
                         #log('ret %s', ret)
                         return ret
                     else:
-                        u_pos_args, u_named_args = self.EvalArgList(node.args)
+                        u_pos_args, u_named_args = self._EvalArgListUntyped(node.args)
                         #log('ARGS %s', u_pos_args)
                         #ret = f(*u_pos_args, **u_named_args)
 
@@ -898,7 +809,7 @@ class ExprEvaluator(object):
                 else:
                     # C++ cast to work around ASDL 'any'
                     f = cast(vm._Callable, func.callable)
-                    pos_args, named_args = self.EvalArgList2(node.args)
+                    pos_args, named_args = self._EvalArgList(node.args)
                     #log('pos_args %s', pos_args)
 
                     ret = f.Call(pos_args, named_args)
@@ -913,15 +824,15 @@ class ExprEvaluator(object):
                 # Cast to work around ASDL limitation for now
                 f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = self.EvalArgList2(node.args, me=func.me)
+                pos_args, named_args = self._EvalArgList(node.args, me=func.me)
 
                 ret = f.Call(pos_args, named_args)
 
                 return ret
 
             else:
-                raise error.InvalidType2(func, 'Expected a function or method',
-                                         node.args.left)
+                raise error.TypeErr(func, 'Expected a function or method',
+                                    node.args.left)
 
         raise AssertionError()
 
@@ -956,8 +867,9 @@ class ExprEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType('expected Slice or Int',
-                                                loc.Missing)
+                        raise error.TypeErr(index,
+                                            'Str index expected Int or Slice',
+                                            loc.Missing)
 
             elif case(value_e.List):
                 obj = cast(value.List, UP_obj)
@@ -979,15 +891,15 @@ class ExprEvaluator(object):
                             raise error.Expr('index out of range', loc.Missing)
 
                     else:
-                        raise error.InvalidType2(index,
-                                                 'expected Slice or Int',
-                                                 loc.Missing)
+                        raise error.TypeErr(
+                            index, 'List index expected Int or Slice',
+                            loc.Missing)
 
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
                 if index.tag() != value_e.Str:
-                    raise error.InvalidType('expected String index for Dict',
-                                            loc.Missing)
+                    raise error.TypeErr(index, 'Dict index expected Str',
+                                        loc.Missing)
 
                 index = cast(value.Str, UP_index)
                 try:
@@ -996,8 +908,8 @@ class ExprEvaluator(object):
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('dict entry not found', loc.Missing)
 
-        raise error.InvalidType2(obj, 'subscript expected Str, List, or Dict',
-                                 loc.Missing)
+        raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
+                            loc.Missing)
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
@@ -1005,21 +917,21 @@ class ExprEvaluator(object):
         o = self._EvalExpr(node.obj)
         UP_o = o
 
-        id_ = node.op.id
-        if id_ == Id.Expr_RArrow:
+        op_id = node.op.id
+        if op_id == Id.Expr_RArrow:
             name = node.attr.tval
             ty = o.tag()
 
             recv = self.methods.get(ty)
             method = recv.get(name) if recv is not None else None
             if not method:
-                raise error.InvalidType(
+                raise error.TypeErrVerbose(
                     'Method %r does not exist on type %s' %
                     (name, ui.ValType(o)), node.attr)
 
             return value.BoundFunc(o, method)
 
-        if id_ == Id.Expr_Dot:  # d.key is like d['key']
+        if op_id == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval
             with tagswitch(o) as case:
                 if case(value_e.Dict):
@@ -1030,12 +942,13 @@ class ExprEvaluator(object):
                         raise error.Expr('dict entry not found', node.op)
 
                 else:
-                    raise error.InvalidType2(o, 'd.key expected Dict', node.op)
+                    raise error.TypeErr(o, 'Dot operator expected Dict',
+                                        node.op)
 
             return result
 
-        if id_ == Id.Expr_DColon:  # StaticName::member
-            raise NotImplementedError(id_)
+        if op_id == Id.Expr_DColon:  # StaticName::member
+            raise NotImplementedError(op_id)
 
             # TODO: We should prevent virtual lookup here?  This is a pure static
             # namespace lookup?
@@ -1043,7 +956,7 @@ class ExprEvaluator(object):
             # Maybe we can just check that it's a module?  And modules don't lookup
             # in a supertype or __class__, etc.
 
-        raise AssertionError(id_)
+        raise AssertionError(op_id)
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t
@@ -1067,9 +980,9 @@ class ExprEvaluator(object):
                 node = cast(CommandSub, UP_node)
 
                 id_ = node.left_token.id
-                if id_ == Id.Left_CaretParen:
-                    # ^(echo block literal)
-                    return value.Str('TODO: value.Block')
+                if id_ == Id.Left_CaretParen:  # ^(echo block literal)
+                    # TODO: Propgate location info?
+                    return value.Block(node.child)
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
@@ -1128,11 +1041,37 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Slice):  # a[:0]
                 node = cast(expr.Slice, UP_node)
-                return self._EvalSlice(node)
+
+                lower = None  # type: Optional[IntBox]
+                upper = None  # type: Optional[IntBox]
+
+                if node.lower:
+                    msg = 'Slice begin should be Int'
+                    i = val_ops.ToInt(self._EvalExpr(node.lower), msg,
+                                      loc.Missing)
+                    lower = IntBox(i)
+
+                if node.upper:
+                    msg = 'Slice end should be Int'
+                    i = val_ops.ToInt(self._EvalExpr(node.upper), msg,
+                                      loc.Missing)
+                    upper = IntBox(i)
+
+                return value.Slice(lower, upper)
 
             elif case(expr_e.Range):
                 node = cast(expr.Range, UP_node)
-                return self._EvalRange(node)
+
+                assert node.lower is not None
+                assert node.upper is not None
+
+                msg = 'Range begin should be Int'
+                i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
+
+                msg = 'Range end should be Int'
+                j = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
+
+                return value.Range(i, j)
 
             elif case(expr_e.Compare):
                 node = cast(expr.Compare, UP_node)
@@ -1159,7 +1098,28 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Dict):
                 node = cast(expr.Dict, UP_node)
-                return self._EvalDict(node)
+
+                kvals = [self._EvalExpr(e) for e in node.keys]
+                values = []  # type: List[value_t]
+
+                for i, value_expr in enumerate(node.values):
+                    if value_expr.tag() == expr_e.Implicit:  # {key}
+                        # Enforced by parser.  Key is expr.Const
+                        assert kvals[i].tag() == value_e.Str, kvals[i]
+                        key = cast(value.Str, kvals[i])
+                        v = self._LookupVar(key.s, loc.Missing)
+                    else:
+                        v = self._EvalExpr(value_expr)
+
+                    values.append(v)
+
+                d = NewDict()  # type: Dict[str, value_t]
+                for i, kval in enumerate(kvals):
+                    k = val_ops.ToStr(kval, 'Dict keys must be strings',
+                                      loc.Missing)
+                    d[k] = values[i]
+
+                return value.Dict(d)
 
             elif case(expr_e.ListComp):
                 e_die_status(
@@ -1239,9 +1199,8 @@ class ExprEvaluator(object):
                 term = cast(class_literal_term.Splice, UP_term)
 
                 val = self._LookupVar(term.var_name, term.name)
-                s = val_ops.ToStr(val,
-                                  term.name,
-                                  prefix='Eggex char class splice ')
+                s = val_ops.ToStr(val, 'Eggex char class splice expected Str',
+                                  term.name)
                 char_code_tok = term.name
 
         assert s is not None, term
@@ -1360,7 +1319,7 @@ class ExprEvaluator(object):
                         to_splice = val.expr
 
                     else:
-                        raise error.InvalidType2(
+                        raise error.TypeErr(
                             val, 'Eggex splice expected Str or Eggex',
                             node.name)
                 return to_splice

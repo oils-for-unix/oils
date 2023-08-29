@@ -49,6 +49,7 @@ echo $i
 
 
 #### Operations That Convert to Integer: // % **
+shopt -s parse_brace
 
 var m = ' 5 ' // 2
 
@@ -58,10 +59,22 @@ var p = ' 5 ' ** 2
 
 write -- $m $n $p
 
+try {
+  var z = 'a' // 3
+}
+echo _status $_status
+
+try {
+  var z = 'z' % 3
+}
+echo _status $_status
+
 ## STDOUT:
 2
 1
 25
+_status 3
+_status 3
 ## END
 
 #### Division by zero
@@ -107,13 +120,43 @@ write -- $a $b $c $d
 false
 ## END
 
-#### unary ~ applied to bool is not allowed
+
+#### unary minus on strings
+json write (-3)
+json write (-'4')
+json write (-'5.5')
+
+# Not accepted
+json write (-'abc')
+
+## status: 3
+## STDOUT:
+-3
+-4
+-5.5
+## END
+
+#### unary ~ complement on strings
+json write (~0)
+json write (~'1')
+json write (~' 2 ')
+# Not accepted
+json write (~'3.5')
+
+## status: 3
+## STDOUT:
+-1
+-2
+-3
+## END
+
+#### unary ~ doesn't work on bool
 = ~false
 ## status: 3
 ## STDOUT:
 ## END
 
-#### unary ~ applied to float is not allowed
+#### unary ~ doesn't work on float
 = ~1.
 ## status: 3
 ## STDOUT:

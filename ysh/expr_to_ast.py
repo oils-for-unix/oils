@@ -30,21 +30,21 @@ from _devbuild.gen.syntax_asdl import (
     place_expr,
     place_expr_e,
     place_expr_t,
-    type_expr_t,
     Comprehension,
     Subscript,
     Attribute,
     proc_sig,
     proc_sig_t,
     Param,
+    RestParam,
     NamedArg,
     ArgList,
-    ProcParam,
     Variant,
     variant_type,
     variant_type_t,
     pat,
     pat_t,
+    TypeExpr,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -214,7 +214,6 @@ class Transformer(object):
         if op_tok.id == Id.Op_LBracket:
             p_args = p_trailer.GetChild(1)
             assert p_args.typ == grammar_nt.subscriptlist
-            indices = []  # type: List[expr_t]
             n = p_args.NumChildren()
             if n > 1:
                 p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
@@ -820,14 +819,14 @@ class Transformer(object):
         | '...' test  # var args
         )
         """
-        positional = arglist.positional
-        named = arglist.named
+        pos_args = arglist.pos_args
+        named_args = arglist.named_args
 
         assert p_node.typ == grammar_nt.argument, p_node
         n = p_node.NumChildren()
         if n == 1:
             arg = self.Expr(p_node.GetChild(0))
-            positional.append(arg)
+            pos_args.append(arg)
             return
 
         if n == 2:
@@ -837,9 +836,9 @@ class Transformer(object):
                 spread_expr = self.Expr(p_node.GetChild(1))
                 if do_named:
                     # Implicit spread with name = None
-                    named.append(NamedArg(None, spread_expr))
+                    named_args.append(NamedArg(None, spread_expr))
                 else:
-                    positional.append(
+                    pos_args.append(
                         expr.Spread(spread_expr, expr_context_e.Store))
                 return
 
@@ -847,14 +846,14 @@ class Transformer(object):
                 elt = self.Expr(p_node.GetChild(0))
                 comp = self._CompFor(p_node.GetChild(1))
                 arg = expr.GeneratorExp(elt, [comp])
-                positional.append(arg)
+                pos_args.append(arg)
                 return
 
             raise AssertionError()
 
         if n == 3:
             n1 = NamedArg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
-            named.append(n1)
+            named_args.append(n1)
             return
 
         raise NotImplementedError()
@@ -891,146 +890,198 @@ class Transformer(object):
         self._Arglist(p, arglist)
 
     def _TypeExpr(self, pnode):
-        # type: (PNode) -> type_expr_t
+        # type: (PNode) -> TypeExpr
+        """
+        type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
+        """
         assert pnode.typ == grammar_nt.type_expr, pnode.typ
-        return None
+
+        #self.p_printer.Print(pnode)
+
+        ty = TypeExpr.CreateNull()  # don't allocate children
+
+        ty.tok = pnode.GetChild(0).tok
+        ty.name = ty.tok.tval  # TODO: TokenVal()
+
+        n = pnode.NumChildren()
+        if n == 1:
+            return ty
+
+        ty.params = []
+        i = 2
+        while i < n:
+            p = self._TypeExpr(pnode.GetChild(i))
+            ty.params.append(p)
+            i += 2  # skip comma
+
+        return ty
 
     def _TypeExprList(self, pnode):
-        # type: (PNode) -> List[type_expr_t]
+        # type: (PNode) -> List[TypeExpr]
+        """
+        For return value annotation?
+        """
         assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
         return None
 
-    def _ProcParam(self, pnode):
-        # type: (PNode) -> Tuple[Optional[Token], Token, Optional[Token], Optional[expr_t]]
+    def _Param(self, pnode):
+        # type: (PNode) -> Param
         """
-        proc_param:
-          # old
-          ':' Expr_Name |
-
-          '...' Expr_Name
-          # type is either Expr or Block 
-          Expr_Name [ Expr_Name ] ['=' expr]  
+        param: Expr_Name [type_expr] ['=' expr]
         """
-        assert pnode.typ == grammar_nt.proc_param
+        assert pnode.typ == grammar_nt.param
 
-        tok0 = pnode.GetChild(0).tok
+        name_tok = pnode.GetChild(0).tok
         n = pnode.NumChildren()
 
-        prefix = None  # type: Optional[Token]
-        name = None  # type: Optional[Token]
-        typ = None  # type: Optional[Token]
-        default_val = None  # type: Optional[expr_t]
-        if tok0.id in (Id.Arith_Colon, Id.Expr_At, Id.Expr_Ellipsis):
-            prefix = tok0
-            name = pnode.GetChild(1).tok
-            return prefix, name, typ, default_val
+        assert name_tok.id == Id.Expr_Name, name_tok
 
-        name = pnode.GetChild(0).tok
+        default_val = None  # type: expr_t
+        type_ = None  # type: TypeExpr
+
+        #self.p_printer.Print(pnode)
+
         if n == 1:
-            return prefix, name, typ, default_val
+            # proc p(a)
+            pass
 
-        i = 1
-        tok1 = pnode.GetChild(1).tok
-        if tok1.id == Id.Expr_Name:
-            typ = tok1
-            i += 1
+        elif n == 2:
+            # proc p(a Int)
+            type_ = self._TypeExpr(pnode.GetChild(1))
 
-        if i + 1 == n - 1:
-            assert pnode.GetChild(i).tok.id == Id.Arith_Equal
-            default_val = self.Expr(pnode.GetChild(i + 1))
-        return prefix, name, typ, default_val
+        elif n == 3:
+            # proc p(a = 3)
+            default_val = self.Expr(pnode.GetChild(2))
 
-    def _ProcParams(self, p_node):
-        # type: (PNode) -> proc_sig_t
-        """proc_params: (proc_param ',')* [ proc_param  [','] ]"""
+        elif n == 4:
+            # proc p(a Int = 3)
+            type_ = self._TypeExpr(pnode.GetChild(1))
+            default_val = self.Expr(pnode.GetChild(3))
+
+        return Param(name_tok, lexer.TokenVal(name_tok), type_, default_val)
+
+    def _ParamGroup(self, p_node):
+        # type: (PNode) -> Tuple[List[Param], Optional[RestParam]]
+        """
+        param_group:
+          (param ',')*
+          [ (param | '...' Expr_Name) [,] ]
+        """
+        assert p_node.typ == grammar_nt.param_group, p_node
+
+        #self.p_printer.Print(p_node)
+
+        params = []  # type: List[Param]
+        rest_of = None  # type: Optional[RestParam]
+
         n = p_node.NumChildren()
-
-        pos_params = []  # type: List[ProcParam]
-        rest = None  # type: Optional[Token]
-
-        state = 0
-
         i = 0
         while i < n:
-            prefix, name, typ, default_val = self._ProcParam(p_node.GetChild(i))
-
-            # TODO: enforce the order of params.  It should look like
-            # untyped* rest? typed*, which is while / if / while!
-            if prefix and prefix.id in (Id.Expr_At, Id.Expr_Ellipsis):
-                rest = name
-            else:
-                if typ and typ.tval not in ('Ref', 'Expr', 'Block'):
-                    p_die('proc param types should be Ref, Expr, or Block', typ)
-                pos_params.append(ProcParam(name, typ, default_val))
-
+            child = p_node.GetChild(i)
+            if child.typ == grammar_nt.param:
+                params.append(self._Param(child))
+            elif child.tok.id == Id.Expr_Ellipsis:
+                tok = p_node.GetChild(i + 1).tok
+                rest_of = RestParam(tok, lexer.TokenVal(tok))
             i += 2
+            #log('i %d n %d', i, n)
 
-        return proc_sig.Closed(pos_params, rest)
+        return params, rest_of
 
-    def _FuncParam(self, pnode):
-        # type: (PNode) -> Param
-        """func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name."""
-        assert pnode.typ == grammar_nt.func_param
-
-        tok0 = pnode.GetChild(0).tok
-        n = pnode.NumChildren()
-
-        if tok0.id == Id.Expr_Name:
-            default_val = None  # type: expr_t
-            type_ = None  # type: type_expr_t
-            if n > 1 and pnode.GetChild(
-                    1).tok.id == Id.Arith_Equal:  # f(x = 1+2*3)
-                default_val = self.Expr(pnode.GetChild(2))
-            elif n > 2 and pnode.GetChild(
-                    2).tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
-                default_val = self.Expr(pnode.GetChild(3))
-            prefix_tok = None  # type: Token
-            return Param(prefix_tok, tok0, type_, default_val)
-
-        raise AssertionError(Id_str(tok0.id))
-
-    def _FuncParams(self, p_node):
-        # type: (PNode) -> Tuple[List[Param], Optional[Token]]
-        """func_params: [func_param] (',' func_param)* [',' '...' Expr_Name]"""
-        params = []  # type: List[Param]
-        splat = None  # type: Optional[Token]
-
-        n = p_node.NumChildren()
-        for i in xrange(n):
-            p = p_node.GetChild(i)
-            if ISNONTERMINAL(p.typ):
-                params.append(self._FuncParam(p))
-            elif p.tok.id == Id.Expr_Ellipsis:
-                splat = p_node.GetChild(i + 1).tok
-
-        return params, splat
-
-    def Proc(self, pnode):
+    def Proc(self, p_node):
         # type: (PNode) -> proc_sig_t
         """
-        oil_proc: (
-          [ '('
-            [proc_params]
-            # optional block arg, with no type
-            [';' Expr_Name ['=' expr] ]
-            ')'
+        ysh_proc: (
+          [ '(' 
+                  [ param_group ]         # word params, with defaults
+            [ ';' [ param_group ] ]       # positional typed params, with defaults
+            [ ';' [ param_group ] ]       # named params, with defaults
+            [ ';' Expr_Name ]             # optional block param, with no type or default
+            ')'  
           ]
           '{'  # opening { for pgen2
         )
         """
-        typ = pnode.typ
-        assert typ == grammar_nt.oil_proc
+        typ = p_node.typ
+        assert typ == grammar_nt.ysh_proc
 
-        #self.p_printer.Print(pnode)
+        #self.p_printer.Print(p_node)
 
-        n = pnode.NumChildren()
+        n = p_node.NumChildren()
         if n == 1:  # proc f {
-            sig = proc_sig.Open  # type: proc_sig_t
-        elif n == 3:  # proc f () {
+            return proc_sig.Open
+
+        if n == 3:  # proc f () {
             sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+
+        # proc f( three param groups, and block group )
+        sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
+
+        # Word args
+        i = 1 
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            sig.word_params, sig.rest_of_words = self._ParamGroup(p_node.GetChild(i))
+            i += 2
         else:
-            sig = self._ProcParams(pnode.GetChild(1))
-            # TODO: process keyword args and block args
+            i += 1
+
+        # Validate word args
+        for word in sig.word_params:
+            if word.type:
+                if word.type.name not in ('Str', 'Ref'):
+                    p_die('Word params may only have type Str or Ref',
+                          word.type.tok)
+                if word.type.params is not None:
+                    p_die('Unexpected type parameters', word.type.tok)
+
+        #log('i %d n %d', i, n)
+        if i >= n:
+            return sig
+
+        # Positional args
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            sig.pos_params, sig.rest_of_pos = (
+                    self._ParamGroup(p_node.GetChild(i)))
+            i += 2
+        else:
+            i += 1
+
+        #log('i %d n %d', i, n)
+        if i >= n:
+            return sig
+
+        # Keyword args
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            sig.named_params, sig.rest_of_named = (
+                    self._ParamGroup(p_node.GetChild(i)))
+            i += 2
+        else:
+            i += 1
+
+        #log('i %d n %d', i, n)
+        if i >= n:
+            return sig
+
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            params, rest = self._ParamGroup(p_node.GetChild(i))
+            if len(params) > 1:
+                p_die('Only 1 block param is allowed', params[1].blame_tok)
+            if rest:
+                p_die("Rest param isn't allowed for blocks", rest.blame_tok)
+
+            if len(params) > 0:
+                if params[0].type:
+                    if params[0].type.name != 'Command':
+                        p_die('Block param must have type Command',
+                              params[0].type.tok)
+                    if params[0].type.params is not None:
+                        p_die('Unexpected type parameters', params[0].type.tok)
+
+                sig.block_param = RestParam(params[0].blame_tok, params[0].name)
 
         return sig
 
@@ -1115,49 +1166,54 @@ class Transformer(object):
 
         return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
-    def YshFunc(self, pnode, out):
+    def YshFunc(self, p_node, out):
         # type: (PNode, command.Func) -> None
         """Parse tree to LST
 
-        ysh_func: Expr_Name '(' [func_params] [';' func_params] ')'
+        ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
         """
-        assert pnode.typ == grammar_nt.ysh_func
+        assert p_node.typ == grammar_nt.ysh_func
 
-        out.name = pnode.GetChild(0).tok
+        #self.p_printer.Print(p_node)
 
-        pos = 2
-        typ = pnode.GetChild(pos).typ  # discriminate f(x) vs. f(; x=y)
-        if ISNONTERMINAL(typ):  # f(x)
-            assert typ == grammar_nt.func_params, pnode.GetChild(pos)
-            # every other one is a comma
-            out.pos_params, out.pos_splat = self._FuncParams(
-                pnode.GetChild(pos))
-            pos += 1
+        out.name = p_node.GetChild(0).tok
 
-        id_ = pnode.GetChild(pos).tok.id
-        if id_ == Id.Op_RParen:  # f()
+        n = p_node.NumChildren()
+        i = 2  # after (
+
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            out.pos_params, out.rest_of_pos = self._ParamGroup(child)
+            i += 2  # skip past ;
+        else:
+            i += 1
+
+        if i >= n:
             return
-        elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._FuncParams(
-                pnode.GetChild(pos + 1))
+
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.param_group:
+            out.named_params, out.rest_of_named = self._ParamGroup(child)
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.TeaFunc) -> None
         """Parse tree to LST
 
         tea_func:
-          '(' [func_params] [';' func_params] ')' [type_expr_list] suite 
+          '(' [param_group] [';' param_group] ')' [type_expr_list] suite 
         """
         assert pnode.typ == grammar_nt.tea_func
         assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
 
+        # TODO: Simplify this in the style of YshFunc() above
+
         pos = 1
         typ2 = pnode.GetChild(pos).typ
         if ISNONTERMINAL(typ2):
-            assert typ2 == grammar_nt.func_params, pnode.GetChild(
+            assert typ2 == grammar_nt.param_group, pnode.GetChild(
                 pos)  # f(x, y)
             # every other one is a comma
-            out.pos_params, out.pos_splat = self._FuncParams(
+            out.pos_params, out.pos_splat = self._ParamGroup(
                 pnode.GetChild(pos))
             pos += 1
 
@@ -1165,7 +1221,7 @@ class Transformer(object):
         if id_ == Id.Op_RParen:  # f()
             pos += 1
         elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._FuncParams(
+            out.named_params, out.named_splat = self._ParamGroup(
                 pnode.GetChild(pos + 1))
             pos += 3
 
@@ -1185,12 +1241,12 @@ class Transformer(object):
 
     def _DataParams(self, p_node):
         # type: (PNode) -> List[Param]
-        """data_params: (func_param ',')* [ func_param [','] ]"""
+        """data_params: (param ',')* [ param [','] ]"""
         params = []  # type: List[Param]
 
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):
-            params.append(self._FuncParam(p_node.GetChild(i)))
+            params.append(self._Param(p_node.GetChild(i)))
 
         return params
 
@@ -1354,8 +1410,6 @@ class Transformer(object):
         typ = first.typ
 
         if ISNONTERMINAL(typ):
-            p_child = p_node.GetChild(0)
-
             n = p_node.NumChildren()
 
             if n == 1 and typ == grammar_nt.range_char:

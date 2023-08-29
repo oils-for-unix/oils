@@ -24,8 +24,6 @@
 
 # Possible refactorings:
 #
-#   # More %Token as first class variants:
-#   type_expr = Atom %Token | ...
 #   printf_part = Literal %Token | ...
 #
 #   # %CompoundWord as first class variant:
@@ -148,10 +146,10 @@ module syntax
   # - no 'Token right' for now, doesn't appear to be used
   ShArrayLiteral = (Token left, List[word] words, Token right)
 
-  # For both proc and func
-  # Note that ...pos is expr.Spread.  TODO: Make NamedArg consistent
+  # Unevaluated, typed arguments for func and proc.
+  # Note that ...arg is expr.Spread.
   ArgList = (
-     Token left, List[expr] positional, List[NamedArg] named, Token right
+     Token left, List[expr] pos_args, List[NamedArg] named_args, Token right
   )
 
   AssocPair = (CompoundWord key, CompoundWord value)
@@ -370,16 +368,16 @@ module syntax
   | Expr(Token keyword, expr e)
   | Proc(Token keyword, Token name, proc_sig sig, command body)
   | Func(Token keyword, Token name,
-         List[Param] pos_params, Token? pos_splat,
-         List[Param] named_params, Token? named_splat,
+         List[Param] pos_params, RestParam? rest_of_pos,
+         List[Param] named_params, RestParam? rest_of_named,
          command body)
 
   # Tea
 
   | TeaFunc(Token name,
-         List[Param] pos_params, Token? pos_splat,
-         List[Param] named_params, Token? named_splat,
-         List[type_expr] return_types, command body)
+         List[Param] pos_params, RestParam? pos_splat,
+         List[Param] named_params, RestParam? named_splat,
+         List[TypeExpr] return_types, command body)
   | Data(Token name, List[Param] params)
   | Enum(Token name, List[Variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)
@@ -404,17 +402,16 @@ module syntax
 
   ImportName = (Token name, Token? alias)
 
-  # type is Ref, Expr, or Block
-  ProcParam = (Token name, Token? type, expr? default_val)
+  Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
+  RestParam = (Token blame_tok, str name)
 
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
-  | Closed(List[ProcParam] pos_params, Token? rest)
-
-  # prefix is : for out param, @ for proc splat, ... for func splat
-  # procs only have types Expr, Block (and Str is implicit)
-  Param = (Token? prefix, Token name, type_expr? type, expr? default_val)
+  | Closed(List[Param] word_params, RestParam? rest_of_words,
+           List[Param] pos_params, RestParam? rest_of_pos,
+           List[Param] named_params, RestParam? rest_of_named,
+           RestParam? block_param)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
@@ -441,24 +438,24 @@ module syntax
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)
 
   #
-  # OIL LANGUAGE
+  # YSH Language
   #
   # Copied and modified from Python-3.7/Parser/Python.asdl !
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
-  # type expressions:   Int   Array[Int]   Dict[Str, Any]
-  type_expr =
-    Simple(Token tok, str name)
-  | Compound(Token name, List[type_expr] params)
+  # Type expressions:   Int   List[Int]   Dict[Str, Any]
+  # Do we have Func[Int, Int => Int] ?  I guess we can parse that into this
+  # system.
+  TypeExpr = (Token tok, str name, List[TypeExpr] params)
 
   # LHS binding in loops, list comprehensions, and var/const
-  NameType = (Token name, type_expr? typ)
+  NameType = (Token name, TypeExpr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   Comprehension = (List[NameType] lhs, expr iter, expr? cond)
 
-  # named arguments supplied to call.  token is null for f(; ...named).
+  # Named arguments supplied to call.  Token is null for f(; ...named).
   NamedArg = (Token? name, expr value)
 
   # Subscripts are lists of expressions

@@ -1,7 +1,7 @@
 # spec/ysh-funcs
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 
 #### Identity function
 func id(x) {
@@ -27,6 +27,33 @@ func f(x) { return (x + 1) }
 
 = f()
 ## status: 3
+## STDOUT:
+## END
+
+#### named args
+func f(; x=3) {
+  echo x=$x
+}
+
+_ f()
+
+_ f(x=4)
+
+## STDOUT:
+## END
+
+#### named args with ...
+func f(; x=3, ...named) {
+  echo x=$x
+  json write (named)
+}
+
+_ f()
+
+_ f(x=4)
+
+_ f(x=4, y=5)
+
 ## STDOUT:
 ## END
 

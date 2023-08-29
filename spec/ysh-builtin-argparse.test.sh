@@ -7,19 +7,27 @@
 
 #### Argparse bool option and positional
 
-hay define ArgSpec
-hay define ArgSpec/Arg
+source --builtin args.ysh
 
-ArgSpec myspec {
-  Arg -v --verbose { type = Bool }
-  Arg src
-  Arg dst
+Args :spec {
+  flag -v --verbose (Bool)
+  arg src
+  arg dst
+
+  rest more  # allow more args
 }
-var args = ['-v', 'src/path', 'dst/path']
-argparse (myspec, args, :opts)
+json write (spec)
 
-json write (opts)
-json write (args)
+var argv = ['-v', 'src/path', 'dst/path']
+
+# TODO: need destructuring with var
+# var arg, i = parseArgs(spec, argv)
+
+var result = parseArgs(spec, argv)
+setvar arg, i = result
+
+json write (arg)
+json write (i)
 ## STDOUT:
 {
   "verbose": true,
@@ -33,21 +41,24 @@ json write (args)
 ## END
 
 #### Argparse basic help message
-hay define ArgSpec
-hay define ArgSpec/Arg
 
-ArgSpec myspec {
+source --builtin args.ysh
+
+Args :spec {
   description = '''
      Reference Implementation
   '''
   prog = "program-name"
-  Arg -v --verbose { type = Bool; help = "Verbose" }
-  Arg src
-  Arg dst
-}
-var args = ['-h', 'src', 'dst']
 
-argparse (myspec, args, :opts)
+  arg -v --verbose (Bool, help = "Verbose")
+  arg src
+  arg dst
+}
+var argv = ['-h', 'src', 'dst']
+
+# Help
+var arg = parseArgs(spec, argv)
+
 ## STDOUT:
 usage: program-name [-h] [-v] src dst
 

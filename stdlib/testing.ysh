@@ -1,0 +1,77 @@
+# testing.ysh
+#
+# Usage:
+#   source --builtin testing.sh
+#
+# func f(x) { return (x + 1) }
+#
+# describe foo {
+#   assert (43 === f(42))
+# }
+#
+# if is-main {
+#   run-tests @ARGV   # --filter
+# }
+
+
+# is 'cond Expr' lazily evaluated?
+# Or all proc arguments are autoomatically lazy, except words?
+
+proc assert (; cond ) {
+  echo hi
+
+  # TODO: This is a builtin cond
+  var val = evalExpr(cond) 
+  if (not val) {
+    # TODO: if it's an expr.Binary
+    # Then
+    #
+    # Then print $left != $right
+    #
+    # I think you need to introspect on the source code
+    #
+    # Or print '5 != 3'
+    #
+    # Or you can evaluate left and right separately, and then compare them
+
+    echo
+  }
+}
+
+
+# is this accessible to users?
+# It can contain a global list of things to run
+
+var _describe = []
+
+proc describe (...desc; ; cmd) {
+  echo describe
+  = desc
+
+  # TODO:
+  # - need append
+  # - need ::
+  # _ _describe->append(cmd)
+  #
+  # Need to clean this up
+  # append (_describe, cmd)  # does NOT work!
+
+  _ append(_describe, cmd)
+}
+
+proc run-tests (...argv) {
+  # TODO:
+  # - parse --filter foo, which you can use eggex for!
+
+  for cmd in (_describe) {
+    # TODO: print filename and 'describe' name?
+    try {
+
+      eval (cmd)
+    }
+    if (_status !== 0) {
+      echo 'failed'
+    }
+  }
+}
+

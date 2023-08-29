@@ -55,7 +55,6 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
-    value_str,
     cmd_value,
     cmd_value_e,
     RedirValue,
@@ -68,6 +67,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
+from core import code
 from core import dev
 from core import error
 from core.error import e_die, e_die_status
@@ -220,67 +220,9 @@ def PlusEquals(old_val, val):
             pass
 
         else:
-            e_die("Can't append to value of type %s" % value_str(old_val.tag()))
+            e_die("Can't append to value of type %s" % ui.ValType(old_val))
 
     return val
-
-
-class Func(vm._Callable):
-
-    def __init__(self, name, node, mem, cmd_ev):
-        # type: (str, command.Func, state.Mem, CommandEvaluator) -> None
-        self.name = name
-        self.node = node
-        self.cmd_ev = cmd_ev
-        self.mem = mem
-
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
-        nargs = len(pos_args)
-        expected = len(self.node.pos_params)
-        if self.node.pos_splat:
-            if nargs < expected:
-                raise error.InvalidType(
-                    "%s() expects at least %d arguments but %d were given" %
-                    (self.name, expected, nargs), self.node.keyword)
-        elif nargs != expected:
-            raise error.InvalidType(
-                "%s() expects %d arguments but %d were given" %
-                (self.name, expected, nargs), self.node.keyword)
-
-        nargs = len(named_args)
-        expected = len(self.node.named_params)
-        if nargs != expected:
-            raise error.InvalidType(
-                "%s() expects %d named arguments but %d were given" %
-                (self.name, expected, nargs), self.node.keyword)
-
-        with state.ctx_FuncCall(self.cmd_ev.mem, self):
-            nargs = len(self.node.pos_params)
-            for i in xrange(0, nargs):
-                pos_arg = pos_args[i]
-                pos_param = self.node.pos_params[i]
-
-                arg_name = location.LName(lexer.TokenVal(pos_param.name))
-                self.mem.SetValue(arg_name, pos_arg, scope_e.LocalOnly)
-
-            if self.node.pos_splat:
-                other_args = value.List(pos_args[nargs:])
-                arg_name = location.LName(lexer.TokenVal(self.node.pos_splat))
-                self.mem.SetValue(arg_name, other_args, scope_e.LocalOnly)
-
-            # TODO: pass named args
-
-            try:
-                self.cmd_ev._Execute(self.node.body)
-
-                return value.Null  # implicit return
-            except vm.ValueControlFlow as e:
-                return e.value
-            except vm.IntControlFlow as e:
-                raise AssertionError('IntControlFlow in func')
-
-        raise AssertionError('unreachable')
 
 
 class ctx_LoopLevel(object):
@@ -720,6 +662,106 @@ class CommandEvaluator(object):
             else:
                 raise NotImplementedError()
 
+    def _EvalPlaceMutation(self, node):
+        # type: (command.PlaceMutation) -> None
+
+        with switch(node.keyword.id) as case2:
+            if case2(Id.KW_SetVar):
+                which_scopes = scope_e.LocalOnly
+            elif case2(Id.KW_SetGlobal):
+                which_scopes = scope_e.GlobalOnly
+            elif case2(Id.KW_SetRef):
+                # The out param is LOCAL, but the nameref lookup is dynamic
+                which_scopes = scope_e.LocalOnly
+            else:
+                raise AssertionError(node.keyword.id)
+
+        if node.op.id == Id.Arith_Equal:
+            right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+
+            places = None  # type: List[lvalue_t]
+            rhs_vals = None  # type: List[value_t]
+
+            num_lhs = len(node.lhs)
+            if num_lhs == 1:
+                places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
+                rhs_vals = [right_val]
+            else:
+                items = val_ops.ToList(
+                    right_val, 'Destructuring assignment expected List',
+                    node.keyword)
+
+                num_rhs = len(items)
+                if num_lhs != num_rhs:
+                    raise error.Expr('%d != %d' % (num_lhs, num_rhs),
+                                     loc.Missing)
+
+                places = []
+                rhs_vals = []
+                for i, lhs_val in enumerate(node.lhs):
+                    places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
+                    rhs_vals.append(items[i])
+
+            for i, place in enumerate(places):
+                rval = rhs_vals[i]
+                UP_place = place
+
+                # setvar mylist[0] = 42
+                # setvar mydict['key'] = 42
+                if place.tag() == lvalue_e.ObjIndex:
+                    place = cast(lvalue.ObjIndex, UP_place)
+
+                    obj = place.obj
+                    UP_obj = obj
+                    with tagswitch(obj) as case:
+                        if case(value_e.List):
+                            obj = cast(value.List, UP_obj)
+                            index = val_ops.ToInt(place.index,
+                                                  'List index should be Int',
+                                                  loc.Missing)
+                            obj.items[index] = rval
+
+                        elif case(value_e.Dict):
+                            obj = cast(value.Dict, UP_obj)
+                            key = val_ops.ToStr(place.index,
+                                                'Dict index should be Str',
+                                                loc.Missing)
+                            obj.d[key] = rval
+
+                        else:
+                            raise error.TypeErr(
+                                obj, "obj[index] expected List or Dict",
+                                loc.Missing)
+
+                    if node.keyword.id == Id.KW_SetRef:
+                        e_die('setref obj[index] not implemented')
+
+                else:
+                    # top level variable
+                    self.mem.SetValue(place,
+                                      rval,
+                                      which_scopes,
+                                      flags=_PackFlags(node.keyword.id))
+
+        # TODO: Eval other augmented assignments.   Do we need "kind"
+        # here?
+        elif node.op.id == Id.Arith_PlusEqual:
+            # Checked in the parser
+            assert len(node.lhs) == 1
+
+            aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
+            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+
+            new_val = self.expr_ev.EvalPlusEquals(aug_lval, val, node.op)
+
+            self.mem.SetValue(aug_lval,
+                              new_val,
+                              which_scopes,
+                              flags=_PackFlags(node.keyword.id))
+
+        else:
+            raise NotImplementedError(Id_str(node.op.id))
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -778,12 +820,12 @@ class CommandEvaluator(object):
                     if node.typed_args:
                         orig = node.typed_args
                         # COPY positional args because we may append an arg
-                        typed_args = ArgList(orig.left, list(orig.positional),
-                                             orig.named, orig.right)
+                        typed_args = ArgList(orig.left, list(orig.pos_args),
+                                             orig.named_args, orig.right)
 
                         # the block is the last argument
                         if node.block:
-                            typed_args.positional.append(node.block)
+                            typed_args.pos_args.append(node.block)
                             # ArgList already has a spid in this case
                     else:
                         if node.block:
@@ -812,8 +854,8 @@ class CommandEvaluator(object):
                     if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                         # Special builtins have their temp env persisted.
                         self._EvalTempEnv(node.more_env, 0)
-                        status = self._RunSimpleCommand(cmd_val, cmd_st,
-                                                        node.do_fork)
+                        status = self._RunSimpleCommand(
+                            cmd_val, cmd_st, node.do_fork)
                     else:
                         with state.ctx_Temp(self.mem):
                             self._EvalTempEnv(node.more_env, state.SetExport)
@@ -943,131 +985,8 @@ class CommandEvaluator(object):
                 node = cast(command.PlaceMutation, UP_node)
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
-                with switch(node.keyword.id) as case2:
-                    if case2(Id.KW_SetVar):
-                        which_scopes = scope_e.LocalOnly
-                    elif case2(Id.KW_SetGlobal):
-                        which_scopes = scope_e.GlobalOnly
-                    elif case2(Id.KW_SetRef):
-                        # The out param is LOCAL, but the nameref lookup is dynamic
-                        which_scopes = scope_e.LocalOnly
-                    else:
-                        raise AssertionError(node.keyword.id)
-
-                if node.op.id == Id.Arith_Equal:
-                    right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                    UP_right_val = right_val
-
-                    places = None  # type: List[lvalue_t]
-                    rhs_vals = None  # type: List[value_t]
-
-                    num_lhs = len(node.lhs)
-                    if num_lhs == 1:
-                        places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
-                        rhs_vals = [right_val]
-                    else:
-                        if right_val.tag() != value_e.List:
-                            raise error.InvalidType2(right_val,
-                                                     'expected a List',
-                                                     loc.Missing)
-                        right_val = cast(value.List, UP_right_val)
-
-                        num_rhs = len(right_val.items)
-                        if num_lhs != num_rhs:
-                            raise error.Expr('%d != %d' % (num_lhs, num_rhs),
-                                             loc.Missing)
-
-                        places = []
-                        rhs_vals = []
-                        for i, lhs_val in enumerate(node.lhs):
-                            places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
-                            rhs_vals.append(right_val.items[i])
-
-                    for i, place in enumerate(places):
-                        rval = rhs_vals[i]
-                        UP_place = place
-                        tag = place.tag()
-
-                        if tag == lvalue_e.ObjIndex:
-                            # setvar mylist[0] = 42
-                            # setvar mydict['key'] = 42
-                            place = cast(lvalue.ObjIndex, UP_place)
-
-                            obj = place.obj
-                            UP_obj = obj
-                            with tagswitch(obj) as case:
-                                if case(value_e.BashArray):
-                                    obj = cast(value.BashArray, UP_obj)
-                                    index = val_ops.ToInt(place.index,
-                                                          loc.Missing,
-                                                          prefix='List index ')
-                                    r = val_ops.ToStr(rval,
-                                                      loc.Missing,
-                                                      prefix='List index ')
-                                    obj.strs[index] = r
-
-                                elif case(value_e.List):
-                                    obj = cast(value.List, UP_obj)
-                                    index = val_ops.ToInt(place.index,
-                                                          loc.Missing,
-                                                          prefix='List index ')
-                                    obj.items[index] = rval
-
-                                elif case(value_e.BashAssoc):
-                                    obj = cast(value.BashAssoc, UP_obj)
-                                    key = val_ops.ToStr(
-                                        place.index,
-                                        loc.Missing,
-                                        prefix='BashAssoc index ')
-                                    r = val_ops.ToStr(rval,
-                                                      loc.Missing,
-                                                      prefix='BashAssoc index ')
-                                    obj.d[key] = r
-
-                                elif case(value_e.Dict):
-                                    obj = cast(value.Dict, UP_obj)
-                                    key = val_ops.ToStr(place.index,
-                                                        loc.Missing,
-                                                        prefix='Dict index ')
-                                    obj.d[key] = rval
-
-                                else:
-                                    raise error.InvalidType2(
-                                        obj, "obj[index] expected List or Dict",
-                                        loc.Missing)
-
-                            if node.keyword.id == Id.KW_SetRef:
-                                e_die('setref obj[index] not implemented')
-
-                        else:
-                            #val = cpython._PyObjToValue(py_val)
-                            # top level variable
-                            self.mem.SetValue(place,
-                                              rval,
-                                              which_scopes,
-                                              flags=_PackFlags(node.keyword.id))
-
-                # TODO: Eval other augmented assignments.   Do we need "kind"
-                # here?
-                elif node.op.id == Id.Arith_PlusEqual:
-                    # Checked in the parser
-                    assert len(node.lhs) == 1
-
-                    aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
-                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-
-                    new_val = self.expr_ev.EvalPlusEquals(aug_lval, val,
-                                                          node.op)
-
-                    self.mem.SetValue(aug_lval,
-                                      new_val,
-                                      which_scopes,
-                                      flags=_PackFlags(node.keyword.id))
-
-                else:
-                    raise NotImplementedError(Id_str(node.op.id))
-
-                status = 0  # TODO: what should status be?
+                self._EvalPlaceMutation(node)
+                status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
@@ -1182,7 +1101,7 @@ class CommandEvaluator(object):
                     # break/continue at top level.  It has the side effect of making
                     # 'return ""' valid, which shells other than zsh fail on.
                     if len(str_val.s
-                          ) == 0 and not self.exec_opts.strict_control_flow():
+                           ) == 0 and not self.exec_opts.strict_control_flow():
                         arg = 0
                     else:
                         try:
@@ -1206,9 +1125,9 @@ class CommandEvaluator(object):
                 # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
                 # from a sourced script, it makes sense to return from a main script.
                 ok = True
-                if (keyword.id in (Id.ControlFlow_Break,
-                                   Id.ControlFlow_Continue) and
-                        self.loop_level == 0):
+                if (keyword.id
+                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue)
+                        and self.loop_level == 0):
                     ok = False
 
                 if ok:
@@ -1399,7 +1318,7 @@ class CommandEvaluator(object):
                                     node.keyword)
 
                         else:
-                            raise error.InvalidType2(
+                            raise error.TypeErr(
                                 val, 'for loop expected List or Dict',
                                 node.keyword)
                 else:
@@ -1486,10 +1405,11 @@ class CommandEvaluator(object):
                 if node.name in self.procs and not self.exec_opts.redefine_proc_func(
                 ):
                     e_die(
-                        "Function %s was already defined (redefine_proc_func)" %
-                        node.name, node.name_tok)
+                        "Function %s was already defined (redefine_proc_func)"
+                        % node.name, node.name_tok)
                 self.procs[node.name] = Proc(node.name, node.name_tok,
-                                             proc_sig.Open, node.body, [], True)
+                                             proc_sig.Open, node.body, [],
+                                             True)
 
                 status = 0
 
@@ -1505,14 +1425,18 @@ class CommandEvaluator(object):
 
                 defaults = None  # type: List[value_t]
                 UP_sig = node.sig
+
+                # Hm this has the same pitfall as Python -- a mutable default
+                # arg.  Maybe whitelist Bool, Int, Float, Str.
+
                 if UP_sig.tag() == proc_sig_e.Closed:
                     sig = cast(proc_sig.Closed, UP_sig)
                     no_val = None  # type: value_t
-                    defaults = [no_val] * len(sig.pos_params)
-                    for i, p in enumerate(sig.pos_params):
+                    defaults = [no_val] * len(sig.word_params)
+                    for i, p in enumerate(sig.word_params):
                         if p.default_val:
-                            val = self.expr_ev.EvalExpr(p.default_val,
-                                                        loc.Missing)
+                            val = self.expr_ev.EvalExpr(
+                                p.default_val, loc.Missing)
                             defaults[i] = val
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
@@ -1536,13 +1460,13 @@ class CommandEvaluator(object):
                         assert did_unset, name
                     else:
                         e_die(
-                            "Func %s was already defined (redefine_proc_func)" %
-                            name, node.name)
+                            "Func %s was already defined (redefine_proc_func)"
+                            % name, node.name)
 
                 # Needed in case the func is an existing variable name
                 self.mem.SetTokenForLine(node.name)
 
-                val = value.Func(Func(name, node, self.mem, self))
+                val = value.Func(code.UserFunc(name, node, self.mem, self))
                 self.mem.SetValue(lval, val, scope_e.LocalOnly,
                                   _PackFlags(Id.KW_Func, state.SetReadOnly))
 
@@ -1645,7 +1569,8 @@ class CommandEvaluator(object):
                 status = self._Execute(node.pipeline)
                 e_real, e_user, e_sys = pyos.Time()
                 # note: mycpp doesn't support %.3f
-                libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
+                libc.print_time(e_real - s_real, e_user - s_user,
+                                e_sys - s_sys)
 
             else:
                 raise NotImplementedError(node.tag())
@@ -1725,7 +1650,8 @@ class CommandEvaluator(object):
                         except error.FailGlob as e:
                             if not e.HasLocation():  # Last resort!
                                 e.location = self.mem.GetFallbackLocation()
-                            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                            self.errfmt.PrettyPrintError(e,
+                                                         prefix='failglob: ')
                             status = 1
                             check_errexit = True
 
@@ -2018,7 +1944,7 @@ class CommandEvaluator(object):
 
     def RunProc(self, proc, argv, arg0_loc):
         # type: (Proc, List[str], loc_t) -> int
-        """Run a shell "functions".
+        """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
         """
@@ -2029,65 +1955,11 @@ class CommandEvaluator(object):
         else:
             proc_argv = argv
 
+        # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            n_args = len(argv)
-            UP_sig = sig
-
-            if UP_sig.tag() == proc_sig_e.Closed:  # proc is-closed ()
-                sig = cast(proc_sig.Closed, UP_sig)
-                for i, p in enumerate(sig.pos_params):
-                    is_out_param = p.type is not None and p.type.tval == 'Ref'
-
-                    param_name = p.name.tval
-                    if i < n_args:
-                        arg_str = argv[i]
-
-                        # If we have myproc(p), and call it with myproc :arg, then bind
-                        # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
-                        # has a prefix REMOVED.
-                        #
-                        # This helps eliminate "nameref cycles".
-                        if is_out_param:
-                            param_name = '__' + param_name
-
-                            if not arg_str.startswith(':'):
-                                # TODO: Point to the exact argument
-                                e_die(
-                                    'Invalid argument %r.  Expected a name starting with :'
-                                    % arg_str)
-                            arg_str = arg_str[1:]
-
-                        val = value.Str(arg_str)  # type: value_t
-                    else:
-                        val = proc.defaults[i]
-                        if val is None:
-                            e_die("No value provided for param %r" %
-                                  p.name.tval)
-
-                    if is_out_param:
-                        flags = state.SetNameref
-                    else:
-                        flags = 0
-
-                    self.mem.SetValue(location.LName(param_name),
-                                      val,
-                                      scope_e.LocalOnly,
-                                      flags=flags)
-
-                n_params = len(sig.pos_params)
-                if sig.rest:
-                    items = [value.Str(s) for s in argv[n_params:]
-                            ]  # type: List[value_t]
-                    leftover = value.List(items)
-                    self.mem.SetValue(location.LName(sig.rest.tval), leftover,
-                                      scope_e.LocalOnly)
-                else:
-                    if n_args > n_params:
-                        self.errfmt.Print_(
-                            "proc %r expected %d arguments, but got %d" %
-                            (proc.name, n_params, n_args), arg0_loc)
-                        # This should be status 2 because it's like a usage error.
-                        return 2
+            status = code.BindProcArgs(proc, argv, arg0_loc, self.mem, self.errfmt)
+            if status != 0:
+                return status
 
             # Redirects still valid for functions.
             # Here doc causes a pipe and Process(SubProgramThunk).
@@ -2146,6 +2018,7 @@ class CommandEvaluator(object):
 
     def RunFuncForCompletion(self, proc, argv):
         # type: (Proc, List[str]) -> int
+
         # TODO: Change this to run YSH procs and funcs too
         try:
             status = self.RunProc(proc, argv, loc.Missing)
@@ -2161,6 +2034,5 @@ class CommandEvaluator(object):
             status = 1
         # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
         return status
-
 
 # vim: sw=4

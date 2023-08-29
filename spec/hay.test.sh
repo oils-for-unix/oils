@@ -602,6 +602,29 @@ publish-html
 ---
 ## END
 
+#### eval_hay() usage
+shopt -s parse_brace
+
+try {
+  var d = eval_hay()
+}
+echo status $_status
+
+try {
+  var d = eval_hay(3)
+}
+echo status $_status
+
+try {
+  var d = eval_hay(^(echo hi), 5)
+}
+echo status $_status
+
+## STDOUT:
+status 3
+status 3
+status 3
+## END
 
 #### Attribute / Data Blocks (package-manager)
 shopt --set parse_proc

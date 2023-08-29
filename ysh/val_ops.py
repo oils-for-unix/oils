@@ -4,14 +4,14 @@ val_ops.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_str, value_t
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.runtime_asdl import value, value_e, value_t
+from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 
 from core import error
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
-from typing import TYPE_CHECKING, cast, List, Optional
+from typing import TYPE_CHECKING, cast, Dict, List, Optional
 
 import libc
 
@@ -19,94 +19,64 @@ if TYPE_CHECKING:
     from core import state
 
 
-def ToInt(val, blame_loc, prefix=''):
-    # type: (value_t, loc_t, Optional[str]) -> int
+def ToInt(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> int
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
         return val.i
 
-    raise error.InvalidType(
-        '%sexpected value.Int, but got %s' % (prefix, value_str(val.tag())),
-        blame_loc)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def ToStr(val, blame_loc, prefix=''):
-    # type: (value_t, loc_t, Optional[str]) -> str
+def ToFloat(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> float
+    UP_val = val
+    if val.tag() == value_e.Float:
+        val = cast(value.Float, UP_val)
+        return val.f
+
+    raise error.TypeErr(val, msg, blame_loc)
+
+
+def ToStr(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> str
     UP_val = val
     if val.tag() == value_e.Str:
         val = cast(value.Str, UP_val)
         return val.s
 
-    raise error.InvalidType(
-        '%sexpected value.Str, but got %s' % (prefix, value_str(val.tag())),
-        blame_loc)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeInt(val):
-    # type: (value_t) -> value.Int
-    UP_val = val
-    if val.tag() == value_e.Int:
-        val = cast(value.Int, UP_val)
-        return val
-
-    raise error.InvalidType(
-        'Expected value.Int, but got %s' % value_str(val.tag()), loc.Missing)
-
-
-def MustBeFloat(val):
-    # type: (value_t) -> value.Float
-    UP_val = val
-    if val.tag() == value_e.Float:
-        val = cast(value.Float, UP_val)
-        return val
-
-    raise error.InvalidType(
-        'Expected value.Float, but got %s' % value_str(val.tag()), loc.Missing)
-
-
-def MustBeStr(val):
-    # type: (value_t) -> value.Str
-    UP_val = val
-    if val.tag() == value_e.Str:
-        val = cast(value.Str, UP_val)
-        return val
-
-    raise error.InvalidType(
-        'Expected value.Str, but got %s' % value_str(val.tag()), loc.Missing)
-
-
-def MustBeList(val):
-    # type: (value_t) -> value.List
+def ToList(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> List[value_t]
     UP_val = val
     if val.tag() == value_e.List:
         val = cast(value.List, UP_val)
-        return val
+        return val.items
 
-    raise error.InvalidType(
-        'Expected value.List, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeDict(val):
-    # type: (value_t) -> value.Dict
+def ToDict(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> Dict[str, value_t]
     UP_val = val
     if val.tag() == value_e.Dict:
         val = cast(value.Dict, UP_val)
-        return val
+        return val.d
 
-    raise error.InvalidType(
-        'Expected value.Dict, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
-def MustBeFunc(val):
-    # type: (value_t) -> value.Func
+def ToCommand(val, msg, blame_loc):
+    # type: (value_t, str, loc_t) -> command_t
     UP_val = val
-    if val.tag() == value_e.Func:
-        val = cast(value.Func, UP_val)
-        return val
+    if val.tag() == value_e.Block:
+        val = cast(value.Block, UP_val)
+        return val.body
 
-    raise error.InvalidType(
-        'Expected value.Func, but got %s' % value_str(val.tag()), loc.Missing)
+    raise error.TypeErr(val, msg, blame_loc)
 
 
 def Stringify(val, blame_loc, prefix=''):
@@ -151,7 +121,7 @@ def Stringify(val, blame_loc, prefix=''):
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
         else:
-            raise error.InvalidType2(
+            raise error.TypeErr(
                 val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
                 blame_loc)
 
@@ -188,8 +158,7 @@ def ToShellArray(val, blame_loc, prefix=''):
             strs = val.strs
 
         else:
-            raise error.InvalidType2(val, "%sexpected List" % prefix,
-                                     blame_loc)
+            raise error.TypeErr(val, "%sexpected List" % prefix, blame_loc)
 
     return strs
 
@@ -382,8 +351,8 @@ def ExactlyEqual(left, right):
         elif case(value_e.Float):
             # Note: could provide floatEquals(), and suggest it
             # Suggested idiom is abs(f1 - f2) < 0.1
-            raise error.InvalidType("Equality isn't defined on Float",
-                                    loc.Missing)
+            raise error.TypeErrVerbose("Equality isn't defined on Float",
+                                       loc.Missing)
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
@@ -448,21 +417,16 @@ def Contains(needle, haystack):
     We should have mylist->find(x) !== -1 for searching through a List.
     Things with different perf characteristics should look different.
     """
-
-    UP_needle = needle
     UP_haystack = haystack
     with tagswitch(haystack) as case:
         if case(value_e.Dict):
             haystack = cast(value.Dict, UP_haystack)
-            if needle.tag() != value_e.Str:
-                raise error.InvalidType('Expected Str', loc.Missing)
-
-            needle = cast(value.Str, UP_needle)
-            return needle.s in haystack.d
+            s = ToStr(needle, "LHS of 'in' should be Str", loc.Missing)
+            return s in haystack.d
 
         else:
-            raise error.InvalidType2(haystack, "'in' expected Dict",
-                                     loc.Missing)
+            raise error.TypeErr(haystack, "RHS of 'in' should be Dict",
+                                loc.Missing)
 
     return False
 
@@ -483,9 +447,8 @@ def RegexMatch(left, right, mem):
             right = cast(value.Eggex, UP_right)
             right_s = regex_translate.AsPosixEre(right)
         else:
-            raise error.InvalidType2(right,
-                                     'Expected Str or Regex for RHS of ~',
-                                     loc.Missing)
+            raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
+                                loc.Missing)
 
     UP_left = left
     left_s = None  # type: str
@@ -494,7 +457,7 @@ def RegexMatch(left, right, mem):
             left = cast(value.Str, UP_left)
             left_s = left.s
         else:
-            raise error.InvalidType('LHS must be a string', loc.Missing)
+            raise error.TypeErrVerbose('LHS must be a string', loc.Missing)
 
     # TODO:
     # - libc_regex_match should populate _start() and _end() too (out params?)

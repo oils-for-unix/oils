@@ -26,24 +26,12 @@ class Append(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        li = pos_args[0]
-        UP_li = li
+        r = typed_args.Reader(pos_args, named_args)
+        items = r.PosList()
+        to_append = r.PosValue()
+        r.Done()
 
-        to_append = pos_args[1]
-
-        with tagswitch(li) as case:
-            if case(value_e.BashArray):
-                li = cast(value.BashArray, UP_li)
-                s = val_ops.ToStr(to_append,
-                                  loc.Missing,
-                                  prefix='append builtin ')
-                li.strs.append(s)
-
-            elif case(value_e.List):
-                li = cast(value.List, UP_li)
-                li.items.append(to_append)
-            else:
-                raise error.InvalidType('append() expected List', loc.Missing)
+        items.append(to_append)
 
         # Equivalent to no return value?
         return value.Null
@@ -58,21 +46,12 @@ class Pop(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        li = pos_args[0]
-        UP_li = li
+        r = typed_args.Reader(pos_args, named_args)
+        items = r.PosList()
+        r.Done()
 
-        with tagswitch(li) as case:
-            if case(value_e.BashArray):
-                li = cast(value.BashArray, UP_li)
-                li.strs.pop()
+        items.pop()
 
-            elif case(value_e.List):
-                li = cast(value.List, UP_li)
-                li.items.pop()
-            else:
-                raise error.InvalidType('append() expected List', loc.Missing)
-
-        # Equivalent to no return value?
         return value.Null
 
 
@@ -85,10 +64,10 @@ class StartsWith(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        arg_reader = typed_args.Reader(pos_args, named_args)
-        string = arg_reader.PosStr()
-        match = arg_reader.PosStr()
-        arg_reader.Done()
+        r = typed_args.Reader(pos_args, named_args)
+        string = r.PosStr()
+        match = r.PosStr()
+        r.Done()
 
         res = string.startswith(match)
         return value.Bool(res)
@@ -103,9 +82,9 @@ class Strip(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        arg_reader = typed_args.Reader(pos_args, named_args)
-        string = arg_reader.PosStr()
-        arg_reader.Done()
+        r = typed_args.Reader(pos_args, named_args)
+        string = r.PosStr()
+        r.Done()
 
         res = string.strip()
         return value.Str(res)
@@ -120,9 +99,9 @@ class Upper(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        arg_reader = typed_args.Reader(pos_args, named_args)
-        string = arg_reader.PosStr()
-        arg_reader.Done()
+        r = typed_args.Reader(pos_args, named_args)
+        string = r.PosStr()
+        r.Done()
 
         res = string.upper()
         return value.Str(res)
@@ -137,9 +116,9 @@ class Keys(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        arg_reader = typed_args.Reader(pos_args, named_args)
-        dictionary = arg_reader.PosDict()
-        arg_reader.Done()
+        r = typed_args.Reader(pos_args, named_args)
+        dictionary = r.PosDict()
+        r.Done()
 
         keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
         return value.List(keys)
@@ -154,9 +133,9 @@ class Len(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        arg_reader = typed_args.Reader(pos_args, named_args)
-        x = arg_reader.PosValue()
-        arg_reader.Done()
+        r = typed_args.Reader(pos_args, named_args)
+        x = r.PosValue()
+        r.Done()
 
         UP_x = x
         with tagswitch(x) as case:
@@ -172,4 +151,5 @@ class Len(vm._Callable):
                 x = cast(value.Str, UP_x)
                 return value.Int(len(x.s))
 
-        raise error.InvalidType('%s has no length' % value_str(x.tag()), loc.Missing)
+        raise error.TypeErr(x, 'len() expected Str, List, or Dict',
+                            loc.Missing)

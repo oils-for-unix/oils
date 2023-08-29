@@ -384,7 +384,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         for variant in sum.types:
             if variant.shared_type:
                 continue
+
+            # TODO: This produces a lint error, but IS USED via % reflection
             variant_name = variant.name
+
             if len(variant.fields) == 0:
                 Emit(
                     '  static %(sum_name)s__%(variant_name)s* %(variant_name)s;'

@@ -135,6 +135,18 @@ def IsStr(t):
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
+def _EqualsFunc(left_type):
+    if IsStr(left_type):
+        return 'str_equals'
+
+    if (isinstance(left_type, UnionType) and len(left_type.items) == 2
+            and IsStr(left_type.items[0])
+            and isinstance(left_type.items[1], NoneTyp)):
+        return 'maybe_str_equals'
+
+    return None
+
+
 def _CheckCondition(node, types):
     """
     strings, lists, and dicts shouldn't be used in boolean contexts, because that
@@ -932,14 +944,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(right, TupleExpr):
                 left_type = self.types[left]
 
-                equals_func = None
-                if IsStr(left_type):
-                    equals_func = 'str_equals'
-                elif (isinstance(left_type, UnionType)
-                      and len(left_type.items) == 2
-                      and IsStr(left_type.items[0])
-                      and isinstance(left_type.items[1], NoneTyp)):
-                    equals_func = 'maybe_str_equals'
+                equals_func = _EqualsFunc(left_type)
 
                 # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
                 self.write('(')
@@ -973,15 +978,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if operator == 'not in':
             if isinstance(right, TupleExpr):
+                left_type = self.types[left]
+                equals_func = _EqualsFunc(left_type)
+
                 # x not in (1, 2, 3) => (x != 1 && x != 2 && x != 3)
                 self.write('(')
 
                 for i, item in enumerate(right.items):
                     if i != 0:
                         self.write(' && ')
-                    self.accept(left)
-                    self.write(' != ')
-                    self.accept(item)
+
+                    if equals_func:
+                        self.write('!%s(' % equals_func)
+                        self.accept(left)
+                        self.write(', ')
+                        self.accept(item)
+                        self.write(')')
+                    else:
+                        self.accept(left)
+                        self.write(' != ')
+                        self.accept(item)
 
                 self.write(')')
                 return
@@ -1313,7 +1329,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # - We translate it here because we need type inference
             #
             # I think we could get rid of NewDict in C++, and have it only in
-            # Python.  
+            # Python.
             #
             # We used to have the "allocating in a constructor" rooting
             # problem, but I believe that's gone now.
@@ -1327,8 +1343,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
 
-                self.write_ind('auto* %s = Alloc<Dict<%s, %s>>();\n', lval.name,
-                               key_c_type, val_c_type)
+                self.write_ind('auto* %s = Alloc<Dict<%s, %s>>();\n',
+                               lval.name, key_c_type, val_c_type)
                 return
 
             #    src = cast(source__SourcedFile, src)

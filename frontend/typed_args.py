@@ -78,7 +78,7 @@ class Reader(object):
         # type: () -> value_t
         if len(self.pos_args) == 0:
             # TODO: may need location info
-            raise error.InvalidType(
+            raise error.TypeErrVerbose(
                 'Expected at least %d arguments, but only got %d' %
                 (self.pos_consumed + 1, self.pos_consumed), loc.Missing)
 
@@ -88,27 +88,38 @@ class Reader(object):
     def PosStr(self):
         # type: () -> str
         arg = self._GetNextPos()
-        return val_ops.MustBeStr(arg).s
+        msg = 'Arg %d should be a Str' % self.pos_consumed
+        return val_ops.ToStr(arg, msg, loc.Missing)
 
     def PosInt(self):
         # type: () -> int
         arg = self._GetNextPos()
-        return val_ops.MustBeInt(arg).i
+        msg = 'Arg %d should be an Int' % self.pos_consumed
+        return val_ops.ToInt(arg, msg, loc.Missing)
 
     def PosFloat(self):
         # type: () -> float
         arg = self._GetNextPos()
-        return val_ops.MustBeFloat(arg).f
+        msg = 'Arg %d should be a Float' % self.pos_consumed
+        return val_ops.ToFloat(arg, msg, loc.Missing)
 
     def PosList(self):
         # type: () -> List[value_t]
         arg = self._GetNextPos()
-        return val_ops.MustBeList(arg).items
+        msg = 'Arg %d should be a List' % self.pos_consumed
+        return val_ops.ToList(arg, msg, loc.Missing)
 
     def PosDict(self):
         # type: () -> Dict[str, value_t]
         arg = self._GetNextPos()
-        return val_ops.MustBeDict(arg).d
+        msg = 'Arg %d should be a Dict' % self.pos_consumed
+        return val_ops.ToDict(arg, msg, loc.Missing)
+
+    def PosCommand(self):
+        # type: () -> command_t
+        arg = self._GetNextPos()
+        msg = 'Arg %d should be a Command' % self.pos_consumed
+        return val_ops.ToCommand(arg, msg, loc.Missing)
 
     def PosValue(self):
         # type: () -> value_t
@@ -127,7 +138,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeStr(self.named_args[param_name]).s
+        msg = 'Named arg %r should be a Str' % param_name
+        ret = val_ops.ToStr(self.named_args[param_name], msg, loc.Missing)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -136,7 +148,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeInt(self.named_args[param_name]).i
+        msg = 'Named arg %r should be an Int' % param_name
+        ret = val_ops.ToInt(self.named_args[param_name], msg, loc.Missing)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -145,7 +158,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeFloat(self.named_args[param_name]).f
+        msg = 'Named arg %r should be a Float' % param_name
+        ret = val_ops.ToFloat(self.named_args[param_name], msg, loc.Missing)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -154,7 +168,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeList(self.named_args[param_name]).items
+        msg = 'Named arg %r should be a List' % param_name
+        ret = val_ops.ToList(self.named_args[param_name], msg, loc.Missing)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -163,7 +178,8 @@ class Reader(object):
         if param_name not in self.named_args:
             return default_
 
-        ret = val_ops.MustBeDict(self.named_args[param_name]).d
+        msg = 'Named arg %r should be a Dict' % param_name
+        ret = val_ops.ToDict(self.named_args[param_name], msg, loc.Missing)
         dict_erase(self.named_args, param_name)
         return ret
 
@@ -193,13 +209,13 @@ class Reader(object):
         """
         # Note: Python throws TypeError on mismatch
         if len(self.pos_args):
-            raise error.InvalidType('Expected %d arguments, but got %d' %
+            raise error.TypeErrVerbose('Expected %d arguments, but got %d' %
                                     (self.pos_consumed, self.pos_consumed +
                                      len(self.pos_args)), loc.Missing)
 
         if len(self.named_args):
             bad_args = ','.join(self.named_args.keys())
-            raise error.InvalidType('Got unexpected named args: %s' % bad_args, loc.Missing)
+            raise error.TypeErrVerbose('Got unexpected named args: %s' % bad_args, loc.Missing)
 
 
 def DoesNotAccept(arg_list):
@@ -213,12 +229,12 @@ def RequiredExpr(arg_list):
     if arg_list is None:
         e_usage('Expected an expression', loc.Missing)
 
-    n = len(arg_list.positional)
+    n = len(arg_list.pos_args)
     if n == 0:
         e_usage('Expected an expression', arg_list.left)
 
     elif n == 1:
-        return arg_list.positional[0]
+        return arg_list.pos_args[0]
 
     else:
         e_usage('Too many typed args (expected one expression)', arg_list.left)
@@ -238,12 +254,12 @@ def GetOneBlock(arg_list):
     if arg_list is None:
         return None
 
-    n = len(arg_list.positional)
+    n = len(arg_list.pos_args)
     if n == 0:
         return None
 
     elif n == 1:
-        arg = arg_list.positional[0]
+        arg = arg_list.pos_args[0]
         UP_arg = arg
 
         # Could we somehow consolidate these?
@@ -277,12 +293,12 @@ def GetLiteralBlock(arg_list):
     if arg_list is None:
         return None
 
-    n = len(arg_list.positional)
+    n = len(arg_list.pos_args)
     if n == 0:
         return None
 
     elif n == 1:
-        arg = arg_list.positional[0]
+        arg = arg_list.pos_args[0]
         if arg.tag() == expr_e.BlockArg:
             return cast(BlockArg, arg)
         else:
