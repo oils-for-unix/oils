@@ -421,7 +421,10 @@ class CommandEvaluator(object):
                     r.op.id)  # could be static in the LST?
 
                 if redir_type == redir_arg_type_e.Path:
-                    # NOTES
+                    # Note: Only bash and zsh allow globbing a path.  If there
+                    # are multiple files, zsh opens BOTH, but bash exits with
+                    # error 1.
+
                     # - no globbing.  You can write to a file called '*.py'.
                     # - set -o strict-array prevents joining by spaces
                     val = self.word_ev.EvalWordToString(arg_word)

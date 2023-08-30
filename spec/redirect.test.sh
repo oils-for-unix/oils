@@ -337,7 +337,7 @@ echo XX >| $TMP/c.txt
 
 set -o noclobber
 
-echo YY >  $TMP/c.txt  # not globber
+echo YY >  $TMP/c.txt  # not clobber
 echo status=$?
 
 cat $TMP/c.txt

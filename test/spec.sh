@@ -340,6 +340,10 @@ redirect() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+redirect-glob() {
+  run-file redirect-glob "$@"
+}
+
 posix() {
   sh-spec spec/posix.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
