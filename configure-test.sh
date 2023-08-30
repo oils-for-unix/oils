@@ -120,6 +120,7 @@ test_echo_vars() {
     die 'Expected echo_shell_vars to succeed, but failed'
   fi
   if ! test "$output" = 'HAVE_READLINE=
+READLINE_DIR=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then

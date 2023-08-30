@@ -246,6 +246,8 @@ echo_shell_vars() {
     echo "READLINE_DIR=$readline_dir"
   else
     echo 'HAVE_READLINE='
+    # Present a consistent interface to build/ninja-rules-cpp.sh
+    echo 'READLINE_DIR='
   fi
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
