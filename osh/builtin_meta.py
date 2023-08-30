@@ -386,7 +386,8 @@ class Error(vm._Builtin):
 
         status = 1
         for arg in cmd_val.typed_args.named_args:
-            if lexer.TokenVal(arg.name) == "status":
+            name = lexer.TokenVal(arg.name)
+            if name == "status":
                 status_val = self.expr_ev.EvalExpr(arg.value, arg.name)
                 if status_val.tag() != value_e.Int:
                     raise error.TypeErr(status_val, 'expected an Int', arg.name)
@@ -395,7 +396,7 @@ class Error(vm._Builtin):
                 if status == 0:
                     e_die("Must be a non-zero integer", arg.name)
             else:
-                e_usage('Unexpected named argument %r' % arg.name, arg.name)
+                e_usage('Unexpected named argument %r' % name, arg.name)
 
         raise error.UserError(status, message, blame)
 
