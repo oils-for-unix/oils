@@ -97,3 +97,85 @@ echo status=$_status
 42
 status=0
 ## END
+
+#### any
+json write (any([]))
+json write (any([true]))
+json write (any([false]))
+json write (any([true, false]))
+json write (any([false, true]))
+json write (any([false, false]))
+json write (any([false, true, false]))
+json write (any([false, false, null, false]))  # null is falsey
+## STDOUT:
+false
+true
+false
+true
+true
+false
+true
+false
+## END
+
+#### all
+json write (any([]))
+json write (any([true]))
+json write (any([false]))
+json write (any([true, true]))
+json write (any([true, false]))
+json write (any([false, true]))
+json write (any([false, false]))
+json write (any([false, true, false]))
+## STDOUT:
+false
+true
+false
+true
+true
+true
+false
+true
+## END
+
+#### sum
+json write (sum([]))
+json write (sum([0]))
+json write (sum([1, 2, 3]))
+## STDOUT:
+0
+0
+6
+## END
+
+#### reversed
+json write (reversed([]))
+json write (reversed([0]))
+json write (reversed([2, 1, 3]))
+json write (reversed(["hello", "world"]))
+
+var immutable = [1, 2, 3]
+_ reversed(immutable)
+json write (immutable)
+## STDOUT:
+[
+
+]
+[
+  0
+]
+[
+  3,
+  1,
+  2
+]
+[
+  "world",
+  "hello"
+]
+[
+  1,
+  2,
+  3
+]
+## END
