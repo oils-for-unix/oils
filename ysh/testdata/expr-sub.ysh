@@ -5,6 +5,8 @@
 
 shopt -s ysh:upgrade
 
+source --builtin list.ysh
+
 simple-demo() {
   var myarray = %(spam eggs ham)
 
