@@ -161,7 +161,7 @@ class Transformer(object):
             # print raw nodes
             self.p_printer = expr_parse.ParseTreePrinter(names)
 
-    def _AssocBinary(self, parent):
+    def _LeftAssoc(self, p_node):
         # type: (PNode) -> expr_t
         """For an associative binary operation.
 
@@ -169,26 +169,30 @@ class Transformer(object):
           xor_expr: and_expr ('xor' and_expr)*
           term: factor (('*'|'/'|'%'|'div') factor)*
 
-        We don't care if it's (1+2)+3 or 1+(2+3).
+        3 - 1 - 2 must be grouped as ((3 - 1) - 2).
         """
         # Note: Compare the iteractive com_binary() method in
         # opy/compiler2/transformer.py.
 
-        n = parent.NumChildren()
-        if n == 1:
-            return self.Expr(parent.GetChild(0))
+        # Examples:
+        # - The PNode for '3 - 1' will have 3 children
+        # - The PNode for '3 - 1 - 2' will have 5 children
 
-        # left is evaluated first
-        left = self.Expr(parent.GetChild(0))
-        op = parent.GetChild(1)
+        #self.p_printer.Print(p_node)
 
-        if n == 3:
-            right = self.Expr(parent.GetChild(2))
-        else:
-            parent.Advance(2)
-            right = self._AssocBinary(parent)  # Recursive call
+        i = 1  # index of the operator
+        n = p_node.NumChildren()
 
-        return expr.Binary(op.tok, left, right)
+        left = self.Expr(p_node.GetChild(0))
+        while i < n:
+            op = p_node.GetChild(i)
+            right = self.Expr(p_node.GetChild(i + 1))
+
+            # create a new left node
+            left = expr.Binary(op.tok, left, right)
+            i += 2
+
+        return left
 
     def _Trailer(self, base, p_trailer):
         # type: (expr_t, PNode) -> expr_t
@@ -545,11 +549,11 @@ class Transformer(object):
 
             if typ == grammar_nt.or_test:
                 # or_test: and_test ('or' and_test)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             if typ == grammar_nt.and_test:
                 # and_test: not_test ('and' not_test)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             if typ == grammar_nt.not_test:
                 # not_test: 'not' not_test | comparison
@@ -578,27 +582,27 @@ class Transformer(object):
 
             elif typ == grammar_nt.expr:
                 # expr: xor_expr ('|' xor_expr)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             if typ == grammar_nt.xor_expr:
                 # xor_expr: and_expr ('xor' and_expr)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             if typ == grammar_nt.and_expr:  # a & b
                 # and_expr: shift_expr ('&' shift_expr)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             elif typ == grammar_nt.shift_expr:
                 # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             elif typ == grammar_nt.arith_expr:
                 # arith_expr: term (('+'|'-') term)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             elif typ == grammar_nt.term:
                 # term: factor (('*'|'/'|'div'|'mod') factor)*
-                return self._AssocBinary(pnode)
+                return self._LeftAssoc(pnode)
 
             elif typ == grammar_nt.factor:
                 # factor: ('+'|'-'|'~') factor | power

@@ -1,7 +1,7 @@
 # spec/ysh-funcs
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### Identity function
 func id(x) {

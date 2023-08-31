@@ -1,3 +1,48 @@
+#### Minus operator is left associative
+
+var a = 1 - 0 - 1
+var b = (1 - 0) - 1
+echo a=$a b=$b
+
+var a = 3 - 1 - 2
+var b = (3 - 1) - 2
+echo a=$a b=$b
+
+## STDOUT:
+a=0 b=0
+a=0 b=0
+## END
+
+#### Division operators are left associative
+
+var a = 10 / 4 / 2
+var b = 10 / 4 / 2
+echo a=$a b=$b
+
+var a = 9 // 3 // 3
+var b = (9 // 3) // 3
+echo a=$a b=$b
+
+var a = 11 % 6 % 3
+var b = (11 % 6) % 3
+echo a=$a b=$b
+
+## STDOUT:
+a=1.25 b=1.25
+a=1 b=1
+a=2 b=2
+## END
+
+#### Exponentiation is right associative
+
+var a = 3 ** 2 ** 2
+var b = 3 ** (2 ** 2)
+echo a=$a b=$b
+
+## STDOUT:
+a=81 b=81
+## END
+
 #### Binary operators, with conversions from string
 
 echo ' i  i' $[1 + 2]
