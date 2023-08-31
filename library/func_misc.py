@@ -167,7 +167,7 @@ class Join(vm._Callable):
         r = typed_args.Reader(pos_args, named_args)
         li = r.PosList()
 
-        delim = r.NamedStr('delim', '')
+        delim = ''
         if len(pos_args): # reader has a reference
             delim = r.PosStr()
 
@@ -175,9 +175,7 @@ class Join(vm._Callable):
 
         strs = []  # type: List[str]
         for i, el in enumerate(li):
-            msg = 'join() items must be Str but item %d is %s' % (
-                i, value_str(el.tag()))
-            strs.append(val_ops.ToStr(el, msg, loc.Missing))
+            strs.append(val_ops.Stringify(el, loc.Missing))
 
         return value.Str(delim.join(strs))
 
