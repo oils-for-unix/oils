@@ -193,7 +193,7 @@ class Maybe(vm._Callable):
         val = r.PosValue()
         r.Done()
 
-        if val == value.Undef or val == value.Null:
+        if val == value.Null:
             return value.List([])
 
         s = val_ops.ToStr(
