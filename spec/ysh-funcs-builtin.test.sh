@@ -63,6 +63,8 @@ write $[abs(-5)] $[abs(-0)] $[abs(5)]
 ## END
 
 #### any() and all()
+source --builtin list.ysh
+
 var a1 = all( :|yes yes| )
 var a2 = all( :|yes ''| )
 var a3 = all( :|'' ''| )
@@ -86,6 +88,8 @@ false
 ## END
 
 #### sum()
+source --builtin list.ysh
+
 var start = 42
 
 write $[sum( 0:3 )]
@@ -98,7 +102,9 @@ write $[sum( 0:0, start)]
 ## END
 
 #### reversed()
-var x = reversed(0:3)
+source --builtin list.ysh
+
+var x = reversed(List(0:3))
 write @x
 ## STDOUT:
 2
