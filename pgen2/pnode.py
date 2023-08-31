@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class PNode(object):
-  __slots__ = ('typ', 'tok', 'children', 'child_offset')
+  __slots__ = ('typ', 'tok', 'children')
 
   def __init__(self, typ, tok, children):
     # type: (int, Optional[Token], Optional[List[PNode]]) -> None
@@ -20,7 +20,6 @@ class PNode(object):
                     # 3-tuple (val, prefix, loc)
                     # NOTE: This is None for the first entry in the stack?
     self.children = children
-    self.child_offset = 0 # type: int
 
   def __repr__(self):
     # type: () -> str
@@ -44,26 +43,14 @@ class PNode(object):
     if i < 0:
       return self.children[i]
 
-    return self.children[self.child_offset + i]
+    return self.children[i]
 
   def NumChildren(self):
     # type: () -> int
     """
     Returns the number of unconsumed children.
     """
-    return len(self.children) - self.child_offset
-
-  def Advance(self, n):
-    # type: (int) -> None
-    """
-    Consumes `n` children. This is equivalent to the slice [n:] on the list of
-    children.  All future calls to GetChild() and NumChildren() will operate on
-    the new list.
-
-    The C++ implementation will use this API to implement slicing of the child
-    list without the GC runtime.
-    """
-    self.child_offset += n
+    return len(self.children)
 
 
 class PNodeAllocator(object):
