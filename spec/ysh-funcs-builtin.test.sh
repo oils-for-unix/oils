@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 # TODO: Test that there are exceptions when there are too many args, etc.
 
