@@ -169,19 +169,9 @@ def Init(mem):
     SetGlobalFunc(mem, 'List', list)  # obsolete without Python-like iterators?
     SetGlobalFunc(mem, 'Dict', dict)  # ditto
 
-    # NOTE: IN-YSH means we can move it to YSH itself
-
-    # NOTE: cmp() deprecated in Python 3
-
     # Utilities
     # round()
     # divmod() - probably useful?  Look at the implementation
-
-    SetGlobalFunc(mem, 'any', any)  # IN-YSH with Bool
-    SetGlobalFunc(mem, 'all', all)  # IN-YSH with Bool
-    SetGlobalFunc(mem, 'sum', sum)  # IN-YSH with +
-
-    SetGlobalFunc(mem, 'reversed', _Reversed)  # IN-YSH with for
 
     #
     # List/array methods

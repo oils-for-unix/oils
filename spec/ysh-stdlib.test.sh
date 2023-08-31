@@ -99,6 +99,8 @@ status=0
 ## END
 
 #### any
+source --builtin list.ysh
+
 json write (any([]))
 json write (any([true]))
 json write (any([false]))
@@ -119,6 +121,8 @@ false
 ## END
 
 #### all
+source --builtin list.ysh
+
 json write (any([]))
 json write (any([true]))
 json write (any([false]))
@@ -139,6 +143,8 @@ true
 ## END
 
 #### sum
+source --builtin list.ysh
+
 json write (sum([]))
 json write (sum([0]))
 json write (sum([1, 2, 3]))
@@ -149,6 +155,8 @@ json write (sum([1, 2, 3]))
 ## END
 
 #### reversed
+source --builtin list.ysh
+
 json write (reversed([]))
 json write (reversed([0]))
 json write (reversed([2, 1, 3]))
