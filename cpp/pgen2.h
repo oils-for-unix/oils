@@ -58,10 +58,8 @@ class PNode {
   void AddChild(PNode* node);
   PNode* GetChild(int i);
   int NumChildren();
-  void Advance(int n);
 
   int typ;
-  int child_offset;
   syntax_asdl::Token* tok;
   std::vector<PNode*> children;
 };
