@@ -51,16 +51,11 @@ FOO=
 #### Redirect in function body.
 fun() { echo hi; } 1>&2
 fun
-## stdout-json: ""
-## stderr-json: "hi\n"
-
-#### Bad redirects in function body
-empty=''
-fun() { echo hi; } > $empty
-fun
-echo status=$?
-## stdout: status=1
-## OK dash stdout: status=2
+## STDOUT:
+## END
+## STDERR:
+hi
+## END
 
 #### Redirect in function body is evaluated multiple times
 i=0

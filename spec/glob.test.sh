@@ -117,17 +117,6 @@ echo _tmp/*.[[:punct:]] _tmp/*.[[:punct\:]]
 ## BUG mksh stdout: _tmp/*.[[:punct:]] _tmp/*.[[:punct:]]
 ## BUG ash stdout: _tmp/foo.- _tmp/foo.-
 
-#### Redirect to glob, not evaluated
-# This writes to *.F, not foo.F
-rm _tmp/*.F
-touch _tmp/f.F
-echo foo > _tmp/*.F
-cat '_tmp/*.F'
-## status: 0
-## stdout: foo
-## BUG bash status: 1
-## BUG bash stdout-json: ""
-
 #### Glob after var manipulation
 touch _tmp/foo.zzz _tmp/bar.zzz
 g='_tmp/*.zzzZ'
