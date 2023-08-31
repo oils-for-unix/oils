@@ -48,6 +48,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter_e,
     pat,
     pat_e,
+    word,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue,
@@ -414,27 +415,49 @@ class CommandEvaluator(object):
             if case(redir_param_e.Word):
                 arg_word = cast(CompoundWord, UP_arg)
 
-                # note: needed for redirect like 'echo foo > x$LINENO'
+                # Note: needed for redirect like 'echo foo > x$LINENO'
                 self.mem.SetTokenForLine(r.op)
 
-                redir_type = consts.RedirArgType(
-                    r.op.id)  # could be static in the LST?
+                # Could be computed at parse time?
+                redir_type = consts.RedirArgType(r.op.id)  
 
                 if redir_type == redir_arg_type_e.Path:
-                    # Note: Only bash and zsh allow globbing a path.  If there
-                    # are multiple files, zsh opens BOTH, but bash exits with
-                    # error 1.
+                    # Redirects with path arguments are evaluated in a special
+                    # way.  bash and zsh allow globbing a path, but
+                    # dash/ash/mksh don't.
+                    #
+                    # If there are multiple files, zsh opens BOTH, but bash
+                    # makes the command fail with status 1.  We mostly follow
+                    # bash behavior.
 
-                    # - no globbing.  You can write to a file called '*.py'.
-                    # - set -o strict-array prevents joining by spaces
-                    val = self.word_ev.EvalWordToString(arg_word)
-                    filename = val.s
-                    if len(filename) == 0:
-                        # Whether this is fatal depends on errexit.
+                    # These don't match bash/zsh behavior
+                    # val = self.word_ev.EvalWordToString(arg_word)
+                    # val, has_extglob = self.word_ev.EvalWordToPattern(arg_word)
+                    # Short-circuit with word_.StaticEval() also doesn't work
+                    # with globs
+
+                    # mycpp needs this explicit declaration
+                    b = braces.BraceDetect(arg_word)  # type: Optional[word.BracedTree]
+                    if b is not None:
                         raise error.RedirectEval(
-                            "Redirect filename can't be empty", arg_word)
+                                'Brace expansion not allowed (try adding quotes)',
+                                arg_word)
 
-                    result.arg = redirect_arg.Path(filename)
+                    # Needed for globbing behavior
+                    files = self.word_ev.EvalWordSequence([arg_word])
+
+                    n = len(files)
+                    if n == 0:
+                        # happens in OSH on empty elision
+                        # in YSH because simple_word_eval globs to zero
+                        raise error.RedirectEval(
+                                "Can't redirect to zero files", arg_word)
+                    if n > 1:
+                        raise error.RedirectEval(
+                                "Can't redirect to more than one file",
+                                arg_word)
+
+                    result.arg = redirect_arg.Path(files[0])
                     return result
 
                 elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
@@ -1638,6 +1661,12 @@ class CommandEvaluator(object):
             except error.RedirectEval as e:
                 self.errfmt.PrettyPrintError(e)
                 redirects = None
+            except error.FailGlob as e:  # e.g. echo hi > foo-*
+                if not e.HasLocation():
+                    e.location = self.mem.GetFallbackLocation()
+                self.errfmt.PrettyPrintError(e,
+                                             prefix='failglob: ')
+                redirects = None
 
             if redirects is None:  # Error evaluating redirect words
                 status = 1
@@ -1656,7 +1685,7 @@ class CommandEvaluator(object):
                             self.errfmt.PrettyPrintError(e,
                                                          prefix='failglob: ')
                             status = 1
-                            check_errexit = True
+                            check_errexit = True  # probably not necessary?
 
                     # Compute status from @PIPESTATUS
                     pipe_status = cmd_st.pipe_status

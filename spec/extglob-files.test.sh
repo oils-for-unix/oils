@@ -164,20 +164,6 @@ argv.py @('foo'|'__|'|bar)
 ['__|', 'foo']
 ## END
 
-#### Extended glob syntax in bad redirect context
-shopt -s extglob
-rm bad_*
-
-# They actually write this literal file!  This is what EvalWordToString() does,
-# as opposed to _EvalWordToParts.
-echo foo > bad_@(*.cc|*.h)
-echo bad_*
-## STDOUT:
-bad_@(*.cc|*.h)
-## END
-## OK osh status: 1
-## OK osh stdout-json: ""
-
 #### Extended glob as argument to ${undef:-} (dynamic globbing)
 
 # This case popped into my mind after inspecting osh/word_eval.py for calls to
