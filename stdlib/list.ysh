@@ -49,8 +49,7 @@ func reversed(list) {
 
   var reversed = []
   for i in (0:len(list)) {
-    # NOTE: the explicit (parens) is due to a associativity bug. We can remove them once that has been fixed
-    _ append(reversed, list[(len(list) - i) - 1])
+    _ append(reversed, list[len(list) - i - 1])
   }
   return (reversed)
 }
