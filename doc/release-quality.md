@@ -94,6 +94,8 @@ compared with the shell interpreter?
   - [benchmarks/gc](benchmarks.wwz/gc/).  Stats from the OS and our GC runtime.
   - [benchmarks/gc-cachegrind](benchmarks.wwz/gc-cachegrind/).  Stable
     measurements.
+- [uftrace](benchmarks.wwz/uftrace/).  Stable measurements for parsing and
+  runtime.
 
 ## Metrics
 

@@ -94,6 +94,7 @@ all() {
   # - During release, this happens on machine1, but not machine2
   if test -n "$do_machine1"; then
     # Only run on one machine
+    benchmarks/uftrace.sh soil-run
     benchmarks/mycpp.sh soil-run
     benchmarks/gc.sh soil-run
     benchmarks/gc-cachegrind.sh soil-run

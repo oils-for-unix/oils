@@ -480,6 +480,8 @@ compress-benchmarks() {
   #   index.html, but include stage1 and stage2.
   # - For those that run on single machines, we also archive the raw/ dir.
   #   - Although benchmarks/compute is saved in oilshell/benchmark-data
+  # - Note: _tmp/uftrace/{raw,stage1} are big (hundreds of MB), so leave them
+  #   out
 
   pushd _tmp
   find \
@@ -491,6 +493,7 @@ compress-benchmarks() {
     gc/{raw,stage2,index.html} \
     gc-cachegrind/{raw,stage2,index.html} \
     mycpp-examples/{raw,stage2,index.html} \
+    uftrace/{stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 
   popd
