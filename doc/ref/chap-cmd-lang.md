@@ -256,15 +256,36 @@ The resulting PID is recorded in the `$!` variable.
 
 ### redir-file
 
-Three variants of redirecting stdout:
+Examples of redirecting the `stdout` of a command:
 
-    echo foo > out.txt    # write to a file
-    echo foo >> out.txt   # append to a file
+    echo foo > out.txt   # overwrite out.txt
+    date >> stamp.txt    # append to stamp.txt
+
+<!--
     echo foo >| out.txt   # clobber the file even if set -o noclobber
+-->
 
-Redirect stdin:
+Redirect to the `stdin` of a command:
 
     cat < in.txt
+
+Redirects are compatible with POSIX and bash, so they take descriptor numbers
+on the left:
+
+    make 2> stderr.txt   # '2>' is valid, but '2 >' is not
+
+Note that the word argument to **file** redirects is evaluated like bash, which
+is different than other arguments to other redirects:
+
+    tar -x -z < Python*  # glob must expand to exactly 1 file
+    tar -x -z < $myvar   # $myvar is split because it's unquoted
+
+In other words, it's evaluated **as** a sequence of 1 word, which **produces**
+zero to N strings.  But redirects are only valid when it produces exactly 1
+string.
+
+(Related: YSH uses `shopt --set simple_word_eval`, which means that globs that
+match nothing evaluate to zero strings, not themselves.)
 
 <!-- They also take a file descriptor on the left -->
 
