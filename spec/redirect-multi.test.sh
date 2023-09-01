@@ -80,7 +80,7 @@ status=0
 ## OK zsh STDOUT:
 ## END
 
-#### Redirect to empty string (in function body)
+#### Redirect to $empty (in function body)
 empty=''
 fun() { echo hi; } > $empty
 fun
@@ -91,6 +91,14 @@ status=1
 ## OK dash STDOUT:
 status=2
 ## END
+
+#### Redirect to '' 
+echo hi > ''
+echo status=$?
+## STDOUT:
+status=1
+## END
+
 
 
 #### File redirect to $var with glob char

@@ -457,11 +457,7 @@ class CommandEvaluator(object):
                                 "Can't redirect to more than one file",
                                 arg_word)
 
-                    filename = files[0]
-                    if len(filename) == 0:
-                        raise error.RedirectEval(
-                            "Redirect filename can't be empty", arg_word)
-                    result.arg = redirect_arg.Path(filename)
+                    result.arg = redirect_arg.Path(files[0])
                     return result
 
                 elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
