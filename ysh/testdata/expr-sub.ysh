@@ -37,9 +37,9 @@ simple-demo() {
 
   echo '+ You can also splice the result of a function returning a sequence:'
   echo '  Notes:'
-  echo '  - the reversed() function is from Python.'
+  echo '  - the List->reverse() method is from Python.'
   echo
-  write -- @[reversed(myarray)]
+  write -- @[myarray->reverse()]
   echo
 
   # But this is a syntax error
