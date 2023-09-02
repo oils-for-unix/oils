@@ -165,9 +165,9 @@ class Reverse(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
         r = typed_args.Reader(pos_args, named_args)
-        this = r.PosList()
+        list_ = r.PosList()
         r.Done()
 
-        this.reverse()
+        list_.reverse()
 
-        return value.List(this)
+        return value.List(list_)
