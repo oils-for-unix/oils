@@ -35,17 +35,3 @@ func sum(list) {
   }
   return (sum)
 }
-
-func reversed(list) {
-  ## Returns a reversed copy of the given list.
-
-  if (len(list) === 0) {
-    return ([])  # create a new list to preserve the "immutable" return property
-  }
-
-  var reversed = []
-  for i in (0:len(list)) {
-    _ append(reversed, list[len(list) - i - 1])
-  }
-  return (reversed)
-}
