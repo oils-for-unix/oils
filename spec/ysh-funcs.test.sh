@@ -245,7 +245,7 @@ func remove(l, i) {
 }
 
 func fib(n) {
-  for rev_idx, item in (reversed(cache)) {
+  for rev_idx, item in (cache->reverse()) {
     if (item[0] === n) {
       const idx = len(cache) - rev_idx + 1
       _ remove(cache, idx)

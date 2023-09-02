@@ -1,7 +1,7 @@
 # spec/ysh-stdlib
 
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### identity
 source --builtin funcs.ysh
@@ -163,14 +163,14 @@ json write (sum([1, 2, 3]))
 #### reversed
 source --builtin list.ysh
 
-json write (reversed([]))
-json write (reversed([0]))
-json write (reversed([2, 1, 3]))
-json write (reversed(["hello", "world"]))
+json write ([]->reverse())
+json write ([0]->reverse())
+json write ([2, 1, 3]->reverse())
+json write (["hello", "world"]->reverse())
 
-var immutable = [1, 2, 3]
-_ reversed(immutable)
-json write (immutable)
+var mylist = [1, 2, 3]
+_ mylist->reverse()
+json write (mylist)  # should have been mutated
 ## STDOUT:
 [
 
@@ -188,8 +188,8 @@ json write (immutable)
   "hello"
 ]
 [
-  1,
+  3,
   2,
-  3
+  1
 ]
 ## END

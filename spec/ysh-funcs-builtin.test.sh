@@ -102,10 +102,8 @@ write $[sum( 0:0, start)]
 42
 ## END
 
-#### reversed()
-source --builtin list.ysh
-
-var x = reversed(List(0:3))
+#### List->reverse()
+var x = List(0:3)->reverse()
 write @x
 ## STDOUT:
 2

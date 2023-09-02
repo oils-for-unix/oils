@@ -304,6 +304,7 @@ def AddMethods(methods):
         'upper': func_misc.Upper(),
     }
     methods[value_e.Dict] = {'keys': func_misc.Keys()}
+    methods[value_e.List] = {'reverse': func_misc.Reverse()}
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):
