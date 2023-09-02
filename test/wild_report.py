@@ -482,11 +482,11 @@ def WriteJsonFiles(node, out_dir):
     WriteJsonFiles(child, os.path.join(out_dir, name))
 
 
-def _MakeNav(rel_path):
+def _MakeNav(rel_path, root_name='WILD'):
   assert not rel_path.startswith('/'), rel_path
   assert not rel_path.endswith('/'), rel_path
   # Get rid of ['']
-  parts = ['WILD'] + [p for p in rel_path.split('/') if p]
+  parts = [root_name] + [p for p in rel_path.split('/') if p]
   data = []
   n = len(parts)
   for i, p in enumerate(parts):
