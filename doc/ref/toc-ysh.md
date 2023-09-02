@@ -252,7 +252,7 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-builtin-func
   [Values]        len()   type() 
-  [Math]          abs()   sum()   max()   min()   round()
+  [Math]          abs()   max()   min()   round()   sum()
 X [Int]           ord()   chr()
 X [Str]           find(eggex)   replace(eggex, template)
                   startsWith()   endsWith()

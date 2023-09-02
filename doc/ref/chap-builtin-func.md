@@ -14,6 +14,26 @@ This chapter in the [Oils Reference](index.html) describes builtin functions.
 <div id="toc">
 </div>
 
+## Values
+
+### len()
+
+### type()
+
+## Math
+
+### abs()
+
+### max()
+
+### min()
+
+### round()
+
+### sum()
+
+## Int
+
 
 ## Pattern
 
