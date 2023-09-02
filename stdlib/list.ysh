@@ -14,7 +14,7 @@ func any(list) {
 func all(list) {
   ## Returns true if all values in the list are truthy.
   ##
-  ## If the list is empty, return false.
+  ## If the list is empty, return true.
 
   for item in (list) {
     if (not item) {
