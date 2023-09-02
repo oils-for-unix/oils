@@ -108,7 +108,8 @@ json write (any([true, false]))
 json write (any([false, true]))
 json write (any([false, false]))
 json write (any([false, true, false]))
-json write (any([false, false, null, false]))  # null is falsey
+json write (any([false, false, null, ""]))  # null and "" are falsey
+json write (any(["foo"]))  # "foo" is truthy
 ## STDOUT:
 false
 true
@@ -118,28 +119,33 @@ true
 false
 true
 false
+true
 ## END
 
 #### all
 source --builtin list.ysh
 
-json write (any([]))
-json write (any([true]))
-json write (any([false]))
-json write (any([true, true]))
-json write (any([true, false]))
-json write (any([false, true]))
-json write (any([false, false]))
-json write (any([false, true, false]))
+json write (all([]))
+json write (all([true]))
+json write (all([false]))
+json write (all([true, true]))
+json write (all([true, false]))
+json write (all([false, true]))
+json write (all([false, false]))
+json write (all([false, true, false]))
+json write (all(["foo"]))
+json write (all([""]))
 ## STDOUT:
-false
-true
-false
-true
 true
 true
 false
 true
+false
+false
+false
+false
+true
+false
 ## END
 
 #### sum

@@ -16,10 +16,6 @@ func all(list) {
   ##
   ## If the list is empty, return false.
 
-  if (len(list) === 0) {
-    return (false)
-  }
-
   for item in (list) {
     if (not item) {
       return (false)
