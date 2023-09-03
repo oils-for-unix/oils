@@ -17,6 +17,33 @@ source test/tsv-lib.sh
 
 export PYTHONPATH=.
 
+# TODO:
+#
+# - replace test/spec-runner.sh with this
+# - replace important-code
+#   - soil/ovm-tarball/src-tree ?  Then _tmp/src-tree vs. source-code.wwz
+# - Highlighters
+#   - Python
+#   - C++ - preprocessor
+#   - ASDL can replace line counter in metrics/source-code.sh
+#     - it's pretty trivial, since ASDL has no string literals
+# - Simple directory lister, just for fun
+# - should README.md be HTML?
+#   - probably, sourcehut has this too
+#   - use cmark
+
+# Honestly I want to write my own
+#  - syntax highlighter, that finds string literals and comments
+#  - as a side effect it estimates significant lines of code
+#    - minus comments and blank lines
+#  - supports
+#    - Python - multi-line strings
+#    - shell and YSH -- here docs?
+#    - C++ - #ifdef, including #if 0 perhaps
+#    - ASDL - just blank lines and comments
+#    - maybe grammar files
+
+
 test-src-tree() {
   local out=_tmp/src-tree
   doctools/src_tree.py files $out stdlib/*.ysh spec/*.test.sh
@@ -146,19 +173,6 @@ important() {
 # - Can we get the cloc or sloccount report?
 #   - https://github.com/AlDanial/cloc - this is a 17K line Perl script!
 #   - https://dwheeler.com/sloccount/ - no release since 2004 ?
-#
-# Honestly I want to write my own
-#  - syntax highlighter, that finds string literals and comments
-#  - as a side effect it estimates significant lines of code
-#    - minus comments and blank lines
-#  - supports
-#    - Python - multi-line strings
-#    - shell and YSH -- here docs?
-#    - C++ - #ifdef, including #if 0 perhaps
-#    - ASDL - just blank lines and comments
-#    - maybe grammar files
-
-
 
 if test $(basename $0) = 'src-tree.sh'; then
   "$@"
