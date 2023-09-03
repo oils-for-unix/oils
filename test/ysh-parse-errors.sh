@@ -165,6 +165,22 @@ test-sh-assign() {
     -o ysh:upgrade -n -c 'x=y'
 }
 
+test-ysh-var() {
+  set +o errexit
+
+  # Unterminated
+  _parse-error 'var x = 1 + '
+
+  _parse-error 'var x = * '
+
+  _parse-error 'var x = @($(cat <<EOF
+here doc
+EOF
+))'
+
+  _parse-error 'var x = $(var x = 1))'
+}
+
 test-ysh-expr() {
   set +o errexit
   # old syntax
@@ -186,10 +202,176 @@ test-ysh-expr() {
   '
 }
 
+test-ysh-expr-more() {
+  # user must choose === or ~==
+  _parse-error 'if (5 == 5) { echo yes }'
 
-soil-run() {
+  _should-parse 'echo $[join(x)]'
+
+  _parse-error 'echo $join(x)'
+
+  _should-parse 'echo @[split(x)]'
+  _should-parse 'echo @[split(x)] two'
+
+  _parse-error 'echo @[split(x)]extra'
+
+  # Old syntax to remove
+  #_parse-error 'echo @split("a")'
+}
+
+
+test-blocks() {
+  _parse-error '>out { echo hi }'
+  _parse-error 'a=1 b=2 { echo hi }'
+  _parse-error 'break { echo hi }'
+  # missing semicolon
+  _parse-error 'cd / { echo hi } cd /'
+}
+
+test-parse-brace() {
+  # missing space
+  _parse-error 'if test -f foo{ echo hi }'
+}
+
+test-proc-sig() {
+  _parse-error 'proc f[] { echo hi }'
+  _parse-error 'proc : { echo hi }'
+  _parse-error 'proc foo::bar { echo hi }'
+}
+
+test-regex-literals() {
+  #set +o errexit
+  _parse-error 'var x = / ! /'
+  _should-parse 'var x = / ![a-z] /'
+
+  _should-parse 'var x = / !d /'
+
+  _parse-error 'var x = / !! /'
+
+  # missing space between rangfes
+  _parse-error 'var x = /[a-zA-Z]/'
+  _parse-error 'var x = /[a-z0-9]/'
+
+  _parse-error 'var x = /[a-zz]/'
+
+  # can't have multichar ranges
+  _parse-error "var x = /['ab'-'z']/"
+
+  # range endpoints must be constants
+  _parse-error 'var x = /[$a-${z}]/'
+
+  # These are too long too
+  _parse-error 'var x = /[abc]/'
+
+  # Single chars not allowed, should be /['%_']/
+  _parse-error 'var x = /[% _]/'
+
+}
+
+test-hay-assign() {
+  _parse-error '
+name = val
+'
+
+  _parse-error '
+rule {
+  x = 42
+}
+'
+
+  _parse-error '
+RULE {
+  x = 42
+}
+'
+
+  _should-parse '
+Rule {
+  x = 42
+}
+'
+
+  _should-parse '
+Rule X Y {
+  x = 42
+}
+'
+
+  _should-parse '
+RULe {   # inconsistent but OK
+  x = 42
+}
+'
+
+  _parse-error '
+hay eval :result {
+
+  Rule {
+    foo = 42
+  }
+
+  bar = 43   # parse error here
+}
+'
+
+  if oils-cpp-bug; then
+  _parse-error '
+hay define TASK
+
+TASK build {
+  foo = 42
+}
+'
+
+  # CODE node nested inside Attr node.
+  _parse-error '
+hay define Package/TASK
+
+Package libc {
+  TASK build {
+    foo = 42
+  }
+}
+'
+  fi
+
+  _parse-error '
+hay define Rule
+
+Rule {
+  return (x)
+}
+'
+
+  return
+  # This is currently allowed, arguably shouldn't be
+
+  _parse-error '
+hay define Rule
+
+Rule {
+  return 42
+}
+'
+
+}
+
+
+
+
+#
+# Entry Points
+#
+
+soil-run-py() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs
+}
+
+soil-run-cpp() {
+  # This is like run-test-funcs, except errexit is off here
+  ninja _bin/cxx-asan/osh
+  SH=_bin/cxx-asan/osh run-test-funcs
 }
 
 run-for-release() {

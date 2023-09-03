@@ -14,18 +14,6 @@ source test/sh-assert.sh  # banner, _assert-sh-status
 SH=${SH:-bin/osh}
 YSH=${YSH:-bin/ysh}
 
-oils-cpp-bug() {
-  ### TODO: Fix all cases guarded by this condition
-
-  case $SH in
-    *_bin/*/osh)
-      return 1
-      ;;
-  esac
-
-  return 0
-}
-
 #
 # Assertions
 #
@@ -386,9 +374,7 @@ other-builtins() {
   _runtime-parse-error 'pushd x y'
   _runtime-parse-error 'pwd -x'
 
-  if oils-cpp-bug; then
-    _runtime-parse-error 'pp x foo a-x'
-  fi
+  _runtime-parse-error 'pp x foo a-x'
 
   _runtime-parse-error 'wait zzz'
   _runtime-parse-error 'wait %jobspec-not-supported'
@@ -536,9 +522,7 @@ args-parse-builtin() {
   _runtime-parse-error 'read -n'  # expected argument for -n
   _runtime-parse-error 'read -n x'  # expected integer
 
-  if oils-cpp-bug; then
-    _runtime-parse-error 'set -o errexit +o oops'
-  fi
+  _runtime-parse-error 'set -o errexit +o oops'
 
   # not implemented yet
   #_error-case 'read -t x'  # expected floating point number
@@ -576,30 +560,11 @@ invalid-brace-ranges() {
   _error-case 'echo {z..a..1}'
 }
 
-ysh_var() {
-  set +o errexit
-
-  # Unterminated
-  _ysh-parse-error 'var x = 1 + '
-
-  _ysh-parse-error 'var x = * '
-
-  _ysh-parse-error 'var x = @($(cat <<EOF
-here doc
-EOF
-))'
-
-  _ysh-parse-error 'var x = $(var x = 1))'
-}
-
 append-builtin() {
   set +o errexit
 
-  # Unterminated
-  if oils-cpp-bug; then
-    _runtime-parse-error 'append'
-    _runtime-parse-error 'append invalid-'
-  fi
+  _runtime-parse-error 'append'
+  _runtime-parse-error 'append invalid-'
 
   #_error-case 'push notarray'  # returns status 1
 }
@@ -686,29 +651,6 @@ extra-newlines() {
   '
 }
 
-blocks() {
-  set +o errexit
-
-  _ysh-parse-error '>out { echo hi }'
-  _ysh-parse-error 'a=1 b=2 { echo hi }'
-  _ysh-parse-error 'break { echo hi }'
-  # missing semicolon
-  _ysh-parse-error 'cd / { echo hi } cd /'
-}
-
-parse_brace() {
-  # missing space
-  _ysh-parse-error 'if test -f foo{ echo hi }'
-
-}
-
-proc_sig() {
-  set +o errexit
-  _ysh-parse-error 'proc f[] { echo hi }'
-  _ysh-parse-error 'proc : { echo hi }'
-  _ysh-parse-error 'proc foo::bar { echo hi }'
-}
-
 proc_arg_list() {
   set +o errexit
 
@@ -736,14 +678,12 @@ json write (x) {
   echo hi
 }'
 
-  if oils-cpp-bug; then
-    # multiple lines
-    _should-parse 'json write (
-      x,
-      y,
-      z
-    )'
-  fi
+  # multiple lines
+  _should-parse 'json write (
+    x,
+    y,
+    z
+  )'
 
   # can't be empty
   _ysh-parse-error 'json write ()'
@@ -754,148 +694,6 @@ json write (x) {
   _ysh-parse-error 'json write()'
   _ysh-parse-error 'f(x)'  # test short name
 }
-
-regex_literals() {
-  set +o errexit
-
-  _ysh-parse-error 'var x = / ! /'
-  _ysh-should-parse 'var x = / ![a-z] /'
-
-  if oils-cpp-bug; then
-    _ysh-should-parse 'var x = / !d /'
-  fi
-
-  _ysh-parse-error 'var x = / !! /'
-
-  # missing space between rangfes
-  _ysh-parse-error 'var x = /[a-zA-Z]/'
-  _ysh-parse-error 'var x = /[a-z0-9]/'
-
-  _ysh-parse-error 'var x = /[a-zz]/'
-
-  # can't have multichar ranges
-  _ysh-parse-error "var x = /['ab'-'z']/"
-
-  # range endpoints must be constants
-  _ysh-parse-error 'var x = /[$a-${z}]/'
-
-  # These are too long too
-  _ysh-parse-error 'var x = /[abc]/'
-
-  # Single chars not allowed, should be /['%_']/
-  _ysh-parse-error 'var x = /[% _]/'
-
-}
-
-ysh_expr_more() {
-  set +o errexit
-
-  # user must choose === or ~==
-  _ysh-parse-error 'if (5 == 5) { echo yes }'
-
-  _ysh-should-parse 'echo $[join(x)]'
-
-  _ysh-parse-error 'echo $join(x)'
-
-  _ysh-should-parse 'echo @[split(x)]'
-  _ysh-should-parse 'echo @[split(x)] two'
-
-  _ysh-parse-error 'echo @[split(x)]extra'
-
-  # Old syntax to remove
-  #_ysh-parse-error 'echo @split("a")'
-}
-
-ysh_hay_assign() {
-  set +o errexit
-
-  _ysh-parse-error '
-name = val
-'
-
-  _ysh-parse-error '
-rule {
-  x = 42
-}
-'
-
-  _ysh-parse-error '
-RULE {
-  x = 42
-}
-'
-
-  _ysh-should-parse '
-Rule {
-  x = 42
-}
-'
-
-  _ysh-should-parse '
-Rule X Y {
-  x = 42
-}
-'
-
-  _ysh-should-parse '
-RULe {   # inconsistent but OK
-  x = 42
-}
-'
-
-  _ysh-parse-error '
-hay eval :result {
-
-  Rule {
-    foo = 42
-  }
-
-  bar = 43   # parse error here
-}
-'
-
-  if oils-cpp-bug; then
-  _ysh-parse-error '
-hay define TASK
-
-TASK build {
-  foo = 42
-}
-'
-
-  # CODE node nested inside Attr node.
-  _ysh-parse-error '
-hay define Package/TASK
-
-Package libc {
-  TASK build {
-    foo = 42
-  }
-}
-'
-  fi
-
-  _ysh-parse-error '
-hay define Rule
-
-Rule {
-  return (x)
-}
-'
-
-  return
-  # This is currently allowed, arguably shouldn't be
-
-  _ysh-parse-error '
-hay define Rule
-
-Rule {
-  return 42
-}
-'
-
-}
-
 
 ysh_string_literals() {
   set +o errexit
@@ -1786,8 +1584,7 @@ soil-run-cpp() {
   ### Run with oils-for-unix
 
   ninja _bin/cxx-asan/osh
-
-  ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh all
+  SH=_bin/cxx-asan/osh all
 }
 
 release-oils-for-unix() {
