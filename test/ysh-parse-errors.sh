@@ -354,6 +354,30 @@ Rule {
 '
 }
 
+test-hay-shell-assign() {
+  ### TODO: disallow shell assignment
+
+  return
+
+  _parse-error '
+hay define Package
+
+Package foo {
+  version=1
+}
+'
+
+  _parse-error '
+hay define package user TASK
+
+hay eval :result {
+  package foo {
+    version=1
+  }
+}
+'
+}
+
 test-parse-at() {
   set +o errexit
 

@@ -273,35 +273,13 @@ hay define package user TASK
 
 hay eval :result {
   package foo {
+    # commands can be run while evaluating
     oops
   }
 
   bad 2
 }
 '
-
-  ### TODO: disallow this shell assignment
-
-  if false; then
-  _error-case-X 2 '
-hay define Package
-
-Package foo {
-  version=1
-}
-'
-
-  ### shell assignment
-  _error-case-X 2 '
-hay define package user TASK
-
-hay eval :result {
-  package foo {
-    version=1
-  }
-}
-'
-  fi
 }
 
 

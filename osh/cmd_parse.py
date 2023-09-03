@@ -537,9 +537,14 @@ class CommandParser(object):
         # A hacky boolean to remove 'if cd / {' ambiguity.
         self.allow_block = True
 
-        # Stack of booleans for nested SHELL and Attr nodes.  There are cleverer
-        # encodings for this, like a uint64, and push 0b10 and 0b11.
-        self.allow_block_attrs = []  # type: List[bool]
+        # Stack of booleans for nested Attr and SHELL nodes.  
+        #   Attr nodes allow bare assignment x = 42, but not shell x=42.
+        #   SHELL nodes are the inverse.  'var x = 42' is preferred in shell
+        # nodes, but x42 is still allowed.
+        #
+        # Note: this stack could be optimized by turning it into an integer and
+        # binary encoding.
+        self.hay_attrs_stack = []  # type: List[bool]
 
         # Note: VarChecker is instantiated with each CommandParser, which means
         # that two 'proc foo' -- inside a command sub and outside -- don't
@@ -756,7 +761,7 @@ class CommandParser(object):
                         if self.allow_block:  # Disabled for if/while condition, etc.
 
                             # allow x = 42
-                            self.allow_block_attrs.append(first_word_caps)
+                            self.hay_attrs_stack.append(first_word_caps)
                             brace_group = self.ParseBraceGroup()
 
                             # So we can get the source code back later
@@ -764,7 +769,7 @@ class CommandParser(object):
                                 brace_group.left, brace_group.right)
                             block = BlockArg(brace_group, lines)
 
-                            self.allow_block_attrs.pop()
+                            self.hay_attrs_stack.pop()
 
                         if 0:
                             print('--')
@@ -2238,17 +2243,16 @@ class CommandParser(object):
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
                     tok = cast(Token, part0)
-                    # NOTE: tok.id should be Lit_Chars, but that check is redundant
                     if (match.IsValidVarName(tok.tval) and
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
+                        assert tok.id == Id.Lit_Chars, tok
 
-                        if len(self.allow_block_attrs
-                              ) and self.allow_block_attrs[-1]:
+                        if len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]:
                             # Note: no static var_checker.Check() for bare assignment
                             enode = self.w_parser.ParseBareDecl()
                             self._SetNext()  # Somehow this is necessary
-                            # TODO: Use BareDecl here.  Well, do that when we treat it as const
-                            # or lazy.
+                            # TODO: Use BareDecl here.  Well, do that when we
+                            # treat it as const or lazy.
                             return command.VarDecl(None, [NameType(tok, None)],
                                                    enode)
                         else:
