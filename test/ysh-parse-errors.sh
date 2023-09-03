@@ -355,10 +355,6 @@ Rule {
 }
 
 test-hay-shell-assign() {
-  ### TODO: disallow shell assignment
-
-  return
-
   _parse-error '
 hay define Package
 
@@ -366,6 +362,47 @@ Package foo {
   version=1
 }
 '
+
+  _parse-error '
+hay define Package/User
+
+Package foo {
+  User bob {
+    sudo=1
+  }
+}
+'
+
+  _should-parse '
+hay define Package/SHELL/User
+
+Package foo {
+  SHELL bob {
+    sudo=1
+    User {
+      name = "z"
+    }
+  }
+}
+'
+
+  _parse-error '
+hay define Package/SHELL/User
+
+Package foo {
+  SHELL bob {
+    # Disallowed
+    # a = b
+    User {
+      x=1
+    }
+  }
+}
+'
+
+  return
+
+  # It's OK that this parses, we didn't use the CapsWord style
 
   _parse-error '
 hay define package user TASK
