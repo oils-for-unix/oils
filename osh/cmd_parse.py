@@ -2253,7 +2253,7 @@ class CommandParser(object):
                             self._SetNext()
                             self._GetWord()
                             p_die(
-                                'Unexpected = (Hint: use const/var/setvar, or quote it)',
+                                'Unexpected = (Hint: use var/setvar, or quote it)',
                                 loc.Word(self.cur_word))
 
             # echo foo

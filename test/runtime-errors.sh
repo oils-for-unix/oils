@@ -14,34 +14,25 @@
 # It would be nice to clean this up.
 
 source test/common.sh
+source test/sh-assert.sh  # banner, _assert-sh-status
 
 # Note: many cases fail if this is overridden.
 SH=${SH:-bin/osh}
 
-banner() {
-  echo
-  echo ===== "$@" =====
-  echo
-}
-
 _error-case() {
-  $SH -c "$@"
+  ### Assert that a snippet fails with status 1
 
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 1; then
-    die "Expected status 1, got $status"
-  fi
+  local message=$0
+  _assert-sh-status 1 $SH $message \
+    -c "$@"
 }
 
 _error-case-2() {
-  $SH -c "$@"
+  ### Assert that a snippet fails with status 2
 
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
+  local message=$0
+  _assert-sh-status 2 $SH $message \
+    -c "$@"
 }
 
 #

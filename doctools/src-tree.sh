@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Make lists of source code
+# Source code -> HTML tree
 #
 # Usage:
 #   doctools/src-tree.sh <function name>
@@ -18,15 +18,11 @@ readonly REPO_ROOT
 export PYTHONPATH=.
 
 # TODO:
-#
-# - Highlighters
-#   - Python
-#   - C++ - preprocessor
-#   - ASDL can replace line counter in metrics/source-code.sh
-#     - it's pretty trivial, since ASDL has no string literals
 # - should README.md be inserted in index.html ?
 #   - probably, sourcehut has this too
 #   - use cmark
+# - line counts in metrics/source-code.sh could be integrated with this
+#   - i.e. we create groups of files there, with subtotals
 
 # Highlighters I'd like to write:
 #  - syntax highlighter, that finds string literals and comments
@@ -36,10 +32,20 @@ export PYTHONPATH=.
 #    - Python - multi-line strings
 #    - shell and YSH -- here docs?
 #    - C++ - #ifdef, including #if 0 perhaps
-#    - ASDL - just blank lines and comments
+#    - ASDL can replace line counter in metrics/source-code.sh
+#     - it's pretty trivial, since ASDL has no string literals
 #    - maybe grammar files
 
+# Columns
+# - Name
+# - Number of lines
+# - Can we get the cloc or sloccount report?
+#   - https://github.com/AlDanial/cloc - this is a 17K line Perl script!
+#   - https://dwheeler.com/sloccount/ - no release since 2004 ?
+
 lexer-files() {
+  ### linked from doc/release-quality.md
+
   for rel_path in \
     _build/tmp/frontend/match.re2c.txt \
     _gen/frontend/match.re2c.h \
@@ -50,8 +56,11 @@ lexer-files() {
 
 print-files() {
   lexer-files
+
+  # Important stuff
   metrics/source-code.sh overview-list
 
+  # And README.md, etc.
   for f in *.md */*.md doc/*/*.md; do
     echo $f
   done
@@ -70,6 +79,11 @@ soil-run() {
 
   time doctools/src_tree.py dirs $out < $attrs
 }
+
+#
+# Misc ways of counting files
+# TODO: unify or remove these
+#
 
 repo() {
   git ls-files
@@ -120,81 +134,6 @@ lint() {
   echo
   test/lint.sh py3-files
 }
-
-important() {
-  build/doc.sh important-source-code
-}
-
-# _tmp/source-code/
-#   lines.attrs - Intermediate file format
-#
-# osh/README.md lines=1   
-# osh/foo.py sloc=23
-# osh/foo.py overview=true
-#
-# can also be:
-# j"osh/README.md" {"lines": 1}
-# or 
-# {"name": "osh/README.md", "lines": 1}
-#
-# doctools/do_files.py
-#   - sometimes, count lines
-#   - sometimes, count significant lines
-#     - output syntax highlighted files
-#     - breadcrumb, link to github
-#   - output ATTRS file
-#
-# shell:
-#   overview, for-translation, etc.
-
-# doctools/do_dirs.py
-#   - read all the ATTRS files
-#   - output _tmp/source/code/{,osh,...}/index.html
-#     - with subdir counts
-
-# 2. THen
-# Pipe those in by lines, cat them
-
-
-
-# Source Viewer Features
-#
-# - Dirs with entry counts (recursive I think)
-# - Files with line counts
-#   - sloc?  But what if we don't have it?
-# - Breadcrumb
-# - Filtering by sets
-#   - this is hard because it's N dimensional
-#   - I think you may just highlight by set
-#     - or do some light JavaScript, letting you hide files
-#     - you can embed JSON
-#     - you can have checkboxes on each page
-#     - do this LATER
-
-# Sets of files
-#
-# test/lint.sh
-#   py2-files-to-format
-#   py3-files
-#
-# metrics/source-code.sh overview
-# metrics/source-code.sh for-translation
-#
-# These should be corrected
-#
-#   osh-files
-#   ysh-files
-
-# spec tests:
-# 
-# test/spec-runner.sh all-tests-to-html
-
-# Columns
-# - Name
-# - Number of lines
-# - Can we get the cloc or sloccount report?
-#   - https://github.com/AlDanial/cloc - this is a 17K line Perl script!
-#   - https://dwheeler.com/sloccount/ - no release since 2004 ?
 
 if test $(basename $0) = 'src-tree.sh'; then
   "$@"

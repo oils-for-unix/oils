@@ -8,15 +8,11 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh
+source test/sh-assert.sh  # banner, _assert-sh-status
 
 # Run with SH=bash too
 SH=${SH:-bin/osh}
-
-banner() {
-  echo
-  echo ===== CASE: "$@" =====
-  echo
-}
+YSH=${YSH:-bin/ysh}
 
 oils-cpp-bug() {
   ### TODO: Fix all cases guarded by this condition
@@ -30,55 +26,70 @@ oils-cpp-bug() {
   return 0
 }
 
-_error-case() {
-  ### Assert that a parse error happens without running the program
-
-  banner "$@"
-  echo
-
-  $SH -n -c "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
-}
-
-_error-case-here() { _error-case "$(cat)"; }
-
-_error-case2() {
-  ### An interface where you can pass flags like -O parse_backslash
-
-  banner "$@"
-  echo
-
-  $SH "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
-}
-
-_error-case2-here() { _error-case2 "$@" -c "$(cat)"; }
+#
+# Assertions
+#
 
 _should-parse() {
-  banner "$@"
-  echo
-  $SH -n -c "$@"
+  ### Pass a string that should parse as $1
 
-  local status=$?
-  if test $status != 0; then
-    die "Expected it to parse"
-  fi
+  local message='Should parse under OSH'
+  _assert-sh-status 0 $SH "$message" \
+    -n -c "$@"
 }
 
-_should-parse-here() { _should-parse "$(cat)"; }
+_should-parse-here() {
+  ### Take stdin a here doc, pass it as first argument
+  _should-parse "$(cat)"
+}
+
+_error-case() {
+  ### Pass a string that should NOT parse as $1
+  local message='Should NOT parse under OSH'
+  _assert-sh-status 2 $SH "$message" \
+    -n -c "$@"
+}
+
+_error-case-here() {
+  ### Take stdin a here doc, pass it as first argument
+  _error-case "$(cat)";
+}
+
+# YSH assertions
+
+_ysh-should-parse() {
+  local message='Should parse under YSH'
+  _assert-sh-status 0 $YSH "$message" \
+    -n -c "$@"
+}
+
+_ysh-parse-error() {
+  ### Assert that a parse error happens with Oil options on
+  local message='Should NOT parse under YSH'
+  _assert-sh-status 2 $YSH "$message" \
+    -n -c "$@"
+}
+
+# So we can write single quoted strings in an easier way
+_ysh-parse-error-here() {
+  _ysh-parse-error "$(cat)"
+}
+
+# More detailed assertions
+
+_assert-status-2() {
+  ### An interface where you can pass flags like -O parse_backslash
+
+  local message=$0
+  _assert-sh-status 2 $SH $message "$@"
+}
+
+_assert-status-2-here() {
+  _assert-status-2 "$@" -c "$(cat)"
+}
 
 _runtime-parse-error() {
-  ### Assert that a parse error happens at runtime
+  ### Assert that a parse error happens at runtime, e.g. for [ z z ]
 
   banner "$@"
   echo
@@ -91,32 +102,9 @@ _runtime-parse-error() {
   fi
 }
 
-_ysh-should-parse() {
-  banner "$@"
-  echo
-  $SH -O oil:all -n -c "$@"
-
-  local status=$?
-  if test $status != 0; then
-    die "Expected it to parse"
-  fi
-}
-
-_ysh-parse-error() {
-  ### Assert that a parse error happens with Oil options on
-
-  banner "$@"
-  echo
-  $SH -O oil:all -c "$@"
-
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
-}
-
-# So we can write single quoted strings in an easier way
-_ysh-parse-error-here() { _ysh-parse-error "$(cat)"; }
+#
+# Cases
+#
 
 # All in osh/word_parse.py
 patsub() {
@@ -922,7 +910,7 @@ ysh_string_literals() {
 echo $'\u{03bc'
 EOF
   # Not with parse_backslash
-  _error-case2-here +O parse_backslash -n <<EOF
+  _assert-status-2-here +O parse_backslash -n <<EOF
 echo parse_backslash $'\u{03bc'
 EOF
   # Not in Oil
@@ -953,7 +941,7 @@ EOF
 
   _should-parse 'echo "\z"'
   # Double quoted is an error
-  _error-case2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
+  _assert-status-2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
 
@@ -968,7 +956,7 @@ EOF
 
   _ysh-parse-error 'setvar x = "\z"'
 
-  _ysh-parse-error <<'EOF'
+  _ysh-parse-error-here <<'EOF'
 setvar x = $'\z'
 EOF
 
@@ -981,8 +969,8 @@ parse_backticks() {
   _should-parse 'echo `echo hi`'
   _should-parse 'echo "foo = `echo hi`"'
 
-  _error-case2 +O parse_backticks -n -c 'echo `echo hi`'
-  _error-case2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
+  _assert-status-2 +O parse_backticks -n -c 'echo `echo hi`'
+  _assert-status-2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
 }
 
 parse_dollar() {
@@ -1007,7 +995,7 @@ parse_dollar() {
   )
   for c in "${CASES[@]}"; do
     _should-parse "$c"
-    _error-case2 +O parse_dollar -n -c "$c"
+    _assert-status-2 +O parse_dollar -n -c "$c"
     _ysh-parse-error "$c"
   done
 }

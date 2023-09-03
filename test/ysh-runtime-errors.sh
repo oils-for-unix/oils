@@ -6,44 +6,30 @@
 # NOTE: No set -o errexit, etc.
 
 source test/common.sh
+source test/sh-assert.sh  # banner, _assert-sh-status
 
 YSH=${YSH:-bin/ysh}
 
-banner() {
-  echo
-  echo ===== CASE: "$@" =====
-  echo
-}
+#
+# Assertions
+#
 
 _osh-error-case-X() {
   local expected_status=$1
   shift
 
-  banner "$@"
-  echo
-  $OSH -c "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != $expected_status; then
-    die "Expected status $expected_status, got $status"
-  fi
+  local message=$0
+  _assert-sh-status $expected_status $OSH "$message" \
+    -c "$@"
 }
-
 
 _error-case-X() {
   local expected_status=$1
   shift
 
-  banner "$@"
-  echo
-  $YSH -c "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != $expected_status; then
-    die "Expected status $expected_status, got $status"
-  fi
+  local message=$0
+  _assert-sh-status $expected_status $YSH "$message" \
+    -c "$@"
 }
 
 _error-case() {
@@ -57,15 +43,14 @@ _expr-error-case() {
 }
 
 _should-run() {
-  banner "$@"
-  echo
-  $YSH -c "$@"
-
-  local status=$?
-  if test $status != 0; then
-    die "Expected it to parse"
-  fi
+  local message='Should run under YSH'
+  _assert-sh-status 0 $YSH "$message" \
+    -c "$@"
 }
+
+#
+# Cases
+#
 
 test-undefined-vars() {
   set +o errexit

@@ -13,8 +13,8 @@ status=127
 y=
 ## END
 
-#### oil:upgrade behavior
-shopt --set oil:upgrade
+#### ysh:upgrade behavior
+shopt --set ysh:upgrade
 
 # allow errors
 set +o errexit +o nounset
@@ -32,8 +32,8 @@ status=0
 x=1
 ## END
 
-#### oil:all behavior
-shopt --set oil:all
+#### ysh:all disallows x=y inside functions, but allows it at the top level
+shopt --set ysh:all
 
 # allow errors
 set +o errexit +o nounset
@@ -73,7 +73,7 @@ y=foo
 
 #### bare assignment inside Hay blocks
 
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Package
 

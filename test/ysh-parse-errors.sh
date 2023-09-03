@@ -4,35 +4,20 @@
 #   test/ysh-parse-errors.sh <function name>
 
 source test/common.sh
+source test/sh-assert.sh  # banner, _assert-sh-status
 
 YSH=${YSH:-bin/ysh}
 
-banner() {
-  echo
-  echo ===== CASE: "$@" =====
-  echo
+_should-parse() {
+  local message='Should parse under YSH'
+  _assert-sh-status 0 $YSH "$message" \
+    -n -c "$@"
 }
 
 _error-case() {
-  banner "$@"
-  echo
-  $YSH -n -c "$@"
-
-  local status=$?
-  if test $status != 2; then
-    die "Expected a parse error, got status $status"
-  fi
-}
-
-_should-parse() {
-  banner "$@"
-  echo
-  $YSH -n -c "$@"
-
-  local status=$?
-  if test $status != 0; then
-    die "Expected it to parse"
-  fi
+  local message='Should NOT parse under YSH'
+  _assert-sh-status 2 $YSH "$message" \
+    -n -c "$@"
 }
 
 test-return-args() {
@@ -161,6 +146,10 @@ test-func-sig() {
   _should-parse 'func f (a, b, ...rest; c) { echo hi }'
   _should-parse 'func f (a, b, ...rest; c, ...rest) { echo hi }'
   _error-case 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
+}
+
+test-assign() {
+  echo TODO
 }
 
 soil-run() {
