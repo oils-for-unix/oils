@@ -1086,21 +1086,19 @@ class CommandParser(object):
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
-        if (typed_args is not None and kw_token is not None and
-                kw_token.id == Id.ControlFlow_Return):
-            # typed return (this is special from the other control flow types)
-            if self.cmd_mode != cmd_mode_e.Func:
-                p_die("Unexpected typed return outside of a func",
-                      typed_loc)
-            if len(typed_args.pos_args) != 1:
-                p_die("Expected one argument passed to a typed return",
-                      typed_loc)
-            if len(typed_args.named_args) != 0:
-                p_die("Expected no named arguments passed to a typed return",
-                      typed_loc)
-            return command.Retval(kw_token, typed_args.pos_args[0])
-
         if kind == Kind.ControlFlow:
+            if kw_token.id == Id.ControlFlow_Return and typed_args is not None:
+                # Check syntax of return (x)
+                if self.cmd_mode != cmd_mode_e.Func:
+                    p_die('Typed return is only allowed inside func',
+                          typed_loc)
+                if len(typed_args.pos_args) != 1:
+                    p_die("Typed return expects one argument", typed_loc)
+                if len(typed_args.named_args) != 0:
+                    p_die("Typed return doesn't take named arguments",
+                          typed_loc)
+                return command.Retval(kw_token, typed_args.pos_args[0])
+
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
             if not self.parse_opts.parse_ignored() and len(redirects):

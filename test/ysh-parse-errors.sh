@@ -148,6 +148,30 @@ test-func-sig() {
   _error-case 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
 }
 
+test-sh-assign() {
+  _error-case 'f() { x=y; }'
+
+  # Disallowed in YSH
+  _error-case 'proc p { x=y; }'
+  _error-case 'func f() { x=y; }'
+
+  return
+
+  # Only proc and func disallow it
+  _should-parse '{ x=y; }'
+  _should-parse '( x=y; )'
+
+  #_error-case 'func f() { local x=y; }'
+
+  _assert-sh-status 0 $YSH 'Expected it to parse' \
+    -o ysh:upgrade -n -c 'x=y'
+
+  # Allowed at the top level
+  _should-parse 'x=y echo hi'
+  _should-parse 'x=y'
+
+}
+
 test-assign() {
   echo TODO
 }
