@@ -859,16 +859,6 @@ ysh_to_make_nicer() {
   #_ysh-parse-error ' d = %{}'
 }
 
-parse_at() {
-  set +o errexit
-
-  _ysh-parse-error 'echo @'
-  _ysh-parse-error 'echo @@'
-  _ysh-parse-error 'echo @{foo}'
-  _ysh-parse-error 'echo @/foo/'
-  _ysh-parse-error 'echo @"foo"'
-}
-
 invalid_parens() {
   set +o errexit
 
@@ -897,23 +887,6 @@ f() {
 }
 '
   _error-case "$s"
-}
-
-ysh_nested_proc() {
-  set +o errexit
-
-  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
-
-  # ksh function
-  _ysh-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
-
-  _ysh-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
-
-  # shell nesting is still allowed
-  _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
-
-  _ysh-should-parse 'proc p() { shopt --unset errexit { false hi } }'
 }
 
 ysh_var_decl() {

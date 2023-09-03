@@ -314,7 +314,6 @@ hay eval :result {
 }
 '
 
-  if oils-cpp-bug; then
   _parse-error '
 hay define TASK
 
@@ -329,11 +328,11 @@ hay define Package/TASK
 
 Package libc {
   TASK build {
+    # this is not an attribute, should not be valid
     foo = 42
   }
 }
 '
-  fi
 
   _parse-error '
 hay define Rule
@@ -353,10 +352,34 @@ Rule {
   return 42
 }
 '
-
 }
 
+test-parse-at() {
+  set +o errexit
 
+  _parse-error 'echo @'
+  _parse-error 'echo @@'
+  _parse-error 'echo @{foo}'
+  _parse-error 'echo @/foo/'
+  _parse-error 'echo @"foo"'
+}
+
+test-ysh-nested-proc() {
+  set +o errexit
+
+  _parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
+
+  # ksh function
+  _parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
+
+  _parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
+
+  # shell nesting is still allowed
+  _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
+
+  _should-parse 'proc p() { shopt --unset errexit { false hi } }'
+}
 
 
 #
