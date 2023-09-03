@@ -14,7 +14,7 @@ _should-parse() {
     -n -c "$@"
 }
 
-_error-case() {
+_parse-error() {
   local message='Should NOT parse under YSH'
   _assert-sh-status 2 $YSH "$message" \
     -n -c "$@"
@@ -29,25 +29,25 @@ test-return-args() {
   }
   '
 
-  _error-case '
+  _parse-error '
   func foo(x) {
     return ()
   }
   '
 
-  _error-case '
+  _parse-error '
   func foo(x) {
     return (named=x)
   }
   '
 
-  _error-case '
+  _parse-error '
   func foo(x) {
     return (x, named=x)
   }
   '
 
-  _error-case '
+  _parse-error '
   func foo(x) {
     return (x, x)
   }
@@ -63,7 +63,7 @@ test-func-var-checker() {
   }
   '
 
-  _error-case '
+  _parse-error '
   func f() {
     setvar x = True
   }
@@ -86,9 +86,9 @@ test-proc-sig() {
 
   # doesn't make sense I think -- they're all strings.  Types don't do any
   # dynamic validation, except 'out Ref' does change semantics
-  _error-case 'proc p (a Int) { echo hi }'
+  _parse-error 'proc p (a Int) { echo hi }'
 
-  _error-case 'proc p (w, ...) { echo hi }'
+  _parse-error 'proc p (w, ...) { echo hi }'
 
   _should-parse 'proc p (w, ...rest) { echo hi }'
 
@@ -109,8 +109,8 @@ test-proc-sig() {
   _should-parse 'func p (p, ...rest; n, ...rest) { echo hi }'
   _should-parse 'func p (p, ...rest; n, ...rest,) { echo hi }'
 
-  _error-case 'func p (p, ...rest; n, ...rest, z) { echo hi }'
-  _error-case 'func p (p, ...rest; n, ...rest; ) { echo hi }'
+  _parse-error 'func p (p, ...rest; n, ...rest, z) { echo hi }'
+  _parse-error 'func p (p, ...rest; n, ...rest; ) { echo hi }'
 
   _should-parse 'proc p (w, ...rest; pos, ...rest) { echo hi }'
 
@@ -118,34 +118,34 @@ test-proc-sig() {
 
   _should-parse 'proc p (w=1, v=2; p=3, q=4; n=5, m=6) { echo hi }'
 
-  _error-case 'proc p (w Int Int) { echo hi }'
+  _parse-error 'proc p (w Int Int) { echo hi }'
 
   _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
   _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; block) { echo hi }'
 
-  _error-case 'proc p ( ; ; ; b1, b2) { echo hi }'
-  _error-case 'proc p ( ; ; ; b1, ...rest) { echo hi }'
-  _error-case 'proc p ( ; ; ; b1 Str) { echo hi }'
+  _parse-error 'proc p ( ; ; ; b1, b2) { echo hi }'
+  _parse-error 'proc p ( ; ; ; b1, ...rest) { echo hi }'
+  _parse-error 'proc p ( ; ; ; b1 Str) { echo hi }'
 
   # Only Command type
   _should-parse 'proc p ( ; ; ; b Command) { echo hi }'
 
   # bad param
-  _error-case 'proc p ( ; ; ; b Command[Int]) { echo hi }'
+  _parse-error 'proc p ( ; ; ; b Command[Int]) { echo hi }'
 
   _should-parse 'proc p ( ; ; ; ) { echo hi }'
 }
 
 test-func-sig() {
-  _error-case 'func f { echo hi }'
+  _parse-error 'func f { echo hi }'
 
   _should-parse 'func f () { echo hi }'
 
   _should-parse 'func f (a List[Int] = [3,4]) { echo hi }'
   _should-parse 'func f (a, b, ...rest; c) { echo hi }'
   _should-parse 'func f (a, b, ...rest; c, ...rest) { echo hi }'
-  _error-case 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
+  _parse-error 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
 }
 
 test-sh-assign() {
@@ -154,8 +154,8 @@ test-sh-assign() {
   _should-parse 'f() { x=y; }'
 
   # Disallowed in YSH
-  _error-case 'func f() { x=y; }'
-  _error-case 'proc p { x=y; }'
+  _parse-error 'func f() { x=y; }'
+  _parse-error 'proc p { x=y; }'
 
   # Only proc and func disallow it
   _should-parse '{ x=y; }'
@@ -168,19 +168,19 @@ test-sh-assign() {
 test-ysh-expr() {
   set +o errexit
   # old syntax
-  _error-case '= 5 mod 3'
+  _parse-error '= 5 mod 3'
 
-  _error-case '= >>='
-  _error-case '= %('
+  _parse-error '= >>='
+  _parse-error '= %('
 
   # Singleton tuples
-  _error-case '= 42,'
-  _error-case '= (42,)'
+  _parse-error '= 42,'
+  _parse-error '= (42,)'
 
   # Disallowed unconditionally
-  _error-case '=a'
+  _parse-error '=a'
 
-  _error-case '
+  _parse-error '
     var d = {}
     = d["foo", "bar"]
   '
