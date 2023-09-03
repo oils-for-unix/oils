@@ -15,11 +15,6 @@ TODO:
 AUTO
 
 - overview.html and for-translation.html should link to these files, not Github
-  - also add Github link at top of file?
-
-- devtools/release.sh should change to build this
-  - and link it from release-quality.md
-
 """
 from __future__ import print_function
 
@@ -260,7 +255,7 @@ def MakeTree(stdin, root_node):
 
 
 def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
-  log('WriteHtmlFiles %s %s %s', out_dir, rel_path, base_url)
+  #log('WriteHtmlFiles %s %s %s', out_dir, rel_path, base_url)
 
   files = []
   for name in sorted(node.files):
@@ -365,7 +360,7 @@ def main(argv):
     root_node = DirNode()
     MakeTree(sys.stdin, root_node)
 
-    if 1:
+    if 0:
       DebugPrint(root_node)
 
     WriteHtmlFiles(root_node, out_dir)

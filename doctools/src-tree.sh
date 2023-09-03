@@ -19,8 +19,6 @@ export PYTHONPATH=.
 
 # TODO:
 #
-# - replace important-code
-#   - soil/ovm-tarball/src-tree ?  Then _tmp/src-tree vs. source-code.wwz
 # - Highlighters
 #   - Python
 #   - C++ - preprocessor
@@ -68,9 +66,9 @@ soil-run() {
 
   local attrs=_tmp/attrs.txt
 
-  print-files | xargs doctools/src_tree.py files $out | tee $attrs
+  time print-files | xargs doctools/src_tree.py files $out > $attrs
 
-  doctools/src_tree.py dirs $out < $attrs
+  time doctools/src_tree.py dirs $out < $attrs
 }
 
 repo() {

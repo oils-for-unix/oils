@@ -26,6 +26,8 @@ a:hover {
 .num {
   color: #666;
   text-align: right;
+  /* Users can copy the code without copying line numbers */
+  user-select: none;
 }
 
 .line {

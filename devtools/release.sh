@@ -457,9 +457,9 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
-  log "--- source-code"
-  local out="$root/source-code.wwz"
-  pushd _tmp/important-source-code
+  log "--- src-tree"
+  local out="$root/srec-tree.wwz"
+  pushd _tmp/src-tree
   time zip -r -q $out .  # recursive, quiet
   popd
 
@@ -521,12 +521,12 @@ metrics() {
 
   line-counts $PWD/$out/line-counts
 
+  # For another .wwz file
+  doctools/src-tree.sh soil-run
+
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
   build/cpython-defs.sh run-for-release
-
-  # For another .wwz file
-  build/doc.sh important-source-code
 
   tree $out
 }
