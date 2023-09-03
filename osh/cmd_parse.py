@@ -547,7 +547,7 @@ class CommandParser(object):
         # this OK but you can imagine different behaviors.
         self.var_checker = VarChecker()
 
-        self.cmd_mode = cmd_mode_e.Normal  # type: cmd_mode_t
+        self.cmd_mode = cmd_mode_e.Global  # type: cmd_mode_t
 
         self.Reset()
 
@@ -1061,11 +1061,13 @@ class CommandParser(object):
         if len(preparsed_list):
             left_token, _, _, _ = preparsed_list[0]
 
-            # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
-            if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
-                p_die(
-                    'Use const or var/setvar to assign in YSH (parse_sh_assign)',
-                    left_token)
+            # Allow X=Y at the top level
+            # - for interactive use foo=bar
+            # - for global constants GLOBAL=~/src 
+            #   - because YSH assignment doesn't have tilde sub
+            # But disallow it inside proc and func
+            if not self.cmd_mode == cmd_mode_e.Global and len(suffix_words) == 0:
+                p_die('Use const or var/setvar to assign in YSH', left_token)
 
         # Set a reference to words and redirects for completion.  We want to
         # inspect this state after a failed parse.
@@ -1087,17 +1089,22 @@ class CommandParser(object):
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
         if kind == Kind.ControlFlow:
-            if kw_token.id == Id.ControlFlow_Return and typed_args is not None:
-                # Check syntax of return (x)
-                if self.cmd_mode != cmd_mode_e.Func:
-                    p_die('Typed return is only allowed inside func',
-                          typed_loc)
-                if len(typed_args.pos_args) != 1:
-                    p_die("Typed return expects one argument", typed_loc)
-                if len(typed_args.named_args) != 0:
-                    p_die("Typed return doesn't take named arguments",
-                          typed_loc)
-                return command.Retval(kw_token, typed_args.pos_args[0])
+            if kw_token.id == Id.ControlFlow_Return:
+                # return x - inside procs and shell functions
+                # return (x) - inside funcs
+                if typed_args is None:
+                    if self.cmd_mode == cmd_mode_e.Func:
+                        p_die("Unexpected shell_style return inside a func", kw_token)
+                else:
+                    if self.cmd_mode != cmd_mode_e.Func:
+                        p_die('Typed return is only allowed inside func',
+                              typed_loc)
+                    if len(typed_args.pos_args) != 1:
+                        p_die("Typed return expects one argument", typed_loc)
+                    if len(typed_args.named_args) != 0:
+                        p_die("Typed return doesn't take named arguments",
+                              typed_loc)
+                    return command.Retval(kw_token, typed_args.pos_args[0])
 
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
@@ -1118,10 +1125,6 @@ class CommandParser(object):
             else:
                 p_die('Unexpected argument to %r' % lexer.TokenVal(kw_token),
                       loc.Word(suffix_words[2]))
-
-            if (kw_token.id == Id.ControlFlow_Return and
-                    self.cmd_mode == cmd_mode_e.Func):
-                p_die("Unexpected shell_style return inside a func", kw_token)
 
             return command.ControlFlow(kw_token, arg_word)
 
@@ -1990,25 +1993,26 @@ class CommandParser(object):
         node.keyword = keyword_tok
 
         with ctx_VarChecker(self.var_checker, keyword_tok):
-            self.w_parser.ParseProc(node)
-            if node.sig.tag() == proc_sig_e.Closed:  # Register params
-                sig = cast(proc_sig.Closed, node.sig)
+            with ctx_CmdMode(self, cmd_mode_e.Proc):
+                self.w_parser.ParseProc(node)
+                if node.sig.tag() == proc_sig_e.Closed:  # Register params
+                    sig = cast(proc_sig.Closed, node.sig)
 
-                # Treat params as variables.
-                for param in sig.word_params:
-                    # TODO: Check() should not look at tval
-                    name_tok = param.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
-                if sig.rest_of_words:
-                    name_tok = sig.rest_of_words.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
-                    # We COULD register __out here but it would require a different API.
-                    #if param.prefix and param.prefix.id == Id.Arith_Colon:
-                    #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
+                    # Treat params as variables.
+                    for param in sig.word_params:
+                        # TODO: Check() should not look at tval
+                        name_tok = param.blame_tok
+                        self.var_checker.Check(Id.KW_Var, name_tok)
+                    if sig.rest_of_words:
+                        name_tok = sig.rest_of_words.blame_tok
+                        self.var_checker.Check(Id.KW_Var, name_tok)
+                        # We COULD register __out here but it would require a different API.
+                        #if param.prefix and param.prefix.id == Id.Arith_Colon:
+                        #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
 
-            self._SetNext()
-            node.body = self.ParseBraceGroup()
-            # No redirects for YSH procs (only at call site)
+                self._SetNext()
+                node.body = self.ParseBraceGroup()
+                # No redirects for YSH procs (only at call site)
 
         return node
 

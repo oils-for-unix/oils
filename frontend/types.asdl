@@ -42,7 +42,7 @@ module types {
 
   # CommandParser parsing context
   cmd_mode =
-    Normal  # Top level
-  | Func    # Inside a func f(...) { ... } - return (x) is required
-  | Proc    # Inside proc { } -- shell assignments disallowed
+    Global  # Top level
+  | Func    # Inside a func,  return (x) is required
+  | Proc    # Inside proc { } -- shell assignments are disallowed
 }

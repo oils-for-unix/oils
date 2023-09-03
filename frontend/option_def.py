@@ -173,7 +173,6 @@ _AGGRESSIVE_PARSE_OPTIONS = [
     ('parse_dollar', True),
     ('parse_ignored', True),
     ('parse_sh_arith', True),  # disallow all shell arithmetic, $(( )) etc.
-    ('parse_sh_assign', True),  # disallow x=y and PYTHONPATH=y
     ('parse_dparen', True),  # disallow bash's ((
     ('parse_bare_word', True),  # 'case bare' and 'for x in bare'
 ]
