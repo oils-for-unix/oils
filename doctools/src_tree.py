@@ -1,6 +1,25 @@
 #!/usr/bin/env python2
 """
 src_tree.py: Publish a directory tree as HTML
+
+TODO:
+
+- dir listing:
+  - should have columns
+  - or add line counts, and file counts?
+  - render README.md - would be nice
+
+- Could use JSON Template {.template} like test/wild_report.py
+  - for consistent header and all that
+
+AUTO
+
+- overview.html and for-translation.html should link to these files, not Github
+  - also add Github link at top of file?
+
+- devtools/release.sh should change to build this
+  - and link it from release-quality.md
+
 """
 from __future__ import print_function
 
@@ -39,13 +58,20 @@ def DetectType(path):
   elif path.endswith('.cc') or path.endswith('.h') or path.endswith('.c'):
     return 'cc'
 
+  elif path.endswith('.js'):
+    return 'js'
+
+  elif path.endswith('.R'):
+    return 'R'
+
   else:
     # Markdown, CSS, etc.
     return 'other'
 
 
-def Breadcrumb(rel_path, out_f):
-  data = wild_report._MakeNav(rel_path, root_name='OILS')
+def Breadcrumb(rel_path, out_f, is_file=False):
+  offset = -1 if is_file else 0
+  data = wild_report.MakeNav(rel_path, root_name='OILS', offset=offset)
   out_f.write(wild_report.NAV_TEMPLATE.expand({'nav': data}))
 
 
@@ -82,7 +108,7 @@ LISTING_T = T("""\
 <div id="files">
   <h1>Files</h1>
   {.repeated section @}
-    <a href="{name|htmltag}.html">{name|html}</a> <br/>
+    <a href="{url|htmltag}">{anchor|html}</a> <br/>
   {.end}
 </div>
 {.end}
@@ -113,11 +139,16 @@ def Files(pairs, attrs_f, spec_to_html=False):
 
       out_f.write('''
       <body class="width40">
+        <p id="home-link">
+          <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
+          |
+          <a href="/">oilshell.org</a>
+        </p>
         <table>
-      ''')
+      ''' % path)
 
       if not spec_to_html:  # Don't need navigation here
-        Breadcrumb(path, out_f)
+        Breadcrumb(path, out_f, is_file=True)
 
       file_type = DetectType(path)
 
@@ -137,12 +168,16 @@ def Files(pairs, attrs_f, spec_to_html=False):
           elif s.startswith('#'):
             row['line_class'] = 'comm1'
 
-        elif file_type in ('spec', 'sh', 'py'):
+        elif file_type in ('spec', 'sh', 'py', 'R'):
           if s.startswith('#'):
             row['line_class'] = 'comm1'
 
         elif file_type == 'cc':
           # Real cheap solution for now
+          if s.startswith('//'):
+            row['line_class'] = 'comm1'
+
+        elif file_type == 'js':
           if s.startswith('//'):
             row['line_class'] = 'comm1'
 
@@ -209,9 +244,19 @@ def UpdateNodes(node, path_parts, attrs):
 
 def MakeTree(stdin, root_node):
   for line in sys.stdin:
-    path, attrs = line.split(None, 1)
+    parts = line.split()
+    path = parts[0]
+
+    # Examples:
+    # {'lines': '345'}
+    # {'raw': '1'}
+    attrs = {}
+    for part in parts[1:]:
+      k, v = part.split('=')
+      attrs[k] = v
+
     path_parts = path.split('/')
-    UpdateNodes(root_node, path_parts, {})
+    UpdateNodes(root_node, path_parts, attrs)
 
 
 def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
@@ -219,7 +264,12 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
 
   files = []
   for name in sorted(node.files):
-    files.append({'name': name})
+    attrs = node.files[name]
+
+    # Big files are raw, e.g. match.re2c.h and syntax_asdl.py
+    url = name if attrs.get('raw') else '%s.html' % name
+    f = {'url': url, 'anchor': name}
+    files.append(f)
 
   dirs = []
   for name in sorted(node.dirs):

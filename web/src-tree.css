@@ -35,12 +35,13 @@ a:hover {
 .comm3 {
   /*font-style: italic;*/
   font-weight: bold;
-  color: #60a0b0;  /* this blue from Blog/pygments */
+  color: #0047ab;  /* Cobalt */
 }
 
 .comm1 {
-  color: #60a0b0
+  color: #0047ab;  /* Cobalt */
 }
+/* TODO: a real color scheme, for pre-processor, etc. */
 
 table {
   border-collapse: collapse;

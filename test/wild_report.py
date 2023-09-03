@@ -482,7 +482,11 @@ def WriteJsonFiles(node, out_dir):
     WriteJsonFiles(child, os.path.join(out_dir, name))
 
 
-def _MakeNav(rel_path, root_name='WILD'):
+def MakeNav(rel_path, root_name='WILD', offset=0):
+  """
+  Args:
+    offset: for doctools/src_tree.py to render files
+  """
   assert not rel_path.startswith('/'), rel_path
   assert not rel_path.endswith('/'), rel_path
   # Get rid of ['']
@@ -493,7 +497,8 @@ def _MakeNav(rel_path, root_name='WILD'):
     if i == n - 1:
       link = None  # Current page shouldn't have link
     else:
-      link = '../' * (n - 1 - i) + 'index.html'
+      # files need to link to .
+      link = '../' * (n - 1 - i + offset) + 'index.html'
     data.append({'anchor': p, 'link': link})
   return data
 
@@ -558,7 +563,7 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
       'dirs': dirs,
       'base_url': base_url,
       'stderr': node.stderr,
-      'nav': _MakeNav(rel_path),
+      'nav': MakeNav(rel_path),
   }
   # Hack to add links for top level page:
   if rel_path == '':
