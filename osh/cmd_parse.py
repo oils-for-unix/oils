@@ -1069,13 +1069,13 @@ class CommandParser(object):
             # Disallow X=Y inside proc and func
             #   and inside Hay Attr blocks
             # But allow X=Y at the top level
-            # - for interactive use foo=bar
-            # - for global constants GLOBAL=~/src 
-            #   - because YSH assignment doesn't have tilde sub
+            #   for interactive use foo=bar
+            #   for global constants GLOBAL=~/src 
+            #     because YSH assignment doesn't have tilde sub
             if len(suffix_words) == 0:
                 if self.cmd_mode != cmd_mode_e.Shell or (
                         len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
-                    p_die('Use const or var/setvar to assign in YSH', left_token)
+                    p_die('Use var/setvar to assign in YSH', left_token)
 
         # Set a reference to words and redirects for completion.  We want to
         # inspect this state after a failed parse.
