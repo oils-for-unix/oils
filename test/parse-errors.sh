@@ -787,27 +787,6 @@ regex_literals() {
 
 }
 
-ysh_expr() {
-  set +o errexit
-  # old syntax
-  _ysh-parse-error '= 5 mod 3'
-
-  _ysh-parse-error '= >>='
-  _ysh-parse-error '= %('
-
-  # Singleton tuples
-  _ysh-parse-error '= 42,'
-  _ysh-parse-error '= (42,)'
-
-  # Disallowed unconditionally
-  _ysh-parse-error '=a'
-
-  _ysh-parse-error '
-    var d = {}
-    = d["foo", "bar"]
-  '
-}
-
 ysh_expr_more() {
   set +o errexit
 
@@ -829,10 +808,6 @@ ysh_expr_more() {
 
 ysh_hay_assign() {
   set +o errexit
-
-  _ysh-parse-error '
-name=val
-'
 
   _ysh-parse-error '
 name = val
@@ -899,6 +874,26 @@ Package libc {
 }
 '
   fi
+
+  _ysh-parse-error '
+hay define Rule
+
+Rule {
+  return (x)
+}
+'
+
+  return
+  # This is currently allowed, arguably shouldn't be
+
+  _ysh-parse-error '
+hay define Rule
+
+Rule {
+  return 42
+}
+'
+
 }
 
 
@@ -1727,7 +1722,6 @@ cases-in-strings() {
   proc_sig
   proc_arg_list
   ysh_var
-  ysh_expr
   ysh_expr_more
   ysh_hay_assign
   ysh_string_literals

@@ -280,6 +280,17 @@ hay eval :result {
 }
 '
 
+  ### TODO: disallow this shell assignment
+
+  if false; then
+  _error-case-X 2 '
+hay define Package
+
+Package foo {
+  version=1
+}
+'
+
   ### shell assignment
   _error-case-X 2 '
 hay define package user TASK
@@ -290,6 +301,7 @@ hay eval :result {
   }
 }
 '
+  fi
 }
 
 

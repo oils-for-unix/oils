@@ -40,9 +40,11 @@ module types {
   # - printf formatting ${x %05d}.  I think that is mostly in expression mode
   #   like ${x|html} or ${x|title}
 
-  # CommandParser parsing context
+  # CommandParser context
   cmd_mode =
-    Global  # Top level
+    Shell   # Top level, and inside shell-style functions
   | Func    # Inside a func,  return (x) is required
   | Proc    # Inside proc { } -- shell assignments are disallowed
+  # No mode for this yet, hard to distinguish with cd { ... }
+  # | Hay     # Package { ... } at top level
 }

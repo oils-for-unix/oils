@@ -165,6 +165,28 @@ test-sh-assign() {
     -o ysh:upgrade -n -c 'x=y'
 }
 
+test-ysh-expr() {
+  set +o errexit
+  # old syntax
+  _error-case '= 5 mod 3'
+
+  _error-case '= >>='
+  _error-case '= %('
+
+  # Singleton tuples
+  _error-case '= 42,'
+  _error-case '= (42,)'
+
+  # Disallowed unconditionally
+  _error-case '=a'
+
+  _error-case '
+    var d = {}
+    = d["foo", "bar"]
+  '
+}
+
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

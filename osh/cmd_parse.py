@@ -547,7 +547,7 @@ class CommandParser(object):
         # this OK but you can imagine different behaviors.
         self.var_checker = VarChecker()
 
-        self.cmd_mode = cmd_mode_e.Global  # type: cmd_mode_t
+        self.cmd_mode = cmd_mode_e.Shell  # type: cmd_mode_t
 
         self.Reset()
 
@@ -1066,7 +1066,7 @@ class CommandParser(object):
             # - for global constants GLOBAL=~/src 
             #   - because YSH assignment doesn't have tilde sub
             # But disallow it inside proc and func
-            if self.cmd_mode != cmd_mode_e.Global and len(suffix_words) == 0:
+            if self.cmd_mode != cmd_mode_e.Shell and len(suffix_words) == 0:
                 p_die('Use const or var/setvar to assign in YSH', left_token)
 
         # Set a reference to words and redirects for completion.  We want to
@@ -1093,8 +1093,8 @@ class CommandParser(object):
                 # return x - inside procs and shell functions
                 # return (x) - inside funcs
                 if typed_args is None:
-                    if self.cmd_mode == cmd_mode_e.Func:
-                        p_die("Unexpected shell_style return inside a func", kw_token)
+                    if self.cmd_mode not in (cmd_mode_e.Shell, cmd_mode_e.Proc):
+                        p_die('Shell-style returns not allowed here', kw_token)
                 else:
                     if self.cmd_mode != cmd_mode_e.Func:
                         p_die('Typed return is only allowed inside func',
