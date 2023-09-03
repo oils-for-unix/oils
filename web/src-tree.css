@@ -1,4 +1,22 @@
-/* For spec test code listings */
+/* For doctools/src_tree.py */
+
+@media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+  }
+}
+
+/* Like web/ref-index.css */
+h1 {
+  font-size: 1.4em;
+}
+
+a:link {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
 
 /* For highlighting specific lines.  Don't need an anchor! */
 :target {

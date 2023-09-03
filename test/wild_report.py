@@ -386,7 +386,7 @@ class DirNode:
 
   def __init__(self):
     self.files = {}  # filename -> stats for success/failure, time, etc.
-    self.dirs = {}  # subdir name -> Dir object
+    self.dirs = {}  # subdir name -> DirNode object
 
     self.subtree_stats = {}  # name -> value
 
@@ -525,49 +525,50 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
 
   wwz latency is subject to caching headers.
   """
+  files = []
+  for name in sorted(node.files, key=_Lower):
+    stats = node.files[name]
+    entry = dict(stats)
+    entry['name'] = name
+    # TODO: This should be internal time
+    entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
+    files.append(entry)
+
+  dirs = []
+  for name in sorted(node.dirs, key=_Lower):
+    entry = dict(node.dirs[name].subtree_stats)
+    entry['name'] = name
+    # TODO: This should be internal time
+    entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
+    dirs.append(entry)
+
+  # TODO: Is there a way to make this less redundant?
+  st = node.subtree_stats
+  try:
+    st['lines_per_sec'] = st['lines_parsed'] / st['parse_proc_secs']
+  except KeyError:
+    # This usually there were ZERO files.
+    print(node, st, repr(rel_path), file=sys.stderr)
+    raise
+
+  data = {
+      'rel_path': rel_path,
+      'subtree_stats': node.subtree_stats,  # redundant totals
+      'files': files,
+      'dirs': dirs,
+      'base_url': base_url,
+      'stderr': node.stderr,
+      'nav': _MakeNav(rel_path),
+  }
+  # Hack to add links for top level page:
+  if rel_path == '':
+    data['top_level_links'] = True
+
+  group = PAGE_TEMPLATES['LISTING']
+  body = BODY_STYLE.expand(data, group=group)
+
   path = os.path.join(out_dir, 'index.html')
   with open(path, 'w') as f:
-    files = []
-    for name in sorted(node.files, key=_Lower):
-      stats = node.files[name]
-      entry = dict(stats)
-      entry['name'] = name
-      # TODO: This should be internal time
-      entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
-      files.append(entry)
-
-    dirs = []
-    for name in sorted(node.dirs, key=_Lower):
-      entry = dict(node.dirs[name].subtree_stats)
-      entry['name'] = name
-      # TODO: This should be internal time
-      entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
-      dirs.append(entry)
-
-    # TODO: Is there a way to make this less redundant?
-    st = node.subtree_stats
-    try:
-      st['lines_per_sec'] = st['lines_parsed'] / st['parse_proc_secs']
-    except KeyError:
-      # This usually there were ZERO files.
-      print(node, st, repr(rel_path), file=sys.stderr)
-      raise
-
-    data = {
-        'rel_path': rel_path,
-        'subtree_stats': node.subtree_stats,  # redundant totals
-        'files': files,
-        'dirs': dirs,
-        'base_url': base_url,
-        'stderr': node.stderr,
-        'nav': _MakeNav(rel_path),
-    }
-    # Hack to add links for top level page:
-    if rel_path == '':
-      data['top_level_links'] = True
-
-    group = PAGE_TEMPLATES['LISTING']
-    body = BODY_STYLE.expand(data, group=group)
     f.write(body)
 
   log('Wrote %s', path)
@@ -800,3 +801,6 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+
+# vim: sw=2

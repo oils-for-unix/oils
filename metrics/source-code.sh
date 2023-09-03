@@ -268,6 +268,9 @@ _overview() {
   ysh-files | $count \
     'YSH (and Tea)' '' "$@"
 
+  ls stdlib/*.ysh | $count \
+    "YSH stdlib" '' "$@"
+
   ls pylib/*.py | filter-py | $count \
     "Code Borrowed from Python's stdlib" '' "$@"
 
@@ -327,6 +330,14 @@ for-translation() {
 
 overview() {
   _overview category-text
+}
+
+print-files() {
+  xargs -n 1 -- echo
+}
+
+overview-list() {
+  _overview print-files
 }
 
 #

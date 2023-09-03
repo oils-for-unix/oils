@@ -350,8 +350,9 @@ all-parallel() {
 all-tests-to-html() {
   local manifest=$1
   local output_base_dir=$2
+  # ignore attrs output
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs --verbose -- doctools/src_tree.py spec-files $output_base_dir
+    | xargs --verbose -- doctools/src_tree.py spec-files $output_base_dir >/dev/null
 
     #| xargs -n 1 -P $MAX_PROCS -- $0 test-to-html $output_base_dir
   log "done: all-tests-to-html"

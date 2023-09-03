@@ -19,7 +19,6 @@ export PYTHONPATH=.
 
 # TODO:
 #
-# - replace test/spec-runner.sh with this
 # - replace important-code
 #   - soil/ovm-tarball/src-tree ?  Then _tmp/src-tree vs. source-code.wwz
 # - Highlighters
@@ -27,12 +26,11 @@ export PYTHONPATH=.
 #   - C++ - preprocessor
 #   - ASDL can replace line counter in metrics/source-code.sh
 #     - it's pretty trivial, since ASDL has no string literals
-# - Simple directory lister, just for fun
-# - should README.md be HTML?
+# - should README.md be inserted in index.html ?
 #   - probably, sourcehut has this too
 #   - use cmark
 
-# Honestly I want to write my own
+# Highlighters I'd like to write:
 #  - syntax highlighter, that finds string literals and comments
 #  - as a side effect it estimates significant lines of code
 #    - minus comments and blank lines
@@ -43,10 +41,32 @@ export PYTHONPATH=.
 #    - ASDL - just blank lines and comments
 #    - maybe grammar files
 
+lexer-files() {
+  for rel_path in \
+    _build/tmp/frontend/match.re2c.txt \
+    _gen/frontend/match.re2c.h \
+    _gen/frontend/id_kind.asdl_c.h; do
+    echo $rel_path
+  done
+}
 
-test-src-tree() {
+print-files() {
+  lexer-files
+  metrics/source-code.sh overview-list
+}
+
+soil-run() {
+  ### Write tree starting at _tmp/src-tree/index.html
+
+  # This will eventually into a .wwz file?  src-tree.wwz?
+  # Have to work out the web too
   local out=_tmp/src-tree
-  doctools/src_tree.py files $out stdlib/*.ysh spec/*.test.sh
+
+  local attrs=_tmp/attrs.txt
+
+  print-files | xargs doctools/src_tree.py files $out | tee $attrs
+
+  doctools/src_tree.py dirs $out < $attrs
 }
 
 repo() {

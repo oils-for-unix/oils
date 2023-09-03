@@ -4,10 +4,8 @@ src_tree.py: Publish a directory tree as HTML
 """
 from __future__ import print_function
 
-import cgi
-import cStringIO
 import os
-import re
+import shutil
 import sys
 
 from doctools.util import log
@@ -15,6 +13,8 @@ from doctools import html_head
 
 from test import jsontemplate
 from test import wild_report
+
+T = jsontemplate.Template
 
 
 def DetectType(path):
@@ -28,10 +28,15 @@ def DetectType(path):
   elif path.endswith('.sh'):
     return 'sh'
 
-  elif path.endswith('.py'):
+  elif path.endswith('.py') or path.endswith('.pyi'):
     return 'py'
 
-  elif path.endswith('.cc') or path.endswith('.h'):
+  # Same lexical syntax
+  elif path.endswith('.pgen2') or path.endswith('.asdl'):
+    return 'py'
+
+  # C files are the same
+  elif path.endswith('.cc') or path.endswith('.h') or path.endswith('.c'):
     return 'cc'
 
   else:
@@ -40,7 +45,7 @@ def DetectType(path):
 
 
 def Breadcrumb(rel_path, out_f):
-  data = wild_report._MakeNav(rel_path, root_name='oils')
+  data = wild_report._MakeNav(rel_path, root_name='OILS')
   out_f.write(wild_report.NAV_TEMPLATE.expand({'nav': data}))
 
 
@@ -49,7 +54,9 @@ def Breadcrumb(rel_path, out_f):
 # To avoid copy-paste problem, you could try the <div> solutions like this:
 # https://gitlab.com/gitlab-examples/python-getting-started/-/blob/master/manage.py?ref_type=heads
 
-ROW_T = jsontemplate.Template("""\
+# Note: we are compressing some stuff
+
+ROW_T = T("""\
 <tr>
   <td class=num>{line_num}</td>
   <td id=L{line_num}>
@@ -59,10 +66,35 @@ ROW_T = jsontemplate.Template("""\
 """, default_formatter='html')
 
 
-def Files(pairs, spec_to_html=False):
+LISTING_T = T("""\
+<body class="width40">
+
+{.section dirs}
+<div id="dirs">
+  <h1>Dirs</h1>
+  {.repeated section @}
+    <a href="{name|htmltag}/index.html">{name|html}/</a> <br/>
+  {.end}
+</div>
+{.end}
+
+{.section files}
+<div id="files">
+  <h1>Files</h1>
+  {.repeated section @}
+    <a href="{name|htmltag}.html">{name|html}</a> <br/>
+  {.end}
+</div>
+{.end}
+
+</body>
+""")
+
+
+def Files(pairs, attrs_f, spec_to_html=False):
 
   for i, (path, html_out) in enumerate(pairs):
-    log(path)
+    #log(path)
 
     try:
       os.makedirs(os.path.dirname(html_out))
@@ -76,7 +108,7 @@ def Files(pairs, spec_to_html=False):
       n = path.count('/') + 2
       base_dir = '/'.join(['..'] * n)
 
-      css_urls = ['%s/web/base.css' % base_dir, '%s/web/spec-code.css' % base_dir]
+      css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
@@ -118,8 +150,8 @@ def Files(pairs, spec_to_html=False):
 
         line_num += 1
 
-      # ATTRS
-      #print('%s lines=%d' %(path, line_num))
+      # parsed by 'dirs'
+      print('%s lines=%d' % (path, line_num), file=attrs_f)
 
       out_f.write('''
         </table>
@@ -129,19 +161,129 @@ def Files(pairs, spec_to_html=False):
   return i + 1
 
 
+class DirNode:
+  """Entry in the file system tree.
+
+  Similar to test/wild_report.py
+  """
+
+  def __init__(self):
+    self.files = {}  # filename -> attrs dict
+    self.dirs = {}  # subdir name -> DirNode object
+
+    # Can accumulate total lines here
+    self.subtree_stats = {}  # name -> value
+
+
+def DebugPrint(node, indent=0):
+  """Debug print."""
+  ind = indent * '    '
+  #print('FILES', node.files.keys())
+  for name in node.files:
+    print('%s%s - %s' % (ind, name, node.files[name]))
+
+  for name, child in node.dirs.iteritems():
+    print('%s%s/ - %s' % (ind, name, child.subtree_stats))
+    DebugPrint(child, indent=indent+1)
+
+
+def UpdateNodes(node, path_parts, attrs):
+  """Similar to test/wild_report.y"""
+
+  first = path_parts[0]
+  rest = path_parts[1:]
+
+  if rest:  # update an intermediate node
+    if first in node.dirs:
+      child = node.dirs[first]
+    else:
+      child = DirNode()
+      node.dirs[first] = child
+
+    UpdateNodes(child, rest, attrs)
+
+  else:
+    # leaf node
+    node.files[first] = attrs
+
+
+def MakeTree(stdin, root_node):
+  for line in sys.stdin:
+    path, attrs = line.split(None, 1)
+    path_parts = path.split('/')
+    UpdateNodes(root_node, path_parts, {})
+
+
+def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
+  log('WriteHtmlFiles %s %s %s', out_dir, rel_path, base_url)
+
+  files = []
+  for name in sorted(node.files):
+    files.append({'name': name})
+
+  dirs = []
+  for name in sorted(node.dirs):
+    dirs.append({'name': name})
+
+  data = {'files': files, 'dirs': dirs}
+  body = LISTING_T.expand(data)
+
+  path = os.path.join(out_dir, 'index.html')
+  with open(path, 'w') as f:
+
+    title = '%s - Listing' % rel_path
+    css_urls = ['%s../../web/base.css' % base_url, '%s../../web/src-tree.css' % base_url]
+    html_head.Write(f, title, css_urls=css_urls)
+
+    Breadcrumb(rel_path, f)
+
+    f.write(body)
+
+    f.write('</html>')
+
+  # Recursive
+  for name, child in node.dirs.iteritems():
+    child_out = os.path.join(out_dir, name)
+    child_rel = os.path.join(rel_path, name)
+    child_base = base_url + '../'
+    WriteHtmlFiles(child, child_out, rel_path=child_rel, base_url=child_base)
+
+
 def main(argv):
   action = argv[1]
 
   if action == 'files':
+    # Policy for _tmp/src-tree
+
     out_dir = argv[2]
     paths = argv[3:]
 
+    attrs_f = sys.stdout
+
     pairs = []
     for path in paths:
+
+      # _gen/frontend/match.re2c.h is 367 KB, and gets expanded to over 2 MB of HTML.
+      # So render big files as plain text.
+      # TODO: directory lister needs to take this into account
+
+      file_size = os.path.getsize(path)
+      if file_size > 100000:
+        out_path = os.path.join(out_dir, path)
+        try:
+          os.makedirs(os.path.dirname(out_path))
+        except OSError:
+          pass
+
+        shutil.copyfile(path, out_path)
+        print('%s raw=1' % path, file=attrs_f)
+        log('Copied %d byte file %s -> %s, no HTML', file_size, path, out_path)
+        continue
+
       html_out = os.path.join(out_dir, '%s.html' % path)
       pairs.append((path, html_out))
 
-    n = Files(pairs)
+    n = Files(pairs, attrs_f)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
 
@@ -157,7 +299,8 @@ def main(argv):
        html_out = os.path.join(out_dir, '%s.test.html' % name)
        pairs.append((src, html_out))
 
-    n = Files(pairs, spec_to_html=True)
+    attrs_f = sys.stdout
+    n = Files(pairs, attrs_f, spec_to_html=True)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
 
@@ -165,7 +308,17 @@ def main(argv):
     # stdin: a bunch of merged ATTRs file?
 
     # We load them, and write a whole tree?
-    out_dir = argv[0]
+    out_dir = argv[2]
+
+    # I think we make a big data structure here
+
+    root_node = DirNode()
+    MakeTree(sys.stdin, root_node)
+
+    if 1:
+      DebugPrint(root_node)
+
+    WriteHtmlFiles(root_node, out_dir)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
