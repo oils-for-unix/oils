@@ -1066,7 +1066,7 @@ class CommandParser(object):
             # - for global constants GLOBAL=~/src 
             #   - because YSH assignment doesn't have tilde sub
             # But disallow it inside proc and func
-            if not self.cmd_mode == cmd_mode_e.Global and len(suffix_words) == 0:
+            if self.cmd_mode != cmd_mode_e.Global and len(suffix_words) == 0:
                 p_die('Use const or var/setvar to assign in YSH', left_token)
 
         # Set a reference to words and redirects for completion.  We want to
