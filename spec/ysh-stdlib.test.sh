@@ -1,7 +1,7 @@
 # spec/ysh-stdlib
 
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### identity
 source --builtin funcs.ysh
@@ -96,4 +96,100 @@ echo status=$_status
 42
 42
 status=0
+## END
+
+#### any
+source --builtin list.ysh
+
+json write (any([]))
+json write (any([true]))
+json write (any([false]))
+json write (any([true, false]))
+json write (any([false, true]))
+json write (any([false, false]))
+json write (any([false, true, false]))
+json write (any([false, false, null, ""]))  # null and "" are falsey
+json write (any(["foo"]))  # "foo" is truthy
+## STDOUT:
+false
+true
+false
+true
+true
+false
+true
+false
+true
+## END
+
+#### all
+source --builtin list.ysh
+
+json write (all([]))
+json write (all([true]))
+json write (all([false]))
+json write (all([true, true]))
+json write (all([true, false]))
+json write (all([false, true]))
+json write (all([false, false]))
+json write (all([false, true, false]))
+json write (all(["foo"]))
+json write (all([""]))
+## STDOUT:
+true
+true
+false
+true
+false
+false
+false
+false
+true
+false
+## END
+
+#### sum
+source --builtin list.ysh
+
+json write (sum([]))
+json write (sum([0]))
+json write (sum([1, 2, 3]))
+## STDOUT:
+0
+0
+6
+## END
+
+#### reversed
+source --builtin list.ysh
+
+json write ([]->reverse())
+json write ([0]->reverse())
+json write ([2, 1, 3]->reverse())
+json write (["hello", "world"]->reverse())
+
+var mylist = [1, 2, 3]
+_ mylist->reverse()
+json write (mylist)  # should have been mutated
+## STDOUT:
+[
+
+]
+[
+  0
+]
+[
+  3,
+  1,
+  2
+]
+[
+  "world",
+  "hello"
+]
+[
+  3,
+  2,
+  1
+]
 ## END

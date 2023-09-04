@@ -1,7 +1,7 @@
 # spec/ysh-funcs
 
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### Identity function
 func id(x) {
@@ -231,6 +231,8 @@ json write (fib(10))
 ## END
 
 #### Recursive functions with LRU Cache
+source --builtin list.ysh
+
 var cache = []
 var maxSize = 4
 
@@ -243,15 +245,21 @@ func remove(l, i) {
 }
 
 func fib(n) {
-  for rev_idx, item in (reversed(cache)) {
+  var i = len(cache) - 1
+  var j = 0;
+  while (i >= 0) {
+    var item = cache[i]
+
     if (item[0] === n) {
-      const idx = len(cache) - rev_idx + 1
-      _ remove(cache, idx)
+      _ remove(cache, i)
       _ append(cache, item)
 
-      echo hit: $[n]  # is this a side-effect?
+      echo hit: $n
       return (item[1])
     }
+
+    setvar i = i - 1
+    setvar j += 1
   }
 
   var result = 0

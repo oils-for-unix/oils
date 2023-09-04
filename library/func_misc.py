@@ -155,6 +155,24 @@ class Len(vm._Callable):
                             loc.Missing)
 
 
+class Reverse(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        r = typed_args.Reader(pos_args, named_args)
+        li = r.PosList()
+        r.Done()
+
+        li.reverse()
+
+        return value.Null
+
+
 class Join(vm._Callable):
 
     def __init__(self):

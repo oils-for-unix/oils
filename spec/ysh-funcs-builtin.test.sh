@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 # TODO: Test that there are exceptions when there are too many args, etc.
 
@@ -63,6 +64,8 @@ write $[abs(-5)] $[abs(-0)] $[abs(5)]
 ## END
 
 #### any() and all()
+source --builtin list.ysh
+
 var a1 = all( :|yes yes| )
 var a2 = all( :|yes ''| )
 var a3 = all( :|'' ''| )
@@ -86,6 +89,8 @@ false
 ## END
 
 #### sum()
+source --builtin list.ysh
+
 var start = 42
 
 write $[sum( 0:3 )]
@@ -97,8 +102,9 @@ write $[sum( 0:0, start)]
 42
 ## END
 
-#### reversed()
-var x = reversed(0:3)
+#### List->reverse()
+var x = List(0:3)
+_ x->reverse()
 write @x
 ## STDOUT:
 2

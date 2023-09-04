@@ -1,0 +1,37 @@
+func any(list) {
+  ## Returns true if any value in the list is truthy.
+  ##
+  ## If the list is empty, return false.
+
+  for item in (list) {
+    if (item) {
+      return (true)
+    }
+  }
+  return (false)
+}
+
+func all(list) {
+  ## Returns true if all values in the list are truthy.
+  ##
+  ## If the list is empty, return true.
+
+  for item in (list) {
+    if (not item) {
+      return (false)
+    }
+  }
+  return (true)
+}
+
+func sum(list) {
+  ## Computes the sum of all elements in the list.
+  ##
+  ## Returns 0 for an empty list.
+
+  var sum = 0;
+  for item in (list) {
+    setvar sum += item
+  }
+  return (sum)
+}

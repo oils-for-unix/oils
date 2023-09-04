@@ -5,6 +5,8 @@
 
 shopt -s ysh:upgrade
 
+source --builtin list.ysh
+
 simple-demo() {
   var myarray = %(spam eggs ham)
 
@@ -33,11 +35,13 @@ simple-demo() {
   write -- @myarray
   echo
 
+  var mydict = { 'hello': 0, 'world': 1 }
+
   echo '+ You can also splice the result of a function returning a sequence:'
   echo '  Notes:'
-  echo '  - the reversed() function is from Python.'
+  echo '  - the Dict->reverse() method is from Python.'
   echo
-  write -- @[reversed(myarray)]
+  write -- @[mydict->keys()]
   echo
 
   # But this is a syntax error
