@@ -1,5 +1,5 @@
 
-## oils_failures_allowed: 6
+## oils_failures_allowed: 8
 
 #### append onto a=(1 2)
 shopt -s parse_at
@@ -506,4 +506,126 @@ builtin
 proc
 ---
 3
+## END
+
+#### type(x)
+echo $[type(1234)]
+echo $[type('foo')]
+echo $[type(false)]
+echo $[type(1.234)]
+echo $[type([])]
+echo $[type({})]
+echo $[type(null)]
+echo $[type(len)]
+echo $[type('foo'->startswith)]
+echo $[type(1:3)]
+## STDOUT:
+Int
+Str
+Bool
+Float
+List
+Dict
+Null
+Func
+BoundFunc
+Range
+## END
+
+#### Bool constructor
+echo "$[Bool(1234)]"
+echo "$[Bool(0)]"
+echo "$[Bool('foo')]"
+echo "$[Bool(true)]"
+echo "$[Bool(1.234)]"
+echo "$[Bool([])]"
+echo "$[Bool({})]"
+echo "$[Bool(null)]"
+echo "$[Bool(len)]"
+echo "$[Bool('foo'->startswith)]"
+echo "$[Bool(1:3)]"
+## STDOUT:
+true
+false
+true
+true
+true
+false
+false
+false
+true
+true
+true
+## END
+
+#### Int constructor
+echo "$[Int(1234)]"
+echo "$[Int('1234')]"
+echo "$[Int(1.234)]"
+## STDOUT:
+1234
+1234
+1
+## END
+
+#### Float constructor
+echo "$[Float(1234)]"
+echo "$[Float('1.234')]"
+echo "$[Float(2.345)]"
+## STDOUT:
+1234.0
+1.234
+2.345
+## END
+
+#### Str constructor
+echo "$[Str(1234)]"
+echo "$[Str(1.234)]"
+echo "$[Str('foo')]"
+## STDOUT:
+1234
+1.234
+foo
+## END
+
+#### Dict() for cloning
+var d = {'a': 1}
+= d
+var d2 = d
+setvar d2['b'] = 2
+= d # d2 should be an alias for d
+var d3 = Dict(d)
+setvar d3['c'] = 3
+# d3 should NOT be an alias
+= d3
+= d
+## STDOUT:
+(OrderedDict)   <'a': 1>
+(OrderedDict)   <'a': 1, 'b': 2>
+(OrderedDict)   <'a': 1, 'b': 2, 'c': 3>
+(OrderedDict)   <'a': 1, 'b': 2>
+## END
+
+#### Dict() with kv-list
+= Dict([['a', 1], ['b', 2]])
+## STDOUT:
+(OrderedDict)   <'a': 1, 'b': 2>
+## END
+
+#### List() for cloning
+var l = [1]
+= l
+var l2 = l
+_ append(l2, 2)
+= l # d2 should be an alias for d
+var l3 = List(l)
+_ append(l3, 3)
+# l3 should NOT be an alias
+= l3
+= l
+## STDOUT:
+(List)   [1]
+(List)   [1, 2]
+(List)   [1, 2, 3]
+(List)   [1, 2]
 ## END
