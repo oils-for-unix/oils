@@ -604,15 +604,6 @@ false
 true
 ## END
 
-#### Dict() with kv-list
-var d = Dict([['a', 1], ['b', 2]])
-echo $[d['a']]
-echo $[d['b']]
-## STDOUT:
-1
-2
-## END
-
 #### List() for cloning
 var l = [1]
 var l2 = l
@@ -627,4 +618,14 @@ echo $[len(l3)]
 2
 2
 3
+## END
+
+#### List constructor
+var l = List(1:5)
+var l2 = List({'a': 1, 'foo': 'bar'})
+echo $[l[2]]
+echo $[l2[1]] # NOTE: depends on dict being ordered
+## STDOUT:
+3
+foo
 ## END

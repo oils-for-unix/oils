@@ -284,9 +284,8 @@ class _Int(vm._Callable):
                 val = cast(value.Str, UP_val)
                 return value.Int(int(val.s))
 
-        raise error.TypeErr(
-            val, 'Int() expected Int, Float, or Str, but got %s' %
-            value_str(val.tag()), loc.Missing)
+        raise error.TypeErr(val, 'Int() expected Int, Float, or Str',
+                            loc.Missing)
 
 
 class _Float(vm._Callable):
@@ -316,9 +315,8 @@ class _Float(vm._Callable):
                 val = cast(value.Str, UP_val)
                 return value.Float(float(val.s))
 
-        raise error.TypeErr(
-            val, 'Float() expected Int, Float, or Str, but got %s' %
-            value_str(val.tag()), loc.Missing)
+        raise error.TypeErr(val, 'Float() expected Int, Float, or Str',
+                            loc.Missing)
 
 
 class _Str(vm._Callable):
@@ -329,9 +327,6 @@ class _Str(vm._Callable):
 
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
-
-        if len(pos_args) == 0:
-            return value.Str('')
 
         r = typed_args.Reader(pos_args, named_args)
         val = r.PosValue()
@@ -348,12 +343,10 @@ class _Str(vm._Callable):
                 return value.Str(str(val.f))
 
             elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                return value.Str(val.s)
+                return val
 
-        raise error.TypeErr(
-            val, 'Str() expected Str, Int, or Float, but got %s' %
-            value_str(val.tag()), loc.Missing)
+        raise error.TypeErr(val, 'Str() expected Str, Int, or Float',
+                            loc.Missing)
 
 
 class _List(vm._Callable):
@@ -365,32 +358,37 @@ class _List(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        if len(pos_args) == 0:
-            return value.List([])
-
         r = typed_args.Reader(pos_args, named_args)
         val = r.PosValue()
         r.Done()
 
+        l = []  # type: List[value_t]
+        it = None  # type: val_ops._ContainerIter
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.List):
                 val = cast(value.List, UP_val)
-                return value.List(list(val.items))
+                it = val_ops.ListIterator(val)
 
-            elif case(value_e.Str):
-                val = cast(value.Str, UP_val)
-                # MYCPP: rewrite list comprehension over sum type
-                l = [] # type: List[value_t]
-                for c in val.s:
-                    l.append(value.Str(c))
+            elif case(value_e.Dict):
+                val = cast(value.Dict, UP_val)
+                it = val_ops.DictIterator(val)
 
-                return value.List(l)
+            elif case(value_e.Range):
+                val = cast(value.Range, UP_val)
+                it = val_ops.RangeIterator(val)
 
-        raise error.TypeErr(
-            val,
-            'List() expected List or Str, but got %s' % value_str(val.tag()),
-            loc.Missing)
+            else:
+                raise error.TypeErr(val,
+                                    'List() expected Dict, List, or Range',
+                                    loc.Missing)
+
+        assert it is not None
+        while not it.Done():
+            l.append(it.FirstValue())
+            it.Next()
+
+        return value.List(l)
 
 
 class _Dict(vm._Callable):
@@ -402,44 +400,18 @@ class _Dict(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
-        d = NewDict() # type: Dict[str, value_t]
-        if len(pos_args) == 0:
-            return value.Dict(d)
-
         r = typed_args.Reader(pos_args, named_args)
         val = r.PosValue()
         r.Done()
 
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.List):
-                val = cast(value.List, UP_val)
-                for i, item in enumerate(val.items):
-                    kv = val_ops.ToList(item,
-                                        'expected item %d to be a List' % i,
-                                        loc.Missing)
-                    if len(kv) != 2:
-                        raise error.TypeErr(
-                            item,
-                            'expected item %d to have length 2, but has length %d'
-                            % (i, len(kv)), loc.Missing)
-
-                    k = val_ops.ToStr(
-                        kv[0],
-                        'expected first element of item %d to be Str' % i,
-                        loc.Missing)
-                    d[k] = kv[1]
-
-                return value.Dict(d)
-
-            elif case(value_e.Dict):
+            if case(value_e.Dict):
+                d = NewDict()  # type: Dict[str, value_t]
                 val = cast(value.Dict, UP_val)
                 for k, v in iteritems(val.d):
                     d[k] = v
 
                 return value.Dict(d)
 
-        raise error.TypeErr(
-            val,
-            'Dict() expected List or Dict, but got %s' % value_str(val.tag()),
-            loc.Missing)
+        raise error.TypeErr(val, 'Dict() expected List or Dict', loc.Missing)

@@ -47,15 +47,15 @@ For example:
 
 ## Bool()
 
-Returns the truth value of its argument. Returns `false` if provided the zero- or empty- values of any type or `Null`.
-Returns `true` for all other values. If the provided value is a boolean, this acts as an identity function.
+Returns the truth value of its argument. Similar to `bool()` in python, it returns `false` for `false`, `0`, `0.0`,
+`''`, `{}`, `[]`, and `null`.  Returns `true` for all other values.
 
 ## Int()
 
 Given a float, returns the largest integer that is less than the given value.
 
-    $ echo $[Int(1.23)]
-    1
+    $ = Int(1.23)
+    (Int)    1
 
 Given a string, `Int()` will attempt to convert the string to a base-10 integer. The base can be overriden by calling
 with a second argument.
@@ -74,8 +74,8 @@ with a second argument.
 
 Given an integer, returns the corressponding value flaoting point representation.
 
-    $ echo $[Float(1)]
-    1.0
+    $ = Float(1)
+    (Float)   1.0
 
 Given a string, `Float()` will attempt to convert the string to float.
 
@@ -87,30 +87,24 @@ Given a string, `Float()` will attempt to convert the string to float.
 
 ## Str()
 
-Calling with no arguments returns a new, empty string. Given a string, returns a copy of the original.
+Returns its argument if it's a string.
 
 ## List()
 
-Calling with no arguments returns a new, empty list. Given a list, returns a shallow copy of the original.
+Given a list, returns a shallow copy of the original.
 
-Given a string, returns a list containing one element for each character in the source string.
+Given an interable value (e.g. a range or dictionary), returns a list containing one element for each item in the
+original colleciton.
 
-    $ = List('foo')
-    (List)   ['f', 'o', 'o']
+    $ = List({'a': 1, 'b': 2})
+    (List)   ['a', 'b']
+
+    $ = List(1:5)
+    (List)   [1, 2, 3, 4, 5]
 
 ## Dict()
 
-Calling with no arguments returns a new, empty dictionary. Given a dictionary, returns a shallow copy of the original.
-
-Can also be called with a list of key-value pairs to construct a new dictionary seeded with the given mapping.
-
-    var d = Dict([['n', 1], ['foo', 'bar']])
-
-    $ echo $[d['n']]
-    1
-
-    $ echo $[d['foo']]
-    bar
+Given a dictionary, returns a shallow copy of the original.
 
 ## Pattern
 
