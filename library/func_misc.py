@@ -276,6 +276,10 @@ class _Int(vm._Callable):
                 val = cast(value.Int, UP_val)
                 return value.Int(val.i)
 
+            elif case(value_e.Bool):
+                val = cast(value.Bool, UP_val)
+                return value.Int(int(val.b))
+
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
                 return value.Int(int(val.f))
@@ -284,7 +288,7 @@ class _Int(vm._Callable):
                 val = cast(value.Str, UP_val)
                 return value.Int(int(val.s))
 
-        raise error.TypeErr(val, 'Int() expected Int, Float, or Str',
+        raise error.TypeErr(val, 'Int() expected Bool, Int, Float, or Str',
                             loc.Missing)
 
 
