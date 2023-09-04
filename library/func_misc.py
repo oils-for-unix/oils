@@ -8,8 +8,9 @@ from _devbuild.gen.runtime_asdl import value, value_str, value_t, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import vm
+from core.ui import ValType
 from frontend import typed_args
-from mycpp.mylib import NewDict, log, tagswitch
+from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval, val_ops
 
 from typing import TYPE_CHECKING, Dict, List, cast
@@ -223,7 +224,7 @@ class Maybe(vm._Callable):
         return value.List([])
 
 
-class Type(vm._Callable):
+class _Type(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -236,11 +237,11 @@ class Type(vm._Callable):
         val = r.PosValue()
         r.Done()
 
-        tname = value_str(val.tag())
+        tname = ValType(val)
         return value.Str(tname[6:])  # strip "value." prefix
 
 
-class Bool(vm._Callable):
+class _Bool(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -256,7 +257,7 @@ class Bool(vm._Callable):
         return value.Bool(val_ops.ToBool(val))
 
 
-class Int(vm._Callable):
+class _Int(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -288,7 +289,7 @@ class Int(vm._Callable):
             value_str(val.tag()), loc.Missing)
 
 
-class Float(vm._Callable):
+class _Float(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -320,7 +321,7 @@ class Float(vm._Callable):
             value_str(val.tag()), loc.Missing)
 
 
-class Str(vm._Callable):
+class _Str(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -401,8 +402,9 @@ class _Dict(vm._Callable):
     def Call(self, pos_args, named_args):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
+        d = NewDict() # type: Dict[str, value_t]
         if len(pos_args) == 0:
-            return value.Dict(NewDict())
+            return value.Dict(d)
 
         r = typed_args.Reader(pos_args, named_args)
         val = r.PosValue()
@@ -412,7 +414,6 @@ class _Dict(vm._Callable):
         with tagswitch(val) as case:
             if case(value_e.List):
                 val = cast(value.List, UP_val)
-                d = NewDict()
                 for i, item in enumerate(val.items):
                     kv = val_ops.ToList(item,
                                         'expected item %d to be a List' % i,
@@ -433,8 +434,7 @@ class _Dict(vm._Callable):
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
-                d = NewDict()
-                for k, v in val.d.items():
+                for k, v in iteritems(val.d):
                     d[k] = v
 
                 return value.Dict(d)
