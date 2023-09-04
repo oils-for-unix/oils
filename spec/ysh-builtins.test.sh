@@ -1,5 +1,5 @@
 
-## oils_failures_allowed: 8
+## oils_failures_allowed: 6
 
 #### append onto a=(1 2)
 shopt -s parse_at

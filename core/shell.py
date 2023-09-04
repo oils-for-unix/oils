@@ -684,6 +684,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, '_end', func_eggex.End(mem))
     func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
     func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
+    func_init.SetGlobalFunc(mem, 'type', func_misc.Type())
+    func_init.SetGlobalFunc(mem, 'Bool', func_misc.Bool())
+    func_init.SetGlobalFunc(mem, 'Int', func_misc.Int())
+    func_init.SetGlobalFunc(mem, 'Float', func_misc.Float())
+    func_init.SetGlobalFunc(mem, 'Str', func_misc.Str())
+    func_init.SetGlobalFunc(mem, 'List', func_misc._List())
+    func_init.SetGlobalFunc(mem, 'Dict', func_misc._Dict())
 
     # Do we want to make these methods?
     #

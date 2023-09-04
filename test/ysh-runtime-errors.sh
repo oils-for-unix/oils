@@ -401,9 +401,9 @@ test-float-construct() {
 }
 
 test-str-construct() {
-  # TODO: _expr-error-case '= Str({})'
-  # TODO: _expr-error-case '= Str([])'
-  # TODO: _expr-error-case '= Str(len)'
+  _expr-error-case '= Str({})'
+  _expr-error-case '= Str([])'
+  _expr-error-case '= Str(len)'
   _expr-error-case '= Str("foo"->startswith)'
 }
 
