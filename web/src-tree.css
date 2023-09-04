@@ -1,4 +1,23 @@
-/* For spec test code listings */
+/* For doctools/src_tree.py */
+
+@media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+    font-family: sans-serif;
+  }
+}
+
+/* Like web/ref-index.css */
+h1 {
+  font-size: 1.4em;
+}
+
+a:link {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
 
 /* For highlighting specific lines.  Don't need an anchor! */
 :target {
@@ -8,6 +27,8 @@
 .num {
   color: #666;
   text-align: right;
+  /* Users can copy the code without copying line numbers */
+  user-select: none;
 }
 
 .line {
@@ -17,12 +38,13 @@
 .comm3 {
   /*font-style: italic;*/
   font-weight: bold;
-  color: #60a0b0;  /* this blue from Blog/pygments */
+  color: #0047ab;  /* Cobalt */
 }
 
 .comm1 {
-  color: #60a0b0
+  color: #0047ab;  /* Cobalt */
 }
+/* TODO: a real color scheme, for pre-processor, etc. */
 
 table {
   border-collapse: collapse;

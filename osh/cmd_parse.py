@@ -537,9 +537,14 @@ class CommandParser(object):
         # A hacky boolean to remove 'if cd / {' ambiguity.
         self.allow_block = True
 
-        # Stack of booleans for nested SHELL and Attr nodes.  There are cleverer
-        # encodings for this, like a uint64, and push 0b10 and 0b11.
-        self.allow_block_attrs = []  # type: List[bool]
+        # Stack of booleans for nested Attr and SHELL nodes.  
+        #   Attr nodes allow bare assignment x = 42, but not shell x=42.
+        #   SHELL nodes are the inverse.  'var x = 42' is preferred in shell
+        # nodes, but x42 is still allowed.
+        #
+        # Note: this stack could be optimized by turning it into an integer and
+        # binary encoding.
+        self.hay_attrs_stack = []  # type: List[bool]
 
         # Note: VarChecker is instantiated with each CommandParser, which means
         # that two 'proc foo' -- inside a command sub and outside -- don't
@@ -547,7 +552,7 @@ class CommandParser(object):
         # this OK but you can imagine different behaviors.
         self.var_checker = VarChecker()
 
-        self.cmd_mode = cmd_mode_e.Normal  # type: cmd_mode_t
+        self.cmd_mode = cmd_mode_e.Shell  # type: cmd_mode_t
 
         self.Reset()
 
@@ -756,7 +761,7 @@ class CommandParser(object):
                         if self.allow_block:  # Disabled for if/while condition, etc.
 
                             # allow x = 42
-                            self.allow_block_attrs.append(first_word_caps)
+                            self.hay_attrs_stack.append(first_word_caps)
                             brace_group = self.ParseBraceGroup()
 
                             # So we can get the source code back later
@@ -764,7 +769,7 @@ class CommandParser(object):
                                 brace_group.left, brace_group.right)
                             block = BlockArg(brace_group, lines)
 
-                            self.allow_block_attrs.pop()
+                            self.hay_attrs_stack.pop()
 
                         if 0:
                             print('--')
@@ -1061,11 +1066,16 @@ class CommandParser(object):
         if len(preparsed_list):
             left_token, _, _, _ = preparsed_list[0]
 
-            # Disallow X=Y when setvar X = 'Y' is idiomatic.  (Space sensitivity is bad.)
-            if not self.parse_opts.parse_sh_assign() and len(suffix_words) == 0:
-                p_die(
-                    'Use const or var/setvar to assign in YSH (parse_sh_assign)',
-                    left_token)
+            # Disallow X=Y inside proc and func
+            #   and inside Hay Attr blocks
+            # But allow X=Y at the top level
+            #   for interactive use foo=bar
+            #   for global constants GLOBAL=~/src 
+            #     because YSH assignment doesn't have tilde sub
+            if len(suffix_words) == 0:
+                if self.cmd_mode != cmd_mode_e.Shell or (
+                        len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
+                    p_die('Use var/setvar to assign in YSH', left_token)
 
         # Set a reference to words and redirects for completion.  We want to
         # inspect this state after a failed parse.
@@ -1086,21 +1096,24 @@ class CommandParser(object):
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
-        if (typed_args is not None and kw_token is not None and
-                kw_token.id == Id.ControlFlow_Return):
-            # typed return (this is special from the other control flow types)
-            if self.cmd_mode != cmd_mode_e.Func:
-                p_die("Unexpected typed return outside of a func",
-                      typed_loc)
-            if len(typed_args.pos_args) != 1:
-                p_die("Expected one argument passed to a typed return",
-                      typed_loc)
-            if len(typed_args.named_args) != 0:
-                p_die("Expected no named arguments passed to a typed return",
-                      typed_loc)
-            return command.Retval(kw_token, typed_args.pos_args[0])
-
         if kind == Kind.ControlFlow:
+            if kw_token.id == Id.ControlFlow_Return:
+                # return x - inside procs and shell functions
+                # return (x) - inside funcs
+                if typed_args is None:
+                    if self.cmd_mode not in (cmd_mode_e.Shell, cmd_mode_e.Proc):
+                        p_die('Shell-style returns not allowed here', kw_token)
+                else:
+                    if self.cmd_mode != cmd_mode_e.Func:
+                        p_die('Typed return is only allowed inside func',
+                              typed_loc)
+                    if len(typed_args.pos_args) != 1:
+                        p_die("Typed return expects one argument", typed_loc)
+                    if len(typed_args.named_args) != 0:
+                        p_die("Typed return doesn't take named arguments",
+                              typed_loc)
+                    return command.Retval(kw_token, typed_args.pos_args[0])
+
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
             if not self.parse_opts.parse_ignored() and len(redirects):
@@ -1120,10 +1133,6 @@ class CommandParser(object):
             else:
                 p_die('Unexpected argument to %r' % lexer.TokenVal(kw_token),
                       loc.Word(suffix_words[2]))
-
-            if (kw_token.id == Id.ControlFlow_Return and
-                    self.cmd_mode == cmd_mode_e.Func):
-                p_die("Unexpected shell_style return inside a func", kw_token)
 
             return command.ControlFlow(kw_token, arg_word)
 
@@ -1992,25 +2001,26 @@ class CommandParser(object):
         node.keyword = keyword_tok
 
         with ctx_VarChecker(self.var_checker, keyword_tok):
-            self.w_parser.ParseProc(node)
-            if node.sig.tag() == proc_sig_e.Closed:  # Register params
-                sig = cast(proc_sig.Closed, node.sig)
+            with ctx_CmdMode(self, cmd_mode_e.Proc):
+                self.w_parser.ParseProc(node)
+                if node.sig.tag() == proc_sig_e.Closed:  # Register params
+                    sig = cast(proc_sig.Closed, node.sig)
 
-                # Treat params as variables.
-                for param in sig.word_params:
-                    # TODO: Check() should not look at tval
-                    name_tok = param.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
-                if sig.rest_of_words:
-                    name_tok = sig.rest_of_words.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
-                    # We COULD register __out here but it would require a different API.
-                    #if param.prefix and param.prefix.id == Id.Arith_Colon:
-                    #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
+                    # Treat params as variables.
+                    for param in sig.word_params:
+                        # TODO: Check() should not look at tval
+                        name_tok = param.blame_tok
+                        self.var_checker.Check(Id.KW_Var, name_tok)
+                    if sig.rest_of_words:
+                        name_tok = sig.rest_of_words.blame_tok
+                        self.var_checker.Check(Id.KW_Var, name_tok)
+                        # We COULD register __out here but it would require a different API.
+                        #if param.prefix and param.prefix.id == Id.Arith_Colon:
+                        #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
 
-            self._SetNext()
-            node.body = self.ParseBraceGroup()
-            # No redirects for YSH procs (only at call site)
+                self._SetNext()
+                node.body = self.ParseBraceGroup()
+                # No redirects for YSH procs (only at call site)
 
         return node
 
@@ -2236,24 +2246,23 @@ class CommandParser(object):
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
                     tok = cast(Token, part0)
-                    # NOTE: tok.id should be Lit_Chars, but that check is redundant
                     if (match.IsValidVarName(tok.tval) and
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
+                        assert tok.id == Id.Lit_Chars, tok
 
-                        if len(self.allow_block_attrs
-                              ) and self.allow_block_attrs[-1]:
+                        if len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]:
                             # Note: no static var_checker.Check() for bare assignment
                             enode = self.w_parser.ParseBareDecl()
                             self._SetNext()  # Somehow this is necessary
-                            # TODO: Use BareDecl here.  Well, do that when we treat it as const
-                            # or lazy.
+                            # TODO: Use BareDecl here.  Well, do that when we
+                            # treat it as const or lazy.
                             return command.VarDecl(None, [NameType(tok, None)],
                                                    enode)
                         else:
                             self._SetNext()
                             self._GetWord()
                             p_die(
-                                'Unexpected = (Hint: use const/var/setvar, or quote it)',
+                                'Unexpected = (Hint: use var/setvar, or quote it)',
                                 loc.Word(self.cur_word))
 
             # echo foo

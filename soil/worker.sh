@@ -88,7 +88,7 @@ arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
-ysh-parse-errors    test/ysh-parse-errors.sh soil-run            -
+ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -
 tea-spec            test/spec-py.sh tea-all-serial               _tmp/spec/tea/index.html
 ysh-large           ysh/run.sh soil-run                          -
 tea-large           tea/run.sh soil-run                          -
@@ -191,10 +191,12 @@ oils-cpp-smoke   build/native.sh soil-run              -
 headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
+src-tree         doctools/src-tree.sh soil-run         _tmp/src-tree/index.html
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
+ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
 test-tar         devtools/release-native.sh test-tar   -

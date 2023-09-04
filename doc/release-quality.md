@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.17.0 Quality
+Oils 0.18.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -94,6 +94,8 @@ compared with the shell interpreter?
   - [benchmarks/gc](benchmarks.wwz/gc/).  Stats from the OS and our GC runtime.
   - [benchmarks/gc-cachegrind](benchmarks.wwz/gc-cachegrind/).  Stable
     measurements.
+- [uftrace](benchmarks.wwz/uftrace/).  Stable measurements for parsing and
+  runtime.
 
 ## Metrics
 
@@ -126,16 +128,16 @@ compared with the shell interpreter?
 These files may help you understand how Oils is implemented, i.e. with
 domain-specific languages and code generation.
 
-- [_gen/frontend/id_kind.asdl_c.h](source-code.wwz/_gen/frontend/id_kind.asdl_c.h).
+- [_gen/frontend/id_kind.asdl_c.h](src-tree.wwz/_gen/frontend/id_kind.asdl_c.h.html).
   A list of language elements, used in the lexer and in multiple parsers and
   evaluators.
 - The regex-based lexer uses two stages of code generation:
-  - [frontend/lexer_def.py](source-code.wwz/frontend/lexer_def.py)
-    | [_build/tmp/frontend/match.re2c.txt](source-code.wwz/_build/tmp/frontend/match.re2c.txt)
-    | [_gen/frontend/match.re2c.h](source-code.wwz/_gen/frontend/match.re2c.h)
-- [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
+  - [frontend/lexer_def.py](src-tree.wwz/frontend/lexer_def.py.html)
+    | [_build/tmp/frontend/match.re2c.txt](src-tree.wwz/_build/tmp/frontend/match.re2c.txt.html)
+    | [_gen/frontend/match.re2c.h](src-tree.wwz/_gen/frontend/match.re2c.h)
+- [frontend/syntax.asdl](src-tree.wwz/frontend/syntax.asdl.html). The syntax tree
   for OSH and YSH.
-- [ysh/grammar.pgen2](source-code.wwz/ysh/grammar.pgen2). The
+- [ysh/grammar.pgen2](src-tree.wwz/ysh/grammar.pgen2.html). The
   expression grammar for YSH.  In contrast, the OSH parsers are hand-written.
 
 Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.

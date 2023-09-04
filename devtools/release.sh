@@ -457,9 +457,9 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
-  log "--- source-code"
-  local out="$root/source-code.wwz"
-  pushd _tmp/important-source-code
+  log "--- src-tree"
+  local out="$root/srec-tree.wwz"
+  pushd _tmp/src-tree
   time zip -r -q $out .  # recursive, quiet
   popd
 
@@ -480,6 +480,8 @@ compress-benchmarks() {
   #   index.html, but include stage1 and stage2.
   # - For those that run on single machines, we also archive the raw/ dir.
   #   - Although benchmarks/compute is saved in oilshell/benchmark-data
+  # - Note: _tmp/uftrace/{raw,stage1} are big (hundreds of MB), so leave them
+  #   out
 
   pushd _tmp
   find \
@@ -491,6 +493,7 @@ compress-benchmarks() {
     gc/{raw,stage2,index.html} \
     gc-cachegrind/{raw,stage2,index.html} \
     mycpp-examples/{raw,stage2,index.html} \
+    uftrace/{stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 
   popd
@@ -518,12 +521,12 @@ metrics() {
 
   line-counts $PWD/$out/line-counts
 
+  # For another .wwz file
+  doctools/src-tree.sh soil-run
+
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
   build/cpython-defs.sh run-for-release
-
-  # For another .wwz file
-  build/doc.sh important-source-code
 
   tree $out
 }

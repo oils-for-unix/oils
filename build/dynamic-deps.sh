@@ -92,7 +92,6 @@ pgen2/pnode.py
 pylib/path_stat.py
 
 library/func_cpython.py
-library/func_eggex.py
 
 ysh/cpython.py
 

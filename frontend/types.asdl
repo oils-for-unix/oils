@@ -23,25 +23,23 @@ module types {
   | FuncParens  # for Id.LookAhead_FuncParens
 
   # Two for printf builtin
-
   | PrintfOuter | PrintfPercent
 
-  # Oil language has 4 main modes, 2 for regexes, and 4 kinds of strings
-  # (or maybe 6 with multiline?  Not sure if that's handled in the lexer.)
-
+  # YSH/eggex both use Expr
   | Expr      # var x = 1 + 2 * 3; echo $f(a, b + 1)
 
+  # TODO: J8Str is bit like SQ_C
   | QSN
-
-  # TODO:
-  # - Tagged strings.  Are these raw by default?
 
   # More possibilities
   # - printf formatting ${x %05d}.  I think that is mostly in expression mode
   #   like ${x|html} or ${x|title}
 
-  # Track the context of commands. Ie. are we in a func?
+  # CommandParser context
+  # Note: cmd_mode_e.Hay is better done with CommandParser.hay_attrs_stack,
+  # which is nested
   cmd_mode =
-    Normal  # Most contexts, such as: top-level, procs, etc.
-  | Func  # Inside a func f(...) { ... }
+    Shell   # Top level, and inside shell-style functions
+  | Func    # Inside a func,  return (x) is required
+  | Proc    # Inside proc { } -- shell assignments are disallowed
 }

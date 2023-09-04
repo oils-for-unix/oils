@@ -7,8 +7,8 @@ uses goto!
 
 Possible optimization flags for Compound:
 - has Lit_LBrace, LitRBrace -- set during word_parse phase
-  - it if has both, then do _BraceDetect
-- has BracedTuple -- set during _BraceDetect
+  - it if has both, then do BraceDetect
+- has BracedTuple -- set during BraceDetect
   - if it does, then do the expansion
 - has Lit_Star, ?, [ ] -- globbing?
   - but after expansion do you still have those flags?
@@ -194,7 +194,7 @@ class _StackFrame(object):
         self.saw_comma = False
 
 
-def _BraceDetect(w):
+def BraceDetect(w):
     # type: (CompoundWord) -> Optional[word.BracedTree]
     """Return a new word if the input word looks like a brace expansion.
 
@@ -315,7 +315,7 @@ def BraceDetectAll(words):
         # a lot of garbage from being created, since otherwise nearly every word
         # would be checked.  We could be even more precise but this is cheap.
         if len(w.parts) >= 3:
-            brace_tree = _BraceDetect(w)
+            brace_tree = BraceDetect(w)
             if brace_tree:
                 out.append(brace_tree)
                 continue

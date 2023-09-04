@@ -192,7 +192,6 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
                   parse_sh_arith (-u)    Is legacy shell arithmetic allowed?
-                  parse_sh_assign (-u)   Are legacy a=b and PATH=. cmd allowed?
                   X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
@@ -252,7 +251,7 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-builtin-func
   [Values]        len()   type() 
-  [Math]          abs()   sum()   max()   min()   round()
+  [Math]          abs()   max()   min()   round()   sum()
 X [Int]           ord()   chr()
 X [Str]           find(eggex)   replace(eggex, template)
                   startsWith()   endsWith()

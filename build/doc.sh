@@ -310,22 +310,6 @@ oil-grammar() {
   PYTHONPATH=. ysh/cmd_parse.py "$@"
 }
 
-important-source-code() {
-  local dest=_tmp/important-source-code
-  mkdir -p $dest
-
-  for rel_path in \
-    frontend/lexer_def.py \
-    _build/tmp/frontend/match.re2c.txt \
-    _gen/frontend/match.re2c.h \
-    _gen/frontend/id_kind.asdl_c.h \
-    frontend/syntax.asdl \
-    ysh/grammar.pgen2; do
-  mkdir -p $dest/$(dirname $rel_path)
-    cp --no-target-directory -v $rel_path $dest/$rel_path
-  done
-}
-
 #
 # Test Tools
 #

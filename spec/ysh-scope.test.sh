@@ -42,7 +42,8 @@ f() {
 }
 
 proc p {
-  x=p
+  # x=p not allowed at parse time
+  declare x=p
 }
 
 demo() {
@@ -281,7 +282,7 @@ shopt --set parse_proc
 # They can't mutate globals or anything higher on the stack
 
 proc p {
-  g=PROC
+  declare g=PROC
   export e=PROC
 }
 

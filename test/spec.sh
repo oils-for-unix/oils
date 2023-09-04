@@ -340,8 +340,8 @@ redirect() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-redirect-glob() {
-  run-file redirect-glob "$@"
+redirect-multi() {
+  run-file redirect-multi "$@"
 }
 
 posix() {

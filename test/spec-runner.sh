@@ -347,69 +347,14 @@ all-parallel() {
   time $0 _all-parallel "$@"
 }
 
-# NOTES:
-# - GitHub does it with tables -- 2-columns, a cell for each number and line.
-# - srcbook does it with a table of 2 CELLS, each with a <pre> block.  But it
-#   - but doesn't link to individual # ones yet?
-
-_test-to-html() {
-  local src=$1
-
-  # A row per line makes sense for highlighting with ":target".
-
-  #print "<a name=L" NR "></a>" line_num " " $0 
-  #print "<span id=L" NR "></a>" line_num " " $0 "</span>"
-  # Explicit PRE tag messes up Firefox formatting.
-  #print "<td id=L" NR "><pre>" line "</pre></td>"
-
-  html-head --title "$src code listing" \
-    ../../../web/base.css ../../../web/spec-code.css
-
-  cat <<EOF
-  <body class="width40">
-    <table>
-EOF
-  awk < $src '
-  { 
-    # & is the substitution character.  Why is \\& a literal backslash instead
-    # of \&?  This changed on the gawk between Ubuntu 14.04 and 16.04.
-
-    gsub("&", "\\&amp;");
-    gsub("<", "\\&lt;");
-    gsub(">", "\\&gt;");
-    line_num = NR
-
-    print "<tr>"
-    print "<td class=num>" line_num "</td>"
-    if ($0 ~ /^###/) {
-      line = "<span class=comm3>" $0 "</span>"
-    } else if ($0 ~ /^#/) {
-      line = "<span class=comm1>" $0 "</span>"
-    } else {
-      line = $0
-    }
-    print "<td class=line id=L" line_num ">" line "</td>"
-    print "</tr>"
-  }
-  '
-  cat <<EOF
-    </table>
-  </body>
-</html>
-EOF
-}
-
-test-to-html() {
-  local output_base_dir=$1
-  local spec_name=$2
-  _test-to-html spec/${spec_name}.test.sh > $output_base_dir/${spec_name}.test.html
-}
-
 all-tests-to-html() {
   local manifest=$1
   local output_base_dir=$2
+  # ignore attrs output
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs -n 1 -P $MAX_PROCS -- $0 test-to-html $output_base_dir
+    | xargs --verbose -- doctools/src_tree.py spec-files $output_base_dir >/dev/null
+
+    #| xargs -n 1 -P $MAX_PROCS -- $0 test-to-html $output_base_dir
   log "done: all-tests-to-html"
 }
 

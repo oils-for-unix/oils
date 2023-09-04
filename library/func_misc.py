@@ -165,9 +165,59 @@ class Reverse(vm._Callable):
         # type: (List[value_t], Dict[str, value_t]) -> value_t
 
         r = typed_args.Reader(pos_args, named_args)
-        list_ = r.PosList()
+        li = r.PosList()
         r.Done()
 
-        list_.reverse()
+        li.reverse()
 
         return value.Null
+
+
+class Reverse(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        r = typed_args.Reader(pos_args, named_args)
+        li = r.PosList()
+
+        delim = ''
+        if len(pos_args): # reader has a reference
+            delim = r.PosStr()
+
+        r.Done()
+
+        strs = []  # type: List[str]
+        for i, el in enumerate(li):
+            strs.append(val_ops.Stringify(el, loc.Missing))
+
+        return value.Str(delim.join(strs))
+
+
+class Maybe(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> value_t
+
+        r = typed_args.Reader(pos_args, named_args)
+        val = r.PosValue()
+        r.Done()
+
+        if val == value.Null:
+            return value.List([])
+
+        s = val_ops.ToStr(
+            val, 'maybe() expected Str, but got %s' % value_str(val.tag()),
+            loc.Missing)
+        if len(s):
+            return value.List([val])  # use val to avoid needlessly copy
+
+        return value.List([])

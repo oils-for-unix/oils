@@ -13,8 +13,8 @@ status=127
 y=
 ## END
 
-#### oil:upgrade behavior
-shopt --set oil:upgrade
+#### ysh:upgrade behavior
+shopt --set ysh:upgrade
 
 # allow errors
 set +o errexit +o nounset
@@ -32,21 +32,24 @@ status=0
 x=1
 ## END
 
-#### oil:all behavior
-shopt --set oil:all
+#### x=y is allowed at the top level
+shopt --set ysh:all
 
 # allow errors
 set +o errexit +o nounset
 
-x=1  # fails here
+x=42
 echo status=$?
 echo x=$x
 
-y = 2
+y = 2  # fails because = is ambiguous
 echo status=$?
 echo y=$y
+
 ## status: 2
 ## STDOUT:
+status=0
+x=42
 ## END
 
 
@@ -73,7 +76,7 @@ y=foo
 
 #### bare assignment inside Hay blocks
 
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Package
 

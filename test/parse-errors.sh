@@ -8,77 +8,76 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh
+source test/sh-assert.sh  # banner, _assert-sh-status
 
 # Run with SH=bash too
 SH=${SH:-bin/osh}
+YSH=${YSH:-bin/ysh}
 
-banner() {
-  echo
-  echo ===== CASE: "$@" =====
-  echo
+#
+# Assertions
+#
+
+_should-parse() {
+  ### Pass a string that should parse as $1
+
+  local message='Should parse under OSH'
+  _assert-sh-status 0 $SH "$message" \
+    -n -c "$@"
 }
 
-oils-cpp-bug() {
-  ### TODO: Fix all cases guarded by this condition
-
-  case $SH in
-    *_bin/*/osh)
-      return 1
-      ;;
-  esac
-
-  return 0
+_should-parse-here() {
+  ### Take stdin a here doc, pass it as first argument
+  _should-parse "$(cat)"
 }
 
 _error-case() {
-  ### Assert that a parse error happens without running the program
-
-  banner "$@"
-  echo
-
-  $SH -n -c "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
+  ### Pass a string that should NOT parse as $1
+  local message='Should NOT parse under OSH'
+  _assert-sh-status 2 $SH "$message" \
+    -n -c "$@"
 }
 
-_error-case-here() { _error-case "$(cat)"; }
+_error-case-here() {
+  ### Take stdin a here doc, pass it as first argument
+  _error-case "$(cat)";
+}
 
-_error-case2() {
+# YSH assertions
+
+_ysh-should-parse() {
+  local message='Should parse under YSH'
+  _assert-sh-status 0 $YSH "$message" \
+    -n -c "$@"
+}
+
+_ysh-parse-error() {
+  ### Assert that a parse error happens with Oil options on
+  local message='Should NOT parse under YSH'
+  _assert-sh-status 2 $YSH "$message" \
+    -n -c "$@"
+}
+
+# So we can write single quoted strings in an easier way
+_ysh-parse-error-here() {
+  _ysh-parse-error "$(cat)"
+}
+
+# More detailed assertions
+
+_assert-status-2() {
   ### An interface where you can pass flags like -O parse_backslash
 
-  banner "$@"
-  echo
-
-  $SH "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
+  local message=$0
+  _assert-sh-status 2 $SH $message "$@"
 }
 
-_error-case2-here() { _error-case2 "$@" -c "$(cat)"; }
-
-_should-parse() {
-  banner "$@"
-  echo
-  $SH -n -c "$@"
-
-  local status=$?
-  if test $status != 0; then
-    die "Expected it to parse"
-  fi
+_assert-status-2-here() {
+  _assert-status-2 "$@" -c "$(cat)"
 }
-
-_should-parse-here() { _should-parse "$(cat)"; }
 
 _runtime-parse-error() {
-  ### Assert that a parse error happens at runtime
+  ### Assert that a parse error happens at runtime, e.g. for [ z z ]
 
   banner "$@"
   echo
@@ -91,32 +90,9 @@ _runtime-parse-error() {
   fi
 }
 
-_ysh-should-parse() {
-  banner "$@"
-  echo
-  $SH -O oil:all -n -c "$@"
-
-  local status=$?
-  if test $status != 0; then
-    die "Expected it to parse"
-  fi
-}
-
-_ysh-parse-error() {
-  ### Assert that a parse error happens with Oil options on
-
-  banner "$@"
-  echo
-  $SH -O oil:all -c "$@"
-
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
-}
-
-# So we can write single quoted strings in an easier way
-_ysh-parse-error-here() { _ysh-parse-error "$(cat)"; }
+#
+# Cases
+#
 
 # All in osh/word_parse.py
 patsub() {
@@ -398,9 +374,7 @@ other-builtins() {
   _runtime-parse-error 'pushd x y'
   _runtime-parse-error 'pwd -x'
 
-  if oils-cpp-bug; then
-    _runtime-parse-error 'pp x foo a-x'
-  fi
+  _runtime-parse-error 'pp x foo a-x'
 
   _runtime-parse-error 'wait zzz'
   _runtime-parse-error 'wait %jobspec-not-supported'
@@ -548,9 +522,7 @@ args-parse-builtin() {
   _runtime-parse-error 'read -n'  # expected argument for -n
   _runtime-parse-error 'read -n x'  # expected integer
 
-  if oils-cpp-bug; then
-    _runtime-parse-error 'set -o errexit +o oops'
-  fi
+  _runtime-parse-error 'set -o errexit +o oops'
 
   # not implemented yet
   #_error-case 'read -t x'  # expected floating point number
@@ -588,30 +560,11 @@ invalid-brace-ranges() {
   _error-case 'echo {z..a..1}'
 }
 
-ysh_var() {
-  set +o errexit
-
-  # Unterminated
-  _ysh-parse-error 'var x = 1 + '
-
-  _ysh-parse-error 'var x = * '
-
-  _ysh-parse-error 'var x = @($(cat <<EOF
-here doc
-EOF
-))'
-
-  _ysh-parse-error 'var x = $(var x = 1))'
-}
-
 append-builtin() {
   set +o errexit
 
-  # Unterminated
-  if oils-cpp-bug; then
-    _runtime-parse-error 'append'
-    _runtime-parse-error 'append invalid-'
-  fi
+  _runtime-parse-error 'append'
+  _runtime-parse-error 'append invalid-'
 
   #_error-case 'push notarray'  # returns status 1
 }
@@ -698,29 +651,6 @@ extra-newlines() {
   '
 }
 
-blocks() {
-  set +o errexit
-
-  _ysh-parse-error '>out { echo hi }'
-  _ysh-parse-error 'a=1 b=2 { echo hi }'
-  _ysh-parse-error 'break { echo hi }'
-  # missing semicolon
-  _ysh-parse-error 'cd / { echo hi } cd /'
-}
-
-parse_brace() {
-  # missing space
-  _ysh-parse-error 'if test -f foo{ echo hi }'
-
-}
-
-proc_sig() {
-  set +o errexit
-  _ysh-parse-error 'proc f[] { echo hi }'
-  _ysh-parse-error 'proc : { echo hi }'
-  _ysh-parse-error 'proc foo::bar { echo hi }'
-}
-
 proc_arg_list() {
   set +o errexit
 
@@ -748,14 +678,12 @@ json write (x) {
   echo hi
 }'
 
-  if oils-cpp-bug; then
-    # multiple lines
-    _should-parse 'json write (
-      x,
-      y,
-      z
-    )'
-  fi
+  # multiple lines
+  _should-parse 'json write (
+    x,
+    y,
+    z
+  )'
 
   # can't be empty
   _ysh-parse-error 'json write ()'
@@ -767,153 +695,6 @@ json write (x) {
   _ysh-parse-error 'f(x)'  # test short name
 }
 
-regex_literals() {
-  set +o errexit
-
-  _ysh-parse-error 'var x = / ! /'
-  _ysh-should-parse 'var x = / ![a-z] /'
-
-  if oils-cpp-bug; then
-    _ysh-should-parse 'var x = / !d /'
-  fi
-
-  _ysh-parse-error 'var x = / !! /'
-
-  # missing space between rangfes
-  _ysh-parse-error 'var x = /[a-zA-Z]/'
-  _ysh-parse-error 'var x = /[a-z0-9]/'
-
-  _ysh-parse-error 'var x = /[a-zz]/'
-
-  # can't have multichar ranges
-  _ysh-parse-error "var x = /['ab'-'z']/"
-
-  # range endpoints must be constants
-  _ysh-parse-error 'var x = /[$a-${z}]/'
-
-  # These are too long too
-  _ysh-parse-error 'var x = /[abc]/'
-
-  # Single chars not allowed, should be /['%_']/
-  _ysh-parse-error 'var x = /[% _]/'
-
-}
-
-ysh_expr() {
-  set +o errexit
-  # old syntax
-  _ysh-parse-error '= 5 mod 3'
-
-  _ysh-parse-error '= >>='
-  _ysh-parse-error '= %('
-
-  # Singleton tuples
-  _ysh-parse-error '= 42,'
-  _ysh-parse-error '= (42,)'
-
-  # Disallowed unconditionally
-  _ysh-parse-error '=a'
-
-  _ysh-parse-error '
-    var d = {}
-    = d["foo", "bar"]
-  '
-}
-
-ysh_expr_more() {
-  set +o errexit
-
-  # user must choose === or ~==
-  _ysh-parse-error 'if (5 == 5) { echo yes }'
-
-  _ysh-should-parse 'echo $[join(x)]'
-
-  _ysh-parse-error 'echo $join(x)'
-
-  _ysh-should-parse 'echo @[split(x)]'
-  _ysh-should-parse 'echo @[split(x)] two'
-
-  _ysh-parse-error 'echo @[split(x)]extra'
-
-  # Old syntax to remove
-  #_ysh-parse-error 'echo @split("a")'
-}
-
-ysh_hay_assign() {
-  set +o errexit
-
-  _ysh-parse-error '
-name=val
-'
-
-  _ysh-parse-error '
-name = val
-'
-
-  _ysh-parse-error '
-rule {
-  x = 42
-}
-'
-
-  _ysh-parse-error '
-RULE {
-  x = 42
-}
-'
-
-  _ysh-should-parse '
-Rule {
-  x = 42
-}
-'
-
-  _ysh-should-parse '
-Rule X Y {
-  x = 42
-}
-'
-
-  _ysh-should-parse '
-RULe {   # inconsistent but OK
-  x = 42
-}
-'
-
-  _ysh-parse-error '
-hay eval :result {
-
-  Rule {
-    foo = 42
-  }
-
-  bar = 43   # parse error here
-}
-'
-
-  if oils-cpp-bug; then
-  _ysh-parse-error '
-hay define TASK
-
-TASK build {
-  foo = 42
-}
-'
-
-  # CODE node nested inside Attr node.
-  _ysh-parse-error '
-hay define Package/TASK
-
-Package libc {
-  TASK build {
-    foo = 42
-  }
-}
-'
-  fi
-}
-
-
 ysh_string_literals() {
   set +o errexit
 
@@ -922,7 +703,7 @@ ysh_string_literals() {
 echo $'\u{03bc'
 EOF
   # Not with parse_backslash
-  _error-case2-here +O parse_backslash -n <<EOF
+  _assert-status-2-here +O parse_backslash -n <<EOF
 echo parse_backslash $'\u{03bc'
 EOF
   # Not in Oil
@@ -953,7 +734,7 @@ EOF
 
   _should-parse 'echo "\z"'
   # Double quoted is an error
-  _error-case2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
+  _assert-status-2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
 
@@ -968,7 +749,7 @@ EOF
 
   _ysh-parse-error 'setvar x = "\z"'
 
-  _ysh-parse-error <<'EOF'
+  _ysh-parse-error-here <<'EOF'
 setvar x = $'\z'
 EOF
 
@@ -981,8 +762,8 @@ parse_backticks() {
   _should-parse 'echo `echo hi`'
   _should-parse 'echo "foo = `echo hi`"'
 
-  _error-case2 +O parse_backticks -n -c 'echo `echo hi`'
-  _error-case2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
+  _assert-status-2 +O parse_backticks -n -c 'echo `echo hi`'
+  _assert-status-2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
 }
 
 parse_dollar() {
@@ -1007,7 +788,7 @@ parse_dollar() {
   )
   for c in "${CASES[@]}"; do
     _should-parse "$c"
-    _error-case2 +O parse_dollar -n -c "$c"
+    _assert-status-2 +O parse_dollar -n -c "$c"
     _ysh-parse-error "$c"
   done
 }
@@ -1078,16 +859,6 @@ ysh_to_make_nicer() {
   #_ysh-parse-error ' d = %{}'
 }
 
-parse_at() {
-  set +o errexit
-
-  _ysh-parse-error 'echo @'
-  _ysh-parse-error 'echo @@'
-  _ysh-parse-error 'echo @{foo}'
-  _ysh-parse-error 'echo @/foo/'
-  _ysh-parse-error 'echo @"foo"'
-}
-
 invalid_parens() {
   set +o errexit
 
@@ -1116,23 +887,6 @@ f() {
 }
 '
   _error-case "$s"
-}
-
-ysh_nested_proc() {
-  set +o errexit
-
-  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
-
-  # ksh function
-  _ysh-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
-
-  _ysh-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
-
-  # shell nesting is still allowed
-  _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
-
-  _ysh-should-parse 'proc p() { shopt --unset errexit { false hi } }'
 }
 
 ysh_var_decl() {
@@ -1739,7 +1493,6 @@ cases-in-strings() {
   proc_sig
   proc_arg_list
   ysh_var
-  ysh_expr
   ysh_expr_more
   ysh_hay_assign
   ysh_string_literals
@@ -1804,8 +1557,7 @@ soil-run-cpp() {
   ### Run with oils-for-unix
 
   ninja _bin/cxx-asan/osh
-
-  ASAN_OPTIONS='detect_leaks=0' SH=_bin/cxx-asan/osh all
+  SH=_bin/cxx-asan/osh all
 }
 
 release-oils-for-unix() {

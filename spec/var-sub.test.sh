@@ -30,20 +30,6 @@ fun _tmp/var-sub1 _tmp/var-sub2
 ## status: 1
 ## OK dash status: 2
 
-#### Filename redirect with split word
-# bash - runtime error, ambiguous redirect
-# mksh and dash - they will NOT apply word splitting after redirect, and write
-# to '_tmp/1 2'
-# Stricter behavior seems fine.
-foo='_tmp/1 2'
-rm '_tmp/1 2'
-echo hi > $foo
-test -f '_tmp/1 2' && cat '_tmp/1 2'
-## status: 0
-## stdout: hi
-## OK bash status: 1
-## OK bash stdout-json: ""
-
 #### Descriptor redirect to bad "$@"
 # All of them give errors:
 # dash - bad fd number, parse error?
