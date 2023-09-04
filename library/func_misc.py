@@ -173,7 +173,7 @@ class Reverse(vm._Callable):
         return value.Null
 
 
-class Reverse(vm._Callable):
+class Join(vm._Callable):
 
     def __init__(self):
         # type: () -> None
