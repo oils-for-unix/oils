@@ -35,11 +35,13 @@ simple-demo() {
   write -- @myarray
   echo
 
+  var mydict = { 'hello': 0, 'world': 1 }
+
   echo '+ You can also splice the result of a function returning a sequence:'
   echo '  Notes:'
-  echo '  - the List->reverse() method is from Python.'
+  echo '  - the Dict->reverse() method is from Python.'
   echo
-  write -- @[myarray->reverse()]
+  write -- @[mydict->keys()]
   echo
 
   # But this is a syntax error
