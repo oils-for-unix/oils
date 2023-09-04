@@ -590,42 +590,41 @@ foo
 
 #### Dict() for cloning
 var d = {'a': 1}
-= d
 var d2 = d
 setvar d2['b'] = 2
-= d # d2 should be an alias for d
+echo $['b' in d] # d2 should be an alias for d
 var d3 = Dict(d)
 setvar d3['c'] = 3
 # d3 should NOT be an alias
-= d3
-= d
+echo $['c' in d]
+echo $['c' in d3]
 ## STDOUT:
-(OrderedDict)   <'a': 1>
-(OrderedDict)   <'a': 1, 'b': 2>
-(OrderedDict)   <'a': 1, 'b': 2, 'c': 3>
-(OrderedDict)   <'a': 1, 'b': 2>
+true
+false
+true
 ## END
 
 #### Dict() with kv-list
-= Dict([['a', 1], ['b', 2]])
+var d = Dict([['a', 1], ['b', 2]])
+echo $[d['a']]
+echo $[d['b']]
 ## STDOUT:
-(OrderedDict)   <'a': 1, 'b': 2>
+1
+2
 ## END
 
 #### List() for cloning
 var l = [1]
-= l
 var l2 = l
 _ append(l2, 2)
-= l # d2 should be an alias for d
+echo $[len(l)] # d2 should be an alias for d
 var l3 = List(l)
 _ append(l3, 3)
 # l3 should NOT be an alias
-= l3
-= l
+echo $[len(l)]
+echo $[len(l3)]
 ## STDOUT:
-(List)   [1]
-(List)   [1, 2]
-(List)   [1, 2, 3]
-(List)   [1, 2]
+2
+2
+3
 ## END
