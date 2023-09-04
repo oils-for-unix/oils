@@ -170,4 +170,4 @@ class Reverse(vm._Callable):
 
         list_.reverse()
 
-        return value.List(list_)
+        return value.Null

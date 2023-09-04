@@ -103,7 +103,8 @@ write $[sum( 0:0, start)]
 ## END
 
 #### List->reverse()
-var x = List(0:3)->reverse()
+var x = List(0:3)
+_ x->reverse()
 write @x
 ## STDOUT:
 2

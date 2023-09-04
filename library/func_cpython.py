@@ -118,11 +118,6 @@ class _VmEval(object):
         raise NotImplementedError()
 
 
-def _Reversed(mylist):
-    # Make a copy
-    return list(reversed(mylist))
-
-
 def Init2(mem, splitter, globber):
     # type: (state.Mem, split.SplitContext, glob_.Globber) -> None
 
