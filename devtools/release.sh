@@ -458,7 +458,7 @@ compress() {
   popd
 
   log "--- src-tree"
-  local out="$root/srec-tree.wwz"
+  local out="$root/src-tree.wwz"
   pushd _tmp/src-tree
   time zip -r -q $out .  # recursive, quiet
   popd
