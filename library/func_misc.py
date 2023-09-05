@@ -7,8 +7,8 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import value, value_str, value_t, value_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
+from core import ui
 from core import vm
-from core.ui import ValType
 from frontend import typed_args
 from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval, val_ops
@@ -224,7 +224,7 @@ class Maybe(vm._Callable):
         return value.List([])
 
 
-class _Type(vm._Callable):
+class Type(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -237,11 +237,11 @@ class _Type(vm._Callable):
         val = r.PosValue()
         r.Done()
 
-        tname = ValType(val)
+        tname = ui.ValType(val)
         return value.Str(tname[6:])  # strip "value." prefix
 
 
-class _Bool(vm._Callable):
+class Bool(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -257,7 +257,7 @@ class _Bool(vm._Callable):
         return value.Bool(val_ops.ToBool(val))
 
 
-class _Int(vm._Callable):
+class Int(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -273,8 +273,7 @@ class _Int(vm._Callable):
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return value.Int(val.i)
+                return val
 
             elif case(value_e.Bool):
                 val = cast(value.Bool, UP_val)
@@ -292,7 +291,7 @@ class _Int(vm._Callable):
                             loc.Missing)
 
 
-class _Float(vm._Callable):
+class Float(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -312,8 +311,7 @@ class _Float(vm._Callable):
                 return value.Float(float(val.i))
 
             elif case(value_e.Float):
-                val = cast(value.Float, UP_val)
-                return value.Float(val.f)
+                return val
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
@@ -323,7 +321,7 @@ class _Float(vm._Callable):
                             loc.Missing)
 
 
-class _Str(vm._Callable):
+class Str_(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -353,7 +351,7 @@ class _Str(vm._Callable):
                             loc.Missing)
 
 
-class _List(vm._Callable):
+class List_(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -395,7 +393,7 @@ class _List(vm._Callable):
         return value.List(l)
 
 
-class _Dict(vm._Callable):
+class Dict_(vm._Callable):
 
     def __init__(self):
         # type: () -> None

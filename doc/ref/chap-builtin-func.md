@@ -27,11 +27,11 @@ For example:
     var d = {'foo': 'bar'}
     var n = 1337
 
-    $ echo $[type(d)]
-    Dict
+    $ = type(d)
+    (Str)    'Dict'
 
-    $ echo $[type(n)]
-    Int
+    $ = type(n)
+    (Str)    'Int'
 
 ## Math
 
@@ -52,9 +52,9 @@ Returns the truth value of its argument. Similar to `bool()` in python, it retur
 
 ## Int()
 
-Given a float, returns the largest integer that is less than the given value.
+Given a float, returns the largest integer that is less than its argument (i.e. `floor()`).
 
-    $ = Int(1.23)
+    $ = Int(1.99)
     (Int)    1
 
 Given a string, `Int()` will attempt to convert the string to a base-10 integer. The base can be overriden by calling
@@ -72,7 +72,7 @@ with a second argument.
 
 ## Float()
 
-Given an integer, returns the corressponding value flaoting point representation.
+Given an integer, returns the corressponding flaoting point representation.
 
     $ = Float(1)
     (Float)   1.0
@@ -93,8 +93,8 @@ Returns its argument if it's a string.
 
 Given a list, returns a shallow copy of the original.
 
-Given an interable value (e.g. a range or dictionary), returns a list containing one element for each item in the
-original colleciton.
+Given an iterable value (e.g. a range or dictionary), returns a list containing one element for each item in the
+original collection.
 
     $ = List({'a': 1, 'b': 2})
     (List)   ['a', 'b']
