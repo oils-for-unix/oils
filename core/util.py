@@ -76,6 +76,7 @@ class DebugFile(_DebugFile):
     def writeln(self, s):
         # type: (str) -> None
         self.write(s + '\n')
+        self.f.flush()
 
     def isatty(self):
         # type: () -> bool

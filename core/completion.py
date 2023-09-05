@@ -591,7 +591,8 @@ class ShellFuncAction(CompletionAction):
         status = self.cmd_ev.RunFuncForCompletion(self.func, argv)
         commands_changed = self.comp_lookup.GetCommandsChanged()
 
-        #self.debug('comp.first %s, commands_changed: %s' % (comp.first, commands_changed))
+        self.debug('comp.first %r, commands_changed: %s' %
+                   (comp.first, ', '.join(commands_changed)))
 
         if status == 124:
             cmd = os_path.basename(comp.first)
@@ -614,20 +615,21 @@ class ShellFuncAction(CompletionAction):
             # Not changing it means there were no completions.
             # TODO: This writes over the command line; it would be better to use an
             # error object.
-            print_stderr('osh: Ran function %r but COMPREPLY was unset' %
+            print_stderr('osh error: Ran function %r but COMPREPLY was unset' %
                          self.func.name)
             return
 
         if val.tag() != value_e.BashArray:
-            print_stderr('ERROR: COMPREPLY should be an array, got %s' %
+            print_stderr('osh error: COMPREPLY should be an array, got %s' %
                          ui.ValType(val))
             return
 
-        # TODO: Print structured value_t in C++.  This line is wrong:
-        # self.debug('COMPREPLY %s' % val)
+        if 0:
+            self.debug('> %r' % val)  # CRASHES in C++
 
         array_val = cast(value.BashArray, val)
         for s in array_val.strs:
+            #self.debug('> %r' % s)
             yield s
 
 
