@@ -227,22 +227,14 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-type-method
-  [Null]      x
-  [Bool]      fromStr() for TSV8
-  [Int attr]  fromStr()  # base 2, 8, 10, 16, ...
-  [Float]     fromStr()
-  [Str]       fromJ8()  fromJson()  fromRunes()
-  [List]      append()   pop()   extend()   index()
-              insert()   remove()
-  [Dict]      keys()   values()   get()   erase()
-  [Eggex]     x
-  [Template]  x
-  [Expr]      x
-  [Command]   x
-  [Proc]      export()
-  [Func]      export()
-  [Slice]     x
-  [Range]     x
+  [Atoms]     Bool   Int   Float   Str
+  [List]      append()   pop()   extend()   X index()
+              X insert()   X remove()   reverse()
+  [Dict]      keys()   values()   X get()   X erase()
+  [Code]      Eggex   X Template   X Expr   Command
+X [Proc]      export()   location()
+X [Func]      export()   location()
+  [More]      Slice   Range
 ```
 
 <h2 id="builtin-func">
@@ -251,22 +243,24 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-builtin-func
   [Values]        len()   type() 
+  [Conversions]   Bool()   Int()   Float()   Str()   List()   Dict()
+                  X chr()   X ord()   
   [List]          any()   all()
-  [Math]          abs()   max()   min()   round()   sum()
-X [Int]           ord()   chr()
-X [Str]           find(eggex)   replace(eggex, template)
+  [Collections]   join()   split()  # $IFS, awk algorithm, regex
+                  copy()   deepCopy()
+  [Word]          glob()   maybe()
+  [Math]          abs()   max()   min()   X round()   sum()
+X [Str]           countRunes()   
+                  find(eggex)   replace(eggex, template)
                   startsWith()   endsWith()
                   strip()   lstrip()   rstrip()  # set of chars, prefix suffix
                   upper()   lower()  # ascii or unicode
-X [Codecs]        quoteUrl()  quoteHtml()  quoteSh()   quoteC()
+                  X fromJ8()  X fromJson()  X fromRunes()
+X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
-  [Collections]   reversed()
-                  join()   split()  # $IFS, awk algorithm, regex
-                  copy()   deepCopy()
-  [Pattern]       _match()   X _start()   X _end()
 X [Serialize]     toJ8()   fromJ8()
                   toJson()   fromJson()
-  [Word]          glob()   maybe()
+  [Pattern]       _match()   X _start()   X _end()
   [Introspection] shvar_get()   procs()   evalExpr()
   [Hay Config]    parse_hay()   eval_hay()
 X [Date Time]     strftime()
