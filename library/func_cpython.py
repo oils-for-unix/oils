@@ -119,17 +119,6 @@ def Init(mem):
     # Borrowed from Python
     #
 
-    # Types:
-    # Should the constructors be Python compatible, and types be capital?
-    SetGlobalFunc(mem, 'Bool', bool)
-    SetGlobalFunc(mem, 'Int', int)
-
-    SetGlobalFunc(mem, 'Float', float)
-
-    SetGlobalFunc(mem, 'Str', str)
-    SetGlobalFunc(mem, 'List', list)  # obsolete without Python-like iterators?
-    SetGlobalFunc(mem, 'Dict', dict)  # ditto
-
     # Utilities
     # round()
     # divmod() - probably useful?  Look at the implementation

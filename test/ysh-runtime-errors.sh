@@ -384,6 +384,43 @@ test-proc-ref-param() {
   '
 }
 
+test-int-construct() {
+  _expr-error-case '= Int({})'
+  _expr-error-case '= Int([])'
+  _expr-error-case '= Int("foo")'
+  _expr-error-case '= Int(len)'
+  _expr-error-case '= Int("foo"->startswith)'
+}
+
+test-float-construct() {
+  _expr-error-case '= Float({})'
+  _expr-error-case '= Float([])'
+  _expr-error-case '= Float("foo")'
+  _expr-error-case '= Float(len)'
+  _expr-error-case '= Float("foo"->startswith)'
+}
+
+test-str-construct() {
+  _expr-error-case '= Str({})'
+  _expr-error-case '= Str([])'
+  _expr-error-case '= Str(len)'
+  _expr-error-case '= Str("foo"->startswith)'
+}
+
+test-list-construct() {
+  _expr-error-case '= List(1)'
+  _expr-error-case '= List(len)'
+  _expr-error-case '= List("foo"->startswith)'
+}
+
+test-dict-construct() {
+  _expr-error-case '= Dict(1)'
+  _expr-error-case '= Dict("foo")'
+  _expr-error-case '= Dict(len)'
+  _expr-error-case '= Dict("foo"->startswith)'
+  _expr-error-case '= Dict([["too", "many", "parts"]])'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

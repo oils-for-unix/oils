@@ -507,3 +507,125 @@ proc
 ---
 3
 ## END
+
+#### type(x)
+echo $[type(1234)]
+echo $[type('foo')]
+echo $[type(false)]
+echo $[type(1.234)]
+echo $[type([])]
+echo $[type({})]
+echo $[type(null)]
+echo $[type(len)]
+echo $[type('foo'->startswith)]
+echo $[type(1:3)]
+## STDOUT:
+Int
+Str
+Bool
+Float
+List
+Dict
+Null
+Func
+BoundFunc
+Range
+## END
+
+#### Bool constructor
+echo "$[Bool(1234)]"
+echo "$[Bool(0)]"
+echo "$[Bool('foo')]"
+echo "$[Bool(true)]"
+echo "$[Bool(1.234)]"
+echo "$[Bool([])]"
+echo "$[Bool({})]"
+echo "$[Bool(null)]"
+echo "$[Bool(len)]"
+echo "$[Bool('foo'->startswith)]"
+echo "$[Bool(1:3)]"
+## STDOUT:
+true
+false
+true
+true
+true
+false
+false
+false
+true
+true
+true
+## END
+
+#### Int constructor
+echo "$[Int(1234)]"
+echo "$[Int('1234')]"
+echo "$[Int(1.234)]"
+## STDOUT:
+1234
+1234
+1
+## END
+
+#### Float constructor
+echo "$[Float(1234)]"
+echo "$[Float('1.234')]"
+echo "$[Float(2.345)]"
+## STDOUT:
+1234.0
+1.234
+2.345
+## END
+
+#### Str constructor
+echo "$[Str(1234)]"
+echo "$[Str(1.234)]"
+echo "$[Str('foo')]"
+## STDOUT:
+1234
+1.234
+foo
+## END
+
+#### Dict() for cloning
+var d = {'a': 1}
+var d2 = d
+setvar d2['b'] = 2
+echo $['b' in d] # d2 should be an alias for d
+var d3 = Dict(d)
+setvar d3['c'] = 3
+# d3 should NOT be an alias
+echo $['c' in d]
+echo $['c' in d3]
+## STDOUT:
+true
+false
+true
+## END
+
+#### List() for cloning
+var l = [1]
+var l2 = l
+_ append(l2, 2)
+echo $[len(l)] # d2 should be an alias for d
+var l3 = List(l)
+_ append(l3, 3)
+# l3 should NOT be an alias
+echo $[len(l)]
+echo $[len(l3)]
+## STDOUT:
+2
+2
+3
+## END
+
+#### List constructor
+var l = List(1:5)
+var l2 = List({'a': 1, 'foo': 'bar'})
+echo $[l[2]]
+echo $[l2[1]] # NOTE: depends on dict being ordered
+## STDOUT:
+3
+foo
+## END

@@ -20,6 +20,19 @@ This chapter in the [Oils Reference](index.html) describes builtin functions.
 
 ### type()
 
+Given an arbitrary value, returns a string representing the value's runtime type.
+
+For example:
+
+    var d = {'foo': 'bar'}
+    var n = 1337
+
+    $ = type(d)
+    (Str)    'Dict'
+
+    $ = type(n)
+    (Str)    'Int'
+
 ## Math
 
 ### abs()
@@ -78,8 +91,66 @@ Returns 0 for an empty list.
 
 Note, you will need to `source --builtin list.ysh` to use this function.
 
-## Int
+## Bool()
 
+Returns the truth value of its argument. Similar to `bool()` in python, it returns `false` for `false`, `0`, `0.0`,
+`''`, `{}`, `[]`, and `null`.  Returns `true` for all other values.
+
+## Int()
+
+Given a float, returns the largest integer that is less than its argument (i.e. `floor()`).
+
+    $ = Int(1.99)
+    (Int)    1
+
+Given a string, `Int()` will attempt to convert the string to a base-10 integer. The base can be overriden by calling
+with a second argument.
+
+
+    $ = Int('10')
+    (Int)   10
+
+    $ = Int('10', 2)
+    (Int)   2
+
+    ysh$ = Int('foo')
+    # fails with an expression error
+
+## Float()
+
+Given an integer, returns the corressponding flaoting point representation.
+
+    $ = Float(1)
+    (Float)   1.0
+
+Given a string, `Float()` will attempt to convert the string to float.
+
+    $ = Float('1.23')
+    (Float)   1.23
+
+    ysh$ = Float('bar')
+    # fails with an expression error
+
+## Str()
+
+Returns its argument if it's a string.
+
+## List()
+
+Given a list, returns a shallow copy of the original.
+
+Given an iterable value (e.g. a range or dictionary), returns a list containing one element for each item in the
+original collection.
+
+    $ = List({'a': 1, 'b': 2})
+    (List)   ['a', 'b']
+
+    $ = List(1:5)
+    (List)   [1, 2, 3, 4, 5]
+
+## Dict()
+
+Given a dictionary, returns a shallow copy of the original.
 
 ## List
 
