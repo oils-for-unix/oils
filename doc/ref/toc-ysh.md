@@ -251,6 +251,7 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-builtin-func
   [Values]        len()   type() 
+  [List]          any()   all()
   [Math]          abs()   max()   min()   round()   sum()
 X [Int]           ord()   chr()
 X [Str]           find(eggex)   replace(eggex, template)
