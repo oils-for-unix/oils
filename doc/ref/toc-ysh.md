@@ -227,14 +227,14 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-type-method
-  [Atoms]     Bool   Int   Float   Str
+  [Primitive] Bool   Int   Float   Str
+              Slice   Range   BoundFunc
+  [Code]      Eggex   X Template   X Expr   Command
   [List]      append()   pop()   extend()   X index()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
-  [Code]      Eggex   X Template   X Expr   Command
 X [Proc]      export()   location()
 X [Func]      export()   location()
-  [More]      Slice   Range
 ```
 
 <h2 id="builtin-func">
@@ -244,7 +244,8 @@ X [Func]      export()   location()
 ```chapter-links-builtin-func
   [Values]        len()   type() 
   [Conversions]   Bool()   Int()   Float()   Str()   List()   Dict()
-                  X chr()   X ord()   
+                  X chr()   X ord()   X encodeRunes()
+X [J8 Decode]     J8.Bool()   J8.Int()  ...
   [List]          any()   all()
   [Collections]   join()   split()  # $IFS, awk algorithm, regex
                   copy()   deepCopy()
@@ -255,7 +256,6 @@ X [Str]           countRunes()
                   startsWith()   endsWith()
                   strip()   lstrip()   rstrip()  # set of chars, prefix suffix
                   upper()   lower()  # ascii or unicode
-                  X fromJ8()  X fromJson()  X fromRunes()
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
 X [Serialize]     toJ8()   fromJ8()

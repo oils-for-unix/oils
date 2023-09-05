@@ -34,7 +34,7 @@ osh-files() {
 }
 
 ysh-files() {
-  ls ysh/*.{py,pgen2} tea/*.py | filter-py 
+  ls ysh/*.{py,pgen2} library/*.py | filter-py 
 }
 
 # cloc doesn't understand ASDL files.
@@ -266,7 +266,7 @@ _overview() {
   osh-counts $count "$@"
 
   ysh-files | $count \
-    'YSH (and Tea)' '' "$@"
+    'YSH' '' "$@"
 
   ls stdlib/*.ysh | $count \
     "YSH stdlib" '' "$@"
