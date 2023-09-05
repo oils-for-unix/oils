@@ -305,7 +305,13 @@ def AddMethods(methods):
         'upper': func_misc.Upper(),
     }
     methods[value_e.Dict] = {'keys': func_misc.Keys()}
-    methods[value_e.List] = {'reverse': func_misc.Reverse()}
+    methods[value_e.List] = {
+        'reverse': func_misc.Reverse(),
+        'append': func_misc.Append(),
+        'extend': func_misc.Extend(),
+        'pop': func_misc.Pop(),
+    }
+
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):
@@ -687,15 +693,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'Str', func_misc.Str_())
     func_init.SetGlobalFunc(mem, 'List', func_misc.List_())
     func_init.SetGlobalFunc(mem, 'Dict', func_misc.Dict_())
-
-    # Do we want to make these methods?
-    #
-    # _ mylist->append('x')
-    # _ mylist->pop()
-    #
-    # It does help
-    func_init.SetGlobalFunc(mem, 'append', func_misc.Append())
-    func_init.SetGlobalFunc(mem, 'pop', func_misc.Pop())
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

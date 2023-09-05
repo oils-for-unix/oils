@@ -356,7 +356,7 @@ proc package(name, b Block) {
   if ('package_list' not in _config) {
     setvar _config->package_list = []
   }
-  _ append(_config->package_list, d)
+  _ _config->package_list->append(d)
 }
 
 package unzip {

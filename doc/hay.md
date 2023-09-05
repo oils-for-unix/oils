@@ -511,7 +511,7 @@ Iteration can also go on the inside of a block:
       # variables ending with _ are "hidden" from block evaluation
       for name_ in *.cc {
         if name_ !== 'skipped.cc' {
-          _ append(inputs, name_)
+          _ inputs->append(name_)
         }
       }
     }
@@ -612,7 +612,7 @@ This can be done with an evaluator that simply enumerates all files:
     for path in myconfig.d/*.hay {
       const code = parse_hay(path)
       const result = eval(hay)
-      _ append(results, result)
+      _ results->append(result)
     }
 
     # Now iterate through results

@@ -51,7 +51,7 @@ func inverse(x) {
 func invertList(list) {
   var result = []
   for item in (list) {
-    _ append(result, inverse(item))
+    _ result->append(inverse(item))
   }
   return (result)
 }

@@ -34,10 +34,6 @@ def SetGlobalFunc(mem, name, func):
                  scope_e.GlobalOnly)
 
 
-def _Extend(L, arg):
-    L.extend(arg)
-
-
 class _Shvar_get(object):
     """Look up with dynamic scope."""
 
@@ -122,12 +118,6 @@ def Init(mem):
     # Utilities
     # round()
     # divmod() - probably useful?  Look at the implementation
-
-    #
-    # List/array methods
-    #
-
-    SetGlobalFunc(mem, 'extend', _Extend)
 
     # count, index, insert, remove
 

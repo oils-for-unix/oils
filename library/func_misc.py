@@ -37,6 +37,23 @@ class Append(vm._Callable):
         return value.Null
 
 
+class Extend(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+
+        a = args.PosList()
+        b = args.PosList()
+        args.Done()
+
+        a.extend(b)
+        return value.List(a)
+
+
 class Pop(vm._Callable):
 
     def __init__(self):

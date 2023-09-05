@@ -187,7 +187,7 @@ for i in @(seq 2) {
   # extend?
 
   #_ e.append(o)
-  _ append(e, o)
+  _ e->append(o)
 }
 
 json write (e)

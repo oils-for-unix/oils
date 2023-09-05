@@ -241,7 +241,7 @@ func remove(l, i) {
     setvar l[i] = l[i + 1]
   }
 
-  _ pop(l) # remove duplicate last element
+  _ l->pop() # remove duplicate last element
 }
 
 func fib(n) {
@@ -252,7 +252,7 @@ func fib(n) {
 
     if (item[0] === n) {
       _ remove(cache, i)
-      _ append(cache, item)
+      _ cache->append(item)
 
       echo hit: $n
       return (item[1])
@@ -272,7 +272,7 @@ func fib(n) {
   if (len(cache) >= maxSize) {
     _ remove(cache, 0)
   }
-  _ append(cache, [n, result])
+  _ cache->append([n, result])
 
   return (result)
 }
