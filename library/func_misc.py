@@ -56,7 +56,7 @@ class Extend(vm._Callable):
         args.Done()
 
         a.extend(b)
-        return value.List(a)
+        return value.Null
 
 
 class Pop(vm._Callable):

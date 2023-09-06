@@ -639,3 +639,21 @@ echo $[len(l)]
 2
 5
 ## END
+
+#### List mutators should return null
+shopt -s oil:all
+var l = List(1:3)
+
+var result = l->extend(List(3:6))
+if (result === null) { echo 'pass' }
+
+setvar result = l->append(6)
+if (result === null) { echo pass }
+
+setvar result = l->pop()
+if (result === null) { echo pass }
+## STDOUT:
+pass
+pass
+pass
+## END
