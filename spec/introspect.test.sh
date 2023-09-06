@@ -235,33 +235,53 @@ f  # line 9
 
 #### Locations with temp frame
 
-$SH $REPO_ROOT/spec/testdata/bash-source-pushtemp.sh
+cd $REPO_ROOT
+
+$SH spec/testdata/bash-source-pushtemp.sh
 
 ## STDOUT:
 F
 G
-STACK:testdata/bash-source-pushtemp.sh:g:3
-STACK:testdata/bash-source-pushtemp.sh:f:24
-STACK:testdata/bash-source-pushtemp.sh:main:0
+STACK:spec/testdata/bash-source-pushtemp.sh:g:3
+STACK:spec/testdata/bash-source-pushtemp.sh:f:19
+STACK:spec/testdata/bash-source-pushtemp.sh:main:0
 ## END
 
-#### Locations with temp frame - source
+#### Locations when sourcing
 
-$SH -c "source $REPO_ROOT/spec/testdata/bash-source-pushtemp.sh"
+cd $REPO_ROOT
+
+# like above test case, but we source
+
+# bash location doesn't make sense:
+# - It says 'source' happens at line 0 of bash-source-pushtemp.  Well I think
+# - It really happens at line 1 of '-c' !    I guess that's to line up
+#   with the 'main' frame
+
+$SH -c 'source spec/testdata/bash-source-pushtemp.sh'
 
 ## STDOUT:
 F
 G
-STACK:testdata/bash-source-pushtemp.sh:g:3
-STACK:testdata/bash-source-pushtemp.sh:f:24
-STACK:testdata/bash-source-pushtemp.sh:source:0
+STACK:spec/testdata/bash-source-pushtemp.sh:g:3
+STACK:spec/testdata/bash-source-pushtemp.sh:f:19
+STACK:spec/testdata/bash-source-pushtemp.sh:source:0
 ## END
 
-## OK osh STDOUT:
+#### Sourcing inside function grows the debug stack
+
+cd $REPO_ROOT
+
+$SH spec/testdata/bash-source-source.sh
+
+## STDOUT:
 F
 G
-STACK:testdata/bash-source-pushtemp.sh:g:3
-STACK:testdata/bash-source-pushtemp.sh:f:24
-TODO: Fix
-STACK:testdata/bash-source-pushtemp.sh:source:1
+STACK:spec/testdata/bash-source-pushtemp.sh:g:3
+STACK:spec/testdata/bash-source-pushtemp.sh:f:19
+STACK:spec/testdata/bash-source-pushtemp.sh:source:2
+STACK:spec/testdata/bash-source-source.sh:mainfunc:6
+STACK:spec/testdata/bash-source-source.sh:main2:10
+STACK:spec/testdata/bash-source-source.sh:main1:13
+STACK:spec/testdata/bash-source-source.sh:main:0
 ## END
