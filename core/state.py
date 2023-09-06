@@ -1313,9 +1313,9 @@ class Mem(object):
 
         self.arena = arena
 
-        # The debug_stack isn't strictly necessary for execution.  We use it for
-        # crash dumps and for 4 parallel arrays: BASH_SOURCE, FUNCNAME,
-        # CALL_SOURCE, and BASH_LINENO.
+        # The debug_stack isn't strictly necessary for execution.  We use it
+        # for crash dumps and for 3 parallel arrays: BASH_SOURCE, FUNCNAME, and
+        # BASH_LINENO.
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
@@ -2100,22 +2100,6 @@ class Mem(object):
                 if frame.bash_source is not None:
                     strs.append(frame.bash_source)
             return value.BashArray(strs)  # TODO: Reuse this object too?
-
-        # This is how bash source SHOULD be defined, but it's not!
-        if 0:
-            if name == 'CALL_SOURCE':
-                strs = []
-                for frame in reversed(self.debug_stack):
-                    # should only happen for the first entry
-                    if frame.call_tok is None:
-                        continue
-                    if frame.call_tok == LINE_ZERO:
-                        strs.append('-')  # Bash does this to line up with main?
-                        continue
-                    source_str = ui.GetLineSourceString(self.arena,
-                                                        self.token_for_line.line)
-                    strs.append(source_str)
-                return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'BASH_LINENO':
             strs = []
