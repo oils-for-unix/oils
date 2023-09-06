@@ -28,7 +28,6 @@ with SPLIT_REGEX = / digit+ / {
 
 from _devbuild.gen.runtime_asdl import (value, value_e, scope_e, span_e, emit_i,
                                         char_kind_i, state_i)
-from core import error
 from mycpp.mylib import log
 from core import pyutil
 from frontend import consts
@@ -193,15 +192,6 @@ class SplitContext(object):
         # type: (str, bool) -> List[Span]
         sp = self._GetSplitter()
         return sp.Split(line, allow_escape)
-
-    def SplitFuncBuiltin(self, s, ifs=None):
-        # type: (str, Optional[str]) -> List[str]
-        """Split() function exposed to users."""
-        if mylib.PYTHON:  # TODO: translate s.__class__.__name__
-            if not isinstance(s, str):
-                raise error.Expr('split() passed arg of invalid type %r' %
-                                 s.__class__.__name__)
-        return self.SplitForWordEval(s, ifs=ifs)
 
 
 class _BaseSplitter(object):

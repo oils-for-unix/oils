@@ -11,17 +11,17 @@ _ 1 + 2 * 3
 
 var strs = %(a b)
 _ len(strs)
-_ append(strs, 'c')
+_ strs->append('c')
 write -- @strs
 
 # integer types too
 const L = [5, 6]
-_ append(L, 7)
+_ L->append(7)
 write -- @L
 
 write __
 
-_ pop(L)  # could also be pop :L
+_ L->pop()  # could also be pop :L
 write -- @L
 
 ## STDOUT:

@@ -69,7 +69,7 @@ proc describe (test_id ; ; ; block) {
   # Need to clean this up
   # append (_describe, cmd)  # does NOT work!
 
-  _ append(_describe_list, block)
+  _ _describe_list->append(block)
 }
 
 # Problem: this creates a global variable?

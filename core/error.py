@@ -172,6 +172,14 @@ class UserError(FatalRuntime):
         FatalRuntime.__init__(self, status, msg, location)
 
 
+class AssertionErr(Expr):
+    """An assertion."""
+
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+        Expr.__init__(self, msg, location)
+
+
 class TypeErrVerbose(Expr):
     """e.g. ~ on a bool or float, 'not' on an int."""
 

@@ -607,10 +607,10 @@ true
 #### List() for cloning
 var l = [1]
 var l2 = l
-_ append(l2, 2)
+_ l2->append(2)
 echo $[len(l)] # d2 should be an alias for d
 var l3 = List(l)
-_ append(l3, 3)
+_ l3->append(3)
 # l3 should NOT be an alias
 echo $[len(l)]
 echo $[len(l3)]
@@ -628,4 +628,41 @@ echo $[l2[1]] # NOTE: depends on dict being ordered
 ## STDOUT:
 3
 foo
+## END
+
+#### List->extend()
+var l = List(1:3)
+echo $[len(l)]
+_ l->extend(List(3:6))
+echo $[len(l)]
+## STDOUT:
+2
+5
+## END
+
+#### List append()/extend() should return null
+shopt -s oil:all
+var l = List(1:3)
+
+var result = l->extend(List(3:6))
+_ assert_(result === null)
+
+setvar result = l->append(6)
+_ assert_(result === null)
+
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List pop()
+shopt -s oil:all
+var l = List(1:5)
+_ assert_(l->pop() === 4)
+_ assert_(l->pop() === 3)
+_ assert_(l->pop() === 2)
+_ assert_(l->pop() === 1)
+echo pass
+## STDOUT:
+pass
 ## END
