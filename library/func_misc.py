@@ -9,6 +9,7 @@ from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import ui
 from core import vm
+from frontend import match
 from frontend import typed_args
 from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval, val_ops
@@ -294,6 +295,10 @@ class Int(vm._Callable):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
+                if not match.LooksLikeInt(val.s):
+                    raise error.Expr('Cannot convert %s to Int' % val.s,
+                                     loc.Missing)
+
                 return value.Int(int(val.s))
 
         raise error.TypeErr(val, 'Int() expected Bool, Int, Float, or Str',
@@ -323,6 +328,10 @@ class Float(vm._Callable):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
+                if not match.LooksLikeFloat(val.s):
+                    raise error.Expr('Cannot convert %s to Float' % val.s,
+                                     loc.Missing)
+
                 return value.Float(float(val.s))
 
         raise error.TypeErr(val, 'Float() expected Int, Float, or Str',
