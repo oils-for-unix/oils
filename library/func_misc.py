@@ -440,11 +440,10 @@ class Split(vm._Callable):
 
         args.Done()
 
-        # mycpp: rewrite list comprehension over sum type
-        l = []  # type: List[value_t]
-        for elem in self.splitter.SplitForWordEval(s, ifs=ifs):
-            l.append(value.Str(elem))
-
+        l = [
+            value.Str(elem)
+            for elem in self.splitter.SplitForWordEval(s, ifs=ifs)
+        ]  # type: List[value_t]
         return value.List(l)
 
 
@@ -463,9 +462,5 @@ class Glob(vm._Callable):
         out = []  # type: List[str]
         self.globber._Glob(s, out)
 
-        # mycpp: rewrite list comprehension over sum type
-        l = []  # type: List[value_t]
-        for elem in out:
-            l.append(value.Str(elem))
-
+        l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)
