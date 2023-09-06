@@ -71,9 +71,7 @@ class Pop(vm._Callable):
         items = args.PosList()
         args.Done()
 
-        items.pop()
-
-        return value.Null
+        return items.pop()
 
 
 class StartsWith(vm._Callable):
