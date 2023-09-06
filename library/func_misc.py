@@ -295,7 +295,7 @@ class Int(vm._Callable):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                if not match.LooksLikeInt(val.s):
+                if not match.LooksLikeInteger(val.s):
                     raise error.Expr('Cannot convert %s to Int' % val.s,
                                      loc.Missing)
 
