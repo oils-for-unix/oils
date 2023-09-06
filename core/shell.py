@@ -587,9 +587,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # TODO: This is instantiation is duplicated in osh/word_eval.py
     globber = glob_.Globber(exec_opts)
 
-    if mylib.PYTHON:
-        func_cpython.Init2(mem, splitter, globber)
-
     # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
@@ -693,6 +690,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'Str', func_misc.Str_())
     func_init.SetGlobalFunc(mem, 'List', func_misc.List_())
     func_init.SetGlobalFunc(mem, 'Dict', func_misc.Dict_())
+    func_init.SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
+    func_init.SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

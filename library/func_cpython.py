@@ -90,17 +90,6 @@ class _VmEval(object):
         raise NotImplementedError()
 
 
-def Init2(mem, splitter, globber):
-    # type: (state.Mem, split.SplitContext, glob_.Globber) -> None
-
-    # split() builtin
-    # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
-    SetGlobalFunc(mem, 'split', splitter.SplitFuncBuiltin)
-
-    # glob() builtin
-    SetGlobalFunc(mem, 'glob', lambda s: globber.OilFuncCall(s))
-
-
 def Init(mem):
     # type: (state.Mem) -> None
     """Populate the top level namespace with some builtin functions."""

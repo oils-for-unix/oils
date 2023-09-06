@@ -482,10 +482,3 @@ class Globber(object):
             # See comment above
             out.append(GlobUnescape(fnmatch_pat))
             return 1
-
-    def OilFuncCall(self, arg):
-        # type: (str) -> List[str]
-        """User-facing function."""
-        out = []  # type: List[str]
-        self._Glob(arg, out)
-        return out

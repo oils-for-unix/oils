@@ -14,6 +14,9 @@ from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval, val_ops
 
 from typing import TYPE_CHECKING, Dict, List, cast
+if TYPE_CHECKING:
+    from osh import glob_
+    from osh import split
 
 _ = log
 
@@ -418,3 +421,51 @@ class Dict_(vm._Callable):
                 return value.Dict(d)
 
         raise error.TypeErr(val, 'Dict() expected List or Dict', loc.Missing)
+
+
+class Split(vm._Callable):
+
+    def __init__(self, splitter):
+        # type: (split.SplitContext) -> None
+        vm._Callable.__init__(self)
+        self.splitter = splitter
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        s = args.PosStr()
+
+        ifs = None  # type: str
+        if args.NumPos():
+            ifs = args.PosStr()
+
+        args.Done()
+
+        # mycpp: rewrite list comprehension over sum type
+        l = []  # type: List[value_t]
+        for elem in self.splitter.SplitForWordEval(s, ifs=ifs):
+            l.append(value.Str(elem))
+
+        return value.List(l)
+
+
+class Glob(vm._Callable):
+
+    def __init__(self, globber):
+        # type: (glob_.Globber) -> None
+        vm._Callable.__init__(self)
+        self.globber = globber
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        s = args.PosStr()
+        args.Done()
+
+        out = []  # type: List[str]
+        self.globber._Glob(s, out)
+
+        # mycpp: rewrite list comprehension over sum type
+        l = []  # type: List[value_t]
+        for elem in out:
+            l.append(value.Str(elem))
+
+        return value.List(l)
