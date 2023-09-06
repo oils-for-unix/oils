@@ -1588,9 +1588,14 @@ class Mem(object):
         # The stack is a 5-tuple, where func_name and source_name are optional.  If
         # both are unset, then it's a "temp frame".
         #
-        # self.token_for_line is set before every SimpleCommand, ShAssignment, [[, ((,
-        # etc.  Function calls and 'source' are both SimpleCommand.
-        assert self.token_for_line is not None, (bash_source, func_name, source_name)
+        # - self.token_for_line may be None, even though it's set before every
+        # SimpleCommand, ShAssignment, [[, ((, etc.  That is, function calls and
+        # 'source' are both SimpleCommand.
+        #
+        # This is because of 'complete -F shellfunc': RunFuncForCompletion  can
+        # be called before any SetTokenForLine().  TODO: clean this up.
+
+        # assert self.token_for_line is not None, (bash_source, func_name, source_name)
 
         self.debug_stack.append(
             DebugFrame(bash_source, func_name, source_name, self.token_for_line,
