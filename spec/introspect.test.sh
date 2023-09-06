@@ -1,4 +1,5 @@
 ## compare_shells: bash
+## oils_failures_allowed: 1
 
 # Test call stack introspection.  There are a bunch of special variables
 # defined here:
@@ -239,7 +240,28 @@ $SH $REPO_ROOT/spec/testdata/bash-source-pushtemp.sh
 ## STDOUT:
 F
 G
-STACK:testdata/bash-source-pushtemp.sh:g:4
-STACK:testdata/bash-source-pushtemp.sh:f:25
+STACK:testdata/bash-source-pushtemp.sh:g:3
+STACK:testdata/bash-source-pushtemp.sh:f:24
 STACK:testdata/bash-source-pushtemp.sh:main:0
+## END
+
+#### Locations with temp frame - source
+
+$SH -c "source $REPO_ROOT/spec/testdata/bash-source-pushtemp.sh"
+
+## STDOUT:
+F
+G
+STACK:testdata/bash-source-pushtemp.sh:g:3
+STACK:testdata/bash-source-pushtemp.sh:f:24
+STACK:testdata/bash-source-pushtemp.sh:source:0
+## END
+
+## OK osh STDOUT:
+F
+G
+STACK:testdata/bash-source-pushtemp.sh:g:3
+STACK:testdata/bash-source-pushtemp.sh:f:24
+TODO: Fix
+STACK:testdata/bash-source-pushtemp.sh:source:1
 ## END

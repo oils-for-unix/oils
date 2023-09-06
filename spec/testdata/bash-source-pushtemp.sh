@@ -1,7 +1,7 @@
 f() {
   echo 'F'
-  #VAR=val g
-  g
+  ZZ=zz g
+  #g
 }
 
 g() {
@@ -21,8 +21,8 @@ g() {
 }
 
 # TODO: enable these frames
-#VAR2=val f
-f
+YY=yy f
+#f
 
 # These are wrong
 #set -x

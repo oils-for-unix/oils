@@ -1505,15 +1505,14 @@ class Mem(object):
 
     def PushCall(self, func_name, def_tok, argv):
         # type: (str, Token, Optional[List[str]]) -> None
-        """For function calls."""
+        """For proc and func calls."""
         if argv is not None:
             self.argv_stack.append(_ArgFrame(argv))
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
 
+        # Filename, or [ stdin ], etc.
         source_str = ui.GetLineSourceString(def_tok.line)
-
-        # bash uses this order: top of stack first.
         self._PushDebugStack(source_str, func_name, None)
 
     def PopCall(self, should_pop_argv_stack):
@@ -1543,11 +1542,11 @@ class Mem(object):
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None
-        """For 'source foo.sh 1 2 3."""
+        """ For 'source foo.sh 1 2 3' """
         if len(argv):
             self.argv_stack.append(_ArgFrame(argv))
-        # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
-        # the name of the script here?
+
+        # Omit func_name to mwatch bash's behavior for ${FUNCNAME[@]} ?
         self._PushDebugStack(source_name, None, source_name)
 
     def PopSource(self, argv):
@@ -1566,12 +1565,8 @@ class Mem(object):
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
 
-        # TODO: Is this necessary?
-        self._PushDebugStack(None, None, None)
-
     def PopTemp(self):
         # type: () -> None
-        self._PopDebugStack()
         self.var_stack.pop()
 
     def TopNamespace(self):
