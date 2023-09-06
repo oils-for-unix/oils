@@ -14,7 +14,7 @@ from core import vm
 from frontend import typed_args
 from mycpp.mylib import log
 
-from typing import List, Dict, cast, TYPE_CHECKING
+from typing import List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
     from _devbuild.gen.runtime_asdl import Proc
