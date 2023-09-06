@@ -60,7 +60,6 @@ from frontend import location
 from frontend import typed_args
 from osh import braces
 from osh import word_compile
-from mycpp import mylib
 from mycpp.mylib import log, NewDict, switch, tagswitch
 from ysh import cpython
 from ysh import val_ops
@@ -268,26 +267,10 @@ class ExprEvaluator(object):
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
-        if mylib.PYTHON:
-
-            blame_loc = loc.Missing
-            try:
-                with state.ctx_OilExpr(self.mutable_opts):
-                    lval = self._EvalPlaceExpr(place)
-                return lval
-
-            # Catch PYTHON exceptions.  Remove after function calls are statically typed
-            except TypeError as e:
-                raise error.Expr('Type error in place expression: %s' % str(e),
-                                 blame_loc)
-            except (AttributeError, ValueError) as e:
-                raise error.Expr('Place expression eval error: %s' % str(e),
-                                 blame_loc)
-        else:
-            # Pure C++ won't need to catch exceptions
-            with state.ctx_OilExpr(self.mutable_opts):
-                lval = self._EvalPlaceExpr(place)
-            return lval
+        # Pure C++ won't need to catch exceptions
+        with state.ctx_OilExpr(self.mutable_opts):
+            lval = self._EvalPlaceExpr(place)
+        return lval
 
     def EvalExprSub(self, part):
         # type: (word_part.ExprSub) -> part_value_t
@@ -316,25 +299,10 @@ class ExprEvaluator(object):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit is on."""
         self.mem.SetLocationForExpr(blame_loc)
-        if mylib.PYTHON:
-            try:
-                with state.ctx_OilExpr(self.mutable_opts):
-                    val = self._EvalExpr(node)
-                return val
-
-            # Catch PYTHON exceptions.  Remove after function calls are statically typed
-            except TypeError as e:
-                raise error.Expr('Type error in expression: %s' % str(e),
-                                 blame_loc)
-            except (AttributeError, ValueError) as e:
-                raise error.Expr('Expression eval error: %s' % str(e),
-                                 blame_loc)
-
-        else:
-            # Pure C++ won't need to catch exceptions
-            with state.ctx_OilExpr(self.mutable_opts):
-                val = self._EvalExpr(node)
-            return val
+        # Pure C++ won't need to catch exceptions
+        with state.ctx_OilExpr(self.mutable_opts):
+            val = self._EvalExpr(node)
+        return val
 
         # Note: IndexError and KeyError are handled in more specific places
 
@@ -784,39 +752,15 @@ class ExprEvaluator(object):
         with tagswitch(func) as case:
             if case(value_e.Func):
                 func = cast(value.Func, UP_func)
-                if mylib.PYTHON:
-                    f = func.callable
-                    if isinstance(f, vm._Callable):  # typed
-                        # TODO: consider using typed_args.Reader
+                # C++ cast to work around ASDL 'any'
+                f = cast(vm._Callable, func.callable)
+                pos_args, named_args = self._EvalArgList(node.args)
+                #log('pos_args %s', pos_args)
 
-                        pos_args, named_args = self._EvalArgList(node.args)
-                        #log('pos_args %s', pos_args)
+                ret = f.Call(typed_args.Reader(pos_args, named_args))
 
-                        ret = f.Call(typed_args.Reader(pos_args, named_args))
-
-                        #log('ret %s', ret)
-                        return ret
-                    else:
-                        u_pos_args, u_named_args = self._EvalArgListUntyped(node.args)
-                        #log('ARGS %s', u_pos_args)
-                        #ret = f(*u_pos_args, **u_named_args)
-
-                        pos_args = [
-                            cpython._ValueToPyObj(a) for a in u_pos_args
-                        ]
-                        ret = f(*pos_args)
-
-                        return cpython._PyObjToValue(ret)
-                else:
-                    # C++ cast to work around ASDL 'any'
-                    f = cast(vm._Callable, func.callable)
-                    pos_args, named_args = self._EvalArgList(node.args)
-                    #log('pos_args %s', pos_args)
-
-                    ret = f.Call(typed_args.Reader(pos_args, named_args))
-
-                    #log('ret %s', ret)
-                    return ret
+                #log('ret %s', ret)
+                return ret
 
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)

@@ -51,8 +51,6 @@ EOF
 __init__.py
 typing.py
 
-library/func_cpython.py
-
 # OrderedDict is polymorphic
 pylib/collections_.py
 
@@ -90,8 +88,6 @@ pgen2/pnode.py
 
 # should be py_path_stat.py, because it's ported by hand to C++
 pylib/path_stat.py
-
-library/func_cpython.py
 
 ysh/cpython.py
 

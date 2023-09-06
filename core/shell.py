@@ -38,7 +38,6 @@ from frontend import flag_spec
 from frontend import reader
 from frontend import parse_lib
 
-from library import func_cpython
 from library import func_eggex
 from library import func_hay
 from library import func_init
@@ -456,9 +455,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     version_str = pyutil.GetVersion(loader)
     state.InitMem(mem, environ, version_str)
 
-    if mylib.PYTHON:
-        func_cpython.Init(mem)
-
     procs = {}  # type: Dict[str, Proc]
     # NOTE: funcs are defined in the common variable namespace
 
@@ -692,6 +688,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'Dict', func_misc.Dict_())
     func_init.SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     func_init.SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
+    func_init.SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

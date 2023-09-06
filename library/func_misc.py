@@ -4,7 +4,7 @@ func_misc.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_str, value_t, value_e
+from _devbuild.gen.runtime_asdl import value, value_str, value_t, value_e, scope_e
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import ui
@@ -15,6 +15,7 @@ from ysh import expr_eval, val_ops
 
 from typing import TYPE_CHECKING, Dict, List, cast
 if TYPE_CHECKING:
+    from core import state
     from osh import glob_
     from osh import split
 
@@ -464,3 +465,19 @@ class Glob(vm._Callable):
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)
+
+
+class Shvar_get(vm._Callable):
+    """Look up with dynamic scope."""
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
+        self.mem = mem
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        name = args.PosStr()
+        args.Done()
+        return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
+                                   loc.Missing)
