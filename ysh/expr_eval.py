@@ -61,7 +61,6 @@ from frontend import typed_args
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, switch, tagswitch
-from ysh import cpython
 from ysh import val_ops
 
 import libc
