@@ -645,10 +645,10 @@ shopt -s oil:all
 var l = List(1:3)
 
 var result = l->extend(List(3:6))
-_ assert(result === null)
+_ assert_(result === null)
 
 setvar result = l->append(6)
-_ assert(result === null)
+_ assert_(result === null)
 
 echo pass
 ## STDOUT:
@@ -658,10 +658,10 @@ pass
 #### List pop()
 shopt -s oil:all
 var l = List(1:5)
-_ assert(l->pop() === 4)
-_ assert(l->pop() === 3)
-_ assert(l->pop() === 2)
-_ assert(l->pop() === 1)
+_ assert_(l->pop() === 4)
+_ assert_(l->pop() === 3)
+_ assert_(l->pop() === 2)
+_ assert_(l->pop() === 1)
 echo pass
 ## STDOUT:
 pass
