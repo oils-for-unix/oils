@@ -144,7 +144,6 @@ def f(obj):
   return obj.TypeString()
 
 
-# Note: this happsns to work, but globals should probably be disallowed
 GLOBAL = DerivedI(None, 37)
 
 def TestInheritance():
@@ -190,16 +189,8 @@ def BenchmarkWriter(n):
   log('')
 
 
-def BenchmarkSimpleNode(n):
-  # type: (int) -> None
-
-  log('BenchmarkSimpleNode')
-  log('')
-
-  next_ = Node(None, -1)
-  for i in xrange(n):
-    node = Node(next_, i)
-    next_ = node
+def PrintLength(node):
+  # type: (Node) -> None
 
   current = node
   linked_list_len = 0
@@ -219,10 +210,44 @@ def BenchmarkSimpleNode(n):
   log('')
 
 
-def BenchmarkVirtualNodes(n):
+def BenchmarkSimpleNode(n):
   # type: (int) -> None
 
-  log('BenchmarkNodes')
+  log('BenchmarkSimpleNode')
+  log('')
+
+  next_ = Node(None, -1)
+  for i in xrange(n):
+    node = Node(next_, i)
+    next_ = node
+
+  PrintLength(node)
+
+
+def PrintLengthBase(current):
+  # type: (Base) -> None
+
+  linked_list_len = 0
+  while True:
+    if linked_list_len < 10:
+      log('  -> %s', current.TypeString())
+
+    current = current.next
+
+    if current is None:
+      break
+    linked_list_len += 1
+
+  log('')
+  log("  linked list len = %d", linked_list_len)
+  log('')
+
+
+def BenchmarkVirtualNodes(n):
+  # type: (int) -> None
+  """With virtual function pointers"""
+
+  log('BenchmarkVirtualNodes')
   log('')
 
   next_ = Base(None)
@@ -241,20 +266,35 @@ def BenchmarkVirtualNodes(n):
   current = None  # type: Base
   current = node3
 
-  linked_list_len = 0
-  while True:
-    if linked_list_len < 10:
-      log('  -> %s', current.TypeString())
+  PrintLengthBase(current)
 
-    current = current.next
 
-    if current is None:
-      break
-    linked_list_len += 1
+# We use this pattern with Token() in frontend/lexer.py
+# TODO: I think only ASDL should be at the top level, because it has a trivial
+# constructor
+# gNode = Node(None, 37)
 
+def BenchmarkGlobal(n):
+  # type: (int) -> None
+
+  log('BenchmarkGlobal')
   log('')
-  log("  linked list len = %d", linked_list_len)
-  log('')
+
+  for i in xrange(10):
+
+    # create garbage with global
+    #next_ = gNode
+    next_ = None  # type: Node
+
+    for j in xrange(n):
+      node1 = Node(next_, j)
+
+      next_ = node1
+      mylib.MaybeCollect()
+
+  PrintLength(next_)
+
+  log('done')
 
 
 def run_benchmarks():
@@ -274,6 +314,9 @@ def run_benchmarks():
   if 1:
     BenchmarkVirtualNodes(1000)
 
+  if 0:
+    BenchmarkGlobal(10000)
+
 
 if __name__ == '__main__':
   if os.getenv('BENCHMARK'):
@@ -281,3 +324,5 @@ if __name__ == '__main__':
     run_benchmarks()
   else:
     run_tests()
+
+# vim: sw=2
