@@ -10,7 +10,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
-                                       CompoundWord)
+                                       CompoundWord, debug_frame_loc)
 
 from core import alloc
 from core import comp_ui
@@ -438,8 +438,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         dollar0 = arg_r.Peek()  # the script name, or the arg after -c
 
         # Copy quirky bash behavior.
-        frame0 = state.DebugFrame(dollar0, 'main', no_str, state.LINE_ZERO, 0,
-                                  0)
+        frame0 = state.DebugFrame(dollar0, 'main', no_str,
+                                  debug_frame_loc.Main, 0, 0)
         debug_stack.append(frame0)
 
     script_name = arg_r.Peek()  # type: Optional[str]

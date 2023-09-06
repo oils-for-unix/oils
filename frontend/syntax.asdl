@@ -105,6 +105,12 @@ module syntax
     # e.g. for errexit blaming
   | Command(command c)
 
+  debug_frame_loc = 
+    Unknown  # possible in cmopletion
+  | Main     # sentinel to match bash behavior
+  | Token %Token
+
+
   #
   # Shell language
   #

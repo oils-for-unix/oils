@@ -4,7 +4,7 @@ module runtime
 {
   # import from frontend/syntax.asdl
   use frontend syntax {
-    loc Token 
+    loc Token
     expr word command
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
@@ -225,7 +225,7 @@ module runtime
   | ProcessSub               # async (other processes can be started)
   | HereDoc                  # async (multiple here docs per process)
 
-  # tools/osh2oil.py
+  # tools/ysh_ify.py
   word_style = Expr | Unquoted | DQ | SQ
 
   # Hay "first word" namespace

@@ -14,7 +14,9 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
                                         lvalue_e, lvalue_t, scope_e, scope_t,
                                         HayNode, Cell)
-from _devbuild.gen.syntax_asdl import loc, loc_t, Token
+from _devbuild.gen.syntax_asdl import (
+        loc, loc_t, Token, debug_frame_loc, debug_frame_loc_e,
+        debug_frame_loc_t)
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
@@ -50,9 +52,6 @@ if TYPE_CHECKING:
 # we have to set it back!
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
-
-# Weird sentinel value
-LINE_ZERO = Token(Id.Unknown_Tok, -1, -1, runtime.NO_SPID, None, None)
 
 # flags for SetVar
 SetReadOnly = 1 << 0
@@ -1001,12 +1000,12 @@ def _GetWorkingDir():
 
 
 class DebugFrame(object):
-    def __init__(self, bash_source, func_name, source_name, call_tok, argv_i,
+    def __init__(self, bash_source, func_name, source_name, def_loc, argv_i,
                  var_i):
-        # type: (Optional[str], Optional[str], Optional[str], Optional[Token], int, int) -> None
+        # type: (Optional[str], Optional[str], Optional[str], debug_frame_loc_t, int, int) -> None
         """
-        Quirks: core/shell.py pushes up to 2 frames, one with call_tok as
-        LINE_ZERO, another with None.  Probably should create a type for this.
+        Args:
+          def_loc: location of the function definition
         """
         self.bash_source = bash_source
 
@@ -1015,7 +1014,7 @@ class DebugFrame(object):
         self.func_name = func_name
         self.source_name = source_name
 
-        self.call_tok = call_tok
+        self.def_loc = def_loc
         self.argv_i = argv_i
         self.var_i = var_i
 
@@ -1390,13 +1389,13 @@ class Mem(object):
                 else:
                     pass  # It's a frame for FOO=bar?  Or the top one?
 
-                # skip over frames without tokens
-                if frame.call_tok is not None and frame.call_tok != LINE_ZERO:
-                    token = frame.call_tok
-                    assert token.line is not None
-                    d['call_source'] = ui.GetLineSourceString(token.line)
-                    d['call_line_num'] = token.line.line_num
-                    d['call_line'] = token.line.content
+                with tagswitch(frame.def_loc) as case:
+                    if case(debug_frame_loc_e.Token):
+                        token = cast(Token, frame.def_loc)
+                        assert token.line is not None
+                        d['call_source'] = ui.GetLineSourceString(token.line)
+                        d['call_line_num'] = token.line.line_num
+                        d['call_line'] = token.line.content
 
                 d['argv_frame'] = frame.argv_i
                 d['var_frame'] = frame.var_i
@@ -1595,11 +1594,14 @@ class Mem(object):
         # This is because of 'complete -F shellfunc': RunFuncForCompletion  can
         # be called before any SetTokenForLine().  TODO: clean this up.
 
-        # assert self.token_for_line is not None, (bash_source, func_name, source_name)
+        if self.token_for_line is None:
+            def_loc = debug_frame_loc.Unknown  # type: debug_frame_loc_t
+        else:
+            def_loc = self.token_for_line 
 
         self.debug_stack.append(
-            DebugFrame(bash_source, func_name, source_name, self.token_for_line,
-                       argv_i, var_i))
+            DebugFrame(bash_source, func_name, source_name, def_loc, argv_i,
+                       var_i))
 
     def _PopDebugStack(self):
         # type: () -> None
@@ -2104,14 +2106,18 @@ class Mem(object):
         if name == 'BASH_LINENO':
             strs = []
             for frame in reversed(self.debug_stack):
-                # should only happen for the first entry
-                if frame.call_tok is None:
-                    continue
-                if frame.call_tok == LINE_ZERO:
-                    strs.append('0')  # Bash does this to line up with main?
-                    continue
-                line_num = frame.call_tok.line.line_num
-                strs.append(str(line_num))
+                with tagswitch(frame.def_loc) as case:
+                    if case(debug_frame_loc_e.Token):
+                        tok = cast(Token, frame.def_loc)
+                        line_num = tok.line.line_num
+                        strs.append(str(line_num))
+
+                    elif case(debug_frame_loc_e.Main):
+                        strs.append('0')  # Bash does this to line up with 'main'
+
+                    elif case(debug_frame_loc_e.Unknown):
+                        strs.append('-1')  # error
+
             return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'LINENO':
