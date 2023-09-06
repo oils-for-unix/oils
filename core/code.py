@@ -11,9 +11,10 @@ from core import error
 from core.error import e_die
 from core import state
 from core import vm
+from frontend import typed_args
 from mycpp.mylib import log
 
-from typing import List, Dict, cast, TYPE_CHECKING
+from typing import List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
     from _devbuild.gen.runtime_asdl import Proc
@@ -33,8 +34,9 @@ class UserFunc(vm._Callable):
         self.cmd_ev = cmd_ev
         self.mem = mem
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        pos_args = args.RestPos()
         num_args = len(pos_args)
         num_params = len(self.node.pos_params)
 
@@ -53,6 +55,8 @@ class UserFunc(vm._Callable):
                 "%s() expects %d arguments but %d were given" %
                 (self.name, num_params, num_args), blame_loc)
 
+        named_args = args.RestNamed()
+        args.Done()
         num_args = len(named_args)
         num_params = len(self.node.named_params)
         if num_args != num_params:

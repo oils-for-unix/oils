@@ -8,10 +8,11 @@ from _devbuild.gen.syntax_asdl import Token
 from core import pyos
 from mycpp.mylib import log
 
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue, value_t
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
+    from frontend import typed_args
     from osh import sh_expr_eval
     from osh.sh_expr_eval import ArithEvaluator
     from osh.sh_expr_eval import BoolEvaluator
@@ -259,8 +260,8 @@ class _Callable(object):
         """Empty constructor for mycpp."""
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
         raise NotImplementedError()
 
 
