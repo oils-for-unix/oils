@@ -1004,7 +1004,10 @@ class DebugFrame(object):
     def __init__(self, bash_source, func_name, source_name, call_tok, argv_i,
                  var_i):
         # type: (Optional[str], Optional[str], Optional[str], Optional[Token], int, int) -> None
-        """core/shell.py: call_tok is None."""
+        """
+        Quirks: core/shell.py pushes up to 2 frames, one with call_tok as
+        LINE_ZERO, another with None.  Probably should create a type for this.
+        """
         self.bash_source = bash_source
 
         # ONE of these is set.  func_name for 'myproc a b', and source_name for
@@ -1310,9 +1313,9 @@ class Mem(object):
 
         self.arena = arena
 
-        # The debug_stack isn't strictly necessary for execution.  We use it for
-        # crash dumps and for 4 parallel arrays: BASH_SOURCE, FUNCNAME,
-        # CALL_SOURCE, and BASH_LINENO.
+        # The debug_stack isn't strictly necessary for execution.  We use it
+        # for crash dumps and for 3 parallel arrays: BASH_SOURCE, FUNCNAME, and
+        # BASH_LINENO.
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
@@ -1577,8 +1580,6 @@ class Mem(object):
 
     def _PushDebugStack(self, bash_source, func_name, source_name):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
-        # self.token_for_line is set before every SimpleCommand, ShAssignment, [[, ((,
-        # etc.  Function calls and 'source' are both SimpleCommand.
 
         # These integers are handles/pointers, for use in CrashDumper.
         argv_i = len(self.argv_stack) - 1
@@ -1586,6 +1587,16 @@ class Mem(object):
 
         # The stack is a 5-tuple, where func_name and source_name are optional.  If
         # both are unset, then it's a "temp frame".
+        #
+        # - self.token_for_line may be None, even though it's set before every
+        # SimpleCommand, ShAssignment, [[, ((, etc.  That is, function calls and
+        # 'source' are both SimpleCommand.
+        #
+        # This is because of 'complete -F shellfunc': RunFuncForCompletion  can
+        # be called before any SetTokenForLine().  TODO: clean this up.
+
+        # assert self.token_for_line is not None, (bash_source, func_name, source_name)
+
         self.debug_stack.append(
             DebugFrame(bash_source, func_name, source_name, self.token_for_line,
                        argv_i, var_i))
@@ -2089,22 +2100,6 @@ class Mem(object):
                 if frame.bash_source is not None:
                     strs.append(frame.bash_source)
             return value.BashArray(strs)  # TODO: Reuse this object too?
-
-        # This is how bash source SHOULD be defined, but it's not!
-        if 0:
-            if name == 'CALL_SOURCE':
-                strs = []
-                for frame in reversed(self.debug_stack):
-                    # should only happen for the first entry
-                    if frame.call_tok is None:
-                        continue
-                    if frame.call_tok == LINE_ZERO:
-                        strs.append('-')  # Bash does this to line up with main?
-                        continue
-                    source_str = ui.GetLineSourceString(self.arena,
-                                                        self.token_for_line.line)
-                    strs.append(source_str)
-                return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'BASH_LINENO':
             strs = []

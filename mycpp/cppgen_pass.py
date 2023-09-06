@@ -1304,7 +1304,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     temp_name = 'gobj%d' % self.unique_id
                     self.unique_id += 1
 
-                    #self.log('INSTANCE lval %s rval %s', lval, call_expr)
+                    #self.log('GLOBAL lval %s rval %s', lval, call_expr)
 
                     self.write('\n')
                     self.write('%s %s', call_expr.callee.name, temp_name)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./startup.sh <function name>
+#   demo/bash-startup.sh <function name>
 
 set -o nounset
 set -o pipefail

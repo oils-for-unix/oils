@@ -437,10 +437,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                   0)
         debug_stack.append(frame0)
 
-    # Copy quirky bash behavior.
-    frame1 = state.DebugFrame(no_str, no_str, no_str, None, 0, 0)
-    debug_stack.append(frame1)
-
     script_name = arg_r.Peek()  # type: Optional[str]
     arg_r.Next()
     mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
