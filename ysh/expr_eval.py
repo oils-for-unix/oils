@@ -57,6 +57,7 @@ from core import vm
 from frontend import consts
 from frontend import match
 from frontend import location
+from frontend import typed_args
 from osh import braces
 from osh import word_compile
 from mycpp import mylib
@@ -791,7 +792,7 @@ class ExprEvaluator(object):
                         pos_args, named_args = self._EvalArgList(node.args)
                         #log('pos_args %s', pos_args)
 
-                        ret = f.Call(pos_args, named_args)
+                        ret = f.Call(typed_args.Reader(pos_args, named_args))
 
                         #log('ret %s', ret)
                         return ret
@@ -812,7 +813,7 @@ class ExprEvaluator(object):
                     pos_args, named_args = self._EvalArgList(node.args)
                     #log('pos_args %s', pos_args)
 
-                    ret = f.Call(pos_args, named_args)
+                    ret = f.Call(typed_args.Reader(pos_args, named_args))
 
                     #log('ret %s', ret)
                     return ret
@@ -826,7 +827,7 @@ class ExprEvaluator(object):
 
                 pos_args, named_args = self._EvalArgList(node.args, me=func.me)
 
-                ret = f.Call(pos_args, named_args)
+                ret = f.Call(typed_args.Reader(pos_args, named_args))
 
                 return ret
 

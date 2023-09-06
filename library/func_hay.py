@@ -67,12 +67,11 @@ class ParseHay(vm._Callable):
         # Wrap in expr.Block?
         return value.Block(node)
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        string = r.PosStr()
-        r.Done()
+        string = args.PosStr()
+        args.Done()
         return self._Call(string)
 
 
@@ -98,12 +97,11 @@ class EvalHay(vm._Callable):
         # Note: we should discourage the unvalidated top namespace for files?  It
         # needs more validation.
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        cmd = r.PosCommand()
-        r.Done()
+        cmd = args.PosCommand()
+        args.Done()
         return value.Dict(self._Call(cmd))
 
 
@@ -123,9 +121,11 @@ class BlockAsStr(vm._Callable):
         # type: (value_t) -> value_t
         return block
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
-        return self._Call(pos_args[0])
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        val = args.PosValue()
+        args.Done()
+        return self._Call(val)
 
 
 class HayFunc(vm._Callable):
@@ -139,8 +139,8 @@ class HayFunc(vm._Callable):
         # type: () -> Dict[str, value_t]
         return self.hay_state.HayRegister()
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
         # TODO: check args
         return value.Dict(self._Call())

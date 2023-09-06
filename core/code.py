@@ -33,8 +33,9 @@ class UserFunc(vm._Callable):
         self.cmd_ev = cmd_ev
         self.mem = mem
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        pos_args = args.RestPos()
         num_args = len(pos_args)
         num_params = len(self.node.pos_params)
 
@@ -53,6 +54,8 @@ class UserFunc(vm._Callable):
                 "%s() expects %d arguments but %d were given" %
                 (self.name, num_params, num_args), blame_loc)
 
+        named_args = args.RestNamed()
+        args.Done()
         num_args = len(named_args)
         num_params = len(self.node.named_params)
         if num_args != num_params:

@@ -23,13 +23,12 @@ class Match(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
-        r = typed_args.Reader(pos_args, named_args)
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
         arg = 0
-        if len(pos_args):
-            arg = r.PosInt()
-            r.Done()
+        if args.NumPos():
+            arg = args.PosInt()
+            args.Done()
 
         # TODO: Support strings
         s = self.mem.GetMatch(arg)
@@ -50,8 +49,8 @@ class Start(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
         raise NotImplementedError('_start')
 
 
@@ -63,8 +62,8 @@ class End(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
         raise NotImplementedError('_end')
 
 

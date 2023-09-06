@@ -24,13 +24,12 @@ class Append(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        items = r.PosList()
-        to_append = r.PosValue()
-        r.Done()
+        items = args.PosList()
+        to_append = args.PosValue()
+        args.Done()
 
         items.append(to_append)
 
@@ -44,12 +43,11 @@ class Pop(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        items = r.PosList()
-        r.Done()
+        items = args.PosList()
+        args.Done()
 
         items.pop()
 
@@ -62,13 +60,12 @@ class StartsWith(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        string = r.PosStr()
-        match = r.PosStr()
-        r.Done()
+        string = args.PosStr()
+        match = args.PosStr()
+        args.Done()
 
         res = string.startswith(match)
         return value.Bool(res)
@@ -80,12 +77,11 @@ class Strip(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        string = r.PosStr()
-        r.Done()
+        string = args.PosStr()
+        args.Done()
 
         res = string.strip()
         return value.Str(res)
@@ -97,12 +93,11 @@ class Upper(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        string = r.PosStr()
-        r.Done()
+        string = args.PosStr()
+        args.Done()
 
         res = string.upper()
         return value.Str(res)
@@ -114,12 +109,11 @@ class Keys(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        dictionary = r.PosDict()
-        r.Done()
+        dictionary = args.PosDict()
+        args.Done()
 
         keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
         return value.List(keys)
@@ -131,12 +125,11 @@ class Len(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        x = r.PosValue()
-        r.Done()
+        x = args.PosValue()
+        args.Done()
 
         UP_x = x
         with tagswitch(x) as case:
@@ -162,12 +155,11 @@ class Reverse(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        li = r.PosList()
-        r.Done()
+        li = args.PosList()
+        args.Done()
 
         li.reverse()
 
@@ -180,15 +172,14 @@ class Join(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        li = r.PosList()
+        li = args.PosList()
 
         delim = ''
-        if len(pos_args):  # reader has a reference
-            delim = r.PosStr()
+        if args.NumPos():
+            delim = args.PosStr()
 
         r.Done()
 
@@ -205,12 +196,11 @@ class Maybe(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         if val == value.Null:
             return value.List([])
@@ -230,12 +220,11 @@ class Type(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         tname = ui.ValType(val)
         return value.Str(tname[6:])  # strip "value." prefix
@@ -247,12 +236,11 @@ class Bool(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         return value.Bool(val_ops.ToBool(val))
 
@@ -263,12 +251,11 @@ class Int(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         UP_val = val
         with tagswitch(val) as case:
@@ -297,12 +284,11 @@ class Float(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         UP_val = val
         with tagswitch(val) as case:
@@ -327,12 +313,11 @@ class Str_(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         UP_val = val
         with tagswitch(val) as case:
@@ -357,12 +342,11 @@ class List_(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         l = []  # type: List[value_t]
         it = None  # type: val_ops._ContainerIter
@@ -399,12 +383,11 @@ class Dict_(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> value_t
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
 
-        r = typed_args.Reader(pos_args, named_args)
-        val = r.PosValue()
-        r.Done()
+        val = args.PosValue()
+        args.Done()
 
         UP_val = val
         with tagswitch(val) as case:

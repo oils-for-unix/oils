@@ -125,6 +125,10 @@ class Reader(object):
         # type: () -> value_t
         return self._GetNextPos()
 
+    def NumPos(self):
+        # type: () -> int
+        return len(self.pos_args)
+
     def RestPos(self):
         # type: () -> List[value_t]
         ret = self.pos_args
