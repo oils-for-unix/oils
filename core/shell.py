@@ -689,6 +689,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     func_init.SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     func_init.SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
+    func_init.SetGlobalFunc(mem, 'assert', func_misc.Assert())
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

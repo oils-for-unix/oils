@@ -490,3 +490,26 @@ class Shvar_get(vm._Callable):
         args.Done()
         return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
                                    loc.Missing)
+
+
+class Assert(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+
+        val = args.PosValue()
+
+        msg = ''
+        if args.NumPos():
+            msg = args.PosStr()
+
+        args.Done()
+
+        if not val_ops.ToBool(val):
+            raise error.AssertionErr(msg, loc.Missing)
+
+        return value.Null

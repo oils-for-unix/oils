@@ -645,15 +645,14 @@ shopt -s oil:all
 var l = List(1:3)
 
 var result = l->extend(List(3:6))
-if (result === null) { echo 'pass' }
+_ assert(result === null)
 
 setvar result = l->append(6)
-if (result === null) { echo pass }
+_ assert(result === null)
 
 setvar result = l->pop()
-if (result === null) { echo pass }
+_ assert(result === null)
+echo pass
 ## STDOUT:
-pass
-pass
 pass
 ## END
