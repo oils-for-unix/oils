@@ -1000,12 +1000,12 @@ def _GetWorkingDir():
 
 
 class DebugFrame(object):
-    def __init__(self, bash_source, func_name, source_name, def_loc, argv_i,
+    def __init__(self, bash_source, func_name, source_name, call_loc, argv_i,
                  var_i):
         # type: (Optional[str], Optional[str], Optional[str], debug_frame_loc_t, int, int) -> None
         """
         Args:
-          def_loc: location of the function definition
+          call_loc: location the function was called from
         """
         self.bash_source = bash_source
 
@@ -1014,7 +1014,7 @@ class DebugFrame(object):
         self.func_name = func_name
         self.source_name = source_name
 
-        self.def_loc = def_loc
+        self.call_loc = call_loc
         self.argv_i = argv_i
         self.var_i = var_i
 
@@ -1389,9 +1389,9 @@ class Mem(object):
                 else:
                     pass  # It's a frame for FOO=bar?  Or the top one?
 
-                with tagswitch(frame.def_loc) as case:
+                with tagswitch(frame.call_loc) as case:
                     if case(debug_frame_loc_e.Token):
-                        token = cast(Token, frame.def_loc)
+                        token = cast(Token, frame.call_loc)
                         assert token.line is not None
                         d['call_source'] = ui.GetLineSourceString(token.line)
                         d['call_line_num'] = token.line.line_num
@@ -1565,6 +1565,8 @@ class Mem(object):
         # We don't want the 'read' builtin to write to this frame!
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
+
+        # TODO: Is this necessary?
         self._PushDebugStack(None, None, None)
 
     def PopTemp(self):
@@ -1579,7 +1581,9 @@ class Mem(object):
 
     def _PushDebugStack(self, bash_source, func_name, source_name):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
-
+        """
+        All 3 values are optional
+        """
         # These integers are handles/pointers, for use in CrashDumper.
         argv_i = len(self.argv_stack) - 1
         var_i = len(self.var_stack) - 1
@@ -1595,12 +1599,12 @@ class Mem(object):
         # be called before any SetTokenForLine().  TODO: clean this up.
 
         if self.token_for_line is None:
-            def_loc = debug_frame_loc.Unknown  # type: debug_frame_loc_t
+            call_loc = debug_frame_loc.Unknown  # type: debug_frame_loc_t
         else:
-            def_loc = self.token_for_line 
+            call_loc = self.token_for_line 
 
         self.debug_stack.append(
-            DebugFrame(bash_source, func_name, source_name, def_loc, argv_i,
+            DebugFrame(bash_source, func_name, source_name, call_loc, argv_i,
                        var_i))
 
     def _PopDebugStack(self):
@@ -2082,6 +2086,7 @@ class Mem(object):
         # Do lookup of system globals before looking at user variables.  Note: we
         # could optimize this at compile-time like $?.  That would break
         # ${!varref}, but it's already broken for $?.
+
         if name == 'FUNCNAME':
             # bash wants it in reverse order.  This is a little inefficient but we're
             # not depending on deque().
@@ -2094,8 +2099,8 @@ class Mem(object):
                 # Temp stacks are ignored
             return value.BashArray(strs2)  # TODO: Reuse this object too?
 
-        # This isn't the call source, it's the source of the function DEFINITION
-        # (or the sourced # file itself).
+        # $BASH_SOURCE and $BASH_LINENO come from the location of the call, not
+        # of the definition.
         if name == 'BASH_SOURCE':
             strs = []
             for frame in reversed(self.debug_stack):
@@ -2106,9 +2111,9 @@ class Mem(object):
         if name == 'BASH_LINENO':
             strs = []
             for frame in reversed(self.debug_stack):
-                with tagswitch(frame.def_loc) as case:
+                with tagswitch(frame.call_loc) as case:
                     if case(debug_frame_loc_e.Token):
-                        tok = cast(Token, frame.def_loc)
+                        tok = cast(Token, frame.call_loc)
                         line_num = tok.line.line_num
                         strs.append(str(line_num))
 

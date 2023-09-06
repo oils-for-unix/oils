@@ -106,7 +106,7 @@ module syntax
   | Command(command c)
 
   debug_frame_loc = 
-    Unknown  # possible in cmopletion
+    Unknown  # possible for proc run by completion
   | Main     # sentinel to match bash behavior
   | Token %Token
 

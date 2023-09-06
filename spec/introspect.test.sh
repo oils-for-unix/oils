@@ -231,3 +231,15 @@ f  # line 9
 ['G', '6', '10']
 ['end F', '10']
 ## END
+
+#### Locations with temp frame
+
+$SH $REPO_ROOT/spec/testdata/bash-source-pushtemp.sh
+
+## STDOUT:
+F
+G
+STACK:testdata/bash-source-pushtemp.sh:g:4
+STACK:testdata/bash-source-pushtemp.sh:f:25
+STACK:testdata/bash-source-pushtemp.sh:main:0
+## END
