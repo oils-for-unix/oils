@@ -177,11 +177,12 @@ class Join(vm._Callable):
 
         li = args.PosList()
 
+        # TODO: see if we can incorporate positional defaults into typed_args.Reader
         delim = ''
         if args.NumPos():
             delim = args.PosStr()
 
-        r.Done()
+        args.Done()
 
         strs = []  # type: List[str]
         for i, el in enumerate(li):

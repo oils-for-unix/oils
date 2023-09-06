@@ -11,6 +11,7 @@ from core import error
 from core.error import e_die
 from core import state
 from core import vm
+from frontend import typed_args
 from mycpp.mylib import log
 
 from typing import List, Dict, cast, TYPE_CHECKING
