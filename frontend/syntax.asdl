@@ -469,7 +469,7 @@ module syntax
 
   # Subscripts are lists of expressions
   #   a[:i, n]      (we don't have matrices, but we have data frames)
-  Subscript = (expr obj, expr index)
+  Subscript = (Token left, expr obj, expr index)
 
   # Attributes are obj.attr, d->key, name::scope,
   Attribute = (expr obj, Token op, Token attr, expr_context ctx)
@@ -511,26 +511,26 @@ module syntax
     # Attribute() and then Call()
 
   | IfExp(expr test, expr body, expr orelse)
-  | Tuple(List[expr] elts, expr_context ctx)
+  | Tuple(Token left, List[expr] elts, expr_context ctx)
 
-  | List(List[expr] elts, expr_context ctx)
-  | Dict(List[expr] keys, List[expr] values)
+  | List(Token left, List[expr] elts, expr_context ctx)
+  | Dict(Token left, List[expr] keys, List[expr] values)
     # For the values in {n1, n2}
   | Implicit
 
-  | ListComp(expr elt, List[Comprehension] generators)
+  | ListComp(Token left, expr elt, List[Comprehension] generators)
     # not implemented
-  | DictComp(expr key, expr value, List[Comprehension] generators)
+  | DictComp(Token left, expr key, expr value, List[Comprehension] generators)
   | GeneratorExp(expr elt, List[Comprehension] generators)
 
     # Ranges are written 1:2, with first class expression syntax. There is no
     # step as in Python. Use range(0, 10, step=2) for that.
-  | Range(expr lower, expr upper)
+  | Range(expr lower, Token op, expr upper)
 
     # Slices occur within [] only.  Unlike ranges, the start/end can be #
     # implicit.  Like ranges, denote a step with slice(0, 10, step=2).
     #   a[3:]   a[:i]
-  | Slice(expr? lower, expr? upper)
+  | Slice(expr? lower, Token op, expr? upper)
 
   | Subscript %Subscript
   | Attribute %Attribute

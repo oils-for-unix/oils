@@ -7,6 +7,9 @@ This makes syntax errors nicer.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
+    expr,
+    expr_t,
+    expr_e,
     loc,
     loc_t,
     loc_e,
@@ -31,6 +34,8 @@ from _devbuild.gen.syntax_asdl import (
     CommandSub,
     BracedVarSub,
     BraceGroup,
+    Subscript,
+    Attribute,
     arith_expr,
     arith_expr_e,
     arith_expr_t,
@@ -452,3 +457,112 @@ def TokenForLhsExpr(node):
             raise AssertionError()
 
     raise AssertionError()
+
+
+# TODO: Token instead of loc_t once all cases are implemented
+def TokenForExpr(node):
+    # type: (expr_t) -> loc_t
+    """Returns the token associated with the given expression."""
+
+    UP_node = node  # type: expr_t
+    with tagswitch(node) as case:
+        if case(expr_e.Const):
+            node = cast(expr.Const, UP_node)
+            return node.c
+
+        elif case(expr_e.Var):
+            node = cast(expr.Var, UP_node)
+            return node.name
+
+        elif case(expr_e.CommandSub):
+            node = cast(CommandSub, UP_node)
+            return node.left_token
+
+        elif case(expr_e.ShArrayLiteral):
+            node = cast(ShArrayLiteral, UP_node)
+            return node.left
+
+        elif case(expr_e.DoubleQuoted):
+            node = cast(DoubleQuoted, UP_node)
+            return node.left
+
+        elif case(expr_e.SingleQuoted):
+            node = cast(SingleQuoted, UP_node)
+            return node.left
+
+        elif case(expr_e.BracedVarSub):
+            node = cast(BracedVarSub, UP_node)
+            return node.left
+
+        elif case(expr_e.SimpleVarSub):
+            node = cast(SimpleVarSub, UP_node)
+            return node.left
+
+        elif case(expr_e.Unary):
+            node = cast(expr.Unary, UP_node)
+            return node.op
+
+        elif case(expr_e.Binary):
+            node = cast(expr.Binary, UP_node)
+            return node.op
+
+        elif case(expr_e.Slice):
+            node = cast(expr.Slice, UP_node)
+            return node.op
+
+        elif case(expr_e.Range):
+            node = cast(expr.Range, UP_node)
+            return node.op
+
+        elif case(expr_e.Compare):
+            node = cast(expr.Compare, UP_node)
+            # TODO: use operator instead?
+            return TokenForExpr(node.left)
+
+        elif case(expr_e.IfExp):
+            # TODO
+            return loc.Missing
+
+        elif case(expr_e.List):
+            node = cast(expr.List, UP_node)
+            return node.left
+
+        elif case(expr_e.Tuple):
+            node = cast(expr.Tuple, UP_node)
+            return node.left
+
+            return node.left
+
+        elif case(expr_e.Dict):
+            node = cast(expr.Dict, UP_node)
+            return node.left
+
+        elif case(expr_e.ListComp):
+            # TODO
+            return loc.Missing
+
+        elif case(expr_e.GeneratorExp):
+            # TODO
+            return loc.Missing
+
+        elif case(expr_e.Lambda):
+            # TODO
+            return loc.Missing
+
+        elif case(expr_e.FuncCall):
+            node = cast(expr.FuncCall, UP_node)
+            return node.args.left
+
+        elif case(expr_e.Subscript):
+            node = cast(Subscript, UP_node)
+            return node.left
+
+        elif case(expr_e.Attribute):
+            node = cast(Attribute, UP_node)
+            return node.op
+
+        elif case(expr_e.RegexLiteral):
+            node = cast(expr.RegexLiteral, UP_node)
+            return node.left
+
+    raise AssertionError()  # unreachable

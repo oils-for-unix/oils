@@ -6,7 +6,9 @@ typed_args_test.py: Tests for typed_args.py
 import unittest
 
 from _devbuild.gen.runtime_asdl import value
+from _devbuild.gen.syntax_asdl import ArgList, expr
 from core import error
+from core import test_lib
 from frontend import typed_args  # module under test
 
 from typing import cast
@@ -14,8 +16,18 @@ from typing import cast
 
 class TypedArgsTest(unittest.TestCase):
     def testReaderPosArgs(self):
+        arena = test_lib.MakeArena('')
+        line_id = arena.AddLine('foo(a, b, c, d, e, f, g)', 1)
+        ltok = arena.NewToken(-1, 3, 1, line_id, '')
+        rtok = arena.NewToken(-1, 4, 1, line_id, '')
+        pos_exprs = [
+            expr.Const(arena.NewToken(-1, 4+2*i, 1, line_id, ''))
+            for i in range(7)
+        ]
+        arg_list = ArgList(ltok, pos_exprs, [], rtok)
+
         # Not enough args...
-        reader = typed_args.Reader([], {})
+        reader = typed_args.Reader([], {}, arg_list)
         self.assertRaises(error.TypeErrVerbose, reader.PosStr)
 
         pos_args = [
@@ -28,16 +40,21 @@ class TypedArgsTest(unittest.TestCase):
             value.Int(0xbeef),
             value.Str('bar'),
         ]
-        reader = typed_args.Reader(list(pos_args), {})
+        reader = typed_args.Reader(list(pos_args), {}, arg_list)
 
         # Haven't processed any args yet...
         self.assertRaises(error.TypeErrVerbose, reader.Done)
 
         # Arg is wrong type...
-        self.assertRaises(error.TypeErrVerbose, reader.PosStr)
+        with self.assertRaises(error.TypeErrVerbose) as cm:
+            reader.PosStr()
+
+        # Check that the error points to the right token
+        e = cm.exception
+        self.assertEqual(pos_exprs[0].c, e.location)
 
         # Normal operation from here on
-        reader = typed_args.Reader(pos_args, {})
+        reader = typed_args.Reader(pos_args, {}, arg_list)
         arg = reader.PosInt()
         self.assertEqual(0xc0ffee, arg)
 
@@ -67,6 +84,13 @@ class TypedArgsTest(unittest.TestCase):
         reader.Done()
 
     def testReaderKwargs(self):
+        # Dummy call. Not testing error messages here.
+        arena = test_lib.MakeArena('')
+        line_id = arena.AddLine('foo()', 1)
+        ltok = arena.NewToken(-1, 0, 3, line_id, '')
+        rtok = arena.NewToken(-1, 0, 4, line_id, '')
+        arg_list = ArgList(ltok, [], [], rtok)
+
         kwargs = {
             'hot': value.Int(0xc0ffee),
             'name': value.Str('foo'),
@@ -77,7 +101,7 @@ class TypedArgsTest(unittest.TestCase):
             'b': value.Int(0xbeef),
             'c': value.Str('bar'),
         }
-        reader = typed_args.Reader([], kwargs)
+        reader = typed_args.Reader([], kwargs, arg_list)
 
         # Haven't processed any args yet...
         self.assertRaises(error.TypeErrVerbose, reader.Done)

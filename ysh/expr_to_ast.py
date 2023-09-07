@@ -223,7 +223,7 @@ class Transformer(object):
                 p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
 
             a = p_args.GetChild(0)
-            return Subscript(base, self._Subscript(a))
+            return Subscript(op_tok, base, self._Subscript(a))
 
         if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
@@ -268,8 +268,8 @@ class Transformer(object):
 
         return key, value
 
-    def _Dict(self, p_node):
-        # type: (PNode) -> expr.Dict
+    def _Dict(self, parent, p_node):
+        # type: (PNode, PNode) -> expr.Dict
         """Parse tree to LST
         
         dict: dict_pair (',' dict_pair)* [',']
@@ -277,7 +277,7 @@ class Transformer(object):
         """
         if not ISNONTERMINAL(p_node.typ):
             assert p_node.tok.id == Id.Op_RBrace
-            return expr.Dict([], [])
+            return expr.Dict(parent.tok, [], [])
 
         #assert p_node.typ == grammar_nt.dict
 
@@ -290,7 +290,7 @@ class Transformer(object):
             keys.append(key)
             values.append(value)
 
-        return expr.Dict(keys, values)
+        return expr.Dict(parent.tok, keys, values)
 
     def _Tuple(self, parent):
         # type: (PNode) -> expr_t
@@ -310,10 +310,10 @@ class Transformer(object):
             p_node = parent.GetChild(i)
             elts.append(self.Expr(p_node))
 
-        return expr.Tuple(elts, expr_context_e.Store)  # unused expr_context_e
+        return expr.Tuple(parent.tok, elts, expr_context_e.Store)  # unused expr_context_e
 
-    def _TestlistComp(self, p_node, id0):
-        # type: (PNode, Id_t) -> expr_t
+    def _TestlistComp(self, parent, p_node, id0):
+        # type: (PNode, PNode, Id_t) -> expr_t
         """Parse tree to LST
         
         testlist_comp:
@@ -327,7 +327,7 @@ class Transformer(object):
             if id0 == Id.Op_LParen:
                 return expr.GeneratorExp(elt, [comp])
             if id0 == Id.Op_LBracket:
-                return expr.ListComp(elt, [comp])
+                return expr.ListComp(parent.tok, elt, [comp])
             raise AssertionError()
 
         if id0 == Id.Op_LParen:
@@ -345,7 +345,7 @@ class Transformer(object):
             for i in xrange(0, n, 2):  # skip commas
                 elts.append(self.Expr(p_node.GetChild(i)))
 
-            return expr.List(elts,
+            return expr.List(parent.tok, elts,
                              expr_context_e.Store)  # unused expr_context_e
 
         raise AssertionError(Id_str(id0))
@@ -363,9 +363,9 @@ class Transformer(object):
             if n == 2:  # () is a tuple
                 assert parent.GetChild(
                     1).tok.id == Id.Op_RParen, parent.GetChild(1)
-                return expr.Tuple([], expr_context_e.Store)
+                return expr.Tuple(tok, [], expr_context_e.Store)
 
-            return self._TestlistComp(parent.GetChild(1), id_)
+            return self._TestlistComp(parent, parent.GetChild(1), id_)
 
         if id_ == Id.Op_LBracket:
             # atom: ... | '[' [testlist_comp] ']' | ...
@@ -373,17 +373,17 @@ class Transformer(object):
             if n == 2:  # []
                 assert parent.GetChild(
                     1).tok.id == Id.Op_RBracket, parent.GetChild(1)
-                return expr.List([],
+                return expr.List(tok, [],
                                  expr_context_e.Store)  # unused expr_context_e
 
-            return self._TestlistComp(parent.GetChild(1), id_)
+            return self._TestlistComp(parent, parent.GetChild(1), id_)
 
         if id_ == Id.Op_LBrace:
             # atom: ... | '{' [Op_Newline] [dict] '}'
             i = 1
             if parent.GetChild(i).tok.id == Id.Op_Newline:
                 i += 1
-            return self._Dict(parent.GetChild(i))
+            return self._Dict(parent, parent.GetChild(i))
 
         if id_ == Id.Arith_Slash:
             r = self._Regex(parent.GetChild(1))
@@ -484,7 +484,7 @@ class Transformer(object):
                 upper = None
             else:  # a[:3]
                 upper = self.Expr(parent.GetChild(1))
-        return expr.Slice(lower, upper)
+        return expr.Slice(lower, parent.GetChild(0).tok, upper)
 
     def Expr(self, pnode):
         # type: (PNode) -> expr_t
@@ -576,6 +576,7 @@ class Transformer(object):
 
                 if n == 3:
                     return expr.Range(self.Expr(pnode.GetChild(0)),
+                                      pnode.GetChild(1).tok,
                                       self.Expr(pnode.GetChild(2)))
 
                 raise AssertionError(n)
