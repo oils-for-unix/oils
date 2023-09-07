@@ -105,11 +105,14 @@ module syntax
     # e.g. for errexit blaming
   | Command(command c)
 
-  debug_frame_loc = 
-    Unknown  # possible for proc run by completion
-  | Main     # sentinel to match bash behavior
-  | Token %Token
-
+  debug_frame = 
+    Main(str dollar0)
+    # call_loc => BASH_LINENO
+    # call_loc may be None with new --source flag?
+  | Source(Token? call_tok, str source_name)
+    # def_tok => BASH_SOURCE
+    # call_loc may be None if invoked via RunFuncForCompletion?
+  | Call(Token? call_tok, Token def_tok, str func_name)
 
   #
   # Shell language

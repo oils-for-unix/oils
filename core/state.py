@@ -15,8 +15,7 @@ from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
                                         lvalue_e, lvalue_t, scope_e, scope_t,
                                         HayNode, Cell)
 from _devbuild.gen.syntax_asdl import (
-        loc, loc_t, Token, debug_frame_loc, debug_frame_loc_e,
-        debug_frame_loc_t)
+        loc, loc_t, Token, debug_frame, debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
@@ -999,24 +998,22 @@ def _GetWorkingDir():
         e_die("Can't determine working directory: %s" % pyutil.strerror(e))
 
 
-class DebugFrame(object):
-    def __init__(self, bash_source, func_name, source_name, call_loc, argv_i,
-                 var_i):
-        # type: (Optional[str], Optional[str], Optional[str], debug_frame_loc_t, int, int) -> None
-        """
-        Args:
-          call_loc: location the function was called from
-        """
-        self.bash_source = bash_source
+def _LineNumber(tok):
+    # type: (Optional[Token]) -> str
+    """ For $BASH_LINENO """
+    if tok is None:
+        return '-1'
+    return str(tok.line.line_num)
 
-        # ONE of these is set.  func_name for 'myproc a b', and source_name for
-        # 'source lib.sh'
-        self.func_name = func_name
-        self.source_name = source_name
 
-        self.call_loc = call_loc
-        self.argv_i = argv_i
-        self.var_i = var_i
+if mylib.PYTHON:
+    def _AddCallToken(d, token):
+        # type: (Dict[str, Any], Optional[Token]) -> None
+        if token is None:
+            return
+        d['call_source'] = ui.GetLineSourceString(token.line)
+        d['call_line_num'] = token.line.line_num
+        d['call_line'] = token.line.content
 
 
 def _InitDefaults(mem):
@@ -1296,11 +1293,11 @@ class Mem(object):
     """
 
     def __init__(self, dollar0, argv, arena, debug_stack):
-        # type: (str, List[str], alloc.Arena, List[DebugFrame]) -> None
+        # type: (str, List[str], alloc.Arena, List[debug_frame_t]) -> None
         """
-    Args:
-      arena: for computing BASH_SOURCE, etc.  Could be factored out
-    """
+        Args:
+          arena: currently unused
+        """
         # circular dep initialized out of line
         self.exec_opts = None  # type: optview.Exec
         self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith
@@ -1309,8 +1306,6 @@ class Mem(object):
         self.argv_stack = [_ArgFrame(argv)]
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack = [frame]
-
-        self.arena = arena
 
         # The debug_stack isn't strictly necessary for execution.  We use it
         # for crash dumps and for 3 parallel arrays: BASH_SOURCE, FUNCNAME, and
@@ -1379,28 +1374,27 @@ class Mem(object):
         if mylib.PYTHON:
             var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
             argv_stack = [frame.Dump() for frame in self.argv_stack]
+
             debug_stack = []  # type: List[Dict[str, Any]]
-            for frame in self.debug_stack:
-                d = {}  # type: Dict[str, Any]
-                if frame.func_name:
-                    d['func_called'] = frame.func_name
-                elif frame.source_name:
-                    d['file_sourced'] = frame.source_name
-                else:
-                    pass  # It's a frame for FOO=bar?  Or the top one?
+            for frame in reversed(self.debug_stack):
+                UP_frame = frame
+                with tagswitch(frame) as case:
+                    if case(debug_frame_e.Call):
+                        frame = cast(debug_frame.Call, UP_frame)
+                        d = {'type': 'Call', 'func_name': frame.func_name}
+                        _AddCallToken(d, frame.call_tok)
+                        # TODO: Add def_tok
 
-                with tagswitch(frame.call_loc) as case:
-                    if case(debug_frame_loc_e.Token):
-                        token = cast(Token, frame.call_loc)
-                        assert token.line is not None
-                        d['call_source'] = ui.GetLineSourceString(token.line)
-                        d['call_line_num'] = token.line.line_num
-                        d['call_line'] = token.line.content
+                    elif case(debug_frame_e.Source):
+                        frame = cast(debug_frame.Source, UP_frame)
+                        d = {'type': 'Source', 'source_name': frame.source_name}
+                        _AddCallToken(d, frame.call_tok)
 
-                d['argv_frame'] = frame.argv_i
-                d['var_frame'] = frame.var_i
+                    elif case(debug_frame_e.Main):
+                        frame = cast(debug_frame.Main, UP_frame)
+                        d = {'type': 'Main', 'dollar0': frame.dollar0}
+
                 debug_stack.append(d)
-
             return var_stack, argv_stack, debug_stack
 
         raise AssertionError()
@@ -1505,7 +1499,15 @@ class Mem(object):
 
     def PushCall(self, func_name, def_tok, argv):
         # type: (str, Token, Optional[List[str]]) -> None
-        """For proc and func calls."""
+        """Push argv, var, and debug stack frames.
+
+        Currently used for proc and func calls.  TODO: New func evaluator may
+        not use it.
+
+        Args:
+          def_tok: Token where proc or func was defined, used to compute
+                   BASH_SOURCE.
+        """
         if argv is not None:
             self.argv_stack.append(_ArgFrame(argv))
         frame = NewDict()  # type: Dict[str, Cell]
@@ -1513,7 +1515,10 @@ class Mem(object):
 
         # Filename, or [ stdin ], etc.
         source_str = ui.GetLineSourceString(def_tok.line)
-        self._PushDebugStack(source_str, func_name, None)
+
+        # self.token_for_line can be None?
+        self.debug_stack.append(
+                debug_frame.Call(self.token_for_line, def_tok, func_name))
 
     def PopCall(self, should_pop_argv_stack):
         # type: (bool) -> None
@@ -1521,7 +1526,8 @@ class Mem(object):
         Args:
           should_pop_argv_stack: Pass False if PushCall was given None for argv
         """
-        self._PopDebugStack()
+        self.debug_stack.pop()
+
         self.var_stack.pop()
 
         if should_pop_argv_stack:
@@ -1546,12 +1552,14 @@ class Mem(object):
         if len(argv):
             self.argv_stack.append(_ArgFrame(argv))
 
-        # Omit func_name to mwatch bash's behavior for ${FUNCNAME[@]} ?
-        self._PushDebugStack(source_name, None, source_name)
+        # self.token_for_line can be None?
+        self.debug_stack.append(
+                debug_frame.Source(self.token_for_line, source_name))
 
     def PopSource(self, argv):
         # type: (List[str]) -> None
-        self._PopDebugStack()
+        self.debug_stack.pop()
+
         if len(argv):
             self.argv_stack.pop()
 
@@ -1573,38 +1581,6 @@ class Mem(object):
         # type: () -> Dict[str, Cell]
         """For eval_to_dict()."""
         return self.var_stack[-1]
-
-    def _PushDebugStack(self, bash_source, func_name, source_name):
-        # type: (Optional[str], Optional[str], Optional[str]) -> None
-        """
-        All 3 values are optional
-        """
-        # These integers are handles/pointers, for use in CrashDumper.
-        argv_i = len(self.argv_stack) - 1
-        var_i = len(self.var_stack) - 1
-
-        # The stack is a 5-tuple, where func_name and source_name are optional.  If
-        # both are unset, then it's a "temp frame".
-        #
-        # - self.token_for_line may be None, even though it's set before every
-        # SimpleCommand, ShAssignment, [[, ((, etc.  That is, function calls and
-        # 'source' are both SimpleCommand.
-        #
-        # This is because of 'complete -F shellfunc': RunFuncForCompletion  can
-        # be called before any SetTokenForLine().  TODO: clean this up.
-
-        if self.token_for_line is None:
-            call_loc = debug_frame_loc.Unknown  # type: debug_frame_loc_t
-        else:
-            call_loc = self.token_for_line 
-
-        self.debug_stack.append(
-            DebugFrame(bash_source, func_name, source_name, call_loc, argv_i,
-                       var_i))
-
-    def _PopDebugStack(self):
-        # type: () -> None
-        self.debug_stack.pop()
 
     #
     # Argv
@@ -2064,8 +2040,8 @@ class Mem(object):
                 return value.Str(self.this_dir[-1])  # top of stack
 
         if name == 'PIPESTATUS':
-            strs = [str(i) for i in self.pipe_status[-1]]  # type: List[str]
-            return value.BashArray(strs)
+            strs2 = [str(i) for i in self.pipe_status[-1]]  # type: List[str]
+            return value.BashArray(strs2)
 
         if name == '_pipeline_status':
             items = [value.Int(i) for i in self.pipe_status[-1]]
@@ -2085,38 +2061,69 @@ class Mem(object):
         if name == 'FUNCNAME':
             # bash wants it in reverse order.  This is a little inefficient but we're
             # not depending on deque().
-            strs2 = []  # type: List[str]
+            strs = []  # type: List[str]
             for frame in reversed(self.debug_stack):
-                if frame.func_name is not None:
-                    strs2.append(frame.func_name)
-                if frame.source_name is not None:
-                    strs2.append('source')  # bash doesn't tell you the filename.
-                # Temp stacks are ignored
-            return value.BashArray(strs2)  # TODO: Reuse this object too?
+                UP_frame = frame
+                with tagswitch(frame) as case:
+                    if case(debug_frame_e.Call):
+                        frame = cast(debug_frame.Call, UP_frame)
+                        strs.append(frame.func_name)
 
-        # $BASH_SOURCE and $BASH_LINENO come from the location of the call, not
-        # of the definition.
+                    elif case(debug_frame_e.Source):
+                        strs.append('source')  # bash doesn't tell you the filename.
+
+                    elif case(debug_frame_e.Main):
+                        strs.append('main')  # bash behavior
+
+            return value.BashArray(strs)  # TODO: Reuse this object too?
+
+        # $BASH_SOURCE and $BASH_LINENO have OFF BY ONE design bugs:
+        #
+        # ${BASH_LINENO[$i]} is the line number in the source file
+        # (${BASH_SOURCE[$i+1]}) where ${FUNCNAME[$i]} was called (or
+        # ${BASH_LINENO[$i-1]} if referenced within another shell function). 
+        #
+        # https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
+
         if name == 'BASH_SOURCE':
             strs = []
             for frame in reversed(self.debug_stack):
-                if frame.bash_source is not None:
-                    strs.append(frame.bash_source)
+                UP_frame = frame
+                with tagswitch(frame) as case:
+                    if case(debug_frame_e.Call):
+                        frame = cast(debug_frame.Call, UP_frame)
+
+                        # Weird bash behavior
+                        assert frame.def_tok.line is not None
+                        source_str = ui.GetLineSourceString(frame.def_tok.line)
+                        strs.append(source_str)
+
+                    elif case(debug_frame_e.Source):
+                        frame = cast(debug_frame.Source, UP_frame)
+                        # Is this right?
+                        strs.append(frame.source_name)
+
+                    elif case(debug_frame_e.Main):
+                        frame = cast(debug_frame.Main, UP_frame)
+                        strs.append(frame.dollar0)
+
             return value.BashArray(strs)  # TODO: Reuse this object too?
 
         if name == 'BASH_LINENO':
             strs = []
             for frame in reversed(self.debug_stack):
-                with tagswitch(frame.call_loc) as case:
-                    if case(debug_frame_loc_e.Token):
-                        tok = cast(Token, frame.call_loc)
-                        line_num = tok.line.line_num
-                        strs.append(str(line_num))
+                UP_frame = frame
+                with tagswitch(frame) as case:
+                    if case(debug_frame_e.Call):
+                        frame = cast(debug_frame.Call, UP_frame)
+                        strs.append(_LineNumber(frame.call_tok))
 
-                    elif case(debug_frame_loc_e.Main):
+                    elif case(debug_frame_e.Source):
+                        frame = cast(debug_frame.Source, UP_frame)
+                        strs.append(_LineNumber(frame.call_tok))
+
+                    elif case(debug_frame_e.Main):
                         strs.append('0')  # Bash does this to line up with 'main'
-
-                    elif case(debug_frame_loc_e.Unknown):
-                        strs.append('-1')  # error
 
             return value.BashArray(strs)  # TODO: Reuse this object too?
 

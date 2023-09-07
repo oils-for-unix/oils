@@ -254,18 +254,27 @@ cd $REPO_ROOT
 # like above test case, but we source
 
 # bash location doesn't make sense:
-# - It says 'source' happens at line 0 of bash-source-pushtemp.  Well I think
-# - It really happens at line 1 of '-c' !    I guess that's to line up
+# - It says 'source' happens at line 1 of bash-source-pushtemp.  Well I think
+# - It really happens at line 2 of '-c' !    I guess that's to line up
 #   with the 'main' frame
 
-$SH -c 'source spec/testdata/bash-source-pushtemp.sh'
+$SH -c 'true;
+source spec/testdata/bash-source-pushtemp.sh'
 
-## STDOUT:
+## BUG bash STDOUT:
 F
 G
 STACK:spec/testdata/bash-source-pushtemp.sh:g:3
 STACK:spec/testdata/bash-source-pushtemp.sh:f:19
-STACK:spec/testdata/bash-source-pushtemp.sh:source:0
+STACK:spec/testdata/bash-source-pushtemp.sh:source:1
+## END
+
+## OK osh STDOUT:
+F
+G
+STACK:spec/testdata/bash-source-pushtemp.sh:g:3
+STACK:spec/testdata/bash-source-pushtemp.sh:f:19
+STACK:spec/testdata/bash-source-pushtemp.sh:source:2
 ## END
 
 #### Sourcing inside function grows the debug stack
