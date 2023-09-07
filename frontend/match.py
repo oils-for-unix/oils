@@ -197,8 +197,8 @@ class SimpleLexer(object):
     def Next(self):
         # type: () -> Tuple[Id_t, str]
         """
-    Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
-    """
+        Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
+        """
         tok_id, end_pos = self.match_func(self.s, self.pos)
         val = self.s[self.pos:end_pos]
         self.pos = end_pos

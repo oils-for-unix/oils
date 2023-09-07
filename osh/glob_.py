@@ -157,10 +157,10 @@ class _GlobParser(object):
     def _ParseCharClass(self):
         # type: () -> List[glob_part_t]
         """
-    Returns:
-      a CharClass if the parse succeeds, or a Literal if fails.  In the latter
-      case, we also append a warning.
-    """
+        Returns:
+          a CharClass if the parse succeeds, or a Literal if fails.  In the latter
+          case, we also append a warning.
+        """
         first_token = glob_part.Literal(self.token_type, self.token_val)
         balance = 1  # We already saw a [
         tokens = []  # type: List[Tuple[Id_t, str]]
@@ -208,10 +208,10 @@ class _GlobParser(object):
     def Parse(self):
         # type: () -> Tuple[List[glob_part_t], List[str]]
         """
-    Returns:
-      regex string (or None if it's not a glob)
-      A list of warnings about the syntax
-    """
+        Returns:
+          regex string (or None if it's not a glob)
+          A list of warnings about the syntax
+        """
         parts = []  # type: List[glob_part_t]
 
         while True:

@@ -23,9 +23,6 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from frontend.reader import _Reader
 
-# Special immutable token
-_EOL_TOK = Token(Id.Eol_Tok, -1, -1, runtime.NO_SPID, None, None)
-
 
 def IsPlusEquals(tok):
     # type: (Token) -> bool
@@ -215,7 +212,8 @@ class LineLexer(object):
             return ord(self.src_line.content[pos])
 
     def Read(self, lex_mode):
-        # type: (lex_mode_t) -> Token
+        # type: (lex_mode_t) -> Optional[Token]
+
         # Inner loop optimization
         if self.src_line:
             line_str = self.src_line.content
@@ -225,28 +223,29 @@ class LineLexer(object):
 
         tok_type, end_pos = match.OneToken(lex_mode, line_str, line_pos)
         if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-            return _EOL_TOK
+            # LineLexer tells Lexer to read a new line.  The Lexer never
+            # returns None.
+            return None
 
-        # Save on allocations!  We often don't look at the token value.
         # TODO: can inline this function with formula on 16-bit Id.
         kind = consts.GetKind(tok_type)
 
+        # Save on allocations!  We often don't look at the token value.
         # Whitelist doesn't work well?  Use blacklist for now.
         # - Kind.KW is sometimes a literal in a word
         # - Kind.Right is for " in here docs.  Lexer isn't involved.
         # - Got an error with Kind.Left too that I don't understand
         # - Kind.ControlFlow doesn't work because we word_.StaticEval()
         # if kind in (Kind.Lit, Kind.VSub, Kind.Redir, Kind.Char, Kind.Backtick, Kind.KW, Kind.Right):
-
         if kind in (Kind.Arith, Kind.Op, Kind.VTest, Kind.VOp0, Kind.VOp2,
                     Kind.VOp3, Kind.WS, Kind.Ignored, Kind.Eof):
             tok_val = None  # type: Optional[str]
         else:
             tok_val = line_str[line_pos:end_pos]
+
         # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
         # want it to be "low level".  The only thing fabricated here is a newline
         # added at the last line, so we don't end with \0.
-
         if self.replace_last_token:  # make another token from the last span
             self.arena.UnreadOne()
             self.replace_last_token = False
@@ -352,8 +351,8 @@ class Lexer(object):
         consuming it. And consuming it would be a problem once we want to hand off
         pattern parsing to the expression parser.
         """
-        self.line_lexer.AssertAtEndOfLine(
-        )  # Only call this when you've seen \n
+        # Only call this when you've seen \n
+        self.line_lexer.AssertAtEndOfLine()
 
         src_line, line_pos = self.line_reader.GetLine()
         self.line_lexer.Reset(src_line, line_pos)  # fill with a new line
@@ -362,7 +361,7 @@ class Lexer(object):
         # type: (lex_mode_t) -> Token
         """Read from the normal line buffer, not an alias."""
         t = self.line_lexer.Read(lex_mode)
-        if t.id == Id.Eol_Tok:  # hit \0, read a new line
+        if t is None:  # We hit \0 aka Eol_Tok, read a new line
             src_line, line_pos = self.line_reader.GetLine()
 
             if src_line is None:  # no more lines
