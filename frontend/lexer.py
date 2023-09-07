@@ -67,6 +67,11 @@ class LineLexer(object):
         self.arena = arena
         self.replace_last_token = False  # For MaybeUnreadOne
 
+        # Singleton instance because we don't allow globals.
+        # 2023-09: I tried LineLexer::Read() returning None, but that is subtly
+        # incorrect, e.g. in Lexer::Read() with NUL bytes.
+        self.eol_tok = DummyToken(Id.Eol_Tok, '')
+
         self.Reset(None, 0)  # Invalid src_line to start
 
     def __repr__(self):
@@ -212,7 +217,7 @@ class LineLexer(object):
             return ord(self.src_line.content[pos])
 
     def Read(self, lex_mode):
-        # type: (lex_mode_t) -> Optional[Token]
+        # type: (lex_mode_t) -> Token
 
         # Inner loop optimization
         if self.src_line:
@@ -223,9 +228,8 @@ class LineLexer(object):
 
         tok_type, end_pos = match.OneToken(lex_mode, line_str, line_pos)
         if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-            # LineLexer tells Lexer to read a new line.  The Lexer never
-            # returns None.
-            return None
+            # LineLexer tells Lexer to read a new line.
+            return self.eol_tok
 
         # TODO: can inline this function with formula on 16-bit Id.
         kind = consts.GetKind(tok_type)
@@ -361,7 +365,7 @@ class Lexer(object):
         # type: (lex_mode_t) -> Token
         """Read from the normal line buffer, not an alias."""
         t = self.line_lexer.Read(lex_mode)
-        if t is None:  # We hit \0 aka Eol_Tok, read a new line
+        if t.id == Id.Eol_Tok:  # We hit \0 aka Eol_Tok, read a new line
             src_line, line_pos = self.line_reader.GetLine()
 
             if src_line is None:  # no more lines

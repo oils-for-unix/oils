@@ -1296,26 +1296,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write(');\n')
                 return
 
-            # TODO: Change to GLOBAL_ASDL_INSTANCE(name, Token, ...) to get HeapTag::Global
-            # Problem: sometimes the constructor calls NewList() or NewDict, which is illegal.
+            # We could do GcGlobal<> for ASDL classes, but Oils doesn't use them
             if isinstance(o.rvalue, CallExpr):
-                call_expr = o.rvalue
-                if self._IsInstantiation(call_expr):
-                    temp_name = 'gobj%d' % self.unique_id
-                    self.unique_id += 1
-
-                    #self.log('GLOBAL lval %s rval %s', lval, call_expr)
-
-                    self.write('\n')
-                    self.write('%s %s', call_expr.callee.name, temp_name)
-                    # C c;, not C c(); which is most vexing parse
-                    if call_expr.args:
-                        self._WriteArgList(call_expr)
-                    self.write(';\n')
-                    self.write('%s %s = &%s;', GetCType(lval_type), lval.name,
-                               temp_name)
-                    self.write('\n')
-                    return
+                self.report_error(
+                    o,
+                    "Can't initialize objects at the top level, only Str List Dict")
+                return
 
         #
         # Non-top-level

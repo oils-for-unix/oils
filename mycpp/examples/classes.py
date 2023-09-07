@@ -144,8 +144,6 @@ def f(obj):
   return obj.TypeString()
 
 
-GLOBAL = DerivedI(None, 37)
-
 def TestInheritance():
   # type: () -> None
 
@@ -162,7 +160,6 @@ def TestInheritance():
   log("f(b)           %s", f(b))
   log("f(di)          %s", f(di))
   log("f(dss)         %s", f(dss))
-  log("f(GLOBAL)      %s", f(GLOBAL))
 
 
 def run_tests():
@@ -269,34 +266,6 @@ def BenchmarkVirtualNodes(n):
   PrintLengthBase(current)
 
 
-# We use this pattern with Token() in frontend/lexer.py
-# TODO: I think only ASDL should be at the top level, because it has a trivial
-# constructor
-# gNode = Node(None, 37)
-
-def BenchmarkGlobal(n):
-  # type: (int) -> None
-
-  log('BenchmarkGlobal')
-  log('')
-
-  for i in xrange(10):
-
-    # create garbage with global
-    #next_ = gNode
-    next_ = None  # type: Node
-
-    for j in xrange(n):
-      node1 = Node(next_, j)
-
-      next_ = node1
-      mylib.MaybeCollect()
-
-  PrintLength(next_)
-
-  log('done')
-
-
 def run_benchmarks():
   # type: () -> None
 
@@ -313,9 +282,6 @@ def run_benchmarks():
   #BenchmarkNodes(750)
   if 1:
     BenchmarkVirtualNodes(1000)
-
-  if 0:
-    BenchmarkGlobal(10000)
 
 
 if __name__ == '__main__':

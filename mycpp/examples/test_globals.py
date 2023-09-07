@@ -26,20 +26,6 @@ class MyClass(object):
     log("x = %d", self.x)
 
 
-# Note: the C++ code for this object uses GC_CLASS_SCANNED / HeapTag::Scanned,
-# but HeapTag::Global would make more sense.
-#
-# So it gets put in the mark set, but it doesn't cause a crash because it's
-# never in the live_objs_ list, and thus not considered for sweeping.
-
-gFoo = MyClass(5)
-
-
-def f():
-  # type: () -> None
-  gFoo.Print()
-
-
 def g(x):
   # type: (int) -> int
   print("g %d" % x)
@@ -50,7 +36,6 @@ def run_tests():
   # type: () -> None
 
   for i in xrange(10):
-    f()
     mylib.MaybeCollect()
 
     new_obj = MyClass(42)

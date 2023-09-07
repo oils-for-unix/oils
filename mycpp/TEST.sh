@@ -229,6 +229,9 @@ test-invalid-examples() {
       */invalid_except.py)
         expected_status=3
         ;;
+      */invalid_global.py)
+        expected_status=2
+        ;;
     esac
 
     if test $status -ne $expected_status; then
