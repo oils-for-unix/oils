@@ -661,7 +661,7 @@ html-demo() {
 }
 
 #
-# Hay is part of the Oil suite
+# Hay is part of the YSH suite
 #
 
 hay() {
@@ -677,8 +677,12 @@ hay-meta() {
 }
 
 #
-# Oil Language
+# YSH
 #
+
+ysh-convert() {
+  run-file ysh-convert "$@"
+}
 
 ysh-stdlib() {
   run-file ysh-stdlib "$@"

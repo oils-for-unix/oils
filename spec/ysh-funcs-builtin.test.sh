@@ -1,41 +1,6 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 1
 
-# TODO: Test that there are exceptions when there are too many args, etc.
-
-#### Bool() - should this be Bool.fromObj()?
-var a = Bool( :|| )
-var b = Bool( :|foo| )
-write $a $b
-## STDOUT:
-false
-true
-## END
-
-#### Int() - should this be Int.fromStr() ?
-var a = Int("3")
-var b = Int("-35")
-write $a $b
-
-var c = Int("bad")
-echo 'should not get here'
-
-## status: 3
-## STDOUT:
-3
--35
-## END
-
-#### Float() - should this be Float.fromStr() ?
-# TODO: This needs a lot more testing, for precision, etc.
-var a = Float("1.2")
-var b = Float("3.4")
-write $a $b
-## STDOUT:
-1.2
-3.4
-## END
-
 #### join()
 var x = :|a b 'c d'|
 
@@ -103,7 +68,7 @@ write $[sum( 0:0, start)]
 ## END
 
 #### List->reverse()
-var x = List(0:3)
+var x = list(0:3)
 _ x->reverse()
 write @x
 ## STDOUT:

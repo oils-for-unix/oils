@@ -532,108 +532,10 @@ BoundFunc
 Range
 ## END
 
-#### Bool constructor
-echo "$[Bool(1234)]"
-echo "$[Bool(0)]"
-echo "$[Bool('foo')]"
-echo "$[Bool(true)]"
-echo "$[Bool(1.234)]"
-echo "$[Bool([])]"
-echo "$[Bool({})]"
-echo "$[Bool(null)]"
-echo "$[Bool(len)]"
-echo "$[Bool('foo'->startswith)]"
-echo "$[Bool(1:3)]"
-## STDOUT:
-true
-false
-true
-true
-true
-false
-false
-false
-true
-true
-true
-## END
-
-#### Int constructor
-echo "$[Int(1234)]"
-echo "$[Int('1234')]"
-echo "$[Int(1.234)]"
-## STDOUT:
-1234
-1234
-1
-## END
-
-#### Float constructor
-echo "$[Float(1234)]"
-echo "$[Float('1.234')]"
-echo "$[Float(2.345)]"
-## STDOUT:
-1234.0
-1.234
-2.345
-## END
-
-#### Str constructor
-echo "$[Str(1234)]"
-echo "$[Str(1.234)]"
-echo "$[Str('foo')]"
-## STDOUT:
-1234
-1.234
-foo
-## END
-
-#### Dict() for cloning
-var d = {'a': 1}
-var d2 = d
-setvar d2['b'] = 2
-echo $['b' in d] # d2 should be an alias for d
-var d3 = Dict(d)
-setvar d3['c'] = 3
-# d3 should NOT be an alias
-echo $['c' in d]
-echo $['c' in d3]
-## STDOUT:
-true
-false
-true
-## END
-
-#### List() for cloning
-var l = [1]
-var l2 = l
-_ l2->append(2)
-echo $[len(l)] # d2 should be an alias for d
-var l3 = List(l)
-_ l3->append(3)
-# l3 should NOT be an alias
-echo $[len(l)]
-echo $[len(l3)]
-## STDOUT:
-2
-2
-3
-## END
-
-#### List constructor
-var l = List(1:5)
-var l2 = List({'a': 1, 'foo': 'bar'})
-echo $[l[2]]
-echo $[l2[1]] # NOTE: depends on dict being ordered
-## STDOUT:
-3
-foo
-## END
-
 #### List->extend()
-var l = List(1:3)
+var l = list(1:3)
 echo $[len(l)]
-_ l->extend(List(3:6))
+_ l->extend(list(3:6))
 echo $[len(l)]
 ## STDOUT:
 2
@@ -642,9 +544,9 @@ echo $[len(l)]
 
 #### List append()/extend() should return null
 shopt -s oil:all
-var l = List(1:3)
+var l = list(1:3)
 
-var result = l->extend(List(3:6))
+var result = l->extend(list(3:6))
 _ assert_(result === null)
 
 setvar result = l->append(6)
@@ -657,7 +559,7 @@ pass
 
 #### List pop()
 shopt -s oil:all
-var l = List(1:5)
+var l = list(1:5)
 _ assert_(l->pop() === 4)
 _ assert_(l->pop() === 3)
 _ assert_(l->pop() === 2)

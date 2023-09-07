@@ -264,13 +264,13 @@ echo 'should not get here'
 
 #### Bool conversion -- explicit allowed, implicit not allowed
 
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
-if (Int(false) < Int(true)) {
+if (int(false) < int(true)) {
   echo '<'
 }
 
-if (Int(false) <= Int(false) ) {
+if (int(false) <= int(false) ) {
   echo '<='
 }
 

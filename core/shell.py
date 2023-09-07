@@ -678,12 +678,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
     func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     func_init.SetGlobalFunc(mem, 'type', func_misc.Type())
-    func_init.SetGlobalFunc(mem, 'Bool', func_misc.Bool())
-    func_init.SetGlobalFunc(mem, 'Int', func_misc.Int())
-    func_init.SetGlobalFunc(mem, 'Float', func_misc.Float())
-    func_init.SetGlobalFunc(mem, 'Str', func_misc.Str_())
-    func_init.SetGlobalFunc(mem, 'List', func_misc.List_())
-    func_init.SetGlobalFunc(mem, 'Dict', func_misc.Dict_())
+
+    # type conversions
+    func_init.SetGlobalFunc(mem, 'bool', func_misc.Bool())
+    func_init.SetGlobalFunc(mem, 'int', func_misc.Int())
+    func_init.SetGlobalFunc(mem, 'float', func_misc.Float())
+    func_init.SetGlobalFunc(mem, 'str', func_misc.Str_())
+    func_init.SetGlobalFunc(mem, 'list', func_misc.List_())
+    func_init.SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+
     func_init.SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     func_init.SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     func_init.SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))

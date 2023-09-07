@@ -243,7 +243,7 @@ X [Func]      export()   location()
 
 ```chapter-links-builtin-func
   [Values]        len()   type() 
-  [Conversions]   Bool()   Int()   Float()   Str()   List()   Dict()
+  [Conversions]   bool()   int()   float()   str()   list()   dict()
                   X chr()   X ord()   X encodeRunes()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
   [List]          any()   all()

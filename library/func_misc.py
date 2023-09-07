@@ -348,6 +348,8 @@ class Str_(vm._Callable):
         val = args.PosValue()
         args.Done()
 
+        # TODO: Should we call Stringify here?  That would handle Eggex.
+
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Int):

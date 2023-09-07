@@ -152,13 +152,3 @@ var t3 = mytable[:2, %(name age)]
 (Str)   'TODO: Table Slicing'
 (Str)   'TODO: Table Slicing'
 ## END
-
-#### List(0:3) should copy the list?
-shopt -s oil:all
-var mylist = List(0:3)
-write @mylist
-## STDOUT:
-0
-1
-2
-## END
