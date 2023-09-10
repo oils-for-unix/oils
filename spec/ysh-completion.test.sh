@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 
 #### compexport
 
@@ -9,15 +9,16 @@ compexport -c 'hay'
 'hay '
 ## END
 
-#### compexport with newline in command
+#### compexport with multi-line commands
 
-# TODO: reject line buf?
+# TODO: Why do we get 3 copies of echo?
+# compexport -c $'for x in y; do\nec'
 
-compexport -c $'hay\nec'
+compexport -c $'for x in y; do\ncompl'
 
 
 ## STDOUT:
-TODO: reject
+'complete '
 ## END
 
 #### filenames are completed
@@ -26,14 +27,30 @@ touch foo bar baz
 
 compexport -c $'echo ba'
 
-# Is the order reversed?
-# Does GNU readline always sort them?
+# TODO: Is the order reversed?  I guess this is file system order, which is
+# nondetrministic
 
 ## STDOUT:
 echo baz 
 echo bar 
 z
 ## END
+
+#### complete both -W and -F: words and functions
+
+__git() {
+  COMPREPLY=(corn dill)
+}
+complete -W 'ale $(echo bean)' -F __git GIT
+
+compexport -c 'GIT '
+
+# Hm they are kinda reversed, I want to fix that.  This is true even in Python
+# though, weird.
+
+## STDOUT:
+## END
+
 
 #### -o default is an "else action", when zero are shown
 
