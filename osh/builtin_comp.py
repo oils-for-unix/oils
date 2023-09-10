@@ -13,11 +13,13 @@ from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
+from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
+
 
 _ = log
 
@@ -511,8 +513,8 @@ class CompExport(vm._Builtin):
         if arg.c is None:
             e_usage('expected a -c string, like sh -c', loc.Missing)
 
-        begin = 0 if arg.b == -1 else arg.b
-        end = len(arg.c) if arg.e == -1 else arg.e
+        begin = 0 if arg.begin == -1 else arg.begin
+        end = len(arg.c) if arg.end == -1 else arg.end
 
         log('%r begin %d end %d', arg.c, begin, end)
 
@@ -526,8 +528,24 @@ class CompExport(vm._Builtin):
         comp_matches = list(it)
         comp_matches.reverse()
 
-        # TODO: escape
-        for m in comp_matches:
-            print(m)
+        if arg.format == 'jlines':
+            for m in comp_matches:
+                # TODO: change to J8 notation
+                # - Since there are spaces, maybe_encode() always adds quotes.
+                # - Could use a jlines=True J8 option to specify that newlines and
+                #   non-UTF-8 unprintable bytes cause quotes.  But not spaces.
+                #
+                # Also, there's always a trailing space!  Gah.
+
+                if 1:
+                    jline = qsn.maybe_encode(m)
+                    print(jline)
+                else:
+                    print(m)
+
+        elif arg.format == 'tsv8':
+            log('TSV8 format not implemented')
+        else:
+            raise AssertionError()
 
         return 0

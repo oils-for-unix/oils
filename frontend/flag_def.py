@@ -370,14 +370,19 @@ COMPEXPORT_SPEC.ShortFlag(
     '-c', args.String,
     help='Shell string to complete, like sh -c')
 
-COMPEXPORT_SPEC.ShortFlag(
-    '-b', args.Int,
+COMPEXPORT_SPEC.LongFlag(
+    '--begin', args.Int,
     help='Simulate readline begin index into line buffer')
 
-COMPEXPORT_SPEC.ShortFlag(
-    '-e', args.Int,
+COMPEXPORT_SPEC.LongFlag(
+    '--end', args.Int,
     help='Simulate readline end index into line buffer')
 
+# jlines is an array of strings with NO header line
+# TSV8 has a header line.  It can have flag descriptions and other data.
+COMPEXPORT_SPEC.LongFlag('--format', ['jlines', 'tsv8'],
+                         default='jlines',
+                         help='Output format')
 
 #
 # Pure YSH

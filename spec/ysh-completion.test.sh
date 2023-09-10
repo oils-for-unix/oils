@@ -1,12 +1,12 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### compexport
 
 compexport -c 'hay'
 
 ## STDOUT:
-haynode 
-hay 
+'haynode '
+'hay '
 ## END
 
 #### compexport with newline in command
@@ -79,3 +79,36 @@ git
 # --table ?  For mulitiple completions
 # compatible with -C ?
 # --trace - show debug_f tracing on stderr?  Would be very nice!
+
+#### git completion space issue
+
+. $REPO_ROOT/testdata/completion/git-completion.bash
+echo status=$?
+
+#complete
+
+# Bug: it has an extra \ on it
+compexport -c 'git ch'
+
+## status: 0
+## STDOUT:
+## END
+
+#### Complete Filenames with bad characters
+
+touch hello
+touch $'hi\xffthere'
+
+compexport -c 'echo h'
+## STDOUT:
+## END
+
+#### Complete Command with bad characters
+
+touch foo fooz
+
+compexport -c "echo \$'bad \\xff byte' f"
+
+## STDOUT:
+## END
+
