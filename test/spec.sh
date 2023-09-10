@@ -684,6 +684,10 @@ ysh-convert() {
   run-file ysh-convert "$@"
 }
 
+ysh-completion() {
+  run-file ysh-completion "$@"
+}
+
 ysh-stdlib() {
   run-file ysh-stdlib "$@"
 }
