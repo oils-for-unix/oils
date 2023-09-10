@@ -738,6 +738,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
     builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
+    # NOTE: We're using a different WordEvaluator here.
+    ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                           tilde_ev, splitter, errfmt)
+
+    ev.arith_ev = arith_ev
+    ev.expr_ev = expr_ev
+    ev.prompt_ev = prompt_ev
+    ev.CheckCircularDeps()
+
+    root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
+                                         comp_ui_state, comp_ctx, debug_f)
+    builtins[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
+
     builtins[builtin_i.json] = builtin_json.Json(mem, expr_ev, errfmt, False)
     builtins[builtin_i.j8] = builtin_json.Json(mem, expr_ev, errfmt, True)
 
@@ -827,14 +840,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         if flag.rcdir is not None:
             print_stderr('%s warning: --rcdir ignored with --norc' % lang)
 
+    # Initialize even in non-interactive shell, for 'compexport'
+    _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+
     if flag.headless:
         state.InitInteractive(mem)
         mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
-
-        # This is like an interactive shell, so we copy some initialization from
-        # below.  Note: this may need to be tweaked.
-        _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
         # NOTE: rc files loaded AFTER _InitDefaultCompletions.
         for rc_path in rc_paths:
@@ -871,19 +883,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         mutable_opts.set_redefine_module()
 
         if readline:
-            # NOTE: We're using a different WordEvaluator here.
-            ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                                   tilde_ev, splitter, errfmt)
-
-            ev.arith_ev = arith_ev
-            ev.expr_ev = expr_ev
-            ev.prompt_ev = prompt_ev
-            ev.CheckCircularDeps()
-
-            root_comp = completion.RootCompleter(ev, mem, comp_lookup,
-                                                 compopt_state, comp_ui_state,
-                                                 comp_ctx, debug_f)
-
             term_width = 0
             if flag.completion_display == 'nice':
                 try:
@@ -901,8 +900,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
             comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
                                  display, debug_f)
-
-            _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
         else:  # Without readline module
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,

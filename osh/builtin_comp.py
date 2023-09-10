@@ -9,6 +9,7 @@ from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import value, value_e
 from core import completion
 from core import error
+from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
@@ -472,9 +473,8 @@ class CompAdjust(vm._Builtin):
         prev = '' if n < 2 else adjusted_argv[-2]
 
         if arg.s:
-            if cur.startswith(
-                    '--') and '=' in cur:  # Split into flag name and value
-                # mycpp: rewrite of multiple-assignment
+            if cur.startswith('--') and '=' in cur:
+                # Split into flag name and value
                 prev, cur = mylib.split_once(cur, '=')
                 split = 'true'
             else:
@@ -490,5 +490,44 @@ class CompAdjust(vm._Builtin):
         if 'cword' in var_names:
             # Same weird invariant after adjustment
             state.BuiltinSetString(self.mem, 'cword', str(n - 1))
+
+        return 0
+
+
+class CompExport(vm._Builtin):
+
+    def __init__(self, root_comp):
+        # type: (completion.RootCompleter) -> None
+        self.root_comp = root_comp
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
+        arg_r.Next()
+
+        attrs = flag_spec.ParseMore('compexport', arg_r)
+        arg = arg_types.compexport(attrs.attrs)
+
+        if arg.c is None:
+            e_usage('expected a -c string, like sh -c', loc.Missing)
+
+        begin = 0 if arg.b == -1 else arg.b
+        end = len(arg.c) if arg.e == -1 else arg.e
+
+        log('%r begin %d end %d', arg.c, begin, end)
+
+        # Copied from completion.ReadlineCallback
+        comp = completion.Api(line=arg.c, begin=begin, end=end)
+        it = self.root_comp.Matches(comp)
+
+        #print(comp)
+        #print(self.root_comp)
+
+        comp_matches = list(it)
+        comp_matches.reverse()
+
+        # TODO: escape
+        for m in comp_matches:
+            print(m)
 
         return 0

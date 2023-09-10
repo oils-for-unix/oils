@@ -364,6 +364,21 @@ COMPADJUST_SPEC.ShortFlag(
 COMPADJUST_SPEC.ShortFlag('-s',
                           help='Treat --foo=bar and --foo bar the same way.')
 
+COMPEXPORT_SPEC = FlagSpecAndMore('compexport')
+
+COMPEXPORT_SPEC.ShortFlag(
+    '-c', args.String,
+    help='Shell string to complete, like sh -c')
+
+COMPEXPORT_SPEC.ShortFlag(
+    '-b', args.Int,
+    help='Simulate readline begin index into line buffer')
+
+COMPEXPORT_SPEC.ShortFlag(
+    '-e', args.Int,
+    help='Simulate readline end index into line buffer')
+
+
 #
 # Pure YSH
 #

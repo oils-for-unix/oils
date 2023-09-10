@@ -919,7 +919,7 @@ def WordEndsWithCompDummy(w):
         return False
 
 
-class RootCompleter(CompletionAction):
+class RootCompleter(object):
     """Dispatch to various completers.
 
     - Complete the OSH language (variables, etc.), or
@@ -1393,6 +1393,7 @@ class ReadlineCallback(object):
             end = self.readline.get_endidx()
 
             comp = Api(line=buf, begin=begin, end=end)
+            self.debug_f.writeln('Api %r %d %d' % (buf, begin, end))
 
             if mylib.PYTHON:
                 self.comp_iter = self.root_comp.Matches(comp)

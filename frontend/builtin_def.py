@@ -36,7 +36,7 @@ _NORMAL_BUILTINS = [
     'umask', 'wait', 'jobs', 'fg', 'bg',
 
     'shopt',
-    'complete', 'compgen', 'compopt', 'compadjust',
+    'complete', 'compgen', 'compopt', 'compadjust', 'compexport',
 
     'getopts',
 
