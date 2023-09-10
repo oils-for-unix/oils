@@ -537,11 +537,9 @@ class CompExport(vm._Builtin):
                 #
                 # Also, there's always a trailing space!  Gah.
 
-                if 1:
-                    jline = qsn.maybe_encode(m)
-                    print(jline)
-                else:
-                    print(m)
+                jline = qsn.maybe_encode(m)
+                print(jline)
+                # print(m)
 
         elif arg.format == 'tsv8':
             log('TSV8 format not implemented')
