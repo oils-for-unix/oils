@@ -4,10 +4,13 @@
 
 # So COMPREPLY takes SHELL-ESCAPED strings
 #
-# bash does NOT except COMPREPLY -- it expects it to be already escaped.
+# bash does NOT quote COMPREPLY -- it expects it to be already quoted.
+#
 # But YSH might do so, because it's a better interface.
 #
-# shopt --set escape_compreply
+# shopt --set ysh_quotes_compreply
+#
+# If the user plugin doesn't quote it, then the shell is responsible for it.
 
 # This is like 'printf %q' 'cha spaces'
 #declare -a commands=( cherry checkout 'cha\ spaces')
@@ -16,7 +19,19 @@
 #
 # Newline works!  It's because printf %q works.  
 
-declare -a commands=( cherry checkout 'cha spaces' "can't" $'one\ntwo')
+# The $ gets quoted
+# BUG: bash shows \$file_not_var as a completion candidate, but you can't select it
+#
+# - If you type $, you get $'one\ntwo'
+# - If you type \$, you get $'one\ntwo' as well
+# This is probably GNU readline evaluation
+# 
+# This is why YSH distinguishes between completing the shell language, and
+# completing a command arg.  The latter must be shell-quoted.
+
+declare -a commands=(
+  cherry checkout 'cha spaces' "can't" $'one\ntwo' '$file_not_var'
+)
 
 # This has problems because 'check' is a prefix of two things.
 # You might need to add quotes
@@ -118,6 +133,10 @@ q3-argv() {
   argv "$@"
 }
 
+v-argv() {
+  argv "$@"
+}
+
 complete -F __backslash b-argv
 complete -F __sq sq-argv
 
@@ -202,9 +221,37 @@ test-words() {
 # This works except you have to press $ for $'one\ntwo'
 complete -W "$(print-comps-q3)" q3-argv
 
+
+print-vars-with-dollar() {
+  local prefix=$1
+  compgen -A variable "$prefix" | while read -r line; do
+    echo '$'$line
+  done
+}
+
+__complete-vars() {
+  #argv "$@"
+  local cur=$2
+
+  local -a results
+
+  case $cur in
+    '$'*)
+      local prefix=${cur:1}
+      #echo "prefix=$prefix"
+
+      # Variables that start with prefix
+      COMPREPLY=( $(print-vars-with-dollar "$prefix") )
+      ;;
+  esac
+}
+
+complete -F __complete-vars v-argv
+
+
 # For testing print-comps
 
-if test "$(basename -- $0)" = 'spaces.bash'; then
+if test "$(basename -- $0)" = 'quoting.bash'; then
   "$@"
 fi
 
