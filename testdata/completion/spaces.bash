@@ -82,14 +82,57 @@ __sq() {
 # Well I think the easiest thing is obviously to implement %q on their side,
 # and '\n'
 
-b-argv() {
+argv() {
   python3 -c 'import sys; print(sys.argv[1:])' "$@"
 }
 
+b-argv() {
+  argv "$@"
+}
+
 sq-argv() {
-  b-argv "$@"
+  argv "$@"
+}
+
+w-argv() {
+  argv "$@"
+}
+
+c-argv() {
+  argv "$@"
 }
 
 complete -F __backslash b-argv
 complete -F __sq sq-argv
 
+# Hm this doesn't work.  It comes across as one candidate.
+# But it doesn't get shell escaping
+#complete -W 'word\ with\ spaces w2' w-argv
+
+# It comes across as one candidate
+complete -W "'word with spaces' w2" w-argv
+
+# This works!  I think there is a double-eval
+complete -W "'word\ with\ spaces' w2" w-argv
+
+print-comps() {
+  local cur=$2
+
+  for cmd in "${commands[@]}"; do
+    case $cmd in
+      $cur*)
+        # More efficient version
+        local quoted
+        printf -v quoted %q "$cmd"
+        echo "$quoted"
+        ;;
+    esac
+  done
+}
+
+complete -C print-comps c-argv
+
+# For testing print-comps
+if test "$(basename -- $0)" = 'spaces.bash'; then
+  "$@"
+fi
