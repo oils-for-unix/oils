@@ -259,6 +259,9 @@ def _DefineCompletionFlags(spec):
     # type: (_FlagSpecAndMore) -> None
     spec.ShortFlag('-F', args.String, help='Complete with this function')
     spec.ShortFlag('-W', args.String, help='Complete with these words')
+    spec.ShortFlag('-C', args.String,
+                   help='Complete with stdout lines of this command')
+
     spec.ShortFlag(
         '-P',
         args.String,
@@ -339,6 +342,7 @@ _DefineCompletionActions(COMPLETE_SPEC)
 COMPLETE_SPEC.ShortFlag('-E', help='Define the compspec for an empty line')
 COMPLETE_SPEC.ShortFlag(
     '-D', help='Define the compspec that applies when nothing else matches')
+
 # I would like this to be less compatible
 # Field name conflicts with 'print' keyword
 #COMPLETE_SPEC.LongFlag(

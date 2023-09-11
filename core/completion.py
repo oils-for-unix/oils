@@ -528,6 +528,19 @@ class FileSystemAction(CompletionAction):
                     yield path
 
 
+class CommandAction(CompletionAction):
+
+    def __init__(self, cmd_ev, command_name):
+        # type: (CommandEvaluator, str) -> None
+        self.cmd_ev = cmd_ev
+        self.command_name = command_name
+
+    def Matches(self, comp):
+        # type: (Api) -> Iterator[str]
+        for candidate in ['TODO-complete-C']:
+            yield candidate
+
+
 class ShellFuncAction(CompletionAction):
     """Call a user-defined function using bash's completion protocol."""
 

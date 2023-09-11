@@ -15,7 +15,7 @@ from core import ui
 from core import vm
 from data_lang import qsn
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, print_stderr
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
@@ -125,7 +125,11 @@ class SpecBuilder(object):
 
     def Build(self, argv, attrs, base_opts):
         # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
-        """Given flags to complete/compgen, return a UserSpec."""
+        """Given flags to complete/compgen, return a UserSpec.
+
+        Args:
+          argv: only used for error message
+        """
         cmd_ev = self.cmd_ev
 
         # arg_types.compgen is a subset of arg_types.complete (the two users of this
@@ -139,10 +143,17 @@ class SpecBuilder(object):
             func_name = arg.F
             func = cmd_ev.procs.get(func_name)
             if func is None:
-                raise error.Usage('Function %r not found' % func_name,
+                raise error.Usage('function %r not found' % func_name,
                                   loc.Missing)
             actions.append(
                 completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
+
+        if arg.C is not None:
+            # this can be a shell FUNCTION too, not just an external command
+            # Honestly seems better than -F?  Does it also get COMP_CWORD?
+            command = arg.C
+            actions.append(completion.CommandAction(cmd_ev, command))
+            print_stderr('osh warning: complete -C not implemented')
 
         # NOTE: We need completion for -A action itself!!!  bash seems to have it.
         for name in attrs.actions:
@@ -359,11 +370,12 @@ class CompGen(vm._Builtin):
             # error printed above
             return 2
 
-        # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
-        # and also showing ALL COMPREPLY reuslts, not just the ones that start with
-        # the word to complete.
+        # NOTE: Matching bash in passing dummy values for COMP_WORDS and
+        # COMP_CWORD, and also showing ALL COMPREPLY results, not just the ones
+        # that start
+        # with the word to complete.
         matched = False
-        comp = completion.Api('', 0, 0)
+        comp = completion.Api('', 0, 0)  # empty string
         comp.Update('compgen', to_complete, '', -1, None)
         try:
             for m, _ in user_spec.Matches(comp):
@@ -516,7 +528,7 @@ class CompExport(vm._Builtin):
         begin = 0 if arg.begin == -1 else arg.begin
         end = len(arg.c) if arg.end == -1 else arg.end
 
-        log('%r begin %d end %d', arg.c, begin, end)
+        #log('%r begin %d end %d', arg.c, begin, end)
 
         # Copied from completion.ReadlineCallback
         comp = completion.Api(line=arg.c, begin=begin, end=end)
