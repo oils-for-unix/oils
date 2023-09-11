@@ -94,11 +94,27 @@ sq-argv() {
   argv "$@"
 }
 
-w-argv() {
+w1-argv() {
+  argv "$@"
+}
+
+w2-argv() {
   argv "$@"
 }
 
 c-argv() {
+  argv "$@"
+}
+
+cw-argv() {
+  argv "$@"
+}
+
+q2-argv() {
+  argv "$@"
+}
+
+q3-argv() {
   argv "$@"
 }
 
@@ -110,10 +126,10 @@ complete -F __sq sq-argv
 #complete -W 'word\ with\ spaces w2' w-argv
 
 # It comes across as one candidate
-complete -W "'word with spaces' w2" w-argv
+complete -W "'word with spaces' w2" w1-argv
 
 # This works!  I think there is a double-eval
-complete -W "'word\ with\ spaces' w2" w-argv
+complete -W "'word\ with\ spaces' w2" w2-argv
 
 print-comps() {
   local cur=$2
@@ -132,7 +148,63 @@ print-comps() {
 
 complete -C print-comps c-argv
 
+#
+# Try to figure out what -W does
+#
+
+# This doesn't work
+complete -W '$(print-comps)' cw-argv
+
+# Doesn't work either
+#complete -W "$(print-comps)" cw-argv
+
+print-comps-q2() {
+  print-comps | while read -r line; do
+    printf '%q\n' "$line"
+  done
+}
+
+# This works except you have to press $ for $'one\ntwo'
+complete -W "$(print-comps-q2)" q2-argv
+
+# -W is first split by IFS, and then each word is evaluated?
+
+print-comps-q3() {
+  ### Complex alternative to printf %q that also works
+
+  print-comps | while read -r line; do
+    # This is wrong
+    #echo "'$line'"
+
+    # replace '  -->  '\''
+    echo "'${line//"'"/"'\\''"}'"
+  done
+}
+
+test-words() {
+  echo "$(print-comps)"
+  echo
+  echo "$(print-comps-q2)"
+  echo
+  echo "$(print-comps-q3)"
+  echo
+
+  echo 'Unquoted command sub, with word splitting'
+  echo
+
+  echo $(print-comps-q2)
+  echo
+
+  echo $(print-comps-q3)
+  echo
+}
+
+# This works except you have to press $ for $'one\ntwo'
+complete -W "$(print-comps-q3)" q3-argv
+
 # For testing print-comps
+
 if test "$(basename -- $0)" = 'spaces.bash'; then
   "$@"
 fi
+
