@@ -416,6 +416,8 @@ py-extensions() {
 }
 
 minimal() {
+  build/stamp.sh write-git-commit
+
   py-source
   py-extensions
 

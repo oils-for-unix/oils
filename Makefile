@@ -71,6 +71,7 @@
 # Make all directories before every build.
 $(shell mkdir -p _bin _release _tmp _build/hello _build/oil _build/opy)
 
+STAMP_SH := build/stamp.sh
 ACTIONS_SH := build/ovm-actions.sh
 COMPILE_SH := build/ovm-compile.sh
 CLEAN_SH := build/clean.sh
