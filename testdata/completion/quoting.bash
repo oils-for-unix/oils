@@ -31,7 +31,7 @@
 
 declare -a commands=(
   cherry checkout
-  'file with space'
+  'ch with space'  # you have to type 'ch\ ' to select this completion
   "can't"  # apostrophe
   $'one\ntwo'  # newline
   '$file_not_var'
@@ -42,7 +42,7 @@ declare -a commands=(
 # You might need to add quotes
 #declare -a commands=( cherry checkout 'check\ spaces' )
 
-__backslash() {
+__printf_q() {
   #argv "$@"
 
   local cur=$2
@@ -87,7 +87,7 @@ __sq() {
   for cmd in "${commands[@]}"; do
     case $cmd in
       $cur*)
-        # Wrong when there's a single quote!
+        # BUG when there's a single quote!
         local quoted="'$cmd'"
         #local quoted="$cmd"
         results+=( "$quoted" )
@@ -106,7 +106,7 @@ argv() {
   python3 -c 'import sys; print(sys.argv[1:])' "$@"
 }
 
-b-argv() {
+pq-argv() {
   argv "$@"
 }
 
@@ -142,7 +142,7 @@ v-argv() {
   argv "$@"
 }
 
-complete -F __backslash b-argv
+complete -F __printf_q pq-argv
 complete -F __sq sq-argv
 
 # Hm this doesn't work.  It comes across as one candidate.

@@ -13,7 +13,7 @@ import unittest
 import sys
 
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import value_e, Proc
+from _devbuild.gen.runtime_asdl import value_e, Proc, comp_action_e
 from _devbuild.gen.syntax_asdl import proc_sig
 from core import completion  # module under test
 from core import comp_ui
@@ -212,14 +212,16 @@ class CompletionTest(unittest.TestCase):
 
     def testUserSpec(self):
         comp = self._CompApi(['f'], 0, 'f')
-        matches = list(U1.Matches(comp))
-        self.assertEqual([('foo.py', False), ('foo', False)], matches)
+        matches = list(U1.AllMatches(comp))
+        self.assertEqual(
+                [('foo.py', comp_action_e.Other), ('foo', comp_action_e.Other)],
+                matches)
 
         predicate = completion.GlobPredicate(False, '*.py')
         c2 = completion.UserSpec([A1], [], [], predicate, '', '')
         comp = self._CompApi(['f'], 0, 'f')
-        matches = list(c2.Matches(comp))
-        self.assertEqual([('foo.py', False)], matches)
+        matches = list(c2.AllMatches(comp))
+        self.assertEqual([('foo.py', comp_action_e.Other)], matches)
 
 
 class RootCompleterTest(unittest.TestCase):

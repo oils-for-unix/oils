@@ -379,7 +379,7 @@ class CompGen(vm._Builtin):
         comp = completion.Api('', 0, 0)  # empty string
         comp.Update('compgen', to_complete, '', -1, None)
         try:
-            for m, _ in user_spec.Matches(comp):
+            for m, _ in user_spec.AllMatches(comp):
                 matched = True
                 print(m)
         except error.FatalRuntime:

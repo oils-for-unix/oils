@@ -854,14 +854,13 @@ class UserSpec(object):
         f.write('  prefix: %s\n' % self.prefix)
         f.write('  suffix: %s\n' % self.prefix)
 
-    def Matches(self, comp):
-        # type: (Api) -> Iterator[Tuple[str, bool]]
+    def AllMatches(self, comp):
+        # type: (Api) -> Iterator[Tuple[str, comp_action_t]]
         """yield completion candidates."""
         num_matches = 0
 
         for a in self.actions:
             action_kind = a.ActionKind()
-            is_fs_action = action_kind == comp_action_e.FileSystem
             for match in a.Matches(comp):
                 # Special case hack to match bash for compgen -F.  It doesn't filter by
                 # to_complete!
@@ -874,7 +873,7 @@ class UserSpec(object):
                 # There are two kinds of filters: changing the string, and filtering
                 # the set of strings.  So maybe have modifiers AND filters?  A triple.
                 if show:
-                    yield self.prefix + match + self.suffix, is_fs_action
+                    yield self.prefix + match + self.suffix, action_kind
                     num_matches += 1
 
         # NOTE: extra_actions and else_actions don't respect -X, -P or -S, and we
@@ -884,13 +883,15 @@ class UserSpec(object):
         # for -o plusdirs
         for a in self.extra_actions:
             for match in a.Matches(comp):
-                yield match, True  # We know plusdirs is a file system action
+                # We know plusdirs is a file system action
+                yield match, comp_action_e.FileSystem
 
         # for -o default and -o dirnames
         if num_matches == 0:
             for a in self.else_actions:
                 for match in a.Matches(comp):
-                    yield match, True  # both are FileSystemAction
+                    # both are FileSystemAction
+                    yield match, comp_action_e.FileSystem
 
         # What if the cursor is not at the end of line?  See readline interface.
         # That's OK -- we just truncate the line at the cursor?
@@ -1304,7 +1305,7 @@ class RootCompleter(object):
         # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
 
         i = 0
-        for candidate, is_fs_action in user_spec.Matches(comp):
+        for candidate, action_kind in user_spec.AllMatches(comp):
             # SUBTLE: dynamic_opts is part of compopt_state, which ShellFuncAction
             # can mutate!  So we don't want to pull this out of the loop.
             #
@@ -1340,7 +1341,7 @@ class RootCompleter(object):
 
             # compopt -o filenames is for user-defined actions.  Or any
             # FileSystemAction needs it.
-            if is_fs_action or opt_filenames:
+            if action_kind == comp_action_e.FileSystem or opt_filenames:
                 if path_stat.isdir(candidate):
                     s = line_until_word + ShellQuoteB(candidate) + '/'
                     yield s
@@ -1351,7 +1352,10 @@ class RootCompleter(object):
                 opt_nospace = dynamic_opts['nospace']
 
             sp = '' if opt_nospace else ' '
-            yield line_until_word + ShellQuoteB(candidate) + sp
+            cand = (candidate if action_kind == comp_action_e.BashFunc else
+                    ShellQuoteB(candidate))
+
+            yield line_until_word + cand + sp
 
             # NOTE: Can't use %.2f in production build!
             i += 1

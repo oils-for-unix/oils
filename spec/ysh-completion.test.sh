@@ -1,4 +1,4 @@
-## oils_failures_allowed: 8
+## oils_failures_allowed: 7
 
 #### compexport
 
@@ -44,12 +44,23 @@ compexport -c 'cd ca'
 
 . $REPO_ROOT/testdata/completion/quoting.bash
 
-compexport -c 'b-argv '
+compexport -c 'pq-argv c'
 echo
 
-compexport -c 'sq-argv '
+# note: excluding "can't" because there's an intentional bug
+compexport -c 'sq-argv ch'
+
+# Quoting doesn't match bash exactly, but it definitely works interactively!
 
 ## STDOUT:
+"pq-argv $'can\\'t' "
+"pq-argv 'ch with space' "
+"pq-argv checkout "
+"pq-argv cherry "
+
+"sq-argv 'ch with space' "
+"sq-argv 'checkout' "
+"sq-argv 'cherry' "
 ## END
 
 #### complete -W quoting
