@@ -206,7 +206,7 @@ class Transformer(object):
         if op_tok.id == Id.Op_LParen:
             lparen = op_tok
             rparen = p_trailer.GetChild(-1).tok
-            arglist = ArgList(lparen, [], [], rparen)
+            arglist = ArgList(lparen, [], None, [], rparen)
             if p_trailer.NumChildren() == 2:  # ()
                 return expr.FuncCall(base, arglist)
 
@@ -877,6 +877,7 @@ class Transformer(object):
             if ISNONTERMINAL(p_child.typ):
                 self._Argument(p_child, do_named, arglist)
             elif p_child.tok.id == Id.Op_Semi:
+                arglist.named_delim = p_child.tok
                 do_named = True
 
     def ToArgList(self, pnode, arglist):

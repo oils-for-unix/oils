@@ -337,15 +337,18 @@ class Reader(object):
         """
         # Note: Python throws TypeError on mismatch
         if len(self.pos_args):
+            self.pos_consumed += 1
             raise error.TypeErrVerbose(
                 'Expected %d arguments, but got %d' %
                 (self.pos_consumed, self.pos_consumed + len(self.pos_args)),
                 self._BlamePos())
 
         if len(self.named_args):
+            assert self.args_node.named_delim is not None
             bad_args = ','.join(self.named_args.keys())
             raise error.TypeErrVerbose(
-                'Got unexpected named args: %s' % bad_args, loc.Missing)
+                'Got unexpected named args: %s' % bad_args,
+                self.args_node.named_delim)
 
 
 def DoesNotAccept(arg_list):

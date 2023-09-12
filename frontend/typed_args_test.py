@@ -24,7 +24,7 @@ class TypedArgsTest(unittest.TestCase):
             expr.Const(arena.NewToken(-1, 4+2*i, 1, line_id, ''))
             for i in range(7)
         ]
-        arg_list = ArgList(ltok, pos_exprs, [], rtok)
+        arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
 
         # Not enough args...
         reader = typed_args.Reader([], {}, arg_list)
@@ -42,8 +42,15 @@ class TypedArgsTest(unittest.TestCase):
         ]
         reader = typed_args.Reader(list(pos_args), {}, arg_list)
 
-        # Haven't processed any args yet...
-        self.assertRaises(error.TypeErrVerbose, reader.Done)
+        # Haven't all the args
+        with self.assertRaises(error.TypeErrVerbose) as cm:
+            _ = reader.PosInt()
+            _ = reader.PosStr()
+            reader.Done()
+
+        # Check that the error points to the first unconsummed argument
+        e = cm.exception
+        self.assertEqual(pos_exprs[2].c, e.location)
 
         # Arg is wrong type...
         with self.assertRaises(error.TypeErrVerbose) as cm:
@@ -51,7 +58,7 @@ class TypedArgsTest(unittest.TestCase):
 
         # Check that the error points to the right token
         e = cm.exception
-        self.assertEqual(pos_exprs[0].c, e.location)
+        self.assertEqual(pos_exprs[3].c, e.location)
 
         # Normal operation from here on
         reader = typed_args.Reader(pos_args, {}, arg_list)
@@ -86,10 +93,11 @@ class TypedArgsTest(unittest.TestCase):
     def testReaderKwargs(self):
         # Dummy call. Not testing error messages here.
         arena = test_lib.MakeArena('')
-        line_id = arena.AddLine('foo()', 1)
+        line_id = arena.AddLine('foo(;)', 1)
         ltok = arena.NewToken(-1, 0, 3, line_id, '')
         rtok = arena.NewToken(-1, 0, 4, line_id, '')
-        arg_list = ArgList(ltok, [], [], rtok)
+        semi_tok = arena.NewToken(-1, 0, 5, line_id, '')
+        arg_list = ArgList(ltok, [], semi_tok, [], rtok)
 
         kwargs = {
             'hot': value.Int(0xc0ffee),
