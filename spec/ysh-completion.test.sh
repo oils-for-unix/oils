@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 6
 
 #### compexport
 
@@ -82,13 +82,14 @@ touch foo bar baz
 
 compexport -c $'echo ba'
 
-# TODO: Is the order reversed?  I guess this is file system order, which is
-# nondetrministic
 
 ## STDOUT:
+
+TODO: Is the order reversed?  I guess this is file system order, which is
+nondeterministic.  YSH can sort them
+
 echo baz 
 echo bar 
-z
 ## END
 
 #### complete both -W and -F: words and functions
@@ -100,10 +101,9 @@ complete -W 'ale $(echo bean)' -F __git GIT
 
 compexport -c 'GIT '
 
-# Hm they are kinda reversed, I want to fix that.  This is true even in Python
-# though, weird.
-
 ## STDOUT:
+Hm they are kinda reversed, I want to fix that.  This is true even in Python
+though, weird.
 ## END
 
 
@@ -143,6 +143,7 @@ compexport -c 'GIT '
 # Does GNU readline always sort them?
 
 ## STDOUT:
+TODO
 git
 ## END
 
@@ -164,6 +165,10 @@ compexport -c 'git ch'
 
 ## status: 0
 ## STDOUT:
+status=0
+"git cherry "
+"git cherry-pick "
+"git checkout "
 ## END
 
 #### Complete Filenames with bad characters
@@ -173,14 +178,16 @@ touch $'hi\xffthere'
 
 compexport -c 'echo h'
 ## STDOUT:
+TODO
 ## END
 
 #### Complete Command with bad characters
 
 touch foo fooz
 
-compexport -c "echo \$'bad \\xff byte' f"
+compexport -c $'echo "bad \xff byte" f'
 
 ## STDOUT:
+TODO
 ## END
 
