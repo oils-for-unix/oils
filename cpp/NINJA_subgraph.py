@@ -14,7 +14,6 @@ CPP_UNIT_MATRIX = [
   ('cxx', 'asan', '-D CPP_UNIT_TEST'),
   ('cxx', 'ubsan', '-D CPP_UNIT_TEST'),
   #('cxx', 'gcalways', '-D CPP_UNIT_TEST'),
-  #('cxx', 'rvroot', '-D CPP_UNIT_TEST'),
   ('clang', 'coverage', '-D CPP_UNIT_TEST'),
 ]
 
@@ -28,20 +27,20 @@ def NinjaGraph(ru):
   # Written by build/py.sh
   git_commit = '_build/git-commit.txt'
 
-  n.rule('git-commit-cpp',
+  n.rule('build-stamp-cpp',
          command='build/stamp.sh gen-cpp $in $out',
-         description='git-commit-cpp $in $out')
+         description='build-stamp-cpp $in $out')
 
-  comm_prefix = '_gen/cpp/git_commit'
-  n.build([comm_prefix + '.h', comm_prefix + '.cc'],
-          'git-commit-cpp', git_commit,
-          implicit=['_bin/shwrap/embedded_file_gen'])
+  stamp_prefix = '_gen/cpp/build_stamp'
+  n.build([stamp_prefix + '.h', stamp_prefix + '.cc'],
+          'build-stamp-cpp', git_commit,
+          implicit=['build/stamp.sh'])
   n.newline()
 
   ru.cc_library(
-      '//cpp/git_commit',
-      srcs = [comm_prefix + '.cc'],
-      generated_headers = [comm_prefix + '.h'])
+      '//cpp/build_stamp',
+      srcs = [stamp_prefix + '.cc'],
+      generated_headers = [stamp_prefix + '.h'])
 
   ru.cc_binary(
       'cpp/obj_layout_test.cc',
@@ -56,7 +55,7 @@ def NinjaGraph(ru):
       '//cpp/core', 
       srcs = ['cpp/core.cc'],
       deps = [
-        '//cpp/git_commit',
+        '//cpp/build_stamp',
         '//frontend/consts',  # for gVersion
         '//frontend/syntax.asdl',
         '//mycpp/runtime',
