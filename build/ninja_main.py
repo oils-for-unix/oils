@@ -33,7 +33,7 @@ from vendor import ninja_syntax
 BUILD_NINJA = 'build.ninja'
 
 
-def TarballManifest(cc_sources):
+def TarballManifest(cc_h_files):
   names = []
 
   # Text
@@ -47,18 +47,14 @@ def TarballManifest(cc_sources):
   names.extend(glob('build/detect-*.c'))
 
   # Code we know about
-  names.extend(cc_sources)
-
-  names.extend(glob('mycpp/*.h'))
+  names.extend(cc_h_files)
 
   # TODO: crawl headers
+  names.extend(glob('mycpp/*.h'))
   names.extend(glob('cpp/*.h'))
 
-  # TODO: Put these in Ninja.
-  names.extend(glob('_gen/asdl/*.h'))
+  # for types.asdl_c.h, which is in build/py.sh, not Ninja
   names.extend(glob('_gen/frontend/*.h'))
-  names.extend(glob('_gen/core/*.h'))
-  names.extend(glob('_gen/ysh/*.h'))
 
   # ONLY the headers
   names.extend(glob('prebuilt/*/*.h'))
@@ -77,7 +73,6 @@ def TarballManifest(cc_sources):
 
     # Generated
     '_build/oils.sh',
-    '_build/git-commit.txt',
     ])
 
   for name in names:
@@ -394,7 +389,8 @@ def main(argv):
     log('  (%s) -> %s', argv[0], out)
 
   elif action == 'tarball-manifest':
-    TarballManifest(cc_sources)
+    h = ru.HeadersForBinary('_gen/bin/oils_for_unix.mycpp.cc')
+    TarballManifest(cc_sources + h)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
@@ -406,3 +402,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: sw=2
