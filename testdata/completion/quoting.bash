@@ -30,7 +30,12 @@
 # completing a command arg.  The latter must be shell-quoted.
 
 declare -a commands=(
-  cherry checkout 'cha spaces' "can't" $'one\ntwo' '$file_not_var'
+  cherry checkout
+  'file with space'
+  "can't"  # apostrophe
+  $'one\ntwo'  # newline
+  '$file_not_var'
+  $'mu \u03bc \u4e09 \U0001f618 unicode'
 )
 
 # This has problems because 'check' is a prefix of two things.

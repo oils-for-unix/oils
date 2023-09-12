@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 
 #### compexport
 
@@ -19,6 +19,37 @@ compexport -c $'for x in y; do\ncompl'
 
 ## STDOUT:
 "complete "
+## END
+
+#### redirect completions are quoted
+
+touch "can't touch this"
+
+compexport -c 'echo hi > c'
+## STDOUT:
+"echo hi > can\\'t\\ touch\\ this"
+## END
+
+#### dir completions have trailing slash
+
+mkdir -p "can't touch this"
+compexport -c 'cd ca'
+
+## STDOUT:
+"cd can\\'t\\ touch\\ this/"
+## END
+
+
+#### complete -F strings are not quoted again
+
+. $REPO_ROOT/testdata/completion/quoting.bash
+
+compexport -c 'b-argv '
+echo
+
+compexport -c 'sq-argv '
+
+## STDOUT:
 ## END
 
 #### filenames are completed

@@ -1347,7 +1347,7 @@ class RootCompleter(object):
             # compopt -o filenames is for user-defined actions.  Or any
             # FileSystemAction needs it.
             if is_fs_action or opt_filenames:
-                if path_stat.isdir(candidate):  # TODO: test coverage
+                if path_stat.isdir(candidate):
                     s = line_until_word + ShellQuoteB(candidate) + '/'
                     yield s
                     continue
