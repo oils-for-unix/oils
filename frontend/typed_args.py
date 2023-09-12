@@ -56,10 +56,13 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, pos_args, named_args, args_node):
-        # type: (List[value_t], Dict[str, value_t], ArgList) -> None
+    def __init__(self, pos_args, named_args, args_node, is_bound):
+        # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
         self.pos_args = pos_args
         self.pos_consumed = 0
+        # TODO: Add LHS of attribute expression to value.BoundFunc and pass
+        # that through to here?
+        self.is_bound = is_bound
         self.named_args = named_args
         self.args_node = args_node
 
@@ -85,8 +88,12 @@ class Reader(object):
         arguments have been consumed, the location of the function call is
         returned."""
         pos = self.pos_consumed - 1
+        if self.is_bound:
+            # Token for the first "argument" of a bound function call isn't in
+            # the same part of the expression
+            pos -= 1
 
-        if pos >= 0:
+        if pos >= 0 and pos < len(self.args_node.pos_args):
             l = location.TokenForExpr(self.args_node.pos_args[pos])
 
             if l is not None:

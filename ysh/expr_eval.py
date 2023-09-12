@@ -756,7 +756,8 @@ class ExprEvaluator(object):
                 pos_args, named_args = self._EvalArgList(node.args)
                 #log('pos_args %s', pos_args)
 
-                ret = f.Call(typed_args.Reader(pos_args, named_args, node.args))
+                ret = f.Call(
+                    typed_args.Reader(pos_args, named_args, node.args, False))
 
                 #log('ret %s', ret)
                 return ret
@@ -770,7 +771,8 @@ class ExprEvaluator(object):
 
                 pos_args, named_args = self._EvalArgList(node.args, me=func.me)
 
-                ret = f.Call(typed_args.Reader(pos_args, named_args, node.args))
+                ret = f.Call(
+                    typed_args.Reader(pos_args, named_args, node.args, True))
 
                 return ret
 

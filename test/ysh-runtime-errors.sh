@@ -421,6 +421,10 @@ test-dict-construct() {
   _expr-error-case '= Dict([["too", "many", "parts"]])'
 }
 
+test-bound-func() {
+  _expr-error-case '= "foo"->startswith(1)' # shouldn't panic
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs
