@@ -158,7 +158,7 @@ module syntax
   # Unevaluated, typed arguments for func and proc.
   # Note that ...arg is expr.Spread.
   ArgList = (
-     Token left, List[expr] pos_args, Token named_delim, List[NamedArg] named_args, Token right
+     Token left, List[expr] pos_args, Token? named_delim, List[NamedArg] named_args, Token right
   )
 
   AssocPair = (CompoundWord key, CompoundWord value)
