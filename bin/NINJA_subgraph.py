@@ -23,24 +23,6 @@ def NinjaGraph(ru):
   # Files embedded in binary
   #
 
-  # Written by build/py.sh minimal
-  git_commit = '_build/git-commit.txt'
-
-  n.rule('git-commit-cpp',
-         command='build/stamp.sh gen-cpp $in $out',
-         description='git-commit-cpp $in $out')
-
-  comm_prefix = '_gen/bin/git_commit'
-  n.build([comm_prefix + '.h', comm_prefix + '.cc'],
-          'git-commit-cpp', git_commit,
-          implicit=['_bin/shwrap/embedded_file_gen'])
-  n.newline()
-
-  ru.cc_library(
-      '//bin/git_commit',
-      srcs = [comm_prefix + '.cc'],
-      generated_headers = [comm_prefix + '.h'])
-
   n.rule('embedded-file-gen',
          command='_bin/shwrap/embedded_file_gen $in > $out',
          description='embedded_file_gen $in $out')
@@ -92,7 +74,6 @@ def NinjaGraph(ru):
 
         deps = [
           '//bin/text_files',
-          '//bin/git_commit',
 
           '//cpp/core',
           '//cpp/libc',

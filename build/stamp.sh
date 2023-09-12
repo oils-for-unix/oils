@@ -22,6 +22,17 @@ write-git-commit() {
   local out=_build/git-commit.txt
   mkdir -p _build
 
+  # This check is not quite accurate, since you can modify a file, and then run
+  # Ninja without running build/py.sh all, which calls this function.  But it's
+  # better than nothing.
+  if ! git diff --quiet; then
+    log 'Working tree is dirty'
+
+    #rm -f -v $out
+    echo '<unknown>' > $out
+    return
+  fi
+
   local hash
   hash=$(git log -n 1 --pretty='format:%H')
 
