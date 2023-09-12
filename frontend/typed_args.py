@@ -63,7 +63,7 @@ class Reader(object):
         self.named_args = named_args
         self.args_node = args_node
 
-    def BlameLoc(self):
+    def LeftParenToken(self):
         # type: () -> loc_t
         return self.args_node.left
 

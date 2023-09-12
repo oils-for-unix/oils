@@ -166,7 +166,7 @@ class Len(vm._Callable):
                 return value.Int(len(x.s))
 
         raise error.TypeErr(x, 'len() expected Str, List, or Dict',
-                            args.BlameLoc())
+                            args.LeftParenToken())
 
 
 class Reverse(vm._Callable):
@@ -206,7 +206,7 @@ class Join(vm._Callable):
 
         strs = []  # type: List[str]
         for i, el in enumerate(li):
-            strs.append(val_ops.Stringify(el, args.BlameLoc()))
+            strs.append(val_ops.Stringify(el, args.LeftParenToken()))
 
         return value.Str(delim.join(strs))
 
@@ -228,7 +228,7 @@ class Maybe(vm._Callable):
 
         s = val_ops.ToStr(
             val, 'maybe() expected Str, but got %s' % value_str(val.tag()),
-            args.BlameLoc())
+            args.LeftParenToken())
         if len(s):
             return value.List([val])  # use val to avoid needlessly copy
 
@@ -295,12 +295,12 @@ class Int(vm._Callable):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeInteger(val.s):
                     raise error.Expr('Cannot convert %s to Int' % val.s,
-                                     args.BlameLoc())
+                                     args.LeftParenToken())
 
                 return value.Int(int(val.s))
 
         raise error.TypeErr(val, 'Int() expected Bool, Int, Float, or Str',
-                            args.BlameLoc())
+                            args.LeftParenToken())
 
 
 class Float(vm._Callable):
@@ -328,12 +328,12 @@ class Float(vm._Callable):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeFloat(val.s):
                     raise error.Expr('Cannot convert %s to Float' % val.s,
-                                     args.BlameLoc())
+                                     args.LeftParenToken())
 
                 return value.Float(float(val.s))
 
         raise error.TypeErr(val, 'Float() expected Int, Float, or Str',
-                            args.BlameLoc())
+                            args.LeftParenToken())
 
 
 class Str_(vm._Callable):
@@ -362,7 +362,7 @@ class Str_(vm._Callable):
                 return val
 
         raise error.TypeErr(val, 'Str() expected Str, Int, or Float',
-                            args.BlameLoc())
+                            args.LeftParenToken())
 
 
 class List_(vm._Callable):
@@ -396,7 +396,7 @@ class List_(vm._Callable):
             else:
                 raise error.TypeErr(val,
                                     'List() expected Dict, List, or Range',
-                                    args.BlameLoc())
+                                    args.LeftParenToken())
 
         assert it is not None
         while not it.Done():
@@ -429,7 +429,7 @@ class Dict_(vm._Callable):
                 return value.Dict(d)
 
         raise error.TypeErr(val, 'Dict() expected List or Dict',
-                            args.BlameLoc())
+                            args.LeftParenToken())
 
 
 class Split(vm._Callable):
@@ -488,7 +488,7 @@ class Shvar_get(vm._Callable):
         name = args.PosStr()
         args.Done()
         return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
-                                   args.BlameLoc())
+                                   args.LeftParenToken())
 
 
 class Assert(vm._Callable):
@@ -509,6 +509,6 @@ class Assert(vm._Callable):
         args.Done()
 
         if not val_ops.ToBool(val):
-            raise error.AssertionErr(msg, args.BlameLoc())
+            raise error.AssertionErr(msg, args.LeftParenToken())
 
         return value.Null
