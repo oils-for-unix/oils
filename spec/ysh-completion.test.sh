@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 8
 
 #### compexport
 
@@ -50,6 +50,19 @@ echo
 compexport -c 'sq-argv '
 
 ## STDOUT:
+## END
+
+#### complete -W quoting
+
+. $REPO_ROOT/testdata/completion/quoting.bash
+
+compexport -c 'q2-argv c'
+echo
+
+## STDOUT:
+"q2-argv can\\'t "
+"q2-argv checkout "
+"q2-argv cherry "
 ## END
 
 #### filenames are completed

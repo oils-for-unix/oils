@@ -21,7 +21,6 @@ from frontend import consts
 
 import yajl
 
-
 _ = log
 
 from typing import Dict, List, Iterator, cast, TYPE_CHECKING
@@ -34,6 +33,7 @@ if TYPE_CHECKING:
     from osh.cmd_eval import CommandEvaluator
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
+
 
 class _FixedWordsAction(completion.CompletionAction):
     def __init__(self, d):

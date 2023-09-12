@@ -38,7 +38,8 @@ import time as time_
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
                                        redir_param_e, Token)
-from _devbuild.gen.runtime_asdl import value, value_e, scope_e, Proc
+from _devbuild.gen.runtime_asdl import (value, value_e, scope_e, Proc,
+                                        comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core import pyos
@@ -359,15 +360,9 @@ class CompletionAction(object):
         # type: (Api) -> Iterator[str]
         pass
 
-    # mycpp: for rewrites of isinstance()
-    def IsFileSystemAction(self):
-        # type: () -> bool
-        return False
-
-    # mycpp: for rewrites of isinstance()
-    def IsShellFuncAction(self):
-        # type: () -> bool
-        return False
+    def ActionKind(self):
+        # type: () -> comp_action_t
+        return comp_action_e.Other
 
     def Print(self, f):
         # type: (mylib.BufWriter) -> None
@@ -466,10 +461,9 @@ class FileSystemAction(CompletionAction):
         # filenames.
         self.add_slash = add_slash  # for directories
 
-    # mycpp: rewrite of isinstance()
-    def IsFileSystemAction(self):
-        # type: () -> bool
-        return True
+    def ActionKind(self):
+        # type: () -> comp_action_t
+        return comp_action_e.FileSystem
 
     def Print(self, f):
         # type: (mylib.BufWriter) -> None
@@ -529,6 +523,7 @@ class FileSystemAction(CompletionAction):
 
 
 class CommandAction(CompletionAction):
+    """ TODO: Implement complete -C """
 
     def __init__(self, cmd_ev, command_name):
         # type: (CommandEvaluator, str) -> None
@@ -560,10 +555,9 @@ class ShellFuncAction(CompletionAction):
 
         f.write('[ShellFuncAction %s] ' % self.func.name)
 
-    # mycpp: rewrite of isinstance()
-    def IsShellFuncAction(self):
-        # type: () -> bool
-        return True
+    def ActionKind(self):
+        # type: () -> comp_action_t
+        return comp_action_e.BashFunc
 
     def debug(self, msg):
         # type: (str) -> None
@@ -664,9 +658,8 @@ class VariablesAction(CompletionAction):
         f.write('VariablesAction ')
 
 
-
 class ExternalCommandAction(CompletionAction):
-    """complete commands in $PATH.
+    """Complete commands in $PATH.
 
     This is PART of compgen -A command.
     """
@@ -867,7 +860,8 @@ class UserSpec(object):
         num_matches = 0
 
         for a in self.actions:
-            is_fs_action = a.IsFileSystemAction()
+            action_kind = a.ActionKind()
+            is_fs_action = action_kind == comp_action_e.FileSystem
             for match in a.Matches(comp):
                 # Special case hack to match bash for compgen -F.  It doesn't filter by
                 # to_complete!
@@ -875,7 +869,7 @@ class UserSpec(object):
                     self.predicate.Evaluate(match) and
                     # ShellFuncAction results are NOT filtered by prefix!
                     (match.startswith(comp.to_complete) or
-                     a.IsShellFuncAction()))
+                     action_kind == comp_action_e.BashFunc))
 
                 # There are two kinds of filters: changing the string, and filtering
                 # the set of strings.  So maybe have modifiers AND filters?  A triple.

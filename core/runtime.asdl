@@ -230,6 +230,8 @@ module runtime
 
   # Hay "first word" namespace
   HayNode = (Dict[str, HayNode] children)
+
+  comp_action = Other | FileSystem | BashFunc
 }
 
 # vim: sw=2
