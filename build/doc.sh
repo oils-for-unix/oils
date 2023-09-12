@@ -592,7 +592,7 @@ run-for-release() {
 }
 
 soil-run() {
-  build/ovm-actions.sh write-release-date
+  build/stamp.sh write-release-date
 
   run-for-release
 }
