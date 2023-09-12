@@ -463,6 +463,8 @@ time-helper() {
 all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
+  build/stamp.sh write-git-commit
+
   py-source
   py-extensions  # no re2c
 
