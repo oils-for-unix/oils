@@ -19,7 +19,8 @@ write-git-commit() {
   ### Write git commit only if we need to
   # Ninja works on timestamps, so we don't want to cause rebuilds.
 
-  local out=${1:-_build/git-commit.txt}
+  local out=_build/git-commit.txt
+  mkdir -p _build
 
   local hash
   hash=$(git log -n 1 --pretty='format:%H')
