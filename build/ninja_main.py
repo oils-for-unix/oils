@@ -77,6 +77,7 @@ def TarballManifest(cc_sources):
 
     # Generated
     '_build/oils.sh',
+    '_build/git-commit.txt',
     ])
 
   for name in names:
