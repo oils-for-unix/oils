@@ -13,12 +13,13 @@ from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
+
+import yajl
 
 
 _ = log
@@ -549,9 +550,8 @@ class CompExport(vm._Builtin):
                 #
                 # Also, there's always a trailing space!  Gah.
 
-                jline = qsn.maybe_encode(m)
-                print(jline)
-                # print(m)
+                if mylib.PYTHON:
+                    print(yajl.dumps(m, indent=-1))
 
         elif arg.format == 'tsv8':
             log('TSV8 format not implemented')

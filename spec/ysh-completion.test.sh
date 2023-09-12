@@ -5,8 +5,8 @@
 compexport -c 'hay'
 
 ## STDOUT:
-'haynode '
-'hay '
+"haynode "
+"hay "
 ## END
 
 #### compexport with multi-line commands
@@ -18,7 +18,7 @@ compexport -c $'for x in y; do\ncompl'
 
 
 ## STDOUT:
-'complete '
+"complete "
 ## END
 
 #### filenames are completed
