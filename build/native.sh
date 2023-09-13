@@ -97,8 +97,15 @@ oil-slice-demo() {
 oils-cpp-smoke() {
   local bin=_bin/cxx-dbg/osh
   ninja $bin
+  echo
 
+  echo "Built $bin"
+  echo
+
+  set -x  # debug CI
   $bin --version
+  set +x
+
   echo
 
   oil-slice-demo $bin

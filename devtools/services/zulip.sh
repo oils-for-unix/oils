@@ -41,12 +41,13 @@ messages-in-stream() {
 }
 
 print-thread() {
-  # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
+  # Get these from Zulip web interface
+  local bot_email=$1
+  local bot_api_key=$2
+  local stream=${3:-'blog-ideas'}
+  local subject=${4:-'An Ambitious Version of YSH (blog backlog)'}
 
-  #local needle="Spring 2023 Blog Posts"
-  #local needle='Summer 2023 Blog Backlog'
-  #local needle='Praise Backlog'
-  local needle='An Ambitious Version of YSH (blog backlog)'
+  # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
   # JQ query
   # - narrow to messages array
@@ -54,9 +55,9 @@ print-thread() {
   # - select records where subject is "needle" var
   # - print the content.  -r prints it raw.
 
-  messages-in-stream "$@" | jq --arg needle "$needle" -r \
+  messages-in-stream "$@" | jq --arg subject "$subject" -r \
     '.messages[] | { content: .content, subject: .subject } |
-      select( .subject == $needle ) | (.content + "\n\n")'
+      select( .subject == $subject ) | (.content + "\n\n")'
 }
 
 #
