@@ -39,6 +39,30 @@ if TYPE_CHECKING:
     from osh.cmd_parse import CommandParser
 
 
+def BuildArgReader(cmd_val, expr_ev):
+    # type: (cmd_value.Argv, expr_eval.Evaluator) -> typed_args.Reader
+    """
+    Build a typed_args.Reader given a builtin command's Argv.
+
+    As part of constructing the Reader, we must evaluate all arguments. This
+    function may fail if there are any runtime errors whilst evaluating those
+    arguments.
+    """
+    pos_args = cmd_val.typed_args and []
+    named_args = cmd_val.typed_args and {}
+    if cmd_val.typed_args:
+        for i, arg in enumerate(cmd_val.typed_args.pos_args):
+            result = self.expr_ev.EvalExpr(arg, cmd_val.arg_locs[i])
+            pos_args.append(result)
+
+        for arg in cmd_val.typed_args.named_args:
+            result = self.expr_ev.EvalExpr(arg.value, arg.name)
+            name = lexer.TokenVal(arg.name)
+            named_args[name] = result
+
+    return typed_args.Reader(cmd_val.argv, pos_args, named_args)
+
+
 class Eval(vm._Builtin):
     def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer, errfmt):
         # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
@@ -366,39 +390,14 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        blame = cmd_val.arg_locs[0]
+        t = BuildArgReader(cmd_val)
 
-        argc = len(cmd_val.argv)
-        if argc != 1:
-            e_usage('Expected 0 command arguments but received %d' % (argc - 1), blame)
+        message = t.PosStr()
+        status = t.NamedInt("error", 1)
+        if status == 0:
+            e_die("Status must be a non-zero integer", cmd_val.arg_locs[0])
 
-        if not cmd_val.typed_args:
-            e_usage('Expected an error argument but received no typed args', blame)
-
-        pos_args = cmd_val.typed_args.pos_args
-        if len(pos_args) != 1:
-            e_usage('Expected 1 positional argument but received %d' % len(pos_args), blame)
-
-        message_val = self.expr_ev.EvalExpr(pos_args[0], blame)
-        if message_val.tag() != value_e.Str:
-            raise error.TypeErr(message_val, 'expected a Str', blame)
-        message = cast(value.Str, message_val).s
-
-        status = 1
-        for arg in cmd_val.typed_args.named_args:
-            name = lexer.TokenVal(arg.name)
-            if name == "status":
-                status_val = self.expr_ev.EvalExpr(arg.value, arg.name)
-                if status_val.tag() != value_e.Int:
-                    raise error.TypeErr(status_val, 'expected an Int', arg.name)
-                status = cast(value.Int, status_val).i
-
-                if status == 0:
-                    e_die("Must be a non-zero integer", arg.name)
-            else:
-                e_usage('Unexpected named argument %r' % name, arg.name)
-
-        raise error.UserError(status, message, blame)
+        raise error.UserError(status, message, cmd_val.arg_locs[0])
 
 
 class BoolStatus(vm._Builtin):
