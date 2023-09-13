@@ -457,8 +457,9 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
+  # Ditto: pub/src-tree.wwz lines up with URLs in Soil
   log "--- src-tree"
-  local out="$root/src-tree.wwz"
+  local out="$root/pub/src-tree.wwz"
   pushd _tmp/src-tree
   time zip -r -q $out .  # recursive, quiet
   popd
