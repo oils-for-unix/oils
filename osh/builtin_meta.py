@@ -365,12 +365,19 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        t = typed_args.ReaderFromArgv(cmd_val, self.expr_ev)
+        t = typed_args.ReaderFromArgv(cmd_val.typed_args, self.expr_ev)
 
         message = t.PosStr()
-        status = t.NamedInt("error", 1)
+        status = t.NamedInt("status", 1)
+        t.Done()
+
         if status == 0:
             e_die("Status must be a non-zero integer", cmd_val.arg_locs[0])
+
+        if len(cmd_val.argv) > 1:
+            raise error.TypeErrVerbose(
+                'Expected 0 untyped arguments, but got %d' %
+                    (len(cmd_val.argv) - 1), loc.Missing)
 
         raise error.UserError(status, message, cmd_val.arg_locs[0])
 

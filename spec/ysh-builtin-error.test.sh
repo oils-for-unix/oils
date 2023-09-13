@@ -84,19 +84,19 @@ error ('some error')
 
 #### Error expects a positional argument
 error (status=42)
-## status: 2
+## status: 3
 ## STDOUT:
 ## END
 
 #### Error will object to an incorrect named arg
 error ('error', status_typo=42)
-## status: 2
+## status: 3
 ## STDOUT:
 ## END
 
 #### Error will object to an extraneous named arg
 error ('error', status=42, other=100)
-## status: 2
+## status: 3
 ## STDOUT:
 ## END
 
@@ -114,13 +114,13 @@ error (100, status=42)
 
 #### Errors cannot take command args
 error uh-oh ('error', status=1)
-## status: 2
+## status: 3
 ## STDOUT:
 ## END
 
 #### Error must take arguments
 error
-## status: 2
+## status: 3
 ## STDOUT:
 ## END
 

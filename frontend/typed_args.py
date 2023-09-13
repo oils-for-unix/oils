@@ -2,7 +2,7 @@
 """Typed_args.py."""
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_t, cmd_value
+from _devbuild.gen.runtime_asdl import value_t
 from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
                                        expr_e, expr_t, CommandSub)
 from core import error
@@ -59,10 +59,8 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, argv, pos_args, named_args):
-        # type: (List[str], List[value_t], Dict[str, value_t]) -> None
-        self.argv = argv
-        self.args_consumed = 0
+    def __init__(self, pos_args, named_args):
+        # type: (List[value_t], Dict[str, value_t]) -> None
         self.pos_args = pos_args
         self.pos_consumed = 0
         self.named_args = named_args
@@ -71,30 +69,22 @@ class Reader(object):
 
     def Word(self):
         # type: () -> str
-        if self.argv is None or len(self.argv) == 0:
-            # TODO: like _GetNestPos, we should add location info
-            raise error.TypeErrVerbose(
-                'Expected at least %d arguments, but only got %d' %
-                (self.args_consumed + 1, self.args_consumed), loc.Missing)
 
-        self.args_consumed += 1
-        return self.argv.pop(0)
+        return None
 
     def RestWords(self):
         # type: () -> List[str]
-        return self.argv
+        return None
 
     ### Typed positional args
 
     def _GetNextPos(self):
         # type: () -> value_t
-        if self.pos_args is None or len(self.pos_args) == 0:
+        if len(self.pos_args) == 0:
             # TODO: may need location info
-            is_proc = self.argv is not None
-            arguments = "typed arguments" if is_proc else "arguments"
             raise error.TypeErrVerbose(
-                'Expected at least %d %s, but only got %d' %
-                (self.pos_consumed + 1, arguments, self.pos_consumed), loc.Missing)
+                'Expected at least %d arguments, but only got %d' %
+                (self.pos_consumed + 1, self.pos_consumed), loc.Missing)
 
         self.pos_consumed += 1
         return self.pos_args.pop(0)
@@ -236,28 +226,32 @@ class Reader(object):
             raise error.TypeErrVerbose('Got unexpected named args: %s' % bad_args, loc.Missing)
 
 
-def ReaderFromArgv(cmd_val, expr_ev):
-    # type: (cmd_value.Argv, ExprEvaluator) -> Reader
+def ReaderFromArgv(typed_args, expr_ev):
+    # type: (ArgList, ExprEvaluator) -> Reader
     """
-    Build a typed_args.Reader given a builtin command's Argv.
+    Build a typed_args.Reader given a builtin command's cmd_val.typed_args.
 
     As part of constructing the Reader, we must evaluate all arguments. This
     function may fail if there are any runtime errors whilst evaluating those
     arguments.
     """
-    pos_args = [] if cmd_val.typed_args else None  # type: List[value_t]
-    named_args = {} if cmd_val.typed_args else None  # type: Dict[str, value_t]
-    if cmd_val.typed_args:
-        for i, pos_arg in enumerate(cmd_val.typed_args.pos_args):
-            result = expr_ev.EvalExpr(pos_arg, cmd_val.arg_locs[i])
-            pos_args.append(result)
+    if typed_args is None:
+        raise error.TypeErrVerbose(
+            'Expected at least 1 typed argument, but got 0', loc.Missing)
 
-        for named_arg in cmd_val.typed_args.named_args:
-            result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
-            name = lexer.TokenVal(named_arg.name)
-            named_args[name] = result
+    pos_args = []  # type: List[value_t]
+    named_args = {}  # type: Dict[str, value_t]
 
-    return Reader(cmd_val.argv, pos_args, named_args)
+    for i, pos_arg in enumerate(typed_args.pos_args):
+        result = expr_ev.EvalExpr(pos_arg, loc.Missing)
+        pos_args.append(result)
+
+    for named_arg in typed_args.named_args:
+        result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+        name = lexer.TokenVal(named_arg.name)
+        named_args[name] = result
+
+    return Reader(pos_args, named_args)
 
 
 def DoesNotAccept(arg_list):
