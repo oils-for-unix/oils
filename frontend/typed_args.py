@@ -2,7 +2,7 @@
 """Typed_args.py."""
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_t
+from _devbuild.gen.runtime_asdl import value_t, cmd_value
 from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
                                        expr_e, expr_t, CommandSub)
 from core import error
@@ -56,8 +56,10 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, pos_args, named_args):
-        # type: (List[value_t], Dict[str, value_t]) -> None
+    def __init__(self, argv, pos_args, named_args):
+        # type: (List[str], List[value_t], Dict[str, value_t]) -> None
+        self.argv = argv
+        self.args_consumed = 0
         self.pos_args = pos_args
         self.pos_consumed = 0
         self.named_args = named_args
@@ -66,21 +68,30 @@ class Reader(object):
 
     def Word(self):
         # type: () -> str
-        return None  # TODO
+        if not self.argv or len(self.argv) == 0:
+            # TODO: like _GetNestPos, we should add location info
+            raise error.TypeErrVerbose(
+                'Expected at least %d arguments, but only got %d' %
+                (self.args_consumed + 1, self.args_consumed), loc.Missing)
+
+        self.args_consumed += 1
+        return self.argv.pop(0)
 
     def RestWords(self):
         # type: () -> List[str]
-        return None  # TODO
+        return self.argv
 
     ### Typed positional args
 
     def _GetNextPos(self):
         # type: () -> value_t
-        if len(self.pos_args) == 0:
+        if not self.pos_args or len(self.pos_args) == 0:
             # TODO: may need location info
+            is_proc = self.argv is not None
+            arguments = "typed arguments" if is_proc else "arguments"
             raise error.TypeErrVerbose(
-                'Expected at least %d arguments, but only got %d' %
-                (self.pos_consumed + 1, self.pos_consumed), loc.Missing)
+                'Expected at least %d %s, but only got %d' %
+                (self.pos_consumed + 1, arguments, self.pos_consumed), loc.Missing)
 
         self.pos_consumed += 1
         return self.pos_args.pop(0)
