@@ -225,6 +225,8 @@ MAIN_SPEC.LongFlag(
 MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
 # TODO: Add option for YSH prompt style?  RHS prompt?
 
+MAIN_SPEC.LongFlag('--completion-demo')
+
 # $SH -n won't reparse a[x+1] and ``.  Note that $SH --tool automatically turns
 # it on.
 # TODO: Do we only need this for the "arena invariant"?  e.g. test/arena.sh I

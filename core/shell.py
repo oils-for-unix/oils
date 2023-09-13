@@ -106,19 +106,21 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     # Add -o filenames?  Or should that be automatic?
     complete_builtin.Run(MakeBuiltinArgv(['-D', '-A', 'file']))
 
-    # TODO: Move this into demo/slow-completion.sh
-    if 1:
-        # Something for fun, to show off.  Also: test that you don't repeatedly hit
-        # the file system / network / coprocess.
-        A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'], 0.0)
-        l = []  # type: List[str]
-        for i in xrange(0, 5):
-            l.append('m%d' % i)
 
-        A2 = completion.TestAction(l, 0.1)
-        C1 = completion.UserSpec([A1, A2], [], [],
-                                 completion.DefaultPredicate(), '', '')
-        comp_lookup.RegisterName('slowc', {}, C1)
+def _CompletionDemo(comp_lookup):
+    # type: (completion.Lookup) -> None
+
+    # Something for fun, to show off.  Also: test that you don't repeatedly hit
+    # the file system / network / coprocess.
+    A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'], 0.0)
+    l = []  # type: List[str]
+    for i in xrange(0, 5):
+        l.append('m%d' % i)
+
+    A2 = completion.TestAction(l, 0.1)
+    C1 = completion.UserSpec([A1, A2], [], [],
+                             completion.DefaultPredicate(), '', '')
+    comp_lookup.RegisterName('slowc', {}, C1)
 
 
 def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
@@ -900,6 +902,10 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
             comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
                                  display, debug_f)
+
+            _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+            if flag.completion_demo:
+                _CompletionDemo(comp_lookup)
 
         else:  # Without readline module
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
