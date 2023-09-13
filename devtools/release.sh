@@ -391,7 +391,7 @@ _compressed-tarball() {
   local out=_release/$name-$version.tar.gz
 
   # Overwrite it to cause rebuild of oil.tar
-  build/ovm-actions.sh write-release-date
+  build/stamp.sh write-release-date
 
   #make -d -r $in  # To debug
   make $in
