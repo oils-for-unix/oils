@@ -217,13 +217,15 @@ class Reader(object):
         """
         # Note: Python throws TypeError on mismatch
         if len(self.pos_args):
-            raise error.TypeErrVerbose('Expected %d arguments, but got %d' %
-                                    (self.pos_consumed, self.pos_consumed +
-                                     len(self.pos_args)), loc.Missing)
+            raise error.TypeErrVerbose(
+                'Expected %d arguments, but got %d' %
+                (self.pos_consumed, self.pos_consumed + len(self.pos_args)),
+                loc.Missing)
 
         if len(self.named_args):
             bad_args = ','.join(self.named_args.keys())
-            raise error.TypeErrVerbose('Got unexpected named args: %s' % bad_args, loc.Missing)
+            raise error.TypeErrVerbose(
+                'Got unexpected named args: %s' % bad_args, loc.Missing)
 
 
 def ReaderFromArgv(typed_args, expr_ev):

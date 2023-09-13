@@ -377,7 +377,7 @@ class Error(vm._Builtin):
         if len(cmd_val.argv) > 1:
             raise error.TypeErrVerbose(
                 'Expected 0 untyped arguments, but got %d' %
-                    (len(cmd_val.argv) - 1), loc.Missing)
+                (len(cmd_val.argv) - 1), loc.Missing)
 
         raise error.UserError(status, message, cmd_val.arg_locs[0])
 
