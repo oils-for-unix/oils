@@ -591,6 +591,11 @@ git-changelog-0.17.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.18.0() {
+  _git-changelog origin/release/0.17.0 release/0.18.0 \
+    > _release/VERSION/changelog.html
+}
+
 
 # For announcement.html
 html-redirect() {
@@ -988,6 +993,9 @@ announcement-0.17.0() {
   write-no-announcement
 }
 
+announcement-0.18.0() {
+  write-no-announcement
+}
 
 blog-redirect() {
   html-redirect 'making-plans.html' > $SITE_DEPLOY_DIR/blog/2020/01/11.html

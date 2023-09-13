@@ -620,17 +620,16 @@ _one-html() {
   local spec_name=$1
   shift
 
-  # TODO:
-  # - Smooth tests be in _tmp/spec/smoosh ?
-  # - They could go in the CI
+  local out_dir=_tmp/spec/smoosh
+  local tmp_dir=_tmp/src-smoosh
+  mkdir -p $out_dir $out_dir
 
-  local base_dir=_tmp/spec/smoosh
-  mkdir -p $base_dir
+  doctools/src_tree.py files $tmp_dir _tmp/$spec_name.test.sh 
 
-  test/spec-runner.sh _test-to-html _tmp/${spec_name}.test.sh \
-    > $base_dir/${spec_name}.test.html
+  # Hack for dir structure
+  mv -v $tmp_dir/_tmp/$spec_name.test.sh.html $out_dir/$spec_name.test.html
 
-  local out=$base_dir/${spec_name}.html
+  local out=$out_dir/${spec_name}.html
   set +o errexit
   # Shell function is smoosh or smoosh-hang
   time $spec_name --format html "$@" > $out
@@ -642,11 +641,17 @@ _one-html() {
   # NOTE: This IGNORES the exit status.
 }
 
+# TODO:
+# - Put these tests in the CI
+# - Import smoosh spec tests into the repo, with 'test/smoosh.sh'
+
 smoosh-html() {
+  ### Run by devtools/release.sh
   _one-html smoosh "$@"
 }
 
 smoosh-hang-html() {
+  ### Run by devtools/release.sh
   _one-html smoosh-hang "$@"
 }
 
