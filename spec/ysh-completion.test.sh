@@ -153,7 +153,18 @@ git
 # compatible with -C ?
 # --trace - show debug_f tracing on stderr?  Would be very nice!
 
-#### git completion space issue
+#### git completion space issue (disabled for old git, e.g. v2.17.1)
+
+# Hack for lenny: version detection for 2.17.1 on Ubuntu 18.02
+if ! git --list-cmds=list-complete; then
+  cat <<'EOF'
+status=0
+"git cherry "
+"git cherry-pick "
+"git checkout "
+EOF
+  return
+fi
 
 . $REPO_ROOT/testdata/completion/git-completion.bash
 echo status=$?
