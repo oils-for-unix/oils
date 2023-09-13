@@ -5,7 +5,7 @@ builtin_meta.py - Builtins that call back into the interpreter.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus, value_e, value
+from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
@@ -18,7 +18,6 @@ from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import consts
-from frontend import lexer
 from frontend import reader
 from frontend import typed_args
 from mycpp.mylib import log
@@ -28,7 +27,7 @@ from ysh import expr_eval
 
 _ = log
 
-from typing import Dict, List, Tuple, Optional, TYPE_CHECKING, cast
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import Proc
     from frontend import args

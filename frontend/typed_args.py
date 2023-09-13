@@ -7,7 +7,9 @@ from _devbuild.gen.syntax_asdl import (loc, ArgList, BlockArg, command_t,
                                        expr_e, expr_t, CommandSub)
 from core import error
 from core.error import e_usage
+from frontend import lexer
 from mycpp.mylib import dict_erase, tagswitch
+from ysh import expr_eval
 from ysh import val_ops
 
 from typing import Optional, Dict, List, cast
@@ -234,7 +236,7 @@ class Reader(object):
 
 
 def ReaderFromArgv(cmd_val, expr_ev):
-    # type: (cmd_value.Argv, expr_eval.ExprEvaluator) -> typed_args.Reader
+    # type: (cmd_value.Argv, expr_eval.ExprEvaluator) -> Reader
     """
     Build a typed_args.Reader given a builtin command's Argv.
 
@@ -254,7 +256,7 @@ def ReaderFromArgv(cmd_val, expr_ev):
             name = lexer.TokenVal(named_arg.name)
             named_args[name] = result
 
-    return typed_args.Reader(cmd_val.argv, pos_args, named_args)
+    return Reader(cmd_val.argv, pos_args, named_args)
 
 
 def DoesNotAccept(arg_list):
