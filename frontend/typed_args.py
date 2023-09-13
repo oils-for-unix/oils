@@ -9,10 +9,11 @@ from core import error
 from core.error import e_usage
 from frontend import lexer
 from mycpp.mylib import dict_erase, tagswitch
-from ysh import expr_eval
 from ysh import val_ops
 
-from typing import Optional, Dict, List, cast
+from typing import Optional, Dict, List, TYPE_CHECKING, cast
+if TYPE_CHECKING:
+    from ysh.expr_eval import ExprEvaluator
 
 
 class Reader(object):
@@ -236,7 +237,7 @@ class Reader(object):
 
 
 def ReaderFromArgv(cmd_val, expr_ev):
-    # type: (cmd_value.Argv, expr_eval.ExprEvaluator) -> Reader
+    # type: (cmd_value.Argv, ExprEvaluator) -> Reader
     """
     Build a typed_args.Reader given a builtin command's Argv.
 
