@@ -170,7 +170,7 @@ cpp-spec-tasks() {
 os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-oils-cpp-smoke   build/native.sh oils-cpp-smoke        -
+oils-cpp-smoke   build/native.sh soil-run              -
 osh-all          test/spec-cpp.sh osh-all              _tmp/spec/osh-cpp/compare.html
 ysh-all          test/spec-cpp.sh ysh-all              _tmp/spec/ysh-cpp/compare.html
 ysh-py           test/spec-py.sh ysh-all-serial        _tmp/spec/ysh-py/index.html

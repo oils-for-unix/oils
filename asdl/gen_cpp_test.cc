@@ -121,6 +121,8 @@ TEST shared_variant_test() {
   PASS();
 }
 
+using typed_demo_asdl::bool_expr_str;
+
 TEST pretty_print_test() {
   // typed_demo.asdl
 
@@ -146,6 +148,8 @@ TEST pretty_print_test() {
   auto c = Alloc<arith_expr__Const>(42);
   hnode_t* t2 = c->PrettyTree();
   ASSERT_EQ(hnode_e::Record, t2->tag());
+
+  log("bool_expr_str = %s", bool_expr_str(b->tag()));
 
   PASS();
 }

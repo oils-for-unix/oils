@@ -273,7 +273,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('const char* %s_str(%s tag);' % (sum_name, enum_name),
+                self.Emit('const char* %s_str(%s tag, bool dot = true);' % (sum_name, enum_name),
                           depth)
                 self.Emit('', depth)
 
@@ -307,7 +307,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('const char* %s_str(int tag);' % sum_name, depth)
+                self.Emit('const char* %s_str(int tag, bool dot = true);' % sum_name, depth)
                 self.Emit('', depth)
 
         return int_to_type
@@ -628,6 +628,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Emit('')
         self.Emit('  return out_node;')
         self.Emit('}')
+        self.Emit('')
 
         #
         # _AbbreviatedTree
@@ -683,23 +684,23 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             enum_name = sum_name
 
         if strong:
-            self.Emit('const char* %s_str(%s tag) {' % (sum_name, enum_name),
+            self.Emit('const char* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
                       depth)
         else:
-            self.Emit('const char* %s_str(int tag) {' % sum_name, depth)
+            self.Emit('const char* %s_str(int tag, bool dot) {' % sum_name, depth)
 
+        self.Emit('  const char* v = nullptr;', depth)
         self.Emit('  switch (tag) {', depth)
         for variant in sum.types:
             self.Emit('case %s::%s:' % (enum_name, variant.name), depth + 1)
-            self.Emit('  return "%s.%s";' % (sum_name, variant.name), depth + 1)
-
-        # NOTE: This happened in real life, maybe due to casting.  TODO: assert(0)
-        # instead?
+            self.Emit('  v = "%s.%s";' % (sum_name, variant.name), depth + 1)
+            self.Emit('  break;', depth + 1)
 
         self.Emit('default:', depth + 1)
         self.Emit('  assert(0);', depth + 1)
 
         self.Emit('  }', depth)
+        self.Emit('  return v;', depth)
         self.Emit('}', depth)
 
     def VisitSimpleSum(self, sum, name, depth):
