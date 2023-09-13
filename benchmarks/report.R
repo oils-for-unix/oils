@@ -983,16 +983,20 @@ UftraceTaskReport = function(env, task_name, summaries) {
   total_bytes = sum(untyped$obj_len)
 
   untyped %>% group_by(obj_len) %>% count() %>% ungroup() -> untyped_hist
+  #print(untyped_hist)
   
   untyped_hist %>%
     mutate(n_less_than = cumsum(n),
            percent = n_less_than * 100.0 / num_allocs) ->
     alloc_sizes
 
-  allocs_24_bytes_or_less = alloc_sizes %>% filter(obj_len == 24) %>% select(percent)
-  allocs_48_bytes_or_less = alloc_sizes %>% filter(obj_len == 48) %>% select(percent)
-  allocs_96_bytes_or_less = alloc_sizes %>% filter(obj_len == 96) %>% select(percent)
-  allocs_192_bytes_or_less = alloc_sizes %>% filter(obj_len == 192) %>% select(percent)
+  a24 = untyped_hist %>% filter(obj_len <= 24)
+  a48 = untyped_hist %>% filter(obj_len <= 48)
+  a96 = untyped_hist %>% filter(obj_len <= 96)
+
+  allocs_24_bytes_or_less = sum(a24$n) * 100.0 / num_allocs
+  allocs_48_bytes_or_less = sum(a48$n) * 100.0 / num_allocs
+  allocs_96_bytes_or_less = sum(a96$n) * 100.0 / num_allocs
 
   Log('Percentage of allocs less than 48 bytes: %.1f', allocs_48_bytes_or_less)
 
@@ -1145,7 +1149,6 @@ UftraceTaskReport = function(env, task_name, summaries) {
                  allocs_24_bytes_or_less = sprintf('%.1f%%', allocs_24_bytes_or_less),
                  allocs_48_bytes_or_less = sprintf('%.1f%%', allocs_48_bytes_or_less),
                  allocs_96_bytes_or_less = sprintf('%.1f%%', allocs_96_bytes_or_less),
-                 allocs_192_bytes_or_less = sprintf('%.1f%%', allocs_192_bytes_or_less),
 
                  strs_6_bytes_or_less = sprintf('%.1f%%', strs_6_bytes_or_less),
                  strs_14_bytes_or_less = sprintf('%.1f%%', strs_14_bytes_or_less),
@@ -1212,7 +1215,7 @@ PrettyPrintLong = function(d) {
     if (row_name %in% c('num_reserve_calls',
                         'percent_string_bytes',
                         'percent_other_typed_allocs',
-                        'allocs_64_bytes_or_less')) {
+                        'allocs_96_bytes_or_less')) {
       cat('\n')
     }
   }
