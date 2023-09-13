@@ -156,7 +156,7 @@ git
 #### git completion space issue (disabled for old git, e.g. v2.17.1)
 
 # Hack for lenny: version detection for 2.17.1 on Ubuntu 18.02
-if ! git --list-cmds=list-complete; then
+if ! git --list-cmds=list-complete >/dev/null; then
   cat <<'EOF'
 status=0
 "git cherry "
