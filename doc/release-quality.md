@@ -128,26 +128,19 @@ compared with the shell interpreter?
 These files may help you understand how Oils is implemented, i.e. with
 domain-specific languages and code generation.
 
-- [_gen/frontend/id_kind.asdl_c.h](src-tree.wwz/_gen/frontend/id_kind.asdl_c.h.html).
+- [_gen/frontend/id_kind.asdl_c.h](pub/src-tree.wwz/_gen/frontend/id_kind.asdl_c.h.html).
   A list of language elements, used in the lexer and in multiple parsers and
   evaluators.
 - The regex-based lexer uses two stages of code generation:
-  - [frontend/lexer_def.py](src-tree.wwz/frontend/lexer_def.py.html)
-    | [_build/tmp/frontend/match.re2c.txt](src-tree.wwz/_build/tmp/frontend/match.re2c.txt.html)
-    | [_gen/frontend/match.re2c.h](src-tree.wwz/_gen/frontend/match.re2c.h)
-- [frontend/syntax.asdl](src-tree.wwz/frontend/syntax.asdl.html). The syntax tree
+  - [frontend/lexer_def.py](pub/src-tree.wwz/frontend/lexer_def.py.html)
+    | [_build/tmp/frontend/match.re2c.txt](pub/src-tree.wwz/_build/tmp/frontend/match.re2c.txt.html)
+    | [_gen/frontend/match.re2c.h](pub/src-tree.wwz/_gen/frontend/match.re2c.h)
+- [frontend/syntax.asdl](pub/src-tree.wwz/frontend/syntax.asdl.html). The syntax tree
   for OSH and YSH.
-- [ysh/grammar.pgen2](src-tree.wwz/ysh/grammar.pgen2.html). The
+- [ysh/grammar.pgen2](pub/src-tree.wwz/ysh/grammar.pgen2.html). The
   expression grammar for YSH.  In contrast, the OSH parsers are hand-written.
 
 Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.
-
-<!-- - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format. -->
-
-<!-- TODO: 
-/src/                       annotated/cross-referenced source code
-coverage/                  code coverage in Python and C
--->
 
 ## Old
 
