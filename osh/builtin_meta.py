@@ -39,30 +39,6 @@ if TYPE_CHECKING:
     from osh.cmd_parse import CommandParser
 
 
-def BuildArgReader(cmd_val, expr_ev):
-    # type: (cmd_value.Argv, expr_eval.Evaluator) -> typed_args.Reader
-    """
-    Build a typed_args.Reader given a builtin command's Argv.
-
-    As part of constructing the Reader, we must evaluate all arguments. This
-    function may fail if there are any runtime errors whilst evaluating those
-    arguments.
-    """
-    pos_args = cmd_val.typed_args and []
-    named_args = cmd_val.typed_args and {}
-    if cmd_val.typed_args:
-        for i, arg in enumerate(cmd_val.typed_args.pos_args):
-            result = self.expr_ev.EvalExpr(arg, cmd_val.arg_locs[i])
-            pos_args.append(result)
-
-        for arg in cmd_val.typed_args.named_args:
-            result = self.expr_ev.EvalExpr(arg.value, arg.name)
-            name = lexer.TokenVal(arg.name)
-            named_args[name] = result
-
-    return typed_args.Reader(cmd_val.argv, pos_args, named_args)
-
-
 class Eval(vm._Builtin):
     def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer, errfmt):
         # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
@@ -390,7 +366,7 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        t = BuildArgReader(cmd_val)
+        t = typed_args.ReaderFromArgv(cmd_val, self.expr_ev)
 
         message = t.PosStr()
         status = t.NamedInt("error", 1)

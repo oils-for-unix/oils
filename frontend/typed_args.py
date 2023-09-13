@@ -68,7 +68,7 @@ class Reader(object):
 
     def Word(self):
         # type: () -> str
-        if not self.argv or len(self.argv) == 0:
+        if self.argv is None or len(self.argv) == 0:
             # TODO: like _GetNestPos, we should add location info
             raise error.TypeErrVerbose(
                 'Expected at least %d arguments, but only got %d' %
@@ -85,7 +85,7 @@ class Reader(object):
 
     def _GetNextPos(self):
         # type: () -> value_t
-        if not self.pos_args or len(self.pos_args) == 0:
+        if self.pos_args is None or len(self.pos_args) == 0:
             # TODO: may need location info
             is_proc = self.argv is not None
             arguments = "typed arguments" if is_proc else "arguments"
@@ -231,6 +231,30 @@ class Reader(object):
         if len(self.named_args):
             bad_args = ','.join(self.named_args.keys())
             raise error.TypeErrVerbose('Got unexpected named args: %s' % bad_args, loc.Missing)
+
+
+def ReaderFromArgv(cmd_val, expr_ev):
+    # type: (cmd_value.Argv, expr_eval.ExprEvaluator) -> typed_args.Reader
+    """
+    Build a typed_args.Reader given a builtin command's Argv.
+
+    As part of constructing the Reader, we must evaluate all arguments. This
+    function may fail if there are any runtime errors whilst evaluating those
+    arguments.
+    """
+    pos_args = [] if cmd_val.typed_args else None  # type: List[value_t]
+    named_args = {} if cmd_val.typed_args else None  # type: Dict[str, value_t]
+    if cmd_val.typed_args:
+        for i, pos_arg in enumerate(cmd_val.typed_args.pos_args):
+            result = expr_ev.EvalExpr(pos_arg, cmd_val.arg_locs[i])
+            pos_args.append(result)
+
+        for named_arg in cmd_val.typed_args.named_args:
+            result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+            name = lexer.TokenVal(named_arg.name)
+            named_args[name] = result
+
+    return typed_args.Reader(cmd_val.argv, pos_args, named_args)
 
 
 def DoesNotAccept(arg_list):
