@@ -69,12 +69,11 @@ class Reader(object):
 
     def Word(self):
         # type: () -> str
-
-        return None
+        return None  # TODO
 
     def RestWords(self):
         # type: () -> List[str]
-        return None
+        return None  # TODO
 
     ### Typed positional args
 
