@@ -600,21 +600,20 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 'L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name), depth)
 
-    def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
-        pretty_cls_name = class_name.replace('__', '.')  # used below
-
+    def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node, sum_name=None):
         #
         # PrettyTree
         #
 
-        # TODO: Create shared constants for the sum/variant names.  Both const
-        # char* and Str*.
+        if sum_name is not None:
+            n = '%s_str(this->tag())' % sum_name
+        else:
+            n = 'StrFromC("%s")' % class_name
 
         self.Emit('')
         self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
         self.Emit(
-            '  hnode::Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
-            pretty_cls_name)
+            '  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
         if all_fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
             self.Emit('')
@@ -640,8 +639,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
         self.Emit(
-            '  hnode::Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
-            pretty_cls_name)
+            '  hnode::Record* out_node = runtime::NewRecord("%s");' % n)
         if ast_node.fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
 
@@ -733,7 +731,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 continue
             all_fields = variant.fields
             class_name = '%s__%s' % (sum_name, variant.name)
-            self._EmitPrettyPrintMethods(class_name, all_fields, variant)
+            self._EmitPrettyPrintMethods(class_name, all_fields, variant,
+                                         sum_name=sum_name)
 
         # Emit dispatch WITHOUT using 'virtual'
         for func_name in PRETTY_METHODS:
