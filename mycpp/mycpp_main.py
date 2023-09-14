@@ -83,10 +83,15 @@ def get_mypy_config(
 
 
 def ModulesToCompile(result, mod_names):
-    # HACK TO PUT asdl/runtime FIRST.  It has runtime::SPID.
+    # HACK TO PUT asdl/runtime FIRST.
     #
     # Another fix is to hoist those to the declaration phase?  Not sure if that
     # makes sense.
+
+    for name, module in result.files.items():
+        # WHERE?
+        if name == 'core.vm':
+            raise RuntimeError(name)
 
     # FIRST files.  Somehow the MyPy builder reorders the modules.
     for name, module in result.files.items():
@@ -154,9 +159,10 @@ def main(argv):
     #log('to_header %s', to_header)
 
     sources, options = get_mypy_config(paths, mypy_options)
-    if 0:
+    if 1:
         for source in sources:
             log('source %s', source)
+        log('')
     #log('options %s', options)
 
     #result = emitmodule.parse_and_typecheck(sources, options)
@@ -193,8 +199,10 @@ def main(argv):
     #return
 
     # no-op
-    for name in result.graph:
-        _ = result.graph[name]
+    if 1:
+        for name in result.graph:
+            log('result %s %s', name, result.graph[name])
+        log('')
 
     # GLOBAL Constant pass over all modules.  We want to collect duplicate
     # strings together.  And have globally unique IDs str0, str1, ... strN.
@@ -224,9 +232,10 @@ def main(argv):
     to_compile = filtered
 
     #import pickle
-    if 0:
+    if 1:
         for name, module in to_compile:
             log('to_compile %s', name)
+        log('')
 
             # can't pickle but now I see deserialize() nodes and stuff
             #s = pickle.dumps(module)

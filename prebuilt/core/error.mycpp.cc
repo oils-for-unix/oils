@@ -11,8 +11,7 @@ GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
 GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "Invalid type %s: %s");
-GLOBAL_STR(str7, "%s != %s: %s");
+GLOBAL_STR(str6, "%s, got %s");
 
 namespace runtime {  // forward declare
 
@@ -65,7 +64,12 @@ using syntax_asdl::loc_e;
 using syntax_asdl::loc;
 using runtime_asdl::value_t;
 using runtime_asdl::value_str;
-using mylib::StrFromC;
+
+Str* _ValType(runtime_asdl::value_t* val) {
+  StackRoots _roots({&val});
+
+  return value_str(val->tag());
+}
 
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
@@ -126,13 +130,13 @@ Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, locati
 UserError::UserError(int status, Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
 }
 
-InvalidType::InvalidType(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+AssertionErr::AssertionErr(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-InvalidType2::InvalidType2(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : InvalidType(StrFormat("Invalid type %s: %s", StrFromC(value_str(actual_val->tag())), msg), location) {
+TypeErrVerbose::TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-InvalidType3::InvalidType3(runtime_asdl::value_t* left_val, runtime_asdl::value_t* right_val, Str* msg, syntax_asdl::loc_t* location) : InvalidType(StrFormat("%s != %s: %s", StrFromC(value_str(left_val->tag())), StrFromC(value_str(right_val->tag())), msg), location) {
+TypeErr::TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
