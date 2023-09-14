@@ -10,166 +10,148 @@ GLOBAL_STR(str1, ")");
 GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "<IntControlFlow %s %s>");
-GLOBAL_STR(str6, "<ValueControlFlow %s %s>");
-GLOBAL_STR(str7, "");
-GLOBAL_STR(str8, "");
-GLOBAL_STR(str9, "\n<html>\n  <head>\n     <title>oil AST</title>\n     <style>\n      .n { color: brown }\n      .s { font-weight: bold }\n      .o { color: darkgreen }\n     </style>\n  </head>\n  <body>\n    <pre>\n");
-GLOBAL_STR(str10, "\n    </pre>\n  </body>\n</html>\n    ");
-GLOBAL_STR(str11, "n");
-GLOBAL_STR(str12, "s");
-GLOBAL_STR(str13, "o");
-GLOBAL_STR(str14, "o");
-GLOBAL_STR(str15, "o");
-GLOBAL_STR(str16, "<span class=\"%s\">");
-GLOBAL_STR(str17, "</span>");
+GLOBAL_STR(str5, "\n<html>\n  <head>\n     <title>oil AST</title>\n     <style>\n      .n { color: brown }\n      .s { font-weight: bold }\n      .o { color: darkgreen }\n     </style>\n  </head>\n  <body>\n    <pre>\n");
+GLOBAL_STR(str6, "\n    </pre>\n  </body>\n</html>\n    ");
+GLOBAL_STR(str7, "n");
+GLOBAL_STR(str8, "s");
+GLOBAL_STR(str9, "o");
+GLOBAL_STR(str10, "o");
+GLOBAL_STR(str11, "o");
+GLOBAL_STR(str12, "<span class=\"%s\">");
+GLOBAL_STR(str13, "</span>");
+GLOBAL_STR(str14, " ");
+GLOBAL_STR(str15, "\n");
+GLOBAL_STR(str16, " ");
+GLOBAL_STR(str17, "]");
 GLOBAL_STR(str18, " ");
-GLOBAL_STR(str19, "\n");
-GLOBAL_STR(str20, " ");
-GLOBAL_STR(str21, "]");
+GLOBAL_STR(str19, " ");
+GLOBAL_STR(str20, "\n");
+GLOBAL_STR(str21, "\n");
 GLOBAL_STR(str22, " ");
-GLOBAL_STR(str23, " ");
+GLOBAL_STR(str23, "%s%s: [");
 GLOBAL_STR(str24, "\n");
 GLOBAL_STR(str25, "\n");
-GLOBAL_STR(str26, " ");
-GLOBAL_STR(str27, "%s%s: [");
+GLOBAL_STR(str26, "%s]");
+GLOBAL_STR(str27, "%s%s: ");
 GLOBAL_STR(str28, "\n");
 GLOBAL_STR(str29, "\n");
-GLOBAL_STR(str30, "%s]");
-GLOBAL_STR(str31, "%s%s: ");
-GLOBAL_STR(str32, "\n");
-GLOBAL_STR(str33, "\n");
-GLOBAL_STR(str34, " ");
+GLOBAL_STR(str30, " ");
+GLOBAL_STR(str31, "UNTYPED any");
+GLOBAL_STR(str32, " ");
+GLOBAL_STR(str33, " ");
+GLOBAL_STR(str34, " %s:");
 GLOBAL_STR(str35, "UNTYPED any");
-GLOBAL_STR(str36, " ");
+GLOBAL_STR(str36, "[");
 GLOBAL_STR(str37, " ");
-GLOBAL_STR(str38, " %s:");
-GLOBAL_STR(str39, "UNTYPED any");
-GLOBAL_STR(str40, "[");
-GLOBAL_STR(str41, " ");
-GLOBAL_STR(str42, "]");
-GLOBAL_STR(str43, "\u001b[0;0m");
-GLOBAL_STR(str44, "\u001b[1m");
-GLOBAL_STR(str45, "\u001b[4m");
-GLOBAL_STR(str46, "\u001b[7m");
-GLOBAL_STR(str47, "\u001b[31m");
-GLOBAL_STR(str48, "\u001b[32m");
-GLOBAL_STR(str49, "\u001b[33m");
-GLOBAL_STR(str50, "\u001b[34m");
-GLOBAL_STR(str51, "&");
-GLOBAL_STR(str52, "&amp;");
-GLOBAL_STR(str53, "<");
-GLOBAL_STR(str54, "&lt;");
-GLOBAL_STR(str55, ">");
-GLOBAL_STR(str56, "&gt;");
-GLOBAL_STR(str57, "\\'\r\n\t\u0000");
-GLOBAL_STR(str58, "$'");
+GLOBAL_STR(str38, "]");
+GLOBAL_STR(str39, "\u001b[0;0m");
+GLOBAL_STR(str40, "\u001b[1m");
+GLOBAL_STR(str41, "\u001b[4m");
+GLOBAL_STR(str42, "\u001b[7m");
+GLOBAL_STR(str43, "\u001b[31m");
+GLOBAL_STR(str44, "\u001b[32m");
+GLOBAL_STR(str45, "\u001b[33m");
+GLOBAL_STR(str46, "\u001b[34m");
+GLOBAL_STR(str47, "&");
+GLOBAL_STR(str48, "&amp;");
+GLOBAL_STR(str49, "<");
+GLOBAL_STR(str50, "&lt;");
+GLOBAL_STR(str51, ">");
+GLOBAL_STR(str52, "&gt;");
+GLOBAL_STR(str53, "\\'\r\n\t\u0000");
+GLOBAL_STR(str54, "$'");
+GLOBAL_STR(str55, "'");
+GLOBAL_STR(str56, "'");
+GLOBAL_STR(str57, "");
+GLOBAL_STR(str58, "'");
 GLOBAL_STR(str59, "'");
-GLOBAL_STR(str60, "'");
-GLOBAL_STR(str61, "");
+GLOBAL_STR(str60, "");
+GLOBAL_STR(str61, "'");
 GLOBAL_STR(str62, "'");
-GLOBAL_STR(str63, "'");
-GLOBAL_STR(str64, "");
-GLOBAL_STR(str65, "'");
+GLOBAL_STR(str63, "");
+GLOBAL_STR(str64, "\\");
+GLOBAL_STR(str65, "\\\\");
 GLOBAL_STR(str66, "'");
-GLOBAL_STR(str67, "");
-GLOBAL_STR(str68, "\\");
-GLOBAL_STR(str69, "\\\\");
-GLOBAL_STR(str70, "'");
-GLOBAL_STR(str71, "\\'");
-GLOBAL_STR(str72, "\n");
-GLOBAL_STR(str73, "\\n");
-GLOBAL_STR(str74, "\r");
-GLOBAL_STR(str75, "\\r");
-GLOBAL_STR(str76, "\t");
-GLOBAL_STR(str77, "\\t");
-GLOBAL_STR(str78, "\u0000");
-GLOBAL_STR(str79, "\\x00");
-GLOBAL_STR(str80, "");
-GLOBAL_STR(str81, "");
-GLOBAL_STR(str82, "");
-GLOBAL_STR(str83, "\\");
-GLOBAL_STR(str84, "\\\\");
-GLOBAL_STR(str85, "'");
-GLOBAL_STR(str86, "\\'");
-GLOBAL_STR(str87, "\n");
-GLOBAL_STR(str88, "\\n");
-GLOBAL_STR(str89, "\r");
-GLOBAL_STR(str90, "\\r");
-GLOBAL_STR(str91, "\t");
-GLOBAL_STR(str92, "\\t");
-GLOBAL_STR(str93, "\u0000");
-GLOBAL_STR(str94, "\\x00");
-GLOBAL_STR(str95, "<%s %r>");
-GLOBAL_STR(str96, "%s, got %s");
-GLOBAL_STR(str97, "-");
-GLOBAL_STR(str98, "_");
-GLOBAL_STR(str99, "<_Attributes %s>");
-GLOBAL_STR(str100, "<args.Reader %r %d>");
-GLOBAL_STR(str101, "expected argument to %r");
-GLOBAL_STR(str102, "-");
-GLOBAL_STR(str103, "expected integer after %s, got %r");
-GLOBAL_STR(str104, "-");
-GLOBAL_STR(str105, "got invalid integer for %s: %s");
-GLOBAL_STR(str106, "-");
-GLOBAL_STR(str107, "expected number after %r, got %r");
-GLOBAL_STR(str108, "-");
-GLOBAL_STR(str109, "got invalid float for %s: %s");
-GLOBAL_STR(str110, "-");
-GLOBAL_STR(str111, "got invalid argument %r to %r, expected one of: %s");
-GLOBAL_STR(str112, "-");
-GLOBAL_STR(str113, "|");
-GLOBAL_STR(str114, "0");
-GLOBAL_STR(str115, "F");
-GLOBAL_STR(str116, "false");
-GLOBAL_STR(str117, "False");
-GLOBAL_STR(str118, "1");
-GLOBAL_STR(str119, "T");
-GLOBAL_STR(str120, "true");
-GLOBAL_STR(str121, "Talse");
-GLOBAL_STR(str122, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(str123, "-");
-GLOBAL_STR(str124, "-");
-GLOBAL_STR(str125, "Invalid option %r");
-GLOBAL_STR(str126, "Expected argument for action");
-GLOBAL_STR(str127, "Invalid action name %r");
-GLOBAL_STR(str128, "--");
-GLOBAL_STR(str129, "--");
-GLOBAL_STR(str130, "=");
-GLOBAL_STR(str131, "got invalid flag %r");
+GLOBAL_STR(str67, "\\'");
+GLOBAL_STR(str68, "\n");
+GLOBAL_STR(str69, "\\n");
+GLOBAL_STR(str70, "\r");
+GLOBAL_STR(str71, "\\r");
+GLOBAL_STR(str72, "\t");
+GLOBAL_STR(str73, "\\t");
+GLOBAL_STR(str74, "\u0000");
+GLOBAL_STR(str75, "\\x00");
+GLOBAL_STR(str76, "");
+GLOBAL_STR(str77, "");
+GLOBAL_STR(str78, "");
+GLOBAL_STR(str79, "\\");
+GLOBAL_STR(str80, "\\\\");
+GLOBAL_STR(str81, "'");
+GLOBAL_STR(str82, "\\'");
+GLOBAL_STR(str83, "\n");
+GLOBAL_STR(str84, "\\n");
+GLOBAL_STR(str85, "\r");
+GLOBAL_STR(str86, "\\r");
+GLOBAL_STR(str87, "\t");
+GLOBAL_STR(str88, "\\t");
+GLOBAL_STR(str89, "\u0000");
+GLOBAL_STR(str90, "\\x00");
+GLOBAL_STR(str91, "<%s %r>");
+GLOBAL_STR(str92, "Invalid type %s: %s");
+GLOBAL_STR(str93, "%s != %s: %s");
+GLOBAL_STR(str94, "-");
+GLOBAL_STR(str95, "_");
+GLOBAL_STR(str96, "<_Attributes %s>");
+GLOBAL_STR(str97, "<args.Reader %r %d>");
+GLOBAL_STR(str98, "expected argument to %r");
+GLOBAL_STR(str99, "-");
+GLOBAL_STR(str100, "expected integer after %s, got %r");
+GLOBAL_STR(str101, "-");
+GLOBAL_STR(str102, "got invalid integer for %s: %s");
+GLOBAL_STR(str103, "-");
+GLOBAL_STR(str104, "expected number after %r, got %r");
+GLOBAL_STR(str105, "-");
+GLOBAL_STR(str106, "got invalid float for %s: %s");
+GLOBAL_STR(str107, "-");
+GLOBAL_STR(str108, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str109, "-");
+GLOBAL_STR(str110, "|");
+GLOBAL_STR(str111, "0");
+GLOBAL_STR(str112, "F");
+GLOBAL_STR(str113, "false");
+GLOBAL_STR(str114, "False");
+GLOBAL_STR(str115, "1");
+GLOBAL_STR(str116, "T");
+GLOBAL_STR(str117, "true");
+GLOBAL_STR(str118, "Talse");
+GLOBAL_STR(str119, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str120, "-");
+GLOBAL_STR(str121, "-");
+GLOBAL_STR(str122, "Invalid option %r");
+GLOBAL_STR(str123, "Expected argument for action");
+GLOBAL_STR(str124, "Invalid action name %r");
+GLOBAL_STR(str125, "--");
+GLOBAL_STR(str126, "--");
+GLOBAL_STR(str127, "=");
+GLOBAL_STR(str128, "got invalid flag %r");
+GLOBAL_STR(str129, "-");
+GLOBAL_STR(str130, "0");
+GLOBAL_STR(str131, "Z");
 GLOBAL_STR(str132, "-");
-GLOBAL_STR(str133, "0");
-GLOBAL_STR(str134, "Z");
-GLOBAL_STR(str135, "-");
-GLOBAL_STR(str136, "doesn't accept flag %s");
-GLOBAL_STR(str137, "-");
+GLOBAL_STR(str133, "doesn't accept flag %s");
+GLOBAL_STR(str134, "-");
+GLOBAL_STR(str135, "+");
+GLOBAL_STR(str136, "+");
+GLOBAL_STR(str137, "doesn't accept option %s");
 GLOBAL_STR(str138, "+");
-GLOBAL_STR(str139, "+");
-GLOBAL_STR(str140, "doesn't accept option %s");
-GLOBAL_STR(str141, "+");
-GLOBAL_STR(str142, "-");
-GLOBAL_STR(str143, "--");
-GLOBAL_STR(str144, "--");
+GLOBAL_STR(str139, "-");
+GLOBAL_STR(str140, "--");
+GLOBAL_STR(str141, "--");
+GLOBAL_STR(str142, "got invalid flag %r");
+GLOBAL_STR(str143, "-");
+GLOBAL_STR(str144, "+");
 GLOBAL_STR(str145, "got invalid flag %r");
 GLOBAL_STR(str146, "-");
-GLOBAL_STR(str147, "+");
-GLOBAL_STR(str148, "got invalid flag %r");
-GLOBAL_STR(str149, "-");
-
-namespace vm {  // forward declare
-
-  class ControlFlow;
-  class IntControlFlow;
-  class ValueControlFlow;
-  class _Executor;
-  class _AssignBuiltin;
-  class _Builtin;
-  class _Callable;
-  class ctx_Redirect;
-  class ctx_ProcessSub;
-  class ctx_FlushStdout;
-
-}  // forward declare namespace vm
 
 namespace ansi {  // forward declare
 
@@ -199,161 +181,11 @@ namespace error {  // forward declare
   class ErrExit;
   class Expr;
   class UserError;
-  class AssertionErr;
-  class TypeErrVerbose;
-  class TypeErr;
+  class InvalidType;
+  class InvalidType2;
+  class InvalidType3;
 
 }  // forward declare namespace error
-
-namespace vm {  // declare
-
-using id_kind_asdl::Id;
-class ControlFlow {
- public:
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(0, sizeof(ControlFlow));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(ControlFlow)
-};
-
-class IntControlFlow {
- public:
-  IntControlFlow(syntax_asdl::Token* token, int arg);
-  bool IsReturn();
-  bool IsBreak();
-  bool IsContinue();
-  int StatusCode();
-  runtime_asdl::flow_t HandleLoop();
-  syntax_asdl::Token* token;
-  int arg;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(IntControlFlow));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(IntControlFlow)
-};
-
-class ValueControlFlow {
- public:
-  ValueControlFlow(syntax_asdl::Token* token, runtime_asdl::value_t* value);
-  syntax_asdl::Token* token;
-  runtime_asdl::value_t* value;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(2, sizeof(ValueControlFlow));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(ValueControlFlow)
-};
-
-void InitUnsafeArith(state::Mem* mem, word_eval::NormalWordEvaluator* word_ev, sh_expr_eval::UnsafeArith* unsafe_arith);
-void InitCircularDeps(sh_expr_eval::ArithEvaluator* arith_ev, sh_expr_eval::BoolEvaluator* bool_ev, expr_eval::ExprEvaluator* expr_ev, word_eval::NormalWordEvaluator* word_ev, cmd_eval::CommandEvaluator* cmd_ev, vm::_Executor* shell_ex, prompt::Evaluator* prompt_ev, dev::Tracer* tracer);
-class _Executor {
- public:
-  _Executor();
-  void CheckCircularDeps();
-  int RunBuiltin(int builtin_id, cmd_value::Argv* cmd_val);
-  int RunSimpleCommand(cmd_value::Argv* cmd_val, runtime_asdl::CommandStatus* cmd_st, bool do_fork, bool call_procs = true);
-  int RunBackgroundJob(syntax_asdl::command_t* node);
-  void RunPipeline(command::Pipeline* node, runtime_asdl::CommandStatus* status_out);
-  int RunSubshell(syntax_asdl::command_t* node);
-  Str* RunCommandSub(syntax_asdl::CommandSub* cs_part);
-  Str* RunProcessSub(syntax_asdl::CommandSub* cs_part);
-  bool PushRedirects(List<runtime_asdl::RedirValue*>* redirects);
-  void PopRedirects(int num_redirects);
-  void PushProcessSub();
-  void PopProcessSub(runtime_asdl::StatusArray* compound_st);
-  cmd_eval::CommandEvaluator* cmd_ev;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(_Executor));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(_Executor)
-};
-
-class _AssignBuiltin {
- public:
-  _AssignBuiltin();
-  int Run(cmd_value::Assign* cmd_val);
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(0, sizeof(_AssignBuiltin));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(_AssignBuiltin)
-};
-
-class _Builtin {
- public:
-  _Builtin();
-  int Run(cmd_value::Argv* cmd_val);
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(0, sizeof(_Builtin));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(_Builtin)
-};
-
-class _Callable {
- public:
-  _Callable();
-  runtime_asdl::value_t* Call(typed_args::Reader* args);
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(0, sizeof(_Callable));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(_Callable)
-};
-
-class ctx_Redirect {
- public:
-  ctx_Redirect(vm::_Executor* shell_ex, int num_redirects);
-  ~ctx_Redirect();
-  vm::_Executor* shell_ex;
-  int num_redirects;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(ctx_Redirect));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(ctx_Redirect)
-};
-
-class ctx_ProcessSub {
- public:
-  ctx_ProcessSub(vm::_Executor* shell_ex, runtime_asdl::StatusArray* process_sub_status);
-  ~ctx_ProcessSub();
-  vm::_Executor* shell_ex;
-  runtime_asdl::StatusArray* process_sub_status;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(2, sizeof(ctx_ProcessSub));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(ctx_ProcessSub)
-};
-
-class ctx_FlushStdout {
- public:
-  ctx_FlushStdout();
-  ~ctx_FlushStdout();
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(0, sizeof(ctx_FlushStdout));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(ctx_FlushStdout)
-};
-
-
-
-}  // declare namespace vm
 
 namespace ansi {  // declare
 
@@ -581,49 +413,49 @@ class UserError : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(UserError)
 };
 
-class AssertionErr : public Expr {
+class InvalidType : public Expr {
  public:
-  AssertionErr(Str* msg, syntax_asdl::loc_t* location);
+  InvalidType(Str* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return Expr::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(AssertionErr));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(AssertionErr)
+  DISALLOW_COPY_AND_ASSIGN(InvalidType)
 };
 
-class TypeErrVerbose : public Expr {
+class InvalidType2 : public InvalidType {
  public:
-  TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location);
+  InvalidType2(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return Expr::field_mask();
+    return InvalidType::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(TypeErrVerbose));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType2));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(TypeErrVerbose)
+  DISALLOW_COPY_AND_ASSIGN(InvalidType2)
 };
 
-class TypeErr : public TypeErrVerbose {
+class InvalidType3 : public InvalidType {
  public:
-  TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
+  InvalidType3(runtime_asdl::value_t* left_val, runtime_asdl::value_t* right_val, Str* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return TypeErrVerbose::field_mask();
+    return InvalidType::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(TypeErr));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType3));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(TypeErr)
+  DISALLOW_COPY_AND_ASSIGN(InvalidType3)
 };
 
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
@@ -662,229 +494,6 @@ Str* TRUE_STR = str3;
 Str* FALSE_STR = str4;
 
 }  // define namespace runtime
-
-namespace vm {  // define
-
-using id_kind_asdl::Id;
-using runtime_asdl::CommandStatus;
-using runtime_asdl::StatusArray;
-using runtime_asdl::flow_e;
-using runtime_asdl::flow_t;
-using syntax_asdl::Token;
-
-IntControlFlow::IntControlFlow(syntax_asdl::Token* token, int arg) {
-  this->token = token;
-  this->arg = arg;
-}
-
-bool IntControlFlow::IsReturn() {
-  return this->token->id == Id::ControlFlow_Return;
-}
-
-bool IntControlFlow::IsBreak() {
-  return this->token->id == Id::ControlFlow_Break;
-}
-
-bool IntControlFlow::IsContinue() {
-  return this->token->id == Id::ControlFlow_Continue;
-}
-
-int IntControlFlow::StatusCode() {
-  return (this->arg & 255);
-}
-
-runtime_asdl::flow_t IntControlFlow::HandleLoop() {
-  if (this->IsBreak()) {
-    this->arg -= 1;
-    if (this->arg == 0) {
-      return flow_e::Break;
-    }
-  }
-  else {
-    if (this->IsContinue()) {
-      this->arg -= 1;
-      if (this->arg == 0) {
-        return flow_e::Nothing;
-      }
-    }
-  }
-  return flow_e::Raise;
-}
-
-ValueControlFlow::ValueControlFlow(syntax_asdl::Token* token, runtime_asdl::value_t* value) {
-  this->token = token;
-  this->value = value;
-}
-
-void InitUnsafeArith(state::Mem* mem, word_eval::NormalWordEvaluator* word_ev, sh_expr_eval::UnsafeArith* unsafe_arith) {
-  StackRoots _roots({&mem, &word_ev, &unsafe_arith});
-
-  mem->unsafe_arith = unsafe_arith;
-  word_ev->unsafe_arith = unsafe_arith;
-}
-
-void InitCircularDeps(sh_expr_eval::ArithEvaluator* arith_ev, sh_expr_eval::BoolEvaluator* bool_ev, expr_eval::ExprEvaluator* expr_ev, word_eval::NormalWordEvaluator* word_ev, cmd_eval::CommandEvaluator* cmd_ev, vm::_Executor* shell_ex, prompt::Evaluator* prompt_ev, dev::Tracer* tracer) {
-  StackRoots _roots({&arith_ev, &bool_ev, &expr_ev, &word_ev, &cmd_ev, &shell_ex, &prompt_ev, &tracer});
-
-  arith_ev->word_ev = word_ev;
-  bool_ev->word_ev = word_ev;
-  if (expr_ev) {
-    expr_ev->shell_ex = shell_ex;
-    expr_ev->word_ev = word_ev;
-  }
-  word_ev->arith_ev = arith_ev;
-  word_ev->expr_ev = expr_ev;
-  word_ev->prompt_ev = prompt_ev;
-  word_ev->shell_ex = shell_ex;
-  cmd_ev->shell_ex = shell_ex;
-  cmd_ev->arith_ev = arith_ev;
-  cmd_ev->bool_ev = bool_ev;
-  cmd_ev->expr_ev = expr_ev;
-  cmd_ev->word_ev = word_ev;
-  cmd_ev->tracer = tracer;
-  shell_ex->cmd_ev = cmd_ev;
-  prompt_ev->word_ev = word_ev;
-  tracer->word_ev = word_ev;
-  arith_ev->CheckCircularDeps();
-  bool_ev->CheckCircularDeps();
-  if (expr_ev) {
-    expr_ev->CheckCircularDeps();
-  }
-  word_ev->CheckCircularDeps();
-  cmd_ev->CheckCircularDeps();
-  shell_ex->CheckCircularDeps();
-  prompt_ev->CheckCircularDeps();
-  tracer->CheckCircularDeps();
-}
-
-_Executor::_Executor() {
-  this->cmd_ev = nullptr;
-}
-
-void _Executor::CheckCircularDeps() {
-  ;  // pass
-}
-
-int _Executor::RunBuiltin(int builtin_id, cmd_value::Argv* cmd_val) {
-  StackRoots _roots({&cmd_val});
-
-  return 0;
-}
-
-int _Executor::RunSimpleCommand(cmd_value::Argv* cmd_val, runtime_asdl::CommandStatus* cmd_st, bool do_fork, bool call_procs) {
-  StackRoots _roots({&cmd_val, &cmd_st});
-
-  return 0;
-}
-
-int _Executor::RunBackgroundJob(syntax_asdl::command_t* node) {
-  StackRoots _roots({&node});
-
-  return 0;
-}
-
-void _Executor::RunPipeline(command::Pipeline* node, runtime_asdl::CommandStatus* status_out) {
-  StackRoots _roots({&node, &status_out});
-
-  ;  // pass
-}
-
-int _Executor::RunSubshell(syntax_asdl::command_t* node) {
-  StackRoots _roots({&node});
-
-  return 0;
-}
-
-Str* _Executor::RunCommandSub(syntax_asdl::CommandSub* cs_part) {
-  StackRoots _roots({&cs_part});
-
-  return str7;
-}
-
-Str* _Executor::RunProcessSub(syntax_asdl::CommandSub* cs_part) {
-  StackRoots _roots({&cs_part});
-
-  return str8;
-}
-
-bool _Executor::PushRedirects(List<runtime_asdl::RedirValue*>* redirects) {
-  StackRoots _roots({&redirects});
-
-  return true;
-}
-
-void _Executor::PopRedirects(int num_redirects) {
-  ;  // pass
-}
-
-void _Executor::PushProcessSub() {
-  ;  // pass
-}
-
-void _Executor::PopProcessSub(runtime_asdl::StatusArray* compound_st) {
-  StackRoots _roots({&compound_st});
-
-  ;  // pass
-}
-
-_AssignBuiltin::_AssignBuiltin() {
-  ;  // pass
-}
-
-int _AssignBuiltin::Run(cmd_value::Assign* cmd_val) {
-  StackRoots _roots({&cmd_val});
-
-  FAIL(kNotImplemented);  // Python NotImplementedError
-}
-
-_Builtin::_Builtin() {
-  ;  // pass
-}
-
-int _Builtin::Run(cmd_value::Argv* cmd_val) {
-  StackRoots _roots({&cmd_val});
-
-  FAIL(kNotImplemented);  // Python NotImplementedError
-}
-
-_Callable::_Callable() {
-  ;  // pass
-}
-
-runtime_asdl::value_t* _Callable::Call(typed_args::Reader* args) {
-  StackRoots _roots({&args});
-
-  FAIL(kNotImplemented);  // Python NotImplementedError
-}
-
-ctx_Redirect::ctx_Redirect(vm::_Executor* shell_ex, int num_redirects) {
-  this->shell_ex = shell_ex;
-  this->num_redirects = num_redirects;
-}
-
-ctx_Redirect::~ctx_Redirect(){
-  this->shell_ex->PopRedirects(this->num_redirects);
-}
-
-ctx_ProcessSub::ctx_ProcessSub(vm::_Executor* shell_ex, runtime_asdl::StatusArray* process_sub_status) {
-  shell_ex->PushProcessSub();
-  this->shell_ex = shell_ex;
-  this->process_sub_status = process_sub_status;
-}
-
-ctx_ProcessSub::~ctx_ProcessSub(){
-  this->shell_ex->PopProcessSub(this->process_sub_status);
-}
-
-ctx_FlushStdout::ctx_FlushStdout() {
-  ;  // pass
-}
-
-ctx_FlushStdout::~ctx_FlushStdout(){
-  pyos::FlushStdout();
-}
-
-}  // define namespace vm
 
 namespace format {  // define
 
@@ -981,11 +590,11 @@ format::HtmlOutput* HtmlOutput::NewTempBuffer() {
 }
 
 void HtmlOutput::FileHeader() {
-  this->f->write(str9);
+  this->f->write(str5);
 }
 
 void HtmlOutput::FileFooter() {
-  this->f->write(str10);
+  this->f->write(str6);
 }
 
 void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
@@ -993,23 +602,23 @@ void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
   StackRoots _roots({&css_class});
 
   if (e_color == color_e::TypeName) {
-    css_class = str11;
+    css_class = str7;
   }
   else {
     if (e_color == color_e::StringConst) {
-      css_class = str12;
+      css_class = str8;
     }
     else {
       if (e_color == color_e::OtherConst) {
-        css_class = str13;
+        css_class = str9;
       }
       else {
         if (e_color == color_e::External) {
-          css_class = str14;
+          css_class = str10;
         }
         else {
           if (e_color == color_e::UserType) {
-            css_class = str15;
+            css_class = str11;
           }
           else {
             assert(0);  // AssertionError
@@ -1022,7 +631,7 @@ void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
 }
 
 void HtmlOutput::PopColor() {
-  this->f->write(str17);
+  this->f->write(str13);
 }
 
 void HtmlOutput::write(Str* s) {
@@ -1093,7 +702,7 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
     hnode_asdl::hnode_t* val = it.Value();
     StackRoots _for({&val  });
     if (i != 0) {
-      f->write(str18);
+      f->write(str14);
     }
     single_f = f->NewTempBuffer();
     if (_TrySingleLine(val, single_f, (this->max_col - chars_so_far))) {
@@ -1104,7 +713,7 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
       chars_so_far += single_f->NumChars();
     }
     else {
-      f->write(str19);
+      f->write(str15);
       this->PrintNode(val, f, (indent + INDENT));
       chars_so_far = 0;
       all_fit = false;
@@ -1148,11 +757,11 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
       Tuple2<Str*, int>* p = it.Value();
       StackRoots _for({&p    });
       if (i != 0) {
-        f->write(str20);
+        f->write(str16);
       }
       f->WriteRaw(p);
     }
-    f->write(str21);
+    f->write(str17);
   }
   return all_fit;
 }
@@ -1173,7 +782,7 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
   int num_chars;
   StackRoots _roots({&node, &f, &ind, &prefix, &name, &val, &ind1, &UP_val, &name_str, &single_f, &s});
 
-  ind = str_repeat(str22, indent);
+  ind = str_repeat(str18, indent);
   if (node->abbrev) {
     prefix = str_concat(ind, node->left);
     f->write(prefix);
@@ -1181,12 +790,12 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
       f->PopColor();
-      f->write(str23);
+      f->write(str19);
     }
     prefix_len = ((len(prefix) + len(node->node_type)) + 1);
     all_fit = this->_PrintWrappedArray(node->unnamed_fields, prefix_len, f, indent);
     if (!all_fit) {
-      f->write(str24);
+      f->write(str20);
       f->write(ind);
     }
     f->write(node->right);
@@ -1196,13 +805,13 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
     f->PushColor(color_e::TypeName);
     f->write(node->node_type);
     f->PopColor();
-    f->write(str25);
+    f->write(str21);
     for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::Field* field = it.Value();
       StackRoots _for({&field    });
       name = field->name;
       val = field->val;
-      ind1 = str_repeat(str26, (indent + INDENT));
+      ind1 = str_repeat(str22, (indent + INDENT));
       UP_val = val;
       tag = val->tag();
       if (tag == hnode_e::Array) {
@@ -1211,12 +820,12 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
         f->write(name_str);
         prefix_len = len(name_str);
         if (!this->_PrintWholeArray(val->children, prefix_len, f, indent)) {
-          f->write(str28);
+          f->write(str24);
           for (ListIter<hnode_asdl::hnode_t*> it(val->children); !it.Done(); it.Next()) {
             hnode_asdl::hnode_t* child = it.Value();
             StackRoots _for({&child          });
             this->PrintNode(child, f, ((indent + INDENT) + INDENT));
-            f->write(str29);
+            f->write(str25);
           }
           f->write(StrFormat("%s]", ind1));
         }
@@ -1233,11 +842,11 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
           f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
         }
         else {
-          f->write(str32);
+          f->write(str28);
           this->PrintNode(val, f, ((indent + INDENT) + INDENT));
         }
       }
-      f->write(str33);
+      f->write(str29);
     }
     f->write(str_concat(ind, node->right));
   }
@@ -1252,7 +861,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
   int tag;
   StackRoots _roots({&node, &f, &ind, &single_f, &s, &UP_node});
 
-  ind = str_repeat(str34, indent);
+  ind = str_repeat(str30, indent);
   single_f = f->NewTempBuffer();
   single_f->write(ind);
   if (_TrySingleLine(node, single_f, (this->max_col - indent))) {
@@ -1276,7 +885,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
       f->PushColor(color_e::External);
       // if not PYTHON
       {
-        f->write(str35);
+        f->write(str31);
       }
       // endif MYCPP
       f->PopColor();
@@ -1303,14 +912,14 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
       f->PopColor();
-      f->write(str36);
+      f->write(str32);
     }
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
       StackRoots _for({&val    });
       if (i != 0) {
-        f->write(str37);
+        f->write(str33);
       }
       if (!_TrySingleLine(val, f, max_chars)) {
         return false;
@@ -1355,7 +964,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
       f->PushColor(color_e::External);
       // if not PYTHON
       {
-        f->write(str39);
+        f->write(str35);
       }
       // endif MYCPP
       f->PopColor();
@@ -1363,19 +972,19 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
     else {
       if (tag == hnode_e::Array) {
         hnode::Array* node = static_cast<hnode::Array*>(UP_node);
-        f->write(str40);
+        f->write(str36);
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
           StackRoots _for({&item        });
           if (i != 0) {
-            f->write(str41);
+            f->write(str37);
           }
           if (!_TrySingleLine(item, f, max_chars)) {
             return false;
           }
         }
-        f->write(str42);
+        f->write(str38);
       }
       else {
         if (tag == hnode_e::Record) {
@@ -1407,14 +1016,14 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-Str* RESET = str43;
-Str* BOLD = str44;
-Str* UNDERLINE = str45;
-Str* REVERSE = str46;
-Str* RED = str47;
-Str* GREEN = str48;
-Str* YELLOW = str49;
-Str* BLUE = str50;
+Str* RESET = str39;
+Str* BOLD = str40;
+Str* UNDERLINE = str41;
+Str* REVERSE = str42;
+Str* RED = str43;
+Str* GREEN = str44;
+Str* YELLOW = str45;
+Str* BLUE = str46;
 
 }  // define namespace ansi
 
@@ -1424,9 +1033,9 @@ namespace cgi {  // define
 Str* escape(Str* s) {
   StackRoots _roots({&s});
 
+  s = s->replace(str47, str48);
+  s = s->replace(str49, str50);
   s = s->replace(str51, str52);
-  s = s->replace(str53, str54);
-  s = s->replace(str55, str56);
   return s;
 }
 
@@ -1475,7 +1084,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
         continue;
       }
       quote = 1;
-      if ((str_contains(str57, ch) or IsUnprintableLow(ch))) {
+      if ((str_contains(str53, ch) or IsUnprintableLow(ch))) {
         quote = 2;
         break;
       }
@@ -1489,13 +1098,13 @@ Str* maybe_shell_encode(Str* s, int flags) {
   valid_utf8 = _encode(s, bit8_display, buf);
   parts->append(buf->getvalue());
   if ((!valid_utf8 or quote == 2)) {
-    prefix = str58;
+    prefix = str54;
   }
   else {
-    prefix = str59;
+    prefix = str55;
   }
-  parts->append(str60);
-  return str_concat(prefix, str61->join(parts));
+  parts->append(str56);
+  return str_concat(prefix, str57->join(parts));
 }
 
 Str* maybe_encode(Str* s, int bit8_display) {
@@ -1522,12 +1131,12 @@ Str* maybe_encode(Str* s, int bit8_display) {
     return s;
   }
   parts = Alloc<List<Str*>>();
-  parts->append(str62);
+  parts->append(str58);
   buf = Alloc<mylib::BufWriter>();
   _encode(s, bit8_display, buf);
   parts->append(buf->getvalue());
-  parts->append(str63);
-  return str64->join(parts);
+  parts->append(str59);
+  return str60->join(parts);
 }
 
 Str* encode(Str* s, int bit8_display) {
@@ -1536,12 +1145,12 @@ Str* encode(Str* s, int bit8_display) {
   StackRoots _roots({&s, &parts, &buf});
 
   parts = Alloc<List<Str*>>();
-  parts->append(str65);
+  parts->append(str61);
   buf = Alloc<mylib::BufWriter>();
   _encode(s, bit8_display, buf);
   parts->append(buf->getvalue());
-  parts->append(str66);
-  return str67->join(parts);
+  parts->append(str62);
+  return str63->join(parts);
 }
 
 void _encode_bytes_x(Str* s, mylib::BufWriter* buf) {
@@ -1551,28 +1160,28 @@ void _encode_bytes_x(Str* s, mylib::BufWriter* buf) {
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
     StackRoots _for({&byte  });
-    if (str_equals(byte, str68)) {
-      part = str69;
+    if (str_equals(byte, str64)) {
+      part = str65;
     }
     else {
-      if (str_equals(byte, str70)) {
-        part = str71;
+      if (str_equals(byte, str66)) {
+        part = str67;
       }
       else {
-        if (str_equals(byte, str72)) {
-          part = str73;
+        if (str_equals(byte, str68)) {
+          part = str69;
         }
         else {
-          if (str_equals(byte, str74)) {
-            part = str75;
+          if (str_equals(byte, str70)) {
+            part = str71;
           }
           else {
-            if (str_equals(byte, str76)) {
-              part = str77;
+            if (str_equals(byte, str72)) {
+              part = str73;
             }
             else {
-              if (str_equals(byte, str78)) {
-                part = str79;
+              if (str_equals(byte, str74)) {
+                part = str75;
               }
               else {
                 if (IsUnprintableLow(byte)) {
@@ -1623,9 +1232,9 @@ bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
 
   valid_utf8 = true;
   state = Start;
-  r1 = str80;
-  r2 = str81;
-  r3 = str82;
+  r1 = str76;
+  r2 = str77;
+  r3 = str78;
   for (StrIter it(s); !it.Done(); it.Next()) {
     Str* byte = it.Value();
     StackRoots _for({&byte  });
@@ -1670,28 +1279,28 @@ bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
     }
     if (typ == Ascii) {
       state = Start;
-      if (str_equals(byte, str83)) {
-        out = str84;
+      if (str_equals(byte, str79)) {
+        out = str80;
       }
       else {
-        if (str_equals(byte, str85)) {
-          out = str86;
+        if (str_equals(byte, str81)) {
+          out = str82;
         }
         else {
-          if (str_equals(byte, str87)) {
-            out = str88;
+          if (str_equals(byte, str83)) {
+            out = str84;
           }
           else {
-            if (str_equals(byte, str89)) {
-              out = str90;
+            if (str_equals(byte, str85)) {
+              out = str86;
             }
             else {
-              if (str_equals(byte, str91)) {
-                out = str92;
+              if (str_equals(byte, str87)) {
+                out = str88;
               }
               else {
-                if (str_equals(byte, str93)) {
-                  out = str94;
+                if (str_equals(byte, str89)) {
+                  out = str90;
                 }
                 else {
                   if (IsUnprintableLow(byte)) {
@@ -1836,6 +1445,8 @@ namespace error {  // define
 using syntax_asdl::loc_e;
 using syntax_asdl::loc;
 using runtime_asdl::value_t;
+using runtime_asdl::value_str;
+using mylib::StrFromC;
 
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
@@ -1896,13 +1507,13 @@ Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, locati
 UserError::UserError(int status, Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
 }
 
-AssertionErr::AssertionErr(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+InvalidType::InvalidType(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErrVerbose::TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+InvalidType2::InvalidType2(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : InvalidType(StrFormat("Invalid type %s: %s", StrFromC(value_str(actual_val->tag())), msg), location) {
 }
 
-TypeErr::TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, ui::ValType(actual_val)), location) {
+InvalidType3::InvalidType3(runtime_asdl::value_t* left_val, runtime_asdl::value_t* right_val, Str* msg, syntax_asdl::loc_t* location) : InvalidType(StrFormat("%s != %s: %s", StrFromC(value_str(left_val->tag())), StrFromC(value_str(right_val->tag())), msg), location) {
 }
 
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
@@ -1974,7 +1585,7 @@ void _Attributes::SetTrue(Str* name) {
 void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
   StackRoots _roots({&name, &val});
 
-  name = name->replace(str97, str98);
+  name = name->replace(str94, str95);
   this->attrs->set(name, val);
 }
 
@@ -2109,7 +1720,7 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str102, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to %r", str_concat(str99, this->name)), arg_r->Location());
     }
   }
   val = this->_Value(arg, arg_r->Location());
@@ -2128,10 +1739,10 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) 
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str104, this->name), arg), location);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str101, this->name), arg), location);
   }
   if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str106, this->name), arg), location);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str103, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -2147,10 +1758,10 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str108, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str105, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str110, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str107, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -2162,7 +1773,7 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, syntax_asdl::loc_t* locatio
   StackRoots _roots({&arg, &location});
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str112, this->name), str113->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str109, this->name), str110->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -2176,11 +1787,11 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
   StackRoots _roots({&attached_arg, &arg_r, &out});
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str114) || str_equals(attached_arg, str115) || str_equals(attached_arg, str116) || str_equals(attached_arg, str117))) {
+    if ((str_equals(attached_arg, str111) || str_equals(attached_arg, str112) || str_equals(attached_arg, str113) || str_equals(attached_arg, str114))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str118) || str_equals(attached_arg, str119) || str_equals(attached_arg, str120) || str_equals(attached_arg, str121))) {
+      if ((str_equals(attached_arg, str115) || str_equals(attached_arg, str116) || str_equals(attached_arg, str117) || str_equals(attached_arg, str118))) {
         b = true;
       }
       else {
@@ -2214,7 +1825,7 @@ bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribute
   bool b;
   StackRoots _roots({&attached_arg, &arg_r, &out});
 
-  b = maybe_str_equals(attached_arg, str123);
+  b = maybe_str_equals(attached_arg, str120);
   out->opt_changes->append((Alloc<Tuple2<Str*, bool>>(this->name, b)));
   return false;
 }
@@ -2237,7 +1848,7 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   List<Tuple2<Str*, bool>*>* changes = nullptr;
   StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &attr_name, &changes});
 
-  b = maybe_str_equals(attached_arg, str124);
+  b = maybe_str_equals(attached_arg, str121);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -2282,7 +1893,7 @@ bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str126, loc::Missing);
+    e_usage(str123, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -2307,13 +1918,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str128)) {
+    if (maybe_str_equals(arg, str125)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str129))) {
-      pos = arg->find(str130, 2);
+    if ((len(spec->actions_long) and arg->startswith(str126))) {
+      pos = arg->find(str127, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -2331,15 +1942,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str132) and len(arg) > 1)) {
+      if ((arg->startswith(str129) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->index_(i);
-          if (str_equals(ch, str133)) {
-            ch = str134;
+          if (str_equals(ch, str130)) {
+            ch = str131;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str135));
+            out->Set(ch, Alloc<value::Str>(str132));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -2352,20 +1963,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str137, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str134, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str138) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str135) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->index_(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str139));
+              out->Set(ch, Alloc<value::Str>(str136));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str141, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str138, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -2389,7 +2000,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str142) and len(chars))) {
+    if ((arg->startswith(str139) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         Str* c = it.Value();
@@ -2429,12 +2040,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str143)) {
+    if (maybe_str_equals(arg, str140)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str144)) {
+    if (arg->startswith(str141)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
@@ -2443,14 +2054,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str146) or arg->startswith(str147)) and len(arg) > 1)) {
+    if (((arg->startswith(str143) or arg->startswith(str144)) and len(arg) > 1)) {
       char0 = arg->index_(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         Str* ch = it.Value();
         StackRoots _for({&ch      });
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str149, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str146, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);
