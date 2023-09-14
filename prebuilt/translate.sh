@@ -125,4 +125,12 @@ all() {
   frontend-args
 }
 
+deps() {
+  PYTHONPATH='.:vendor' \
+    python2 -c 'import sys; from frontend import args; print(sys.modules.keys())'
+
+  PYTHONPATH='.:vendor' \
+    python2 -c 'import sys; from core import error; print(sys.modules.keys())'
+}
+
 run-task "$@"

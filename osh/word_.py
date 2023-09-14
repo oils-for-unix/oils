@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import tagswitch, StrFromC, log
+from mycpp.mylib import tagswitch, log
 from osh import word_compile
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
@@ -661,7 +661,7 @@ def Pretty(w):
         else:
             return repr(w.s)
     else:
-        return StrFromC(word_str(w.tag()))  # tag name
+        return word_str(w.tag())  # tag name
 
 
 class ctx_EmitDocToken(object):

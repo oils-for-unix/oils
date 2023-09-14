@@ -39,7 +39,7 @@ from frontend import location
 from frontend import match
 from osh import cmd_eval
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch, iteritems, StrFromC
+from mycpp.mylib import log, print_stderr, tagswitch, iteritems
 
 import libc
 import posix_ as posix
@@ -1387,7 +1387,7 @@ class Pipeline(Job):
 
 def _JobStateStr(i):
     # type: (job_state_t) -> str
-    return StrFromC(job_state_str(i))[10:]  # remove 'job_state.'
+    return job_state_str(i)[10:]  # remove 'job_state.'
 
 
 def _GetTtyFd():

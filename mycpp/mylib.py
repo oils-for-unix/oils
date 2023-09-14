@@ -29,11 +29,6 @@ def MaybeCollect():
     pass
 
 
-def StrFromC(s):
-    """Hack to translate const char* s to Str * in C++."""
-    return s
-
-
 def NewDict():
     """Make dictionaries ordered in Python, e.g. for JSON.
   

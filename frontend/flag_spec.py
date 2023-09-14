@@ -11,6 +11,8 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_t,
 )
+from _devbuild.gen.syntax_asdl import ArgList
+from core.error import e_usage
 from frontend import args
 from mycpp import mylib
 from mycpp.mylib import log
@@ -47,13 +49,20 @@ def Parse(spec_name, arg_r):
     return args.Parse(spec, arg_r)
 
 
+def _DoesNotAccept(arg_list):
+    # type: (Optional[ArgList]) -> None
+    """ Copy from frontend/typed_args.py, to break dependency """
+    if arg_list is not None:
+        e_usage('got unexpected typed args', arg_list.left)
+
+
 def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
     # type: (str, cmd_value.Argv, bool) -> Tuple[args._Attributes, args.Reader]
 
-    from frontend import typed_args  # break circular dependency
+    #from frontend import typed_args  # break circular dependency
 
     if not accept_typed_args:
-        typed_args.DoesNotAccept(cmd_val.typed_args)
+        _DoesNotAccept(cmd_val.typed_args)
 
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # move past the builtin name
@@ -65,9 +74,9 @@ def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
 def ParseLikeEcho(spec_name, cmd_val):
     # type: (str, cmd_value.Argv) -> Tuple[args._Attributes, args.Reader]
 
-    from frontend import typed_args  # break circular dependency
+    #from frontend import typed_args  # break circular dependency
 
-    typed_args.DoesNotAccept(cmd_val.typed_args)
+    _DoesNotAccept(cmd_val.typed_args)
 
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # move past the builtin name

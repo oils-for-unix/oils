@@ -1,13 +1,16 @@
-"""error.py."""
+""" core/error.py """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_e, loc
-from _devbuild.gen.runtime_asdl import value_t
-from core import ui
+from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
+from _devbuild.gen.runtime_asdl import value_t, value_str
 
-from typing import TYPE_CHECKING, NoReturn
-if TYPE_CHECKING:
-    from _devbuild.gen.syntax_asdl import loc_t
+from typing import NoReturn
+
+
+def _ValType(val):
+    # type: (value_t) -> str
+    """Duplicate ui.ValType for now"""
+    return value_str(val.tag())
 
 
 class _ErrorWithLocation(Exception):
@@ -194,7 +197,7 @@ class TypeErr(TypeErrVerbose):
         # type: (value_t, str, loc_t) -> None
         TypeErrVerbose.__init__(
             self, "%s, got %s" %
-            (msg, ui.ValType(actual_val)), location)
+            (msg, _ValType(actual_val)), location)
 
 
 def e_usage(msg, location):
