@@ -10,14 +10,32 @@ GLOBAL_STR(str1, ")");
 GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "Invalid type %s: %s");
-GLOBAL_STR(str7, "%s != %s: %s");
+GLOBAL_STR(str5, "<IntControlFlow %s %s>");
+GLOBAL_STR(str6, "<ValueControlFlow %s %s>");
+GLOBAL_STR(str7, "");
+GLOBAL_STR(str8, "");
+GLOBAL_STR(str9, "<%s %r>");
+GLOBAL_STR(str10, "%s, got %s");
 
 namespace runtime {  // forward declare
 
 
 }  // forward declare namespace runtime
+
+namespace vm {  // forward declare
+
+  class ControlFlow;
+  class IntControlFlow;
+  class ValueControlFlow;
+  class _Executor;
+  class _AssignBuiltin;
+  class _Builtin;
+  class _Callable;
+  class ctx_Redirect;
+  class ctx_ProcessSub;
+  class ctx_FlushStdout;
+
+}  // forward declare namespace vm
 
 namespace runtime {  // declare
 
@@ -30,6 +48,156 @@ extern Str* FALSE_STR;
 
 
 }  // declare namespace runtime
+
+namespace vm {  // declare
+
+using id_kind_asdl::Id;
+class ControlFlow {
+ public:
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(ControlFlow));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(ControlFlow)
+};
+
+class IntControlFlow {
+ public:
+  IntControlFlow(syntax_asdl::Token* token, int arg);
+  bool IsReturn();
+  bool IsBreak();
+  bool IsContinue();
+  int StatusCode();
+  runtime_asdl::flow_t HandleLoop();
+  syntax_asdl::Token* token;
+  int arg;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(IntControlFlow));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(IntControlFlow)
+};
+
+class ValueControlFlow {
+ public:
+  ValueControlFlow(syntax_asdl::Token* token, runtime_asdl::value_t* value);
+  syntax_asdl::Token* token;
+  runtime_asdl::value_t* value;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(ValueControlFlow));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(ValueControlFlow)
+};
+
+void InitUnsafeArith(state::Mem* mem, word_eval::NormalWordEvaluator* word_ev, sh_expr_eval::UnsafeArith* unsafe_arith);
+void InitCircularDeps(sh_expr_eval::ArithEvaluator* arith_ev, sh_expr_eval::BoolEvaluator* bool_ev, expr_eval::ExprEvaluator* expr_ev, word_eval::NormalWordEvaluator* word_ev, cmd_eval::CommandEvaluator* cmd_ev, vm::_Executor* shell_ex, prompt::Evaluator* prompt_ev, dev::Tracer* tracer);
+class _Executor {
+ public:
+  _Executor();
+  void CheckCircularDeps();
+  int RunBuiltin(int builtin_id, cmd_value::Argv* cmd_val);
+  int RunSimpleCommand(cmd_value::Argv* cmd_val, runtime_asdl::CommandStatus* cmd_st, bool do_fork, bool call_procs = true);
+  int RunBackgroundJob(syntax_asdl::command_t* node);
+  void RunPipeline(command::Pipeline* node, runtime_asdl::CommandStatus* status_out);
+  int RunSubshell(syntax_asdl::command_t* node);
+  Str* RunCommandSub(syntax_asdl::CommandSub* cs_part);
+  Str* RunProcessSub(syntax_asdl::CommandSub* cs_part);
+  bool PushRedirects(List<runtime_asdl::RedirValue*>* redirects);
+  void PopRedirects(int num_redirects);
+  void PushProcessSub();
+  void PopProcessSub(runtime_asdl::StatusArray* compound_st);
+  cmd_eval::CommandEvaluator* cmd_ev;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(_Executor));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(_Executor)
+};
+
+class _AssignBuiltin {
+ public:
+  _AssignBuiltin();
+  int Run(cmd_value::Assign* cmd_val);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(_AssignBuiltin));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(_AssignBuiltin)
+};
+
+class _Builtin {
+ public:
+  _Builtin();
+  int Run(cmd_value::Argv* cmd_val);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(_Builtin));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(_Builtin)
+};
+
+class _Callable {
+ public:
+  _Callable();
+  runtime_asdl::value_t* Call(typed_args::Reader* args);
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(_Callable));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(_Callable)
+};
+
+class ctx_Redirect {
+ public:
+  ctx_Redirect(vm::_Executor* shell_ex, int num_redirects);
+  ~ctx_Redirect();
+  vm::_Executor* shell_ex;
+  int num_redirects;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(ctx_Redirect));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(ctx_Redirect)
+};
+
+class ctx_ProcessSub {
+ public:
+  ctx_ProcessSub(vm::_Executor* shell_ex, runtime_asdl::StatusArray* process_sub_status);
+  ~ctx_ProcessSub();
+  vm::_Executor* shell_ex;
+  runtime_asdl::StatusArray* process_sub_status;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(ctx_ProcessSub));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(ctx_ProcessSub)
+};
+
+class ctx_FlushStdout {
+ public:
+  ctx_FlushStdout();
+  ~ctx_FlushStdout();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(0, sizeof(ctx_FlushStdout));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(ctx_FlushStdout)
+};
+
+
+
+}  // declare namespace vm
 
 namespace runtime {  // define
 
@@ -59,13 +227,234 @@ Str* FALSE_STR = str4;
 
 }  // define namespace runtime
 
+namespace vm {  // define
+
+using id_kind_asdl::Id;
+using runtime_asdl::CommandStatus;
+using runtime_asdl::StatusArray;
+using runtime_asdl::flow_e;
+using runtime_asdl::flow_t;
+using syntax_asdl::Token;
+
+IntControlFlow::IntControlFlow(syntax_asdl::Token* token, int arg) {
+  this->token = token;
+  this->arg = arg;
+}
+
+bool IntControlFlow::IsReturn() {
+  return this->token->id == Id::ControlFlow_Return;
+}
+
+bool IntControlFlow::IsBreak() {
+  return this->token->id == Id::ControlFlow_Break;
+}
+
+bool IntControlFlow::IsContinue() {
+  return this->token->id == Id::ControlFlow_Continue;
+}
+
+int IntControlFlow::StatusCode() {
+  return (this->arg & 255);
+}
+
+runtime_asdl::flow_t IntControlFlow::HandleLoop() {
+  if (this->IsBreak()) {
+    this->arg -= 1;
+    if (this->arg == 0) {
+      return flow_e::Break;
+    }
+  }
+  else {
+    if (this->IsContinue()) {
+      this->arg -= 1;
+      if (this->arg == 0) {
+        return flow_e::Nothing;
+      }
+    }
+  }
+  return flow_e::Raise;
+}
+
+ValueControlFlow::ValueControlFlow(syntax_asdl::Token* token, runtime_asdl::value_t* value) {
+  this->token = token;
+  this->value = value;
+}
+
+void InitUnsafeArith(state::Mem* mem, word_eval::NormalWordEvaluator* word_ev, sh_expr_eval::UnsafeArith* unsafe_arith) {
+  StackRoots _roots({&mem, &word_ev, &unsafe_arith});
+
+  mem->unsafe_arith = unsafe_arith;
+  word_ev->unsafe_arith = unsafe_arith;
+}
+
+void InitCircularDeps(sh_expr_eval::ArithEvaluator* arith_ev, sh_expr_eval::BoolEvaluator* bool_ev, expr_eval::ExprEvaluator* expr_ev, word_eval::NormalWordEvaluator* word_ev, cmd_eval::CommandEvaluator* cmd_ev, vm::_Executor* shell_ex, prompt::Evaluator* prompt_ev, dev::Tracer* tracer) {
+  StackRoots _roots({&arith_ev, &bool_ev, &expr_ev, &word_ev, &cmd_ev, &shell_ex, &prompt_ev, &tracer});
+
+  arith_ev->word_ev = word_ev;
+  bool_ev->word_ev = word_ev;
+  if (expr_ev) {
+    expr_ev->shell_ex = shell_ex;
+    expr_ev->word_ev = word_ev;
+  }
+  word_ev->arith_ev = arith_ev;
+  word_ev->expr_ev = expr_ev;
+  word_ev->prompt_ev = prompt_ev;
+  word_ev->shell_ex = shell_ex;
+  cmd_ev->shell_ex = shell_ex;
+  cmd_ev->arith_ev = arith_ev;
+  cmd_ev->bool_ev = bool_ev;
+  cmd_ev->expr_ev = expr_ev;
+  cmd_ev->word_ev = word_ev;
+  cmd_ev->tracer = tracer;
+  shell_ex->cmd_ev = cmd_ev;
+  prompt_ev->word_ev = word_ev;
+  tracer->word_ev = word_ev;
+  arith_ev->CheckCircularDeps();
+  bool_ev->CheckCircularDeps();
+  if (expr_ev) {
+    expr_ev->CheckCircularDeps();
+  }
+  word_ev->CheckCircularDeps();
+  cmd_ev->CheckCircularDeps();
+  shell_ex->CheckCircularDeps();
+  prompt_ev->CheckCircularDeps();
+  tracer->CheckCircularDeps();
+}
+
+_Executor::_Executor() {
+  this->cmd_ev = nullptr;
+}
+
+void _Executor::CheckCircularDeps() {
+  ;  // pass
+}
+
+int _Executor::RunBuiltin(int builtin_id, cmd_value::Argv* cmd_val) {
+  StackRoots _roots({&cmd_val});
+
+  return 0;
+}
+
+int _Executor::RunSimpleCommand(cmd_value::Argv* cmd_val, runtime_asdl::CommandStatus* cmd_st, bool do_fork, bool call_procs) {
+  StackRoots _roots({&cmd_val, &cmd_st});
+
+  return 0;
+}
+
+int _Executor::RunBackgroundJob(syntax_asdl::command_t* node) {
+  StackRoots _roots({&node});
+
+  return 0;
+}
+
+void _Executor::RunPipeline(command::Pipeline* node, runtime_asdl::CommandStatus* status_out) {
+  StackRoots _roots({&node, &status_out});
+
+  ;  // pass
+}
+
+int _Executor::RunSubshell(syntax_asdl::command_t* node) {
+  StackRoots _roots({&node});
+
+  return 0;
+}
+
+Str* _Executor::RunCommandSub(syntax_asdl::CommandSub* cs_part) {
+  StackRoots _roots({&cs_part});
+
+  return str7;
+}
+
+Str* _Executor::RunProcessSub(syntax_asdl::CommandSub* cs_part) {
+  StackRoots _roots({&cs_part});
+
+  return str8;
+}
+
+bool _Executor::PushRedirects(List<runtime_asdl::RedirValue*>* redirects) {
+  StackRoots _roots({&redirects});
+
+  return true;
+}
+
+void _Executor::PopRedirects(int num_redirects) {
+  ;  // pass
+}
+
+void _Executor::PushProcessSub() {
+  ;  // pass
+}
+
+void _Executor::PopProcessSub(runtime_asdl::StatusArray* compound_st) {
+  StackRoots _roots({&compound_st});
+
+  ;  // pass
+}
+
+_AssignBuiltin::_AssignBuiltin() {
+  ;  // pass
+}
+
+int _AssignBuiltin::Run(cmd_value::Assign* cmd_val) {
+  StackRoots _roots({&cmd_val});
+
+  FAIL(kNotImplemented);  // Python NotImplementedError
+}
+
+_Builtin::_Builtin() {
+  ;  // pass
+}
+
+int _Builtin::Run(cmd_value::Argv* cmd_val) {
+  StackRoots _roots({&cmd_val});
+
+  FAIL(kNotImplemented);  // Python NotImplementedError
+}
+
+_Callable::_Callable() {
+  ;  // pass
+}
+
+runtime_asdl::value_t* _Callable::Call(typed_args::Reader* args) {
+  StackRoots _roots({&args});
+
+  FAIL(kNotImplemented);  // Python NotImplementedError
+}
+
+ctx_Redirect::ctx_Redirect(vm::_Executor* shell_ex, int num_redirects) {
+  this->shell_ex = shell_ex;
+  this->num_redirects = num_redirects;
+}
+
+ctx_Redirect::~ctx_Redirect(){
+  this->shell_ex->PopRedirects(this->num_redirects);
+}
+
+ctx_ProcessSub::ctx_ProcessSub(vm::_Executor* shell_ex, runtime_asdl::StatusArray* process_sub_status) {
+  shell_ex->PushProcessSub();
+  this->shell_ex = shell_ex;
+  this->process_sub_status = process_sub_status;
+}
+
+ctx_ProcessSub::~ctx_ProcessSub(){
+  this->shell_ex->PopProcessSub(this->process_sub_status);
+}
+
+ctx_FlushStdout::ctx_FlushStdout() {
+  ;  // pass
+}
+
+ctx_FlushStdout::~ctx_FlushStdout(){
+  pyos::FlushStdout();
+}
+
+}  // define namespace vm
+
 namespace error {  // define
 
 using syntax_asdl::loc_e;
 using syntax_asdl::loc;
 using runtime_asdl::value_t;
-using runtime_asdl::value_str;
-using mylib::StrFromC;
 
 _ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
@@ -126,13 +515,13 @@ Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, locati
 UserError::UserError(int status, Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
 }
 
-InvalidType::InvalidType(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+AssertionErr::AssertionErr(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-InvalidType2::InvalidType2(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : InvalidType(StrFormat("Invalid type %s: %s", StrFromC(value_str(actual_val->tag())), msg), location) {
+TypeErrVerbose::TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-InvalidType3::InvalidType3(runtime_asdl::value_t* left_val, runtime_asdl::value_t* right_val, Str* msg, syntax_asdl::loc_t* location) : InvalidType(StrFormat("%s != %s: %s", StrFromC(value_str(left_val->tag())), StrFromC(value_str(right_val->tag())), msg), location) {
+TypeErr::TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, ui::ValType(actual_val)), location) {
 }
 
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
