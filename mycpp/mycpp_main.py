@@ -154,7 +154,7 @@ def main(argv):
     #log('to_header %s', to_header)
 
     sources, options = get_mypy_config(paths, mypy_options)
-    if 1:
+    if 0:
         for source in sources:
             log('source %s', source)
         log('')
@@ -194,7 +194,7 @@ def main(argv):
     #return
 
     # no-op
-    if 1:
+    if 0:
         for name in result.graph:
             log('result %s %s', name, result.graph[name])
         log('')
@@ -227,7 +227,7 @@ def main(argv):
     to_compile = filtered
 
     #import pickle
-    if 1:
+    if 0:
         for name, module in to_compile:
             log('to_compile %s', name)
         log('')
