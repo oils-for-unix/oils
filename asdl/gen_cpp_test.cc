@@ -152,6 +152,8 @@ TEST pretty_print_test() {
   log("bool_expr_str = %s", bool_expr_str(b->tag())->data_);
   ASSERT(str_equals0("bool_expr.Binary", bool_expr_str(b->tag())));
 
+  ASSERT(str_equals0("Binary", bool_expr_str(b->tag(), false)));
+
   PASS();
 }
 

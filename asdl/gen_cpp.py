@@ -687,18 +687,29 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         else:
             self.Emit('Str* %s_str(int tag, bool dot) {' % sum_name, depth)
 
+        buf_size = 32
+        v_max = max(len(variant.name) for variant in sum.types)
+        s_max = v_max + 1 + len(sum_name) + 1  # for . and NUL
+        if s_max > buf_size:
+            raise RuntimeError('Sum name %r + variant name is too long' % sum_name)
+
+        self.Emit('  char buf[%d];' % buf_size, depth)
         self.Emit('  const char* v = nullptr;', depth)
         self.Emit('  switch (tag) {', depth)
         for variant in sum.types:
             self.Emit('case %s::%s:' % (enum_name, variant.name), depth + 1)
-            self.Emit('  v = "%s.%s";' % (sum_name, variant.name), depth + 1)
-            self.Emit('  break;', depth + 1)
+            self.Emit('  v = "%s"; break;' % variant.name, depth + 1)
 
         self.Emit('default:', depth + 1)
         self.Emit('  assert(0);', depth + 1)
 
         self.Emit('  }', depth)
-        self.Emit('  return StrFromC(v);', depth)
+        self.Emit('  if (dot) {', depth)
+        self.Emit('    snprintf(buf, %d, "%s.%%s", v);' % (buf_size, sum_name), depth)
+        self.Emit('    return StrFromC(buf);', depth)
+        self.Emit('  } else {', depth)
+        self.Emit('    return StrFromC(v);', depth)
+        self.Emit('  }', depth)
         self.Emit('}', depth)
 
     def VisitSimpleSum(self, sum, name, depth):

@@ -18,8 +18,8 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "_gen/frontend/consts.h"  // gVersion
 #include "_gen/cpp/build_stamp.h"  // gCommitHash
+#include "_gen/frontend/consts.h"  // gVersion
 #include "cpp/embedded_file.h"
 
 extern char** environ;
