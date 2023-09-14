@@ -88,11 +88,6 @@ def ModulesToCompile(result, mod_names):
     # Another fix is to hoist those to the declaration phase?  Not sure if that
     # makes sense.
 
-    for name, module in result.files.items():
-        # WHERE?
-        if name == 'core.vm':
-            raise RuntimeError(name)
-
     # FIRST files.  Somehow the MyPy builder reorders the modules.
     for name, module in result.files.items():
         if name in ('asdl.runtime', 'core.vm'):
