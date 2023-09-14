@@ -149,7 +149,8 @@ TEST pretty_print_test() {
   hnode_t* t2 = c->PrettyTree();
   ASSERT_EQ(hnode_e::Record, t2->tag());
 
-  log("bool_expr_str = %s", bool_expr_str(b->tag()));
+  log("bool_expr_str = %s", bool_expr_str(b->tag())->data_);
+  ASSERT(str_equals0("bool_expr.Binary", bool_expr_str(b->tag())));
 
   PASS();
 }

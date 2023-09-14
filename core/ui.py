@@ -26,7 +26,7 @@ from asdl import format as fmt
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch, StrFromC
+from mycpp.mylib import print_stderr, tagswitch
 from data_lang import qsn
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
@@ -42,7 +42,7 @@ def ValType(val):
     """For displaying type errors in the UI."""
 
     # Displays 'value.BashArray' for now, maybe change it.
-    return StrFromC(value_str(val.tag()))
+    return value_str(val.tag())
 
 
 def CommandType(cmd):
@@ -50,7 +50,7 @@ def CommandType(cmd):
     """For displaying commands in the UI."""
 
     # Displays 'command.Simple' for now, maybe change it.
-    return StrFromC(command_str(cmd.tag()))
+    return command_str(cmd.tag())
 
 
 def PrettyId(id_):
@@ -58,7 +58,7 @@ def PrettyId(id_):
     """For displaying type errors in the UI."""
 
     # Displays 'Id.BoolUnary_v' for now
-    return StrFromC(Id_str(id_))
+    return Id_str(id_)
 
 
 def PrettyToken(tok):

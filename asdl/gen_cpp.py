@@ -199,10 +199,10 @@ def _HNodeExpr(abbrev, typ, var_name):
             code_str = 'Alloc<hnode::External>(%s)' % var_name
 
         elif type_name == 'id':  # was meta.UserType
-            code_str = 'Alloc<hnode::Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
+            code_str = 'Alloc<hnode::Leaf>(Id_str(%s), color_e::UserType)' % var_name
 
         elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-            code_str = 'Alloc<hnode::Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
+            code_str = 'Alloc<hnode::Leaf>(%s_str(%s), color_e::TypeName)' % (
                 type_name, var_name)
 
         else:
@@ -273,7 +273,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('const char* %s_str(%s tag, bool dot = true);' % (sum_name, enum_name),
+                self.Emit('Str* %s_str(%s tag, bool dot = true);' % (sum_name, enum_name),
                           depth)
                 self.Emit('', depth)
 
@@ -307,7 +307,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('const char* %s_str(int tag, bool dot = true);' % sum_name, depth)
+                self.Emit('Str* %s_str(int tag, bool dot = true);' % sum_name, depth)
                 self.Emit('', depth)
 
         return int_to_type
@@ -684,10 +684,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             enum_name = sum_name
 
         if strong:
-            self.Emit('const char* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
+            self.Emit('Str* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
                       depth)
         else:
-            self.Emit('const char* %s_str(int tag, bool dot) {' % sum_name, depth)
+            self.Emit('Str* %s_str(int tag, bool dot) {' % sum_name, depth)
 
         self.Emit('  const char* v = nullptr;', depth)
         self.Emit('  switch (tag) {', depth)
@@ -700,7 +700,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('  assert(0);', depth + 1)
 
         self.Emit('  }', depth)
-        self.Emit('  return v;', depth)
+        self.Emit('  return StrFromC(v);', depth)
         self.Emit('}', depth)
 
     def VisitSimpleSum(self, sum, name, depth):

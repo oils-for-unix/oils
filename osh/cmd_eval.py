@@ -85,7 +85,7 @@ from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
-from mycpp.mylib import log, switch, tagswitch, StrFromC
+from mycpp.mylib import log, switch, tagswitch
 from ysh import cpython
 from ysh import expr_eval
 from ysh import val_ops
@@ -386,7 +386,7 @@ class CommandEvaluator(object):
                     cmd_st.show_code = True  # not sure about this
                     # TODO: We should show which element of the pipeline failed!
 
-            desc = StrFromC(command_str(node.tag()))
+            desc = command_str(node.tag())
 
             # Override location if explicitly passed.
             # Note: this produces better results for process sub
