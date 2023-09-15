@@ -30,11 +30,6 @@ inline void MaybeCollect() {
   gHeap.MaybeCollect();
 }
 
-// Used by generated _build/cpp/osh_eval.cc
-inline Str* StrFromC(const char* s) {
-  return ::StrFromC(s);
-}
-
 void print_stderr(Str* s);
 
 // const int kStdout = 1;

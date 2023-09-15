@@ -260,7 +260,6 @@ TEST files_test() {
 
 TEST for_test_coverage() {
   mylib::MaybeCollect();  // trivial wrapper for translation
-  mylib::StrFromC("x");   // trivial wrapper for translation
 
   auto writer = mylib::Stderr();
   writer->write(kEmptyString);
