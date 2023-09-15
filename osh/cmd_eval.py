@@ -847,7 +847,8 @@ class CommandEvaluator(object):
                         orig = node.typed_args
                         # COPY positional args because we may append an arg
                         typed_args = ArgList(orig.left, list(orig.pos_args),
-                                             orig.named_args, orig.right)
+                                             orig.named_delim, orig.named_args,
+                                             orig.right)
 
                         # the block is the last argument
                         if node.block:
@@ -858,7 +859,7 @@ class CommandEvaluator(object):
                             # Create ArgList for the block.  Since we have { } and not (),
                             # copy them from BraceGroup
                             typed_args = ArgList(node.block.brace_group.left,
-                                                 [node.block], [],
+                                                 [node.block], None, [],
                                                  node.block.brace_group.right)
 
                     cmd_val.typed_args = typed_args
