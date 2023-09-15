@@ -247,8 +247,7 @@ class Type(vm._Callable):
         val = args.PosValue()
         args.Done()
 
-        tname = ui.ValType(val)
-        return value.Str(tname[6:])  # strip "value." prefix
+        return value.Str(ui.ValType(val))
 
 
 class Bool(vm._Callable):

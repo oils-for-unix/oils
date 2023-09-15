@@ -10,7 +10,7 @@ from typing import NoReturn
 def _ValType(val):
     # type: (value_t) -> str
     """Duplicate ui.ValType for now"""
-    return value_str(val.tag())
+    return value_str(val.tag(), dot=False)
 
 
 class _ErrorWithLocation(Exception):

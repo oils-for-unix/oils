@@ -457,15 +457,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             else:
                 tag_num = i + 1
             self.Emit('  %s = %d' % (variant.name, tag_num), depth)
-            tag_str = '%s.%s' % (sum_name, variant.name)
-            int_to_str[tag_num] = tag_str
+            int_to_str[tag_num] = variant.name
         self.Emit('', depth)
 
         self._EmitDict(sum_name, int_to_str, depth)
 
-        self.Emit('def %s_str(tag):' % sum_name, depth)
-        self.Emit('  # type: (int) -> str', depth)
-        self.Emit('  return _%s_str[tag]' % sum_name, depth)
+        self.Emit('def %s_str(tag, dot=True):' % sum_name, depth)
+        self.Emit('  # type: (int, bool) -> str', depth)
+        self.Emit('  v = _%s_str[tag]' % sum_name, depth)
+        self.Emit('  if dot:', depth)
+        self.Emit('    return "%s.%%s" %% v' % sum_name, depth)
+        self.Emit('  else:', depth)
+        self.Emit('    return v', depth)
         self.Emit('', depth)
 
         # the base class, e.g. 'oil_cmd'

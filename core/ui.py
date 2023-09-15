@@ -41,8 +41,7 @@ def ValType(val):
     # type: (value_t) -> str
     """For displaying type errors in the UI."""
 
-    # Displays 'value.BashArray' for now, maybe change it.
-    return value_str(val.tag())
+    return value_str(val.tag(), dot=False)
 
 
 def CommandType(cmd):

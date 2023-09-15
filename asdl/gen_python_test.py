@@ -7,46 +7,61 @@ import unittest
 from asdl import pybase
 
 from _devbuild.gen import typed_demo_asdl
-from _devbuild.gen import typed_arith_asdl
-
-arith_expr = typed_arith_asdl.arith_expr
-source_location = typed_demo_asdl.source_location
-op_id_e = typed_demo_asdl.op_id_e
-
-cflow = typed_demo_asdl.cflow
-cflow_e = typed_demo_asdl.cflow_e
+from _devbuild.gen.typed_arith_asdl import arith_expr, arith_expr_e
+from _devbuild.gen.typed_demo_asdl import (
+        source_location,
+        flag_type, flag_type_str,
+        op_id_e, op_id_str,
+        cflow, cflow_t,
+        Strings, Dicts, Maybes, op_array)
 
 
 class ArithAstTest(unittest.TestCase):
+
+    def testPrettyPrint(self):
+        s = op_id_str(op_id_e.Plus)
+        self.assertEqual('op_id.Plus', s)
+        print(s)
+
+        obj = flag_type.Bool
+        s = flag_type_str(obj.tag())
+
+        self.assertEqual('flag_type.Bool', s)
+        print(s)
+
+        s= flag_type_str(obj.tag(), dot=False)
+        self.assertEqual('Bool', s)
+        print(s)
+
     def testStringDefaults(self):
-        st = typed_demo_asdl.Strings('', '')
+        st = Strings('', '')
         self.assertEqual('', st.required)
         self.assertEqual('', st.optional)
 
         # ZERO ARG "constructor" (static method)
-        st = typed_demo_asdl.Strings.CreateNull(alloc_lists=True)
+        st = Strings.CreateNull(alloc_lists=True)
         self.assertEqual('', st.required)
         self.assertEqual(None, st.optional)
 
         # N arg constructor with None
-        st = typed_demo_asdl.Strings('', None)
+        st = Strings('', None)
         self.assertEqual('', st.required)
         self.assertEqual(None, st.optional)
 
     def testArrayDefault(self):
-        obj = typed_demo_asdl.op_array.CreateNull()
+        obj = op_array.CreateNull()
         self.assertEqual(None, obj.ops)
 
-        obj = typed_demo_asdl.op_array.CreateNull(alloc_lists=True)
+        obj = op_array.CreateNull(alloc_lists=True)
         self.assertEqual([], obj.ops)
 
     def testMapDefault(self):
         # TODO: alloc_dicts=True
-        obj = typed_demo_asdl.Dicts.CreateNull(alloc_lists=True)
+        obj = Dicts.CreateNull(alloc_lists=True)
         self.assertEqual(None, obj.ss)
 
     def testOptionalDefault(self):
-        obj = typed_demo_asdl.Maybes.CreateNull(alloc_lists=True)
+        obj = Maybes.CreateNull(alloc_lists=True)
 
         # These are None
         self.assertEqual(None, obj.op)
@@ -128,7 +143,7 @@ class ArithAstTest(unittest.TestCase):
 
         c = cflow.Break
         assert isinstance(c, typed_demo_asdl.cflow__Break)
-        assert isinstance(c, typed_demo_asdl.cflow_t)
+        assert isinstance(c, cflow_t)
         assert isinstance(c, pybase.CompoundObj)
 
     def testOtherTypes(self):
@@ -159,7 +174,6 @@ class ArithAstTest(unittest.TestCase):
         n.right = arith_expr.Const(6)
         #n.CheckUnassigned()
 
-        arith_expr_e = typed_arith_asdl.arith_expr_e
         self.assertEqual(arith_expr_e.Const, c.tag())
         self.assertEqual(arith_expr_e.Binary, n.tag())
 

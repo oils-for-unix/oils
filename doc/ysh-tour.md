@@ -1156,7 +1156,9 @@ proc main {
   }
 }
 
-main @ARGV                      # The only top-level statement
+if is-main {                    # The only top-level statement
+  main @ARGV
+}
 ```
 
 <!--

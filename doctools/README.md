@@ -71,13 +71,15 @@ like this.  Put it all in `src-tree.wwz`.
   - # comments
   - `"" ''` strings
   - multi-line strings
-  - class
-  - def
+  - these may require INDENT/DEDENT tokens
+    - class
+    - def
   - does it understand `state.Mem`?  Probably
     - vim only understands `Mem` though.  We might be able to convince it to.
   - Reference:
     - We may also need a fast whole-file lexer for `var_name` and `package.Var`,
       which does dynamic lookup.
+   
 
 - C++
   - `//` comments
