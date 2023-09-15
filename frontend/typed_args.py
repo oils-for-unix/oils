@@ -9,7 +9,7 @@ from core import error
 from core.error import e_usage
 from frontend import lexer
 from frontend import location
-from mycpp.mylib import dict_erase, tagswitch, Stdout
+from mycpp.mylib import dict_erase, tagswitch
 
 from typing import Optional, Dict, List, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -391,7 +391,7 @@ def ReaderFromArgv(typed_args, expr_ev):
         name = lexer.TokenVal(named_arg.name)
         named_args[name] = result
 
-    return Reader(pos_args, named_args)
+    return Reader(pos_args, named_args, typed_args, False)
 
 
 def DoesNotAccept(arg_list):
