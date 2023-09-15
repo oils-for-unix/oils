@@ -359,11 +359,14 @@ class Reader(object):
                 (n, n + len(self.pos_args)), self.BlamePos())
 
         if len(self.named_args):
-            assert self.args_node.named_delim is not None
+            # may not be set
+            blame = self.args_node.named_delim
+            if blame is None:
+                blame = self.args_node.left
+
             bad_args = ', '.join(self.named_args.keys())
             raise error.TypeErrVerbose(
-                'Got unexpected named args: %s' % bad_args,
-                self.args_node.named_delim)
+                'Got unexpected named args: %s' % bad_args, blame)
 
 
 def ReaderFromArgv(typed_args, expr_ev):
