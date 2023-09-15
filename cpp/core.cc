@@ -204,7 +204,7 @@ Tuple3<double, double, double> Time() {
 
 static void PrintClock(clock_t ticks, long ticks_per_sec) {
   double seconds = static_cast<double>(ticks) / ticks_per_sec;
-  printf("%ldm%.3fs", static_cast<long>(seconds) / 60, std::fmod(seconds, 60));
+  printf("%ldm%.3fs", static_cast<long>(seconds) / 60, fmod(seconds, 60));
 }
 
 // bash source: builtins/times.def
