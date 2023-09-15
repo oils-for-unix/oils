@@ -166,7 +166,7 @@ class Len(vm._Callable):
                 return value.Int(len(x.s))
 
         raise error.TypeErr(x, 'len() expected Str, List, or Dict',
-                            args.LeftParenToken())
+                            args.BlamePos())
 
 
 class Reverse(vm._Callable):
@@ -295,12 +295,12 @@ class Int(vm._Callable):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeInteger(val.s):
                     raise error.Expr('Cannot convert %s to Int' % val.s,
-                                     args.LeftParenToken())
+                                     args.BlamePos())
 
                 return value.Int(int(val.s))
 
         raise error.TypeErr(val, 'Int() expected Bool, Int, Float, or Str',
-                            args.LeftParenToken())
+                            args.BlamePos())
 
 
 class Float(vm._Callable):
@@ -328,12 +328,12 @@ class Float(vm._Callable):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeFloat(val.s):
                     raise error.Expr('Cannot convert %s to Float' % val.s,
-                                     args.LeftParenToken())
+                                     args.BlamePos())
 
                 return value.Float(float(val.s))
 
         raise error.TypeErr(val, 'Float() expected Int, Float, or Str',
-                            args.LeftParenToken())
+                            args.BlamePos())
 
 
 class Str_(vm._Callable):
@@ -364,7 +364,7 @@ class Str_(vm._Callable):
                 return val
 
         raise error.TypeErr(val, 'Str() expected Str, Int, or Float',
-                            args.LeftParenToken())
+                            args.BlamePos())
 
 
 class List_(vm._Callable):
@@ -398,7 +398,7 @@ class List_(vm._Callable):
             else:
                 raise error.TypeErr(val,
                                     'List() expected Dict, List, or Range',
-                                    args.LeftParenToken())
+                                    args.BlamePos())
 
         assert it is not None
         while not it.Done():
@@ -431,7 +431,7 @@ class Dict_(vm._Callable):
                 return value.Dict(d)
 
         raise error.TypeErr(val, 'Dict() expected List or Dict',
-                            args.LeftParenToken())
+                            args.BlamePos())
 
 
 class Split(vm._Callable):

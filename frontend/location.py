@@ -538,8 +538,8 @@ def TokenForExpr(node):
             return node.left
 
         elif case(expr_e.ListComp):
-            # TODO
-            return loc.Missing
+            node = cast(expr.ListComp, UP_node)
+            return node.left
 
         elif case(expr_e.GeneratorExp):
             # TODO

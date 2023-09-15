@@ -421,8 +421,16 @@ test-dict-convert() {
   _expr-error-case '= dict([["too", "many", "parts"]])'
 }
 
-test-bound-func() {
-  _expr-error-case '= "foo"->startswith(1)' # shouldn't panic
+test-func-error-locs() {
+  # free funcs
+  _expr-error-case '= join(["foo", "bar"], " ", 99)' # too many args
+  _expr-error-case '= int()' # not enough args
+  _expr-error-case '= str({})' # wrong type
+
+  # bound funcs
+  _expr-error-case '= "foo"->startswith("f", "o")' # too many args
+  _expr-error-case '= "foo"->startswith()' # not enough args
+  _expr-error-case '= "foo"->startswith(1)' # wrong type
 }
 
 soil-run() {

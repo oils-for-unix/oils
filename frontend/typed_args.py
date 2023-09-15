@@ -9,7 +9,7 @@ from core import error
 from core.error import e_usage
 from frontend import lexer
 from frontend import location
-from mycpp.mylib import dict_erase, tagswitch
+from mycpp.mylib import dict_erase, tagswitch, Stdout
 
 from typing import Optional, Dict, List, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ class Reader(object):
 
     ### Typed positional args
 
-    def _BlamePos(self):
+    def BlamePos(self):
         # type: () -> loc_t
         """Returns the location of the most recently consumed argument. If no
         arguments have been consumed, the location of the function call is
@@ -132,7 +132,7 @@ class Reader(object):
             return arg.s
 
         raise error.TypeErr(arg, 'Arg %d should be a Str' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosBool(self):
         # type: () -> bool
@@ -143,7 +143,7 @@ class Reader(object):
             return arg.b
 
         raise error.TypeErr(arg, 'Arg %d should be a Bool' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosInt(self):
         # type: () -> int
@@ -154,7 +154,7 @@ class Reader(object):
             return arg.i
 
         raise error.TypeErr(arg, 'Arg %d should be a Int' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosFloat(self):
         # type: () -> float
@@ -166,7 +166,7 @@ class Reader(object):
 
         raise error.TypeErr(arg,
                             'Arg %d should be a Float' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosList(self):
         # type: () -> List[value_t]
@@ -177,7 +177,7 @@ class Reader(object):
             return arg.items
 
         raise error.TypeErr(arg, 'Arg %d should be a List' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosDict(self):
         # type: () -> Dict[str, value_t]
@@ -188,7 +188,7 @@ class Reader(object):
             return arg.d
 
         raise error.TypeErr(arg, 'Arg %d should be a Dict' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosCommand(self):
         # type: () -> command_t
@@ -200,7 +200,7 @@ class Reader(object):
 
         raise error.TypeErr(arg,
                             'Arg %d should be a Command' % self.pos_consumed,
-                            self._BlamePos())
+                            self.BlamePos())
 
     def PosValue(self):
         # type: () -> value_t
@@ -347,15 +347,20 @@ class Reader(object):
         """
         # Note: Python throws TypeError on mismatch
         if len(self.pos_args):
-            self.pos_consumed += 1
+            n = self.pos_consumed
+            # Excluding implicit first arg should make errors less confusing
+            if self.is_bound:
+                n -= 1
+
+            self.pos_consumed += 1  # point to the first uncomsumed arg
+
             raise error.TypeErrVerbose(
                 'Expected %d arguments, but got %d' %
-                (self.pos_consumed, self.pos_consumed + len(self.pos_args)),
-                self._BlamePos())
+                (n, n + len(self.pos_args)), self.BlamePos())
 
         if len(self.named_args):
             assert self.args_node.named_delim is not None
-            bad_args = ','.join(self.named_args.keys())
+            bad_args = ', '.join(self.named_args.keys())
             raise error.TypeErrVerbose(
                 'Got unexpected named args: %s' % bad_args,
                 self.args_node.named_delim)
