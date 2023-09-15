@@ -51,7 +51,7 @@ soil-run() {
 }
 
 run-for-release() {
-  run-other-suite-for-release ysh-prettify run-all
+  run-other-suite-for-release ysh-ify run-all
 }
 
 

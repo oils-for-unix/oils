@@ -225,6 +225,8 @@ MAIN_SPEC.LongFlag(
 MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
 # TODO: Add option for YSH prompt style?  RHS prompt?
 
+MAIN_SPEC.LongFlag('--completion-demo')
+
 # $SH -n won't reparse a[x+1] and ``.  Note that $SH --tool automatically turns
 # it on.
 # TODO: Do we only need this for the "arena invariant"?  e.g. test/arena.sh I
@@ -259,6 +261,9 @@ def _DefineCompletionFlags(spec):
     # type: (_FlagSpecAndMore) -> None
     spec.ShortFlag('-F', args.String, help='Complete with this function')
     spec.ShortFlag('-W', args.String, help='Complete with these words')
+    spec.ShortFlag('-C', args.String,
+                   help='Complete with stdout lines of this command')
+
     spec.ShortFlag(
         '-P',
         args.String,
@@ -339,6 +344,7 @@ _DefineCompletionActions(COMPLETE_SPEC)
 COMPLETE_SPEC.ShortFlag('-E', help='Define the compspec for an empty line')
 COMPLETE_SPEC.ShortFlag(
     '-D', help='Define the compspec that applies when nothing else matches')
+
 # I would like this to be less compatible
 # Field name conflicts with 'print' keyword
 #COMPLETE_SPEC.LongFlag(
@@ -363,6 +369,26 @@ COMPADJUST_SPEC.ShortFlag(
     'Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')
 COMPADJUST_SPEC.ShortFlag('-s',
                           help='Treat --foo=bar and --foo bar the same way.')
+
+COMPEXPORT_SPEC = FlagSpecAndMore('compexport')
+
+COMPEXPORT_SPEC.ShortFlag(
+    '-c', args.String,
+    help='Shell string to complete, like sh -c')
+
+COMPEXPORT_SPEC.LongFlag(
+    '--begin', args.Int,
+    help='Simulate readline begin index into line buffer')
+
+COMPEXPORT_SPEC.LongFlag(
+    '--end', args.Int,
+    help='Simulate readline end index into line buffer')
+
+# jlines is an array of strings with NO header line
+# TSV8 has a header line.  It can have flag descriptions and other data.
+COMPEXPORT_SPEC.LongFlag('--format', ['jlines', 'tsv8'],
+                         default='jlines',
+                         help='Output format')
 
 #
 # Pure YSH

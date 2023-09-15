@@ -391,7 +391,7 @@ _compressed-tarball() {
   local out=_release/$name-$version.tar.gz
 
   # Overwrite it to cause rebuild of oil.tar
-  build/ovm-actions.sh write-release-date
+  build/stamp.sh write-release-date
 
   #make -d -r $in  # To debug
   make $in
@@ -457,8 +457,9 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
+  # Ditto: pub/src-tree.wwz lines up with URLs in Soil
   log "--- src-tree"
-  local out="$root/src-tree.wwz"
+  local out="$root/pub/src-tree.wwz"
   pushd _tmp/src-tree
   time zip -r -q $out .  # recursive, quiet
   popd

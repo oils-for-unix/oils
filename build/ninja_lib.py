@@ -410,6 +410,13 @@ class Rules(object):
       sources.extend(self.cc_libs[label].srcs)
     return sources
 
+  def HeadersForBinary(self, main_cc):
+    deps = self.cc_binary_deps[main_cc]
+    headers = []
+    for label in deps:
+      headers.extend(self.cc_libs[label].generated_headers)
+    return headers
+
   def asdl_library(self, asdl_path, deps = None,
       pretty_print_methods=True):
 

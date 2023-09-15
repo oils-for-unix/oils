@@ -127,6 +127,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   X dbg                  Only thing that can be used in funcs
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
+  [Completion]    compadjust   compexport
   [Data Formats]  json
                   X j8str                Upgrade JSON with binary, utf-8
                   X json8                Tree-shaped
@@ -243,7 +244,7 @@ X [Func]      export()   location()
 
 ```chapter-links-builtin-func
   [Values]        len()   type() 
-  [Conversions]   Bool()   Int()   Float()   Str()   List()   Dict()
+  [Conversions]   bool()   int()   float()   str()   list()   dict()
                   X chr()   X ord()   X encodeRunes()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
   [List]          any()   all()

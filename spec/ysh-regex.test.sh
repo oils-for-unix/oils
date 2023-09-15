@@ -672,7 +672,7 @@ var i = 0
 while (i < len(content)) {
   var line = content[i]
   write $[content[i]]
-  if (Str(line) ~ / s* 'imports' s* '=' s* .* /) {
+  if (str(line) ~ / s* 'imports' s* '=' s* .* /) {
     exit
   }
   setvar i += 1

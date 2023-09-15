@@ -38,7 +38,8 @@ import time as time_
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
                                        redir_param_e, Token)
-from _devbuild.gen.runtime_asdl import value, value_e, scope_e, Proc
+from _devbuild.gen.runtime_asdl import (value, value_e, scope_e, Proc,
+                                        comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
 from core import pyos
@@ -359,15 +360,9 @@ class CompletionAction(object):
         # type: (Api) -> Iterator[str]
         pass
 
-    # mycpp: for rewrites of isinstance()
-    def IsFileSystemAction(self):
-        # type: () -> bool
-        return False
-
-    # mycpp: for rewrites of isinstance()
-    def IsShellFuncAction(self):
-        # type: () -> bool
-        return False
+    def ActionKind(self):
+        # type: () -> comp_action_t
+        return comp_action_e.Other
 
     def Print(self, f):
         # type: (mylib.BufWriter) -> None
@@ -466,10 +461,9 @@ class FileSystemAction(CompletionAction):
         # filenames.
         self.add_slash = add_slash  # for directories
 
-    # mycpp: rewrite of isinstance()
-    def IsFileSystemAction(self):
-        # type: () -> bool
-        return True
+    def ActionKind(self):
+        # type: () -> comp_action_t
+        return comp_action_e.FileSystem
 
     def Print(self, f):
         # type: (mylib.BufWriter) -> None
@@ -528,6 +522,20 @@ class FileSystemAction(CompletionAction):
                     yield path
 
 
+class CommandAction(CompletionAction):
+    """ TODO: Implement complete -C """
+
+    def __init__(self, cmd_ev, command_name):
+        # type: (CommandEvaluator, str) -> None
+        self.cmd_ev = cmd_ev
+        self.command_name = command_name
+
+    def Matches(self, comp):
+        # type: (Api) -> Iterator[str]
+        for candidate in ['TODO-complete-C']:
+            yield candidate
+
+
 class ShellFuncAction(CompletionAction):
     """Call a user-defined function using bash's completion protocol."""
 
@@ -547,10 +555,9 @@ class ShellFuncAction(CompletionAction):
 
         f.write('[ShellFuncAction %s] ' % self.func.name)
 
-    # mycpp: rewrite of isinstance()
-    def IsShellFuncAction(self):
-        # type: () -> bool
-        return True
+    def ActionKind(self):
+        # type: () -> comp_action_t
+        return comp_action_e.BashFunc
 
     def debug(self, msg):
         # type: (str) -> None
@@ -651,9 +658,8 @@ class VariablesAction(CompletionAction):
         f.write('VariablesAction ')
 
 
-
 class ExternalCommandAction(CompletionAction):
-    """complete commands in $PATH.
+    """Complete commands in $PATH.
 
     This is PART of compgen -A command.
     """
@@ -848,13 +854,13 @@ class UserSpec(object):
         f.write('  prefix: %s\n' % self.prefix)
         f.write('  suffix: %s\n' % self.prefix)
 
-    def Matches(self, comp):
-        # type: (Api) -> Iterator[Tuple[str, bool]]
+    def AllMatches(self, comp):
+        # type: (Api) -> Iterator[Tuple[str, comp_action_t]]
         """yield completion candidates."""
         num_matches = 0
 
         for a in self.actions:
-            is_fs_action = a.IsFileSystemAction()
+            action_kind = a.ActionKind()
             for match in a.Matches(comp):
                 # Special case hack to match bash for compgen -F.  It doesn't filter by
                 # to_complete!
@@ -862,12 +868,12 @@ class UserSpec(object):
                     self.predicate.Evaluate(match) and
                     # ShellFuncAction results are NOT filtered by prefix!
                     (match.startswith(comp.to_complete) or
-                     a.IsShellFuncAction()))
+                     action_kind == comp_action_e.BashFunc))
 
                 # There are two kinds of filters: changing the string, and filtering
                 # the set of strings.  So maybe have modifiers AND filters?  A triple.
                 if show:
-                    yield self.prefix + match + self.suffix, is_fs_action
+                    yield self.prefix + match + self.suffix, action_kind
                     num_matches += 1
 
         # NOTE: extra_actions and else_actions don't respect -X, -P or -S, and we
@@ -877,13 +883,15 @@ class UserSpec(object):
         # for -o plusdirs
         for a in self.extra_actions:
             for match in a.Matches(comp):
-                yield match, True  # We know plusdirs is a file system action
+                # We know plusdirs is a file system action
+                yield match, comp_action_e.FileSystem
 
         # for -o default and -o dirnames
         if num_matches == 0:
             for a in self.else_actions:
                 for match in a.Matches(comp):
-                    yield match, True  # both are FileSystemAction
+                    # both are FileSystemAction
+                    yield match, comp_action_e.FileSystem
 
         # What if the cursor is not at the end of line?  See readline interface.
         # That's OK -- we just truncate the line at the cursor?
@@ -919,7 +927,7 @@ def WordEndsWithCompDummy(w):
         return False
 
 
-class RootCompleter(CompletionAction):
+class RootCompleter(object):
     """Dispatch to various completers.
 
     - Complete the OSH language (variables, etc.), or
@@ -1297,7 +1305,7 @@ class RootCompleter(CompletionAction):
         # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
 
         i = 0
-        for candidate, is_fs_action in user_spec.Matches(comp):
+        for candidate, action_kind in user_spec.AllMatches(comp):
             # SUBTLE: dynamic_opts is part of compopt_state, which ShellFuncAction
             # can mutate!  So we don't want to pull this out of the loop.
             #
@@ -1333,8 +1341,8 @@ class RootCompleter(CompletionAction):
 
             # compopt -o filenames is for user-defined actions.  Or any
             # FileSystemAction needs it.
-            if is_fs_action or opt_filenames:
-                if path_stat.isdir(candidate):  # TODO: test coverage
+            if action_kind == comp_action_e.FileSystem or opt_filenames:
+                if path_stat.isdir(candidate):
                     s = line_until_word + ShellQuoteB(candidate) + '/'
                     yield s
                     continue
@@ -1344,7 +1352,10 @@ class RootCompleter(CompletionAction):
                 opt_nospace = dynamic_opts['nospace']
 
             sp = '' if opt_nospace else ' '
-            yield line_until_word + ShellQuoteB(candidate) + sp
+            cand = (candidate if action_kind == comp_action_e.BashFunc else
+                    ShellQuoteB(candidate))
+
+            yield line_until_word + cand + sp
 
             # NOTE: Can't use %.2f in production build!
             i += 1
@@ -1393,6 +1404,7 @@ class ReadlineCallback(object):
             end = self.readline.get_endidx()
 
             comp = Api(line=buf, begin=begin, end=end)
+            self.debug_f.writeln('Api %r %d %d' % (buf, begin, end))
 
             if mylib.PYTHON:
                 self.comp_iter = self.root_comp.Matches(comp)

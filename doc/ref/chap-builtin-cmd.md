@@ -553,7 +553,20 @@ variables cur, prev, words (an array), and cword.  May also set 'split'.
 This is an OSH extension that makes it easier to run the bash-completion
 project.
 
-<h3>Shell Process</h3>
+### compexport
+
+Complete an entire shell command string.  For example,
+
+    compexport -c 'echo $H'
+
+will complete variables like `$HOME`.  And
+
+    compexport -c 'ha'
+
+will complete builtins like `hay`, as well as external commands.
+
+
+## Shell Process
 
 These builtins mutate the state of the shell process.
 

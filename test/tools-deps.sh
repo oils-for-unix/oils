@@ -66,7 +66,7 @@ DEPS
 }
 
 run-for-release() {
-  run-other-suite-for-release oshc-deps run-test-funcs
+  run-other-suite-for-release tools-deps run-test-funcs
 }
 
 soil-run() {

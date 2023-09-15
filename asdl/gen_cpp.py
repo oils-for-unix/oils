@@ -199,10 +199,10 @@ def _HNodeExpr(abbrev, typ, var_name):
             code_str = 'Alloc<hnode::External>(%s)' % var_name
 
         elif type_name == 'id':  # was meta.UserType
-            code_str = 'Alloc<hnode::Leaf>(StrFromC(Id_str(%s)), color_e::UserType)' % var_name
+            code_str = 'Alloc<hnode::Leaf>(Id_str(%s), color_e::UserType)' % var_name
 
         elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
-            code_str = 'Alloc<hnode::Leaf>(StrFromC(%s_str(%s)), color_e::TypeName)' % (
+            code_str = 'Alloc<hnode::Leaf>(%s_str(%s), color_e::TypeName)' % (
                 type_name, var_name)
 
         else:
@@ -273,7 +273,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('const char* %s_str(%s tag);' % (sum_name, enum_name),
+                self.Emit('Str* %s_str(%s tag, bool dot = true);' % (sum_name, enum_name),
                           depth)
                 self.Emit('', depth)
 
@@ -307,7 +307,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('const char* %s_str(int tag);' % sum_name, depth)
+                self.Emit('Str* %s_str(int tag, bool dot = true);' % sum_name, depth)
                 self.Emit('', depth)
 
         return int_to_type
@@ -600,21 +600,20 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 'L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name), depth)
 
-    def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
-        pretty_cls_name = class_name.replace('__', '.')  # used below
-
+    def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node, sum_name=None):
         #
         # PrettyTree
         #
 
-        # TODO: Create shared constants for the sum/variant names.  Both const
-        # char* and Str*.
+        if sum_name is not None:
+            n = '%s_str(this->tag())' % sum_name
+        else:
+            n = 'StrFromC("%s")' % class_name
 
         self.Emit('')
         self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
         self.Emit(
-            '  hnode::Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
-            pretty_cls_name)
+            '  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
         if all_fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
             self.Emit('')
@@ -628,6 +627,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Emit('')
         self.Emit('  return out_node;')
         self.Emit('}')
+        self.Emit('')
 
         #
         # _AbbreviatedTree
@@ -639,8 +639,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
         self.Emit(
-            '  hnode::Record* out_node = runtime::NewRecord(StrFromC("%s"));' %
-            pretty_cls_name)
+            '  hnode::Record* out_node = runtime::NewRecord("%s");' % n)
         if ast_node.fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
 
@@ -683,22 +682,33 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             enum_name = sum_name
 
         if strong:
-            self.Emit('const char* %s_str(%s tag) {' % (sum_name, enum_name),
+            self.Emit('Str* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
                       depth)
         else:
-            self.Emit('const char* %s_str(int tag) {' % sum_name, depth)
+            self.Emit('Str* %s_str(int tag, bool dot) {' % sum_name, depth)
 
+        buf_size = 32
+        v_max = max(len(variant.name) for variant in sum.types)
+        s_max = v_max + 1 + len(sum_name) + 1  # for . and NUL
+        if s_max > buf_size:
+            raise RuntimeError('Sum name %r + variant name is too long' % sum_name)
+
+        self.Emit('  char buf[%d];' % buf_size, depth)
+        self.Emit('  const char* v = nullptr;', depth)
         self.Emit('  switch (tag) {', depth)
         for variant in sum.types:
             self.Emit('case %s::%s:' % (enum_name, variant.name), depth + 1)
-            self.Emit('  return "%s.%s";' % (sum_name, variant.name), depth + 1)
-
-        # NOTE: This happened in real life, maybe due to casting.  TODO: assert(0)
-        # instead?
+            self.Emit('  v = "%s"; break;' % variant.name, depth + 1)
 
         self.Emit('default:', depth + 1)
         self.Emit('  assert(0);', depth + 1)
 
+        self.Emit('  }', depth)
+        self.Emit('  if (dot) {', depth)
+        self.Emit('    snprintf(buf, %d, "%s.%%s", v);' % (buf_size, sum_name), depth)
+        self.Emit('    return StrFromC(buf);', depth)
+        self.Emit('  } else {', depth)
+        self.Emit('    return StrFromC(v);', depth)
         self.Emit('  }', depth)
         self.Emit('}', depth)
 
@@ -732,7 +742,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 continue
             all_fields = variant.fields
             class_name = '%s__%s' % (sum_name, variant.name)
-            self._EmitPrettyPrintMethods(class_name, all_fields, variant)
+            self._EmitPrettyPrintMethods(class_name, all_fields, variant,
+                                         sum_name=sum_name)
 
         # Emit dispatch WITHOUT using 'virtual'
         for func_name in PRETTY_METHODS:

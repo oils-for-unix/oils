@@ -21,7 +21,7 @@ index-python() {
   popd
 }
 
-oil-ctags-out() {
+oils-ctags-out() {
 
   # Vim complains unless we have this
   echo $'!_TAG_FILE_SORTED\t0'
@@ -32,9 +32,38 @@ oil-ctags-out() {
   test/lint.sh find-src-files | ctags --filter | sort 
 }
 
-index-oil() {
-  time oil-ctags-out > tags
+index-oils() {
+  time oils-ctags-out > tags
+
+  # This file ends up at 992 KB
+  # It's 11832 symbols/lines
+  # That's way too many; doesn't work that well
+  # Comment/string/def lexers should do better
+
   ls -l tags
 }
+
+# TODO:
+#
+# The ctags file is easy to generate!
+#
+# - Select the list of files
+# - SYMBOL \t FILENAME \t VI-COMMAND ;" EXTENSION
+#   - you can just use a line number?
+#   - well then it's out of date if you insert something, so that's why they
+#     use /
+#
+# Intermediate format - OTAGS
+# - SYMBOL FILENAME LINE
+#   - and then GENERATE ctags from this - with /^ command.  I guess you escape \/
+#   - GENERATE HTML or JSON from this
+#     - you can have a big list of symbols to highlight
+#
+# - osh --tool ctags FILE*
+#   - warn about duplicates
+#
+# Idea for comment/string/def lexers, i.e. CSD:
+#
+# See devtools/README.md
 
 "$@"

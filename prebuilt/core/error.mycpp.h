@@ -22,15 +22,16 @@ namespace error {  // forward declare
   class ErrExit;
   class Expr;
   class UserError;
-  class InvalidType;
-  class InvalidType2;
-  class InvalidType3;
+  class AssertionErr;
+  class TypeErrVerbose;
+  class TypeErr;
 
 }  // forward declare namespace error
 
 namespace error {  // declare
 
 using syntax_asdl::loc;
+Str* _ValType(runtime_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
   _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);
@@ -204,49 +205,49 @@ class UserError : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(UserError)
 };
 
-class InvalidType : public Expr {
+class AssertionErr : public Expr {
  public:
-  InvalidType(Str* msg, syntax_asdl::loc_t* location);
+  AssertionErr(Str* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return Expr::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(AssertionErr));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(InvalidType)
+  DISALLOW_COPY_AND_ASSIGN(AssertionErr)
 };
 
-class InvalidType2 : public InvalidType {
+class TypeErrVerbose : public Expr {
  public:
-  InvalidType2(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
+  TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return InvalidType::field_mask();
+    return Expr::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType2));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(TypeErrVerbose));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(InvalidType2)
+  DISALLOW_COPY_AND_ASSIGN(TypeErrVerbose)
 };
 
-class InvalidType3 : public InvalidType {
+class TypeErr : public TypeErrVerbose {
  public:
-  InvalidType3(runtime_asdl::value_t* left_val, runtime_asdl::value_t* right_val, Str* msg, syntax_asdl::loc_t* location);
+  TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return InvalidType::field_mask();
+    return TypeErrVerbose::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(InvalidType3));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(TypeErr));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(InvalidType3)
+  DISALLOW_COPY_AND_ASSIGN(TypeErr)
 };
 
 [[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);

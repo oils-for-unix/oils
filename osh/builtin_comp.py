@@ -9,14 +9,17 @@ from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import value, value_e
 from core import completion
 from core import error
+from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, print_stderr
 from frontend import flag_spec
 from frontend import args
 from frontend import consts
+
+import yajl
 
 _ = log
 
@@ -30,6 +33,7 @@ if TYPE_CHECKING:
     from osh.cmd_eval import CommandEvaluator
     from osh.split import SplitContext
     from osh.word_eval import NormalWordEvaluator
+
 
 class _FixedWordsAction(completion.CompletionAction):
     def __init__(self, d):
@@ -122,7 +126,11 @@ class SpecBuilder(object):
 
     def Build(self, argv, attrs, base_opts):
         # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
-        """Given flags to complete/compgen, return a UserSpec."""
+        """Given flags to complete/compgen, return a UserSpec.
+
+        Args:
+          argv: only used for error message
+        """
         cmd_ev = self.cmd_ev
 
         # arg_types.compgen is a subset of arg_types.complete (the two users of this
@@ -136,10 +144,17 @@ class SpecBuilder(object):
             func_name = arg.F
             func = cmd_ev.procs.get(func_name)
             if func is None:
-                raise error.Usage('Function %r not found' % func_name,
+                raise error.Usage('function %r not found' % func_name,
                                   loc.Missing)
             actions.append(
                 completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
+
+        if arg.C is not None:
+            # this can be a shell FUNCTION too, not just an external command
+            # Honestly seems better than -F?  Does it also get COMP_CWORD?
+            command = arg.C
+            actions.append(completion.CommandAction(cmd_ev, command))
+            print_stderr('osh warning: complete -C not implemented')
 
         # NOTE: We need completion for -A action itself!!!  bash seems to have it.
         for name in attrs.actions:
@@ -356,14 +371,15 @@ class CompGen(vm._Builtin):
             # error printed above
             return 2
 
-        # NOTE: Matching bash in passing dummy values for COMP_WORDS and COMP_CWORD,
-        # and also showing ALL COMPREPLY reuslts, not just the ones that start with
-        # the word to complete.
+        # NOTE: Matching bash in passing dummy values for COMP_WORDS and
+        # COMP_CWORD, and also showing ALL COMPREPLY results, not just the ones
+        # that start
+        # with the word to complete.
         matched = False
-        comp = completion.Api('', 0, 0)
+        comp = completion.Api('', 0, 0)  # empty string
         comp.Update('compgen', to_complete, '', -1, None)
         try:
-            for m, _ in user_spec.Matches(comp):
+            for m, _ in user_spec.AllMatches(comp):
                 matched = True
                 print(m)
         except error.FatalRuntime:
@@ -472,9 +488,8 @@ class CompAdjust(vm._Builtin):
         prev = '' if n < 2 else adjusted_argv[-2]
 
         if arg.s:
-            if cur.startswith(
-                    '--') and '=' in cur:  # Split into flag name and value
-                # mycpp: rewrite of multiple-assignment
+            if cur.startswith('--') and '=' in cur:
+                # Split into flag name and value
                 prev, cur = mylib.split_once(cur, '=')
                 split = 'true'
             else:
@@ -490,5 +505,57 @@ class CompAdjust(vm._Builtin):
         if 'cword' in var_names:
             # Same weird invariant after adjustment
             state.BuiltinSetString(self.mem, 'cword', str(n - 1))
+
+        return 0
+
+
+class CompExport(vm._Builtin):
+
+    def __init__(self, root_comp):
+        # type: (completion.RootCompleter) -> None
+        self.root_comp = root_comp
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
+        arg_r.Next()
+
+        attrs = flag_spec.ParseMore('compexport', arg_r)
+        arg = arg_types.compexport(attrs.attrs)
+
+        if arg.c is None:
+            e_usage('expected a -c string, like sh -c', loc.Missing)
+
+        begin = 0 if arg.begin == -1 else arg.begin
+        end = len(arg.c) if arg.end == -1 else arg.end
+
+        #log('%r begin %d end %d', arg.c, begin, end)
+
+        # Copied from completion.ReadlineCallback
+        comp = completion.Api(line=arg.c, begin=begin, end=end)
+        it = self.root_comp.Matches(comp)
+
+        #print(comp)
+        #print(self.root_comp)
+
+        comp_matches = list(it)
+        comp_matches.reverse()
+
+        if arg.format == 'jlines':
+            for m in comp_matches:
+                # TODO: change to J8 notation
+                # - Since there are spaces, maybe_encode() always adds quotes.
+                # - Could use a jlines=True J8 option to specify that newlines and
+                #   non-UTF-8 unprintable bytes cause quotes.  But not spaces.
+                #
+                # Also, there's always a trailing space!  Gah.
+
+                if mylib.PYTHON:
+                    print(yajl.dumps(m, indent=-1))
+
+        elif arg.format == 'tsv8':
+            log('TSV8 format not implemented')
+        else:
+            raise AssertionError()
 
         return 0

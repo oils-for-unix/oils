@@ -384,41 +384,41 @@ test-proc-ref-param() {
   '
 }
 
-test-int-construct() {
-  _expr-error-case '= Int({})'
-  _expr-error-case '= Int([])'
-  _expr-error-case '= Int("foo")'
-  _expr-error-case '= Int(len)'
-  _expr-error-case '= Int("foo"->startswith)'
+test-int-convert() {
+  _expr-error-case '= int({})'
+  _expr-error-case '= int([])'
+  _expr-error-case '= int("foo")'
+  _expr-error-case '= int(len)'
+  _expr-error-case '= int("foo"->startswith)'
 }
 
-test-float-construct() {
-  _expr-error-case '= Float({})'
-  _expr-error-case '= Float([])'
-  _expr-error-case '= Float("foo")'
-  _expr-error-case '= Float(len)'
-  _expr-error-case '= Float("foo"->startswith)'
+test-float-convert() {
+  _expr-error-case '= float({})'
+  _expr-error-case '= float([])'
+  _expr-error-case '= float("foo")'
+  _expr-error-case '= float(len)'
+  _expr-error-case '= float("foo"->startswith)'
 }
 
-test-str-construct() {
-  _expr-error-case '= Str({})'
-  _expr-error-case '= Str([])'
-  _expr-error-case '= Str(len)'
-  _expr-error-case '= Str("foo"->startswith)'
+test-str-convert() {
+  _expr-error-case '= str({})'
+  _expr-error-case '= str([])'
+  _expr-error-case '= str(len)'
+  _expr-error-case '= str("foo"->startswith)'
 }
 
-test-list-construct() {
-  _expr-error-case '= List(1)'
-  _expr-error-case '= List(len)'
-  _expr-error-case '= List("foo"->startswith)'
+test-list-convert() {
+  _expr-error-case '= list(1)'
+  _expr-error-case '= list(len)'
+  _expr-error-case '= list("foo"->startswith)'
 }
 
-test-dict-construct() {
-  _expr-error-case '= Dict(1)'
-  _expr-error-case '= Dict("foo")'
-  _expr-error-case '= Dict(len)'
-  _expr-error-case '= Dict("foo"->startswith)'
-  _expr-error-case '= Dict([["too", "many", "parts"]])'
+test-dict-convert() {
+  _expr-error-case '= dict(1)'
+  _expr-error-case '= dict("foo")'
+  _expr-error-case '= dict(len)'
+  _expr-error-case '= dict("foo"->startswith)'
+  _expr-error-case '= dict([["too", "many", "parts"]])'
 }
 
 test-bound-func() {

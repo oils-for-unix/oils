@@ -106,19 +106,21 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     # Add -o filenames?  Or should that be automatic?
     complete_builtin.Run(MakeBuiltinArgv(['-D', '-A', 'file']))
 
-    # TODO: Move this into demo/slow-completion.sh
-    if 1:
-        # Something for fun, to show off.  Also: test that you don't repeatedly hit
-        # the file system / network / coprocess.
-        A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'], 0.0)
-        l = []  # type: List[str]
-        for i in xrange(0, 5):
-            l.append('m%d' % i)
 
-        A2 = completion.TestAction(l, 0.1)
-        C1 = completion.UserSpec([A1, A2], [], [],
-                                 completion.DefaultPredicate(), '', '')
-        comp_lookup.RegisterName('slowc', {}, C1)
+def _CompletionDemo(comp_lookup):
+    # type: (completion.Lookup) -> None
+
+    # Something for fun, to show off.  Also: test that you don't repeatedly hit
+    # the file system / network / coprocess.
+    A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'], 0.0)
+    l = []  # type: List[str]
+    for i in xrange(0, 5):
+        l.append('m%d' % i)
+
+    A2 = completion.TestAction(l, 0.1)
+    C1 = completion.UserSpec([A1, A2], [], [],
+                             completion.DefaultPredicate(), '', '')
+    comp_lookup.RegisterName('slowc', {}, C1)
 
 
 def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
@@ -678,12 +680,15 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
     func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     func_init.SetGlobalFunc(mem, 'type', func_misc.Type())
-    func_init.SetGlobalFunc(mem, 'Bool', func_misc.Bool())
-    func_init.SetGlobalFunc(mem, 'Int', func_misc.Int())
-    func_init.SetGlobalFunc(mem, 'Float', func_misc.Float())
-    func_init.SetGlobalFunc(mem, 'Str', func_misc.Str_())
-    func_init.SetGlobalFunc(mem, 'List', func_misc.List_())
-    func_init.SetGlobalFunc(mem, 'Dict', func_misc.Dict_())
+
+    # type conversions
+    func_init.SetGlobalFunc(mem, 'bool', func_misc.Bool())
+    func_init.SetGlobalFunc(mem, 'int', func_misc.Int())
+    func_init.SetGlobalFunc(mem, 'float', func_misc.Float())
+    func_init.SetGlobalFunc(mem, 'str', func_misc.Str_())
+    func_init.SetGlobalFunc(mem, 'list', func_misc.List_())
+    func_init.SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+
     func_init.SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     func_init.SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     func_init.SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
@@ -734,6 +739,19 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
     builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
     builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
+
+    # NOTE: We're using a different WordEvaluator here.
+    ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                           tilde_ev, splitter, errfmt)
+
+    ev.arith_ev = arith_ev
+    ev.expr_ev = expr_ev
+    ev.prompt_ev = prompt_ev
+    ev.CheckCircularDeps()
+
+    root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
+                                         comp_ui_state, comp_ctx, debug_f)
+    builtins[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
 
     builtins[builtin_i.json] = builtin_json.Json(mem, expr_ev, errfmt, False)
     builtins[builtin_i.j8] = builtin_json.Json(mem, expr_ev, errfmt, True)
@@ -824,14 +842,13 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         if flag.rcdir is not None:
             print_stderr('%s warning: --rcdir ignored with --norc' % lang)
 
+    # Initialize even in non-interactive shell, for 'compexport'
+    _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+
     if flag.headless:
         state.InitInteractive(mem)
         mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
-
-        # This is like an interactive shell, so we copy some initialization from
-        # below.  Note: this may need to be tweaked.
-        _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
         # NOTE: rc files loaded AFTER _InitDefaultCompletions.
         for rc_path in rc_paths:
@@ -868,19 +885,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
         mutable_opts.set_redefine_module()
 
         if readline:
-            # NOTE: We're using a different WordEvaluator here.
-            ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                                   tilde_ev, splitter, errfmt)
-
-            ev.arith_ev = arith_ev
-            ev.expr_ev = expr_ev
-            ev.prompt_ev = prompt_ev
-            ev.CheckCircularDeps()
-
-            root_comp = completion.RootCompleter(ev, mem, comp_lookup,
-                                                 compopt_state, comp_ui_state,
-                                                 comp_ctx, debug_f)
-
             term_width = 0
             if flag.completion_display == 'nice':
                 try:
@@ -900,6 +904,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                  display, debug_f)
 
             _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
+            if flag.completion_demo:
+                _CompletionDemo(comp_lookup)
 
         else:  # Without readline module
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,

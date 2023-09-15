@@ -18,6 +18,7 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
+#include "_gen/cpp/build_stamp.h"  // gCommitHash
 #include "_gen/frontend/consts.h"  // gVersion
 #include "cpp/embedded_file.h"
 
@@ -347,9 +348,11 @@ Str* GetVersion(_ResourceLoader* loader) {
 }
 
 void PrintVersionDetails(_ResourceLoader* loader) {
+  // Invoked by core/util.py VersionFlag()
+  printf("git commit = %s\n", gCommitHash);
+
   // TODO: I would like the CPU, OS, compiler
   // How do we get those?  Look at CPython
-  ;
 }
 
 Str* BackslashEscape(Str* s, Str* meta_chars) {

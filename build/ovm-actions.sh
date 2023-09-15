@@ -3,7 +3,7 @@
 # Build actions used in the Makefile.
 #
 # Usage:
-#   ./actions.sh <function name>
+#   build/ovm-actions.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -14,13 +14,6 @@ REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
-
-write-release-date() {
-  mkdir -p _build  # Makefile makes this, but scripts/release.sh needs it too
-
-  # Write a readable, sortable date that is independent of time zone.
-  date --utc --rfc-3339 seconds > _build/release-date.txt
-}
 
 main-name() {
   local python_main=${1:-hello}

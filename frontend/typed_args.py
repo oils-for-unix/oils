@@ -7,10 +7,13 @@ from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, BlockArg,
                                        command_t, expr_e, expr_t, CommandSub)
 from core import error
 from core.error import e_usage
+from frontend import lexer
 from frontend import location
 from mycpp.mylib import dict_erase, tagswitch
 
-from typing import Optional, Dict, List, cast
+from typing import Optional, Dict, List, TYPE_CHECKING, cast
+if TYPE_CHECKING:
+    from ysh.expr_eval import ExprEvaluator
 
 
 class Reader(object):
@@ -356,6 +359,34 @@ class Reader(object):
             raise error.TypeErrVerbose(
                 'Got unexpected named args: %s' % bad_args,
                 self.args_node.named_delim)
+
+
+def ReaderFromArgv(typed_args, expr_ev):
+    # type: (ArgList, ExprEvaluator) -> Reader
+    """
+    Build a typed_args.Reader given a builtin command's cmd_val.typed_args.
+
+    As part of constructing the Reader, we must evaluate all arguments. This
+    function may fail if there are any runtime errors whilst evaluating those
+    arguments.
+    """
+    if typed_args is None:
+        raise error.TypeErrVerbose(
+            'Expected at least 1 typed argument, but got 0', loc.Missing)
+
+    pos_args = []  # type: List[value_t]
+    named_args = {}  # type: Dict[str, value_t]
+
+    for i, pos_arg in enumerate(typed_args.pos_args):
+        result = expr_ev.EvalExpr(pos_arg, loc.Missing)
+        pos_args.append(result)
+
+    for named_arg in typed_args.named_args:
+        result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+        name = lexer.TokenVal(named_arg.name)
+        named_args[name] = result
+
+    return Reader(pos_args, named_args)
 
 
 def DoesNotAccept(arg_list):

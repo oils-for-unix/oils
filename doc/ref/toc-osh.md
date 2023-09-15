@@ -110,7 +110,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
   [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs
-  [Completion]    complete   compgen   compopt   compadjust
+  [Completion]    complete   compgen   compopt   compadjust   compexport
   [Shell Process] exec   X logout 
                   umask   X ulimit   times
   [Child Process] jobs   wait   ampersand &

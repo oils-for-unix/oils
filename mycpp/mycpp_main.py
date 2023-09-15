@@ -83,7 +83,7 @@ def get_mypy_config(
 
 
 def ModulesToCompile(result, mod_names):
-    # HACK TO PUT asdl/runtime FIRST.  It has runtime::SPID.
+    # HACK TO PUT asdl/runtime FIRST.
     #
     # Another fix is to hoist those to the declaration phase?  Not sure if that
     # makes sense.
@@ -157,6 +157,7 @@ def main(argv):
     if 0:
         for source in sources:
             log('source %s', source)
+        log('')
     #log('options %s', options)
 
     #result = emitmodule.parse_and_typecheck(sources, options)
@@ -193,8 +194,10 @@ def main(argv):
     #return
 
     # no-op
-    for name in result.graph:
-        _ = result.graph[name]
+    if 0:
+        for name in result.graph:
+            log('result %s %s', name, result.graph[name])
+        log('')
 
     # GLOBAL Constant pass over all modules.  We want to collect duplicate
     # strings together.  And have globally unique IDs str0, str1, ... strN.
@@ -227,6 +230,7 @@ def main(argv):
     if 0:
         for name, module in to_compile:
             log('to_compile %s', name)
+        log('')
 
             # can't pickle but now I see deserialize() nodes and stuff
             #s = pickle.dumps(module)

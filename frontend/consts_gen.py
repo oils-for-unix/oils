@@ -229,6 +229,8 @@ def main(argv):
 #ifndef ID_KIND_ASDL_H
 #define ID_KIND_ASDL_H
 
+class Str;
+
 namespace id_kind_asdl {
 
 #define ASDL_NAMES struct
@@ -247,6 +249,7 @@ namespace id_kind_asdl {
             f.write("""\
 #include <assert.h>
 #include "_gen/frontend/id_kind.asdl.h"
+#include "mycpp/gc_alloc.h"  // StrFromC()
 
 namespace id_kind_asdl {
 

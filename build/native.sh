@@ -58,16 +58,6 @@ measure-build-times() {
 # Ninja Wrappers
 #
 
-soil-run() {
-  ### Invoked by soil/worker.sh
-
-  ./NINJA-config.sh
-
-  ninja _bin/cxx-dbg/oils-for-unix \
-        _bin/cxx-asan/oils-for-unix \
-        _bin/cxx-opt/oils-for-unix.stripped
-}
-
 oil-slice-demo() {
   export PYTHONPATH='.:vendor/'
 
@@ -86,7 +76,7 @@ oil-slice-demo() {
   echo '-----'
 
   # Now test some more exotic stuff
-  $osh -c '(( a = 1 + 2 * 3 ))'
+  $osh -c '(( a = 1 + 2 * 3 )); echo $a'
 
   $osh -c \
     'echo "hello"x $$ ${$} $((1 + 2 * 3)) {foo,bar}@example.com'
@@ -94,9 +84,18 @@ oil-slice-demo() {
   $osh -c 'for x in 1 2 3; do echo $x; done'
 }
 
-oils-cpp-smoke() {
-  local bin=_bin/cxx-dbg/osh
+soil-run() {
+  local bin=_bin/cxx-asan/osh
+
   ninja $bin
+  echo
+
+  echo "Built $bin"
+  echo
+
+  $bin --version
+  echo
+
   oil-slice-demo $bin
 }
 

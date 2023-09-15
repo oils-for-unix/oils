@@ -42,64 +42,67 @@ For example:
 
 ## Conversions
 
-### Bool()
+### bool()
 
-Returns the truth value of its argument. Similar to `bool()` in python, it returns `false` for `false`, `0`, `0.0`,
-`''`, `{}`, `[]`, and `null`.  Returns `true` for all other values.
+Returns the truth value of its argument. Similar to `bool()` in python, it
+returns `false` for:
 
-### Int()
+- `false`, `0`, `0.0`, `''`, `{}`, `[]`, and `null`.
+
+Returns `true` for all other values.
+
+### int()
 
 Given a float, returns the largest integer that is less than its argument (i.e. `floor()`).
 
-    $ = Int(1.99)
+    $ = int(1.99)
     (Int)    1
 
-Given a string, `Int()` will attempt to convert the string to a base-10 integer. The base can be overriden by calling
-with a second argument.
+Given a string, `Int()` will attempt to convert the string to a base-10
+integer. The base can be overriden by calling with a second argument.
 
-
-    $ = Int('10')
+    $ = int('10')
     (Int)   10
 
-    $ = Int('10', 2)
+    $ = int('10', 2)
     (Int)   2
 
     ysh$ = Int('foo')
     # fails with an expression error
 
-### Float()
+### float()
 
 Given an integer, returns the corressponding flaoting point representation.
 
-    $ = Float(1)
+    $ = float(1)
     (Float)   1.0
 
 Given a string, `Float()` will attempt to convert the string to float.
 
-    $ = Float('1.23')
+    $ = float('1.23')
     (Float)   1.23
 
-    ysh$ = Float('bar')
+    ysh$ = float('bar')
     # fails with an expression error
 
-### Str()
+### str()
 
-Returns its argument if it's a string.
+Converts a `Float` or `Int` to a string.
 
-### List()
+### list()
 
 Given a list, returns a shallow copy of the original.
 
-Given an iterable value (e.g. a range or dictionary), returns a list containing one element for each item in the
-original collection.
+Given an iterable value (e.g. a range or dictionary), returns a list containing
+one element for each item in the original collection.
 
-    $ = List({'a': 1, 'b': 2})
+    $ = list({'a': 1, 'b': 2})
     (List)   ['a', 'b']
 
-    $ = List(1:5)
+    $ = list(1:5)
     (List)   [1, 2, 3, 4, 5]
 
-### Dict()
+### dict()
 
 Given a dictionary, returns a shallow copy of the original.
 
