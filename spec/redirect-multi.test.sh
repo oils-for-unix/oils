@@ -1,5 +1,4 @@
 ## compare_shells: bash mksh zsh ash
-## oils_failures_allowed: 2
 
 #### File redirects with glob args (bash and zsh only)
 
