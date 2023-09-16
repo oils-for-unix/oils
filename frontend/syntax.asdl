@@ -501,6 +501,7 @@ module syntax
 
   | BlockArg %BlockArg
 
+  | Literal(expr inner)
   | Lambda(List[NameType] params, expr body)
 
   | Unary(Token op, expr child)

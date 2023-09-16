@@ -102,7 +102,9 @@ atom: (
 
   | dq_string | sq_string
     # Expr_Symbol could be %mykey
-    
+
+  | literal_expr
+
   # $foo is disallowed, but $? is allowed.  Should be "$foo" to indicate a
   # string, or ${foo:-}
   | simple_var_sub
@@ -112,6 +114,8 @@ atom: (
     # Anonymous function.  Is this only in Tea mode?
   | 'func' tea_func
 )
+
+literal_expr: '^[' expr ']'
 
 # Tea can run a limited form of procs.  The first word must be a name, and NO
 # BARE WORDS.
