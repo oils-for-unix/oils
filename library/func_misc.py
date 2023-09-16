@@ -526,6 +526,6 @@ class EvalExpr(vm._Callable):
         lazy = args.PosExpr()
         args.Done()
 
-        result = self.expr_ev.EvalExpr(lazy, loc.Missing)
+        result = self.expr_ev.EvalExpr(lazy, args.LeftParenToken())
 
         return result
