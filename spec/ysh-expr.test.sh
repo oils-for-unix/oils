@@ -741,7 +741,7 @@ _ evalExpr(e)
 ## STDOUT:
 ## END
 
-#### expression literals, no scope capture
+#### expression literals, lazy evaluation
 var x = 0
 var e = ^[x]
 
