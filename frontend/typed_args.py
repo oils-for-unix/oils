@@ -198,7 +198,7 @@ class Reader(object):
             arg = cast(value.Expr, UP_arg)
             return arg.e
 
-        raise error.TypeErr(arg, 'Arg %d should be a lazy Expr' % self.pos_consumed,
+        raise error.TypeErr(arg, 'Arg %d should be a Expr' % self.pos_consumed,
                             self.BlamePos())
 
     def PosCommand(self):
