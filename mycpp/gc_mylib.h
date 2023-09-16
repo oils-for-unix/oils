@@ -41,14 +41,33 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
-  int pos = haystack->position_of_key(needle);
-  if (pos == -1) {
+  DCHECK(haystack->obj_header().heap_tag != HeapTag::Global);
+  int pos = haystack->find_key_in_index(needle);
+  if (pos == -1 || haystack->entry_->items_[pos] < 0) {
+    // Nothing to do.
     return;
   }
-  haystack->entry_->items_[pos] = kDeletedEntry;
+
+  int offset = haystack->entry_->items_[pos];
+  int last_offset = haystack->len_ - 1;
+  DCHECK(offset <= last_offset);
+
+  // To keep things compact, swap the target entry with the most recently
+  // inserted one before removing it.
+  if (offset != last_offset) {
+    K last_key = haystack->keys_->items_[last_offset];
+    V last_val = haystack->values_->items_[last_offset];
+    int last_pos = haystack->find_key_in_index(last_key);
+    DCHECK(last_pos != -1);
+    haystack->keys_->items_[offset] = last_key;
+    haystack->values_->items_[offset] = last_val;
+    haystack->entry_->items_[last_pos] = offset;
+  }
+
   // Zero out for GC.  These could be nullptr or 0
-  haystack->keys_->items_[pos] = 0;
-  haystack->values_->items_[pos] = 0;
+  haystack->keys_->items_[last_offset] = 0;
+  haystack->values_->items_[last_offset] = 0;
+  haystack->entry_->items_[pos] = kDeletedEntry;
   haystack->len_--;
 }
 

@@ -479,6 +479,61 @@ TEST test_tuple_key() {
   PASS();
 }
 
+TEST test_dict_erase() {
+  auto d = Alloc<Dict<int, int>>();
+  d->set(25315, 0xdead);
+  d->set(25316, 0xbeef);
+  d->set(25317, 0xc0ffee);
+
+  ASSERT_EQ(0xdead, d->index_(25315));
+  ASSERT_EQ(0xbeef, d->index_(25316));
+  ASSERT_EQ(0xc0ffee, d->index_(25317));
+
+  mylib::dict_erase(d, 25315);
+  ASSERT_FALSE(dict_contains(d, 25315));
+  ASSERT_EQ(0xbeef, d->index_(25316));
+  ASSERT_EQ(0xc0ffee, d->index_(25317));
+
+  mylib::dict_erase(d, 25316);
+  ASSERT_FALSE(dict_contains(d, 25316));
+  ASSERT_EQ(0xc0ffee, d->index_(25317));
+
+  // This is a trace of processes coming and going in a real shell. It tickles a
+  // (now fixed) bug in dict_erase() that would prematurely open a slot in the
+  // index before compacting the last inserted entry. With the right sequence of
+  // collisions (hence this trace) this behavior can lead to an index slot that
+  // points to an invalid entry, causing future calls to `find_key_in_index()`
+  // to crash (e.g.  by dereferencing a bad pointer).
+  d = Alloc<Dict<int, int>>();
+  d->set(326224, 0);
+  d->set(326225, 1);
+  d->set(326226, 2);
+  d->set(326227, 3);
+  d->set(326228, 4);
+  mylib::dict_erase(d, 326227);
+  d->set(326229, 4);
+  d->set(326230, 5);
+  mylib::dict_erase(d, 326229);
+  d->set(326231, 5);
+  d->set(326232, 6);
+  mylib::dict_erase(d, 326231);
+  d->set(326233, 6);
+  d->set(326234, 7);
+  mylib::dict_erase(d, 326233);
+  d->set(326235, 7);
+  d->set(326236, 8);
+  mylib::dict_erase(d, 326235);
+  d->set(326237, 8);
+  d->set(326238, 9);
+  mylib::dict_erase(d, 326237);
+  d->set(326239, 9);
+  d->set(326240, 10);
+  mylib::dict_erase(d, 326239);
+  d->set(326241, 10);
+
+  PASS();
+}
+
 GLOBAL_DICT(gDict, int, int, 2, {42 COMMA 43}, {1 COMMA 2});
 
 GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
@@ -511,6 +566,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_tuple_construct);
   RUN_TEST(test_update_dict);
   RUN_TEST(test_tuple_key);
+  RUN_TEST(test_dict_erase);
   RUN_TEST(test_global_dict);
 
   RUN_TEST(dict_methods_test);

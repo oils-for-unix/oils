@@ -144,7 +144,7 @@ inline Str* NewStr(int len) {
 
   s->data_[len] = '\0';  // NUL terminate
   s->len_ = len;
-  s->hash_value_ = -1;  // this could be a valid hash value
+  s->hash_value_ = 0;
 
 #if MARK_SWEEP
   header->obj_id = obj_id;

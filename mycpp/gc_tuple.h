@@ -1,6 +1,8 @@
 #ifndef MYCPP_GC_TUPLE_H
 #define MYCPP_GC_TUPLE_H
 
+#include <type_traits>
+
 template <class A, class B>
 class Tuple2 {
   typedef Tuple2<A, B> this_type;

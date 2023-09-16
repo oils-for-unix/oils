@@ -3,6 +3,7 @@
 
 #include "mycpp/common.h"  // DISALLOW_COPY_AND_ASSIGN
 #include "mycpp/gc_obj.h"  // GC_OBJ
+#include "mycpp/hash.h"    // HashFunc
 
 template <typename T>
 class List;
@@ -73,6 +74,10 @@ class Str {
   static constexpr ObjHeader obj_header() {
     return ObjHeader::Str();
   }
+
+  int hash(HashFunc h);
+
+  static constexpr int kHashFlagMask = 0x08000000;
 
   int len_;
   int hash_value_;
