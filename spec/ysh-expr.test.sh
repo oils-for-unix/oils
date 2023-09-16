@@ -724,4 +724,29 @@ echo $x
 ## END
 
 
+#### expression literals
+var e = ^[1 + 2]
 
+echo type=$[type(e)]
+echo eval=$[evalExpr(e)]
+## STDOUT:
+type=Expr
+eval=3
+## END
+
+#### expression literals, evaluation failure
+var e = ^[1 / 0]
+_ evalExpr(e)
+## status: 3
+## STDOUT:
+## END
+
+#### expression literals, no scope capture
+var x = 0
+var e = ^[x]
+
+setvar x = 1
+echo result=$[evalExpr(e)]
+## STDOUT:
+result=1
+## END
