@@ -513,3 +513,19 @@ class Assert(vm._Callable):
             raise error.AssertionErr(msg, args.LeftParenToken())
 
         return value.Null
+
+
+class EvalExpr(vm._Callable):
+
+    def __init__(self, expr_ev):
+        # type: (expr_eval.ExprEvaluator) -> None
+        self.expr_ev = expr_ev
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+        lazy = args.PosExpr()
+        args.Done()
+
+        result = self.expr_ev.EvalExpr(lazy, loc.Missing)
+
+        return result

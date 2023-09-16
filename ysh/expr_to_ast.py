@@ -640,6 +640,10 @@ class Transformer(object):
 
                 return node
 
+            elif typ == grammar_nt.literal_expr:
+                inner = self.Expr(pnode.GetChild(1))
+                return expr.Literal(inner)
+
             elif typ == grammar_nt.oil_expr_sub:
                 return self.Expr(pnode.GetChild(0))
 

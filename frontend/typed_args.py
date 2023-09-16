@@ -190,6 +190,17 @@ class Reader(object):
         raise error.TypeErr(arg, 'Arg %d should be a Dict' % self.pos_consumed,
                             self.BlamePos())
 
+    def PosExpr(self):
+        # type: () -> expr_t
+        arg = self._GetNextPos()
+        UP_arg = arg
+        if arg.tag() == value_e.Expr:
+            arg = cast(value.Expr, UP_arg)
+            return arg.e
+
+        raise error.TypeErr(arg, 'Arg %d should be a lazy Expr' % self.pos_consumed,
+                            self.BlamePos())
+
     def PosCommand(self):
         # type: () -> command_t
         arg = self._GetNextPos()

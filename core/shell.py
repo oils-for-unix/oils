@@ -680,6 +680,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
     func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     func_init.SetGlobalFunc(mem, 'type', func_misc.Type())
+    func_init.SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
     # type conversions
     func_init.SetGlobalFunc(mem, 'bool', func_misc.Bool())

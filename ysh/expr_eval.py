@@ -1075,6 +1075,10 @@ class ExprEvaluator(object):
                 e_die_status(
                     2, 'Generator expression reserved but not implemented')
 
+            elif case(expr_e.Literal):  # ^[1 + 2]
+                node = cast(expr.Literal, UP_node)
+                return value.Expr(node.inner)
+
             elif case(expr_e.Lambda):  # |x| x+1 syntax is reserved
                 # TODO: Location information for |, or func
                 # Note: anonymous functions also evaluate to a Lambda, but they shouldn't

@@ -766,7 +766,7 @@ YSH_LEFT_UNQUOTED = [
     C("$'''", Id.Left_DollarTSingleQuote),
     C('@(', Id.Left_AtParen),  # Split Command Sub
     C('^(', Id.Left_CaretParen),  # Block literals in expression mode
-    C('^[', Id.Left_CaretBracket),  # Expr literals, unimplemented
+    C('^[', Id.Left_CaretBracket),  # Expr literals
     C('^{', Id.Left_CaretBrace),  # Unused
     C(':|', Id.Left_ColonPipe),  # shell-like word arrays.
     C('%(', Id.Left_PercentParen),  # old syntax for shell-like word arrays.
