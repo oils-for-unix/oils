@@ -14,6 +14,7 @@ const char* RED = "\x1b[31m";
 const char* GREEN = "\x1b[32m";
 const char* YELLOW = "\x1b[33m";
 const char* BLUE = "\x1b[34m";
+const char* PURPLE = "\x1b[35m";
 
 void Log(const char* fmt, ...) {
   va_list args;
@@ -29,19 +30,25 @@ void Log(const char* fmt, ...) {
   re2c:define:YYCTYPE = char;
   re2c:define:YYCURSOR = p;
 
+  // Shared definitions
+
   nul = [\x00];
   not_nul = [^\x00];
+
+  identifier = [_a-zA-Z][_a-zA-Z0-9]*;
 */
 
-typedef struct Token {
+struct Token {
   int kind;
   int line_num;
   int end_col;
-} Token;
+};
 
-typedef enum py_tok_e {
+enum py_tok_e {
   IdComm,
-  IdWS,
+  IdWS,  // TODO: indent, dedent
+
+  IdName,  // foo
 
   IdDQ,  // ""
   IdSQ,  // ''
@@ -56,22 +63,22 @@ typedef enum py_tok_e {
 
   IdOther,  // any other text
   IdUnknown,
-} py_tok_e;
+};
 
 // TODO: consider C++, or use XMACROS
 
-typedef enum py_line_mode_e {
+enum py_line_mode_e {
   PyOuter,  // default
   MultiSQ,  // inside '''
   MultiDQ,  // inside """
-} py_line_mode_e;
+};
 
-typedef enum cpp_line_mode_e {
+enum cpp_line_mode_e {
   CppOuter,  // default
   Comm,      // inside /* */ comment
-} cpp_line_mode_e;
+};
 
-typedef enum sh_line_mode_e {
+enum sh_line_mode_e {
   Outer2,    // default
   SQ,        // inside multi-line ''
   DollarSQ,  // inside multi-line $''
@@ -84,13 +91,13 @@ typedef enum sh_line_mode_e {
   YshSQ,  // inside '''
   YshDQ,  // inside """
   YshJ,   // inside j"""
-} sh_line_mode_e;
+};
 
-typedef struct Lexer {
+struct Lexer {
   const char* line;
   const char* p_current;     // points into line
   py_line_mode_e line_mode;  // current mode, starts with PyOuter
-} Lexer;
+};
 
 // Returns whether EOL was hit
 bool MatchPy(Lexer* lexer, struct Token* tok) {
@@ -113,6 +120,8 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
       /*!re2c
 
         nul       { return true; }
+
+        identifier { tok->kind = IdName; break; }
 
         sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
         sq_string = [r]? ['] sq_middle ['];
@@ -146,12 +155,9 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
         whitespace = [ \t]*;
         whitespace { tok->kind = IdWS; break; }
 
-        // Hack: have to put r so we don't skip past raw strings, hm
-        other = [^\x00"'#r]+;
+        // Not the start of quoted, comment, identifier
+        other = [^\x00"'#_a-zA-Z]+;
         other     { tok->kind = IdOther; break; }
-
-        // Make sure it's not unknown.  TODO: Is there a better way to do this?
-        [r] { tok->kind = IdOther; break; }
 
         // This happens on unclosed quote like "foo
         *         { tok->kind = IdUnknown; break; }
@@ -213,13 +219,13 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
 
 // We don't care about internal NUL, so wrap this in an interface that doesn't
 
-typedef struct Reader {
+struct Reader {
   FILE* f;
 
   char* line;             // valid for one NextLine() call, NULL on EOF or error
   size_t allocated_size;  // unused
   int err_num;            // set on error
-} Reader;
+};
 
 void Init(Reader* reader, FILE* f) {
   reader->f = f;
@@ -311,6 +317,17 @@ int main(int argc, char** argv) {
             fwrite(p_start, 1, num_bytes, stdout);
             fputs(RESET, stdout);
             break;
+
+          case IdName:
+            fwrite(p_start, 1, num_bytes, stdout);
+            break;
+
+          case IdOther:
+            fputs(PURPLE, stdout);
+            fwrite(p_start, 1, num_bytes, stdout);
+            fputs(RESET, stdout);
+            break;
+
           case IdDQ:
           case IdSQ:
             fputs(RED, stdout);

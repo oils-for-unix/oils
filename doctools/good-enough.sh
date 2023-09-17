@@ -58,20 +58,20 @@ readonly -a STRS=(
 )
 
 build() {
-  local c=_gen/doctools/good-enough.c
+  local cc=_gen/doctools/good-enough.cc
   local bin=_bin/good-enough
 
   mkdir -p _gen/doctools
-  my-re2c doctools/good-enough.re2c.c $c
+  my-re2c doctools/good-enough.re2c.cc $cc
 
   local asan='-fsanitize=address'
   #local asan=''
 
   # gnu99 instead of c99 for fdopen() and getline()
-  cc -std=gnu99 -O2 -Wall $asan \
-    -o $bin $c
+  cc -std=c++11 -O2 -Wall $asan \
+    -o $bin $cc
 
-  log "  CC $c"
+  log "  CXX $cc"
 
   ls -l $bin 
 }
