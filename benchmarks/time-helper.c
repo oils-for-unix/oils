@@ -86,8 +86,8 @@ int time_helper(Spec *spec, FILE *f) {
   struct rusage usage;
   getrusage(RUSAGE_CHILDREN, &usage);
 
-  struct timeval *user = &usage.ru_utime;
-  struct timeval *sys = &usage.ru_stime;
+  // struct timeval *user = &usage.ru_utime;
+  // struct timeval *sys = &usage.ru_stime;
 
   // this is like the definition of $? that shell use
   int exit_status = -1;

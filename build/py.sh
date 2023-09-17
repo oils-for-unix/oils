@@ -456,7 +456,7 @@ time-helper() {
 
   mkdir -p $(dirname $out)
 
-  cc -std=c99 -o $out $in
+  cc -std=c99 -Wall -o $out $in
   log "  CC $in"
 }
 

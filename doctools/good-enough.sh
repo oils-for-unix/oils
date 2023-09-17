@@ -34,7 +34,9 @@ build() {
   mkdir -p _gen/doctools
   my-re2c doctools/good-enough.re2c.c $c
 
-  cc -std=c99 -o $bin $c
+  # gnu99 instead of c99 for fdopen() and getline()
+  cc -std=gnu99 -Wall -o $bin $c
+
   log "  CC $c"
 
   ls -l $bin 
@@ -44,13 +46,19 @@ build() {
   echo
   $bin \
     'abc' '""' \
-    '"hi there"' '"hi there' \
-    '"\n"' \
+    '"dq \" backslash \\"' '"missing ' \
+    "'sq \\' backslash \\\\'" \
     '"line\n"' '"quote \" backslash \\ "' \
-    '# comment'
+    '"\n"' \
+    'hi # comment' \
+    '"hi"  # comment'
 
   echo
-  $bin
+  seq 5 | $bin
+
+  echo '/dev/null'
+  $bin < /dev/null
+
 }
 
 
