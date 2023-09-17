@@ -27,6 +27,18 @@ my-re2c() {
   re2c -W -Wno-match-empty-string -Werror -o $out $in
 }
 
+readonly -a STRS=(
+    'abc' '""'
+    '"dq \" backslash \\"' '"missing ' 
+    "'sq \\' backslash \\\\'" 
+    '"line\n"' '"quote \" backslash \\ "' 
+    '"\n"' 
+    'hi # comment' 
+    '"hi"  # comment'
+    '"L1"  # first
+    L2 # second' 
+)
+
 build() {
   local c=_gen/doctools/good-enough.c
   local bin=_bin/good-enough
@@ -34,8 +46,12 @@ build() {
   mkdir -p _gen/doctools
   my-re2c doctools/good-enough.re2c.c $c
 
+  local asan='-fsanitize=address'
+  #local asan=''
+
   # gnu99 instead of c99 for fdopen() and getline()
-  cc -std=gnu99 -Wall -o $bin $c
+  cc -std=gnu99 -O2 -Wall $asan \
+    -o $bin $c
 
   log "  CC $c"
 
@@ -44,17 +60,14 @@ build() {
   #$bin 12 '' abc
 
   echo
-  $bin \
-    'abc' '""' \
-    '"dq \" backslash \\"' '"missing ' \
-    "'sq \\' backslash \\\\'" \
-    '"line\n"' '"quote \" backslash \\ "' \
-    '"\n"' \
-    'hi # comment' \
-    '"hi"  # comment'
+  $bin "${STRS[@]}"
 
   echo
-  seq 5 | $bin
+  for s in "${STRS[@]}"; do
+    echo "==== $s"
+    echo "$s" | $bin
+    echo
+  done
 
   echo '/dev/null'
   $bin < /dev/null
