@@ -24,62 +24,44 @@ void Log(const char* fmt, ...) {
   fputs("\n", stderr);
 }
 
-/*!re2c
+enum class Id {
+  Comm,
+  WS,  // TODO: indent, dedent
 
-  re2c:yyfill:enable = 0;
-  re2c:define:YYCTYPE = char;
-  re2c:define:YYCURSOR = p;
+  Name,  // foo
 
-  // Shared definitions
+  DQ,  // "" and Python r""
+  SQ,  // '' and Python r''
 
-  nul = [\x00];
-  not_nul = [^\x00];
+  TripleSQ,  // '''
+  TripleDQ,  // """
 
-  identifier = [_a-zA-Z][_a-zA-Z0-9]*;
-*/
+  // Hm I guess we also need r''' and """ ?
+
+  Other,  // any other text
+  Unknown,
+};
 
 struct Token {
-  int kind;
+  Id kind;
   int line_num;
   int end_col;
 };
 
-enum py_tok_e {
-  IdComm,
-  IdWS,  // TODO: indent, dedent
-
-  IdName,  // foo
-
-  IdDQ,  // ""
-  IdSQ,  // ''
-
-  IdRawDQ,  // r""
-  IdRawSQ,  // r''
-
-  IdTripleSQ,  // '''
-  IdTripleDQ,  // """
-
-  // Hm I guess we also need r''' and """ ?
-
-  IdOther,  // any other text
-  IdUnknown,
-};
-
-// TODO: consider C++, or use XMACROS
-
-enum py_line_mode_e {
+enum class line_mode_e {
   PyOuter,  // default
   MultiSQ,  // inside '''
   MultiDQ,  // inside """
 };
 
-enum cpp_line_mode_e {
-  CppOuter,  // default
-  Comm,      // inside /* */ comment
+enum class cpp_line_mode_e {
+  Outer,  // default
+  Comm,   // inside /* */ comment
 };
 
-enum sh_line_mode_e {
-  Outer2,    // default
+enum class sh_line_mode_e {
+  Outer,  // default
+
   SQ,        // inside multi-line ''
   DollarSQ,  // inside multi-line $''
   DQ,        // inside multi-line ""
@@ -93,171 +75,263 @@ enum sh_line_mode_e {
   YshJ,   // inside j"""
 };
 
-struct Lexer {
-  const char* line;
-  const char* p_current;     // points into line
-  py_line_mode_e line_mode;  // current mode, starts with PyOuter
+class Lexer {
+ public:
+  Lexer(char* line)
+      : line_(line), p_current(line), line_mode(line_mode_e::PyOuter) {
+  }
+
+  void SetLine(char* line) {
+    line_ = line;
+    p_current = line;
+  }
+
+  const char* line_;
+  const char* p_current;  // points into line
+  line_mode_e line_mode;  // current mode, starts with PyOuter
 };
+
+// Macros for semantic actions
+
+#define TOK(k)   \
+  tok->kind = k; \
+  break;
+#define TOK_MODE(k, m)               \
+  tok->kind = k;                     \
+  lexer->line_mode = line_mode_e::m; \
+  break;
+
+// Definitions shared between languages
+
+/*!re2c
+  re2c:yyfill:enable = 0;
+  re2c:define:YYCTYPE = char;
+  re2c:define:YYCURSOR = p;
+
+  nul = [\x00];
+  not_nul = [^\x00];
+
+  identifier = [_a-zA-Z][_a-zA-Z0-9]*;
+
+  // Shell and Python have # comments
+  pound_comment        = "#" not_nul*;
+
+  // YSH and Python have ''' """
+  triple_sq = "'''";
+  triple_dq = ["]["]["];
+*/
 
 // Returns whether EOL was hit
 bool MatchPy(Lexer* lexer, struct Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
 
-  // clang-format off
-  /*!re2c
-
-    triple_sq = "'''";
-    triple_dq = ["]["]["];
-
-  */
-  // clang-format on
-
   switch (lexer->line_mode) {
-  case PyOuter:
+  case line_mode_e::PyOuter:
     while (true) {
-      // clang-format off
       /*!re2c
-
-        nul       { return true; }
-
-        identifier { tok->kind = IdName; break; }
-
-        sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
-        sq_string = [r]? ['] sq_middle ['];
-
-        dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
-        dq_string = [r]? ["] dq_middle ["];
-
-        sq_string { tok->kind = IdSQ; break; }
-        dq_string { tok->kind = IdDQ; break; }
-
-        // TODO: raw strings
-        // Examples: r'foo' and r'\''
-        //           r"foo" and r"\""
-
-        comment = "#" not_nul*;
-        comment   { tok->kind = IdComm; break; }
+        nul                    { return true; }
 
         // optional raw prefix
-        [r]? triple_sq {
-          tok->kind = IdTripleSQ;
-          lexer->line_mode = MultiSQ;
-          break;
-        }
-        [r]? triple_dq {
-          tok->kind = IdTripleDQ;
-          lexer->line_mode = MultiDQ;
-          break;
-        }
+        [r]? triple_sq         { TOK_MODE(Id::TripleSQ, MultiSQ); }
+        [r]? triple_dq         { TOK_MODE(Id::TripleDQ, MultiDQ); }
+
+        identifier             { TOK(Id::Name); }
+
+        sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
+        dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
+
+        [r]? ['] sq_middle ['] { TOK(Id::SQ); }
+        [r]? ["] dq_middle ["] { TOK(Id::DQ); }
+
+        pound_comment          { TOK(Id::Comm); }
 
         // Whitespace is needed for SLOC, to tell if a line is entirely blank
-        whitespace = [ \t]*;
-        whitespace { tok->kind = IdWS; break; }
+        // TODO: Also compute INDENT DEDENT tokens
 
-        // Not the start of quoted, comment, identifier
-        other = [^\x00"'#_a-zA-Z]+;
-        other     { tok->kind = IdOther; break; }
+        whitespace = [ \t\r\n]*;
+        whitespace             { TOK(Id::WS); }
 
-        // This happens on unclosed quote like "foo
-        *         { tok->kind = IdUnknown; break; }
+        // Not the start of a string, comment, identifier
+        [^\x00"'#_a-zA-Z]+     { TOK(Id::Other); }
+
+        // e.g. unclosed quote like "foo
+        *                      { TOK(Id::Unknown); }
 
       */
-      // clang-format on
     }
     break;
 
-  case MultiSQ:
+  case line_mode_e::MultiSQ:
     while (true) {
-      // clang-format off
       /*!re2c
         nul       { return true; }
 
-        triple_sq {
-          tok->kind = IdTripleSQ;
-          lexer->line_mode = PyOuter;
-          break;
-        }
+        triple_sq { TOK_MODE(Id::TripleSQ, PyOuter); }
 
-        // Highlighted like double-quoted contents
-        [^\x00']* { tok->kind = IdTripleSQ; break; }
+        [^\x00']* { TOK(Id::TripleSQ); }
 
-        // Catch all
-        *        { tok->kind = IdTripleSQ; break; }
+        *         { TOK(Id::TripleSQ); }
+
       */
-      // clang-format on
     }
     break;
 
-  case MultiDQ:
+  case line_mode_e::MultiDQ:
     while (true) {
-      // clang-format off
       /*!re2c
         nul       { return true; }
 
-        triple_dq {
-          tok->kind = IdTripleDQ;
-          lexer->line_mode = PyOuter;
-          break;
-        }
+        triple_dq { TOK_MODE(Id::TripleDQ, PyOuter); }
 
-        // Highlighted like double-quoted contents
-        [^\x00"]* { tok->kind = IdTripleDQ; break; }
+        [^\x00"]* { TOK(Id::TripleDQ); }
 
-        // Catch all
-        *        { tok->kind = IdTripleDQ; break; }
+        *         { TOK(Id::TripleDQ); }
+
       */
-      // clang-format on
     }
     break;
   }
 
-  tok->end_col = p - lexer->line;
+  tok->end_col = p - lexer->line_;
   lexer->p_current = p;
   return false;
 }
 
 // We don't care about internal NUL, so wrap this in an interface that doesn't
 
-struct Reader {
-  FILE* f;
+class Reader {
+ public:
+  Reader(FILE* f) : f_(f), line_(nullptr), allocated_size_(0) {
+  }
 
-  char* line;             // valid for one NextLine() call, NULL on EOF or error
-  size_t allocated_size;  // unused
-  int err_num;            // set on error
+  bool NextLine() {
+    // Returns true if it put a line in the Reader, or false for EOF.  Handles
+    // I/O errors by printing to stderr.
+
+    // Note: getline() frees the previous line, so we don't have to
+    ssize_t len = getline(&line_, &allocated_size_, f_);
+    // Log("len = %d", len);
+
+    if (len < 0) {  // EOF is -1
+      // man page says the buffer should be freed if getline() fails
+      free(line_);
+
+      line_ = nullptr;  // tell the caller not to continue
+
+      if (errno != 0) {  // I/O error
+        err_num_ = errno;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  char* Current() {
+    return line_;
+  }
+
+  FILE* f_;
+
+  char* line_;  // valid for one NextLine() call, nullptr on EOF or error
+  size_t allocated_size_;  // unused, but must pass address to getline()
+  int err_num_;            // set on error
 };
 
-void Init(Reader* reader, FILE* f) {
-  reader->f = f;
-  reader->line = NULL;
-  reader->allocated_size = 0;  // must pass address to getline()
-}
+class Printer {
+ public:
+  virtual void Print(char* line, int line_num, int start_col, Token token) = 0;
+  virtual ~Printer() {
+  }
+};
 
-bool NextLine(Reader* reader) {
-  // Returns true if it put a line in the Reader, or false for EOF.  Handles
-  // I/O errors by printing to stderr.
+class AnsiPrinter : public Printer {
+ public:
+  virtual void Print(char* line, int line_num, int start_col, Token tok) {
+    char* p_start = line + start_col;
+    int num_bytes = tok.end_col - start_col;
+    switch (tok.kind) {
+    case Id::Comm:
+      fputs(BLUE, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
 
-  // Note: getline() frees the previous line, so we don't have to
-  ssize_t len = getline(&(reader->line), &(reader->allocated_size), reader->f);
-  // Log("len = %d", len);
+    case Id::Name:
+      fwrite(p_start, 1, num_bytes, stdout);
+      break;
 
-  if (len < 0) {  // EOF is -1
-    // man page says the buffer should be freed if getline() fails
-    free(reader->line);
+    case Id::Other:
+      fputs(PURPLE, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
 
-    reader->line = NULL;  // tell the caller not to continue
+    case Id::DQ:
+    case Id::SQ:
+      fputs(RED, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
 
-    if (errno != 0) {  // I/O error
-      reader->err_num = errno;
-      return false;
+    case Id::TripleSQ:
+    case Id::TripleDQ:
+      fputs(GREEN, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
+
+    case Id::Unknown:
+      // Make errors red
+      fputs(REVERSE, stdout);
+      fputs(RED, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
+    default:
+      fwrite(p_start, 1, num_bytes, stdout);
+      break;
     }
   }
-  return true;
+  virtual ~AnsiPrinter() {
+  }
+};
+
+char* Id_str(Id id) {
+  switch (id) {
+  case Id::Comm:
+    return "Comm";
+  case Id::WS:
+    return "WS";
+  case Id::Name:
+    return "Name";
+  case Id::Other:
+    return "Other";
+  case Id::DQ:
+    return "DQ";
+  case Id::SQ:
+    return "SQ";
+  case Id::TripleSQ:
+    return "TripleSQ";
+  case Id::TripleDQ:
+    return "TripleDQ";
+  case Id::Unknown:
+    return "Unknown";
+  default:
+    assert(0);
+  }
 }
 
-void Close(Reader* reader) {
-  fclose(reader->f);
-}
+class TsvPrinter : public Printer {
+ public:
+  virtual void Print(char* line, int line_num, int start_col, Token tok) {
+    printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.kind), start_col,
+           tok.end_col);
+    // printf("  -> mode %d\n", lexer.line_mode);
+  }
+  virtual ~TsvPrinter() {
+  }
+};
 
 int main(int argc, char** argv) {
   // TODO:
@@ -277,117 +351,42 @@ int main(int argc, char** argv) {
   // - LATER: parsed definitions, for now just do line by line
   //   - maybe do a transducer on the tokens
 
-  if (argc == 1) {
-    Reader reader;
-    Init(&reader, stdin);
-    int line_num = 1;
+  Reader reader(stdin);
+  Lexer lexer(nullptr);
 
-    Lexer lexer = {
-        .line = NULL,
-        .p_current = NULL,
-        .line_mode = PyOuter,
-    };
+  Printer* pr;
+  if (0) {
+    pr = new AnsiPrinter();
+  } else {
+    pr = new TsvPrinter();
+  }
 
-    while (true) {
-      if (!NextLine(&reader)) {
-        Log("getline() error: %s", strerror(reader.err_num));
+  int line_num = 1;
+  while (true) {  // read each line, handling errors
+    if (!reader.NextLine()) {
+      Log("getline() error: %s", strerror(reader.err_num_));
+      break;
+    }
+    char* line = reader.Current();
+    if (line == nullptr) {
+      break;  // EOF
+    }
+    lexer.SetLine(line);
+    // Log("line = %s", line);
+
+    int start_col = 0;
+    while (true) {  // tokens on each line
+      Token tok;
+      bool eol = MatchPy(&lexer, &tok);
+      if (eol) {
         break;
       }
-      if (reader.line == NULL) {
-        break;  // EOF
-      }
-      // Log("line = %s", reader.line);
-
-      Token tok;
-      lexer.line = reader.line;
-      lexer.p_current = reader.line;
-
-      int start_col = 0;
-      while (true) {
-        bool eol = MatchPy(&lexer, &tok);
-        if (eol) {
-          break;
-        }
-        if (1) {
-          char* p_start = reader.line + start_col;
-          int num_bytes = tok.end_col - start_col;
-          switch (tok.kind) {
-          case IdComm:
-            fputs(BLUE, stdout);
-            fwrite(p_start, 1, num_bytes, stdout);
-            fputs(RESET, stdout);
-            break;
-
-          case IdName:
-            fwrite(p_start, 1, num_bytes, stdout);
-            break;
-
-          case IdOther:
-            fputs(PURPLE, stdout);
-            fwrite(p_start, 1, num_bytes, stdout);
-            fputs(RESET, stdout);
-            break;
-
-          case IdDQ:
-          case IdSQ:
-            fputs(RED, stdout);
-            fwrite(p_start, 1, num_bytes, stdout);
-            fputs(RESET, stdout);
-            break;
-
-          case IdTripleSQ:
-          case IdTripleDQ:
-            fputs(GREEN, stdout);
-            fwrite(p_start, 1, num_bytes, stdout);
-            fputs(RESET, stdout);
-            break;
-
-          case IdUnknown:
-            // Make errors red
-            fputs(REVERSE, stdout);
-            fputs(RED, stdout);
-            fwrite(p_start, 1, num_bytes, stdout);
-            fputs(RESET, stdout);
-            break;
-          default:
-            fwrite(p_start, 1, num_bytes, stdout);
-            break;
-          }
-        } else {
-          printf("%d %d %d\n", tok.kind, start_col, tok.end_col);
-          printf("  -> mode %d\n", lexer.line_mode);
-        }
-        start_col = tok.end_col;
-      }
-      line_num += 1;
+      pr->Print(line, line_num, start_col, tok);
+      start_col = tok.end_col;
     }
-    Close(&reader);
-
-  } else {
-    for (int i = 1; i < argc; ++i) {
-      char* s = argv[i];
-      printf("\n");
-
-      // Should we loop until we need a new line, and then getline()?
-
-      Token tok;
-      Lexer lexer = {.line = s, .p_current = s, .line_mode = PyOuter};
-
-      int len = strlen(s);
-      printf("%d %s\n", len, s);
-
-      int start_col = 0;
-      while (true) {
-        bool eol = MatchPy(&lexer, &tok);
-        if (eol) {
-          // TODO: refill lines here
-          break;
-        }
-        printf("%d %d %d\n", tok.kind, start_col, tok.end_col);
-        // printf("  -> mode %d\n", lexer.line_mode);
-        start_col = tok.end_col;
-      }
-    }
+    line_num += 1;
   }
+  delete pr;
+
   return 0;
 }

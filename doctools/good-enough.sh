@@ -68,7 +68,8 @@ build() {
   #local asan=''
 
   # gnu99 instead of c99 for fdopen() and getline()
-  cc -std=c++11 -O2 -Wall $asan \
+  # g++ - otherwise virtual functions don't work!
+  g++ -std=c++11 -O2 -Wall $asan \
     -o $bin $cc
 
   log "  CXX $cc"
@@ -83,8 +84,8 @@ run-tests() {
 
   #$bin 12 '' abc
 
-  echo
-  $bin "${STRS[@]}"
+  #echo
+  #$bin "${STRS[@]}"
 
   echo
   for s in "${STRS[@]}"; do
