@@ -1,3 +1,30 @@
+// Good Enough Syntax Recognition
+
+// Motivation:
+//
+// - The Github source viewer is too slow.  We want to publish a fast version
+//   of our source code to view.
+//   - We need to link source code from Oils docs.
+// - Aesthetics
+//   - I don't like noisy keyword highlighting.  Just comments and string
+//     literals looks surprisingly good.
+//   - Can use this on the blog too.
+// - YSH needs syntax highlighters, and this code is a GUIDE to writing one.
+//   - The lexer should run on its own.  Generated parsers like TreeSitter
+//     require such a lexer.  In contrast to recursive descent, grammars can't
+//     specify lexer modes.
+// - I realized that "sloccount" is the same problem as syntax highlighting --
+//   you exclude comments, whitespace, and lines with only string literals.
+//   - sloccount is a huge Perl codebase, and we can stop depending on that.
+// - Because re2c is fun, and I wanted to experiment with writing it directly.
+// - Ideas
+//   - use this on your blog?
+//   - embed in a text editor?
+
+// Later:
+// - Extract declarations, and navigate to source.  This may be another step
+//   that processes the TSV file.
+
 #include <assert.h>
 #include <errno.h>
 #include <getopt.h>
@@ -62,22 +89,21 @@ enum class Id {
 
 struct Token {
   Id kind;
-  int line_num;
   int end_col;
 };
 
-enum class line_mode_e {
-  PyOuter,  // default
+enum class py_mode_e {
+  Outer,    // default
   MultiSQ,  // inside '''
   MultiDQ,  // inside """
 };
 
-enum class cpp_line_mode_e {
+enum class cpp_mode_e {
   Outer,  // default
   Comm,   // inside /* */ comment
 };
 
-enum class sh_line_mode_e {
+enum class sh_mode_e {
   Outer,  // default
 
   SQ,        // inside multi-line ''
@@ -93,10 +119,12 @@ enum class sh_line_mode_e {
   YshJ,   // inside j"""
 };
 
+// Lexer and Matcher are specialized on py_mode_e, cpp_mode_e, ...
+
+template <typename T>
 class Lexer {
  public:
-  Lexer(char* line)
-      : line_(line), p_current(line), line_mode(line_mode_e::PyOuter) {
+  Lexer(char* line) : line_(line), p_current(line), line_mode(T::Outer) {
   }
 
   void SetLine(char* line) {
@@ -106,7 +134,15 @@ class Lexer {
 
   const char* line_;
   const char* p_current;  // points into line
-  line_mode_e line_mode;  // current mode, starts with PyOuter
+  T line_mode;            // current mode, starts with Outer
+};
+
+template <typename T>
+class Matcher {
+ public:
+  // Returns whether EOL was hit.  Mutates lexer state, and fills in tok out
+  // param.
+  bool Match(Lexer<T>* lexer, Token* tok);
 };
 
 // Macros for semantic actions
@@ -114,12 +150,12 @@ class Lexer {
 #define TOK(k)   \
   tok->kind = k; \
   break;
-#define TOK_MODE(k, m)               \
-  tok->kind = k;                     \
-  lexer->line_mode = line_mode_e::m; \
+#define TOK_MODE(k, m)  \
+  tok->kind = k;        \
+  lexer->line_mode = m; \
   break;
 
-// Definitions shared between languages
+// Regex definitions shared between languages
 
 /*!re2c
   re2c:yyfill:enable = 0;
@@ -140,19 +176,20 @@ class Lexer {
 */
 
 // Returns whether EOL was hit
-bool MatchPy(Lexer* lexer, struct Token* tok) {
+template <>
+bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
 
   switch (lexer->line_mode) {
-  case line_mode_e::PyOuter:
+  case py_mode_e::Outer:
     while (true) {
       /*!re2c
         nul                    { return true; }
 
         // optional raw prefix
-        [r]? triple_sq         { TOK_MODE(Id::TripleSQ, MultiSQ); }
-        [r]? triple_dq         { TOK_MODE(Id::TripleDQ, MultiDQ); }
+        [r]? triple_sq         { TOK_MODE(Id::TripleSQ, py_mode_e::MultiSQ); }
+        [r]? triple_dq         { TOK_MODE(Id::TripleDQ, py_mode_e::MultiDQ); }
 
         identifier             { TOK(Id::Name); }
 
@@ -180,12 +217,12 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
     }
     break;
 
-  case line_mode_e::MultiSQ:
+  case py_mode_e::MultiSQ:
     while (true) {
       /*!re2c
         nul       { return true; }
 
-        triple_sq { TOK_MODE(Id::TripleSQ, PyOuter); }
+        triple_sq { TOK_MODE(Id::TripleSQ, py_mode_e::Outer); }
 
         [^\x00']* { TOK(Id::TripleSQ); }
 
@@ -195,12 +232,12 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
     }
     break;
 
-  case line_mode_e::MultiDQ:
+  case py_mode_e::MultiDQ:
     while (true) {
       /*!re2c
         nul       { return true; }
 
-        triple_dq { TOK_MODE(Id::TripleDQ, PyOuter); }
+        triple_dq { TOK_MODE(Id::TripleDQ, py_mode_e::Outer); }
 
         [^\x00"]* { TOK(Id::TripleDQ); }
 
@@ -208,6 +245,58 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
 
       */
     }
+    break;
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+  const char* YYMARKER = p;
+
+  switch (lexer->line_mode) {
+  case cpp_mode_e::Outer:
+    while (true) {
+      /*!re2c
+        nul                    { return true; }
+
+        // optional raw prefix
+        [r]? triple_sq         { TOK_MODE(Id::TripleSQ, cpp_mode_e::Comm); }
+        [r]? triple_dq         { TOK_MODE(Id::TripleDQ, cpp_mode_e::Comm); }
+
+        identifier             { TOK(Id::Name); }
+
+        // sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
+        // dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
+
+        [r]? ['] sq_middle ['] { TOK(Id::SQ); }
+        [r]? ["] dq_middle ["] { TOK(Id::DQ); }
+
+        pound_comment          { TOK(Id::Comm); }
+
+        // Whitespace is needed for SLOC, to tell if a line is entirely blank
+        // TODO: Also compute INDENT DEDENT tokens
+
+        // whitespace = [ \t\r\n]*;
+        whitespace             { TOK(Id::WS); }
+
+        // Not the start of a string, comment, identifier
+        [^\x00"'#_a-zA-Z]+     { TOK(Id::Other); }
+
+        // e.g. unclosed quote like "foo
+        *                      { TOK(Id::Unknown); }
+
+      */
+    }
+    break;
+
+  case cpp_mode_e::Comm:
+    assert(0);
     break;
   }
 
@@ -265,6 +354,9 @@ class Printer {
 
 class AnsiPrinter : public Printer {
  public:
+  AnsiPrinter(bool more_color) : Printer(), more_color_(more_color) {
+  }
+
   virtual void Print(char* line, int line_num, int start_col, Token tok) {
     char* p_start = line + start_col;
     int num_bytes = tok.end_col - start_col;
@@ -280,9 +372,13 @@ class AnsiPrinter : public Printer {
       break;
 
     case Id::Other:
-      fputs(PURPLE, stdout);
+      if (more_color_) {
+        fputs(PURPLE, stdout);
+      }
       fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      if (more_color_) {
+        fputs(RESET, stdout);
+      }
       break;
 
     case Id::DQ:
@@ -313,6 +409,9 @@ class AnsiPrinter : public Printer {
   }
   virtual ~AnsiPrinter() {
   }
+
+ private:
+  bool more_color_;
 };
 
 const char* Id_str(Id id) {
@@ -354,20 +453,28 @@ class TsvPrinter : public Printer {
 struct Flags {
   lang_e lang;
   bool tsv;
+  bool more_color;
 
   int argc;
   char** argv;
 };
 
+// This templated method causes some code expansion, but not too much.  The
+// binary went from 38 KB to 42 KB, after being stripped.
+// We get a little type safety with py_mode_e vs cpp_mode_e.
+
+template <typename T>
 int GoodEnough(const Flags& flag) {
   Reader reader(stdin);
-  Lexer lexer(nullptr);
+
+  Lexer<T> lexer(nullptr);
+  Matcher<T> matcher;
 
   Printer* pr;
   if (flag.tsv) {
     pr = new TsvPrinter();
   } else {
-    pr = new AnsiPrinter();
+    pr = new AnsiPrinter(flag.more_color);
   }
 
   int line_num = 1;
@@ -389,7 +496,7 @@ int GoodEnough(const Flags& flag) {
     bool is_significant = false;
     while (true) {  // tokens on each line
       Token tok;
-      bool eol = MatchPy(&lexer, &tok);
+      bool eol = matcher.Match(&lexer, &tok);
       if (eol) {
         break;
       }
@@ -419,6 +526,21 @@ int GoodEnough(const Flags& flag) {
   return 0;
 }
 
+void PrintHelp() {
+  puts(R"(Usage: good-enough FLAGS*
+
+Recognizes the syntax of the text on stdin, and prints it to stdout.
+
+Flags:
+
+  -l    Language: py|cpp
+  -m    More color
+  -t    Print tokens as TSV, instead of ANSI color
+
+  -h    This help
+)");
+}
+
 int main(int argc, char** argv) {
   // Outputs:
   // - syntax highlighting
@@ -431,8 +553,12 @@ int main(int argc, char** argv) {
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
   int c;
-  while ((c = getopt(argc, argv, "+l:t")) != -1) {
+  while ((c = getopt(argc, argv, "+hl:mt")) != -1) {
     switch (c) {
+    case 'h':
+      PrintHelp();
+      return 0;
+
     case 'l':
       if (strcmp(optarg, "py") == 0) {
         flag.lang = lang_e::Py;
@@ -445,6 +571,11 @@ int main(int argc, char** argv) {
         return 2;
       }
       break;
+
+    case 'm':
+      flag.more_color = true;
+      break;
+
     case 't':
       flag.tsv = true;
       break;
@@ -461,5 +592,14 @@ int main(int argc, char** argv) {
   flag.argv = argv + a;
   flag.argc = argc - a;
 
-  return GoodEnough(flag);
+  switch (flag.lang) {
+  case lang_e::Py:
+    return GoodEnough<py_mode_e>(flag);
+
+  case lang_e::Cpp:
+    return GoodEnough<cpp_mode_e>(flag);
+
+  default:
+    return GoodEnough<py_mode_e>(flag);
+  }
 }

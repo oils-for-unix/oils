@@ -71,10 +71,11 @@ build() {
   # g++ - otherwise virtual functions don't work!
   g++ -std=c++11 -O2 -Wall $asan \
     -o $bin $cc
+  strip -o $bin.stripped $bin
 
   log "  CXX $cc"
 
-  ls -l $bin 
+  ls -l --si -h $bin*
 }
 
 run-tests() {
@@ -90,7 +91,7 @@ run-tests() {
   echo
   for s in "${STRS[@]}"; do
     echo "==== $s"
-    echo "$s" | $bin #-t
+    echo "$s" | $bin # -l py
     echo
   done
 
