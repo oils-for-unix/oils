@@ -90,7 +90,7 @@ run-tests() {
   echo
   for s in "${STRS[@]}"; do
     echo "==== $s"
-    echo "$s" | $bin
+    echo "$s" | $bin #-t
     echo
   done
 

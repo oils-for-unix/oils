@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdbool.h>
 #include <stdio.h>
@@ -23,6 +24,23 @@ void Log(const char* fmt, ...) {
   va_end(args);
   fputs("\n", stderr);
 }
+
+void die(const char* message) {
+  fprintf(stderr, "good-enough: %s\n", message);
+  exit(1);
+}
+
+enum class lang_e {
+  Unspecified,
+
+  Py,
+  Shell,
+  Ysh,  // ''' etc.
+
+  Cpp,  // including C
+  R,    // uses # comments
+  JS,   // uses // comments
+};
 
 enum class Id {
   Comm,
@@ -198,9 +216,9 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
   return false;
 }
 
-// We don't care about internal NUL, so wrap this in an interface that doesn't
-
 class Reader {
+  // We don't care about internal NUL, so this interface doesn't allow it
+
  public:
   Reader(FILE* f) : f_(f), line_(nullptr), allocated_size_(0) {
   }
@@ -297,7 +315,7 @@ class AnsiPrinter : public Printer {
   }
 };
 
-char* Id_str(Id id) {
+const char* Id_str(Id id) {
   switch (id) {
   case Id::Comm:
     return "Comm";
@@ -333,39 +351,32 @@ class TsvPrinter : public Printer {
   }
 };
 
-int main(int argc, char** argv) {
-  // TODO:
-  // - make sure the whole thing matches
-  // - wrap in Python API
-  // - wrap in command line API with TSV?
+struct Flags {
+  lang_e lang;
+  bool tsv;
 
-  // -l LANG - one of cpp py sh ysh R
-  //           otherwise it's guessed from the file extension
-  // -tokens - output tokens.tsv
-  //           default: print syntax highlighting
-  //           and print SLOC
+  int argc;
+  char** argv;
+};
 
-  // Outputs:
-  // - syntax highlighting
-  // - SLOC - (file, number), number of lines with significant tokens
-  // - LATER: parsed definitions, for now just do line by line
-  //   - maybe do a transducer on the tokens
-
+int GoodEnough(const Flags& flag) {
   Reader reader(stdin);
   Lexer lexer(nullptr);
 
   Printer* pr;
-  if (0) {
-    pr = new AnsiPrinter();
-  } else {
+  if (flag.tsv) {
     pr = new TsvPrinter();
+  } else {
+    pr = new AnsiPrinter();
   }
 
   int line_num = 1;
+  int num_sig = 0;
+
   while (true) {  // read each line, handling errors
     if (!reader.NextLine()) {
       Log("getline() error: %s", strerror(reader.err_num_));
-      break;
+      return 1;
     }
     char* line = reader.Current();
     if (line == nullptr) {
@@ -375,6 +386,7 @@ int main(int argc, char** argv) {
     // Log("line = %s", line);
 
     int start_col = 0;
+    bool is_significant = false;
     while (true) {  // tokens on each line
       Token tok;
       bool eol = MatchPy(&lexer, &tok);
@@ -383,10 +395,71 @@ int main(int argc, char** argv) {
       }
       pr->Print(line, line_num, start_col, tok);
       start_col = tok.end_col;
+
+      switch (tok.kind) {
+      // Comments, whitespace, and string literals aren't significant
+      case Id::Name:
+      case Id::Other:
+        is_significant = true;
+        break;
+
+      // TODO: can abort on Id::Unknown?
+      default:
+        break;
+      }
     }
     line_num += 1;
+    num_sig += is_significant;
   }
+
+  Log("%d lines, %d significant", line_num - 1, num_sig);
+
   delete pr;
 
   return 0;
+}
+
+int main(int argc, char** argv) {
+  // Outputs:
+  // - syntax highlighting
+  // - SLOC - (file, number), number of lines with significant tokens
+  // - LATER: parsed definitions, for now just do line by line
+  //   - maybe do a transducer on the tokens
+
+  Flags flag = {lang_e::Unspecified};
+
+  // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
+  // + means to be strict about flag parsing.
+  int c;
+  while ((c = getopt(argc, argv, "+l:t")) != -1) {
+    switch (c) {
+    case 'l':
+      if (strcmp(optarg, "py") == 0) {
+        flag.lang = lang_e::Py;
+
+      } else if (strcmp(optarg, "cpp") == 0) {
+        flag.lang = lang_e::Cpp;
+
+      } else {
+        Log("Expected -l LANG to be py|cpp, got %s", optarg);
+        return 2;
+      }
+      break;
+    case 't':
+      flag.tsv = true;
+      break;
+
+    case '?':  // getopt library will print error
+      return 2;
+
+    default:
+      abort();  // should never happen
+    }
+  }
+
+  int a = optind;  // index into argv
+  flag.argv = argv + a;
+  flag.argc = argc - a;
+
+  return GoodEnough(flag);
 }
