@@ -35,8 +35,26 @@ readonly -a STRS=(
     '"\n"' 
     'hi # comment' 
     '"hi"  # comment'
-    '"L1"  # first
-    L2 # second' 
+    '(r"raw dq")'
+    "(r'raw \\' sq')"
+
+' "L1"  # first
+  L2 # second' 
+
+' def f():
+    """docstring
+    with "quote"
+    """
+    pass'
+
+" def f():
+    '''docstring
+    with 'quote'
+    '''
+    pass"
+
+    " print(r'''hello''')"
+    ' print(r"""hi there""")'
 )
 
 build() {
@@ -56,6 +74,12 @@ build() {
   log "  CC $c"
 
   ls -l $bin 
+}
+
+run-tests() {
+  local bin=_bin/good-enough
+
+  build
 
   #$bin 12 '' abc
 
@@ -73,6 +97,5 @@ build() {
   $bin < /dev/null
 
 }
-
 
 "$@"

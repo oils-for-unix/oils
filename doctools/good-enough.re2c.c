@@ -42,8 +42,18 @@ typedef struct Token {
 typedef enum py_tok_e {
   IdComm,
   IdWS,
-  IdDQ,
-  IdSQ,
+
+  IdDQ,  // ""
+  IdSQ,  // ''
+
+  IdRawDQ,  // r""
+  IdRawSQ,  // r''
+
+  IdTripleSQ,  // '''
+  IdTripleDQ,  // """
+
+  // Hm I guess we also need r''' and """ ?
+
   IdOther,  // any other text
   IdUnknown,
 } py_tok_e;
@@ -87,38 +97,63 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
 
+  // clang-format off
+  /*!re2c
+
+    triple_sq = "'''";
+    triple_dq = ["]["]["];
+
+  */
+  // clang-format on
+
   switch (lexer->line_mode) {
   case PyOuter:
     while (true) {
       // clang-format off
       /*!re2c
 
+        nul       { return true; }
+
         sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
-        sq_string = ['] sq_middle ['];
+        sq_string = [r]? ['] sq_middle ['];
 
         dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
-        dq_string = ["] dq_middle ["];
+        dq_string = [r]? ["] dq_middle ["];
 
-        triple_sq = "'''";
-        triple_dq = ["]["]["];
+        sq_string { tok->kind = IdSQ; break; }
+        dq_string { tok->kind = IdDQ; break; }
+
+        // TODO: raw strings
+        // Examples: r'foo' and r'\''
+        //           r"foo" and r"\""
 
         comment = "#" not_nul*;
         comment   { tok->kind = IdComm; break; }
 
-        sq_string { tok->kind = IdSQ; break; }
-        dq_string { tok->kind = IdDQ; break; }
+        // optional raw prefix
+        [r]? triple_sq {
+          tok->kind = IdTripleSQ;
+          lexer->line_mode = MultiSQ;
+          break;
+        }
+        [r]? triple_dq {
+          tok->kind = IdTripleDQ;
+          lexer->line_mode = MultiDQ;
+          break;
+        }
 
         // Whitespace is needed for SLOC, to tell if a line is entirely blank
         whitespace = [ \t]*;
         whitespace { tok->kind = IdWS; break; }
 
-        nul       { return true; }
-
-        other = [^\x00"'#]+;
+        // Hack: have to put r so we don't skip past raw strings, hm
+        other = [^\x00"'#r]+;
         other     { tok->kind = IdOther; break; }
 
+        // Make sure it's not unknown.  TODO: Is there a better way to do this?
+        [r] { tok->kind = IdOther; break; }
+
         // This happens on unclosed quote like "foo
-        // Should we raise an error?
         *         { tok->kind = IdUnknown; break; }
 
       */
@@ -127,11 +162,47 @@ bool MatchPy(Lexer* lexer, struct Token* tok) {
     break;
 
   case MultiSQ:
-    assert(0);
+    while (true) {
+      // clang-format off
+      /*!re2c
+        nul       { return true; }
+
+        triple_sq {
+          tok->kind = IdTripleSQ;
+          lexer->line_mode = PyOuter;
+          break;
+        }
+
+        // Highlighted like double-quoted contents
+        [^\x00']* { tok->kind = IdTripleSQ; break; }
+
+        // Catch all
+        *        { tok->kind = IdTripleSQ; break; }
+      */
+      // clang-format on
+    }
     break;
 
   case MultiDQ:
-    assert(0);
+    while (true) {
+      // clang-format off
+      /*!re2c
+        nul       { return true; }
+
+        triple_dq {
+          tok->kind = IdTripleDQ;
+          lexer->line_mode = PyOuter;
+          break;
+        }
+
+        // Highlighted like double-quoted contents
+        [^\x00"]* { tok->kind = IdTripleDQ; break; }
+
+        // Catch all
+        *        { tok->kind = IdTripleDQ; break; }
+      */
+      // clang-format on
+    }
     break;
   }
 
@@ -203,6 +274,14 @@ int main(int argc, char** argv) {
   if (argc == 1) {
     Reader reader;
     Init(&reader, stdin);
+    int line_num = 1;
+
+    Lexer lexer = {
+        .line = NULL,
+        .p_current = NULL,
+        .line_mode = PyOuter,
+    };
+
     while (true) {
       if (!NextLine(&reader)) {
         Log("getline() error: %s", strerror(reader.err_num));
@@ -214,8 +293,8 @@ int main(int argc, char** argv) {
       // Log("line = %s", reader.line);
 
       Token tok;
-      Lexer lexer = {
-          .line = reader.line, .p_current = reader.line, .line_mode = PyOuter};
+      lexer.line = reader.line;
+      lexer.p_current = reader.line;
 
       int start_col = 0;
       while (true) {
@@ -223,35 +302,47 @@ int main(int argc, char** argv) {
         if (eol) {
           break;
         }
-        char* p_start = reader.line + start_col;
-        int num_bytes = tok.end_col - start_col;
-        switch (tok.kind) {
-        case IdComm:
-          fputs(BLUE, stdout);
-          fwrite(p_start, 1, num_bytes, stdout);
-          fputs(RESET, stdout);
-          break;
-        case IdDQ:
-        case IdSQ:
-          fputs(RED, stdout);
-          fwrite(p_start, 1, num_bytes, stdout);
-          fputs(RESET, stdout);
-          break;
-        case IdUnknown:
-          // Make errors red
-          fputs(REVERSE, stdout);
-          fputs(RED, stdout);
-          fwrite(p_start, 1, num_bytes, stdout);
-          fputs(RESET, stdout);
-          break;
-        default:
-          fwrite(p_start, 1, num_bytes, stdout);
-          break;
+        if (1) {
+          char* p_start = reader.line + start_col;
+          int num_bytes = tok.end_col - start_col;
+          switch (tok.kind) {
+          case IdComm:
+            fputs(BLUE, stdout);
+            fwrite(p_start, 1, num_bytes, stdout);
+            fputs(RESET, stdout);
+            break;
+          case IdDQ:
+          case IdSQ:
+            fputs(RED, stdout);
+            fwrite(p_start, 1, num_bytes, stdout);
+            fputs(RESET, stdout);
+            break;
+
+          case IdTripleSQ:
+          case IdTripleDQ:
+            fputs(GREEN, stdout);
+            fwrite(p_start, 1, num_bytes, stdout);
+            fputs(RESET, stdout);
+            break;
+
+          case IdUnknown:
+            // Make errors red
+            fputs(REVERSE, stdout);
+            fputs(RED, stdout);
+            fwrite(p_start, 1, num_bytes, stdout);
+            fputs(RESET, stdout);
+            break;
+          default:
+            fwrite(p_start, 1, num_bytes, stdout);
+            break;
+          }
+        } else {
+          printf("%d %d %d\n", tok.kind, start_col, tok.end_col);
+          printf("  -> mode %d\n", lexer.line_mode);
         }
-        // printf("%d %d %d\n", tok.kind, start_col, tok.end_col);
-        // printf("  -> mode %d\n", lexer.line_mode);
         start_col = tok.end_col;
       }
+      line_num += 1;
     }
     Close(&reader);
 
