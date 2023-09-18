@@ -115,6 +115,14 @@ readonly -a CPP_TESTS=(
   '
 )
 
+readonly -a SHELL_TESTS=(
+  "echo $'multi \\n
+     sq \\' line'"
+
+  # Quoted backslash
+  "echo hi \\' there"
+)
+
 run-tests() {
   local bin=$BASE_DIR/good-enough
 
@@ -139,13 +147,25 @@ run-tests() {
     echo
   done
 
+  echo
+  for s in "${SHELL_TESTS[@]}"; do
+    echo "==== $s"
+    echo "$s" | $bin -l shell
+    echo
+  done
+
   echo '/dev/null'
   $bin < /dev/null
 }
 
-myself() {
+cpp-self() {
   build
-  $BASE_DIR/good-enough -l cpp < doctools/good-enough*.cc | less -r
+  cat doctools/good-enough.{re2c.h,cc} | $BASE_DIR/good-enough -l cpp  | less -r
+}
+
+sh-self() {
+  build
+  $BASE_DIR/good-enough -l shell < doctools/good-enough.sh | less -r
 }
 
 lexer-def() {
@@ -153,6 +173,14 @@ lexer-def() {
 
   build
   $BASE_DIR/good-enough -l py < frontend/lexer_def.py | less -r
+}
+
+git-comp() {
+  ### Test on a hard shell file
+
+  # Exposes double quote issue
+  build
+  $BASE_DIR/good-enough -l shell < testdata/completion/git | less -r
 }
 
 count() {

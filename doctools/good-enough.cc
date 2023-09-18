@@ -80,22 +80,6 @@ enum class lang_e {
   JS,   // uses // comments
 };
 
-enum class sh_mode_e {
-  Outer,  // default
-
-  SQ,        // inside multi-line ''
-  DollarSQ,  // inside multi-line $''
-  DQ,        // inside multi-line ""
-
-  HereSQ,  // inside <<'EOF'
-  HereDQ,  // inside <<EOF
-
-  // We could have a separate thing for this
-  YshSQ,  // inside '''
-  YshDQ,  // inside """
-  YshJ,   // inside j"""
-};
-
 // Problems matching #ifdef only at beginning of line
 // I might need to make a special line lexer for that, and it might be used
 // for INDENT/DEDENT too?
@@ -402,8 +386,11 @@ int main(int argc, char** argv) {
       } else if (strcmp(optarg, "cpp") == 0) {
         flag.lang = lang_e::Cpp;
 
+      } else if (strcmp(optarg, "shell") == 0) {
+        flag.lang = lang_e::Shell;
+
       } else {
-        Log("Expected -l LANG to be py|cpp, got %s", optarg);
+        Log("Expected -l LANG to be py|cpp|shell, got %s", optarg);
         return 2;
       }
       break;
@@ -447,6 +434,11 @@ int main(int argc, char** argv) {
   case lang_e::Cpp:
     hook = new CppHook();  // preprocessor
     status = GoodEnough<cpp_mode_e>(flag, pr, hook);
+    break;
+
+  case lang_e::Shell:
+    hook = new Hook();  // default hook
+    status = GoodEnough<sh_mode_e>(flag, pr, hook);
     break;
 
   default:

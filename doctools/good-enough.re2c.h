@@ -33,18 +33,6 @@ struct Token {
   int end_col;
 };
 
-enum class py_mode_e {
-  Outer,    // default
-  MultiSQ,  // inside '''
-  MultiDQ,  // inside """
-};
-
-enum class cpp_mode_e {
-  Outer,   // default
-  Comm,    // inside /* */ comment
-  RawStr,  // R"zz(string literal)zz"
-};
-
 // Lexer and Matcher are specialized on py_mode_e, cpp_mode_e, ...
 
 template <typename T>
@@ -113,6 +101,12 @@ class Matcher {
   triple_sq = "'''";
   triple_dq = ["]["]["];
 */
+
+enum class py_mode_e {
+  Outer,    // default
+  MultiSQ,  // inside '''
+  MultiDQ,  // inside """
+};
 
 // Returns whether EOL was hit
 template <>
@@ -185,12 +179,17 @@ bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
   return false;
 }
 
+enum class cpp_mode_e {
+  Outer,   // default
+  Comm,    // inside /* */ comment
+  RawStr,  // R"zz(string literal)zz"
+};
+
 // Returns whether EOL was hit
 template <>
 bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
-  // const char* YYCTXMARKER = p;  // needed for re2c lookahead operator '/'
 
   switch (lexer->line_mode) {
   case cpp_mode_e::Outer:
@@ -306,5 +305,115 @@ class CppHook : public Hook {
     return true;
   }
 };
+
+// Problem with shell: nested double quotes!!!
+// We probably discourage this in YSH
+
+enum class sh_mode_e {
+  Outer,  // default
+
+  SQ,        // inside multi-line ''
+  DollarSQ,  // inside multi-line $''
+  DQ,        // inside multi-line ""
+
+  HereSQ,  // inside <<'EOF'
+  HereDQ,  // inside <<EOF
+
+  // We could have a separate thing for this
+  YshSQ,  // inside '''
+  YshDQ,  // inside """
+  YshJ,   // inside j"""
+};
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+  const char* YYMARKER = p;
+
+  switch (lexer->line_mode) {
+  case sh_mode_e::Outer:
+
+    while (true) {
+      /*!re2c
+        nul                    { return true; }
+
+        whitespace             { TOK(Id::WS); }
+
+        pound_comment          { TOK(Id::Comm); }
+
+        // not that relevant for shell
+        identifier             { TOK(Id::Name); }
+
+        // Not the start of a string, escaped, comment, identifier
+        [^\x00"'$#_a-zA-Z\\]+  { TOK(Id::Other); }
+
+                               // echo is like a string
+        "\\" .                 { TOK(Id::Str); }
+
+        [']                    { TOK_MODE(Id::Str, sh_mode_e::SQ); }
+        ["]                    { TOK_MODE(Id::Str, sh_mode_e::DQ); }
+        "$'"                   { TOK_MODE(Id::Str, sh_mode_e::DollarSQ); }
+
+                               // NOT Unknown, as in Python
+        *                      { TOK(Id::Other); }
+
+      */
+    }
+    break;
+
+  case sh_mode_e::SQ:
+    // Search until next ' unconditionally
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        [']       { TOK_MODE(Id::Str, sh_mode_e::Outer); }
+
+        [^\x00']* { TOK(Id::Str); }
+
+        *         { TOK(Id::Str); }
+
+      */
+    }
+    break;
+
+  case sh_mode_e::DQ:
+    // Search until next " that's not preceded by "
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        ["]       { TOK_MODE(Id::Str, sh_mode_e::Outer); }
+
+        dq_middle { TOK(Id::Str); }
+
+        *         { TOK(Id::Str); }
+
+      */
+    }
+    break;
+
+  case sh_mode_e::DollarSQ:
+    // Search until next ' that's not preceded by "
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        [']       { TOK_MODE(Id::Str, sh_mode_e::Outer); }
+
+        sq_middle { TOK(Id::Str); }
+
+        *         { TOK(Id::Str); }
+
+      */
+    }
+    break;
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
 
 #endif  // GOOD_ENOUGH_H
