@@ -25,6 +25,15 @@
 // - Extract declarations, and navigate to source.  This may be another step
 //   that processes the TSV file.
 
+// TODO:
+// - Python: Indent hook can maintain a stack, and emit tokens
+// - C++ 
+//   - multi-line preprocessor
+//   - arbitrary raw strings R"zZXx(
+// - Shell
+//   - here docs 
+//   - many kinds of multi-line strings
+
 #include <assert.h>
 #include <errno.h>
 #include <getopt.h>
@@ -71,25 +80,25 @@ enum class lang_e {
 
 enum class Id {
   Comm,
-  WS,       // TODO: indent, dedent
+  WS,
   Preproc,  // for C++
 
   Name,  // foo
 
-  DQ,  // "" and Python r""
-  SQ,  // '' and Python r''
-
-  TripleSQ,  // '''
-  TripleDQ,  // """
+  Str,  // "" and Python r""
+        // '' and Python r''
+        // ''' """
 
   // Hm I guess we also need r''' and """ ?
 
   Other,  // any other text
   Unknown,
 
-  // These are special zero-width tokens
-  Indent,
-  Dedent,
+  // For C++ block structure
+  LBrace, RBrace,
+
+  // These are special zero-width tokens for Python
+  Indent, Dedent,
   // Maintain our own stack!
   // https://stackoverflow.com/questions/40960123/how-exactly-a-dedent-token-is-generated-in-python
 };
@@ -231,10 +240,6 @@ class CppHook : public Hook {
   }
 };
 
-// TODO:
-// Python - compute the indentation, but don't skip next line
-//        - this means Lexer<py_mode_e> is NOT ENOUGH?
-
 // Problems matching #ifdef only at beginning of line
 // I might need to make a special line lexer for that, and it might be used
 // for INDENT/DEDENT too?
@@ -276,17 +281,16 @@ bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul                    { return true; }
 
-        // TODO: Also compute INDENT DEDENT tokens
         whitespace             { TOK(Id::WS); }
 
         identifier             { TOK(Id::Name); }
 
-        [r]? sq_string         { TOK(Id::SQ); }
-        [r]? dq_string         { TOK(Id::DQ); }
+        [r]? sq_string         { TOK(Id::Str); }
+        [r]? dq_string         { TOK(Id::Str); }
 
         // optional raw prefix
-        [r]? triple_sq         { TOK_MODE(Id::TripleSQ, py_mode_e::MultiSQ); }
-        [r]? triple_dq         { TOK_MODE(Id::TripleDQ, py_mode_e::MultiDQ); }
+        [r]? triple_sq         { TOK_MODE(Id::Str, py_mode_e::MultiSQ); }
+        [r]? triple_dq         { TOK_MODE(Id::Str, py_mode_e::MultiDQ); }
 
         pound_comment          { TOK(Id::Comm); }
 
@@ -305,11 +309,11 @@ bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul       { return true; }
 
-        triple_sq { TOK_MODE(Id::TripleSQ, py_mode_e::Outer); }
+        triple_sq { TOK_MODE(Id::Str, py_mode_e::Outer); }
 
-        [^\x00']* { TOK(Id::TripleSQ); }
+        [^\x00']* { TOK(Id::Str); }
 
-        *         { TOK(Id::TripleSQ); }
+        *         { TOK(Id::Str); }
 
       */
     }
@@ -320,11 +324,11 @@ bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul       { return true; }
 
-        triple_dq { TOK_MODE(Id::TripleDQ, py_mode_e::Outer); }
+        triple_dq { TOK_MODE(Id::Str, py_mode_e::Outer); }
 
-        [^\x00"]* { TOK(Id::TripleDQ); }
+        [^\x00"]* { TOK(Id::Str); }
 
-        *         { TOK(Id::TripleDQ); }
+        *         { TOK(Id::Str); }
 
       */
     }
@@ -343,11 +347,6 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
   const char* YYMARKER = p;
   // const char* YYCTXMARKER = p;  // needed for re2c lookahead operator '/'
 
-  // TODO:
-  // - C++ raw strings
-  //   R"(
-  //   R"zZXx(
-
   switch (lexer->line_mode) {
   case cpp_mode_e::Outer:
 
@@ -357,20 +356,23 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
 
         whitespace             { TOK(Id::WS); }
 
+        "{"                    { TOK(Id::LBrace); }
+        "}"                    { TOK(Id::RBrace); }
+
         identifier             { TOK(Id::Name); }
 
         // approximation for C++ char literals
-        sq_string              { TOK(Id::SQ); }
-        dq_string              { TOK(Id::DQ); }
+        sq_string              { TOK(Id::Str); }
+        dq_string              { TOK(Id::Str); }
 
         // Not the start of a string, comment, identifier
-        [^\x00"'/_a-zA-Z]+     { TOK(Id::Other); }
+        [^\x00"'/_a-zA-Z{}]+   { TOK(Id::Other); }
 
         "//" not_nul*          { TOK(Id::Comm); }
 
         "/" "*"                { TOK_MODE(Id::Comm, cpp_mode_e::Comm); }
 
-        "R" ["] "("            { TOK_MODE(Id::DQ, cpp_mode_e::RawStr); }
+        "R" ["] "("            { TOK_MODE(Id::Str, cpp_mode_e::RawStr); }
 
         // e.g. unclosed quote like "foo
         *                      { TOK(Id::Unknown); }
@@ -401,11 +403,11 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul       { return true; }
 
-        ")" ["]   { TOK_MODE(Id::DQ, cpp_mode_e::Outer); }
+        ")" ["]   { TOK_MODE(Id::Str, cpp_mode_e::Outer); }
 
-        [^\x00)]* { TOK(Id::DQ); }
+        [^\x00)]* { TOK(Id::Str); }
 
-        *         { TOK(Id::DQ); }
+        *         { TOK(Id::Str); }
 
       */
     }
@@ -499,15 +501,14 @@ class AnsiPrinter : public Printer {
       }
       break;
 
-    case Id::DQ:
-    case Id::SQ:
+    case Id::Str:
       fputs(RED, stdout);
       fwrite(p_start, 1, num_bytes, stdout);
       fputs(RESET, stdout);
       break;
 
-    case Id::TripleSQ:
-    case Id::TripleDQ:
+    case Id::LBrace:
+    case Id::RBrace:
       fputs(GREEN, stdout);
       fwrite(p_start, 1, num_bytes, stdout);
       fputs(RESET, stdout);
@@ -540,18 +541,20 @@ const char* Id_str(Id id) {
     return "WS";
   case Id::Preproc:
     return "Preproc";
+
   case Id::Name:
     return "Name";
   case Id::Other:
     return "Other";
-  case Id::DQ:
-    return "DQ";
-  case Id::SQ:
-    return "SQ";
-  case Id::TripleSQ:
-    return "TripleSQ";
-  case Id::TripleDQ:
-    return "TripleDQ";
+
+  case Id::Str:
+    return "Str";
+
+  case Id::LBrace:
+    return "LBrace";
+  case Id::RBrace:
+    return "RBrace";
+
   case Id::Unknown:
     return "Unknown";
   default:
@@ -629,10 +632,6 @@ int GoodEnough(const Flags& flag, Printer* pr, Hook* hook) {
 
     lexer.SetLine(line);
     // Log("line = %s", line);
-
-    // TODO:
-    // - Preprocessor hook can emit a token to Printer, and also skip the line
-    // - Python Indent hook can maintain a stack, and emit tokens
 
     bool line_is_sig = false;
     while (true) {  // tokens on each line
