@@ -27,25 +27,42 @@ my-re2c() {
   re2c -W -Wno-match-empty-string -Werror -o $out $in
 }
 
+readonly BASE_DIR=_tmp/good-enough
+
 build() {
-  local cc=_gen/doctools/good-enough.cc
-  local bin=_bin/good-enough
+  local variant=${1:-asan}
 
-  mkdir -p _gen/doctools
-  my-re2c doctools/good-enough.re2c.cc $cc
+  case $variant in
+    asan)
+      cxxflags='-O0 -fsanitize=address'
+      ;;
+    opt)
+      cxxflags='-O2'
+      ;;
+    *)
+      die "Invalid variant $variant"
+      ;;
+  esac
 
-  local asan='-fsanitize=address'
-  #local asan=''
+  mkdir -p $BASE_DIR
 
-  # gnu99 instead of c99 for fdopen() and getline()
+  local cc=doctools/good-enough.cc
+  local h=$BASE_DIR/good-enough.h
+  local bin=$BASE_DIR/good-enough
+
+  my-re2c doctools/good-enough.re2c.h $h
+
+  # Note: with cc, you need gnu99 instead of c99 for fdopen() and getline()
+
   # g++ - otherwise virtual functions don't work!
-  g++ -std=c++11 -O2 -Wall $asan \
+
+  g++ -std=c++11 -Wall -I $BASE_DIR $cxxflags \
     -o $bin $cc
+
   strip -o $bin.stripped $bin
 
   log "  CXX $cc"
 
-  ls -l --si -h $bin*
 }
 
 readonly -a PY_TESTS=(
@@ -98,9 +115,8 @@ readonly -a CPP_TESTS=(
   '
 )
 
-
 run-tests() {
-  local bin=_bin/good-enough
+  local bin=$BASE_DIR/good-enough
 
   build
 
@@ -129,7 +145,20 @@ run-tests() {
 
 myself() {
   build
-  _bin/good-enough -l cpp < doctools/good-enough*.cc | less -r
+  $BASE_DIR/good-enough -l cpp < doctools/good-enough*.cc | less -r
+}
+
+lexer-def() {
+  ### Test on a hard Python file
+
+  build
+  $BASE_DIR/good-enough -l py < frontend/lexer_def.py | less -r
+}
+
+count() {
+  wc -l doctools/good-enough* $BASE_DIR/*.h
+  echo
+  ls -l --si -h $BASE_DIR
 }
 
 "$@"
