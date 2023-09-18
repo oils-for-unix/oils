@@ -4,9 +4,13 @@
 enum class Id {
   Comm,
   WS,
-  Preproc,  // for C++
+  Preproc,   // for C++
+  LineCont,  // backslash at end of line, for #define continuation
 
-  Name,  // foo
+  // Zero-width token to detect #ifdef and Python INDENT/DEDENT
+  StartLine,
+
+  Name,  // Keyword or Identifier
 
   Str,  // "" and Python r""
         // '' and Python r''
@@ -18,6 +22,7 @@ enum class Id {
   Unknown,
 
   // For C++ block structure
+  // Could be done in second pass after removing comments/strings?
   LBrace,
   RBrace,
 
@@ -280,9 +285,10 @@ enum class preproc {
 
 class CppHook : public Hook {
  public:
-  // Note: testing a single line isn't enough.  We also have to look at line
+  // Problems:
+  // - Testing a single line isn't enough.  We also have to look at line
   // continuations.
-  // So we may need to switch into another mode.
+  // - Comments can appear at the end of the line
 
   virtual bool IsPreprocessorLine(char* line, Token* tok) {
     const char* p = line;  // mutated by re2c
@@ -333,7 +339,6 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 
   switch (lexer->line_mode) {
   case sh_mode_e::Outer:
-
     while (true) {
       /*!re2c
         nul                    { return true; }
@@ -409,6 +414,12 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
       */
     }
     break;
+  case sh_mode_e::HereSQ:
+  case sh_mode_e::HereDQ:
+  case sh_mode_e::YshSQ:
+  case sh_mode_e::YshDQ:
+  case sh_mode_e::YshJ:
+    assert(0);
   }
 
   tok->end_col = p - lexer->line_;

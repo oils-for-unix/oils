@@ -165,7 +165,9 @@ cpp-self() {
 
 sh-self() {
   build
-  $BASE_DIR/good-enough -l shell < doctools/good-enough.sh | less -r
+  #$BASE_DIR/good-enough -l shell < doctools/good-enough.sh | less -r
+
+  $BASE_DIR/good-enough -l shell -w < doctools/good-enough.sh
 }
 
 lexer-def() {
@@ -178,9 +180,14 @@ lexer-def() {
 git-comp() {
   ### Test on a hard shell file
 
-  # Exposes double quote issue
+  # Exposes nested double quote issue
   build
   $BASE_DIR/good-enough -l shell < testdata/completion/git | less -r
+}
+
+mycpp-runtime() {
+  build
+  cat mycpp/gc_str.* | $BASE_DIR/good-enough -l cpp | less -r
 }
 
 count() {

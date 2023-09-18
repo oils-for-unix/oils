@@ -75,10 +75,22 @@ soil-run() {
 
   local attrs=_tmp/attrs.txt
 
-  time print-files | xargs doctools/src_tree.py files $out > $attrs
+  # overview-list has dupes
+  time print-files | sort | uniq | xargs doctools/src_tree.py files $out > $attrs
 
   time doctools/src_tree.py dirs $out < $attrs
 }
+
+cat-benchmark() {
+  # 355 ms to cat the files!  It takes 2.75 seconds to syntax highlight 'src_tree.py files'
+  time print-files | xargs cat > /dev/null
+}
+
+wc-benchmark() {
+  # 372 ms!   Very fast
+  time print-files | xargs wc
+}
+
 
 #
 # Misc ways of counting files

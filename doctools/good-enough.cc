@@ -9,6 +9,7 @@
 //   - I don't like noisy keyword highlighting.  Just comments and string
 //     literals looks surprisingly good.
 //   - Can use this on the blog too.
+// - HTML equivalent of showsh, showpy -- quickly jump to definitions
 // - YSH needs syntax highlighters, and this code is a GUIDE to writing one.
 //   - The lexer should run on its own.  Generated parsers like TreeSitter
 //     require such a lexer.  In contrast to recursive descent, grammars can't
@@ -21,18 +22,52 @@
 //   - use this on your blog?
 //   - embed in a text editor?
 
-// Later:
-// - Extract declarations, and navigate to source.  This may be another step
-//   that processes the TSV file.
+// Two pass algorithm with StartLine:
+//
+// First pass: Lexer modes with no lookahead or lookbehind
+//             "Pre-structuring" as we do in Oils!
+//
+// Second pass:
+//   Python - StartLine WS -> Indent/Dedent
+//   C++ - StartLine MaybePreproc LineCont -> preprocessor
+//
+// Q: Are here docs first pass or second pass?
 
 // TODO:
 // - Python: Indent hook can maintain a stack, and emit tokens
 // - C++
-//   - multi-line preprocessor
+//   - multi-line preprocessor, comments
 //   - arbitrary raw strings R"zZXx(
 // - Shell
-//   - here docs
-//   - many kinds of multi-line strings
+//   - here docs <<EOF and <<'EOF'
+//     - configure-coreutils uses << \_ACEOF \ACAWK which is annoying
+//   - YSH multi-line strings
+
+// CLI:
+// - take multiple files, guess extension
+//   - mainly so you can glob!
+
+// Parsing:
+// - Name tokens should also have contents?
+//   - at least for Python and C++
+//   - shell: we want these at start of line:
+//     - proc X, func X, f()
+//     - not echo proc X
+// - Write some kind of "Transducer/CST" library to pattern match definitions
+//   - like showpy, showsh, but you can export to HTML with line numbers, and
+//     anchor
+
+// More languages
+// - R   # comments
+// - JS  // and /* */ and `` for templates
+// - CSS /* */
+// - spec tests have "comm3" CSS class - change to comm4 perhaps
+
+// Shared library interface:
+//
+// ("file contents", "cpp") -> "html"
+//
+// doctools/src-tree.sh prints 822 files, 811 are unique
 
 #include <assert.h>
 #include <errno.h>
@@ -42,6 +77,8 @@
 #include <stdio.h>
 #include <stdlib.h>  // free
 #include <string.h>
+
+#include <string>
 
 #include "good-enough.h"  // requires -I $BASE_DIR
 
@@ -156,6 +193,98 @@ class Printer {
   }
 };
 
+class HtmlPrinter : public Printer {
+ public:
+  HtmlPrinter(std::string* out) : Printer(), out_(out) {
+    PrintLine(99);
+  }
+
+  void PrintLine(int line_num) {
+    out_->append("<tr><td class=num>");
+
+    char buf[16];
+    snprintf(buf, 16, "%d", line_num);
+    out_->append(buf);
+
+    out_->append("</td><td>");
+
+    // TODO: Print tokens in the line here
+
+    out_->append("</td>\n");
+  }
+
+  void PrintSpan(const char* css_class, char* s, int len) {
+    out_->append("<span class=");
+    out_->append(css_class);
+    out_->append(">");
+
+    // HTML escape the code string
+    for (int i = 0; i < len; ++i) {
+      char c = s[i];
+
+      switch (c) {
+        case '<':
+          out_->append("&lt;");
+          break;
+        case '>':
+          out_->append("&gt;");
+          break;
+        case '&':
+          out_->append("&amp;");
+          break;
+        default:
+          // Is this inefficient?  Fill 1 char
+          out_->append(1, s[i]);
+          break;
+      }
+    }
+
+    out_->append("</span>");
+  }
+
+  virtual void Print(char* line, int line_num, int start_col, Token tok) {
+    char* p_start = line + start_col;
+    int num_bytes = tok.end_col - start_col;
+    switch (tok.kind) {
+    case Id::Comm:
+      PrintSpan("comm", p_start, num_bytes);
+      break;
+
+    case Id::Name:
+      out_->append(p_start, num_bytes);
+      break;
+
+    case Id::Preproc:
+      PrintSpan("preproc", p_start, num_bytes);
+      break;
+
+    case Id::Other:
+      // PrintSpan("other", p_start, num_bytes);
+      out_->append(p_start, num_bytes);
+      break;
+
+    case Id::Str:
+      PrintSpan("str", p_start, num_bytes);
+      break;
+
+    case Id::LBrace:
+    case Id::RBrace:
+      PrintSpan("brace", p_start, num_bytes);
+      break;
+
+    case Id::Unknown:
+      PrintSpan("x", p_start, num_bytes);
+      break;
+    default:
+      out_->append(p_start, num_bytes);
+      break;
+    }
+  }
+
+ private:
+  std::string* out_;
+};
+
 class AnsiPrinter : public Printer {
  public:
   AnsiPrinter(bool more_color) : Printer(), more_color_(more_color) {
@@ -215,8 +344,6 @@ class AnsiPrinter : public Printer {
       fwrite(p_start, 1, num_bytes, stdout);
       break;
     }
-  }
-  virtual ~AnsiPrinter() {
   }
 
  private:
@@ -280,6 +407,7 @@ bool TokenIsSignificant(Id id) {
 struct Flags {
   lang_e lang;
   bool tsv;
+  bool web;
   bool more_color;
 
   int argc;
@@ -354,9 +482,10 @@ Recognizes the syntax of the text on stdin, and prints it to stdout.
 Flags:
 
   -l    Language: py|cpp
-  -m    More color, useful for debugging tokens
   -t    Print tokens as TSV, instead of ANSI color
+  -w    Print HTML for the web
 
+  -m    More color, useful for debugging tokens
   -h    This help
 )");
 }
@@ -373,7 +502,7 @@ int main(int argc, char** argv) {
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
   int c;
-  while ((c = getopt(argc, argv, "+hl:mt")) != -1) {
+  while ((c = getopt(argc, argv, "+hl:mtw")) != -1) {
     switch (c) {
     case 'h':
       PrintHelp();
@@ -403,6 +532,10 @@ int main(int argc, char** argv) {
       flag.tsv = true;
       break;
 
+    case 'w':
+      flag.web = true;
+      break;
+
     case '?':  // getopt library will print error
       return 2;
 
@@ -415,9 +548,13 @@ int main(int argc, char** argv) {
   flag.argv = argv + a;
   flag.argc = argc - a;
 
+  std::string html_out;
+
   Printer* pr;
   if (flag.tsv) {
     pr = new TsvPrinter();
+  } else if (flag.web) {
+    pr = new HtmlPrinter(&html_out);
   } else {
     pr = new AnsiPrinter(flag.more_color);
   }
@@ -445,6 +582,10 @@ int main(int argc, char** argv) {
     hook = new Hook();  // default hook
     status = GoodEnough<py_mode_e>(flag, pr, hook);
     break;
+  }
+
+  if (flag.web) {
+    fputs(html_out.c_str(), stdout);
   }
 
   delete hook;
