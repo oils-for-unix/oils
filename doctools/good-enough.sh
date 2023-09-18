@@ -27,7 +27,28 @@ my-re2c() {
   re2c -W -Wno-match-empty-string -Werror -o $out $in
 }
 
-readonly -a STRS=(
+build() {
+  local cc=_gen/doctools/good-enough.cc
+  local bin=_bin/good-enough
+
+  mkdir -p _gen/doctools
+  my-re2c doctools/good-enough.re2c.cc $cc
+
+  local asan='-fsanitize=address'
+  #local asan=''
+
+  # gnu99 instead of c99 for fdopen() and getline()
+  # g++ - otherwise virtual functions don't work!
+  g++ -std=c++11 -O2 -Wall $asan \
+    -o $bin $cc
+  strip -o $bin.stripped $bin
+
+  log "  CXX $cc"
+
+  ls -l --si -h $bin*
+}
+
+readonly -a PY_TESTS=(
     'abc' '""'
     '"dq \" backslash \\"' '"missing ' 
     "'sq \\' backslash \\\\'" 
@@ -57,26 +78,21 @@ readonly -a STRS=(
     ' print(r"""hi there""")'
 )
 
-build() {
-  local cc=_gen/doctools/good-enough.cc
-  local bin=_bin/good-enough
+readonly -a CPP_TESTS=(
+  '#ifdef 0'
+  'not prepreproc #ifdef 0'
+  "// comment can't "
+  "f(); // comment isn't "
 
-  mkdir -p _gen/doctools
-  my-re2c doctools/good-enough.re2c.cc $cc
+  # Char literal in C
+  "'\\''"
 
-  local asan='-fsanitize=address'
-  #local asan=''
+  'void f(); /* multi-line
+                comment
+             */
+  void g(int x);'
+)
 
-  # gnu99 instead of c99 for fdopen() and getline()
-  # g++ - otherwise virtual functions don't work!
-  g++ -std=c++11 -O2 -Wall $asan \
-    -o $bin $cc
-  strip -o $bin.stripped $bin
-
-  log "  CXX $cc"
-
-  ls -l --si -h $bin*
-}
 
 run-tests() {
   local bin=_bin/good-enough
@@ -89,15 +105,26 @@ run-tests() {
   #$bin "${STRS[@]}"
 
   echo
-  for s in "${STRS[@]}"; do
+  for s in "${PY_TESTS[@]}"; do
     echo "==== $s"
     echo "$s" | $bin # -l py
     echo
   done
 
+  echo
+  for s in "${CPP_TESTS[@]}"; do
+    echo "==== $s"
+    echo "$s" | $bin -l cpp
+    echo
+  done
+
   echo '/dev/null'
   $bin < /dev/null
+}
 
+myself() {
+  build
+  _bin/good-enough -l cpp < doctools/good-enough*.cc | less -r
 }
 
 "$@"

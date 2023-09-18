@@ -71,7 +71,8 @@ enum class lang_e {
 
 enum class Id {
   Comm,
-  WS,  // TODO: indent, dedent
+  WS,       // TODO: indent, dedent
+  Preproc,  // for C++
 
   Name,  // foo
 
@@ -165,7 +166,20 @@ class Matcher {
   nul = [\x00];
   not_nul = [^\x00];
 
+  // Whitespace is needed for SLOC, to tell if a line is entirely blank
+  whitespace = [ \t\r\n]*;
+
   identifier = [_a-zA-Z][_a-zA-Z0-9]*;
+
+  // Python and C++ have "" strings
+  // C++ char literals are similar, e.g. '\''
+  // We are not more precise
+
+  sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
+  dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
+
+  sq_string = ['] sq_middle ['];
+  dq_string = ["] dq_middle ["];
 
   // Shell and Python have # comments
   pound_comment        = "#" not_nul*;
@@ -187,25 +201,19 @@ bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul                    { return true; }
 
+        // TODO: Also compute INDENT DEDENT tokens
+        whitespace             { TOK(Id::WS); }
+
+        identifier             { TOK(Id::Name); }
+
+        [r]? sq_string         { TOK(Id::SQ); }
+        [r]? dq_string         { TOK(Id::DQ); }
+
         // optional raw prefix
         [r]? triple_sq         { TOK_MODE(Id::TripleSQ, py_mode_e::MultiSQ); }
         [r]? triple_dq         { TOK_MODE(Id::TripleDQ, py_mode_e::MultiDQ); }
 
-        identifier             { TOK(Id::Name); }
-
-        sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
-        dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
-
-        [r]? ['] sq_middle ['] { TOK(Id::SQ); }
-        [r]? ["] dq_middle ["] { TOK(Id::DQ); }
-
         pound_comment          { TOK(Id::Comm); }
-
-        // Whitespace is needed for SLOC, to tell if a line is entirely blank
-        // TODO: Also compute INDENT DEDENT tokens
-
-        whitespace = [ \t\r\n]*;
-        whitespace             { TOK(Id::WS); }
 
         // Not the start of a string, comment, identifier
         [^\x00"'#_a-zA-Z]+     { TOK(Id::Other); }
@@ -258,45 +266,89 @@ template <>
 bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
+  const char* YYCTXMARKER = p;  // needed for re2c lookahead operator '/'
+
+  // TODO:
+  // - #ifdef
+  // - C++ raw strings
+  //   R"(
+  //   R"zZXx(
 
   switch (lexer->line_mode) {
   case cpp_mode_e::Outer:
+
+    // Problems matching #ifdef only at beginning of line
+    // I might need to make a special line lexer for that, and it might be used
+    // for INDENT/DEDENT too?
+    //
+    // The start conditions example looks scary, with YYCURSOR and all that
+    // https://re2c.org/manual/manual_c.html#start-conditions
+
+#if 0
+    // at start of line?
+    if (lexer->p_current == lexer->line_) {
+      // printf("STARTING ");
+      while (true) {
+      /*!re2c
+                                // break out of case
+        whitespace "#" not_nul* { tok->kind = Id::Preproc; goto outer2; }
+        *                       { goto outer1; }
+
+      */
+      }
+    }
+#endif
+    /* this goes into an infinite loop
+            "" / whitespace "#" not_nul* {
+              if (lexer->p_current == lexer->line_) {
+                TOK(Id::Preproc);
+              }
+            }
+    */
+
+  outer1:
     while (true) {
       /*!re2c
         nul                    { return true; }
 
-        // optional raw prefix
-        [r]? triple_sq         { TOK_MODE(Id::TripleSQ, cpp_mode_e::Comm); }
-        [r]? triple_dq         { TOK_MODE(Id::TripleDQ, cpp_mode_e::Comm); }
+        whitespace             { TOK(Id::WS); }
 
         identifier             { TOK(Id::Name); }
 
-        // sq_middle = ( [^\x00'\\] | "\\" not_nul )*;
-        // dq_middle = ( [^\x00"\\] | "\\" not_nul )*;
-
-        [r]? ['] sq_middle ['] { TOK(Id::SQ); }
-        [r]? ["] dq_middle ["] { TOK(Id::DQ); }
-
-        pound_comment          { TOK(Id::Comm); }
-
-        // Whitespace is needed for SLOC, to tell if a line is entirely blank
-        // TODO: Also compute INDENT DEDENT tokens
-
-        // whitespace = [ \t\r\n]*;
-        whitespace             { TOK(Id::WS); }
+        // approximation for C++ char literals
+        sq_string              { TOK(Id::SQ); }
+        dq_string              { TOK(Id::DQ); }
 
         // Not the start of a string, comment, identifier
-        [^\x00"'#_a-zA-Z]+     { TOK(Id::Other); }
+        [^\x00"'/_a-zA-Z]+     { TOK(Id::Other); }
+
+        "//" not_nul*          { TOK(Id::Comm); }
+
+        "/" "*"                { TOK_MODE(Id::Comm, cpp_mode_e::Comm); }
 
         // e.g. unclosed quote like "foo
         *                      { TOK(Id::Unknown); }
 
       */
     }
+  outer2:
     break;
 
   case cpp_mode_e::Comm:
-    assert(0);
+    // Search until next */
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        "*" "/"   { TOK_MODE(Id::Comm, cpp_mode_e::Outer); }
+
+        [^\x00*]* { TOK(Id::Comm); }
+
+        *         { TOK(Id::Comm); }
+
+      */
+    }
+    break;
     break;
   }
 
@@ -371,6 +423,12 @@ class AnsiPrinter : public Printer {
       fwrite(p_start, 1, num_bytes, stdout);
       break;
 
+    case Id::Preproc:
+      fputs(PURPLE, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
+
     case Id::Other:
       if (more_color_) {
         fputs(PURPLE, stdout);
@@ -420,6 +478,8 @@ const char* Id_str(Id id) {
     return "Comm";
   case Id::WS:
     return "WS";
+  case Id::Preproc:
+    return "Preproc";
   case Id::Name:
     return "Name";
   case Id::Other:
@@ -534,7 +594,7 @@ Recognizes the syntax of the text on stdin, and prints it to stdout.
 Flags:
 
   -l    Language: py|cpp
-  -m    More color
+  -m    More color, useful for debugging tokens
   -t    Print tokens as TSV, instead of ANSI color
 
   -h    This help
