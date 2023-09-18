@@ -27,11 +27,11 @@
 
 // TODO:
 // - Python: Indent hook can maintain a stack, and emit tokens
-// - C++ 
+// - C++
 //   - multi-line preprocessor
 //   - arbitrary raw strings R"zZXx(
 // - Shell
-//   - here docs 
+//   - here docs
 //   - many kinds of multi-line strings
 
 #include <assert.h>
@@ -94,49 +94,6 @@ enum class sh_mode_e {
   YshSQ,  // inside '''
   YshDQ,  // inside """
   YshJ,   // inside j"""
-};
-
-class Hook {
- public:
-  virtual bool IsPreprocessorLine(char* line, Token* tok) {
-    return false;
-  }
-  virtual ~Hook() {
-  }
-};
-
-enum class preproc {
-  No,
-  Yes,          // #define X 0
-  YesContinue,  // #define X \ continuation
-};
-
-class CppHook : public Hook {
- public:
-  // Note: testing a single line isn't enough.  We also have to look at line
-  // continuations.
-  // So we may need to switch into another mode.
-
-  virtual bool IsPreprocessorLine(char* line, Token* tok) {
-    const char* p = line;  // mutated by re2c
-    // const char* YYMARKER = p;
-
-    while (true) {
-      /*!re2c
-        nul            { return false; }
-
-                       // e.g. #ifdef
-        whitespace '#' not_nul* { break; }
-
-        *              { return false; }
-
-      */
-    }
-    tok->kind = Id::Preproc;
-    tok->end_col = p - line;
-    // Log("line '%s' END %d strlen %d", line, tok->end_col, strlen(line));
-    return true;
-  }
 };
 
 // Problems matching #ifdef only at beginning of line
@@ -488,8 +445,7 @@ int main(int argc, char** argv) {
     break;
 
   case lang_e::Cpp:
-    //hook = new CppHook();  // preprocessor
-    hook = new Hook();  // preprocessor
+    hook = new CppHook();  // preprocessor
     status = GoodEnough<cpp_mode_e>(flag, pr, hook);
     break;
 

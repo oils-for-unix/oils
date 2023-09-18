@@ -317,7 +317,7 @@ _overview() {
   ls tools/*.py | filter-py | $count \
     'Tools' '' "$@"
 
-  ls {doctools,lazylex}/*.py doctools/*.cc | filter-py | $count \
+  ls {doctools,lazylex}/*.py doctools/*.{h,cc} | filter-py | $count \
     'Doc Tools' '' "$@"
 
   ls web/*.js web/*/*.{js,py} | $count \

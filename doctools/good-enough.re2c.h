@@ -18,10 +18,12 @@ enum class Id {
   Unknown,
 
   // For C++ block structure
-  LBrace, RBrace,
+  LBrace,
+  RBrace,
 
   // These are special zero-width tokens for Python
-  Indent, Dedent,
+  Indent,
+  Dedent,
   // Maintain our own stack!
   // https://stackoverflow.com/questions/40960123/how-exactly-a-dedent-token-is-generated-in-python
 };
@@ -261,5 +263,48 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
   lexer->p_current = p;
   return false;
 }
+
+class Hook {
+ public:
+  virtual bool IsPreprocessorLine(char* line, Token* tok) {
+    return false;
+  }
+  virtual ~Hook() {
+  }
+};
+
+enum class preproc {
+  No,
+  Yes,          // #define X 0
+  YesContinue,  // #define X \ continuation
+};
+
+class CppHook : public Hook {
+ public:
+  // Note: testing a single line isn't enough.  We also have to look at line
+  // continuations.
+  // So we may need to switch into another mode.
+
+  virtual bool IsPreprocessorLine(char* line, Token* tok) {
+    const char* p = line;  // mutated by re2c
+    const char* YYMARKER = p;
+
+    while (true) {
+      /*!re2c
+        nul            { return false; }
+
+                       // e.g. #ifdef
+        whitespace '#' not_nul* { break; }
+
+        *              { return false; }
+
+      */
+    }
+    tok->kind = Id::Preproc;
+    tok->end_col = p - line;
+    // Log("line '%s' END %d strlen %d", line, tok->end_col, strlen(line));
+    return true;
+  }
+};
 
 #endif  // GOOD_ENOUGH_H
