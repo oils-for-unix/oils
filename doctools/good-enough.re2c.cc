@@ -86,6 +86,12 @@ enum class Id {
 
   Other,  // any other text
   Unknown,
+
+  // These are special zero-width tokens
+  Indent,
+  Dedent,
+  // Maintain our own stack!
+  // https://stackoverflow.com/questions/40960123/how-exactly-a-dedent-token-is-generated-in-python
 };
 
 struct Token {
@@ -100,8 +106,9 @@ enum class py_mode_e {
 };
 
 enum class cpp_mode_e {
-  Outer,  // default
-  Comm,   // inside /* */ comment
+  Outer,   // default
+  Comm,    // inside /* */ comment
+  RawStr,  // R"zz(string literal)zz"
 };
 
 enum class sh_mode_e {
@@ -189,6 +196,74 @@ class Matcher {
   triple_dq = ["]["]["];
 */
 
+class Hook {
+ public:
+  virtual bool IsPreprocessorLine(char* line, Token* tok) {
+    return false;
+  }
+};
+
+class CppHook : public Hook {
+ public:
+  // Note: testing a single line isn't enough.  We also have to look at line
+  // continuations.
+  // So we may need to switch into another mode.
+
+  virtual bool IsPreprocessorLine(char* line, Token* tok) {
+    const char* p = line;  // mutated by re2c
+    const char* YYMARKER = p;
+
+    while (true) {
+      /*!re2c
+        nul            { return false; }
+
+                       // e.g. #ifdef
+        whitespace '#' not_nul* { break; }
+
+        *              { return false; }
+
+      */
+    }
+    tok->kind = Id::Preproc;
+    tok->end_col = p - line;
+    // Log("line '%s' END %d strlen %d", line, tok->end_col, strlen(line));
+    return true;
+  }
+};
+
+// TODO:
+// Python - compute the indentation, but don't skip next line
+//        - this means Lexer<py_mode_e> is NOT ENOUGH?
+
+// Problems matching #ifdef only at beginning of line
+// I might need to make a special line lexer for that, and it might be used
+// for INDENT/DEDENT too?
+//
+// The start conditions example looks scary, with YYCURSOR and all that
+// https://re2c.org/manual/manual_c.html#start-conditions
+
+#if 0
+    // at start of line?
+    if (lexer->p_current == lexer->line_) {
+      // printf("STARTING ");
+      while (true) {
+      /*!re2c
+                                // break out of case
+        whitespace "#" not_nul* { tok->kind = Id::Preproc; goto outer2; }
+        *                       { goto outer1; }
+
+      */
+      }
+    }
+#endif
+/* this goes into an infinite loop
+        "" / whitespace "#" not_nul* {
+          if (lexer->p_current == lexer->line_) {
+            TOK(Id::Preproc);
+          }
+        }
+*/
+
 // Returns whether EOL was hit
 template <>
 bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
@@ -266,10 +341,9 @@ template <>
 bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
-  const char* YYCTXMARKER = p;  // needed for re2c lookahead operator '/'
+  // const char* YYCTXMARKER = p;  // needed for re2c lookahead operator '/'
 
   // TODO:
-  // - #ifdef
   // - C++ raw strings
   //   R"(
   //   R"zZXx(
@@ -277,36 +351,6 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
   switch (lexer->line_mode) {
   case cpp_mode_e::Outer:
 
-    // Problems matching #ifdef only at beginning of line
-    // I might need to make a special line lexer for that, and it might be used
-    // for INDENT/DEDENT too?
-    //
-    // The start conditions example looks scary, with YYCURSOR and all that
-    // https://re2c.org/manual/manual_c.html#start-conditions
-
-#if 0
-    // at start of line?
-    if (lexer->p_current == lexer->line_) {
-      // printf("STARTING ");
-      while (true) {
-      /*!re2c
-                                // break out of case
-        whitespace "#" not_nul* { tok->kind = Id::Preproc; goto outer2; }
-        *                       { goto outer1; }
-
-      */
-      }
-    }
-#endif
-    /* this goes into an infinite loop
-            "" / whitespace "#" not_nul* {
-              if (lexer->p_current == lexer->line_) {
-                TOK(Id::Preproc);
-              }
-            }
-    */
-
-  outer1:
     while (true) {
       /*!re2c
         nul                    { return true; }
@@ -326,12 +370,13 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
 
         "/" "*"                { TOK_MODE(Id::Comm, cpp_mode_e::Comm); }
 
+        "R" ["] "("            { TOK_MODE(Id::DQ, cpp_mode_e::RawStr); }
+
         // e.g. unclosed quote like "foo
         *                      { TOK(Id::Unknown); }
 
       */
     }
-  outer2:
     break;
 
   case cpp_mode_e::Comm:
@@ -349,6 +394,21 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
       */
     }
     break;
+
+  case cpp_mode_e::RawStr:
+    // Search until next */
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        ")" ["]   { TOK_MODE(Id::DQ, cpp_mode_e::Outer); }
+
+        [^\x00)]* { TOK(Id::DQ); }
+
+        *         { TOK(Id::DQ); }
+
+      */
+    }
     break;
   }
 
@@ -510,6 +570,20 @@ class TsvPrinter : public Printer {
   }
 };
 
+bool TokenIsSignificant(Id id) {
+  switch (id) {
+  case Id::Name:
+  case Id::Other:
+    return true;
+
+  // Comments, whitespace, and string literals aren't significant
+  // TODO: can abort on Id::Unknown?
+  default:
+    break;
+  }
+  return false;
+}
+
 struct Flags {
   lang_e lang;
   bool tsv;
@@ -524,18 +598,11 @@ struct Flags {
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int GoodEnough(const Flags& flag) {
+int GoodEnough(const Flags& flag, Printer* pr, Hook* hook) {
   Reader reader(stdin);
 
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
-
-  Printer* pr;
-  if (flag.tsv) {
-    pr = new TsvPrinter();
-  } else {
-    pr = new AnsiPrinter(flag.more_color);
-  }
 
   int line_num = 1;
   int num_sig = 0;
@@ -549,11 +616,25 @@ int GoodEnough(const Flags& flag) {
     if (line == nullptr) {
       break;  // EOF
     }
+    int start_col = 0;
+
+    Token pre_tok;
+    if (hook->IsPreprocessorLine(line, &pre_tok)) {
+      pr->Print(line, line_num, start_col, pre_tok);
+
+      num_sig += 1;  // a preprocessor line is real code
+      line_num += 1;
+      continue;
+    }
+
     lexer.SetLine(line);
     // Log("line = %s", line);
 
-    int start_col = 0;
-    bool is_significant = false;
+    // TODO:
+    // - Preprocessor hook can emit a token to Printer, and also skip the line
+    // - Python Indent hook can maintain a stack, and emit tokens
+
+    bool line_is_sig = false;
     while (true) {  // tokens on each line
       Token tok;
       bool eol = matcher.Match(&lexer, &tok);
@@ -563,25 +644,15 @@ int GoodEnough(const Flags& flag) {
       pr->Print(line, line_num, start_col, tok);
       start_col = tok.end_col;
 
-      switch (tok.kind) {
-      // Comments, whitespace, and string literals aren't significant
-      case Id::Name:
-      case Id::Other:
-        is_significant = true;
-        break;
-
-      // TODO: can abort on Id::Unknown?
-      default:
-        break;
+      if (TokenIsSignificant(tok.kind)) {
+        line_is_sig = true;
       }
     }
     line_num += 1;
-    num_sig += is_significant;
+    num_sig += line_is_sig;
   }
 
   Log("%d lines, %d significant", line_num - 1, num_sig);
-
-  delete pr;
 
   return 0;
 }
@@ -652,14 +723,35 @@ int main(int argc, char** argv) {
   flag.argv = argv + a;
   flag.argc = argc - a;
 
+  Printer* pr;
+  if (flag.tsv) {
+    pr = new TsvPrinter();
+  } else {
+    pr = new AnsiPrinter(flag.more_color);
+  }
+
+  Hook* hook;
+
+  int status = 0;
   switch (flag.lang) {
   case lang_e::Py:
-    return GoodEnough<py_mode_e>(flag);
+    hook = new Hook();  // default hook
+    status = GoodEnough<py_mode_e>(flag, pr, hook);
+    break;
 
   case lang_e::Cpp:
-    return GoodEnough<cpp_mode_e>(flag);
+    hook = new CppHook();  // preprocessor
+    status = GoodEnough<cpp_mode_e>(flag, pr, hook);
+    break;
 
   default:
-    return GoodEnough<py_mode_e>(flag);
+    hook = new Hook();  // default hook
+    status = GoodEnough<py_mode_e>(flag, pr, hook);
+    break;
   }
+
+  delete hook;
+  delete pr;
+
+  return status;
 }

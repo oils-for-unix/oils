@@ -79,7 +79,7 @@ readonly -a PY_TESTS=(
 )
 
 readonly -a CPP_TESTS=(
-  '#ifdef 0'
+  '#if 0'
   'not prepreproc #ifdef 0'
   "// comment can't "
   "f(); // comment isn't "
@@ -91,6 +91,11 @@ readonly -a CPP_TESTS=(
                 comment
              */
   void g(int x);'
+
+  'char* s = f(R"(one
+  two
+  three)");
+  '
 )
 
 
