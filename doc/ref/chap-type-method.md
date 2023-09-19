@@ -28,5 +28,18 @@ This chapter in the [Oils Reference](index.html) describes YSH types and methods
 
 ## List
 
+### join
+
+Stringify all items in a list and join them by a seperator (default seperator
+is the empty string `""`.)
+
+    var items = [1, 2, 3]
+
+    json write (items->join())  # "123"
+    json write (items->join(" "))  # "1 2 3"
+    json write (items->join(", "))  # "1, 2, 3"
+
+See also: [`join()`](./chap-builtin-func.html#join)
+
 ## Dict
 
