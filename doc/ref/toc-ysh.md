@@ -231,7 +231,7 @@ X [Builtin Sub]   _buffer
   [Primitive] Bool   Int   Float   Str
               Slice   Range   BoundFunc
   [Code]      Eggex   X Template   X Expr   Command
-  [List]      append()   pop()   extend()   X index()
+  [List]      append()   pop()   extend()   X index()   join()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
 X [Proc]      export()   location()

@@ -311,6 +311,7 @@ def AddMethods(methods):
         'append': func_misc.Append(),
         'extend': func_misc.Extend(),
         'pop': func_misc.Pop(),
+        'join': func_misc.Join(),  # NOTE: This is both a method and a func
     }
 
 
