@@ -74,6 +74,22 @@ class Pop(vm._Callable):
         return items.pop()
 
 
+class Join(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, args):
+        # type: (typed_args.Reader) -> value_t
+
+        items = args.PosList()
+        sep = args.PosStr()
+        args.Done()
+
+        return value.Str(items.join(sep))
+
+
 class StartsWith(vm._Callable):
 
     def __init__(self):

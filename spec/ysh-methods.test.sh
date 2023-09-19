@@ -64,3 +64,21 @@ setvar is_a_val = "xyz"
 (Bool)   True
 (Bool)   True
 ## END
+
+#### List->join
+var items = [1, 2, 3]
+
+json write (items->join())  # default separator is ''
+json write (items->join(" "))  # explicit separator (can be any number or chars)
+json write (items->join(", "))  #  separator can be any number of chars
+
+try {
+  json write (items->join(1))  # separator must be a string
+}
+echo "failed with status $_status"
+## STDOUT:
+"123"
+"1 2 3"
+"1, 2, 3"
+failed with status 3
+## END
