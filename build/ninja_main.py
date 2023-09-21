@@ -36,31 +36,18 @@ BUILD_NINJA = 'build.ninja'
 def TarballManifest(cc_h_files):
   names = []
 
-  # Text
+  # Code we know about
+  names.extend(cc_h_files)
+
   names.extend([
+    # Text
     'LICENSE.txt',
     'README-native.txt',
     'configure',
     'install',
     'doc/osh.1',
-    ])
-  names.extend(glob('build/detect-*.c'))
 
-  # Code we know about
-  names.extend(cc_h_files)
-
-  # TODO: crawl headers
-  names.extend(glob('mycpp/*.h'))
-  names.extend(glob('cpp/*.h'))
-
-  # for types.asdl_c.h, which is in build/py.sh, not Ninja
-  names.extend(glob('_gen/frontend/*.h'))
-
-  # ONLY the headers
-  names.extend(glob('prebuilt/*/*.h'))
-
-  # Build scripts
-  names.extend([
+    # Build Scripts
     'build/common.sh',
     'build/native.sh',
 
@@ -73,7 +60,31 @@ def TarballManifest(cc_h_files):
 
     # Generated
     '_build/oils.sh',
+
+    # These are in build/py.sh, not Ninja.  Should probably put them in Ninja.
+    #'_gen/frontend/help_meta.h',
+    '_gen/frontend/match.re2c.h',
+    '_gen/frontend/id_kind.asdl_c.h',
+    '_gen/frontend/types.asdl_c.h',
     ])
+
+  # For configure
+  names.extend(glob('build/detect-*.c'))
+
+  # TODO: crawl headers
+  names.extend(glob('mycpp/*.h'))
+  names.extend(glob('cpp/*.h'))
+
+  # ONLY the headers
+  names.extend(glob('prebuilt/*/*.h'))
+
+  names.sort()  # Pass them to tar sorted
+
+  # Check for dupes here
+  unique = sorted(set(names))
+  if names != unique:
+    dupes = [n for n in names if names.count(n) > 1]
+    raise AssertionError("Tarball manifest shouldn't have duplicates: %s" % dupes)
 
   for name in names:
     print(name)
