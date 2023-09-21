@@ -24,6 +24,7 @@
 #
 # echo "Verbose $[opt.verbose]"
 
+var old = '''
 
 # TODO: how to register these as Args ?
 #
@@ -103,9 +104,9 @@ Documented {  # Do we inherit the name of the proc?  Or $path/$procName?
   # Do we want a longer way of documenting APIs?
   # Document every argument?
   # I like Go's docs
-  desc = '''
+  desc = """
   These are my docs
-  '''
+  """
 
   proc p {
     echo
@@ -160,4 +161,66 @@ func parseArgs(spec, argv) {
   var arg = {}
 
   return ([arg, i])
+}
+'''
+
+
+func __args_getFlagName(flag) {
+  if (flag.long) {
+    return (flag.long[2:])
+  } elif (flag.short) {
+    return (flag.short[1:])
+  }
+
+  error ('No flag.long or flag.short')
+}
+
+func parseArgs(spec, argv) {
+  var i = 0
+  var positionalPos = 0
+  var argc = len(argv)
+  var args = {}
+  var rest = []
+
+  # Would like to have: var value
+  var value = null
+  while (i < argc) {
+    var arg = argv[i]
+    if (arg->startswith('-')) {
+      for flag in (spec.flags) {
+        if ( (flag.short and flag.short === arg) or
+             (flag.long and flag.long === arg) ) {
+          case (flag.type) {
+            (null) { setvar value = true }
+            int {
+              setvar i += 1
+              setvar value = int(argv[i])
+            }
+          }
+
+          var name = __args_getFlagName(flag)
+          setvar args[name] = value
+        }
+      }
+    } elif (positionalPos >= len(spec.args)) {
+      if (not spec.rest) {
+        error ("Too many arguments, unexpected '$arg'")
+      }
+
+      _ rest->append(arg)
+    } else {
+      var pos = spec.args[positionalPos]
+      setvar positionalPos += 1
+
+      case (pos.type) {
+        str { setvar value = arg }
+      }
+
+      setvar args[pos.name] = value
+    }
+
+    setvar i += 1
+  }
+
+  return ([args, i])
 }
