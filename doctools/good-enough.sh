@@ -5,6 +5,28 @@
 # Usage:
 #   doctools/good-enough.sh <function name>
 
+# TODO:
+# - Rename to micro-syntax, from micro-grammars and uchex?
+#   - micro-segmenting and lexing - comments, strings, and maybe { }
+#   - micro-parsing: for indent/dedent
+#
+# - use GNU long flags, test them
+
+# C++
+#
+# - ANSI should cat all argv, and it should print line numbers
+# - HTML string can append with with netstrings!
+#   - (path, html, path, html, ...) should be sufficient, though not fully general
+#   - print SLOC at the top
+# - COALESCE tokens to save space
+
+# Then src-tree reads this stream
+# - actually it can take the filenames directly from here
+#   - it can discard the big HTML!
+
+# Later: port some kind of parser combinator for
+# - def class, etc.
+
 set -o nounset
 set -o pipefail
 set -o errexit
@@ -13,11 +35,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 
 #source build/dev-shell.sh  # 're2c' in path
 source build/ninja-rules-cpp.sh
-
-#source test/common.sh
-#source test/tsv-lib.sh
-
-#export PYTHONPATH=.
 
 my-re2c() {
   local in=$1
@@ -196,4 +213,15 @@ count() {
   ls -l --si -h $BASE_DIR
 }
 
+test-usage() {
+  build
+  $BASE_DIR/good-enough -h
+
+  echo 'echo "hi $name"' | $BASE_DIR/good-enough -l shell
+
+  $BASE_DIR/good-enough -l shell doctools/*.sh
+
+}
+
 "$@"
+

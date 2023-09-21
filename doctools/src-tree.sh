@@ -54,7 +54,7 @@ lexer-files() {
   done
 }
 
-print-files() {
+_print-files() {
   lexer-files
 
   # Important stuff
@@ -66,6 +66,11 @@ print-files() {
   done
 }
 
+# overview-list has dupes
+sorted-files() {
+  _print-files | sort | uniq 
+}
+
 soil-run() {
   ### Write tree starting at _tmp/src-tree/index.html
 
@@ -75,20 +80,26 @@ soil-run() {
 
   local attrs=_tmp/attrs.txt
 
-  # overview-list has dupes
-  time print-files | sort | uniq | xargs doctools/src_tree.py files $out > $attrs
+  # TODO: Pass to micro-syntax tool
+  # Should we pre-determine the file types?
+  # i.e. sort them and then pass explicit -lang?
+
+  # py R js
+  # cc|c|h   sh|bash   osh|ysh
+
+  time sorted-files | xargs doctools/src_tree.py files $out > $attrs
 
   time doctools/src_tree.py dirs $out < $attrs
 }
 
 cat-benchmark() {
   # 355 ms to cat the files!  It takes 2.75 seconds to syntax highlight 'src_tree.py files'
-  time print-files | xargs cat > /dev/null
+  time sorted-files | xargs cat > /dev/null
 }
 
 wc-benchmark() {
   # 372 ms!   Very fast
-  time print-files | xargs wc
+  time sorted-files | xargs wc
 }
 
 

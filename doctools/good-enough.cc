@@ -53,7 +53,7 @@
 //   - shell: we want these at start of line:
 //     - proc X, func X, f()
 //     - not echo proc X
-// - Write some kind of "Transducer/CST" library to pattern match definitions
+// - Some kind of parser combinator library to match definitions
 //   - like showpy, showsh, but you can export to HTML with line numbers, and
 //     anchor
 
@@ -79,6 +79,7 @@
 #include <string.h>
 
 #include <string>
+#include <vector>
 
 #include "good-enough.h"  // requires -I $BASE_DIR
 
@@ -188,6 +189,7 @@ class Reader {
 
 class Printer {
  public:
+  virtual void PrintPath(const char* path) = 0;
   virtual void Print(char* line, int line_num, int start_col, Token token) = 0;
   virtual ~Printer() {
   }
@@ -197,6 +199,11 @@ class HtmlPrinter : public Printer {
  public:
   HtmlPrinter(std::string* out) : Printer(), out_(out) {
     PrintLine(99);
+  }
+
+  virtual void PrintPath(const char* path) {
+    // net string?
+    ;
   }
 
   void PrintLine(int line_num) {
@@ -223,19 +230,19 @@ class HtmlPrinter : public Printer {
       char c = s[i];
 
       switch (c) {
-        case '<':
-          out_->append("&lt;");
-          break;
-        case '>':
-          out_->append("&gt;");
-          break;
-        case '&':
-          out_->append("&amp;");
-          break;
-        default:
-          // Is this inefficient?  Fill 1 char
-          out_->append(1, s[i]);
-          break;
+      case '<':
+        out_->append("&lt;");
+        break;
+      case '>':
+        out_->append("&gt;");
+        break;
+      case '&':
+        out_->append("&amp;");
+        break;
+      default:
+        // Is this inefficient?  Fill 1 char
+        out_->append(1, s[i]);
+        break;
       }
     }
 
@@ -288,6 +295,16 @@ class HtmlPrinter : public Printer {
 class AnsiPrinter : public Printer {
  public:
   AnsiPrinter(bool more_color) : Printer(), more_color_(more_color) {
+  }
+
+  virtual void PrintPath(const char* path) {
+    if (path == nullptr) {
+      path = "<stdin>";
+    }
+    // diff uses +++ ---
+    printf("\n");
+    printf("/// %s%s%s%s ///\n", BOLD, PURPLE, path, RESET);
+    printf("\n");
   }
 
   virtual void Print(char* line, int line_num, int start_col, Token tok) {
@@ -381,6 +398,10 @@ const char* Id_str(Id id) {
 
 class TsvPrinter : public Printer {
  public:
+  virtual void PrintPath(const char* path) {
+    ;
+  }
+
   virtual void Print(char* line, int line_num, int start_col, Token tok) {
     printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.kind), start_col,
            tok.end_col);
@@ -419,9 +440,7 @@ struct Flags {
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int GoodEnough(const Flags& flag, Printer* pr, Hook* hook) {
-  Reader reader(stdin);
-
+int GoodEnough(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
 
@@ -429,11 +448,11 @@ int GoodEnough(const Flags& flag, Printer* pr, Hook* hook) {
   int num_sig = 0;
 
   while (true) {  // read each line, handling errors
-    if (!reader.NextLine()) {
-      Log("getline() error: %s", strerror(reader.err_num_));
+    if (!reader->NextLine()) {
+      Log("getline() error: %s", strerror(reader->err_num_));
       return 1;
     }
-    char* line = reader.Current();
+    char* line = reader->Current();
     if (line == nullptr) {
       break;  // EOF
     }
@@ -474,10 +493,84 @@ int GoodEnough(const Flags& flag, Printer* pr, Hook* hook) {
   return 0;
 }
 
-void PrintHelp() {
-  puts(R"(Usage: good-enough FLAGS*
+int PrintFiles(const Flags& flag, std::vector<char*> files) {
+  std::string html_out;
 
-Recognizes the syntax of the text on stdin, and prints it to stdout.
+  Printer* pr;
+  if (flag.tsv) {
+    pr = new TsvPrinter();
+  } else if (flag.web) {
+    pr = new HtmlPrinter(&html_out);
+  } else {
+    pr = new AnsiPrinter(flag.more_color);
+  }
+
+  Hook* hook = nullptr;
+  Reader* reader = nullptr;
+
+  int status = 0;
+  for (auto path : files) {
+    FILE* f;
+    if (path == nullptr) {
+      f = stdin;
+    } else {
+      f = fopen(path, "r");
+    }
+    pr->PrintPath(path);
+
+    reader = new Reader(f);
+
+    switch (flag.lang) {
+    case lang_e::Py:
+    case lang_e::Unspecified:  // TODO: detect from extension?
+
+      hook = new Hook();  // default hook
+      status = GoodEnough<py_mode_e>(flag, reader, pr, hook);
+      break;
+
+    case lang_e::Cpp:
+      hook = new CppHook();  // preprocessor
+      status = GoodEnough<cpp_mode_e>(flag, reader, pr, hook);
+      break;
+
+    case lang_e::Shell:
+      hook = new Hook();  // default hook
+      status = GoodEnough<sh_mode_e>(flag, reader, pr, hook);
+      break;
+
+    default:
+      assert(0);
+    }
+
+    delete hook;
+    delete reader;
+
+    if (path == nullptr) {
+      ;
+    } else {
+      fclose(f);
+    }
+
+    if (status != 0) {
+      break;
+    }
+
+    if (flag.web) {
+      fputs(html_out.c_str(), stdout);
+    }
+  }
+
+  delete pr;
+
+  return status;
+}
+
+void PrintHelp() {
+  puts(R"(Usage: good-enough FLAGS* FILE*
+
+Recognizes the syntax of each file,, and prints it to stdout.
+
+If there are no files, reads stdin.
 
 Flags:
 
@@ -548,48 +641,14 @@ int main(int argc, char** argv) {
   flag.argv = argv + a;
   flag.argc = argc - a;
 
-  std::string html_out;
-
-  Printer* pr;
-  if (flag.tsv) {
-    pr = new TsvPrinter();
-  } else if (flag.web) {
-    pr = new HtmlPrinter(&html_out);
+  std::vector<char*> files;  // filename, or nullptr for stdin
+  if (flag.argc != 0) {
+    for (int i = 0; i < flag.argc; ++i) {
+      files.push_back(flag.argv[i]);
+    }
   } else {
-    pr = new AnsiPrinter(flag.more_color);
+    files.push_back(nullptr);  // stands for stdin
   }
 
-  Hook* hook;
-
-  int status = 0;
-  switch (flag.lang) {
-  case lang_e::Py:
-    hook = new Hook();  // default hook
-    status = GoodEnough<py_mode_e>(flag, pr, hook);
-    break;
-
-  case lang_e::Cpp:
-    hook = new CppHook();  // preprocessor
-    status = GoodEnough<cpp_mode_e>(flag, pr, hook);
-    break;
-
-  case lang_e::Shell:
-    hook = new Hook();  // default hook
-    status = GoodEnough<sh_mode_e>(flag, pr, hook);
-    break;
-
-  default:
-    hook = new Hook();  // default hook
-    status = GoodEnough<py_mode_e>(flag, pr, hook);
-    break;
-  }
-
-  if (flag.web) {
-    fputs(html_out.c_str(), stdout);
-  }
-
-  delete hook;
-  delete pr;
-
-  return status;
+  return PrintFiles(flag, files);
 }
