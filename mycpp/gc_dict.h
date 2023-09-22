@@ -132,12 +132,12 @@ class Dict {
   // grow the table.
   //
   // Used by dict_contains(), index(), get(), and set().
-  int find_key_in_index(K key) const;
+  int hash_and_probe(K key) const;
 
   // Returns an offset into the table (keys_/values_) for the given key.
   //
   // Returns -1 if the key isn't in the table.
-  int find_key(K key) const;
+  int lookup_kv(K key) const;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Dict));
@@ -170,7 +170,7 @@ class Dict {
 
 template <typename K, typename V>
 inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
-  int pos = haystack->find_key_in_index(needle);
+  int pos = haystack->hash_and_probe(needle);
   return pos != kNotFound && haystack->entry_->items_[pos] >= 0;
 }
 
@@ -219,7 +219,7 @@ void Dict<K, V>::reserve(int n) {
 // d[key] in Python: raises KeyError if not found
 template <typename K, typename V>
 V Dict<K, V>::at(K key) const {
-  int pos = find_key(key);
+  int pos = lookup_kv(key);
   if (pos == kNotFound) {
     throw Alloc<KeyError>();
   } else {
@@ -231,7 +231,7 @@ V Dict<K, V>::at(K key) const {
 // Returns nullptr if not found (Can't use this for non-pointer types?)
 template <typename K, typename V>
 V Dict<K, V>::get(K key) const {
-  int pos = find_key(key);
+  int pos = lookup_kv(key);
   if (pos == kNotFound) {
     return nullptr;
   } else {
@@ -243,7 +243,7 @@ V Dict<K, V>::get(K key) const {
 // expr_parse.py uses this with OTHER_BALANCE
 template <typename K, typename V>
 V Dict<K, V>::get(K key, V default_val) const {
-  int pos = find_key(key);
+  int pos = lookup_kv(key);
   if (pos == kNotFound) {
     return default_val;
   } else {
@@ -285,7 +285,7 @@ void Dict<K, V>::clear() {
 //   - SetAndIntern<V>(D, &string_key, value)
 //   This will enable duplicate copies of the string to be garbage collected
 template <typename K, typename V>
-int Dict<K, V>::find_key_in_index(K key) const {
+int Dict<K, V>::hash_and_probe(K key) const {
   if (capacity_ == 0) {
     return kNotFound;
   }
@@ -347,10 +347,10 @@ int Dict<K, V>::find_key_in_index(K key) const {
 }
 
 template <typename K, typename V>
-int Dict<K, V>::find_key(K key) const {
+int Dict<K, V>::lookup_kv(K key) const {
   if (entry_ != nullptr) {
     // Common case.
-    int pos = find_key_in_index(key);
+    int pos = hash_and_probe(key);
     if (pos == kNotFound || entry_->items_[pos] < 0) {
       return kNotFound;
     }
@@ -371,12 +371,12 @@ int Dict<K, V>::find_key(K key) const {
 template <typename K, typename V>
 void Dict<K, V>::set(K key, V val) {
   DCHECK(obj_header().heap_tag != HeapTag::Global);
-  int pos = find_key_in_index(key);
+  int pos = hash_and_probe(key);
   if (pos == kNotFound) {
     // No room. Resize and see if we can find a slot.
     for (int attempt = 0; attempt < 3; ++attempt) {
       reserve((capacity_ ?: 1) * 2);
-      pos = find_key_in_index(key);
+      pos = hash_and_probe(key);
       if (pos >= 0) {
         break;
       }

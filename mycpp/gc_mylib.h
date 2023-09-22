@@ -42,7 +42,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->obj_header().heap_tag != HeapTag::Global);
-  int pos = haystack->find_key_in_index(needle);
+  int pos = haystack->hash_and_probe(needle);
   if (pos == kNotFound || haystack->entry_->items_[pos] < 0) {
     // Nothing to do.
     return;
@@ -57,7 +57,7 @@ void dict_erase(Dict<K, V>* haystack, K needle) {
   if (offset != last_offset) {
     K last_key = haystack->keys_->items_[last_offset];
     V last_val = haystack->values_->items_[last_offset];
-    int last_pos = haystack->find_key_in_index(last_key);
+    int last_pos = haystack->hash_and_probe(last_key);
     DCHECK(last_pos != kNotFound);
     haystack->keys_->items_[offset] = last_key;
     haystack->values_->items_[offset] = last_val;
