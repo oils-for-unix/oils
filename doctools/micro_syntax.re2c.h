@@ -427,4 +427,16 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
   return false;
 }
 
+// TODO:
+// - Lua / Rust-style multi-line strings, with matching delimiters e.g. r###"
+//   - same as C++ raw string, I think
+//   - similar to here docs, but less complex
+//
+// Inherent problems with "micro segmentation:
+//
+// - Nested double quotes in shell.  echo "hi ${name:-"default"}"
+//   - This means that lexing is **dependent on** parsing: does the second
+//   double quote **close** the first one, or does it start a nested string?
+//   - lexing is non-recursive, parsing is recursive
+
 #endif  // GOOD_ENOUGH_H

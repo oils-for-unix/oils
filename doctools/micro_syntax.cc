@@ -1,73 +1,7 @@
-// Good Enough Syntax Recognition
-
-// Motivation:
+// Micro Syntax
 //
-// - The Github source viewer is too slow.  We want to publish a fast version
-//   of our source code to view.
-//   - We need to link source code from Oils docs.
-// - Aesthetics
-//   - I don't like noisy keyword highlighting.  Just comments and string
-//     literals looks surprisingly good.
-//   - Can use this on the blog too.
-// - HTML equivalent of showsh, showpy -- quickly jump to definitions
-// - YSH needs syntax highlighters, and this code is a GUIDE to writing one.
-//   - The lexer should run on its own.  Generated parsers like TreeSitter
-//     require such a lexer.  In contrast to recursive descent, grammars can't
-//     specify lexer modes.
-// - I realized that "sloccount" is the same problem as syntax highlighting --
-//   you exclude comments, whitespace, and lines with only string literals.
-//   - sloccount is a huge Perl codebase, and we can stop depending on that.
-// - Because re2c is fun, and I wanted to experiment with writing it directly.
-// - Ideas
-//   - use this on your blog?
-//   - embed in a text editor?
+// See doctools/micro-syntax.md
 
-// Two pass algorithm with StartLine:
-//
-// First pass: Lexer modes with no lookahead or lookbehind
-//             "Pre-structuring" as we do in Oils!
-//
-// Second pass:
-//   Python - StartLine WS -> Indent/Dedent
-//   C++ - StartLine MaybePreproc LineCont -> preprocessor
-//
-// Q: Are here docs first pass or second pass?
-
-// TODO:
-// - Python: Indent hook can maintain a stack, and emit tokens
-// - C++
-//   - multi-line preprocessor, comments
-//   - arbitrary raw strings R"zZXx(
-// - Shell
-//   - here docs <<EOF and <<'EOF'
-//     - configure-coreutils uses << \_ACEOF \ACAWK which is annoying
-//   - YSH multi-line strings
-
-// CLI:
-// - take multiple files, guess extension
-//   - mainly so you can glob!
-
-// Parsing:
-// - Name tokens should also have contents?
-//   - at least for Python and C++
-//   - shell: we want these at start of line:
-//     - proc X, func X, f()
-//     - not echo proc X
-// - Some kind of parser combinator library to match definitions
-//   - like showpy, showsh, but you can export to HTML with line numbers, and
-//     anchor
-
-// More languages
-// - R   # comments
-// - JS  // and /* */ and `` for templates
-// - CSS /* */
-// - spec tests have "comm3" CSS class - change to comm4 perhaps
-
-// Shared library interface:
-//
-// ("file contents", "cpp") -> "html"
-//
-// doctools/src-tree.sh prints 822 files, 811 are unique
 
 #include <assert.h>
 #include <errno.h>
@@ -81,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "good-enough.h"  // requires -I $BASE_DIR
+#include "micro_syntax.h"  // requires -I $BASE_DIR
 
 const char* RESET = "\x1b[0;0m";
 const char* BOLD = "\x1b[1m";
@@ -102,7 +36,7 @@ void Log(const char* fmt, ...) {
 }
 
 void die(const char* message) {
-  fprintf(stderr, "good-enough: %s\n", message);
+  fprintf(stderr, "micro-syntax: %s\n", message);
   exit(1);
 }
 
@@ -566,7 +500,7 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
 }
 
 void PrintHelp() {
-  puts(R"(Usage: good-enough FLAGS* FILE*
+  puts(R"(Usage: micro-syntax FLAGS* FILE*
 
 Recognizes the syntax of each file,, and prints it to stdout.
 

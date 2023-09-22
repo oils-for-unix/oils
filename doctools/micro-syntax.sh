@@ -3,7 +3,7 @@
 # Lexing / Parsing experiment
 #
 # Usage:
-#   doctools/good-enough.sh <function name>
+#   doctools/micro-syntax.sh <function name>
 
 # TODO:
 # - Rename to micro-syntax, from micro-grammars and uchex?
@@ -44,7 +44,7 @@ my-re2c() {
   re2c -W -Wno-match-empty-string -Werror -o $out $in
 }
 
-readonly BASE_DIR=_tmp/good-enough
+readonly BASE_DIR=_tmp/micro-syntax
 
 build() {
   local variant=${1:-asan}
@@ -63,11 +63,11 @@ build() {
 
   mkdir -p $BASE_DIR
 
-  local cc=doctools/good-enough.cc
-  local h=$BASE_DIR/good-enough.h
-  local bin=$BASE_DIR/good-enough
+  local cc=doctools/micro_syntax.cc
+  local h=$BASE_DIR/micro_syntax.h
+  local bin=$BASE_DIR/micro_syntax
 
-  my-re2c doctools/good-enough.re2c.h $h
+  my-re2c doctools/micro_syntax.re2c.h $h
 
   # Note: with cc, you need gnu99 instead of c99 for fdopen() and getline()
 
@@ -141,7 +141,7 @@ readonly -a SHELL_TESTS=(
 )
 
 run-tests() {
-  local bin=$BASE_DIR/good-enough
+  local bin=$BASE_DIR/micro_syntax
 
   build
 
@@ -177,21 +177,21 @@ run-tests() {
 
 cpp-self() {
   build
-  cat doctools/good-enough.{re2c.h,cc} | $BASE_DIR/good-enough -l cpp  | less -r
+  cat doctools/micro_syntax.{re2c.h,cc} | $BASE_DIR/micro_syntax -l cpp  | less -r
 }
 
 sh-self() {
   build
-  #$BASE_DIR/good-enough -l shell < doctools/good-enough.sh | less -r
+  #$BASE_DIR/micro_syntax -l shell < doctools/micro_syntax.sh | less -r
 
-  $BASE_DIR/good-enough -l shell -w < doctools/good-enough.sh
+  $BASE_DIR/micro_syntax -l shell -w < doctools/micro-syntax.sh
 }
 
 lexer-def() {
   ### Test on a hard Python file
 
   build
-  $BASE_DIR/good-enough -l py < frontend/lexer_def.py | less -r
+  $BASE_DIR/micro_syntax -l py < frontend/lexer_def.py | less -r
 }
 
 git-comp() {
@@ -199,28 +199,33 @@ git-comp() {
 
   # Exposes nested double quote issue
   build
-  $BASE_DIR/good-enough -l shell < testdata/completion/git | less -r
+  $BASE_DIR/micro_syntax -l shell < testdata/completion/git | less -r
 }
 
 mycpp-runtime() {
   build
-  cat mycpp/gc_str.* | $BASE_DIR/good-enough -l cpp | less -r
+  cat mycpp/gc_str.* | $BASE_DIR/micro_syntax -l cpp | less -r
 }
 
 count() {
-  wc -l doctools/good-enough* $BASE_DIR/*.h
+  wc -l doctools/micro_syntax* $BASE_DIR/*.h
   echo
   ls -l --si -h $BASE_DIR
 }
 
 test-usage() {
   build
-  $BASE_DIR/good-enough -h
+  $BASE_DIR/micro_syntax -h
 
-  echo 'echo "hi $name"' | $BASE_DIR/good-enough -l shell
+  echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell
 
-  $BASE_DIR/good-enough -l shell doctools/*.sh
+  $BASE_DIR/micro_syntax -l shell doctools/*.sh
 
+}
+
+soil-run() {
+  # TODO: hook this up.  This doesn't really fail though
+  run-tests 
 }
 
 "$@"
