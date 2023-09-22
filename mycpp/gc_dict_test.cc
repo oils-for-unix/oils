@@ -552,6 +552,32 @@ TEST test_global_dict() {
   PASS();
 }
 
+TEST test_dict_ordering() {
+  auto d = Alloc<Dict<int, int>>();
+
+  auto in = NewList<int>(std::initializer_list<int>{95, 9, 67, 70, 93, 30, 25,
+                                                    98, 80, 39, 56, 48, 99});
+  for (ListIter<int> it(in); !it.Done(); it.Next()) {
+    d->set(it.Value(), -1);
+  }
+
+  auto keys = d->keys();
+  ASSERT_EQ(len(in), len(keys));
+  for (int i = 0; i < len(in); i++) {
+    ASSERT_EQ(in->index_(i), keys->index_(i));
+  }
+
+  // check that order survives rehashing
+  d->reserve(2 * len(d));
+  keys = d->keys();
+  ASSERT_EQ(len(in), len(keys));
+  for (int i = 0; i < len(in); i++) {
+    ASSERT_EQ(in->index_(i), keys->index_(i));
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -568,6 +594,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_tuple_key);
   RUN_TEST(test_dict_erase);
   RUN_TEST(test_global_dict);
+  RUN_TEST(test_dict_ordering);
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);
