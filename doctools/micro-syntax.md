@@ -27,6 +27,15 @@ Motivations:
   - use this on your blog?
   - embed in a text editor?
 
+## TODO
+
+- Deploy with src-tree - 3 languages at first
+
+- `--long-flags` in C++, probably
+- Syntax issues
+  - C++ preprocessor
+  - post-process maybe-comment
+
 ## Algorithm Notes
 
 Two pass algorithm with StartLine:

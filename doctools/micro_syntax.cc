@@ -137,31 +137,28 @@ class Printer {
 
 class HtmlPrinter : public Printer {
  public:
-  HtmlPrinter(std::string* out) : Printer(), out_(out) {
+  HtmlPrinter() : Printer(), out_() {
   }
 
   virtual void Swap(std::string* s) {
-    out_->swap(*s);
+    // assert(s != nullptr);
+    out_.swap(*s);
   }
 
   virtual void PrintLineNumber(int line_num) {
-    out_->append("<tr><td class=num>");
+    out_.append("<tr><td class=num>");
 
     char buf[16];
     snprintf(buf, 16, "%d", line_num);
-    out_->append(buf);
+    out_.append(buf);
 
-    out_->append("</td><td>");
-
-    // TODO: Print tokens in the line here
-
-    out_->append("</td>\n");
+    out_.append("</td>");
   }
 
   void PrintSpan(const char* css_class, const char* s, int len) {
-    out_->append("<span class=");
-    out_->append(css_class);
-    out_->append(">");
+    out_.append("<span class=");
+    out_.append(css_class);
+    out_.append(">");
 
     // HTML escape the code string
     for (int i = 0; i < len; ++i) {
@@ -169,22 +166,22 @@ class HtmlPrinter : public Printer {
 
       switch (c) {
       case '<':
-        out_->append("&lt;");
+        out_.append("&lt;");
         break;
       case '>':
-        out_->append("&gt;");
+        out_.append("&gt;");
         break;
       case '&':
-        out_->append("&amp;");
+        out_.append("&amp;");
         break;
       default:
         // Is this inefficient?  Fill 1 char
-        out_->append(1, s[i]);
+        out_.append(1, s[i]);
         break;
       }
     }
 
-    out_->append("</span>");
+    out_.append("</span>");
   }
 
   virtual void PrintToken(const char* line, int line_num, int start_col,
@@ -197,7 +194,7 @@ class HtmlPrinter : public Printer {
       break;
 
     case Id::Name:
-      out_->append(p_start, num_bytes);
+      out_.append(p_start, num_bytes);
       break;
 
     case Id::Preproc:
@@ -206,7 +203,7 @@ class HtmlPrinter : public Printer {
 
     case Id::Other:
       // PrintSpan("other", p_start, num_bytes);
-      out_->append(p_start, num_bytes);
+      out_.append(p_start, num_bytes);
       break;
 
     case Id::Str:
@@ -222,13 +219,13 @@ class HtmlPrinter : public Printer {
       PrintSpan("x", p_start, num_bytes);
       break;
     default:
-      out_->append(p_start, num_bytes);
+      out_.append(p_start, num_bytes);
       break;
     }
   }
 
  private:
-  std::string* out_;
+  std::string out_;
 };
 
 class AnsiPrinter : public Printer {
@@ -337,7 +334,7 @@ class TsvPrinter : public Printer {
   }
 
   virtual void Swap(std::string* s) {
-    // out_->swap(*s);
+    // out_.swap(*s);
   }
 
   virtual void PrintToken(const char* line, int line_num, int start_col,
@@ -459,7 +456,7 @@ class AnsiOutput : public OutputStream {
   };
 
   virtual void PathEnd(int num_lines, int num_sig_lines) {
-    fprintf(stdout, "%d lines, %d significant", num_lines, num_sig_lines);
+    fprintf(stdout, "%d lines, %d significant\n", num_lines, num_sig_lines);
   };
 };
 
@@ -513,8 +510,6 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
 }
 
 int PrintFiles(const Flags& flag, std::vector<char*> files) {
-  std::string html_out;
-
   Printer* pr;        // for each file
   OutputStream* out;  // the entire stream
 
@@ -522,7 +517,7 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     pr = new TsvPrinter();
     out = new NetStringOutput(pr);
   } else if (flag.web) {
-    pr = new HtmlPrinter(&html_out);
+    pr = new HtmlPrinter();
     out = new NetStringOutput(pr);
   } else {
     pr = new AnsiPrinter(flag.more_color);
@@ -550,7 +545,6 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
       break;
 
     case lang_e::Py:
-
       hook = new Hook();  // default hook
       status = Scan<py_mode_e>(flag, reader, out);
       break;
@@ -581,10 +575,6 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     if (status != 0) {
       break;
     }
-
-    if (flag.web) {
-      fputs(html_out.c_str(), stdout);
-    }
   }
 
   delete pr;
@@ -602,7 +592,7 @@ If there are no files, reads stdin.
 
 Flags:
 
-  -l    Language: py|cpp
+  -l    Language: py|cpp|shell
   -t    Print tokens as TSV, instead of ANSI color
   -w    Print HTML for the web
 

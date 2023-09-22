@@ -80,7 +80,7 @@ classify() {
     *.sh|*.bash|*.ysh)
       echo "$path" >& $shell
       ;;
-    *.py|*.pyi)
+    *.py|*.pyi|pgen2)  # pgen2 uses Python lexical syntax
       echo "$path" >& $py
       ;;
     *.cc|*.c|*.h)
@@ -122,7 +122,9 @@ classify() {
 }
 
 highlight() {
-  doctools/micro-syntax.sh build opt
+  local variant=opt
+  local variant=asan
+  doctools/micro-syntax.sh build $variant
   for lang in cpp py; do
     time cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
       | doctools/src_tree.py html-files

@@ -463,4 +463,8 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 //   double quote **close** the first one, or does it start a nested string?
 //   - lexing is non-recursive, parsing is recursive
 
+// Shell Comments depend on operator chars
+// echo one # comment
+// echo $(( 16#ff ))'
+
 #endif  // MICRO_SYNTAX_H

@@ -158,29 +158,29 @@ def Files(pairs, attrs_f, spec_to_html=False):
         s = line.lstrip()
 
         if file_type == 'spec':
-          if s.startswith('###'):
-            row['line_class'] = 'comm3'
+          if s.startswith('####'):
+            row['line_class'] = 'spec-comment'
           elif s.startswith('#'):
-            row['line_class'] = 'comm1'
+            row['line_class'] = 'comm'
 
         elif file_type in ('spec', 'sh', 'py', 'R'):
           if s.startswith('#'):
-            row['line_class'] = 'comm1'
+            row['line_class'] = 'comm'
 
         elif file_type == 'cc':
           # Real cheap solution for now
           if s.startswith('//'):
-            row['line_class'] = 'comm1'
+            row['line_class'] = 'comm'
 
         elif file_type == 'js':
           if s.startswith('//'):
-            row['line_class'] = 'comm1'
+            row['line_class'] = 'comm'
 
         out_f.write(ROW_T.expand(row))
 
         line_num += 1
 
-      # parsed by 'dirs'
+      # could be parsed by 'dirs'
       print('%s lines=%d' % (path, line_num), file=attrs_f)
 
       out_f.write('''
@@ -328,11 +328,19 @@ def ReadNetString(in_f):
 
 def HtmlFiles(in_f):
   while True:
-    s = ReadNetString(in_f)
-
-    if s is None:
+    path = ReadNetString(in_f)
+    if path is None:
       break
 
+    html = ReadNetString(in_f)
+    if html is None:
+      raise RuntimeError('Expected 2nd HTML record')
+
+    count = ReadNetString(in_f)
+    if html is None:
+      raise RuntimeError('Expected 3rd HTML record')
+
+    yield path, html, count
     #print(repr(s[:10]))
 
 
@@ -375,7 +383,12 @@ def main(argv):
         out_dir)
 
   elif action == 'html-files':
-    HtmlFiles(sys.stdin)
+    i = 0
+    for path, html, counts in HtmlFiles(sys.stdin):
+      print(path)
+      print(counts)
+      i += 1
+    log('Read %d files', i)
 
   elif action == 'spec-files':
     # Policy for _tmp/spec/osh-minimal/foo.test.html

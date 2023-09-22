@@ -35,13 +35,12 @@ a:hover {
   white-space: pre;
 }
 
-.comm3 {
-  /*font-style: italic;*/
+.spec-comment {
   font-weight: bold;
   color: #0047ab;  /* Cobalt */
 }
 
-.comm1 {
+.comm {
   color: #0047ab;  /* Cobalt */
 }
 /* TODO: a real color scheme, for pre-processor, etc. */

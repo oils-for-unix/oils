@@ -140,6 +140,14 @@ readonly -a SHELL_TESTS=(
 
   # Quoted backslash
   "echo hi \\' there"
+
+  # not a comment!
+  # TODO: shell needs some kind of MaybeComment token
+
+  'echo one#two'
+  'echo $(( 16#ff ))'
+
+  'echo one # comment'
 )
 
 run-tests() {
@@ -238,14 +246,12 @@ test-usage() {
 
   echo 'TSV'
   echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell -t
-
-  # Many files
-  # $BASE_DIR/micro_syntax -l shell doctools/*.sh
-
 }
 
 soil-run() {
-  # TODO: hook this up.  This doesn't really fail though
+  test-usage
+  echo
+
   run-tests 
 }
 
