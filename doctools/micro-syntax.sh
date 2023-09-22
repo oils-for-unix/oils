@@ -244,8 +244,13 @@ test-usage() {
   echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell -w
   echo
 
+  set -x
   echo 'TSV'
   echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell -t
+
+  echo
+  echo
+  echo '"dq"' | $BASE_DIR/micro_syntax -l shell 
 }
 
 soil-run() {

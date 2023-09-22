@@ -126,6 +126,8 @@ class Reader {
 class Printer {
  public:
   virtual void PrintLineNumber(int line_num) = 0;
+  virtual void PrintLineEnd() {
+  }
   virtual void PrintToken(const char* line, int line_num, int start_col,
                           Token token) = 0;
   virtual void Swap(std::string* s) {
@@ -146,20 +148,20 @@ class HtmlPrinter : public Printer {
   }
 
   virtual void PrintLineNumber(int line_num) {
-    out_.append("<tr><td class=num>");
+    out_.append("<tr><td class=num>");  // <tr> closed by PrintLineEnd()
 
     char buf[16];
     snprintf(buf, 16, "%d", line_num);
     out_.append(buf);
 
-    out_.append("</td>");
+    out_.append("</td></td>");  // <td> closed by PrintLineEnd()
   }
 
-  void PrintSpan(const char* css_class, const char* s, int len) {
-    out_.append("<span class=");
-    out_.append(css_class);
-    out_.append(">");
+  virtual void PrintLineEnd() {
+    out_.append("</td></tr>");
+  }
 
+  void PrintEscaped(const char* s, int len) {
     // HTML escape the code string
     for (int i = 0; i < len; ++i) {
       char c = s[i];
@@ -180,6 +182,14 @@ class HtmlPrinter : public Printer {
         break;
       }
     }
+  }
+
+  void PrintSpan(const char* css_class, const char* s, int len) {
+    out_.append("<span class=");
+    out_.append(css_class);
+    out_.append(">");
+
+    PrintEscaped(s, len);
 
     out_.append("</span>");
   }
@@ -414,6 +424,8 @@ class NetStringOutput : public OutputStream {
       pr_->PrintToken(line, line_num, start_col, tok);
       start_col = tok.end_col;
     }
+
+    pr_->PrintLineEnd();
   }
 
   virtual void PathEnd(int num_lines, int num_sig_lines) {
@@ -449,16 +461,76 @@ class AnsiOutput : public OutputStream {
     pr_->PrintLineNumber(line_num);
 
     int start_col = 0;
+    int i = 0;
     for (auto tok : tokens) {
       pr_->PrintToken(line, line_num, start_col, tok);
       start_col = tok.end_col;
+      ++i;
     }
+
+    pr_->PrintLineEnd();
   };
 
   virtual void PathEnd(int num_lines, int num_sig_lines) {
     fprintf(stdout, "%d lines, %d significant\n", num_lines, num_sig_lines);
   };
 };
+
+void PrintTokens(std::vector<Token>& toks) {
+  int start_col = 0;
+  int i = 0;
+  Log("===");
+  for (auto tok : toks) {
+    Log("%2d %10s %2d %2d", i, Id_str(tok.kind), start_col, tok.end_col);
+    start_col = tok.end_col;
+    ++i;
+  }
+  Log("===");
+}
+
+void Optimize(std::vector<Token>* tokens) {
+  std::vector<Token>& toks = *tokens;  // alias
+  // Log("tokens %p toks %p", tokens, toks);
+
+  // PrintTokens(toks);
+
+  int n = toks.size();
+  if (n < 1) {  // nothing to de-duplicate
+    return;
+  }
+
+  int left = 0;
+  int right = 1;
+  while (right < n) {
+    // Log("right ID = %s, end %d", Id_str(toks[right].kind),
+    // toks[right].end_col);
+
+    if (toks[left].kind == toks[right].kind) {
+      // Log("eq");
+      //  Join the tokens together
+      toks[left].end_col = toks[right].end_col;
+    } else {
+      left++;
+      // toks[left] = toks[right];
+      // Log("  not eq, left = %d", left);
+    }
+    right++;
+  }
+  // Log("left = %d, right = %d", left, right);
+
+  // Fiddly condition: one more iteration.  Need some unit tests for this.
+  toks[left].end_col = toks[right - 1].end_col;
+  left++;
+
+  assert(left <= n);
+
+  // PrintTokens(toks);
+
+  // Erase the remaining ones
+  toks.resize(left);
+
+  // PrintTokens(toks);
+}
 
 // This templated method causes some code expansion, but not too much.  The
 // binary went from 38 KB to 42 KB, after being stripped.
@@ -498,6 +570,9 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
         line_is_sig = true;
       }
     }
+
+    // Optimize(&tokens);
+
     out->Line(line_num, line, tokens);
     tokens.clear();
 

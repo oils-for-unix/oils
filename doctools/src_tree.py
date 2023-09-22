@@ -112,7 +112,7 @@ LISTING_T = T("""\
 """)
 
 
-def Files(pairs, attrs_f, spec_to_html=False):
+def Files(pairs, attrs_f, show_breadcrumb=True):
 
   for i, (path, html_out) in enumerate(pairs):
     #log(path)
@@ -142,7 +142,7 @@ def Files(pairs, attrs_f, spec_to_html=False):
         <table>
       ''' % path)
 
-      if not spec_to_html:  # Don't need navigation here
+      if show_breadcrumb:
         Breadcrumb(path, out_f, is_file=True)
 
       file_type = DetectType(path)
@@ -371,7 +371,11 @@ def main(argv):
           pass
 
         shutil.copyfile(path, out_path)
+
+        # Attrs are parsed by MakeTree(), and then used WriteHtmlFiles()
+        # So we can print the write link
         print('%s raw=1' % path, file=attrs_f)
+
         log('Copied %d byte file %s -> %s, no HTML', file_size, path, out_path)
         continue
 
@@ -383,15 +387,30 @@ def main(argv):
         out_dir)
 
   elif action == 'html-files':
+    max_bytes = 0
+
     i = 0
     for path, html, counts in HtmlFiles(sys.stdin):
-      print(path)
-      print(counts)
+      num_bytes = len(html)
+      if num_bytes > 200000:
+        log('*** BIG FILE: %r is %d bytes', path, num_bytes)
+
+      max_bytes = max(max_bytes, num_bytes)
+
+      # We can repeat the raw=1 logic I guess
+      # attrs_f is sys.stdout
+
+      #print(path)
+      #print(counts)
       i += 1
+
     log('Read %d files', i)
+    log('Max bytes = %d', max_bytes)
+
 
   elif action == 'spec-files':
     # Policy for _tmp/spec/osh-minimal/foo.test.html
+    # This just changes the HTML names?
 
     out_dir = argv[2]
     spec_names = argv[3:]
@@ -403,7 +422,7 @@ def main(argv):
        pairs.append((src, html_out))
 
     attrs_f = sys.stdout
-    n = Files(pairs, attrs_f, spec_to_html=True)
+    n = Files(pairs, attrs_f, show_breadcrumb=False)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
 

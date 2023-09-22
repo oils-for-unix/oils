@@ -164,12 +164,14 @@ cat-benchmark() {
 micro-bench() {
   # ~435 ms, not bad.  cat is ~355 ms, so that's only 70 ms more.
 
-  doctools/micro-syntax.sh build opt
+  local variant=opt
+  #local variant=asan
+  doctools/micro-syntax.sh build $variant
 
-  # Producing 11.5 MB of text.
+  # Producing 11.4 MB of text.
   time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp | wc --bytes
 
-  # 17.3 MB of text
+  # 18.5 MB of text
   time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp -w | wc --bytes
 }
 
