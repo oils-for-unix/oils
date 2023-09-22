@@ -1145,6 +1145,25 @@ TEST test_str_format() {
   PASS();
 }
 
+// a very innovative hash function
+int coffee_hash(const char*, int) {
+  return 0xc0ffee;
+}
+
+TEST test_str_hash() {
+  Str* s1 = StrFromC("a string");
+  Str* s2 = StrFromC("a different string");
+  int h1 = s1->hash(fnv1);
+  int h2 = s2->hash(fnv1);
+  ASSERT(h1 != h2);
+
+  // flag bit should be set and we should return the cached hash.
+  ASSERT_EQ(h1, s1->hash(coffee_hash));
+  ASSERT_EQ(h2, s2->hash(coffee_hash));
+
+  PASS();
+}
+
 GLOBAL_STR(kStrFoo, "foo");
 GLOBAL_STR(a, "a");
 GLOBAL_STR(XX, "XX");
@@ -1459,6 +1478,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_str_join);
 
   RUN_TEST(test_str_format);
+
+  RUN_TEST(test_str_hash);
 
   // Duplicate
   RUN_TEST(str_replace_test);
