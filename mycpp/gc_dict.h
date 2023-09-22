@@ -17,6 +17,9 @@ const int kDeletedEntry = -1;
 // entry_.
 const int kEmptyEntry = -2;
 
+// NOTE: This is just a return value. It is never stored in the index.
+const int kNotFound = -3;
+
 // Helper for keys() and values()
 template <typename T>
 List<T>* ListFromDictSlab(Slab<T>* slab, int n) {
@@ -168,7 +171,7 @@ class Dict {
 template <typename K, typename V>
 inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
   int pos = haystack->find_key_in_index(needle);
-  return pos != -1 && haystack->entry_->items_[pos] >= 0;
+  return pos != kNotFound && haystack->entry_->items_[pos] >= 0;
 }
 
 template <typename K, typename V>
@@ -217,7 +220,7 @@ void Dict<K, V>::reserve(int n) {
 template <typename K, typename V>
 V Dict<K, V>::at(K key) const {
   int pos = find_key(key);
-  if (pos == -1) {
+  if (pos == kNotFound) {
     throw Alloc<KeyError>();
   } else {
     return values_->items_[pos];
@@ -229,7 +232,7 @@ V Dict<K, V>::at(K key) const {
 template <typename K, typename V>
 V Dict<K, V>::get(K key) const {
   int pos = find_key(key);
-  if (pos == -1) {
+  if (pos == kNotFound) {
     return nullptr;
   } else {
     return values_->items_[pos];
@@ -241,7 +244,7 @@ V Dict<K, V>::get(K key) const {
 template <typename K, typename V>
 V Dict<K, V>::get(K key, V default_val) const {
   int pos = find_key(key);
-  if (pos == -1) {
+  if (pos == kNotFound) {
     return default_val;
   } else {
     return values_->items_[pos];
@@ -284,7 +287,7 @@ void Dict<K, V>::clear() {
 template <typename K, typename V>
 int Dict<K, V>::find_key_in_index(K key) const {
   if (capacity_ == 0) {
-    return -1;
+    return kNotFound;
   }
 
   // Hash the key onto a slot in the index. If the first slot is occupied, probe
@@ -295,18 +298,19 @@ int Dict<K, V>::find_key_in_index(K key) const {
   // If there's a vacancy because of deletion on the probe path for this key, we
   // should fill it before consuming a slot that has never been used. This
   // should help keep the index somewhat compact.
-  int tombstone = -1;
+  int tombstone = kNotFound;
+
   for (int i = init_bucket; i < capacity_; ++i) {
     int pos = entry_->items_[i];  // NOT an index now
     DCHECK(pos < len_);
     if (pos == kDeletedEntry) {
-      if (tombstone == -1) {
-        tombstone = pos;
+      if (tombstone == kNotFound) {
+        tombstone = i;
       }
       continue;
     }
     if (pos == kEmptyEntry) {
-      if (tombstone != -1) {
+      if (tombstone != kNotFound) {
         return tombstone;
       }
       return i;
@@ -322,13 +326,13 @@ int Dict<K, V>::find_key_in_index(K key) const {
     int pos = entry_->items_[i];  // NOT an index now
     DCHECK(pos < len_);
     if (pos == kDeletedEntry) {
-      if (tombstone == -1) {
-        tombstone = pos;
+      if (tombstone == kNotFound) {
+        tombstone = i;
       }
       continue;
     }
     if (pos == kEmptyEntry) {
-      if (tombstone != -1) {
+      if (tombstone != kNotFound) {
         return tombstone;
       }
       return i;
@@ -347,8 +351,8 @@ int Dict<K, V>::find_key(K key) const {
   if (entry_ != nullptr) {
     // Common case.
     int pos = find_key_in_index(key);
-    if (pos == -1 || entry_->items_[pos] < 0) {
-      return -1;
+    if (pos == kNotFound || entry_->items_[pos] < 0) {
+      return kNotFound;
     }
     return entry_->items_[pos];
   }
@@ -361,14 +365,14 @@ int Dict<K, V>::find_key(K key) const {
   }
 
   // Not found.
-  return -1;
+  return kNotFound;
 }
 
 template <typename K, typename V>
 void Dict<K, V>::set(K key, V val) {
   DCHECK(obj_header().heap_tag != HeapTag::Global);
   int pos = find_key_in_index(key);
-  if (pos == -1) {
+  if (pos == kNotFound) {
     // No room. Resize and see if we can find a slot.
     for (int attempt = 0; attempt < 3; ++attempt) {
       reserve((capacity_ ?: 1) * 2);
@@ -377,8 +381,8 @@ void Dict<K, V>::set(K key, V val) {
         break;
       }
     }
-    CHECK(pos != -1);
   }
+  DCHECK(pos >= 0);
   int offset = entry_->items_[pos];
   DCHECK(offset < len_);
   if (offset < 0) {
