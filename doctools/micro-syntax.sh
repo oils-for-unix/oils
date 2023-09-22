@@ -73,8 +73,10 @@ build() {
 
   # g++ - otherwise virtual functions don't work!
 
+  set -o xtrace
   g++ -std=c++11 -Wall -I $BASE_DIR $cxxflags \
     -o $bin $cc
+  set +o xtrace
 
   strip -o $bin.stripped $bin
 
@@ -170,6 +172,11 @@ run-tests() {
     echo "$s" | $bin -l shell
     echo
   done
+
+  # No language specified
+  echo '==== No language'
+  head $0 | $bin
+  echo
 
   echo '/dev/null'
   $bin < /dev/null

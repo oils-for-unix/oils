@@ -294,6 +294,48 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
     WriteHtmlFiles(child, child_out, rel_path=child_rel, base_url=child_base)
 
 
+def ReadNetString(in_f):
+
+  digits = []
+  for i in xrange(10):  # up to 10 digits
+    c = in_f.read(1)
+    if c == '':
+      return None  # EOF
+
+    if c == ':':
+      break
+
+    if not c.isdigit():
+      raise RuntimeError('Bad byte %r' % c)
+
+    digits.append(c)
+
+  if c != ':':
+    raise RuntimeError('Expected colon, got %r' % c)
+
+  n = int(''.join(digits))
+
+  s = in_f.read(n)
+  if len(s) != n:
+    raise RuntimeError('Expected %d bytes, got %d' % (n, len(s)))
+
+  c = in_f.read(1)
+  if c != ',':
+    raise RuntimeError('Expected comma, got %r' % c)
+
+  return s
+
+
+def HtmlFiles(in_f):
+  while True:
+    s = ReadNetString(in_f)
+
+    if s is None:
+      break
+
+    #print(repr(s[:10]))
+
+
 def main(argv):
   action = argv[1]
 
@@ -331,6 +373,9 @@ def main(argv):
     n = Files(pairs, attrs_f)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
+
+  elif action == 'html-files':
+    HtmlFiles(sys.stdin)
 
   elif action == 'spec-files':
     # Policy for _tmp/spec/osh-minimal/foo.test.html

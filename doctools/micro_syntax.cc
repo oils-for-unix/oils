@@ -43,7 +43,7 @@ void die(const char* message) {
 }
 
 enum class lang_e {
-  Unspecified,
+  None,
 
   Py,
   Shell,
@@ -128,6 +128,9 @@ class Printer {
   virtual void PrintLineNumber(int line_num) = 0;
   virtual void PrintToken(const char* line, int line_num, int start_col,
                           Token token) = 0;
+  virtual void Swap(std::string* s) {
+    assert(0);
+  }
   virtual ~Printer() {
   }
 };
@@ -135,16 +138,13 @@ class Printer {
 class HtmlPrinter : public Printer {
  public:
   HtmlPrinter(std::string* out) : Printer(), out_(out) {
-    PrintLine(99);
   }
 
-  void NetString(char* s) {
+  virtual void Swap(std::string* s) {
+    out_->swap(*s);
   }
 
   virtual void PrintLineNumber(int line_num) {
-  }
-
-  void PrintLine(int line_num) {
     out_->append("<tr><td class=num>");
 
     char buf[16];
@@ -336,6 +336,10 @@ class TsvPrinter : public Printer {
     ;
   }
 
+  virtual void Swap(std::string* s) {
+    // out_->swap(*s);
+  }
+
   virtual void PrintToken(const char* line, int line_num, int start_col,
                           Token tok) {
     printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.kind), start_col,
@@ -370,22 +374,11 @@ struct Flags {
   char** argv;
 };
 
-// OutputStream - stdout contains either
-// - netstrings of HTML, or Token structs
-// - ANSI text
-//
-// API:
-//
-//   PathBegin(const char* path)
-//
-//   Line(int line_num, std::vector<Token>)  -- the whole file, or
-//   TODO: tokens can be optimized
-//
-//   PathEnd(int num_lines, int num_sig_lines)
-//
-// FilePrinter
-
 class OutputStream {
+  // stdout contains either
+  // - netstrings of HTML, or TSV Token structs
+  // - ANSI text
+
  public:
   OutputStream(Printer* pr) : pr_(pr) {
   }
@@ -397,20 +390,26 @@ class OutputStream {
   }
 
  protected:
-  Printer* pr_;
+  Printer* pr_;  // how to print each file
 };
 
 class NetStringOutput : public OutputStream {
  public:
   NetStringOutput(Printer* pr) : OutputStream(pr) {
   }
-  virtual void PathBegin(const char* path) {
-    ;
+  void PrintNetString(const char* s, int len) {
+    fprintf(stdout, "%d:%*s,", len, len, s);
   }
+
+  virtual void PathBegin(const char* path) {
+    if (path == nullptr) {
+      path = "<stdin>";
+    }
+    PrintNetString(path, strlen(path));
+  }
+
   virtual void Line(int line_num, const char* line,
                     const std::vector<Token>& tokens) {
-    // TODO: Collect into a single HTML string
-
     pr_->PrintLineNumber(line_num);
 
     int start_col = 0;
@@ -419,8 +418,17 @@ class NetStringOutput : public OutputStream {
       start_col = tok.end_col;
     }
   }
+
   virtual void PathEnd(int num_lines, int num_sig_lines) {
-    Log("%d lines, %d significant", num_lines, num_sig_lines);
+    std::string string_for_file;
+    pr_->Swap(&string_for_file);
+
+    PrintNetString(string_for_file.c_str(), string_for_file.size());
+
+    char buf[64];
+    int n =
+        snprintf(buf, 64, "%d lines, %d significant", num_lines, num_sig_lines);
+    PrintNetString(buf, n);
   }
 };
 
@@ -451,7 +459,7 @@ class AnsiOutput : public OutputStream {
   };
 
   virtual void PathEnd(int num_lines, int num_sig_lines) {
-    Log("%d lines, %d significant", num_lines, num_sig_lines);
+    fprintf(stdout, "%d lines, %d significant", num_lines, num_sig_lines);
   };
 };
 
@@ -493,11 +501,11 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
         line_is_sig = true;
       }
     }
-    line_num += 1;
-    num_sig += line_is_sig;
-
     out->Line(line_num, line, tokens);
     tokens.clear();
+
+    line_num += 1;
+    num_sig += line_is_sig;
   }
 
   out->PathEnd(line_num - 1, num_sig);
@@ -536,8 +544,12 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     reader = new Reader(f);
 
     switch (flag.lang) {
+    case lang_e::None:
+      hook = new Hook();  // default hook
+      status = Scan<none_mode_e>(flag, reader, out);
+      break;
+
     case lang_e::Py:
-    case lang_e::Unspecified:  // TODO: detect from extension?
 
       hook = new Hook();  // default hook
       status = Scan<py_mode_e>(flag, reader, out);
@@ -606,7 +618,7 @@ int main(int argc, char** argv) {
   // - LATER: parsed definitions, for now just do line by line
   //   - maybe do a transducer on the tokens
 
-  Flags flag = {lang_e::Unspecified};
+  Flags flag = {lang_e::None};
 
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.

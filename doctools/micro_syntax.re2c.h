@@ -1,7 +1,8 @@
-#ifndef GOOD_ENOUGH_H
-#define GOOD_ENOUGH_H
+#ifndef MICRO_SYNTAX_H
+#define MICRO_SYNTAX_H
 
 #include <assert.h>
+#include <string.h>  // strlen()
 
 enum class Id {
   Comm,
@@ -65,6 +66,27 @@ class Matcher {
   // param.
   bool Match(Lexer<T>* lexer, Token* tok);
 };
+
+enum class none_mode_e {
+  Outer,  // default
+};
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<none_mode_e>::Match(Lexer<none_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+
+  if (*p == '\0') {  // end of line
+    return true;
+  }
+
+  // Every line is a token
+  int n = strlen(p);
+  tok->kind = Id::Other;
+  tok->end_col = n;
+  lexer->p_current += n;
+  return false;
+}
 
 // Macros for semantic actions
 
@@ -441,4 +463,4 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 //   double quote **close** the first one, or does it start a nested string?
 //   - lexing is non-recursive, parsing is recursive
 
-#endif  // GOOD_ENOUGH_H
+#endif  // MICRO_SYNTAX_H

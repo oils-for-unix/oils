@@ -122,8 +122,11 @@ classify() {
 }
 
 highlight() {
-  doctools/micro-syntax.sh build
-  cat $BASE_DIR/cpp.txt | xargs _tmp/micro-syntax/micro_syntax -l cpp #-w
+  doctools/micro-syntax.sh build opt
+  for lang in cpp py; do
+    time cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
+      | doctools/src_tree.py html-files
+  done
 }
 
 soil-run() {
@@ -157,10 +160,15 @@ cat-benchmark() {
 }
 
 micro-bench() {
-  # 468 ms, not bad.  So it's less than 100 ms over cat?
+  # ~435 ms, not bad.  cat is ~355 ms, so that's only 70 ms more.
 
-  # Producing 7.5 MB of text.
+  doctools/micro-syntax.sh build opt
+
+  # Producing 11.5 MB of text.
   time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp | wc --bytes
+
+  # 17.3 MB of text
+  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp -w | wc --bytes
 }
 
 
