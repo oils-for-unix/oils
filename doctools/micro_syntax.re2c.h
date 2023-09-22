@@ -1,6 +1,8 @@
 #ifndef GOOD_ENOUGH_H
 #define GOOD_ENOUGH_H
 
+#include <assert.h>
+
 enum class Id {
   Comm,
   WS,

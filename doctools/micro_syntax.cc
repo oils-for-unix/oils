@@ -2,6 +2,7 @@
 //
 // See doctools/micro-syntax.md
 
+#include "micro_syntax.h"  // requires -I $BASE_DIR
 
 #include <assert.h>
 #include <errno.h>
@@ -15,17 +16,18 @@
 #include <string>
 #include <vector>
 
-#include "micro_syntax.h"  // requires -I $BASE_DIR
-
 const char* RESET = "\x1b[0;0m";
 const char* BOLD = "\x1b[1m";
 const char* REVERSE = "\x1b[7m";  // reverse video
 
+const char* BLACK = "\x1b[30m";
 const char* RED = "\x1b[31m";
 const char* GREEN = "\x1b[32m";
 const char* YELLOW = "\x1b[33m";
 const char* BLUE = "\x1b[34m";
 const char* PURPLE = "\x1b[35m";
+
+const char* BLACK2 = "\x1b[90m";
 
 void Log(const char* fmt, ...) {
   va_list args;
@@ -124,6 +126,7 @@ class Reader {
 class Printer {
  public:
   virtual void PrintPath(const char* path) = 0;
+  virtual void PrintLineNumber(int line_num) = 0;
   virtual void Print(char* line, int line_num, int start_col, Token token) = 0;
   virtual ~Printer() {
   }
@@ -138,6 +141,9 @@ class HtmlPrinter : public Printer {
   virtual void PrintPath(const char* path) {
     // net string?
     ;
+  }
+
+  virtual void PrintLineNumber(int line_num) {
   }
 
   void PrintLine(int line_num) {
@@ -237,8 +243,12 @@ class AnsiPrinter : public Printer {
     }
     // diff uses +++ ---
     printf("\n");
-    printf("/// %s%s%s%s ///\n", BOLD, PURPLE, path, RESET);
+    printf("=== %s%s%s%s ===\n", BOLD, PURPLE, path, RESET);
     printf("\n");
+  }
+
+  virtual void PrintLineNumber(int line_num) {
+    printf("%s%5d%s ", BLACK2, line_num, RESET);
   }
 
   virtual void Print(char* line, int line_num, int start_col, Token tok) {
@@ -336,6 +346,10 @@ class TsvPrinter : public Printer {
     ;
   }
 
+  virtual void PrintLineNumber(int line_num) {
+    ;
+  }
+
   virtual void Print(char* line, int line_num, int start_col, Token tok) {
     printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.kind), start_col,
            tok.end_col);
@@ -374,7 +388,7 @@ struct Flags {
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int GoodEnough(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
+int Scan(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
 
@@ -391,6 +405,8 @@ int GoodEnough(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
       break;  // EOF
     }
     int start_col = 0;
+
+    pr->PrintLineNumber(line_num);
 
     Token pre_tok;
     if (hook->IsPreprocessorLine(line, &pre_tok)) {
@@ -459,17 +475,17 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     case lang_e::Unspecified:  // TODO: detect from extension?
 
       hook = new Hook();  // default hook
-      status = GoodEnough<py_mode_e>(flag, reader, pr, hook);
+      status = Scan<py_mode_e>(flag, reader, pr, hook);
       break;
 
     case lang_e::Cpp:
       hook = new CppHook();  // preprocessor
-      status = GoodEnough<cpp_mode_e>(flag, reader, pr, hook);
+      status = Scan<cpp_mode_e>(flag, reader, pr, hook);
       break;
 
     case lang_e::Shell:
       hook = new Hook();  // default hook
-      status = GoodEnough<sh_mode_e>(flag, reader, pr, hook);
+      status = Scan<sh_mode_e>(flag, reader, pr, hook);
       break;
 
     default:

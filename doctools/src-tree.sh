@@ -71,6 +71,61 @@ sorted-files() {
   _print-files | sort | uniq 
 }
 
+readonly BASE_DIR=_tmp/src-tree
+
+classify() {
+  local prefix=
+  sorted-files | while read -r path; do
+  case $path in
+    *.sh|*.bash|*.ysh)
+      echo "$path" >& $shell
+      ;;
+    *.py|*.pyi)
+      echo "$path" >& $py
+      ;;
+    *.cc|*.c|*.h)
+      echo "$path" >& $cpp
+      ;;
+    *.R)
+      echo "$path" >& $R
+      ;;
+    *.js)
+      echo "$path" >& $js
+      ;;
+    *.asdl)
+      echo "$path" >& $asdl
+      ;;
+    *.md)
+      echo "$path" >& $md
+      ;;
+    *)
+      echo "$path" >& $other
+    esac
+  done {cpp}>$BASE_DIR/cpp.txt \
+       {py}>$BASE_DIR/py.txt \
+       {shell}>$BASE_DIR/shell.txt \
+       {R}>$BASE_DIR/R.txt \
+       {js}>$BASE_DIR/js.txt \
+       {md}>$BASE_DIR/md.txt \
+       {asdl}>$BASE_DIR/asdl.txt \
+       {other}>$BASE_DIR/other.txt
+
+  # Other
+  # .mk
+  # .re2c.txt
+  # configure install
+  # .pgen2
+  #
+  # Just leave those un-highlighted for now
+
+  wc -l $BASE_DIR/*.txt
+}
+
+highlight() {
+  doctools/micro-syntax.sh build
+  cat $BASE_DIR/cpp.txt | xargs _tmp/micro-syntax/micro_syntax -l cpp #-w
+}
+
 soil-run() {
   ### Write tree starting at _tmp/src-tree/index.html
 
@@ -94,12 +149,18 @@ soil-run() {
 
 cat-benchmark() {
   # 355 ms to cat the files!  It takes 2.75 seconds to syntax highlight 'src_tree.py files'
-  time sorted-files | xargs cat > /dev/null
+  #
+  # Producing 5.9 MB of text.
+  time sorted-files | xargs cat | wc --bytes
+
+  # Note: wc -l is not much slower.
 }
 
-wc-benchmark() {
-  # 372 ms!   Very fast
-  time sorted-files | xargs wc
+micro-bench() {
+  # 468 ms, not bad.  So it's less than 100 ms over cat?
+
+  # Producing 7.5 MB of text.
+  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp | wc --bytes
 }
 
 

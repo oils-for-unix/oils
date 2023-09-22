@@ -208,7 +208,9 @@ mycpp-runtime() {
 }
 
 count() {
-  wc -l doctools/micro_syntax* $BASE_DIR/*.h
+  wc -l doctools/micro_syntax* 
+  echo
+  wc -l $BASE_DIR/*.h
   echo
   ls -l --si -h $BASE_DIR
 }
