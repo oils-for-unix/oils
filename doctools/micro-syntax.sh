@@ -217,11 +217,23 @@ count() {
 
 test-usage() {
   build
+
+  # help
   $BASE_DIR/micro_syntax -h
 
+  echo 'ANSI'
   echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell
+  echo
 
-  $BASE_DIR/micro_syntax -l shell doctools/*.sh
+  echo 'WEB'
+  echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell -w
+  echo
+
+  echo 'TSV'
+  echo 'echo "hi $name"' | $BASE_DIR/micro_syntax -l shell -t
+
+  # Many files
+  # $BASE_DIR/micro_syntax -l shell doctools/*.sh
 
 }
 

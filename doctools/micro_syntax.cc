@@ -125,9 +125,9 @@ class Reader {
 
 class Printer {
  public:
-  virtual void PrintPath(const char* path) = 0;
   virtual void PrintLineNumber(int line_num) = 0;
-  virtual void Print(char* line, int line_num, int start_col, Token token) = 0;
+  virtual void PrintToken(const char* line, int line_num, int start_col,
+                          Token token) = 0;
   virtual ~Printer() {
   }
 };
@@ -138,9 +138,7 @@ class HtmlPrinter : public Printer {
     PrintLine(99);
   }
 
-  virtual void PrintPath(const char* path) {
-    // net string?
-    ;
+  void NetString(char* s) {
   }
 
   virtual void PrintLineNumber(int line_num) {
@@ -160,7 +158,7 @@ class HtmlPrinter : public Printer {
     out_->append("</td>\n");
   }
 
-  void PrintSpan(const char* css_class, char* s, int len) {
+  void PrintSpan(const char* css_class, const char* s, int len) {
     out_->append("<span class=");
     out_->append(css_class);
     out_->append(">");
@@ -189,8 +187,9 @@ class HtmlPrinter : public Printer {
     out_->append("</span>");
   }
 
-  virtual void Print(char* line, int line_num, int start_col, Token tok) {
-    char* p_start = line + start_col;
+  virtual void PrintToken(const char* line, int line_num, int start_col,
+                          Token tok) {
+    const char* p_start = line + start_col;
     int num_bytes = tok.end_col - start_col;
     switch (tok.kind) {
     case Id::Comm:
@@ -237,22 +236,13 @@ class AnsiPrinter : public Printer {
   AnsiPrinter(bool more_color) : Printer(), more_color_(more_color) {
   }
 
-  virtual void PrintPath(const char* path) {
-    if (path == nullptr) {
-      path = "<stdin>";
-    }
-    // diff uses +++ ---
-    printf("\n");
-    printf("=== %s%s%s%s ===\n", BOLD, PURPLE, path, RESET);
-    printf("\n");
-  }
-
   virtual void PrintLineNumber(int line_num) {
     printf("%s%5d%s ", BLACK2, line_num, RESET);
   }
 
-  virtual void Print(char* line, int line_num, int start_col, Token tok) {
-    char* p_start = line + start_col;
+  virtual void PrintToken(const char* line, int line_num, int start_col,
+                          Token tok) {
+    const char* p_start = line + start_col;
     int num_bytes = tok.end_col - start_col;
     switch (tok.kind) {
     case Id::Comm:
@@ -342,15 +332,12 @@ const char* Id_str(Id id) {
 
 class TsvPrinter : public Printer {
  public:
-  virtual void PrintPath(const char* path) {
-    ;
-  }
-
   virtual void PrintLineNumber(int line_num) {
     ;
   }
 
-  virtual void Print(char* line, int line_num, int start_col, Token tok) {
+  virtual void PrintToken(const char* line, int line_num, int start_col,
+                          Token tok) {
     printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.kind), start_col,
            tok.end_col);
     // printf("  -> mode %d\n", lexer.line_mode);
@@ -383,12 +370,97 @@ struct Flags {
   char** argv;
 };
 
+// OutputStream - stdout contains either
+// - netstrings of HTML, or Token structs
+// - ANSI text
+//
+// API:
+//
+//   PathBegin(const char* path)
+//
+//   Line(int line_num, std::vector<Token>)  -- the whole file, or
+//   TODO: tokens can be optimized
+//
+//   PathEnd(int num_lines, int num_sig_lines)
+//
+// FilePrinter
+
+class OutputStream {
+ public:
+  OutputStream(Printer* pr) : pr_(pr) {
+  }
+  virtual void PathBegin(const char* path) = 0;
+  virtual void Line(int line_num, const char* line,
+                    const std::vector<Token>& tokens) = 0;
+  virtual void PathEnd(int num_lines, int num_sig_lines) = 0;
+  virtual ~OutputStream() {
+  }
+
+ protected:
+  Printer* pr_;
+};
+
+class NetStringOutput : public OutputStream {
+ public:
+  NetStringOutput(Printer* pr) : OutputStream(pr) {
+  }
+  virtual void PathBegin(const char* path) {
+    ;
+  }
+  virtual void Line(int line_num, const char* line,
+                    const std::vector<Token>& tokens) {
+    // TODO: Collect into a single HTML string
+
+    pr_->PrintLineNumber(line_num);
+
+    int start_col = 0;
+    for (auto tok : tokens) {
+      pr_->PrintToken(line, line_num, start_col, tok);
+      start_col = tok.end_col;
+    }
+  }
+  virtual void PathEnd(int num_lines, int num_sig_lines) {
+    Log("%d lines, %d significant", num_lines, num_sig_lines);
+  }
+};
+
+class AnsiOutput : public OutputStream {
+ public:
+  AnsiOutput(Printer* pr) : OutputStream(pr) {
+  }
+
+  virtual void PathBegin(const char* path) {
+    if (path == nullptr) {
+      path = "<stdin>";
+    }
+    // diff uses +++ ---
+    printf("\n");
+    printf("=== %s%s%s%s ===\n", BOLD, PURPLE, path, RESET);
+    printf("\n");
+  }
+
+  virtual void Line(int line_num, const char* line,
+                    const std::vector<Token>& tokens) {
+    pr_->PrintLineNumber(line_num);
+
+    int start_col = 0;
+    for (auto tok : tokens) {
+      pr_->PrintToken(line, line_num, start_col, tok);
+      start_col = tok.end_col;
+    }
+  };
+
+  virtual void PathEnd(int num_lines, int num_sig_lines) {
+    Log("%d lines, %d significant", num_lines, num_sig_lines);
+  };
+};
+
 // This templated method causes some code expansion, but not too much.  The
 // binary went from 38 KB to 42 KB, after being stripped.
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int Scan(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
+int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
 
@@ -404,22 +476,10 @@ int Scan(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
     if (line == nullptr) {
       break;  // EOF
     }
-    int start_col = 0;
-
-    pr->PrintLineNumber(line_num);
-
-    Token pre_tok;
-    if (hook->IsPreprocessorLine(line, &pre_tok)) {
-      pr->Print(line, line_num, start_col, pre_tok);
-
-      num_sig += 1;  // a preprocessor line is real code
-      line_num += 1;
-      continue;
-    }
 
     lexer.SetLine(line);
-    // Log("line = %s", line);
 
+    std::vector<Token> tokens;
     bool line_is_sig = false;
     while (true) {  // tokens on each line
       Token tok;
@@ -427,8 +487,7 @@ int Scan(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
       if (eol) {
         break;
       }
-      pr->Print(line, line_num, start_col, tok);
-      start_col = tok.end_col;
+      tokens.push_back(tok);  // make a copy
 
       if (TokenIsSignificant(tok.kind)) {
         line_is_sig = true;
@@ -436,25 +495,31 @@ int Scan(const Flags& flag, Reader* reader, Printer* pr, Hook* hook) {
     }
     line_num += 1;
     num_sig += line_is_sig;
+
+    out->Line(line_num, line, tokens);
+    tokens.clear();
   }
 
-  Log("%d lines, %d significant", line_num - 1, num_sig);
-
+  out->PathEnd(line_num - 1, num_sig);
   return 0;
 }
 
 int PrintFiles(const Flags& flag, std::vector<char*> files) {
   std::string html_out;
 
-  Printer* pr;
+  Printer* pr;        // for each file
+  OutputStream* out;  // the entire stream
+
   if (flag.tsv) {
     pr = new TsvPrinter();
+    out = new NetStringOutput(pr);
   } else if (flag.web) {
     pr = new HtmlPrinter(&html_out);
+    out = new NetStringOutput(pr);
   } else {
     pr = new AnsiPrinter(flag.more_color);
+    out = new AnsiOutput(pr);
   }
-
   Hook* hook = nullptr;
   Reader* reader = nullptr;
 
@@ -466,7 +531,7 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     } else {
       f = fopen(path, "r");
     }
-    pr->PrintPath(path);
+    out->PathBegin(path);
 
     reader = new Reader(f);
 
@@ -475,17 +540,17 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     case lang_e::Unspecified:  // TODO: detect from extension?
 
       hook = new Hook();  // default hook
-      status = Scan<py_mode_e>(flag, reader, pr, hook);
+      status = Scan<py_mode_e>(flag, reader, out);
       break;
 
     case lang_e::Cpp:
       hook = new CppHook();  // preprocessor
-      status = Scan<cpp_mode_e>(flag, reader, pr, hook);
+      status = Scan<cpp_mode_e>(flag, reader, out);
       break;
 
     case lang_e::Shell:
       hook = new Hook();  // default hook
-      status = Scan<sh_mode_e>(flag, reader, pr, hook);
+      status = Scan<sh_mode_e>(flag, reader, out);
       break;
 
     default:
@@ -511,6 +576,7 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
   }
 
   delete pr;
+  delete out;
 
   return status;
 }
