@@ -374,13 +374,8 @@ void Dict<K, V>::set(K key, V val) {
   int pos = hash_and_probe(key);
   if (pos == kNotFound) {
     // No room. Resize and see if we can find a slot.
-    for (int attempt = 0; attempt < 3; ++attempt) {
-      reserve((capacity_ ?: 1) * 2);
-      pos = hash_and_probe(key);
-      if (pos >= 0) {
-        break;
-      }
-    }
+    reserve(RoundCapacity(capacity_ * 2));
+    pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
   int offset = entry_->items_[pos];
