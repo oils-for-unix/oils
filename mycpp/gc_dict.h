@@ -137,7 +137,7 @@ class Dict {
   // Returns an offset into the table (keys_/values_) for the given key.
   //
   // Returns -1 if the key isn't in the table.
-  int lookup_kv(K key) const;
+  int find_kv_index(K key) const;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Dict));
@@ -219,7 +219,7 @@ void Dict<K, V>::reserve(int n) {
 // d[key] in Python: raises KeyError if not found
 template <typename K, typename V>
 V Dict<K, V>::at(K key) const {
-  int pos = lookup_kv(key);
+  int pos = find_kv_index(key);
   if (pos == kNotFound) {
     throw Alloc<KeyError>();
   } else {
@@ -231,7 +231,7 @@ V Dict<K, V>::at(K key) const {
 // Returns nullptr if not found (Can't use this for non-pointer types?)
 template <typename K, typename V>
 V Dict<K, V>::get(K key) const {
-  int pos = lookup_kv(key);
+  int pos = find_kv_index(key);
   if (pos == kNotFound) {
     return nullptr;
   } else {
@@ -243,7 +243,7 @@ V Dict<K, V>::get(K key) const {
 // expr_parse.py uses this with OTHER_BALANCE
 template <typename K, typename V>
 V Dict<K, V>::get(K key, V default_val) const {
-  int pos = lookup_kv(key);
+  int pos = find_kv_index(key);
   if (pos == kNotFound) {
     return default_val;
   } else {
@@ -347,7 +347,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
 }
 
 template <typename K, typename V>
-int Dict<K, V>::lookup_kv(K key) const {
+int Dict<K, V>::find_kv_index(K key) const {
   if (entry_ != nullptr) {
     // Common case.
     int pos = hash_and_probe(key);
