@@ -191,6 +191,82 @@ def Files(pairs, attrs_f, show_breadcrumb=True):
   return i + 1
 
 
+def ReadFragments(in_f):
+  while True:
+    path = ReadNetString(in_f)
+    if path is None:
+      break
+
+    html_frag = ReadNetString(in_f)
+    if html_frag is None:
+      raise RuntimeError('Expected 2nd record (HTML fragment)')
+
+    count = ReadNetString(in_f)
+    if html_frag is None:
+      raise RuntimeError('Expected 3rd record (file summary)')
+
+    yield path, html_frag, count
+    #print(repr(s[:10]))
+
+
+def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
+
+  i = 0
+  for rel_path, html_frag, counts in ReadFragments(in_f):
+    num_bytes = len(html_frag)
+    if num_bytes > 300000:
+      log('*** BIG FILE: %r is %.1f KB', rel_path, (float(num_bytes) / 1000))
+      # parsed by 'dirs'
+      print('%s raw=1' % rel_path, file=attrs_f)
+
+      # TODO: copy the regular file
+      continue
+
+    html_out = os.path.join(out_dir, rel_path + '.html') 
+
+    try:
+      os.makedirs(os.path.dirname(html_out))
+    except OSError:
+      pass
+
+    with open(html_out, 'w') as out_f:
+      title = rel_path
+
+      # How deep are we?
+      n = rel_path.count('/') + 3
+      base_dir = '/'.join(['..'] * n)
+
+      css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      html_head.Write(out_f, title, css_urls=css_urls)
+
+      out_f.write('''
+      <body class="width50">
+        <p id="home-link">
+          <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
+          |
+          <a href="/">oilshell.org</a>
+        </p>
+        <table>
+      ''' % rel_path)
+
+      Breadcrumb(rel_path, out_f, is_file=True)
+
+      out_f.write(html_frag)
+
+      # TODO: print SLOC counts as attrs
+      # could be parsed by 'dirs'
+      print('%s lines=%d' % (rel_path, 99), file=attrs_f)
+
+      out_f.write('''
+        </table>
+      </body>
+    </html>''')
+
+    i += 1
+
+  log('Wrote %d HTML fragments', i)
+
+
 class DirNode:
   """Entry in the file system tree.
 
@@ -327,24 +403,6 @@ def ReadNetString(in_f):
   return s
 
 
-def HtmlFiles(in_f):
-  while True:
-    path = ReadNetString(in_f)
-    if path is None:
-      break
-
-    html = ReadNetString(in_f)
-    if html is None:
-      raise RuntimeError('Expected 2nd HTML record')
-
-    count = ReadNetString(in_f)
-    if html is None:
-      raise RuntimeError('Expected 3rd HTML record')
-
-    yield path, html, count
-    #print(repr(s[:10]))
-
-
 def main(argv):
   action = argv[1]
 
@@ -387,29 +445,10 @@ def main(argv):
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
 
-  elif action == 'html-to-files':
+  elif action == 'write-html-fragments':
+
     out_dir = argv[2]
-
-    max_bytes = 0
-
-    i = 0
-    for path, html, counts in HtmlFiles(sys.stdin):
-      num_bytes = len(html)
-      if num_bytes > 200000:
-        log('*** BIG FILE: %r is %d bytes', path, num_bytes)
-
-      max_bytes = max(max_bytes, num_bytes)
-
-      # We can repeat the raw=1 logic I guess
-      # attrs_f is sys.stdout
-
-      #print(path)
-      #print(counts)
-      i += 1
-
-    log('Read %d files', i)
-    log('Max bytes = %d', max_bytes)
-
+    WriteHtmlFragments(sys.stdin, out_dir)
 
   elif action == 'spec-files':
     # Policy for _tmp/spec/osh-minimal/foo.test.html
@@ -428,6 +467,7 @@ def main(argv):
     n = Files(pairs, attrs_f, show_breadcrumb=False)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
+
 
   elif action == 'dirs':
     # stdin: a bunch of merged ATTRs file?

@@ -37,12 +37,19 @@ a:hover {
 
 .spec-comment {
   font-weight: bold;
-  color: #0047ab;  /* Cobalt */
+  color: #0047ab;  /* cobalt */
 }
 
 .comm {
-  color: #0047ab;  /* Cobalt */
+  /* Note blog uses language.css, which is 'green' */
+  color: #0047ab;  /* cobalt */
+  font-style: italic;
 }
+
+.str {
+  color: brown;
+}
+
 /* TODO: a real color scheme, for pre-processor, etc. */
 
 table {

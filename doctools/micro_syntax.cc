@@ -154,7 +154,10 @@ class HtmlPrinter : public Printer {
     snprintf(buf, 16, "%d", line_num);
     out_.append(buf);
 
-    out_.append("</td></td>");  // <td> closed by PrintLineEnd()
+    // jump to line with foo.html#L32
+    out_.append("</td><td id=L");
+    out_.append(buf);
+    out_.append(" class=line>");  // <td> closed by PrintLineEnd()
   }
 
   virtual void PrintLineEnd() {
@@ -213,7 +216,7 @@ class HtmlPrinter : public Printer {
 
     case Id::Other:
       // PrintSpan("other", p_start, num_bytes);
-      out_.append(p_start, num_bytes);
+      PrintEscaped(p_start, num_bytes);
       break;
 
     case Id::Str:

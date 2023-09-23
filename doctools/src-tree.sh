@@ -122,9 +122,10 @@ classify() {
 }
 
 all-html-to-files() {
+  local out_dir=$1
   for lang in cpp py shell asdl R js md other; do
     time cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
-      | doctools/src_tree.py html-to-files $out_dir
+      | doctools/src_tree.py write-html-fragments $out_dir
   done
 }
 
@@ -133,25 +134,32 @@ highlight() {
   #local variant=asan
   doctools/micro-syntax.sh build $variant
 
-  local attrs=$BASE_DIR/attrs.txt
-
-  local out_dir=$BASE_DIR/www
-  all-html-to-files $out_dir > $attrs
-
-  #time doctools/src_tree.py dirs $out < $attrs
-}
-
-soil-run() {
-  ### Write tree starting at _tmp/src-tree/index.html
-
   local out_dir=$BASE_DIR/www
   mkdir -p $out_dir
 
+  # Figure file types
+  classify
+
+  local attrs=$BASE_DIR/attrs.txt
+
+  all-html-to-files $out_dir > $attrs
+
+  # Now write index.html dir listings
+  time doctools/src_tree.py dirs $out_dir < $attrs
+}
+
+highlight-old() {
   local attrs=$BASE_DIR/attrs-old.txt
 
   time sorted-files | xargs doctools/src_tree.py files $out_dir > $attrs
 
   time doctools/src_tree.py dirs $out_dir < $attrs
+}
+
+soil-run() {
+  ### Write tree starting at _tmp/src-tree/index.html
+
+  highlight
 }
 
 cat-benchmark() {
