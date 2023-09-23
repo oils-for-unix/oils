@@ -145,6 +145,7 @@ soil-run() {
   ### Write tree starting at _tmp/src-tree/index.html
 
   local out_dir=$BASE_DIR/www
+  mkdir -p $out_dir
 
   local attrs=$BASE_DIR/attrs-old.txt
 
