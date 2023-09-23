@@ -204,7 +204,7 @@ class HtmlPrinter : public Printer {
       break;
 
     case Id::Name:
-      out_.append(p_start, num_bytes);
+      PrintEscaped(p_start, num_bytes);
       break;
 
     case Id::Preproc:
@@ -228,8 +228,9 @@ class HtmlPrinter : public Printer {
     case Id::Unknown:
       PrintSpan("x", p_start, num_bytes);
       break;
+
     default:
-      out_.append(p_start, num_bytes);
+      PrintEscaped(p_start, num_bytes);
       break;
     }
   }
@@ -488,9 +489,12 @@ void PrintTokens(std::vector<Token>& toks) {
   Log("===");
 }
 
+// BUGGY, needs unit tests
+
+// Fiddly function, reduces the size of the output a bit
+// "hi" becomes 1 Id::DQ token instead of 3 separate Id::DQ tokens
 void Optimize(std::vector<Token>* tokens) {
   std::vector<Token>& toks = *tokens;  // alias
-  // Log("tokens %p toks %p", tokens, toks);
 
   // PrintTokens(toks);
 
@@ -502,34 +506,53 @@ void Optimize(std::vector<Token>* tokens) {
   int left = 0;
   int right = 1;
   while (right < n) {
-    // Log("right ID = %s, end %d", Id_str(toks[right].kind),
-    // toks[right].end_col);
+    Log("right ID = %s, end %d", Id_str(toks[right].kind), toks[right].end_col);
 
     if (toks[left].kind == toks[right].kind) {
-      // Log("eq");
       //  Join the tokens together
       toks[left].end_col = toks[right].end_col;
     } else {
+      toks[left] = toks[right];
       left++;
-      // toks[left] = toks[right];
-      // Log("  not eq, left = %d", left);
+      Log("  not eq, left = %d", left);
     }
     right++;
   }
-  // Log("left = %d, right = %d", left, right);
+  Log("left = %d, right = %d", left, right);
 
   // Fiddly condition: one more iteration.  Need some unit tests for this.
-  toks[left].end_col = toks[right - 1].end_col;
+  toks[left] = toks[right - 1];
   left++;
-
   assert(left <= n);
-
-  // PrintTokens(toks);
 
   // Erase the remaining ones
   toks.resize(left);
 
   // PrintTokens(toks);
+}
+
+// Version of the above that's not in-place, led to a bug fix
+void Optimize2(std::vector<Token>* tokens) {
+  std::vector<Token> optimized;
+
+  int n = tokens->size();
+  if (n < 1) {
+    return;
+  }
+
+  optimized.reserve(n);
+
+  int left = 0;
+  int right = 1;
+  while (right < n) {
+    optimized.push_back((*tokens)[left]);
+    left++;
+    right++;
+  }
+  optimized.push_back((*tokens)[left]);
+  left++;
+
+  tokens->swap(optimized);
 }
 
 // This templated method causes some code expansion, but not too much.  The
@@ -571,7 +594,13 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
       }
     }
 
-    // Optimize(&tokens);
+#if 0
+    PrintTokens(tokens);
+    Log("%d tokens before", tokens.size());
+    Optimize(&tokens);
+    Log("%d tokens after", tokens.size());
+    PrintTokens(tokens);
+#endif
 
     out->Line(line_num, line, tokens);
     tokens.clear();

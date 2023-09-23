@@ -112,6 +112,8 @@ readonly -a PY_TESTS=(
 
     " print(r'''hello''')"
     ' print(r"""hi there""")'
+
+  '"hi"  # comment'
 )
 
 readonly -a CPP_TESTS=(
@@ -163,7 +165,7 @@ run-tests() {
   echo
   for s in "${PY_TESTS[@]}"; do
     echo "==== $s"
-    echo "$s" | $bin # -l py
+    echo "$s" | $bin -l py
     echo
   done
 

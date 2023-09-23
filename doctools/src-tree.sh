@@ -168,11 +168,18 @@ micro-bench() {
   #local variant=asan
   doctools/micro-syntax.sh build $variant
 
-  # Producing 11.4 MB of text.
-  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp | wc --bytes
+  local lang=cpp
+  local lang=py
 
-  # 18.5 MB of text
-  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l cpp -w | wc --bytes
+  # optimization:
+  # lang=cpp: 11.4 MB -> 11.3 MB
+  # lang=py : 11.5 MB -> 11.3 MB
+  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l $lang | wc --bytes
+
+  # optimization:
+  # lang=cpp: 18.5 MB -> 18.4 MB
+  # lang=py : 18.8 MB -> 18.5 MB
+  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l $lang -w | wc --bytes
 }
 
 
