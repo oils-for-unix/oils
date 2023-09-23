@@ -192,7 +192,7 @@ headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
 micro-syntax     doctools/micro-syntax.sh soil-run     -
-src-tree         doctools/src-tree.sh soil-run         _tmp/src-tree/index.html
+src-tree         doctools/src-tree.sh soil-run         _tmp/src-tree/www/index.html
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html

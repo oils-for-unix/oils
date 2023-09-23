@@ -724,17 +724,33 @@ int main(int argc, char** argv) {
       return 0;
 
     case 'l':
-      if (strcmp(optarg, "py") == 0) {
-        flag.lang = lang_e::Py;
-
-      } else if (strcmp(optarg, "cpp") == 0) {
+      if (strcmp(optarg, "cpp") == 0) {
         flag.lang = lang_e::Cpp;
+
+      } else if (strcmp(optarg, "py") == 0) {
+        flag.lang = lang_e::Py;
 
       } else if (strcmp(optarg, "shell") == 0) {
         flag.lang = lang_e::Shell;
 
+        // TODO: implement all of these
+      } else if (strcmp(optarg, "asdl") == 0) {
+        flag.lang = lang_e::None;
+
+      } else if (strcmp(optarg, "R") == 0) {
+        flag.lang = lang_e::None;
+
+      } else if (strcmp(optarg, "js") == 0) {
+        flag.lang = lang_e::None;
+
+      } else if (strcmp(optarg, "md") == 0) {
+        flag.lang = lang_e::None;
+
+      } else if (strcmp(optarg, "other") == 0) {
+        flag.lang = lang_e::None;
+
       } else {
-        Log("Expected -l LANG to be py|cpp|shell, got %s", optarg);
+        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js, got %s", optarg);
         return 2;
       }
       break;

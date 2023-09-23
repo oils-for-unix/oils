@@ -77,23 +77,23 @@ classify() {
   local prefix=
   sorted-files | while read -r path; do
   case $path in
-    *.sh|*.bash|*.ysh)
-      echo "$path" >& $shell
+    *.cc|*.c|*.h)
+      echo "$path" >& $cpp
       ;;
     *.py|*.pyi|pgen2)  # pgen2 uses Python lexical syntax
       echo "$path" >& $py
       ;;
-    *.cc|*.c|*.h)
-      echo "$path" >& $cpp
+    *.sh|*.bash|*.ysh)
+      echo "$path" >& $shell
+      ;;
+    *.asdl)
+      echo "$path" >& $asdl
       ;;
     *.R)
       echo "$path" >& $R
       ;;
     *.js)
       echo "$path" >& $js
-      ;;
-    *.asdl)
-      echo "$path" >& $asdl
       ;;
     *.md)
       echo "$path" >& $md
@@ -104,10 +104,10 @@ classify() {
   done {cpp}>$BASE_DIR/cpp.txt \
        {py}>$BASE_DIR/py.txt \
        {shell}>$BASE_DIR/shell.txt \
+       {asdl}>$BASE_DIR/asdl.txt \
        {R}>$BASE_DIR/R.txt \
        {js}>$BASE_DIR/js.txt \
        {md}>$BASE_DIR/md.txt \
-       {asdl}>$BASE_DIR/asdl.txt \
        {other}>$BASE_DIR/other.txt
 
   # Other
@@ -121,35 +121,36 @@ classify() {
   wc -l $BASE_DIR/*.txt
 }
 
+all-html-to-files() {
+  for lang in cpp py shell asdl R js md other; do
+    time cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
+      | doctools/src_tree.py html-to-files $out_dir
+  done
+}
+
 highlight() {
   local variant=opt
-  local variant=asan
+  #local variant=asan
   doctools/micro-syntax.sh build $variant
-  for lang in cpp py; do
-    time cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
-      | doctools/src_tree.py html-files
-  done
+
+  local attrs=$BASE_DIR/attrs.txt
+
+  local out_dir=$BASE_DIR/www
+  all-html-to-files $out_dir > $attrs
+
+  #time doctools/src_tree.py dirs $out < $attrs
 }
 
 soil-run() {
   ### Write tree starting at _tmp/src-tree/index.html
 
-  # This will eventually into a .wwz file?  src-tree.wwz?
-  # Have to work out the web too
-  local out=_tmp/src-tree
+  local out_dir=$BASE_DIR/www
 
-  local attrs=_tmp/attrs.txt
+  local attrs=$BASE_DIR/attrs-old.txt
 
-  # TODO: Pass to micro-syntax tool
-  # Should we pre-determine the file types?
-  # i.e. sort them and then pass explicit -lang?
+  time sorted-files | xargs doctools/src_tree.py files $out_dir > $attrs
 
-  # py R js
-  # cc|c|h   sh|bash   osh|ysh
-
-  time sorted-files | xargs doctools/src_tree.py files $out > $attrs
-
-  time doctools/src_tree.py dirs $out < $attrs
+  time doctools/src_tree.py dirs $out_dir < $attrs
 }
 
 cat-benchmark() {
@@ -169,16 +170,16 @@ micro-bench() {
   doctools/micro-syntax.sh build $variant
 
   local lang=cpp
+
+  # Buggy!
   local lang=py
 
   # optimization:
   # lang=cpp: 11.4 MB -> 11.3 MB
-  # lang=py : 11.5 MB -> 11.3 MB
   time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l $lang | wc --bytes
 
   # optimization:
   # lang=cpp: 18.5 MB -> 18.4 MB
-  # lang=py : 18.8 MB -> 18.5 MB
   time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l $lang -w | wc --bytes
 }
 

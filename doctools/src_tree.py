@@ -88,7 +88,7 @@ ROW_T = T("""\
 
 
 LISTING_T = T("""\
-<body class="width40">
+<body class="width50">
 
 {.section dirs}
 <div id="dirs">
@@ -126,14 +126,14 @@ def Files(pairs, attrs_f, show_breadcrumb=True):
       title = path
 
       # How deep are we?
-      n = path.count('/') + 2
+      n = path.count('/') + 3
       base_dir = '/'.join(['..'] * n)
 
       css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
-      <body class="width40">
+      <body class="width50">
         <p id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
@@ -277,7 +277,8 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
   with open(path, 'w') as f:
 
     title = '%s - Listing' % rel_path
-    css_urls = ['%s../../web/base.css' % base_url, '%s../../web/src-tree.css' % base_url]
+    prefix = '%s../../..' % base_url
+    css_urls = ['%s/web/base.css' % prefix, '%s/web/src-tree.css' % prefix]
     html_head.Write(f, title, css_urls=css_urls)
 
     Breadcrumb(rel_path, f)
@@ -386,7 +387,9 @@ def main(argv):
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
 
-  elif action == 'html-files':
+  elif action == 'html-to-files':
+    out_dir = argv[2]
+
     max_bytes = 0
 
     i = 0
