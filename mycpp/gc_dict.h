@@ -6,7 +6,7 @@
 #include "mycpp/gc_list.h"
 #include "mycpp/hash.h"
 
-// Non-negative entries in entry_ are array indices into keys_ and values_.
+// Non-negative entries in index_ are array indices into keys_ and values_.
 // There are two special negative entries.
 
 // index that means this Dict item was deleted (a tombstone).
@@ -14,7 +14,7 @@ const int kDeletedEntry = -1;
 
 // index that means this Dict entry is free.  Because we have Dict[int, int],
 // we can't use a sentinel entry in keys_.  It has to be a sentinel entry in
-// entry_.
+// index_.
 const int kEmptyEntry = -2;
 
 // NOTE: This is just a return value. It is never stored in the index.
@@ -40,7 +40,7 @@ class GlobalDict {
  public:
   int len_;
   int capacity_;
-  GlobalSlab<int, N>* entry_;  // TODO: should be sized differently
+  GlobalSlab<int, N>* index_;  // TODO: should be sized differently
   GlobalSlab<K, N>* keys_;
   GlobalSlab<V, N>* values_;
 };
@@ -54,7 +54,7 @@ class GlobalDict {
       ObjHeader::Global(TypeTag::Dict),                                        \
       {.len_ = N,                                                              \
        .capacity_ = N,                                                         \
-       .entry_ = nullptr,                                                      \
+       .index_ = nullptr,                                                      \
        .keys_ = &_keys_##name.obj,                                             \
        .values_ = &_vals_##name.obj},                                          \
   };                                                                           \
@@ -71,7 +71,7 @@ class Dict {
   Dict()
       : len_(0),
         capacity_(0),
-        entry_(nullptr),
+        index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
   }
@@ -79,7 +79,7 @@ class Dict {
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
       : len_(0),
         capacity_(0),
-        entry_(nullptr),
+        index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
     assert(keys.size() == values.size());
@@ -147,13 +147,13 @@ class Dict {
   int capacity_;  // number of entries before resizing
 
   // These 3 slabs are resized at the same time.
-  Slab<int>* entry_;  // kEmptyEntry, or a valid index into keys_/values_
+  Slab<int>* index_;  // kEmptyEntry, or a valid index into keys_/values_
   Slab<K>* keys_;     // Dict<int, V>
   Slab<V>* values_;   // Dict<K, int>
 
   // A dict has 3 pointers the GC needs to follow.
   static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(Dict, entry_)) | maskbit(offsetof(Dict, keys_)) |
+    return maskbit(offsetof(Dict, index_)) | maskbit(offsetof(Dict, keys_)) |
            maskbit(offsetof(Dict, values_));
   }
 
@@ -171,7 +171,7 @@ class Dict {
 template <typename K, typename V>
 inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
   int pos = haystack->hash_and_probe(needle);
-  return pos != kNotFound && haystack->entry_->items_[pos] >= 0;
+  return pos != kNotFound && haystack->index_->items_[pos] >= 0;
 }
 
 template <typename K, typename V>
@@ -202,7 +202,7 @@ void Dict<K, V>::reserve(int n) {
     new_k = NewSlab<K>(capacity_);
     new_v = NewSlab<V>(capacity_);
 
-    entry_ = new_i;
+    index_ = new_i;
     keys_ = new_k;
     values_ = new_v;
     len_ = 0;
@@ -266,7 +266,7 @@ template <typename K, typename V>
 void Dict<K, V>::clear() {
   // Maintain invariant
   for (int i = 0; i < capacity_; ++i) {
-    entry_->items_[i] = kEmptyEntry;
+    index_->items_[i] = kEmptyEntry;
   }
 
   if (keys_) {
@@ -301,7 +301,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
   int tombstone = kNotFound;
 
   for (int i = init_bucket; i < capacity_; ++i) {
-    int pos = entry_->items_[i];  // NOT an index now
+    int pos = index_->items_[i];  // NOT an index now
     DCHECK(pos < len_);
     if (pos == kDeletedEntry) {
       if (tombstone == kNotFound) {
@@ -323,7 +323,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
 
   // Didn't find anything. Try wrapping around.
   for (int i = 0; i < init_bucket; ++i) {
-    int pos = entry_->items_[i];  // NOT an index now
+    int pos = index_->items_[i];  // NOT an index now
     DCHECK(pos < len_);
     if (pos == kDeletedEntry) {
       if (tombstone == kNotFound) {
@@ -348,13 +348,13 @@ int Dict<K, V>::hash_and_probe(K key) const {
 
 template <typename K, typename V>
 int Dict<K, V>::find_kv_index(K key) const {
-  if (entry_ != nullptr) {
+  if (index_ != nullptr) {
     // Common case.
     int pos = hash_and_probe(key);
-    if (pos == kNotFound || entry_->items_[pos] < 0) {
+    if (pos == kNotFound || index_->items_[pos] < 0) {
       return kNotFound;
     }
-    return entry_->items_[pos];
+    return index_->items_[pos];
   }
 
   // GlobalDict. Just scan.
@@ -378,12 +378,12 @@ void Dict<K, V>::set(K key, V val) {
     pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
-  int offset = entry_->items_[pos];
+  int offset = index_->items_[pos];
   DCHECK(offset < len_);
   if (offset < 0) {
     keys_->items_[len_] = key;
     values_->items_[len_] = val;
-    entry_->items_[pos] = len_;
+    index_->items_[pos] = len_;
     len_++;
   } else {
     values_->items_[offset] = val;

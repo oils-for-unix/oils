@@ -157,7 +157,7 @@ TEST test_dict_internals() {
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
 
-  ASSERT_EQ(nullptr, dict1->entry_);
+  ASSERT_EQ(nullptr, dict1->index_);
   ASSERT_EQ(nullptr, dict1->keys_);
   ASSERT_EQ(nullptr, dict1->values_);
 
@@ -177,7 +177,7 @@ TEST test_dict_internals() {
 #endif
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->values_)->obj_len, "%d");
 #endif
@@ -216,7 +216,7 @@ TEST test_dict_internals() {
   ASSERT(str_equals(bar, dict2->at(foo)));
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict2->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict2->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict2->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict2->values_)->obj_len, "%d");
 #endif
@@ -227,7 +227,7 @@ TEST test_dict_internals() {
   ASSERT_EQ(1, len(dict_si));
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict_si->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->values_)->obj_len, "%d");
 #endif
@@ -240,7 +240,7 @@ TEST test_dict_internals() {
   ASSERT_EQ(1, len(dict_is));
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_is->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_is->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_is->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict_is->values_)->obj_len, "%d");
 #endif

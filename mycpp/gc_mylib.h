@@ -43,12 +43,12 @@ template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->obj_header().heap_tag != HeapTag::Global);
   int pos = haystack->hash_and_probe(needle);
-  if (pos == kNotFound || haystack->entry_->items_[pos] < 0) {
+  if (pos == kNotFound || haystack->index_->items_[pos] < 0) {
     // Nothing to do.
     return;
   }
 
-  int offset = haystack->entry_->items_[pos];
+  int offset = haystack->index_->items_[pos];
   int last_offset = haystack->len_ - 1;
   DCHECK(offset <= last_offset);
 
@@ -61,13 +61,13 @@ void dict_erase(Dict<K, V>* haystack, K needle) {
     DCHECK(last_pos != kNotFound);
     haystack->keys_->items_[offset] = last_key;
     haystack->values_->items_[offset] = last_val;
-    haystack->entry_->items_[last_pos] = offset;
+    haystack->index_->items_[last_pos] = offset;
   }
 
   // Zero out for GC.  These could be nullptr or 0
   haystack->keys_->items_[last_offset] = 0;
   haystack->values_->items_[last_offset] = 0;
-  haystack->entry_->items_[pos] = kDeletedEntry;
+  haystack->index_->items_[pos] = kDeletedEntry;
   haystack->len_--;
 }
 
