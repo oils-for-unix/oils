@@ -213,13 +213,24 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
 
   i = 0
   for rel_path, html_frag, counts in ReadFragments(in_f):
-    num_bytes = len(html_frag)
-    if num_bytes > 300000:
-      log('*** BIG FILE: %r is %.1f KB', rel_path, (float(num_bytes) / 1000))
-      # parsed by 'dirs'
+    html_size = len(html_frag)
+    if html_size > 300000:
+      out_path = os.path.join(out_dir, rel_path)
+      try:
+        os.makedirs(os.path.dirname(out_path))
+      except OSError:
+        pass
+
+      shutil.copyfile(rel_path, out_path)
+
+      # Attrs are parsed by MakeTree(), and then used by WriteHtmlFiles().
+      # So we can print the right link.
       print('%s raw=1' % rel_path, file=attrs_f)
 
-      # TODO: copy the regular file
+      file_size = os.path.getsize(rel_path)
+      log('Big HTML fragment of %.1f KB', float(html_size) / 1000)
+      log('Copied %s -> %s, %.1f KB', rel_path, out_path, float(file_size) / 1000)
+
       continue
 
     html_out = os.path.join(out_dir, rel_path + '.html') 
@@ -467,7 +478,6 @@ def main(argv):
     n = Files(pairs, attrs_f, show_breadcrumb=False)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
-
 
   elif action == 'dirs':
     # stdin: a bunch of merged ATTRs file?

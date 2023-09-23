@@ -24,3 +24,29 @@ More tools:
 - It uses polyglot syntax analysis called "micro syntax".  See
   [micro-syntax.md](micro-syntax.md).
 
+## TODO
+
+Immediate:
+
+- Shell comment fix
+- C preprocessor highlighting
+- SLOC
+  - add to top of file
+  - add to index.html, with attrs
+  - Subsumes these tools:
+    - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!
+    - <https://dwheeler.com/sloccount/> - no release since 2004 ?
+
+src-tree:
+
+- should README.md be inserted in index.html ?
+  - probably, sourcehut has this too
+  - use cmark
+- line counts in metrics/source-code.sh could link to src-tree
+  - combine the CI jobs
+
+Later:
+
+- Parsing, jump to definition
+
+

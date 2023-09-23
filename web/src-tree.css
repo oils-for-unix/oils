@@ -33,6 +33,7 @@ a:hover {
 
 .line {
   white-space: pre;
+  color: #141414;  /* almost black */
 }
 
 .spec-comment {

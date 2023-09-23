@@ -12,36 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
-#source test/common.sh
-#source test/tsv-lib.sh
-
 export PYTHONPATH=.
-
-# TODO:
-# - should README.md be inserted in index.html ?
-#   - probably, sourcehut has this too
-#   - use cmark
-# - line counts in metrics/source-code.sh could be integrated with this
-#   - i.e. we create groups of files there, with subtotals
-
-# Highlighters I'd like to write:
-#  - syntax highlighter, that finds string literals and comments
-#  - as a side effect it estimates significant lines of code
-#    - minus comments and blank lines
-#  - supports
-#    - Python - multi-line strings
-#    - shell and YSH -- here docs?
-#    - C++ - #ifdef, including #if 0 perhaps
-#    - ASDL can replace line counter in metrics/source-code.sh
-#     - it's pretty trivial, since ASDL has no string literals
-#    - maybe grammar files
-
-# Columns
-# - Name
-# - Number of lines
-# - Can we get the cloc or sloccount report?
-#   - https://github.com/AlDanial/cloc - this is a 17K line Perl script!
-#   - https://dwheeler.com/sloccount/ - no release since 2004 ?
 
 lexer-files() {
   ### linked from doc/release-quality.md
