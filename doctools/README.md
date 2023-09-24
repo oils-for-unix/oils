@@ -28,25 +28,36 @@ More tools:
 
 Immediate:
 
+- CSS
+  - float the breadcrumb next to the home links
+  - small text
+- Add all files -- git ls-files
+
+- SLOC
+  - add to index.html, with attrs
+    - light grey monospace?
+  - Subsumes these tools:
+    - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!
+    - <https://dwheeler.com/sloccount/> - no release since 2004 ?
+
 - Shell comment fix
 - C preprocessor highlighting
 
 - Maybe add language for `*.test.sh`
   - the `####` and `##` lines are special
 
-- SLOC
-  - add to index.html, with attrs
-  - Subsumes these tools:
-    - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!
-    - <https://dwheeler.com/sloccount/> - no release since 2004 ?
 
 src-tree:
 
 - should README.md be inserted in index.html ?
   - probably, sourcehut has this too
   - use cmark
+    - also use our TOC plugin
 - line counts in metrics/source-code.sh could link to src-tree
   - combine the CI jobs
+  - should use `micro_syntax --wc` to count SLOC
+    - Also `micro_syntax` --print --format ansi
+      - this is the default?
 
 Later:
 

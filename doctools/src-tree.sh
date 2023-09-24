@@ -28,6 +28,10 @@ lexer-files() {
 _print-files() {
   lexer-files
 
+  # For some reason it shows py-yajl
+  git ls-files | grep -v Python-2.7.13 | grep -v '^py-yajl'
+  return
+
   # Important stuff
   metrics/source-code.sh overview-list
 
@@ -54,7 +58,7 @@ classify() {
     *.py|*.pyi|*.pgen2)  # pgen2 uses Python lexical syntax
       echo "$path" >& $py
       ;;
-    *.sh|*.bash|*.ysh|configure|install)
+    *.sh|*.bash|*.osh|*.ysh|configure|install)
       echo "$path" >& $shell
       ;;
     *.asdl)

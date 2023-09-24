@@ -67,8 +67,6 @@ ROW_T = T("""\
 
 
 LISTING_T = T("""\
-<body class="">
-
 {.section dirs}
 <h1>Dirs</h1>
 <div id="dirs" class="listing">
@@ -91,7 +89,7 @@ LISTING_T = T("""\
 """)
 
 FILE_COUNTS_T = T("""\
-<p id="file-counts"> {num_lines} lines, {num_sig_lines} significant </p>
+<div id="file-counts"> {num_lines} lines, {num_sig_lines} significant </div>
 """, default_formatter='html')
 
 
@@ -117,11 +115,11 @@ def SpecFiles(pairs, attrs_f):
 
       out_f.write('''
       <body class="">
-        <p id="home-link">
+        <div id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
           <a href="/">oilshell.org</a>
-        </p>
+        </div>
         <table>
       ''' % path)
 
@@ -191,7 +189,7 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
 
       shutil.copyfile(rel_path, out_path)
 
-      # Attrs are parsed by MakeTree(), and then used by WriteHtmlFiles().
+      # Attrs are parsed by MakeTree(), and then used by WriteDirsHtml().
       # So we can print the right link.
       print('%s raw=1' % rel_path, file=attrs_f)
 
@@ -220,14 +218,18 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
 
       out_f.write('''
       <body class="">
-        <p id="home-link">
+      <p>
+      ''')
+      Breadcrumb(rel_path, out_f, is_file=True)
+
+      out_f.write('''
+        <span id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
           <a href="/">oilshell.org</a>
-        </p>
+        </span>
+      </p>
       ''' % rel_path)
-
-      Breadcrumb(rel_path, out_f, is_file=True)
 
       out_f.write(FILE_COUNTS_T.expand(summary))
 
@@ -309,8 +311,8 @@ def MakeTree(stdin, root_node):
     UpdateNodes(root_node, path_parts, attrs)
 
 
-def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
-  #log('WriteHtmlFiles %s %s %s', out_dir, rel_path, base_url)
+def WriteDirsHtml(node, out_dir, rel_path='', base_url=''):
+  #log('WriteDirectory %s %s %s', out_dir, rel_path, base_url)
 
   files = []
   for name in sorted(node.files):
@@ -337,12 +339,18 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
     html_head.Write(f, title, css_urls=css_urls)
 
     f.write('''
-        <p id="home-link">
-          <a href="/">oilshell.org</a>
-        </p>
-        ''')
-
+    <body>
+      <p>
+    ''')
     Breadcrumb(rel_path, f)
+
+    f.write('''
+        <span id="home-link">
+          <a href="/">oilshell.org</a>
+        </span>
+      </p>
+    ''')
+
 
     f.write(body)
 
@@ -353,7 +361,8 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
     child_out = os.path.join(out_dir, name)
     child_rel = os.path.join(rel_path, name)
     child_base = base_url + '../'
-    WriteHtmlFiles(child, child_out, rel_path=child_rel, base_url=child_base)
+    WriteDirsHtml(child, child_out, rel_path=child_rel,
+                       base_url=child_base)
 
 
 def ReadNetString(in_f):
@@ -428,7 +437,7 @@ def main(argv):
     if 0:
       DebugPrint(root_node)
 
-    WriteHtmlFiles(root_node, out_dir)
+    WriteDirsHtml(root_node, out_dir)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
@@ -436,6 +445,5 @@ def main(argv):
 
 if __name__ == '__main__':
   main(sys.argv)
-
 
 # vim: sw=2

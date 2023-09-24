@@ -88,7 +88,12 @@ class Reader {
   // We don't care about internal NUL, so this interface doesn't allow it
 
  public:
-  Reader(FILE* f) : f_(f), line_(nullptr), allocated_size_(0) {
+  Reader(FILE* f, const char* filename)
+      : f_(f), filename_(filename), line_(nullptr), allocated_size_(0) {
+  }
+
+  const char* Filename() {  // for error messages only
+    return filename_;
   }
 
   bool NextLine() {
@@ -118,6 +123,7 @@ class Reader {
   }
 
   FILE* f_;
+  const char* filename_;
 
   char* line_;  // valid for one NextLine() call, nullptr on EOF or error
   size_t allocated_size_;  // unused, but must pass address to getline()
@@ -586,7 +592,8 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
 
   while (true) {  // read each line, handling errors
     if (!reader->NextLine()) {
-      Log("getline() error: %s", strerror(reader->err_num_));
+      Log("micro-syntax: getline() error on %s: %s", reader->Filename(),
+          strerror(reader->err_num_));
       return 1;
     }
     char* line = reader->Current();
@@ -657,7 +664,7 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     }
     out->PathBegin(path);
 
-    reader = new Reader(f);
+    reader = new Reader(f, path ?: "<stdin>");
 
     switch (flag.lang) {
     case lang_e::None:

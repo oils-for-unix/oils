@@ -1,20 +1,18 @@
 /* For doctools/{src_tree,micro_syntax} */
 
-@media screen and (min-width: 801px) {
-  body {
-    font-size: large;
-  }
-}
-
 /* Copied from mobile part of web/base.css */
 body {
   /* Arial seems thinner than the default sans-serif font */
   font-family: Arial, sans-serif;
-  padding: 0 1em;
+  padding: 0 3em;
 }
 /* horizontal scrollbar for code, so the long lines don't make the page small */
 pre {
   overflow: auto;
+}
+
+#home-link {
+  float: right;  /* to the right of the breadcrumb */
 }
 
 /* Like web/ref-index.css */
