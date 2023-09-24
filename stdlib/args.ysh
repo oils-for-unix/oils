@@ -266,5 +266,8 @@ func parseArgs(spec, argv) {
     setvar i += 1
   }
 
+  # assert (spec.rest)
+  setvar args[spec.rest] = rest
+
   return ([args, i])
 }
