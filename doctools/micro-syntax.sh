@@ -134,6 +134,11 @@ readonly -a CPP_TESTS=(
   two
   three)");
   '
+
+  'char* s = f(R"zz(hi
+  world
+  )zz");
+  '
 )
 
 readonly -a SHELL_TESTS=(
@@ -157,11 +162,13 @@ EOF'
 
   'cat <<- "EOF"
 $3.99
-EOF'
+EOF '
 
   'cat <<- \_ACAWK
 $3.99
-EOF'
+more
+_ACAWK 
+echo yo'
 )
 
 readonly -a R_TESTS=(
@@ -205,7 +212,7 @@ run-tests() {
     echo "$s" | $bin -l shell
     echo
   done
-  #return
+  return
 
   echo
   for s in "${R_TESTS[@]}"; do
@@ -291,6 +298,25 @@ soil-run() {
   echo
 
   run-tests 
+}
+
+### Shell Tests
+
+here-doc-syntax() {
+  ### Test here doc syntax with $0 sh-self
+
+  echo 42 > _tmp/42.txt
+
+  # _tmp/42 and - are arguments to cat!  Vim doesn't understand
+  # and >_tmp/here.txt is not part of the here doc
+
+  cat <<EOF _tmp/42.txt - >_tmp/here.txt
+x
+short
+hello there
+EOF
+
+  cat _tmp/here.txt
 }
 
 "$@"

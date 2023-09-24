@@ -26,8 +26,11 @@ const char* GREEN = "\x1b[32m";
 const char* YELLOW = "\x1b[33m";
 const char* BLUE = "\x1b[34m";
 const char* PURPLE = "\x1b[35m";
+const char* CYAN = "\x1b[36m";
 
 const char* BLACK2 = "\x1b[90m";
+const char* RED2 = "\x1b[91m";
+const char* BLUE2 = "\x1b[94m";
 
 void Log(const char* fmt, ...) {
   va_list args;
@@ -201,6 +204,9 @@ class HtmlPrinter : public Printer {
       PrintEscaped(p_start, num_bytes);
       break;
 
+      // for now these are strings
+    case Id::HereBegin:
+    case Id::HereEnd:
     case Id::Str:
       PrintSpan("str", p_start, num_bytes);
       break;
@@ -277,6 +283,26 @@ class AnsiPrinter : public Printer {
       break;
 
     case Id::HereBegin: {
+      fputs(RED2, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+
+      // Debug submatch extraction
+#if 0
+      fputs(RED, stdout);
+      int n = tok.submatch_end - tok.submatch_start;
+      fwrite(tok.submatch_start, 1, n, stdout);
+      fputs(RESET, stdout);
+#endif
+    } break;
+
+    case Id::HereEnd:
+      fputs(RED2, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
+
+    case Id::RawStrBegin: {
       fputs(BLUE, stdout);
       fwrite(p_start, 1, num_bytes, stdout);
       fputs(RESET, stdout);
@@ -330,6 +356,11 @@ const char* Id_str(Id id) {
 
   case Id::Str:
     return "Str";
+
+  case Id::HereBegin:
+    return "HereBegin";
+  case Id::HereEnd:
+    return "HereEnd";
 
   case Id::LBrace:
     return "LBrace";
@@ -563,6 +594,44 @@ void Optimize2(std::vector<Token>* tokens) {
   tokens->swap(optimized);
 }
 
+// compare EOF vs. EOF\n or EOF\t\n or x\n
+bool LineEqualsHereDelim(const char* line, std::string& here_delim) {
+  int n = strlen(line);
+  int h = here_delim.size();
+
+  // Log("Here delim=%s line=%s", here_delim.c_str(), line);
+
+  // Line should be at least one longer, EOF\n
+  if (n <= h) {
+    // Log("  [0] line too short");
+    return false;
+  }
+
+  int i = 0;
+  for (; i < h; ++i) {
+    if (here_delim[i] != line[i]) {
+      // Log("  [1] byte %d not equal", i);
+      return false;
+    }
+  }
+
+  while (i < n) {
+    switch (line[i]) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+      break;
+    default:
+      // Log("  [2] byte %d not whitespace", i);
+      return false;  // line can't have whitespace on the end
+    }
+    ++i;
+  }
+
+  return true;
+}
+
 // This templated method causes some code expansion, but not too much.  The
 // binary went from 38 KB to 42 KB, after being stripped.
 // We get a little type safety with py_mode_e vs cpp_mode_e.
@@ -574,6 +643,9 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
 
   int line_num = 1;
   int num_sig = 0;
+
+  // stack of delimiters to pop
+  std::vector<std::string> here_stack;
 
   while (true) {  // read each line, handling errors
     if (!reader->NextLine()) {
@@ -597,6 +669,11 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
       if (eol) {
         break;
       }
+      if (tok.kind == Id::HereBegin) {
+        int n = tok.submatch_end - tok.submatch_start;
+        // Put a copy on the stack
+        here_stack.emplace_back(tok.submatch_start, n);
+      }
       tokens.push_back(tok);  // make a copy
 
       if (TokenIsSignificant(tok.kind)) {
@@ -615,7 +692,46 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
     out->Line(line_num, line, tokens);
     tokens.clear();
 
-    line_num += 1;
+    if (!here_stack.empty()) {
+      // Log("HERE %s", here_c);
+      while (true) {
+        if (!reader->NextLine()) {
+          const char* name = reader->Filename() ?: "<stdin>";
+          Log("micro-syntax: getline() error on %s: %s", name,
+              strerror(reader->err_num_));
+          return 1;
+        }
+        char* line = reader->Current();
+        if (line == nullptr) {
+          Log("Unexpected EOF in here doc");
+          return 1;
+        }
+
+        line_num++;
+
+        if (LineEqualsHereDelim(line, here_stack[0])) {
+          here_stack.pop_back();
+
+          int n = strlen(line);
+          Token whole_line(Id::HereEnd, n);
+          tokens.push_back(whole_line);
+          out->Line(line_num, line, tokens);
+          tokens.clear();
+          break;
+
+        } else {
+          int n = strlen(line);
+          Token whole_line(Id::Str, n);
+          tokens.push_back(whole_line);
+          out->Line(line_num, line, tokens);
+          tokens.clear();
+
+          // Log("  not equal: %s", line);
+        }
+      }
+    }
+
+    line_num++;
     num_sig += line_is_sig;
   }
 
