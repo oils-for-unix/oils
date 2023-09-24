@@ -164,6 +164,50 @@ func parseArgs(spec, argv) {
 }
 '''
 
+proc todo () {
+  error ("TODO: not implemented")
+}
+
+proc pass () {
+  _ null
+}
+
+proc Args (spec_ Ref;;; block) {
+  setvar spec_ = {
+    flags: [],
+    args: [],
+    rest: null,
+  }
+
+  eval (block) | while read line {
+    json read parsed <<< $line
+    var spec_frag = dict(parsed)
+
+    case (spec_frag.tag) {
+      flag {
+        _ spec_.flags->append(spec_frag.node)
+      }
+      arg {
+        _ spec.args->append(spec_frag.node)
+      }
+      rest {
+        setvar spec.rest = spec_frag.node
+      }
+    }
+  }
+}
+
+proc flag (short, long; type='bool', default=null) {
+  json write --pretty=F ({ tag: 'flag', node: { short, long, type, default, help: null } })
+}
+
+proc arg (name) {
+  json write --pretty=F ({ tag: 'arg', node: { name, type: 'str', default: null, help: null } })
+}
+
+proc rest (name) {
+  json write --pretty=F ({ tag: 'rest', node: name })
+}
 
 func __args_getFlagName(flag) {
   if (flag.long) {
@@ -191,7 +235,7 @@ func parseArgs(spec, argv) {
         if ( (flag.short and flag.short === arg) or
              (flag.long and flag.long === arg) ) {
           case (flag.type) {
-            (null) { setvar value = true }
+            ('bool') | (null) { setvar value = true }
             int {
               setvar i += 1
               setvar value = int(argv[i])

@@ -74,6 +74,7 @@ options:
 ## END
 
 #### Parse args using a JSON argspec
+
 source --builtin args.ysh
 
 var spec = {
@@ -140,5 +141,86 @@ $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
 
 $ python3 example.py -v --count 120 example.sh -v --count 150
 Namespace(filename='example.sh', count='150', verbose=True)
+
+## END
+
+#### Args spec definitions
+
+source --builtin args.ysh
+
+Args :spec {
+  flag -v --verbose ('bool')
+  arg src
+  arg dst
+
+  rest more  # allow more args
+}
+
+json write (spec)
+## STDOUT:
+{
+  "flags": [
+    {
+      "default": null,
+      "short": "-v",
+      "type": "bool",
+      "help": null,
+      "long": "--verbose"
+    }
+  ],
+  "args": [
+    {
+      "default": null,
+      "type": "str",
+      "name": "src",
+      "help": null
+    },
+    {
+      "default": null,
+      "type": "str",
+      "name": "dst",
+      "help": null
+    }
+  ],
+  "rest": "more"
+}
+## END
+
+#### Args spec definitions driving argument parser
+
+source --builtin args.ysh
+
+Args :spec {
+  flag -v --verbose ('bool', false)
+  flag -c --count ('int', 120)
+  arg file
+}
+
+var argsCases = [
+  :| -v --count 120 example.sh |,
+  :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
+  :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
+]
+
+for args in (argsCases) {
+  var args_str = args->join(" ")
+  echo "----------  $args_str  ----------"
+  echo "\$ bin/ysh example.sh $args_str"
+  = parseArgs(spec, args)
+
+  echo
+}
+## STDOUT:
+----------  -v --count 120 example.sh  ----------
+$ bin/ysh example.sh -v --count 120 example.sh
+(List)   [<'verbose': True, 'count': 120, 'file': 'example.sh'>, 4]
+
+----------  -v --count 120 example.sh -v  ----------
+$ bin/ysh example.sh -v --count 120 example.sh -v
+(List)   [<'verbose': True, 'count': 120, 'file': 'example.sh'>, 5]
+
+----------  -v --count 120 example.sh -v --count 150  ----------
+$ bin/ysh example.sh -v --count 120 example.sh -v --count 150
+(List)   [<'verbose': True, 'count': 150, 'file': 'example.sh'>, 7]
 
 ## END
