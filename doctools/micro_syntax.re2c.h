@@ -571,7 +571,7 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 
         // <<- is another syntax
         here_op    = "<<" [-]? [ \t]*;
-        h_delim    = [_a-zA-Z]+;
+        h_delim    = [_a-zA-Z][_a-zA-Z0-9]*;
 
         // unquoted or quoted
         here_op @s      h_delim @e     { SUBMATCH(s, e); TOK(Id::HereBegin); }

@@ -54,6 +54,12 @@ classify() {
   local prefix=
   sorted-files | while read -r path; do
   case $path in
+    */here-doc.test.sh|*/posix.test.sh|*/gold/complex-here-docs.sh|*/07-unterminated-here-doc.sh)
+      # Plain text since they can have invalid here docs
+      #
+      # TODO: make a style for *.test.sh?
+      echo "$path" >& $txt
+      ;;
     *.cc|*.c|*.h)
       echo "$path" >& $cpp
       ;;

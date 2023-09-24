@@ -596,6 +596,12 @@ void Optimize2(std::vector<Token>* tokens) {
 
 // compare EOF vs. EOF\n or EOF\t\n or x\n
 bool LineEqualsHereDelim(const char* line, std::string& here_delim) {
+  // Hack: skip leading tab unconditionally, even though that's only alowed in
+  // <<- Really we should capture the operator and the delim?
+  if (*line == '\t') {
+    line++;
+  }
+
   int n = strlen(line);
   int h = here_delim.size();
 
@@ -645,7 +651,8 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
   int num_sig = 0;
 
   // stack of delimiters to pop
-  std::vector<std::string> here_stack;
+  std::vector<std::string> here_list;
+  std::vector<int> here_start_num;
 
   while (true) {  // read each line, handling errors
     if (!reader->NextLine()) {
@@ -672,7 +679,8 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
       if (tok.kind == Id::HereBegin) {
         int n = tok.submatch_end - tok.submatch_start;
         // Put a copy on the stack
-        here_stack.emplace_back(tok.submatch_start, n);
+        here_list.emplace_back(tok.submatch_start, n);
+        here_start_num.push_back(line_num);
       }
       tokens.push_back(tok);  // make a copy
 
@@ -692,26 +700,29 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
     out->Line(line_num, line, tokens);
     tokens.clear();
 
-    if (!here_stack.empty()) {
-      // Log("HERE %s", here_c);
+    // Potentially multiple here docs for this line
+    int here_index = 0;
+    for (auto here_delim : here_list) {
+      // Log("HERE %s", here_delim.c_str());
+
       while (true) {
+        const char* blame = reader->Filename() ?: "<stdin>";
         if (!reader->NextLine()) {
-          const char* name = reader->Filename() ?: "<stdin>";
-          Log("micro-syntax: getline() error on %s: %s", name,
+          Log("micro-syntax: getline() error on %s: %s", blame,
               strerror(reader->err_num_));
           return 1;
         }
         char* line = reader->Current();
         if (line == nullptr) {
-          Log("Unexpected EOF in here doc");
+          int start_line = here_start_num[here_index];
+          Log("Unexpected end-of-file in here doc in %s, start line %d", blame,
+              start_line);
           return 1;
         }
 
         line_num++;
 
-        if (LineEqualsHereDelim(line, here_stack[0])) {
-          here_stack.pop_back();
-
+        if (LineEqualsHereDelim(line, here_delim)) {
           int n = strlen(line);
           Token whole_line(Id::HereEnd, n);
           tokens.push_back(whole_line);
@@ -729,7 +740,10 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
           // Log("  not equal: %s", line);
         }
       }
+      here_index++;
     }
+    here_list.clear();
+    here_start_num.clear();
 
     line_num++;
     num_sig += line_is_sig;
