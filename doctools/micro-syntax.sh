@@ -152,6 +152,17 @@ readonly -a SHELL_TESTS=(
   'echo one # comment'
 )
 
+readonly -a R_TESTS=(
+  'f() # hello'
+  'x = f("1
+  2 \"quote\"
+  3")'
+
+  "x = f('1
+  2
+  3')"
+)
+
 run-tests() {
   local bin=$BASE_DIR/micro_syntax
 
@@ -180,6 +191,13 @@ run-tests() {
   for s in "${SHELL_TESTS[@]}"; do
     echo "==== $s"
     echo "$s" | $bin -l shell
+    echo
+  done
+
+  echo
+  for s in "${R_TESTS[@]}"; do
+    echo "==== $s"
+    echo "$s" | $bin -l R
     echo
   done
 

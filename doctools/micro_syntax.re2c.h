@@ -394,6 +394,79 @@ class CppHook : public Hook {
   }
 };
 
+enum class R_mode_e {
+  Outer,  // default
+
+  SQ,  // inside multi-line ''
+  DQ,  // inside multi-line ""
+};
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<R_mode_e>::Match(Lexer<R_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+  const char* YYMARKER = p;
+
+  switch (lexer->line_mode) {
+  case R_mode_e::Outer:
+    while (true) {
+      /*!re2c
+        nul                    { return true; }
+
+        whitespace             { TOK(Id::WS); }
+
+        pound_comment          { TOK(Id::Comm); }
+
+        identifier             { TOK(Id::Name); }
+
+        // Not the start of a string, escaped, comment, identifier
+        [^\x00"'#_a-zA-Z]+     { TOK(Id::Other); }
+
+        [']                    { TOK_MODE(Id::Str, R_mode_e::SQ); }
+        ["]                    { TOK_MODE(Id::Str, R_mode_e::DQ); }
+
+        *                      { TOK(Id::Unknown); }
+
+      */
+    }
+    break;
+
+  case R_mode_e::SQ:
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        [']       { TOK_MODE(Id::Str, R_mode_e::Outer); }
+
+        sq_middle { TOK(Id::Str); }
+
+        *         { TOK(Id::Str); }
+
+      */
+    }
+    break;
+
+  case R_mode_e::DQ:
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        ["]       { TOK_MODE(Id::Str, R_mode_e::Outer); }
+
+        dq_middle { TOK(Id::Str); }
+
+        *         { TOK(Id::Str); }
+
+      */
+    }
+    break;
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
+
 // Problem with shell: nested double quotes!!!
 // We probably discourage this in YSH
 

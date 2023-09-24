@@ -50,8 +50,8 @@ enum class lang_e {
   Shell,
   Ysh,  // ''' etc.
   Asdl,
+  R,  // uses # comments
 
-  R,   // uses # comments
   JS,  // uses // comments
 };
 
@@ -685,6 +685,11 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
       status = Scan<asdl_mode_e>(flag, reader, out);
       break;
 
+    case lang_e::R:
+      hook = new Hook();  // default hook
+      status = Scan<R_mode_e>(flag, reader, out);
+      break;
+
     default:
       assert(0);
     }
@@ -758,10 +763,10 @@ int main(int argc, char** argv) {
       } else if (strcmp(optarg, "asdl") == 0) {
         flag.lang = lang_e::Asdl;
 
-        // TODO: implement all of these
       } else if (strcmp(optarg, "R") == 0) {
-        flag.lang = lang_e::None;
+        flag.lang = lang_e::R;
 
+        // TODO: implement all of these
       } else if (strcmp(optarg, "js") == 0) {
         flag.lang = lang_e::None;
 

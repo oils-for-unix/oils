@@ -95,7 +95,7 @@ FILE_COUNTS_T = T("""\
 """, default_formatter='html')
 
 
-def Files(pairs, attrs_f, show_breadcrumb=True):
+def SpecFiles(pairs, attrs_f):
 
   for i, (path, html_out) in enumerate(pairs):
     #log(path)
@@ -109,7 +109,7 @@ def Files(pairs, attrs_f, show_breadcrumb=True):
       title = path
 
       # How deep are we?
-      n = path.count('/') + 3
+      n = path.count('/') + 2
       base_dir = '/'.join(['..'] * n)
 
       css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
@@ -124,9 +124,6 @@ def Files(pairs, attrs_f, show_breadcrumb=True):
         </p>
         <table>
       ''' % path)
-
-      if show_breadcrumb:
-        Breadcrumb(path, out_f, is_file=True)
 
       file_type = DetectType(path)
 
@@ -394,51 +391,7 @@ def ReadNetString(in_f):
 def main(argv):
   action = argv[1]
 
-  if action == 'files':
-    # Policy for _tmp/src-tree
-
-    out_dir = argv[2]
-    paths = argv[3:]
-
-    attrs_f = sys.stdout
-
-    pairs = []
-    for path in paths:
-
-      # _gen/frontend/match.re2c.h is 367 KB, and gets expanded to over 2 MB of HTML.
-      # So render big files as plain text.
-      # TODO: directory lister needs to take this into account
-
-      file_size = os.path.getsize(path)
-      if file_size > 100000:
-        out_path = os.path.join(out_dir, path)
-        try:
-          os.makedirs(os.path.dirname(out_path))
-        except OSError:
-          pass
-
-        shutil.copyfile(path, out_path)
-
-        # Attrs are parsed by MakeTree(), and then used WriteHtmlFiles()
-        # So we can print the write link
-        print('%s raw=1' % path, file=attrs_f)
-
-        log('Copied %d byte file %s -> %s, no HTML', file_size, path, out_path)
-        continue
-
-      html_out = os.path.join(out_dir, '%s.html' % path)
-      pairs.append((path, html_out))
-
-    n = Files(pairs, attrs_f)
-    log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
-        out_dir)
-
-  elif action == 'write-html-fragments':
-
-    out_dir = argv[2]
-    WriteHtmlFragments(sys.stdin, out_dir)
-
-  elif action == 'spec-files':
+  if action == 'spec-files':
     # Policy for _tmp/spec/osh-minimal/foo.test.html
     # This just changes the HTML names?
 
@@ -452,9 +405,14 @@ def main(argv):
        pairs.append((src, html_out))
 
     attrs_f = sys.stdout
-    n = Files(pairs, attrs_f, show_breadcrumb=False)
+    n = SpecFiles(pairs, attrs_f)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
+
+  elif action == 'write-html-fragments':
+
+    out_dir = argv[2]
+    WriteHtmlFragments(sys.stdin, out_dir)
 
   elif action == 'dirs':
     # stdin: a bunch of merged ATTRs file?
