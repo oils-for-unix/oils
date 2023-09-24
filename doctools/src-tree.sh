@@ -83,9 +83,7 @@ classify() {
 
   # Other
   # .mk
-  # .re2c.txt
-  # configure install
-  # .pgen2
+  # .re2c.txt - rename this one to .h
   #
   # Just leave those un-highlighted for now
 

@@ -70,8 +70,8 @@ LISTING_T = T("""\
 <body class="">
 
 {.section dirs}
-<div id="dirs">
-  <h1>Dirs</h1>
+<h1>Dirs</h1>
+<div id="dirs" class="listing">
   {.repeated section @}
     <a href="{name|htmltag}/index.html">{name|html}/</a> <br/>
   {.end}
@@ -79,8 +79,8 @@ LISTING_T = T("""\
 {.end}
 
 {.section files}
-<div id="files">
-  <h1>Files</h1>
+<h1>Files</h1>
+<div id="files" class="listing">
   {.repeated section @}
     <a href="{url|htmltag}">{anchor|html}</a> <br/>
   {.end}

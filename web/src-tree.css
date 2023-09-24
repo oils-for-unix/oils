@@ -8,7 +8,8 @@
 
 /* Copied from mobile part of web/base.css */
 body {
-  font-family: sans-serif;
+  /* Arial seems thinner than the default sans-serif font */
+  font-family: Arial, sans-serif;
   padding: 0 1em;
 }
 /* horizontal scrollbar for code, so the long lines don't make the page small */
@@ -31,6 +32,12 @@ a:hover {
 /* For highlighting specific lines.  Don't need an anchor! */
 :target {
    background-color: palegoldenrod;
+}
+
+.listing {
+  /* Long filenames like those in spec/ can wrap, but that seems OK */
+  column-width: 12em;
+  /* column-count: 3; */
 }
 
 #file-counts {
