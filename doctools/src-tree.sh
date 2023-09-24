@@ -12,6 +12,8 @@ set -o errexit
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
+source build/common.sh  # log
+
 export PYTHONPATH=.
 
 lexer-files() {
@@ -58,7 +60,7 @@ classify() {
     *.py|*.pyi|*.pgen2)  # pgen2 uses Python lexical syntax
       echo "$path" >& $py
       ;;
-    *.sh|*.bash|*.osh|*.ysh|configure|install)
+    *.sh|*.bash|*.osh|*.ysh|configure|install|uninstall)
       echo "$path" >& $shell
       ;;
     *.asdl)
@@ -70,8 +72,17 @@ classify() {
     *.js)
       echo "$path" >& $js
       ;;
+    *.css)
+      echo "$path" >& $css
+      ;;
     *.md)
       echo "$path" >& $md
+      ;;
+    *.yml)
+      echo "$path" >& $yaml
+      ;;
+    *.txt)
+      echo "$path" >& $txt
       ;;
     *)
       echo "$path" >& $other
@@ -82,7 +93,10 @@ classify() {
        {asdl}>$BASE_DIR/asdl.txt \
        {R}>$BASE_DIR/R.txt \
        {js}>$BASE_DIR/js.txt \
+       {css}>$BASE_DIR/css.txt \
        {md}>$BASE_DIR/md.txt \
+       {yaml}>$BASE_DIR/yaml.txt \
+       {txt}>$BASE_DIR/txt.txt \
        {other}>$BASE_DIR/other.txt
 
   # Other
@@ -96,9 +110,12 @@ classify() {
 
 all-html-to-files() {
   local out_dir=$1
-  for lang in cpp py shell asdl R js md other; do
-    time cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
+  for lang in cpp py shell asdl R js md txt other; do
+    log "=== $lang ===" 
+
+    cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
       | doctools/src_tree.py write-html-fragments $out_dir
+    log ''
   done
 }
 
@@ -115,7 +132,7 @@ highlight() {
 
   local attrs=$BASE_DIR/attrs.txt
 
-  all-html-to-files $out_dir > $attrs
+  time all-html-to-files $out_dir > $attrs
 
   # Now write index.html dir listings
   time doctools/src_tree.py dirs $out_dir < $attrs

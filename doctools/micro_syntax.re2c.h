@@ -68,27 +68,6 @@ class Matcher {
   bool Match(Lexer<T>* lexer, Token* tok);
 };
 
-enum class none_mode_e {
-  Outer,  // default
-};
-
-// Returns whether EOL was hit
-template <>
-bool Matcher<none_mode_e>::Match(Lexer<none_mode_e>* lexer, Token* tok) {
-  const char* p = lexer->p_current;  // mutated by re2c
-
-  if (*p == '\0') {  // end of line
-    return true;
-  }
-
-  // Every line is a token
-  int n = strlen(p);
-  tok->kind = Id::Other;
-  tok->end_col = n;
-  lexer->p_current += n;
-  return false;
-}
-
 // Macros for semantic actions
 
 #define TOK(k)   \
@@ -131,6 +110,37 @@ bool Matcher<none_mode_e>::Match(Lexer<none_mode_e>* lexer, Token* tok) {
   triple_sq = "'''";
   triple_dq = ["]["]["];
 */
+
+enum class text_mode_e {
+  Outer,  // default
+};
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<text_mode_e>::Match(Lexer<text_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+
+  while (true) {
+    /*!re2c
+      nul                    { return true; }
+
+                             // whitespace at start of line
+      whitespace             { TOK(Id::WS); }
+
+                             // This rule consumes trailing whitespace, but
+                             // it's OK.  We're counting significant lines, not
+                             // highlighting.
+      [^\x00]+               { TOK(Id::Other); }
+
+      *                      { TOK(Id::Other); }
+
+    */
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
 
 enum class asdl_mode_e {
   Outer,

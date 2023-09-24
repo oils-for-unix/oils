@@ -28,11 +28,6 @@ More tools:
 
 Immediate:
 
-- CSS
-  - float the breadcrumb next to the home links
-  - small text
-- Add all files -- git ls-files
-
 - SLOC
   - add to index.html, with attrs
     - light grey monospace?
@@ -40,12 +35,13 @@ Immediate:
     - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!
     - <https://dwheeler.com/sloccount/> - no release since 2004 ?
 
+- shell here doc fix
+  - requires captures?
 - Shell comment fix
 - C preprocessor highlighting
 
 - Maybe add language for `*.test.sh`
   - the `####` and `##` lines are special
-
 
 src-tree:
 

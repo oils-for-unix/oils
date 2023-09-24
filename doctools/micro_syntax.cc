@@ -43,7 +43,7 @@ void die(const char* message) {
 }
 
 enum class lang_e {
-  None,
+  PlainText,
 
   Cpp,  // including C
   Py,
@@ -55,35 +55,6 @@ enum class lang_e {
   JS,  // uses // comments
 };
 
-// Problems matching #ifdef only at beginning of line
-// I might need to make a special line lexer for that, and it might be used
-// for INDENT/DEDENT too?
-//
-// The start conditions example looks scary, with YYCURSOR and all that
-// https://re2c.org/manual/manual_c.html#start-conditions
-
-#if 0
-    // at start of line?
-    if (lexer->p_current == lexer->line_) {
-      // printf("STARTING ");
-      while (true) {
-      /*!re2c
-                                // break out of case
-        whitespace "#" not_nul* { tok->kind = Id::Preproc; goto outer2; }
-        *                       { goto outer1; }
-
-      */
-      }
-    }
-#endif
-/* this goes into an infinite loop
-        "" / whitespace "#" not_nul* {
-          if (lexer->p_current == lexer->line_) {
-            TOK(Id::Preproc);
-          }
-        }
-*/
-
 class Reader {
   // We don't care about internal NUL, so this interface doesn't allow it
 
@@ -92,7 +63,7 @@ class Reader {
       : f_(f), filename_(filename), line_(nullptr), allocated_size_(0) {
   }
 
-  const char* Filename() {  // for error messages only
+  const char* Filename() {  // for error messages only, nullptr for stdin
     return filename_;
   }
 
@@ -592,8 +563,9 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
 
   while (true) {  // read each line, handling errors
     if (!reader->NextLine()) {
-      Log("micro-syntax: getline() error on %s: %s", reader->Filename(),
-          strerror(reader->err_num_));
+      const char* name = reader->Filename() ?: "<stdin>";
+      Log("micro-syntax: getline() error on %s: %s",
+          name, strerror(reader->err_num_));
       return 1;
     }
     char* line = reader->Current();
@@ -664,12 +636,12 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     }
     out->PathBegin(path);
 
-    reader = new Reader(f, path ?: "<stdin>");
+    reader = new Reader(f, path);
 
     switch (flag.lang) {
-    case lang_e::None:
+    case lang_e::PlainText:
       hook = new Hook();  // default hook
-      status = Scan<none_mode_e>(flag, reader, out);
+      status = Scan<text_mode_e>(flag, reader, out);
       break;
 
     case lang_e::Py:
@@ -746,7 +718,7 @@ int main(int argc, char** argv) {
   // - LATER: parsed definitions, for now just do line by line
   //   - maybe do a transducer on the tokens
 
-  Flags flag = {lang_e::None};
+  Flags flag = {lang_e::PlainText};
 
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
@@ -775,16 +747,25 @@ int main(int argc, char** argv) {
 
         // TODO: implement all of these
       } else if (strcmp(optarg, "js") == 0) {
-        flag.lang = lang_e::None;
+        flag.lang = lang_e::PlainText;
+
+      } else if (strcmp(optarg, "css") == 0) {
+        flag.lang = lang_e::PlainText;
 
       } else if (strcmp(optarg, "md") == 0) {
-        flag.lang = lang_e::None;
+        flag.lang = lang_e::PlainText;
+
+      } else if (strcmp(optarg, "yaml") == 0) {
+        flag.lang = lang_e::PlainText;
+
+      } else if (strcmp(optarg, "txt") == 0) {
+        flag.lang = lang_e::PlainText;
 
       } else if (strcmp(optarg, "other") == 0) {
-        flag.lang = lang_e::None;
+        flag.lang = lang_e::PlainText;
 
       } else {
-        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js, got %s", optarg);
+        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|txt, got %s", optarg);
         return 2;
       }
       break;

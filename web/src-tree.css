@@ -4,6 +4,7 @@
 body {
   /* Arial seems thinner than the default sans-serif font */
   font-family: Arial, sans-serif;
+  font-size: large;
   padding: 0 3em;
 }
 /* horizontal scrollbar for code, so the long lines don't make the page small */
