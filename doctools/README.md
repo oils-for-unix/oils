@@ -30,8 +30,11 @@ Immediate:
 
 - Shell comment fix
 - C preprocessor highlighting
+
+- Maybe add language for `*.test.sh`
+  - the `####` and `##` lines are special
+
 - SLOC
-  - add to top of file
   - add to index.html, with attrs
   - Subsumes these tools:
     - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!

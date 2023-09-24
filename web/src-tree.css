@@ -24,6 +24,11 @@ a:hover {
    background-color: palegoldenrod;
 }
 
+#file-counts {
+  text-align: right;
+  font-size: medium;
+}
+
 .num {
   color: #666;
   text-align: right;
@@ -44,11 +49,15 @@ a:hover {
 .comm {
   /* Note blog uses language.css, which is 'green' */
   color: #0047ab;  /* cobalt */
-  font-style: italic;
+  /* font-style: italic; */
 }
 
 .str {
   color: brown;
+}
+
+.re2c {
+  color: purple;
 }
 
 /* TODO: a real color scheme, for pre-processor, etc. */

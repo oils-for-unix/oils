@@ -8,6 +8,7 @@ enum class Id {
   Comm,
   WS,
   Preproc,   // for C++
+  Re2c,      // embedded in C++
   LineCont,  // backslash at end of line, for #define continuation
 
   // Zero-width token to detect #ifdef and Python INDENT/DEDENT
@@ -131,6 +132,43 @@ bool Matcher<none_mode_e>::Match(Lexer<none_mode_e>* lexer, Token* tok) {
   triple_dq = ["]["]["];
 */
 
+enum class asdl_mode_e {
+  Outer,
+};
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<asdl_mode_e>::Match(Lexer<asdl_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+
+  switch (lexer->line_mode) {
+  case asdl_mode_e::Outer:
+    while (true) {
+      /*!re2c
+        nul                    { return true; }
+
+        whitespace             { TOK(Id::WS); }
+
+        identifier             { TOK(Id::Name); }
+
+        pound_comment          { TOK(Id::Comm); }
+
+        // Not the start of a comment, identifier
+        [^\x00#_a-zA-Z]+       { TOK(Id::Other); }
+
+        // e.g. unclosed quote like "foo
+        *                      { TOK(Id::Unknown); }
+
+      */
+    }
+    break;
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
+
 enum class py_mode_e {
   Outer,    // default
   MultiSQ,  // inside '''
@@ -212,6 +250,7 @@ enum class cpp_mode_e {
   Outer,   // default
   Comm,    // inside /* */ comment
   RawStr,  // R"zz(string literal)zz"
+  Re2c,    // /* !re2c
 };
 
 // Returns whether EOL was hit
@@ -243,6 +282,9 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
 
         "//" not_nul*          { TOK(Id::Comm); }
 
+        // Treat re2c as preprocessor block
+        "/" "*!re2c"           { TOK_MODE(Id::Re2c, cpp_mode_e::Re2c); }
+
         "/" "*"                { TOK_MODE(Id::Comm, cpp_mode_e::Comm); }
 
         "R" ["] "("            { TOK_MODE(Id::Str, cpp_mode_e::RawStr); }
@@ -265,6 +307,22 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
         [^\x00*]* { TOK(Id::Comm); }
 
         *         { TOK(Id::Comm); }
+
+      */
+    }
+    break;
+
+  case cpp_mode_e::Re2c:
+    // Search until next */
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        "*" "/"   { TOK_MODE(Id::Re2c, cpp_mode_e::Outer); }
+
+        [^\x00*]* { TOK(Id::Re2c); }
+
+        *         { TOK(Id::Re2c); }
 
       */
     }

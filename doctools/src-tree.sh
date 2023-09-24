@@ -54,7 +54,7 @@ classify() {
     *.py|*.pyi|pgen2)  # pgen2 uses Python lexical syntax
       echo "$path" >& $py
       ;;
-    *.sh|*.bash|*.ysh)
+    *.sh|*.bash|*.ysh|configure|install)
       echo "$path" >& $shell
       ;;
     *.asdl)

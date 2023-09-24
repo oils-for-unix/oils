@@ -18,6 +18,7 @@ AUTO
 """
 from __future__ import print_function
 
+import json
 import os
 import shutil
 import sys
@@ -32,35 +33,13 @@ T = jsontemplate.Template
 
 
 def DetectType(path):
+
+  # Most support moved to src-tree.sh and micro-syntax
+
   if path.endswith('.test.sh'):
     return 'spec'
 
-  elif path.endswith('.ysh'):
-    # For now, YSH highlighting is identical
-    return 'sh'
-
-  elif path.endswith('.sh'):
-    return 'sh'
-
-  elif path.endswith('.py') or path.endswith('.pyi'):
-    return 'py'
-
-  # Same lexical syntax
-  elif path.endswith('.pgen2') or path.endswith('.asdl'):
-    return 'py'
-
-  # C files are the same
-  elif path.endswith('.cc') or path.endswith('.h') or path.endswith('.c'):
-    return 'cc'
-
-  elif path.endswith('.js'):
-    return 'js'
-
-  elif path.endswith('.R'):
-    return 'R'
-
   else:
-    # Markdown, CSS, etc.
     return 'other'
 
 
@@ -110,6 +89,10 @@ LISTING_T = T("""\
 
 </body>
 """)
+
+FILE_COUNTS_T = T("""\
+<p id="file-counts"> {num_lines} lines, {num_sig_lines} significant </p>
+""", default_formatter='html')
 
 
 def Files(pairs, attrs_f, show_breadcrumb=True):
@@ -163,19 +146,6 @@ def Files(pairs, attrs_f, show_breadcrumb=True):
           elif s.startswith('#'):
             row['line_class'] = 'comm'
 
-        elif file_type in ('spec', 'sh', 'py', 'R'):
-          if s.startswith('#'):
-            row['line_class'] = 'comm'
-
-        elif file_type == 'cc':
-          # Real cheap solution for now
-          if s.startswith('//'):
-            row['line_class'] = 'comm'
-
-        elif file_type == 'js':
-          if s.startswith('//'):
-            row['line_class'] = 'comm'
-
         out_f.write(ROW_T.expand(row))
 
         line_num += 1
@@ -201,18 +171,19 @@ def ReadFragments(in_f):
     if html_frag is None:
       raise RuntimeError('Expected 2nd record (HTML fragment)')
 
-    count = ReadNetString(in_f)
-    if html_frag is None:
+    s = ReadNetString(in_f)
+    if s is None:
       raise RuntimeError('Expected 3rd record (file summary)')
 
-    yield path, html_frag, count
-    #print(repr(s[:10]))
+    summary = json.loads(s)
+
+    yield path, html_frag, summary
 
 
 def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
 
   i = 0
-  for rel_path, html_frag, counts in ReadFragments(in_f):
+  for rel_path, html_frag, summary in ReadFragments(in_f):
     html_size = len(html_frag)
     if html_size > 300000:
       out_path = os.path.join(out_dir, rel_path)
@@ -257,16 +228,16 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
           |
           <a href="/">oilshell.org</a>
         </p>
-        <table>
       ''' % rel_path)
 
       Breadcrumb(rel_path, out_f, is_file=True)
 
+      out_f.write(FILE_COUNTS_T.expand(summary))
+
+      out_f.write('<table>')
       out_f.write(html_frag)
 
-      # TODO: print SLOC counts as attrs
-      # could be parsed by 'dirs'
-      print('%s lines=%d' % (rel_path, 99), file=attrs_f)
+      print('%s lines=%d' % (rel_path, summary['num_lines']), file=attrs_f)
 
       out_f.write('''
         </table>
@@ -367,6 +338,12 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
     prefix = '%s../../..' % base_url
     css_urls = ['%s/web/base.css' % prefix, '%s/web/src-tree.css' % prefix]
     html_head.Write(f, title, css_urls=css_urls)
+
+    f.write('''
+        <p id="home-link">
+          <a href="/">oilshell.org</a>
+        </p>
+        ''')
 
     Breadcrumb(rel_path, f)
 

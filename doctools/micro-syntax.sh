@@ -201,7 +201,7 @@ sh-self() {
   build
   #$BASE_DIR/micro_syntax -l shell < doctools/micro_syntax.sh | less -r
 
-  $BASE_DIR/micro_syntax -l shell -w < doctools/micro-syntax.sh
+  $BASE_DIR/micro_syntax -l shell doctools/micro-syntax.sh
 }
 
 lexer-def() {

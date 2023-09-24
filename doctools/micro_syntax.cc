@@ -45,13 +45,14 @@ void die(const char* message) {
 enum class lang_e {
   None,
 
+  Cpp,  // including C
   Py,
   Shell,
   Ysh,  // ''' etc.
+  Asdl,
 
-  Cpp,  // including C
-  R,    // uses # comments
-  JS,   // uses // comments
+  R,   // uses # comments
+  JS,  // uses // comments
 };
 
 // Problems matching #ifdef only at beginning of line
@@ -214,6 +215,10 @@ class HtmlPrinter : public Printer {
       PrintSpan("preproc", p_start, num_bytes);
       break;
 
+    case Id::Re2c:
+      PrintSpan("re2c", p_start, num_bytes);
+      break;
+
     case Id::Other:
       // PrintSpan("other", p_start, num_bytes);
       PrintEscaped(p_start, num_bytes);
@@ -267,6 +272,12 @@ class AnsiPrinter : public Printer {
       break;
 
     case Id::Preproc:
+      fputs(PURPLE, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+      break;
+
+    case Id::Re2c:
       fputs(PURPLE, stdout);
       fwrite(p_start, 1, num_bytes, stdout);
       fputs(RESET, stdout);
@@ -365,6 +376,8 @@ bool TokenIsSignificant(Id id) {
   switch (id) {
   case Id::Name:
   case Id::Other:
+  case Id::Preproc:
+  case Id::Re2c:
     return true;
 
   // Comments, whitespace, and string literals aren't significant
@@ -438,9 +451,10 @@ class NetStringOutput : public OutputStream {
 
     PrintNetString(string_for_file.c_str(), string_for_file.size());
 
+    // Output summary in JSON
     char buf[64];
-    int n =
-        snprintf(buf, 64, "%d lines, %d significant", num_lines, num_sig_lines);
+    int n = snprintf(buf, 64, "{\"num_lines\": %d, \"num_sig_lines\": %d}",
+                     num_lines, num_sig_lines);
     PrintNetString(buf, n);
   }
 };
@@ -666,6 +680,11 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
       status = Scan<sh_mode_e>(flag, reader, out);
       break;
 
+    case lang_e::Asdl:
+      hook = new Hook();  // default hook
+      status = Scan<asdl_mode_e>(flag, reader, out);
+      break;
+
     default:
       assert(0);
     }
@@ -736,10 +755,10 @@ int main(int argc, char** argv) {
       } else if (strcmp(optarg, "shell") == 0) {
         flag.lang = lang_e::Shell;
 
-        // TODO: implement all of these
       } else if (strcmp(optarg, "asdl") == 0) {
-        flag.lang = lang_e::None;
+        flag.lang = lang_e::Asdl;
 
+        // TODO: implement all of these
       } else if (strcmp(optarg, "R") == 0) {
         flag.lang = lang_e::None;
 
