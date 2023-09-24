@@ -4,9 +4,21 @@
 body {
   /* Arial seems thinner than the default sans-serif font */
   font-family: Arial, sans-serif;
-  font-size: large;
-  padding: 0 3em;
 }
+
+@media screen and (max-width: 800px) {
+  body {
+    padding: 0 1em;  /* save space on small screen */
+  }
+}
+
+@media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+    padding: 0 3em;
+  }
+}
+
 /* horizontal scrollbar for code, so the long lines don't make the page small */
 pre {
   overflow: auto;
@@ -16,9 +28,9 @@ pre {
   float: right;  /* to the right of the breadcrumb */
 }
 
-/* Like web/ref-index.css */
+/* "Files" and "Dirs" are same size, just bold */
 h1 {
-  font-size: 1.4em;
+  font-size: 1.2em;
 }
 
 a:link {

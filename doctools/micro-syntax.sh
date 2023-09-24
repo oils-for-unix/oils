@@ -40,8 +40,8 @@ my-re2c() {
   local in=$1
   local out=$2
 
-  # Copied from build/py.sh
-  re2c -W -Wno-match-empty-string -Werror -o $out $in
+  # Copied from build/py.sh, and added --tags
+  re2c --tags -W -Wno-match-empty-string -Werror -o $out $in
 }
 
 readonly BASE_DIR=_tmp/micro-syntax
@@ -150,6 +150,18 @@ readonly -a SHELL_TESTS=(
   'echo $(( 16#ff ))'
 
   'echo one # comment'
+
+  'cat <<EOF
+hello $world
+EOF'
+
+  'cat <<- "EOF"
+$3.99
+EOF'
+
+  'cat <<- \_ACAWK
+$3.99
+EOF'
 )
 
 readonly -a R_TESTS=(
@@ -193,6 +205,7 @@ run-tests() {
     echo "$s" | $bin -l shell
     echo
   done
+  #return
 
   echo
   for s in "${R_TESTS[@]}"; do

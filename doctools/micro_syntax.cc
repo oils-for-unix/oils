@@ -276,6 +276,20 @@ class AnsiPrinter : public Printer {
       fputs(RESET, stdout);
       break;
 
+    case Id::HereBegin: {
+      fputs(BLUE, stdout);
+      fwrite(p_start, 1, num_bytes, stdout);
+      fputs(RESET, stdout);
+
+      // Debug submatch extraction
+#if 0
+      fputs(RED, stdout);
+      int n = tok.submatch_end - tok.submatch_start;
+      fwrite(tok.submatch_start, 1, n, stdout);
+      fputs(RESET, stdout);
+#endif
+    } break;
+
     case Id::LBrace:
     case Id::RBrace:
       fputs(GREEN, stdout);
@@ -564,8 +578,8 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
   while (true) {  // read each line, handling errors
     if (!reader->NextLine()) {
       const char* name = reader->Filename() ?: "<stdin>";
-      Log("micro-syntax: getline() error on %s: %s",
-          name, strerror(reader->err_num_));
+      Log("micro-syntax: getline() error on %s: %s", name,
+          strerror(reader->err_num_));
       return 1;
     }
     char* line = reader->Current();
@@ -765,7 +779,9 @@ int main(int argc, char** argv) {
         flag.lang = lang_e::PlainText;
 
       } else {
-        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|txt, got %s", optarg);
+        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|txt, "
+            "got %s",
+            optarg);
         return 2;
       }
       break;

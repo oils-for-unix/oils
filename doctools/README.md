@@ -57,6 +57,22 @@ src-tree:
 
 Later:
 
+- Recast as TSV-Netstring, which is different than TSV8
+  - select one of these cols:
+    - Path, HTML, `num_lines`, `num_sig_lines`, and I guess ANSI?
+      - line/tokens binary?  You have line number and so forth
+  - 3:foo\t 5:foo\n  # last cell has to end with newline ?
+    - preserves wc -l when data has no newlines?
+    - or is this too easily confused with TSV8 itself?  You don't want it to be valid TSV8?
+    - it can start out as text
+    - !tsv8 Str
+    - !type
+    - !nets-row ?
+  - another thing you can do is have a prefix of cells
+    - netstring is 3:foo,
+    - prefix is 5; 3:foo,
+      - that's a command to read 5 net strings I guess?
+
 - Parsing, jump to definition
 
 
