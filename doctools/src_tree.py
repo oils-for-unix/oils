@@ -67,7 +67,7 @@ ROW_T = T("""\
 
 
 LISTING_T = T("""\
-<body class="width50">
+<body class="">
 
 {.section dirs}
 <div id="dirs">
@@ -116,7 +116,7 @@ def SpecFiles(pairs, attrs_f):
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
-      <body class="width50">
+      <body class="">
         <p id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
@@ -219,7 +219,7 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
-      <body class="width50">
+      <body class="">
         <p id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |

@@ -51,7 +51,7 @@ classify() {
     *.cc|*.c|*.h)
       echo "$path" >& $cpp
       ;;
-    *.py|*.pyi|pgen2)  # pgen2 uses Python lexical syntax
+    *.py|*.pyi|*.pgen2)  # pgen2 uses Python lexical syntax
       echo "$path" >& $py
       ;;
     *.sh|*.bash|*.ysh|configure|install)

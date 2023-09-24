@@ -1,10 +1,19 @@
-/* For doctools/src_tree.py */
+/* For doctools/{src_tree,micro_syntax} */
 
 @media screen and (min-width: 801px) {
   body {
     font-size: large;
-    font-family: sans-serif;
   }
+}
+
+/* Copied from mobile part of web/base.css */
+body {
+  font-family: sans-serif;
+  padding: 0 1em;
+}
+/* horizontal scrollbar for code, so the long lines don't make the page small */
+pre {
+  overflow: auto;
 }
 
 /* Like web/ref-index.css */
@@ -78,4 +87,3 @@ td {
   padding-left: 1em;
   padding-right: 1em;
 }
-
