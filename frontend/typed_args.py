@@ -59,8 +59,10 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, pos_args, named_args, args_node, is_bound):
-        # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
+    def __init__(self, argv, pos_args, named_args, args_node, block, is_bound):
+        # type: (List[str], List[value_t], Dict[str, value_t], ArgList, BlockArg, bool) -> None
+        self.argv = argv
+        self.argv_consumed = 0
         self.pos_args = pos_args
         self.pos_consumed = 0
         # TODO: Add LHS of attribute expression to value.BoundFunc and pass
@@ -68,6 +70,8 @@ class Reader(object):
         self.is_bound = is_bound
         self.named_args = named_args
         self.args_node = args_node
+
+        self.block = block
 
     def LeftParenToken(self):
         # type: () -> loc_t
@@ -77,11 +81,22 @@ class Reader(object):
 
     def Word(self):
         # type: () -> str
-        return None  # TODO
+        if self.argv is None or len(self.argv) == 0:
+            # TODO: may need location info
+            raise error.TypeErrVerbose(
+                'Expected at least %d word arguments, but only got %d' %
+                (self.argv_consumed + 1, self.argv_consumed),
+                self.args_node.left)
+
+        self.argv_consumed += 1
+        return self.argv.pop(0)
 
     def RestWords(self):
         # type: () -> List[str]
-        return None  # TODO
+        if not self.argv:
+            return []
+
+        return self.argv
 
     ### Typed positional args
 
@@ -213,6 +228,18 @@ class Reader(object):
                             'Arg %d should be a Command' % self.pos_consumed,
                             self.BlamePos())
 
+    def PosCommand(self):
+        # type: () -> command_t
+        arg = self._GetNextPos()
+        UP_arg = arg
+        if arg.tag() == value_e.Block:
+            arg = cast(value.Block, UP_arg)
+            return arg.body
+
+        raise error.TypeErr(arg,
+                            'Arg %d should be a Command' % self.pos_consumed,
+                            self.BlamePos())
+
     def PosValue(self):
         # type: () -> value_t
         return self._GetNextPos()
@@ -241,6 +268,15 @@ class Reader(object):
         caller can use this to produce more specific error messages."""
         # TODO
         return None
+
+    def NamedValue(self, param_name, default_):
+        # type: (str, value_t) -> value_t
+        if param_name not in self.named_args:
+            return default_
+
+        val = self.named_args[param_name]
+        dict_erase(self.named_args, param_name)
+        return val
 
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
@@ -339,12 +375,11 @@ class Reader(object):
         return ret
 
     def Block(self):
-        # type: () -> command_t
+        # type: () -> command_t.BlockArg
         """
         Block arg for proc
         """
-        # TODO: is this BraceGroup?
-        return None  # TODO
+        return self.block
 
     def Done(self):
         # type: () -> None
@@ -380,8 +415,8 @@ class Reader(object):
                 'Got unexpected named args: %s' % bad_args, blame)
 
 
-def ReaderFromArgv(typed_args, expr_ev):
-    # type: (ArgList, ExprEvaluator) -> Reader
+def ReaderFromArgv(argv, typed_args, expr_ev):
+    # type: (List[str], ArgList, ExprEvaluator) -> Reader
     """
     Build a typed_args.Reader given a builtin command's cmd_val.typed_args.
 
@@ -389,23 +424,30 @@ def ReaderFromArgv(typed_args, expr_ev):
     function may fail if there are any runtime errors whilst evaluating those
     arguments.
     """
-    if typed_args is None:
-        raise error.TypeErrVerbose(
-            'Expected at least 1 typed argument, but got 0', loc.Missing)
-
+    block = None  # type: command_t
     pos_args = []  # type: List[value_t]
     named_args = {}  # type: Dict[str, value_t]
 
-    for i, pos_arg in enumerate(typed_args.pos_args):
-        result = expr_ev.EvalExpr(pos_arg, loc.Missing)
-        pos_args.append(result)
+    if typed_args:
+        for i, pos_arg in enumerate(typed_args.pos_args):
+            if pos_arg.tag() == expr_e.BlockArg:
+                assert block is None, "There should only be one block arg"
+                block = cast(BlockArg, pos_arg).brace_group
 
-    for named_arg in typed_args.named_args:
-        result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
-        name = lexer.TokenVal(named_arg.name)
-        named_args[name] = result
+            elif pos_arg.tag() == expr_e.CommandSub:
+                assert block is None, "There should only be one block arg"
+                block = cast(CommandSub, pos_arg).child
 
-    return Reader(pos_args, named_args, typed_args, False)
+            else:
+                result = expr_ev.EvalExpr(pos_arg, loc.Missing)
+                pos_args.append(result)
+
+        for named_arg in typed_args.named_args:
+            result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+            name = lexer.TokenVal(named_arg.name)
+            named_args[name] = result
+
+    return Reader(argv, pos_args, named_args, typed_args, block, False)
 
 
 def DoesNotAccept(arg_list):
@@ -431,7 +473,7 @@ def RequiredExpr(arg_list):
 
 
 def GetOneBlock(arg_list):
-    # type: (Optional[ArgList]) -> Optional[command_t]
+    # type: (Optional[ArgList], bool) -> Optional[command_t]
     """Returns the first block arg, if any.
 
     For cd { }, shopt { }, etc.

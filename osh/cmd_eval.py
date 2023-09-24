@@ -1975,8 +1975,8 @@ class CommandEvaluator(object):
                 with ctx_ErrTrap(self):
                     self._Execute(node)
 
-    def RunProc(self, proc, argv, arg0_loc):
-        # type: (Proc, List[str], loc_t) -> int
+    def RunProc(self, proc, argv, arg0_loc, typed_args):
+        # type: (Proc, List[str], loc_t, ArgList) -> int
         """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
@@ -1990,7 +1990,7 @@ class CommandEvaluator(object):
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            status = code.BindProcArgs(proc, argv, arg0_loc, self.mem, self.errfmt)
+            status = code.BindProcArgs(proc, argv, arg0_loc, typed_args, self.mem, self.errfmt, self.expr_ev)
             if status != 0:
                 return status
 
