@@ -39,17 +39,26 @@ if TYPE_CHECKING:
 
 
 class Eval(vm._Builtin):
-    def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer, errfmt):
-        # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
+    def __init__(self, parse_ctx, exec_opts, cmd_ev, expr_ev, tracer, errfmt):
+        # type: (ParseContext, optview.Exec, CommandEvaluator, expr_eval.ExprEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.exec_opts = exec_opts
         self.cmd_ev = cmd_ev
+        self.expr_ev = expr_ev
         self.tracer = tracer
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+
+        t = typed_args.ReaderFromArgv(cmd_val.argv, cmd_val.typed_args, self.expr_ev)
+
+        block = t.PosCommand()
+        t.Done()
+
+        self.cmd_ev.EvalBlock(block)
+        return 0
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
@@ -365,7 +374,7 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        t = typed_args.ReaderFromArgv(cmd_val.typed_args, self.expr_ev)
+        t = typed_args.ReaderFromArgv(cmd_val.argv, cmd_val.typed_args, self.expr_ev)
 
         message = t.PosStr()
         status = t.NamedInt("status", 1)
