@@ -534,6 +534,57 @@ TEST test_dict_erase() {
   PASS();
 }
 
+// Ints hash to themselves, so we can control when collisions happen. This test
+// sets up a few contrived workloads and checks that Dict still operates as
+// expected.
+TEST test_dict_probe() {
+  auto d = Alloc<Dict<int, int>>();
+  d->reserve(32);
+
+  // First, fill the table to the brim and check that we can recall
+  // everything.
+  int n = d->capacity_;
+  for (int i = 0; i < n; i++) {
+    d->set(i, i);
+  }
+  ASSERT_EQ(n, d->capacity_);
+  for (int i = 0; i < n; i++) {
+    ASSERT_EQ(i, d->at(i));
+  }
+  // Triger a rehash, and check that everything is OK.
+  d->set(n, n);
+  ASSERT(d->capacity_ > n);
+  for (int i = 0; i <= n; i++) {
+    ASSERT_EQ(i, d->at(i));
+  }
+  for (int i = 0; i <= n; i++) {
+    d->set(i, n * i);
+  }
+  for (int i = 0; i <= n; i++) {
+    ASSERT_EQ(n * i, d->at(i));
+  }
+
+  // Reset and fill the table with keys that all has onto the same index slot
+  n = d->capacity_;
+  int target = n / 2;  // pick a slot in the middle to test wrap around
+  d->clear();
+  for (int i = 0; i < n; i++) {
+    d->set(target * i, i);
+  }
+  // Remove each entry one-by-one, stopping after each removal to check that
+  // the other keys can be set and retrieved without issue. This implicitly
+  // checks that special index entires like tombstones are working correctly.
+  for (int i = 0; i < n; i++) {
+    mylib::dict_erase(d, target * i);
+    for (int j = i + 1; j < n; j++) {
+      d->set(target * j, j + 1);
+      ASSERT_EQ(j + 1, d->at(target * j));
+    }
+  }
+
+  PASS();
+}
+
 GLOBAL_DICT(gDict, int, int, 2, {42 COMMA 43}, {1 COMMA 2});
 
 GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
@@ -595,6 +646,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_dict_erase);
   RUN_TEST(test_global_dict);
   RUN_TEST(test_dict_ordering);
+  RUN_TEST(test_dict_probe);
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);
