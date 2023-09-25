@@ -863,7 +863,7 @@ class HayNode(vm._Builtin):
                     with state.ctx_HayNode(self.hay_state, hay_name):
                         # Note: we want all haynode invocations in the block to appear as
                         # our 'children', recursively
-                        block_attrs = self.cmd_ev.EvalBlock(
+                        block_attrs, result = self.cmd_ev.EvalBlock(
                             lit_block.brace_group)
 
                 attrs = NewDict()  # type: Dict[str, value_t]

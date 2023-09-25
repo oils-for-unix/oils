@@ -52,13 +52,14 @@ class Eval(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        t = typed_args.ReaderFromArgv(cmd_val.argv, cmd_val.typed_args, self.expr_ev)
+        if cmd_val.typed_args:
+            t = typed_args.ReaderFromArgv(cmd_val.argv, cmd_val.typed_args, self.expr_ev)
 
-        block = t.PosCommand()
-        t.Done()
+            block = t.PosCommand()
+            t.Done()
 
-        self.cmd_ev.EvalBlock(block)
-        return 0
+            unused, result = self.cmd_ev.EvalBlock(block)
+            return 0
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)

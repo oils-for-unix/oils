@@ -2014,8 +2014,10 @@ class CommandEvaluator(object):
         return status
 
     def EvalBlock(self, block):
-        # type: (command_t) -> Dict[str, Cell]
-        """Returns a namespace.  For config files.
+        # type: (command_t) -> Tuple[Dict[str, Cell], int]
+        """Returns a namespace and the resulting integer status code.
+
+        For config files.
 
         rule foo {
           a = 1
@@ -2047,7 +2049,7 @@ class CommandEvaluator(object):
         #namespace['_returned'] = status
 
         # TODO: Have to get rid of the cells
-        return namespace_
+        return namespace_, status
 
     def RunFuncForCompletion(self, proc, argv):
         # type: (Proc, List[str]) -> int
