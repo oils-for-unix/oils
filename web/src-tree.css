@@ -87,7 +87,9 @@ a:hover {
   color: purple;
 }
 
-/* TODO: a real color scheme, for pre-processor, etc. */
+.preproc {
+  color: darkgreen;
+}
 
 table {
   border-collapse: collapse;

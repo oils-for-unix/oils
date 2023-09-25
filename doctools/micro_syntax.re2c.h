@@ -9,9 +9,11 @@
 enum class Id {
   Comm,
   WS,
-  Preproc,   // for C++
-  Re2c,      // embedded in C++
-  LineCont,  // backslash at end of line, for #define continuation
+  Re2c,  // embedded in C++
+
+  PreprocCommand,  // #define
+  PreprocOther,    // X in #define X
+  LineCont,        // backslash at end of line, for #define continuation
 
   // Zero-width token to detect #ifdef and Python INDENT/DEDENT
   StartLine,
@@ -402,55 +404,65 @@ class Hook {
  public:
   // Return true if this is a preprocessor line, and fill in tokens
   // Caller should check last token for whether there is a continuation line.
-  virtual bool PreprocessLine(char* line, std::vector<Token>* tokens) {
-    return false;
+  virtual void TryPreprocess(char* line, std::vector<Token>* tokens) {
+    ;
   }
   virtual ~Hook() {
   }
 };
 
-enum class preproc {
-  No,
-  Yes,          // #define X 0
-  YesContinue,  // #define X \ continuation
+enum class pp_mode_e {
+  Outer,
 };
 
-class CppHook : public Hook {
- public:
-  // Problems:
-  // - Testing a single line isn't enough.  We also have to look at line
-  // continuations.
-  // - Comments can appear at the end of the line
+// Returns whether EOL was hit
+template <>
+bool Matcher<pp_mode_e>::Match(Lexer<pp_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+  const char* YYMARKER = p;
 
-  virtual bool PreprocessLine(char* line, std::vector<Token>* tokens) {
-    Token pre_tok;
-    if (CheckFirst(line, &pre_tok)) {
-      tokens->push_back(pre_tok);
-      return true;
-    }
-    return false;
-  }
-
-  bool CheckFirst(char* line, Token* tok) {
-    const char* p = line;  // mutated by re2c
-    const char* YYMARKER = p;
-
+  switch (lexer->line_mode) {
+  case pp_mode_e::Outer:
     while (true) {
       /*!re2c
-        nul            { return false; }
+        nul                    { return true; }
 
-                       // e.g. #ifdef
-        whitespace '#' not_nul* { break; }
+                               // #include #define etc. only valid at the
+                               // beginning
+        [ \t]* "#" [a-z]+      { TOK(Id::PreprocCommand); }
 
-        *              { return false; }
+                               // Token pasting operator (avoid unintentional
+                               // PreprocCommand)
+        "##"                   { TOK(Id::PreprocOther); }
+
+                               // C-style comments can end these lines
+        "//" not_nul*          { TOK(Id::Comm); }
+
+        [\\] [\n]              { TOK(Id::LineCont); }
+
+                               // A line could be all whitespace, then \ at the
+                               // end.  And it's not significant
+        whitespace             { TOK(Id::WS); }
+
+                               // Not the start of a command, comment, or line
+                               // continuation
+        [^\x00#/\\]+           { TOK(Id::PreprocOther); }
+
+        *                      { TOK(Id::PreprocOther); }
 
       */
     }
-    tok->kind = Id::Preproc;
-    tok->end_col = p - line;
-    // Log("line '%s' END %d strlen %d", line, tok->end_col, strlen(line));
-    return true;
+    break;
   }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
+
+class CppHook : public Hook {
+ public:
+  virtual void TryPreprocess(char* line, std::vector<Token>* tokens);
 };
 
 enum class R_mode_e {

@@ -154,6 +154,8 @@ readonly -a CPP_TESTS=(
    void f();'
 
   '#undef x'
+
+  '#define F(x) x##name'
 )
 
 readonly -a SHELL_TESTS=(
@@ -217,7 +219,7 @@ run-tests() {
   echo
   for s in "${CPP_TESTS[@]}"; do
     echo "==== $s"
-    echo "$s" | $bin -l cpp
+    echo "$s" | $bin -l cpp 
     echo
   done
   return

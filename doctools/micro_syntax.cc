@@ -158,7 +158,8 @@ class HtmlPrinter : public Printer {
       PrintEscaped(p_start, num_bytes);
       break;
 
-    case Id::Preproc:
+    case Id::PreprocCommand:
+    case Id::LineCont:
       PrintSpan("preproc", p_start, num_bytes);
       break;
 
@@ -254,7 +255,8 @@ class AnsiPrinter : public Printer {
       fwrite(p_start, 1, num_bytes, stdout);
       break;
 
-    case Id::Preproc:
+    case Id::PreprocCommand:
+    case Id::LineCont:
       fputs(PURPLE, stdout);
       fwrite(p_start, 1, num_bytes, stdout);
       fputs(RESET, stdout);
@@ -346,8 +348,15 @@ const char* Id_str(Id id) {
     return "Comm";
   case Id::WS:
     return "WS";
-  case Id::Preproc:
-    return "Preproc";
+  case Id::Re2c:
+    return "Re2c";
+
+  case Id::PreprocCommand:
+    return "PreprocCommand";
+  case Id::PreprocOther:
+    return "PreprocOther";
+  case Id::LineCont:
+    return "LineCont";
 
   case Id::Name:
     return "Name";
@@ -361,6 +370,8 @@ const char* Id_str(Id id) {
     return "HereBegin";
   case Id::HereEnd:
     return "HereEnd";
+  case Id::RawStrBegin:
+    return "RawStrBegin";
 
   case Id::LBrace:
     return "LBrace";
@@ -398,7 +409,8 @@ bool TokenIsSignificant(Id id) {
   switch (id) {
   case Id::Name:
   case Id::Other:
-  case Id::Preproc:
+  case Id::PreprocCommand:
+  case Id::PreprocOther:
   case Id::Re2c:
     return true;
 
@@ -640,6 +652,23 @@ bool LineEqualsHereDelim(const char* line, std::string& here_delim) {
   return true;
 }
 
+void CppHook::TryPreprocess(char* line, std::vector<Token>* tokens) {
+  Lexer<pp_mode_e> lexer(line);
+  Matcher<pp_mode_e> matcher;
+
+  while (true) {  // tokens on each line
+    Token tok;
+    // Log("Match %d", lexer.p_current - lexer.line_);
+    bool eol = matcher.Match(&lexer, &tok);
+    // Log("EOL %d", eol);
+    if (eol) {
+      break;
+    }
+    // Log("TOK %s %d", Id_str(tok.kind), tok.end_col);
+    tokens->push_back(tok);  // make a copy
+  }
+}
+
 // This templated method causes some code expansion, but not too much.  The
 // binary went from 38 KB to 42 KB, after being stripped.
 // We get a little type safety with py_mode_e vs cpp_mode_e.
@@ -668,24 +697,51 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
       break;  // EOF
     }
 
-    std::vector<Token> tokens;
-    if (hook->PreprocessLine(line, &tokens)) {
-      // TODO: Push a token for #define
-      // hook->Highlight()
-      // reader, out
-      // Do we create a separate Lexer<preproc_mode_e> ?
-      // Run it until you hit a real \n
+    std::vector<Token> pre_tokens;
+    // Log("line len %d", strlen(line));
+    // Log("line last %d", line[2]);
 
-      // out-
-      // This is our goal
+    hook->TryPreprocess(line, &pre_tokens);
+    // Log("Got %d tokens", pre_tokens.size());
+    // PrintTokens(pre_tokens);
 
-      // while (hook->StartLine(tokens)) {
-      // }
-      // out->Line(line_num, line, tokens);
+    if (pre_tokens.size() &&
+        pre_tokens[0].kind == Id::PreprocCommand) {  // # define
+      out->Line(line_num, line, pre_tokens);
 
-      tokens.clear();
+      line_num += 1;
+      num_sig += 1;
+
+      Token last = pre_tokens.back();
+      while (last.kind == Id::LineCont) {
+        // TODO: get a whole other line
+        const char* blame = reader->Filename() ?: "<stdin>";
+        if (!reader->NextLine()) {
+          Log("micro-syntax: getline() error on %s: %s", blame,
+              strerror(reader->err_num_));
+          return 1;
+        }
+        char* line = reader->Current();
+        if (line == nullptr) {
+          Log("Unexpected end-of-file in preprocessor in %s", blame);
+          return 1;
+        }
+
+        pre_tokens.clear();
+        hook->TryPreprocess(line, &pre_tokens);
+
+        out->Line(line_num, line, pre_tokens);
+
+        line_num += 1;
+        num_sig += 1;
+
+        last = pre_tokens.back();
+      }
+      continue;  // Skip the rest of the loop
     }
 
+    // Regular scanning loop
+    std::vector<Token> tokens;
     lexer.SetLine(line);
 
     bool line_is_sig = false;
