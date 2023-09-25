@@ -30,10 +30,25 @@ Immediate:
 
 - iPhone CSS
   - font sizes are wrong when the line wraps
+  - need to debug this directly
 
-- Ninja
+- Experiment with shared library -- narrow waist that eliminates process overhead
+  - main(argv)
+  - stdin / stdout are buffers?
+    - for the coprocess protocol, I wanted file descriptors.  But this is a
+      portable interface
+  - returns status code
+  - what about errors?
+    - I think they can go to stderr to start
+
+- Ninja makes it faster
 - CLI syntax
   - modes: wc and cat
+  - `--col` and `--omit-col`
+  - `mtax cat --no-comments --no-strs` or `--empty-strs`
+    - replace with spaces
+    - reminds me of "garfield minus garfield"
+
 - output: 4 columns
   - which I guess are selectable
   - should tokens be binary data though?

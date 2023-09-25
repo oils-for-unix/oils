@@ -16,6 +16,10 @@ source build/common.sh  # log
 
 export PYTHONPATH=.
 
+install-deps() {
+  sudo apt-get install moreutils  # for isutf8
+}
+
 lexer-files() {
   ### linked from doc/release-quality.md
 
@@ -37,7 +41,10 @@ _print-files() {
   find _devbuild/help -type f
 
   # For some reason it shows py-yajl
-  git ls-files | grep -v Python-2.7.13 | grep -v '^py-yajl'
+  # Remove binary file (probably should delete it altogether, but it's a nice
+  # test of UTF-8)
+
+  git ls-files | egrep -v 'Python-2.7.13|^py-yajl|rsa_travis.enc' 
 
   return
 
@@ -54,47 +61,48 @@ sorted-files() {
 readonly BASE_DIR=_tmp/src-tree
 
 classify() {
-  local prefix=
-  sorted-files | while read -r path; do
-  case $path in
-    */here-doc.test.sh|*/posix.test.sh|*/gold/complex-here-docs.sh|*/07-unterminated-here-doc.sh)
-      # Plain text since they can have invalid here docs
-      #
-      # TODO: make a style for *.test.sh?
-      echo "$path" >& $txt
-      ;;
-    *.cc|*.c|*.h)
-      echo "$path" >& $cpp
-      ;;
-    *.py|*.pyi|*.pgen2)  # pgen2 uses Python lexical syntax
-      echo "$path" >& $py
-      ;;
-    *.sh|*.bash|*.osh|*.ysh|configure|install|uninstall)
-      echo "$path" >& $shell
-      ;;
-    *.asdl)
-      echo "$path" >& $asdl
-      ;;
-    *.R)
-      echo "$path" >& $R
-      ;;
-    *.js)
-      echo "$path" >& $js
-      ;;
-    *.css)
-      echo "$path" >& $css
-      ;;
-    *.md)
-      echo "$path" >& $md
-      ;;
-    *.yml)
-      echo "$path" >& $yaml
-      ;;
-    *.txt)
-      echo "$path" >& $txt
-      ;;
-    *)
-      echo "$path" >& $other
+  ### Classify files on stdin
+
+  while read -r path; do
+    case $path in
+      */here-doc.test.sh|*/posix.test.sh|*/gold/complex-here-docs.sh|*/07-unterminated-here-doc.sh)
+        # Plain text since they can have invalid here docs
+        #
+        # TODO: make a style for *.test.sh?
+        echo "$path" >& $txt
+        ;;
+      *.cc|*.c|*.h)
+        echo "$path" >& $cpp
+        ;;
+      *.py|*.pyi|*.pgen2)  # pgen2 uses Python lexical syntax
+        echo "$path" >& $py
+        ;;
+      *.sh|*.bash|*.osh|*.ysh|configure|install|uninstall)
+        echo "$path" >& $shell
+        ;;
+      *.asdl)
+        echo "$path" >& $asdl
+        ;;
+      *.R)
+        echo "$path" >& $R
+        ;;
+      *.js)
+        echo "$path" >& $js
+        ;;
+      *.css)
+        echo "$path" >& $css
+        ;;
+      *.md)
+        echo "$path" >& $md
+        ;;
+      *.yml)
+        echo "$path" >& $yaml
+        ;;
+      *.txt)
+        echo "$path" >& $txt
+        ;;
+      *)
+        echo "$path" >& $other
     esac
   done {cpp}>$BASE_DIR/cpp.txt \
        {py}>$BASE_DIR/py.txt \
@@ -128,16 +136,38 @@ all-html-to-files() {
   done
 }
 
+check-is-utf8() {
+  local manifest=$1
+
+  log '--- Checking that files are UTF-8'
+  log ''
+
+  if ! xargs isutf8 --list < $manifest; then
+    echo
+    die "The files shown aren't UTF-8"
+  fi
+}
+
 highlight() {
   local variant=opt
   #local variant=asan
+
   doctools/micro-syntax.sh build $variant
+  echo
 
   local out_dir=$BASE_DIR/www
   mkdir -p $out_dir
 
+  sorted-files > $BASE_DIR/manifest.txt
+  wc -l $BASE_DIR/manifest.txt
+  echo
+
+  # Fails if there is non UTF-8
+  # Disable until moreutils is in our Soil CI images
+  # check-is-utf8 $BASE_DIR/manifest.txt
+
   # Figure file types
-  classify
+  classify < $BASE_DIR/manifest.txt
 
   local attrs=$BASE_DIR/attrs.txt
 

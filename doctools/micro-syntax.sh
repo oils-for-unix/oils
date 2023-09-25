@@ -320,6 +320,10 @@ test-usage() {
   echo
   echo
   echo '"dq"' | $BASE_DIR/micro_syntax -l shell 
+
+  $BASE_DIR/micro_syntax -l shell  configure
+
+  $BASE_DIR/micro_syntax -l shell  _nonexistent_ZZ
 }
 
 soil-run() {

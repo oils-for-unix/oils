@@ -5,9 +5,24 @@ Lightweight, polyglot syntax analysis.
 
 Motivations:
 
+- YSH needs syntax highlighters, and this code is a GUIDE to writing one.
+  - The lexer should run on its own.  Generated parsers like TreeSitter
+    require such a lexer.  In contrast to recursive descent, grammars can't
+    specify lexer modes.
+
+Our own dev tools:
+
 - The Github source viewer is too slow.  We want to publish a fast version of
   our source code to view.
   - Our docs need to link to link source code.
+  - Github source viewing APPROXIMATE anyway, because they don't execute your
+    build; they don't have ENV.  They would have to "solve the halting problem"
+    - So let's be FAST and approximate, not SLOW and approximate.
+
+- Multiple attempts at this polyglot problem
+  - github/semantic in Haskell
+  - facebook/pfff -- semgrep heritage
+
 - Aesthetics
   - I don't like noisy keyword highlighting.  Just comments and string
     literals looks surprisingly good.
@@ -15,26 +30,48 @@ Motivations:
 - HTML equivalent of showsh, showpy -- quickly jump to definitions
 - I think I can generate better ctags than `devtools/ctags.sh`!  It's a simple
   format.
-- YSH needs syntax highlighters, and this code is a GUIDE to writing one.
-  - The lexer should run on its own.  Generated parsers like TreeSitter
-    require such a lexer.  In contrast to recursive descent, grammars can't
-    specify lexer modes.
 - I realized that "sloccount" is the same problem as syntax highlighting --
   you exclude comments, whitespace, and lines with only string literals.
   - sloccount is a huge Perl codebase, and we can stop depending on that.
+
+- could be used to spell check comments?
+  - look at the tool sed in the PR from Martin
+
+Other:
+
 - Because re2c is fun, and I wanted to experiment with writing it directly.
 - Ideas
   - use this on your blog?
-  - embed in a text editor?
+  - embed in a text editor?  Can it be incremental?
+
+## Related
+
+Positively inspired:
+
+- uchex static analysis paper (2016)
+- ctags
+
+(and re2c itself)
+
+Also see my comment on: Rust is the future of JavaScript infrastructure -- you
+need Rust/C++ semantics to be fast.  We're using C++ because it's already in
+our codebase, but Rust is probably better for collaboration.  (I trust myself
+to use ASAN and develop with it on, but I don't want to review other people's
+code who haven't used ASAN :-P )
+
+
+Negatively inspired:
+
+- Github source viewer
+- tree-sitter-bash, and to some degree seeing semgrep using tree-sitter-bash
+- huge amount of Perl code in sloccount
+- to some extent, also ctags -- low-level C code
 
 ## TODO
 
-- Deploy with src-tree - 3 languages at first
-
 - `--long-flags` in C++, probably
-- Syntax issues
-  - C++ preprocessor
-  - post-process maybe-comment
+- Export to parser combinators
+  - Export to ctags
 
 ## Algorithm Notes
 
@@ -55,11 +92,8 @@ Q: Are here docs first pass or second pass?
 TODO:
 
 - C++
-  - multi-line preprocessor, comments
   - arbitrary raw strings R"zZXx(
 - Shell
-  - here docs `<<EOF` and `<<'EOF'`
-    - configure-coreutils uses << `\_ACEOF \ACAWK` which is annoying
   - YSH multi-line strings
 
 Parsing:
@@ -140,17 +174,17 @@ like this.  Put it all in `src-tree.wwz`.
     - We may also need a fast whole-file lexer for `var_name` and `package.Var`,
       which does dynamic lookup.
    
-
 - C++
   - `//` comments
   - `/* */` comments
-  - preprocessor `#if`
-  - `class` declarations, with method declarations
-  - function declarations (prototypes)
-    - these are a bit hard - do they require parsing?
-  - function and method definition
-    - including templates?
+  - preprocessor `#if #define`
   - multi-line strings in generated code
+  - Parsing:
+    - `class` declarations, with method declarations
+    - function declarations (prototypes)
+      - these are a bit hard - do they require parsing?
+    - function and method definition
+      - including templates?
 
 - ASDL
   - # comments
@@ -159,9 +193,18 @@ like this.  Put it all in `src-tree.wwz`.
     - `value_e.Str` and `value.Str` and `value_t` can jump to the right
       definition
 
+- R   # comments and "\n" strings
+
 ### More languages
 
-- R   # comments
 - JS  // and `/* */` and `` for templates
 - CSS `/* */`
-- spec tests have "comm3" CSS class - change to comm4 perhaps
+  - there's no real symbols to extract here
+- YAML - `#` and strings
+  - there's no parsing, just highlighting
+- Markdown 
+  - the headings would be nice -- other stuff is more complex
+  - the `==` and `--` styles require lookahead; they're not line-based
+  - so it needs a different model than `ScanOne()`
+
+- spec tests

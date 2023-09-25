@@ -227,12 +227,26 @@ class HtmlPrinter : public Printer {
   std::string out_;
 };
 
+struct Flags {
+  lang_e lang;
+  bool tsv;
+  bool web;
+  bool more_color;
+  bool comments_only;
+
+  int argc;
+  char** argv;
+};
+
 class AnsiPrinter : public Printer {
  public:
-  AnsiPrinter(bool more_color) : Printer(), more_color_(more_color) {
+  AnsiPrinter(const Flags& flag) : Printer(), flag_(flag) {
   }
 
   virtual void PrintLineNumber(int line_num) {
+    if (flag_.comments_only) {
+      return;
+    }
     printf("%s%5d%s ", BLACK2, line_num, RESET);
   }
 
@@ -242,11 +256,15 @@ class AnsiPrinter : public Printer {
     int num_bytes = tok.end_col - start_col;
     switch (tok.id) {
     case Id::Comm:
-      PrintColor(BLUE, p_start, num_bytes);
+      if (flag_.comments_only) {
+        PrintAlways(p_start, num_bytes);
+      } else {
+        PrintColor(BLUE, p_start, num_bytes);
+      }
       break;
 
     case Id::Name:
-      Print(p_start, num_bytes);
+      PrintText(p_start, num_bytes);
       break;
 
     case Id::PreprocCommand:
@@ -259,19 +277,19 @@ class AnsiPrinter : public Printer {
       break;
 
     case Id::Other:
-      if (more_color_) {
+      if (flag_.more_color) {
         PrintColor(PURPLE, p_start, num_bytes);
       } else {
-        Print(p_start, num_bytes);
+        PrintText(p_start, num_bytes);
       }
       break;
 
     case Id::WS:
-      if (more_color_) {
+      if (flag_.more_color) {
         fputs(REVERSE, stdout);
         PrintColor(WHITE, p_start, num_bytes);
       } else {
-        Print(p_start, num_bytes);
+        PrintText(p_start, num_bytes);
       }
       break;
 
@@ -319,7 +337,7 @@ class AnsiPrinter : public Printer {
       break;
 
     default:
-      Print(p_start, num_bytes);
+      PrintText(p_start, num_bytes);
       break;
     }
   }
@@ -327,15 +345,29 @@ class AnsiPrinter : public Printer {
  private:
   void PrintColor(const char* color, const char* s, int n) {
     fputs(color, stdout);
-    fwrite(s, 1, n, stdout);
+    PrintText(s, n);
     fputs(RESET, stdout);
   }
 
-  void Print(const char* s, int n) {
+  void PrintText(const char* s, int n) {
+    if (flag_.comments_only) {
+      for (int i = 0; i < n; ++i) {
+        // Replace everything but newline with space
+        // TODO: I think we always want a newline token, including in comments.
+        // That will simplify this.
+        char c = (s[i] == '\n') ? '\n' : ' ';
+        fwrite(&c, 1, 1, stdout);
+      }
+    } else {
+      fwrite(s, 1, n, stdout);
+    }
+  }
+
+  void PrintAlways(const char* s, int n) {
     fwrite(s, 1, n, stdout);
   }
 
-  bool more_color_;
+  const Flags& flag_;
 };
 
 const char* Id_str(Id id) {
@@ -422,16 +454,6 @@ bool TokenIsSignificant(Id id) {
   return false;
 }
 
-struct Flags {
-  lang_e lang;
-  bool tsv;
-  bool web;
-  bool more_color;
-
-  int argc;
-  char** argv;
-};
-
 class OutputStream {
   // stdout contains either
   // - netstrings of HTML, or TSV Token structs
@@ -501,6 +523,7 @@ class AnsiOutput : public OutputStream {
   AnsiOutput(Printer* pr) : OutputStream(pr) {
   }
 
+  // TODO: Can respect --comments-only
   virtual void PathBegin(const char* path) {
     if (path == nullptr) {
       path = "<stdin>";
@@ -524,6 +547,7 @@ class AnsiOutput : public OutputStream {
     pr_->PrintLineEnd();
   };
 
+  // TODO: Can respect --comments-only
   virtual void PathEnd(int num_lines, int num_sig_lines) {
     fprintf(stdout, "%s%d lines, %d significant%s\n", GREEN, num_lines,
             num_sig_lines, RESET);
@@ -858,6 +882,10 @@ int ScanFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
       f = stdin;
     } else {
       f = fopen(path, "r");
+      if (f == nullptr) {
+        Log("Error opening %s: %s", path, strerror(errno));
+        return 1;
+      }
     }
     out->PathBegin(path);
 
@@ -916,13 +944,19 @@ Recognizes the syntax of each file,, and prints it to stdout.
 If there are no files, reads stdin.
 
 Flags:
+  -h --help   This help
 
-  -l    Language: py|cpp|shell
-  -t    Print tokens as TSV, instead of ANSI color
-  -w    Print HTML for the web
+  -l --lang   Language: py|cpp|shell|...
+  -t          Print tokens as TSV, instead of ANSI color
+  -w          Print HTML for the web
 
-  -m    More color, useful for debugging tokens
-  -h    This help
+  -m          More color, useful for debugging tokens
+
+  -n --no-comments    Omit comments
+  -o --comments-only  Only print comments
+  -e --empty-strs     Substitute string literals for empty strings
+     --color          on off always more
+
 )");
 }
 
@@ -932,7 +966,7 @@ int main(int argc, char** argv) {
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
   int c;
-  while ((c = getopt(argc, argv, "+hl:mtw")) != -1) {
+  while ((c = getopt(argc, argv, "+hl:motw")) != -1) {
     switch (c) {
     case 'h':
       PrintHelp();
@@ -985,6 +1019,10 @@ int main(int argc, char** argv) {
       flag.more_color = true;
       break;
 
+    case 'o':
+      flag.comments_only = true;
+      break;
+
     case 't':
       flag.tsv = true;
       break;
@@ -1024,7 +1062,7 @@ int main(int argc, char** argv) {
     pr = new HtmlPrinter();
     out = new NetStringOutput(pr);
   } else {
-    pr = new AnsiPrinter(flag.more_color);
+    pr = new AnsiPrinter(flag);
     out = new AnsiOutput(pr);
   }
 
