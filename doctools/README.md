@@ -28,6 +28,17 @@ More tools:
 
 Immediate:
 
+- Ninja
+- CLI syntax
+  - modes: wc and cat
+- output: 4 columns
+  - which I guess are selectable
+  - should tokens be binary data though?
+
+- Analyze TSV for function names in Python parser combinators
+  - add () {} -- this is all you need really
+    - oh and : for Python
+
 - C++ multi-line
   - this is an architecture issues, will allow Rust/Lua as well
   - need `_gen/bin/text_files.cc` then

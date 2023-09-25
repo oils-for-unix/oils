@@ -285,7 +285,7 @@ class AnsiPrinter : public Printer {
       // Debug submatch extraction
 #if 0
       fputs(RED, stdout);
-      int n = tok.submatch_end - tok.submatch_start;
+      int n = tok.submatch_len;
       fwrite(tok.submatch_start, 1, n, stdout);
       fputs(RESET, stdout);
 #endif
@@ -301,7 +301,7 @@ class AnsiPrinter : public Printer {
       // Debug submatch extraction
 #if 0
       fputs(RED, stdout);
-      int n = tok.submatch_end - tok.submatch_start;
+      int n = tok.submatch_len;
       fwrite(tok.submatch_start, 1, n, stdout);
       fputs(RESET, stdout);
 #endif
@@ -525,7 +525,8 @@ class AnsiOutput : public OutputStream {
   };
 
   virtual void PathEnd(int num_lines, int num_sig_lines) {
-    fprintf(stdout, "%d lines, %d significant\n", num_lines, num_sig_lines);
+    fprintf(stdout, "%s%d lines, %d significant%s\n", GREEN, num_lines,
+            num_sig_lines, RESET);
   };
 };
 
@@ -691,7 +692,7 @@ void FixShellComments(std::vector<Token>& tokens) {
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int Scan(Reader* reader, OutputStream* out, Hook* hook) {
+int ScanOne(Reader* reader, OutputStream* out, Hook* hook) {
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
 
@@ -768,9 +769,9 @@ int Scan(Reader* reader, OutputStream* out, Hook* hook) {
         break;
       }
       if (tok.id == Id::HereBegin) {
-        int n = tok.submatch_end - tok.submatch_start;
         // Put a copy on the stack
-        here_list.emplace_back(tok.submatch_start, n);
+        int n = tok.submatch_end - tok.submatch_start;
+        here_list.emplace_back(line + tok.submatch_start, n);
         here_start_num.push_back(line_num);
       }
       tokens.push_back(tok);  // make a copy
@@ -846,8 +847,8 @@ int Scan(Reader* reader, OutputStream* out, Hook* hook) {
   return 0;
 }
 
-int PrintFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
-               Hook* hook) {
+int ScanFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
+              Hook* hook) {
   Reader* reader = nullptr;
 
   int status = 0;
@@ -864,27 +865,27 @@ int PrintFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
 
     switch (flag.lang) {
     case lang_e::PlainText:
-      status = Scan<text_mode_e>(reader, out, hook);
+      status = ScanOne<text_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Py:
-      status = Scan<py_mode_e>(reader, out, hook);
+      status = ScanOne<py_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Cpp:
-      status = Scan<cpp_mode_e>(reader, out, hook);
+      status = ScanOne<cpp_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Shell:
-      status = Scan<sh_mode_e>(reader, out, hook);
+      status = ScanOne<sh_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Asdl:
-      status = Scan<asdl_mode_e>(reader, out, hook);
+      status = ScanOne<asdl_mode_e>(reader, out, hook);
       break;
 
     case lang_e::R:
-      status = Scan<R_mode_e>(reader, out, hook);
+      status = ScanOne<R_mode_e>(reader, out, hook);
       break;
 
     default:
@@ -1034,7 +1035,7 @@ int main(int argc, char** argv) {
     hook = new Hook();  // default hook
   }
 
-  int status = PrintFiles(flag, files, out, hook);
+  int status = ScanFiles(flag, files, out, hook);
 
   delete hook;
   delete pr;

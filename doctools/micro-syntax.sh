@@ -186,6 +186,14 @@ $3.99
 more
 _ACAWK 
 echo yo'
+
+  'echo multiple << EOF1 << EOF2 > out
+one
+EOF1
+...
+two
+EOF2
+echo done'
 )
 
 readonly -a R_TESTS=(

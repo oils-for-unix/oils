@@ -51,23 +51,16 @@ enum class Id {
 };
 
 struct Token {
-  Token()
-      : id(Id::Unknown),
-        end_col(0),
-        submatch_start(nullptr),
-        submatch_end(nullptr) {
+  Token() : id(Id::Unknown), end_col(0), submatch_start(0), submatch_end(0) {
   }
   Token(Id id, int end_col)
-      : id(id),
-        end_col(end_col),
-        submatch_start(nullptr),
-        submatch_end(nullptr) {
+      : id(id), end_col(end_col), submatch_start(0), submatch_end(0) {
   }
 
   Id id;
-  int end_col;
-  const char* submatch_start;
-  const char* submatch_end;
+  int end_col;         // offset from char* line
+  int submatch_start;  // ditto
+  int submatch_end;    // ditto
 };
 
 // Lexer and Matcher are specialized on py_mode_e, cpp_mode_e, ...
@@ -108,9 +101,9 @@ class Matcher {
   break;
 
 // Must call TOK*() after this
-#define SUBMATCH(s, e)     \
-  tok->submatch_start = s; \
-  tok->submatch_end = e;
+#define SUBMATCH(s, e)                    \
+  tok->submatch_start = s - lexer->line_; \
+  tok->submatch_end = e - lexer->line_;
 
 // Regex definitions shared between languages
 
