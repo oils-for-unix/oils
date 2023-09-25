@@ -321,9 +321,16 @@ test-usage() {
   echo
   echo '"dq"' | $BASE_DIR/micro_syntax -l shell 
 
-  $BASE_DIR/micro_syntax -l shell  configure
+  $BASE_DIR/micro_syntax -l shell  configure | wc -l
 
+  # TODO: need a nicer pattern for this test
+  set +o errexit
   $BASE_DIR/micro_syntax -l shell  _nonexistent_ZZ
+  local status=$?
+  if test $status -ne 1; then
+    die 'Expected status 1'
+  fi
+  set -o errexit
 }
 
 soil-run() {
