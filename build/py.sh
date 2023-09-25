@@ -292,7 +292,7 @@ osh-lex-gen-native() {
 
 fastmatch() {
   local gen_dir=_gen/frontend
-  mkdir -p _build/tmp/frontend $gen_dir
+  mkdir -p _gen/_tmp $gen_dir
 
   # C version of frontend/types.asdl
   local out=$gen_dir/types.asdl_c.h
@@ -305,7 +305,7 @@ fastmatch() {
   log "  (frontend/consts_gen c) -> $out"
 
   # Fast matcher
-  local tmp=_build/tmp/frontend/match.re2c.txt
+  local tmp=_gen/_tmp/match.re2c-input.h
   local out=_gen/frontend/match.re2c.h
   lexer-gen c > $tmp
   log "  (lexer_gen) -> $tmp"

@@ -20,7 +20,7 @@ lexer-files() {
   ### linked from doc/release-quality.md
 
   for rel_path in \
-    _build/tmp/frontend/match.re2c.txt \
+    _gen/_tmp/match.re2c-input.h \
     _gen/frontend/match.re2c.h \
     _gen/frontend/id_kind.asdl_c.h; do
     echo $rel_path
@@ -28,19 +28,22 @@ lexer-files() {
 }
 
 _print-files() {
-  lexer-files
+  #lexer-files
+
+  find _gen/ -type f
+
+  # TODO: move _devbuild/bin/time-helper elsewhere?
+  find _devbuild/ -type f -a -name '*.py'
+  find _devbuild/help -type f
 
   # For some reason it shows py-yajl
   git ls-files | grep -v Python-2.7.13 | grep -v '^py-yajl'
+
   return
 
-  # Important stuff
+  # We also had this way of categorizing.  Should unify these line counts with
+  # micro-syntax.
   metrics/source-code.sh overview-list
-
-  # And README.md, etc.
-  for f in *.md */*.md doc/*/*.md; do
-    echo $f
-  done
 }
 
 # overview-list has dupes

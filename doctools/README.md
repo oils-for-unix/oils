@@ -35,13 +35,16 @@ Immediate:
   - which I guess are selectable
   - should tokens be binary data though?
 
+- Detect UTF-8
+  - lexing doesn't work without UTF-8
+
 - Analyze TSV for function names in Python parser combinators
   - add () {} -- this is all you need really
     - oh and : for Python
 
 - C++ multi-line
+  - comes up in `_gen/bin/text_files.cc`
   - this is an architecture issues, will allow Rust/Lua as well
-  - need `_gen/bin/text_files.cc` then
 
 - Max color mode for debugging?
   - detail: blank lines in re2c blocks shouldn't be significant
