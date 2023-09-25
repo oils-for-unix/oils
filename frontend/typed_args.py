@@ -75,6 +75,9 @@ class Reader(object):
 
     def LeftParenToken(self):
         # type: () -> loc_t
+        if not self.args_node:
+            return loc.Missing
+
         return self.args_node.left
 
     ### Words: untyped args for procs
@@ -86,7 +89,7 @@ class Reader(object):
             raise error.TypeErrVerbose(
                 'Expected at least %d word arguments, but only got %d' %
                 (self.argv_consumed + 1, self.argv_consumed),
-                self.args_node.left)
+                self.LeftParenToken())
 
         self.argv_consumed += 1
         return self.argv.pop(0)
@@ -97,6 +100,10 @@ class Reader(object):
             return []
 
         return self.argv
+
+    def NumWords(self):
+        # type: () -> int
+        return len(self.argv)
 
     ### Typed positional args
 
@@ -118,12 +125,15 @@ class Reader(object):
                 return l
 
         # Fall back on call
-        return self.args_node.left
+        return self.LeftParenToken()
 
     def PosNode(self, i):
         # type: (int) -> expr_t
         """Returns the expression handle for the ith positional argument. The
         caller can use this to produce more specific error messages."""
+        if not self.args_node:
+            return None
+
         return self.args_node.pos_args[i]
 
     def _GetNextPos(self):
@@ -133,7 +143,7 @@ class Reader(object):
             raise error.TypeErrVerbose(
                 'Expected at least %d arguments, but only got %d' %
                 (self.pos_consumed + 1, self.pos_consumed),
-                self.args_node.left)
+                self.LeftParenToken())
 
         self.pos_consumed += 1
         return self.pos_args.pop(0)
@@ -260,6 +270,9 @@ class Reader(object):
         # type: (str) -> loc_t
         """Returns the location of the given named argument."""
         # TODO
+        if not self.args_node:
+            return loc.Missing
+
         return self.args_node.left
 
     def NamedNode(self, name):

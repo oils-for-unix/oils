@@ -112,14 +112,25 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
 
     t = typed_args.ReaderFromArgv(argv, args, expr_ev)
 
-    for p in sig.word_params:
-        arg_str = t.Word()
-
+    nwords = t.NumWords()
+    for i, p in enumerate(sig.word_params):
         # proc p(out Ref)
         is_out_param = (p.type is not None and p.type.name == 'Ref')
-        #log('is_out %s', is_out_param)
+        log('is_out %s', is_out_param)
 
         param_name = p.name  # may get hidden __
+
+        if i >= nwords:
+            if not p.default_val:
+                break
+
+            # Not sure how this will behave... disallowing it for now
+            assert not is_out_param, "Out params cannot have default values"
+
+            arg_str = p.default_val
+
+        else:
+            arg_str = t.Word()
 
         # If we have myproc(p), and call it with myproc :arg, then bind
         # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
@@ -138,34 +149,44 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
             arg_str = arg_str[1:]
 
         val = value.Str(arg_str)  # type: value_t
-        #log('%s -> %s', param_name, val)
+        log('%s -> %s', param_name, val)
 
         if is_out_param:
             flags = state.SetNameref
         else:
             flags = 0
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
+        mem.SetValue(lvalue.Named(param_name, p.blame_tok),
                      val,
                      scope_e.LocalOnly,
                      flags=flags)
 
+    if sig.rest_of_words:
+        rest = t.RestWords()
+        v = value.List(rest)
+
+        mem.SetValue(lvalue.Named(sig.rest_of_words.name, sig.rest_of_words.blame_tok),
+                     val,
+                     scope_e.LocalOnly)
+
     npos = t.NumPos()
     for i, p in enumerate(sig.pos_params):
         if i >= npos and p.default_val:
-            default_val = expr_ev.EvalExpr(p.default_val, p.blame_tok)
-            mem.SetValue(lvalue.Named(p.name, p.blame_tok),
-                         default_val,
-                         scope_e.LocalOnly,
-                         flags=flags)
-            continue
-
-        v = t.PosValue()
+            v = expr_ev.EvalExpr(p.default_val, p.blame_tok)
+        else:
+            v = t.PosValue()
 
         mem.SetValue(lvalue.Named(p.name, p.blame_tok),
                      v,
-                     scope_e.LocalOnly,
-                     flags=flags)
+                     scope_e.LocalOnly)
+
+    if sig.rest_of_pos:
+        rest = t.RestPos()
+        v = value.List(rest)
+
+        mem.SetValue(lvalue.Named(sig.rest_of_pos.name, sig.rest_of_pos.blame_tok),
+                     v,
+                     scope_e.LocalOnly)
 
     for n in sig.named_params:
         default_ = None  # type: value_t
@@ -173,7 +194,18 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
             default_ = expr_ev.EvalExpr(n.default_val, n.blame_tok)
 
         v = t.NamedValue(n.name, default_)
-        pass  # TODO: look at ths tructure of
+
+        mem.SetValue(lvalue.Named(n.name, n.blame_tok),
+                     v,
+                     scope_e.LocalOnly)
+
+    if sig.rest_of_named:
+        rest = t.RestNamed()
+        v = value.Dict(rest)
+
+        mem.SetValue(lvalue.Named(sig.rest_of_named.name, sig.rest_of_named.blame_tok),
+                     v,
+                     scope_e.LocalOnly)
 
     if sig.block_param:
         p = sig.block_param
@@ -182,7 +214,6 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
         mem.SetValue(lvalue.Named(p.name, p.blame_tok),
                      value.Block(b),
                      scope_e.LocalOnly)
-        # bind b
 
     t.Done()
 

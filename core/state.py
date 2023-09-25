@@ -1774,15 +1774,15 @@ class Mem(object):
     def SetValue(self, lval, val, which_scopes, flags=0):
         # type: (lvalue_t, value_t, scope_t, int) -> None
         """
-    Args:
-      lval: lvalue
-      val: value, or None if only changing flags
-      which_scopes:
-        Local | Global | Dynamic - for builtins, PWD, etc.
-      flags: packed pair (keyword_id, bit mask of set/clear flags)
+        Args:
+          lval: lvalue
+          val: value, or None if only changing flags
+          which_scopes:
+            Local | Global | Dynamic - for builtins, PWD, etc.
+          flags: packed pair (keyword_id, bit mask of set/clear flags)
 
-    Note: in bash, PWD=/ changes the directory.  But not in dash.
-    """
+        Note: in bash, PWD=/ changes the directory.  But not in dash.
+        """
         keyword_id = flags >> 8  # opposite of _PackFlags
         is_setref = keyword_id == Id.KW_SetRef
         # STRICTNESS / SANENESS:

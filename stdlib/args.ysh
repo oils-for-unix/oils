@@ -114,7 +114,7 @@ Documented {  # Do we inherit the name of the proc?  Or $path/$procName?
 
 }
 
-proc Args(spec Ref ; ; ; block) {
+proc Args(; spec Ref;; block) {
 
   var more_procs = {
     flag: getProc('__flag'),
@@ -172,8 +172,8 @@ proc pass () {
   _ null
 }
 
-proc Args (spec_ Ref;;; block) {
-  setvar spec_ = {
+proc Args (spec Ref;;; block) {
+  setref spec = {
     flags: [],
     args: [],
     rest: null,
@@ -185,7 +185,7 @@ proc Args (spec_ Ref;;; block) {
 
     case (spec_frag.tag) {
       flag {
-        _ spec_.flags->append(spec_frag.node)
+        _ spec.flags->append(spec_frag.node)
       }
       arg {
         _ spec.args->append(spec_frag.node)
@@ -266,8 +266,9 @@ func parseArgs(spec, argv) {
     setvar i += 1
   }
 
-  # assert (spec.rest)
-  setvar args[spec.rest] = rest
+  if (spec.rest) {
+    setvar args[spec.rest] = rest
+  }
 
   return ([args, i])
 }
