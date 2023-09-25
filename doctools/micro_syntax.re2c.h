@@ -7,59 +7,60 @@
 #include <vector>
 
 enum class Id {
+  // Common to nearly all languages
   Comm,
   WS,
-  Re2c,  // embedded in C++
+
+  Name,  // Keyword or Identifier
+  Str,   // "" and Python r""
+         // '' and Python r''
+         // ''' """
+         // body of here docs
+
+  Other,  // any other text
+  Unknown,
+
+  // C++
+  Re2c,  // re2c code block
 
   PreprocCommand,  // #define
   PreprocOther,    // X in #define X
   LineCont,        // backslash at end of line, for #define continuation
 
-  // Zero-width token to detect #ifdef and Python INDENT/DEDENT
-  StartLine,
-
-  Name,  // Keyword or Identifier
-
-  Str,  // "" and Python r""
-        // '' and Python r''
-        // ''' """
-
   HereBegin,  // for shell
   HereEnd,
   RawStrBegin,  // for C++ R"zzz(hello)zzz"
-
-  // Hm I guess we also need r''' and """ ?
-
-  Other,  // any other text
-  Unknown,
 
   // For C++ block structure
   // Could be done in second pass after removing comments/strings?
   LBrace,
   RBrace,
 
+  // Zero-width token to detect #ifdef and Python INDENT/DEDENT
+  // StartLine,
+
   // These are special zero-width tokens for Python
-  Indent,
-  Dedent,
+  // Indent,
+  // Dedent,
   // Maintain our own stack!
   // https://stackoverflow.com/questions/40960123/how-exactly-a-dedent-token-is-generated-in-python
 };
 
 struct Token {
   Token()
-      : kind(Id::Unknown),
+      : id(Id::Unknown),
         end_col(0),
         submatch_start(nullptr),
         submatch_end(nullptr) {
   }
   Token(Id id, int end_col)
-      : kind(id),
+      : id(id),
         end_col(end_col),
         submatch_start(nullptr),
         submatch_end(nullptr) {
   }
 
-  Id kind;
+  Id id;
   int end_col;
   const char* submatch_start;
   const char* submatch_end;
@@ -93,12 +94,12 @@ class Matcher {
 
 // Macros for semantic actions
 
-#define TOK(k)   \
-  tok->kind = k; \
+#define TOK(k) \
+  tok->id = k; \
   break;
 
 #define TOK_MODE(k, m)  \
-  tok->kind = k;        \
+  tok->id = k;          \
   lexer->line_mode = m; \
   break;
 
@@ -548,9 +549,6 @@ enum class sh_mode_e {
   DollarSQ,  // inside multi-line $''
   DQ,        // inside multi-line ""
 
-  HereSQ,  // inside <<'EOF' or <<\EOF
-  HereDQ,  // inside <<EOF
-
   // We could have a separate thing for this
   YshSQ,  // inside '''
   YshDQ,  // inside """
@@ -658,8 +656,6 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
       */
     }
     break;
-  case sh_mode_e::HereSQ:
-  case sh_mode_e::HereDQ:
   case sh_mode_e::YshSQ:
   case sh_mode_e::YshDQ:
   case sh_mode_e::YshJ:

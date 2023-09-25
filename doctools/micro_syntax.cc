@@ -40,11 +40,6 @@ void Log(const char* fmt, ...) {
   fputs("\n", stderr);
 }
 
-void die(const char* message) {
-  fprintf(stderr, "micro-syntax: %s\n", message);
-  exit(1);
-}
-
 enum class lang_e {
   PlainText,
 
@@ -55,7 +50,7 @@ enum class lang_e {
   Asdl,
   R,  // uses # comments
 
-  JS,  // uses // comments
+  // JS,  // uses // comments
 };
 
 class Reader {
@@ -71,12 +66,11 @@ class Reader {
   }
 
   bool NextLine() {
-    // Returns true if it put a line in the Reader, or false for EOF.  Handles
-    // I/O errors by printing to stderr.
+    // Returns false if there was an error, and sets err_num_.
+    // Returns true if not error, and Current() can be checked.
 
     // Note: getline() frees the previous line, so we don't have to
     ssize_t len = getline(&line_, &allocated_size_, f_);
-    // Log("len = %d", len);
 
     if (len < 0) {  // EOF is -1
       // man page says the buffer should be freed if getline() fails
@@ -93,6 +87,7 @@ class Reader {
   }
 
   char* Current() {
+    // Returns nullptr on EOF.
     return line_;
   }
 
@@ -129,14 +124,12 @@ class HtmlPrinter : public Printer {
   }
 
   virtual void PrintLineNumber(int line_num) {
-    out_.append("<tr><td class=num>");  // <tr> closed by PrintLineEnd()
-
     char buf[16];
     snprintf(buf, 16, "%d", line_num);
-    out_.append(buf);
 
-    // jump to line with foo.html#L32
-    out_.append("</td><td id=L");
+    out_.append("<tr><td class=num>");  // <tr> closed by PrintLineEnd()
+    out_.append(buf);
+    out_.append("</td><td id=L");  // jump to line with foo.html#L32
     out_.append(buf);
     out_.append(" class=line>");  // <td> closed by PrintLineEnd()
   }
@@ -149,7 +142,8 @@ class HtmlPrinter : public Printer {
                           Token tok) {
     const char* p_start = line + start_col;
     int num_bytes = tok.end_col - start_col;
-    switch (tok.kind) {
+
+    switch (tok.id) {
     case Id::Comm:
       PrintSpan("comm", p_start, num_bytes);
       break;
@@ -244,7 +238,7 @@ class AnsiPrinter : public Printer {
                           Token tok) {
     const char* p_start = line + start_col;
     int num_bytes = tok.end_col - start_col;
-    switch (tok.kind) {
+    switch (tok.id) {
     case Id::Comm:
       fputs(BLUE, stdout);
       fwrite(p_start, 1, num_bytes, stdout);
@@ -397,7 +391,7 @@ class TsvPrinter : public Printer {
 
   virtual void PrintToken(const char* line, int line_num, int start_col,
                           Token tok) {
-    printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.kind), start_col,
+    printf("%d\t%s\t%d\t%d\n", line_num, Id_str(tok.id), start_col,
            tok.end_col);
     // printf("  -> mode %d\n", lexer.line_mode);
   }
@@ -483,6 +477,7 @@ class NetStringOutput : public OutputStream {
     PrintNetString(string_for_file.c_str(), string_for_file.size());
 
     // Output summary in JSON
+    // TODO: change this to a 4th column
     char buf[64];
     int n = snprintf(buf, 64, "{\"num_lines\": %d, \"num_sig_lines\": %d}",
                      num_lines, num_sig_lines);
@@ -515,11 +510,9 @@ class AnsiOutput : public OutputStream {
     pr_->PrintLineNumber(line_num);
 
     int start_col = 0;
-    int i = 0;
     for (auto tok : tokens) {
       pr_->PrintToken(line, line_num, start_col, tok);
       start_col = tok.end_col;
-      ++i;
     }
 
     pr_->PrintLineEnd();
@@ -535,7 +528,7 @@ void PrintTokens(std::vector<Token>& toks) {
   int i = 0;
   Log("===");
   for (auto tok : toks) {
-    Log("%2d %10s %2d %2d", i, Id_str(tok.kind), start_col, tok.end_col);
+    Log("%2d %10s %2d %2d", i, Id_str(tok.id), start_col, tok.end_col);
     start_col = tok.end_col;
     ++i;
   }
@@ -559,9 +552,9 @@ void Optimize(std::vector<Token>* tokens) {
   int left = 0;
   int right = 1;
   while (right < n) {
-    Log("right ID = %s, end %d", Id_str(toks[right].kind), toks[right].end_col);
+    Log("right ID = %s, end %d", Id_str(toks[right].id), toks[right].end_col);
 
-    if (toks[left].kind == toks[right].kind) {
+    if (toks[left].id == toks[right].id) {
       //  Join the tokens together
       toks[left].end_col = toks[right].end_col;
     } else {
@@ -608,8 +601,9 @@ void Optimize2(std::vector<Token>* tokens) {
   tokens->swap(optimized);
 }
 
-// compare EOF vs. EOF\n or EOF\t\n or x\n
 bool LineEqualsHereDelim(const char* line, std::string& here_delim) {
+  // Compare EOF vs. EOF\n or EOF\t\n or x\n
+
   // Hack: skip leading tab unconditionally, even though that's only alowed in
   // <<- Really we should capture the operator and the delim?
   if (*line == '\t') {
@@ -653,6 +647,8 @@ bool LineEqualsHereDelim(const char* line, std::string& here_delim) {
 }
 
 void CppHook::TryPreprocess(char* line, std::vector<Token>* tokens) {
+  // Fills tokens, which can be checked for beginning and end tokens
+
   Lexer<pp_mode_e> lexer(line);
   Matcher<pp_mode_e> matcher;
 
@@ -664,7 +660,7 @@ void CppHook::TryPreprocess(char* line, std::vector<Token>* tokens) {
     if (eol) {
       break;
     }
-    // Log("TOK %s %d", Id_str(tok.kind), tok.end_col);
+    // Log("TOK %s %d", Id_str(tok.id), tok.end_col);
     tokens->push_back(tok);  // make a copy
   }
 }
@@ -674,15 +670,14 @@ void CppHook::TryPreprocess(char* line, std::vector<Token>* tokens) {
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
+int Scan(Reader* reader, OutputStream* out, Hook* hook) {
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
 
   int line_num = 1;
   int num_sig = 0;
 
-  // stack of delimiters to pop
-  std::vector<std::string> here_list;
+  std::vector<std::string> here_list;  // delimiters to pop
   std::vector<int> here_start_num;
 
   while (true) {  // read each line, handling errors
@@ -698,23 +693,18 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
     }
 
     std::vector<Token> pre_tokens;
-    // Log("line len %d", strlen(line));
-    // Log("line last %d", line[2]);
 
     hook->TryPreprocess(line, &pre_tokens);
-    // Log("Got %d tokens", pre_tokens.size());
-    // PrintTokens(pre_tokens);
 
     if (pre_tokens.size() &&
-        pre_tokens[0].kind == Id::PreprocCommand) {  // # define
+        pre_tokens[0].id == Id::PreprocCommand) {  // # define
       out->Line(line_num, line, pre_tokens);
 
       line_num += 1;
       num_sig += 1;
 
       Token last = pre_tokens.back();
-      while (last.kind == Id::LineCont) {
-        // TODO: get a whole other line
+      while (last.id == Id::LineCont) {
         const char* blame = reader->Filename() ?: "<stdin>";
         if (!reader->NextLine()) {
           Log("micro-syntax: getline() error on %s: %s", blame,
@@ -740,7 +730,10 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
       continue;  // Skip the rest of the loop
     }
 
-    // Regular scanning loop
+    //
+    // Main Loop for "normal" lines (not preprocessor or here doc)
+    //
+
     std::vector<Token> tokens;
     lexer.SetLine(line);
 
@@ -751,7 +744,7 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
       if (eol) {
         break;
       }
-      if (tok.kind == Id::HereBegin) {
+      if (tok.id == Id::HereBegin) {
         int n = tok.submatch_end - tok.submatch_start;
         // Put a copy on the stack
         here_list.emplace_back(tok.submatch_start, n);
@@ -759,7 +752,7 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
       }
       tokens.push_back(tok);  // make a copy
 
-      if (TokenIsSignificant(tok.kind)) {
+      if (TokenIsSignificant(tok.id)) {
         line_is_sig = true;
       }
     }
@@ -828,29 +821,9 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
   return 0;
 }
 
-int PrintFiles(const Flags& flag, std::vector<char*> files) {
-  Printer* pr;        // for each file
-  OutputStream* out;  // the entire stream
-
-  if (flag.tsv) {
-    pr = new TsvPrinter();
-    out = new NetStringOutput(pr);
-  } else if (flag.web) {
-    pr = new HtmlPrinter();
-    out = new NetStringOutput(pr);
-  } else {
-    pr = new AnsiPrinter(flag.more_color);
-    out = new AnsiOutput(pr);
-  }
-
+int PrintFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
+               Hook* hook) {
   Reader* reader = nullptr;
-
-  Hook* hook = nullptr;
-  if (flag.lang == lang_e::Cpp) {
-    hook = new CppHook();
-  } else {
-    hook = new Hook();  // default hook
-  }
 
   int status = 0;
   for (auto path : files) {
@@ -866,27 +839,27 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
 
     switch (flag.lang) {
     case lang_e::PlainText:
-      status = Scan<text_mode_e>(flag, reader, out, hook);
+      status = Scan<text_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Py:
-      status = Scan<py_mode_e>(flag, reader, out, hook);
+      status = Scan<py_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Cpp:
-      status = Scan<cpp_mode_e>(flag, reader, out, hook);
+      status = Scan<cpp_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Shell:
-      status = Scan<sh_mode_e>(flag, reader, out, hook);
+      status = Scan<sh_mode_e>(reader, out, hook);
       break;
 
     case lang_e::Asdl:
-      status = Scan<asdl_mode_e>(flag, reader, out, hook);
+      status = Scan<asdl_mode_e>(reader, out, hook);
       break;
 
     case lang_e::R:
-      status = Scan<R_mode_e>(flag, reader, out, hook);
+      status = Scan<R_mode_e>(reader, out, hook);
       break;
 
     default:
@@ -905,10 +878,6 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
       break;
     }
   }
-
-  delete hook;
-  delete pr;
-  delete out;
 
   return status;
 }
@@ -932,12 +901,6 @@ Flags:
 }
 
 int main(int argc, char** argv) {
-  // Outputs:
-  // - syntax highlighting
-  // - SLOC - (file, number), number of lines with significant tokens
-  // - LATER: parsed definitions, for now just do line by line
-  //   - maybe do a transducer on the tokens
-
   Flags flag = {lang_e::PlainText};
 
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
@@ -1025,5 +988,32 @@ int main(int argc, char** argv) {
     files.push_back(nullptr);  // stands for stdin
   }
 
-  return PrintFiles(flag, files);
+  Printer* pr;        // for each file
+  OutputStream* out;  // the entire stream
+
+  if (flag.tsv) {
+    pr = new TsvPrinter();
+    out = new NetStringOutput(pr);
+  } else if (flag.web) {
+    pr = new HtmlPrinter();
+    out = new NetStringOutput(pr);
+  } else {
+    pr = new AnsiPrinter(flag.more_color);
+    out = new AnsiOutput(pr);
+  }
+
+  Hook* hook = nullptr;
+  if (flag.lang == lang_e::Cpp) {
+    hook = new CppHook();
+  } else {
+    hook = new Hook();  // default hook
+  }
+
+  int status = PrintFiles(flag, files, out, hook);
+
+  delete hook;
+  delete pr;
+  delete out;
+
+  return status;
 }

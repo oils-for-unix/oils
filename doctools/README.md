@@ -28,17 +28,27 @@ More tools:
 
 Immediate:
 
+- Line-wise Fixes
+  - Shell comment fix - # begin, or after WS
+  - PreprocCommand only at beginning
+- fiddly fix:
+
+- Max color mode for debugging?
+  - debug whitespace with reverse?
+  - Use that with -m
+  - blank lines in re2c blocks shouldn't be code
+    - I guess you detect whitespace in re2c blocks then
+
+- Architecture issues
+  - C++ multi-line
+  - need `_gen/bin/text_files.cc` then
+
 - SLOC
   - add to index.html, with attrs
     - light grey monospace?
   - Subsumes these tools:
     - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!
     - <https://dwheeler.com/sloccount/> - no release since 2004 ?
-
-- shell here doc fix
-  - requires captures?
-- Shell comment fix
-- C preprocessor highlighting
 
 - Maybe add language for `*.test.sh`
   - the `####` and `##` lines are special
@@ -74,5 +84,4 @@ Later:
       - that's a command to read 5 net strings I guess?
 
 - Parsing, jump to definition
-
 
