@@ -9,6 +9,8 @@
 enum class Id {
   // Common to nearly all languages
   Comm,
+  MaybeComment,  // for shell, resolved in a fix-up pass
+
   WS,
 
   Name,  // Keyword or Identifier
@@ -21,20 +23,21 @@ enum class Id {
   Unknown,
 
   // C++
-  Re2c,  // re2c code block
+  RawStrBegin,  // for C++ R"zzz(hello)zzz"
+  Re2c,         // re2c code block
 
   PreprocCommand,  // #define
   PreprocOther,    // X in #define X
   LineCont,        // backslash at end of line, for #define continuation
 
-  HereBegin,  // for shell
-  HereEnd,
-  RawStrBegin,  // for C++ R"zzz(hello)zzz"
-
-  // For C++ block structure
-  // Could be done in second pass after removing comments/strings?
+  // Braces for C++ block structure. Could be done in second pass after
+  // removing comments/strings?
   LBrace,
   RBrace,
+
+  // Shell
+  HereBegin,
+  HereEnd,
 
   // Zero-width token to detect #ifdef and Python INDENT/DEDENT
   // StartLine,
@@ -577,7 +580,8 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 
         whitespace             { TOK(Id::WS); }
 
-        pound_comment          { TOK(Id::Comm); }
+                               // Resolved in fix-up pass
+        pound_comment          { TOK(Id::MaybeComment); }
 
         // not that relevant for shell
         identifier             { TOK(Id::Name); }
@@ -672,7 +676,7 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 //   - same as C++ raw string, I think
 //   - similar to here docs, but less complex
 //
-// Inherent problems with "micro segmentation:
+// Inherent problems with "micro segmentation":
 //
 // - Nested double quotes in shell.  echo "hi ${name:-"default"}"
 //   - This means that lexing is **dependent on** parsing: does the second
@@ -680,7 +684,7 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 //   - lexing is non-recursive, parsing is recursive
 
 // Shell Comments depend on operator chars
-// echo one # comment
-// echo $(( 16#ff ))'
+//   echo one # comment
+//   echo $(( 16#ff ))'
 
 #endif  // MICRO_SYNTAX_H

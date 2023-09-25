@@ -340,6 +340,8 @@ const char* Id_str(Id id) {
   switch (id) {
   case Id::Comm:
     return "Comm";
+  case Id::MaybeComment:  // shouldn't appear in finaly output
+    return "MaybeComment";
   case Id::WS:
     return "WS";
   case Id::Re2c:
@@ -665,6 +667,21 @@ void CppHook::TryPreprocess(char* line, std::vector<Token>* tokens) {
   }
 }
 
+void FixShellComments(std::vector<Token>& tokens) {
+  int n = tokens.size();
+  for (int i = 0; i < n; ++i) {
+    // # comment at start of line
+    if (tokens[i].id == Id::MaybeComment) {
+      if (i == 0) {
+        tokens[i].id = Id::Comm;
+      }
+      if (i != 0 and tokens[i - 1].id == Id::WS) {
+        tokens[i].id = Id::Comm;
+      }
+    }
+  }
+}
+
 // This templated method causes some code expansion, but not too much.  The
 // binary went from 38 KB to 42 KB, after being stripped.
 // We get a little type safety with py_mode_e vs cpp_mode_e.
@@ -764,6 +781,8 @@ int Scan(Reader* reader, OutputStream* out, Hook* hook) {
     Log("%d tokens after", tokens.size());
     PrintTokens(tokens);
 #endif
+
+    FixShellComments(tokens);
 
     out->Line(line_num, line, tokens);
     tokens.clear();

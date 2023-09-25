@@ -165,11 +165,11 @@ readonly -a SHELL_TESTS=(
   # Quoted backslash
   "echo hi \\' there"
 
-  # not a comment!
-  # TODO: shell needs some kind of MaybeComment token
-
   'echo one#two'
   'echo $(( 16#ff ))'
+
+  '# comment'
+  '### comment'
 
   'echo one # comment'
 
@@ -199,45 +199,48 @@ readonly -a R_TESTS=(
   3')"
 )
 
+run-cases() {
+  local lang=$1
+  shift
+
+  local bin=$BASE_DIR/micro_syntax
+
+  for s in "$@"; do
+    echo "==== $s"
+    echo "$s" | $bin -l $lang
+    echo
+  done
+}
+
+test-shell() {
+  build  # TODO: use Ninja
+  run-cases shell "${SHELL_TESTS[@]}"
+}
+
+test-cpp() {
+  build
+  run-cases cpp "${CPP_TESTS[@]}"
+}
+
+test-py() {
+  build
+  run-cases py "${PY_TESTS[@]}"
+}
+
+test-R() {
+  build
+  run-cases R "${R_TESTS[@]}"
+}
+
 run-tests() {
   local bin=$BASE_DIR/micro_syntax
 
   build
 
-  #$bin 12 '' abc
-
-  #echo
-  #$bin "${STRS[@]}"
-
-  echo
-  for s in "${PY_TESTS[@]}"; do
-    echo "==== $s"
-    echo "$s" | $bin -l py
-    echo
-  done
-
-  echo
-  for s in "${CPP_TESTS[@]}"; do
-    echo "==== $s"
-    echo "$s" | $bin -l cpp 
-    echo
-  done
-  return
-
-  echo
-  for s in "${SHELL_TESTS[@]}"; do
-    echo "==== $s"
-    echo "$s" | $bin -l shell
-    echo
-  done
-  #return
-
-  echo
-  for s in "${R_TESTS[@]}"; do
-    echo "==== $s"
-    echo "$s" | $bin -l R
-    echo
-  done
+  run-cases shell "${SHELL_TESTS[@]}"
+  run-cases cpp "${CPP_TESTS[@]}"
+  run-cases py "${PY_TESTS[@]}"
+  run-cases R "${R_TESTS[@]}"
 
   # No language specified
   echo '==== No language'

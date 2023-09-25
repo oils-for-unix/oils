@@ -116,7 +116,7 @@ classify() {
 
 all-html-to-files() {
   local out_dir=$1
-  for lang in cpp py shell asdl R js md txt other; do
+  for lang in cpp py shell asdl R js css md yaml txt other; do
     log "=== $lang ===" 
 
     cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
