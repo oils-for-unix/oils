@@ -1,31 +1,24 @@
 /* For doctools/{src_tree,micro_syntax} */
 
-/* Copied from mobile part of web/base.css */
 body {
   /* Arial seems thinner than the default sans-serif font */
   font-family: Arial, sans-serif;
+  color: #444;  /* same as base.css */
 }
 
-@media screen and (max-width: 800px) {
+/* Arbitrary threshold of 1000 pixels */
+
+@media screen and (max-width: 1000px) {
   body {
     padding: 0 1em;  /* save space on small screen */
   }
 }
 
-@media screen and (min-width: 801px) {
+@media screen and (min-width: 1001px) {
   body {
     font-size: large;
     padding: 0 3em;
   }
-}
-
-/* horizontal scrollbar for code, so the long lines don't make the page small */
-pre {
-  overflow: auto;
-}
-
-#home-link {
-  float: right;  /* to the right of the breadcrumb */
 }
 
 /* "Files" and "Dirs" are same size, just bold */
@@ -45,15 +38,34 @@ a:hover {
    background-color: palegoldenrod;
 }
 
-.listing {
-  /* Long filenames like those in spec/ can wrap, but that seems OK */
-  column-width: 12em;
-  /* column-count: 3; */
+/* horizontal scrollbar for code, so the long lines don't make the page small */
+pre {
+  overflow: auto;
+}
+
+#home-link {
+  float: right;  /* to the right of the breadcrumb */
 }
 
 #file-counts {
   text-align: right;
   font-size: medium;
+}
+
+table {
+  border-collapse: collapse;  /* shared borders */
+  font-family: monospace;
+}
+
+td {
+  /* For the line number */
+  padding-right: 1em;
+}
+
+.listing {
+  /* Long filenames like those in spec/ can wrap, but that seems OK */
+  column-width: 12em;
+  /* column-count: 3; */
 }
 
 .num {
@@ -91,19 +103,3 @@ a:hover {
   color: darkgreen;
 }
 
-table {
-  border-collapse: collapse;
-  font-family: monospace;
-}
-
-td {
-  padding-top: 1px;
-  padding-bottom: 1px;
-  /*
-  padding-top: 0px;
-  padding-bottom: 0px;
-  */
-  /* The line number and code need margins */
-  padding-left: 1em;
-  padding-right: 1em;
-}

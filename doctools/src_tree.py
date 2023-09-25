@@ -110,7 +110,9 @@ def SpecFiles(pairs, attrs_f):
       n = path.count('/') + 2
       base_dir = '/'.join(['..'] * n)
 
-      css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      #css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      css_urls = ['%s/web/src-tree.css' % base_dir]
+
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
@@ -213,7 +215,8 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
       n = rel_path.count('/') + 3
       base_dir = '/'.join(['..'] * n)
 
-      css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      #css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      css_urls = ['%s/web/src-tree.css' % base_dir]
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
