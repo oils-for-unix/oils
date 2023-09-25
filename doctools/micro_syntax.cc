@@ -145,39 +145,6 @@ class HtmlPrinter : public Printer {
     out_.append("</td></tr>");
   }
 
-  void PrintEscaped(const char* s, int len) {
-    // HTML escape the code string
-    for (int i = 0; i < len; ++i) {
-      char c = s[i];
-
-      switch (c) {
-      case '<':
-        out_.append("&lt;");
-        break;
-      case '>':
-        out_.append("&gt;");
-        break;
-      case '&':
-        out_.append("&amp;");
-        break;
-      default:
-        // Is this inefficient?  Fill 1 char
-        out_.append(1, s[i]);
-        break;
-      }
-    }
-  }
-
-  void PrintSpan(const char* css_class, const char* s, int len) {
-    out_.append("<span class=");
-    out_.append(css_class);
-    out_.append(">");
-
-    PrintEscaped(s, len);
-
-    out_.append("</span>");
-  }
-
   virtual void PrintToken(const char* line, int line_num, int start_col,
                           Token tok) {
     const char* p_start = line + start_col;
@@ -227,6 +194,39 @@ class HtmlPrinter : public Printer {
   }
 
  private:
+  void PrintEscaped(const char* s, int len) {
+    // HTML escape the code string
+    for (int i = 0; i < len; ++i) {
+      char c = s[i];
+
+      switch (c) {
+      case '<':
+        out_.append("&lt;");
+        break;
+      case '>':
+        out_.append("&gt;");
+        break;
+      case '&':
+        out_.append("&amp;");
+        break;
+      default:
+        // Is this inefficient?  Fill 1 char
+        out_.append(1, s[i]);
+        break;
+      }
+    }
+  }
+
+  void PrintSpan(const char* css_class, const char* s, int len) {
+    out_.append("<span class=");
+    out_.append(css_class);
+    out_.append(">");
+
+    PrintEscaped(s, len);
+
+    out_.append("</span>");
+  }
+
   std::string out_;
 };
 
@@ -443,9 +443,6 @@ class NetStringOutput : public OutputStream {
  public:
   NetStringOutput(Printer* pr) : OutputStream(pr) {
   }
-  void PrintNetString(const char* s, int len) {
-    fprintf(stdout, "%d:%*s,", len, len, s);
-  }
 
   virtual void PathBegin(const char* path) {
     if (path == nullptr) {
@@ -478,6 +475,11 @@ class NetStringOutput : public OutputStream {
     int n = snprintf(buf, 64, "{\"num_lines\": %d, \"num_sig_lines\": %d}",
                      num_lines, num_sig_lines);
     PrintNetString(buf, n);
+  }
+
+ private:
+  void PrintNetString(const char* s, int len) {
+    fprintf(stdout, "%d:%*s,", len, len, s);
   }
 };
 
@@ -643,7 +645,7 @@ bool LineEqualsHereDelim(const char* line, std::string& here_delim) {
 // We get a little type safety with py_mode_e vs cpp_mode_e.
 
 template <typename T>
-int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
+int Scan(const Flags& flag, Reader* reader, OutputStream* out, Hook* hook) {
   Lexer<T> lexer(nullptr);
   Matcher<T> matcher;
 
@@ -666,9 +668,26 @@ int Scan(const Flags& flag, Reader* reader, OutputStream* out) {
       break;  // EOF
     }
 
+    std::vector<Token> tokens;
+    if (hook->PreprocessLine(line, &tokens)) {
+      // TODO: Push a token for #define
+      // hook->Highlight()
+      // reader, out
+      // Do we create a separate Lexer<preproc_mode_e> ?
+      // Run it until you hit a real \n
+
+      // out-
+      // This is our goal
+
+      // while (hook->StartLine(tokens)) {
+      // }
+      // out->Line(line_num, line, tokens);
+
+      tokens.clear();
+    }
+
     lexer.SetLine(line);
 
-    std::vector<Token> tokens;
     bool line_is_sig = false;
     while (true) {  // tokens on each line
       Token tok;
@@ -767,8 +786,15 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     pr = new AnsiPrinter(flag.more_color);
     out = new AnsiOutput(pr);
   }
-  Hook* hook = nullptr;
+
   Reader* reader = nullptr;
+
+  Hook* hook = nullptr;
+  if (flag.lang == lang_e::Cpp) {
+    hook = new CppHook();
+  } else {
+    hook = new Hook();  // default hook
+  }
 
   int status = 0;
   for (auto path : files) {
@@ -784,40 +810,33 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
 
     switch (flag.lang) {
     case lang_e::PlainText:
-      hook = new Hook();  // default hook
-      status = Scan<text_mode_e>(flag, reader, out);
+      status = Scan<text_mode_e>(flag, reader, out, hook);
       break;
 
     case lang_e::Py:
-      hook = new Hook();  // default hook
-      status = Scan<py_mode_e>(flag, reader, out);
+      status = Scan<py_mode_e>(flag, reader, out, hook);
       break;
 
     case lang_e::Cpp:
-      hook = new CppHook();  // preprocessor
-      status = Scan<cpp_mode_e>(flag, reader, out);
+      status = Scan<cpp_mode_e>(flag, reader, out, hook);
       break;
 
     case lang_e::Shell:
-      hook = new Hook();  // default hook
-      status = Scan<sh_mode_e>(flag, reader, out);
+      status = Scan<sh_mode_e>(flag, reader, out, hook);
       break;
 
     case lang_e::Asdl:
-      hook = new Hook();  // default hook
-      status = Scan<asdl_mode_e>(flag, reader, out);
+      status = Scan<asdl_mode_e>(flag, reader, out, hook);
       break;
 
     case lang_e::R:
-      hook = new Hook();  // default hook
-      status = Scan<R_mode_e>(flag, reader, out);
+      status = Scan<R_mode_e>(flag, reader, out, hook);
       break;
 
     default:
       assert(0);
     }
 
-    delete hook;
     delete reader;
 
     if (path == nullptr) {
@@ -831,6 +850,7 @@ int PrintFiles(const Flags& flag, std::vector<char*> files) {
     }
   }
 
+  delete hook;
   delete pr;
   delete out;
 

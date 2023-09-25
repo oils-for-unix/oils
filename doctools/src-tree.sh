@@ -224,26 +224,6 @@ extensions() {
     | sort | uniq -c | sort -n
 }
 
-metrics() {
-  metrics/source-code.sh osh-files
-  echo
-  metrics/source-code.sh ysh-files
-
-  # Also see metrics/line_counts.py (104 lines)
-}
-
-line-counts() {
-  metrics/source-code.sh overview
-  metrics/source-code.sh for-translation
-}
-
-lint() {
-  # We're not formatting now
-  test/lint.sh py2-files-to-format
-  echo
-  test/lint.sh py3-files
-}
-
 if test $(basename $0) = 'src-tree.sh'; then
   "$@"
 fi

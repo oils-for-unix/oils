@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <string.h>  // strlen()
 
+#include <vector>
+
 enum class Id {
   Comm,
   WS,
@@ -398,7 +400,9 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
 
 class Hook {
  public:
-  virtual bool IsPreprocessorLine(char* line, Token* tok) {
+  // Return true if this is a preprocessor line, and fill in tokens
+  // Caller should check last token for whether there is a continuation line.
+  virtual bool PreprocessLine(char* line, std::vector<Token>* tokens) {
     return false;
   }
   virtual ~Hook() {
@@ -418,7 +422,16 @@ class CppHook : public Hook {
   // continuations.
   // - Comments can appear at the end of the line
 
-  virtual bool IsPreprocessorLine(char* line, Token* tok) {
+  virtual bool PreprocessLine(char* line, std::vector<Token>* tokens) {
+    Token pre_tok;
+    if (CheckFirst(line, &pre_tok)) {
+      tokens->push_back(pre_tok);
+      return true;
+    }
+    return false;
+  }
+
+  bool CheckFirst(char* line, Token* tok) {
     const char* p = line;  // mutated by re2c
     const char* YYMARKER = p;
 

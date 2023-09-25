@@ -139,6 +139,21 @@ readonly -a CPP_TESTS=(
   world
   )zz");
   '
+
+  '#include "foo.h"'
+  '#include <foo.h> // comment'
+
+  '#define X 3  // comment
+   int g();'
+
+  '// hello
+   #include <stdio.h>
+   #define SUM(x, y) \
+      (x) + \
+      (y)      // comment
+   void f();'
+
+  '#undef x'
 )
 
 readonly -a SHELL_TESTS=(
@@ -205,6 +220,7 @@ run-tests() {
     echo "$s" | $bin -l cpp
     echo
   done
+  return
 
   echo
   for s in "${SHELL_TESTS[@]}"; do
@@ -212,7 +228,7 @@ run-tests() {
     echo "$s" | $bin -l shell
     echo
   done
-  return
+  #return
 
   echo
   for s in "${R_TESTS[@]}"; do
