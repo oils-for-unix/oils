@@ -4,6 +4,11 @@ body {
   /* Arial seems thinner than the default sans-serif font */
   font-family: Arial, sans-serif;
   color: #444;  /* same as base.css */
+
+  /* We've designed with mobile in mind, so disable iPhone's special inflation
+   * algorithm - https://developer.mozilla.org/en-US/docs/Web/CSS/text-size-adjust
+   */
+  text-size-adjust: none;
 }
 
 /* Arbitrary threshold of 1000 pixels */
