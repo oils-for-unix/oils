@@ -18,6 +18,7 @@
 
 const char* RESET = "\x1b[0;0m";
 const char* BOLD = "\x1b[1m";
+const char* UNDERLINE = "\x1b[4m";
 const char* REVERSE = "\x1b[7m";  // reverse video
 
 const char* BLACK = "\x1b[30m";
@@ -27,6 +28,7 @@ const char* YELLOW = "\x1b[33m";
 const char* BLUE = "\x1b[34m";
 const char* PURPLE = "\x1b[35m";
 const char* CYAN = "\x1b[36m";
+const char* WHITE = "\x1b[37m";
 
 const char* BLACK2 = "\x1b[90m";
 const char* RED2 = "\x1b[91m";
@@ -240,48 +242,45 @@ class AnsiPrinter : public Printer {
     int num_bytes = tok.end_col - start_col;
     switch (tok.id) {
     case Id::Comm:
-      fputs(BLUE, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(BLUE, p_start, num_bytes);
       break;
 
     case Id::Name:
-      fwrite(p_start, 1, num_bytes, stdout);
+      Print(p_start, num_bytes);
       break;
 
     case Id::PreprocCommand:
     case Id::LineCont:
-      fputs(PURPLE, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(PURPLE, p_start, num_bytes);
       break;
 
     case Id::Re2c:
-      fputs(PURPLE, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(PURPLE, p_start, num_bytes);
       break;
 
     case Id::Other:
       if (more_color_) {
-        fputs(PURPLE, stdout);
+        PrintColor(PURPLE, p_start, num_bytes);
+      } else {
+        Print(p_start, num_bytes);
       }
-      fwrite(p_start, 1, num_bytes, stdout);
+      break;
+
+    case Id::WS:
       if (more_color_) {
-        fputs(RESET, stdout);
+        fputs(REVERSE, stdout);
+        PrintColor(WHITE, p_start, num_bytes);
+      } else {
+        Print(p_start, num_bytes);
       }
       break;
 
     case Id::Str:
-      fputs(RED, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(RED, p_start, num_bytes);
       break;
 
     case Id::HereBegin: {
-      fputs(RED2, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(RED2, p_start, num_bytes);
 
       // Debug submatch extraction
 #if 0
@@ -293,15 +292,11 @@ class AnsiPrinter : public Printer {
     } break;
 
     case Id::HereEnd:
-      fputs(RED2, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(RED2, p_start, num_bytes);
       break;
 
     case Id::RawStrBegin: {
-      fputs(BLUE, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(RED2, p_start, num_bytes);
 
       // Debug submatch extraction
 #if 0
@@ -314,25 +309,32 @@ class AnsiPrinter : public Printer {
 
     case Id::LBrace:
     case Id::RBrace:
-      fputs(GREEN, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(GREEN, p_start, num_bytes);
       break;
 
     case Id::Unknown:
       // Make errors red
       fputs(REVERSE, stdout);
-      fputs(RED, stdout);
-      fwrite(p_start, 1, num_bytes, stdout);
-      fputs(RESET, stdout);
+      PrintColor(RED, p_start, num_bytes);
       break;
+
     default:
-      fwrite(p_start, 1, num_bytes, stdout);
+      Print(p_start, num_bytes);
       break;
     }
   }
 
  private:
+  void PrintColor(const char* color, const char* s, int n) {
+    fputs(color, stdout);
+    fwrite(s, 1, n, stdout);
+    fputs(RESET, stdout);
+  }
+
+  void Print(const char* s, int n) {
+    fwrite(s, 1, n, stdout);
+  }
+
   bool more_color_;
 };
 
@@ -340,13 +342,15 @@ const char* Id_str(Id id) {
   switch (id) {
   case Id::Comm:
     return "Comm";
-  case Id::MaybeComment:  // shouldn't appear in finaly output
+  case Id::MaybeComment:  // fix-up doesn't guarantee this is gone
     return "MaybeComment";
   case Id::WS:
     return "WS";
   case Id::Re2c:
     return "Re2c";
 
+  case Id::MaybePreproc:  // fix-up doesn't guarantee this is gone
+    return "MaybePreproc";
   case Id::PreprocCommand:
     return "PreprocCommand";
   case Id::PreprocOther:
@@ -713,8 +717,10 @@ int Scan(Reader* reader, OutputStream* out, Hook* hook) {
 
     hook->TryPreprocess(line, &pre_tokens);
 
-    if (pre_tokens.size() &&
-        pre_tokens[0].id == Id::PreprocCommand) {  // # define
+    // e.g #define at beginning of line
+    if (pre_tokens.size() && pre_tokens[0].id == Id::MaybePreproc) {
+      pre_tokens[0].id = Id::PreprocCommand;
+
       out->Line(line_num, line, pre_tokens);
 
       line_num += 1;

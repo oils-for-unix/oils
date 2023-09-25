@@ -26,8 +26,9 @@ enum class Id {
   RawStrBegin,  // for C++ R"zzz(hello)zzz"
   Re2c,         // re2c code block
 
-  PreprocCommand,  // #define
-  PreprocOther,    // X in #define X
+  MaybePreproc,    // resolved to PreprocCommand/PreprocOther in fix-up pass
+  PreprocCommand,  // resolved #define
+  PreprocOther,    // any other text
   LineCont,        // backslash at end of line, for #define continuation
 
   // Braces for C++ block structure. Could be done in second pass after
@@ -311,40 +312,39 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
 
     while (true) {
       /*!re2c
-        nul                    { return true; }
+        nul                     { return true; }
 
-        whitespace             { TOK(Id::WS); }
+        whitespace              { TOK(Id::WS); }
 
-        "{"                    { TOK(Id::LBrace); }
-        "}"                    { TOK(Id::RBrace); }
+        "{"                     { TOK(Id::LBrace); }
+        "}"                     { TOK(Id::RBrace); }
 
-        identifier             { TOK(Id::Name); }
+        identifier              { TOK(Id::Name); }
 
         // approximation for C++ char literals
-        sq_string              { TOK(Id::Str); }
-        dq_string              { TOK(Id::Str); }
+        sq_string               { TOK(Id::Str); }
+        dq_string               { TOK(Id::Str); }
 
         // Not the start of a string, comment, identifier
-        [^\x00"'/_a-zA-Z{}]+   { TOK(Id::Other); }
+        [^\x00"'/_a-zA-Z{}]+    { TOK(Id::Other); }
 
-        "//" not_nul*          { TOK(Id::Comm); }
+        "//" not_nul*           { TOK(Id::Comm); }
 
         // Treat re2c as preprocessor block
-        "/" "*!re2c"           { TOK_MODE(Id::Re2c, cpp_mode_e::Re2c); }
+        "/" "*!re2c"            { TOK_MODE(Id::Re2c, cpp_mode_e::Re2c); }
 
-        "/" "*"                { TOK_MODE(Id::Comm, cpp_mode_e::Comm); }
+        "/" "*"                 { TOK_MODE(Id::Comm, cpp_mode_e::Comm); }
 
         // Not sure what the rules are for R"zz(hello)zz".  Make it similar to
         // here docs.
         delim = [_a-zA-Z]*;
 
-        "R" ["] @s delim @e "(" {
-                                SUBMATCH(s, e);
-                                TOK_MODE(Id::RawStrBegin, cpp_mode_e::RawStr);
-                              }
+        "R" ["] @s delim @e "(" { SUBMATCH(s, e);
+                                  TOK_MODE(Id::RawStrBegin, cpp_mode_e::RawStr);
+                                }
 
         // e.g. unclosed quote like "foo
-        *                      { TOK(Id::Unknown); }
+        *                       { TOK(Id::Unknown); }
 
       */
     }
@@ -431,13 +431,10 @@ bool Matcher<pp_mode_e>::Match(Lexer<pp_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul                    { return true; }
 
+                               // Resolved in fix-up pass
                                // #include #define etc. only valid at the
                                // beginning
-        [ \t]* "#" [a-z]+      { TOK(Id::PreprocCommand); }
-
-                               // Token pasting operator (avoid unintentional
-                               // PreprocCommand)
-        "##"                   { TOK(Id::PreprocOther); }
+        [ \t]* "#" [a-z]+      { TOK(Id::MaybePreproc); }
 
                                // C-style comments can end these lines
         "//" not_nul*          { TOK(Id::Comm); }
@@ -601,13 +598,13 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
         h_delim    = [_a-zA-Z][_a-zA-Z0-9]*;
 
         // unquoted or quoted
-        here_op @s      h_delim @e     { SUBMATCH(s, e); TOK(Id::HereBegin); }
+        here_op      @s h_delim @e     { SUBMATCH(s, e); TOK(Id::HereBegin); }
         here_op [']  @s h_delim @e ['] { SUBMATCH(s, e); TOK(Id::HereBegin); }
         here_op ["]  @s h_delim @e ["] { SUBMATCH(s, e); TOK(Id::HereBegin); }
         here_op "\\" @s h_delim @e     { SUBMATCH(s, e); TOK(Id::HereBegin); }
 
-                               // NOT Unknown, as in Python
-        *                      { TOK(Id::Other); }
+                                       // NOT Unknown, as in Python
+        *                              { TOK(Id::Other); }
 
       */
     }

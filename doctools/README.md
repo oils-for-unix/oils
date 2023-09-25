@@ -28,20 +28,13 @@ More tools:
 
 Immediate:
 
-- Line-wise Fixes
-  - Shell comment fix - # begin, or after WS
-  - PreprocCommand only at beginning
-- fiddly fix:
+- C++ multi-line
+  - this is an architecture issues, will allow Rust/Lua as well
+  - need `_gen/bin/text_files.cc` then
 
 - Max color mode for debugging?
-  - debug whitespace with reverse?
-  - Use that with -m
-  - blank lines in re2c blocks shouldn't be code
+  - detail: blank lines in re2c blocks shouldn't be significant
     - I guess you detect whitespace in re2c blocks then
-
-- Architecture issues
-  - C++ multi-line
-  - need `_gen/bin/text_files.cc` then
 
 - SLOC
   - add to index.html, with attrs
