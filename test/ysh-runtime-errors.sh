@@ -375,7 +375,7 @@ EOF
 }
 
 test-proc-ref-param() {
-  _error-case '
+  _error-case-X 2 '
   proc p (out Ref) {
     setref out = "yo"
   }
