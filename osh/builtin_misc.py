@@ -55,6 +55,7 @@ _ = log
 
 
 class Times(vm._Builtin):
+
     def __init__(self):
         # type: () -> None
         vm._Builtin.__init__(self)
@@ -263,6 +264,7 @@ def ReadAll():
 
 
 class ctx_TermAttrs(object):
+
     def __init__(self, fd, local_modes):
         # type: (int, int) -> None
         self.fd = fd
@@ -284,6 +286,7 @@ class ctx_TermAttrs(object):
 
 
 class Read(vm._Builtin):
+
     def __init__(self, splitter, mem, parse_ctx, cmd_ev, errfmt):
         # type: (SplitContext, Mem, ParseContext, CommandEvaluator, ErrorFormatter) -> None
         self.splitter = splitter
@@ -550,6 +553,7 @@ class MapFile(vm._Builtin):
 
 
 class ctx_CdBlock(object):
+
     def __init__(self, dir_stack, dest_dir, mem, errfmt, out_errs):
         # type: (DirStack, str, Mem, ErrorFormatter, List[bool]) -> None
         dir_stack.Push(dest_dir)
@@ -565,10 +569,12 @@ class ctx_CdBlock(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        _PopDirStack('cd', self.mem, self.dir_stack, self.errfmt, self.out_errs)
+        _PopDirStack('cd', self.mem, self.dir_stack, self.errfmt,
+                     self.out_errs)
 
 
 class Cd(vm._Builtin):
+
     def __init__(self, mem, dir_stack, cmd_ev, errfmt):
         # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None
         self.mem = mem
@@ -670,6 +676,7 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
 
 class Pushd(vm._Builtin):
+
     def __init__(self, mem, dir_stack, errfmt):
         # type: (Mem, DirStack, ErrorFormatter) -> None
         self.mem = mem
@@ -721,7 +728,8 @@ def _PopDirStack(label, mem, dir_stack, errfmt, out_errs):
     err_num = pyos.Chdir(dest_dir)
     if err_num != 0:
         # Happens if a directory is deleted in pushing and popping
-        errfmt.Print_('%s: %r: %s' % (label, dest_dir, posix.strerror(err_num)))
+        errfmt.Print_('%s: %r: %s' %
+                      (label, dest_dir, posix.strerror(err_num)))
         out_errs.append(True)  # "return" to caller
         return False
 
@@ -731,6 +739,7 @@ def _PopDirStack(label, mem, dir_stack, errfmt, out_errs):
 
 
 class Popd(vm._Builtin):
+
     def __init__(self, mem, dir_stack, errfmt):
         # type: (Mem, DirStack, ErrorFormatter) -> None
         self.mem = mem
@@ -756,6 +765,7 @@ class Popd(vm._Builtin):
 
 
 class Dirs(vm._Builtin):
+
     def __init__(self, mem, dir_stack, errfmt):
         # type: (Mem, DirStack, ErrorFormatter) -> None
         self.mem = mem
@@ -816,6 +826,7 @@ class Pwd(vm._Builtin):
 
 # Needs a different _ResourceLoader to translate
 class Help(vm._Builtin):
+
     def __init__(self, lang, loader, help_data, errfmt):
         # type: (str, _ResourceLoader, Dict[str, str], ErrorFormatter) -> None
         self.lang = lang
@@ -841,10 +852,8 @@ class Help(vm._Builtin):
         # print the URL.
         if chapter_name is not None:
             util.PrintTopicHeader(topic_id, self.f)
-            print('    %s/%s/doc/ref/chap-%s.html#%s' % (prefix,
-                                                         self.version_str,
-                                                         chapter_name,
-                                                         topic_id))
+            print('    %s/%s/doc/ref/chap-%s.html#%s' %
+                  (prefix, self.version_str, chapter_name, topic_id))
             return 0
 
         found = util.PrintEmbeddedHelp(self.loader, topic_id, self.f)

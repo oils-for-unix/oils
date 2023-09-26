@@ -145,8 +145,9 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
                     if not arg_str.startswith(':'):
                         # TODO: Point to the exact argument.  We got argv but not
                         # locations.
-                        e_die('Ref param %r expected arg starting with colon : but got %r' %
-                              (p.name, arg_str))
+                        e_die(
+                            'Ref param %r expected arg starting with colon : but got %r'
+                            % (p.name, arg_str))
 
                     arg_str = arg_str[1:]
 
@@ -164,11 +165,11 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
 
         if sig.rest_of_words:
             rw = sig.rest_of_words
-            items = [value.Str(x) for x in t.RestWords()]  # type: List[value_t]
+            items = [value.Str(x)
+                     for x in t.RestWords()]  # type: List[value_t]
             val = value.List(items)
 
-            mem.SetValue(lvalue.Named(rw.name, rw.blame_tok),
-                         val,
+            mem.SetValue(lvalue.Named(rw.name, rw.blame_tok), val,
                          scope_e.LocalOnly)
 
         npos = t.NumPos()
@@ -179,8 +180,7 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
             else:
                 val = t.PosValue()
 
-            mem.SetValue(lvalue.Named(p.name, p.blame_tok),
-                         val,
+            mem.SetValue(lvalue.Named(p.name, p.blame_tok), val,
                          scope_e.LocalOnly)
 
         if sig.rest_of_pos:
@@ -188,8 +188,7 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
             rest_pos = t.RestPos()
             val = value.List(rest_pos)
 
-            mem.SetValue(lvalue.Named(rp.name, rp.blame_tok),
-                         val,
+            mem.SetValue(lvalue.Named(rp.name, rp.blame_tok), val,
                          scope_e.LocalOnly)
 
         for n in sig.named_params:
@@ -199,8 +198,7 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
 
             val = t.NamedValue(n.name, default_)
 
-            mem.SetValue(lvalue.Named(n.name, n.blame_tok),
-                         val,
+            mem.SetValue(lvalue.Named(n.name, n.blame_tok), val,
                          scope_e.LocalOnly)
 
         if sig.rest_of_named:
@@ -208,17 +206,16 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
             rest_named = t.RestNamed()
             val = value.Dict(rest_named)
 
-            mem.SetValue(lvalue.Named(rn.name, rn.blame_tok),
-                         val,
+            mem.SetValue(lvalue.Named(rn.name, rn.blame_tok), val,
                          scope_e.LocalOnly)
 
         if sig.block_param:
             b = t.Block()
             val = value.Block(b)
 
-            mem.SetValue(lvalue.Named(sig.block_param.name, sig.block_param.blame_tok),
-                         val,
-                         scope_e.LocalOnly)
+            mem.SetValue(
+                lvalue.Named(sig.block_param.name, sig.block_param.blame_tok),
+                val, scope_e.LocalOnly)
 
         t.Done()
     except error._ErrorWithLocation as err:
