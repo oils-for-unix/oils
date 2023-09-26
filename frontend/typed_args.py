@@ -105,6 +105,9 @@ class Reader(object):
 
     def NumWords(self):
         # type: () -> int
+        if not self.argv:
+            return 0
+
         return len(self.argv)
 
     ### Typed positional args
@@ -407,7 +410,7 @@ class Reader(object):
         problem
         """
         # Note: Python throws TypeError on mismatch
-        if len(self.argv):
+        if self.argv is not None and len(self.argv):
             n = self.argv_consumed
 
             raise error.Usage(

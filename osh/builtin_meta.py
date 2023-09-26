@@ -53,7 +53,7 @@ class Eval(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         if cmd_val.typed_args:
-            t = typed_args.ReaderFromArgv(cmd_val.argv, cmd_val.typed_args, self.expr_ev)
+            t = typed_args.ReaderFromArgv(cmd_val.argv[1:], cmd_val.typed_args, self.expr_ev)
 
             block = t.PosCommand()
             t.Done()
@@ -375,7 +375,7 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        t = typed_args.ReaderFromArgv(cmd_val.argv, cmd_val.typed_args, self.expr_ev)
+        t = typed_args.ReaderFromArgv(cmd_val.argv[1:], cmd_val.typed_args, self.expr_ev)
 
         message = t.PosStr()
         status = t.NamedInt("status", 1)
