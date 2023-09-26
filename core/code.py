@@ -99,8 +99,16 @@ class UserFunc(vm._Callable):
         raise AssertionError('unreachable')
 
 
-def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
-    # type: (Proc, List[str], loc_t, ArgList, state.Mem, ui.ErrorFormatter, expr_eval.ExprEvaluator) -> int
+def BindProcArgs(
+        proc,  # type: Proc
+        argv,  # type: List[str]
+        arg0_loc,  # type: loc_t
+        args,  # type: ArgList
+        mem,  # type: state.Mem
+        errfmt,  # type: ui.ErrorFormatter
+        expr_ev,  # type: expr_eval.ExprEvaluator
+):
+    # type: (...) -> int
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
         return 0
