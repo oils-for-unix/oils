@@ -60,7 +60,7 @@ class Reader(object):
     """
 
     def __init__(self, argv, pos_args, named_args, args_node, block, is_bound):
-        # type: (List[str], List[value_t], Dict[str, value_t], ArgList, BlockArg, bool) -> None
+        # type: (List[str], List[value_t], Dict[str, value_t], ArgList, command_t, bool) -> None
         self.argv = argv
         self.argv_consumed = 0
         self.pos_args = pos_args
@@ -243,18 +243,6 @@ class Reader(object):
                             'Arg %d should be a Command' % self.pos_consumed,
                             self.BlamePos())
 
-    def PosCommand(self):
-        # type: () -> command_t
-        arg = self._GetNextPos()
-        UP_arg = arg
-        if arg.tag() == value_e.Block:
-            arg = cast(value.Block, UP_arg)
-            return arg.body
-
-        raise error.TypeErr(arg,
-                            'Arg %d should be a Command' % self.pos_consumed,
-                            self.BlamePos())
-
     def PosValue(self):
         # type: () -> value_t
         return self._GetNextPos()
@@ -393,7 +381,7 @@ class Reader(object):
         return ret
 
     def Block(self):
-        # type: () -> command_t.BlockArg
+        # type: () -> command_t
         """
         Block arg for proc
         """
@@ -498,7 +486,7 @@ def RequiredExpr(arg_list):
 
 
 def GetOneBlock(arg_list):
-    # type: (Optional[ArgList], bool) -> Optional[command_t]
+    # type: (Optional[ArgList]) -> Optional[command_t]
     """Returns the first block arg, if any.
 
     For cd { }, shopt { }, etc.

@@ -2056,7 +2056,7 @@ class CommandEvaluator(object):
 
         # TODO: Change this to run YSH procs and funcs too
         try:
-            status = self.RunProc(proc, argv, loc.Missing)
+            status = self.RunProc(proc, argv, loc.Missing, None)
         except error.FatalRuntime as e:
             self.errfmt.PrettyPrintError(e)
             status = e.ExitStatus()

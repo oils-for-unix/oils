@@ -120,6 +120,8 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
 
         param_name = p.name  # may get hidden __
 
+        val = None  # type: value_t
+
         if i >= nwords:
             if not p.default_val:
                 break  # Will raise when we call t.Done()
@@ -148,8 +150,7 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
 
                 arg_str = arg_str[1:]
 
-            val = value.Str(arg_str)  # type: value_t
-            #log('%s -> %s', param_name, val)
+            val = value.Str(arg_str)
 
         if is_out_param:
             flags = state.SetNameref
@@ -162,8 +163,8 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
                      flags=flags)
 
     if sig.rest_of_words:
-        rest = t.RestWords()
-        val = value.List([value.Str(x) for x in rest])
+        rest_words = t.RestWords()
+        val = value.List([value.Str(x) for x in rest_words])
 
         mem.SetValue(lvalue.Named(sig.rest_of_words.name, sig.rest_of_words.blame_tok),
                      val,
@@ -181,8 +182,8 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
                      scope_e.LocalOnly)
 
     if sig.rest_of_pos:
-        rest = t.RestPos()
-        v = value.List(rest)
+        rest_pos = t.RestPos()
+        v = value.List(rest_pos)
 
         mem.SetValue(lvalue.Named(sig.rest_of_pos.name, sig.rest_of_pos.blame_tok),
                      v,
@@ -200,18 +201,17 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
                      scope_e.LocalOnly)
 
     if sig.rest_of_named:
-        rest = t.RestNamed()
-        v = value.Dict(rest)
+        rest_named = t.RestNamed()
+        v = value.Dict(rest_named)
 
         mem.SetValue(lvalue.Named(sig.rest_of_named.name, sig.rest_of_named.blame_tok),
                      v,
                      scope_e.LocalOnly)
 
     if sig.block_param:
-        p = sig.block_param
         b = t.Block()
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
+        mem.SetValue(lvalue.Named(sig.block_param.name, sig.block_param.blame_tok),
                      value.Block(b),
                      scope_e.LocalOnly)
 
