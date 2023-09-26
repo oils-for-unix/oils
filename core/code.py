@@ -116,40 +116,40 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
     for i, p in enumerate(sig.word_params):
         # proc p(out Ref)
         is_out_param = (p.type is not None and p.type.name == 'Ref')
-        log('is_out %s', is_out_param)
+        #log('is_out %s', is_out_param)
 
         param_name = p.name  # may get hidden __
 
         if i >= nwords:
             if not p.default_val:
-                break
+                break  # Will raise when we call t.Done()
 
             # Not sure how this will behave... disallowing it for now
             assert not is_out_param, "Out params cannot have default values"
 
-            arg_str = p.default_val
+            val = proc.defaults[i]
 
         else:
             arg_str = t.Word()
 
-        # If we have myproc(p), and call it with myproc :arg, then bind
-        # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
-        # has a prefix REMOVED.
-        #
-        # This helps eliminate "nameref cycles".
-        if is_out_param:
-            param_name = '__' + param_name
+            # If we have myproc(p), and call it with myproc :arg, then bind
+            # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
+            # has a prefix REMOVED.
+            #
+            # This helps eliminate "nameref cycles".
+            if is_out_param:
+                param_name = '__' + param_name
 
-            if not arg_str.startswith(':'):
-                # TODO: Point to the exact argument.  We got argv but not
-                # locations.
-                e_die('Ref param %r expected arg starting with colon : but got %r' %
-                      (p.name, arg_str))
+                if not arg_str.startswith(':'):
+                    # TODO: Point to the exact argument.  We got argv but not
+                    # locations.
+                    e_die('Ref param %r expected arg starting with colon : but got %r' %
+                          (p.name, arg_str))
 
-            arg_str = arg_str[1:]
+                arg_str = arg_str[1:]
 
-        val = value.Str(arg_str)  # type: value_t
-        log('%s -> %s', param_name, val)
+            val = value.Str(arg_str)  # type: value_t
+            #log('%s -> %s', param_name, val)
 
         if is_out_param:
             flags = state.SetNameref
@@ -163,7 +163,7 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
 
     if sig.rest_of_words:
         rest = t.RestWords()
-        v = value.List(rest)
+        val = value.List([value.Str(x) for x in rest])
 
         mem.SetValue(lvalue.Named(sig.rest_of_words.name, sig.rest_of_words.blame_tok),
                      val,
@@ -215,7 +215,12 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
                      value.Block(b),
                      scope_e.LocalOnly)
 
-    t.Done()
+    try:
+        t.Done()
+    except error.Usage as err:
+        err.location = arg0_loc  # TEMP: We should be passing locs to Reader
+        errfmt.PrettyPrintError(err)
+        return 2
 
     """
     num_args = len(argv)

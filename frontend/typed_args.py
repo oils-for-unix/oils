@@ -99,7 +99,9 @@ class Reader(object):
         if not self.argv:
             return []
 
-        return self.argv
+        rest = self.argv
+        self.argv = []
+        return rest
 
     def NumWords(self):
         # type: () -> int
@@ -405,6 +407,13 @@ class Reader(object):
         problem
         """
         # Note: Python throws TypeError on mismatch
+        if len(self.argv):
+            n = self.argv_consumed
+
+            raise error.Usage(
+                'Expected %d word arguments, but got %d' %
+                (n, n + len(self.argv)), self.BlamePos())
+
         if len(self.pos_args):
             n = self.pos_consumed
             # Excluding implicit first arg should make errors less confusing
