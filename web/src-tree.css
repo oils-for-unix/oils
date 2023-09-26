@@ -9,6 +9,8 @@ body {
    * algorithm - https://developer.mozilla.org/en-US/docs/Web/CSS/text-size-adjust
    */
   text-size-adjust: none;
+  /* 2023-09: essential for my phone! */
+  -webkit-text-size-adjust: none;
 }
 
 /* Arbitrary threshold of 1000 pixels */
@@ -21,7 +23,7 @@ body {
 
 @media screen and (min-width: 1001px) {
   body {
-    font-size: large;
+    /*font-size: large;*/
     padding: 0 3em;
   }
 }
@@ -81,6 +83,7 @@ td {
 }
 
 .line {
+  /* like <pre> tag */
   white-space: pre;
   color: #141414;  /* almost black */
 }
