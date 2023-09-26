@@ -163,8 +163,11 @@ def BindProcArgs(proc, argv, arg0_loc, args, mem, errfmt, expr_ev):
                      flags=flags)
 
     if sig.rest_of_words:
-        rest_words = t.RestWords()
-        val = value.List([value.Str(x) for x in rest_words])
+        rest_words = [value.Str(x) for x in t.RestWords()]  # type: List[value_t]
+        #rest_words = []  # type: List[value_t]
+        #for word in t.RestWords():
+        #    rest_words.append(value.Str(word))
+        val = value.List(rest_words)
 
         mem.SetValue(lvalue.Named(sig.rest_of_words.name, sig.rest_of_words.blame_tok),
                      val,

@@ -263,7 +263,7 @@ class Shopt(vm._Builtin):
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
-                unused = self.cmd_ev.EvalBlock(block)
+                unused, status = self.cmd_ev.EvalBlock(block)
             return 0  # cd also returns 0
 
         # Otherwise, set options.
@@ -707,7 +707,7 @@ class Shvar(vm._Builtin):
                 self.search_path.ClearCache()
 
         with state.ctx_Shvar(self.mem, pairs):
-            unused = self.cmd_ev.EvalBlock(block)
+            unused, status = self.cmd_ev.EvalBlock(block)
 
         return 0
 
@@ -730,7 +730,7 @@ class PushRegisters(vm._Builtin):
             raise error.Usage('expected a block', loc.Missing)
 
         with state.ctx_Registers(self.mem):
-            unused = self.cmd_ev.EvalBlock(block)
+            unused, status = self.cmd_ev.EvalBlock(block)
 
         # make it "SILENT" in terms of not mutating $?
         # TODO: Revisit this.  It might be better to provide the headless shell
@@ -760,7 +760,7 @@ class Fopen(vm._Builtin):
         if not block:
             raise error.Usage('expected a block', loc.Missing)
 
-        unused = self.cmd_ev.EvalBlock(block)
+        unused, status = self.cmd_ev.EvalBlock(block)
         return 0
 
 
@@ -949,7 +949,7 @@ class Hay(vm._Builtin):
                                    self.mem):
                 # Note: we want all haynode invocations in the block to appear as
                 # our 'children', recursively
-                unused = self.cmd_ev.EvalBlock(block)
+                unused, status = self.cmd_ev.EvalBlock(block)
 
             result = self.hay_state.Result()
 

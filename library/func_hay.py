@@ -90,7 +90,7 @@ class EvalHay(vm._Callable):
 
         with state.ctx_HayEval(self.hay_state, self.mutable_opts,
                                self.mem):
-            unused = self.cmd_ev.EvalBlock(cmd)
+            unused, status = self.cmd_ev.EvalBlock(cmd)
 
         return self.hay_state.Result()
 

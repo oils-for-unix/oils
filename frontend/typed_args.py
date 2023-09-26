@@ -96,7 +96,7 @@ class Reader(object):
 
     def RestWords(self):
         # type: () -> List[str]
-        if not self.argv:
+        if self.argv is None:
             return []
 
         rest = self.argv
@@ -105,7 +105,7 @@ class Reader(object):
 
     def NumWords(self):
         # type: () -> int
-        if not self.argv:
+        if self.argv is None:
             return 0
 
         return len(self.argv)
