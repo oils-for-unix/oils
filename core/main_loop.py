@@ -14,6 +14,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
                                        parse_result_e)
 from core import error
+from core import completion
 from core import process
 from core import ui
 from core import util
@@ -100,11 +101,12 @@ def ShowDescriptorState(label):
 class Headless(object):
     """Main loop for headless mode."""
 
-    def __init__(self, cmd_ev, parse_ctx, errfmt):
+    def __init__(self, cmd_ev, parse_ctx, root_comp, errfmt):
         # type: (CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> None
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
+        self.root_comp = root_comp
 
     def Loop(self):
         # type: () -> int
@@ -178,7 +180,12 @@ class Headless(object):
             # Do we also need 'complete --osh' and 'complete --ysh' ?
             elif command == 'PARSE':
                 # Just parse
-                reply = 'TODO:PARSE'
+                comp = completion.Api(line=arg, begin=0, end=len(arg))
+                it = self.root_comp.Matches(comp)
+                matches = list(it)
+                reply = ""
+                for match in matches:
+                    reply += match + "\n"
 
             else:
                 fanos_log('Invalid command %r' % command)

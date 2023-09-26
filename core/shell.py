@@ -861,7 +861,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                 except util.UserExit as e:
                     return e.status
 
-        loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
+        loop = main_loop.Headless(cmd_ev, parse_ctx, root_comp, errfmt)
         try:
             # TODO: What other exceptions happen here?
             status = loop.Loop()
