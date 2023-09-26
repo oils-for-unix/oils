@@ -385,7 +385,13 @@ class Reader(object):
         """
         Block arg for proc
         """
-        return self.block
+        if self.block is None:
+            raise error.Usage('Expected a block argument', self.BlamePos())
+
+        block = self.block
+        self.block = None
+
+        return block
 
     def Done(self):
         # type: () -> None
@@ -426,6 +432,12 @@ class Reader(object):
             bad_args = ', '.join(self.named_args.keys())
             raise error.TypeErrVerbose(
                 'Got unexpected named args: %s' % bad_args, blame)
+
+        if self.block:
+            # TODO: use the block's location
+            blame = self.args_node.left
+
+            raise error.TypeErrVerbose('Got unexpected block argument', blame)
 
 
 def ReaderFromArgv(argv, typed_args, expr_ev):
