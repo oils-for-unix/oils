@@ -23,8 +23,9 @@ enum class Id {
   Unknown,
 
   // C++
-  RawStrBegin,  // for C++ R"zzz(hello)zzz"
-  Re2c,         // re2c code block
+  DelimStrBegin,  // for C++ R"zzz(hello)zzz"
+  DelimStrEnd,
+  Re2c,  // re2c code block
 
   MaybePreproc,    // resolved to PreprocCommand/PreprocOther in fix-up pass
   PreprocCommand,  // resolved #define
@@ -284,10 +285,10 @@ bool Matcher<py_mode_e>::Match(Lexer<py_mode_e>* lexer, Token* tok) {
 }
 
 enum class cpp_mode_e {
-  Outer,   // default
-  Comm,    // inside /* */ comment
-  RawStr,  // R"zz(string literal)zz"
-  Re2c,    // /* !re2c
+  Outer,     // default
+  Comm,      // inside /* */ comment
+  DelimStr,  // R"zz(string literal)zz"
+  Re2c,      // /* !re2c
 };
 
 // Returns whether EOL was hit
@@ -330,11 +331,12 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
 
         // Not sure what the rules are for R"zz(hello)zz".  Make it similar to
         // here docs.
-        delim = [_a-zA-Z]*;
+        cpp_delim_str = [_a-zA-Z]*;
 
-        "R" ["] @s delim @e "(" { SUBMATCH(s, e);
-                                  TOK_MODE(Id::RawStrBegin, cpp_mode_e::RawStr);
-                                }
+        "R" ["] @s cpp_delim_str @e "(" {
+          SUBMATCH(s, e);
+          TOK_MODE(Id::DelimStrBegin, cpp_mode_e::DelimStr);
+        }
 
         // e.g. unclosed quote like "foo
         *                       { TOK(Id::Unknown); }
@@ -375,13 +377,19 @@ bool Matcher<cpp_mode_e>::Match(Lexer<cpp_mode_e>* lexer, Token* tok) {
     }
     break;
 
-  case cpp_mode_e::RawStr:
+  case cpp_mode_e::DelimStr:
     // Search until next */
     while (true) {
       /*!re2c
         nul       { return true; }
 
-        ")" ["]   { TOK_MODE(Id::Str, cpp_mode_e::Outer); }
+        ")" @s cpp_delim_str @e ["] {
+          SUBMATCH(s, e);
+          TOK(Id::DelimStrEnd);
+
+          // Caller is responsible for checking the extracted delimiter, and
+          // setting mode back to Cpp::Outer!
+        }
 
         [^\x00)]* { TOK(Id::Str); }
 

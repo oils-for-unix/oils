@@ -297,7 +297,8 @@ class AnsiPrinter : public Printer {
       PrintColor(RED, p_start, num_bytes);
       break;
 
-    case Id::HereBegin: {
+    case Id::HereBegin:
+    case Id::HereEnd: {
       PrintColor(RED2, p_start, num_bytes);
 
       // Debug submatch extraction
@@ -309,11 +310,8 @@ class AnsiPrinter : public Printer {
 #endif
     } break;
 
-    case Id::HereEnd:
-      PrintColor(RED2, p_start, num_bytes);
-      break;
-
-    case Id::RawStrBegin: {
+    case Id::DelimStrBegin:
+    case Id::DelimStrEnd: {
       PrintColor(RED2, p_start, num_bytes);
 
       // Debug submatch extraction
@@ -402,8 +400,10 @@ const char* Id_str(Id id) {
     return "HereBegin";
   case Id::HereEnd:
     return "HereEnd";
-  case Id::RawStrBegin:
-    return "RawStrBegin";
+  case Id::DelimStrBegin:
+    return "DelimStrBegin";
+  case Id::DelimStrEnd:
+    return "DelimStrEnd";
 
   case Id::LBrace:
     return "LBrace";
@@ -726,6 +726,10 @@ int ScanOne(Reader* reader, OutputStream* out, Hook* hook) {
   std::vector<std::string> here_list;  // delimiters to pop
   std::vector<int> here_start_num;
 
+  // For multi-line strings.  This has 0 or 1 entries, and the 1 entry can be
+  // the empty string.
+  std::vector<std::string> delim_begin;
+
   while (true) {  // read each line, handling errors
     if (!reader->NextLine()) {
       const char* name = reader->Filename() ?: "<stdin>";
@@ -792,12 +796,47 @@ int ScanOne(Reader* reader, OutputStream* out, Hook* hook) {
       if (eol) {
         break;
       }
-      if (tok.id == Id::HereBegin) {
+
+      switch (tok.id) {
+      case Id::HereBegin: {
         // Put a copy on the stack
         int n = tok.submatch_end - tok.submatch_start;
         here_list.emplace_back(line + tok.submatch_start, n);
         here_start_num.push_back(line_num);
+      } break;
+
+      case Id::DelimStrBegin: {
+        if (delim_begin.empty()) {
+          int n = tok.submatch_end - tok.submatch_start;
+          delim_begin.emplace_back(line + tok.submatch_start, n);
+        } else {
+          // We have entered cpp_mode_e::DelimStr, which means we should never
+          // return another DelimStrBegin
+          assert(0);
+        }
+      } break;
+
+      case Id::DelimStrEnd: {
+        if (delim_begin.empty()) {
+          // We should never get this unless we got a DelimStrBegin first
+          assert(0);
+        } else {
+          size_t n = tok.submatch_end - tok.submatch_start;
+          std::string end_delim(line + tok.submatch_start, n);
+
+          if (end_delim == delim_begin.back()) {
+            lexer.line_mode = T::Outer;  // the string is ended
+            delim_begin.pop_back();
+          } else {
+            tok.id = Id::Str;  // mismatched delimiter is just a string
+          }
+        }
+      } break;
+
+      default:
+        break;
       }
+
       tokens.push_back(tok);  // make a copy
 
       if (TokenIsSignificant(tok.id)) {

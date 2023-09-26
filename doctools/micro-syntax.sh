@@ -130,16 +130,6 @@ readonly -a CPP_TESTS=(
              */
   void g(int x);'
 
-  'char* s = f(R"(one
-  two
-  three)");
-  '
-
-  'char* s = f(R"zz(hi
-  world
-  )zz");
-  '
-
   '#include "foo.h"'
   '#include <foo.h> // comment'
 
@@ -156,6 +146,22 @@ readonly -a CPP_TESTS=(
   '#undef x'
 
   '#define F(x) x##name'
+
+  'char* s = f(R"(one
+  two
+  three)");
+  '
+
+  'char* s = f(R"zzXX(hi
+  world
+  )zzX"  (not the end)
+  )zzXX");
+  '
+
+  'char* unclosed = f(R"zzXX(hi
+  world
+  )oops");
+  '
 )
 
 readonly -a SHELL_TESTS=(
