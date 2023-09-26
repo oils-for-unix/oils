@@ -21,6 +21,11 @@ gen-oils-sh() {
   chmod +x _build/oils.sh
 }
 
+tarball-manifest() {
+  # 100 files
+  PYTHONPATH=. build/ninja_main.py tarball-manifest 
+}
+
 make-tar() {
   local app_name='oils-for-unix'
 
@@ -34,8 +39,7 @@ make-tar() {
   ninja
 
   local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
-  PYTHONPATH=. build/ninja_main.py tarball-manifest \
-    | xargs -- tar --create --transform "$sed_expr" --file $tar
+  tarball-manifest | xargs -- tar --create --transform "$sed_expr" --file $tar
 
   local tar_gz=_release/${app_name}-${OIL_VERSION}.tar.gz
   gzip -c $tar > $tar_gz
@@ -80,6 +84,21 @@ extract-for-benchmarks() {
   git status
   echo "Now run git commit"
 
+  popd
+}
+
+#
+# Repro bug #1731 -- passing duplicate files to tar results in weird hard
+# links!
+#
+
+install-bsdtar() {
+  sudo apt-get install libarchive-tools
+}
+
+test-with-bsdtar() {
+  pushd _release
+  bsdtar -x < oils-for-unix.tar
   popd
 }
 

@@ -12,73 +12,215 @@ set -o errexit
 REPO_ROOT=$(cd $(dirname $0)/.. && pwd)  # tsv-lib.sh uses this
 readonly REPO_ROOT
 
-#source test/common.sh
-#source test/tsv-lib.sh
+source build/common.sh  # log
 
 export PYTHONPATH=.
 
-# TODO:
-# - should README.md be inserted in index.html ?
-#   - probably, sourcehut has this too
-#   - use cmark
-# - line counts in metrics/source-code.sh could be integrated with this
-#   - i.e. we create groups of files there, with subtotals
-
-# Highlighters I'd like to write:
-#  - syntax highlighter, that finds string literals and comments
-#  - as a side effect it estimates significant lines of code
-#    - minus comments and blank lines
-#  - supports
-#    - Python - multi-line strings
-#    - shell and YSH -- here docs?
-#    - C++ - #ifdef, including #if 0 perhaps
-#    - ASDL can replace line counter in metrics/source-code.sh
-#     - it's pretty trivial, since ASDL has no string literals
-#    - maybe grammar files
-
-# Columns
-# - Name
-# - Number of lines
-# - Can we get the cloc or sloccount report?
-#   - https://github.com/AlDanial/cloc - this is a 17K line Perl script!
-#   - https://dwheeler.com/sloccount/ - no release since 2004 ?
+install-deps() {
+  sudo apt-get install moreutils  # for isutf8
+}
 
 lexer-files() {
   ### linked from doc/release-quality.md
 
   for rel_path in \
-    _build/tmp/frontend/match.re2c.txt \
+    _gen/_tmp/match.re2c-input.h \
     _gen/frontend/match.re2c.h \
     _gen/frontend/id_kind.asdl_c.h; do
     echo $rel_path
   done
 }
 
-print-files() {
-  lexer-files
+_print-files() {
+  #lexer-files
 
-  # Important stuff
+  find _gen/ -type f
+
+  # TODO: move _devbuild/bin/time-helper elsewhere?
+  find _devbuild/ -type f -a -name '*.py'
+  find _devbuild/help -type f
+
+  # For some reason it shows py-yajl
+  # Remove binary file (probably should delete it altogether, but it's a nice
+  # test of UTF-8)
+
+  git ls-files | egrep -v 'Python-2.7.13|^py-yajl|rsa_travis.enc' 
+
+  return
+
+  # We also had this way of categorizing.  Should unify these line counts with
+  # micro-syntax.
   metrics/source-code.sh overview-list
+}
 
-  # And README.md, etc.
-  for f in *.md */*.md doc/*/*.md; do
-    echo $f
+# overview-list has dupes
+sorted-files() {
+  _print-files | sort | uniq 
+}
+
+readonly BASE_DIR=_tmp/src-tree
+
+classify() {
+  ### Classify files on stdin
+
+  while read -r path; do
+    case $path in
+      */here-doc.test.sh|*/posix.test.sh|*/gold/complex-here-docs.sh|*/07-unterminated-here-doc.sh)
+        # Plain text since they can have invalid here docs
+        #
+        # TODO: make a style for *.test.sh?
+        echo "$path" >& $txt
+        ;;
+      *.cc|*.c|*.h)
+        echo "$path" >& $cpp
+        ;;
+      *.py|*.pyi|*.pgen2)  # pgen2 uses Python lexical syntax
+        echo "$path" >& $py
+        ;;
+      *.sh|*.bash|*.osh|*.ysh|configure|install|uninstall)
+        echo "$path" >& $shell
+        ;;
+      *.asdl)
+        echo "$path" >& $asdl
+        ;;
+      *.R)
+        echo "$path" >& $R
+        ;;
+      *.js)
+        echo "$path" >& $js
+        ;;
+      *.css)
+        echo "$path" >& $css
+        ;;
+      *.md)
+        echo "$path" >& $md
+        ;;
+      *.yml)
+        echo "$path" >& $yaml
+        ;;
+      *.txt)
+        echo "$path" >& $txt
+        ;;
+      *)
+        echo "$path" >& $other
+    esac
+  done {cpp}>$BASE_DIR/cpp.txt \
+       {py}>$BASE_DIR/py.txt \
+       {shell}>$BASE_DIR/shell.txt \
+       {asdl}>$BASE_DIR/asdl.txt \
+       {R}>$BASE_DIR/R.txt \
+       {js}>$BASE_DIR/js.txt \
+       {css}>$BASE_DIR/css.txt \
+       {md}>$BASE_DIR/md.txt \
+       {yaml}>$BASE_DIR/yaml.txt \
+       {txt}>$BASE_DIR/txt.txt \
+       {other}>$BASE_DIR/other.txt
+
+  # Other
+  # .mk
+  # .re2c.txt - rename this one to .h
+  #
+  # Just leave those un-highlighted for now
+
+  wc -l $BASE_DIR/*.txt
+}
+
+all-html-to-files() {
+  local out_dir=$1
+  for lang in cpp py shell asdl R js css md yaml txt other; do
+    log "=== $lang ===" 
+
+    cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
+      | doctools/src_tree.py write-html-fragments $out_dir
+    log ''
   done
+}
+
+check-is-utf8() {
+  local manifest=$1
+
+  log '--- Checking that files are UTF-8'
+  log ''
+
+  if ! xargs isutf8 --list < $manifest; then
+    echo
+    die "The files shown aren't UTF-8"
+  fi
+}
+
+highlight() {
+  local variant=opt
+  #local variant=asan
+
+  doctools/micro-syntax.sh build $variant
+  echo
+
+  local out_dir=$BASE_DIR/www
+  mkdir -p $out_dir
+
+  sorted-files > $BASE_DIR/manifest.txt
+  wc -l $BASE_DIR/manifest.txt
+  echo
+
+  # Fails if there is non UTF-8
+  # Disable until moreutils is in our Soil CI images
+  # check-is-utf8 $BASE_DIR/manifest.txt
+
+  # Figure file types
+  classify < $BASE_DIR/manifest.txt
+
+  local attrs=$BASE_DIR/attrs.txt
+
+  time all-html-to-files $out_dir > $attrs
+
+  # Now write index.html dir listings
+  time doctools/src_tree.py dirs $out_dir < $attrs
+}
+
+highlight-old() {
+  local attrs=$BASE_DIR/attrs-old.txt
+
+  time sorted-files | xargs doctools/src_tree.py files $out_dir > $attrs
+
+  time doctools/src_tree.py dirs $out_dir < $attrs
 }
 
 soil-run() {
   ### Write tree starting at _tmp/src-tree/index.html
 
-  # This will eventually into a .wwz file?  src-tree.wwz?
-  # Have to work out the web too
-  local out=_tmp/src-tree
-
-  local attrs=_tmp/attrs.txt
-
-  time print-files | xargs doctools/src_tree.py files $out > $attrs
-
-  time doctools/src_tree.py dirs $out < $attrs
+  highlight
 }
+
+cat-benchmark() {
+  # 355 ms to cat the files!  It takes 2.75 seconds to syntax highlight 'src_tree.py files'
+  #
+  # Producing 5.9 MB of text.
+  time sorted-files | xargs cat | wc --bytes
+
+  # Note: wc -l is not much slower.
+}
+
+micro-bench() {
+  # ~435 ms, not bad.  cat is ~355 ms, so that's only 70 ms more.
+
+  local variant=opt
+  #local variant=asan
+  doctools/micro-syntax.sh build $variant
+
+  local lang=cpp
+
+  # Buggy!
+  local lang=py
+
+  # optimization:
+  # lang=cpp: 11.4 MB -> 11.3 MB
+  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l $lang | wc --bytes
+
+  # optimization:
+  # lang=cpp: 18.5 MB -> 18.4 MB
+  time sorted-files | xargs _tmp/micro-syntax/micro_syntax -l $lang -w | wc --bytes
+}
+
 
 #
 # Misc ways of counting files
@@ -113,26 +255,6 @@ extensions() {
     | grep -v 'testdata/' \
     | awk --field-separator . '{ print $(NF) }' \
     | sort | uniq -c | sort -n
-}
-
-metrics() {
-  metrics/source-code.sh osh-files
-  echo
-  metrics/source-code.sh ysh-files
-
-  # Also see metrics/line_counts.py (104 lines)
-}
-
-line-counts() {
-  metrics/source-code.sh overview
-  metrics/source-code.sh for-translation
-}
-
-lint() {
-  # We're not formatting now
-  test/lint.sh py2-files-to-format
-  echo
-  test/lint.sh py3-files
 }
 
 if test $(basename $0) = 'src-tree.sh'; then

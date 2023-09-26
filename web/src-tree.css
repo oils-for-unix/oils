@@ -1,15 +1,34 @@
-/* For doctools/src_tree.py */
+/* For doctools/{src_tree,micro_syntax} */
 
-@media screen and (min-width: 801px) {
+body {
+  /* Arial seems thinner than the default sans-serif font */
+  font-family: Arial, sans-serif;
+  color: #444;  /* same as base.css */
+
+  /* We've designed with mobile in mind, so disable iPhone's special inflation
+   * algorithm - https://developer.mozilla.org/en-US/docs/Web/CSS/text-size-adjust
+   */
+  text-size-adjust: none;
+}
+
+/* Arbitrary threshold of 1000 pixels */
+
+@media screen and (max-width: 1000px) {
   body {
-    font-size: large;
-    font-family: sans-serif;
+    padding: 0 1em;  /* save space on small screen */
   }
 }
 
-/* Like web/ref-index.css */
+@media screen and (min-width: 1001px) {
+  body {
+    font-size: large;
+    padding: 0 3em;
+  }
+}
+
+/* "Files" and "Dirs" are same size, just bold */
 h1 {
-  font-size: 1.4em;
+  font-size: 1.2em;
 }
 
 a:link {
@@ -24,6 +43,36 @@ a:hover {
    background-color: palegoldenrod;
 }
 
+/* horizontal scrollbar for code, so the long lines don't make the page small */
+pre {
+  overflow: auto;
+}
+
+#home-link {
+  float: right;  /* to the right of the breadcrumb */
+}
+
+#file-counts {
+  text-align: right;
+  font-size: medium;
+}
+
+table {
+  border-collapse: collapse;  /* shared borders */
+  font-family: monospace;
+}
+
+td {
+  /* For the line number */
+  padding-right: 1em;
+}
+
+.listing {
+  /* Long filenames like those in spec/ can wrap, but that seems OK */
+  column-width: 12em;
+  /* column-count: 3; */
+}
+
 .num {
   color: #666;
   text-align: right;
@@ -33,33 +82,29 @@ a:hover {
 
 .line {
   white-space: pre;
+  color: #141414;  /* almost black */
 }
 
-.comm3 {
-  /*font-style: italic;*/
+.spec-comment {
   font-weight: bold;
-  color: #0047ab;  /* Cobalt */
+  color: #0047ab;  /* cobalt */
 }
 
-.comm1 {
-  color: #0047ab;  /* Cobalt */
-}
-/* TODO: a real color scheme, for pre-processor, etc. */
-
-table {
-  border-collapse: collapse;
-  font-family: monospace;
+.comm {
+  /* Note blog uses language.css, which is 'green' */
+  color: #0047ab;  /* cobalt */
+  /* font-style: italic; */
 }
 
-td {
-  padding-top: 1px;
-  padding-bottom: 1px;
-  /*
-  padding-top: 0px;
-  padding-bottom: 0px;
-  */
-  /* The line number and code need margins */
-  padding-left: 1em;
-  padding-right: 1em;
+.str {
+  color: brown;
+}
+
+.re2c {
+  color: purple;
+}
+
+.preproc {
+  color: darkgreen;
 }
 

@@ -74,7 +74,9 @@ BODY_STYLE = jsontemplate.Template("""\
     <p id="status"></p>
 
     <p style="text-align: right"><a href="/">oilshell.org</a></p>
+<p>
 {.template NAV}
+</p>
 
 {.template BODY}
   </body>
@@ -85,7 +87,7 @@ BODY_STYLE = jsontemplate.Template("""\
 # NOTE: {.link} {.or id?} {.or} {.end} doesn't work?  That is annoying.
 NAV_TEMPLATE = jsontemplate.Template("""\
 {.section nav}
-<p id="nav">
+<span id="nav">
 {.repeated section @}
   {.link?}
     <a href="{link|htmltag}">{anchor}</a>
@@ -95,7 +97,7 @@ NAV_TEMPLATE = jsontemplate.Template("""\
 {.alternates with}
   /
 {.end}
-</p>
+</span>
 {.end}
 """, default_formatter='html')
 

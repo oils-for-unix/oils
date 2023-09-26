@@ -18,6 +18,7 @@ AUTO
 """
 from __future__ import print_function
 
+import json
 import os
 import shutil
 import sys
@@ -32,35 +33,13 @@ T = jsontemplate.Template
 
 
 def DetectType(path):
+
+  # Most support moved to src-tree.sh and micro-syntax
+
   if path.endswith('.test.sh'):
     return 'spec'
 
-  elif path.endswith('.ysh'):
-    # For now, YSH highlighting is identical
-    return 'sh'
-
-  elif path.endswith('.sh'):
-    return 'sh'
-
-  elif path.endswith('.py') or path.endswith('.pyi'):
-    return 'py'
-
-  # Same lexical syntax
-  elif path.endswith('.pgen2') or path.endswith('.asdl'):
-    return 'py'
-
-  # C files are the same
-  elif path.endswith('.cc') or path.endswith('.h') or path.endswith('.c'):
-    return 'cc'
-
-  elif path.endswith('.js'):
-    return 'js'
-
-  elif path.endswith('.R'):
-    return 'R'
-
   else:
-    # Markdown, CSS, etc.
     return 'other'
 
 
@@ -88,11 +67,9 @@ ROW_T = T("""\
 
 
 LISTING_T = T("""\
-<body class="width40">
-
 {.section dirs}
-<div id="dirs">
-  <h1>Dirs</h1>
+<h1>Dirs</h1>
+<div id="dirs" class="listing">
   {.repeated section @}
     <a href="{name|htmltag}/index.html">{name|html}/</a> <br/>
   {.end}
@@ -100,8 +77,8 @@ LISTING_T = T("""\
 {.end}
 
 {.section files}
-<div id="files">
-  <h1>Files</h1>
+<h1>Files</h1>
+<div id="files" class="listing">
   {.repeated section @}
     <a href="{url|htmltag}">{anchor|html}</a> <br/>
   {.end}
@@ -111,8 +88,12 @@ LISTING_T = T("""\
 </body>
 """)
 
+FILE_COUNTS_T = T("""\
+<div id="file-counts"> {num_lines} lines, {num_sig_lines} significant </div>
+""", default_formatter='html')
 
-def Files(pairs, attrs_f, spec_to_html=False):
+
+def SpecFiles(pairs, attrs_f):
 
   for i, (path, html_out) in enumerate(pairs):
     #log(path)
@@ -129,21 +110,20 @@ def Files(pairs, attrs_f, spec_to_html=False):
       n = path.count('/') + 2
       base_dir = '/'.join(['..'] * n)
 
-      css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      #css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      css_urls = ['%s/web/src-tree.css' % base_dir]
+
       html_head.Write(out_f, title, css_urls=css_urls)
 
       out_f.write('''
-      <body class="width40">
-        <p id="home-link">
+      <body class="">
+        <div id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
           <a href="/">oilshell.org</a>
-        </p>
+        </div>
         <table>
       ''' % path)
-
-      if not spec_to_html:  # Don't need navigation here
-        Breadcrumb(path, out_f, is_file=True)
 
       file_type = DetectType(path)
 
@@ -158,29 +138,16 @@ def Files(pairs, attrs_f, spec_to_html=False):
         s = line.lstrip()
 
         if file_type == 'spec':
-          if s.startswith('###'):
-            row['line_class'] = 'comm3'
+          if s.startswith('####'):
+            row['line_class'] = 'spec-comment'
           elif s.startswith('#'):
-            row['line_class'] = 'comm1'
-
-        elif file_type in ('spec', 'sh', 'py', 'R'):
-          if s.startswith('#'):
-            row['line_class'] = 'comm1'
-
-        elif file_type == 'cc':
-          # Real cheap solution for now
-          if s.startswith('//'):
-            row['line_class'] = 'comm1'
-
-        elif file_type == 'js':
-          if s.startswith('//'):
-            row['line_class'] = 'comm1'
+            row['line_class'] = 'comm'
 
         out_f.write(ROW_T.expand(row))
 
         line_num += 1
 
-      # parsed by 'dirs'
+      # could be parsed by 'dirs'
       print('%s lines=%d' % (path, line_num), file=attrs_f)
 
       out_f.write('''
@@ -189,6 +156,99 @@ def Files(pairs, attrs_f, spec_to_html=False):
     </html>''')
 
   return i + 1
+
+
+def ReadFragments(in_f):
+  while True:
+    path = ReadNetString(in_f)
+    if path is None:
+      break
+
+    html_frag = ReadNetString(in_f)
+    if html_frag is None:
+      raise RuntimeError('Expected 2nd record (HTML fragment)')
+
+    s = ReadNetString(in_f)
+    if s is None:
+      raise RuntimeError('Expected 3rd record (file summary)')
+
+    summary = json.loads(s)
+
+    yield path, html_frag, summary
+
+
+def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
+
+  i = 0
+  for rel_path, html_frag, summary in ReadFragments(in_f):
+    html_size = len(html_frag)
+    if html_size > 300000:
+      out_path = os.path.join(out_dir, rel_path)
+      try:
+        os.makedirs(os.path.dirname(out_path))
+      except OSError:
+        pass
+
+      shutil.copyfile(rel_path, out_path)
+
+      # Attrs are parsed by MakeTree(), and then used by WriteDirsHtml().
+      # So we can print the right link.
+      print('%s raw=1' % rel_path, file=attrs_f)
+
+      file_size = os.path.getsize(rel_path)
+      log('Big HTML fragment of %.1f KB', float(html_size) / 1000)
+      log('Copied %s -> %s, %.1f KB', rel_path, out_path, float(file_size) / 1000)
+
+      continue
+
+    html_out = os.path.join(out_dir, rel_path + '.html') 
+
+    try:
+      os.makedirs(os.path.dirname(html_out))
+    except OSError:
+      pass
+
+    with open(html_out, 'w') as out_f:
+      title = rel_path
+
+      # How deep are we?
+      n = rel_path.count('/') + 3
+      base_dir = '/'.join(['..'] * n)
+
+      #css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
+      css_urls = ['%s/web/src-tree.css' % base_dir]
+      html_head.Write(out_f, title, css_urls=css_urls)
+
+      out_f.write('''
+      <body class="">
+      <p>
+      ''')
+      Breadcrumb(rel_path, out_f, is_file=True)
+
+      out_f.write('''
+        <span id="home-link">
+          <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
+          |
+          <a href="/">oilshell.org</a>
+        </span>
+      </p>
+      ''' % rel_path)
+
+      out_f.write(FILE_COUNTS_T.expand(summary))
+
+      out_f.write('<table>')
+      out_f.write(html_frag)
+
+      print('%s lines=%d' % (rel_path, summary['num_lines']), file=attrs_f)
+
+      out_f.write('''
+        </table>
+      </body>
+    </html>''')
+
+    i += 1
+
+  log('Wrote %d HTML fragments', i)
 
 
 class DirNode:
@@ -254,8 +314,8 @@ def MakeTree(stdin, root_node):
     UpdateNodes(root_node, path_parts, attrs)
 
 
-def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
-  #log('WriteHtmlFiles %s %s %s', out_dir, rel_path, base_url)
+def WriteDirsHtml(node, out_dir, rel_path='', base_url=''):
+  #log('WriteDirectory %s %s %s', out_dir, rel_path, base_url)
 
   files = []
   for name in sorted(node.files):
@@ -277,10 +337,23 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
   with open(path, 'w') as f:
 
     title = '%s - Listing' % rel_path
-    css_urls = ['%s../../web/base.css' % base_url, '%s../../web/src-tree.css' % base_url]
+    prefix = '%s../../..' % base_url
+    css_urls = ['%s/web/base.css' % prefix, '%s/web/src-tree.css' % prefix]
     html_head.Write(f, title, css_urls=css_urls)
 
+    f.write('''
+    <body>
+      <p>
+    ''')
     Breadcrumb(rel_path, f)
+
+    f.write('''
+        <span id="home-link">
+          <a href="/">oilshell.org</a>
+        </span>
+      </p>
+    ''')
+
 
     f.write(body)
 
@@ -291,49 +364,48 @@ def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
     child_out = os.path.join(out_dir, name)
     child_rel = os.path.join(rel_path, name)
     child_base = base_url + '../'
-    WriteHtmlFiles(child, child_out, rel_path=child_rel, base_url=child_base)
+    WriteDirsHtml(child, child_out, rel_path=child_rel,
+                       base_url=child_base)
+
+
+def ReadNetString(in_f):
+
+  digits = []
+  for i in xrange(10):  # up to 10 digits
+    c = in_f.read(1)
+    if c == '':
+      return None  # EOF
+
+    if c == ':':
+      break
+
+    if not c.isdigit():
+      raise RuntimeError('Bad byte %r' % c)
+
+    digits.append(c)
+
+  if c != ':':
+    raise RuntimeError('Expected colon, got %r' % c)
+
+  n = int(''.join(digits))
+
+  s = in_f.read(n)
+  if len(s) != n:
+    raise RuntimeError('Expected %d bytes, got %d' % (n, len(s)))
+
+  c = in_f.read(1)
+  if c != ',':
+    raise RuntimeError('Expected comma, got %r' % c)
+
+  return s
 
 
 def main(argv):
   action = argv[1]
 
-  if action == 'files':
-    # Policy for _tmp/src-tree
-
-    out_dir = argv[2]
-    paths = argv[3:]
-
-    attrs_f = sys.stdout
-
-    pairs = []
-    for path in paths:
-
-      # _gen/frontend/match.re2c.h is 367 KB, and gets expanded to over 2 MB of HTML.
-      # So render big files as plain text.
-      # TODO: directory lister needs to take this into account
-
-      file_size = os.path.getsize(path)
-      if file_size > 100000:
-        out_path = os.path.join(out_dir, path)
-        try:
-          os.makedirs(os.path.dirname(out_path))
-        except OSError:
-          pass
-
-        shutil.copyfile(path, out_path)
-        print('%s raw=1' % path, file=attrs_f)
-        log('Copied %d byte file %s -> %s, no HTML', file_size, path, out_path)
-        continue
-
-      html_out = os.path.join(out_dir, '%s.html' % path)
-      pairs.append((path, html_out))
-
-    n = Files(pairs, attrs_f)
-    log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
-        out_dir)
-
-  elif action == 'spec-files':
+  if action == 'spec-files':
     # Policy for _tmp/spec/osh-minimal/foo.test.html
+    # This just changes the HTML names?
 
     out_dir = argv[2]
     spec_names = argv[3:]
@@ -345,9 +417,14 @@ def main(argv):
        pairs.append((src, html_out))
 
     attrs_f = sys.stdout
-    n = Files(pairs, attrs_f, spec_to_html=True)
+    n = SpecFiles(pairs, attrs_f)
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
+
+  elif action == 'write-html-fragments':
+
+    out_dir = argv[2]
+    WriteHtmlFragments(sys.stdin, out_dir)
 
   elif action == 'dirs':
     # stdin: a bunch of merged ATTRs file?
@@ -363,7 +440,7 @@ def main(argv):
     if 0:
       DebugPrint(root_node)
 
-    WriteHtmlFiles(root_node, out_dir)
+    WriteDirsHtml(root_node, out_dir)
 
   else:
     raise RuntimeError('Invalid action %r' % action)
@@ -371,6 +448,5 @@ def main(argv):
 
 if __name__ == '__main__':
   main(sys.argv)
-
 
 # vim: sw=2

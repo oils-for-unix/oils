@@ -6,95 +6,107 @@ is used to build the [the blog](//www.oilshell.org/blog/) as well.
 
 See [doc/doc-toolchain.md](../doc/doc-toolchain.md) for details.
 
+Tools shared with the blog:
+
 - `cmark.py`: Our wrapper around CommonMark.
+- `spelling.py`: spell checker
+- `split_doc.py`: Split "front matter" from Markdown.
+
+More tools:
+
 - `html_head.py`: Common HTML fragments.
 - `oil_doc.py`: HTML filters.
-- `split_doc.py`: Split "front matter" from Markdown.
-- `make_help.py`: For `doc/ref/index-{osh,ysh}.md`.
+- `help_gen.py`: For `doc/ref/index-{osh,ysh}.md`.
 
-## Idea for Minimal Comment/String/Def/Use Lexers
+## Micro Syntax
 
-Why not reuse off-the-shelf tools?
+- `src_tree.py` is a fast and minimal source viewer.
+- It uses polyglot syntax analysis called "micro syntax".  See
+  [micro-syntax.md](micro-syntax.md).
 
-1. Because we are a POLYGLOT codebase.
-1. Because we care about speed.  (e.g. Github's source viewer is super slow
-   now!)
-   - and I think we can do a little bit better that `devtools/ctags.sh`.
-   - That is, we can generate a better tags file.
+## TODO
 
-We output 2 things:
+Immediate:
 
-1. A list of spans
-   - type. TODO: see Vim and textmate types: comment, string, definition
-   - location: line, begin:end col
-2. A list of "OTAGS"
-   - SYMBOL FILENAME LINE
-   - generate ctags from this
-   - generate HTML or JSON from this
-     - recall Woboq code browser was entirely static, in C++
-     - they used `compile_commands.json`
+- iPhone CSS
+  - font sizes are wrong when the line wraps
+  - need to debug this directly
 
-- Leaving out VARIABLES, because those are local.
-  - I think the 'use' lexer is dynamic, sort of like it is in Vim.
-  - 'find uses' can be approximated with `grep -n`?  I think that simplifies
-    things a lot
-    - it's a good practice for code to be greppable
+- Experiment with shared library -- narrow waist that eliminates process overhead
+  - main(argv)
+  - stdin / stdout are buffers?
+    - for the coprocess protocol, I wanted file descriptors.  But this is a
+      portable interface
+  - returns status code
+  - what about errors?
+    - I think they can go to stderr to start
 
-### Design Question
+- Ninja makes it faster
+- CLI syntax
+  - modes: wc and cat
+  - `--col` and `--omit-col`
+  - `mtax cat --no-comments --no-strs` or `--empty-strs`
+    - replace with spaces
+    - reminds me of "garfield minus garfield"
 
-- can they be made incremental?
-  - run on every keystroke?  Supposedly IntelliJ does that.
-  - <https://www.jetbrains.com/help/resharper/sdk/ImplementingLexers.html#strongly-typed-lexers>
-- but if you reuse Python's lexer, it's probably not incremental
-  - see Python's tokenize.py
+- output: 4 columns
+  - which I guess are selectable
+  - should tokens be binary data though?
 
+- Detect UTF-8
+  - lexing doesn't work without UTF-8
 
-### Languages
+- Analyze TSV for function names in Python parser combinators
+  - add () {} -- this is all you need really
+    - oh and : for Python
 
-Note: All our source code, and generated Python and C++ code, should be lexable
-like this.  Put it all in `src-tree.wwz`.
+- C++ multi-line
+  - comes up in `_gen/bin/text_files.cc`
+  - this is an architecture issues, will allow Rust/Lua as well
 
-- Shell:
-  - comments
-  - `'' "" $''` string literals
-  - here docs
-  - functions
-    - understand `{ }` matching?
+- Max color mode for debugging?
+  - detail: blank lines in re2c blocks shouldn't be significant
+    - I guess you detect whitespace in re2c blocks then
 
-- YSH
-  - strings `j""`
-  - multiline strings `''' """ j"""`
-  - proc def
-  - func def
+- SLOC
+  - add to index.html, with attrs
+    - light grey monospace?
+  - Subsumes these tools:
+    - <https://github.com/AlDanial/cloc> - this is a 17K line Perl script!
+    - <https://dwheeler.com/sloccount/> - no release since 2004 ?
 
-- Python
-  - # comments
-  - `"" ''` strings
-  - multi-line strings
-  - these may require INDENT/DEDENT tokens
-    - class
-    - def
-  - does it understand `state.Mem`?  Probably
-    - vim only understands `Mem` though.  We might be able to convince it to.
-  - Reference:
-    - We may also need a fast whole-file lexer for `var_name` and `package.Var`,
-      which does dynamic lookup.
-   
+- Maybe add language for `*.test.sh`
+  - the `####` and `##` lines are special
 
-- C++
-  - `//` comments
-  - `/* */` comments
-  - preprocessor `#if`
-  - `class` declarations, with method declarations
-  - function declarations (prototypes)
-    - these are a bit hard - do they require parsing?
-  - function and method definition
-    - including templates?
-  - multi-line strings in generated code
+src-tree:
 
-- ASDL
-  - # comments
-  - I guess every single type can have a line number
-    - it shouldn't jump to Python file
-    - `value_e.Str` and `value.Str` and `value_t` can jump to the right
-      definition
+- should README.md be inserted in index.html ?
+  - probably, sourcehut has this too
+  - use cmark
+    - also use our TOC plugin
+- line counts in metrics/source-code.sh could link to src-tree
+  - combine the CI jobs
+  - should use `micro_syntax --wc` to count SLOC
+    - Also `micro_syntax` --print --format ansi
+      - this is the default?
+
+Later:
+
+- Recast as TSV-Netstring, which is different than TSV8
+  - select one of these cols:
+    - Path, HTML, `num_lines`, `num_sig_lines`, and I guess ANSI?
+      - line/tokens binary?  You have line number and so forth
+  - 3:foo\t 5:foo\n  # last cell has to end with newline ?
+    - preserves wc -l when data has no newlines?
+    - or is this too easily confused with TSV8 itself?  You don't want it to be valid TSV8?
+    - it can start out as text
+    - !tsv8 Str
+    - !type
+    - !nets-row ?
+  - another thing you can do is have a prefix of cells
+    - netstring is 3:foo,
+    - prefix is 5; 3:foo,
+      - that's a command to read 5 net strings I guess?
+
+- Parsing, jump to definition
+

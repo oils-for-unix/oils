@@ -133,7 +133,7 @@ domain-specific languages and code generation.
   evaluators.
 - The regex-based lexer uses two stages of code generation:
   - [frontend/lexer_def.py](pub/src-tree.wwz/frontend/lexer_def.py.html)
-    | [_build/tmp/frontend/match.re2c.txt](pub/src-tree.wwz/_build/tmp/frontend/match.re2c.txt.html)
+    | [_gen/_tmp/match.re2c-input.h](pub/src-tree.wwz/_gen/_tmp/match.re2c-input.h.html)
     | [_gen/frontend/match.re2c.h](pub/src-tree.wwz/_gen/frontend/match.re2c.h)
 - [frontend/syntax.asdl](pub/src-tree.wwz/frontend/syntax.asdl.html). The syntax tree
   for OSH and YSH.
