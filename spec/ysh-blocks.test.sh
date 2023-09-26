@@ -381,5 +381,5 @@ task foo {
 echo status=$?
 
 ## STDOUT:
-status=1
+status=2
 ## END
