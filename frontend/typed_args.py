@@ -459,10 +459,6 @@ def ReaderFromArgv(argv, typed_args, expr_ev):
                 assert block is None, "There should only be one block arg"
                 block = cast(BlockArg, pos_arg).brace_group
 
-            elif pos_arg.tag() == expr_e.CommandSub:
-                assert block is None, "There should only be one block arg"
-                block = cast(CommandSub, pos_arg).child
-
             else:
                 result = expr_ev.EvalExpr(pos_arg, loc.Missing)
                 pos_args.append(result)
