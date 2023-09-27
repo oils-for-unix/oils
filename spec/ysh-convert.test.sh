@@ -91,6 +91,21 @@ echo "$[str('foo')]"
 foo
 ## END
 
+#### dict() converts from BashAssoc to Dict
+declare -A foo
+foo=([a]=1 [b]=2 [c]=3)
+
+json write (type(foo))
+json write (dict(foo))
+## STDOUT:
+"BashAssoc"
+{
+  "a": "1",
+  "b": "2",
+  "c": "3"
+}
+## END
+
 #### dict() does shallow copy
 var d = {'a': 1}
 var d2 = d
