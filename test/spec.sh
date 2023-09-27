@@ -745,6 +745,10 @@ ysh-builtin-describe() {
   run-file ysh-builtin-describe "$@"
 }
 
+ysh-builtin-eval() {
+  run-file ysh-builtin-eval "$@"
+}
+
 # Related to errexit-oil
 ysh-builtin-error() {
   run-file ysh-builtin-error "$@"
