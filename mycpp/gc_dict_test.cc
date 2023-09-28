@@ -485,18 +485,18 @@ TEST test_dict_erase() {
   d->set(25316, 0xbeef);
   d->set(25317, 0xc0ffee);
 
-  ASSERT_EQ(0xdead, d->index_(25315));
-  ASSERT_EQ(0xbeef, d->index_(25316));
-  ASSERT_EQ(0xc0ffee, d->index_(25317));
+  ASSERT_EQ(0xdead, d->at(25315));
+  ASSERT_EQ(0xbeef, d->at(25316));
+  ASSERT_EQ(0xc0ffee, d->at(25317));
 
   mylib::dict_erase(d, 25315);
   ASSERT_FALSE(dict_contains(d, 25315));
-  ASSERT_EQ(0xbeef, d->index_(25316));
-  ASSERT_EQ(0xc0ffee, d->index_(25317));
+  ASSERT_EQ(0xbeef, d->at(25316));
+  ASSERT_EQ(0xc0ffee, d->at(25317));
 
   mylib::dict_erase(d, 25316);
   ASSERT_FALSE(dict_contains(d, 25316));
-  ASSERT_EQ(0xc0ffee, d->index_(25317));
+  ASSERT_EQ(0xc0ffee, d->at(25317));
 
   // This is a trace of processes coming and going in a real shell. It tickles a
   // (now fixed) bug in dict_erase() that would prematurely open a slot in the
@@ -615,7 +615,7 @@ TEST test_dict_ordering() {
   auto keys = d->keys();
   ASSERT_EQ(len(in), len(keys));
   for (int i = 0; i < len(in); i++) {
-    ASSERT_EQ(in->index_(i), keys->index_(i));
+    ASSERT_EQ(in->at(i), keys->at(i));
   }
 
   // check that order survives rehashing
@@ -623,7 +623,7 @@ TEST test_dict_ordering() {
   keys = d->keys();
   ASSERT_EQ(len(in), len(keys));
   for (int i = 0; i < len(in); i++) {
-    ASSERT_EQ(in->index_(i), keys->index_(i));
+    ASSERT_EQ(in->at(i), keys->at(i));
   }
 
   PASS();
