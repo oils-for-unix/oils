@@ -34,11 +34,11 @@ class _View {
   }
 
   bool _Get(int opt_num) {
-    List<bool>* overlay = opt_stacks->index_(opt_num);
+    List<bool>* overlay = opt_stacks->at(opt_num);
     if ((overlay == nullptr) or len(overlay) == 0) {
-      return opt0_array->index_(opt_num);
+      return opt0_array->at(opt_num);
     } else {
-      return overlay->index_(-1);
+      return overlay->at(-1);
     }
   }
 

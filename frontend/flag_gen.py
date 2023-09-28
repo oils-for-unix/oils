@@ -207,7 +207,7 @@ namespace arg_types {
             with switch(typ) as case:
                 if case(flag_type_e.Bool):
                     init_vals.append(
-                        'static_cast<value::Bool*>(attrs->index_(StrFromC("%s")))->b'
+                        'static_cast<value::Bool*>(attrs->at(StrFromC("%s")))->b'
                         % field_name)
                     field_decls.append('bool %s;' % field_name)
 
@@ -218,9 +218,9 @@ namespace arg_types {
                     # TODO: This code is ugly and inefficient!  Generate something
                     # better.  At least get rid of 'new' everywhere?
                     init_vals.append('''\
-attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
+attrs->at(StrFromC("%s"))->tag() == value_e::Undef
           ? nullptr
-          : static_cast<value::Str*>(attrs->index_(StrFromC("%s")))->s''' %
+          : static_cast<value::Str*>(attrs->at(StrFromC("%s")))->s''' %
                                      (field_name, field_name))
 
                     field_decls.append('Str* %s;' % field_name)
@@ -231,17 +231,17 @@ attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
 
                 elif case(flag_type_e.Int):
                     init_vals.append('''\
-attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
+attrs->at(StrFromC("%s"))->tag() == value_e::Undef
           ? -1
-          : static_cast<value::Int*>(attrs->index_(StrFromC("%s")))->i''' %
+          : static_cast<value::Int*>(attrs->at(StrFromC("%s")))->i''' %
                                      (field_name, field_name))
                     field_decls.append('int %s;' % field_name)
 
                 elif case(flag_type_e.Float):
                     init_vals.append('''\
-attrs->index_(StrFromC("%s"))->tag() == value_e::Undef
+attrs->at(StrFromC("%s"))->tag() == value_e::Undef
           ? -1
-          : static_cast<value::Float*>(attrs->index_(StrFromC("%s")))->f''' %
+          : static_cast<value::Float*>(attrs->at(StrFromC("%s")))->f''' %
                                      (field_name, field_name))
                     field_decls.append('float %s;' % field_name)
 

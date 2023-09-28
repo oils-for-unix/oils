@@ -108,11 +108,11 @@ TEST list_collection_test() {
 
     // Verify the list looks as we expected
     {
-      ASSERT(are_equal(test_list->index_(0), test_str0));
-      ASSERT(are_equal(test_list->index_(1), test_str1));
+      ASSERT(are_equal(test_list->at(0), test_str0));
+      ASSERT(are_equal(test_list->at(1), test_str1));
 
-      ASSERT_EQ(test_list->index_(0), test_str0);
-      ASSERT_EQ(test_list->index_(1), test_str1);
+      ASSERT_EQ(test_list->at(0), test_str0);
+      ASSERT_EQ(test_list->at(1), test_str1);
 
       ASSERT_EQ(2, len(test_list));
     }
@@ -120,11 +120,11 @@ TEST list_collection_test() {
     gHeap.Collect();
 
     {
-      ASSERT(are_equal(test_list->index_(0), test_str0));
-      ASSERT(are_equal(test_list->index_(1), test_str1));
+      ASSERT(are_equal(test_list->at(0), test_str0));
+      ASSERT(are_equal(test_list->at(1), test_str1));
 
-      ASSERT_EQ(test_list->index_(0), test_str0);
-      ASSERT_EQ(test_list->index_(1), test_str1);
+      ASSERT_EQ(test_list->at(0), test_str0);
+      ASSERT_EQ(test_list->at(1), test_str1);
     }
 
     test_list->pop();

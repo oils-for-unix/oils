@@ -50,7 +50,7 @@ class List {
   }
 
   // Implements L[i]
-  T index_(int i);
+  T at(int i);
 
   // returns index of the element
   int index(T element);
@@ -281,7 +281,7 @@ void List<T>::set(int i, T item) {
 
 // Implements L[i]
 template <typename T>
-T List<T>::index_(int i) {
+T List<T>::at(int i) {
   if (i < 0) {
     int j = len_ + i;
     if (j >= len_ || j < 0) {
@@ -328,7 +328,7 @@ T List<T>::pop(int i) {
     throw Alloc<IndexError>();
   }
 
-  T result = index_(i);
+  T result = at(i);
   len_--;
 
   // Shift everything by one
@@ -404,7 +404,7 @@ template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
-    if (are_equal(haystack->index_(i), needle)) {
+    if (are_equal(haystack->at(i), needle)) {
       return true;
     }
   }

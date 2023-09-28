@@ -321,7 +321,7 @@ Str* ChArrayToString(List<int>* ch_array) {
   int n = len(ch_array);
   Str* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
-    result->data_[i] = ch_array->index_(i);
+    result->data_[i] = ch_array->at(i);
   }
   result->data_[n] = '\0';
   return result;

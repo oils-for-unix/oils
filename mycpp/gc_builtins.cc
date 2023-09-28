@@ -406,9 +406,9 @@ int max(List<int>* elems) {
     throw Alloc<ValueError>();
   }
 
-  int ret = elems->index_(0);
+  int ret = elems->at(0);
   for (int i = 0; i < n; ++i) {
-    int cand = elems->index_(i);
+    int cand = elems->at(i);
     if (cand > ret) {
       ret = cand;
     }
