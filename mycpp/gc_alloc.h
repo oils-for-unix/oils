@@ -170,7 +170,7 @@ inline Str* OverAllocatedStr(int len) {
 #endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
   auto s = new (header->ObjectAddress()) Str();
-  s->hash_value_ = -1;  // this could be a valid hash value
+  s->hash_value_ = 0;  // this could be a valid hash value
 
 #if MARK_SWEEP
   header->obj_id = obj_id;
