@@ -258,8 +258,8 @@ TEST signal_test() {
     List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT_EQ(2, len(q));
-    ASSERT_EQ(SIGUSR1, q->index_(0));
-    ASSERT_EQ(SIGUSR2, q->index_(1));
+    ASSERT_EQ(SIGUSR1, q->at(0));
+    ASSERT_EQ(SIGUSR2, q->at(1));
 
     q->clear();
     signal_safe->ReuseEmptyList(q);
@@ -288,8 +288,8 @@ TEST signal_test() {
     List<int>* q = signal_safe->TakePendingSignals();
     ASSERT(q != nullptr);
     ASSERT_EQ(2, len(q));
-    ASSERT_EQ(SIGWINCH, q->index_(0));
-    ASSERT_EQ(SIGWINCH, q->index_(1));
+    ASSERT_EQ(SIGWINCH, q->at(0));
+    ASSERT_EQ(SIGWINCH, q->at(1));
   }
 
   PASS();

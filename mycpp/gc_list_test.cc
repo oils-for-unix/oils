@@ -18,7 +18,7 @@ void Print(List<Str*>* parts) {
   log("---");
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
-    Str* s = parts->index_(i);
+    Str* s = parts->at(i);
     printf("%d [ %s ]\n", i, s->data_);
   }
 }
@@ -74,9 +74,9 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(list1->slab_)->obj_len, "%d");
 #endif
 
-  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
-  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
-  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
+  ASSERT_EQ_FMT(11, list1->at(0), "%d");
+  ASSERT_EQ_FMT(22, list1->at(1), "%d");
+  ASSERT_EQ_FMT(33, list1->at(2), "%d");
 
   log("extending");
   auto more2 = NewList<int>(std::initializer_list<int>{44, 55, 66, 77});
@@ -92,16 +92,16 @@ TEST test_list_gc_header() {
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(list1->slab_)->obj_len, "%d");
 #endif
 
-  ASSERT_EQ_FMT(11, list1->index_(0), "%d");
-  ASSERT_EQ_FMT(22, list1->index_(1), "%d");
-  ASSERT_EQ_FMT(33, list1->index_(2), "%d");
-  ASSERT_EQ_FMT(44, list1->index_(3), "%d");
-  ASSERT_EQ_FMT(55, list1->index_(4), "%d");
-  ASSERT_EQ_FMT(66, list1->index_(5), "%d");
-  ASSERT_EQ_FMT(77, list1->index_(6), "%d");
+  ASSERT_EQ_FMT(11, list1->at(0), "%d");
+  ASSERT_EQ_FMT(22, list1->at(1), "%d");
+  ASSERT_EQ_FMT(33, list1->at(2), "%d");
+  ASSERT_EQ_FMT(44, list1->at(3), "%d");
+  ASSERT_EQ_FMT(55, list1->at(4), "%d");
+  ASSERT_EQ_FMT(66, list1->at(5), "%d");
+  ASSERT_EQ_FMT(77, list1->at(6), "%d");
 
   list1->append(88);
-  ASSERT_EQ_FMT(88, list1->index_(7), "%d");
+  ASSERT_EQ_FMT(88, list1->at(7), "%d");
   ASSERT_EQ_FMT(8, len(list1), "%d");
 
 #ifndef MARK_SWEEP
@@ -122,8 +122,8 @@ TEST test_list_gc_header() {
   list2->append(str1);
   list2->append(str2);
   ASSERT_EQ(2, len(list2));
-  ASSERT(str_equals(str1, list2->index_(0)));
-  ASSERT(str_equals(str2, list2->index_(1)));
+  ASSERT(str_equals(str1, list2->at(0)));
+  ASSERT(str_equals(str2, list2->at(1)));
 
   PASS();
 }
@@ -144,19 +144,19 @@ GLOBAL_LIST(gList3, Str*, 2, {gFoo COMMA gFoo});
 
 TEST test_global_list() {
   ASSERT_EQ(3, len(gList));
-  ASSERT_EQ_FMT(5, gList->index_(0), "%d");
-  ASSERT_EQ_FMT(6, gList->index_(1), "%d");
-  ASSERT_EQ_FMT(7, gList->index_(2), "%d");
+  ASSERT_EQ_FMT(5, gList->at(0), "%d");
+  ASSERT_EQ_FMT(6, gList->at(1), "%d");
+  ASSERT_EQ_FMT(7, gList->at(2), "%d");
 
   ASSERT_EQ(4, len(gList2));
-  ASSERT_EQ_FMT(5, gList2->index_(0), "%d");
-  ASSERT_EQ_FMT(4, gList2->index_(1), "%d");
-  ASSERT_EQ_FMT(3, gList2->index_(2), "%d");
-  ASSERT_EQ_FMT(2, gList2->index_(3), "%d");
+  ASSERT_EQ_FMT(5, gList2->at(0), "%d");
+  ASSERT_EQ_FMT(4, gList2->at(1), "%d");
+  ASSERT_EQ_FMT(3, gList2->at(2), "%d");
+  ASSERT_EQ_FMT(2, gList2->at(3), "%d");
 
   ASSERT_EQ(2, len(gList3));
-  ASSERT(str_equals(gFoo, gList3->index_(0)));
-  ASSERT(str_equals(gFoo, gList3->index_(1)));
+  ASSERT(str_equals(gFoo, gList3->at(0)));
+  ASSERT(str_equals(gFoo, gList3->at(1)));
 
   PASS();
 }
@@ -166,34 +166,34 @@ TEST test_list_funcs() {
   auto ints = NewList<int>({4, 5, 6});
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index_(i));
+    log("ints[%d] = %d", i, ints->at(i));
   }
   ASSERT_EQ(3, len(ints));  // [4, 5, 6]
   ints->pop(0);             // [5, 6]
 
   ASSERT_EQ(2, len(ints));
-  ASSERT_EQ_FMT(5, ints->index_(0), "%d");
-  ASSERT_EQ_FMT(6, ints->index_(1), "%d");
+  ASSERT_EQ_FMT(5, ints->at(0), "%d");
+  ASSERT_EQ_FMT(6, ints->at(1), "%d");
 
   ints->reverse();
   ASSERT_EQ(2, len(ints));  // [6, 5]
 
-  ASSERT_EQ_FMT(6, ints->index_(0), "%d");
-  ASSERT_EQ_FMT(5, ints->index_(1), "%d");
+  ASSERT_EQ_FMT(6, ints->at(0), "%d");
+  ASSERT_EQ_FMT(5, ints->at(1), "%d");
 
   ints->append(9);  // [6, 5, 9]
   ASSERT_EQ(3, len(ints));
 
   ints->reverse();  // [9, 5, 6]
-  ASSERT_EQ(9, ints->index_(0));
-  ASSERT_EQ(5, ints->index_(1));
-  ASSERT_EQ(6, ints->index_(2));
+  ASSERT_EQ(9, ints->at(0));
+  ASSERT_EQ(5, ints->at(1));
+  ASSERT_EQ(6, ints->at(2));
 
   ints->set(0, 42);
   ints->set(1, 43);
   log("-- after mutation");
   for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index_(i));
+    log("ints[%d] = %d", i, ints->at(i));
   }
 
   auto L = list_repeat<Str*>(nullptr, 3);
@@ -201,8 +201,8 @@ TEST test_list_funcs() {
 
   auto L2 = list_repeat<bool>(true, 3);
   log("list_repeat length = %d", len(L2));
-  log("item 0 %d", L2->index_(0));
-  log("item 1 %d", L2->index_(1));
+  log("item 0 %d", L2->at(0));
+  log("item 1 %d", L2->at(1));
 
   auto strs = NewList<Str*>();
   strs->append(StrFromC("c"));
@@ -213,10 +213,10 @@ TEST test_list_funcs() {
 
   strs->sort();
   ASSERT_EQ(4, len(strs));  // ['', 'a', 'b', 'c']
-  ASSERT(str_equals(kEmptyString, strs->index_(0)));
-  ASSERT(str_equals(StrFromC("a"), strs->index_(1)));
-  ASSERT(str_equals(StrFromC("b"), strs->index_(2)));
-  ASSERT(str_equals(StrFromC("c"), strs->index_(3)));
+  ASSERT(str_equals(kEmptyString, strs->at(0)));
+  ASSERT(str_equals(StrFromC("a"), strs->at(1)));
+  ASSERT(str_equals(StrFromC("b"), strs->at(2)));
+  ASSERT(str_equals(StrFromC("c"), strs->at(3)));
 
   auto a = StrFromC("a");
   auto aa = StrFromC("aa");
@@ -252,9 +252,9 @@ TEST test_list_iters() {
   {
     ListIter<int> it(ints);
     auto ints2 = list(it);
-    ASSERT_EQ(ints->index_(0), ints2->index_(0));
-    ASSERT_EQ(ints->index_(1), ints2->index_(1));
-    ASSERT_EQ(ints->index_(2), ints2->index_(2));
+    ASSERT_EQ(ints->at(0), ints2->at(0));
+    ASSERT_EQ(ints->at(1), ints2->at(1));
+    ASSERT_EQ(ints->at(2), ints2->at(2));
   }
 
   log("  backward iteration over list");
@@ -275,9 +275,9 @@ TEST test_list_copy() {
   List<int>* b = list(a);
 
   ASSERT_EQ(b->len_, a->len_);
-  ASSERT_EQ(b->index_(0), a->index_(0));
-  ASSERT_EQ(b->index_(1), a->index_(1));
-  ASSERT_EQ(b->index_(2), a->index_(2));
+  ASSERT_EQ(b->at(0), a->at(0));
+  ASSERT_EQ(b->at(1), a->at(1));
+  ASSERT_EQ(b->at(2), a->at(2));
 
   PASS();
 }
@@ -290,20 +290,20 @@ TEST list_methods_test() {
 
   List<int>* slice1 = ints->slice(1);
   ASSERT_EQ(3, len(slice1));
-  ASSERT_EQ(6, slice1->index_(0));
+  ASSERT_EQ(6, slice1->at(0));
 
   List<int>* slice2 = ints->slice(-4, -2);
   ASSERT_EQ(2, len(slice2));
-  ASSERT_EQ(5, slice2->index_(0));
+  ASSERT_EQ(5, slice2->at(0));
 
   List<int>* slice3 = ints->slice(1, 4, 2);
   ASSERT_EQ(2, len(slice2));
-  ASSERT_EQ(6, slice3->index_(0));
-  ASSERT_EQ(8, slice3->index_(1));
+  ASSERT_EQ(6, slice3->at(0));
+  ASSERT_EQ(8, slice3->at(1));
 
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index_(i));
+    log("ints[%d] = %d", i, ints->at(i));
   }
   ASSERT_EQ(4, len(ints));  // [5, 6, 7, 8]
 
@@ -311,36 +311,36 @@ TEST list_methods_test() {
 
   ints->pop();  // [5, 6, 7]
   ASSERT_EQ(3, len(ints));
-  ASSERT_EQ_FMT(5, ints->index_(0), "%d");
-  ASSERT_EQ_FMT(6, ints->index_(1), "%d");
-  ASSERT_EQ_FMT(7, ints->index_(2), "%d");
+  ASSERT_EQ_FMT(5, ints->at(0), "%d");
+  ASSERT_EQ_FMT(6, ints->at(1), "%d");
+  ASSERT_EQ_FMT(7, ints->at(2), "%d");
 
   log("pop(0)");
 
   ints->pop(0);  // [6, 7]
   ASSERT_EQ(2, len(ints));
-  ASSERT_EQ_FMT(6, ints->index_(0), "%d");
-  ASSERT_EQ_FMT(7, ints->index_(1), "%d");
+  ASSERT_EQ_FMT(6, ints->at(0), "%d");
+  ASSERT_EQ_FMT(7, ints->at(1), "%d");
 
   ints->reverse();
   ASSERT_EQ(2, len(ints));  // [7, 6]
 
-  ASSERT_EQ_FMT(7, ints->index_(0), "%d");
-  ASSERT_EQ_FMT(6, ints->index_(1), "%d");
+  ASSERT_EQ_FMT(7, ints->at(0), "%d");
+  ASSERT_EQ_FMT(6, ints->at(1), "%d");
 
   ints->append(9);  // [7, 6, 9]
   ASSERT_EQ(3, len(ints));
 
   ints->reverse();  // [9, 6, 7]
-  ASSERT_EQ(9, ints->index_(0));
-  ASSERT_EQ(6, ints->index_(1));
-  ASSERT_EQ(7, ints->index_(2));
+  ASSERT_EQ(9, ints->at(0));
+  ASSERT_EQ(6, ints->at(1));
+  ASSERT_EQ(7, ints->at(2));
 
   auto other = NewList<int>(std::initializer_list<int>{-1, -2});
   ints->extend(other);  // [9, 6, 7, 1, 2]
   ASSERT_EQ(5, len(ints));
-  ASSERT_EQ(-2, ints->index_(4));
-  ASSERT_EQ(-1, ints->index_(3));
+  ASSERT_EQ(-2, ints->at(4));
+  ASSERT_EQ(-1, ints->at(3));
 
   ints->clear();
   ASSERT_EQ(0, len(ints));
@@ -385,10 +385,10 @@ TEST sort_test() {
 
   strs->sort();  // ['', 'a', 'aa', 'b']
   ASSERT_EQ(4, len(strs));
-  ASSERT(str_equals(kEmptyString, strs->index_(0)));
-  ASSERT(str_equals0("a", strs->index_(1)));
-  ASSERT(str_equals0("aa", strs->index_(2)));
-  ASSERT(str_equals0("b", strs->index_(3)));
+  ASSERT(str_equals(kEmptyString, strs->at(0)));
+  ASSERT(str_equals0("a", strs->at(1)));
+  ASSERT(str_equals0("aa", strs->at(2)));
+  ASSERT(str_equals0("b", strs->at(3)));
 
   PASS();
 }
@@ -436,9 +436,9 @@ TEST test_list_sort() {
   auto l = NewList<Str*>(std::initializer_list<Str*>{s3, s1, s2});
 
   auto s = sorted(l);
-  ASSERT(str_equals(s->index_(0), s1));
-  ASSERT(str_equals(s->index_(1), s2));
-  ASSERT(str_equals(s->index_(2), s3));
+  ASSERT(str_equals(s->at(0), s1));
+  ASSERT(str_equals(s->at(1), s2));
+  ASSERT(str_equals(s->at(2), s3));
 
   PASS();
 }
@@ -458,8 +458,8 @@ TEST test_list_remove() {
   }
   ASSERT(caught);
 
-  ASSERT_EQ(l->index_(0), 1);
-  ASSERT_EQ(l->index_(1), 2);
+  ASSERT_EQ(l->at(0), 1);
+  ASSERT_EQ(l->at(1), 2);
 
   PASS();
 }

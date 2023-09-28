@@ -64,9 +64,9 @@ TEST libc_test() {
   List<Str*>* results =
       libc::regex_match(StrFromC("(a+).(a+)"), StrFromC("-abaacaaa"));
   ASSERT_EQ_FMT(3, len(results), "%d");
-  ASSERT(str_equals(StrFromC("abaa"), results->index_(0)));  // whole match
-  ASSERT(str_equals(StrFromC("a"), results->index_(1)));
-  ASSERT(str_equals(StrFromC("aa"), results->index_(2)));
+  ASSERT(str_equals(StrFromC("abaa"), results->at(0)));  // whole match
+  ASSERT(str_equals(StrFromC("a"), results->at(1)));
+  ASSERT(str_equals(StrFromC("aa"), results->at(2)));
 
   results = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"));
   ASSERT_EQ(nullptr, results);
@@ -97,7 +97,7 @@ TEST libc_glob_test() {
   // 3 files are made by the shell wrapper
   ASSERT_EQ_FMT(3, len(files), "%d");
 
-  print(files->index_(0));
+  print(files->at(0));
 
   auto files2 = libc::glob(StrFromC("*.pyzzz"));
   ASSERT_EQ_FMT(0, len(files2), "%d");

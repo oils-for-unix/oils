@@ -98,7 +98,7 @@ bool Str::endswith(Str* s) {
 }
 
 // Get a string with one character
-Str* Str::index_(int i) {
+Str* Str::at(int i) {
   int len_ = len(this);
   if (i < 0) {
     i = len_ + i;
@@ -440,11 +440,11 @@ Str* Str::join(List<Str*>* items) {
   // Common case
   // 'anything'.join(["foo"]) == "foo"
   if (num_parts == 1) {
-    return items->index_(0);
+    return items->at(0);
   }
 
   for (int i = 0; i < num_parts; ++i) {
-    length += len(items->index_(i));
+    length += len(items->at(i));
   }
   // add length of all the separators
   int this_len = len(this);
@@ -461,9 +461,9 @@ Str* Str::join(List<Str*>* items) {
       // log("this_len %d", this_len);
     }
 
-    int n = len(items->index_(i));
+    int n = len(items->at(i));
     // log("n: %d", n);
-    memcpy(p_result, items->index_(i)->data_, n);  // copy the list item
+    memcpy(p_result, items->at(i)->data_, n);  // copy the list item
     p_result += n;
   }
 
@@ -627,7 +627,7 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
   return StrFromC(buf.c_str(), buf.size());
 }
 
-Str* StrIter::Value() {  // similar to index_()
+Str* StrIter::Value() {  // similar to at()
   Str* result = NewStr(1);
   result->data_[0] = s_->data_[i_];
   DCHECK(result->data_[1] == '\0');
