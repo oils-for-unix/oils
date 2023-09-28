@@ -257,6 +257,18 @@ extensions() {
     | sort | uniq -c | sort -n
 }
 
+#
+# Debug CSS
+#
+
+css-deploy() {
+  local host=oilshell.org
+  ssh $host mkdir -p $host/tmp
+  scp web/src-tree.css $host:$host/tmp
+  sed 's;../../../web/;;g' _tmp/src-tree/www/configure.html > _tmp/configure.html
+  scp _tmp/configure.html $host:$host/tmp
+}
+
 if test $(basename $0) = 'src-tree.sh'; then
   "$@"
 fi
