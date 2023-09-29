@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
 
 class Eval(vm._Builtin):
+
     def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer, errfmt):
         # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
         self.parse_ctx = parse_ctx
@@ -76,6 +77,7 @@ class Eval(vm._Builtin):
 
 
 class Source(vm._Builtin):
+
     def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, tracer,
                  errfmt, loader):
         # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, dev.Tracer, ui.ErrorFormatter, pyutil._ResourceLoader) -> None
@@ -120,7 +122,8 @@ class Source(vm._Builtin):
                 resolved = path
 
             try:
-                f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
+                # Shell can't use descriptors 3-9
+                f = self.fd_state.Open(resolved)
             except (IOError, OSError) as e:
                 self.errfmt.Print_('source %r failed: %s' %
                                    (path, pyutil.strerror(e)),
@@ -185,7 +188,8 @@ class Command(vm._Builtin):
         if arg.v:
             status = 0
             names = arg_r.Rest()
-            for kind, argument in _ResolveNames(names, self.funcs, self.aliases,
+            for kind, argument in _ResolveNames(names, self.funcs,
+                                                self.aliases,
                                                 self.search_path):
                 if kind is None:
                     status = 1  # nothing printed, but we fail
@@ -210,6 +214,7 @@ class Command(vm._Builtin):
 
 
 class Builtin(vm._Builtin):
+
     def __init__(self, shell_ex, errfmt):
         # type: (vm._Executor, ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
@@ -244,6 +249,7 @@ class Builtin(vm._Builtin):
 
 
 class RunProc(vm._Builtin):
+
     def __init__(self, shell_ex, procs, errfmt):
         # type: (vm._Executor, Dict[str, Proc], ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
@@ -383,6 +389,7 @@ class Error(vm._Builtin):
 
 
 class BoolStatus(vm._Builtin):
+
     def __init__(self, shell_ex, errfmt):
         # type: (vm._Executor, ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
@@ -444,6 +451,7 @@ def _ResolveNames(names, funcs, aliases, search_path):
 
 
 class Type(vm._Builtin):
+
     def __init__(self, funcs, aliases, search_path, errfmt):
         # type: (Dict[str, Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
         self.funcs = funcs

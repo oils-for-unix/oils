@@ -14,8 +14,8 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
                                         lvalue_e, lvalue_t, scope_e, scope_t,
                                         HayNode, Cell)
-from _devbuild.gen.syntax_asdl import (
-        loc, loc_t, Token, debug_frame, debug_frame_e, debug_frame_t)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
+                                       debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
 from asdl import runtime
 from core import error
@@ -281,6 +281,7 @@ class ctx_ErrExit(object):
 
 
 class ctx_Try(object):
+
     def __init__(self, mutable_opts):
         # type: (MutableOpts) -> None
 
@@ -591,6 +592,7 @@ def _SetOptionNum(opt_name):
 
 
 class MutableOpts(object):
+
     def __init__(self, mem, opt0_array, opt_stacks, opt_hook):
         # type: (Mem, List[bool], List[List[bool]], OptHook) -> None
         self.mem = mem
@@ -1007,6 +1009,7 @@ def _LineNumber(tok):
 
 
 if mylib.PYTHON:
+
     def _AddCallToken(d, token):
         # type: (Dict[str, Any], Optional[Token]) -> None
         if token is None:
@@ -1387,7 +1390,10 @@ class Mem(object):
 
                     elif case(debug_frame_e.Source):
                         frame = cast(debug_frame.Source, UP_frame)
-                        d = {'type': 'Source', 'source_name': frame.source_name}
+                        d = {
+                            'type': 'Source',
+                            'source_name': frame.source_name
+                        }
                         _AddCallToken(d, frame.call_tok)
 
                     elif case(debug_frame_e.Main):
@@ -1518,7 +1524,7 @@ class Mem(object):
 
         # self.token_for_line can be None?
         self.debug_stack.append(
-                debug_frame.Call(self.token_for_line, def_tok, func_name))
+            debug_frame.Call(self.token_for_line, def_tok, func_name))
 
     def PopCall(self, should_pop_argv_stack):
         # type: (bool) -> None
@@ -1554,7 +1560,7 @@ class Mem(object):
 
         # self.token_for_line can be None?
         self.debug_stack.append(
-                debug_frame.Source(self.token_for_line, source_name))
+            debug_frame.Source(self.token_for_line, source_name))
 
     def PopSource(self, argv):
         # type: (List[str]) -> None
@@ -1875,7 +1881,7 @@ class Mem(object):
                 if cell.val.tag() not in (value_e.Undef, value_e.Str):
                     if cell.exported:
                         e_die("Only strings can be exported"
-                             )  # TODO: error context
+                              )  # TODO: error context
                     if cell.nameref:
                         e_die("nameref must be a string")
 
@@ -1913,7 +1919,8 @@ class Mem(object):
                 # undef[0]=y is allowed
                 with tagswitch(UP_cell_val) as case2:
                     if case2(value_e.Undef):
-                        self._BindNewArrayWithEntry(name_map, lval, rval, flags)
+                        self._BindNewArrayWithEntry(name_map, lval, rval,
+                                                    flags)
                         return
 
                     elif case2(value_e.Str):
@@ -2022,7 +2029,8 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         if name == 'ARGV':
-            items = [value.Str(s) for s in self.GetArgv()]  # type: List[value_t]
+            items = [value.Str(s)
+                     for s in self.GetArgv()]  # type: List[value_t]
             return value.List(items)
 
         # "Registers"
@@ -2070,10 +2078,11 @@ class Mem(object):
                         strs.append(frame.func_name)
 
                     elif case(debug_frame_e.Source):
-                        strs.append('source')  # bash doesn't tell you the filename.
+                        # bash doesn't tell you the filename sourced
+                        strs.append('source')
 
                     elif case(debug_frame_e.Main):
-                        strs.append('main')  # bash behavior
+                        strs.append('main')  # also bash behavior
 
             return value.BashArray(strs)  # TODO: Reuse this object too?
 
@@ -2081,7 +2090,7 @@ class Mem(object):
         #
         # ${BASH_LINENO[$i]} is the line number in the source file
         # (${BASH_SOURCE[$i+1]}) where ${FUNCNAME[$i]} was called (or
-        # ${BASH_LINENO[$i-1]} if referenced within another shell function). 
+        # ${BASH_LINENO[$i-1]} if referenced within another shell function).
         #
         # https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
 
@@ -2123,7 +2132,8 @@ class Mem(object):
                         strs.append(_LineNumber(frame.call_tok))
 
                     elif case(debug_frame_e.Main):
-                        strs.append('0')  # Bash does this to line up with 'main'
+                        # Bash does this to line up with 'main'
+                        strs.append('0')
 
             return value.BashArray(strs)  # TODO: Reuse this object too?
 
@@ -2457,8 +2467,7 @@ def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetValue(location.LName(name), value.BashArray(a),
-                 scope_e.GlobalOnly)
+    mem.SetValue(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):
@@ -2466,7 +2475,10 @@ def ExportGlobalString(mem, name, s):
     """Helper for completion, $PWD, $OLDPWD, etc."""
     assert isinstance(s, str)
     val = value.Str(s)
-    mem.SetValue(location.LName(name), val, scope_e.GlobalOnly, flags=SetExport)
+    mem.SetValue(location.LName(name),
+                 val,
+                 scope_e.GlobalOnly,
+                 flags=SetExport)
 
 
 #
