@@ -40,7 +40,8 @@ class GlobalDict {
  public:
   int len_;
   int capacity_;
-  GlobalSlab<int, N>* index_;  // TODO: should be sized differently
+  int index_len_;
+  GlobalSlab<int, N>* index_;
   GlobalSlab<K, N>* keys_;
   GlobalSlab<V, N>* values_;
 };
@@ -54,6 +55,7 @@ class GlobalDict {
       ObjHeader::Global(TypeTag::Dict),                                        \
       {.len_ = N,                                                              \
        .capacity_ = N,                                                         \
+       .index_len_ = 0,                                                        \
        .index_ = nullptr,                                                      \
        .keys_ = &_keys_##name.obj,                                             \
        .values_ = &_vals_##name.obj},                                          \
@@ -71,6 +73,7 @@ class Dict {
   Dict()
       : len_(0),
         capacity_(0),
+        index_len_(0),
         index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
@@ -79,6 +82,7 @@ class Dict {
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
       : len_(0),
         capacity_(0),
+        index_len_(0),
         index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
@@ -128,8 +132,8 @@ class Dict {
   // returned. The caller is responsible for checking if the index slot is empty
   // before using it.
   //
-  // Returns -1 if the dictionary is full. The caller can use this as a cue to
-  // grow the table.
+  // Returns kNotFound if the dictionary is full. The caller can use this as a
+  // cue to grow the table.
   //
   // Used by dict_contains(), index(), get(), and set().
   int hash_and_probe(K key) const;
@@ -143,11 +147,13 @@ class Dict {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Dict));
   }
 
-  int len_;       // number of entries (keys and values, almost dense)
-  int capacity_;  // number of entries before resizing
+  int len_;        // number of entries (keys and values, almost dense)
+  int capacity_;   // number of k/v slots
+  int index_len_;  // number of index slots
 
   // These 3 slabs are resized at the same time.
-  Slab<int>* index_;  // kEmptyEntry, or a valid index into keys_/values_
+  Slab<int>* index_;  // kEmptyEntry, kDeletedEntry, or a valid index into
+                      // keys_/values_
   Slab<K>* keys_;     // Dict<int, V>
   Slab<V>* values_;   // Dict<K, int>
 
@@ -184,17 +190,16 @@ void Dict<K, V>::reserve(int n) {
   int old_len = len_;
   // log("--- reserve %d", capacity_);
   //
-  if (capacity_ < n) {  // TODO: use load factor, not exact fit
+  if (capacity_ < n) {
     // calculate the number of keys and values we should have
     capacity_ = RoundCapacity(n + kCapacityAdjust) - kCapacityAdjust;
+    // capacity_ is rounded to a power of two, so this division should be safe.
+    index_len_ = 3 * (capacity_ / 2);
 
-    // TODO: This is SPARSE.  How to compute a size that ensures a decent
-    // load factor?
-    int index_len = capacity_;
-    new_i = NewSlab<int>(index_len);
+    new_i = NewSlab<int>(index_len_);
 
     // For the linear search to work
-    for (int i = 0; i < index_len; ++i) {
+    for (int i = 0; i < index_len_; ++i) {
       new_i->items_[i] = kEmptyEntry;
     }
 
@@ -293,57 +298,32 @@ int Dict<K, V>::hash_and_probe(K key) const {
   // Hash the key onto a slot in the index. If the first slot is occupied, probe
   // until an empty one is found.
   unsigned h = hash_key(key);
-  int init_bucket = h % capacity_;
+  int init_bucket = h % index_len_;
 
-  // If there's a vacancy because of deletion on the probe path for this key, we
-  // should fill it before consuming a slot that has never been used. This
-  // should help keep the index somewhat compact.
-  int tombstone = kNotFound;
+  for (int i = 0; i < index_len_; ++i) {
+    // Start at init_bucket and wrap araound
+    int slot = (i + init_bucket) % index_len_;
 
-  for (int i = init_bucket; i < capacity_; ++i) {
-    int pos = index_->items_[i];  // NOT an index now
-    DCHECK(pos < len_);
-    if (pos == kDeletedEntry) {
-      if (tombstone == kNotFound) {
-        tombstone = i;
+    int kv_index = index_->items_[slot];
+    DCHECK(kv_index < len_);
+    // Optimistically this is the common case once the table has been populated.
+    if (kv_index >= 0) {
+      unsigned h2 = hash_key(keys_->items_[kv_index]);
+      if (h == h2 && keys_equal(keys_->items_[kv_index], key)) {
+        return slot;
       }
-      continue;
     }
-    if (pos == kEmptyEntry) {
-      if (tombstone != kNotFound) {
-        return tombstone;
-      }
-      return i;
+
+    if (kv_index == kEmptyEntry) {
+      // If there isn't room in the entry arrays, tell the caller to resize.
+      return len_ < capacity_ ? slot : kNotFound;
     }
-    unsigned h2 = hash_key(keys_->items_[pos]);
-    if (h == h2 && keys_equal(keys_->items_[pos], key)) {
-      return i;
-    }
+
+    // Tombstone or collided keys unequal. Keep scanning.
+    DCHECK(kv_index >= 0 || kv_index == kDeletedEntry);
   }
 
-  // Didn't find anything. Try wrapping around.
-  for (int i = 0; i < init_bucket; ++i) {
-    int pos = index_->items_[i];  // NOT an index now
-    DCHECK(pos < len_);
-    if (pos == kDeletedEntry) {
-      if (tombstone == kNotFound) {
-        tombstone = i;
-      }
-      continue;
-    }
-    if (pos == kEmptyEntry) {
-      if (tombstone != kNotFound) {
-        return tombstone;
-      }
-      return i;
-    }
-    unsigned h2 = hash_key(keys_->items_[pos]);
-    if (h == h2 && keys_equal(keys_->items_[pos], key)) {
-      return i;
-    }
-  }
-
-  return tombstone;
+  return kNotFound;
 }
 
 template <typename K, typename V>
@@ -381,6 +361,8 @@ void Dict<K, V>::set(K key, V val) {
   int offset = index_->items_[pos];
   DCHECK(offset < len_);
   if (offset < 0) {
+    // Always write new entries to the end of the k/v arrays. This allows us to
+    // recall the insertion order of keys trivially in most cases.
     keys_->items_[len_] = key;
     values_->items_[len_] = val;
     index_->items_[pos] = len_;

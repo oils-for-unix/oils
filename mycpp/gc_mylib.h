@@ -43,30 +43,42 @@ template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->obj_header().heap_tag != HeapTag::Global);
   int pos = haystack->hash_and_probe(needle);
-  if (pos == kNotFound || haystack->index_->items_[pos] < 0) {
-    // Nothing to do.
+  if (pos == kNotFound) {
+    return;
+  }
+  int kv_index = haystack->index_->items_[pos];
+  if (kv_index < 0) {
     return;
   }
 
-  int offset = haystack->index_->items_[pos];
-  int last_offset = haystack->len_ - 1;
-  DCHECK(offset <= last_offset);
+  int last_kv_index = haystack->len_ - 1;
+  DCHECK(kv_index <= last_kv_index);
 
-  // To keep things compact, swap the target entry with the most recently
-  // inserted one before removing it.
-  if (offset != last_offset) {
-    K last_key = haystack->keys_->items_[last_offset];
-    V last_val = haystack->values_->items_[last_offset];
+  // Swap the target entry with the most recently inserted one before removing
+  // it. This has two benefits.
+  //   (1) It keeps the entry arrays compact. All valid entries occupy a
+  //       contiguous region in memory.
+  //   (2) It prevents holes in the entry arrays. This makes iterating over
+  //       entries (e.g. in keys() or DictIter()) trivial and doesn't require
+  //       any extra validity state (like a bitset of unusable slots). This is
+  //       important because keys and values wont't always be pointers, so we
+  //       can't rely on NULL checks for validity. We also can't wrap the slab
+  //       entry types in some other type without modifying the garbage
+  //       collector to trace through unmanaged types (or paying the extra
+  //       allocations for the outer type).
+  if (kv_index != last_kv_index) {
+    K last_key = haystack->keys_->items_[last_kv_index];
+    V last_val = haystack->values_->items_[last_kv_index];
     int last_pos = haystack->hash_and_probe(last_key);
     DCHECK(last_pos != kNotFound);
-    haystack->keys_->items_[offset] = last_key;
-    haystack->values_->items_[offset] = last_val;
-    haystack->index_->items_[last_pos] = offset;
+    haystack->keys_->items_[kv_index] = last_key;
+    haystack->values_->items_[kv_index] = last_val;
+    haystack->index_->items_[last_pos] = kv_index;
   }
 
   // Zero out for GC.  These could be nullptr or 0
-  haystack->keys_->items_[last_offset] = 0;
-  haystack->values_->items_[last_offset] = 0;
+  haystack->keys_->items_[last_kv_index] = 0;
+  haystack->values_->items_[last_kv_index] = 0;
   haystack->index_->items_[pos] = kDeletedEntry;
   haystack->len_--;
 }
