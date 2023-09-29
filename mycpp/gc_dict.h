@@ -224,11 +224,11 @@ void Dict<K, V>::reserve(int n) {
 // d[key] in Python: raises KeyError if not found
 template <typename K, typename V>
 V Dict<K, V>::at(K key) const {
-  int pos = find_kv_index(key);
-  if (pos == kNotFound) {
+  int kv_index = find_kv_index(key);
+  if (kv_index == kNotFound) {
     throw Alloc<KeyError>();
   } else {
-    return values_->items_[pos];
+    return values_->items_[kv_index];
   }
 }
 
@@ -236,11 +236,11 @@ V Dict<K, V>::at(K key) const {
 // Returns nullptr if not found (Can't use this for non-pointer types?)
 template <typename K, typename V>
 V Dict<K, V>::get(K key) const {
-  int pos = find_kv_index(key);
-  if (pos == kNotFound) {
+  int kv_index = find_kv_index(key);
+  if (kv_index == kNotFound) {
     return nullptr;
   } else {
-    return values_->items_[pos];
+    return values_->items_[kv_index];
   }
 }
 
@@ -248,11 +248,11 @@ V Dict<K, V>::get(K key) const {
 // expr_parse.py uses this with OTHER_BALANCE
 template <typename K, typename V>
 V Dict<K, V>::get(K key, V default_val) const {
-  int pos = find_kv_index(key);
-  if (pos == kNotFound) {
+  int kv_index = find_kv_index(key);
+  if (kv_index == kNotFound) {
     return default_val;
   } else {
-    return values_->items_[pos];
+    return values_->items_[kv_index];
   }
 }
 
@@ -358,9 +358,9 @@ void Dict<K, V>::set(K key, V val) {
     pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
-  int offset = index_->items_[pos];
-  DCHECK(offset < len_);
-  if (offset < 0) {
+  int kv_index = index_->items_[pos];
+  DCHECK(kv_index < len_);
+  if (kv_index < 0) {
     // Always write new entries to the end of the k/v arrays. This allows us to
     // recall the insertion order of keys trivially in most cases.
     keys_->items_[len_] = key;
@@ -368,7 +368,7 @@ void Dict<K, V>::set(K key, V val) {
     index_->items_[pos] = len_;
     len_++;
   } else {
-    values_->items_[offset] = val;
+    values_->items_[kv_index] = val;
   }
 }
 
