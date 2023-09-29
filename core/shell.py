@@ -9,9 +9,9 @@ import time
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
-from _devbuild.gen.syntax_asdl import (
-        loc, source, source_t, IntParamBox, CompoundWord, debug_frame,
-        debug_frame_t)
+from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
+                                       CompoundWord, debug_frame,
+                                       debug_frame_t)
 from core import alloc
 from core import comp_ui
 from core import dev
@@ -118,8 +118,8 @@ def _CompletionDemo(comp_lookup):
         l.append('m%d' % i)
 
     A2 = completion.TestAction(l, 0.1)
-    C1 = completion.UserSpec([A1, A2], [], [],
-                             completion.DefaultPredicate(), '', '')
+    C1 = completion.UserSpec([A1, A2], [], [], completion.DefaultPredicate(),
+                             '', '')
     comp_lookup.RegisterName('slowc', {}, C1)
 
 
@@ -159,6 +159,7 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
 
 
 class ShellOptHook(state.OptHook):
+
     def __init__(self, readline):
         # type: (Optional[Readline]) -> None
         self.readline = readline
@@ -202,7 +203,8 @@ def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
     b[builtin_i.error] = builtin_meta.Error(expr_ev)
 
 
-def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path, errfmt):
+def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path,
+            errfmt):
     # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, Proc], Dict[str, bool], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
     b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
 
@@ -278,8 +280,8 @@ def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
     """Builtins that run more code."""
 
     builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
-    builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
-                                                       search_path)
+    builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs,
+                                                       aliases, search_path)
     builtins[builtin_i.runproc] = builtin_meta.RunProc(shell_ex, procs, errfmt)
     builtins[builtin_i.boolstatus] = builtin_meta.BoolStatus(shell_ex, errfmt)
 
@@ -315,7 +317,6 @@ def AddMethods(methods):
     }
 
 
-
 def InitAssignmentBuiltins(mem, procs, errfmt):
     # type: (state.Mem, Dict[str, Proc], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
 
@@ -333,6 +334,7 @@ def InitAssignmentBuiltins(mem, procs, errfmt):
 
 
 class ShellFiles(object):
+
     def __init__(self, lang, home_dir, mem, flag):
         # type: (str, str, state.Mem, arg_types.main) -> None
         assert lang in ('osh', 'ysh'), lang
@@ -660,8 +662,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                             tilde_ev, splitter, errfmt)
 
     assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
-    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                       assign_b, arena, cmd_deps, trap_state, signal_safe)
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
+                                       arena, cmd_deps, trap_state,
+                                       signal_safe)
 
     AddOil(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)
 
@@ -734,8 +737,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
              hay_state, errfmt)
 
     spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup,
-                                            help_data, errfmt)
+                                            splitter, comp_lookup, help_data,
+                                            errfmt)
     complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
     builtins[builtin_i.complete] = complete_builtin
     builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
@@ -998,9 +1001,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
 
         return 0
 
-    # 
+    #
     # Run a shell script
-    # 
+    #
 
     with state.ctx_ThisDir(mem, script_name):
         try:

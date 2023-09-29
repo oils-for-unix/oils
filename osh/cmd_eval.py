@@ -419,7 +419,7 @@ class CommandEvaluator(object):
                 self.mem.SetTokenForLine(r.op)
 
                 # Could be computed at parse time?
-                redir_type = consts.RedirArgType(r.op.id)  
+                redir_type = consts.RedirArgType(r.op.id)
 
                 if redir_type == redir_arg_type_e.Path:
                     # Redirects with path arguments are evaluated in a special
@@ -437,11 +437,12 @@ class CommandEvaluator(object):
                     # with globs
 
                     # mycpp needs this explicit declaration
-                    b = braces.BraceDetect(arg_word)  # type: Optional[word.BracedTree]
+                    b = braces.BraceDetect(
+                        arg_word)  # type: Optional[word.BracedTree]
                     if b is not None:
                         raise error.RedirectEval(
-                                'Brace expansion not allowed (try adding quotes)',
-                                arg_word)
+                            'Brace expansion not allowed (try adding quotes)',
+                            arg_word)
 
                     # Needed for globbing behavior
                     files = self.word_ev.EvalWordSequence([arg_word])
@@ -451,11 +452,10 @@ class CommandEvaluator(object):
                         # happens in OSH on empty elision
                         # in YSH because simple_word_eval globs to zero
                         raise error.RedirectEval(
-                                "Can't redirect to zero files", arg_word)
+                            "Can't redirect to zero files", arg_word)
                     if n > 1:
                         raise error.RedirectEval(
-                                "Can't redirect to more than one file",
-                                arg_word)
+                            "Can't redirect to more than one file", arg_word)
 
                     result.arg = redirect_arg.Path(files[0])
                     return result
@@ -1665,8 +1665,7 @@ class CommandEvaluator(object):
             except error.FailGlob as e:  # e.g. echo hi > foo-*
                 if not e.HasLocation():
                     e.location = self.mem.GetFallbackLocation()
-                self.errfmt.PrettyPrintError(e,
-                                             prefix='failglob: ')
+                self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                 redirects = None
 
             if redirects is None:  # Error evaluating redirect words
@@ -1990,7 +1989,8 @@ class CommandEvaluator(object):
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            status = code.BindProcArgs(proc, argv, arg0_loc, self.mem, self.errfmt)
+            status = code.BindProcArgs(proc, argv, arg0_loc, self.mem,
+                                       self.errfmt)
             if status != 0:
                 return status
 
@@ -2067,5 +2067,6 @@ class CommandEvaluator(object):
             status = 1
         # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
         return status
+
 
 # vim: sw=4
