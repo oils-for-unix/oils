@@ -526,8 +526,6 @@ List<Str*>* Str::split(Str* sep) {
 }
 
 int Str::hash(HashFunc h) {
-  // Use the MSB as a flag to indicate that we've already computed the hash.
-  // This keeps the header compact, since we don't have to add a bool.
   if (!is_hashed_) {
     hash_ = h(data_, len_) >> 1;
     is_hashed_ = 1;
