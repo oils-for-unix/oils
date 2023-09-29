@@ -738,7 +738,7 @@ ysh-builtin-module() {
 }
 
 ysh-argparse() {
-  run-file ysh-builtin-argparse "$@"
+  run-file ysh-argparse "$@"
 }
 
 ysh-builtin-describe() {
