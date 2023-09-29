@@ -525,7 +525,7 @@ List<Str*>* Str::split(Str* sep) {
   return this->split(sep, len(this));
 }
 
-int Str::hash(HashFunc h) {
+unsigned Str::hash(HashFunc h) {
   if (!is_hashed_) {
     hash_ = h(data_, len_) >> 1;
     is_hashed_ = 1;

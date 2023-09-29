@@ -1146,15 +1146,15 @@ TEST test_str_format() {
 }
 
 // a very innovative hash function
-int coffee_hash(const char*, int) {
-  return 0xc0ffee;
+unsigned coffee_hash(const char*, int) {
+  return 0xc0ffeeu;
 }
 
 TEST test_str_hash() {
   Str* s1 = StrFromC("a string");
   Str* s2 = StrFromC("a different string");
-  int h1 = s1->hash(fnv1);
-  int h2 = s2->hash(fnv1);
+  unsigned h1 = s1->hash(fnv1);
+  unsigned h2 = s2->hash(fnv1);
   ASSERT(h1 != h2);
 
   // flag bit should be set and we should return the cached hash.

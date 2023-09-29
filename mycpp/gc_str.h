@@ -75,7 +75,7 @@ class Str {
     return ObjHeader::Str();
   }
 
-  int hash(HashFunc h);
+  unsigned hash(HashFunc h);
 
   static constexpr int kHashFlagMask = 0x08000000;
 
