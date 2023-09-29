@@ -144,7 +144,8 @@ inline Str* NewStr(int len) {
 
   s->data_[len] = '\0';  // NUL terminate
   s->len_ = len;
-  s->hash_value_ = 0;
+  s->hash_ = 0;
+  s->is_hashed_ = 0;
 
 #if MARK_SWEEP
   header->obj_id = obj_id;
@@ -170,7 +171,8 @@ inline Str* OverAllocatedStr(int len) {
 #endif
   ObjHeader* header = new (place) ObjHeader(Str::obj_header());
   auto s = new (header->ObjectAddress()) Str();
-  s->hash_value_ = 0;  // this could be a valid hash value
+  s->hash_ = 0;
+  s->is_hashed_ = 0;
 
 #if MARK_SWEEP
   header->obj_id = obj_id;

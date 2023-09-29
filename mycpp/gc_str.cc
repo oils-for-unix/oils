@@ -528,10 +528,11 @@ List<Str*>* Str::split(Str* sep) {
 int Str::hash(HashFunc h) {
   // Use the MSB as a flag to indicate that we've already computed the hash.
   // This keeps the header compact, since we don't have to add a bool.
-  if ((hash_value_ & 0x08000000) == 0) {
-    hash_value_ = h(data_, len_) | 0x08000000;
+  if (!is_hashed_) {
+    hash_ = h(data_, len_) >> 1;
+    is_hashed_ = 1;
   }
-  return hash_value_ >> 1;  // Drop MSB
+  return hash_;
 }
 
 static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
