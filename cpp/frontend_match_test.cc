@@ -13,7 +13,7 @@ TEST lexer_test() {
 
   List<Tuple2<Id_t, Str*>*>* toks = lex->Tokens();
   for (int i = 0; i < len(toks); i++) {
-    auto* t = toks->index_(i);
+    auto* t = toks->at(i);
     int id = t->at0();
     if (id == id__Eol_Tok) {
       break;

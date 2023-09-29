@@ -938,15 +938,15 @@ TEST test_str_split() {
     List<Str*>* parts = s->split(StrFromC("x"));
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
-    ASSERT_EQ(parts->index_(0), s);
+    ASSERT_EQ(parts->at(0), s);
   }
 
   {
     List<Str*>* parts = StrFromC("abc def")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(2, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("abc")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("def")));
+    ASSERT(are_equal(parts->at(0), StrFromC("abc")));
+    ASSERT(are_equal(parts->at(1), StrFromC("def")));
   }
 
   {
@@ -954,53 +954,53 @@ TEST test_str_split() {
     ShowList(parts);
     ASSERT_EQ_FMT(4, len(parts), "%d");
     // Identical objects
-    ASSERT_EQ(kEmptyString, parts->index_(0));
-    ASSERT_EQ(kEmptyString, parts->index_(1));
-    ASSERT_EQ(kEmptyString, parts->index_(2));
-    ASSERT_EQ(kEmptyString, parts->index_(3));
+    ASSERT_EQ(kEmptyString, parts->at(0));
+    ASSERT_EQ(kEmptyString, parts->at(1));
+    ASSERT_EQ(kEmptyString, parts->at(2));
+    ASSERT_EQ(kEmptyString, parts->at(3));
   }
 
   {
     List<Str*>* parts = StrFromC(" ### ")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(4, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC(" ")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("")));
-    ASSERT(are_equal(parts->index_(2), StrFromC("")));
-    ASSERT(are_equal(parts->index_(3), StrFromC(" ")));
+    ASSERT(are_equal(parts->at(0), StrFromC(" ")));
+    ASSERT(are_equal(parts->at(1), StrFromC("")));
+    ASSERT(are_equal(parts->at(2), StrFromC("")));
+    ASSERT(are_equal(parts->at(3), StrFromC(" ")));
   }
 
   {
     List<Str*>* parts = StrFromC(" # ")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("#")));
-    ASSERT(are_equal(parts->index_(2), StrFromC("")));
+    ASSERT(are_equal(parts->at(0), StrFromC("")));
+    ASSERT(are_equal(parts->at(1), StrFromC("#")));
+    ASSERT(are_equal(parts->at(2), StrFromC("")));
   }
 
   {
     List<Str*>* parts = StrFromC("  #")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(2, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("  ")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("")));
+    ASSERT(are_equal(parts->at(0), StrFromC("  ")));
+    ASSERT(are_equal(parts->at(1), StrFromC("")));
   }
 
   {
     List<Str*>* parts = StrFromC("#  #")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("  ")));
-    ASSERT(are_equal(parts->index_(2), StrFromC("")));
+    ASSERT(are_equal(parts->at(0), StrFromC("")));
+    ASSERT(are_equal(parts->at(1), StrFromC("  ")));
+    ASSERT(are_equal(parts->at(2), StrFromC("")));
   }
 
   {
     List<Str*>* parts = StrFromC("")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("")));
+    ASSERT(are_equal(parts->at(0), StrFromC("")));
   }
 
   {
@@ -1008,30 +1008,30 @@ TEST test_str_split() {
     List<Str*>* parts = s->split(StrFromC(","));
     ShowList(parts);
     ASSERT_EQ(7, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("a")));
+    ASSERT(are_equal(parts->at(0), StrFromC("a")));
 
     // ask for 3 splits
     parts = s->split(StrFromC(","), 3);
     ShowList(parts);
     ASSERT_EQ_FMT(4, len(parts), "%d");
-    ASSERT(are_equal(parts->index_(0), StrFromC("a")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("b")));
-    ASSERT(are_equal(parts->index_(2), StrFromC("c")));
-    ASSERT(are_equal(parts->index_(3), StrFromC("d,e,f,g")));
+    ASSERT(are_equal(parts->at(0), StrFromC("a")));
+    ASSERT(are_equal(parts->at(1), StrFromC("b")));
+    ASSERT(are_equal(parts->at(2), StrFromC("c")));
+    ASSERT(are_equal(parts->at(3), StrFromC("d,e,f,g")));
 
     // ask for 0 splits
     parts = s->split(StrFromC(","), 0);
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
     // identical objects
-    ASSERT_EQ(parts->index_(0), s);
+    ASSERT_EQ(parts->at(0), s);
 
     parts = StrFromC("###")->split(StrFromC("#"), 2);
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
-    ASSERT(are_equal(parts->index_(0), StrFromC("")));
-    ASSERT(are_equal(parts->index_(1), StrFromC("")));
-    ASSERT(are_equal(parts->index_(2), StrFromC("#")));
+    ASSERT(are_equal(parts->at(0), StrFromC("")));
+    ASSERT(are_equal(parts->at(1), StrFromC("")));
+    ASSERT(are_equal(parts->at(2), StrFromC("#")));
   }
 
   printf("---------- Done ----------\n");
@@ -1190,7 +1190,7 @@ void Print(List<Str*>* parts) {
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
     printf("%d [", i);
-    Str* s = parts->index_(i);
+    Str* s = parts->at(i);
     int n = len(s);
     fwrite(s->data_, sizeof(char), n, stdout);
     fputs("]\n", stdout);
@@ -1212,32 +1212,32 @@ TEST str_split_test() {
   s = StrFromC(":");
   parts = s->split(sep);
   ASSERT_EQ_FMT(2, len(parts), "%d");
-  ASSERT(str_equals(kEmptyString, parts->index_(0)));
-  ASSERT(str_equals(kEmptyString, parts->index_(1)));
+  ASSERT(str_equals(kEmptyString, parts->at(0)));
+  ASSERT(str_equals(kEmptyString, parts->at(1)));
   Print(parts);
 
   s = StrFromC("::");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
-  ASSERT(str_equals(kEmptyString, parts->index_(0)));
-  ASSERT(str_equals(kEmptyString, parts->index_(1)));
-  ASSERT(str_equals(kEmptyString, parts->index_(2)));
+  ASSERT(str_equals(kEmptyString, parts->at(0)));
+  ASSERT(str_equals(kEmptyString, parts->at(1)));
+  ASSERT(str_equals(kEmptyString, parts->at(2)));
   Print(parts);
 
   s = StrFromC("a:b");
   parts = s->split(sep);
   ASSERT_EQ(2, len(parts));
   Print(parts);
-  ASSERT(str_equals0("a", parts->index_(0)));
-  ASSERT(str_equals0("b", parts->index_(1)));
+  ASSERT(str_equals0("a", parts->at(0)));
+  ASSERT(str_equals0("b", parts->at(1)));
 
   s = StrFromC("abc:def:");
   parts = s->split(sep);
   ASSERT_EQ(3, len(parts));
   Print(parts);
-  ASSERT(str_equals0("abc", parts->index_(0)));
-  ASSERT(str_equals0("def", parts->index_(1)));
-  ASSERT(str_equals(kEmptyString, parts->index_(2)));
+  ASSERT(str_equals0("abc", parts->at(0)));
+  ASSERT(str_equals0("def", parts->at(1)));
+  ASSERT(str_equals(kEmptyString, parts->at(2)));
 
   s = StrFromC(":abc:def:");
   parts = s->split(sep);
@@ -1264,9 +1264,9 @@ TEST str_methods_test() {
   ASSERT(!(StrFromC(""))->isdigit());
 
   log("slice()");
-  ASSERT(str_equals0("f", kStrFood->index_(0)));
+  ASSERT(str_equals0("f", kStrFood->at(0)));
 
-  ASSERT(str_equals0("d", kStrFood->index_(-1)));
+  ASSERT(str_equals0("d", kStrFood->at(-1)));
 
   ASSERT(str_equals0("ood", kStrFood->slice(1)));
   ASSERT(str_equals0("oo", kStrFood->slice(1, 3)));

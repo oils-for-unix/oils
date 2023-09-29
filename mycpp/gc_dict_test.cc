@@ -18,12 +18,12 @@ TEST test_dict_init() {
 
   Dict<int, Str*>* d = Alloc<Dict<int, Str*>>(std::initializer_list<int>{42},
                                               std::initializer_list<Str*>{s});
-  ASSERT_EQ(s, d->index_(42));
+  ASSERT_EQ(s, d->at(42));
 
   Dict<Str*, int>* d2 = Alloc<Dict<Str*, int>>(
       std::initializer_list<Str*>{s, s2}, std::initializer_list<int>{43, 99});
-  ASSERT_EQ(43, d2->index_(s));
-  ASSERT_EQ(99, d2->index_(s2));
+  ASSERT_EQ(43, d2->at(s));
+  ASSERT_EQ(99, d2->at(s2));
 
   PASS();
 }
@@ -35,13 +35,13 @@ TEST test_dict() {
   d->clear();
 
   d->set(1, StrFromC("foo"));
-  log("d[1] = %s", d->index_(1)->data_);
+  log("d[1] = %s", d->at(1)->data_);
 
   auto d2 = NewDict<Str*, int>();
   Str* key = StrFromC("key");
   d2->set(key, 42);
 
-  log("d2['key'] = %d", d2->index_(key));
+  log("d2['key'] = %d", d2->at(key));
   d2->set(StrFromC("key2"), 2);
   d2->set(StrFromC("key3"), 3);
 
@@ -82,15 +82,15 @@ TEST test_dict() {
   d3->set(StrFromC("a"), 10);
   ASSERT_EQ(3, len(d3));
 
-  ASSERT_EQ(10, d3->index_(StrFromC("a")));
-  ASSERT_EQ(11, d3->index_(StrFromC("b")));
-  ASSERT_EQ(12, d3->index_(StrFromC("c")));
+  ASSERT_EQ(10, d3->at(StrFromC("a")));
+  ASSERT_EQ(11, d3->at(StrFromC("b")));
+  ASSERT_EQ(12, d3->at(StrFromC("c")));
   ASSERT_EQ(3, len(d3));
 
   auto keys = sorted(d3);
-  ASSERT(str_equals0("a", keys->index_(0)));
-  ASSERT(str_equals0("b", keys->index_(1)));
-  ASSERT(str_equals0("c", keys->index_(2)));
+  ASSERT(str_equals0("a", keys->at(0)));
+  ASSERT(str_equals0("b", keys->at(1)));
+  ASSERT(str_equals0("c", keys->at(2)));
   ASSERT_EQ(3, len(keys));
 
   auto keys3 = d3->keys();
@@ -170,7 +170,7 @@ TEST test_dict_internals() {
 #endif
 
   dict1->set(42, 5);
-  ASSERT_EQ(5, dict1->index_(42));
+  ASSERT_EQ(5, dict1->at(42));
   ASSERT_EQ(1, len(dict1));
 #if 0
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
@@ -183,14 +183,14 @@ TEST test_dict_internals() {
 #endif
 
   dict1->set(42, 99);
-  ASSERT_EQ(99, dict1->index_(42));
+  ASSERT_EQ(99, dict1->at(42));
   ASSERT_EQ(1, len(dict1));
 #if 0
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 #endif
 
   dict1->set(43, 10);
-  ASSERT_EQ(10, dict1->index_(43));
+  ASSERT_EQ(10, dict1->at(43));
   ASSERT_EQ(2, len(dict1));
 #if 0
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
@@ -201,7 +201,7 @@ TEST test_dict_internals() {
     log("i = %d, capacity = %d", i, dict1->capacity_);
 
     // make sure we didn't lose old entry after resize
-    ASSERT_EQ(10, dict1->index_(43));
+    ASSERT_EQ(10, dict1->at(43));
   }
 
   Str* foo = nullptr;
@@ -213,7 +213,7 @@ TEST test_dict_internals() {
   dict2->set(foo, bar);
 
   ASSERT_EQ(1, len(dict2));
-  ASSERT(str_equals(bar, dict2->index_(foo)));
+  ASSERT(str_equals(bar, dict2->at(foo)));
 
 #if 0
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict2->entry_)->obj_len, "%d");
@@ -282,12 +282,12 @@ TEST dict_methods_test() {
 
   d = Alloc<Dict<int, Str*>>();
   d->set(1, kStrFoo);
-  ASSERT(str_equals0("foo", d->index_(1)));
+  ASSERT(str_equals0("foo", d->at(1)));
 
   d2 = Alloc<Dict<Str*, int>>();
   key = StrFromC("key");
   d2->set(key, 42);
-  ASSERT_EQ(42, d2->index_(key));
+  ASSERT_EQ(42, d2->at(key));
 
   PASS();
 
@@ -300,22 +300,22 @@ TEST dict_methods_test() {
   ASSERT_EQ_FMT(3, len(keys), "%d");
 
   // Retain insertion order
-  ASSERT(str_equals0("key", keys->index_(0)));
-  ASSERT(str_equals0("key2", keys->index_(1)));
-  ASSERT(str_equals0("key3", keys->index_(2)));
+  ASSERT(str_equals0("key", keys->at(0)));
+  ASSERT(str_equals0("key2", keys->at(1)));
+  ASSERT(str_equals0("key3", keys->at(2)));
 
   mylib::dict_erase(d2, StrFromC("key"));
   ASSERT_EQ_FMT(2, len(d2), "%d");
 
   auto keys2 = d2->keys();
   ASSERT_EQ_FMT(2, len(keys2), "%d");
-  ASSERT(str_equals0("key2", keys2->index_(0)));
-  ASSERT(str_equals0("key3", keys2->index_(1)));
+  ASSERT(str_equals0("key2", keys2->at(0)));
+  ASSERT(str_equals0("key3", keys2->at(1)));
 
   auto values = d2->values();
   ASSERT_EQ_FMT(2, len(values), "%d");
-  ASSERT_EQ(2, values->index_(0));
-  ASSERT_EQ(3, values->index_(1));
+  ASSERT_EQ(2, values->at(0));
+  ASSERT_EQ(3, values->at(1));
 
   int j = 0;
   for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
@@ -352,16 +352,16 @@ TEST dict_methods_test() {
   d3->set(StrFromC("b"), 11);
   d3->set(StrFromC("c"), 12);
   d3->set(StrFromC("a"), 10);
-  ASSERT_EQ(10, d3->index_(StrFromC("a")));
-  ASSERT_EQ(11, d3->index_(StrFromC("b")));
-  ASSERT_EQ(12, d3->index_(StrFromC("c")));
+  ASSERT_EQ(10, d3->at(StrFromC("a")));
+  ASSERT_EQ(11, d3->at(StrFromC("b")));
+  ASSERT_EQ(12, d3->at(StrFromC("c")));
   ASSERT_EQ(3, len(d3));
 
   auto keys3 = sorted(d3);
   ASSERT_EQ(3, len(keys3));
-  ASSERT(str_equals0("a", keys3->index_(0)));
-  ASSERT(str_equals0("b", keys3->index_(1)));
-  ASSERT(str_equals0("c", keys3->index_(2)));
+  ASSERT(str_equals0("a", keys3->at(0)));
+  ASSERT(str_equals0("b", keys3->at(1)));
+  ASSERT(str_equals0("c", keys3->at(2)));
 
   auto keys4 = d3->keys();
   ASSERT(list_contains(keys4, a));
@@ -414,7 +414,7 @@ TEST dict_iters_test() {
 
   keys = d2->keys();
   for (int i = 0; i < len(keys); ++i) {
-    printf("k %s\n", keys->index_(i)->data_);
+    printf("k %s\n", keys->at(i)->data_);
   }
 
   log("  iterating over Dict");
@@ -433,8 +433,8 @@ TEST test_tuple_construct() {
   kvs->append(t2);
 
   auto d = dict(kvs);
-  ASSERT_EQ(d->index_(0xdead), 0xbeef);
-  ASSERT_EQ(d->index_(0xbeee), 0xeeef);
+  ASSERT_EQ(d->at(0xdead), 0xbeef);
+  ASSERT_EQ(d->at(0xbeee), 0xeeef);
 
   PASS();
 }
@@ -443,8 +443,8 @@ TEST test_update_dict() {
   auto d = Alloc<Dict<int, int>>();
   d->set(1, 0xdead);
   d->set(2, 0xbeef);
-  ASSERT_EQ(d->index_(1), 0xdead);
-  ASSERT_EQ(d->index_(2), 0xbeef);
+  ASSERT_EQ(d->at(1), 0xdead);
+  ASSERT_EQ(d->at(2), 0xbeef);
 
   auto kvs = Alloc<List<Tuple2<int, int>*>>();
   auto t1 = Alloc<Tuple2<int, int>>(2, 0xfeeb);
@@ -452,9 +452,9 @@ TEST test_update_dict() {
   kvs->append(t1);
   kvs->append(t2);
   d->update(kvs);
-  ASSERT_EQ(d->index_(1), 0xdead);
-  ASSERT_EQ(d->index_(2), 0xfeeb);
-  ASSERT_EQ(d->index_(3), 0x3333);
+  ASSERT_EQ(d->at(1), 0xdead);
+  ASSERT_EQ(d->at(2), 0xfeeb);
+  ASSERT_EQ(d->at(3), 0x3333);
 
   PASS();
 }
@@ -465,16 +465,16 @@ TEST test_tuple_key() {
   auto t2 = Alloc<Tuple2<int, int>>(0xbeee, 0xeeef);
   d1->set(t1, -42);
   d1->set(t2, 17);
-  ASSERT_EQ(d1->index_(t1), -42);
-  ASSERT_EQ(d1->index_(t2), 17);
+  ASSERT_EQ(d1->at(t1), -42);
+  ASSERT_EQ(d1->at(t2), 17);
 
   auto d2 = Alloc<Dict<Tuple2<Str*, int>*, int>>();
   auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("foo"), 0xbeef);
   auto t4 = Alloc<Tuple2<Str*, int>>(StrFromC("bar"), 0xeeef);
   d2->set(t3, 12345);
   d2->set(t4, 67890);
-  ASSERT_EQ(d2->index_(t3), 12345);
-  ASSERT_EQ(d2->index_(t4), 67890);
+  ASSERT_EQ(d2->at(t3), 12345);
+  ASSERT_EQ(d2->at(t4), 67890);
 
   PASS();
 }
@@ -487,12 +487,12 @@ GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
 TEST test_global_dict() {
   log("gDict len = %d", len(gDict));
   ASSERT_EQ(2, len(gDict));
-  ASSERT_EQ(1, gDict->index_(42));
-  ASSERT_EQ(2, gDict->index_(43));
+  ASSERT_EQ(1, gDict->at(42));
+  ASSERT_EQ(2, gDict->at(43));
 
   log("gStrDict len = %d", len(gStrDict));
-  ASSERT_EQ(kStrFoo, gStrDict->index_(kStrBar));
-  ASSERT_EQ(kStrBar, gStrDict->index_(kStrFoo));
+  ASSERT_EQ(kStrFoo, gStrDict->at(kStrBar));
+  ASSERT_EQ(kStrBar, gStrDict->at(kStrFoo));
 
   PASS();
 }

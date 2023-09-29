@@ -1611,7 +1611,7 @@ Str* Reader::Peek() {
     return nullptr;
   }
   else {
-    return this->argv->index_(this->i);
+    return this->argv->at(this->i);
   }
 }
 
@@ -1620,7 +1620,7 @@ Tuple2<Str*, syntax_asdl::loc_t*> Reader::Peek2() {
     return Tuple2<Str*, syntax_asdl::loc_t*>(nullptr, loc::Missing);
   }
   else {
-    return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->index_(this->i), this->locs->index_(this->i));
+    return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->at(this->i), this->locs->at(this->i));
   }
 }
 
@@ -1645,7 +1645,7 @@ Tuple2<Str*, syntax_asdl::loc_t*> Reader::ReadRequired2(Str* error_msg) {
   if (arg == nullptr) {
     e_usage(error_msg, this->_FirstLocation());
   }
-  location = this->locs->index_(this->i);
+  location = this->locs->at(this->i);
   this->Next();
   return Tuple2<Str*, syntax_asdl::loc_t*>(arg, location);
 }
@@ -1663,8 +1663,8 @@ bool Reader::AtEnd() {
 }
 
 syntax_asdl::loc_t* Reader::_FirstLocation() {
-  if ((this->locs and this->locs->index_(0) != nullptr)) {
-    return this->locs->index_(0);
+  if ((this->locs and this->locs->at(0) != nullptr)) {
+    return this->locs->at(0);
   }
   else {
     return loc::Missing;
@@ -1680,8 +1680,8 @@ syntax_asdl::loc_t* Reader::Location() {
     else {
       i = this->i;
     }
-    if (this->locs->index_(i) != nullptr) {
-      return this->locs->index_(i);
+    if (this->locs->at(i) != nullptr) {
+      return this->locs->at(i);
     }
     else {
       return loc::Missing;
@@ -1951,7 +1951,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       if ((arg->startswith(str128) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
-          ch = arg->index_(i);
+          ch = arg->at(i);
           if (str_equals(ch, str129)) {
             ch = str130;
           }
@@ -1964,7 +1964,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             continue;
           }
           if (dict_contains(spec->arity1, ch)) {
-            action = spec->arity1->index_(ch);
+            action = spec->arity1->at(ch);
             attached_arg = i < (n - 1) ? arg->slice((i + 1)) : nullptr;
             action->OnMatch(attached_arg, arg_r, out);
             break;
@@ -1977,7 +1977,7 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
         if ((len(spec->plus_flags) and (arg->startswith(str134) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
-            ch = arg->index_(i);
+            ch = arg->at(i);
             if (list_contains(spec->plus_flags, ch)) {
               out->Set(ch, Alloc<value::Str>(str135));
               continue;
@@ -2061,7 +2061,7 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       continue;
     }
     if (((arg->startswith(str142) or arg->startswith(str143)) and len(arg) > 1)) {
-      char0 = arg->index_(0);
+      char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         Str* ch = it.Value();
         StackRoots _for({&ch      });

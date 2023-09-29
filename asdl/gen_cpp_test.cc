@@ -170,7 +170,7 @@ TEST dicts_test() {
   m->ib->set(42, true);
   // note: Dict<int, bool>::get() doesn't compile because nullptr isn't valid
   // to return.  But Dict<int, bool>::index() does compile.
-  log("mm.ib[42] = %d", m->ib->index_(42));
+  log("mm.ib[42] = %d", m->ib->at(42));
 
   hnode_t* t = m->PrettyTree();
   auto f = mylib::Stdout();
@@ -224,9 +224,9 @@ TEST literal_test() {
   // Wow this works too?  Is it the the constexpr interpreter, or is this code
   // inserted before main()?
   ASSERT_EQ(3, len(g_list));
-  ASSERT_EQ_FMT(7, g_list->index_(0), "%d");
-  ASSERT_EQ_FMT(8, g_list->index_(1), "%d");
-  ASSERT_EQ_FMT(9, g_list->index_(2), "%d");
+  ASSERT_EQ_FMT(7, g_list->at(0), "%d");
+  ASSERT_EQ_FMT(8, g_list->at(1), "%d");
+  ASSERT_EQ_FMT(9, g_list->at(2), "%d");
 #endif
 
   PASS();

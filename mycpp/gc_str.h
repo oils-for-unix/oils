@@ -20,7 +20,7 @@ class Str {
   // Call this after writing into buffer created by OverAllocatedStr()
   void MaybeShrink(int str_len);
 
-  Str* index_(int i);
+  Str* at(int i);
 
   int find(Str* needle, int pos = 0);
   int rfind(Str* needle);
@@ -116,7 +116,7 @@ class StrIter {
   bool Done() {
     return i_ >= len_;
   }
-  Str* Value();  // similar to index_()
+  Str* Value();  // similar to at()
 
  private:
   Str* s_;

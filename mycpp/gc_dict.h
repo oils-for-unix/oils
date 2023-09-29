@@ -110,7 +110,7 @@ class Dict {
   void reserve(int n);
 
   // d[key] in Python: raises KeyError if not found
-  V index_(K key);
+  V at(K key);
 
   // Get a key.
   // Returns nullptr if not found (Can't use this for non-pointer types?)
@@ -247,7 +247,7 @@ void Dict<K, V>::reserve(int n) {
 
 // d[key] in Python: raises KeyError if not found
 template <typename K, typename V>
-V Dict<K, V>::index_(K key) {
+V Dict<K, V>::at(K key) {
   int pos = position_of_key(key);
   if (pos == -1) {
     throw Alloc<KeyError>();

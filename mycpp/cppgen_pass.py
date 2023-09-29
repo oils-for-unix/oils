@@ -1117,7 +1117,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.index)  # method call
         else:
             # it's hard syntactically to do (*a)[0], so do it this way.
-            self.write('->index_(')
+            self.write('->at(')
             self.accept(o.index)
             self.write(')')
 
