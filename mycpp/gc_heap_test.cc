@@ -115,9 +115,9 @@ TEST offsets_test() {
     unsigned list_mask = List<int>::field_mask();
     ASSERT_EQ_FMT(0x0002, list_mask, "0x%x");
 
-    // in binary: 0b 0000 0000 0000 1110
+    // in binary: 0b 0000 0000 0001 1100
     unsigned dict_mask = Dict<int COMMA int>::field_mask();
-    ASSERT_EQ_FMT(0x0000e, dict_mask, "0x%x");
+    ASSERT_EQ_FMT(0x0001c, dict_mask, "0x%x");
   }
 
   PASS();
