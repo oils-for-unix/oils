@@ -1,0 +1,15 @@
+[style]
+
+# I like 
+#
+# if (foo() and
+#     bar()):
+#  pass
+#
+# because it lines up.  Not
+#
+# if (foo()
+#     and bar()):
+#  pass
+
+split_before_logical_operator = false

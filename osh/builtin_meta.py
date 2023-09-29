@@ -133,8 +133,8 @@ class Source(vm._Builtin):
                 resolved = path
 
             try:
-                f = self.fd_state.Open(
-                    resolved)  # Shell can't use descriptors 3-9
+                # Shell can't use descriptors 3-9
+                f = self.fd_state.Open(resolved)
             except (IOError, OSError) as e:
                 self.errfmt.Print_('source %r failed: %s' %
                                    (path, pyutil.strerror(e)),

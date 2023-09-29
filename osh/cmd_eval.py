@@ -1153,8 +1153,8 @@ class CommandEvaluator(object):
                 # from a sourced script, it makes sense to return from a main script.
                 ok = True
                 if (keyword.id
-                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue)
-                        and self.loop_level == 0):
+                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
+                        self.loop_level == 0):
                     ok = False
 
                 if ok:
