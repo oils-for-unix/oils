@@ -140,7 +140,7 @@ class Dict {
 
   // Returns an offset into the table (keys_/values_) for the given key.
   //
-  // Returns -1 if the key isn't in the table.
+  // Returns kNotFound if the key isn't in the table.
   int find_kv_index(K key) const;
 
   static constexpr ObjHeader obj_header() {
