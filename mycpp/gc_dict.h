@@ -198,6 +198,7 @@ void Dict<K, V>::reserve(int new_size) {
 
     // capacity_ is rounded to a power of two, so this division should be safe.
     index_len_ = 3 * (capacity_ / 2);
+    DCHECK(index_len_ > capacity_);
     new_i = NewSlab<int>(index_len_);
     for (int i = 0; i < index_len_; ++i) {
       new_i->items_[i] = kEmptyEntry;
@@ -300,6 +301,9 @@ int Dict<K, V>::hash_and_probe(K key) const {
   unsigned h = hash_key(key);
   int init_bucket = h % index_len_;
 
+  // If we see a tombstone along the probing path, stash it.
+  int open_slot = -1;
+
   for (int i = 0; i < index_len_; ++i) {
     // Start at init_bucket and wrap araound
     // NOTE: if division becomes a hotspot, split this into two loops.
@@ -316,12 +320,18 @@ int Dict<K, V>::hash_and_probe(K key) const {
     }
 
     if (kv_index == kEmptyEntry) {
+      if (open_slot != -1) {
+        slot = open_slot;
+      }
       // If there isn't room in the entry arrays, tell the caller to resize.
       return len_ < capacity_ ? slot : kNotFound;
     }
 
     // Tombstone or collided keys unequal. Keep scanning.
     DCHECK(kv_index >= 0 || kv_index == kDeletedEntry);
+    if (kv_index == kDeletedEntry && open_slot == -1) {
+      open_slot = slot;
+    }
   }
 
   return kNotFound;
@@ -354,7 +364,7 @@ void Dict<K, V>::set(K key, V val) {
   DCHECK(obj_header().heap_tag != HeapTag::Global);
   int pos = hash_and_probe(key);
   if (pos == kNotFound) {
-    reserve(capacity_ + 1);
+    reserve(len_ + 1);
     pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);

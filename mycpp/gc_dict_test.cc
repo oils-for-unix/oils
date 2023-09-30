@@ -539,7 +539,18 @@ TEST test_dict_erase() {
 // expected.
 TEST test_dict_probe() {
   auto d = Alloc<Dict<int, int>>();
+
+  // This trace is a regression test for a weird bug where the index is full but
+  // the table has two free slots, causing a write to needlessly fail.
+  d->set(584818, -1);
+  d->set(584828, -1);
+  mylib::dict_erase(d, 584828);
+  d->set(584833, -1);
+  mylib::dict_erase(d, 584833);
+  d->set(584888, -1);
+
   d->reserve(32);
+  d->clear();
 
   // First, fill the table to the brim and check that we can recall
   // everything.
