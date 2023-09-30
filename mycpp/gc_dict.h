@@ -355,6 +355,7 @@ void Dict<K, V>::set(K key, V val) {
   int pos = hash_and_probe(key);
   if (pos == kNotFound) {
     reserve(capacity_ + 1);
+    pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
   int kv_index = index_->items_[pos];
