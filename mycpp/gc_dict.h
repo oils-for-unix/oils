@@ -341,6 +341,9 @@ int Dict<K, V>::hash_and_probe(K key) const {
   }
 
   if (open_slot >= 0) {
+    // We found a tombstone. Since the entry arrays are compacted on deletion,
+    // we know there is at least one free slot there and don't need to check
+    // len_.
     return open_slot;
   }
   return kNotFound;
