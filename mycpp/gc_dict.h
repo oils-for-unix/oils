@@ -352,7 +352,7 @@ int Dict<K, V>::find_kv_index(K key) const {
 template <typename K, typename V>
 void Dict<K, V>::set(K key, V val) {
   DCHECK(obj_header().heap_tag != HeapTag::Global);
-  reserve(capacity_ + 1);
+  reserve(len_ + 1);
   int pos = hash_and_probe(key);
   DCHECK(pos >= 0);
   int kv_index = index_->items_[pos];
