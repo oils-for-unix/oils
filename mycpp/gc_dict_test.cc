@@ -573,7 +573,7 @@ TEST test_dict_probe() {
   }
   // Remove each entry one-by-one, stopping after each removal to check that
   // the other keys can be set and retrieved without issue. This implicitly
-  // checks that special index entires like tombstones are working correctly.
+  // checks that special index entries like tombstones are working correctly.
   for (int i = 0; i < n; i++) {
     mylib::dict_erase(d, target * i);
     for (int j = i + 1; j < n; j++) {

@@ -77,8 +77,6 @@ class Str {
 
   unsigned hash(HashFunc h);
 
-  static constexpr int kHashFlagMask = 0x08000000;
-
   int len_;
   unsigned hash_ : 31;
   unsigned is_hashed_ : 1;

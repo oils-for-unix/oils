@@ -102,7 +102,7 @@ class Dict {
   static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");
 
-  void reserve(int n);
+  void reserve(int new_size);
 
   // d[key] in Python: raises KeyError if not found
   V at(K key) const;
@@ -181,7 +181,7 @@ inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
 }
 
 template <typename K, typename V>
-void Dict<K, V>::reserve(int n) {
+void Dict<K, V>::reserve(int new_size) {
   Slab<int>* new_i = nullptr;
   Slab<K>* new_k = nullptr;
   Slab<V>* new_v = nullptr;
@@ -190,15 +190,13 @@ void Dict<K, V>::reserve(int n) {
   int old_len = len_;
   // log("--- reserve %d", capacity_);
   //
-  if (capacity_ < n) {
+  if (capacity_ < new_size) {
     // calculate the number of keys and values we should have
-    capacity_ = RoundCapacity(n + kCapacityAdjust) - kCapacityAdjust;
+    capacity_ = RoundCapacity(new_size + kCapacityAdjust) - kCapacityAdjust;
+
     // capacity_ is rounded to a power of two, so this division should be safe.
     index_len_ = 3 * (capacity_ / 2);
-
     new_i = NewSlab<int>(index_len_);
-
-    // For the linear search to work
     for (int i = 0; i < index_len_; ++i) {
       new_i->items_[i] = kEmptyEntry;
     }
@@ -302,6 +300,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
 
   for (int i = 0; i < index_len_; ++i) {
     // Start at init_bucket and wrap araound
+    // NOTE: if division becomes a hotspot, split this into two loops.
     int slot = (i + init_bucket) % index_len_;
 
     int kv_index = index_->items_[slot];
@@ -354,7 +353,7 @@ void Dict<K, V>::set(K key, V val) {
   int pos = hash_and_probe(key);
   if (pos == kNotFound) {
     // No room. Resize and see if we can find a slot.
-    reserve(RoundCapacity(capacity_ * 2));
+    reserve((capacity_ ?: kMinItems) * 2);
     pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
