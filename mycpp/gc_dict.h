@@ -102,6 +102,8 @@ class Dict {
   static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");
 
+  // Reserve enough space in the index and table for at least `new_size`
+  // entries.
   void reserve(int new_size);
 
   // d[key] in Python: raises KeyError if not found
@@ -353,7 +355,7 @@ void Dict<K, V>::set(K key, V val) {
   int pos = hash_and_probe(key);
   if (pos == kNotFound) {
     // No room. Resize and see if we can find a slot.
-    reserve((capacity_ ?: kMinItems) * 2);
+    reserve(capacity_ + 1);
     pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
