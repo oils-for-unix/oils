@@ -290,6 +290,11 @@ void Dict<K, V>::clear() {
 //   - V GetAndIntern<V>(D, &string_key)
 //   - SetAndIntern<V>(D, &string_key, value)
 //   This will enable duplicate copies of the string to be garbage collected
+//
+// NOTE: This draws a lot of inspiration from this proposal for CPython's dict.
+// The links below are useful references.
+// https://code.activestate.com/recipes/578375/
+// https://mail.python.org/pipermail/python-dev/2012-December/123028.html
 template <typename K, typename V>
 int Dict<K, V>::hash_and_probe(K key) const {
   if (capacity_ == 0) {
@@ -341,12 +346,13 @@ int Dict<K, V>::hash_and_probe(K key) const {
     }
   }
 
-  if (open_slot >= 0) {
+  if (open_slot != -1) {
     // We found a tombstone. Since the entry arrays are compacted on deletion,
     // we know there is at least one free slot there and don't need to check
     // len_.
     return open_slot;
   }
+
   return kNotFound;
 }
 
