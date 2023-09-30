@@ -271,7 +271,7 @@ List<V>* Dict<K, V>::values() const {
 template <typename K, typename V>
 void Dict<K, V>::clear() {
   // Maintain invariant
-  for (int i = 0; i < capacity_; ++i) {
+  for (int i = 0; i < index_len_; ++i) {
     index_->items_[i] = kEmptyEntry;
   }
 
