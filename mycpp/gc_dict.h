@@ -321,7 +321,8 @@ int Dict<K, V>::hash_and_probe(K key) const {
 
     if (kv_index == kEmptyEntry) {
       if (open_slot != -1) {
-        slot = open_slot;
+        // Found a tombstone.
+        break;
       }
       // If there isn't room in the entry arrays, tell the caller to resize.
       return len_ < capacity_ ? slot : kNotFound;
