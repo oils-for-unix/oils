@@ -330,10 +330,19 @@ int Dict<K, V>::hash_and_probe(K key) const {
     // Tombstone or collided keys unequal. Keep scanning.
     DCHECK(kv_index >= 0 || kv_index == kDeletedEntry);
     if (kv_index == kDeletedEntry && open_slot == -1) {
+      // NOTE: We only record the open slot here. We DON'T return it. If we're
+      // looking for a key that was deleted before this tombstone was written to
+      // the index we should continue probing until we get to that key. If we
+      // get to an empty index slot or the end of the index then we know we are
+      // dealing with a new key and can safely replace the tombstone without
+      // disrupting any existing keys.
       open_slot = slot;
     }
   }
 
+  if (open_slot >= 0) {
+    return open_slot;
+  }
   return kNotFound;
 }
 
