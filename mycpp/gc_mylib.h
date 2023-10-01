@@ -43,9 +43,10 @@ template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->obj_header().heap_tag != HeapTag::Global);
   int pos = haystack->hash_and_probe(needle);
-  if (pos == kNotFound) {
+  if (pos == kTooSmall) {
     return;
   }
+  DCHECK(pos >= 0);
   int kv_index = haystack->index_->items_[pos];
   if (kv_index < 0) {
     return;

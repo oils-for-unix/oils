@@ -3,7 +3,11 @@
 //   https://mail.python.org/pipermail/python-dev/2012-December/123028.html
 //   https://code.activestate.com/recipes/578375/
 //
-// The main difference is that it's type-specialized in C++, i.e. Dict<K, V>.
+// Main differences:
+// - It's type-specialized in C++ -- Dict<K, V>.
+// - It's integrated with our mark and sweep GC, using Slab<int>, Slab<K>, and
+//   Slab<V>
+// - We use linear probing, not the pseudo-random number generator
 
 #ifndef MYCPP_GC_DICT_H
 #define MYCPP_GC_DICT_H
@@ -337,13 +341,17 @@ int Dict<K, V>::hash_and_probe(K key) const {
 
 template <typename K, typename V>
 int Dict<K, V>::find_kv_index(K key) const {
-  if (index_ != nullptr) {
-    // Common case.
+  if (index_ != nullptr) {  // Common case
     int pos = hash_and_probe(key);
-    if (pos == kTooSmall || index_->items_[pos] < 0) {
+    if (pos == kTooSmall) {
       return kNotFound;
     }
-    return index_->items_[pos];
+    DCHECK(pos >= 0);
+    int kv_index = index_->items_[pos];
+    if (kv_index < 0) {
+      return kNotFound;
+    }
+    return kv_index;
   }
 
   // Linear search on GlobalDict instances.
@@ -366,6 +374,7 @@ void Dict<K, V>::set(K key, V val) {
     pos = hash_and_probe(key);
   }
   DCHECK(pos >= 0);
+
   int kv_index = index_->items_[pos];
   DCHECK(kv_index < len_);
   if (kv_index < 0) {

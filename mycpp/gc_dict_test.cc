@@ -541,6 +541,21 @@ TEST test_dict_erase() {
   PASS();
 }
 
+TEST test_dict_erase2() {
+  auto d = NewDict<int, Str*>();
+
+  for (int i = 0; i < 6; ++i) {
+    d->set(i, kEmptyString);
+  }
+  log("len(d) = %d", len(d));
+  ASSERT_EQ(6, len(d));
+
+  mylib::dict_erase(d, 99);
+  ASSERT_EQ(6, len(d));
+
+  PASS();
+}
+
 // Ints hash to themselves, so we can control when collisions happen. This test
 // sets up a few contrived workloads and checks that Dict still operates as
 // expected.
@@ -666,6 +681,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_update_dict);
   RUN_TEST(test_tuple_key);
   RUN_TEST(test_dict_erase);
+  RUN_TEST(test_dict_erase2);
   RUN_TEST(test_global_dict);
   RUN_TEST(test_dict_ordering);
   RUN_TEST(test_dict_probe);
