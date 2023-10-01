@@ -50,17 +50,21 @@ readonly BASE_DIR=_tmp/perf
 # - a longer file like configure-coreutils hit garbage collection!  collect()
 # - reference counting functions: visit_decref, visit_reachable
 
-install-packages() {
+install-ubuntu-packages() {
   # linux-tools-generic is the kernel module
   # Apparently you need a package specific to the kernel, not sure why.
   sudo apt-get install \
     linux-tools-common linux-tools-$(uname -r) linux-tools-generic
 }
 
+install-debian-packages() {
+  sudo apt-get install linux-perf
+}
+
 soil-install() {
   sudo apt-get update  # seem to need this
 
-  install-packages
+  install-ubuntu-packages
 }
 
 debug-symbols() {

@@ -93,7 +93,7 @@ class Dict {
         index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
-    assert(keys.size() == values.size());
+    DCHECK(keys.size() == values.size());
     auto v = values.begin();  // This simulates a "zip" loop
     for (auto key : keys) {
       // note: calls reserve(), and may allocate
@@ -133,11 +133,12 @@ class Dict {
 
   void clear();
 
-  // Helper used by find_kv_index() and set().
+  // Helper used by find_kv_index(), set(), mylib::dict_erase() -- see gc_mylib.h
   // Returns either:
   // - the slot for an existing key, or an empty slot for a new key
   // - kTooSmall if the table is full
   int hash_and_probe(K key) const;
+
 
   // Helper used by at(), get(), dict_contains()
   // Given a key, returns either:

@@ -178,16 +178,16 @@ EOF
 }
 
 cpp-small-tasks() {
-  # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
-  # And then we have correctness for mycpp-translator.  Somewhat redundant but
-  # it's OK for now.
 
+  # Build the tarball toward the beginning
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh soil-run              -
+make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
+test-tar         devtools/release-native.sh test-tar   -
+cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
@@ -199,8 +199,6 @@ mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
-make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
-test-tar         devtools/release-native.sh test-tar   -
 build-times      build/native.sh measure-build-times   -
 EOF
 }
