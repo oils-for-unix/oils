@@ -38,10 +38,6 @@ class List {
   static_assert(kSlabHeaderSize % sizeof(T) == 0,
                 "Slab header size should be multiple of item size");
 
-  // Relates to minimum Slab size.
-  // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
-  // Smallest non-empty List<int> should have about 8 items, or 7 without header
-  static const int kMinItems = 32 / sizeof(T);
   static_assert(32 % sizeof(T) == 0,
                 "An integral number of items should fit in 32 bytes");
 
@@ -85,8 +81,8 @@ class List {
   // Templated function
   void sort();
 
-  // Ensure that there's space for a number of items
-  void reserve(int n);
+  // Ensure that there's space for at LEAST this many items
+  void reserve(int num_desired);
 
   // Append a single element to this list.
   void append(T item);
@@ -112,6 +108,11 @@ class List {
   DISALLOW_COPY_AND_ASSIGN(List)
 
  private:
+  // Relates to minimum Slab size.
+  // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
+  // Smallest non-empty List<int> should have about 8 items, or 7 without header
+  static const int kMinItems = 32 / sizeof(T);
+
   int RoundCapacity(int n) {
     if (n < kMinItems) {
       return kMinItems;
@@ -240,11 +241,11 @@ List<T>* List<T>::slice(int begin, int end, int step) {
 
 // Ensure that there's space for a number of items
 template <typename T>
-void List<T>::reserve(int n) {
+void List<T>::reserve(int num_desired) {
   // log("reserve capacity = %d, n = %d", capacity_, n);
 
   // Don't do anything if there's already enough space.
-  if (capacity_ >= n) {
+  if (capacity_ >= num_desired) {
     return;
   }
 
@@ -256,7 +257,7 @@ void List<T>::reserve(int n) {
   // items would be 5, which is rounded up to 8.  Subtract 2 again, giving 6,
   // which leads to 8 + 6*4 = 32 byte Slab.
 
-  capacity_ = RoundCapacity(n + kCapacityAdjust) - kCapacityAdjust;
+  capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
   auto new_slab = NewSlab<T>(capacity_);
 
   if (len_ > 0) {

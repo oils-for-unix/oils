@@ -179,40 +179,34 @@ inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
 
 template <typename K, typename V>
 void Dict<K, V>::reserve(int num_desired) {
-  Slab<int>* new_i = nullptr;
-  Slab<K>* new_k = nullptr;
-  Slab<V>* new_v = nullptr;
+  if (capacity_ >= num_desired) {
+    return;  // Don't do anything if there's already enough space.
+  }
+
+  int old_len = len_;
   Slab<K>* old_k = keys_;
   Slab<V>* old_v = values_;
-  int old_len = len_;
-  // log("--- reserve %d", capacity_);
-  //
-  if (capacity_ < num_desired) {
-    // Calculate the number of keys and values we should have
-    capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
 
-    // Introduce hash table load factor (could be tuned)
-    index_len_ = 3 * (capacity_ / 2);
-    DCHECK(index_len_ > capacity_);
-    new_i = NewSlab<int>(index_len_);
-    for (int i = 0; i < index_len_; ++i) {
-      new_i->items_[i] = kEmptyEntry;
-    }
+  // Calculate the number of keys and values we should have
+  capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
 
-    // These are DENSE.
-    new_k = NewSlab<K>(capacity_);
-    new_v = NewSlab<V>(capacity_);
+  // Introduce hash table load factor (could be tuned)
+  index_len_ = 3 * (capacity_ / 2);
+  DCHECK(index_len_ > capacity_);
 
-    index_ = new_i;
-    keys_ = new_k;
-    values_ = new_v;
+  index_ = NewSlab<int>(index_len_);
+  for (int i = 0; i < index_len_; ++i) {
+    index_->items_[i] = kEmptyEntry;
+  }
+
+  // These are DENSE, while index_ is sparse.
+  keys_ = NewSlab<K>(capacity_);
+  values_ = NewSlab<V>(capacity_);
+
+  if (old_k != nullptr) {  // rehash if there were any entries
     len_ = 0;
-
-    if (old_k != nullptr) {
-      // rehash
-      for (int i = 0; i < old_len; ++i) {
-        set(old_k->items_[i], old_v->items_[i]);
-      }
+    for (int i = 0; i < old_len; ++i) {
+      set(old_k->items_[i], old_v->items_[i]);
     }
   }
 }
