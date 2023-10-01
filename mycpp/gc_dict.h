@@ -1,3 +1,10 @@
+// Hash table based on CPython's "compact dict":
+//
+//   https://mail.python.org/pipermail/python-dev/2012-December/123028.html
+//   https://code.activestate.com/recipes/578375/
+//
+// The main difference is that it's type-specialized in C++, i.e. Dict<K, V>.
+
 #ifndef MYCPP_GC_DICT_H
 #define MYCPP_GC_DICT_H
 
@@ -119,15 +126,10 @@ class Dict {
 
   void clear();
 
-  // Returns an offset into the index for given key. If the key is not already
-  // in the table and there is room, the offset to an empty slot will be
-  // returned. The caller is responsible for checking if the index slot is empty
-  // before using it.
-  //
-  // Returns kNotFound if the dictionary is full. The caller can use this as a
-  // cue to grow the table.
-  //
-  // Used by dict_contains(), at(), get(), and set().
+  // Helper used by find_kv_index() and set().
+  // Returns either:
+  //   - the slot for an existing key, or an empty slot for a new key
+  //   - kNotFound if the table is full
   int hash_and_probe(K key) const;
 
   // Returns an offset into the table (keys_/values_) for the given key.
@@ -173,8 +175,7 @@ class Dict {
 
 template <typename K, typename V>
 inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
-  int pos = haystack->hash_and_probe(needle);
-  return pos != kNotFound && haystack->index_->items_[pos] >= 0;
+  return haystack->find_kv_index(needle) != kNotFound;
 }
 
 template <typename K, typename V>
@@ -273,11 +274,6 @@ void Dict<K, V>::clear() {
 //   - V GetAndIntern<V>(D, &string_key)
 //   - SetAndIntern<V>(D, &string_key, value)
 //   This will enable duplicate copies of the string to be garbage collected
-//
-// NOTE: This draws a lot of inspiration from this proposal for CPython's dict.
-// The links below are useful references.
-// https://code.activestate.com/recipes/578375/
-// https://mail.python.org/pipermail/python-dev/2012-December/123028.html
 template <typename K, typename V>
 int Dict<K, V>::hash_and_probe(K key) const {
   if (capacity_ == 0) {

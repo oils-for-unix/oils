@@ -611,6 +611,10 @@ TEST test_global_dict() {
   ASSERT_EQ(kStrFoo, gStrDict->at(kStrBar));
   ASSERT_EQ(kStrBar, gStrDict->at(kStrFoo));
 
+  ASSERT(dict_contains(gStrDict, kStrFoo));
+  ASSERT(dict_contains(gStrDict, kStrBar));
+  ASSERT(!dict_contains(gStrDict, kEmptyString));
+
   PASS();
 }
 
