@@ -326,8 +326,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
 
     if (kv_index == kEmptyEntry) {
       if (open_slot != -1) {
-        // Found a tombstone.
-        break;
+        slot = open_slot;
       }
       // If there isn't room in the entry arrays, tell the caller to resize.
       return len_ < capacity_ ? slot : kNotFound;
@@ -347,10 +346,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
   }
 
   if (open_slot != -1) {
-    // We found a tombstone. Since the entry arrays are compacted on deletion,
-    // we know there is at least one free slot there and don't need to check
-    // len_.
-    return open_slot;
+    return len_ < capacity_ ? open_slot : kNotFound;
   }
 
   return kNotFound;
@@ -396,6 +392,7 @@ void Dict<K, V>::set(K key, V val) {
     values_->items_[len_] = val;
     index_->items_[pos] = len_;
     len_++;
+    DCHECK(len_ <= capacity_);
   } else {
     values_->items_[kv_index] = val;
   }

@@ -81,6 +81,7 @@ void dict_erase(Dict<K, V>* haystack, K needle) {
   haystack->values_->items_[last_kv_index] = 0;
   haystack->index_->items_[pos] = kDeletedEntry;
   haystack->len_--;
+  DCHECK(haystack->len_ < haystack->capacity_);
 }
 
 // NOTE: Can use OverAllocatedStr for all of these, rather than copying
