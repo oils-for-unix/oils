@@ -7,14 +7,12 @@
 #include "mycpp/hash.h"
 
 // Non-negative entries in index_ are array indices into keys_ and values_.
-// There are two special negative entries.
+// There are two special negative entries:
 
-// index that means this Dict item was deleted (a tombstone).
+// This Dict item was deleted (a tombstone).
 const int kDeletedEntry = -1;
 
-// index that means this Dict entry is free.  Because we have Dict[int, int],
-// we can't use a sentinel entry in keys_.  It has to be a sentinel entry in
-// index_.
+// This Dict entry is free.
 const int kEmptyEntry = -2;
 
 // NOTE: This is just a return value. It is never stored in the index.
@@ -64,11 +62,6 @@ class GlobalDict {
 
 template <class K, class V>
 class Dict {
-  // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
-  // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
-  // case is rare.
-  static const int kMinItems = 4;
-
  public:
   Dict()
       : len_(0),
@@ -89,7 +82,7 @@ class Dict {
     assert(keys.size() == values.size());
     auto v = values.begin();  // This simulates a "zip" loop
     for (auto key : keys) {
-      // note: calls reserve(), and maybe allocate
+      // note: calls reserve(), and may allocate
       this->set(key, *v);
       ++v;
     }
@@ -102,15 +95,13 @@ class Dict {
   static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");
 
-  // Reserve enough space in the index and table for at least `new_size`
-  // entries.
-  void reserve(int new_size);
+  // Reserve enough space for at LEAST this many key-value pairs.
+  void reserve(int num_desired);
 
   // d[key] in Python: raises KeyError if not found
   V at(K key) const;
 
-  // Get a key.
-  // Returns nullptr if not found (Can't use this for non-pointer types?)
+  // d.get(key) in Python. (Can't use this if V isn't a pointer!)
   V get(K key) const;
 
   // Get a key, but return a default if not found.
@@ -124,7 +115,6 @@ class Dict {
 
   List<K>* keys() const;
 
-  // For AssocArray transformations
   List<V>* values() const;
 
   void clear();
@@ -137,7 +127,7 @@ class Dict {
   // Returns kNotFound if the dictionary is full. The caller can use this as a
   // cue to grow the table.
   //
-  // Used by dict_contains(), index(), get(), and set().
+  // Used by dict_contains(), at(), get(), and set().
   int hash_and_probe(K key) const;
 
   // Returns an offset into the table (keys_/values_) for the given key.
@@ -155,9 +145,9 @@ class Dict {
 
   // These 3 slabs are resized at the same time.
   Slab<int>* index_;  // kEmptyEntry, kDeletedEntry, or a valid index into
-                      // keys_/values_
-  Slab<K>* keys_;     // Dict<int, V>
-  Slab<V>* values_;   // Dict<K, int>
+                      // keys_ and values_
+  Slab<K>* keys_;     // Dict<K, int>
+  Slab<V>* values_;   // Dict<int, V>
 
   // A dict has 3 pointers the GC needs to follow.
   static constexpr uint32_t field_mask() {
@@ -168,6 +158,11 @@ class Dict {
   DISALLOW_COPY_AND_ASSIGN(Dict)
 
  private:
+  // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
+  // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
+  // case is rare.
+  static const int kMinItems = 4;
+
   int RoundCapacity(int n) {
     if (n < kMinItems) {
       return kMinItems;
@@ -183,7 +178,7 @@ inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
 }
 
 template <typename K, typename V>
-void Dict<K, V>::reserve(int new_size) {
+void Dict<K, V>::reserve(int num_desired) {
   Slab<int>* new_i = nullptr;
   Slab<K>* new_k = nullptr;
   Slab<V>* new_v = nullptr;
@@ -192,11 +187,11 @@ void Dict<K, V>::reserve(int new_size) {
   int old_len = len_;
   // log("--- reserve %d", capacity_);
   //
-  if (capacity_ < new_size) {
-    // calculate the number of keys and values we should have
-    capacity_ = RoundCapacity(new_size + kCapacityAdjust) - kCapacityAdjust;
+  if (capacity_ < num_desired) {
+    // Calculate the number of keys and values we should have
+    capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
 
-    // capacity_ is rounded to a power of two, so this division should be safe.
+    // Introduce hash table load factor (could be tuned)
     index_len_ = 3 * (capacity_ / 2);
     DCHECK(index_len_ > capacity_);
     new_i = NewSlab<int>(index_len_);
@@ -222,7 +217,6 @@ void Dict<K, V>::reserve(int new_size) {
   }
 }
 
-// d[key] in Python: raises KeyError if not found
 template <typename K, typename V>
 V Dict<K, V>::at(K key) const {
   int kv_index = find_kv_index(key);
@@ -233,8 +227,6 @@ V Dict<K, V>::at(K key) const {
   }
 }
 
-// Get a key.
-// Returns nullptr if not found (Can't use this for non-pointer types?)
 template <typename K, typename V>
 V Dict<K, V>::get(K key) const {
   int kv_index = find_kv_index(key);
@@ -245,8 +237,6 @@ V Dict<K, V>::get(K key) const {
   }
 }
 
-// Get a key, but return a default if not found.
-// expr_parse.py uses this with OTHER_BALANCE
 template <typename K, typename V>
 V Dict<K, V>::get(K key, V default_val) const {
   int kv_index = find_kv_index(key);
@@ -262,7 +252,6 @@ List<K>* Dict<K, V>::keys() const {
   return ListFromDictSlab<K>(keys_, len_);
 }
 
-// For AssocArray transformations
 template <typename K, typename V>
 List<V>* Dict<K, V>::values() const {
   return ListFromDictSlab<V>(values_, len_);
@@ -301,8 +290,8 @@ int Dict<K, V>::hash_and_probe(K key) const {
     return kNotFound;
   }
 
-  // Hash the key onto a slot in the index. If the first slot is occupied, probe
-  // until an empty one is found.
+  // Hash the key onto a slot in the index. If the first slot is occupied,
+  // probe until an empty one is found.
   unsigned h = hash_key(key);
   int init_bucket = h % index_len_;
 
@@ -363,14 +352,14 @@ int Dict<K, V>::find_kv_index(K key) const {
     return index_->items_[pos];
   }
 
-  // GlobalDict. Just scan.
+  // Linear search on GlobalDict instances.
+  // TODO: Should we populate and compare their hash values?
   for (int i = 0; i < len_; ++i) {
     if (keys_equal(keys_->items_[i], key)) {
       return i;
     }
   }
 
-  // Not found.
   return kNotFound;
 }
 
@@ -386,8 +375,8 @@ void Dict<K, V>::set(K key, V val) {
   int kv_index = index_->items_[pos];
   DCHECK(kv_index < len_);
   if (kv_index < 0) {
-    // Always write new entries to the end of the k/v arrays. This allows us to
-    // recall the insertion order of keys trivially in most cases.
+    // Write new entries to the end of the k/v arrays. This allows us to recall
+    // insertion order until the first deletion.
     keys_->items_[len_] = key;
     values_->items_[len_] = val;
     index_->items_[pos] = len_;
@@ -433,7 +422,7 @@ class DictIter {
   int pos_;
 };
 
-// dict(l) converts a list of (k, v) tuples into a dict
+// dict(mylist) converts a list of (k, v) tuples into a dict
 template <typename K, typename V>
 Dict<K, V>* dict(List<Tuple2<K, V>*>* l) {
   auto ret = Alloc<Dict<K, V>>();

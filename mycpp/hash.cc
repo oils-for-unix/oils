@@ -5,7 +5,7 @@
 
 unsigned fnv1(const char* data, int len) {
   // FNV-1 from http://www.isthe.com/chongo/tech/comp/fnv/#FNV-1
-  unsigned h = 2166136261;          // 32-bit FNV-1 offset basis
+  unsigned h = 2166136261;     // 32-bit FNV-1 offset basis
   constexpr int p = 16777619;  // 32-bit FNV-1 prime
   for (int i = 0; i < len; i++) {
     h *= data[i];
