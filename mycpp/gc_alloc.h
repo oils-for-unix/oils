@@ -24,6 +24,11 @@ extern MarkSweepHeap gHeap;
 // mycpp generates code that keeps track of the root set
 class StackRoots {
  public:
+  explicit StackRoots(void* root) {
+      n_ = 1;
+      gHeap.PushRoot(reinterpret_cast<RawObject**>(root));
+  }
+
   // Note: void** seems logical, because these are pointers to pointers, but
   // the C++ compiler doesn't like it.
   StackRoots(std::initializer_list<void*> roots) {
