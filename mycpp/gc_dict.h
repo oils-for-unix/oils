@@ -16,14 +16,17 @@
 // Non-negative entries in index_ are array indices into keys_ and values_.
 // There are two special negative entries:
 
-// This Dict item was deleted (a tombstone).
+// index_ value to say this Dict item was deleted (a tombstone).
 const int kDeletedEntry = -1;
 
-// This Dict entry is free.
+// index_ value to say this Dict entry is free.
 const int kEmptyEntry = -2;
 
-// NOTE: This is just a return value. It is never stored in the index.
+// Return value for find_kv_index(), not stored in index_.
 const int kNotFound = -3;
+
+// Return value for hash_and_probe(), not stored in index_.
+const int kTooSmall = -4;
 
 // Helper for keys() and values()
 template <typename T>
@@ -128,13 +131,14 @@ class Dict {
 
   // Helper used by find_kv_index() and set().
   // Returns either:
-  //   - the slot for an existing key, or an empty slot for a new key
-  //   - kNotFound if the table is full
+  // - the slot for an existing key, or an empty slot for a new key
+  // - kTooSmall if the table is full
   int hash_and_probe(K key) const;
 
-  // Returns an offset into the table (keys_/values_) for the given key.
-  //
-  // Returns kNotFound if the key isn't in the table.
+  // Helper used by at(), get(), dict_contains()
+  // Given a key, returns either:
+  // - an index into keys_ and values_
+  // - kNotFound
   int find_kv_index(K key) const;
 
   static constexpr ObjHeader obj_header() {
@@ -277,7 +281,7 @@ void Dict<K, V>::clear() {
 template <typename K, typename V>
 int Dict<K, V>::hash_and_probe(K key) const {
   if (capacity_ == 0) {
-    return kNotFound;
+    return kTooSmall;
   }
 
   // Hash the key onto a slot in the index. If the first slot is occupied,
@@ -308,7 +312,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
         slot = open_slot;
       }
       // If there isn't room in the entry arrays, tell the caller to resize.
-      return len_ < capacity_ ? slot : kNotFound;
+      return len_ < capacity_ ? slot : kTooSmall;
     }
 
     // Tombstone or collided keys unequal. Keep scanning.
@@ -325,10 +329,10 @@ int Dict<K, V>::hash_and_probe(K key) const {
   }
 
   if (open_slot != -1) {
-    return len_ < capacity_ ? open_slot : kNotFound;
+    return len_ < capacity_ ? open_slot : kTooSmall;
   }
 
-  return kNotFound;
+  return kTooSmall;
 }
 
 template <typename K, typename V>
@@ -336,7 +340,7 @@ int Dict<K, V>::find_kv_index(K key) const {
   if (index_ != nullptr) {
     // Common case.
     int pos = hash_and_probe(key);
-    if (pos == kNotFound || index_->items_[pos] < 0) {
+    if (pos == kTooSmall || index_->items_[pos] < 0) {
       return kNotFound;
     }
     return index_->items_[pos];
@@ -357,7 +361,7 @@ template <typename K, typename V>
 void Dict<K, V>::set(K key, V val) {
   DCHECK(obj_header().heap_tag != HeapTag::Global);
   int pos = hash_and_probe(key);
-  if (pos == kNotFound) {
+  if (pos == kTooSmall) {
     reserve(len_ + 1);
     pos = hash_and_probe(key);
   }

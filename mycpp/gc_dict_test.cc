@@ -196,9 +196,16 @@ TEST test_dict_internals() {
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 #endif
 
+  // Dict<int, int>
+  // capacity: 6 -> 14 -> 30 -> ...
+  // index len: 9 -> 21 -> 45 -> ...
+
+  // 6 * 4 bytes = 24, plus 8 byte header = 32, which fits in the second pool
+  // 9 * 4 bytes = 36, plus 8 byte header = 44, which fits in the second pool
   for (int i = 0; i < 14; ++i) {
-    dict1->set(i, 999);
-    log("i = %d, capacity = %d", i, dict1->capacity_);
+    dict1->set(i, i + 999);
+    log("len_ = %d, capacity = %d, index len %d", dict1->len_, dict1->capacity_,
+        dict1->index_len_);
 
     // make sure we didn't lose old entry after resize
     ASSERT_EQ(10, dict1->at(43));
