@@ -157,7 +157,7 @@ TEST test_dict_internals() {
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
 
-  ASSERT_EQ(nullptr, dict1->entry_);
+  ASSERT_EQ(nullptr, dict1->index_);
   ASSERT_EQ(nullptr, dict1->keys_);
   ASSERT_EQ(nullptr, dict1->values_);
 
@@ -177,7 +177,7 @@ TEST test_dict_internals() {
 #endif
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict1->values_)->obj_len, "%d");
 #endif
@@ -216,7 +216,7 @@ TEST test_dict_internals() {
   ASSERT(str_equals(bar, dict2->at(foo)));
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict2->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict2->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict2->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict2->values_)->obj_len, "%d");
 #endif
@@ -227,7 +227,7 @@ TEST test_dict_internals() {
   ASSERT_EQ(1, len(dict_si));
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict_si->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->values_)->obj_len, "%d");
 #endif
@@ -240,7 +240,7 @@ TEST test_dict_internals() {
   ASSERT_EQ(1, len(dict_is));
 
 #if 0
-  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_is->entry_)->obj_len, "%d");
+  ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_is->index_)->obj_len, "%d");
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_is->keys_)->obj_len, "%d");
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict_is->values_)->obj_len, "%d");
 #endif
@@ -479,6 +479,123 @@ TEST test_tuple_key() {
   PASS();
 }
 
+TEST test_dict_erase() {
+  auto d = Alloc<Dict<int, int>>();
+  d->set(25315, 0xdead);
+  d->set(25316, 0xbeef);
+  d->set(25317, 0xc0ffee);
+
+  ASSERT_EQ(0xdead, d->at(25315));
+  ASSERT_EQ(0xbeef, d->at(25316));
+  ASSERT_EQ(0xc0ffee, d->at(25317));
+
+  mylib::dict_erase(d, 25315);
+  ASSERT_FALSE(dict_contains(d, 25315));
+  ASSERT_EQ(0xbeef, d->at(25316));
+  ASSERT_EQ(0xc0ffee, d->at(25317));
+
+  mylib::dict_erase(d, 25316);
+  ASSERT_FALSE(dict_contains(d, 25316));
+  ASSERT_EQ(0xc0ffee, d->at(25317));
+
+  // This is a trace of processes coming and going in a real shell. It tickles a
+  // (now fixed) bug in dict_erase() that would prematurely open a slot in the
+  // index before compacting the last inserted entry. With the right sequence of
+  // collisions (hence this trace) this behavior can lead to an index slot that
+  // points to an invalid entry, causing future calls to `find_key_in_index()`
+  // to crash (e.g.  by dereferencing a bad pointer).
+  d = Alloc<Dict<int, int>>();
+  d->set(326224, 0);
+  d->set(326225, 1);
+  d->set(326226, 2);
+  d->set(326227, 3);
+  d->set(326228, 4);
+  mylib::dict_erase(d, 326227);
+  d->set(326229, 4);
+  d->set(326230, 5);
+  mylib::dict_erase(d, 326229);
+  d->set(326231, 5);
+  d->set(326232, 6);
+  mylib::dict_erase(d, 326231);
+  d->set(326233, 6);
+  d->set(326234, 7);
+  mylib::dict_erase(d, 326233);
+  d->set(326235, 7);
+  d->set(326236, 8);
+  mylib::dict_erase(d, 326235);
+  d->set(326237, 8);
+  d->set(326238, 9);
+  mylib::dict_erase(d, 326237);
+  d->set(326239, 9);
+  d->set(326240, 10);
+  mylib::dict_erase(d, 326239);
+  d->set(326241, 10);
+
+  PASS();
+}
+
+// Ints hash to themselves, so we can control when collisions happen. This test
+// sets up a few contrived workloads and checks that Dict still operates as
+// expected.
+TEST test_dict_probe() {
+  auto d = Alloc<Dict<int, int>>();
+
+  // This trace is a regression test for a weird bug where the index is full but
+  // the table has two free slots, causing a write to needlessly fail.
+  d->set(584818, -1);
+  d->set(584828, -1);
+  mylib::dict_erase(d, 584828);
+  d->set(584833, -1);
+  mylib::dict_erase(d, 584833);
+  d->set(584888, -1);
+
+  d->reserve(32);
+  d->clear();
+
+  // First, fill the table to the brim and check that we can recall
+  // everything.
+  int n = d->capacity_;
+  for (int i = 0; i < n; i++) {
+    d->set(i, i);
+  }
+  ASSERT_EQ(n, d->capacity_);
+  for (int i = 0; i < n; i++) {
+    ASSERT_EQ(i, d->at(i));
+  }
+  // Triger a rehash, and check that everything is OK.
+  d->set(n, n);
+  ASSERT(d->capacity_ > n);
+  for (int i = 0; i <= n; i++) {
+    ASSERT_EQ(i, d->at(i));
+  }
+  for (int i = 0; i <= n; i++) {
+    d->set(i, n * i);
+  }
+  for (int i = 0; i <= n; i++) {
+    ASSERT_EQ(n * i, d->at(i));
+  }
+
+  // Reset and fill the table with keys that all has onto the same index slot
+  n = d->capacity_;
+  int target = n / 2;  // pick a slot in the middle to test wrap around
+  d->clear();
+  for (int i = 0; i < n; i++) {
+    d->set(target * i, i);
+  }
+  // Remove each entry one-by-one, stopping after each removal to check that
+  // the other keys can be set and retrieved without issue. This implicitly
+  // checks that special index entries like tombstones are working correctly.
+  for (int i = 0; i < n; i++) {
+    mylib::dict_erase(d, target * i);
+    for (int j = i + 1; j < n; j++) {
+      d->set(target * j, j + 1);
+      ASSERT_EQ(j + 1, d->at(target * j));
+    }
+  }
+
+  PASS();
+}
+
 GLOBAL_DICT(gDict, int, int, 2, {42 COMMA 43}, {1 COMMA 2});
 
 GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
@@ -497,6 +614,32 @@ TEST test_global_dict() {
   PASS();
 }
 
+TEST test_dict_ordering() {
+  auto d = Alloc<Dict<int, int>>();
+
+  auto in = NewList<int>(std::initializer_list<int>{95, 9, 67, 70, 93, 30, 25,
+                                                    98, 80, 39, 56, 48, 99});
+  for (ListIter<int> it(in); !it.Done(); it.Next()) {
+    d->set(it.Value(), -1);
+  }
+
+  auto keys = d->keys();
+  ASSERT_EQ(len(in), len(keys));
+  for (int i = 0; i < len(in); i++) {
+    ASSERT_EQ(in->at(i), keys->at(i));
+  }
+
+  // check that order survives rehashing
+  d->reserve(2 * len(d));
+  keys = d->keys();
+  ASSERT_EQ(len(in), len(keys));
+  for (int i = 0; i < len(in); i++) {
+    ASSERT_EQ(in->at(i), keys->at(i));
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -511,7 +654,10 @@ int main(int argc, char** argv) {
   RUN_TEST(test_tuple_construct);
   RUN_TEST(test_update_dict);
   RUN_TEST(test_tuple_key);
+  RUN_TEST(test_dict_erase);
   RUN_TEST(test_global_dict);
+  RUN_TEST(test_dict_ordering);
+  RUN_TEST(test_dict_probe);
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);

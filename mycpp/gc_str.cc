@@ -525,6 +525,14 @@ List<Str*>* Str::split(Str* sep) {
   return this->split(sep, len(this));
 }
 
+unsigned Str::hash(HashFunc h) {
+  if (!is_hashed_) {
+    hash_ = h(data_, len_) >> 1;
+    is_hashed_ = 1;
+  }
+  return hash_;
+}
+
 static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
   auto beg = std::cregex_iterator(fmt, fmt + fmt_len, gStrFmtRegex);
   auto end = std::cregex_iterator();

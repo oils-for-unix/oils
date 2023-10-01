@@ -2,9 +2,11 @@
 #define MYCPP_GC_DICT_H
 
 #include "mycpp/comparators.h"
+#include "mycpp/gc_builtins.h"
 #include "mycpp/gc_list.h"
+#include "mycpp/hash.h"
 
-// Non-negative entries in entry_ are array indices into keys_ and values_.
+// Non-negative entries in index_ are array indices into keys_ and values_.
 // There are two special negative entries.
 
 // index that means this Dict item was deleted (a tombstone).
@@ -12,24 +14,19 @@ const int kDeletedEntry = -1;
 
 // index that means this Dict entry is free.  Because we have Dict[int, int],
 // we can't use a sentinel entry in keys_.  It has to be a sentinel entry in
-// entry_.
+// index_.
 const int kEmptyEntry = -2;
+
+// NOTE: This is just a return value. It is never stored in the index.
+const int kNotFound = -3;
 
 // Helper for keys() and values()
 template <typename T>
-List<T>* ListFromDictSlab(Slab<int>* index, Slab<T>* slab, int n) {
-  // TODO: Reserve the right amount of space
-  List<T>* result = nullptr;
-  result = Alloc<List<T>>();
+List<T>* ListFromDictSlab(Slab<T>* slab, int n) {
+  List<T>* result = Alloc<List<T>>();
+  result->reserve(n);
 
   for (int i = 0; i < n; ++i) {
-    int special = index->items_[i];
-    if (special == kDeletedEntry) {
-      continue;
-    }
-    if (special == kEmptyEntry) {
-      break;
-    }
     result->append(slab->items_[i]);
   }
   return result;
@@ -43,18 +40,13 @@ class GlobalDict {
  public:
   int len_;
   int capacity_;
-  GlobalSlab<int, N>* entry_;  // TODO: should be sized differently
+  int index_len_;
+  GlobalSlab<int, N>* index_;
   GlobalSlab<K, N>* keys_;
   GlobalSlab<V, N>* values_;
 };
 
-// TODO: when we implement entry_, it shouldn't be the zero slab
-// We should probably update the runtime code to allow a nullptr?  For linear
-// search?
-
 #define GLOBAL_DICT(name, K, V, N, keys, vals)                                 \
-  GcGlobal<GlobalSlab<int, N>> _entry_##name = {                               \
-      ObjHeader::Global(TypeTag::Slab), {.items_ = {}}};                       \
   GcGlobal<GlobalSlab<K, N>> _keys_##name = {ObjHeader::Global(TypeTag::Slab), \
                                              {.items_ = keys}};                \
   GcGlobal<GlobalSlab<V, N>> _vals_##name = {ObjHeader::Global(TypeTag::Slab), \
@@ -63,7 +55,8 @@ class GlobalDict {
       ObjHeader::Global(TypeTag::Dict),                                        \
       {.len_ = N,                                                              \
        .capacity_ = N,                                                         \
-       .entry_ = &_entry_##name.obj,                                           \
+       .index_len_ = 0,                                                        \
+       .index_ = nullptr,                                                      \
        .keys_ = &_keys_##name.obj,                                             \
        .values_ = &_vals_##name.obj},                                          \
   };                                                                           \
@@ -80,7 +73,8 @@ class Dict {
   Dict()
       : len_(0),
         capacity_(0),
-        entry_(nullptr),
+        index_len_(0),
+        index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
   }
@@ -88,7 +82,8 @@ class Dict {
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
       : len_(0),
         capacity_(0),
-        entry_(nullptr),
+        index_len_(0),
+        index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
     assert(keys.size() == values.size());
@@ -107,63 +102,66 @@ class Dict {
   static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");
 
-  void reserve(int n);
+  // Reserve enough space in the index and table for at least `new_size`
+  // entries.
+  void reserve(int new_size);
 
   // d[key] in Python: raises KeyError if not found
-  V at(K key);
+  V at(K key) const;
 
   // Get a key.
   // Returns nullptr if not found (Can't use this for non-pointer types?)
-  V get(K key);
+  V get(K key) const;
 
   // Get a key, but return a default if not found.
   // expr_parse.py uses this with OTHER_BALANCE
-  V get(K key, V default_val);
+  V get(K key, V default_val) const;
 
   // Implements d[k] = v.  May resize the dictionary.
   void set(K key, V val);
 
   void update(List<Tuple2<K, V>*>* kvs);
 
-  List<K>* keys();
+  List<K>* keys() const;
 
   // For AssocArray transformations
-  List<V>* values();
+  List<V>* values() const;
 
   void clear();
 
-  // Returns the position in the array.  Used by dict_contains(), index(),
-  // get(), and set().
+  // Returns an offset into the index for given key. If the key is not already
+  // in the table and there is room, the offset to an empty slot will be
+  // returned. The caller is responsible for checking if the index slot is empty
+  // before using it.
   //
-  // For now this does a linear search.
-  // TODO:
-  // - hash functions, and linear probing.
-  // - resizing based on load factor
-  //   - which requires rehashing (re-insert all items)
-  // - Special case to intern Str* when it's hashed?  How?
-  //   - Should we have wrappers like:
-  //   - V GetAndIntern<V>(D, &string_key)
-  //   - SetAndIntern<V>(D, &string_key, value)
-  //   This will enable duplicate copies of the string to be garbage collected
-  int position_of_key(K key);
+  // Returns kNotFound if the dictionary is full. The caller can use this as a
+  // cue to grow the table.
+  //
+  // Used by dict_contains(), index(), get(), and set().
+  int hash_and_probe(K key) const;
+
+  // Returns an offset into the table (keys_/values_) for the given key.
+  //
+  // Returns kNotFound if the key isn't in the table.
+  int find_kv_index(K key) const;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Dict));
   }
 
-  int len_;       // number of entries (keys and values, almost dense)
-  int capacity_;  // number of entries before resizing
+  int len_;        // number of entries (keys and values, almost dense)
+  int capacity_;   // number of k/v slots
+  int index_len_;  // number of index slots
 
   // These 3 slabs are resized at the same time.
-  Slab<int>* entry_;  // NOW: kEmptyEntry, kDeletedEntry, or 0.
-                      // LATER: indices which are themselves indexed by // hash
-                      // value % capacity_
+  Slab<int>* index_;  // kEmptyEntry, kDeletedEntry, or a valid index into
+                      // keys_/values_
   Slab<K>* keys_;     // Dict<int, V>
   Slab<V>* values_;   // Dict<K, int>
 
   // A dict has 3 pointers the GC needs to follow.
   static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(Dict, entry_)) | maskbit(offsetof(Dict, keys_)) |
+    return maskbit(offsetof(Dict, index_)) | maskbit(offsetof(Dict, keys_)) |
            maskbit(offsetof(Dict, values_));
   }
 
@@ -179,51 +177,30 @@ class Dict {
 };
 
 template <typename K, typename V>
-inline bool dict_contains(Dict<K, V>* haystack, K needle) {
-  return haystack->position_of_key(needle) != -1;
-}
-
-#if 0
-// mylib.NewDict() translates to this
-template <typename K, typename V>
-Dict<K, V>* NewDict() {
-  return Alloc<Dict<K, V>>();
+inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
+  int pos = haystack->hash_and_probe(needle);
+  return pos != kNotFound && haystack->index_->items_[pos] >= 0;
 }
 
 template <typename K, typename V>
-Dict<K, V>* NewDict(std::initializer_list<K> keys,
-                    std::initializer_list<V> values) {
-  assert(keys.size() == values.size());
-  auto self = Alloc<Dict<K, V>>();
-  auto v = values.begin();  // This simulates a "zip" loop
-  for (auto key : keys) {
-    // note: calls reserve(), and maybe allocate
-    self->set(key, *v);
-    ++v;
-  }
-
-  return self;
-}
-#endif
-
-template <typename K, typename V>
-void Dict<K, V>::reserve(int n) {
+void Dict<K, V>::reserve(int new_size) {
   Slab<int>* new_i = nullptr;
   Slab<K>* new_k = nullptr;
   Slab<V>* new_v = nullptr;
+  Slab<K>* old_k = keys_;
+  Slab<V>* old_v = values_;
+  int old_len = len_;
   // log("--- reserve %d", capacity_);
   //
-  if (capacity_ < n) {  // TODO: use load factor, not exact fit
+  if (capacity_ < new_size) {
     // calculate the number of keys and values we should have
-    capacity_ = RoundCapacity(n + kCapacityAdjust) - kCapacityAdjust;
+    capacity_ = RoundCapacity(new_size + kCapacityAdjust) - kCapacityAdjust;
 
-    // TODO: This is SPARSE.  How to compute a size that ensures a decent
-    // load factor?
-    int index_len = capacity_;
-    new_i = NewSlab<int>(index_len);
-
-    // For the linear search to work
-    for (int i = 0; i < index_len; ++i) {
+    // capacity_ is rounded to a power of two, so this division should be safe.
+    index_len_ = 3 * (capacity_ / 2);
+    DCHECK(index_len_ > capacity_);
+    new_i = NewSlab<int>(index_len_);
+    for (int i = 0; i < index_len_; ++i) {
       new_i->items_[i] = kEmptyEntry;
     }
 
@@ -231,71 +208,71 @@ void Dict<K, V>::reserve(int n) {
     new_k = NewSlab<K>(capacity_);
     new_v = NewSlab<V>(capacity_);
 
-    if (keys_ != nullptr) {
-      // Right now the index is the same size as keys and values.
-      memcpy(new_i->items_, entry_->items_, len_ * sizeof(int));
-
-      memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
-      memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
-    }
-
-    entry_ = new_i;
+    index_ = new_i;
     keys_ = new_k;
     values_ = new_v;
+    len_ = 0;
+
+    if (old_k != nullptr) {
+      // rehash
+      for (int i = 0; i < old_len; ++i) {
+        set(old_k->items_[i], old_v->items_[i]);
+      }
+    }
   }
 }
 
 // d[key] in Python: raises KeyError if not found
 template <typename K, typename V>
-V Dict<K, V>::at(K key) {
-  int pos = position_of_key(key);
-  if (pos == -1) {
+V Dict<K, V>::at(K key) const {
+  int kv_index = find_kv_index(key);
+  if (kv_index == kNotFound) {
     throw Alloc<KeyError>();
   } else {
-    return values_->items_[pos];
+    return values_->items_[kv_index];
   }
 }
 
 // Get a key.
 // Returns nullptr if not found (Can't use this for non-pointer types?)
 template <typename K, typename V>
-V Dict<K, V>::get(K key) {
-  int pos = position_of_key(key);
-  if (pos == -1) {
+V Dict<K, V>::get(K key) const {
+  int kv_index = find_kv_index(key);
+  if (kv_index == kNotFound) {
     return nullptr;
   } else {
-    return values_->items_[pos];
+    return values_->items_[kv_index];
   }
 }
 
 // Get a key, but return a default if not found.
 // expr_parse.py uses this with OTHER_BALANCE
 template <typename K, typename V>
-V Dict<K, V>::get(K key, V default_val) {
-  int pos = position_of_key(key);
-  if (pos == -1) {
+V Dict<K, V>::get(K key, V default_val) const {
+  int kv_index = find_kv_index(key);
+  if (kv_index == kNotFound) {
     return default_val;
   } else {
-    return values_->items_[pos];
+    return values_->items_[kv_index];
   }
 }
 
 template <typename K, typename V>
-List<K>* Dict<K, V>::keys() {
-  return ListFromDictSlab<K>(entry_, keys_, capacity_);
+List<K>* Dict<K, V>::keys() const {
+  return ListFromDictSlab<K>(keys_, len_);
 }
 
 // For AssocArray transformations
 template <typename K, typename V>
-List<V>* Dict<K, V>::values() {
-  return ListFromDictSlab<V>(entry_, values_, capacity_);
+List<V>* Dict<K, V>::values() const {
+  return ListFromDictSlab<V>(values_, len_);
 }
 
 template <typename K, typename V>
 void Dict<K, V>::clear() {
   // Maintain invariant
-  for (int i = 0; i < capacity_; ++i) {
-    entry_->items_[i] = kEmptyEntry;
+  for (int i = 0; i < index_len_; ++i) {
+    index_->items_[i] = kEmptyEntry;
   }
 
   if (keys_) {
@@ -307,49 +284,117 @@ void Dict<K, V>::clear() {
   len_ = 0;
 }
 
-// Returns the position in the array.  Used by dict_contains(), index(),
-// get(), and set().
-//
-// For now this does a linear search.
 // TODO:
-// - hash functions, and linear probing.
-// - resizing based on load factor
-//   - which requires rehashing (re-insert all items)
 // - Special case to intern Str* when it's hashed?  How?
 //   - Should we have wrappers like:
 //   - V GetAndIntern<V>(D, &string_key)
 //   - SetAndIntern<V>(D, &string_key, value)
 //   This will enable duplicate copies of the string to be garbage collected
+//
+// NOTE: This draws a lot of inspiration from this proposal for CPython's dict.
+// The links below are useful references.
+// https://code.activestate.com/recipes/578375/
+// https://mail.python.org/pipermail/python-dev/2012-December/123028.html
 template <typename K, typename V>
-int Dict<K, V>::position_of_key(K key) {
-  for (int i = 0; i < capacity_; ++i) {
-    int special = entry_->items_[i];  // NOT an index now
-    if (special == kDeletedEntry) {
-      continue;  // keep searching
+int Dict<K, V>::hash_and_probe(K key) const {
+  if (capacity_ == 0) {
+    return kNotFound;
+  }
+
+  // Hash the key onto a slot in the index. If the first slot is occupied, probe
+  // until an empty one is found.
+  unsigned h = hash_key(key);
+  int init_bucket = h % index_len_;
+
+  // If we see a tombstone along the probing path, stash it.
+  int open_slot = -1;
+
+  for (int i = 0; i < index_len_; ++i) {
+    // Start at init_bucket and wrap araound
+    // NOTE: if division becomes a hotspot, split this into two loops.
+    int slot = (i + init_bucket) % index_len_;
+
+    int kv_index = index_->items_[slot];
+    DCHECK(kv_index < len_);
+    // Optimistically this is the common case once the table has been populated.
+    if (kv_index >= 0) {
+      unsigned h2 = hash_key(keys_->items_[kv_index]);
+      if (h == h2 && keys_equal(keys_->items_[kv_index], key)) {
+        return slot;
+      }
     }
-    if (special == kEmptyEntry) {
-      return -1;  // not found
+
+    if (kv_index == kEmptyEntry) {
+      if (open_slot != -1) {
+        slot = open_slot;
+      }
+      // If there isn't room in the entry arrays, tell the caller to resize.
+      return len_ < capacity_ ? slot : kNotFound;
     }
+
+    // Tombstone or collided keys unequal. Keep scanning.
+    DCHECK(kv_index >= 0 || kv_index == kDeletedEntry);
+    if (kv_index == kDeletedEntry && open_slot == -1) {
+      // NOTE: We only record the open slot here. We DON'T return it. If we're
+      // looking for a key that was writen before this tombstone was written to
+      // the index we should continue probing until we get to that key. If we
+      // get to an empty index slot or the end of the index then we know we are
+      // dealing with a new key and can safely replace the tombstone without
+      // disrupting any existing keys.
+      open_slot = slot;
+    }
+  }
+
+  if (open_slot != -1) {
+    return len_ < capacity_ ? open_slot : kNotFound;
+  }
+
+  return kNotFound;
+}
+
+template <typename K, typename V>
+int Dict<K, V>::find_kv_index(K key) const {
+  if (index_ != nullptr) {
+    // Common case.
+    int pos = hash_and_probe(key);
+    if (pos == kNotFound || index_->items_[pos] < 0) {
+      return kNotFound;
+    }
+    return index_->items_[pos];
+  }
+
+  // GlobalDict. Just scan.
+  for (int i = 0; i < len_; ++i) {
     if (keys_equal(keys_->items_[i], key)) {
       return i;
     }
   }
-  return -1;  // table is completely full?  Does this happen?
+
+  // Not found.
+  return kNotFound;
 }
 
 template <typename K, typename V>
 void Dict<K, V>::set(K key, V val) {
-  int pos = position_of_key(key);
-  if (pos == -1) {  // new pair
+  DCHECK(obj_header().heap_tag != HeapTag::Global);
+  int pos = hash_and_probe(key);
+  if (pos == kNotFound) {
     reserve(len_ + 1);
+    pos = hash_and_probe(key);
+  }
+  DCHECK(pos >= 0);
+  int kv_index = index_->items_[pos];
+  DCHECK(kv_index < len_);
+  if (kv_index < 0) {
+    // Always write new entries to the end of the k/v arrays. This allows us to
+    // recall the insertion order of keys trivially in most cases.
     keys_->items_[len_] = key;
     values_->items_[len_] = val;
-
-    entry_->items_[len_] = 0;  // new special value
-
-    ++len_;
+    index_->items_[pos] = len_;
+    len_++;
+    DCHECK(len_ <= capacity_);
   } else {
-    values_->items_[pos] = val;
+    values_->items_[kv_index] = val;
   }
 }
 
@@ -368,13 +413,13 @@ inline int len(const Dict<K, V>* d) {
 template <class K, class V>
 class DictIter {
  public:
-  explicit DictIter(Dict<K, V>* D) : D_(D), pos_(ValidPosAfter(0)) {
+  explicit DictIter(Dict<K, V>* D) : D_(D), pos_(0) {
   }
   void Next() {
-    pos_ = ValidPosAfter(pos_ + 1);
+    pos_++;
   }
   bool Done() {
-    return pos_ == -1;
+    return pos_ == D_->len_;
   }
   K Key() {
     return D_->keys_->items_[pos_];
@@ -384,27 +429,7 @@ class DictIter {
   }
 
  private:
-  int ValidPosAfter(int pos) {
-    // Returns the position of a valid entry at or after index i_.  Or -1 if
-    // there isn't one.  Advances i_ too.
-    while (true) {
-      if (pos >= D_->capacity_) {
-        return -1;
-      }
-      int index = D_->entry_->items_[pos];
-      if (index == kDeletedEntry) {
-        ++pos;
-        continue;  // increment again
-      }
-      if (index == kEmptyEntry) {
-        return -1;
-      }
-      break;
-    }
-    return pos;
-  }
-
-  Dict<K, V>* D_;
+  const Dict<K, V>* D_;
   int pos_;
 };
 

@@ -26,6 +26,7 @@ def DefineTargets(ru):
         'mycpp/gc_builtins.cc',
         'mycpp/gc_mylib.cc',
         'mycpp/gc_str.cc',
+        'mycpp/hash.cc',
         'mycpp/mark_sweep_heap.cc',
       ]
   )

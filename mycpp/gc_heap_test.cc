@@ -16,7 +16,9 @@
   static_assert(offsetof(Str, field) == offsetof(GlobalStr<1>, field), \
                 "Str and GlobalStr should be consistent");
 ASSERT_GLOBAL_STR(len_);
-ASSERT_GLOBAL_STR(hash_value_);
+// NOTE: offsetof doesn't work with bitfields...
+// ASSERT_GLOBAL_STR(hash_);
+// ASSERT_GLOBAL_STR(is_hashed_);
 ASSERT_GLOBAL_STR(data_);
 
 static_assert(offsetof(Slab<int>, items_) ==
@@ -39,7 +41,7 @@ ASSERT_GLOBAL_LIST(slab_);
 
 ASSERT_GLOBAL_DICT(len_);
 ASSERT_GLOBAL_DICT(capacity_);
-ASSERT_GLOBAL_DICT(entry_);
+ASSERT_GLOBAL_DICT(index_);
 ASSERT_GLOBAL_DICT(keys_);
 ASSERT_GLOBAL_DICT(values_);
 
@@ -113,9 +115,9 @@ TEST offsets_test() {
     unsigned list_mask = List<int>::field_mask();
     ASSERT_EQ_FMT(0x0002, list_mask, "0x%x");
 
-    // in binary: 0b 0000 0000 0000 1110
+    // in binary: 0b 0000 0000 0001 1100
     unsigned dict_mask = Dict<int COMMA int>::field_mask();
-    ASSERT_EQ_FMT(0x0000e, dict_mask, "0x%x");
+    ASSERT_EQ_FMT(0x0001c, dict_mask, "0x%x");
   }
 
   PASS();
