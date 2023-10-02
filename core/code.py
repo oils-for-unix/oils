@@ -219,7 +219,7 @@ def BindProcArgs(
 
         if sig.block_param:
             b = t.Block()
-            val = value.Block(b)
+            val = value.Command(b)
 
             mem.SetValue(
                 lvalue.Named(sig.block_param.name, sig.block_param.blame_tok),
