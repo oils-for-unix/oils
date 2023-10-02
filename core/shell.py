@@ -189,7 +189,7 @@ class ShellOptHook(state.OptHook):
         return True
 
 
-def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
+def AddYsh(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
     # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.ExprEvaluator, ui.ErrorFormatter, Dict[str, Proc], alloc.Arena) -> None
 
     b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
@@ -666,7 +666,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                        arena, cmd_deps, trap_state,
                                        signal_safe)
 
-    AddOil(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)
+    AddYsh(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)
 
     parse_hay = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
