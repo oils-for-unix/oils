@@ -81,6 +81,7 @@ from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
+from frontend import typed_args
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
@@ -842,27 +843,27 @@ class CommandEvaluator(object):
                     else:
                         self.mem.SetLastArgument('')
 
-                    typed_args = None  # type: ArgList
+                    typed_args_ = None  # type: ArgList
                     if node.typed_args:
                         orig = node.typed_args
                         # COPY positional args because we may append an arg
-                        typed_args = ArgList(orig.left, list(orig.pos_args),
-                                             orig.named_delim, orig.named_args,
-                                             orig.right)
+                        typed_args_ = ArgList(orig.left, list(orig.pos_args),
+                                              orig.named_delim,
+                                              orig.named_args, orig.right)
 
                         # the block is the last argument
                         if node.block:
-                            typed_args.pos_args.append(node.block)
+                            typed_args_.pos_args.append(node.block)
                             # ArgList already has a spid in this case
                     else:
                         if node.block:
                             # Create ArgList for the block.  Since we have { } and not (),
                             # copy them from BraceGroup
-                            typed_args = ArgList(node.block.brace_group.left,
-                                                 [node.block], None, [],
-                                                 node.block.brace_group.right)
+                            typed_args_ = ArgList(node.block.brace_group.left,
+                                                  [node.block], None, [],
+                                                  node.block.brace_group.right)
 
-                    cmd_val.typed_args = typed_args
+                    cmd_val.typed_args = typed_args_
 
                 else:
                     if node.block:
@@ -1450,21 +1451,7 @@ class CommandEvaluator(object):
                         "Proc %s was already defined (redefine_proc_func)" %
                         proc_name, node.name)
 
-                defaults = None  # type: List[value_t]
-                UP_sig = node.sig
-
-                # Hm this has the same pitfall as Python -- a mutable default
-                # arg.  Maybe whitelist Bool, Int, Float, Str.
-
-                if UP_sig.tag() == proc_sig_e.Closed:
-                    sig = cast(proc_sig.Closed, UP_sig)
-                    no_val = None  # type: value_t
-                    defaults = [no_val] * len(sig.word_params)
-                    for i, p in enumerate(sig.word_params):
-                        if p.default_val:
-                            val = self.expr_ev.EvalExpr(
-                                p.default_val, loc.Missing)
-                            defaults[i] = val
+                defaults = typed_args.EvalProcDefaults(self.expr_ev, node)
 
                 self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
                                              node.body, defaults,
