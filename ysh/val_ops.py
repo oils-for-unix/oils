@@ -72,8 +72,8 @@ def ToDict(val, msg, blame_loc):
 def ToCommand(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> command_t
     UP_val = val
-    if val.tag() == value_e.Block:
-        val = cast(value.Block, UP_val)
+    if val.tag() == value_e.Command:
+        val = cast(value.Command, UP_val)
         return val.body
 
     raise error.TypeErr(val, msg, blame_loc)

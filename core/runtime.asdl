@@ -74,7 +74,7 @@ module runtime
     # ^"$1 and $2"
   | Template(DoubleQuoted dq)
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
-  | Block(command body)  # TODO: rename Command or Cmd
+  | Command(command body)
 
     # callable is vm._Callable.  TODO: ASDL should be able to express and
     # "inline" such types?  Maybe we need a forward declaration of it.

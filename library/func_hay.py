@@ -64,8 +64,7 @@ class ParseHay(vm._Callable):
             self.errfmt.PrettyPrintError(e)
             return None
 
-        # Wrap in expr.Block?
-        return value.Block(node)
+        return value.Command(node)
 
     def Call(self, args):
         # type: (typed_args.Reader) -> value_t
