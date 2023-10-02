@@ -3,8 +3,9 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value_t
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, BlockArg,
-                                       command_t, expr_e, expr_t, CommandSub)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, BlockArg, command,
+                                       command_t, expr_e, expr_t, CommandSub,
+                                       proc_sig, proc_sig_e)
 from core import error
 from core.error import e_usage
 from frontend import lexer
@@ -14,6 +15,27 @@ from mycpp.mylib import dict_erase, tagswitch
 from typing import Optional, Dict, List, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from ysh.expr_eval import ExprEvaluator
+
+
+def EvalProcDefaults(expr_ev, node):
+    # type: (ExprEvaluator, command.Proc) -> Optional[List[value_t]]
+    """Evaluated at time of proc DEFINITION, not time of call."""
+
+    # TODO: remove the mutable default issue that Python has: f(x=[])
+    # Whitelist Bool, Int, Float, Str.
+
+    defaults = None  # type: List[value_t]
+    UP_sig = node.sig
+
+    if UP_sig.tag() == proc_sig_e.Closed:
+        sig = cast(proc_sig.Closed, UP_sig)
+        no_val = None  # type: value_t
+        defaults = [no_val] * len(sig.word_params)
+        for i, p in enumerate(sig.word_params):
+            if p.default_val:
+                val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+                defaults[i] = val
+    return defaults
 
 
 class Reader(object):
