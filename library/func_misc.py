@@ -429,6 +429,14 @@ class Dict_(vm._Callable):
 
                 return value.Dict(d)
 
+            elif case(value_e.BashAssoc):
+                d = NewDict()
+                val = cast(value.BashAssoc, UP_val)
+                for k, s in iteritems(val.d):
+                    d[k] = value.Str(s)
+
+                return value.Dict(d)
+
         raise error.TypeErr(val, 'Dict() expected List or Dict',
                             args.BlamePos())
 
