@@ -355,6 +355,7 @@ build-stress-test() {
     mycpp/gc_builtins.cc \
     mycpp/gc_mylib.cc \
     mycpp/gc_str.cc \
+    mycpp/hash.cc \
     -lstdc++ 
 }
 

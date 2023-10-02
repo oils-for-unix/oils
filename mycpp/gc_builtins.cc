@@ -386,14 +386,7 @@ bool str_equals0(const char* c_string, Str* s) {
 }
 
 int hash(Str* s) {
-  // FNV-1 from http://www.isthe.com/chongo/tech/comp/fnv/#FNV-1
-  int h = 2166136261;          // 32-bit FNV-1 offset basis
-  constexpr int p = 16777619;  // 32-bit FNV-1 prime
-  for (int i = 0; i < len(s); i++) {
-    h *= s->data()[i];
-    h ^= p;
-  }
-  return h;
+  return s->hash(fnv1);
 }
 
 int max(int a, int b) {
