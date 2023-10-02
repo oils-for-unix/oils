@@ -227,8 +227,8 @@ class Reader(object):
         # type: () -> command_t
         arg = self._GetNextPos()
         UP_arg = arg
-        if arg.tag() == value_e.Block:
-            arg = cast(value.Block, UP_arg)
+        if arg.tag() == value_e.Command:
+            arg = cast(value.Command, UP_arg)
             return arg.body
 
         raise error.TypeErr(arg,

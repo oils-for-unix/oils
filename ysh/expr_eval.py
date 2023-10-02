@@ -928,7 +928,7 @@ class ExprEvaluator(object):
                 id_ = node.left_token.id
                 if id_ == Id.Left_CaretParen:  # ^(echo block literal)
                     # TODO: Propgate location info?
-                    return value.Block(node.child)
+                    return value.Command(node.child)
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
