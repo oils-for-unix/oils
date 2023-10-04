@@ -1763,9 +1763,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
             if CTypeIsManaged(c_item_type):
-                self.write_ind('  StackRoots _for({&')
+                self.write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
-                self.write_ind('});\n')
+                self.write_ind(');\n')
 
         elif isinstance(item_type, TupleType):  # for x, y in pairs
             if over_dict:
@@ -2575,13 +2575,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('roots %s', roots)
 
             if len(roots):
-                self.write_ind('StackRoots _roots({')
                 for i, r in enumerate(roots):
-                    if i != 0:
-                        self.write(', ')
-                    self.write('&%s' % r)
+                    self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
 
-                self.write('});\n')
                 self.write('\n')
 
             self.prepend_to_block = None
