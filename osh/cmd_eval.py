@@ -961,6 +961,35 @@ class CommandEvaluator(object):
         i = self.arith_ev.EvalToInt(node.child)
         return 1 if i == 0 else 0
 
+    def _DoVarDecl(self, node):
+        # type: (command.VarDecl) -> int
+        # Point to var name (bare assignment has no keyword)
+        self.mem.SetTokenForLine(node.lhs[0].name)
+
+        # x = 'foo' in Hay blocks
+        if node.keyword is None or node.keyword.id == Id.KW_Const:
+            # Note: there's only one LHS
+            vd_lval = location.LName(node.lhs[0].name.tval)  # type: lvalue_t
+            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+
+            self.mem.SetValue(vd_lval,
+                              val,
+                              scope_e.LocalOnly,
+                              flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
+
+        else:
+            # TODO: optimize this common case (but measure)
+            assert len(node.lhs) == 1, node.lhs
+
+            vd_lval = location.LName(node.lhs[0].name.tval)
+            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+            self.mem.SetValue(vd_lval,
+                              val,
+                              scope_e.LocalOnly,
+                              flags=_PackFlags(node.keyword.id))
+
+        return 0
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1003,34 +1032,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
-                # Point to var name (bare assignment has no keyword)
-                self.mem.SetTokenForLine(node.lhs[0].name)
-
-                # x = 'foo' in Hay blocks
-                if node.keyword is None or node.keyword.id == Id.KW_Const:
-                    # Note: there's only one LHS
-                    vd_lval = location.LName(
-                        node.lhs[0].name.tval)  # type: lvalue_t
-                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-
-                    self.mem.SetValue(vd_lval,
-                                      val,
-                                      scope_e.LocalOnly,
-                                      flags=_PackFlags(Id.KW_Const,
-                                                       state.SetReadOnly))
-
-                else:
-                    # TODO: optimize this common case (but measure)
-                    assert len(node.lhs) == 1, node.lhs
-
-                    vd_lval = location.LName(node.lhs[0].name.tval)
-                    val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-                    self.mem.SetValue(vd_lval,
-                                      val,
-                                      scope_e.LocalOnly,
-                                      flags=_PackFlags(node.keyword.id))
-
-                status = 0
+                status = self._DoVarDecl(node)
 
             elif case(command_e.PlaceMutation):
                 node = cast(command.PlaceMutation, UP_node)
