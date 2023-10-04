@@ -895,6 +895,14 @@ class CommandEvaluator(object):
         else:
             return self._Execute(node.child)
 
+    def _DoSentence(self, node):
+        # type: (command.Sentence) -> int
+        # Don't check_errexit since this isn't a real node!
+        if node.terminator.id == Id.Op_Semi:
+            return self._Execute(node.child)
+        else:
+            return self.shell_ex.RunBackgroundJob(node.child)
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -916,11 +924,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                # Don't check_errexit since this isn't a real node!
-                if node.terminator.id == Id.Op_Semi:
-                    status = self._Execute(node.child)
-                else:
-                    status = self.shell_ex.RunBackgroundJob(node.child)
+                status = self._DoSentence(node)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
