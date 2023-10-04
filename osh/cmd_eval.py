@@ -1141,6 +1141,49 @@ class CommandEvaluator(object):
                 self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
                 return 0
 
+    def _DoAndOr(self, node, cmd_st):
+        # type: (command.AndOr, CommandStatus) -> int
+        # NOTE: && and || have EQUAL precedence in command mode.  See case #13
+        # in dbracket.test.sh.
+
+        left = node.children[0]
+
+        # Suppress failure for every child except the last one.
+        self._StrictErrExit(left)
+        with state.ctx_ErrExit(self.mutable_opts, False, node.ops[0]):
+            status = self._Execute(left)
+
+        i = 1
+        n = len(node.children)
+        while i < n:
+            #log('i %d status %d', i, status)
+            child = node.children[i]
+            op = node.ops[i - 1]
+            op_id = op.id
+
+            #log('child %s op_id %s', child, op_id)
+
+            if op_id == Id.Op_DPipe and status == 0:
+                i += 1
+                continue  # short circuit
+
+            elif op_id == Id.Op_DAmp and status != 0:
+                i += 1
+                continue  # short circuit
+
+            if i == n - 1:  # errexit handled differently for last child
+                status = self._Execute(child)
+                cmd_st.check_errexit = True
+            else:
+                # blame the right && or ||
+                self._StrictErrExit(child)
+                with state.ctx_ErrExit(self.mutable_opts, False, op):
+                    status = self._Execute(child)
+
+            i += 1
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1227,44 +1270,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.AndOr):
                 node = cast(command.AndOr, UP_node)
-                # NOTE: && and || have EQUAL precedence in command mode.  See case #13
-                # in dbracket.test.sh.
-
-                left = node.children[0]
-
-                # Suppress failure for every child except the last one.
-                self._StrictErrExit(left)
-                with state.ctx_ErrExit(self.mutable_opts, False, node.ops[0]):
-                    status = self._Execute(left)
-
-                i = 1
-                n = len(node.children)
-                while i < n:
-                    #log('i %d status %d', i, status)
-                    child = node.children[i]
-                    op = node.ops[i - 1]
-                    op_id = op.id
-
-                    #log('child %s op_id %s', child, op_id)
-
-                    if op_id == Id.Op_DPipe and status == 0:
-                        i += 1
-                        continue  # short circuit
-
-                    elif op_id == Id.Op_DAmp and status != 0:
-                        i += 1
-                        continue  # short circuit
-
-                    if i == n - 1:  # errexit handled differently for last child
-                        status = self._Execute(child)
-                        cmd_st.check_errexit = True
-                    else:
-                        # blame the right && or ||
-                        self._StrictErrExit(child)
-                        with state.ctx_ErrExit(self.mutable_opts, False, op):
-                            status = self._Execute(child)
-
-                    i += 1
+                status = self._DoAndOr(node, cmd_st)
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
