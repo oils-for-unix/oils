@@ -317,9 +317,16 @@ jobs:
         run: |
           soil/github-actions.sh run-job cpp-tarball
 
+      # can't be done inside container
+      - name: publish-cpp-tarball
+        env:
+          # auth for web server
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-cpp-tarball
+
       - name: publish-html
         env:
-          # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit cpp-tarball T
@@ -371,7 +378,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
+    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code

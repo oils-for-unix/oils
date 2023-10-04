@@ -195,6 +195,11 @@ make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.ta
 test-tar         devtools/release-native.sh test-tar   -
 build-times      build/native.sh measure-build-times   -
 EOF
+
+# TODO: the container doesn't have an SSH key?  (It also doesn't even have the ssh binary)
+# So we have to do on the host I think
+
+#deploy-tar       soil/web-worker.sh deploy-cpp-tarball -
 }
 
 cpp-small-tasks() {

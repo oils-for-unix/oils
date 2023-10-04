@@ -153,11 +153,16 @@ smoke() {
   ### Smoke test of container
   local name=${1:-dummy}
   local tag=${2:-$LATEST_TAG}
+  local docker=${3:-$DOCKER}
+  local prefix=${4:-}
 
   #sudo docker run oilshell/soil-$name
   #sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
 
-  sudo $DOCKER run oilshell/soil-$name:$tag bash -c '
+  # Need to point at registries.conf ?
+  #export-podman
+
+  sudo $docker run ${prefix}oilshell/soil-$name:$tag bash -c '
 echo "bash $BASH_VERSION"
 
 git --version
@@ -175,6 +180,13 @@ done
   #sudo docker run oilshell/soil-$name python -V
 
   #sudo docker run oilshell/soil-$name python3 -c 'import pexpect; print(pexpect)'
+}
+
+smoke-podman() {
+  local name=${1:-dummy}
+
+  # need explicit docker.io prefix with podman
+  smoke $name latest podman docker.io/
 }
 
 cmd() {

@@ -277,6 +277,47 @@ deploy-job-results() {
   log ''
 }
 
+publish-cpp-tarball() {
+  local prefix=${1:-'github-'}  # e.g. example.com/github-jobs/
+
+  local commit_hash
+  # written by save-metadata in soil/worker.sh
+  commit_hash=$(cat _tmp/soil/commit-hash.txt)
+
+  # Example of dir structure we need to cleanup:
+  #
+  # srht-jobs/
+  #   git-$hash/
+  #     index.html
+  #     oils-for-unix.tar
+  # github-jobs/
+  #   git-$hash/
+  #     oils-for-unix.tar
+  #
+  # Algorithm
+  # 1. List all JSON, finding commit date and commit hash
+  # 2. Get the OLDEST commit dates, e.g. all except for 50
+  # 3. Delete all commit hash dirs not associated with them
+
+  local remote_dest_dir="travis-ci.oilshell.org/${prefix}jobs/git-$commit_hash"
+
+  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
+
+  # Do JSON last because that's what 'list-json' looks for
+
+  local tar=_release/oils-for-unix.tar 
+
+  # Permission denied because of host/guest issue
+  #local tar_gz=$tar.gz
+  #gzip -c $tar > $tar_gz
+
+  my-scp $tar "$SOIL_USER_HOST:$remote_dest_dir"
+
+  log 'Tarball:'
+  log ''
+  log "http://$remote_dest_dir"
+}
+
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
 

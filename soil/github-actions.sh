@@ -64,10 +64,7 @@ publish-html-assuming-ssh-key() {
 # Instead of SSH, we should use curl to POST a .zip file to PHP script on
 # travis-ci.oilshell.org?
 
-# Overwrites the function in soil/travis.sh
-publish-html() {
-  ### Publish job HTML, and optionally status-api
-
+load-secret-key() {
   local privkey=/tmp/rsa_github_actions
 
   if test -n "${TOIL_KEY:-}"; then
@@ -80,9 +77,23 @@ publish-html() {
   chmod 600 $privkey
   eval "$(ssh-agent -s)"
   ssh-add $privkey
+}
+
+
+# Overwrites the function in soil/travis.sh
+publish-html() {
+  ### Publish job HTML, and optionally status-api
+
+  load-secret-key
 
   # $1 can be the job name
   publish-html-assuming-ssh-key "$@"
+}
+
+publish-cpp-tarball() {
+  load-secret-key
+
+  soil/web-worker.sh publish-cpp-tarball github-
 }
 
 run-job() {
