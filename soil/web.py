@@ -763,11 +763,28 @@ def main(argv):
     log('%s cleanup: keep %d', sys.argv[0], num_to_keep)
     log('%s cleanup: got %d JSON paths', sys.argv[0], len(prefixes))
 
-    # TODO: Github can be 
-    # - $GITHUB_RUN_NUMBER/$job_name.json, and then sort by $GITHUB_RUN_NUMBER
-    #   - this means that the 'raw-vm' task can look for 'cpp-small' directly
-    # - sourcehut could be $JOB_ID/$job_name.json, and then sort by $JOB_ID
-    #   - this is more flattened, but you can still do use list-json which does */*.json
+    # TODO: clean up git-$hash dirs
+    #
+    # github-jobs/
+    #   $GITHUB_RUN_NUMBER/
+    #     cpp-tarball.{json,wwz,tsv}
+    #     dummy.{json,wwz,tsv}
+    #   git-$hash/
+    #     oils-for-unix.tar
+    #
+    # srht-jobs/
+    #   1234/
+    #     cpp-tarball.{json,wwz,tsv}
+    #   1235/
+    #     dummy.{json,wwz,tsv}
+    #   git-$hash/
+    #     index.html  # HTML for this job
+    #     oils-for-unix.tar
+    #
+    # We might have to read the most recent JSON, find the corresponding $hash,
+    # and print that dir.
+    #
+    # Another option is to use a real database, rather than the file system!
 
     # Sort by 999 here
     # travis-ci.oilshell.org/github-jobs/999/foo.json

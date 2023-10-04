@@ -192,14 +192,14 @@ dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh soil-run              -
 make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
-test-tar         devtools/release-native.sh test-tar   -
 build-times      build/native.sh measure-build-times   -
 EOF
 
-# TODO: the container doesn't have an SSH key?  (It also doesn't even have the ssh binary)
-# So we have to do on the host I think
+# build-times is a good enough test
+# test-tar         devtools/release-native.sh test-tar   -
+#
+# Note: tarball is deployed outside the container
 
-#deploy-tar       soil/web-worker.sh deploy-cpp-tarball -
 }
 
 cpp-small-tasks() {
