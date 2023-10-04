@@ -48,6 +48,11 @@ def Options():
                  default=None,
                  help='Write this header')
 
+    p.add_option('--stack-roots-warn',
+                 dest='stack_roots_warn',
+                 default=None,
+                 help='Emit warnings about functions with too many stack roots')
+
     return p
 
 

@@ -367,7 +367,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  fmt_ids=None,
                  field_gc=None,
                  decl=False,
-                 forward_decl=False):
+                 forward_decl=False,
+                 stack_roots_warn_threshold=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -383,6 +384,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.decl = decl
         self.forward_decl = forward_decl
+        self.stack_roots_warn_threshold = stack_roots_warn_threshold
 
         self.unique_id = 0
 
@@ -2575,7 +2577,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('roots %s', roots)
 
             if len(roots):
-                if len(roots) > 16:
+                if self.stack_roots_warn_threshold and len(roots) > self.stack_roots_warn_threshold:
                     log(
                         'WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
                         % (self.current_class_name or '', self.current_func_node.name, len(roots))
