@@ -123,6 +123,7 @@ wild() {
     gcc  # 'cc' for compiling Python extensions
     python2-dev
     libreadline-dev
+    curl  # wait for cpp-tarball
   )
 
   apt-install "${packages[@]}"
@@ -371,6 +372,8 @@ app-tests() {
     wget
     # for wget https://.  TODO: remove when the build is hermetic
     ca-certificates
+
+    curl  # wait for cpp-tarball
 
     gcc
     g++

@@ -70,3 +70,15 @@ find-dir-html() {
 
   log "Wrote $html"
 }
+
+git-commit-dir() {
+  local prefix=$1
+
+  local commit_hash
+  # written by save-metadata in soil/worker.sh
+  commit_hash=$(cat _tmp/soil/commit-hash.txt)
+
+  local git_commit_dir="travis-ci.oilshell.org/${prefix}jobs/git-$commit_hash"
+
+  echo $git_commit_dir
+}

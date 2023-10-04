@@ -280,10 +280,6 @@ deploy-job-results() {
 publish-cpp-tarball() {
   local prefix=${1:-'github-'}  # e.g. example.com/github-jobs/
 
-  local commit_hash
-  # written by save-metadata in soil/worker.sh
-  commit_hash=$(cat _tmp/soil/commit-hash.txt)
-
   # Example of dir structure we need to cleanup:
   #
   # srht-jobs/
@@ -299,9 +295,10 @@ publish-cpp-tarball() {
   # 2. Get the OLDEST commit dates, e.g. all except for 50
   # 3. Delete all commit hash dirs not associated with them
 
-  local remote_dest_dir="travis-ci.oilshell.org/${prefix}jobs/git-$commit_hash"
+  local git_commit_dir
+  git_commit_dir=$(git-commit-dir "$prefix")
 
-  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
+  my-ssh $SOIL_USER_HOST "mkdir -p $git_commit_dir"
 
   # Do JSON last because that's what 'list-json' looks for
 
@@ -311,11 +308,11 @@ publish-cpp-tarball() {
   #local tar_gz=$tar.gz
   #gzip -c $tar > $tar_gz
 
-  my-scp $tar "$SOIL_USER_HOST:$remote_dest_dir"
+  my-scp $tar "$SOIL_USER_HOST:$git_commit_dir"
 
   log 'Tarball:'
   log ''
-  log "http://$remote_dest_dir"
+  log "http://$git_commit_dir"
 }
 
 remote-event-job-done() {
