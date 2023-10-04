@@ -1433,6 +1433,90 @@ class CommandEvaluator(object):
 
         return 0
 
+    def _DoIf(self, node):
+        # type: (command.If) -> int
+        # No SetTokenForLine() because
+        # - $LINENO can't appear directly in 'if'
+        # - 'if' doesn't directly cause errors
+        # It will be taken care of by command.Simple, condition, etc.
+
+        done = False
+        for if_arm in node.arms:
+            b = self._EvalCondition(if_arm.cond, if_arm.keyword)
+            if b:
+                status = self._ExecuteList(if_arm.action)
+                done = True
+                break
+
+        if not done and node.else_action is not None:
+            status = self._ExecuteList(node.else_action)
+
+        return status
+
+    def _DoCase(self, node):
+        # type: (command.Case) -> int
+        # Must set location for 'case $LINENO'
+        self.mem.SetTokenForLine(node.case_kw)
+
+        to_match = self._EvalCaseArg(node.to_match, node.case_kw)
+        self._MaybeRunDebugTrap()
+
+        status = 0  # If there are no arms, it should be zero?
+        matched = False
+
+        for case_arm in node.arms:
+            with tagswitch(case_arm.pattern) as case:
+                if case(pat_e.Words):
+                    if to_match.tag() != value_e.Str:
+                        continue  # A non-string `to_match` will never match a pat.Words
+                    to_match_str = cast(value.Str, to_match)
+
+                    pat_words = cast(pat.Words, case_arm.pattern)
+
+                    for pat_word in pat_words.words:
+                        word_val = self.word_ev.EvalWordToString(
+                            pat_word, word_eval.QUOTE_FNMATCH)
+
+                        if libc.fnmatch(word_val.s, to_match_str.s):
+                            status = self._ExecuteList(case_arm.action)
+                            matched = True  # TODO: Parse ;;& and for fallthrough and such?
+                            break
+
+                elif case(pat_e.YshExprs):
+                    pat_exprs = cast(pat.YshExprs, case_arm.pattern)
+
+                    for pat_expr in pat_exprs.exprs:
+                        expr_val = self.expr_ev.EvalExpr(
+                            pat_expr, case_arm.left)
+
+                        if val_ops.ExactlyEqual(expr_val, to_match):
+                            status = self._ExecuteList(case_arm.action)
+                            matched = True
+                            break
+
+                elif case(pat_e.Eggex):
+                    pat_eggex = cast(pat.Eggex, case_arm.pattern)
+                    eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
+                    eggex_val = value.Eggex(eggex, None)
+
+                    if val_ops.RegexMatch(to_match, eggex_val, self.mem):
+                        status = self._ExecuteList(case_arm.action)
+                        matched = True
+                        break
+
+                elif case(pat_e.Else):
+                    status = self._ExecuteList(case_arm.action)
+                    matched = True
+                    break
+
+                else:
+                    raise AssertionError()
+
+            if matched:  # first match wins
+                break
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1547,87 +1631,14 @@ class CommandEvaluator(object):
 
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
-                # No SetTokenForLine() because
-                # - $LINENO can't appear directly in 'if'
-                # - 'if' doesn't directly cause errors
-                # It will be taken care of by command.Simple, condition, etc.
-
-                done = False
-                for if_arm in node.arms:
-                    b = self._EvalCondition(if_arm.cond, if_arm.keyword)
-                    if b:
-                        status = self._ExecuteList(if_arm.action)
-                        done = True
-                        break
-                if not done and node.else_action is not None:
-                    status = self._ExecuteList(node.else_action)
+                status = self._DoIf(node)
 
             elif case(command_e.NoOp):
                 status = 0  # make it true
 
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
-
-                # Must set location for 'case $LINENO'
-                self.mem.SetTokenForLine(node.case_kw)
-
-                to_match = self._EvalCaseArg(node.to_match, node.case_kw)
-                self._MaybeRunDebugTrap()
-
-                status = 0  # If there are no arms, it should be zero?
-                matched = False
-
-                for case_arm in node.arms:
-                    with tagswitch(case_arm.pattern) as case:
-                        if case(pat_e.Words):
-                            if to_match.tag() != value_e.Str:
-                                continue  # A non-string `to_match` will never match a pat.Words
-                            to_match_str = cast(value.Str, to_match)
-
-                            pat_words = cast(pat.Words, case_arm.pattern)
-
-                            for pat_word in pat_words.words:
-                                word_val = self.word_ev.EvalWordToString(
-                                    pat_word, word_eval.QUOTE_FNMATCH)
-
-                                if libc.fnmatch(word_val.s, to_match_str.s):
-                                    status = self._ExecuteList(case_arm.action)
-                                    matched = True  # TODO: Parse ;;& and for fallthrough and such?
-                                    break
-
-                        elif case(pat_e.YshExprs):
-                            pat_exprs = cast(pat.YshExprs, case_arm.pattern)
-
-                            for pat_expr in pat_exprs.exprs:
-                                expr_val = self.expr_ev.EvalExpr(
-                                    pat_expr, case_arm.left)
-
-                                if val_ops.ExactlyEqual(expr_val, to_match):
-                                    status = self._ExecuteList(case_arm.action)
-                                    matched = True
-                                    break
-
-                        elif case(pat_e.Eggex):
-                            pat_eggex = cast(pat.Eggex, case_arm.pattern)
-                            eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
-                            eggex_val = value.Eggex(eggex, None)
-
-                            if val_ops.RegexMatch(to_match, eggex_val,
-                                                  self.mem):
-                                status = self._ExecuteList(case_arm.action)
-                                matched = True
-                                break
-
-                        elif case(pat_e.Else):
-                            status = self._ExecuteList(case_arm.action)
-                            matched = True
-                            break
-
-                        else:
-                            raise AssertionError()
-
-                    if matched:  # first match wins
-                        break
+                status = self._DoCase(node)
 
             elif case(command_e.TimeBlock):
                 node = cast(command.TimeBlock, UP_node)
