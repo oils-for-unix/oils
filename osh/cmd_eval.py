@@ -1381,6 +1381,58 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoShFunction(self, node):
+        # type: (command.ShFunction) -> int
+        if node.name in self.procs and not self.exec_opts.redefine_proc_func():
+            e_die(
+                "Function %s was already defined (redefine_proc_func)" %
+                node.name, node.name_tok)
+        self.procs[node.name] = Proc(node.name, node.name_tok, proc_sig.Open,
+                                     node.body, [], True)
+
+        return 0
+
+    def _DoProc(self, node):
+        # type: (command.Proc) -> int
+        proc_name = lexer.TokenVal(node.name)
+        if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
+            e_die(
+                "Proc %s was already defined (redefine_proc_func)" % proc_name,
+                node.name)
+
+        defaults = typed_args.EvalProcDefaults(self.expr_ev, node)
+
+        self.procs[proc_name] = Proc(proc_name, node.name, node.sig, node.body,
+                                     defaults, False)  # no dynamic scope
+
+        return 0
+
+    def _DoFunc(self, node):
+        # type: (command.Func) -> int
+        name = lexer.TokenVal(node.name)
+        lval = location.LName(name)
+
+        # Check that we haven't already defined a function
+        cell = self.mem.GetCell(name, scope_e.LocalOnly)
+        if cell and cell.val.tag() == value_e.Func:
+            if self.exec_opts.redefine_proc_func():
+                cell.readonly = False  # Ensure we can unset the value
+                did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
+                assert did_unset, name
+            else:
+                e_die(
+                    "Func %s was already defined (redefine_proc_func)" % name,
+                    node.name)
+
+        # Needed in case the func is an existing variable name
+        self.mem.SetTokenForLine(node.name)
+
+        val = value.Func(code.UserFunc(name, node, self.mem, self))
+        self.mem.SetValue(lval, val, scope_e.LocalOnly,
+                          _PackFlags(Id.KW_Func, state.SetReadOnly))
+
+        return 0
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1483,62 +1535,15 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-
-                if node.name in self.procs and not self.exec_opts.redefine_proc_func(
-                ):
-                    e_die(
-                        "Function %s was already defined (redefine_proc_func)"
-                        % node.name, node.name_tok)
-                self.procs[node.name] = Proc(node.name, node.name_tok,
-                                             proc_sig.Open, node.body, [],
-                                             True)
-
-                status = 0
+                status = self._DoShFunction(node)
 
             elif case(command_e.Proc):
                 node = cast(command.Proc, UP_node)
-
-                proc_name = lexer.TokenVal(node.name)
-                if proc_name in self.procs and not self.exec_opts.redefine_proc_func(
-                ):
-                    e_die(
-                        "Proc %s was already defined (redefine_proc_func)" %
-                        proc_name, node.name)
-
-                defaults = typed_args.EvalProcDefaults(self.expr_ev, node)
-
-                self.procs[proc_name] = Proc(proc_name, node.name, node.sig,
-                                             node.body, defaults,
-                                             False)  # no dynamic scope
-
-                status = 0
+                status = self._DoProc(node)
 
             elif case(command_e.Func):
                 node = cast(command.Func, UP_node)
-
-                name = lexer.TokenVal(node.name)
-                lval = location.LName(name)
-
-                # Check that we haven't already defined a function
-                cell = self.mem.GetCell(name, scope_e.LocalOnly)
-                if cell and cell.val.tag() == value_e.Func:
-                    if self.exec_opts.redefine_proc_func():
-                        cell.readonly = False  # Ensure we can unset the value
-                        did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
-                        assert did_unset, name
-                    else:
-                        e_die(
-                            "Func %s was already defined (redefine_proc_func)"
-                            % name, node.name)
-
-                # Needed in case the func is an existing variable name
-                self.mem.SetTokenForLine(node.name)
-
-                val = value.Func(code.UserFunc(name, node, self.mem, self))
-                self.mem.SetValue(lval, val, scope_e.LocalOnly,
-                                  _PackFlags(Id.KW_Func, state.SetReadOnly))
-
-                status = 0
+                status = self._DoFunc(node)
 
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
