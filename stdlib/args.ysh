@@ -24,153 +24,16 @@
 #
 # echo "Verbose $[opt.verbose]"
 
-var old = '''
-
-# TODO: how to register these as Args ?
-#
-# var proc_bindings = {}
-# var var_bindings = {}
-# eval ()
-
-
-# How to make this private to a file?  Or is redefine_func_proc enough?
-#
-# Also it would be nice if we can setref a variable?
-
-proc __flag (...strs ; type ; default Any = null) {
-
-  var short = ''
-  var long = ''
-  if (strs[0].startsWith('-')) {
-    setvar short = strs[0]
-  }
-
-  case (len(strs)) {
-    (1) {
-      echo
-    }
-    (2) {
-      echo
-    }
-  }
-
-  var result = {short, long, type, default}
-
-  # TODO:
-  # - need :: because vars start with _
-  # - It would be nice if _this was a magic param?
-  #   - it would be nice if 'flag' was a "method" on something?
-  #   - that's what it's doing, it's mutating "self"
-  #   - _this is the thing we're currently creating
-
-  _ _this.flags->append(result)
-
-  var this = getvar('_this', scope='dynamic')
-  _ this.flags->append(result)
-}
-
-proc __arg (name, desc ; type ; default Any = null) {
-  # Type is always string?  Or support conversion?
-  # I guess there's no reason not to
-  #
-  # Int or Float
-
-  echo 'arg'
-}
-
-# TODO: create a builtin?
-func getProc(x) {
-  return (x)
-}
-# TODO: builtin?
-# Is this different than shvar?  How?
-# Is it a global or a local?
-
-# Maybe we can rename shvar IFS=: (foo={}) { }
-#
-# - shvar does LocalOnly
-# - but 'proc arg' will push a new stack frame?
-#   - so we need something like setref?
-#
-
-proc bind-vars (; ; ...bindings; block) {
-  echo
-}
-
-hay define Documented
-
-Documented {  # Do we inherit the name of the proc?  Or $path/$procName?
-
-  # Do we want a longer way of documenting APIs?
-  # Document every argument?
-  # I like Go's docs
-  desc = """
-  These are my docs
-  """
-
-  proc p {
-    echo
-  }
-
-}
-
-proc Args(; spec Ref;; block) {
-
-  var more_procs = {
-    flag: getProc('__flag'),
-    arg: getProc('__arg'),
-  }
-
-  var this = {}
-
-  # _this is part of this frame -- it's a duplicate that callers can look up I
-  # guess
-  # Well then all you need is getvar() ?  You don't even need bind-vars?
-  bind-vars (_this=this) {
-    # So now 'arg' and 'flag' can see _this?
-
-    # TODO: more_procs vs. replace procs?
-    eval (block, procs=more_procs)
-  }
-  = this
-
-  # You have to put 'flag' and 'arg' in scope
-
-  # Flags have these fields
-  # default type is Bool
-  var flag = {short: '', long: '', type: null, default: '', help: ''}
-
-  # Args have these fields
-  #
-  # I think all args are required -- you can ARGV[i:] if you want something else
-  #
-  # Default type is string
-  var arg = {name: '', type: null, help: ''}
-
-  # May also have program name, etc.
-  var result = {flags: [], args: []}
-
-  #= spec
-  #= block
-
-  setref spec = result
-}
-
-func parseArgs(spec, argv) {
-  var i = 0
-  var arg = {}
-
-  return ([arg, i])
-}
-'''
-
-proc todo () {
-  error ("TODO: not implemented")
-}
-
-proc pass () {
-  _ null
-}
+# TODO: See list
+# - It would be nice to keep `flag` and `arg` private, injecting them into the
+#   proc namespace only within `Args`
+# - need :: because vars start with _
+# - We need a mechanism to share state between Args and `flag`/`arg` that is
+#   run in the block passed to it
+#   - It would be nice if _this was a magic param?
+#     - it would be nice if 'flag' was a "method" on something?
+#     - that's what it's doing, it's mutating "self"
+#     - _this is the thing we're currently creating
 
 proc Args (spec Ref;;; block) {
   setref spec = {
@@ -198,10 +61,12 @@ proc Args (spec Ref;;; block) {
 }
 
 proc flag (short, long; type='bool', default=null) {
+  # TODO: help, make type take in a type object (ie. Bool, Int, Str)
   json write --pretty=F ({ tag: 'flag', node: { short, long, type, default, help: null } })
 }
 
 proc arg (name) {
+  # TODO: type, default and help
   json write --pretty=F ({ tag: 'arg', node: { name, type: 'str', default: null, help: null } })
 }
 
