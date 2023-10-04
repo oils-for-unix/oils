@@ -880,6 +880,21 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoExpandedAlias(self, node):
+        # type: (command.ExpandedAlias) -> int
+        # Expanded aliases need redirects and env bindings from the calling
+        # context, as well as redirects in the expansion!
+
+        # TODO: SetTokenForLine to OUTSIDE?  Don't bother with stuff inside
+        # expansion, since aliases are discouraged.
+
+        if len(node.more_env):
+            with state.ctx_Temp(self.mem):
+                self._EvalTempEnv(node.more_env, state.SetExport)
+                return self._Execute(node.child)
+        else:
+            return self._Execute(node.child)
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -897,18 +912,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.ExpandedAlias):
                 node = cast(command.ExpandedAlias, UP_node)
-                # Expanded aliases need redirects and env bindings from the calling
-                # context, as well as redirects in the expansion!
-
-                # TODO: SetTokenForLine to OUTSIDE?  Don't bother with stuff inside
-                # expansion, since aliases are discouraged.
-
-                if len(node.more_env):
-                    with state.ctx_Temp(self.mem):
-                        self._EvalTempEnv(node.more_env, state.SetExport)
-                        status = self._Execute(node.child)
-                else:
-                    status = self._Execute(node.child)
+                status = self._DoExpandedAlias(node)
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
