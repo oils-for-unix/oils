@@ -2575,6 +2575,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('roots %s', roots)
 
             if len(roots):
+                if len(roots) > 16:
+                    log(
+                        'WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
+                        % (self.current_class_name or '', self.current_func_node.name, len(roots))
+                    )
+
                 for i, r in enumerate(roots):
                     self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
 
