@@ -279,7 +279,6 @@ deploy-job-results() {
 
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
-  local prefix=$1
 
   log "remote-event-job-done"
 

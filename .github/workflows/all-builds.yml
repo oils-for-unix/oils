@@ -303,6 +303,27 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit cpp-small T
 
+  cpp-tarball:
+    runs-on: ubuntu-20.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: cpp-tarball
+        run: |
+          soil/github-actions.sh run-job cpp-tarball
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit cpp-tarball T
+
   cpp-spec:
     runs-on: ubuntu-20.04
     env:

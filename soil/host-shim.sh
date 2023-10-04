@@ -255,6 +255,9 @@ run-job-uke() {
     cpp-coverage)
       image_id='clang'
       ;;
+    cpp-tarball)
+      image_id='cpp-small'
+      ;;
     interactive)
       # to run 'interactive-osh' with job control enabled
       flags=( -t )
