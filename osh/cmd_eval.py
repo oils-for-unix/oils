@@ -1049,6 +1049,35 @@ class CommandEvaluator(object):
         else:
             return 0
 
+    def _DoExpr(self, node):
+        # type: (command.Expr) -> int
+        self.mem.SetTokenForLine(node.keyword)
+        val = self.expr_ev.EvalExpr(node.e, loc.Missing)
+        if mylib.PYTHON:
+            obj = cpython._ValueToPyObj(val)
+
+            if node.keyword.id == Id.Lit_Equals:
+                # typed
+                if 0:
+                    buf = mylib.BufWriter()
+                    prettyp = j8.PrettyPrinter()
+                    prettyp.Print(val, buf)
+                    print(buf.getvalue())
+
+                # NOTE: It would be nice to unify this with 'repr', but there isn't a
+                # good way to do it with the value/PyObject split.
+                class_name = obj.__class__.__name__
+                oil_name = YSH_TYPE_NAMES.get(class_name, class_name)
+                print('(%s)   %s' % (oil_name, repr(obj)))
+
+                # BUG FIX related to forking!  Note that BUILTINS flush, but
+                # keywords don't flush.  So we have to beware of keywords that
+                # print.  TODO: Or avoid Python's print() altogether.
+                sys.stdout.flush()
+
+        # TODO: What about exceptions?  They just throw?
+        return 0
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1106,33 +1135,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.Expr):
                 node = cast(command.Expr, UP_node)
-
-                self.mem.SetTokenForLine(node.keyword)
-                val = self.expr_ev.EvalExpr(node.e, loc.Missing)
-                if mylib.PYTHON:
-                    obj = cpython._ValueToPyObj(val)
-
-                    if node.keyword.id == Id.Lit_Equals:
-                        # typed
-                        if 0:
-                            buf = mylib.BufWriter()
-                            prettyp = j8.PrettyPrinter()
-                            prettyp.Print(val, buf)
-                            print(buf.getvalue())
-
-                        # NOTE: It would be nice to unify this with 'repr', but there isn't a
-                        # good way to do it with the value/PyObject split.
-                        class_name = obj.__class__.__name__
-                        oil_name = YSH_TYPE_NAMES.get(class_name, class_name)
-                        print('(%s)   %s' % (oil_name, repr(obj)))
-
-                        # BUG FIX related to forking!  Note that BUILTINS flush, but
-                        # keywords don't flush.  So we have to beware of keywords that
-                        # print.  TODO: Or avoid Python's print() altogether.
-                        sys.stdout.flush()
-
-                # TODO: What about exceptions?  They just throw?
-                status = 0
+                status = self._DoExpr(node)
 
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
