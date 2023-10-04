@@ -1078,6 +1078,69 @@ class CommandEvaluator(object):
         # TODO: What about exceptions?  They just throw?
         return 0
 
+    def _DoRetval(self, node):
+        # type: (command.Retval) -> int
+        self.mem.SetTokenForLine(node.keyword)
+
+        val = self.expr_ev.EvalExpr(node.val, node.keyword)
+        raise vm.ValueControlFlow(node.keyword, val)
+
+    def _DoControlFlow(self, node):
+        # type: (command.ControlFlow) -> int
+        keyword = node.keyword
+        self.mem.SetTokenForLine(keyword)
+
+        if node.arg_word:  # Evaluate the argument
+            str_val = self.word_ev.EvalWordToString(node.arg_word)
+
+            # Quirk: We need 'return $empty' to be valid for libtool.  This is
+            # another meaning of strict_control_flow, which also has to do with
+            # break/continue at top level.  It has the side effect of making
+            # 'return ""' valid, which shells other than zsh fail on.
+            if len(str_val.s
+                   ) == 0 and not self.exec_opts.strict_control_flow():
+                arg = 0
+            else:
+                try:
+                    # They all take integers.  NOTE: dash is the only shell that
+                    # disallows -1!  Others wrap to 255.
+                    arg = int(str_val.s)
+                except ValueError:
+                    e_die(
+                        '%r expected a number, got %r' %
+                        (lexer.TokenVal(keyword), str_val.s),
+                        loc.Word(node.arg_word))
+        else:
+            if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
+                arg = self.mem.LastStatus()
+            else:
+                arg = 1  # break or continue 1 level by default
+
+        self.tracer.OnControlFlow(keyword.tval, arg)
+
+        # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
+        # from a sourced script, it makes sense to return from a main script.
+        ok = True
+        if (keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
+                self.loop_level == 0):
+            ok = False
+
+        if ok:
+            if keyword.id == Id.ControlFlow_Exit:
+                raise util.UserExit(
+                    arg)  # handled differently than other control flow
+            else:
+                raise vm.IntControlFlow(keyword, arg)
+        else:
+            msg = 'Invalid control flow at top level'
+            if self.exec_opts.strict_control_flow():
+                e_die(msg, keyword)
+            else:
+                # Only print warnings, never fatal.
+                # Bash oddly only exits 1 for 'return', but no other shell does.
+                self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
+                return 0
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1139,69 +1202,11 @@ class CommandEvaluator(object):
 
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
-                self.mem.SetTokenForLine(node.keyword)
-
-                val = self.expr_ev.EvalExpr(node.val, node.keyword)
-                raise vm.ValueControlFlow(node.keyword, val)
+                self._DoRetval(node)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
-
-                keyword = node.keyword
-                self.mem.SetTokenForLine(keyword)
-
-                if node.arg_word:  # Evaluate the argument
-                    str_val = self.word_ev.EvalWordToString(node.arg_word)
-
-                    # Quirk: We need 'return $empty' to be valid for libtool.  This is
-                    # another meaning of strict_control_flow, which also has to do with
-                    # break/continue at top level.  It has the side effect of making
-                    # 'return ""' valid, which shells other than zsh fail on.
-                    if len(str_val.s
-                           ) == 0 and not self.exec_opts.strict_control_flow():
-                        arg = 0
-                    else:
-                        try:
-                            # They all take integers.  NOTE: dash is the only shell that
-                            # disallows -1!  Others wrap to 255.
-                            arg = int(str_val.s)
-                        except ValueError:
-                            e_die(
-                                '%r expected a number, got %r' %
-                                (lexer.TokenVal(keyword), str_val.s),
-                                loc.Word(node.arg_word))
-                else:
-                    if keyword.id in (Id.ControlFlow_Exit,
-                                      Id.ControlFlow_Return):
-                        arg = self.mem.LastStatus()
-                    else:
-                        arg = 1  # break or continue 1 level by default
-
-                self.tracer.OnControlFlow(keyword.tval, arg)
-
-                # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
-                # from a sourced script, it makes sense to return from a main script.
-                ok = True
-                if (keyword.id
-                        in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
-                        self.loop_level == 0):
-                    ok = False
-
-                if ok:
-                    if keyword.id == Id.ControlFlow_Exit:
-                        raise util.UserExit(
-                            arg)  # handled differently than other control flow
-                    else:
-                        raise vm.IntControlFlow(keyword, arg)
-                else:
-                    msg = 'Invalid control flow at top level'
-                    if self.exec_opts.strict_control_flow():
-                        e_die(msg, keyword)
-                    else:
-                        # Only print warnings, never fatal.
-                        # Bash oddly only exits 1 for 'return', but no other shell does.
-                        self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
-                        status = 0
+                status = self._DoControlFlow(node)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
             # DoGroup has 'do' and 'done' spids for translation.
