@@ -1763,7 +1763,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
             if CTypeIsManaged(c_item_type):
-                self.write_ind('  StackRoots _for(&')
+                self.write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
                 self.write_ind(');\n')
 
@@ -2576,7 +2576,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if len(roots):
                 for i, r in enumerate(roots):
-                    self.write_ind('StackRoots _root%d(&%s);\n' % (i, r))
+                    self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
 
                 self.write('\n')
 

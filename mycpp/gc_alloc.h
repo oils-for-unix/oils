@@ -22,13 +22,42 @@ extern MarkSweepHeap gHeap;
 #define VALIDATE_ROOTS 0
 
 // mycpp generates code that keeps track of the root set
-class StackRoots {
+class StackRoot {
  public:
-  explicit StackRoots(void* root) {
-      n_ = 1;
-      gHeap.PushRoot(reinterpret_cast<RawObject**>(root));
+  StackRoot(void* root) {
+#if VALIDATE_ROOTS
+    RawObject* obj = *(reinterpret_cast<RawObject**>(root));
+    if (obj) {
+      RawObject* header = ObjHeader::FromObject(obj);
+      log("obj %p header %p", obj, header);
+
+      switch (header->heap_tag) {
+      case HeapTag::Global:
+      case HeapTag::Opaque:
+      case HeapTag::Scanned:
+      case HeapTag::FixedSize:
+        break;
+
+      default:
+        log("root %d heap %d type %d mask %d len %d", i, header->heap_tag,
+            header->type_tag, header->field_mask, header->obj_len);
+        FAIL(kShouldNotGetHere);
+        break;
+      }
+    }
+    i++;
+#endif
+    gHeap.PushRoot(reinterpret_cast<RawObject**>(root));
   }
 
+  ~StackRoot() {
+    gHeap.PopRoot();
+  }
+};
+
+// sugar for tests
+class StackRoots {
+ public:
   // Note: void** seems logical, because these are pointers to pointers, but
   // the C++ compiler doesn't like it.
   StackRoots(std::initializer_list<void*> roots) {
