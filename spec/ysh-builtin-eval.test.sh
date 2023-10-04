@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Eval a block within a proc
 proc run (;;; block) {
@@ -38,4 +38,17 @@ eval (my_block)
 ## STDOUT:
 0
 1
+## END
+
+#### Eval should not leak scope
+proc leaky (;;; block) {
+  var this = 42
+  eval (block)
+}
+
+leaky {
+  echo $this
+}
+## status: 1
+## STDOUT:
 ## END
