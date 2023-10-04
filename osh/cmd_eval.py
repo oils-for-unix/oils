@@ -990,6 +990,65 @@ class CommandEvaluator(object):
 
         return 0
 
+    def _DoShAssignment(self, node, cmd_st):
+        # type: (command.ShAssignment, CommandStatus) -> int
+        assert len(node.pairs) >= 1, node
+        pairs = node.pairs
+        self.mem.SetTokenForLine(pairs[0].left)
+
+        # x=y is 'neutered' inside 'proc'
+        which_scopes = self.mem.ScopesForWriting()
+
+        for pair in pairs:
+            if pair.op == assign_op_e.PlusEqual:
+                assert pair.rhs, pair.rhs  # I don't think a+= is valid?
+                rhs = self.word_ev.EvalRhsWord(pair.rhs)
+
+                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+                # do not respect set -u
+                old_val = sh_expr_eval.OldValue(lval, self.mem, None)
+
+                val = PlusEquals(old_val, rhs)
+
+            else:  # plain assignment
+                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+
+                # RHS can be a string or array.
+                if pair.rhs:
+                    val = self.word_ev.EvalRhsWord(pair.rhs)
+                    assert isinstance(val, value_t), val
+
+                else:  # e.g. 'readonly x' or 'local x'
+                    val = None
+
+            # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
+            # Undef value, but the 'array' attribute.
+
+            #log('setting %s to %s with flags %s', lval, val, flags)
+            flags = 0
+            self.mem.SetValue(lval, val, which_scopes, flags=flags)
+            self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
+
+        self._MaybeRunDebugTrap()
+
+        # PATCH to be compatible with existing shells: If the assignment had a
+        # command sub like:
+        #
+        # s=$(echo one; false)
+        #
+        # then its status will be in mem.last_status, and we can check it here.
+        # If there was NOT a command sub in the assignment, then we don't want to
+        # check it.
+
+        # Only do this if there was a command sub?  How?  Look at node?
+        # Set a flag in mem?   self.mem.last_status or
+        if self.check_command_sub_status:
+            last_status = self.mem.LastStatus()
+            self._CheckStatus(last_status, cmd_st, node, loc.Missing)
+            return last_status  # A global assignment shouldn't clear $?.
+        else:
+            return 0
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1043,65 +1102,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
-                assert len(node.pairs) >= 1, node
-                pairs = node.pairs
-                self.mem.SetTokenForLine(pairs[0].left)
-
-                # x=y is 'neutered' inside 'proc'
-                which_scopes = self.mem.ScopesForWriting()
-
-                for pair in pairs:
-                    if pair.op == assign_op_e.PlusEqual:
-                        assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-                        rhs = self.word_ev.EvalRhsWord(pair.rhs)
-
-                        lval = self.arith_ev.EvalShellLhs(
-                            pair.lhs, which_scopes)
-                        # do not respect set -u
-                        old_val = sh_expr_eval.OldValue(lval, self.mem, None)
-
-                        val = PlusEquals(old_val, rhs)
-
-                    else:  # plain assignment
-                        lval = self.arith_ev.EvalShellLhs(
-                            pair.lhs, which_scopes)
-
-                        # RHS can be a string or array.
-                        if pair.rhs:
-                            val = self.word_ev.EvalRhsWord(pair.rhs)
-                            assert isinstance(val, value_t), val
-
-                        else:  # e.g. 'readonly x' or 'local x'
-                            val = None
-
-                    # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
-                    # Undef value, but the 'array' attribute.
-
-                    #log('setting %s to %s with flags %s', lval, val, flags)
-                    flags = 0
-                    self.mem.SetValue(lval, val, which_scopes, flags=flags)
-                    self.tracer.OnShAssignment(lval, pair.op, val, flags,
-                                               which_scopes)
-
-                self._MaybeRunDebugTrap()
-
-                # PATCH to be compatible with existing shells: If the assignment had a
-                # command sub like:
-                #
-                # s=$(echo one; false)
-                #
-                # then its status will be in mem.last_status, and we can check it here.
-                # If there was NOT a command sub in the assignment, then we don't want to
-                # check it.
-
-                # Only do this if there was a command sub?  How?  Look at node?
-                # Set a flag in mem?   self.mem.last_status or
-                if self.check_command_sub_status:
-                    last_status = self.mem.LastStatus()
-                    self._CheckStatus(last_status, cmd_st, node, loc.Missing)
-                    status = last_status  # A global assignment shouldn't clear $?.
-                else:
-                    status = 0
+                status = self._DoShAssignment(node, cmd_st)
 
             elif case(command_e.Expr):
                 node = cast(command.Expr, UP_node)
