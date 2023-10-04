@@ -1517,6 +1517,23 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoTimeBlock(self, node):
+        # type: (command.TimeBlock) -> int
+        # TODO:
+        # - When do we need RUSAGE_CHILDREN?
+        # - Respect TIMEFORMAT environment variable.
+        # "If this variable is not set, Bash acts as if it had the value"
+        # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
+        # "A trailing newline is added when the format string is displayed."
+
+        s_real, s_user, s_sys = pyos.Time()
+        status = self._Execute(node.pipeline)
+        e_real, e_user, e_sys = pyos.Time()
+        # note: mycpp doesn't support %.3f
+        libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1642,19 +1659,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.TimeBlock):
                 node = cast(command.TimeBlock, UP_node)
-                # TODO:
-                # - When do we need RUSAGE_CHILDREN?
-                # - Respect TIMEFORMAT environment variable.
-                # "If this variable is not set, Bash acts as if it had the value"
-                # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
-                # "A trailing newline is added when the format string is displayed."
-
-                s_real, s_user, s_sys = pyos.Time()
-                status = self._Execute(node.pipeline)
-                e_real, e_user, e_sys = pyos.Time()
-                # note: mycpp doesn't support %.3f
-                libc.print_time(e_real - s_real, e_user - s_user,
-                                e_sys - s_sys)
+                status = self._DoTimeBlock(node)
 
             else:
                 raise NotImplementedError(node.tag())
