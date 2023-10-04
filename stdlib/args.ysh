@@ -36,6 +36,17 @@
 #     - _this is the thing we're currently creating
 
 proc Args (spec Ref;;; block) {
+  ## Create an args spec which can be passed to parseArgs.
+  ##
+  ## Example:
+  ##
+  ##   # NOTE: :spec will create a variable named spec
+  ##   Args :spec {
+  ##     flag -v --verbose ('bool')
+  ##   }
+  ##
+  ##   :: parseArgs(spec, ARGV)
+
   setref spec = {
     flags: [],
     args: [],
@@ -61,16 +72,43 @@ proc Args (spec Ref;;; block) {
 }
 
 proc flag (short, long; type='bool', default=null) {
+  ## Declare a flag within an `Args`.
+  ##
+  ## Examples:
+  ##
+  ##   Args :spec {
+  ##     flag -v --verbose
+  ##     flag -n --count ('int', default=1)
+  ##     flag -f --file ('str')
+  ##   }
+
   # TODO: help, make type take in a type object (ie. Bool, Int, Str)
   json write --pretty=F ({ tag: 'flag', node: { short, long, type, default, help: null } })
 }
 
 proc arg (name) {
+  ## Declare a positional argument within an `Args`.
+  ##
+  ## Examples:
+  ##
+  ##   Args :spec {
+  ##     arg file
+  ##   }
+
   # TODO: type, default and help
   json write --pretty=F ({ tag: 'arg', node: { name, type: 'str', default: null, help: null } })
 }
 
 proc rest (name) {
+  ## Take the remaining positional arguments within an `Args`.
+  ##
+  ## Examples:
+  ##
+  ##   Args :grep {
+  ##     arg query
+  ##     rest files
+  ##   }
+
   json write --pretty=F ({ tag: 'rest', node: name })
 }
 
@@ -85,6 +123,11 @@ func __args_getFlagName(flag) {
 }
 
 func parseArgs(spec, argv) {
+  ## Given a spec created by `Args`. Parse an array of strings `argv` per that
+  ## spec.
+  ##
+  ## See `Args` for examples of use.
+
   var i = 0
   var positionalPos = 0
   var argc = len(argv)
