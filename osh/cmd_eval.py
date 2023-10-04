@@ -903,6 +903,40 @@ class CommandEvaluator(object):
         else:
             return self.shell_ex.RunBackgroundJob(node.child)
 
+    def _DoPipeline(self, node, cmd_st):
+        # type: (command.Pipeline, CommandStatus) -> int
+        cmd_st.check_errexit = True
+        for op in node.ops:
+            if op.id != Id.Op_Pipe:
+                e_die("|& isn't supported", op)
+
+        # Remove $_ before pipeline.  This matches bash, and is important in
+        # pipelines than assignments because pipelines are non-deterministic.
+        self.mem.SetLastArgument('')
+
+        # Set status to INVALID value, because we MIGHT set cmd_st.pipe_status,
+        # which _Execute() boils down into a status for us.
+        status = -1
+
+        if node.negated is not None:
+            self._StrictErrExit(node)
+            with state.ctx_ErrExit(self.mutable_opts, False, node.negated):
+                # '! grep' is parsed as a pipeline, according to the grammar, but
+                # there's no pipe() call.
+                if len(node.children) == 1:
+                    tmp_status = self._Execute(node.children[0])
+                    status = 1 if tmp_status == 0 else 0
+                else:
+                    self.shell_ex.RunPipeline(node, cmd_st)
+                    cmd_st.pipe_negated = True
+
+            # errexit is disabled for !.
+            cmd_st.check_errexit = False
+        else:
+            self.shell_ex.RunPipeline(node, cmd_st)
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -928,36 +962,7 @@ class CommandEvaluator(object):
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
-                cmd_st.check_errexit = True
-                for op in node.ops:
-                    if op.id != Id.Op_Pipe:
-                        e_die("|& isn't supported", op)
-
-                # Remove $_ before pipeline.  This matches bash, and is important in
-                # pipelines than assignments because pipelines are non-deterministic.
-                self.mem.SetLastArgument('')
-
-                # Set status to INVALID value, because we MIGHT set cmd_st.pipe_status,
-                # which _Execute() boils down into a status for us.
-                status = -1
-
-                if node.negated is not None:
-                    self._StrictErrExit(node)
-                    with state.ctx_ErrExit(self.mutable_opts, False,
-                                           node.negated):
-                        # '! grep' is parsed as a pipeline, according to the grammar, but
-                        # there's no pipe() call.
-                        if len(node.children) == 1:
-                            tmp_status = self._Execute(node.children[0])
-                            status = 1 if tmp_status == 0 else 0
-                        else:
-                            self.shell_ex.RunPipeline(node, cmd_st)
-                            cmd_st.pipe_negated = True
-
-                    # errexit is disabled for !.
-                    cmd_st.check_errexit = False
-                else:
-                    self.shell_ex.RunPipeline(node, cmd_st)
+                status = self._DoPipeline(node, cmd_st)
 
             elif case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
