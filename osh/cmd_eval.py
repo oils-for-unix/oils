@@ -789,6 +789,97 @@ class CommandEvaluator(object):
         else:
             raise NotImplementedError(Id_str(node.op.id))
 
+    def _DoSimple(self, node, cmd_st):
+        # type: (command.Simple, CommandStatus) -> int
+        cmd_st.check_errexit = True
+
+        # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
+        # Note that for '> $LINENO' the location token is set in _EvalRedirect.
+        # TODO: blame_tok should always be set.
+        if node.blame_tok is not None:
+            self.mem.SetTokenForLine(node.blame_tok)
+
+        self._MaybeRunDebugTrap()
+
+        # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
+        # redirected here, which screws up logging.  For example, 'echo hi
+        # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
+        # redirects.
+
+        # Another problem:
+        # - tracing can be called concurrently from multiple processes, leading
+        # to overlap.  Maybe have a mode that creates a file per process.
+        # xtrace-proc
+        # - line numbers for every command would be very nice.  But then you have
+        # to print the filename too.
+
+        words = braces.BraceExpandWords(node.words)
+
+        # Note: Individual WORDS can fail
+        # - $() and <() can have failures.  This can happen in DBracket,
+        #   DParen, etc. too
+        # - Tracing: this can start processes for proc sub and here docs!
+        cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
+
+        UP_cmd_val = cmd_val
+        if UP_cmd_val.tag() == cmd_value_e.Argv:
+            cmd_val = cast(cmd_value.Argv, UP_cmd_val)
+
+            if len(cmd_val.argv):  # it can be empty in rare cases
+                self.mem.SetLastArgument(cmd_val.argv[-1])
+            else:
+                self.mem.SetLastArgument('')
+
+            typed_args_ = None  # type: ArgList
+            if node.typed_args:
+                orig = node.typed_args
+                # COPY positional args because we may append an arg
+                typed_args_ = ArgList(orig.left, list(orig.pos_args),
+                                      orig.named_delim, orig.named_args,
+                                      orig.right)
+
+                # the block is the last argument
+                if node.block:
+                    typed_args_.pos_args.append(node.block)
+                    # ArgList already has a spid in this case
+            else:
+                if node.block:
+                    # Create ArgList for the block.  Since we have { } and not (),
+                    # copy them from BraceGroup
+                    typed_args_ = ArgList(node.block.brace_group.left,
+                                          [node.block], None, [],
+                                          node.block.brace_group.right)
+
+            cmd_val.typed_args = typed_args_
+
+        else:
+            if node.block:
+                e_die("ShAssignment builtins don't accept blocks",
+                      node.block.brace_group.left)
+            cmd_val = cast(cmd_value.Assign, UP_cmd_val)
+
+            # Could reset $_ after assignment, but then we'd have to do it for
+            # all YSH constructs too.  It's easier to let it persist.  Other
+            # shells aren't consistent.
+            # self.mem.SetLastArgument('')
+
+        # NOTE: RunSimpleCommand never returns when do_fork=False!
+        if len(node.more_env):  # I think this guard is necessary?
+            is_other_special = False  # TODO: There are other special builtins too!
+            if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
+                # Special builtins have their temp env persisted.
+                self._EvalTempEnv(node.more_env, 0)
+                status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+            else:
+                with state.ctx_Temp(self.mem):
+                    self._EvalTempEnv(node.more_env, state.SetExport)
+                    status = self._RunSimpleCommand(cmd_val, cmd_st,
+                                                    node.do_fork)
+        else:
+            status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -802,96 +893,7 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
-
-                cmd_st.check_errexit = True
-
-                # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
-                # Note that for '> $LINENO' the location token is set in _EvalRedirect.
-                # TODO: blame_tok should always be set.
-                if node.blame_tok is not None:
-                    self.mem.SetTokenForLine(node.blame_tok)
-
-                self._MaybeRunDebugTrap()
-
-                # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
-                # redirected here, which screws up logging.  For example, 'echo hi
-                # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
-                # redirects.
-
-                # Another problem:
-                # - tracing can be called concurrently from multiple processes, leading
-                # to overlap.  Maybe have a mode that creates a file per process.
-                # xtrace-proc
-                # - line numbers for every command would be very nice.  But then you have
-                # to print the filename too.
-
-                words = braces.BraceExpandWords(node.words)
-
-                # Note: Individual WORDS can fail
-                # - $() and <() can have failures.  This can happen in DBracket,
-                #   DParen, etc. too
-                # - Tracing: this can start processes for proc sub and here docs!
-                cmd_val = self.word_ev.EvalWordSequence2(words,
-                                                         allow_assign=True)
-
-                UP_cmd_val = cmd_val
-                if UP_cmd_val.tag() == cmd_value_e.Argv:
-                    cmd_val = cast(cmd_value.Argv, UP_cmd_val)
-
-                    if len(cmd_val.argv):  # it can be empty in rare cases
-                        self.mem.SetLastArgument(cmd_val.argv[-1])
-                    else:
-                        self.mem.SetLastArgument('')
-
-                    typed_args_ = None  # type: ArgList
-                    if node.typed_args:
-                        orig = node.typed_args
-                        # COPY positional args because we may append an arg
-                        typed_args_ = ArgList(orig.left, list(orig.pos_args),
-                                              orig.named_delim,
-                                              orig.named_args, orig.right)
-
-                        # the block is the last argument
-                        if node.block:
-                            typed_args_.pos_args.append(node.block)
-                            # ArgList already has a spid in this case
-                    else:
-                        if node.block:
-                            # Create ArgList for the block.  Since we have { } and not (),
-                            # copy them from BraceGroup
-                            typed_args_ = ArgList(node.block.brace_group.left,
-                                                  [node.block], None, [],
-                                                  node.block.brace_group.right)
-
-                    cmd_val.typed_args = typed_args_
-
-                else:
-                    if node.block:
-                        e_die("ShAssignment builtins don't accept blocks",
-                              node.block.brace_group.left)
-                    cmd_val = cast(cmd_value.Assign, UP_cmd_val)
-
-                    # Could reset $_ after assignment, but then we'd have to do it for
-                    # all YSH constructs too.  It's easier to let it persist.  Other
-                    # shells aren't consistent.
-                    # self.mem.SetLastArgument('')
-
-                # NOTE: RunSimpleCommand never returns when do_fork=False!
-                if len(node.more_env):  # I think this guard is necessary?
-                    is_other_special = False  # TODO: There are other special builtins too!
-                    if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
-                        # Special builtins have their temp env persisted.
-                        self._EvalTempEnv(node.more_env, 0)
-                        status = self._RunSimpleCommand(
-                            cmd_val, cmd_st, node.do_fork)
-                    else:
-                        with state.ctx_Temp(self.mem):
-                            self._EvalTempEnv(node.more_env, state.SetExport)
-                            status = self._RunSimpleCommand(
-                                cmd_val, cmd_st, node.do_fork)
-                else:
-                    status = self._RunSimpleCommand(cmd_val, cmd_st,
-                                                    node.do_fork)
+                status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
                 node = cast(command.ExpandedAlias, UP_node)
