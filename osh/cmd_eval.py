@@ -1184,6 +1184,203 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoWhileUntil(self, node):
+        # type: (command.WhileUntil) -> int
+        self.mem.SetTokenForLine(node.keyword)
+        status = 0
+
+        with ctx_LoopLevel(self):
+            while True:
+                try:
+                    # blame while/until spid
+                    b = self._EvalCondition(node.cond, node.keyword)
+                    if node.keyword.id == Id.KW_Until:
+                        b = not b
+                    if not b:
+                        break
+                    status = self._Execute(node.body)  # last one wins
+
+                except vm.IntControlFlow as e:
+                    status = 0
+                    action = e.HandleLoop()
+                    if action == flow_e.Break:
+                        break
+                    elif action == flow_e.Raise:
+                        raise
+
+        return status
+
+    def _DoForEach(self, node):
+        # type: (command.ForEach) -> int
+        self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
+
+        # for the 2 kinds of shell loop
+        iter_list = None  # type: List[str]
+
+        # for YSH loop
+        iter_expr = None  # type: expr_t
+        expr_blame = None  # type: loc_t
+
+        iterable = node.iterable
+        UP_iterable = iterable
+
+        with tagswitch(node.iterable) as case:
+            if case(for_iter_e.Args):
+                iter_list = self.mem.GetArgv()
+
+            elif case(for_iter_e.Words):
+                iterable = cast(for_iter.Words, UP_iterable)
+                words = braces.BraceExpandWords(iterable.words)
+                iter_list = self.word_ev.EvalWordSequence(words)
+
+            elif case(for_iter_e.YshExpr):
+                iterable = cast(for_iter.YshExpr, UP_iterable)
+                iter_expr = iterable.e
+                expr_blame = iterable.blame
+
+        n = len(node.iter_names)
+        assert n > 0
+
+        i_name = None  # type: Optional[lvalue_t]
+        # required
+        name1 = None  # type: lvalue_t
+        name2 = None  # type: Optional[lvalue_t]
+
+        it2 = None  # type: val_ops._ContainerIter
+        if iter_list is None:  # for_expr.YshExpr
+            val = self.expr_ev.EvalExpr(iter_expr, expr_blame)
+
+            UP_val = val
+            with tagswitch(val) as case:
+                if case(value_e.List):
+                    val = cast(value.List, UP_val)
+                    it2 = val_ops.ListIterator(val)
+
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                    else:
+                        # This is similar to a parse error
+                        e_die_status(
+                            2,
+                            'List iteration expects at most 2 loop variables',
+                            node.keyword)
+
+                elif case(value_e.Dict):
+                    val = cast(value.Dict, UP_val)
+                    it2 = val_ops.DictIterator(val)
+
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        name1 = location.LName(node.iter_names[0])
+                        name2 = location.LName(node.iter_names[1])
+                    elif n == 3:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                        name2 = location.LName(node.iter_names[2])
+                    else:
+                        raise AssertionError()
+
+                elif case(value_e.Range):
+                    val = cast(value.Range, UP_val)
+                    it2 = val_ops.RangeIterator(val)
+
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                    else:
+                        e_die_status(
+                            2,
+                            'Range iteration expects at most 2 loop variables',
+                            node.keyword)
+
+                else:
+                    raise error.TypeErr(val, 'for loop expected List or Dict',
+                                        node.keyword)
+        else:
+            #log('iter list %s', iter_list)
+            it2 = val_ops.ArrayIter(iter_list)
+
+            if n == 1:
+                name1 = location.LName(node.iter_names[0])
+            elif n == 2:
+                i_name = location.LName(node.iter_names[0])
+                name1 = location.LName(node.iter_names[1])
+            else:
+                # This is similar to a parse error
+                e_die_status(
+                    2, 'Argv iteration expects at most 2 loop variables',
+                    node.keyword)
+
+        status = 0  # in case we loop zero times
+        with ctx_LoopLevel(self):
+            while not it2.Done():
+                self.mem.SetValue(name1, it2.FirstValue(), scope_e.LocalOnly)
+                if name2:
+                    self.mem.SetValue(name2, it2.SecondValue(),
+                                      scope_e.LocalOnly)
+                if i_name:
+                    self.mem.SetValue(i_name, value.Int(it2.Index()),
+                                      scope_e.LocalOnly)
+
+                # increment index before handling continue, etc.
+                it2.Next()
+
+                try:
+                    status = self._Execute(node.body)  # last one wins
+                except vm.IntControlFlow as e:
+                    status = 0
+                    action = e.HandleLoop()
+                    if action == flow_e.Break:
+                        break
+                    elif action == flow_e.Raise:
+                        raise
+
+        return status
+
+    def _DoForExpr(self, node):
+        # type: (command.ForExpr) -> int
+        self.mem.SetTokenForLine(node.keyword)
+        #self._MaybeRunDebugTrap()
+
+        status = 0
+
+        init = node.init
+        for_cond = node.cond
+        body = node.body
+        update = node.update
+
+        if init:
+            self.arith_ev.Eval(init)
+
+        with ctx_LoopLevel(self):
+            while True:
+                if for_cond:
+                    # We only accept integers as conditions
+                    cond_int = self.arith_ev.EvalToInt(for_cond)
+                    if cond_int == 0:  # false
+                        break
+
+                try:
+                    status = self._Execute(body)
+                except vm.IntControlFlow as e:
+                    status = 0
+                    action = e.HandleLoop()
+                    if action == flow_e.Break:
+                        break
+                    elif action == flow_e.Raise:
+                        raise
+
+                if update:
+                    self.arith_ev.Eval(update)
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1274,198 +1471,15 @@ class CommandEvaluator(object):
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
-                self.mem.SetTokenForLine(node.keyword)
-                status = 0
-
-                with ctx_LoopLevel(self):
-                    while True:
-                        try:
-                            # blame while/until spid
-                            b = self._EvalCondition(node.cond, node.keyword)
-                            if node.keyword.id == Id.KW_Until:
-                                b = not b
-                            if not b:
-                                break
-                            status = self._Execute(node.body)  # last one wins
-
-                        except vm.IntControlFlow as e:
-                            status = 0
-                            action = e.HandleLoop()
-                            if action == flow_e.Break:
-                                break
-                            elif action == flow_e.Raise:
-                                raise
+                status = self._DoWhileUntil(node)
 
             elif case(command_e.ForEach):
                 node = cast(command.ForEach, UP_node)
-                self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
-
-                # for the 2 kinds of shell loop
-                iter_list = None  # type: List[str]
-
-                # for YSH loop
-                iter_expr = None  # type: expr_t
-                expr_blame = None  # type: loc_t
-
-                iterable = node.iterable
-                UP_iterable = iterable
-
-                with tagswitch(node.iterable) as case:
-                    if case(for_iter_e.Args):
-                        iter_list = self.mem.GetArgv()
-
-                    elif case(for_iter_e.Words):
-                        iterable = cast(for_iter.Words, UP_iterable)
-                        words = braces.BraceExpandWords(iterable.words)
-                        iter_list = self.word_ev.EvalWordSequence(words)
-
-                    elif case(for_iter_e.YshExpr):
-                        iterable = cast(for_iter.YshExpr, UP_iterable)
-                        iter_expr = iterable.e
-                        expr_blame = iterable.blame
-
-                n = len(node.iter_names)
-                assert n > 0
-
-                i_name = None  # type: Optional[lvalue_t]
-                # required
-                name1 = None  # type: lvalue_t
-                name2 = None  # type: Optional[lvalue_t]
-
-                it2 = None  # type: val_ops._ContainerIter
-                if iter_list is None:  # for_expr.YshExpr
-                    val = self.expr_ev.EvalExpr(iter_expr, expr_blame)
-
-                    UP_val = val
-                    with tagswitch(val) as case:
-                        if case(value_e.List):
-                            val = cast(value.List, UP_val)
-                            it2 = val_ops.ListIterator(val)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                i_name = location.LName(node.iter_names[0])
-                                name1 = location.LName(node.iter_names[1])
-                            else:
-                                # This is similar to a parse error
-                                e_die_status(
-                                    2,
-                                    'List iteration expects at most 2 loop variables',
-                                    node.keyword)
-
-                        elif case(value_e.Dict):
-                            val = cast(value.Dict, UP_val)
-                            it2 = val_ops.DictIterator(val)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                name1 = location.LName(node.iter_names[0])
-                                name2 = location.LName(node.iter_names[1])
-                            elif n == 3:
-                                i_name = location.LName(node.iter_names[0])
-                                name1 = location.LName(node.iter_names[1])
-                                name2 = location.LName(node.iter_names[2])
-                            else:
-                                raise AssertionError()
-
-                        elif case(value_e.Range):
-                            val = cast(value.Range, UP_val)
-                            it2 = val_ops.RangeIterator(val)
-
-                            if n == 1:
-                                name1 = location.LName(node.iter_names[0])
-                            elif n == 2:
-                                i_name = location.LName(node.iter_names[0])
-                                name1 = location.LName(node.iter_names[1])
-                            else:
-                                e_die_status(
-                                    2,
-                                    'Range iteration expects at most 2 loop variables',
-                                    node.keyword)
-
-                        else:
-                            raise error.TypeErr(
-                                val, 'for loop expected List or Dict',
-                                node.keyword)
-                else:
-                    #log('iter list %s', iter_list)
-                    it2 = val_ops.ArrayIter(iter_list)
-
-                    if n == 1:
-                        name1 = location.LName(node.iter_names[0])
-                    elif n == 2:
-                        i_name = location.LName(node.iter_names[0])
-                        name1 = location.LName(node.iter_names[1])
-                    else:
-                        # This is similar to a parse error
-                        e_die_status(
-                            2,
-                            'Argv iteration expects at most 2 loop variables',
-                            node.keyword)
-
-                status = 0  # in case we loop zero times
-                with ctx_LoopLevel(self):
-                    while not it2.Done():
-                        self.mem.SetValue(name1, it2.FirstValue(),
-                                          scope_e.LocalOnly)
-                        if name2:
-                            self.mem.SetValue(name2, it2.SecondValue(),
-                                              scope_e.LocalOnly)
-                        if i_name:
-                            self.mem.SetValue(i_name, value.Int(it2.Index()),
-                                              scope_e.LocalOnly)
-
-                        # increment index before handling continue, etc.
-                        it2.Next()
-
-                        try:
-                            status = self._Execute(node.body)  # last one wins
-                        except vm.IntControlFlow as e:
-                            status = 0
-                            action = e.HandleLoop()
-                            if action == flow_e.Break:
-                                break
-                            elif action == flow_e.Raise:
-                                raise
+                status = self._DoForEach(node)
 
             elif case(command_e.ForExpr):
                 node = cast(command.ForExpr, UP_node)
-
-                self.mem.SetTokenForLine(node.keyword)
-                #self._MaybeRunDebugTrap()
-
-                status = 0
-
-                init = node.init
-                for_cond = node.cond
-                body = node.body
-                update = node.update
-
-                if init:
-                    self.arith_ev.Eval(init)
-
-                with ctx_LoopLevel(self):
-                    while True:
-                        if for_cond:
-                            # We only accept integers as conditions
-                            cond_int = self.arith_ev.EvalToInt(for_cond)
-                            if cond_int == 0:  # false
-                                break
-
-                        try:
-                            status = self._Execute(body)
-                        except vm.IntControlFlow as e:
-                            status = 0
-                            action = e.HandleLoop()
-                            if action == flow_e.Break:
-                                break
-                            elif action == flow_e.Raise:
-                                raise
-
-                        if update:
-                            self.arith_ev.Eval(update)
+                status = self._DoForExpr(node)
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
