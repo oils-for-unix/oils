@@ -937,6 +937,30 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoDBracket(self, node, cmd_st):
+        # type: (command.DBracket, CommandStatus) -> int
+        self.mem.SetTokenForLine(node.left)
+        self._MaybeRunDebugTrap()
+
+        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
+
+        cmd_st.check_errexit = True
+        cmd_st.show_code = True  # this is a "leaf" for errors
+        result = self.bool_ev.EvalB(node.expr)
+        return 0 if result else 1
+
+    def _DoDParen(self, node, cmd_st):
+        # type: (command.DParen, CommandStatus) -> int
+        self.mem.SetTokenForLine(node.left)
+        self._MaybeRunDebugTrap()
+
+        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
+
+        cmd_st.check_errexit = True
+        cmd_st.show_code = True  # this is a "leaf" for errors
+        i = self.arith_ev.EvalToInt(node.child)
+        return 1 if i == 0 else 0
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -971,27 +995,11 @@ class CommandEvaluator(object):
 
             elif case(command_e.DBracket):
                 node = cast(command.DBracket, UP_node)
-                self.mem.SetTokenForLine(node.left)
-                self._MaybeRunDebugTrap()
-
-                self.tracer.PrintSourceCode(node.left, node.right, self.arena)
-
-                cmd_st.check_errexit = True
-                cmd_st.show_code = True  # this is a "leaf" for errors
-                result = self.bool_ev.EvalB(node.expr)
-                status = 0 if result else 1
+                status = self._DoDBracket(node, cmd_st)
 
             elif case(command_e.DParen):
                 node = cast(command.DParen, UP_node)
-                self.mem.SetTokenForLine(node.left)
-                self._MaybeRunDebugTrap()
-
-                self.tracer.PrintSourceCode(node.left, node.right, self.arena)
-
-                cmd_st.check_errexit = True
-                cmd_st.show_code = True  # this is a "leaf" for errors
-                i = self.arith_ev.EvalToInt(node.child)
-                status = 1 if i == 0 else 0
+                status = self._DoDParen(node, cmd_st)
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
