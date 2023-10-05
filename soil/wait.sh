@@ -12,7 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source soil/common.sh
 
-curl-until-200() {
+fast-curl-until-200() {
   ### Retry fetch until HTTP 200, REUSING curl process AND connection
 
   # Similar to
@@ -53,12 +53,26 @@ curl-until-200() {
     $url
 }
 
-http-wait() {
-  local url=$1
-  local sleep_secs=${2:-1}  # don't bother trying until this amount of time
+curl-until-200() {
+  ### bash version of the function above
 
-  while test $(curl); do
-    echo
+  local url=$1
+  local out_path=$2
+  local num_retries=${3:-10}  # number of times through the loop
+  local interval=${4:-10}  # retry every n seconds
+
+  local i=0
+  while true; do
+    curl --verbose --output $out_path \
+      $url
+
+    log "Waiting $interval seconds"
+    sleep $interval
+
+    i=$(( i + 1 ))
+    if test $i -eq $num_retries; then
+      break;
+    fi
   done
 }
 
