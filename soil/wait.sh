@@ -37,6 +37,8 @@ fast-curl-until-200() {
   local num_retries=${3:-10}  # number of times through the loop
   local interval=${4:-10}  # retry every n seconds
 
+  mkdir -p "$(dirname $out_path)"
+
   # --retry-all-errors and --fail are used to make curl try on a 404
 
   # Note: might need --retry-conn-refused as well, in case the server
@@ -60,6 +62,8 @@ curl-until-200() {
   local out_path=$2
   local num_retries=${3:-10}  # number of times through the loop
   local interval=${4:-10}  # retry every n seconds
+
+  mkdir -p "$(dirname $out_path)"
 
   local i=0
   while true; do
