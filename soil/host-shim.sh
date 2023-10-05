@@ -27,8 +27,8 @@ live-image-tag() {
       echo 'v-2023-10-05'
       ;;
     (wild)
-      # rebuild with curl
-      echo 'v-2023-10-05'
+      # rebuild with curl, then g++
+      echo 'v-2023-10-05a'
       ;;
     (benchmarks)
       # freshen up

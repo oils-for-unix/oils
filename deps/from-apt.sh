@@ -121,6 +121,8 @@ wild() {
   # for build/py.sh all
   local -a packages=(
     gcc  # 'cc' for compiling Python extensions
+    g++  # for C++ tarball
+
     python2-dev
     libreadline-dev
     curl  # wait for cpp-tarball
@@ -376,7 +378,7 @@ app-tests() {
     curl  # wait for cpp-tarball
 
     gcc
-    g++
+    g++  # for C++ tarball
 
     # to build ble.sh
     make
