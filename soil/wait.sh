@@ -90,8 +90,8 @@ curl-until-200() {
 for-cpp-tarball()  {
   local prefix=${1:-github-}
 
-  # Wait 3 minutes for cpp-tarball task, before starting to hit the server
-  local sleep_secs=${2:-180}
+  # Wait 80 seconds for cpp-tarball task, since I've seen it complete in 90 seconds
+  local sleep_secs=${2:-80}
 
   # Retry for 12 times, every 10 seconds = 2 minutes.
 
