@@ -61,7 +61,7 @@ class Eval(vm._Builtin):
             t.Done()
 
             unused, status = self.cmd_ev.EvalBlock(block)
-            return 0
+            return status
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
