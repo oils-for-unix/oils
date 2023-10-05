@@ -63,10 +63,16 @@ curl-until-200() {
 
   local i=0
   while true; do
-    curl --verbose --output $out_path \
-      $url
+    local http_code
+    http_code=$(curl --verbose --output $out_path --write-out '%{http_code}' $url)
 
-    log "Waiting $interval seconds"
+    if test "$http_code" = 200; then
+      log "Curl wrote $out_path"
+      ls -l $out_path
+      break;
+    fi
+
+    log "HTTP status $http_code; retrying in $interval seconds"
     sleep $interval
 
     i=$(( i + 1 ))
