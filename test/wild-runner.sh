@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-source test/common.sh  # $OSH
+source test/common.sh  # $OSH, log
 
 dump-html-and-translate-file() {
   local rel_path=$1

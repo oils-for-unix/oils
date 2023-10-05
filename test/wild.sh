@@ -10,14 +10,14 @@
 #   test/wild.sh all '^oil'  # subset
 
 # TODO:
-# - There are a lot of hard-coded source paths here.  These files could
-#   published in a tarball or torrent.
 # - Add more scripts, like gentoo package defs
 
 set -o nounset
 set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+
+source test/common.sh  # export-osh-cpp
 
 # This persists across build/clean.sh
 readonly DEPS_WILD_DIR=../oil_DEPS/wild
@@ -703,10 +703,7 @@ rootfs-manifest() {
 }
 
 soil-run() {
-  # Find osh binary created by devtools/release-native.sh test-tar
-  # test/wild-runner.sh uses it.  We can't extract it over the repo.
-  OIL_VERSION=$(head -n 1 oil-version.txt)
-  export OSH="_tmp/native-tar-test/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/osh"
+  export-osh-cpp _tmp/native-tar-test opt
 
   if test -n "${QUICKLY:-}"; then
     # Do a quick version
@@ -714,17 +711,19 @@ soil-run() {
   else
     # This takes longer than 15 minutes with build/dev.sh minimal !
     # That's with xargs -P $MAX_PROCS in test/wild-runner.sh
-    #
-    # TODO: osh -n --ast-format abbrev-html is slow, even in C++.
 
-    # all '^distro'
+    # The whole thing takes 7:25, which means that the 'wild' Soil job takes 10
+    # minutes.  It waits for the tarball, then tests it.
+    #
+    # For now, just do 'distro', since that's about half the files.
+
+    all '^distro'
     # all '^cloud'
     # all '^cloud|^gnu|^freebsd'
-    all
+    # all
   fi
 }
 
 if test "$(basename $0)" = 'wild.sh'; then
   "$@"
 fi
-

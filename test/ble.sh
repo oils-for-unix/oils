@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh
+
 readonly BASE_DIR=_clone/ble.sh
 
 clone() {
@@ -45,10 +47,10 @@ filter-ansi() {
 run-tests-osh-cpp() {
   # Find osh binary created by devtools/release-native.sh test-tar
   # test/wild-runner.sh uses it.  We can't extract it over the repo.
-  OIL_VERSION=$(head -n 1 oil-version.txt)
-  local osh="$PWD/_tmp/native-tar-test/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/osh"
 
-  run-tests-osh $osh
+  export-osh-cpp _tmp/native-tar-test opt
+
+  run-tests-osh $OSH
 }
 
 run-tests-osh-py() {

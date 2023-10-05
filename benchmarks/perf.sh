@@ -35,6 +35,8 @@ set -o errexit
 
 readonly BASE_DIR=_tmp/perf
 
+source test/common.sh  # $OSH
+
 # TODO:
 # - kernel symbols.  Is that why there are a lot of [unknown] in opt mode?
 # - grep for call_function in collapsed.  I don't see it?
@@ -194,16 +196,13 @@ profile-osh-parse() {
   # Profile parsing a big file.  More than half the time is in malloc
   # (_int_malloc in GCC), which is not surprising!
 
-  local mode=${1:-graph}
-  local variant=${2:-opt}
-
-  local bin="_bin/cxx-$variant/osh"
-  ninja $bin
+  local osh=${1:-_bin/cxx-opt/osh}
+  local mode=${2:-graph}
 
   local file=benchmarks/testdata/configure
   #local file=benchmarks/testdata/configure-coreutils
 
-  local -a cmd=( $bin --ast-format none -n $file )
+  local -a cmd=( $osh --ast-format none -n $file )
   profile-cpp 'osh-parse' $mode "${cmd[@]}"
 
   # 'perf list' shows the events
@@ -215,26 +214,20 @@ profile-osh-parse() {
 }
 
 profile-fib() {
-  local mode=${1:-graph}
-  local variant=${2:-opt}
-
-  local bin="_bin/cxx-$variant/osh"
-  ninja $bin
+  local osh=${1:-_bin/cxx-opt/osh}
+  local mode=${2:-graph}
 
   # Same iterations as benchmarks/gc
-  local -a cmd=( $bin benchmarks/compute/fib.sh 100 44 )
+  local -a cmd=( $OSH benchmarks/compute/fib.sh 100 44 )
 
   profile-cpp 'fib' $mode "${cmd[@]}"
 }
 
 profile-execute() {
-  local mode=${1:-graph}
-  local variant=${2:-opt}
+  local osh=${1:-_bin/cxx-opt/osh}
+  local mode=${2:-graph}
 
-  local bin="_bin/cxx-$variant/osh"
-  ninja $bin
-
-  local -a cmd=( $bin benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+  local -a cmd=( $OSH benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
 
   profile-cpp 'parse-help' $mode "${cmd[@]}"
 }
@@ -425,6 +418,12 @@ soil-run() {
   build-stress-test
 
   profile-stress-test
+
+  export-osh-cpp _tmp/native-tar-test opt
+  #export-osh-cpp '' opt
+
+  profile-fib $OSH flat
+  profile-osh-parse $OSH flat
 
   print-index > $BASE_DIR/index.html
 
