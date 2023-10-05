@@ -295,6 +295,9 @@ publish-cpp-tarball() {
   # 2. Get the OLDEST commit dates, e.g. all except for 50
   # 3. Delete all commit hash dirs not associated with them
 
+  # Fix subtle problem here !!!
+  shopt -s inherit_errexit
+
   local git_commit_dir
   git_commit_dir=$(git-commit-dir "$prefix")
 
@@ -308,7 +311,17 @@ publish-cpp-tarball() {
   #local tar_gz=$tar.gz
   #gzip -c $tar > $tar_gz
 
-  my-scp $tar "$SOIL_USER_HOST:$git_commit_dir"
+  # Avoid race condition
+  # Crappy UUID: seconds since epoch, plus PID
+  local timestamp
+  timestamp=$(date +%s)
+
+  local temp_name="tmp-$timestamp-$$.tar"
+
+  my-scp $tar "$SOIL_USER_HOST:$git_commit_dir/$temp_name"
+
+  my-ssh $SOIL_USER_HOST \
+    "mv -v $git_commit_dir/$temp_name $git_commit_dir/oils-for-unix.tar"
 
   log 'Tarball:'
   log ''

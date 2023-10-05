@@ -130,11 +130,11 @@ wild-tasks() {
   cat <<EOF
 os-info          soil/diagnose.sh os-info             -
 dump-env         soil/diagnose.sh dump-env            -
+wait-for-tarball soil/wait.sh for-cpp-tarball         -
+test-tar         devtools/release-native.sh test-tar  -
 build-py         build/py.sh all                      -
 wild             test/wild.sh soil-run                _tmp/wild-www/index.html
 EOF
-#wait-for-tarball soil/wait.sh for-cpp-tarball         -
-#test-tar         devtools/release-native.sh test-tar  -
 }
 
 benchmarks-tasks() {

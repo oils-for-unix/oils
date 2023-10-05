@@ -714,7 +714,8 @@ soil-run() {
     # Just distro is too slow!
     # all '^distro'
 
-    all '^cloud|^gnu|^freebsd'
+    #all '^cloud|^gnu|^freebsd'
+    all '^cloud'
   fi
 }
 

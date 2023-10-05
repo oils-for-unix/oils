@@ -12,16 +12,32 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source soil/common.sh
 
-curl-until-200() {
+fast-curl-until-200() {
   ### Retry fetch until HTTP 200, REUSING curl process AND connection
 
   # Similar to
   # https://stackoverflow.com/questions/42873285/curl-retry-mechanism
+  # --retry-all-errors is 7.71 !
+
+  # --retry-all-errors not present in curl 7.58.0 on Ubuntu 18.04
+  # Do we have to upgrade?  We're using Debian buster-slim
+  #
+  # curl 7.64 !  Gah.
+
+  # Curl versions
+  #
+  # 7.58 - Ubuntu 18.04, --retry-all-errors not present
+  # 7.64 - Debian Buster slim, our container base
+  #        https://packages.debian.org/buster/curl
+  # 7.71 - --retry-all-errors 
+  # 7.88 - Debian Bookworm
 
   local url=$1
-  local output_dir=$2
+  local out_path=$2
   local num_retries=${3:-10}  # number of times through the loop
   local interval=${4:-10}  # retry every n seconds
+
+  mkdir -p "$(dirname $out_path)"
 
   # --retry-all-errors and --fail are used to make curl try on a 404
 
@@ -29,9 +45,7 @@ curl-until-200() {
   # disconnects
 
   curl \
-    --verbose \
-    --remote-name \
-    --output-dir $output_dir \
+    --output $out_path \
     --max-time 10 \
     --retry $num_retries \
     --retry-all-errors \
@@ -40,12 +54,34 @@ curl-until-200() {
     $url
 }
 
-http-wait() {
-  local url=$1
-  local sleep_secs=${2:-1}  # don't bother trying until this amount of time
+curl-until-200() {
+  ### bash version of the function above
 
-  while test $(curl); do
-    echo
+  local url=$1
+  local out_path=$2
+  local num_retries=${3:-10}  # number of times through the loop
+  local interval=${4:-10}  # retry every n seconds
+
+  mkdir -p "$(dirname $out_path)"
+
+  local i=0
+  while true; do
+    local http_code
+    http_code=$(curl --verbose --output $out_path --write-out '%{http_code}' $url)
+
+    if test "$http_code" = 200; then
+      log "Curl wrote $out_path"
+      ls -l $out_path
+      break;
+    fi
+
+    log "HTTP status $http_code; retrying in $interval seconds"
+    sleep $interval
+
+    i=$(( i + 1 ))
+    if test $i -eq $num_retries; then
+      break;
+    fi
   done
 }
 
@@ -57,8 +93,8 @@ http-wait() {
 for-cpp-tarball()  {
   local prefix=${1:-github-}
 
-  # Wait 3 minutes for cpp-tarball task, before starting to hit the server
-  local sleep_secs=${2:-180}
+  # Wait 80 seconds for cpp-tarball task, since I've seen it complete in 90 seconds
+  local sleep_secs=${2:-80}
 
   # Retry for 12 times, every 10 seconds = 2 minutes.
 
@@ -76,13 +112,13 @@ for-cpp-tarball()  {
   set -x
   sleep $sleep_secs
 
-  curl-until-200 $url _release/ $num_retries $interval
+  curl-until-200 $url _release/oils-for-unix.tar $num_retries $interval
 }
 
 readonly TEST_FILE='oilshell.org/tmp/curl-test'
 
 for-test-file() {
-  curl-until-200 "http://www.$TEST_FILE" _tmp/ 5 10
+  curl-until-200 "http://www.$TEST_FILE" _tmp/$(basename $TEST_FILE) 5 10
 }
 
 touch-remote() {
