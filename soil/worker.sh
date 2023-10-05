@@ -40,13 +40,13 @@ raw-vm-tasks() {
   # The perf tool depends on a specific version of a kernel, so run it outside
   # a container.
 
-  # TODO: wait-for-cpp-tarball, and then untar it?
-
   # (task_name, script, action, result_html)
   cat <<EOF
 os-info          soil/diagnose.sh os-info         -
 dump-env         soil/diagnose.sh dump-env        -
 perf-install     benchmarks/perf.sh soil-install  -
+wait-for-tarball soil/wait.sh for-cpp-tarball         -
+test-tar         devtools/release-native.sh test-tar  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
 }
@@ -271,18 +271,17 @@ EOF
 # Reuse ovm-tarball container
 app-tests-tasks() {
 
-  # TODO: wait-for-cpp-tarball, and then untar it
-
   cat <<EOF
 os-info          soil/diagnose.sh os-info             -
 dump-env         soil/diagnose.sh dump-env            -
-wait-for-tarball soil/wait.sh for-cpp-tarball         -
-test-tar         devtools/release-native.sh test-tar  -
 py-all           build/py.sh all                      -
 ble-clone        test/ble.sh clone                    -
 ble-build        test/ble.sh build                    -
 ble-test-bash    test/ble.sh run-tests-bash           -
 ble-test-osh-py  test/ble.sh run-tests-osh-py         -
+wait-for-tarball soil/wait.sh for-cpp-tarball         -
+test-tar         devtools/release-native.sh test-tar  -
+ble-test-osh-cpp test/ble.sh run-tests-osh-cpp        -
 EOF
 }
 

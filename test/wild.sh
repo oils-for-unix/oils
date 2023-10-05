@@ -703,12 +703,9 @@ rootfs-manifest() {
 }
 
 soil-run() {
+  # Find osh binary created by devtools/release-native.sh test-tar
+  # test/wild-runner.sh uses it.  We can't extract it over the repo.
   OIL_VERSION=$(head -n 1 oil-version.txt)
-
-  # Extracted by devtools/release-native.sh
-  # We can't extract it over the repo.
-
-  # test/wild-runner.sh uses this
   export OSH="_tmp/native-tar-test/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/osh"
 
   if test -n "${QUICKLY:-}"; then
@@ -722,8 +719,8 @@ soil-run() {
 
     # all '^distro'
     # all '^cloud'
-
-    all '^cloud|^gnu|^freebsd'
+    # all '^cloud|^gnu|^freebsd'
+    all
   fi
 }
 

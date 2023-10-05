@@ -42,8 +42,23 @@ filter-ansi() {
   sed 's/\x1b\[[0-9;]*m//g'
 }
 
+run-tests-osh-cpp() {
+  # Find osh binary created by devtools/release-native.sh test-tar
+  # test/wild-runner.sh uses it.  We can't extract it over the repo.
+  OIL_VERSION=$(head -n 1 oil-version.txt)
+  local osh="$PWD/_tmp/native-tar-test/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/osh"
+
+  run-tests-osh $osh
+}
+
 run-tests-osh-py() {
-  cd $BASE_DIR
+  run-tests-osh ../../bin/osh
+}
+
+run-tests-osh() {
+  local osh=$1
+
+  pushd $BASE_DIR
 
   # Fork of oshrc.test-util, to make it take less time
   local myscript=myscript
@@ -80,13 +95,15 @@ EOF
   #wc -l lib/test-util.sh
 
   # Shorter tests
-  ../../bin/osh -i --rcfile $myscript | filter-ansi
+  $osh -i --rcfile $myscript | filter-ansi
 
   #../../bin/osh -i --rcfile oshrc.test-util | filter-ansi
 
   # Longer tests
   # TODO: Run these with osh-cpp
   # ../../bin/osh out/ble.osh --test | filter-ansi
+
+  popd
 
   echo DONE
 }
