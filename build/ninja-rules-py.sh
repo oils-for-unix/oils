@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+: ${EXTRA_MYCPP_FLAGS:=""}
 
 source build/dev-shell.sh  # python2 in $PATH
 source mycpp/common-vars.sh  # MYPY_REPO
@@ -75,6 +76,7 @@ gen-oils-for-unix() {
 
   _bin/shwrap/mycpp_main $mypypath $raw_cc \
     --header-out $raw_header \
+    "$EXTRA_MYCPP_FLAGS" \
     "$@"
     #--to-header osh.cmd_eval \
 
