@@ -17,9 +17,23 @@ curl-until-200() {
 
   # Similar to
   # https://stackoverflow.com/questions/42873285/curl-retry-mechanism
+  # --retry-all-errors is 7.71 !
+
+  # --retry-all-errors not present in curl 7.58.0 on Ubuntu 18.04
+  # Do we have to upgrade?  We're using Debian buster-slim
+  #
+  # curl 7.64 !  Gah.
+
+  # Curl versions
+  #
+  # 7.58 - Ubuntu 18.04, --retry-all-errors not present
+  # 7.64 - Debian Buster slim, our container base
+  #        https://packages.debian.org/buster/curl
+  # 7.71 - --retry-all-errors 
+  # 7.88 - Debian Bookworm
 
   local url=$1
-  local output_dir=$2
+  local out_path=$2
   local num_retries=${3:-10}  # number of times through the loop
   local interval=${4:-10}  # retry every n seconds
 
@@ -30,8 +44,7 @@ curl-until-200() {
 
   curl \
     --verbose \
-    --remote-name \
-    --output-dir $output_dir \
+    --output $out_path \
     --max-time 10 \
     --retry $num_retries \
     --retry-all-errors \
@@ -76,13 +89,13 @@ for-cpp-tarball()  {
   set -x
   sleep $sleep_secs
 
-  curl-until-200 $url _release/ $num_retries $interval
+  curl-until-200 $url _release/oils-for-unix.tar $num_retries $interval
 }
 
 readonly TEST_FILE='oilshell.org/tmp/curl-test'
 
 for-test-file() {
-  curl-until-200 "http://www.$TEST_FILE" _tmp/ 5 10
+  curl-until-200 "http://www.$TEST_FILE" _tmp/$(basename $TEST_FILE) 5 10
 }
 
 touch-remote() {
