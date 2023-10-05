@@ -40,7 +40,7 @@ eval (my_block)
 1
 ## END
 
-#### Eval should not leak scope
+#### Eval should not have dynamic scope
 proc leaky (;;; block) {
   var this = 42
   eval (block)
