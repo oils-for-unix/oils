@@ -23,12 +23,12 @@ live-image-tag() {
 
   case $image_id in
     (app-tests)
-      # freshen up
-      echo 'v-2023-07-15'
+      # rebuild with curl
+      echo 'v-2023-10-05'
       ;;
     (wild)
-      # freshen up
-      echo 'v-2023-07-15'
+      # rebuild with curl
+      echo 'v-2023-10-05'
       ;;
     (benchmarks)
       # freshen up
