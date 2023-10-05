@@ -274,13 +274,15 @@ app-tests-tasks() {
   # TODO: wait-for-cpp-tarball, and then untar it
 
   cat <<EOF
-os-info          soil/diagnose.sh os-info         -
-dump-env         soil/diagnose.sh dump-env        -
-py-all           build/py.sh all                  -
-ble-clone        test/ble.sh clone                -
-ble-build        test/ble.sh build                -
-ble-test-bash    test/ble.sh run-tests-bash       -
-ble-test-osh-py  test/ble.sh run-tests-osh-py     -
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+wait-for-tarball soil/wait.sh for-cpp-tarball         -
+test-tar         devtools/release-native.sh test-tar  -
+py-all           build/py.sh all                      -
+ble-clone        test/ble.sh clone                    -
+ble-build        test/ble.sh build                    -
+ble-test-bash    test/ble.sh run-tests-bash           -
+ble-test-osh-py  test/ble.sh run-tests-osh-py         -
 EOF
 }
 

@@ -703,19 +703,27 @@ rootfs-manifest() {
 }
 
 soil-run() {
+  OIL_VERSION=$(head -n 1 oil-version.txt)
+
+  # Extracted by devtools/release-native.sh
+  # We can't extract it over the repo.
+
+  # test/wild-runner.sh uses this
+  export OSH="_tmp/native-tar-test/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/osh"
+
   if test -n "${QUICKLY:-}"; then
     # Do a quick version
     all '^oil'
   else
     # This takes longer than 15 minutes with build/dev.sh minimal !
     # That's with xargs -P $MAX_PROCS in test/wild-runner.sh
+    #
+    # TODO: osh -n --ast-format abbrev-html is slow, even in C++.
 
-    # TODO: Add C++ here as well.
-    # Just distro is too slow!
     # all '^distro'
+    # all '^cloud'
 
-    #all '^cloud|^gnu|^freebsd'
-    all '^cloud'
+    all '^cloud|^gnu|^freebsd'
   fi
 }
 

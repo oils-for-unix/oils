@@ -67,7 +67,7 @@ curl-until-200() {
   local i=0
   while true; do
     local http_code
-    http_code=$(curl --verbose --output $out_path --write-out '%{http_code}' $url)
+    http_code=$(curl --output $out_path --write-out '%{http_code}' $url)
 
     if test "$http_code" = 200; then
       log "Curl wrote $out_path"
