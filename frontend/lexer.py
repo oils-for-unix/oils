@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import Token, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
 from asdl import runtime
-from mycpp.mylib import log
+from mycpp.mylib import log, InternedStr
 from frontend import consts
 from frontend import match
 
@@ -245,7 +245,7 @@ class LineLexer(object):
                     Kind.VOp3, Kind.WS, Kind.Ignored, Kind.Eof):
             tok_val = None  # type: Optional[str]
         else:
-            tok_val = line_str[line_pos:end_pos]
+            tok_val = InternedStr(line_str, line_pos, end_pos)
 
         # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
         # want it to be "low level".  The only thing fabricated here is a newline
