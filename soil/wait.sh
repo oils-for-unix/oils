@@ -80,7 +80,8 @@ curl-until-200() {
 
     i=$(( i + 1 ))
     if test $i -eq $num_retries; then
-      break;
+      log "Giving up after $num_retries tries"
+      return 1  # fail
     fi
   done
 }
@@ -101,12 +102,12 @@ for-cpp-tarball()  {
   # So just wait 1 second
   local sleep_secs=${2:-1}
 
-  # Retry for 12 times, every 10 seconds = 2 minutes.
+  # Retry for 18 times, every 10 seconds = 3 minutes.
 
   # If we have 10 clients, then we're hitting it once a second, which is not
   # unreasonable.  We're also keeping 10 connections
 
-  local num_retries=${3:-12}
+  local num_retries=${3:-18}
   local interval=${4:-10}
 
   local git_commit_dir
