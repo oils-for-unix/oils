@@ -13,14 +13,18 @@
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 
+template <typename K, typename V>
+class Dict;
+
+class Str;
+
 class BumpLeakHeap {
  public:
   // reserve 32 frames to start
   BumpLeakHeap() {
   }
 
-  void Init() {
-  }
+  void Init();
   void Init(int gc_threshold) {
   }
 
@@ -69,6 +73,8 @@ class BumpLeakHeap {
   std::vector<RawObject**> roots_;
   int max_roots_ = 0;
 #endif
+
+  Dict<Str*, Str*>* intern_table_;
 };
 
 #ifdef BUMP_LEAK

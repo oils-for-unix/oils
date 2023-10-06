@@ -9,6 +9,8 @@
 #include <unistd.h>  // STDERR_FILENO
 
 #include "mycpp/common.h"  // aligned
+#include "mycpp/gc_alloc.h"              // Alloc()
+#include "mycpp/gc_dict.h"               // Dict
 
 // We need this #ifdef because we don't want the global var in other binaries
 
@@ -26,6 +28,10 @@ struct LayoutBlock {
 
 // offsetof() accounts for possible padding, but it should equal sizeof(size_t)
 const int kHeaderSize = offsetof(LayoutBlock, data);
+
+BumpLeakHeap::BumpLeakHeap() : intern_table_(Alloc<Dict<Str*, Str*>>()) {
+    PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
+}
 
 // Allocate() bumps a pointer
 void* BumpLeakHeap::Allocate(size_t num_bytes) {
