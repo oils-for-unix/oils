@@ -147,17 +147,13 @@ _record-cpp() {
   shift 2
 
   # Can repeat 13 times without blowing heap
-  local freq=10000
   #export REPEAT=13 
 
-  # call graph mode: needed to make flame graph
-  local flag='-g'  
-
-  #local flag='' # flat mode?
+  local freq=10000
 
   local extra_flags=''
   case $mode in 
-    (graph) extra_flags='-g' ;;
+    (graph) extra_flags='-g' ;;  # needed to make flame graph
     (flat)  extra_flags='' ;;
     (*)     die "Mode should be graph or flat, got $mode" ;;
   esac
@@ -199,8 +195,8 @@ profile-osh-parse() {
   local osh=${1:-_bin/cxx-opt/osh}
   local mode=${2:-graph}
 
-  local file=benchmarks/testdata/configure
-  #local file=benchmarks/testdata/configure-coreutils
+  #local file=benchmarks/testdata/configure
+  local file=benchmarks/testdata/configure-coreutils
 
   local -a cmd=( $osh --ast-format none -n $file )
   profile-cpp 'osh-parse' $mode "${cmd[@]}"
@@ -218,7 +214,7 @@ profile-fib() {
   local mode=${2:-graph}
 
   # Same iterations as benchmarks/gc
-  local -a cmd=( $OSH benchmarks/compute/fib.sh 100 44 )
+  local -a cmd=( $osh benchmarks/compute/fib.sh 500 44 )
 
   profile-cpp 'fib' $mode "${cmd[@]}"
 }
@@ -227,7 +223,7 @@ profile-execute() {
   local osh=${1:-_bin/cxx-opt/osh}
   local mode=${2:-graph}
 
-  local -a cmd=( $OSH benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+  local -a cmd=( $osh benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
 
   profile-cpp 'parse-help' $mode "${cmd[@]}"
 }
