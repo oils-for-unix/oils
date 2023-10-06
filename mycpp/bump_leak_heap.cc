@@ -29,7 +29,7 @@ struct LayoutBlock {
 // offsetof() accounts for possible padding, but it should equal sizeof(size_t)
 const int kHeaderSize = offsetof(LayoutBlock, data);
 
-BumpLeakHeap::BumpLeakHeap() : intern_table_(Alloc<Dict<Str*, Str*>>()) {
+BumpLeakHeap::Init() : intern_table_(Alloc<Dict<Str*, Str*>>()) {
     PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
 }
 
