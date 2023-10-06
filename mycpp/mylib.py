@@ -65,6 +65,11 @@ def Stdin():
     return sys.stdin
 
 
+def InternedStr(s, start, end):
+    # type: (str, int, int) -> str
+    return intern(s[start:end])
+
+
 # mylib.open is the builtin, but we have different static types mylib.pyi
 open = open
 

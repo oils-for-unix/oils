@@ -8,6 +8,11 @@
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 
+template <typename K, typename V>
+class Dict;
+
+class Str;
+
 class MarkSet {
  public:
   MarkSet() : bits_() {
@@ -192,7 +197,7 @@ class Pool {
 class MarkSweepHeap {
  public:
   // reserve 32 frames to start
-  MarkSweepHeap() {
+  MarkSweepHeap() : intern_table_(nullptr) {
   }
 
   void Init();  // use default threshold
@@ -283,6 +288,8 @@ class MarkSweepHeap {
   MarkSet mark_set_;
 
   int greatest_obj_id_ = 0;
+
+  Dict<Str*, Str*>* intern_table_;
 
  private:
   void FreeEverything();

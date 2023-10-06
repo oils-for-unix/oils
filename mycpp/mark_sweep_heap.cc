@@ -8,7 +8,9 @@
 #include <unistd.h>    // STDERR_FILENO
 
 #include "_build/detected-cpp-config.h"  // for GC_TIMING
+#include "mycpp/gc_alloc.h"              // Alloc()
 #include "mycpp/gc_builtins.h"           // StringToInteger()
+#include "mycpp/gc_dict.h"               // Dict
 #include "mycpp/gc_slab.h"
 
 // TODO: Remove this guard when we have separate binaries
@@ -16,6 +18,8 @@
 
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
+  intern_table_ = Alloc<Dict<Str*, Str*>>();
+  PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
 }
 
 void MarkSweepHeap::Init(int gc_threshold) {

@@ -246,4 +246,14 @@ Str* BufWriter::getvalue() {
   }
 }
 
+Str* InternedStr(Str* s, int begin, int end) {
+    s = s->slice(begin, end);
+    Str* interned = gHeap.intern_table_->get(s);
+    if (interned == nullptr) {
+        interned = s;
+        gHeap.intern_table_->set(interned, interned);
+    }
+    return interned;
+}
+
 }  // namespace mylib

@@ -304,6 +304,8 @@ class UniqueObjects {
   Dict<void*, int> addresses_;
 };
 
+Str* InternedStr(Str* s, int begin, int end);
+
 }  // namespace mylib
 
 #endif  // MYCPP_GC_MYLIB_H
