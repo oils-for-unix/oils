@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Run ble.sh unit tests in Travis.
+# Run ble.sh tests.
 #
 # Usage:
 #   test/ble.sh <function name>
@@ -22,13 +22,7 @@ clone() {
     https://github.com/akinomyoga/contra.git $out/ext/contra.src
 }
 
-# TODO: What version of osh
 build() {
-  #make  # make osh
-
-  # make _bin/osh
-  #devtools/bin.sh make-ovm-links
-
   # make ble.sh
   cd $BASE_DIR
   make
@@ -44,20 +38,26 @@ filter-ansi() {
   sed 's/\x1b\[[0-9;]*m//g'
 }
 
-run-tests-osh-cpp() {
-  # Find osh binary created by devtools/release-native.sh test-tar
-  # test/wild-runner.sh uses it.  We can't extract it over the repo.
-
-  export-osh-cpp _tmp/native-tar-test opt
-
-  run-tests-osh $OSH
+run-tests-osh-bash() {
+  # Hm the tests detect ble.osh or ble.sh, this doesn't work
+  run-tests-osh bash
 }
 
 run-tests-osh-py() {
   run-tests-osh ../../bin/osh
 }
 
+run-tests-osh-cpp() {
+  # Find osh binary created by devtools/release-native.sh test-tar
+  # test/wild-runner.sh uses it.  We can't extract it over the repo.
+  export-osh-cpp _tmp/native-tar-test opt
+
+  run-tests-osh $OSH
+}
+
 run-tests-osh() {
+  ### Source the 35K line file, but only run selected tests
+
   local osh=$1
 
   pushd $BASE_DIR
@@ -97,7 +97,7 @@ EOF
   #wc -l lib/test-util.sh
 
   # Shorter tests
-  $osh -i --rcfile $myscript | filter-ansi
+  $osh --rcfile $myscript -i | filter-ansi
 
   #../../bin/osh -i --rcfile oshrc.test-util | filter-ansi
 
@@ -111,7 +111,9 @@ EOF
 }
 
 # Seems to take about 12 seconds
-run-tests-bash() {
+bash-suite() {
+  ### Run the 35K line file with --test
+
   cd $BASE_DIR
 
   set +o errexit

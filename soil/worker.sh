@@ -132,7 +132,6 @@ os-info          soil/diagnose.sh os-info             -
 dump-env         soil/diagnose.sh dump-env            -
 wait-for-tarball soil/wait.sh for-cpp-tarball         -
 test-tar         devtools/release-native.sh test-tar  -
-build-py         build/py.sh all                      -
 wild             test/wild.sh soil-run                _tmp/wild-www/index.html
 EOF
 }
@@ -272,17 +271,20 @@ EOF
 app-tests-tasks() {
 
   cat <<EOF
-os-info          soil/diagnose.sh os-info             -
-dump-env         soil/diagnose.sh dump-env            -
-py-all           build/py.sh all                      -
-ble-clone        test/ble.sh clone                    -
-ble-build        test/ble.sh build                    -
-ble-test-bash    test/ble.sh run-tests-bash           -
-ble-test-osh-py  test/ble.sh run-tests-osh-py         -
-wait-for-tarball soil/wait.sh for-cpp-tarball         -
-test-tar         devtools/release-native.sh test-tar  -
-ble-test-osh-cpp test/ble.sh run-tests-osh-cpp        -
+os-info           soil/diagnose.sh os-info             -
+dump-env          soil/diagnose.sh dump-env            -
+py-all            build/py.sh all                      -
+ble-clone         test/ble.sh clone                    -
+ble-build         test/ble.sh build                    -
+ble-bash-suite    test/ble.sh bash-suite               -
+ble-test-osh-py   test/ble.sh run-tests-osh-py         -
+wait-for-tarball  soil/wait.sh for-cpp-tarball         -
+test-tar          devtools/release-native.sh test-tar  -
+ble-test-osh-cpp  test/ble.sh run-tests-osh-cpp        -
 EOF
+
+# This doesn't work
+# ble-test-osh-bash test/ble.sh run-tests-osh-bash       -
 }
 
 # TODO: Most of these should be Ninja tasks.
