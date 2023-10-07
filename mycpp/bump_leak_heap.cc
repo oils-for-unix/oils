@@ -30,7 +30,12 @@ struct LayoutBlock {
 const int kHeaderSize = offsetof(LayoutBlock, data);
 
 void BumpLeakHeap::Init() {
+    Init(0);
+}
+
+void BumpLeakHeap::Init(int gc_threshold) {
     intern_table_ = Alloc<Dict<Str*, Str*>>();
+    intern_table_->reserve(1024);
     PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
 }
 

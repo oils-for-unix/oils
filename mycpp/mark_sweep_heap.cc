@@ -18,8 +18,6 @@
 
 void MarkSweepHeap::Init() {
   Init(1000);  // collect at 1000 objects in tests
-  intern_table_ = Alloc<Dict<Str*, Str*>>();
-  PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
 }
 
 void MarkSweepHeap::Init(int gc_threshold) {
@@ -43,6 +41,10 @@ void MarkSweepHeap::Init(int gc_threshold) {
 
   live_objs_.reserve(KiB(10));
   roots_.reserve(KiB(1));  // prevent resizing in common case
+                           //
+  intern_table_ = Alloc<Dict<Str*, Str*>>();
+  intern_table_->reserve(1024);
+  PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
 }
 
 int MarkSweepHeap::MaybeCollect() {

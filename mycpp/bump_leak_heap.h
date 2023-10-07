@@ -25,8 +25,7 @@ class BumpLeakHeap {
   }
 
   void Init();
-  void Init(int gc_threshold) {
-  }
+  void Init(int gc_threshold);
 
   // the BumpLeakHeap doesn't need rooting, but provide the option to
   // approximate its costs.

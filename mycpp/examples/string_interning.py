@@ -16,8 +16,10 @@ def run_benchmarks():
     # type: () -> None
 
     x = InternedStr("foo" + "bar", 0, 6)
-    while True:
-        if InternedStr("foobar", 0, 6) == x:
+    y = InternedStr("foobar", 0, 6)
+    for _ in xrange(10000000):
+        if y == x:
+        #if "foobar" == x:
             pass
         else:
             break
