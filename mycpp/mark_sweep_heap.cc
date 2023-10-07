@@ -43,7 +43,6 @@ void MarkSweepHeap::Init(int gc_threshold) {
   roots_.reserve(KiB(1));  // prevent resizing in common case
                            //
   intern_table_ = Alloc<Dict<Str*, Str*>>();
-  intern_table_->reserve(1024);
   PushRoot(reinterpret_cast<RawObject**>(&intern_table_));
 }
 
