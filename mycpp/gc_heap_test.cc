@@ -51,10 +51,6 @@ void ShowSlab(void* obj) {
   assert(header->heap_tag == HeapTag::Scanned);
 
   int n = NUM_POINTERS(*header);
-#if 0
-  int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", ObjHeader::FromObject(slab)->obj_len, n);
-#endif
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {
@@ -138,12 +134,15 @@ TEST roundup_test() {
 }
 
 TEST list_resize_policy_test() {
-  // log("min items %d", List<int>::kMinItems);
-  // log("min items %d", List<Str*>::kMinItems);
-
+#if 1
   log("int kMinItems %d", List<int>::kMinItems);
-
   log("Str* kMinItems %d", List<Str*>::kMinItems);
+#else
+  log("int kNumItems1 %d", List<int>::kNumItems1);
+  log("Str* kNumItems1 %d", List<Str*>::kNumItems1);
+  log("int kNumItems2 %d", List<int>::kNumItems2);
+  log("Str* kNumItems2 %d", List<Str*>::kNumItems2);
+#endif
 
   log("");
   log("\tList<int>");

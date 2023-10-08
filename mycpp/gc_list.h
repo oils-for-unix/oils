@@ -102,12 +102,15 @@ class List {
                 "ObjHeader size should be multiple of item size");
   static constexpr int kHeaderFudge = sizeof(ObjHeader) / sizeof(T);
 
-  static constexpr int kMinBytes = 32 - sizeof(ObjHeader);
+  // Tuning to put slabs in BOTH pools leads to bad growth!  Too much GC of the
+  // tiny objects.  So just use the larger 48 byte pool.
+#if 1
+  static constexpr int kMinBytes = 48 - sizeof(ObjHeader);
   static_assert(kMinBytes % sizeof(T) == 0,
                 "An integral number of items should fit in second pool");
   static constexpr int kMinItems = kMinBytes / sizeof(T);
 
-#if 0
+#else
   // Matches mark_sweep_heap.h
   // 24-byte pool comes from very common List header, and Token
   static constexpr int kPoolBytes1 = 24 - sizeof(ObjHeader);
@@ -124,16 +127,16 @@ class List {
   // Given the number of items desired, return the number items we should
   // reserve room for, according to our growth policy.
   int HowManyItems(int num_desired) {
+#if 1
     if (num_desired <= kMinItems) {
       return kMinItems;
     }
-
-#if 0
-    if (num_desired <= numItems1) {  // use full cell in pool 1
-      return numItems1;
+#else
+    if (num_desired <= kNumItems1) {  // use full cell in pool 1
+      return kNumItems1;
     }
-    if (num_desired <= numItems2) {  // use full cell in pool 2
-      return numItems2;
+    if (num_desired <= kNumItems2) {  // use full cell in pool 2
+      return kNumItems2;
     }
 #endif
 

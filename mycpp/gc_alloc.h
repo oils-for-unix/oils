@@ -229,7 +229,7 @@ inline Str* StrFromC(const char* data) {
 // zeroing them separately.
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
-  int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
+  int obj_len = len * sizeof(T);
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;
