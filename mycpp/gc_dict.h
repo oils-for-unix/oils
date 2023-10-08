@@ -296,7 +296,8 @@ int Dict<K, V>::hash_and_probe(K key) const {
   // If we see a tombstone along the probing path, stash it.
   int open_slot = -1;
 
-  for (int slot = init_bucket; slot < index_len_; ++slot) {
+  for (int i = 0; i < index_len_; ++i) {
+    int slot = (i + init_bucket) & (index_len_ - 1);
     int kv_index = index_->items_[slot];
     DCHECK(kv_index < len_);
     // Optimistically this is the common case once the table has been populated.
@@ -324,30 +325,6 @@ int Dict<K, V>::hash_and_probe(K key) const {
       // get to an empty index slot or the end of the index then we know we are
       // dealing with a new key and can safely replace the tombstone without
       // disrupting any existing keys.
-      open_slot = slot;
-    }
-  }
-
-  // Didn't find anything. Wrap around.
-  for (int slot = 0; slot < init_bucket; ++slot) {
-    int kv_index = index_->items_[slot];
-    DCHECK(kv_index < len_);
-    if (kv_index >= 0) {
-      unsigned h2 = hash_key(keys_->items_[kv_index]);
-      if (h == h2 && keys_equal(keys_->items_[kv_index], key)) {
-        return slot;
-      }
-    }
-
-    if (kv_index == kEmptyEntry) {
-      if (open_slot != -1) {
-        slot = open_slot;
-      }
-      return len_ < capacity_ ? slot : kTooSmall;
-    }
-
-    DCHECK(kv_index >= 0 || kv_index == kDeletedEntry);
-    if (kv_index == kDeletedEntry && open_slot == -1) {
       open_slot = slot;
     }
   }
