@@ -56,14 +56,14 @@ void do_mod(int n, int divisor) {
   log("sum = %d", sum);
 }
 
-TEST modulus_test() {
+TEST modulus_benchmark() {
   // 830 ms
   // do_mod(1<<30, 8);
 
   // 1.11 s
   // do_mod(1<<30, 7);
 
-  // 0.9 seconds
+  // 900 ms seconds
   do_mod(1 << 30, 6);
 
   PASS();
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
   RUN_TEST(unordered_set_bucket_test);
   RUN_TEST(hash_speed_test);
-  RUN_TEST(modulus_test);
+  // RUN_TEST(modulus_benchmark);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

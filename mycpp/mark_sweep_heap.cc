@@ -221,7 +221,7 @@ void MarkSweepHeap::Sweep() {
   int num_objs = live_objs_.size();
   for (int i = 0; i < num_objs; ++i) {
     ObjHeader* obj = live_objs_[i];
-    assert(obj);  // malloc() shouldn't have returned nullptr
+    DCHECK(obj);  // malloc() shouldn't have returned nullptr
 
     bool is_live = mark_set_.IsMarked(obj->obj_id);
 
@@ -245,7 +245,7 @@ int MarkSweepHeap::Collect() {
   #ifdef GC_TIMING
   struct timespec start, end;
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) < 0) {
-    assert(0);
+    FAIL("clock_gettime failed");
   }
   #endif
 
@@ -307,7 +307,7 @@ int MarkSweepHeap::Collect() {
 
   #ifdef GC_TIMING
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) < 0) {
-    assert(0);
+    FAIL("clock_gettime failed");
   }
 
   double start_secs = start.tv_sec + start.tv_nsec / 1e9;

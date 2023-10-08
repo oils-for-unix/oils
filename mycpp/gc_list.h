@@ -116,6 +116,13 @@ class List {
                 "An integral number of items should fit in second pool");
   static constexpr int kNumItems2 = kPoolBytes2 / sizeof(T);
 
+#if 0
+  static constexpr int kMinBytes2 = 128 - sizeof(ObjHeader);
+  static_assert(kMinBytes2 % sizeof(T) == 0,
+                "An integral number of items should fit");
+  static constexpr int kMinItems2 = kMinBytes2 / sizeof(T);
+#endif
+
   // Given the number of items desired, return the number items we should
   // reserve room for, according to our growth policy.
   int HowManyItems(int num_desired) {
@@ -129,6 +136,11 @@ class List {
     if (num_desired <= kNumItems2) {  // use full cell in pool 2
       return kNumItems2;
     }
+#if 0
+    if (num_desired <= kMinItems2) {  // 48 -> 128, not 48 -> 64
+      return kMinItems2;
+    }
+#endif
 
     // Make sure the total allocation is a power of 2.  TODO: consider using
     // slightly less than power of 2, to account for malloc() headers, and
