@@ -134,22 +134,22 @@ TEST roundup_test() {
 }
 
 TEST list_resize_policy_test() {
-  log("int kNumItems2 %d", List<int>::kNumItems2);
-  log("Str* kNumItems2 %d", List<Str*>::kNumItems2);
-
   log("");
   log("\tList<int>");
+  log("\tkNumItems2 %d", List<int>::kNumItems2);
 
   auto small = NewList<int>();
 
   for (int i = 0; i < 20; ++i) {
     small->append(i);
     int c = small->capacity_;
-    log("i %d capacity %d alloc %d", i, c, 8 + c * sizeof(int));
+    int slab_bytes = sizeof(ObjHeader) + c * sizeof(int);
+    log("desired %3d how many %3d slab bytes %3d", i, c, slab_bytes);
   }
 
   log("");
   log("\tList<Str*>");
+  log("\tNumItems2 %d", List<Str*>::kNumItems2);
 
   // Note: on 32-bit systems, this should be the same
 
@@ -157,23 +157,54 @@ TEST list_resize_policy_test() {
   for (int i = 0; i < 20; ++i) {
     big->append(kEmptyString);
     int c = big->capacity_;
-    log("i %d capacity %d alloc %d", i, c, 8 + c * sizeof(Str*));
+    int slab_bytes = sizeof(ObjHeader) + c * sizeof(Str*);
+    log("desired %3d how many %3d slab bytes %3d", i, c, slab_bytes);
   }
 
   PASS();
 }
 
 TEST dict_resize_policy_test() {
-  log("Dict min items %d", Dict<int, int>::kMinItems);
-  log("kHeaderFudge %d", Dict<int, int>::kHeaderFudge);
-  log("--");
+  log("\tDict<int, int>");
+
+  log("\tkMinItems %d", Dict<int, int>::kMinItems);
+  log("\tkHeaderFudge %d", Dict<int, int>::kHeaderFudge);
 
   auto small = Alloc<Dict<int, int>>();
 
   for (int i = 0; i < 20; ++i) {
     small->set(i, i);
     int c = small->capacity_;
-    log("i %d capacity %d alloc %d", i, c, 8 + c * sizeof(int));
+    int slab_k = sizeof(ObjHeader) + c * sizeof(int);
+    int slab_v = slab_k;
+
+    int x = small->index_len_;
+    int index_bytes = sizeof(ObjHeader) + x * sizeof(int);
+
+    log("desired %3d how many %3d k %3d v %3d index %3d %3d", i, c, slab_k,
+        slab_v, x, index_bytes);
+  }
+
+  log("");
+  log("\tDict<Str*, int>");
+
+  log("\tkMinItems %d", Dict<Str*, int>::kMinItems);
+  log("\tkHeaderFudge %d", Dict<Str*, int>::kHeaderFudge);
+
+  auto big = Alloc<Dict<Str*, int>>();
+
+  for (int i = 0; i < 20; ++i) {
+    Str* key = str_repeat(StrFromC("x"), i);
+    big->set(key, i);
+    int c = big->capacity_;
+    int slab_k = sizeof(ObjHeader) + c * sizeof(Str*);
+    int slab_v = sizeof(ObjHeader) + c * sizeof(int);
+
+    int x = small->index_len_;
+    int index_bytes = sizeof(ObjHeader) + x * sizeof(int);
+
+    log("desired %3d how many %3d k %3d v %3d index %3d %3d", i, c, slab_k,
+        slab_v, x, index_bytes);
   }
 
   PASS();

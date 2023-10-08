@@ -103,7 +103,6 @@ class List {
   static constexpr int kHeaderFudge = sizeof(ObjHeader) / sizeof(T);
 
 #if 0
-  // Matches mark_sweep_heap.h
   // 24-byte pool comes from very common List header, and Token
   static constexpr int kPoolBytes1 = 24 - sizeof(ObjHeader);
   static_assert(kPoolBytes1 % sizeof(T) == 0,
@@ -111,6 +110,7 @@ class List {
   static constexpr int kNumItems1 = kPoolBytes1 / sizeof(T);
 #endif
 
+  // Matches mark_sweep_heap.h
   static constexpr int kPoolBytes2 = 48 - sizeof(ObjHeader);
   static_assert(kPoolBytes2 % sizeof(T) == 0,
                 "An integral number of items should fit in second pool");
