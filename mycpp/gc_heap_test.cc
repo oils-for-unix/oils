@@ -181,7 +181,7 @@ TEST dict_resize_policy_test() {
     int x = small->index_len_;
     int index_bytes = sizeof(ObjHeader) + x * sizeof(int);
 
-    log("desired %3d how many %3d k %3d v %3d index %3d %3d", i, c, slab_k,
+    log("desired %3d how many %3d  k %3d v %3d  index %3d %3d", i, c, slab_k,
         slab_v, x, index_bytes);
   }
 
@@ -200,10 +200,10 @@ TEST dict_resize_policy_test() {
     int slab_k = sizeof(ObjHeader) + c * sizeof(Str*);
     int slab_v = sizeof(ObjHeader) + c * sizeof(int);
 
-    int x = small->index_len_;
+    int x = big->index_len_;
     int index_bytes = sizeof(ObjHeader) + x * sizeof(int);
 
-    log("desired %3d how many %3d k %3d v %3d index %3d %3d", i, c, slab_k,
+    log("desired %3d how many %3d  k %3d v %3d  index %3d %3d", i, c, slab_k,
         slab_v, x, index_bytes);
   }
 

@@ -216,8 +216,10 @@ void Dict<K, V>::reserve(int num_desired) {
   // Calculate the number of keys and values we should have
   capacity_ = HowManyPairs(num_desired);
 
-  // Introduce hash table load factor (could be tuned)
-  index_len_ = 3 * (capacity_ / 2);
+  // 1) Ensure index len a power of 2, to avoid expensive modulus % operation
+  // 2) Introduce hash table load factor.   Use capacity_+1 to simulate ceil()
+  // div, not floor() div.
+  index_len_ = RoundUp((capacity_ + 1) * 5 / 4);
   DCHECK(index_len_ > capacity_);
 
   index_ = NewSlab<int>(index_len_);
@@ -308,15 +310,17 @@ int Dict<K, V>::hash_and_probe(K key) const {
   // Hash the key onto a slot in the index. If the first slot is occupied,
   // probe until an empty one is found.
   unsigned h = hash_key(key);
-  int init_bucket = h % index_len_;
+  // faster % using & -- assuming index_len_ is power of 2
+  int init_bucket = h & (index_len_ - 1);
 
   // If we see a tombstone along the probing path, stash it.
   int open_slot = -1;
 
   for (int i = 0; i < index_len_; ++i) {
     // Start at init_bucket and wrap araound
-    // NOTE: if division becomes a hotspot, split this into two loops.
-    int slot = (i + init_bucket) % index_len_;
+
+    // faster % using & -- assuming index_len_ is power of 2
+    int slot = (i + init_bucket) & (index_len_ - 1);
 
     int kv_index = index_->items_[slot];
     DCHECK(kv_index < len_);
