@@ -159,25 +159,42 @@ class Dict {
            maskbit(offsetof(Dict, values_));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(Dict)
+  DISALLOW_COPY_AND_ASSIGN(Dict);
 
-  // This relies on the fact that containers of 4-byte ints are reduced by 2
-  // items, which is greater than (or equal to) the reduction of any other
-  // type
-  static const int kHeaderFudge = sizeof(ObjHeader) / sizeof(int);
-  static_assert(sizeof(ObjHeader) % sizeof(int) == 0,
+  // kItemSize is max of K and V size.  That is, on 64-bit machines, the RARE
+  // Dict<int, int> is smaller than other dicts
+  static constexpr int kItemSize = sizeof(K) > sizeof(V) ? sizeof(K)
+                                                         : sizeof(V);
+
+  // Matches mark_sweep_heap.h
+  static constexpr int kPoolBytes2 = 48 - sizeof(ObjHeader);
+  static_assert(kPoolBytes2 % kItemSize == 0,
+                "An integral number of items should fit in second pool");
+  static constexpr int kNumItems2 = kPoolBytes2 / kItemSize;
+
+  static const int kHeaderFudge = sizeof(ObjHeader) / kItemSize;
+  static_assert(sizeof(ObjHeader) % kItemSize == 0,
                 "Slab header size should be multiple of key size");
 
-  // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
-  // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
-  // case is rare.
-  static const int kMinItems = 4;
+#if 0
+  static constexpr int kMinBytes2 = 128 - sizeof(ObjHeader);
+  static_assert(kMinBytes2 % kItemSize == 0,
+                "An integral number of items should fit");
+  static constexpr int kMinItems2 = kMinBytes2 / kItemSize;
+#endif
 
   int HowManyPairs(int num_desired) {
-    if (num_desired < kMinItems) {
-      return kMinItems;
+    // See gc_list.h for comments on nearly identical logic
+
+    if (num_desired <= kNumItems2) {  // use full cell in pool 2
+      return kNumItems2;
     }
-    return RoundUp(num_desired);
+#if 0
+    if (num_desired <= kMinItems2) {  // 48 -> 128, not 48 -> 64
+      return kMinItems2;
+    }
+#endif
+    return RoundUp(num_desired + kHeaderFudge) - kHeaderFudge;
   }
 };
 
@@ -197,7 +214,7 @@ void Dict<K, V>::reserve(int num_desired) {
   Slab<V>* old_v = values_;
 
   // Calculate the number of keys and values we should have
-  capacity_ = HowManyPairs(num_desired + kHeaderFudge) - kHeaderFudge;
+  capacity_ = HowManyPairs(num_desired);
 
   // Introduce hash table load factor (could be tuned)
   index_len_ = 3 * (capacity_ / 2);

@@ -167,7 +167,7 @@ TEST list_resize_policy_test() {
 TEST dict_resize_policy_test() {
   log("\tDict<int, int>");
 
-  log("\tkMinItems %d", Dict<int, int>::kMinItems);
+  log("\tkNumItems2 %d", Dict<int, int>::kNumItems2);
   log("\tkHeaderFudge %d", Dict<int, int>::kHeaderFudge);
 
   auto small = Alloc<Dict<int, int>>();
@@ -188,7 +188,7 @@ TEST dict_resize_policy_test() {
   log("");
   log("\tDict<Str*, int>");
 
-  log("\tkMinItems %d", Dict<Str*, int>::kMinItems);
+  log("\tkNumItems2 %d", Dict<Str*, int>::kNumItems2);
   log("\tkHeaderFudge %d", Dict<Str*, int>::kHeaderFudge);
 
   auto big = Alloc<Dict<Str*, int>>();
