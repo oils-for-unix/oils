@@ -100,31 +100,43 @@ class List {
 
   static_assert(sizeof(ObjHeader) % sizeof(T) == 0,
                 "ObjHeader size should be multiple of item size");
+  static constexpr int kHeaderFudge = sizeof(ObjHeader) / sizeof(T);
 
+  static constexpr int kMinBytes = 32 - sizeof(ObjHeader);
+  static_assert(kMinBytes % sizeof(T) == 0,
+                "An integral number of items should fit in second pool");
+  static constexpr int kMinItems = kMinBytes / sizeof(T);
+
+#if 0
   // Matches mark_sweep_heap.h
   // 24-byte pool comes from very common List header, and Token
-  static constexpr int kPoolBytes1 = 32 - 8;
-  // static constexpr int kPoolBytes2 = 48 - 8;
-
+  static constexpr int kPoolBytes1 = 24 - sizeof(ObjHeader);
   static_assert(kPoolBytes1 % sizeof(T) == 0,
-                "An integral number of items should fit in 32 bytes");
+                "An integral number of items should fit in first pool");
+  static constexpr int kNumItems1 = kPoolBytes1 / sizeof(T);
 
-  static constexpr int numItems1 = kPoolBytes1 / sizeof(T);
-  // static constexpr int numItems2 = kPoolBytes2 / sizeof(T);
-
-  static constexpr int kHeaderFudge = 8 / sizeof(T);
+  static constexpr int kPoolBytes2 = 48 - sizeof(ObjHeader);
+  static_assert(kPoolBytes2 % sizeof(T) == 0,
+                "An integral number of items should fit in second pool");
+  static constexpr int kNumItems2 = kPoolBytes2 / sizeof(T);
+#endif
 
   // Given the number of items desired, return the number items we should
   // reserve room for, according to our growth policy.
   int HowManyItems(int num_desired) {
+    if (num_desired <= kMinItems) {
+      return kMinItems;
+    }
+
+#if 0
     if (num_desired <= numItems1) {  // use full cell in pool 1
       return numItems1;
     }
-    /*
     if (num_desired <= numItems2) {  // use full cell in pool 2
       return numItems2;
     }
-    */
+#endif
+
     // Does power of 2 makes sense for malloc()?
     return RoundUp(num_desired + kHeaderFudge) - kHeaderFudge;
   }

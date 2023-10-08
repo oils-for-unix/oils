@@ -141,11 +141,9 @@ TEST list_resize_policy_test() {
   // log("min items %d", List<int>::kMinItems);
   // log("min items %d", List<Str*>::kMinItems);
 
-  log("int numItems1 %d", List<int>::numItems1);
-  // log("int numItems2 %d", List<int>::numItems2);
+  log("int kMinItems %d", List<int>::kMinItems);
 
-  log("Str* numItems1 %d", List<Str*>::numItems1);
-  // log("Str* numItems2 %d", List<Str*>::numItems2);
+  log("Str* kMinItems %d", List<Str*>::kMinItems);
 
   log("");
   log("\tList<int>");
