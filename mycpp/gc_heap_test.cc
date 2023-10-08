@@ -138,19 +138,28 @@ TEST roundup_test() {
 }
 
 TEST list_resize_policy_test() {
-  log("min items %d", List<int>::kMinItems);
-  log("min items %d", List<Str*>::kMinItems);
-  log("--");
+  // log("min items %d", List<int>::kMinItems);
+  // log("min items %d", List<Str*>::kMinItems);
+
+  log("int numItems1 %d", List<int>::numItems1);
+  // log("int numItems2 %d", List<int>::numItems2);
+
+  log("Str* numItems1 %d", List<Str*>::numItems1);
+  // log("Str* numItems2 %d", List<Str*>::numItems2);
+
+  log("");
+  log("\tList<int>");
 
   auto small = NewList<int>();
 
   for (int i = 0; i < 20; ++i) {
     small->append(i);
     int c = small->capacity_;
-    log("i %d capacity %d alloc %d", i, c, 8 + c * 4);
+    log("i %d capacity %d alloc %d", i, c, 8 + c * sizeof(int));
   }
 
-  log("--");
+  log("");
+  log("\tList<Str*>");
 
   // Note: on 32-bit systems, this should be the same
 
@@ -158,7 +167,7 @@ TEST list_resize_policy_test() {
   for (int i = 0; i < 20; ++i) {
     big->append(kEmptyString);
     int c = big->capacity_;
-    log("i %d capacity %d alloc %d", i, c, 8 + c * 8);
+    log("i %d capacity %d alloc %d", i, c, 8 + c * sizeof(Str*));
   }
 
   PASS();

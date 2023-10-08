@@ -32,15 +32,6 @@ class GlobalList {
 
 template <typename T>
 class List {
-  // Relate slab size to number of items (capacity)
-  // 8 / 4 = 2 items, or 8 / 8 = 1 item
-  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
-  static_assert(kSlabHeaderSize % sizeof(T) == 0,
-                "Slab header size should be multiple of item size");
-
-  static_assert(32 % sizeof(T) == 0,
-                "An integral number of items should fit in 32 bytes");
-
  public:
   List() : len_(0), capacity_(0), slab_(nullptr) {
   }
@@ -107,16 +98,35 @@ class List {
 
   DISALLOW_COPY_AND_ASSIGN(List)
 
-  // Relates to minimum Slab size.
-  // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
-  // Smallest non-empty List<int> should have about 8 items, or 7 without header
-  static const int kMinItems = 32 / sizeof(T);
+  static_assert(sizeof(ObjHeader) % sizeof(T) == 0,
+                "ObjHeader size should be multiple of item size");
 
-  int RoundCapacity(int n) {
-    if (n < kMinItems) {
-      return kMinItems;
+  // Matches mark_sweep_heap.h
+  // 24-byte pool comes from very common List header, and Token
+  static constexpr int kPoolBytes1 = 32 - 8;
+  // static constexpr int kPoolBytes2 = 48 - 8;
+
+  static_assert(kPoolBytes1 % sizeof(T) == 0,
+                "An integral number of items should fit in 32 bytes");
+
+  static constexpr int numItems1 = kPoolBytes1 / sizeof(T);
+  // static constexpr int numItems2 = kPoolBytes2 / sizeof(T);
+
+  static constexpr int kHeaderFudge = 8 / sizeof(T);
+
+  // Given the number of items desired, return the number items we should
+  // reserve room for, according to our growth policy.
+  int HowManyItems(int num_desired) {
+    if (num_desired <= numItems1) {  // use full cell in pool 1
+      return numItems1;
     }
-    return RoundUp(n);
+    /*
+    if (num_desired <= numItems2) {  // use full cell in pool 2
+      return numItems2;
+    }
+    */
+    // Does power of 2 makes sense for malloc()?
+    return RoundUp(num_desired + kHeaderFudge) - kHeaderFudge;
   }
 };
 
@@ -256,7 +266,7 @@ void List<T>::reserve(int num_desired) {
   // items would be 5, which is rounded up to 8.  Subtract 2 again, giving 6,
   // which leads to 8 + 6*4 = 32 byte Slab.
 
-  capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
+  capacity_ = HowManyItems(num_desired);
   auto new_slab = NewSlab<T>(capacity_);
 
   if (len_ > 0) {
