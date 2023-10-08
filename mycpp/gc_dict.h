@@ -133,12 +133,12 @@ class Dict {
 
   void clear();
 
-  // Helper used by find_kv_index(), set(), mylib::dict_erase() -- see gc_mylib.h
+  // Helper used by find_kv_index(), set(), mylib::dict_erase() in
+  // gc_mylib.h
   // Returns either:
   // - the slot for an existing key, or an empty slot for a new key
   // - kTooSmall if the table is full
   int hash_and_probe(K key) const;
-
 
   // Helper used by at(), get(), dict_contains()
   // Given a key, returns either:
@@ -168,7 +168,6 @@ class Dict {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 
- private:
   // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
   // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
   // case is rare.

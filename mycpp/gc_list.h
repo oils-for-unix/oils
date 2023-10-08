@@ -107,7 +107,6 @@ class List {
 
   DISALLOW_COPY_AND_ASSIGN(List)
 
- private:
   // Relates to minimum Slab size.
   // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
   // Smallest non-empty List<int> should have about 8 items, or 7 without header

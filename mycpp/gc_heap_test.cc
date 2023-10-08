@@ -137,6 +137,48 @@ TEST roundup_test() {
   PASS();
 }
 
+TEST list_resize_policy_test() {
+  log("min items %d", List<int>::kMinItems);
+  log("min items %d", List<Str*>::kMinItems);
+  log("--");
+
+  auto small = NewList<int>();
+
+  for (int i = 0; i < 20; ++i) {
+    small->append(i);
+    int c = small->capacity_;
+    log("i %d capacity %d alloc %d", i, c, 8 + c * 4);
+  }
+
+  log("--");
+
+  // Note: on 32-bit systems, this should be the same
+
+  auto big = NewList<Str*>();
+  for (int i = 0; i < 20; ++i) {
+    big->append(kEmptyString);
+    int c = big->capacity_;
+    log("i %d capacity %d alloc %d", i, c, 8 + c * 8);
+  }
+
+  PASS();
+}
+
+TEST dict_resize_policy_test() {
+  log("Dict min items %d", Dict<int, int>::kMinItems);
+  log("--");
+
+  auto small = Alloc<Dict<int, int>>();
+
+  for (int i = 0; i < 20; ++i) {
+    small->set(i, i);
+    int c = small->capacity_;
+    log("i %d capacity %d alloc %d", i, c, 8 + c * sizeof(int));
+  }
+
+  PASS();
+}
+
 class Point {
  public:
   Point(int x, int y) : x_(x), y_(y) {
@@ -403,6 +445,8 @@ int main(int argc, char** argv) {
   RUN_TEST(offsets_test);
 
   RUN_TEST(roundup_test);
+  RUN_TEST(list_resize_policy_test);
+  RUN_TEST(dict_resize_policy_test);
 
   RUN_TEST(fixed_trace_test);
   RUN_TEST(slab_trace_test);

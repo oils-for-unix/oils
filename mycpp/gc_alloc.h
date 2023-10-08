@@ -8,9 +8,9 @@
 #include <new>      // placement new
 #include <utility>  // std::forward
 
+#include "mycpp/gc_obj.h"   // for RawObject, ObjHeader
 #include "mycpp/gc_slab.h"  // for NewSlab()
 #include "mycpp/gc_str.h"   // for NewStr()
-#include "mycpp/gc_obj.h"   // for RawObject, ObjHeader
 
 #if defined(BUMP_LEAK)
   #include "mycpp/bump_leak_heap.h"
