@@ -48,6 +48,27 @@ TEST hash_speed_test() {
   PASS();
 }
 
+void do_mod(int n, int divisor) {
+  int sum = 0;
+  for (int i = 0; i < n; ++i) {
+    sum += i % divisor;
+  }
+  log("sum = %d", sum);
+}
+
+TEST modulus_test() {
+  // 830 ms
+  // do_mod(1<<30, 8);
+
+  // 1.11 s
+  // do_mod(1<<30, 7);
+
+  // 0.9 seconds
+  do_mod(1 << 30, 6);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -57,6 +78,7 @@ int main(int argc, char **argv) {
 
   RUN_TEST(unordered_set_bucket_test);
   RUN_TEST(hash_speed_test);
+  RUN_TEST(modulus_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
