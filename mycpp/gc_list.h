@@ -102,45 +102,42 @@ class List {
                 "ObjHeader size should be multiple of item size");
   static constexpr int kHeaderFudge = sizeof(ObjHeader) / sizeof(T);
 
-  // Tuning to put slabs in BOTH pools leads to bad growth!  Too much GC of the
-  // tiny objects.  So just use the larger 48 byte pool.
-#if 1
-  static constexpr int kMinBytes = 48 - sizeof(ObjHeader);
-  static_assert(kMinBytes % sizeof(T) == 0,
-                "An integral number of items should fit in second pool");
-  static constexpr int kMinItems = kMinBytes / sizeof(T);
-
-#else
+#if 0
   // Matches mark_sweep_heap.h
   // 24-byte pool comes from very common List header, and Token
   static constexpr int kPoolBytes1 = 24 - sizeof(ObjHeader);
   static_assert(kPoolBytes1 % sizeof(T) == 0,
                 "An integral number of items should fit in first pool");
   static constexpr int kNumItems1 = kPoolBytes1 / sizeof(T);
+#endif
 
   static constexpr int kPoolBytes2 = 48 - sizeof(ObjHeader);
   static_assert(kPoolBytes2 % sizeof(T) == 0,
                 "An integral number of items should fit in second pool");
   static constexpr int kNumItems2 = kPoolBytes2 / sizeof(T);
-#endif
 
   // Given the number of items desired, return the number items we should
   // reserve room for, according to our growth policy.
   int HowManyItems(int num_desired) {
-#if 1
-    if (num_desired <= kMinItems) {
-      return kMinItems;
-    }
-#else
+    // Using the 24-byte pool leads to too much GC of tiny slab objects!  So
+    // just use the larger 48 byte pool.
+#if 0
     if (num_desired <= kNumItems1) {  // use full cell in pool 1
       return kNumItems1;
     }
+#endif
     if (num_desired <= kNumItems2) {  // use full cell in pool 2
       return kNumItems2;
     }
-#endif
 
-    // Does power of 2 makes sense for malloc()?
+    // Make sure the total allocation is a power of 2.  TODO: consider using
+    // slightly less than power of 2, to account for malloc() headers, and
+    // reduce fragmentation.
+    // Example:
+    // - ask for 11 integers
+    // - round up 11+2 == 13 up to 16 items
+    // - return 14 items
+    // - 14 integers is 56 bytes, plus 8 byte GC header => 64 byte alloc.
     return RoundUp(num_desired + kHeaderFudge) - kHeaderFudge;
   }
 };

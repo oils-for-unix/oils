@@ -102,13 +102,6 @@ class Dict {
     }
   }
 
-  // This relies on the fact that containers of 4-byte ints are reduced by 2
-  // items, which is greater than (or equal to) the reduction of any other
-  // type
-  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(int);
-  static_assert(kSlabHeaderSize % sizeof(int) == 0,
-                "Slab header size should be multiple of key size");
-
   // Reserve enough space for at LEAST this many key-value pairs.
   void reserve(int num_desired);
 
@@ -168,16 +161,23 @@ class Dict {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 
+  // This relies on the fact that containers of 4-byte ints are reduced by 2
+  // items, which is greater than (or equal to) the reduction of any other
+  // type
+  static const int kHeaderFudge = sizeof(ObjHeader) / sizeof(int);
+  static_assert(sizeof(ObjHeader) % sizeof(int) == 0,
+                "Slab header size should be multiple of key size");
+
   // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
   // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
   // case is rare.
   static const int kMinItems = 4;
 
-  int RoundCapacity(int n) {
-    if (n < kMinItems) {
+  int HowManyPairs(int num_desired) {
+    if (num_desired < kMinItems) {
       return kMinItems;
     }
-    return RoundUp(n);
+    return RoundUp(num_desired);
   }
 };
 
@@ -197,7 +197,7 @@ void Dict<K, V>::reserve(int num_desired) {
   Slab<V>* old_v = values_;
 
   // Calculate the number of keys and values we should have
-  capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
+  capacity_ = HowManyPairs(num_desired + kHeaderFudge) - kHeaderFudge;
 
   // Introduce hash table load factor (could be tuned)
   index_len_ = 3 * (capacity_ / 2);

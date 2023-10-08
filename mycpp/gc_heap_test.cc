@@ -134,15 +134,8 @@ TEST roundup_test() {
 }
 
 TEST list_resize_policy_test() {
-#if 1
-  log("int kMinItems %d", List<int>::kMinItems);
-  log("Str* kMinItems %d", List<Str*>::kMinItems);
-#else
-  log("int kNumItems1 %d", List<int>::kNumItems1);
-  log("Str* kNumItems1 %d", List<Str*>::kNumItems1);
   log("int kNumItems2 %d", List<int>::kNumItems2);
   log("Str* kNumItems2 %d", List<Str*>::kNumItems2);
-#endif
 
   log("");
   log("\tList<int>");
@@ -172,6 +165,7 @@ TEST list_resize_policy_test() {
 
 TEST dict_resize_policy_test() {
   log("Dict min items %d", Dict<int, int>::kMinItems);
+  log("kHeaderFudge %d", Dict<int, int>::kHeaderFudge);
   log("--");
 
   auto small = Alloc<Dict<int, int>>();
