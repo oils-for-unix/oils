@@ -57,8 +57,8 @@ and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: range_expr (comp_op range_expr)*
 
-# Here the beginning and end are required
-range_expr: expr [':' expr]
+# Unlike slice, beginning and end are required
+range_expr: expr ['..' expr]
 
 # Oil patch: removed legacy <>, use == and !==
 comp_op: (

@@ -8,20 +8,20 @@
 # the hashing?
 # Python xrange objects probably shouldn't even be comparable!
 #
-# = 1:3 < 1:4
+# = 1..3 < 1..4
 # >>> xrange(1,3)  < xrange(1,4)
 # False
 # >>> xrange(1,3)  < xrange(1,4)
 # True
 
-= 1:3
+= 1..3
 
 ## STDOUT:
 (xrange)   xrange(1, 3)
 ## END
 
 #### precedence of 1:3 vs bitwise operator
-= 3:3|4
+= 3..3|4
 ## STDOUT:
 (xrange)   xrange(3, 7)
 ## END
@@ -104,10 +104,10 @@ var b = a[:]
 ## END
 
 #### Iterate over range
-for i in (1:5) {
+for i in (1..5) {
     echo $[i]
 }
-for i, n in (1:4) {
+for i, n in (1..4) {
     echo "$[i], $[n]"
 }
 ## STDOUT:
@@ -123,7 +123,7 @@ for i, n in (1:4) {
 #### Loops over bogus ranges terminate
 # Regression test for bug found during dev. Loops over backwards ranges should
 # terminate immediately.
-for i in (5:1) {
+for i in (5..1) {
     echo $[i]
 }
 ## STDOUT:

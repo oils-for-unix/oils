@@ -12,7 +12,7 @@ func __math_select(list, cmp) {
   }
 
   var match = list[0]
-  for i in (1:len(list)) {
+  for i in (1 .. len(list)) {
     setvar match = cmp(list[i], match)
   }
   return (match)
