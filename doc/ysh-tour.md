@@ -94,7 +94,7 @@ Unlike shell, Oil has `const` and `var` keywords:
 They take rich Python-like expressions on the right:
 
     var x = 42             # an integer, not a string
-    setvar x = min(x, 1)   # mutate with the 'setvar' keyword
+    setvar x = x * 2 + 1   # mutate with the 'setvar' keyword
 
     setvar x += 5          # Increment by 5
     echo $x                # => 6

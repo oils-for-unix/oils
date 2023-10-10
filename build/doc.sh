@@ -388,7 +388,7 @@ log() { echo "$@" 1>&2; }
 EOF
 
   pushd $work_dir
-  $REPO_ROOT/bin/oil $name.txt
+  $REPO_ROOT/bin/ysh $name.txt
   popd
 
   # My own dev tools
