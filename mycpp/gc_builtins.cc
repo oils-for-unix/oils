@@ -223,10 +223,12 @@ double to_float(Str* s) {
   double result = strtod(begin, &end);
 
   if (errno == ERANGE) {  // error: overflow or underflow
-    if (result <= DBL_MIN) {
-      return -INFINITY;
-    } else if (result >= DBL_MAX) {
+    if (result >= HUGE_VAL) {
       return INFINITY;
+    } else if (result <= -HUGE_VAL) {
+      return -INFINITY;
+    } else if (-DBL_MIN <= result && result <= DBL_MIN) {
+      return 0.0;
     } else {
       FAIL("Invalid value after ERANGE");
     }

@@ -88,3 +88,29 @@ echo $[-1e309]
 inf
 -inf
 ## END
+
+#### Tiny floats go to zero
+
+shopt -s ysh:upgrade
+# TODO: need equivalent of in YSh
+# '0' * 309
+# ['0'] * 309
+
+# 1e-324 == 0.0 in Python
+
+var zeros = []
+for i in (1:324) {
+  _ zeros->append('0')
+}
+
+#= zeros
+
+var s = "0.$[join(zeros)]1"
+#echo $s
+
+echo float=$[float(s)]
+
+## STDOUT:
+float=0.0
+## END
+
