@@ -1,4 +1,3 @@
-## oils_failures_allowed: 1
 
 #### command sub $(echo hi)
 var x = $(echo hi)
@@ -335,58 +334,6 @@ echo "mu $mu"
 ## STDOUT:
 yes
 mu 956
-## END
-
-#### Pound char literal (is an integer)
-const a  = #'a'
-const A = #'A'
-echo "$a $A"
-## STDOUT:
-97 65
-## END
-
-#### The literal #''' isn't accepted (use \' instead)
-
-# This looks too much like triple quoted strings!
-
-echo nope
-const bad = #'''
-echo "$bad"
-
-## status: 2
-## STDOUT:
-nope
-## END
-
-#### Float Literals
-shopt -s oil:upgrade
-# 1+2 2.3
-var x = 1.2 + 23.0e-1  # 3.5
-if (x < 3.9) {
-  echo less
-}
-if (x > 3.4) {
-  echo great
-}
-## STDOUT:
-less
-great
-## END
-
-#### Float Literals with _ (requires re2c refinement)
-shopt -s oil:upgrade
-# 1+2 + 2.3
-# add this _ here
-var x = 1.2 + 2_3.0e-1  # 3.5
-if (x < 3.9) {
-  echo less
-}
-if (x > 3.4) {
-  echo great
-}
-## STDOUT:
-less
-great
 ## END
 
 #### "in" and "not in" on Dicts

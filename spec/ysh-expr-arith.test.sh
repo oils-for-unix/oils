@@ -202,7 +202,7 @@ json write (~'3.5')
 ## END
 
 #### unary ~ doesn't work on float
-= ~1.
+= ~1.0
 ## status: 3
 ## STDOUT:
 ## END

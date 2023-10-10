@@ -310,21 +310,21 @@ class ExprEvaluator(object):
 
         # Remove underscores from 1_000_000.  The lexer is responsible for
         # validation.  TODO: Do this at PARSE TIME / COMPILE TIME.
-
-        c = node.c.tval.replace('_', '')
+        c_under = node.c.tval.replace('_', '')
 
         id_ = node.c.id
         if id_ == Id.Expr_DecInt:
-            return value.Int(int(c))
+            return value.Int(int(c_under))
         if id_ == Id.Expr_BinInt:
-            return value.Int(int(c, 2))
+            return value.Int(int(c_under, 2))
         if id_ == Id.Expr_OctInt:
-            return value.Int(int(c, 8))
+            return value.Int(int(c_under, 8))
         if id_ == Id.Expr_HexInt:
-            return value.Int(int(c, 16))
+            return value.Int(int(c_under, 16))
 
         if id_ == Id.Expr_Float:
-            return value.Float(float(c))
+            # Note: float() in mycpp/gc_builtins.py currently uses strtod
+            return value.Float(float(c_under))
 
         if id_ == Id.Expr_Null:
             return value.Null
