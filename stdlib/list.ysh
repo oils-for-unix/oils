@@ -29,7 +29,7 @@ func sum(list) {
   ##
   ## Returns 0 for an empty list.
 
-  var sum = 0;
+  var sum = 0
   for item in (list) {
     setvar sum += item
   }

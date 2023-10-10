@@ -11,7 +11,7 @@ echo "$[bool({})]"
 echo "$[bool(null)]"
 echo "$[bool(len)]"
 echo "$[bool('foo'->startswith)]"
-echo "$[bool(1:3)]"
+echo "$[bool(1..3)]"
 ## STDOUT:
 true
 false
@@ -161,7 +161,7 @@ foo
 #### list() from range
 shopt -s ysh:upgrade
 
-var mylist = list(0:3)
+var mylist = list(0..3)
 write @mylist
 ## STDOUT:
 0

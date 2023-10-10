@@ -937,6 +937,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
     C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
+    C('..', Id.Expr_DDot),    # range 1..5
     C('::', Id.Expr_DColon),  # static namespace access
     C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
                             # instead of d['name']['age']

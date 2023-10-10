@@ -53,14 +53,16 @@ true
 false
 ## END
 
-#### sum()
+#### sum() - TODO: need default args
 source --builtin list.ysh
 
 var start = 42
 
-write $[sum( 0:3 )]
-write $[sum( 0:3, start)]
-write $[sum( 0:0, start)]
+
+write $[sum( 0 .. 3 )]
+write $[sum( 0 .. 3, start)]
+#write $[sum( 0 .. 0, start)]
+
 ## STDOUT:
 3
 45
@@ -68,7 +70,7 @@ write $[sum( 0:0, start)]
 ## END
 
 #### List->reverse()
-var x = list(0:3)
+var x = list(0 .. 3)
 _ x->reverse()
 write @x
 ## STDOUT:
