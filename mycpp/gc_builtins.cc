@@ -1,5 +1,7 @@
 #include <ctype.h>  // isspace()
 #include <errno.h>  // errno
+#include <float.h>  // DBL_MIN, DBL_MAX
+#include <math.h>   // INFINITY
 #include <stdio.h>  // required for readline/readline.h (man readline)
 
 #include "_build/detected-cpp-config.h"
@@ -41,7 +43,19 @@ Str* str(double d) {
   // We want literal syntax to indicate float, so add '.'
 
   int n = sizeof(buf) - 2;  // in case we add '.0'
-  int length = snprintf(buf, n, "%g", d);
+
+  // %.9g digits for string that can be converted back to the same FLOAT
+  // (not double)
+  // https://stackoverflow.com/a/21162120
+  // https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10
+  int length = snprintf(buf, n, "%.9g", d);
+
+  // %a is a hexfloat form, could use that somewhere
+  // int length = snprintf(buf, n, "%a", d);
+
+  if (strchr(buf, 'i')) {  // inf or -inf
+    return StrFromC(buf);
+  }
 
   if (!strchr(buf, '.')) {  // 12345 -> 12345.0
     buf[length] = '.';
@@ -209,9 +223,13 @@ double to_float(Str* s) {
   double result = strtod(begin, &end);
 
   if (errno == ERANGE) {  // error: overflow or underflow
-    // log("OVERFLOW or UNDERFLOW %s", s->data_);
-    // log("result %f", result);
-    throw Alloc<ValueError>();
+    if (result <= DBL_MIN) {
+      return -INFINITY;
+    } else if (result >= DBL_MAX) {
+      return INFINITY;
+    } else {
+      FAIL("Invalid value after ERANGE");
+    }
   }
   if (end == begin) {  // error: not a floating point number
     throw Alloc<ValueError>();

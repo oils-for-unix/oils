@@ -74,3 +74,17 @@ echo $[42_000.000_500e-1]
 420000.005
 4200.00005
 ## END
+
+#### Big floats like 1e309 and -1e309 go to Inf / -Inf
+
+# Notes
+# - Python float() and JS parseFloat() agree with this behavior
+# - JSON doesn't have inf / -inf
+
+echo $[1e309]
+echo $[-1e309]
+
+## STDOUT:
+inf
+-inf
+## END
