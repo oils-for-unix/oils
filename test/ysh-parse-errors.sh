@@ -469,6 +469,31 @@ test-place-expr() {
   _parse-error 'setvar x->y = 42'
 }
 
+test-destructure() {
+  _parse-error '
+  func f() {
+    const x, y = 3, 4
+
+    #setvar x = 5
+
+    setvar y = 6
+  }'
+
+  _parse-error '
+  func f() {
+    var x, y = 3, 4
+
+    var y = 6
+  }'
+
+  _parse-error '
+  func f() {
+    var x, y = 3, 4
+
+    const y = 6
+  }'
+}
+
 #
 # Entry Points
 #

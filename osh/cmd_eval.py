@@ -2105,21 +2105,12 @@ class CommandEvaluator(object):
         return status
 
     def EvalBlock(self, block):
-        # type: (command_t) -> Tuple[Dict[str, Cell], int]
-        """Returns a namespace and the resulting integer status code.
+        # type: (command_t) -> int
+        """Returns an integer status."""
 
-        For config files.
-
-        rule foo {
-          a = 1
-        }
-        is like:
-        foo = {a:1}
-        """
         status = 0
-        namespace_ = None  # type: Dict[str, Cell]
         try:
-            self._Execute(block)  # can raise FatalRuntimeError, etc.
+            status = self._Execute(block)  # can raise FatalRuntimeError, etc.
         except vm.IntControlFlow as e:  # A block is more like a function.
             # return in a block
             if e.IsReturn():
@@ -2127,20 +2118,7 @@ class CommandEvaluator(object):
             else:
                 e_die('Unexpected control flow in block', e.token)
 
-        namespace_ = self.mem.TopNamespace()
-
-        # This is the thing on self.mem?
-        # Filter out everything beginning with _ ?
-
-        # TODO: Return arbitrary values instead
-
-        # Nothing seems to depend on this, and mypy isn't happy with it
-        # because it's an int and values of the namespace dict should be
-        # cells, so I've commented it out.
-        #namespace['_returned'] = status
-
-        # TODO: Have to get rid of the cells
-        return namespace_, status
+        return status
 
     def RunFuncForCompletion(self, proc, argv):
         # type: (Proc, List[str]) -> int
