@@ -765,9 +765,8 @@ class Transformer(object):
         lhs = self._NameTypeList(p_node.GetChild(0))  # could be a tuple
         # This syntax is confusing, and different than JavaScript
         #   var x, y = 1, 2
-        if len(lhs) > 1:
-            eq_tok = p_node.GetChild(1).tok
-            p_die('Only one variable can be initialized', eq_tok)
+        # But this is useful:
+        #   var flag, i = parseArgs(spec, argv)
 
         rhs = self.Expr(p_node.GetChild(2))
 

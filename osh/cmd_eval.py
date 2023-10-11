@@ -689,7 +689,64 @@ class CommandEvaluator(object):
             else:
                 raise NotImplementedError()
 
-    def _EvalPlaceMutation(self, node):
+    def _DoVarDecl(self, node):
+        # type: (command.VarDecl) -> int
+        # Point to var name (bare assignment has no keyword)
+        self.mem.SetTokenForLine(node.lhs[0].name)
+
+        # x = 'foo' in Hay blocks
+        if node.keyword is None:
+            # Note: there's only one LHS
+            place = location.LName(node.lhs[0].name.tval)
+            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+
+            self.mem.SetValue(place, val, scope_e.LocalOnly,
+                              flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
+
+        else:  # var or const
+            right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+
+            lvals = None  # type: List[lvalue_t]
+            rhs_vals = None  # type: List[value_t]
+
+            num_lhs = len(node.lhs)
+            if num_lhs == 1:
+                lvals = [location.LName(node.lhs[0].name.tval)]
+                rhs_vals = [right_val]
+            else:
+                items = val_ops.ToList(
+                    right_val, 'Destructuring assignment expected List',
+                    node.keyword)
+
+                num_rhs = len(items)
+                if num_lhs != num_rhs:
+                    raise error.Expr(
+                            'Got %d places on left, but %d values on right' %
+                            (num_lhs, num_rhs), node.keyword)
+
+                lvals = []
+                rhs_vals = []
+                for i, lhs_val in enumerate(node.lhs):
+                    place = location.LName(lhs_val.name.tval)
+                    lvals.append(place)
+                    rhs_vals.append(items[i])
+
+            with switch(node.keyword.id) as case:
+                if case(Id.KW_Var):
+                    flags = _PackFlags(Id.KW_Var)
+                elif case(Id.KW_Const):
+                    # Same as hay block above
+                    flags = _PackFlags(Id.KW_Const, state.SetReadOnly)
+                else:
+                    raise AssertionError()
+
+            for i, lval in enumerate(lvals):
+                rval = rhs_vals[i]
+                self.mem.SetValue(lval, rval, scope_e.LocalOnly, flags=flags)
+
+        return 0
+
+    def _DoPlaceMutation(self, node):
         # type: (command.PlaceMutation) -> None
 
         with switch(node.keyword.id) as case2:
@@ -720,8 +777,9 @@ class CommandEvaluator(object):
 
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
-                    raise error.Expr('%d != %d' % (num_lhs, num_rhs),
-                                     loc.Missing)
+                    raise error.Expr(
+                            'Got %d places on left, but %d values on right' %
+                            (num_lhs, num_rhs), node.keyword)
 
                 places = []
                 rhs_vals = []
@@ -731,10 +789,10 @@ class CommandEvaluator(object):
 
             for i, place in enumerate(places):
                 rval = rhs_vals[i]
-                UP_place = place
 
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
+                UP_place = place
                 if place.tag() == lvalue_e.ObjIndex:
                     place = cast(lvalue.ObjIndex, UP_place)
 
@@ -960,35 +1018,6 @@ class CommandEvaluator(object):
         cmd_st.show_code = True  # this is a "leaf" for errors
         i = self.arith_ev.EvalToInt(node.child)
         return 1 if i == 0 else 0
-
-    def _DoVarDecl(self, node):
-        # type: (command.VarDecl) -> int
-        # Point to var name (bare assignment has no keyword)
-        self.mem.SetTokenForLine(node.lhs[0].name)
-
-        # x = 'foo' in Hay blocks
-        if node.keyword is None or node.keyword.id == Id.KW_Const:
-            # Note: there's only one LHS
-            vd_lval = location.LName(node.lhs[0].name.tval)  # type: lvalue_t
-            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-
-            self.mem.SetValue(vd_lval,
-                              val,
-                              scope_e.LocalOnly,
-                              flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
-
-        else:
-            # TODO: optimize this common case (but measure)
-            assert len(node.lhs) == 1, node.lhs
-
-            vd_lval = location.LName(node.lhs[0].name.tval)
-            val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
-            self.mem.SetValue(vd_lval,
-                              val,
-                              scope_e.LocalOnly,
-                              flags=_PackFlags(node.keyword.id))
-
-        return 0
 
     def _DoShAssignment(self, node, cmd_st):
         # type: (command.ShAssignment, CommandStatus) -> int
@@ -1582,7 +1611,7 @@ class CommandEvaluator(object):
                 node = cast(command.PlaceMutation, UP_node)
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
-                self._EvalPlaceMutation(node)
+                self._DoPlaceMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
