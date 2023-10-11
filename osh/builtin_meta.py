@@ -60,7 +60,7 @@ class Eval(vm._Builtin):
             block = t.PosCommand()
             t.Done()
 
-            unused, status = self.cmd_ev.EvalBlock(block)
+            status = self.cmd_ev.EvalBlock(block)
             return status
 
         # There are no flags, but we need it to respect --
@@ -333,7 +333,7 @@ class Try(vm._Builtin):
             status = 0  # success by default
             try:
                 with state.ctx_Try(self.mutable_opts):
-                    unused, status = self.cmd_ev.EvalBlock(block)
+                    status = self.cmd_ev.EvalBlock(block)
             except error.Expr as e:
                 status = e.ExitStatus()
             except error.ErrExit as e:
