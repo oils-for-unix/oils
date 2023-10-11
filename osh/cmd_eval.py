@@ -99,7 +99,7 @@ from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
-    from _devbuild.gen.runtime_asdl import cmd_value_t, Cell, lvalue_t
+    from _devbuild.gen.runtime_asdl import cmd_value_t, lvalue_t
     from _devbuild.gen.syntax_asdl import Redir, EnvPair
     from core.alloc import Arena
     from core import optview
