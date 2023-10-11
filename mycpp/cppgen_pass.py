@@ -1827,9 +1827,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def _write_cases(self, if_node):
         """
-      The MyPy AST has a recursive structure for if-elif-elif rather than a
-      flat one.  It's a bit confusing.
-      """
+        The MyPy AST has a recursive structure for if-elif-elif rather than a
+        flat one.  It's a bit confusing.
+        """
         assert isinstance(if_node, IfStmt), if_node
         assert len(if_node.expr) == 1, if_node.expr
         assert len(if_node.body) == 1, if_node.body

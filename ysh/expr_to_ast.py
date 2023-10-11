@@ -743,9 +743,13 @@ class Transformer(object):
                     places.append(e)
 
                 else:
-                    # This blame mechanism seems to work.  Otherwise we don't
-                    # have a method to blame an arbitrary expr_t.
-                    blame = p.tok if p.tok else loc.Missing  # type: loc_t
+                    pass
+                    # TODO: could blame arbitary expr_t, bu this works most of
+                    # the time
+                    if p.tok is not None:
+                        blame = p.tok  # type: loc_t
+                    else:
+                        blame = loc.Missing
                     p_die("Can't assign to this expression", blame)
         return places
 
