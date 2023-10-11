@@ -463,6 +463,12 @@ test-float-literals() {
   _parse-error '= _42.0'
 }
 
+test-place-expr() {
+  _should-parse 'setvar x.y = 42'
+  _parse-error 'setvar x+y = 42'
+  _parse-error 'setvar x->y = 42'
+}
+
 #
 # Entry Points
 #

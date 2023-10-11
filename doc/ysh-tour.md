@@ -380,8 +380,8 @@ Modify variables with the `setvar` keyword:
 A more complex example:
 
     var d = {name: 'bob', age: 42}  # dict literal
-    setvar d->name = 'alice'        # d->name is a synonym for d['name']
-    echo $[d->name]                 # => alice
+    setvar d.name = 'alice'         # d.name is a synonym for d['name']
+    echo $[d.name]                  # => alice
 
 That's most of what you need to know about assignments.  Advanced users may
 want to use `setglobal` or `setref` in certain situations.
@@ -516,7 +516,7 @@ As with `while` loops, the condition can also be an **expression** wrapped in
 The case statement matches a string against **glob** patterns, and executes the
 corresponding block:
 
-    case $s {
+    case (s) {
       *.py       { echo 'Python' }
       *.cc | *.h { echo 'C++' }
       *          { echo 'Other' }
@@ -633,11 +633,16 @@ Oil uses JavaScript-like spellings these three "atoms":
 
     var x = null
 
-    var b1, b2 = true, false
+    var b1 = true
+    var b2 = false
 
     if (b1) {
       echo 'yes'
     }  # => yes
+
+<!-- TODO: restore this style
+    var b1, b2 = true, false
+-->
 
 #### Int
 

@@ -249,14 +249,13 @@ class ExprEvaluator(object):
 
             elif case(place_expr_e.Attribute):
                 place = cast(Attribute, UP_place)
-                # setvar mydict.key = 42
+                assert place.op.id == Id.Expr_Dot
 
+                # setvar mydict.key = 42
                 lval = self._EvalExpr(place.obj)
-                if place.op.id == Id.Expr_Dot:
-                    attr = value.Str(place.attr.tval)
-                    return lvalue.ObjIndex(lval, attr)
-                else:
-                    raise AssertionError()
+
+                attr = value.Str(place.attr.tval)
+                return lvalue.ObjIndex(lval, attr)
 
             else:
                 raise NotImplementedError(place)
