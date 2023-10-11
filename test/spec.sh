@@ -782,6 +782,10 @@ ysh-expr() {
   run-file ysh-expr "$@"
 }
 
+ysh-int-float() {
+  run-file ysh-int-float "$@"
+}
+
 ysh-expr-bool() {
   run-file ysh-expr-bool "$@"
 }

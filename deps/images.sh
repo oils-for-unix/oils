@@ -7,25 +7,25 @@
 #
 # Example: Rebuild an image:
 #
-# - Update LATEST_TAG
+# (1) Update LATEST_TAG
 #
-#   deps/images.sh build common  # populates apt cache.  WHY DO I NEED THIS?
-#   deps/images.sh build cpp T   # reuse package cache from apt-get
-#   deps/images.sh smoke cpp
+# (2) Rebuild
 #
-#   deps/images.sh push cpp      # pushes the LATEST_TAG
+#     deps/images.sh build common  # populates apt cache.  WHY DO I NEED THIS?
+#     deps/images.sh build cpp T   # reuse package cache from apt-get
+#     deps/images.sh smoke cpp
 #
-#   sudo docker tag abcdef oilshell/soil-common:latest
-#   deps/images.sh push common latest  # update latest, for next Docker build
+# (3) Push image and common
 #
-# - Update live version in 'soil/host-shim.sh live-image-tag'
+#     deps/images.sh push cpp      # pushes the LATEST_TAG
 #
-# Also useful:
+#     deps/images.sh list-tagged  # find hash of soil-common
+#     sudo docker tag abcdef oilshell/soil-common:latest
+#     deps/images.sh push common latest  # update latest, for next Docker build
 #
-#   sudo docker images oilshell/soil-common -- list tags for image
-#   deps/images.sh list-tagged
+# (4) Update live version in 'soil/host-shim.sh live-image-tag'
 #
-# URL
+# Our images:
 #
 #   https://hub.docker.com/u/oilshell
 
@@ -38,7 +38,7 @@ source deps/podman.sh
 DOCKER=${DOCKER:-docker}
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-08-09'
+readonly LATEST_TAG='v-2023-10-05a'
 
 # BUGS in Docker.
 #
@@ -153,11 +153,16 @@ smoke() {
   ### Smoke test of container
   local name=${1:-dummy}
   local tag=${2:-$LATEST_TAG}
+  local docker=${3:-$DOCKER}
+  local prefix=${4:-}
 
   #sudo docker run oilshell/soil-$name
   #sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
 
-  sudo $DOCKER run oilshell/soil-$name:$tag bash -c '
+  # Need to point at registries.conf ?
+  #export-podman
+
+  sudo $docker run ${prefix}oilshell/soil-$name:$tag bash -c '
 echo "bash $BASH_VERSION"
 
 git --version
@@ -175,6 +180,13 @@ done
   #sudo docker run oilshell/soil-$name python -V
 
   #sudo docker run oilshell/soil-$name python3 -c 'import pexpect; print(pexpect)'
+}
+
+smoke-podman() {
+  local name=${1:-dummy}
+
+  # need explicit docker.io prefix with podman
+  smoke $name latest podman docker.io/
 }
 
 cmd() {

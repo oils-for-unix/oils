@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <limits.h>  // INT_MAX
+#include <math.h>    // INFINITY
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
@@ -76,24 +77,23 @@ TEST float_test() {
   }
   ASSERT(caught);
 
-  caught = false;
-  try {
-    Str* huge = str_repeat(StrFromC("123456789"), 100);
-    (void)to_float(huge);
-  } catch (ValueError* e) {
-    caught = true;
-  }
-  ASSERT(caught);
+  Str* huge = str_repeat(StrFromC("123456789"), 100);
+  double d = to_float(huge);
+  ASSERT_EQ(INFINITY, d);
 
-  caught = false;
-  try {
-    Str* zeros = str_repeat(StrFromC("00000000"), 100);
-    Str* tiny = str_concat3(StrFromC("0."), zeros, StrFromC("1"));
-    (void)to_float(tiny);
-  } catch (ValueError* e) {
-    caught = true;
-  }
-  ASSERT(caught);
+  double d2 = to_float(StrFromC("-1e309"));
+  ASSERT_EQ(-INFINITY, d2);
+
+  Str* zeros = str_repeat(StrFromC("00000000"), 100);
+  Str* tiny = str_concat3(StrFromC("0."), zeros, StrFromC("1"));
+  double d3 = to_float(tiny);
+  log("d3 = %.17g", d3);
+  ASSERT_EQ(0.0f, d3);
+
+  Str* neg_tiny = str_concat3(StrFromC("-0."), zeros, StrFromC("1"));
+  double d4 = to_float(neg_tiny);
+  log("d4 = %.17g", d4);
+  ASSERT_EQ(-0.0f, d4);
 
   PASS();
 }

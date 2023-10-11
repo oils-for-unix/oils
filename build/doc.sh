@@ -388,7 +388,7 @@ log() { echo "$@" 1>&2; }
 EOF
 
   pushd $work_dir
-  $REPO_ROOT/bin/oil $name.txt
+  $REPO_ROOT/bin/ysh $name.txt
   popd
 
   # My own dev tools
@@ -565,6 +565,9 @@ run-for-release() {
 
   local root=_release/VERSION
   mkdir -p $root/{doc,test,pub}
+
+  # TODO: fix failures here
+  # tour
 
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root

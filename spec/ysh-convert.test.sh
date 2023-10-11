@@ -11,7 +11,7 @@ echo "$[bool({})]"
 echo "$[bool(null)]"
 echo "$[bool(len)]"
 echo "$[bool('foo'->startswith)]"
-echo "$[bool(1:3)]"
+echo "$[bool(1..3)]"
 ## STDOUT:
 true
 false
@@ -70,15 +70,20 @@ echo "$[float(2.345)]"
 2.345
 ## END
 
-#### float() more
+#### float() overflow / underflow
 
-# TODO: This needs a lot more testing, for precision, etc.
 var a = float("1.2")
 var b = float("3.4")
-write $a $b
+
+var c = float("42.1e500")
+var d = float("-42.1e500")
+
+write $a $b $c $d
 ## STDOUT:
 1.2
 3.4
+inf
+-inf
 ## END
 
 #### str() conversion
@@ -156,7 +161,7 @@ foo
 #### list() from range
 shopt -s ysh:upgrade
 
-var mylist = list(0:3)
+var mylist = list(0..3)
 write @mylist
 ## STDOUT:
 0

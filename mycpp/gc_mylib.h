@@ -6,7 +6,7 @@
 #include <limits.h>  // CHAR_BIT
 
 #include "mycpp/gc_alloc.h"  // gHeap
-#include "mycpp/gc_dict.h"   // kDeletedEntry
+#include "mycpp/gc_dict.h"   // for dict_erase()
 #include "mycpp/gc_tuple.h"
 
 template <class K, class V>
@@ -42,6 +42,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->obj_header().heap_tag != HeapTag::Global);
+
   int pos = haystack->hash_and_probe(needle);
   if (pos == kTooSmall) {
     return;

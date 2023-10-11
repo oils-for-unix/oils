@@ -282,7 +282,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
           <a class="fail" href="#stderr_parse_{name}">FAIL</a>
           <td>{parse_proc_secs}</td>
         {.or}
-          <a class="ok" href="{name}__ast.html">OK</a>
+          <span class="ok">OK</a>
           <td>{parse_proc_secs}</td>
         {.end}
       </td>
@@ -291,7 +291,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
         {.osh2oil_failed?}
           <a class="fail" href="#stderr_osh2oil_{name}">FAIL</a>
         {.or}
-          <a class="ok" href="{name}__oil.txt">OK</a>
+          <a class="ok" href="{name}__ysh.txt">OK</a>
         {.end}
       </td>
       <td class="name">
@@ -672,14 +672,14 @@ def SumStats(stdin, in_dir, not_shell, not_osh, root_node, failures):
           {'rel_path': rel_path, 'stderr': st['parse_stderr']}
       )
 
-    osh2oil_task_path = raw_base + '__osh2oil.task.txt'
+    osh2oil_task_path = raw_base + '__ysh-ify.task.txt'
     osh2oil_failed, st['osh2oil_proc_secs'] = _ReadTaskFile(
         osh2oil_task_path)
 
     # Only count translation failures if the parse succeeded!
     st['osh2oil_failed'] = osh2oil_failed if not parse_failed else 0
 
-    with open(raw_base + '__osh2oil.stderr.txt') as f:
+    with open(raw_base + '__ysh-ify.stderr.txt') as f:
       st['osh2oil_stderr'] = f.read()
 
     if st['osh2oil_failed']:

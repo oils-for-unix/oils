@@ -93,7 +93,7 @@ class Dict {
         index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
-    assert(keys.size() == values.size());
+    DCHECK(keys.size() == values.size());
     auto v = values.begin();  // This simulates a "zip" loop
     for (auto key : keys) {
       // note: calls reserve(), and may allocate
@@ -101,13 +101,6 @@ class Dict {
       ++v;
     }
   }
-
-  // This relies on the fact that containers of 4-byte ints are reduced by 2
-  // items, which is greater than (or equal to) the reduction of any other
-  // type
-  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(int);
-  static_assert(kSlabHeaderSize % sizeof(int) == 0,
-                "Slab header size should be multiple of key size");
 
   // Reserve enough space for at LEAST this many key-value pairs.
   void reserve(int num_desired);
@@ -133,7 +126,8 @@ class Dict {
 
   void clear();
 
-  // Helper used by find_kv_index() and set().
+  // Helper used by find_kv_index(), set(), mylib::dict_erase() in
+  // gc_mylib.h
   // Returns either:
   // - the slot for an existing key, or an empty slot for a new key
   // - kTooSmall if the table is full
@@ -165,19 +159,42 @@ class Dict {
            maskbit(offsetof(Dict, values_));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(Dict)
+  DISALLOW_COPY_AND_ASSIGN(Dict);
 
- private:
-  // Relates to minimum slab size.  This is good for Dict<K*, V*>, Dict<K*,
-  // int>, Dict<int, V*>, but possibly suboptimal for Dict<int, int>.  But that
-  // case is rare.
-  static const int kMinItems = 4;
+  // kItemSize is max of K and V size.  That is, on 64-bit machines, the RARE
+  // Dict<int, int> is smaller than other dicts
+  static constexpr int kItemSize = sizeof(K) > sizeof(V) ? sizeof(K)
+                                                         : sizeof(V);
 
-  int RoundCapacity(int n) {
-    if (n < kMinItems) {
-      return kMinItems;
+  // Matches mark_sweep_heap.h
+  static constexpr int kPoolBytes2 = 48 - sizeof(ObjHeader);
+  static_assert(kPoolBytes2 % kItemSize == 0,
+                "An integral number of items should fit in second pool");
+  static constexpr int kNumItems2 = kPoolBytes2 / kItemSize;
+
+  static const int kHeaderFudge = sizeof(ObjHeader) / kItemSize;
+  static_assert(sizeof(ObjHeader) % kItemSize == 0,
+                "Slab header size should be multiple of key size");
+
+#if 0
+  static constexpr int kMinBytes2 = 128 - sizeof(ObjHeader);
+  static_assert(kMinBytes2 % kItemSize == 0,
+                "An integral number of items should fit");
+  static constexpr int kMinItems2 = kMinBytes2 / kItemSize;
+#endif
+
+  int HowManyPairs(int num_desired) {
+    // See gc_list.h for comments on nearly identical logic
+
+    if (num_desired <= kNumItems2) {  // use full cell in pool 2
+      return kNumItems2;
     }
-    return RoundUp(n);
+#if 0
+    if (num_desired <= kMinItems2) {  // 48 -> 128, not 48 -> 64
+      return kMinItems2;
+    }
+#endif
+    return RoundUp(num_desired + kHeaderFudge) - kHeaderFudge;
   }
 };
 
@@ -197,10 +214,12 @@ void Dict<K, V>::reserve(int num_desired) {
   Slab<V>* old_v = values_;
 
   // Calculate the number of keys and values we should have
-  capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
+  capacity_ = HowManyPairs(num_desired);
 
-  // Introduce hash table load factor (could be tuned)
-  index_len_ = 3 * (capacity_ / 2);
+  // 1) Ensure index len a power of 2, to avoid expensive modulus % operation
+  // 2) Introduce hash table load factor.   Use capacity_+1 to simulate ceil()
+  // div, not floor() div.
+  index_len_ = RoundUp((capacity_ + 1) * 5 / 4);
   DCHECK(index_len_ > capacity_);
 
   index_ = NewSlab<int>(index_len_);
@@ -291,15 +310,17 @@ int Dict<K, V>::hash_and_probe(K key) const {
   // Hash the key onto a slot in the index. If the first slot is occupied,
   // probe until an empty one is found.
   unsigned h = hash_key(key);
-  int init_bucket = h % index_len_;
+  // faster % using & -- assuming index_len_ is power of 2
+  int init_bucket = h & (index_len_ - 1);
 
   // If we see a tombstone along the probing path, stash it.
   int open_slot = -1;
 
   for (int i = 0; i < index_len_; ++i) {
     // Start at init_bucket and wrap araound
-    // NOTE: if division becomes a hotspot, split this into two loops.
-    int slot = (i + init_bucket) % index_len_;
+
+    // faster % using & -- assuming index_len_ is power of 2
+    int slot = (i + init_bucket) & (index_len_ - 1);
 
     int kv_index = index_->items_[slot];
     DCHECK(kv_index < len_);

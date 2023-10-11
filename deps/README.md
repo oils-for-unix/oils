@@ -76,3 +76,32 @@ And then we'll need some symlinks like `python3`, etc.
 - Source vs. Intermediate - what repo stores it?
 - Absolute vs. Relative - where is it mounted?
 - Layer vs. Wedge - how is it mounted?
+
+## Soil C++ Tarball Notes
+
+cpp-tarball is consumed by these jobs now:
+
+- raw-vm
+- wild
+- app-tests for ble.sh
+
+If we use it in more tasks, we could try to remove MyPy/Python 3 from Docker
+images.  It should especially speed up the pull on sourcehut -- 30-40 seconds
+for pea/other-tests, vs. 2:13 for benchmarks2
+
+So these can also consume the tarball:
+
+- benchmarks
+- benchmarks2
+- interactive uses the 'benchmarks' image for some reason
+- cpp-spec
+  - build ASAN binary from tarball
+  - needs both osh and ysh
+- cpp-coverage -- would need to include C++ unit tests and Ninja in tarball,
+  which is not a bad idea
+
+More:
+
+- Alpine testing
+- Smoosh testing with OCaml, similar to spec tests
+

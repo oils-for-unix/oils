@@ -518,7 +518,7 @@ echo $[type({})]
 echo $[type(null)]
 echo $[type(len)]
 echo $[type('foo'->startswith)]
-echo $[type(1:3)]
+echo $[type(1..3)]
 ## STDOUT:
 Int
 Str
@@ -533,9 +533,9 @@ Range
 ## END
 
 #### List->extend()
-var l = list(1:3)
+var l = list(1..3)
 echo $[len(l)]
-_ l->extend(list(3:6))
+_ l->extend(list(3..6))
 echo $[len(l)]
 ## STDOUT:
 2
@@ -544,9 +544,9 @@ echo $[len(l)]
 
 #### List append()/extend() should return null
 shopt -s oil:all
-var l = list(1:3)
+var l = list(1..3)
 
-var result = l->extend(list(3:6))
+var result = l->extend(list(3..6))
 _ assert_(result === null)
 
 setvar result = l->append(6)
@@ -559,7 +559,7 @@ pass
 
 #### List pop()
 shopt -s oil:all
-var l = list(1:5)
+var l = list(1..5)
 _ assert_(l->pop() === 4)
 _ assert_(l->pop() === 3)
 _ assert_(l->pop() === 2)

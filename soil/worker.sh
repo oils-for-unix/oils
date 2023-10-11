@@ -45,6 +45,8 @@ raw-vm-tasks() {
 os-info          soil/diagnose.sh os-info         -
 dump-env         soil/diagnose.sh dump-env        -
 perf-install     benchmarks/perf.sh soil-install  -
+wait-for-tarball soil/wait.sh for-cpp-tarball         -
+test-tar         devtools/release-native.sh test-tar  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
 }
@@ -126,10 +128,11 @@ wild-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info    -
-dump-env         soil/diagnose.sh dump-env   -
-build-py         build/py.sh all             -
-wild             test/wild.sh soil-run       _tmp/wild-www/index.html
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+wait-for-tarball soil/wait.sh for-cpp-tarball         -
+test-tar         devtools/release-native.sh test-tar  -
+wild             test/wild.sh soil-run                _tmp/wild-www/index.html
 EOF
 }
 
@@ -177,17 +180,38 @@ ysh-py           test/spec-py.sh ysh-all-serial        _tmp/spec/ysh-py/index.ht
 EOF
 }
 
-cpp-small-tasks() {
-  # Note: mycpp-benchmarks runs benchmarks SERIALLY with ninja -j 1, and makes HTML
-  # And then we have correctness for mycpp-translator.  Somewhat redundant but
-  # it's OK for now.
+cpp-tarball-tasks() {
+
+  # Note: build-times task requires _build/oils.sh
+  # It's a bit redundant with test-tar
 
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 oils-cpp-smoke   build/native.sh soil-run              -
+make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
+build-times      build/native.sh measure-build-times   -
+EOF
+
+# build-times is a good enough test
+# test-tar         devtools/release-native.sh test-tar   -
+#
+# Note: tarball is deployed outside the container
+
+}
+
+cpp-small-tasks() {
+
+  # TODO: remove tarball
+
+  # Build the tarball toward the beginning
+  cat <<EOF
+os-info          soil/diagnose.sh os-info    -
+dump-env         soil/diagnose.sh dump-env   -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+oils-cpp-smoke   build/native.sh soil-run              -
+cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
@@ -199,9 +223,6 @@ mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
-make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
-test-tar         devtools/release-native.sh test-tar   -
-build-times      build/native.sh measure-build-times   -
 EOF
 }
 
@@ -248,18 +269,22 @@ EOF
 
 # Reuse ovm-tarball container
 app-tests-tasks() {
+
   cat <<EOF
-os-info          soil/diagnose.sh os-info         -
-dump-env         soil/diagnose.sh dump-env        -
-py-all           build/py.sh all                  -
-ble-clone        test/ble.sh clone                -
-ble-build        test/ble.sh build                -
-ble-test-bash    test/ble.sh run-tests-bash       -
-ble-test-osh-py  test/ble.sh run-tests-osh-py     -
+os-info           soil/diagnose.sh os-info             -
+dump-env          soil/diagnose.sh dump-env            -
+py-all            build/py.sh all                      -
+ble-clone         test/ble.sh clone                    -
+ble-build         test/ble.sh build                    -
+ble-bash-suite    test/ble.sh bash-suite               -
+ble-test-osh-py   test/ble.sh run-tests-osh-py         -
+wait-for-tarball  soil/wait.sh for-cpp-tarball         -
+test-tar          devtools/release-native.sh test-tar  -
+ble-test-osh-cpp  test/ble.sh run-tests-osh-cpp        -
 EOF
 
-# Only for tarball build
-# yajl             build/py.sh yajl-release    -
+# This doesn't work
+# ble-test-osh-bash test/ble.sh run-tests-osh-bash       -
 }
 
 # TODO: Most of these should be Ninja tasks.
@@ -505,15 +530,14 @@ JOB-other-tests() { job-main 'other-tests'; }
 
 JOB-pea() { job-main 'pea'; }
 
-JOB-cpp-coverage() { job-main 'cpp-coverage'; }
-
-# For now, these share a container image
 JOB-ovm-tarball() { job-main 'ovm-tarball'; }
 JOB-app-tests() { job-main 'app-tests'; }
 
-# For now, these share a container image
+JOB-cpp-coverage() { job-main 'cpp-coverage'; }
 JOB-cpp-small() { job-main 'cpp-small'; }
+JOB-cpp-tarball() { job-main 'cpp-tarball'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
+
 JOB-benchmarks() { job-main 'benchmarks'; }
 JOB-benchmarks2() { job-main 'benchmarks2'; }
 

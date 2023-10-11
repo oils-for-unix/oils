@@ -9,6 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
+source build/common.sh  # log
+
 # Demo for the oils-for-unix tarball.
 # Notes:
 # - Does not rely on Ninja, which is for the dev build
@@ -85,7 +88,18 @@ oil-slice-demo() {
 }
 
 soil-run() {
-  local bin=_bin/cxx-asan/osh
+  if test "${container:-}" = podman; then
+
+    # Work around for ASAN not working in podman
+
+    local bin=_bin/cxx-dbg/osh
+
+    log "Using $bin for podman"
+    log ''
+
+  else
+    local bin=_bin/cxx-asan/osh
+  fi
 
   ninja $bin
   echo

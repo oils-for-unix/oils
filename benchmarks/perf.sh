@@ -35,6 +35,8 @@ set -o errexit
 
 readonly BASE_DIR=_tmp/perf
 
+source test/common.sh  # $OSH
+
 # TODO:
 # - kernel symbols.  Is that why there are a lot of [unknown] in opt mode?
 # - grep for call_function in collapsed.  I don't see it?
@@ -50,17 +52,21 @@ readonly BASE_DIR=_tmp/perf
 # - a longer file like configure-coreutils hit garbage collection!  collect()
 # - reference counting functions: visit_decref, visit_reachable
 
-install-packages() {
+install-ubuntu-packages() {
   # linux-tools-generic is the kernel module
   # Apparently you need a package specific to the kernel, not sure why.
   sudo apt-get install \
     linux-tools-common linux-tools-$(uname -r) linux-tools-generic
 }
 
+install-debian-packages() {
+  sudo apt-get install linux-perf
+}
+
 soil-install() {
   sudo apt-get update  # seem to need this
 
-  install-packages
+  install-ubuntu-packages
 }
 
 debug-symbols() {
@@ -141,17 +147,13 @@ _record-cpp() {
   shift 2
 
   # Can repeat 13 times without blowing heap
-  local freq=10000
   #export REPEAT=13 
 
-  # call graph mode: needed to make flame graph
-  local flag='-g'  
-
-  #local flag='' # flat mode?
+  local freq=10000
 
   local extra_flags=''
   case $mode in 
-    (graph) extra_flags='-g' ;;
+    (graph) extra_flags='-g' ;;  # needed to make flame graph
     (flat)  extra_flags='' ;;
     (*)     die "Mode should be graph or flat, got $mode" ;;
   esac
@@ -190,16 +192,13 @@ profile-osh-parse() {
   # Profile parsing a big file.  More than half the time is in malloc
   # (_int_malloc in GCC), which is not surprising!
 
-  local mode=${1:-graph}
-  local variant=${2:-opt}
+  local osh=${1:-_bin/cxx-opt/osh}
+  local mode=${2:-graph}
 
-  local bin="_bin/cxx-$variant/osh"
-  ninja $bin
+  #local file=benchmarks/testdata/configure
+  local file=benchmarks/testdata/configure-coreutils
 
-  local file=benchmarks/testdata/configure
-  #local file=benchmarks/testdata/configure-coreutils
-
-  local -a cmd=( $bin --ast-format none -n $file )
+  local -a cmd=( $osh --ast-format none -n $file )
   profile-cpp 'osh-parse' $mode "${cmd[@]}"
 
   # 'perf list' shows the events
@@ -211,26 +210,20 @@ profile-osh-parse() {
 }
 
 profile-fib() {
-  local mode=${1:-graph}
-  local variant=${2:-opt}
-
-  local bin="_bin/cxx-$variant/osh"
-  ninja $bin
+  local osh=${1:-_bin/cxx-opt/osh}
+  local mode=${2:-graph}
 
   # Same iterations as benchmarks/gc
-  local -a cmd=( $bin benchmarks/compute/fib.sh 100 44 )
+  local -a cmd=( $osh benchmarks/compute/fib.sh 500 44 )
 
   profile-cpp 'fib' $mode "${cmd[@]}"
 }
 
 profile-execute() {
-  local mode=${1:-graph}
-  local variant=${2:-opt}
+  local osh=${1:-_bin/cxx-opt/osh}
+  local mode=${2:-graph}
 
-  local bin="_bin/cxx-$variant/osh"
-  ninja $bin
-
-  local -a cmd=( $bin benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+  local -a cmd=( $osh benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
 
   profile-cpp 'parse-help' $mode "${cmd[@]}"
 }
@@ -421,6 +414,12 @@ soil-run() {
   build-stress-test
 
   profile-stress-test
+
+  export-osh-cpp _tmp/native-tar-test opt
+  #export-osh-cpp '' opt
+
+  profile-fib $OSH flat
+  profile-osh-parse $OSH flat
 
   print-index > $BASE_DIR/index.html
 

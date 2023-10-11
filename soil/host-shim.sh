@@ -23,12 +23,12 @@ live-image-tag() {
 
   case $image_id in
     (app-tests)
-      # freshen up
-      echo 'v-2023-07-15'
+      # rebuild with curl
+      echo 'v-2023-10-05'
       ;;
     (wild)
-      # freshen up
-      echo 'v-2023-07-15'
+      # rebuild with curl, then g++
+      echo 'v-2023-10-05a'
       ;;
     (benchmarks)
       # freshen up
@@ -254,6 +254,9 @@ run-job-uke() {
       ;;
     cpp-coverage)
       image_id='clang'
+      ;;
+    cpp-tarball)
+      image_id='cpp-small'
       ;;
     interactive)
       # to run 'interactive-osh' with job control enabled

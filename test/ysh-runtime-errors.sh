@@ -248,7 +248,7 @@ test-EvalExpr-calls() {
 
   _expr-error-case '
     var d = {}
-    setvar len(42)->z = "foo"
+    setvar len(42).z = "foo"
   '
 
   _expr-error-case '
@@ -431,6 +431,11 @@ test-func-error-locs() {
   _expr-error-case '= "foo"->startswith("f", "o")' # too many args
   _expr-error-case '= "foo"->startswith()' # not enough args
   _expr-error-case '= "foo"->startswith(1)' # wrong type
+}
+
+test-var-decl() {
+  _expr-error-case 'var x, y = 1, 2, 3'
+  _expr-error-case 'setvar x, y = 1, 2, 3'
 }
 
 soil-run() {

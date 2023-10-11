@@ -277,9 +277,59 @@ deploy-job-results() {
   log ''
 }
 
+publish-cpp-tarball() {
+  local prefix=${1:-'github-'}  # e.g. example.com/github-jobs/
+
+  # Example of dir structure we need to cleanup:
+  #
+  # srht-jobs/
+  #   git-$hash/
+  #     index.html
+  #     oils-for-unix.tar
+  # github-jobs/
+  #   git-$hash/
+  #     oils-for-unix.tar
+  #
+  # Algorithm
+  # 1. List all JSON, finding commit date and commit hash
+  # 2. Get the OLDEST commit dates, e.g. all except for 50
+  # 3. Delete all commit hash dirs not associated with them
+
+  # Fix subtle problem here !!!
+  shopt -s inherit_errexit
+
+  local git_commit_dir
+  git_commit_dir=$(git-commit-dir "$prefix")
+
+  my-ssh $SOIL_USER_HOST "mkdir -p $git_commit_dir"
+
+  # Do JSON last because that's what 'list-json' looks for
+
+  local tar=_release/oils-for-unix.tar 
+
+  # Permission denied because of host/guest issue
+  #local tar_gz=$tar.gz
+  #gzip -c $tar > $tar_gz
+
+  # Avoid race condition
+  # Crappy UUID: seconds since epoch, plus PID
+  local timestamp
+  timestamp=$(date +%s)
+
+  local temp_name="tmp-$timestamp-$$.tar"
+
+  my-scp $tar "$SOIL_USER_HOST:$git_commit_dir/$temp_name"
+
+  my-ssh $SOIL_USER_HOST \
+    "mv -v $git_commit_dir/$temp_name $git_commit_dir/oils-for-unix.tar"
+
+  log 'Tarball:'
+  log ''
+  log "http://$git_commit_dir"
+}
+
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
-  local prefix=$1
 
   log "remote-event-job-done"
 

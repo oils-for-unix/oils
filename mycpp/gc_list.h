@@ -32,15 +32,6 @@ class GlobalList {
 
 template <typename T>
 class List {
-  // Relate slab size to number of items (capacity)
-  // 8 / 4 = 2 items, or 8 / 8 = 1 item
-  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
-  static_assert(kSlabHeaderSize % sizeof(T) == 0,
-                "Slab header size should be multiple of item size");
-
-  static_assert(32 % sizeof(T) == 0,
-                "An integral number of items should fit in 32 bytes");
-
  public:
   List() : len_(0), capacity_(0), slab_(nullptr) {
   }
@@ -107,17 +98,59 @@ class List {
 
   DISALLOW_COPY_AND_ASSIGN(List)
 
- private:
-  // Relates to minimum Slab size.
-  // Smallest non-empty List<T*>  should have about 4 items, or 3 without header
-  // Smallest non-empty List<int> should have about 8 items, or 7 without header
-  static const int kMinItems = 32 / sizeof(T);
+  static_assert(sizeof(ObjHeader) % sizeof(T) == 0,
+                "ObjHeader size should be multiple of item size");
+  static constexpr int kHeaderFudge = sizeof(ObjHeader) / sizeof(T);
 
-  int RoundCapacity(int n) {
-    if (n < kMinItems) {
-      return kMinItems;
+#if 0
+  // 24-byte pool comes from very common List header, and Token
+  static constexpr int kPoolBytes1 = 24 - sizeof(ObjHeader);
+  static_assert(kPoolBytes1 % sizeof(T) == 0,
+                "An integral number of items should fit in first pool");
+  static constexpr int kNumItems1 = kPoolBytes1 / sizeof(T);
+#endif
+
+  // Matches mark_sweep_heap.h
+  static constexpr int kPoolBytes2 = 48 - sizeof(ObjHeader);
+  static_assert(kPoolBytes2 % sizeof(T) == 0,
+                "An integral number of items should fit in second pool");
+  static constexpr int kNumItems2 = kPoolBytes2 / sizeof(T);
+
+#if 0
+  static constexpr int kMinBytes2 = 128 - sizeof(ObjHeader);
+  static_assert(kMinBytes2 % sizeof(T) == 0,
+                "An integral number of items should fit");
+  static constexpr int kMinItems2 = kMinBytes2 / sizeof(T);
+#endif
+
+  // Given the number of items desired, return the number items we should
+  // reserve room for, according to our growth policy.
+  int HowManyItems(int num_desired) {
+    // Using the 24-byte pool leads to too much GC of tiny slab objects!  So
+    // just use the larger 48 byte pool.
+#if 0
+    if (num_desired <= kNumItems1) {  // use full cell in pool 1
+      return kNumItems1;
     }
-    return RoundUp(n);
+#endif
+    if (num_desired <= kNumItems2) {  // use full cell in pool 2
+      return kNumItems2;
+    }
+#if 0
+    if (num_desired <= kMinItems2) {  // 48 -> 128, not 48 -> 64
+      return kMinItems2;
+    }
+#endif
+
+    // Make sure the total allocation is a power of 2.  TODO: consider using
+    // slightly less than power of 2, to account for malloc() headers, and
+    // reduce fragmentation.
+    // Example:
+    // - ask for 11 integers
+    // - round up 11+2 == 13 up to 16 items
+    // - return 14 items
+    // - 14 integers is 56 bytes, plus 8 byte GC header => 64 byte alloc.
+    return RoundUp(num_desired + kHeaderFudge) - kHeaderFudge;
   }
 };
 
@@ -257,7 +290,7 @@ void List<T>::reserve(int num_desired) {
   // items would be 5, which is rounded up to 8.  Subtract 2 again, giving 6,
   // which leads to 8 + 6*4 = 32 byte Slab.
 
-  capacity_ = RoundCapacity(num_desired + kCapacityAdjust) - kCapacityAdjust;
+  capacity_ = HowManyItems(num_desired);
   auto new_slab = NewSlab<T>(capacity_);
 
   if (len_ > 0) {

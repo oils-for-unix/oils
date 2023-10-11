@@ -442,6 +442,32 @@ test-ysh-nested-proc() {
   _should-parse 'proc p() { shopt --unset errexit { false hi } }'
 }
 
+test-int-literals() {
+  _should-parse '= 42'
+  _should-parse '= 42_0'
+  _parse-error '= 42_'
+  _parse-error '= 42_0_'
+
+  # this is a var name
+  _should-parse '= _42'
+}
+
+test-float-literals() {
+  _should-parse '= 42.0'
+  _should-parse '= 42_0.0'
+  _parse-error '= 42_.0'
+
+  _parse-error '= 42.'
+  _parse-error '= .333'
+
+  _parse-error '= _42.0'
+}
+
+test-place-expr() {
+  _should-parse 'setvar x.y = 42'
+  _parse-error 'setvar x+y = 42'
+  _parse-error 'setvar x->y = 42'
+}
 
 #
 # Entry Points
