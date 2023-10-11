@@ -28,7 +28,6 @@ from _devbuild.gen.syntax_asdl import (
     PerlClass,
     NameType,
     place_expr,
-    place_expr_e,
     place_expr_t,
     Comprehension,
     Subscript,
@@ -719,6 +718,7 @@ class Transformer(object):
         # type: (PNode) -> List[place_expr_t]
         """place_list: expr (',' expr)*"""
         assert p_node.typ == grammar_nt.place_list
+
         places = []  # type: List[place_expr_t]
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):  # was children[::2]
@@ -743,14 +743,16 @@ class Transformer(object):
                     places.append(e)
 
                 else:
-                    pass
+                    pass  # work around mycpp bug
+
                     # TODO: could blame arbitary expr_t, bu this works most of
                     # the time
-                    if p.tok is not None:
+                    if p.tok:
                         blame = p.tok  # type: loc_t
                     else:
                         blame = loc.Missing
                     p_die("Can't assign to this expression", blame)
+
         return places
 
     def MakeVarDecl(self, p_node):

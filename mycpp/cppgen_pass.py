@@ -1856,6 +1856,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if if_node.else_body:
             first_of_block = if_node.else_body.body[0]
+            # BUG: this is meant for 'elif' only.  But it also triggers for
+            #
+            # else:
+            #   if 0:
+
             if isinstance(first_of_block, IfStmt):
                 self._write_cases(first_of_block)
             else:

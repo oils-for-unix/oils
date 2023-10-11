@@ -248,7 +248,7 @@ test-EvalExpr-calls() {
 
   _expr-error-case '
     var d = {}
-    setvar len(42)->z = "foo"
+    setvar len(42).z = "foo"
   '
 
   _expr-error-case '
