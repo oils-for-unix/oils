@@ -2105,7 +2105,7 @@ class CommandEvaluator(object):
         return status
 
     def EvalBlock(self, block):
-        # type: (command_t) -> Dict[str, Cell]
+        # type: (command_t) -> int
         """Returns a namespace.  For config files.
 
         rule foo {
@@ -2125,20 +2125,7 @@ class CommandEvaluator(object):
             else:
                 e_die('Unexpected control flow in block', e.token)
 
-        namespace_ = self.mem.TopNamespace()
-
-        # This is the thing on self.mem?
-        # Filter out everything beginning with _ ?
-
-        # TODO: Return arbitrary values instead
-
-        # Nothing seems to depend on this, and mypy isn't happy with it
-        # because it's an int and values of the namespace dict should be
-        # cells, so I've commented it out.
-        #namespace['_returned'] = status
-
-        # TODO: Have to get rid of the cells
-        return namespace_
+        return status
 
     def RunFuncForCompletion(self, proc, argv):
         # type: (Proc, List[str]) -> int
