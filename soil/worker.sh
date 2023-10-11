@@ -10,6 +10,7 @@ set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
+EXTRA_MYCPP_ARGS="--stack-roots-warn 16"
 readonly REPO_ROOT
 
 source soil/common.sh
