@@ -160,7 +160,9 @@ module syntax
   # If a call has named arguments, named_delim will point to the ';' token that
   # separates the positional and named arguments.
   ArgList = (
-     Token left, List[expr] pos_args, Token? named_delim, List[NamedArg] named_args, Token right
+     Token left, List[expr] pos_args,
+     Token? named_delim, List[NamedArg] named_args,
+     Token right
   )
 
   AssocPair = (CompoundWord key, CompoundWord value)
