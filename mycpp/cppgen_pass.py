@@ -139,9 +139,9 @@ def _EqualsFunc(left_type):
     if IsStr(left_type):
         return 'str_equals'
 
-    if (isinstance(left_type, UnionType) and len(left_type.items) == 2
-            and IsStr(left_type.items[0])
-            and isinstance(left_type.items[1], NoneTyp)):
+    if (isinstance(left_type, UnionType) and len(left_type.items) == 2 and
+            IsStr(left_type.items[0]) and
+            isinstance(left_type.items[1], NoneTyp)):
         return 'maybe_str_equals'
 
     return None
@@ -178,8 +178,8 @@ def _CheckCondition(node, types):
             return False
 
     elif isinstance(t, UnionType):
-        if (len(t.items) == 2 and IsStr(t.items[0])
-                and isinstance(t.items[1], NoneTyp)):
+        if (len(t.items) == 2 and IsStr(t.items[0]) and
+                isinstance(t.items[1], NoneTyp)):
             return False  # Optional[str]
 
     return True
@@ -368,7 +368,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  field_gc=None,
                  decl=False,
                  forward_decl=False,
-                 stack_roots_warn_threshold=None):
+                 stack_roots_warn=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -384,7 +384,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.decl = decl
         self.forward_decl = forward_decl
-        self.stack_roots_warn_threshold = stack_roots_warn_threshold
+        self.stack_roots_warn = stack_roots_warn
 
         self.unique_id = 0
 
@@ -535,8 +535,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('defs %s', o.defs)
         for node in o.defs:
             # skip module docstring
-            if (isinstance(node, ExpressionStmt)
-                    and isinstance(node.expr, StrExpr)):
+            if (isinstance(node, ExpressionStmt) and
+                    isinstance(node.expr, StrExpr)):
                 continue
             self.accept(node)
 
@@ -683,14 +683,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # str(i) doesn't need new.  For now it's a free function.
             # TODO: rename int_to_str?  or Str::from_int()?
-            if (callee_name not in ('str', 'bool', 'float')
-                    and isinstance(ret_type, Instance)):
+            if (callee_name not in ('str', 'bool', 'float') and
+                    isinstance(ret_type, Instance)):
 
                 ret_type_name = ret_type.type.name
 
                 # HACK: Const is the callee; expr.Const is the return type
-                if (ret_type_name == callee_name
-                        or ret_type_name.endswith('__' + callee_name)):
+                if (ret_type_name == callee_name or
+                        ret_type_name.endswith('__' + callee_name)):
                     return True
 
         return False
@@ -842,9 +842,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             elif isinstance(right_type, TupleType):
                 fmt_types = right_type.items
             # Handle Optional[str]
-            elif (isinstance(right_type, UnionType)
-                  and len(right_type.items) == 2
-                  and isinstance(right_type.items[1], NoneTyp)):
+            elif (isinstance(right_type, UnionType) and
+                  len(right_type.items) == 2 and
+                  isinstance(right_type.items[1], NoneTyp)):
                 fmt_types = [right_type.items[0]]
             else:
                 raise AssertionError(right_type)
@@ -906,14 +906,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if IsStr(t0):
             left_type = 1
-        elif (isinstance(t0, UnionType) and len(t0.items) == 2
-              and IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
+        elif (isinstance(t0, UnionType) and len(t0.items) == 2 and
+              IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
             left_type = 2
 
         if IsStr(t1):
             right_type = 1
-        elif (isinstance(t1, UnionType) and len(t1.items) == 2
-              and IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
+        elif (isinstance(t1, UnionType) and len(t1.items) == 2 and
+              IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
             right_type = 2
 
         #self.log('left_type %s right_type %s', left_type, right_type)
@@ -1302,7 +1302,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(o.rvalue, CallExpr):
                 self.report_error(
                     o,
-                    "Can't initialize objects at the top level, only Str List Dict")
+                    "Can't initialize objects at the top level, only Str List Dict"
+                )
                 return
 
         #
@@ -2230,8 +2231,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             for stmt in block.body:
 
                 # Ignore things that look like docstrings
-                if (isinstance(stmt, ExpressionStmt)
-                        and isinstance(stmt.expr, StrExpr)):
+                if (isinstance(stmt, ExpressionStmt) and
+                        isinstance(stmt.expr, StrExpr)):
                     continue
 
                 # Constructor is named after class
@@ -2386,13 +2387,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                     # Skip docstring
                     maybe_skip_stmt = stmt.body.body[0]
-                    if (isinstance(maybe_skip_stmt, ExpressionStmt)
-                            and isinstance(maybe_skip_stmt.expr, StrExpr)):
+                    if (isinstance(maybe_skip_stmt, ExpressionStmt) and
+                            isinstance(maybe_skip_stmt.expr, StrExpr)):
                         first_index += 1
 
                     first_stmt = stmt.body.body[first_index]
-                    if (isinstance(first_stmt, ExpressionStmt)
-                            and isinstance(first_stmt.expr, CallExpr)):
+                    if (isinstance(first_stmt, ExpressionStmt) and
+                            isinstance(first_stmt.expr, CallExpr)):
                         expr = first_stmt.expr
                         #log('expr %s', expr)
                         callee = first_stmt.expr.callee
@@ -2582,11 +2583,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('roots %s', roots)
 
             if len(roots):
-                if self.stack_roots_warn_threshold and len(roots) > self.stack_roots_warn_threshold:
-                    log(
-                        'WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
-                        % (self.current_class_name or '', self.current_func_node.name, len(roots))
-                    )
+                if (self.stack_roots_warn and
+                        len(roots) > self.stack_roots_warn):
+                    log('WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
+                        % (self.current_class_name or
+                           '', self.current_func_node.name, len(roots)))
 
                 for i, r in enumerate(roots):
                     self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
@@ -2672,9 +2673,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         # Omit anything that looks like if __name__ == ...
-        if (isinstance(cond, ComparisonExpr)
-                and isinstance(cond.operands[0], NameExpr)
-                and cond.operands[0].name == '__name__'):
+        if (isinstance(cond, ComparisonExpr) and
+                isinstance(cond.operands[0], NameExpr) and
+                cond.operands[0].name == '__name__'):
             return
 
         # Omit if 0:

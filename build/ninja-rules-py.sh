@@ -4,13 +4,15 @@
 #
 # Usage:
 #   build/ninja-rules-py.sh <function name>
+#
+# Env variables:
+#   EXTRA_MYCPP_ARGS - passed to mycpp_main
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-: ${EXTRA_MYCPP_ARGS:=""}
 
 source build/dev-shell.sh  # python2 in $PATH
 source mycpp/common-vars.sh  # MYPY_REPO
@@ -76,9 +78,8 @@ gen-oils-for-unix() {
 
   _bin/shwrap/mycpp_main $mypypath $raw_cc \
     --header-out $raw_header \
-    $EXTRA_MYCPP_ARGS \
+    ${EXTRA_MYCPP_ARGS:-} \
     "$@"
-    #--to-header osh.cmd_eval \
 
   { echo "// $main_name.h: translated from Python by mycpp"
     echo

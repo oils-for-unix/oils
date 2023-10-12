@@ -10,7 +10,6 @@ set -o pipefail
 set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
-EXTRA_MYCPP_ARGS="--stack-roots-warn 16"
 readonly REPO_ROOT
 
 source soil/common.sh
@@ -493,6 +492,9 @@ job-main() {
   local job_name=$1
 
   local out_dir=_tmp/soil
+
+  # Report for debugging
+  export EXTRA_MYCPP_ARGS='--stack-roots-warn 16'
 
   log-context 'job-main'
   mkdir -v -p $out_dir

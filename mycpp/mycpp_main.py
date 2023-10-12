@@ -48,10 +48,12 @@ def Options():
                  default=None,
                  help='Write this header')
 
-    p.add_option('--stack-roots-warn',
-                 dest='stack_roots_warn',
-                 default=None,
-                 help='Emit warnings about functions with too many stack roots')
+    p.add_option(
+        '--stack-roots-warn',
+        dest='stack_roots_warn',
+        default=None,
+        type='int',
+        help='Emit warnings about functions with too many stack roots')
 
     return p
 
@@ -237,9 +239,9 @@ def main(argv):
             log('to_compile %s', name)
         log('')
 
-            # can't pickle but now I see deserialize() nodes and stuff
-            #s = pickle.dumps(module)
-            #log('%d pickle', len(s))
+        # can't pickle but now I see deserialize() nodes and stuff
+        #s = pickle.dumps(module)
+        #log('%d pickle', len(s))
 
     # Print the tree for debugging
     if 0:
@@ -343,7 +345,8 @@ def main(argv):
                                   f,
                                   local_vars=local_vars,
                                   fmt_ids=fmt_ids,
-                                  field_gc=field_gc)
+                                  field_gc=field_gc,
+                                  stack_roots_warn=opts.stack_roots_warn)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 
