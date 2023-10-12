@@ -889,45 +889,37 @@ class CommandEvaluator(object):
             else:
                 self.mem.SetLastArgument('')
 
-            left_tok = None  # type: Token
-            named_delim = None  # type: Token
-            right_tok = None  # type: Token
-
-            pos_args = None  # type: List[expr_t]
-            named_args = None  # type: List[NamedArg]
+            typed_vals = ArgList.CreateNull(alloc_lists=True)
 
             if node.typed_args:
                 orig = node.typed_args
 
-                left_tok = orig.left
-                named_delim = orig.named_delim
-                right_tok = orig.right
+                typed_vals.left = orig.left
+                typed_vals.named_delim = orig.named_delim
+                typed_vals.right = orig.right
 
                 if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
                     # TODO: defer evaluation by wrapping in value.Expr
                     #pos_args = [value.Expr(e) for e in pos_args]
-                    pos_args = list(orig.pos_args)
+                    typed_vals.pos_args.extend(orig.pos_args)
 
                 else:  # json write (x)
                     # TODO: Evaluate args!
-                    pos_args = list(orig.pos_args)  # copy before mutating
+                    typed_vals.pos_args.extend(orig.pos_args)
 
-                named_args = orig.named_args
+                typed_vals.named_args.extend(orig.named_args)
 
             else:
-                pos_args = []
-                named_args = []
-
                 if node.block:
-                    left_tok = node.block.brace_group.left
-                    right_tok = node.block.brace_group.right
+                    typed_vals.left = node.block.brace_group.left
+                    typed_vals.right = node.block.brace_group.right
 
+            # Pass the unevaluated block.  TODO: value.Command()
             if node.block:
-                pos_args.append(node.block)
+                typed_vals.pos_args.append(node.block)
 
-            if left_tok:  # we got either ( or {
-                cmd_val.typed_args = ArgList(left_tok, pos_args, named_delim,
-                                             named_args, right_tok)
+            if typed_vals.left:  # we got either ( or {
+                cmd_val.typed_args = typed_vals
 
         else:
             if node.block:
