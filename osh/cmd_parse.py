@@ -9,7 +9,6 @@ cmd_parse.py - Parse high level shell commands.
 """
 from __future__ import print_function
 
-from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
@@ -184,6 +183,8 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
     left_token, close_token, part_offset, w = preparsed
 
+    lhs = None  # type: sh_lhs_expr_t
+
     if left_token.id == Id.Lit_VarLike:  # s=1
         if lexer.IsPlusEquals(left_token):
             var_name = lexer.TokenSliceRight(left_token, -2)
@@ -192,9 +193,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
             var_name = lexer.TokenSliceRight(left_token, -1)
             op = assign_op_e.Equal
 
-        tmp = sh_lhs_expr.Name(left_token, var_name)
-
-        lhs = cast(sh_lhs_expr_t, tmp)
+        lhs = sh_lhs_expr.Name(left_token, var_name)
 
     elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
         var_name = lexer.TokenSliceRight(left_token, -1)
@@ -217,14 +216,14 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         else:
             op = assign_op_e.Equal
 
-        span1 = left_token
-        span2 = close_token
         # Similar to SnipCodeString / SnipCodeBlock
-        if span1.line == span2.line:
+        if left_token.line == close_token.line:
             # extract what's between brackets
-            code_str = span1.line.content[span1.col + span1.length:span2.col]
+            s = left_token.col + left_token.length
+            code_str = left_token.line.content[s:close_token.col]
         else:
-            raise NotImplementedError('%s != %s' % (span1.line, span2.line))
+            raise NotImplementedError('%s != %s' %
+                                      (left_token.line, close_token.line))
         a_parser = parse_ctx.MakeArithParser(code_str)
 
         # a[i+1]= is a place
@@ -232,9 +231,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 
-        tmp3 = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
-
-        lhs = cast(sh_lhs_expr_t, tmp3)
+        lhs = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
 
     else:
         raise AssertionError()
@@ -950,8 +947,8 @@ class CommandParser(object):
         with alloc.ctx_SourceCode(arena, src):
             with parse_lib.ctx_Alias(self.parse_ctx.trail):
                 try:
-                    # _ParseCommandTerm() handles multiline commands, compound commands, etc.
-                    # as opposed to ParseLogicalLine()
+                    # _ParseCommandTerm() handles multiline commands, compound
+                    # commands, etc.  as opposed to ParseLogicalLine()
                     node = cp._ParseCommandTerm()
                 except error.Parse as e:
                     # Failure to parse alias expansion is a fatal error
@@ -1333,8 +1330,7 @@ class CommandParser(object):
 
             self._SetNext()  # skip in
             if self.w_parser.LookPastSpace() == Id.Op_LParen:
-                enode, last_token = self.parse_ctx.ParseYshExpr(
-                    self.lexer, grammar_nt.oil_expr)
+                enode = self.w_parser.ParseYshExprForCommand()
                 node.iterable = for_iter.YshExpr(enode, expr_blame)
 
                 # For simplicity, we don't accept for x in (obj); do ...
@@ -1435,10 +1431,9 @@ class CommandParser(object):
         """
         self._SetNext()  # skip keyword
 
-        if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace(
-        ) == Id.Op_LParen:
-            enode, _ = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                   grammar_nt.oil_expr)
+        if (self.parse_opts.parse_paren() and
+                self.w_parser.LookPastSpace() == Id.Op_LParen):
+            enode = self.w_parser.ParseYshExprForCommand()
             cond = condition.YshExpr(enode)  # type: condition_t
         else:
             cond = self._ParseConditionList()
@@ -1577,7 +1572,7 @@ class CommandParser(object):
 
         Looking at: token after 'case'
         """
-        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
+        enode = self.w_parser.ParseYshExprForCommand()
         to_match = case_arg.YshExpr(enode)
 
         ate = self._Eat(Id.Lit_LBrace)
@@ -1686,8 +1681,7 @@ class CommandParser(object):
             self._SetNext()  # skip elif
             if (self.parse_opts.parse_paren() and
                     self.w_parser.LookPastSpace() == Id.Op_LParen):
-                enode, _ = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                       grammar_nt.oil_expr)
+                enode = self.w_parser.ParseYshExprForCommand()
                 cond = condition.YshExpr(enode)  # type: condition_t
             else:
                 self.allow_block = False
@@ -1798,8 +1792,7 @@ class CommandParser(object):
         if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace(
         ) == Id.Op_LParen:
             # if (x + 1)
-            enode, _ = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                   grammar_nt.oil_expr)
+            enode = self.w_parser.ParseYshExprForCommand()
             cond = condition.YshExpr(enode)  # type: condition_t
         else:
             # if echo 1; echo 2; then

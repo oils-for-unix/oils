@@ -494,6 +494,27 @@ test-destructure() {
   }'
 }
 
+test-no-space-before-paren() {
+  ### Regression
+
+  _should-parse 'for x in(y) { echo hi }'
+
+  _should-parse 'while(x<0) { echo hi }'
+
+  _should-parse 'if(x) { echo hi }'
+  _should-parse 'if (x) { echo hi } elif(y) { echo y }'
+
+  # Removing space between { and ( somehow breaks it
+  _should-parse 'case(x){ ("y"){ echo hi } }'
+
+  # From test/parse-errors.sh ysh_case
+  #_should-parse 'case (x){("y"){ echo hi }'
+
+  # CRASH
+  #_should-parse 'case (x){ ("y"){ echo hi }'
+
+}
+
 #
 # Entry Points
 #

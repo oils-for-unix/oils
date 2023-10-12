@@ -1126,6 +1126,27 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.ShCommand)
         return enode
 
+    def ParseYshExprForCommand(self):
+        # type: () -> expr_t
+
+        # Fudge for this case
+        #  for x in(y) {
+        # versus
+        #  for x in (y) {
+        #
+        # In the former case, ReadWord on 'in' puts the lexer past (.  
+        # Also see LookPastSpace in CommandParers.
+        # A simpler solution would be nicer.
+
+        if self.token_type == Id.Op_LParen:
+          self.lexer.MaybeUnreadOne()
+
+        enode, _ = self.parse_ctx.ParseYshExpr(
+            self.lexer, grammar_nt.oil_expr)
+
+        self._SetNext(lex_mode_e.ShCommand)
+        return enode
+
     def ParseCommandExpr(self):
         # type: () -> expr_t
         """
