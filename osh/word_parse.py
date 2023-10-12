@@ -1709,8 +1709,8 @@ class WordParser(WordEmitter):
         return w
 
     def _ReadArithWord(self):
-        # type: () -> Tuple[Optional[word_t], bool]
-        """Helper function for ReadWord."""
+        # type: () -> Optional[word_t]
+        """ Helper for ReadArithWord() """
         self._GetToken()
 
         if self.token_kind == Kind.Unknown:
@@ -1720,43 +1720,33 @@ class WordParser(WordEmitter):
                 lexer.TokenVal(self.cur_token), self.cur_token)
 
         elif self.token_kind == Kind.Eof:
-            # Just return EOF token
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind == Kind.Ignored:
             # Space should be ignored.
             self._SetNext(lex_mode_e.Arith)
-            no_word = None  # type: Optional[word_t]
-            return no_word, True  # Tell wrapper to try again
+            return None
 
         elif self.token_kind in (Kind.Arith, Kind.Right):
             # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
             self._SetNext(lex_mode_e.Arith)
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
-            w = self._ReadCompoundWord(lex_mode_e.Arith)
-            return cast(word_t, w), False
+            return self._ReadCompoundWord(lex_mode_e.Arith)
 
         else:
             raise AssertionError(self.cur_token)
 
     def _ReadWord(self, lex_mode):
-        # type: (lex_mode_t) -> Tuple[Optional[word_t], bool]
-        """Helper function for ReadWord().
-
-        Returns:
-          2-tuple (word, need_more)
-            word: Word, or None if there was an error, or need_more is set
-            need_more: True if the caller should call us again
-        """
-        no_word = None  # type: Optional[word_t]
+        # type: (lex_mode_t) -> Optional[word_t]
+        """Helper function for ReadWord()."""
 
         self._GetToken()
 
         if self.token_kind == Kind.Eof:
             # No advance
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         # Allow Arith for ) at end of for loop?
         elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
@@ -1770,12 +1760,12 @@ class WordParser(WordEmitter):
                         # This points at a blank line, but at least it gives the line number
                         p_die('Invalid blank line in multiline mode',
                               self.cur_token)
-                    return no_word, True
+                    return None
 
                 if self.returned_newline:  # skip
-                    return no_word, True
+                    return None
 
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind == Kind.Right:
             if self.token_type not in (Id.Right_Subshell, Id.Right_ShFunction,
@@ -1784,11 +1774,11 @@ class WordParser(WordEmitter):
                 raise AssertionError(self.cur_token)
 
             self._SetNext(lex_mode)
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind in (Kind.Ignored, Kind.WS):
             self._SetNext(lex_mode)
-            return no_word, True  # tell ReadWord() to try again
+            return None
 
         elif self.token_kind in (Kind.VSub, Kind.Lit, Kind.History, Kind.Left,
                                  Kind.KW, Kind.ControlFlow, Kind.BoolUnary,
@@ -1806,16 +1796,16 @@ class WordParser(WordEmitter):
 
                 # The next iteration will go into Kind.Ignored and set lex state to
                 # lex_mode_e.ShCommand/etc.
-                return no_word, True  # tell ReadWord() to try again after comment
+                return None  # tell ReadWord() to try again after comment
 
             elif self.token_type == Id.Lit_TPound:  ### doc comment
                 self._SetNext(lex_mode_e.Comment)
                 self._GetToken()
 
                 if self.token_type == Id.Ignored_Comment and self.emit_doc_token:
-                    return cast(word_t, self.cur_token), False
+                    return self.cur_token
 
-                return no_word, True  # tell ReadWord() to try again after comment
+                return None  # tell ReadWord() to try again after comment
 
             else:
                 # parse_raw_string: Is there an r'' at the beginning of a word?
@@ -1826,8 +1816,7 @@ class WordParser(WordEmitter):
                             lex_mode_e.ShCommand) == Id.Left_SingleQuote):
                         self._SetNext(lex_mode_e.ShCommand)
 
-                w = self._ReadCompoundWord(lex_mode)
-                return cast(word_t, w), False
+                return self._ReadCompoundWord(lex_mode)
 
         else:
             raise AssertionError('Unhandled: %s (%s)' %
@@ -1898,14 +1887,13 @@ class WordParser(WordEmitter):
         assert lex_mode in (lex_mode_e.ShCommand, lex_mode_e.DBracket,
                             lex_mode_e.BashRegex)
 
-        # For integration with pgen2
-        if self.buffered_word:
+        if self.buffered_word:  # For integration with pgen2
             w = self.buffered_word
             self.buffered_word = None
         else:
             while True:
-                w, need_more = self._ReadWord(lex_mode)
-                if not need_more:
+                w = self._ReadWord(lex_mode)
+                if w is not None:
                     break
 
         self.returned_newline = (word_.CommandId(w) == Id.Op_Newline)
@@ -1914,15 +1902,16 @@ class WordParser(WordEmitter):
     def ReadArithWord(self):
         # type: () -> word_t
         while True:
-            w, need_more = self._ReadArithWord()
-            if not need_more:
+            w = self._ReadArithWord()
+            if w is not None:
                 break
         return w
 
     def ReadHereDocBody(self, parts):
         # type: (List[word_part_t]) -> None
-        """A here doc is like a double quoted context, except " isn't
-        special."""
+        """
+        A here doc is like a double quoted context, except " isn't special.
+        """
         self._ReadLikeDQ(None, False, parts)
         # Returns nothing
 
