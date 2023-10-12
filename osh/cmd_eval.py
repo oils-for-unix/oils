@@ -891,15 +891,25 @@ class CommandEvaluator(object):
             typed_args_ = None  # type: ArgList
             if node.typed_args:
                 orig = node.typed_args
-                # COPY positional args because we may append an arg
-                typed_args_ = ArgList(orig.left, list(orig.pos_args),
-                                      orig.named_delim, orig.named_args,
-                                      orig.right)
 
-                # the block is the last argument
-                if node.block:
-                    typed_args_.pos_args.append(node.block)
-                    # ArgList already has a spid in this case
+                if orig.left.id == Id.Op_LBracket:
+                    #pos_args = [value.Expr(e) for e in pos_args]
+                    pos_args = orig.pos_args
+
+                    typed_args_ = ArgList(orig.left, pos_args,
+                                          orig.named_delim, orig.named_args,
+                                          orig.right)
+                    if node.block:
+                        typed_args_.pos_args.append(node.block)
+                else:
+                    # TODO: Evaluate args!
+                    pos_args = list(orig.pos_args)  # copy before mtuating
+                    if node.block:
+                        pos_args.append(node.block)
+
+                    typed_args_ = ArgList(orig.left, pos_args,
+                                          orig.named_delim, orig.named_args,
+                                          orig.right)
             else:
                 if node.block:
                     # Create ArgList for the block.  Since we have { } and not (),
