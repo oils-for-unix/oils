@@ -49,7 +49,7 @@ lex_mode_e.VSub_ArgDQ
 
 from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
-from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
+from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
@@ -1134,15 +1134,14 @@ class WordParser(WordEmitter):
         # versus
         #  for x in (y) {
         #
-        # In the former case, ReadWord on 'in' puts the lexer past (.  
+        # In the former case, ReadWord on 'in' puts the lexer past (.
         # Also see LookPastSpace in CommandParers.
         # A simpler solution would be nicer.
 
         if self.token_type == Id.Op_LParen:
-          self.lexer.MaybeUnreadOne()
+            self.lexer.MaybeUnreadOne()
 
-        enode, _ = self.parse_ctx.ParseYshExpr(
-            self.lexer, grammar_nt.oil_expr)
+        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
 
         self._SetNext(lex_mode_e.ShCommand)
         return enode
@@ -1480,14 +1479,14 @@ class WordParser(WordEmitter):
         words3 = word_.TildeDetectAll(words2)
         return ShArrayLiteral(left_token, words3, right_token)
 
-    def ParseProcCallArgs(self):
-        # type: () -> ArgList
-        """For json write (x)"""
+    def ParseProcCallArgs(self, start_symbol):
+        # type: (int) -> ArgList
+        """ json write (x) """
         self.lexer.MaybeUnreadOne()
 
         arg_list = ArgList.CreateNull(alloc_lists=True)
         arg_list.left = self.cur_token
-        self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
+        self.parse_ctx.ParseYshArgList(self.lexer, arg_list, start_symbol)
         return arg_list
 
     def _MaybeReadWordPart(self, is_first, lex_mode, parts):
@@ -1759,9 +1758,24 @@ class WordParser(WordEmitter):
         else:
             raise AssertionError(self.cur_token)
 
-    def _ReadWord(self, lex_mode):
+    def _ReadWord(self, word_mode):
         # type: (lex_mode_t) -> Optional[word_t]
         """Helper function for ReadWord()."""
+        """
+        with switch(word_mode) as case:
+            if case(word_mode_e.ShCommand, word_mode_e.Op_LBracket):
+                lex_mode = lex_mode_e.ShCommand
+            elif case(word_mode_e.DBracket):
+                lex_mode = lex_mode_e.DBracket
+            elif case(word_mode_e.BashRegex):
+                lex_mode = lex_mode_e.BashRegex
+        """
+
+        # Change the pseudo lexer mode to a real lexer mode
+        if word_mode == lex_mode_e.ShCommandBrack:
+            lex_mode = lex_mode_e.ShCommand
+        else:
+            lex_mode = word_mode
 
         self._GetToken()
 
@@ -1804,6 +1818,20 @@ class WordParser(WordEmitter):
         elif self.token_kind in (Kind.VSub, Kind.Lit, Kind.History, Kind.Left,
                                  Kind.KW, Kind.ControlFlow, Kind.BoolUnary,
                                  Kind.BoolBinary, Kind.ExtGlob):
+            if (word_mode == lex_mode_e.ShCommandBrack and
+                    self.parse_opts.parse_bracket() and
+                    self.token_type == Id.Lit_LBracket):
+                # Change [ from Kind.Lit -> Kind.Op
+                # So CommandParser can treat
+                #   assert [42 === x]
+                # like
+                #   json write (x)
+                bracket_word = self.cur_token
+                bracket_word.id = Id.Op_LBracket
+
+                self._SetNext(lex_mode)
+                return bracket_word
+
             # We're beginning a word.  If we see Id.Lit_Pound, change to
             # lex_mode_e.Comment and read until end of line.
             if self.token_type == Id.Lit_Pound:
@@ -1899,21 +1927,21 @@ class WordParser(WordEmitter):
         else:
             return False
 
-    def ReadWord(self, lex_mode):
+    def ReadWord(self, word_mode):
         # type: (lex_mode_t) -> word_t
         """Read the next word, using the given lexer mode.
 
         This is a stateful wrapper for the stateless _ReadWord function.
         """
-        assert lex_mode in (lex_mode_e.ShCommand, lex_mode_e.DBracket,
-                            lex_mode_e.BashRegex)
+        assert word_mode in (lex_mode_e.ShCommand, lex_mode_e.ShCommandBrack,
+                             lex_mode_e.DBracket, lex_mode_e.BashRegex)
 
         if self.buffered_word:  # For integration with pgen2
             w = self.buffered_word
             self.buffered_word = None
         else:
             while True:
-                w = self._ReadWord(lex_mode)
+                w = self._ReadWord(word_mode)
                 if w is not None:
                     break
 

@@ -70,7 +70,7 @@ for x in @(seq 3) {
   echo "[$x]"
 }
 for x in @(seq 3) {
-  argv.py z [$x]  # note this is an empty glob!!!
+  argv.py z @[glob("[$x]")]
 }
 ## STDOUT:
 [1]

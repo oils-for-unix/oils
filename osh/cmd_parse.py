@@ -9,6 +9,7 @@ cmd_parse.py - Parse high level shell commands.
 """
 from __future__ import print_function
 
+from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
@@ -592,6 +593,10 @@ class CommandParser(object):
         """
         self.next_lex_mode = lex_mode_e.ShCommand
 
+    def _SetNextBrack(self):
+        # type: () -> None
+        self.next_lex_mode = lex_mode_e.ShCommandBrack
+
     def _GetWord(self):
         # type: () -> None
         """Call this when you need to make a decision based on Id or Kind.
@@ -813,12 +818,18 @@ class CommandParser(object):
                     p_die('Empty arg list not allowed',
                           loc.Word(self.cur_word))
 
-                typed_args = self.w_parser.ParseProcCallArgs()
+                typed_args = self.w_parser.ParseProcCallArgs(
+                    grammar_nt.ysh_eager_arglist)
+
+            elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
+                typed_args = self.w_parser.ParseProcCallArgs(
+                    grammar_nt.ysh_lazy_arglist)
+                #log('---- TYPED %s', typed_args)
 
             else:
                 break
 
-            self._SetNext()
+            self._SetNextBrack()  # Allow bracket for SECOND word on
             i += 1
         return redirects, words, typed_args, block
 

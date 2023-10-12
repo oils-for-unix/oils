@@ -12,7 +12,10 @@ module types {
   lex_mode =
     Undefined
   | Comment
+
   | ShCommand
+  | ShCommandBrack  # pseudo lexer mode for lazy arg list
+
   | Backtick  # preprocessing before Outer
   | DBracket
   | SQ_Raw | DQ | SQ_C
@@ -30,6 +33,15 @@ module types {
 
   # TODO: J8Str is bit like SQ_C
   | QSN
+
+  # Unused.  TODO: consider this representation
+  word_mode =
+    ShCommand  # These three correspond to lex_mode
+  | ShCommandBrack # for lazy arg list assert [42 === x]
+
+  | DBracket 
+  | BashRegex
+
 
   # More possibilities
   # - printf formatting ${x %05d}.  I think that is mostly in expression mode

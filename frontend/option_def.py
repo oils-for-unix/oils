@@ -152,6 +152,7 @@ _BASIC_PARSE_OPTIONS = [
     'parse_proc',  # proc p { ... }
     'parse_func',  # func f(x) { ... }
     'parse_brace',  # cd /bin { ... }
+    'parse_bracket',  # assert [42 === x]
 
     # bare assignment 'x = 42' is allowed in Hay { } blocks, but disallowed
     # everywhere else.  It's not a command 'x' with arg '='.

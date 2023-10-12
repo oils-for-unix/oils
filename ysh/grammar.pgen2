@@ -309,8 +309,9 @@ oil_var_decl: name_type_list '=' testlist end_stmt
 place_list: expr (',' expr)*
 oil_place_mutation: place_list (augassign | '=') testlist end_stmt
 
-# For $stringfunc(x, y=1) and @arrayfunc(a, b='s')
-oil_arglist: '(' [arglist] ')'
+# For json write (x)
+ysh_eager_arglist: '(' arglist ')'
+ysh_lazy_arglist: '[' arglist ']'
 
 #
 # Other Entry Points

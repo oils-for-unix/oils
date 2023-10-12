@@ -494,24 +494,45 @@ test-destructure() {
   }'
 }
 
-test-no-space-before-paren() {
-  ### Regression
+test-lazy-arg-list() {
+  # Empty arg list not allowed
+  _parse-error 'json write []'
 
-  _should-parse 'for x in(y) { echo hi }'
+  _should-parse 'assert [42 === x]'
 
-  _should-parse 'while(x<0) { echo hi }'
+  _should-parse 'assert [ 42 === x ]'
+  _should-parse 'assert [42, 43]'
+  _should-parse 'assert [42, named=true]'
+  _should-parse 'assert [42, named=true]; echo hi'
 
-  _should-parse 'if(x) { echo hi }'
-  _should-parse 'if (x) { echo hi } elif(y) { echo y }'
+  _should-parse 'assert [42, named=true] { echo hi }'
 
-  # Removing space between { and ( somehow breaks it
-  _should-parse 'case(x){ ("y"){ echo hi } }'
+  # Seems fine
+  _should-parse 'assert [42, named=true]{ echo hi }'
 
-  # From test/parse-errors.sh ysh_case
-  #_should-parse 'case (x){("y"){ echo hi }'
+  # I guess this legacy is still valid?  Or disallow explicitly
+  _should-parse 'assert *.[ch]'
+  _should-parse 'assert 42[ch]'
+  _should-parse 'echo[]'
 
-  # CRASH
-  #_should-parse 'case (x){ ("y"){ echo hi }'
+  _parse-error 'assert [4'
+  _parse-error 'assert [ 4'
+
+  # How to support this?  Maybe the CommandParser can test for i == 0 when it
+  # gets Op_LBracket
+
+  # legacy
+  _should-parse '[ x = y ]'
+
+  return
+
+  # TODO: shouldn't allow extra words
+  _parse-error 'assert (42)extra'
+  _parse-error 'assert (42) extra'
+
+  _parse-error 'assert [42]extra'
+  _parse-error 'assert [42] extra'
+
 
 }
 

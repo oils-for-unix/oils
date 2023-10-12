@@ -318,7 +318,7 @@ class ParseContext(object):
 
     def ParsePlaceMutation(self, kw_token, lexer):
         # type: (Token, Lexer) -> Tuple[command.PlaceMutation, Token]
-        """Setvar d['a'] += 1."""
+        """ setvar d['a'] += 1 """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer,
@@ -330,13 +330,13 @@ class ParseContext(object):
 
         return ast_node, last_token
 
-    def ParseYshArgList(self, lx, out):
-        # type: (Lexer, ArgList) -> None
-        """$f(x, y)"""
+    def ParseYshArgList(self, lx, out, start_symbol):
+        # type: (Lexer, ArgList, int) -> None
+        """ json write (x, foo=1) """
 
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lx, grammar_nt.oil_arglist)
+            pnode, last_token = e_parser.Parse(lx, start_symbol)
 
             if 0:
                 self.p_printer.Print(pnode)

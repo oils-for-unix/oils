@@ -902,7 +902,8 @@ class Transformer(object):
         # type: (PNode, ArgList) -> None
         """Transform arg lists.
 
-        oil_arglist: '(' [arglist] ')'
+        ysh_eager_arglist: '(' [arglist] ')'
+        ysh_lazy_arglist: '[' [arglist] ']'
         """
         if pnode.NumChildren() == 2:  # f()
             return
