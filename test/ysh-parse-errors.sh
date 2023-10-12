@@ -518,17 +518,29 @@ test-lazy-arg-list() {
   _parse-error 'assert [4'
   _parse-error 'assert [ 4'
 
+  _should-parse 'json write (42) >out'
+
+  # I guess this is OK
+  _should-parse 'json write >out (42)'
+
+  # BUG
+  #_parse-error 'when (42) >out { echo hi }'
+
+  #_should-parse 'when (42) { echo hi } >out'
+
   # How to support this?  Maybe the CommandParser can test for i == 0 when it
   # gets Op_LBracket
 
   # legacy
   _should-parse '[ x = y ]'
 
+
   return
 
   # TODO: shouldn't allow extra words
   _parse-error 'assert (42)extra'
   _parse-error 'assert (42) extra'
+
 
   _parse-error 'assert [42]extra'
   _parse-error 'assert [42] extra'

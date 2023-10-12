@@ -47,6 +47,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr_t,
     AssignPair,
     EnvPair,
+    ParsedAssignment,
     assign_op_e,
     NameType,
     proc_sig,
@@ -179,10 +180,11 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
-    # type: (ParseContext, PreParsedItem, Arena) -> AssignPair
+    # type: (ParseContext, ParsedAssignment, Arena) -> AssignPair
     """Create an AssignPair from a 4-tuples from DetectShAssignment."""
 
-    left_token, close_token, part_offset, w = preparsed
+    left_token = preparsed.left
+    close_token = preparsed.close
 
     lhs = None  # type: sh_lhs_expr_t
 
@@ -238,12 +240,15 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         raise AssertionError()
 
     # TODO: Should we also create a rhs_expr.ArrayLiteral here?
-    n = len(w.parts)
-    if part_offset == n:
+    parts = preparsed.w.parts
+    offset = preparsed.part_offset
+
+    n = len(parts)
+    if offset == n:
         rhs = rhs_word.Empty  # type: rhs_word_t
     else:
         # tmp2 is for intersection of C++/MyPy type systems
-        tmp2 = CompoundWord(w.parts[part_offset:])
+        tmp2 = CompoundWord(parts[offset:])
         word_.TildeDetectAssign(tmp2)
         rhs = tmp2
 
@@ -251,14 +256,16 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
 
 def _AppendMoreEnv(preparsed_list, more_env):
-    # type: (PreParsedList, List[EnvPair]) -> None
+    # type: (List[ParsedAssignment], List[EnvPair]) -> None
     """Helper to modify a SimpleCommand node.
 
     Args:
       preparsed: a list of 4-tuples from DetectShAssignment
       more_env: a list to append env_pairs to
     """
-    for left_token, _, part_offset, w in preparsed_list:
+    for preparsed in preparsed_list:
+        left_token = preparsed.left
+
         if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
             p_die(
                 "Environment binding shouldn't look like an array assignment",
@@ -268,25 +275,22 @@ def _AppendMoreEnv(preparsed_list, more_env):
             p_die('Expected = in environment binding, got +=', left_token)
 
         var_name = lexer.TokenSliceRight(left_token, -1)
-        n = len(w.parts)
-        if part_offset == n:
+
+        parts = preparsed.w.parts
+        n = len(parts)
+        offset = preparsed.part_offset
+        if offset == n:
             val = rhs_word.Empty  # type: rhs_word_t
         else:
-            val = CompoundWord(w.parts[part_offset:])
+            val = CompoundWord(parts[offset:])
 
-        pair = EnvPair(left_token, var_name, val)
-        more_env.append(pair)
-
-
-if TYPE_CHECKING:
-    PreParsedItem = Tuple[Token, Optional[Token], int, CompoundWord]
-    PreParsedList = List[PreParsedItem]
+        more_env.append(EnvPair(left_token, var_name, val))
 
 
 def _SplitSimpleCommandPrefix(words):
-    # type: (List[CompoundWord]) -> Tuple[PreParsedList, List[CompoundWord]]
+    # type: (List[CompoundWord]) -> Tuple[List[ParsedAssignment], List[CompoundWord]]
     """Second pass of SimpleCommand parsing: look for assignment words."""
-    preparsed_list = []  # type: PreParsedList
+    preparsed_list = []  # type: List[ParsedAssignment]
     suffix_words = []  # type: List[CompoundWord]
 
     done_prefix = False
@@ -297,7 +301,8 @@ def _SplitSimpleCommandPrefix(words):
 
         left_token, close_token, part_offset = word_.DetectShAssignment(w)
         if left_token:
-            preparsed_list.append((left_token, close_token, part_offset, w))
+            preparsed_list.append(
+                ParsedAssignment(left_token, close_token, part_offset, w))
         else:
             done_prefix = True
             suffix_words.append(w)
@@ -306,7 +311,7 @@ def _SplitSimpleCommandPrefix(words):
 
 
 def _MakeSimpleCommand(
-        preparsed_list,  # type: PreParsedList
+        preparsed_list,  # type: List[ParsedAssignment]
         suffix_words,  # type: List[CompoundWord]
         redirects,  # type: List[Redir]
         typed_args,  # type: Optional[ArgList]
@@ -316,10 +321,10 @@ def _MakeSimpleCommand(
     """Create an command.Simple node."""
 
     # FOO=(1 2 3) ls is not allowed.
-    for _, _, _, w in preparsed_list:
-        if word_.HasArrayPart(w):
+    for preparsed in preparsed_list:
+        if word_.HasArrayPart(preparsed.w):
             p_die("Environment bindings can't contain array literals",
-                  loc.Word(w))
+                  loc.Word(preparsed.w))
 
     # NOTE: It would be possible to add this check back.  But it already happens
     # at runtime in EvalWordSequence2.
@@ -741,7 +746,43 @@ class CommandParser(object):
 
     def _ScanSimpleCommand(self):
         # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[BlockArg]]
-        """First pass: Split into redirects and words."""
+        """YSH extends simple commands with typed args and blocks.
+
+        Shell has a recursive grammar, which awkwardly expresses
+        non-grammatical rules:
+
+        simple_command   : cmd_prefix cmd_word cmd_suffix
+                         | cmd_prefix cmd_word
+                         | cmd_prefix
+                         | cmd_name cmd_suffix
+                         | cmd_name
+                         ;
+        cmd_name         : WORD                   /* Apply rule 7a */
+                         ;
+        cmd_word         : WORD                   /* Apply rule 7b */
+                         ;
+        cmd_prefix       :            io_redirect
+                         | cmd_prefix io_redirect
+                         |            ASSIGNMENT_WORD
+                         | cmd_prefix ASSIGNMENT_WORD
+                         ;
+        cmd_suffix       :            io_redirect
+                         | cmd_suffix io_redirect
+                         |            WORD
+                         | cmd_suffix WORD
+
+        YSH grammar:
+
+        simple_command = 
+            cmd_prefix* word+ typed_args? BraceGroup? cmd_suffix*
+
+        typed_args =
+          '(' arglist ')'
+        | '[' arglist ']'
+
+        Notably, redirects shouldn't appear after between typed args and
+        BraceGroup.
+        """
         redirects = []  # type: List[Redir]
         words = []  # type: List[CompoundWord]
         typed_args = None  # type: Optional[ArgList]
@@ -820,11 +861,14 @@ class CommandParser(object):
 
                 typed_args = self.w_parser.ParseProcCallArgs(
                     grammar_nt.ysh_eager_arglist)
+                #self._SetNext()
+                #break
 
             elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
                 typed_args = self.w_parser.ParseProcCallArgs(
                     grammar_nt.ysh_lazy_arglist)
-                #log('---- TYPED %s', typed_args)
+                #self._SetNext()
+                #break
 
             else:
                 break
@@ -1073,8 +1117,6 @@ class CommandParser(object):
 
         preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
         if len(preparsed_list):
-            left_token, _, _, _ = preparsed_list[0]
-
             # Disallow X=Y inside proc and func
             #   and inside Hay Attr blocks
             # But allow X=Y at the top level
@@ -1084,7 +1126,8 @@ class CommandParser(object):
             if len(suffix_words) == 0:
                 if self.cmd_mode != cmd_mode_e.Shell or (len(
                         self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
-                    p_die('Use var/setvar to assign in YSH', left_token)
+                    p_die('Use var/setvar to assign in YSH',
+                          preparsed_list[0].left)
 
         # Set a reference to words and redirects for completion.  We want to
         # inspect this state after a failed parse.
@@ -1130,10 +1173,8 @@ class CommandParser(object):
                 p_die("Control flow shouldn't have redirects", kw_token)
 
             if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
-                # TODO: Change location as above
-                left_token, _, _, _ = preparsed_list[0]
                 p_die("Control flow shouldn't have environment bindings",
-                      left_token)
+                      preparsed_list[0].left)
 
             # Attach the token for errors.  (ShAssignment may not need it.)
             if len(suffix_words) == 1:

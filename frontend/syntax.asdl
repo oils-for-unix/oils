@@ -314,6 +314,9 @@ module syntax
   # Retain references to lines
   BlockArg = (BraceGroup brace_group, List[SourceLine] lines)
 
+  # Represents all these case:  s=1  s+=1  s[x]=1 ...
+  ParsedAssignment = (Token? left, Token? close, int part_offset, CompoundWord w)
+
   command =
     NoOp
   | Simple(Token? blame_tok,  # TODO: make required (BracedTuple?)
