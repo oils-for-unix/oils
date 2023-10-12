@@ -49,6 +49,7 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_e,
     word,
+    NamedArg,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue,
@@ -888,36 +889,45 @@ class CommandEvaluator(object):
             else:
                 self.mem.SetLastArgument('')
 
-            typed_args_ = None  # type: ArgList
+            left_tok = None  # type: Token
+            named_delim = None  # type: Token
+            right_tok = None  # type: Token
+
+            pos_args = None  # type: List[expr_t]
+            named_args = None  # type: List[NamedArg]
+
             if node.typed_args:
                 orig = node.typed_args
 
-                if orig.left.id == Id.Op_LBracket:
+                left_tok = orig.left
+                named_delim = orig.named_delim
+                right_tok = orig.right
+
+                if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
                     # TODO: defer evaluation by wrapping in value.Expr
                     #pos_args = [value.Expr(e) for e in pos_args]
                     pos_args = list(orig.pos_args)
-                    if node.block:
-                        pos_args.append(node.block)
 
-                else:
+                else:  # json write (x)
                     # TODO: Evaluate args!
-                    pos_args = list(orig.pos_args)  # copy before mtuating
-                    if node.block:
-                        pos_args.append(node.block)
+                    pos_args = list(orig.pos_args)  # copy before mutating
 
-                typed_args_ = ArgList(orig.left, pos_args,
-                                      orig.named_delim, orig.named_args,
-                                      orig.right)
+                named_args = orig.named_args
+
             else:
-                if node.block:
-                    # Create ArgList for the block.  Since we have { } and not (),
-                    # copy them from BraceGroup
-                    typed_args_ = ArgList(node.block.brace_group.left,
-                                          [node.block], None, [],
-                                          node.block.brace_group.right)
+                pos_args = []
+                named_args = []
 
-            # TODO: This should be typed_vals
-            cmd_val.typed_args = typed_args_
+                if node.block:
+                    left_tok = node.block.brace_group.left
+                    right_tok = node.block.brace_group.right
+
+            if node.block:
+                pos_args.append(node.block)
+
+            if left_tok:  # we got either ( or {
+                cmd_val.typed_args = ArgList(left_tok, pos_args, named_delim,
+                                             named_args, right_tok)
 
         else:
             if node.block:
