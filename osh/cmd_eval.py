@@ -888,27 +888,36 @@ class CommandEvaluator(object):
             else:
                 self.mem.SetLastArgument('')
 
-            typed_args_ = None  # type: ArgList
-            if node.typed_args:
-                orig = node.typed_args
-                # COPY positional args because we may append an arg
-                typed_args_ = ArgList(orig.left, list(orig.pos_args),
-                                      orig.named_delim, orig.named_args,
-                                      orig.right)
+            if node.typed_args or node.block:  # guard to avoid allocs
+                typed_vals = ArgList.CreateNull(alloc_lists=True)
 
-                # the block is the last argument
-                if node.block:
-                    typed_args_.pos_args.append(node.block)
-                    # ArgList already has a spid in this case
-            else:
-                if node.block:
-                    # Create ArgList for the block.  Since we have { } and not (),
-                    # copy them from BraceGroup
-                    typed_args_ = ArgList(node.block.brace_group.left,
-                                          [node.block], None, [],
-                                          node.block.brace_group.right)
+                if node.typed_args:
+                    orig = node.typed_args
 
-            cmd_val.typed_args = typed_args_
+                    typed_vals.left = orig.left
+                    typed_vals.named_delim = orig.named_delim
+                    typed_vals.right = orig.right
+
+                    if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
+                        # TODO: defer evaluation by wrapping in value.Expr
+                        #pos_args = [value.Expr(e) for e in pos_args]
+                        typed_vals.pos_args.extend(orig.pos_args)
+
+                    else:  # json write (x)
+                        # TODO: Evaluate args!
+                        typed_vals.pos_args.extend(orig.pos_args)
+
+                    typed_vals.named_args.extend(orig.named_args)
+
+                elif node.block:  # Change location info
+                    typed_vals.left = node.block.brace_group.left
+                    typed_vals.right = node.block.brace_group.right
+
+                # Pass the unevaluated block.  TODO: value.Command()
+                if node.block:
+                    typed_vals.pos_args.append(node.block)
+
+                cmd_val.typed_args = typed_vals
 
         else:
             if node.block:
