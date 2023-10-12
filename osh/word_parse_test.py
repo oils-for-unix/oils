@@ -522,7 +522,7 @@ class WordParserTest(unittest.TestCase):
             w_parser._SetNext(lex_mode_e.Arith)
 
             while True:
-                w = w_parser.ReadWord(lex_mode_e.Arith)
+                w = w_parser.ReadArithWord()
                 assert w is not None
                 w.PrettyPrint()
                 if word_.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):

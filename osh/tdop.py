@@ -6,7 +6,6 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_e,
                                        arith_expr_t, word_t, CompoundWord,
                                        SimpleVarSub)
-from _devbuild.gen.types_asdl import lex_mode_e
 from core.error import p_die
 from core import ui
 from frontend import lexer
@@ -276,7 +275,7 @@ class TdopParser(object):
 
     def Next(self):
         # type: () -> bool
-        self.cur_word = self.w_parser.ReadWord(lex_mode_e.Arith)
+        self.cur_word = self.w_parser.ReadArithWord()
         self.op_id = word_.ArithId(self.cur_word)
         return True
 

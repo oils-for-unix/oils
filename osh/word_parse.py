@@ -1459,15 +1459,6 @@ class WordParser(WordEmitter):
         words3 = word_.TildeDetectAll(words2)
         return ShArrayLiteral(left_token, words3, right_token)
 
-    def _ParseInlineCallArgs(self, arg_list):
-        # type: (ArgList) -> None
-        """For $f(x) and @arrayfunc(x)."""
-        #log('t: %s', self.cur_token)
-
-        # Call into expression language.
-        arg_list.left = self.cur_token
-        self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
-
     def ParseProcCallArgs(self):
         # type: () -> ArgList
         """For json write (x)"""
@@ -1900,31 +1891,32 @@ class WordParser(WordEmitter):
 
     def ReadWord(self, lex_mode):
         # type: (lex_mode_t) -> word_t
-        """Read the next Word.
+        """Read the next word, using the given lexer mode.
 
-        Returns:
-          Word, or None if there was an error
+        This is a stateful wrapper for the stateless _ReadWord function.
         """
+        assert lex_mode in (lex_mode_e.ShCommand, lex_mode_e.DBracket,
+                            lex_mode_e.BashRegex)
+
         # For integration with pgen2
         if self.buffered_word:
             w = self.buffered_word
             self.buffered_word = None
         else:
-            # Implementation note: This is an stateful/iterative function that calls
-            # the stateless "_ReadWord" function.
             while True:
-                if lex_mode == lex_mode_e.Arith:
-                    # TODO: Can this be unified?
-                    w, need_more = self._ReadArithWord()
-                elif lex_mode in (lex_mode_e.ShCommand, lex_mode_e.DBracket,
-                                  lex_mode_e.BashRegex):
-                    w, need_more = self._ReadWord(lex_mode)
-                else:
-                    raise AssertionError('Invalid lex state %s' % lex_mode)
+                w, need_more = self._ReadWord(lex_mode)
                 if not need_more:
                     break
 
         self.returned_newline = (word_.CommandId(w) == Id.Op_Newline)
+        return w
+
+    def ReadArithWord(self):
+        # type: () -> word_t
+        while True:
+            w, need_more = self._ReadArithWord()
+            if not need_more:
+                break
         return w
 
     def ReadHereDocBody(self, parts):
