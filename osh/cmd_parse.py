@@ -262,8 +262,9 @@ def _AppendMoreEnv(preparsed_list, more_env):
     """
     for left_token, _, part_offset, w in preparsed_list:
         if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
-            p_die("Environment binding shouldn't look like an array assignment",
-                  left_token)
+            p_die(
+                "Environment binding shouldn't look like an array assignment",
+                left_token)
 
         if lexer.IsPlusEquals(left_token):
             p_die('Expected = in environment binding, got +=', left_token)
@@ -468,7 +469,6 @@ class ctx_CmdMode(object):
         self.cmd_parse.cmd_mode = self.prev_cmd_mode
 
 
-
 SECONDARY_KEYWORDS = [
     Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else,
     Id.KW_Esac
@@ -537,7 +537,7 @@ class CommandParser(object):
         # A hacky boolean to remove 'if cd / {' ambiguity.
         self.allow_block = True
 
-        # Stack of booleans for nested Attr and SHELL nodes.  
+        # Stack of booleans for nested Attr and SHELL nodes.
         #   Attr nodes allow bare assignment x = 42, but not shell x=42.
         #   SHELL nodes are the inverse.  'var x = 42' is preferred in shell
         # nodes, but x42 is still allowed.
@@ -635,8 +635,8 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id != c_id:
             if msg is None:
-                msg = 'Expected word type %s, got %s' % (ui.PrettyId(c_id),
-                                                         ui.PrettyId(self.c_id))
+                msg = 'Expected word type %s, got %s' % (
+                    ui.PrettyId(c_id), ui.PrettyId(self.c_id))
             p_die(msg, loc.Word(self.cur_word))
 
         skipped = self.cur_word
@@ -813,7 +813,8 @@ class CommandParser(object):
                 # of a word, and we don't know if it will end.
                 next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
                 if next_id == Id.Op_RParen:
-                    p_die('Empty arg list not allowed', loc.Word(self.cur_word))
+                    p_die('Empty arg list not allowed',
+                          loc.Word(self.cur_word))
 
                 typed_args = self.w_parser.ParseProcCallArgs()
 
@@ -1070,11 +1071,11 @@ class CommandParser(object):
             #   and inside Hay Attr blocks
             # But allow X=Y at the top level
             #   for interactive use foo=bar
-            #   for global constants GLOBAL=~/src 
+            #   for global constants GLOBAL=~/src
             #     because YSH assignment doesn't have tilde sub
             if len(suffix_words) == 0:
-                if self.cmd_mode != cmd_mode_e.Shell or (
-                        len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
+                if self.cmd_mode != cmd_mode_e.Shell or (len(
+                        self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
                     p_die('Use var/setvar to assign in YSH', left_token)
 
         # Set a reference to words and redirects for completion.  We want to
@@ -1101,7 +1102,8 @@ class CommandParser(object):
                 # return x - inside procs and shell functions
                 # return (x) - inside funcs
                 if typed_args is None:
-                    if self.cmd_mode not in (cmd_mode_e.Shell, cmd_mode_e.Proc):
+                    if self.cmd_mode not in (cmd_mode_e.Shell,
+                                             cmd_mode_e.Proc):
                         p_die('Shell-style returns not allowed here', kw_token)
                 else:
                     if self.cmd_mode != cmd_mode_e.Func:
@@ -1598,7 +1600,8 @@ class CommandParser(object):
         arms_end = word_.AsOperatorToken(ate)
         arms_end.id = Id.Lit_RBrace
 
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
+                            None)
 
     def ParseOldCase(self, case_kw):
         # type: (Token) -> command.Case
@@ -1649,7 +1652,8 @@ class CommandParser(object):
         arms_end = word_.AsKeywordToken(ate)
 
         # no redirects yet
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
+                            None)
 
     def ParseCase(self):
         # type: () -> command.Case
@@ -2151,7 +2155,8 @@ class CommandParser(object):
             # $ bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
-            if self.parse_opts.parse_func() and not self.parse_opts.parse_tea():
+            if (self.parse_opts.parse_func() and
+                    not self.parse_opts.parse_tea()):
                 return self.ParseYshFunc()
 
             # Otherwise silently pass, like for the procs.
@@ -2224,7 +2229,8 @@ class CommandParser(object):
             return self.ParseSimpleCommand()
 
         if self.c_kind == Kind.Word:
-            cur_word = cast(CompoundWord, self.cur_word)  # ensured by Kind.Word
+            # ensured by Kind.Word
+            cur_word = cast(CompoundWord, self.cur_word)
 
             # NOTE: At the top level, only Token and Compound are possible.
             # Can this be modelled better in the type system, removing asserts?
@@ -2250,7 +2256,8 @@ class CommandParser(object):
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
                         assert tok.id == Id.Lit_Chars, tok
 
-                        if len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]:
+                        if len(self.hay_attrs_stack
+                               ) and self.hay_attrs_stack[-1]:
                             # Note: no static var_checker.Check() for bare assignment
                             enode = self.w_parser.ParseBareDecl()
                             self._SetNext()  # Somehow this is necessary

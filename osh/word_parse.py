@@ -124,6 +124,7 @@ class WordEmitter(object):
 
 
 class WordParser(WordEmitter):
+
     def __init__(self, parse_ctx, lexer, line_reader):
         # type: (ParseContext, Lexer, _Reader) -> None
         self.parse_ctx = parse_ctx
@@ -856,9 +857,11 @@ class WordParser(WordEmitter):
                         # YSH.
                         # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
                         # recursion (unless parse_backslash)
-                        if is_oil_expr or not self.parse_opts.parse_backslash():
-                            p_die("Invalid char escape in double quoted string",
-                                  self.cur_token)
+                        if (is_oil_expr or
+                                not self.parse_opts.parse_backslash()):
+                            p_die(
+                                "Invalid char escape in double quoted string",
+                                self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_oil_expr or not self.parse_opts.parse_dollar():
                             p_die("Literal $ should be quoted like \$",
@@ -1115,8 +1118,8 @@ class WordParser(WordEmitter):
         """
         self._SetNext(lex_mode_e.Expr)
         self._GetToken()
-        enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                        grammar_nt.command_expr)
+        enode, last_token = self.parse_ctx.ParseYshExpr(
+            self.lexer, grammar_nt.command_expr)
         if last_token.id == Id.Op_RBrace:
             last_token.id = Id.Lit_RBrace
         self.buffered_word = last_token
@@ -1128,8 +1131,8 @@ class WordParser(WordEmitter):
         """
         = 1+2
         """
-        enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                        grammar_nt.command_expr)
+        enode, last_token = self.parse_ctx.ParseYshExpr(
+            self.lexer, grammar_nt.command_expr)
 
         # In some cases, such as the case statement, we expect *the lexer* to be
         # pointing at the token right after the expression. But the expression
@@ -1171,7 +1174,8 @@ class WordParser(WordEmitter):
 
     def ParseYshCasePattern(self):
         # type: () -> Tuple[pat_t, Token]
-        pat, left_tok, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
+        pat, left_tok, last_token = self.parse_ctx.ParseYshCasePattern(
+            self.lexer)
 
         if last_token.id == Id.Op_LBrace:
             last_token.id = Id.Lit_LBrace
@@ -1625,7 +1629,7 @@ class WordParser(WordEmitter):
                 # If parse_at, we can take over @( to start @(seq 3)
                 # Users can also use look at ,(*.py|*.sh)
                 if (self.parse_opts.parse_at() and
-                    self.token_type == Id.ExtGlob_At and num_parts == 0):
+                        self.token_type == Id.ExtGlob_At and num_parts == 0):
                     cs_part = self._ReadCommandSub(Id.Left_AtParen,
                                                    d_quoted=False)
                     # RARE mutation of tok.id!
@@ -1700,7 +1704,8 @@ class WordParser(WordEmitter):
                 self._SetNext(lex_mode)
                 num_parts += 1
 
-        if self.parse_opts.parse_brace() and num_parts > 1 and brace_count != 0:
+        if (self.parse_opts.parse_brace() and num_parts > 1 and
+                brace_count != 0):
             # accept { and }, but not foo{
             p_die(
                 'Word has unbalanced { }.  Maybe add a space or quote it like \{',
@@ -1824,10 +1829,10 @@ class WordParser(WordEmitter):
             else:
                 # parse_raw_string: Is there an r'' at the beginning of a word?
                 if (self.parse_opts.parse_raw_string() and
-                    self.token_type == Id.Lit_Chars and
-                    self.cur_token.tval == 'r'):
-                    if (self.lexer.LookAheadOne(lex_mode_e.ShCommand) == 
-                        Id.Left_SingleQuote):
+                        self.token_type == Id.Lit_Chars and
+                        self.cur_token.tval == 'r'):
+                    if (self.lexer.LookAheadOne(
+                            lex_mode_e.ShCommand) == Id.Left_SingleQuote):
                         self._SetNext(lex_mode_e.ShCommand)
 
                 w = self._ReadCompoundWord(lex_mode)

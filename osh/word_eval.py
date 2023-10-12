@@ -99,8 +99,8 @@ _STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
 def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
     # type: (str, optview.Exec, bool) -> bool
     """Return whether we should allow ${a} to mean ${a[0]}."""
-    return (not exec_opts.strict_array()
-            or is_plain_var_sub and var_name in _STRING_AND_ARRAY)
+    return (not exec_opts.strict_array() or
+            is_plain_var_sub and var_name in _STRING_AND_ARRAY)
 
 
 def DecayArray(val):
@@ -232,7 +232,7 @@ def _ValueToPartValue(val, quoted, part_loc):
 
         else:
             raise error.TypeErr(val, "Can't substitute into word",
-                                     loc.WordPart(part_loc))
+                                loc.WordPart(part_loc))
 
     raise AssertionError('for -Wreturn-type in C++')
 
@@ -395,7 +395,7 @@ def _PerformSlice(
 
         else:
             raise error.TypeErr(val, 'Slice op expected Str or BashArray',
-                                     loc.WordPart(part))
+                                loc.WordPart(part))
 
     return result
 
@@ -791,8 +791,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 e_die('Indirect expansion of assoc array')
 
             else:
-                raise error.TypeErr(val, 'Var Ref op expected Str',
-                                         blame_tok)
+                raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
 
     def _ApplyUnarySuffixOp(self, val, op):
         # type: (value_t, suffix_op.Unary) -> value_t
@@ -1075,9 +1074,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = value.Str(s)
 
             else:
-                raise error.TypeErr(
-                    val, 'Index op expected BashArray, BashAssoc',
-                    loc.WordPart(part))
+                raise error.TypeErr(val,
+                                    'Index op expected BashArray, BashAssoc',
+                                    loc.WordPart(part))
 
         return val
 
@@ -1162,9 +1161,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         else:  # no bracket op
             var_name = vtest_place.name
-            if (var_name is not None
-                    and val.tag() in (value_e.BashArray, value_e.BashAssoc)
-                    and not vsub_state.is_type_query):
+            if (var_name is not None and
+                    val.tag() in (value_e.BashArray, value_e.BashAssoc) and
+                    not vsub_state.is_type_query):
                 if ShouldArrayDecay(var_name, self.exec_opts,
                                     not (part.prefix_op or part.suffix_op)):
                     # for ${BASH_SOURCE}, etc.
@@ -1255,9 +1254,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if part.token.id == Id.VSub_Name:
             # Handle ${!prefix@} first, since that looks at names and not values
             # Do NOT handle ${!A[@]@a} here!
-            if (part.prefix_op is not None and part.bracket_op is None
-                    and part.suffix_op is not None
-                    and part.suffix_op.tag() == suffix_op_e.Nullary):
+            if (part.prefix_op is not None and part.bracket_op is None and
+                    part.suffix_op is not None and
+                    part.suffix_op.tag() == suffix_op_e.Nullary):
                 nullary_op = cast(Token, part.suffix_op)
                 # ${!x@} but not ${!x@P}
                 if consts.GetKind(nullary_op.id) == Kind.VOp3:
@@ -1289,8 +1288,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # ${array[@]@Q}
         # TODO: An IR for ${} might simplify these lengthy conditions
         suffix_op_ = part.suffix_op
-        if (suffix_op_ and suffix_op_.tag() == suffix_op_e.Nullary
-                and cast(Token, suffix_op_).id == Id.VOp0_a):
+        if (suffix_op_ and suffix_op_.tag() == suffix_op_e.Nullary and
+                cast(Token, suffix_op_).id == Id.VOp0_a):
             vsub_state.is_type_query = True
 
         # 2. Bracket Op
