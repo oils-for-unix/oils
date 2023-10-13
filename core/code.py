@@ -4,8 +4,8 @@ code.py: User-defined funcs and procs
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_t, scope_e, lvalue
-from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e
+from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue, cmd_value)
+from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e, loc
 
 from core import error
 from core.error import e_die
@@ -98,8 +98,8 @@ class UserFunc(vm._Callable):
         raise AssertionError('unreachable')
 
 
-def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
-    # type: (Proc, List[str], loc_t, state.Mem, ui.ErrorFormatter) -> int
+def BindProcArgs(proc, cmd_val, mem, errfmt):
+    # type: (Proc, cmd_value.Argv, state.Mem, ui.ErrorFormatter) -> int
 
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
@@ -107,6 +107,7 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
 
     sig = cast(proc_sig.Closed, UP_sig)
 
+    argv = cmd_val.argv[1:]
     num_args = len(argv)
     for i, p in enumerate(sig.word_params):
 
@@ -164,6 +165,11 @@ def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
         mem.SetValue(lval, rest_val, scope_e.LocalOnly)
     else:
         if num_args > num_params:
+            if len(cmd_val.arg_locs):
+                arg0_loc = cmd_val.arg_locs[0]  # type: loc_t
+            else:
+                arg0_loc = loc.Missing
+
             # TODO: Raise an exception?
             errfmt.Print_(
                 "proc %r expected %d arguments, but got %d" %

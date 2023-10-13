@@ -124,6 +124,14 @@ YSH_TYPE_NAMES = {
 }
 
 
+def MakeBuiltinArgv(argv1):
+    # type: (List[str]) -> cmd_value.Argv
+    argv = ['']  # dummy for argv[0]
+    argv.extend(argv1)
+    missing = None  # type: CompoundWord
+    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None)
+
+
 class Deps(object):
 
     def __init__(self):
@@ -2096,8 +2104,8 @@ class CommandEvaluator(object):
                 with ctx_ErrTrap(self):
                     self._Execute(node)
 
-    def RunProc(self, proc, argv, arg0_loc):
-        # type: (Proc, List[str], loc_t) -> int
+    def RunProc(self, proc, cmd_val):
+        # type: (Proc, cmd_value.Argv) -> int
         """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
@@ -2107,12 +2115,11 @@ class CommandEvaluator(object):
             # We're binding named params.  User should use @rest.  No 'shift'.
             proc_argv = []  # type: List[str]
         else:
-            proc_argv = argv
+            proc_argv = cmd_val.argv[1:]
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            status = code.BindProcArgs(proc, argv, arg0_loc, self.mem,
-                                       self.errfmt)
+            status = code.BindProcArgs(proc, cmd_val, self.mem, self.errfmt)
             if status != 0:
                 return status
 
@@ -2160,10 +2167,15 @@ class CommandEvaluator(object):
 
     def RunFuncForCompletion(self, proc, argv):
         # type: (Proc, List[str]) -> int
+        """
+        Args:
+          argv: $1 $2 $3 ... not including $0
+        """
+        cmd_val = MakeBuiltinArgv(argv)
 
         # TODO: Change this to run YSH procs and funcs too
         try:
-            status = self.RunProc(proc, argv, loc.Missing)
+            status = self.RunProc(proc, cmd_val)
         except error.FatalRuntime as e:
             self.errfmt.PrettyPrintError(e)
             status = e.ExitStatus()
