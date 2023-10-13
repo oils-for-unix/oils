@@ -49,7 +49,6 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_e,
     word,
-    NamedArg,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue,
