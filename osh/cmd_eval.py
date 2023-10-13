@@ -888,36 +888,35 @@ class CommandEvaluator(object):
             else:
                 self.mem.SetLastArgument('')
 
-            typed_vals = ArgList.CreateNull(alloc_lists=True)
+            if node.typed_args or node.block:  # guard to avoid allocs
+                typed_vals = ArgList.CreateNull(alloc_lists=True)
 
-            if node.typed_args:
-                orig = node.typed_args
+                if node.typed_args:
+                    orig = node.typed_args
 
-                typed_vals.left = orig.left
-                typed_vals.named_delim = orig.named_delim
-                typed_vals.right = orig.right
+                    typed_vals.left = orig.left
+                    typed_vals.named_delim = orig.named_delim
+                    typed_vals.right = orig.right
 
-                if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
-                    # TODO: defer evaluation by wrapping in value.Expr
-                    #pos_args = [value.Expr(e) for e in pos_args]
-                    typed_vals.pos_args.extend(orig.pos_args)
+                    if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
+                        # TODO: defer evaluation by wrapping in value.Expr
+                        #pos_args = [value.Expr(e) for e in pos_args]
+                        typed_vals.pos_args.extend(orig.pos_args)
 
-                else:  # json write (x)
-                    # TODO: Evaluate args!
-                    typed_vals.pos_args.extend(orig.pos_args)
+                    else:  # json write (x)
+                        # TODO: Evaluate args!
+                        typed_vals.pos_args.extend(orig.pos_args)
 
-                typed_vals.named_args.extend(orig.named_args)
+                    typed_vals.named_args.extend(orig.named_args)
 
-            else:
-                if node.block:
+                elif node.block:  # Change location info
                     typed_vals.left = node.block.brace_group.left
                     typed_vals.right = node.block.brace_group.right
 
-            # Pass the unevaluated block.  TODO: value.Command()
-            if node.block:
-                typed_vals.pos_args.append(node.block)
+                # Pass the unevaluated block.  TODO: value.Command()
+                if node.block:
+                    typed_vals.pos_args.append(node.block)
 
-            if typed_vals.left:  # we got either ( or {
                 cmd_val.typed_args = typed_vals
 
         else:
