@@ -758,8 +758,8 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                          comp_ui_state, comp_ctx, debug_f)
     builtins[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
 
-    builtins[builtin_i.json] = builtin_json.Json(mem, expr_ev, errfmt, False)
-    builtins[builtin_i.j8] = builtin_json.Json(mem, expr_ev, errfmt, True)
+    builtins[builtin_i.json] = builtin_json.Json(mem, errfmt, False)
+    builtins[builtin_i.j8] = builtin_json.Json(mem, errfmt, True)
 
     builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer,
                                                  errfmt)

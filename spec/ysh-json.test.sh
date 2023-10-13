@@ -125,10 +125,11 @@ echo status=$?
 
 json write (5, 6)  # to many args
 echo status=$?
+
+## status: 3
 ## STDOUT:
 [1,2,3]
 status=0
-status=2
 ## END
 
 #### json write evaluation error

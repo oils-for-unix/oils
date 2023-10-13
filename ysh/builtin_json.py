@@ -25,7 +25,6 @@ import posix_ as posix
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
-    from ysh import expr_eval
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
@@ -37,10 +36,9 @@ class Json(vm._Builtin):
     --indent=2 controls multiline indentation
     """
 
-    def __init__(self, mem, expr_ev, errfmt, is_j8):
-        # type: (state.Mem, expr_eval.ExprEvaluator, ErrorFormatter, bool) -> None
+    def __init__(self, mem, errfmt, is_j8):
+        # type: (state.Mem, ErrorFormatter, bool) -> None
         self.mem = mem
-        self.expr_ev = expr_ev
         self.errfmt = errfmt
         if is_j8:
             self.printer = j8.Printer(0)
@@ -69,8 +67,10 @@ class Json(vm._Builtin):
             if not arg_r.AtEnd():
                 e_usage('write got too many args', arg_r.Location())
 
-            expr = typed_args.RequiredExpr(cmd_val.typed_args)
-            val = self.expr_ev.EvalExpr(expr, loc.Missing)
+            r = typed_args.Reader(cmd_val.pos_args, cmd_val.named_args,
+                                  cmd_val.typed_args, False)
+            val = r.PosValue()
+            r.Done()
 
             if arg_jw.pretty:
                 indent = arg_jw.indent
