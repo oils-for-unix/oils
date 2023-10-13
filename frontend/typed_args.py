@@ -2,7 +2,7 @@
 """Typed_args.py."""
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_t
+from _devbuild.gen.runtime_asdl import value, value_e, value_t, cmd_value
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, BlockArg, command,
                                        command_t, expr_e, expr_t, CommandSub,
                                        proc_sig, proc_sig_e)
@@ -81,7 +81,7 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, pos_args, named_args, args_node, is_bound):
+    def __init__(self, pos_args, named_args, args_node, is_bound=False):
         # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
         self.pos_args = pos_args
         self.pos_consumed = 0
@@ -93,7 +93,22 @@ class Reader(object):
 
     def LeftParenToken(self):
         # type: () -> loc_t
+        """
+        Used by functions in library/func_misc.py
+        """
         return self.args_node.left
+
+    def LeastSpecificLocation(self):
+        # type: () -> loc_t
+        """Returns the least specific blame location.
+
+        Applicable to procs as well.
+        """
+        # return LeftParenToken() if available
+        if self.args_node.left:  # may be None for proc like 'json write'
+            return self.args_node.left
+
+        return loc.Missing
 
     ### Words: untyped args for procs
 
@@ -109,9 +124,11 @@ class Reader(object):
 
     def BlamePos(self):
         # type: () -> loc_t
-        """Returns the location of the most recently consumed argument. If no
-        arguments have been consumed, the location of the function call is
-        returned."""
+        """Returns the location of the most recently consumed argument.
+
+        If no arguments have been consumed, the location of the function call
+        is returned.
+        """
         pos = self.pos_consumed - 1
         if self.is_bound:
             # Token for the first "argument" of a bound function call isn't in
@@ -125,7 +142,7 @@ class Reader(object):
                 return l
 
         # Fall back on call
-        return self.args_node.left
+        return self.LeastSpecificLocation()
 
     def PosNode(self, i):
         # type: (int) -> expr_t
@@ -136,11 +153,10 @@ class Reader(object):
     def _GetNextPos(self):
         # type: () -> value_t
         if len(self.pos_args) == 0:
-            # TODO: may need location info
             raise error.TypeErrVerbose(
-                'Expected at least %d arguments, but only got %d' %
+                'Expected at least %d typed args, but only got %d' %
                 (self.pos_consumed + 1, self.pos_consumed),
-                self.args_node.left)
+                self.LeastSpecificLocation())
 
         self.pos_consumed += 1
         return self.pos_args.pop(0)
@@ -254,8 +270,8 @@ class Reader(object):
     def _BlameNamed(self, name):
         # type: (str) -> loc_t
         """Returns the location of the given named argument."""
-        # TODO
-        return self.args_node.left
+        # TODO: be more specific
+        return self.LeastSpecificLocation()
 
     def NamedNode(self, name):
         # type: (str) -> Optional[expr_t]
@@ -388,46 +404,26 @@ class Reader(object):
             self.pos_consumed += 1  # point to the first uncomsumed arg
 
             raise error.TypeErrVerbose(
-                'Expected %d arguments, but got %d' %
+                'Expected %d typed args, but got %d' %
                 (n, n + len(self.pos_args)), self.BlamePos())
 
         if len(self.named_args):
-            # may not be set
-            blame = self.args_node.named_delim
-            if blame is None:
-                blame = self.args_node.left
-
             bad_args = ', '.join(self.named_args.keys())
             raise error.TypeErrVerbose(
-                'Got unexpected named args: %s' % bad_args, blame)
+                'Got unexpected named args: %s' % bad_args,
+                self.args_node.named_delim or self.LeastSpecificLocation())
 
 
-def ReaderFromArgv(typed_args, expr_ev):
-    # type: (ArgList, ExprEvaluator) -> Reader
-    """
-    Build a typed_args.Reader given a builtin command's cmd_val.typed_args.
+def ReaderForProc(cmd_val):
+    # type: (cmd_value.Argv) -> Reader
 
-    As part of constructing the Reader, we must evaluate all arguments. This
-    function may fail if there are any runtime errors whilst evaluating those
-    arguments.
-    """
-    if typed_args is None:
-        raise error.TypeErrVerbose(
-            'Expected at least 1 typed argument, but got 0', loc.Missing)
+    pos_args = cmd_val.pos_args or []
+    named_args = cmd_val.named_args or {}
 
-    pos_args = []  # type: List[value_t]
-    named_args = {}  # type: Dict[str, value_t]
+    # TODO: Reader() relies on args_node.left not being None
+    arg_list = cmd_val.typed_args or ArgList.CreateNull()
 
-    for i, pos_arg in enumerate(typed_args.pos_args):
-        result = expr_ev.EvalExpr(pos_arg, loc.Missing)
-        pos_args.append(result)
-
-    for named_arg in typed_args.named_args:
-        result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
-        name = lexer.TokenVal(named_arg.name)
-        named_args[name] = result
-
-    return Reader(pos_args, named_args, typed_args, False)
+    return Reader(pos_args, named_args, arg_list)
 
 
 def DoesNotAccept(arg_list):

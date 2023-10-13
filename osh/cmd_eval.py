@@ -849,6 +849,12 @@ class CommandEvaluator(object):
 
     def _EvalTypedArgs(self, node, cmd_val):
         # type: (command.Simple, cmd_value.Argv) -> None
+        """
+
+        TODO: Synchronize with _EvalArgList() in ysh/expr_eval.py
+
+        """
+
         typed_vals = ArgList.CreateNull(alloc_lists=True)
 
         if node.typed_args:

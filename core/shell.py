@@ -200,7 +200,7 @@ def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
     b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
     b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
     b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
-    b[builtin_i.error] = builtin_meta.Error(expr_ev)
+    b[builtin_i.error] = builtin_meta.Error()
 
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path,

@@ -67,8 +67,7 @@ class Json(vm._Builtin):
             if not arg_r.AtEnd():
                 e_usage('write got too many args', arg_r.Location())
 
-            r = typed_args.Reader(cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.typed_args, False)
+            r = typed_args.ReaderForProc(cmd_val)
             val = r.PosValue()
             r.Done()
 

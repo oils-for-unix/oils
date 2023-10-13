@@ -1,6 +1,18 @@
 ## oils_failures_allowed: 1
 ## tags: dev-minimal
 
+#### usage errors
+
+json read
+echo status=$?
+
+json write
+
+## status: 3
+## STDOUT:
+status=2
+## END
+
 #### json write STRING
 shopt --set parse_proc
 

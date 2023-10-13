@@ -23,7 +23,6 @@ from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
 from osh import cmd_eval
-from ysh import expr_eval
 
 _ = log
 
@@ -375,20 +374,19 @@ class Try(vm._Builtin):
 
 class Error(vm._Builtin):
 
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
-        self.expr_ev = expr_ev
+    def __init__(self):
+        # type: () -> None
+        pass
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        t = typed_args.ReaderFromArgv(cmd_val.typed_args, self.expr_ev)
-
-        message = t.PosStr()
-        status = t.NamedInt("status", 1)
-        t.Done()
+        r = typed_args.ReaderForProc(cmd_val)
+        message = r.PosStr()
+        status = r.NamedInt('status', 1)
+        r.Done()
 
         if status == 0:
-            e_die("Status must be a non-zero integer", cmd_val.arg_locs[0])
+            e_die('Status must be a non-zero integer', cmd_val.arg_locs[0])
 
         if len(cmd_val.argv) > 1:
             raise error.TypeErrVerbose(
