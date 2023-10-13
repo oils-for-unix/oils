@@ -8,7 +8,6 @@ from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, BlockArg, command,
                                        proc_sig, proc_sig_e)
 from core import error
 from core.error import e_usage
-from frontend import lexer
 from frontend import location
 from mycpp.mylib import dict_erase, tagswitch
 
@@ -409,19 +408,24 @@ class Reader(object):
 
         if len(self.named_args):
             bad_args = ', '.join(self.named_args.keys())
+
+            blame = self.args_node.named_delim  # type: loc_t
+            if blame is None:
+                blame = self.LeastSpecificLocation()
+
             raise error.TypeErrVerbose(
-                'Got unexpected named args: %s' % bad_args,
-                self.args_node.named_delim or self.LeastSpecificLocation())
+                'Got unexpected named args: %s' % bad_args, blame)
 
 
 def ReaderForProc(cmd_val):
     # type: (cmd_value.Argv) -> Reader
 
-    pos_args = cmd_val.pos_args or []
-    named_args = cmd_val.named_args or {}
+    # mycpp rewrite: doesn't understand 'or' pattern
+    pos_args = (cmd_val.pos_args if cmd_val.pos_args is not None else [])
+    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
 
-    # TODO: Reader() relies on args_node.left not being None
-    arg_list = cmd_val.typed_args or ArgList.CreateNull()
+    arg_list = (cmd_val.typed_args
+                if cmd_val.typed_args is not None else ArgList.CreateNull())
 
     return Reader(pos_args, named_args, arg_list)
 
