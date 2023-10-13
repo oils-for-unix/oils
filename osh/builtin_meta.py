@@ -51,6 +51,12 @@ class Eval(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
+        if cmd_val.typed_args:  # eval (myblock)
+            r = typed_args.ReaderForProc(cmd_val)
+            block = r.PosCommand()
+            r.Done()
+            return self.cmd_ev.EvalBlock(block)
+
         # There are no flags, but we need it to respect --
         _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
 

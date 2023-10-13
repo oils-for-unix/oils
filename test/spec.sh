@@ -733,6 +733,11 @@ ysh-builtins() {
   run-file ysh-builtins "$@"
 }
 
+ysh-builtin-eval() {
+  run-file ysh-builtin-eval "$@"
+}
+
+
 ysh-builtin-module() {
   run-file ysh-builtin-module "$@"
 }
