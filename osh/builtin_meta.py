@@ -185,10 +185,12 @@ class Command(vm._Builtin):
                                              cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.command(attrs.attrs)
+
+        argv, locs = arg_r.Rest2()
+
         if arg.v:
             status = 0
-            names = arg_r.Rest()
-            for kind, argument in _ResolveNames(names, self.funcs,
+            for kind, argument in _ResolveNames(argv, self.funcs,
                                                 self.aliases,
                                                 self.search_path):
                 if kind is None:
@@ -198,19 +200,25 @@ class Command(vm._Builtin):
                     print(argument)
             return status
 
-        # shift by one
-        cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                                 cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
 
         # If we respected do_fork here instead of passing True, the case
         # 'command date | wc -l' would take 2 processes instead of 3.  But no other
         # shell does that, and this rare case isn't worth the bookkeeping.
         # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val,
+        return self.shell_ex.RunSimpleCommand(cmd_val2,
                                               cmd_st,
                                               True,
                                               call_procs=False)
+
+
+def _ShiftArgv(cmd_val):
+    # type: (cmd_value.Argv) -> cmd_value.Argv
+    return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
+                          cmd_val.typed_args, cmd_val.pos_args,
+                          cmd_val.named_args)
 
 
 class Builtin(vm._Builtin):
@@ -243,8 +251,7 @@ class Builtin(vm._Builtin):
                                    blame_loc=location)
             return 1
 
-        cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                                  cmd_val.typed_args)
+        cmd_val2 = _ShiftArgv(cmd_val)
         return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
@@ -271,7 +278,9 @@ class RunProc(vm._Builtin):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
+
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
@@ -337,7 +346,8 @@ class Try(vm._Builtin):
             e_usage('expects a block or command argv', loc.Missing)
 
         argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
 
         try:
             # Temporarily turn ON errexit, but don't pass a SPID because we're
@@ -404,7 +414,8 @@ class BoolStatus(vm._Builtin):
             e_usage('expected a command to run', loc.Missing)
 
         argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)

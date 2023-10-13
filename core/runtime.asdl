@@ -18,7 +18,11 @@ module runtime
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(List[str] argv, List[CompoundWord] arg_locs, ArgList? typed_args)
+    Argv(List[str] argv, List[CompoundWord] arg_locs, ArgList? typed_args,
+         # Evaluated args, similar to typed_args.py Reader
+         # TODO: fix ASDL bug with Dict[str, value]?
+         List[value]? pos_args, Dict[str, value] named_args)
+
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)

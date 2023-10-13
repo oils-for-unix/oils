@@ -197,9 +197,9 @@ class Exec(vm._Builtin):
         if argv0_path is None:
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
-        # shift off 'exec'
+        # shift off 'exec', and remove typed args because they don't apply
         c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
-                            cmd_val.typed_args)
+                            None, None, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
         # makes mypy and C++ compiler happy

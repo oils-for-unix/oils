@@ -847,6 +847,51 @@ class CommandEvaluator(object):
         else:
             raise NotImplementedError(Id_str(node.op.id))
 
+    def _EvalTypedArgs(self, node, cmd_val):
+        # type: (command.Simple, cmd_value.Argv) -> None
+        typed_vals = ArgList.CreateNull(alloc_lists=True)
+
+        if node.typed_args:
+            orig = node.typed_args
+
+            typed_vals.left = orig.left
+            typed_vals.named_delim = orig.named_delim
+            typed_vals.right = orig.right
+
+            if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
+                # TODO: defer evaluation by wrapping in value.Expr
+                #pos_args = [value.Expr(e) for e in pos_args]
+                typed_vals.pos_args.extend(orig.pos_args)
+
+            else:  # json write (x)
+                # TODO: Don't need this
+                typed_vals.pos_args.extend(orig.pos_args)
+
+                # TODO: save on allocations if no pos args
+                cmd_val.pos_args = []
+                for i, pos_arg in enumerate(node.typed_args.pos_args):
+                    val = self.expr_ev.EvalExpr(pos_arg, loc.Missing)
+                    cmd_val.pos_args.append(val)
+
+                # TODO: save on allocations if no named args
+                cmd_val.named_args = {} 
+                for named_arg in node.typed_args.named_args:
+                    val = self.expr_ev.EvalExpr(named_arg.value, named_arg.name)
+                    name = lexer.TokenVal(named_arg.name)
+                    cmd_val.named_args[name] = val
+
+            typed_vals.named_args.extend(orig.named_args)
+
+        elif node.block:  # Change location info
+            typed_vals.left = node.block.brace_group.left
+            typed_vals.right = node.block.brace_group.right
+
+        # Pass the unevaluated block.  TODO: value.Command()
+        if node.block:
+            typed_vals.pos_args.append(node.block)
+
+        cmd_val.typed_args = typed_vals
+
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
@@ -889,36 +934,7 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
-                typed_vals = ArgList.CreateNull(alloc_lists=True)
-
-                if node.typed_args:
-                    orig = node.typed_args
-
-                    typed_vals.left = orig.left
-                    typed_vals.named_delim = orig.named_delim
-                    typed_vals.right = orig.right
-
-                    if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
-                        # TODO: defer evaluation by wrapping in value.Expr
-                        #pos_args = [value.Expr(e) for e in pos_args]
-                        typed_vals.pos_args.extend(orig.pos_args)
-
-                    else:  # json write (x)
-                        # TODO: Evaluate args!
-                        typed_vals.pos_args.extend(orig.pos_args)
-
-                    typed_vals.named_args.extend(orig.named_args)
-
-                elif node.block:  # Change location info
-                    typed_vals.left = node.block.brace_group.left
-                    typed_vals.right = node.block.brace_group.right
-
-                # Pass the unevaluated block.  TODO: value.Command()
-                if node.block:
-                    typed_vals.pos_args.append(node.block)
-
-                cmd_val.typed_args = typed_vals
-
+                self._EvalTypedArgs(node, cmd_val)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",
