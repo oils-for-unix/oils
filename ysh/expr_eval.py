@@ -48,6 +48,7 @@ from _devbuild.gen.runtime_asdl import (
     value_e,
     value_t,
     IntBox,
+    FuncValue,
 )
 from core import code
 from core import error
@@ -69,15 +70,15 @@ import libc
 from typing import cast, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from core.state import Mem
-    from osh.word_eval import AbstractWordEvaluator
+    from osh import cmd_eval
+    from osh import word_eval
     from osh import split
 
 _ = log
 
 
 def LookupVar(mem, var_name, which_scopes, var_loc):
-    # type: (Mem, str, scope_t, loc_t) -> value_t
+    # type: (state.Mem, str, scope_t, loc_t) -> value_t
 
     # Lookup WITHOUT dynamic scope.
     val = mem.GetValue(var_name, which_scopes=which_scopes)
@@ -166,7 +167,7 @@ class ExprEvaluator(object):
 
     def __init__(
             self,
-            mem,  # type: Mem
+            mem,  # type: state.Mem
             mutable_opts,  # type: state.MutableOpts
             methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
@@ -174,7 +175,8 @@ class ExprEvaluator(object):
     ):
         # type: (...) -> None
         self.shell_ex = None  # type: vm._Executor
-        self.word_ev = None  # type: AbstractWordEvaluator
+        self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
+        self.word_ev = None  # type: word_eval.AbstractWordEvaluator
 
         self.mem = mem
         self.mutable_opts = mutable_opts
@@ -683,18 +685,22 @@ class ExprEvaluator(object):
         UP_func = func
 
         with tagswitch(func) as case:
-            if case(value_e.Func):
+            if case(value_e.UserFunc):
+                func = cast(FuncValue, UP_func)
+
+                pos_args, named_args = code._EvalArgList(self, node.args)
+                rd = typed_args.Reader(pos_args, named_args, node.args)
+                return code.CallUserFunc(func, rd, self.mem, self.cmd_ev)
+
+            elif case(value_e.Func):
                 func = cast(value.Func, UP_func)
                 # C++ cast to work around ASDL 'any'
                 f = cast(vm._Callable, func.callable)
                 pos_args, named_args = code._EvalArgList(self, node.args)
                 #log('pos_args %s', pos_args)
 
-                ret = f.Call(typed_args.Reader(pos_args, named_args,
-                                               node.args))
-
-                #log('ret %s', ret)
-                return ret
+                rd = typed_args.Reader(pos_args, named_args, node.args)
+                return f.Call(rd)
 
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)
@@ -707,13 +713,11 @@ class ExprEvaluator(object):
                                                          node.args,
                                                          me=func.me)
 
-                ret = f.Call(
-                    typed_args.Reader(pos_args,
-                                      named_args,
-                                      node.args,
-                                      is_bound=True))
-
-                return ret
+                rd = typed_args.Reader(pos_args,
+                                       named_args,
+                                       node.args,
+                                       is_bound=True)
+                return f.Call(rd)
 
             else:
                 raise error.TypeErr(func, 'Expected a function or method',

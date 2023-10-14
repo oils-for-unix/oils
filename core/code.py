@@ -6,9 +6,9 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue,
-                                        cmd_value)
-from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, loc, ArgList,
-                                       expr, expr_e)
+                                        cmd_value, FuncValue)
+from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Proc, Func,
+                                       loc, ArgList, expr, expr_e)
 
 from core import error
 from core.error import e_die
@@ -21,7 +21,7 @@ from mycpp.mylib import log
 from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
-    from _devbuild.gen.runtime_asdl import Proc
+    from _devbuild.gen.runtime_asdl import ProcValue
     from core import ui
     from osh import cmd_eval
     from ysh import expr_eval
@@ -30,7 +30,7 @@ _ = log
 
 
 def EvalProcDefaults(expr_ev, node):
-    # type: (expr_eval.ExprEvaluator, command.Proc) -> Optional[List[value_t]]
+    # type: (expr_eval.ExprEvaluator, Proc) -> Optional[List[value_t]]
     """Evaluated at time of proc DEFINITION, not time of call."""
 
     # TODO: remove the mutable default issue that Python has: f(x=[])
@@ -149,36 +149,27 @@ def EvalTypedArgsToProc(expr_ev, node, cmd_val):
 
 
 def _BindFuncArgs(func_name, node, rd, mem):
-    # type: (str, command.Func, typed_args.Reader, state.Mem) -> None
+    # type: (str, Func, typed_args.Reader, state.Mem) -> None
 
     # TODO:
     # - Handle default args.  Evaluate them here or elsewhere?
     # - pass named args
 
-    pos_args = rd.RestPos()
+    num_pos_params = len(node.pos_params)
+
+    pos_args = rd.pos_args
     num_args = len(pos_args)
-    num_params = len(node.pos_params)
 
     blame_loc = rd.LeftParenToken()
-
     if node.rest_of_pos:
-        if num_args < num_params:
+        if num_args < num_pos_params:
             raise error.TypeErrVerbose(
                 "%s() expects at least %d arguments, but got %d" %
-                (func_name, num_params, num_args), blame_loc)
-    elif num_args != num_params:
+                (func_name, num_pos_params, num_args), blame_loc)
+    elif num_args != num_pos_params:
         raise error.TypeErrVerbose(
             "%s() expects %d arguments, but got %d" %
-            (func_name, num_params, num_args), blame_loc)
-
-    named_args = rd.RestNamed()
-    rd.Done()
-    num_args = len(named_args)
-    num_params = len(node.named_params)
-    if num_args != num_params:
-        raise error.TypeErrVerbose(
-            "%s() expects %d named arguments, but got %d" %
-            (func_name, num_params, num_args), blame_loc)
+            (func_name, num_pos_params, num_args), blame_loc)
 
     num_args = len(node.pos_params)
     for i in xrange(0, num_args):
@@ -195,9 +186,19 @@ def _BindFuncArgs(func_name, node, rd, mem):
         rest_val = value.List(pos_args[num_args:])
         mem.SetValue(lval, rest_val, scope_e.LocalOnly)
 
+    num_params = len(node.named_params)
+    named_args = rd.named_args
+    num_args = len(named_args)
+
+    if num_args != num_params:
+        raise error.TypeErrVerbose(
+            "%s() expects %d named arguments, but got %d" %
+            (func_name, num_params, num_args), blame_loc)
+
+
 
 def BindProcArgs(proc, cmd_val, mem, errfmt):
-    # type: (Proc, cmd_value.Argv, state.Mem, ui.ErrorFormatter) -> int
+    # type: (ProcValue, cmd_value.Argv, state.Mem, ui.ErrorFormatter) -> int
 
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
@@ -280,30 +281,20 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
     return 0
 
 
-class UserFunc(vm._Callable):
-    """A user-defined function."""
+def CallUserFunc(func, rd, mem, cmd_ev):
+    # type: (FuncValue, typed_args.Reader, state.Mem, cmd_eval.CommandEvaluator) -> value_t
 
-    def __init__(self, name, node, mem, cmd_ev):
-        # type: (str, command.Func, state.Mem, cmd_eval.CommandEvaluator) -> None
-        self.name = name
-        self.node = node
-        self.cmd_ev = cmd_ev
-        self.mem = mem
+    # Push a new stack frame
+    with state.ctx_FuncCall(mem, func):
+        _BindFuncArgs(func.name, func.parsed, rd, mem)
 
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        # Push a new stack frame
-        with state.ctx_FuncCall(self.cmd_ev.mem, self):
+        try:
+            cmd_ev._Execute(func.parsed.body)
 
-            _BindFuncArgs(self.name, self.node, rd, self.mem)
+            return value.Null  # implicit return
+        except vm.ValueControlFlow as e:
+            return e.value
+        except vm.IntControlFlow as e:
+            raise AssertionError('IntControlFlow in func')
 
-            try:
-                self.cmd_ev._Execute(self.node.body)
-
-                return value.Null  # implicit return
-            except vm.ValueControlFlow as e:
-                return e.value
-            except vm.IntControlFlow as e:
-                raise AssertionError('IntControlFlow in func')
-
-        raise AssertionError('unreachable')
+    raise AssertionError('unreachable')

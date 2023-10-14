@@ -28,7 +28,7 @@ _ = log
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import Proc
+    from _devbuild.gen.runtime_asdl import ProcValue
     from frontend import args
     from frontend.parse_lib import ParseContext
     from core import optview
@@ -176,7 +176,7 @@ class Command(vm._Builtin):
     """'command ls' suppresses function lookup."""
 
     def __init__(self, shell_ex, funcs, aliases, search_path):
-        # type: (vm._Executor, Dict[str, Proc], Dict[str, str], state.SearchPath) -> None
+        # type: (vm._Executor, Dict[str, ProcValue], Dict[str, str], state.SearchPath) -> None
         self.shell_ex = shell_ex
         self.funcs = funcs
         self.aliases = aliases
@@ -262,7 +262,7 @@ class Builtin(vm._Builtin):
 class RunProc(vm._Builtin):
 
     def __init__(self, shell_ex, procs, errfmt):
-        # type: (vm._Executor, Dict[str, Proc], ui.ErrorFormatter) -> None
+        # type: (vm._Executor, Dict[str, ProcValue], ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
         self.procs = procs
         self.errfmt = errfmt
@@ -432,7 +432,7 @@ class BoolStatus(vm._Builtin):
 
 
 def _ResolveNames(names, funcs, aliases, search_path):
-    # type: (List[str], Dict[str, Proc], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
+    # type: (List[str], Dict[str, ProcValue], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
     results = []  # type: List[Tuple[str, str]]
     for name in names:
         if name in funcs:
@@ -467,7 +467,7 @@ def _ResolveNames(names, funcs, aliases, search_path):
 class Type(vm._Builtin):
 
     def __init__(self, funcs, aliases, search_path, errfmt):
-        # type: (Dict[str, Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+        # type: (Dict[str, ProcValue], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
         self.funcs = funcs
         self.aliases = aliases
         self.search_path = search_path
@@ -479,7 +479,7 @@ class Type(vm._Builtin):
         arg = arg_types.type(attrs.attrs)
 
         if arg.f:
-            funcs = {}  # type: Dict[str, Proc]
+            funcs = {}  # type: Dict[str, ProcValue]
         else:
             funcs = self.funcs
 

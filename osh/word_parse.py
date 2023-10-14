@@ -79,8 +79,9 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_t,
     command,
     expr_t,
-    ArgList,
     pat_t,
+    ArgList,
+    Proc,
 )
 from core import alloc
 from core.error import p_die
@@ -1172,7 +1173,7 @@ class WordParser(WordEmitter):
         return enode
 
     def ParseProc(self, node):
-        # type: (command.Proc) -> None
+        # type: (Proc) -> None
 
         # proc name-with-hyphens() must be accepted
         self._SetNext(lex_mode_e.ShCommand)

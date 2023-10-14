@@ -313,6 +313,15 @@ module syntax
       List[Redir] redirects, Token right
   )
 
+  Proc = (Token keyword, Token name, proc_sig sig, command body)
+
+  Func = (
+      Token keyword, Token name,
+      List[Param] pos_params, RestParam? rest_of_pos,
+      List[Param] named_params, RestParam? rest_of_named,
+      command body
+  )
+
   # Retain references to lines
   LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
 
@@ -382,11 +391,8 @@ module syntax
   | PlaceMutation(Token keyword, List[place_expr] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
-  | Proc(Token keyword, Token name, proc_sig sig, command body)
-  | Func(Token keyword, Token name,
-         List[Param] pos_params, RestParam? rest_of_pos,
-         List[Param] named_params, RestParam? rest_of_named,
-         command body)
+  | Proc %Proc
+  | Func %Func
 
   # Tea
 

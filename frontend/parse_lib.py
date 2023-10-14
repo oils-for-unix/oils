@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t, Redir,
-                                       ArgList, command, pat_t)
+                                       ArgList, Proc, Func, command, pat_t)
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
@@ -378,7 +378,7 @@ class ParseContext(object):
         return pattern, left_tok, last_token
 
     def ParseProc(self, lexer, out):
-        # type: (Lexer, command.Proc) -> Token
+        # type: (Lexer, Proc) -> Token
         """proc f(x, y, @args) {"""
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
@@ -392,7 +392,7 @@ class ParseContext(object):
         return last_token
 
     def ParseFunc(self, lexer, out):
-        # type: (Lexer, command.Func) -> None
+        # type: (Lexer, Func) -> None
         """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):

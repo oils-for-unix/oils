@@ -9,6 +9,8 @@ module runtime
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
     LiteralBlock
+    Proc
+    Func
   }
 
   IntBox = (int i)
@@ -27,6 +29,17 @@ module runtime
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
+
+  # What command.ShFunction and command.Proc evaluate to
+  # For ShFunction, this is trivial.  For Proc, we evaluate default args.
+  # We store name_loc separately because ShFunction has a word as a name, but
+  # a Proc has a Token.
+  ProcValue = (
+    str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
+    bool dynamic_scope
+  )
+
+  FuncValue = (str name, Func parsed, List[value] defaults)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -89,12 +102,16 @@ module runtime
 
     # callable is vm._Callable.  TODO: ASDL should be able to express and
     # "inline" such types?  Maybe we need a forward declaration of it.
-    #
-    # VM.funcs() and VM.procs() could return dictionaries.
+
+    # Also consider
+  # | UserFunc %FuncValue, which is like ProcValue above
+     
   | Func(any callable)
   | BoundFunc(value me, any callable)
-    # Reflect on Proc, e.g. find location info for its file!
-  | Proc(any p)
+
+    # User-defined values.  We can reflect onthese too
+  | UserProc %ProcValue
+  | UserFunc %FuncValue
 
   #
   # Internal details
@@ -162,15 +179,6 @@ module runtime
 
   # Evaluated version of syntax.Redir
   RedirValue = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
-
-  # What command.ShFunction and command.Proc evaluate to
-  # For ShFunction, this is trivial.  For Proc, we evaluate default args.
-  # We store name_loc separately because ShFunction has a word as a name, but
-  # a Proc has a Token.
-  Proc = (
-    str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
-    bool dynamic_scope
-  )
 
   # An exit status with location info.  For process sub.
   StatusArray = (

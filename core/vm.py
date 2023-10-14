@@ -133,6 +133,7 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
 
     if expr_ev:  # for pure OSH
         expr_ev.shell_ex = shell_ex
+        expr_ev.cmd_ev = cmd_ev
         expr_ev.word_ev = word_ev
 
     word_ev.arith_ev = arith_ev

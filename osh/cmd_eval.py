@@ -37,6 +37,8 @@ from _devbuild.gen.syntax_asdl import (
     case_arg_e,
     case_arg_t,
     BraceGroup,
+    Proc,
+    Func,
     assign_op_e,
     expr_t,
     proc_sig,
@@ -63,7 +65,8 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
     CommandStatus,
     StatusArray,
-    Proc,
+    ProcValue,
+    FuncValue,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -279,7 +282,7 @@ class CommandEvaluator(object):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
-            procs,  # type: Dict[str, Proc]
+            procs,  # type: Dict[str, ProcValue]
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -1383,11 +1386,11 @@ class CommandEvaluator(object):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
-        self.procs[node.name] = Proc(node.name, node.name_tok, proc_sig.Open,
-                                     node.body, [], True)
+        self.procs[node.name] = ProcValue(node.name, node.name_tok,
+                                          proc_sig.Open, node.body, [], True)
 
     def _DoProc(self, node):
-        # type: (command.Proc) -> None
+        # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
         if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
             e_die(
@@ -1396,17 +1399,18 @@ class CommandEvaluator(object):
 
         defaults = code.EvalProcDefaults(self.expr_ev, node)
 
-        self.procs[proc_name] = Proc(proc_name, node.name, node.sig, node.body,
-                                     defaults, False)  # no dynamic scope
+        # no dynamic scope
+        self.procs[proc_name] = ProcValue(proc_name, node.name, node.sig,
+                                          node.body, defaults, False)
 
     def _DoFunc(self, node):
-        # type: (command.Func) -> None
+        # type: (Func) -> None
         name = lexer.TokenVal(node.name)
         lval = location.LName(name)
 
         # Check that we haven't already defined a function
         cell = self.mem.GetCell(name, scope_e.LocalOnly)
-        if cell and cell.val.tag() == value_e.Func:
+        if cell and cell.val.tag() == value_e.UserFunc:
             if self.exec_opts.redefine_proc_func():
                 cell.readonly = False  # Ensure we can unset the value
                 did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
@@ -1416,8 +1420,9 @@ class CommandEvaluator(object):
                     "Func %s was already defined (redefine_proc_func)" % name,
                     node.name)
 
-        val = value.Func(code.UserFunc(name, node, self.mem, self))
-        self.mem.SetValue(lval, val, scope_e.LocalOnly,
+        # TODO: evaluate defaults
+        func_val = FuncValue(name, node, None)
+        self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
 
     def _DoIf(self, node):
@@ -1648,12 +1653,12 @@ class CommandEvaluator(object):
                 status = 0
 
             elif case(command_e.Proc):
-                node = cast(command.Proc, UP_node)
+                node = cast(Proc, UP_node)
                 self._DoProc(node)
                 status = 0
 
             elif case(command_e.Func):
-                node = cast(command.Func, UP_node)
+                node = cast(Func, UP_node)
 
                 # Needed for error, when the func is an existing variable name
                 self.mem.SetTokenForLine(node.name)
@@ -2077,7 +2082,7 @@ class CommandEvaluator(object):
                     self._Execute(node)
 
     def RunProc(self, proc, cmd_val):
-        # type: (Proc, cmd_value.Argv) -> int
+        # type: (ProcValue, cmd_value.Argv) -> int
         """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
@@ -2115,7 +2120,7 @@ class CommandEvaluator(object):
         return status
 
     def RunFuncForCompletion(self, proc, argv):
-        # type: (Proc, List[str]) -> int
+        # type: (ProcValue, List[str]) -> int
         """
         Args:
           argv: $1 $2 $3 ... not including $0

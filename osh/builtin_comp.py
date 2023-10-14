@@ -25,7 +25,7 @@ _ = log
 
 from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value, Proc
+    from _devbuild.gen.runtime_asdl import cmd_value, ProcValue
     from core.completion import Lookup, OptionState, Api, UserSpec
     from core.ui import ErrorFormatter
     from frontend.args import _Attributes
@@ -60,7 +60,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
     """
 
     def __init__(self, d):
-        # type: (Dict[str, Proc]) -> None
+        # type: (Dict[str, ProcValue]) -> None
         self.d = d
 
     def Matches(self, comp):

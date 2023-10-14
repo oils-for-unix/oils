@@ -44,6 +44,7 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_t,
     TypeExpr,
+    Func,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -1192,7 +1193,7 @@ class Transformer(object):
         return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
     def YshFunc(self, p_node, out):
-        # type: (PNode, command.Func) -> None
+        # type: (PNode, Func) -> None
         """Parse tree to LST
 
         ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'

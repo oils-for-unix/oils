@@ -38,7 +38,7 @@ import time as time_
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
                                        redir_param_e, Token)
-from _devbuild.gen.runtime_asdl import (value, value_e, scope_e, Proc,
+from _devbuild.gen.runtime_asdl import (value, value_e, scope_e, ProcValue,
                                         comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from core import error
@@ -540,7 +540,7 @@ class ShellFuncAction(CompletionAction):
     """Call a user-defined function using bash's completion protocol."""
 
     def __init__(self, cmd_ev, func, comp_lookup):
-        # type: (CommandEvaluator, Proc, Lookup) -> None
+        # type: (CommandEvaluator, ProcValue, Lookup) -> None
         """
         Args:
           comp_lookup: For the 124 protocol: test if the user-defined function

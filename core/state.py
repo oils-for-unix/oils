@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
                                         lvalue_e, lvalue_t, scope_e, scope_t,
-                                        HayNode, Cell)
+                                        HayNode, Cell, FuncValue)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
@@ -41,7 +41,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
-    from _devbuild.gen.runtime_asdl import Proc
+    from _devbuild.gen.runtime_asdl import ProcValue
     from core import alloc
     from core import code
     from osh import sh_expr_eval
@@ -1135,8 +1135,8 @@ class ctx_FuncCall(object):
     """For func calls."""
 
     def __init__(self, mem, func):
-        # type: (Mem, code.UserFunc) -> None
-        mem.PushCall(func.name, func.node.name, None)
+        # type: (Mem, FuncValue) -> None
+        mem.PushCall(func.name, func.parsed.name, None)
         self.mem = mem
 
     def __enter__(self):
@@ -1152,7 +1152,7 @@ class ctx_ProcCall(object):
     """For proc calls."""
 
     def __init__(self, mem, mutable_opts, proc, argv):
-        # type: (Mem, MutableOpts, Proc, List[str]) -> None
+        # type: (Mem, MutableOpts, ProcValue, List[str]) -> None
         mem.PushCall(proc.name, proc.name_tok, argv)
         mutable_opts.PushDynamicScope(proc.dynamic_scope)
         # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but

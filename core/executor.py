@@ -30,7 +30,7 @@ import posix_ as posix
 from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
-                                            StatusArray, Proc)
+                                            StatusArray, ProcValue)
     from _devbuild.gen.syntax_asdl import command_t
     from core import optview
     from core import state
@@ -94,7 +94,7 @@ class ShellExecutor(vm._Executor):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
-            procs,  # type: Dict[str, Proc]
+            procs,  # type: Dict[str, ProcValue]
             hay_state,  # type: state.Hay
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath

@@ -52,6 +52,8 @@ from _devbuild.gen.syntax_asdl import (
     NameType,
     proc_sig,
     proc_sig_e,
+    Proc,
+    Func,
 )
 from core import alloc
 from core import error
@@ -2043,8 +2045,8 @@ class CommandParser(object):
         return func
 
     def ParseYshProc(self):
-        # type: () -> command.Proc
-        node = command.Proc.CreateNull(alloc_lists=True)
+        # type: () -> Proc
+        node = Proc.CreateNull(alloc_lists=True)
 
         keyword_tok = word_.AsKeywordToken(self.cur_word)
         node.keyword = keyword_tok
@@ -2074,13 +2076,13 @@ class CommandParser(object):
         return node
 
     def ParseYshFunc(self):
-        # type: () -> command.Func
+        # type: () -> Func
         """
         ysh_func: KW_Func Expr_Name '(' [func_params] [';' func_params] ')' brace_group
 
         Looking at KW_Func
         """
-        node = command.Func.CreateNull(alloc_lists=True)
+        node = Func.CreateNull(alloc_lists=True)
 
         keyword_tok = word_.AsKeywordToken(self.cur_word)
         node.keyword = keyword_tok
