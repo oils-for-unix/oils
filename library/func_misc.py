@@ -29,12 +29,12 @@ class Append(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        items = args.PosList()
-        to_append = args.PosValue()
-        args.Done()
+        items = rd.PosList()
+        to_append = rd.PosValue()
+        rd.Done()
 
         items.append(to_append)
 
@@ -48,12 +48,12 @@ class Extend(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        a = args.PosList()
-        b = args.PosList()
-        args.Done()
+        a = rd.PosList()
+        b = rd.PosList()
+        rd.Done()
 
         a.extend(b)
         return value.Null
@@ -65,11 +65,11 @@ class Pop(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        items = args.PosList()
-        args.Done()
+        items = rd.PosList()
+        rd.Done()
 
         return items.pop()
 
@@ -80,12 +80,12 @@ class StartsWith(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        string = args.PosStr()
-        match = args.PosStr()
-        args.Done()
+        string = rd.PosStr()
+        match = rd.PosStr()
+        rd.Done()
 
         res = string.startswith(match)
         return value.Bool(res)
@@ -97,11 +97,11 @@ class Strip(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        string = args.PosStr()
-        args.Done()
+        string = rd.PosStr()
+        rd.Done()
 
         res = string.strip()
         return value.Str(res)
@@ -113,11 +113,11 @@ class Upper(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        string = args.PosStr()
-        args.Done()
+        string = rd.PosStr()
+        rd.Done()
 
         res = string.upper()
         return value.Str(res)
@@ -129,11 +129,11 @@ class Keys(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        dictionary = args.PosDict()
-        args.Done()
+        dictionary = rd.PosDict()
+        rd.Done()
 
         keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
         return value.List(keys)
@@ -145,11 +145,11 @@ class Len(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        x = args.PosValue()
-        args.Done()
+        x = rd.PosValue()
+        rd.Done()
 
         UP_x = x
         with tagswitch(x) as case:
@@ -166,7 +166,7 @@ class Len(vm._Callable):
                 return value.Int(len(x.s))
 
         raise error.TypeErr(x, 'len() expected Str, List, or Dict',
-                            args.BlamePos())
+                            rd.BlamePos())
 
 
 class Reverse(vm._Callable):
@@ -175,11 +175,11 @@ class Reverse(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        li = args.PosList()
-        args.Done()
+        li = rd.PosList()
+        rd.Done()
 
         li.reverse()
 
@@ -192,16 +192,16 @@ class Join(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        li = args.PosList()
-        delim = args.OptionalStr(default_='')
-        args.Done()
+        li = rd.PosList()
+        delim = rd.OptionalStr(default_='')
+        rd.Done()
 
         strs = []  # type: List[str]
         for i, el in enumerate(li):
-            strs.append(val_ops.Stringify(el, args.LeftParenToken()))
+            strs.append(val_ops.Stringify(el, rd.LeftParenToken()))
 
         return value.Str(delim.join(strs))
 
@@ -212,18 +212,18 @@ class Maybe(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         if val == value.Null:
             return value.List([])
 
         s = val_ops.ToStr(
             val, 'maybe() expected Str, but got %s' % value_str(val.tag()),
-            args.LeftParenToken())
+            rd.LeftParenToken())
         if len(s):
             return value.List([val])  # use val to avoid needlessly copy
 
@@ -236,11 +236,11 @@ class Type(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         return value.Str(ui.ValType(val))
 
@@ -251,11 +251,11 @@ class Bool(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         return value.Bool(val_ops.ToBool(val))
 
@@ -266,11 +266,11 @@ class Int(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         UP_val = val
         with tagswitch(val) as case:
@@ -289,12 +289,12 @@ class Int(vm._Callable):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeInteger(val.s):
                     raise error.Expr('Cannot convert %s to Int' % val.s,
-                                     args.BlamePos())
+                                     rd.BlamePos())
 
                 return value.Int(int(val.s))
 
         raise error.TypeErr(val, 'Int() expected Bool, Int, Float, or Str',
-                            args.BlamePos())
+                            rd.BlamePos())
 
 
 class Float(vm._Callable):
@@ -303,11 +303,11 @@ class Float(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         UP_val = val
         with tagswitch(val) as case:
@@ -322,12 +322,12 @@ class Float(vm._Callable):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeFloat(val.s):
                     raise error.Expr('Cannot convert %s to Float' % val.s,
-                                     args.BlamePos())
+                                     rd.BlamePos())
 
                 return value.Float(float(val.s))
 
         raise error.TypeErr(val, 'Float() expected Int, Float, or Str',
-                            args.BlamePos())
+                            rd.BlamePos())
 
 
 class Str_(vm._Callable):
@@ -336,11 +336,11 @@ class Str_(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         # TODO: Should we call Stringify here?  That would handle Eggex.
 
@@ -358,7 +358,7 @@ class Str_(vm._Callable):
                 return val
 
         raise error.TypeErr(val, 'Str() expected Str, Int, or Float',
-                            args.BlamePos())
+                            rd.BlamePos())
 
 
 class List_(vm._Callable):
@@ -367,11 +367,11 @@ class List_(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         l = []  # type: List[value_t]
         it = None  # type: val_ops._ContainerIter
@@ -392,7 +392,7 @@ class List_(vm._Callable):
             else:
                 raise error.TypeErr(val,
                                     'List() expected Dict, List, or Range',
-                                    args.BlamePos())
+                                    rd.BlamePos())
 
         assert it is not None
         while not it.Done():
@@ -408,11 +408,11 @@ class Dict_(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
 
         UP_val = val
         with tagswitch(val) as case:
@@ -432,8 +432,7 @@ class Dict_(vm._Callable):
 
                 return value.Dict(d)
 
-        raise error.TypeErr(val, 'Dict() expected List or Dict',
-                            args.BlamePos())
+        raise error.TypeErr(val, 'Dict() expected List or Dict', rd.BlamePos())
 
 
 class Split(vm._Callable):
@@ -443,13 +442,13 @@ class Split(vm._Callable):
         vm._Callable.__init__(self)
         self.splitter = splitter
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        s = args.PosStr()
+        s = rd.PosStr()
 
-        ifs = args.OptionalStr()
+        ifs = rd.OptionalStr()
 
-        args.Done()
+        rd.Done()
 
         l = [
             value.Str(elem)
@@ -465,10 +464,10 @@ class Glob(vm._Callable):
         vm._Callable.__init__(self)
         self.globber = globber
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        s = args.PosStr()
-        args.Done()
+        s = rd.PosStr()
+        rd.Done()
 
         out = []  # type: List[str]
         self.globber._Glob(s, out)
@@ -485,12 +484,12 @@ class Shvar_get(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        name = args.PosStr()
-        args.Done()
+        name = rd.PosStr()
+        rd.Done()
         return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
-                                   args.LeftParenToken())
+                                   rd.LeftParenToken())
 
 
 class Assert(vm._Callable):
@@ -499,17 +498,17 @@ class Assert(vm._Callable):
         # type: () -> None
         pass
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        val = args.PosValue()
+        val = rd.PosValue()
 
-        msg = args.OptionalStr(default_='')
+        msg = rd.OptionalStr(default_='')
 
-        args.Done()
+        rd.Done()
 
         if not val_ops.ToBool(val):
-            raise error.AssertionErr(msg, args.LeftParenToken())
+            raise error.AssertionErr(msg, rd.LeftParenToken())
 
         return value.Null
 
@@ -520,11 +519,11 @@ class EvalExpr(vm._Callable):
         # type: (expr_eval.ExprEvaluator) -> None
         self.expr_ev = expr_ev
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        lazy = args.PosExpr()
-        args.Done()
+        lazy = rd.PosExpr()
+        rd.Done()
 
-        result = self.expr_ev.EvalExpr(lazy, args.LeftParenToken())
+        result = self.expr_ev.EvalExpr(lazy, rd.LeftParenToken())
 
         return result

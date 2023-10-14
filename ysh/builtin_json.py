@@ -67,9 +67,9 @@ class Json(vm._Builtin):
             if not arg_r.AtEnd():
                 e_usage('write got too many args', arg_r.Location())
 
-            r = typed_args.ReaderForProc(cmd_val)
-            val = r.PosValue()
-            r.Done()
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
 
             if arg_jw.pretty:
                 indent = arg_jw.indent
@@ -122,12 +122,14 @@ class Json(vm._Builtin):
                 try:
                     obj = yajl.loads(contents)
                 except ValueError as e:
-                    self.errfmt.Print_('json read: %s' % e, blame_loc=action_loc)
+                    self.errfmt.Print_('json read: %s' % e,
+                                       blame_loc=action_loc)
                     return 1
 
                 # TODO: use token directly
                 val = cpython._PyObjToValue(obj)
-                self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
+                self.mem.SetValue(location.LName(var_name), val,
+                                  scope_e.LocalOnly)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

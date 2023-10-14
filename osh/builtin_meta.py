@@ -52,9 +52,9 @@ class Eval(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         if cmd_val.typed_args:  # eval (myblock)
-            r = typed_args.ReaderForProc(cmd_val)
-            block = r.PosCommand()
-            r.Done()
+            rd = typed_args.ReaderForProc(cmd_val)
+            block = rd.PosCommand()
+            rd.Done()
             return self.cmd_ev.EvalBlock(block)
 
         # There are no flags, but we need it to respect --
@@ -195,8 +195,7 @@ class Command(vm._Builtin):
 
         if arg.v:
             status = 0
-            for kind, argument in _ResolveNames(argv, self.funcs,
-                                                self.aliases,
+            for kind, argument in _ResolveNames(argv, self.funcs, self.aliases,
                                                 self.search_path):
                 if kind is None:
                     status = 1  # nothing printed, but we fail
@@ -386,10 +385,10 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        r = typed_args.ReaderForProc(cmd_val)
-        message = r.PosStr()
-        status = r.NamedInt('status', 1)
-        r.Done()
+        rd = typed_args.ReaderForProc(cmd_val)
+        message = rd.PosStr()
+        status = rd.NamedInt('status', 1)
+        rd.Done()
 
         if status == 0:
             e_die('Status must be a non-zero integer', cmd_val.arg_locs[0])

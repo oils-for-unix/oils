@@ -198,13 +198,38 @@ class Reader(object):
         if val.tag() == value_e.Float:
             return cast(value.Float, val).f
 
-        raise error.TypeErr(val, 'Arg %d should be a Float' % self.pos_consumed,
+        raise error.TypeErr(val,
+                            'Arg %d should be a Float' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToList(self, val):
+        # type: (value_t) -> List[value_t]
+        if val.tag() == value_e.List:
+            return cast(value.List, val).items
+
+        raise error.TypeErr(val, 'Arg %d should be a List' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToDict(self, val):
+        # type: (value_t) -> Dict[str, value_t]
+        if val.tag() == value_e.Dict:
+            return cast(value.Dict, val).d
+
+        raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToExpr(self, val):
+        # type: (value_t) -> expr_t
+        if val.tag() == value_e.Expr:
+            return cast(value.Expr, val).e
+
+        raise error.TypeErr(val, 'Arg %d should be a Expr' % self.pos_consumed,
                             self.BlamePos())
 
     def _ToCommand(self, val):
         # type: (value_t) -> command_t
         if val.tag() == value_e.Command:
-            return cast(value.Command, val).body
+            return cast(value.Command, val).c
 
         # Special case for hay
         # Foo { x = 1 }
@@ -220,9 +245,9 @@ class Reader(object):
         if val.tag() == value_e.Block:
             return cast(value.Block, val).block
 
-        raise error.TypeErr(val,
-                            'Arg %d should be a LiteralBlock' % self.pos_consumed,
-                            self.BlamePos())
+        raise error.TypeErr(
+            val, 'Arg %d should be a LiteralBlock' % self.pos_consumed,
+            self.BlamePos())
 
     def PosStr(self):
         # type: () -> str
@@ -260,36 +285,18 @@ class Reader(object):
 
     def PosList(self):
         # type: () -> List[value_t]
-        arg = self.PosValue()
-        UP_arg = arg
-        if arg.tag() == value_e.List:
-            arg = cast(value.List, UP_arg)
-            return arg.items
-
-        raise error.TypeErr(arg, 'Arg %d should be a List' % self.pos_consumed,
-                            self.BlamePos())
+        val = self.PosValue()
+        return self._ToList(val)
 
     def PosDict(self):
         # type: () -> Dict[str, value_t]
-        arg = self.PosValue()
-        UP_arg = arg
-        if arg.tag() == value_e.Dict:
-            arg = cast(value.Dict, UP_arg)
-            return arg.d
-
-        raise error.TypeErr(arg, 'Arg %d should be a Dict' % self.pos_consumed,
-                            self.BlamePos())
+        val = self.PosValue()
+        return self._ToDict(val)
 
     def PosExpr(self):
         # type: () -> expr_t
-        arg = self.PosValue()
-        UP_arg = arg
-        if arg.tag() == value_e.Expr:
-            arg = cast(value.Expr, UP_arg)
-            return arg.e
-
-        raise error.TypeErr(arg, 'Arg %d should be a Expr' % self.pos_consumed,
-                            self.BlamePos())
+        val = self.PosValue()
+        return self._ToExpr(val)
 
     def PosCommand(self):
         # type: () -> command_t

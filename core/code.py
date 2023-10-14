@@ -4,7 +4,8 @@ code.py: User-defined funcs and procs
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue, cmd_value)
+from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue,
+                                        cmd_value)
 from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e, loc
 
 from core import error
@@ -34,9 +35,9 @@ class UserFunc(vm._Callable):
         self.cmd_ev = cmd_ev
         self.mem = mem
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        pos_args = args.RestPos()
+        pos_args = rd.RestPos()
         num_args = len(pos_args)
         num_params = len(self.node.pos_params)
 
@@ -55,8 +56,8 @@ class UserFunc(vm._Callable):
                 "%s() expects %d arguments but %d were given" %
                 (self.name, num_params, num_args), blame_loc)
 
-        named_args = args.RestNamed()
-        args.Done()
+        named_args = rd.RestNamed()
+        rd.Done()
         num_args = len(named_args)
         num_params = len(self.node.named_params)
         if num_args != num_params:
@@ -130,8 +131,9 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
                 if not arg_str.startswith(':'):
                     # TODO: Point to the exact argument.  We got argv but not
                     # locations.
-                    e_die('Ref param %r expected arg starting with colon : but got %r' %
-                          (p.name, arg_str))
+                    e_die(
+                        'Ref param %r expected arg starting with colon : but got %r'
+                        % (p.name, arg_str))
 
                 arg_str = arg_str[1:]
 
@@ -160,7 +162,8 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
         r = sig.rest_of_words
         lval = lvalue.Named(r.name, r.blame_tok)
 
-        items = [value.Str(s) for s in argv[num_params:]]  # type: List[value_t]
+        items = [value.Str(s)
+                 for s in argv[num_params:]]  # type: List[value_t]
         rest_val = value.List(items)
         mem.SetValue(lval, rest_val, scope_e.LocalOnly)
     else:

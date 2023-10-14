@@ -79,7 +79,7 @@ module runtime
     # ^"$1 and $2"
   | Template(DoubleQuoted dq)
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
-  | Command(command body)
+  | Command(command c)
 
     # for Hay to get the backing lines
     # TODO: ASDL doesn't support shared variant across module

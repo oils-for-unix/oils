@@ -19,5 +19,4 @@ def SetGlobalFunc(mem, name, func):
 
     # TODO: Fix this location info
     #left = lexer.DummyToken(Id.Undefined_Tok, '')
-    mem.SetValue(location.LName(name), value.Func(func),
-                 scope_e.GlobalOnly)
+    mem.SetValue(location.LName(name), value.Func(func), scope_e.GlobalOnly)

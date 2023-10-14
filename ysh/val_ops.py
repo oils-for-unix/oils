@@ -74,7 +74,7 @@ def ToCommand(val, msg, blame_loc):
     UP_val = val
     if val.tag() == value_e.Command:
         val = cast(value.Command, UP_val)
-        return val.body
+        return val.c
 
     raise error.TypeErr(val, msg, blame_loc)
 
