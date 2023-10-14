@@ -905,6 +905,10 @@ class CommandEvaluator(object):
             if not cmd_val.typed_args:
                 cmd_val.typed_args = ArgList.CreateNull()
 
+                # Also add locations for error message: ls { echo invalid }
+                cmd_val.typed_args.left = node.block.brace_group.left
+                cmd_val.typed_args.right = node.block.brace_group.right
+
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
