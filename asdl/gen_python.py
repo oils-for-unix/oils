@@ -359,7 +359,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('  def CreateNull(alloc_lists=False):')
             self.Emit('    # type: () -> %s%s' % (class_ns, class_name))
             self.Emit('    return %s%s(%s)' %
-                      (class_ns, class_name, ', '.join(default_vals)))
+                      (class_ns, class_name, ', '.join(default_vals)),
+                      reflow=False)
             self.Emit('')
 
         if not self.pretty_print_methods:

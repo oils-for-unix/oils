@@ -313,6 +313,17 @@ module syntax
       List[Redir] redirects, Token right
   )
 
+  Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
+  RestParam = (Token blame_tok, str name)
+
+  # 'open' is for proc p { }; closed is for proc p () { }
+  proc_sig =
+    Open
+  | Closed(List[Param] word_params, RestParam? rest_of_words,
+           List[Param] pos_params, RestParam? rest_of_pos,
+           List[Param] named_params, RestParam? rest_of_named,
+           RestParam? block_param)
+
   Proc = (Token keyword, Token name, proc_sig sig, command body)
 
   Func = (
@@ -423,17 +434,6 @@ module syntax
   | Method()
 
   ImportName = (Token name, Token? alias)
-
-  Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
-  RestParam = (Token blame_tok, str name)
-
-  # 'open' is for proc p { }; closed is for proc p () { }
-  proc_sig =
-    Open
-  | Closed(List[Param] word_params, RestParam? rest_of_words,
-           List[Param] pos_params, RestParam? rest_of_pos,
-           List[Param] named_params, RestParam? rest_of_named,
-           RestParam? block_param)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.

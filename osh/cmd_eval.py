@@ -65,6 +65,7 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
     CommandStatus,
     StatusArray,
+    ProcDefaults,
     ProcValue,
     FuncValue,
 )
@@ -1387,7 +1388,8 @@ class CommandEvaluator(object):
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
         self.procs[node.name] = ProcValue(node.name, node.name_tok,
-                                          proc_sig.Open, node.body, [], True)
+                                          proc_sig.Open, node.body, None,
+                                          True)
 
     def _DoProc(self, node):
         # type: (Proc) -> None
@@ -1397,11 +1399,12 @@ class CommandEvaluator(object):
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
 
-        defaults = code.EvalProcDefaults(self.expr_ev, node)
+        word_defaults = code.EvalProcDefaults(self.expr_ev, node)
+        proc_defaults = ProcDefaults(word_defaults, None, None, None)
 
         # no dynamic scope
         self.procs[proc_name] = ProcValue(proc_name, node.name, node.sig,
-                                          node.body, defaults, False)
+                                          node.body, proc_defaults, False)
 
     def _DoFunc(self, node):
         # type: (Func) -> None
@@ -1421,7 +1424,7 @@ class CommandEvaluator(object):
                     node.name)
 
         # TODO: evaluate defaults
-        func_val = FuncValue(name, node, None)
+        func_val = FuncValue(name, node, [], {})
         self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
 

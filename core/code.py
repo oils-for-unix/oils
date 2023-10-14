@@ -240,7 +240,7 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
         else:
             # default args were evaluated on definition
 
-            val = proc.defaults[i]
+            val = proc.defaults.for_word[i]
             if val is None:
                 e_die("No value provided for param %r" % p.name, p.blame_tok)
 

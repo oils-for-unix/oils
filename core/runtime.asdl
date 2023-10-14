@@ -28,14 +28,23 @@ module runtime
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
 
+  ProcDefaults = (
+    List[value] for_word,  # TODO: should be List[str]
+    List[value] for_typed, Dict[str, value] for_named,
+    value? for_block,
+  )
+
   # command.ShFunction and command.Proc evaluate to ProcValue.
   # Procs have default args to evaluate, and no dynamic scope.
   ProcValue = (
-    str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
-    bool dynamic_scope
+    str name, Token name_tok, proc_sig sig, command body,
+    ProcDefaults? defaults, bool dynamic_scope
   )
 
-  FuncValue = (str name, Func parsed, List[value] defaults)
+  FuncValue = (
+    str name, Func parsed,
+    List[value] defaults, Dict[str, value] named_defaults,
+  )
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
