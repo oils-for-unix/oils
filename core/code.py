@@ -4,25 +4,104 @@ code.py: User-defined funcs and procs
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue,
                                         cmd_value)
-from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e, loc
+from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e, loc, ArgList
 
 from core import error
 from core.error import e_die
 from core import state
 from core import vm
+from frontend import lexer
 from frontend import typed_args
 from mycpp.mylib import log
 
-from typing import List, cast, TYPE_CHECKING
+from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
     from _devbuild.gen.runtime_asdl import Proc
     from core import ui
     from osh import cmd_eval
+    from ysh import expr_eval
 
 _ = log
+
+
+def EvalProcDefaults(expr_ev, node):
+    # type: (expr_eval.ExprEvaluator, command.Proc) -> Optional[List[value_t]]
+    """Evaluated at time of proc DEFINITION, not time of call."""
+
+    # TODO: remove the mutable default issue that Python has: f(x=[])
+    # Whitelist Bool, Int, Float, Str.
+
+    defaults = None  # type: List[value_t]
+    UP_sig = node.sig
+
+    if UP_sig.tag() == proc_sig_e.Closed:
+        sig = cast(proc_sig.Closed, UP_sig)
+        no_val = None  # type: value_t
+        defaults = [no_val] * len(sig.word_params)
+        for i, p in enumerate(sig.word_params):
+            if p.default_val:
+                val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+                defaults[i] = val
+    return defaults
+
+
+def EvalTypedArgs(expr_ev, node, cmd_val):
+    # type: (expr_eval.ExprEvaluator, command.Simple, cmd_value.Argv) -> None
+    """
+    TODO: Synchronize with _EvalArgList() in ysh/expr_eval.py
+    """
+    cmd_val.typed_args = node.typed_args
+
+    ty = node.typed_args
+    if ty:
+        if ty.left.id == Id.Op_LBracket:  # assert [42 === x]
+            # Defer evaluation by wrapping in value.Expr
+
+            # TODO: save allocs
+            cmd_val.pos_args = []
+            for exp in ty.pos_args:
+                cmd_val.pos_args.append(value.Expr(exp))
+
+            # TODO: save allocs
+            cmd_val.named_args = {} 
+            for named_arg in node.typed_args.named_args:
+                name = lexer.TokenVal(named_arg.name)
+                cmd_val.named_args[name] = value.Expr(named_arg.value)
+
+        else:  # json write (x)
+            # TODO: save on allocations if no pos args
+            cmd_val.pos_args = []
+            for i, pos_arg in enumerate(ty.pos_args):
+                val = expr_ev.EvalExpr(pos_arg, loc.Missing)
+                cmd_val.pos_args.append(val)
+
+            # TODO: save on allocations if no named args
+            cmd_val.named_args = {} 
+            for named_arg in ty.named_args:
+                val = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+                name = lexer.TokenVal(named_arg.name)
+                cmd_val.named_args[name] = val
+
+    # Pass the unevaluated block.
+    if node.block:
+        if cmd_val.pos_args is None:  # TODO: remove
+            cmd_val.pos_args = []
+        cmd_val.pos_args.append(value.Block(node.block))
+
+        # Important invariant: cmd_val look the same for
+        #   eval (^(echo hi))
+        #   eval { echo hi }
+        if not cmd_val.typed_args:
+            cmd_val.typed_args = ArgList.CreateNull()
+
+            # Also add locations for error message: ls { echo invalid }
+            cmd_val.typed_args.left = node.block.brace_group.left
+            cmd_val.typed_args.right = node.block.brace_group.right
+
 
 
 class UserFunc(vm._Callable):

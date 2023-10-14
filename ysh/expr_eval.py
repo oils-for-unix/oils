@@ -65,7 +65,7 @@ from ysh import val_ops
 
 import libc
 
-from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
+from typing import cast, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import ArgList
@@ -262,10 +262,18 @@ class ExprEvaluator(object):
 
         raise AssertionError()  # silence C++ compiler
 
+    def EvalExpr(self, node, blame_loc):
+        # type: (expr_t, loc_t) -> value_t
+        """Public API for _EvalExpr to ensure command_sub_errexit"""
+        self.mem.SetLocationForExpr(blame_loc)
+        # Pure C++ won't need to catch exceptions
+        with state.ctx_OilExpr(self.mutable_opts):
+            val = self._EvalExpr(node)
+        return val
+
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
-        # Pure C++ won't need to catch exceptions
         with state.ctx_OilExpr(self.mutable_opts):
             lval = self._EvalPlaceExpr(place)
         return lval
@@ -292,17 +300,6 @@ class ExprEvaluator(object):
         # type: (value_t, word_part.Splice) -> List[str]
         """ write -- @myvar """
         return val_ops.ToShellArray(val, loc.WordPart(part), prefix='Splice ')
-
-    def EvalExpr(self, node, blame_loc):
-        # type: (expr_t, loc_t) -> value_t
-        """Public API for _EvalExpr to ensure command_sub_errexit is on."""
-        self.mem.SetLocationForExpr(blame_loc)
-        # Pure C++ won't need to catch exceptions
-        with state.ctx_OilExpr(self.mutable_opts):
-            val = self._EvalExpr(node)
-        return val
-
-        # Note: IndexError and KeyError are handled in more specific places
 
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
@@ -679,39 +676,9 @@ class ExprEvaluator(object):
 
         return value.Bool(result)
 
-    def _EvalArgListUntyped(self, args):
-        # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
-        """For procs and funcs - UNTYPED"""
-        pos_args = []  # type: List[Any]
-        for arg in args.pos_args:
-            UP_arg = arg
-
-            if arg.tag() == expr_e.Spread:
-                arg = cast(expr.Spread, UP_arg)
-                # assume it returns a list
-                #pos_args.extend(self._EvalExpr(arg.child))
-            else:
-                pos_args.append(self._EvalExpr(arg))
-
-        kwargs = {}  # type: Dict[str, Any]
-
-        # NOTE: Keyword args aren't tested
-        if 0:
-            for named in args.named:
-                if named.name:
-                    kwargs[named.name.tval] = self._EvalExpr(named.value)
-                else:
-                    # ...named
-                    kwargs.update(self._EvalExpr(named.value))
-
-        return pos_args, kwargs
-
     def _EvalArgList(self, args, me=None):
         # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
-        """For procs and args - TYPED """
-
-        # TODO: CommandEvaluator.RunProc is similar
-
+        """ For funcs, similar to EvalTypedArgs """
         pos_args = []  # type: List[value_t]
 
         if me:  # self/this argument

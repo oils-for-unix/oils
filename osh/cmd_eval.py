@@ -37,7 +37,6 @@ from _devbuild.gen.syntax_asdl import (
     case_arg_e,
     case_arg_t,
     BraceGroup,
-    ArgList,
     assign_op_e,
     expr_t,
     proc_sig,
@@ -81,7 +80,6 @@ from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
-from frontend import typed_args
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
@@ -855,60 +853,6 @@ class CommandEvaluator(object):
         else:
             raise NotImplementedError(Id_str(node.op.id))
 
-    def _EvalTypedArgs(self, node, cmd_val):
-        # type: (command.Simple, cmd_value.Argv) -> None
-        """
-        TODO: Synchronize with _EvalArgList() in ysh/expr_eval.py
-        """
-        cmd_val.typed_args = node.typed_args
-
-        if node.typed_args:
-            orig = node.typed_args
-
-            if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
-                # Defer evaluation by wrapping in value.Expr
-
-                # TODO: save allocs
-                cmd_val.pos_args = []
-                for exp in orig.pos_args:
-                    cmd_val.pos_args.append(value.Expr(exp))
-
-                # TODO: save allocs
-                cmd_val.named_args = {} 
-                for named_arg in node.typed_args.named_args:
-                    name = lexer.TokenVal(named_arg.name)
-                    cmd_val.named_args[name] = value.Expr(named_arg.value)
-
-            else:  # json write (x)
-                # TODO: save on allocations if no pos args
-                cmd_val.pos_args = []
-                for i, pos_arg in enumerate(node.typed_args.pos_args):
-                    val = self.expr_ev.EvalExpr(pos_arg, loc.Missing)
-                    cmd_val.pos_args.append(val)
-
-                # TODO: save on allocations if no named args
-                cmd_val.named_args = {} 
-                for named_arg in node.typed_args.named_args:
-                    val = self.expr_ev.EvalExpr(named_arg.value, named_arg.name)
-                    name = lexer.TokenVal(named_arg.name)
-                    cmd_val.named_args[name] = val
-
-        # Pass the unevaluated block.
-        if node.block:
-            if cmd_val.pos_args is None:  # TODO: remove
-                cmd_val.pos_args = []
-            cmd_val.pos_args.append(value.Block(node.block))
-
-            # Important invariant: cmd_val look the same for
-            #   eval (^(echo hi))
-            #   eval { echo hi }
-            if not cmd_val.typed_args:
-                cmd_val.typed_args = ArgList.CreateNull()
-
-                # Also add locations for error message: ls { echo invalid }
-                cmd_val.typed_args.left = node.block.brace_group.left
-                cmd_val.typed_args.right = node.block.brace_group.right
-
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
@@ -951,7 +895,7 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
-                self._EvalTypedArgs(node, cmd_val)
+                code.EvalTypedArgs(self.expr_ev, node, cmd_val)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",
@@ -1471,7 +1415,7 @@ class CommandEvaluator(object):
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
 
-        defaults = typed_args.EvalProcDefaults(self.expr_ev, node)
+        defaults = code.EvalProcDefaults(self.expr_ev, node)
 
         self.procs[proc_name] = Proc(proc_name, node.name, node.sig, node.body,
                                      defaults, False)  # no dynamic scope

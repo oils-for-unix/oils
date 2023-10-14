@@ -1,40 +1,58 @@
 #!/usr/bin/env python2
-"""Typed_args.py."""
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value_t, cmd_value
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
-                                       command, command_t, expr_t, proc_sig,
-                                       proc_sig_e)
+                                       command_t, expr_t)
 from core import error
 from core.error import e_usage
 from frontend import location
-from mycpp.mylib import dict_erase
+from mycpp import mylib
 
-from typing import Optional, Dict, List, TYPE_CHECKING, cast
-if TYPE_CHECKING:
-    from ysh.expr_eval import ExprEvaluator
+from typing import Dict, List, Optional, cast
 
 
-def EvalProcDefaults(expr_ev, node):
-    # type: (ExprEvaluator, command.Proc) -> Optional[List[value_t]]
-    """Evaluated at time of proc DEFINITION, not time of call."""
+def DoesNotAccept(arg_list):
+    # type: (Optional[ArgList]) -> None
+    if arg_list is not None:
+        e_usage('got unexpected typed args', arg_list.left)
 
-    # TODO: remove the mutable default issue that Python has: f(x=[])
-    # Whitelist Bool, Int, Float, Str.
 
-    defaults = None  # type: List[value_t]
-    UP_sig = node.sig
+def OptionalCommand(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[command_t]
+    """Helper for shopt, etc."""
 
-    if UP_sig.tag() == proc_sig_e.Closed:
-        sig = cast(proc_sig.Closed, UP_sig)
-        no_val = None  # type: value_t
-        defaults = [no_val] * len(sig.word_params)
-        for i, p in enumerate(sig.word_params):
-            if p.default_val:
-                val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-                defaults[i] = val
-    return defaults
+    cmd = None  # type: Optional[command_t]
+    if cmd_val.typed_args:
+        r = ReaderForProc(cmd_val)
+        cmd = r.OptionalCommand()
+        r.Done()
+    return cmd
+
+
+def OptionalLiteralBlock(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
+    """Helper for Hay """
+
+    block = None  # type: Optional[LiteralBlock]
+    if cmd_val.typed_args:
+        r = ReaderForProc(cmd_val)
+        block = r.OptionalLiteralBlock()
+        r.Done()
+    return block
+
+
+def ReaderForProc(cmd_val):
+    # type: (cmd_value.Argv) -> Reader
+
+    # mycpp rewrite: doesn't understand 'or' pattern
+    pos_args = (cmd_val.pos_args if cmd_val.pos_args is not None else [])
+    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
+
+    arg_list = (cmd_val.typed_args
+                if cmd_val.typed_args is not None else ArgList.CreateNull())
+
+    return Reader(pos_args, named_args, arg_list)
 
 
 class Reader(object):
@@ -346,7 +364,7 @@ class Reader(object):
         val = self.named_args[param_name]
         UP_val = val
         if val.tag() == value_e.Str:
-            dict_erase(self.named_args, param_name)
+            mylib.dict_erase(self.named_args, param_name)
             val = cast(value.Str, UP_val)
             return val.s
 
@@ -362,7 +380,7 @@ class Reader(object):
         UP_val = val
         if val.tag() == value_e.Bool:
             val = cast(value.Bool, UP_val)
-            dict_erase(self.named_args, param_name)
+            mylib.dict_erase(self.named_args, param_name)
             return val.b
 
         raise error.TypeErr(val, 'Named arg %r should be a Bool' % param_name,
@@ -377,7 +395,7 @@ class Reader(object):
         UP_val = val
         if val.tag() == value_e.Int:
             val = cast(value.Int, UP_val)
-            dict_erase(self.named_args, param_name)
+            mylib.dict_erase(self.named_args, param_name)
             return val.i
 
         raise error.TypeErr(val, 'Named arg %r should be a Int' % param_name,
@@ -392,7 +410,7 @@ class Reader(object):
         UP_val = val
         if val.tag() == value_e.Float:
             val = cast(value.Float, UP_val)
-            dict_erase(self.named_args, param_name)
+            mylib.dict_erase(self.named_args, param_name)
             return val.f
 
         raise error.TypeErr(val, 'Named arg %r should be a Float' % param_name,
@@ -407,7 +425,7 @@ class Reader(object):
         UP_val = val
         if val.tag() == value_e.List:
             val = cast(value.List, UP_val)
-            dict_erase(self.named_args, param_name)
+            mylib.dict_erase(self.named_args, param_name)
             return val.items
 
         raise error.TypeErr(val, 'Named arg %r should be a List' % param_name,
@@ -422,7 +440,7 @@ class Reader(object):
         UP_val = val
         if val.tag() == value_e.Dict:
             val = cast(value.Dict, UP_val)
-            dict_erase(self.named_args, param_name)
+            mylib.dict_erase(self.named_args, param_name)
             return val.d
 
         raise error.TypeErr(val, 'Named arg %r should be a Dict' % param_name,
@@ -466,46 +484,3 @@ class Reader(object):
 
             raise error.TypeErrVerbose(
                 'Got unexpected named args: %s' % bad_args, blame)
-
-
-def ReaderForProc(cmd_val):
-    # type: (cmd_value.Argv) -> Reader
-
-    # mycpp rewrite: doesn't understand 'or' pattern
-    pos_args = (cmd_val.pos_args if cmd_val.pos_args is not None else [])
-    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
-
-    arg_list = (cmd_val.typed_args
-                if cmd_val.typed_args is not None else ArgList.CreateNull())
-
-    return Reader(pos_args, named_args, arg_list)
-
-
-def DoesNotAccept(arg_list):
-    # type: (Optional[ArgList]) -> None
-    if arg_list is not None:
-        e_usage('got unexpected typed args', arg_list.left)
-
-
-def OptionalCommand(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[command_t]
-    """Helper for shopt, etc."""
-
-    cmd = None  # type: Optional[command_t]
-    if cmd_val.typed_args:
-        r = ReaderForProc(cmd_val)
-        cmd = r.OptionalCommand()
-        r.Done()
-    return cmd
-
-
-def OptionalLiteralBlock(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
-    """Helper for Hay """
-
-    block = None  # type: Optional[LiteralBlock]
-    if cmd_val.typed_args:
-        r = ReaderForProc(cmd_val)
-        block = r.OptionalLiteralBlock()
-        r.Done()
-    return block
