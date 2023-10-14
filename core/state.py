@@ -43,7 +43,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
     from _devbuild.gen.runtime_asdl import ProcValue
     from core import alloc
-    from core import code
     from osh import sh_expr_eval
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
