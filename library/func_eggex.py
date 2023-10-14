@@ -25,14 +25,11 @@ class Match(vm._Callable):
 
     def Call(self, args):
         # type: (typed_args.Reader) -> value_t
-        arg = 0
-        if args.NumPos():
-            arg = args.PosInt()
-            args.Done()
+        n = args.OptionalInt(default=0)
 
         # TODO: Support strings
-        s = self.mem.GetMatch(arg)
-        # Oil code doesn't deal well with exceptions!
+        s = self.mem.GetMatch(n)
+        # YSH code doesn't deal well with exceptions!
         #if s is None:
         #  raise IndexError('No such group')
         if s is not None:

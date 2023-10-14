@@ -80,7 +80,7 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, pos_args, named_args, args_node, is_bound=False):
+    def __init__(self, pos_args, named_args, arg_list, is_bound=False):
         # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
         self.pos_args = pos_args
         self.pos_consumed = 0
@@ -88,14 +88,14 @@ class Reader(object):
         # that through to here?
         self.is_bound = is_bound
         self.named_args = named_args
-        self.args_node = args_node
+        self.arg_list = arg_list
 
     def LeftParenToken(self):
         # type: () -> loc_t
         """
         Used by functions in library/func_misc.py
         """
-        return self.args_node.left
+        return self.arg_list.left
 
     def LeastSpecificLocation(self):
         # type: () -> loc_t
@@ -104,8 +104,8 @@ class Reader(object):
         Applicable to procs as well.
         """
         # return LeftParenToken() if available
-        if self.args_node.left:  # may be None for proc like 'json write'
-            return self.args_node.left
+        if self.arg_list.left:  # may be None for proc like 'json write'
+            return self.arg_list.left
 
         return loc.Missing
 
@@ -134,8 +134,8 @@ class Reader(object):
             # the same part of the expression
             pos -= 1
 
-        if pos >= 0 and pos < len(self.args_node.pos_args):
-            l = location.TokenForExpr(self.args_node.pos_args[pos])
+        if pos >= 0 and pos < len(self.arg_list.pos_args):
+            l = location.TokenForExpr(self.arg_list.pos_args[pos])
 
             if l is not None:
                 return l
@@ -147,9 +147,9 @@ class Reader(object):
         # type: (int) -> expr_t
         """Returns the expression handle for the ith positional argument. The
         caller can use this to produce more specific error messages."""
-        return self.args_node.pos_args[i]
+        return self.arg_list.pos_args[i]
 
-    def _GetNextPos(self):
+    def PosValue(self):
         # type: () -> value_t
         if len(self.pos_args) == 0:
             raise error.TypeErrVerbose(
@@ -160,54 +160,91 @@ class Reader(object):
         self.pos_consumed += 1
         return self.pos_args.pop(0)
 
+    def OptionalValue(self):
+        # type: () -> Optional[value_t]
+        if len(self.pos_args) == 0:
+            return None
+        self.pos_consumed += 1
+        return self.pos_args.pop(0)
+
+    def _ToStr(self, val):
+        # type: (value_t) -> str
+        if val.tag() == value_e.Str:
+            return cast(value.Str, val).s
+
+        raise error.TypeErr(val, 'Arg %d should be a Str' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToBool(self, val):
+        # type: (value_t) -> bool
+        if val.tag() == value_e.Bool:
+            return cast(value.Bool, val).b
+
+        raise error.TypeErr(val, 'Arg %d should be a Bool' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToInt(self, val):
+        # type: (value_t) -> int
+        if val.tag() == value_e.Int:
+            return cast(value.Int, val).i
+
+        raise error.TypeErr(val, 'Arg %d should be an Int' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToFloat(self, val):
+        # type: (value_t) -> float
+        if val.tag() == value_e.Float:
+            return cast(value.Float, val).f
+
+        raise error.TypeErr(val, 'Arg %d should be a Float' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToCommand(self, val):
+        # type: (value_t) -> command_t
+        if val.tag() == value_e.Command:
+            return cast(value.Command, val).body
+
+        raise error.TypeErr(val,
+                            'Arg %d should be a Command' % self.pos_consumed,
+                            self.BlamePos())
+
     def PosStr(self):
         # type: () -> str
-        arg = self._GetNextPos()
-        UP_arg = arg
-        if arg.tag() == value_e.Str:
-            arg = cast(value.Str, UP_arg)
-            return arg.s
+        val = self.PosValue()
+        return self._ToStr(val)
 
-        raise error.TypeErr(arg, 'Arg %d should be a Str' % self.pos_consumed,
-                            self.BlamePos())
+    def OptionalStr(self, default=None):
+        # type: (Optional[str]) -> Optional[str]
+        val = self.OptionalValue()
+        if val is None:
+            return default
+        return self._ToStr(val)
 
     def PosBool(self):
         # type: () -> bool
-        arg = self._GetNextPos()
-        UP_arg = arg
-        if arg.tag() == value_e.Bool:
-            arg = cast(value.Bool, UP_arg)
-            return arg.b
-
-        raise error.TypeErr(arg, 'Arg %d should be a Bool' % self.pos_consumed,
-                            self.BlamePos())
+        val = self.PosValue()
+        return self._ToBool(val)
 
     def PosInt(self):
         # type: () -> int
-        arg = self._GetNextPos()
-        UP_arg = arg
-        if arg.tag() == value_e.Int:
-            arg = cast(value.Int, UP_arg)
-            return arg.i
+        val = self.PosValue()
+        return self._ToInt(val)
 
-        raise error.TypeErr(arg, 'Arg %d should be a Int' % self.pos_consumed,
-                            self.BlamePos())
+    def OptionalInt(self, default):
+        # type: (int) -> int
+        val = self.OptionalValue()
+        if val is None:
+            return default
+        return self._ToInt(val)
 
     def PosFloat(self):
         # type: () -> float
-        arg = self._GetNextPos()
-        UP_arg = arg
-        if arg.tag() == value_e.Float:
-            arg = cast(value.Float, UP_arg)
-            return arg.f
-
-        raise error.TypeErr(arg,
-                            'Arg %d should be a Float' % self.pos_consumed,
-                            self.BlamePos())
+        val = self.PosValue()
+        return self._ToFloat(val)
 
     def PosList(self):
         # type: () -> List[value_t]
-        arg = self._GetNextPos()
+        arg = self.PosValue()
         UP_arg = arg
         if arg.tag() == value_e.List:
             arg = cast(value.List, UP_arg)
@@ -218,7 +255,7 @@ class Reader(object):
 
     def PosDict(self):
         # type: () -> Dict[str, value_t]
-        arg = self._GetNextPos()
+        arg = self.PosValue()
         UP_arg = arg
         if arg.tag() == value_e.Dict:
             arg = cast(value.Dict, UP_arg)
@@ -229,7 +266,7 @@ class Reader(object):
 
     def PosExpr(self):
         # type: () -> expr_t
-        arg = self._GetNextPos()
+        arg = self.PosValue()
         UP_arg = arg
         if arg.tag() == value_e.Expr:
             arg = cast(value.Expr, UP_arg)
@@ -240,23 +277,15 @@ class Reader(object):
 
     def PosCommand(self):
         # type: () -> command_t
-        arg = self._GetNextPos()
-        UP_arg = arg
-        if arg.tag() == value_e.Command:
-            arg = cast(value.Command, UP_arg)
-            return arg.body
+        val = self.PosValue()
+        return self._ToCommand(val)
 
-        raise error.TypeErr(arg,
-                            'Arg %d should be a Command' % self.pos_consumed,
-                            self.BlamePos())
-
-    def PosValue(self):
-        # type: () -> value_t
-        return self._GetNextPos()
-
-    def NumPos(self):
-        # type: () -> int
-        return len(self.pos_args)
+    def OptionalCommand(self):
+        # type: () -> Optional[command_t]
+        val = self.OptionalValue()
+        if val is None:
+            return None
+        return self._ToCommand(val)
 
     def RestPos(self):
         # type: () -> List[value_t]
@@ -375,14 +404,6 @@ class Reader(object):
         self.named_args = {}
         return ret
 
-    def Block(self):
-        # type: () -> command_t
-        """
-        Block arg for proc
-        """
-        # TODO: is this BraceGroup?
-        return None  # TODO
-
     def Done(self):
         # type: () -> None
         """
@@ -409,7 +430,7 @@ class Reader(object):
         if len(self.named_args):
             bad_args = ', '.join(self.named_args.keys())
 
-            blame = self.args_node.named_delim  # type: loc_t
+            blame = self.arg_list.named_delim  # type: loc_t
             if blame is None:
                 blame = self.LeastSpecificLocation()
 

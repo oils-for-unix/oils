@@ -196,12 +196,7 @@ class Join(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         li = args.PosList()
-
-        # TODO: see if we can incorporate positional defaults into typed_args.Reader
-        delim = ''
-        if args.NumPos():
-            delim = args.PosStr()
-
+        delim = args.OptionalStr(default='')
         args.Done()
 
         strs = []  # type: List[str]
@@ -452,9 +447,7 @@ class Split(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         s = args.PosStr()
 
-        ifs = None  # type: str
-        if args.NumPos():
-            ifs = args.PosStr()
+        ifs = args.OptionalStr()
 
         args.Done()
 
@@ -511,9 +504,7 @@ class Assert(vm._Callable):
 
         val = args.PosValue()
 
-        msg = ''
-        if args.NumPos():
-            msg = args.PosStr()
+        msg = args.OptionalStr(default='')
 
         args.Done()
 
