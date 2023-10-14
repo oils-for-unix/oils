@@ -431,6 +431,13 @@ test-func-error-locs() {
   _expr-error-case '= "foo"->startswith("f", "o")' # too many args
   _expr-error-case '= "foo"->startswith()' # not enough args
   _expr-error-case '= "foo"->startswith(1)' # wrong type
+
+  _expr-error-case '
+  func f(x) {
+     return (x)
+  }
+  = f()
+  '
 }
 
 test-var-decl() {

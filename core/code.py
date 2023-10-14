@@ -120,19 +120,16 @@ class UserFunc(vm._Callable):
         num_args = len(pos_args)
         num_params = len(self.node.pos_params)
 
-        # TODO: this is the location of 'func', not the CALL.  Should add that
-        # location to typed_args.Reader
-
-        blame_loc = self.node.keyword
+        blame_loc = rd.LeftParenToken()
 
         if self.node.rest_of_pos:
             if num_args < num_params:
                 raise error.TypeErrVerbose(
-                    "%s() expects at least %d arguments but %d were given" %
+                    "%s() expects at least %d arguments, but got %d" %
                     (self.name, num_params, num_args), blame_loc)
         elif num_args != num_params:
             raise error.TypeErrVerbose(
-                "%s() expects %d arguments but %d were given" %
+                "%s() expects %d arguments, but got %d" %
                 (self.name, num_params, num_args), blame_loc)
 
         named_args = rd.RestNamed()
@@ -141,7 +138,7 @@ class UserFunc(vm._Callable):
         num_params = len(self.node.named_params)
         if num_args != num_params:
             raise error.TypeErrVerbose(
-                "%s() expects %d named arguments but %d were given" %
+                "%s() expects %d named arguments, but got %d" %
                 (self.name, num_params, num_args), blame_loc)
 
         # Push a new stack frame
