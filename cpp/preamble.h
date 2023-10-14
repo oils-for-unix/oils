@@ -36,3 +36,4 @@ using runtime_asdl::lvalue;  // for builtin_assign.py and builtin_misc.py
 using runtime_asdl::value;
 using syntax_asdl::command;
 using syntax_asdl::expr;
+using syntax_asdl::proc_sig;

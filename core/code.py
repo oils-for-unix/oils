@@ -6,9 +6,9 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue,
-                                        cmd_value, FuncValue)
-from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Proc, Func,
-                                       loc, ArgList, expr, expr_e)
+                                        cmd_value, FuncValue, ProcDefaults)
+from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Func, loc,
+                                       ArgList, expr, expr_e)
 
 from core import error
 from core.error import e_die
@@ -29,25 +29,30 @@ if TYPE_CHECKING:
 _ = log
 
 
-def EvalProcDefaults(expr_ev, node):
-    # type: (expr_eval.ExprEvaluator, Proc) -> Optional[List[value_t]]
+def EvalProcDefaults(expr_ev, sig):
+    # type: (expr_eval.ExprEvaluator, proc_sig.Closed) -> ProcDefaults
     """Evaluated at time of proc DEFINITION, not time of call."""
 
     # TODO: remove the mutable default issue that Python has: f(x=[])
     # Whitelist Bool, Int, Float, Str.
 
-    defaults = None  # type: List[value_t]
-    UP_sig = node.sig
+    no_val = None  # type: value_t
 
-    if UP_sig.tag() == proc_sig_e.Closed:
-        sig = cast(proc_sig.Closed, UP_sig)
-        no_val = None  # type: value_t
-        defaults = [no_val] * len(sig.word_params)
-        for i, p in enumerate(sig.word_params):
-            if p.default_val:
-                val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-                defaults[i] = val
-    return defaults
+    word_defaults = [no_val] * len(sig.word_params)
+    for i, p in enumerate(sig.word_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            word_defaults[i] = val
+
+    return ProcDefaults(word_defaults, None, None)
+
+
+def EvalFuncDefaults(
+        expr_ev,  # type: expr_eval.ExprEvaluator
+        func,  # type: Func
+):
+    # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
+    return [], {}
 
 
 def _EvalArgList(

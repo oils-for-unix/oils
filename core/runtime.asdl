@@ -30,8 +30,8 @@ module runtime
 
   ProcDefaults = (
     List[value] for_word,  # TODO: should be List[str]
-    List[value] for_typed, Dict[str, value] for_named,
-    value? for_block,
+    List[value] for_typed,  # block default is also here
+    Dict[str, value] for_named,
   )
 
   # command.ShFunction and command.Proc evaluate to ProcValue.
@@ -43,7 +43,7 @@ module runtime
 
   FuncValue = (
     str name, Func parsed,
-    List[value] defaults, Dict[str, value] named_defaults,
+    List[value] pos_defaults, Dict[str, value] named_defaults,
   )
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
