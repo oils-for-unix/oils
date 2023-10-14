@@ -26,6 +26,7 @@ def _InitLexer(s):
 
 
 class AsdlTest(unittest.TestCase):
+
     def testLexMode(self):
         print(lex_mode_e.DQ)
 
@@ -37,6 +38,7 @@ ls /home/
 
 
 class LexerTest(unittest.TestCase):
+
     def assertTokensEqual(self, left, right):
         self.assertTrue(test_lib.TokensEqual(left, right),
                         'Expected %r, got %r' % (left, right))
@@ -280,6 +282,7 @@ class LexerTest(unittest.TestCase):
 
 
 class LineLexerTest(unittest.TestCase):
+
     def setUp(self):
         self.arena = test_lib.MakeArena('<lex_test.py>')
 
@@ -329,6 +332,7 @@ class LineLexerTest(unittest.TestCase):
 
 
 class RegexTest(unittest.TestCase):
+
     def testNul(self):
         nul_pat = re.compile(r'[\0]')
         self.assertEqual(False, bool(nul_pat.match('x')))
@@ -342,6 +346,7 @@ class RegexTest(unittest.TestCase):
 
 
 class OtherLexerTest(unittest.TestCase):
+
     def testEchoLexer(self):
         CASES = [
             r'newline \n NUL \0 octal \0377 hex \x00',

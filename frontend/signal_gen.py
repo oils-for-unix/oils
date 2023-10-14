@@ -13,7 +13,7 @@ void PrintSignals() {
 """)
 
     for abbrev, _ in signal_def._BY_NUMBER:
-        name = "SIG%s" % (abbrev,)
+        name = "SIG%s" % (abbrev, )
         f.write("""\
 #ifdef %s
   printf("%%2d %s\\n", %s);
@@ -35,7 +35,7 @@ int GetNumber(Str* sig_spec) {
 
 """)
     for abbrev, _ in signal_def._BY_NUMBER:
-        name = "SIG%s" % (abbrev,)
+        name = "SIG%s" % (abbrev, )
         f.write("""\
   if ((length == %d && memcmp("%s", data, %d) == 0) ||
       (length == %d && memcmp("%s", data, %d) == 0)) {

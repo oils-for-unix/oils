@@ -38,6 +38,7 @@ def _ParseCmdVal(spec, cmd_val):
 
 
 class ArgsTest(unittest.TestCase):
+
     def testFlagSpecAndMore(self):
         s = flag_spec._FlagSpecAndMore()
         s.ShortFlag('-c', args.String)

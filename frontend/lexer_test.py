@@ -45,6 +45,7 @@ def _PrintAllTokens(lx, lex_mode):
 
 
 class TokenTest(unittest.TestCase):
+
     def testToken(self):
         t = Tok(Id.Lit_Chars, 'abc')
         print(t)

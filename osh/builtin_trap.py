@@ -156,6 +156,7 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
 class Trap(vm._Builtin):
+
     def __init__(self, trap_state, parse_ctx, tracer, errfmt):
         # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
         self.trap_state = trap_state
@@ -193,10 +194,10 @@ class Trap(vm._Builtin):
             # The unit tests rely on this being one line.
             # bash prints a line that can be re-parsed.
             for name, _ in iteritems(self.trap_state.hooks):
-                print('%s TrapState' % (name,))
+                print('%s TrapState' % (name, ))
 
             for sig_num, _ in iteritems(self.trap_state.traps):
-                print('%d TrapState' % (sig_num,))
+                print('%d TrapState' % (sig_num, ))
 
             return 0
 

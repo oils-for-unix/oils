@@ -197,8 +197,8 @@ class _FlagSpec(object):
         self.actions_long = {}  # type: Dict[str, args._Action]
         self.defaults = {}  # type: Dict[str, value_t]
 
-        # For code generation.  Not used at runtime.
-        self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
+        # For arg_types code generation to use.  Not used at runtime.
+        self.fields = {}  # type: Dict[str, flag_type_t]
 
     def PrintHelp(self, f):
         # type: (mylib.Writer) -> None
@@ -292,10 +292,10 @@ class _FlagSpecAndMore(object):
         # type: (bool) -> None
 
         # {'-c': _Action}
-        self.actions_short = {}  # type: Dict[str, args._Action]  
+        self.actions_short = {}  # type: Dict[str, args._Action]
 
         # {'--rcfile': _Action}
-        self.actions_long = {}  # type: Dict[str, args._Action] 
+        self.actions_long = {}  # type: Dict[str, args._Action]
         self.plus_flags = []  # type: List[str]
         self.defaults = {}  # type: Dict[str, value_t]
 

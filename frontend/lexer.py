@@ -62,6 +62,7 @@ def DummyToken(id_, val):
 
 
 class LineLexer(object):
+
     def __init__(self, arena):
         # type: (Arena) -> None
         self.arena = arena

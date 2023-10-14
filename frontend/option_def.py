@@ -6,6 +6,7 @@ from typing import List, Dict, Optional, Any
 
 
 class Option(object):
+
     def __init__(self,
                  index,
                  name,
@@ -389,7 +390,8 @@ STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
 DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
 #print([opt.name for opt in _SORTED if opt.default])
 
-META_OPTIONS = ['strict:all', 'ysh:upgrade', 'ysh:all']  # Passed to flag parser
+META_OPTIONS = ['strict:all', 'ysh:upgrade',
+                'ysh:all']  # Passed to flag parser
 
 # For printing option names to stdout.  Wrapped by frontend/consts.
 OPTION_NAMES = dict((opt.index, opt.name) for opt in _SORTED)

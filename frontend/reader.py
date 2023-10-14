@@ -26,6 +26,7 @@ _PS2 = '> '
 
 
 class _Reader(object):
+
     def __init__(self, arena):
         # type: (Arena) -> None
         self.arena = arena
@@ -166,6 +167,7 @@ def _readline_no_tty(prompt):
 
 
 class InteractiveLineReader(_Reader):
+
     def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
         # type: (Arena, prompt.Evaluator, history.Evaluator, Readline, PromptState) -> None
         # TODO: Hook up PromptEvaluator and history.Evaluator when they have types.

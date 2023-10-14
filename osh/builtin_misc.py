@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 
 _ = log
 
+
 class Times(vm._Builtin):
 
     def __init__(self):

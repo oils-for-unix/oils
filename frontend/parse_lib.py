@@ -112,8 +112,8 @@ class _BaseTrail(object):
 
     def __repr__(self):
         # type: () -> str
-        return '<Trail %s %s %s %s>' % (self.words, self.redirects, self.tokens,
-                                        self.alias_words)
+        return '<Trail %s %s %s %s>' % (self.words, self.redirects,
+                                        self.tokens, self.alias_words)
 
 
 class ctx_Alias(object):

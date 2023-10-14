@@ -13,6 +13,7 @@ from frontend import reader  # module under test
 
 
 class ReaderTest(unittest.TestCase):
+
     def testStringLineReader(self):
         arena = test_lib.MakeArena('<reader_test.py>')
 

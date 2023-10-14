@@ -68,6 +68,7 @@ _NORMAL_BUILTINS = [
 
 
 class _Builtin(object):
+
     def __init__(self, index, name, enum_name=None, kind='normal'):
         # type: (int, str, Optional[str], str) -> None
         """
@@ -123,7 +124,7 @@ def _Init(b):
     b.Add('export', enum_name='export_', kind='assign')  # C++ keyword conflict
 
     b.Add('true', enum_name='true_')  # C++ Keywords
-    b.Add('false', enum_name='false_')  
+    b.Add('false', enum_name='false_')
     b.Add('try', enum_name='try_')
 
     for name in _NORMAL_BUILTINS:
