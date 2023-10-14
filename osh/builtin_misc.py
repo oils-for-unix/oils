@@ -49,11 +49,6 @@ if TYPE_CHECKING:
 
 _ = log
 
-#
-# Implementation of builtins.
-#
-
-
 class Times(vm._Builtin):
 
     def __init__(self):

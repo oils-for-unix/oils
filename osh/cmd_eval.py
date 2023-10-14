@@ -703,7 +703,9 @@ class CommandEvaluator(object):
             place = location.LName(node.lhs[0].name.tval)
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            self.mem.SetValue(place, val, scope_e.LocalOnly,
+            self.mem.SetValue(place,
+                              val,
+                              scope_e.LocalOnly,
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
 
         else:  # var or const
@@ -724,8 +726,8 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                            'Got %d places on left, but %d values on right' %
-                            (num_lhs, num_rhs), node.keyword)
+                        'Got %d places on left, but %d values on right' %
+                        (num_lhs, num_rhs), node.keyword)
 
                 lvals = []
                 rhs_vals = []
@@ -781,8 +783,8 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                            'Got %d places on left, but %d values on right' %
-                            (num_lhs, num_rhs), node.keyword)
+                        'Got %d places on left, but %d values on right' %
+                        (num_lhs, num_rhs), node.keyword)
 
                 places = []
                 rhs_vals = []

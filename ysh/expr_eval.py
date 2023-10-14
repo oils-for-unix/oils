@@ -690,8 +690,8 @@ class ExprEvaluator(object):
                 pos_args, named_args = code._EvalArgList(self, node.args)
                 #log('pos_args %s', pos_args)
 
-                ret = f.Call(
-                    typed_args.Reader(pos_args, named_args, node.args))
+                ret = f.Call(typed_args.Reader(pos_args, named_args,
+                                               node.args))
 
                 #log('ret %s', ret)
                 return ret
@@ -703,10 +703,15 @@ class ExprEvaluator(object):
                 # Cast to work around ASDL limitation for now
                 f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = code._EvalArgList(self, node.args, me=func.me)
+                pos_args, named_args = code._EvalArgList(self,
+                                                         node.args,
+                                                         me=func.me)
 
                 ret = f.Call(
-                    typed_args.Reader(pos_args, named_args, node.args, is_bound=True))
+                    typed_args.Reader(pos_args,
+                                      named_args,
+                                      node.args,
+                                      is_bound=True))
 
                 return ret
 
