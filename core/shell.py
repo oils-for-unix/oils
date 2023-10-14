@@ -89,22 +89,14 @@ if mylib.PYTHON:
         help_meta = None
 
 
-def MakeBuiltinArgv(argv1):
-    # type: (List[str]) -> cmd_value.Argv
-    argv = ['']  # dummy for argv[0]
-    argv.extend(argv1)
-    missing = None  # type: CompoundWord
-    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None)
-
-
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
 
     # register builtins and words
-    complete_builtin.Run(MakeBuiltinArgv(['-E', '-A', 'command']))
+    complete_builtin.Run(cmd_eval.MakeBuiltinArgv(['-E', '-A', 'command']))
     # register path completion
     # Add -o filenames?  Or should that be automatic?
-    complete_builtin.Run(MakeBuiltinArgv(['-D', '-A', 'file']))
+    complete_builtin.Run(cmd_eval.MakeBuiltinArgv(['-D', '-A', 'file']))
 
 
 def _CompletionDemo(comp_lookup):
