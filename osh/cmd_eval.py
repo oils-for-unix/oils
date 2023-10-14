@@ -873,9 +873,18 @@ class CommandEvaluator(object):
             typed_vals.right = orig.right
 
             if orig.left.id == Id.Op_LBracket:  # assert [42 === x]
-                # TODO: defer evaluation by wrapping in value.Expr
-                #pos_args = [value.Expr(e) for e in pos_args]
-                typed_vals.pos_args.extend(orig.pos_args)
+                # Defer evaluation by wrapping in value.Expr
+
+                # TODO: save allocs
+                cmd_val.pos_args = []
+                for exp in orig.pos_args:
+                    cmd_val.pos_args.append(value.Expr(exp))
+
+                # TODO: save allocs
+                cmd_val.named_args = {} 
+                for named_arg in node.typed_args.named_args:
+                    name = lexer.TokenVal(named_arg.name)
+                    cmd_val.named_args[name] = value.Expr(named_arg.value)
 
             else:  # json write (x)
                 # TODO: Don't need this

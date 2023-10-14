@@ -436,22 +436,6 @@ def DoesNotAccept(arg_list):
         e_usage('got unexpected typed args', arg_list.left)
 
 
-def RequiredExpr(arg_list):
-    # type: (Optional[ArgList]) -> Optional[expr_t]
-    if arg_list is None:
-        e_usage('Expected an expression', loc.Missing)
-
-    n = len(arg_list.pos_args)
-    if n == 0:
-        e_usage('Expected an expression', arg_list.left)
-
-    elif n == 1:
-        return arg_list.pos_args[0]
-
-    else:
-        e_usage('Too many typed args (expected one expression)', arg_list.left)
-
-
 def GetOneBlock(arg_list):
     # type: (Optional[ArgList]) -> Optional[command_t]
     """Returns the first block arg, if any.
