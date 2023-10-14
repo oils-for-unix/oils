@@ -30,10 +30,8 @@ module runtime
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
 
-  # What command.ShFunction and command.Proc evaluate to
-  # For ShFunction, this is trivial.  For Proc, we evaluate default args.
-  # We store name_loc separately because ShFunction has a word as a name, but
-  # a Proc has a Token.
+  # command.ShFunction and command.Proc evaluate to ProcValue
+  # - For Proc, we evaluate default args.
   ProcValue = (
     str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
     bool dynamic_scope
@@ -106,8 +104,8 @@ module runtime
     # Also consider
   # | UserFunc %FuncValue, which is like ProcValue above
      
-  | Func(any callable)
-  | BoundFunc(value me, any callable)
+  | BuiltinFunc(any callable)
+  | BuiltinMethod(value me, any callable)
 
     # User-defined values.  We can reflect onthese too
   | UserProc %ProcValue

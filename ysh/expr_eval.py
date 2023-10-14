@@ -692,8 +692,8 @@ class ExprEvaluator(object):
                 rd = typed_args.Reader(pos_args, named_args, node.args)
                 return code.CallUserFunc(func, rd, self.mem, self.cmd_ev)
 
-            elif case(value_e.Func):
-                func = cast(value.Func, UP_func)
+            elif case(value_e.BuiltinFunc):
+                func = cast(value.BuiltinFunc, UP_func)
                 # C++ cast to work around ASDL 'any'
                 f = cast(vm._Callable, func.callable)
                 pos_args, named_args = code._EvalArgList(self, node.args)
@@ -702,8 +702,8 @@ class ExprEvaluator(object):
                 rd = typed_args.Reader(pos_args, named_args, node.args)
                 return f.Call(rd)
 
-            elif case(value_e.BoundFunc):
-                func = cast(value.BoundFunc, UP_func)
+            elif case(value_e.BuiltinMethod):
+                func = cast(value.BuiltinMethod, UP_func)
 
                 #assert isinstance(func.callable, vm._Callable), "Bound funcs must be typed"
                 # Cast to work around ASDL limitation for now
@@ -818,7 +818,7 @@ class ExprEvaluator(object):
                     'Method %r does not exist on type %s' %
                     (name, ui.ValType(o)), node.attr)
 
-            return value.BoundFunc(o, method)
+            return value.BuiltinMethod(o, method)
 
         if op_id == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval

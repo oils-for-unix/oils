@@ -8,7 +8,7 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import value, value_e
+from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
 from core import alloc
@@ -34,12 +34,12 @@ from frontend import flag_def  # side effect: flags are defined!
 
 unused2 = flag_def
 from frontend import flag_spec
+from frontend import location
 from frontend import reader
 from frontend import parse_lib
 
 from library import func_eggex
 from library import func_hay
-from library import func_init
 from library import func_misc
 
 from ysh import expr_eval
@@ -178,6 +178,15 @@ class ShellOptHook(state.OptHook):
                 opt0_array[option_i.vi] = not b
 
         return True
+
+
+def _SetGlobalFunc(mem, name, func):
+    # type: (state.Mem, str, vm._Callable) -> None
+    assert isinstance(func, vm._Callable), func
+
+    # Note: no location info for builtin functions?
+    mem.SetValue(location.LName(name), value.BuiltinFunc(func),
+                 scope_e.GlobalOnly)
 
 
 def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
@@ -664,31 +673,31 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     block_as_str = func_hay.BlockAsStr(arena)
     hay_func = func_hay.HayFunc(hay_state)
 
-    func_init.SetGlobalFunc(mem, 'parse_hay', parse_hay)
-    func_init.SetGlobalFunc(mem, 'eval_hay', eval_hay)
-    func_init.SetGlobalFunc(mem, 'block_as_str', block_as_str)
-    func_init.SetGlobalFunc(mem, '_hay', hay_func)
-    func_init.SetGlobalFunc(mem, 'len', func_misc.Len())
-    func_init.SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
-    func_init.SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
-    func_init.SetGlobalFunc(mem, '_end', func_eggex.End(mem))
-    func_init.SetGlobalFunc(mem, 'join', func_misc.Join())
-    func_init.SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
-    func_init.SetGlobalFunc(mem, 'type', func_misc.Type())
-    func_init.SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
+    _SetGlobalFunc(mem, 'parse_hay', parse_hay)
+    _SetGlobalFunc(mem, 'eval_hay', eval_hay)
+    _SetGlobalFunc(mem, 'block_as_str', block_as_str)
+    _SetGlobalFunc(mem, '_hay', hay_func)
+    _SetGlobalFunc(mem, 'len', func_misc.Len())
+    _SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
+    _SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
+    _SetGlobalFunc(mem, '_end', func_eggex.End(mem))
+    _SetGlobalFunc(mem, 'join', func_misc.Join())
+    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
+    _SetGlobalFunc(mem, 'type', func_misc.Type())
+    _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
     # type conversions
-    func_init.SetGlobalFunc(mem, 'bool', func_misc.Bool())
-    func_init.SetGlobalFunc(mem, 'int', func_misc.Int())
-    func_init.SetGlobalFunc(mem, 'float', func_misc.Float())
-    func_init.SetGlobalFunc(mem, 'str', func_misc.Str_())
-    func_init.SetGlobalFunc(mem, 'list', func_misc.List_())
-    func_init.SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+    _SetGlobalFunc(mem, 'bool', func_misc.Bool())
+    _SetGlobalFunc(mem, 'int', func_misc.Int())
+    _SetGlobalFunc(mem, 'float', func_misc.Float())
+    _SetGlobalFunc(mem, 'str', func_misc.Str_())
+    _SetGlobalFunc(mem, 'list', func_misc.List_())
+    _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
 
-    func_init.SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
-    func_init.SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
-    func_init.SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
-    func_init.SetGlobalFunc(mem, 'assert_', func_misc.Assert())
+    _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
+    _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
+    _SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
+    _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)

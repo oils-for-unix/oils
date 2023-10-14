@@ -516,6 +516,14 @@ echo $[type(1.234)]
 echo $[type([])]
 echo $[type({})]
 echo $[type(null)]
+
+shopt --set ysh:upgrade
+
+func f() {
+  return (42)
+}
+
+echo $[type(f)]
 echo $[type(len)]
 echo $[type('foo'->startswith)]
 echo $[type(1..3)]
@@ -527,8 +535,9 @@ Float
 List
 Dict
 Null
-Func
-BoundFunc
+UserFunc
+BuiltinFunc
+BuiltinMethod
 Range
 ## END
 
