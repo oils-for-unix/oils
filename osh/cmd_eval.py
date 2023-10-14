@@ -862,7 +862,6 @@ class CommandEvaluator(object):
         TODO: Synchronize with _EvalArgList() in ysh/expr_eval.py
 
         """
-
         typed_vals = ArgList.CreateNull(alloc_lists=True)
 
         if node.typed_args:
@@ -909,9 +908,11 @@ class CommandEvaluator(object):
             typed_vals.left = node.block.brace_group.left
             typed_vals.right = node.block.brace_group.right
 
-        # Pass the unevaluated block.  TODO: value.Command()
+        # Pass the unevaluated block.
         if node.block:
-            typed_vals.pos_args.append(node.block)
+            if cmd_val.pos_args is None:  # TODO: remove
+                cmd_val.pos_args = []
+            cmd_val.pos_args.append(value.Block(node.block))
 
         cmd_val.typed_args = typed_vals
 

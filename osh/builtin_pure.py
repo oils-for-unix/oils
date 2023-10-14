@@ -17,8 +17,8 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_e, value, value_e, value_t
-from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.types_asdl import opt_group_i
 
 from asdl import format as fmt
 from core import alloc
@@ -237,8 +237,8 @@ class Shopt(vm._Builtin):
             self.mutable_opts.ShowShoptOptions(opt_names)
             return 0
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd:
             opt_nums = []  # type: List[int]
             for opt_name in opt_names:
                 # TODO: could consolidate with checks in core/state.py and option
@@ -263,7 +263,7 @@ class Shopt(vm._Builtin):
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
-                unused = self.cmd_ev.EvalBlock(block)
+                unused = self.cmd_ev.EvalBlock(cmd)
             return 0  # cd also returns 0
 
         # Otherwise, set options.
@@ -685,8 +685,8 @@ class Shvar(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if not block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if not cmd:
             # TODO: I think shvar LANG=C should just mutate
             # But should there be a whitelist?
             raise error.Usage('expected a block', loc.Missing)
@@ -707,7 +707,7 @@ class Shvar(vm._Builtin):
                 self.search_path.ClearCache()
 
         with state.ctx_Shvar(self.mem, pairs):
-            unused = self.cmd_ev.EvalBlock(block)
+            unused = self.cmd_ev.EvalBlock(cmd)
 
         return 0
 
@@ -725,12 +725,12 @@ class PushRegisters(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if not block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if not cmd:
             raise error.Usage('expected a block', loc.Missing)
 
         with state.ctx_Registers(self.mem):
-            unused = self.cmd_ev.EvalBlock(block)
+            unused = self.cmd_ev.EvalBlock(cmd)
 
         # make it "SILENT" in terms of not mutating $?
         # TODO: Revisit this.  It might be better to provide the headless shell
@@ -739,10 +739,13 @@ class PushRegisters(vm._Builtin):
 
 
 class Fopen(vm._Builtin):
-    """This builtin does nothing but run a block.  It's used solely for its
-    redirects.
+    """fopen does nothing but run a block.
 
-    fopen >out.txt {   echo hi }
+    It's used solely for its redirects.
+        fopen >out.txt { echo hi }
+
+    It's a subset of eval
+        eval >out.txt { echo hi }
     """
 
     def __init__(self, mem, cmd_ev):
@@ -756,11 +759,11 @@ class Fopen(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if not block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if not cmd:
             raise error.Usage('expected a block', loc.Missing)
 
-        unused = self.cmd_ev.EvalBlock(block)
+        unused = self.cmd_ev.EvalBlock(cmd)
         return 0
 
 
@@ -810,8 +813,7 @@ class HayNode(vm._Builtin):
         arg_r.Next()
         arguments = arg_r.Rest()
 
-        lit_block = typed_args.GetLiteralBlock(cmd_val.typed_args)
-        # block = typed_args.GetOneBlock(cmd_val.typed_args)
+        lit_block = typed_args.OptionalLiteralBlock(cmd_val)
 
         # package { ... } is not valid
         if len(arguments) == 0 and lit_block is None:
@@ -943,15 +945,15 @@ class Hay(vm._Builtin):
                 var_name = var_name[1:]
                 # TODO: This could be fatal?
 
-            block = typed_args.GetOneBlock(cmd_val.typed_args)
-            if not block:  # 'package foo' is OK
+            cmd = typed_args.OptionalCommand(cmd_val)
+            if not cmd:  # 'package foo' is OK
                 e_usage('eval expected a block', loc.Missing)
 
             with state.ctx_HayEval(self.hay_state, self.mutable_opts,
                                    self.mem):
                 # Note: we want all haynode invocations in the block to appear as
                 # our 'children', recursively
-                unused = self.cmd_ev.EvalBlock(block)
+                unused = self.cmd_ev.EvalBlock(cmd)
 
             result = self.hay_state.Result()
 

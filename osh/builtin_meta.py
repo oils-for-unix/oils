@@ -331,12 +331,12 @@ class Try(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd:
             status = 0  # success by default
             try:
                 with state.ctx_Try(self.mutable_opts):
-                    unused = self.cmd_ev.EvalBlock(block)
+                    unused = self.cmd_ev.EvalBlock(cmd)
             except error.Expr as e:
                 status = e.ExitStatus()
             except error.ErrExit as e:

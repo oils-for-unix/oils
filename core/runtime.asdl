@@ -8,6 +8,7 @@ module runtime
     expr word command
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
+    LiteralBlock
   }
 
   IntBox = (int i)
@@ -79,6 +80,12 @@ module runtime
   | Template(DoubleQuoted dq)
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | Command(command body)
+
+    # for Hay to get the backing lines
+    # TODO: ASDL doesn't support shared variant across module
+    # This would be more efficient
+  # | LiteralBlock %LiteralBlock
+    | Block(LiteralBlock block)
 
     # callable is vm._Callable.  TODO: ASDL should be able to express and
     # "inline" such types?  Maybe we need a forward declaration of it.

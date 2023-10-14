@@ -314,7 +314,7 @@ module syntax
   )
 
   # Retain references to lines
-  BlockArg = (BraceGroup brace_group, List[SourceLine] lines)
+  LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
 
   # Represents all these case:  s=1  s+=1  s[x]=1 ...
   ParsedAssignment = (Token? left, Token? close, int part_offset, CompoundWord w)
@@ -324,7 +324,7 @@ module syntax
   | Simple(Token? blame_tok,  # TODO: make required (BracedTuple?)
            List[EnvPair] more_env,
            List[word] words, List[Redir] redirects,
-           ArgList? typed_args, BlockArg? block,
+           ArgList? typed_args, LiteralBlock? block,
            # do_fork is semantic, not syntactic
            bool do_fork)
     # This doesn't technically belong in the LST, but it's convenient for
@@ -503,8 +503,6 @@ module syntax
   | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
-
-  | BlockArg %BlockArg
 
   | Literal(expr inner)
   | Lambda(List[NameType] params, expr body)

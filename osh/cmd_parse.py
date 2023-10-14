@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter,
     ArgList,
     BraceGroup,
-    BlockArg,
+    LiteralBlock,
     CaseArm,
     case_arg,
     IfArm,
@@ -315,7 +315,7 @@ def _MakeSimpleCommand(
         suffix_words,  # type: List[CompoundWord]
         redirects,  # type: List[Redir]
         typed_args,  # type: Optional[ArgList]
-        block,  # type: Optional[BlockArg]
+        block,  # type: Optional[LiteralBlock]
 ):
     # type: (...) -> command.Simple
     """Create an command.Simple node."""
@@ -745,7 +745,7 @@ class CommandParser(object):
         return redirects
 
     def _ScanSimpleCommand(self):
-        # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[BlockArg]]
+        # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[LiteralBlock]]
         """YSH extends simple commands with typed args and blocks.
 
         Shell has a recursive grammar, which awkwardly expresses
@@ -786,7 +786,7 @@ class CommandParser(object):
         redirects = []  # type: List[Redir]
         words = []  # type: List[CompoundWord]
         typed_args = None  # type: Optional[ArgList]
-        block = None  # type: Optional[BlockArg]
+        block = None  # type: Optional[LiteralBlock]
 
         first_word_caps = False  # does first word look like Caps, but not CAPS
 
@@ -810,7 +810,7 @@ class CommandParser(object):
                             # So we can get the source code back later
                             lines = self.arena.SaveLinesAndDiscard(
                                 brace_group.left, brace_group.right)
-                            block = BlockArg(brace_group, lines)
+                            block = LiteralBlock(brace_group, lines)
 
                             self.hay_attrs_stack.pop()
 

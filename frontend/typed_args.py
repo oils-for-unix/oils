@@ -3,13 +3,13 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_e, value_t, cmd_value
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, BlockArg, command,
-                                       command_t, expr_e, expr_t, CommandSub,
-                                       proc_sig, proc_sig_e)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
+                                       command, command_t, expr_t, proc_sig,
+                                       proc_sig_e)
 from core import error
 from core.error import e_usage
 from frontend import location
-from mycpp.mylib import dict_erase, tagswitch
+from mycpp.mylib import dict_erase
 
 from typing import Optional, Dict, List, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -145,8 +145,10 @@ class Reader(object):
 
     def PosNode(self, i):
         # type: (int) -> expr_t
-        """Returns the expression handle for the ith positional argument. The
-        caller can use this to produce more specific error messages."""
+        """Returns the expression handle for the ith positional argument.
+
+        You can use this to produce more specific errors.
+        """
         return self.arg_list.pos_args[i]
 
     def PosValue(self):
@@ -204,8 +206,22 @@ class Reader(object):
         if val.tag() == value_e.Command:
             return cast(value.Command, val).body
 
+        # Special case for hay
+        # Foo { x = 1 }
+        if val.tag() == value_e.Block:
+            return cast(value.Block, val).block.brace_group
+
         raise error.TypeErr(val,
                             'Arg %d should be a Command' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToLiteralBlock(self, val):
+        # type: (value_t) -> LiteralBlock
+        if val.tag() == value_e.Block:
+            return cast(value.Block, val).block
+
+        raise error.TypeErr(val,
+                            'Arg %d should be a LiteralBlock' % self.pos_consumed,
                             self.BlamePos())
 
     def PosStr(self):
@@ -286,6 +302,13 @@ class Reader(object):
         if val is None:
             return None
         return self._ToCommand(val)
+
+    def OptionalLiteralBlock(self):
+        # type: () -> Optional[LiteralBlock]
+        val = self.OptionalValue()
+        if val is None:
+            return None
+        return self._ToLiteralBlock(val)
 
     def RestPos(self):
         # type: () -> List[value_t]
@@ -457,69 +480,25 @@ def DoesNotAccept(arg_list):
         e_usage('got unexpected typed args', arg_list.left)
 
 
-def GetOneBlock(arg_list):
-    # type: (Optional[ArgList]) -> Optional[command_t]
-    """Returns the first block arg, if any.
+def OptionalCommand(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[command_t]
+    """Helper for shopt, etc."""
 
-    For cd { }, shopt { }, etc.
-
-    Errors:
-      - the first arg isn't a block
-      - more than 1 arg
-    """
-
-    if arg_list is None:
-        return None
-
-    n = len(arg_list.pos_args)
-    if n == 0:
-        return None
-
-    elif n == 1:
-        arg = arg_list.pos_args[0]
-        UP_arg = arg
-
-        # Could we somehow consolidate these?
-        with tagswitch(arg) as case:
-            if case(expr_e.BlockArg):  # cd /tmp { echo hi }
-                arg = cast(BlockArg, UP_arg)
-                return arg.brace_group
-
-            # TODO: we need an expr_ev for cd /tmp (myblock)
-            elif case(expr_e.CommandSub):  # cd /tmp (^(echo hi))
-                arg = cast(CommandSub, UP_arg)
-                return arg.child
-
-            else:
-                e_usage('Expected block argument', arg_list.left)
-
-    else:
-        e_usage('Too many typed args (expected one block)', arg_list.left)
+    cmd = None  # type: Optional[command_t]
+    if cmd_val.typed_args:
+        r = ReaderForProc(cmd_val)
+        cmd = r.OptionalCommand()
+        r.Done()
+    return cmd
 
 
-def GetLiteralBlock(arg_list):
-    # type: (Optional[ArgList]) -> Optional[BlockArg]
-    """Returns the first block literal arg, if any.
+def OptionalLiteralBlock(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
+    """Helper for Hay """
 
-    For Hay evaluation.
-
-    Errors:
-      - more than 1 arg
-    """
-
-    if arg_list is None:
-        return None
-
-    n = len(arg_list.pos_args)
-    if n == 0:
-        return None
-
-    elif n == 1:
-        arg = arg_list.pos_args[0]
-        if arg.tag() == expr_e.BlockArg:
-            return cast(BlockArg, arg)
-        else:
-            return None
-
-    else:
-        e_usage('Too many typed args (expected one block)', arg_list.left)
+    block = None  # type: Optional[LiteralBlock]
+    if cmd_val.typed_args:
+        r = ReaderForProc(cmd_val)
+        block = r.OptionalLiteralBlock()
+        r.Done()
+    return block

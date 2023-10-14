@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 2
 
 #### cd with block
 shopt -s oil:all
@@ -115,16 +115,13 @@ x=42
 shopt -s oil:all
 
 const myblock = ^(echo $PWD | wc -l)
-const b2 = ^(echo one; echo two)
-= myblock
-= b2
+eval (myblock)
 
-# TODO:
-# Implement something like this?
-# _ evalexpr(b2, binding_dict)  # e.g. to bind to QTSV fields
-# _ evalblock(b2, binding_dict)
+const b2 = ^(echo one; echo two)
+eval (b2)
 
 ## STDOUT:
+1
 one
 two
 ## END
@@ -147,15 +144,12 @@ cd /tmp (myblock)
 #### Pass invalid typed args
 
 cd /tmp (42)  # should be a block
-echo status=$?
+## status: 3
+
+#### Pass too many typed args
 
 cd /tmp (1, 2)
-echo status=$?
-
-## STDOUT:
-status=2
-status=2
-## END
+## status: 3
 
 #### 'builtin' and 'command' with block
 shopt --set oil:upgrade
@@ -340,23 +334,23 @@ rule bar-cc
 #### Block param binding
 shopt --set parse_brace parse_proc
 
-proc package(name, b Block) {
+proc package(name; ; ; b) {
   = b
 
   var d = eval_hay(b)
 
   # NAME and TYPE?
-  setvar d->name = name
-  setvar d->type = 'package'
+  setvar d.name = name
+  setvar d.type = 'package'
 
   # Now where does d go?
   # Every time you do eval_hay, it clears _config?
   # Another option: HAY_CONFIG
 
   if ('package_list' not in _config) {
-    setvar _config->package_list = []
+    setvar _config.package_list = []
   }
-  _ _config->package_list->append(d)
+  _ _config.package_list->append(d)
 }
 
 package unzip {

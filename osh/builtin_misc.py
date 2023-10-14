@@ -636,12 +636,12 @@ class Cd(vm._Builtin):
         # Other shells use global variables.
         self.mem.SetPwd(real_dest_dir)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd:
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,
                              self.errfmt, out_errs):
-                unused = self.cmd_ev.EvalBlock(block)
+                unused = self.cmd_ev.EvalBlock(cmd)
             if len(out_errs):
                 return 1
 

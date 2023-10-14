@@ -144,11 +144,11 @@ class Fork(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block is None:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd is None:
             e_usage('expected a block', loc.Missing)
 
-        return self.shell_ex.RunBackgroundJob(block)
+        return self.shell_ex.RunBackgroundJob(cmd)
 
 
 class ForkWait(vm._Builtin):
@@ -165,11 +165,11 @@ class ForkWait(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block is None:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd is None:
             e_usage('expected a block', loc.Missing)
 
-        return self.shell_ex.RunSubshell(block)
+        return self.shell_ex.RunSubshell(cmd)
 
 
 class Exec(vm._Builtin):
