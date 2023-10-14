@@ -221,7 +221,7 @@ class ctx_AssignBuiltin(object):
             self.mutable_opts.Pop(option_i._allow_process_sub)
 
 
-class ctx_OilExpr(object):
+class ctx_YshExpr(object):
     """Command sub must fail in 'mystring' ++ $(false)"""
 
     def __init__(self, mutable_opts):

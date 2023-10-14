@@ -7,7 +7,8 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue,
                                         cmd_value)
-from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e, loc, ArgList
+from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, loc, ArgList,
+                                       expr, expr_e)
 
 from core import error
 from core.error import e_die
@@ -17,7 +18,7 @@ from frontend import lexer
 from frontend import typed_args
 from mycpp.mylib import log
 
-from typing import List, Optional, cast, TYPE_CHECKING
+from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
     from _devbuild.gen.runtime_asdl import Proc
@@ -49,7 +50,51 @@ def EvalProcDefaults(expr_ev, node):
     return defaults
 
 
-def EvalTypedArgs(expr_ev, node, cmd_val):
+def _EvalArgList(
+        expr_ev,  # type: expr_eval.ExprEvaluator
+        args,  # type: ArgList
+        me=None  # type: Optional[value_t]
+):
+    # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
+    """ 
+    This is a PRIVATE METHOD on ExprEvaluator, but it's in THIS FILE, because I
+    want it to be next to EvalTypedArgsToProc, which is similar.
+
+    It's not valid to call this without the PUBLIC EvalExpr() wrapper:
+
+      with state.ctx_YshExpr(...)  # required to call this
+    """
+    pos_args = []  # type: List[value_t]
+
+    if me:  # self/this argument
+        pos_args.append(me)
+
+    for arg in args.pos_args:
+        UP_arg = arg
+
+        if arg.tag() == expr_e.Spread:
+            arg = cast(expr.Spread, UP_arg)
+            # assume it returns a list
+            #pos_args.extend(self._EvalExpr(arg.child))
+            pass
+        else:
+            pos_args.append(expr_ev._EvalExpr(arg))
+
+    kwargs = {}  # type: Dict[str, value_t]
+
+    # NOTE: Keyword args aren't tested
+    if 0:
+        for named in args.named:
+            if named.name:
+                kwargs[named.name.tval] = expr_ev._EvalExpr(named.value)
+            else:
+                # ...named
+                kwargs.update(expr_ev._EvalExpr(named.value))
+
+    return pos_args, kwargs
+
+
+def EvalTypedArgsToProc(expr_ev, node, cmd_val):
     # type: (expr_eval.ExprEvaluator, command.Simple, cmd_value.Argv) -> None
     """
     TODO: Synchronize with _EvalArgList() in ysh/expr_eval.py
@@ -67,7 +112,7 @@ def EvalTypedArgs(expr_ev, node, cmd_val):
                 cmd_val.pos_args.append(value.Expr(exp))
 
             # TODO: save allocs
-            cmd_val.named_args = {} 
+            cmd_val.named_args = {}
             for named_arg in node.typed_args.named_args:
                 name = lexer.TokenVal(named_arg.name)
                 cmd_val.named_args[name] = value.Expr(named_arg.value)
@@ -80,7 +125,7 @@ def EvalTypedArgs(expr_ev, node, cmd_val):
                 cmd_val.pos_args.append(val)
 
             # TODO: save on allocations if no named args
-            cmd_val.named_args = {} 
+            cmd_val.named_args = {}
             for named_arg in ty.named_args:
                 val = expr_ev.EvalExpr(named_arg.value, named_arg.name)
                 name = lexer.TokenVal(named_arg.name)
@@ -103,76 +148,52 @@ def EvalTypedArgs(expr_ev, node, cmd_val):
             cmd_val.typed_args.right = node.block.brace_group.right
 
 
+def _BindFuncArgs(func_name, node, rd, mem):
+    # type: (str, command.Func, typed_args.Reader, state.Mem) -> None
 
-class UserFunc(vm._Callable):
-    """A user-defined function."""
+    # TODO:
+    # - Handle default args.  Evaluate them here or elsewhere?
+    # - pass named args
 
-    def __init__(self, name, node, mem, cmd_ev):
-        # type: (str, command.Func, state.Mem, cmd_eval.CommandEvaluator) -> None
-        self.name = name
-        self.node = node
-        self.cmd_ev = cmd_ev
-        self.mem = mem
+    pos_args = rd.RestPos()
+    num_args = len(pos_args)
+    num_params = len(node.pos_params)
 
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        pos_args = rd.RestPos()
-        num_args = len(pos_args)
-        num_params = len(self.node.pos_params)
+    blame_loc = rd.LeftParenToken()
 
-        blame_loc = rd.LeftParenToken()
-
-        if self.node.rest_of_pos:
-            if num_args < num_params:
-                raise error.TypeErrVerbose(
-                    "%s() expects at least %d arguments, but got %d" %
-                    (self.name, num_params, num_args), blame_loc)
-        elif num_args != num_params:
+    if node.rest_of_pos:
+        if num_args < num_params:
             raise error.TypeErrVerbose(
-                "%s() expects %d arguments, but got %d" %
-                (self.name, num_params, num_args), blame_loc)
+                "%s() expects at least %d arguments, but got %d" %
+                (func_name, num_params, num_args), blame_loc)
+    elif num_args != num_params:
+        raise error.TypeErrVerbose(
+            "%s() expects %d arguments, but got %d" %
+            (func_name, num_params, num_args), blame_loc)
 
-        named_args = rd.RestNamed()
-        rd.Done()
-        num_args = len(named_args)
-        num_params = len(self.node.named_params)
-        if num_args != num_params:
-            raise error.TypeErrVerbose(
-                "%s() expects %d named arguments, but got %d" %
-                (self.name, num_params, num_args), blame_loc)
+    named_args = rd.RestNamed()
+    rd.Done()
+    num_args = len(named_args)
+    num_params = len(node.named_params)
+    if num_args != num_params:
+        raise error.TypeErrVerbose(
+            "%s() expects %d named arguments, but got %d" %
+            (func_name, num_params, num_args), blame_loc)
 
-        # Push a new stack frame
-        with state.ctx_FuncCall(self.cmd_ev.mem, self):
+    num_args = len(node.pos_params)
+    for i in xrange(0, num_args):
+        pos_param = node.pos_params[i]
+        lval = lvalue.Named(pos_param.name, pos_param.blame_tok)
 
-            # TODO: Handle default args.  Evaluate them here or elsewhere?
+        pos_arg = pos_args[i]
+        mem.SetValue(lval, pos_arg, scope_e.LocalOnly)
 
-            num_args = len(self.node.pos_params)
-            for i in xrange(0, num_args):
-                pos_param = self.node.pos_params[i]
-                lval = lvalue.Named(pos_param.name, pos_param.blame_tok)
+    if node.rest_of_pos:
+        p = node.rest_of_pos
+        lval = lvalue.Named(p.name, p.blame_tok)
 
-                pos_arg = pos_args[i]
-                self.mem.SetValue(lval, pos_arg, scope_e.LocalOnly)
-
-            if self.node.rest_of_pos:
-                p = self.node.rest_of_pos
-                lval = lvalue.Named(p.name, p.blame_tok)
-
-                rest_val = value.List(pos_args[num_args:])
-                self.mem.SetValue(lval, rest_val, scope_e.LocalOnly)
-
-            # TODO: pass named args
-
-            try:
-                self.cmd_ev._Execute(self.node.body)
-
-                return value.Null  # implicit return
-            except vm.ValueControlFlow as e:
-                return e.value
-            except vm.IntControlFlow as e:
-                raise AssertionError('IntControlFlow in func')
-
-        raise AssertionError('unreachable')
+        rest_val = value.List(pos_args[num_args:])
+        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
 
 
 def BindProcArgs(proc, cmd_val, mem, errfmt):
@@ -257,3 +278,32 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
             return 2
 
     return 0
+
+
+class UserFunc(vm._Callable):
+    """A user-defined function."""
+
+    def __init__(self, name, node, mem, cmd_ev):
+        # type: (str, command.Func, state.Mem, cmd_eval.CommandEvaluator) -> None
+        self.name = name
+        self.node = node
+        self.cmd_ev = cmd_ev
+        self.mem = mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        # Push a new stack frame
+        with state.ctx_FuncCall(self.cmd_ev.mem, self):
+
+            _BindFuncArgs(self.name, self.node, rd, self.mem)
+
+            try:
+                self.cmd_ev._Execute(self.node.body)
+
+                return value.Null  # implicit return
+            except vm.ValueControlFlow as e:
+                return e.value
+            except vm.IntControlFlow as e:
+                raise AssertionError('IntControlFlow in func')
+
+        raise AssertionError('unreachable')

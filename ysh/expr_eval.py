@@ -49,6 +49,7 @@ from _devbuild.gen.runtime_asdl import (
     value_t,
     IntBox,
 )
+from core import code
 from core import error
 from core.error import e_die, e_die_status
 from core import state
@@ -267,14 +268,14 @@ class ExprEvaluator(object):
         """Public API for _EvalExpr to ensure command_sub_errexit"""
         self.mem.SetLocationForExpr(blame_loc)
         # Pure C++ won't need to catch exceptions
-        with state.ctx_OilExpr(self.mutable_opts):
+        with state.ctx_YshExpr(self.mutable_opts):
             val = self._EvalExpr(node)
         return val
 
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
-        with state.ctx_OilExpr(self.mutable_opts):
+        with state.ctx_YshExpr(self.mutable_opts):
             lval = self._EvalPlaceExpr(place)
         return lval
 
@@ -676,38 +677,6 @@ class ExprEvaluator(object):
 
         return value.Bool(result)
 
-    def _EvalArgList(self, args, me=None):
-        # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
-        """ For funcs, similar to EvalTypedArgs """
-        pos_args = []  # type: List[value_t]
-
-        if me:  # self/this argument
-            pos_args.append(me)
-
-        for arg in args.pos_args:
-            UP_arg = arg
-
-            if arg.tag() == expr_e.Spread:
-                arg = cast(expr.Spread, UP_arg)
-                # assume it returns a list
-                #pos_args.extend(self._EvalExpr(arg.child))
-                pass
-            else:
-                pos_args.append(self._EvalExpr(arg))
-
-        kwargs = {}  # type: Dict[str, value_t]
-
-        # NOTE: Keyword args aren't tested
-        if 0:
-            for named in args.named:
-                if named.name:
-                    kwargs[named.name.tval] = self._EvalExpr(named.value)
-                else:
-                    # ...named
-                    kwargs.update(self._EvalExpr(named.value))
-
-        return pos_args, kwargs
-
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
 
@@ -719,7 +688,7 @@ class ExprEvaluator(object):
                 func = cast(value.Func, UP_func)
                 # C++ cast to work around ASDL 'any'
                 f = cast(vm._Callable, func.callable)
-                pos_args, named_args = self._EvalArgList(node.args)
+                pos_args, named_args = code._EvalArgList(self, node.args)
                 #log('pos_args %s', pos_args)
 
                 ret = f.Call(
@@ -735,7 +704,7 @@ class ExprEvaluator(object):
                 # Cast to work around ASDL limitation for now
                 f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = self._EvalArgList(node.args, me=func.me)
+                pos_args, named_args = code._EvalArgList(self, node.args, me=func.me)
 
                 ret = f.Call(
                     typed_args.Reader(pos_args, named_args, node.args, is_bound=True))

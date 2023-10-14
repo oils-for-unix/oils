@@ -697,9 +697,6 @@ class CommandEvaluator(object):
 
     def _DoVarDecl(self, node):
         # type: (command.VarDecl) -> int
-        # Point to var name (bare assignment has no keyword)
-        self.mem.SetTokenForLine(node.lhs[0].name)
-
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
@@ -857,12 +854,6 @@ class CommandEvaluator(object):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
 
-        # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
-        # Note that for '> $LINENO' the location token is set in _EvalRedirect.
-        # TODO: blame_tok should always be set.
-        if node.blame_tok is not None:
-            self.mem.SetTokenForLine(node.blame_tok)
-
         self._MaybeRunDebugTrap()
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
@@ -895,7 +886,7 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
-                code.EvalTypedArgs(self.expr_ev, node, cmd_val)
+                code.EvalTypedArgsToProc(self.expr_ev, node, cmd_val)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",
@@ -983,7 +974,6 @@ class CommandEvaluator(object):
 
     def _DoDBracket(self, node, cmd_st):
         # type: (command.DBracket, CommandStatus) -> int
-        self.mem.SetTokenForLine(node.left)
         self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -995,7 +985,6 @@ class CommandEvaluator(object):
 
     def _DoDParen(self, node, cmd_st):
         # type: (command.DParen, CommandStatus) -> int
-        self.mem.SetTokenForLine(node.left)
         self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -1008,13 +997,11 @@ class CommandEvaluator(object):
     def _DoShAssignment(self, node, cmd_st):
         # type: (command.ShAssignment, CommandStatus) -> int
         assert len(node.pairs) >= 1, node
-        pairs = node.pairs
-        self.mem.SetTokenForLine(pairs[0].left)
 
         # x=y is 'neutered' inside 'proc'
         which_scopes = self.mem.ScopesForWriting()
 
-        for pair in pairs:
+        for pair in node.pairs:
             if pair.op == assign_op_e.PlusEqual:
                 assert pair.rhs, pair.rhs  # I don't think a+= is valid?
                 rhs = self.word_ev.EvalRhsWord(pair.rhs)
@@ -1066,7 +1053,6 @@ class CommandEvaluator(object):
 
     def _DoExpr(self, node):
         # type: (command.Expr) -> int
-        self.mem.SetTokenForLine(node.keyword)
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
         if mylib.PYTHON:
             obj = cpython._ValueToPyObj(val)
@@ -1095,15 +1081,12 @@ class CommandEvaluator(object):
 
     def _DoRetval(self, node):
         # type: (command.Retval) -> int
-        self.mem.SetTokenForLine(node.keyword)
-
         val = self.expr_ev.EvalExpr(node.val, node.keyword)
         raise vm.ValueControlFlow(node.keyword, val)
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
         keyword = node.keyword
-        self.mem.SetTokenForLine(keyword)
 
         if node.arg_word:  # Evaluate the argument
             str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1201,9 +1184,7 @@ class CommandEvaluator(object):
 
     def _DoWhileUntil(self, node):
         # type: (command.WhileUntil) -> int
-        self.mem.SetTokenForLine(node.keyword)
         status = 0
-
         with ctx_LoopLevel(self):
             while True:
                 try:
@@ -1227,7 +1208,6 @@ class CommandEvaluator(object):
 
     def _DoForEach(self, node):
         # type: (command.ForEach) -> int
-        self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
 
         # for the 2 kinds of shell loop
         iter_list = None  # type: List[str]
@@ -1360,7 +1340,6 @@ class CommandEvaluator(object):
 
     def _DoForExpr(self, node):
         # type: (command.ForExpr) -> int
-        self.mem.SetTokenForLine(node.keyword)
         #self._MaybeRunDebugTrap()
 
         status = 0
@@ -1397,7 +1376,7 @@ class CommandEvaluator(object):
         return status
 
     def _DoShFunction(self, node):
-        # type: (command.ShFunction) -> int
+        # type: (command.ShFunction) -> None
         if node.name in self.procs and not self.exec_opts.redefine_proc_func():
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
@@ -1405,10 +1384,8 @@ class CommandEvaluator(object):
         self.procs[node.name] = Proc(node.name, node.name_tok, proc_sig.Open,
                                      node.body, [], True)
 
-        return 0
-
     def _DoProc(self, node):
-        # type: (command.Proc) -> int
+        # type: (command.Proc) -> None
         proc_name = lexer.TokenVal(node.name)
         if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
             e_die(
@@ -1420,10 +1397,8 @@ class CommandEvaluator(object):
         self.procs[proc_name] = Proc(proc_name, node.name, node.sig, node.body,
                                      defaults, False)  # no dynamic scope
 
-        return 0
-
     def _DoFunc(self, node):
-        # type: (command.Func) -> int
+        # type: (command.Func) -> None
         name = lexer.TokenVal(node.name)
         lval = location.LName(name)
 
@@ -1439,21 +1414,12 @@ class CommandEvaluator(object):
                     "Func %s was already defined (redefine_proc_func)" % name,
                     node.name)
 
-        # Needed in case the func is an existing variable name
-        self.mem.SetTokenForLine(node.name)
-
         val = value.Func(code.UserFunc(name, node, self.mem, self))
         self.mem.SetValue(lval, val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
 
-        return 0
-
     def _DoIf(self, node):
         # type: (command.If) -> int
-        # No SetTokenForLine() because
-        # - $LINENO can't appear directly in 'if'
-        # - 'if' doesn't directly cause errors
-        # It will be taken care of by command.Simple, condition, etc.
 
         done = False
         for if_arm in node.arms:
@@ -1470,8 +1436,6 @@ class CommandEvaluator(object):
 
     def _DoCase(self, node):
         # type: (command.Case) -> int
-        # Must set location for 'case $LINENO'
-        self.mem.SetTokenForLine(node.case_kw)
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
         self._MaybeRunDebugTrap()
@@ -1562,6 +1526,12 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
+
+                # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
+                # Note that for '> $LINENO' the location token is set in _EvalRedirect.
+                # TODO: blame_tok should always be set.
+                if node.blame_tok is not None:
+                    self.mem.SetTokenForLine(node.blame_tok)
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1583,37 +1553,52 @@ class CommandEvaluator(object):
 
             elif case(command_e.DBracket):
                 node = cast(command.DBracket, UP_node)
+
+                self.mem.SetTokenForLine(node.left)
                 status = self._DoDBracket(node, cmd_st)
 
             elif case(command_e.DParen):
                 node = cast(command.DParen, UP_node)
+
+                self.mem.SetTokenForLine(node.left)
                 status = self._DoDParen(node, cmd_st)
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
+
+                # Point to var name (bare assignment has no keyword)
+                self.mem.SetTokenForLine(node.lhs[0].name)
                 status = self._DoVarDecl(node)
 
             elif case(command_e.PlaceMutation):
                 node = cast(command.PlaceMutation, UP_node)
-                self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
+                self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoPlaceMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
+
+                self.mem.SetTokenForLine(node.pairs[0].left)
                 status = self._DoShAssignment(node, cmd_st)
 
             elif case(command_e.Expr):
                 node = cast(command.Expr, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoExpr(node)
 
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 self._DoRetval(node)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoControlFlow(node)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
@@ -1639,30 +1624,47 @@ class CommandEvaluator(object):
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoWhileUntil(node)
 
             elif case(command_e.ForEach):
                 node = cast(command.ForEach, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoForEach(node)
 
             elif case(command_e.ForExpr):
                 node = cast(command.ForExpr, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
                 status = self._DoForExpr(node)
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-                status = self._DoShFunction(node)
+                self._DoShFunction(node)
+                status = 0
 
             elif case(command_e.Proc):
                 node = cast(command.Proc, UP_node)
-                status = self._DoProc(node)
+                self._DoProc(node)
+                status = 0
 
             elif case(command_e.Func):
                 node = cast(command.Func, UP_node)
-                status = self._DoFunc(node)
+
+                # Needed for error, when the func is an existing variable name
+                self.mem.SetTokenForLine(node.name)
+                self._DoFunc(node)
+                status = 0
 
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
+
+                # No SetTokenForLine() because
+                # - $LINENO can't appear directly in 'if'
+                # - 'if' doesn't directly cause errors
+                # It will be taken care of by command.Simple, condition, etc.
                 status = self._DoIf(node)
 
             elif case(command_e.NoOp):
@@ -1670,6 +1672,9 @@ class CommandEvaluator(object):
 
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
+
+                # Must set location for 'case $LINENO'
+                self.mem.SetTokenForLine(node.case_kw)
                 status = self._DoCase(node)
 
             elif case(command_e.TimeBlock):
@@ -2028,8 +2033,8 @@ class CommandEvaluator(object):
 
             with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
                 with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                    with state.ctx_DebugTrap(
-                            self.mem):  # for SetTokenForLine $LINENO
+                    # for SetTokenForLine $LINENO
+                    with state.ctx_DebugTrap(self.mem):
                         # Don't catch util.UserExit, etc.
                         self._Execute(node)
 
