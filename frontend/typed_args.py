@@ -213,11 +213,11 @@ class Reader(object):
         val = self.PosValue()
         return self._ToStr(val)
 
-    def OptionalStr(self, default=None):
+    def OptionalStr(self, default_=None):
         # type: (Optional[str]) -> Optional[str]
         val = self.OptionalValue()
         if val is None:
-            return default
+            return default_
         return self._ToStr(val)
 
     def PosBool(self):
@@ -230,11 +230,11 @@ class Reader(object):
         val = self.PosValue()
         return self._ToInt(val)
 
-    def OptionalInt(self, default):
+    def OptionalInt(self, default_):
         # type: (int) -> int
         val = self.OptionalValue()
         if val is None:
-            return default
+            return default_
         return self._ToInt(val)
 
     def PosFloat(self):

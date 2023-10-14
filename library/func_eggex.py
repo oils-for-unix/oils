@@ -25,7 +25,7 @@ class Match(vm._Callable):
 
     def Call(self, args):
         # type: (typed_args.Reader) -> value_t
-        n = args.OptionalInt(default=0)
+        n = args.OptionalInt(default_=0)
 
         # TODO: Support strings
         s = self.mem.GetMatch(n)

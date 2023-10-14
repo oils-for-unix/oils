@@ -196,7 +196,7 @@ class Join(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         li = args.PosList()
-        delim = args.OptionalStr(default='')
+        delim = args.OptionalStr(default_='')
         args.Done()
 
         strs = []  # type: List[str]
@@ -504,7 +504,7 @@ class Assert(vm._Callable):
 
         val = args.PosValue()
 
-        msg = args.OptionalStr(default='')
+        msg = args.OptionalStr(default_='')
 
         args.Done()
 
