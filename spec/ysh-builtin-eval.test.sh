@@ -3,6 +3,22 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 2
 
+#### Eval a command literal
+
+var b = ^(echo obj)
+eval (b)
+
+eval (^(echo command literal))
+
+eval { echo block }
+
+## STDOUT:
+obj
+command literal
+block
+## END
+
+
 #### Eval a block within a proc
 proc run (;;; block) {
   eval (block)
@@ -13,12 +29,6 @@ run {
 }
 ## STDOUT:
 In a block!
-## END
-
-#### Eval a command sub
-eval (^(echo block literal))
-## STDOUT:
-block literal
 ## END
 
 #### Eval block created by calling a proc
