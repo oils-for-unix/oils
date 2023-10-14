@@ -97,7 +97,7 @@ from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
-    from _devbuild.gen.runtime_asdl import cmd_value_t, Cell, lvalue_t
+    from _devbuild.gen.runtime_asdl import cmd_value_t, lvalue_t
     from _devbuild.gen.syntax_asdl import Redir, EnvPair
     from core.alloc import Arena
     from core import optview
@@ -1993,6 +1993,24 @@ class CommandEvaluator(object):
         self.mem.SetLastStatus(status)
         return is_return, is_fatal
 
+    def EvalCommand(self, block):
+        # type: (command_t) -> int
+        """For builtins to evaluate command args.
+
+        e.g. cd /tmp (x)
+        """
+        status = 0
+        try:
+            status = self._Execute(block)  # can raise FatalRuntimeError, etc.
+        except vm.IntControlFlow as e:  # A block is more like a function.
+            # return in a block
+            if e.IsReturn():
+                status = e.StatusCode()
+            else:
+                e_die('Unexpected control flow in block', e.token)
+
+        return status
+
     def MaybeRunExitTrap(self, mut_status):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
@@ -2091,29 +2109,6 @@ class CommandEvaluator(object):
                 # Dump the stack before unwinding it
                 self.dumper.MaybeRecord(self, e)
                 raise
-
-        return status
-
-    def EvalBlock(self, block):
-        # type: (command_t) -> int
-        """Returns a namespace.  For config files.
-
-        rule foo {
-          a = 1
-        }
-        is like:
-        foo = {a:1}
-        """
-        status = 0
-        namespace_ = None  # type: Dict[str, Cell]
-        try:
-            self._Execute(block)  # can raise FatalRuntimeError, etc.
-        except vm.IntControlFlow as e:  # A block is more like a function.
-            # return in a block
-            if e.IsReturn():
-                status = e.StatusCode()
-            else:
-                e_die('Unexpected control flow in block', e.token)
 
         return status
 

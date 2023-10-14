@@ -88,7 +88,7 @@ class EvalHay(vm._Callable):
         # type: (command_t) -> Dict[str, value_t]
 
         with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
-            unused = self.cmd_ev.EvalBlock(cmd)
+            unused = self.cmd_ev.EvalCommand(cmd)
 
         return self.hay_state.Result()
 

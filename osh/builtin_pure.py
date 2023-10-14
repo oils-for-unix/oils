@@ -263,7 +263,7 @@ class Shopt(vm._Builtin):
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
-                unused = self.cmd_ev.EvalBlock(cmd)
+                unused = self.cmd_ev.EvalCommand(cmd)
             return 0  # cd also returns 0
 
         # Otherwise, set options.
@@ -707,7 +707,7 @@ class Shvar(vm._Builtin):
                 self.search_path.ClearCache()
 
         with state.ctx_Shvar(self.mem, pairs):
-            unused = self.cmd_ev.EvalBlock(cmd)
+            unused = self.cmd_ev.EvalCommand(cmd)
 
         return 0
 
@@ -730,7 +730,7 @@ class PushRegisters(vm._Builtin):
             raise error.Usage('expected a block', loc.Missing)
 
         with state.ctx_Registers(self.mem):
-            unused = self.cmd_ev.EvalBlock(cmd)
+            unused = self.cmd_ev.EvalCommand(cmd)
 
         # make it "SILENT" in terms of not mutating $?
         # TODO: Revisit this.  It might be better to provide the headless shell
@@ -763,7 +763,7 @@ class Fopen(vm._Builtin):
         if not cmd:
             raise error.Usage('expected a block', loc.Missing)
 
-        unused = self.cmd_ev.EvalBlock(cmd)
+        unused = self.cmd_ev.EvalCommand(cmd)
         return 0
 
 
@@ -854,7 +854,7 @@ class HayNode(vm._Builtin):
             self.hay_state.AppendResult(result)
 
         else:
-            # Must be done before EvalBlock
+            # Must be done before EvalCommand
             self.hay_state.AppendResult(result)
 
             if lit_block:  # 'package foo' is OK
@@ -865,7 +865,7 @@ class HayNode(vm._Builtin):
                     with state.ctx_HayNode(self.hay_state, hay_name):
                         # Note: we want all haynode invocations in the block to appear as
                         # our 'children', recursively
-                        self.cmd_ev.EvalBlock(lit_block.brace_group)
+                        self.cmd_ev.EvalCommand(lit_block.brace_group)
 
                     # Treat the vars as a Dict
                     block_attrs = self.mem.TopNamespace()
@@ -953,7 +953,7 @@ class Hay(vm._Builtin):
                                    self.mem):
                 # Note: we want all haynode invocations in the block to appear as
                 # our 'children', recursively
-                unused = self.cmd_ev.EvalBlock(cmd)
+                unused = self.cmd_ev.EvalCommand(cmd)
 
             result = self.hay_state.Result()
 

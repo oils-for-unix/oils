@@ -55,7 +55,7 @@ class Eval(vm._Builtin):
             rd = typed_args.ReaderForProc(cmd_val)
             block = rd.PosCommand()
             rd.Done()
-            return self.cmd_ev.EvalBlock(block)
+            return self.cmd_ev.EvalCommand(block)
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
@@ -335,7 +335,7 @@ class Try(vm._Builtin):
             status = 0  # success by default
             try:
                 with state.ctx_Try(self.mutable_opts):
-                    unused = self.cmd_ev.EvalBlock(cmd)
+                    unused = self.cmd_ev.EvalCommand(cmd)
             except error.Expr as e:
                 status = e.ExitStatus()
             except error.ErrExit as e:
