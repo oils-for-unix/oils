@@ -538,16 +538,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                       (field.name, out_val_name))
             self.Emit('}')
 
-        elif field.typ.IsOptional():
-            typ = field.typ.children[0]
-
-            self.Emit('if (this->%s) {  // Optional' % field.name)
-            child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
-            self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
-            self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
-                      (field.name, out_val_name))
-            self.Emit('}')
-
         elif field.typ.IsDict():
             k = 'k%d' % counter
             v = 'v%d' % counter
@@ -584,6 +574,16 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                       (out_val_name, v_code_str))
             self.Emit('  }')
             self.Emit('  L->append(Alloc<Field>(StrFromC ("%s"), %s));' %
+                      (field.name, out_val_name))
+            self.Emit('}')
+
+        elif field.typ.IsOptional():
+            typ = field.typ.children[0]
+
+            self.Emit('if (this->%s) {  // Optional' % field.name)
+            child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
+            self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
+            self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                       (field.name, out_val_name))
             self.Emit('}')
 

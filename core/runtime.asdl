@@ -8,9 +8,7 @@ module runtime
     expr word command
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
-    LiteralBlock
-    Proc
-    Func
+    LiteralBlock Func
   }
 
   IntBox = (int i)
@@ -21,17 +19,17 @@ module runtime
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(List[str] argv, List[CompoundWord] arg_locs, ArgList? typed_args,
+    Argv(List[str] argv, List[CompoundWord] arg_locs,
+         ArgList? typed_args,
          # Evaluated args, similar to typed_args.py Reader
-         # TODO: fix ASDL bug with Dict[str, value]?
-         List[value]? pos_args, Dict[str, value] named_args)
+         List[value]? pos_args, Dict[str, value]? named_args)
 
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
 
-  # command.ShFunction and command.Proc evaluate to ProcValue
-  # - For Proc, we evaluate default args.
+  # command.ShFunction and command.Proc evaluate to ProcValue.
+  # Procs have default args to evaluate, and no dynamic scope.
   ProcValue = (
     str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
     bool dynamic_scope
@@ -100,10 +98,6 @@ module runtime
 
     # callable is vm._Callable.  TODO: ASDL should be able to express and
     # "inline" such types?  Maybe we need a forward declaration of it.
-
-    # Also consider
-  # | UserFunc %FuncValue, which is like ProcValue above
-     
   | BuiltinFunc(any callable)
   | BuiltinMethod(value me, any callable)
 
