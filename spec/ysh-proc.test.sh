@@ -1,4 +1,3 @@
-## oils_failures_allowed: 1
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -129,22 +128,29 @@ b c
 #### proc with typed args
 shopt --set ysh:upgrade
 
-# TODO: default args can only be mutable
-
-proc p (a; mylist, mydict; a Int = 3) {
-  json write (mylist)
-  json write (mydict)
-  json write (a)
+# TODO: duplicate param names aren't allowed
+proc p (a; mylist, mydict; opt Int = 42) {
+  json write --pretty=F (a)
+  json write --pretty=F (mylist)
+  json write --pretty=F (mydict)
+  #json write --pretty=F (opt)
 }
 
 p WORD ([1,2,3], {name: 'bob'})
 
-p a (:| a b |, {bob}, a = 5)
+echo ---
+
+p x (:| a b |, {bob: 42}, a = 5)
 
 ## STDOUT:
-[1, 2, 3]
+"WORD"
+[1,2,3]
+{"name":"bob"}
+---
+"x"
+["a","b"]
+{"bob":42}
 ## END
-
 
 #### Proc name-with-hyphen
 shopt --set parse_proc

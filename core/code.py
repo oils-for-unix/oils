@@ -65,6 +65,8 @@ def EvalProcDefaults(expr_ev, sig):
             val = None  # no default, different than value.Null
         pos_defaults.append(val)
 
+    #log('pos_defaults %s', pos_defaults)
+
     named_defaults = NewDict()  # type: Dict[str, value_t]
     for i, p in enumerate(sig.named_params):
         if p.default_val:
@@ -294,7 +296,7 @@ def _BindWords(
 
             val = defaults[i]
             if val is None:
-                e_die("No value provided for param %r" % p.name, p.blame_tok)
+                e_die("No value provided for word param %r" % p.name, p.blame_tok)
 
         if is_out_param:
             flags = state.SetNameref
@@ -326,7 +328,7 @@ def _BindWords(
 
             # Too many arguments.
             e_die_status(2,
-                "proc %r expected %d arguments, but got %d" %
+                "proc %r expected %d words, but got %d" %
                 (proc_name, num_params, num_args), extra_loc)
 
 
@@ -349,7 +351,7 @@ def _BindTyped(
             val = defaults[i]
             if val is None:
                 # TODO: better location
-                e_die("No value provided for param %r" % p.name, loc.Missing)
+                e_die("No value provided for typed param %r" % p.name, loc.Missing)
 
         mem.SetValue(lvalue.Named(p.name, p.blame_tok),
                      val,
@@ -358,15 +360,16 @@ def _BindTyped(
 
     # Special case: treat block param like the next positional arg
     if sig.block_param:
+        p = sig.block_param
+
         if i < num_args:
             val = pos_args[i]
         else:
             val = defaults[i]
             if val is None:
                 # TODO: better location
-                e_die("No value provided for param %r" % p.name, loc.Missing)
+                e_die("No value provided for block param %r" % p.name, loc.Missing)
 
-        p = sig.block_param
         mem.SetValue(lvalue.Named(p.name, p.blame_tok),
                      val,
                      scope_e.LocalOnly)
@@ -388,7 +391,7 @@ def _BindTyped(
             # Too many arguments.
             # TODO: better location
             e_die_status(2,
-                "proc %r expected %d arguments, but got %d" %
+                "proc %r expected %d typed args, but got %d" %
                 (proc_name, num_params, num_args), loc.Missing)
 
 

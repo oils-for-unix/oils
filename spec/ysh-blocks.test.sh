@@ -1,5 +1,3 @@
-## oils_failures_allowed: 2
-
 #### cd with block
 shopt -s oil:all
 
@@ -331,49 +329,39 @@ rule bar-python
 rule bar-cc
 ## END
 
-#### Block param binding
-shopt --set parse_brace parse_proc
-
-proc package(name; ; ; b) {
-  = b
-
-  var d = eval_hay(b)
-
-  # NAME and TYPE?
-  setvar d.name = name
-  setvar d.type = 'package'
-
-  # Now where does d go?
-  # Every time you do eval_hay, it clears _config?
-  # Another option: HAY_CONFIG
-
-  if ('package_list' not in _config) {
-    setvar _config.package_list = []
-  }
-  _ _config.package_list->append(d)
-}
-
-package unzip {
-  version = 1
-}
-
-## STDOUT:
-## END
-
-
 #### Proc that doesn't take a block
-shopt --set parse_brace parse_proc
+shopt --set parse_brace parse_proc parse_paren
 
-proc task(name) {
+proc task(name ; ; ; b = null) {
   echo "task name=$name"
+  if (b) {
+    eval (b)
+    return 33
+  } else {
+    echo 'no block'
+    return 44
+  }
 }
+
+task spam
+echo status=$?
+
+echo
 
 task foo {
-  echo 'running task foo'
+  echo 'running'
+  echo 'block'
 }
-# This should be an error
 echo status=$?
 
 ## STDOUT:
-status=1
+task name=spam
+no block
+status=44
+
+task name=foo
+running
+block
+status=33
 ## END
+
