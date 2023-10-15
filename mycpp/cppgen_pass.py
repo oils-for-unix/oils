@@ -1327,6 +1327,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if callee.name == 'NewDict':
                 lval_type = self.types[lval]
+
+                # Fix for Dict[str, value]? in ASDL
+
+                #self.log('lval type %s', lval_type)
+                if (isinstance(lval_type, UnionType) and
+                    len(lval_type.items) == 2 and
+                    isinstance(lval_type.items[1], NoneTyp)):
+                    lval_type = lval_type.items[0]
+
                 key_type, val_type = lval_type.args
 
                 key_c_type = GetCType(key_type)

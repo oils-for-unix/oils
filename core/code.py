@@ -29,9 +29,36 @@ if TYPE_CHECKING:
 _ = log
 
 
+def EvalFuncDefaults(
+        expr_ev,  # type: expr_eval.ExprEvaluator
+        func,  # type: Func
+):
+    # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
+    """Evaluate default args for funcs, at time of DEFINITION, not call."""
+
+    no_val = None  # type: value_t
+
+    # TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
+    # Bool, Int, Float, Str.
+
+    pos_defaults = [no_val] * len(func.pos_params)
+    for i, p in enumerate(func.pos_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            pos_defaults[i] = val
+
+    named_defaults = NewDict()  # type: Dict[str, value_t]
+    for i, p in enumerate(func.named_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            named_defaults[p.name] = val
+
+    return pos_defaults, named_defaults
+
+
 def EvalProcDefaults(expr_ev, sig):
     # type: (expr_eval.ExprEvaluator, proc_sig.Closed) -> ProcDefaults
-    """Evaluated at time of proc DEFINITION, not time of call."""
+    """Evaluate default args for procs, at time of DEFINITION, not call."""
 
     no_val = None  # type: value_t
 
@@ -61,6 +88,7 @@ def EvalProcDefaults(expr_ev, sig):
         exp = sig.block_param.default_val
         if exp:
             val = expr_ev.EvalExpr(exp, loc.Missing)
+            # TODO: it can only be ^() or null
         else:
             val = None  # no default, different than value.Null
         pos_defaults.append(val)
@@ -76,45 +104,21 @@ def EvalProcDefaults(expr_ev, sig):
     return ProcDefaults(word_defaults, pos_defaults, named_defaults)
 
 
-def EvalFuncDefaults(
-        expr_ev,  # type: expr_eval.ExprEvaluator
-        func,  # type: Func
-):
-    # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
-
-    no_val = None  # type: value_t
-
-    # TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
-    # Bool, Int, Float, Str.
-
-    pos_defaults = [no_val] * len(func.pos_params)
-    for i, p in enumerate(func.pos_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            pos_defaults[i] = val
-
-    named_defaults = NewDict()  # type: Dict[str, value_t]
-    for i, p in enumerate(func.named_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            named_defaults[p.name] = val
-
-    return pos_defaults, named_defaults
-
-
 def _EvalArgList(
         expr_ev,  # type: expr_eval.ExprEvaluator
         args,  # type: ArgList
         me=None  # type: Optional[value_t]
 ):
     # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
-    """ 
+    """Evaluate arg list for funcs.
+
     This is a PRIVATE METHOD on ExprEvaluator, but it's in THIS FILE, because I
     want it to be next to EvalTypedArgsToProc, which is similar.
 
-    It's not valid to call this without the PUBLIC EvalExpr() wrapper:
+    It's not valid to call this without the EvalExpr() wrapper:
 
       with state.ctx_YshExpr(...)  # required to call this
+        ...
     """
     pos_args = []  # type: List[value_t]
 
@@ -148,16 +152,14 @@ def _EvalArgList(
 
 def EvalTypedArgsToProc(expr_ev, node, cmd_val):
     # type: (expr_eval.ExprEvaluator, command.Simple, cmd_value.Argv) -> None
-    """
-    Similar to _EvalArgList()
-    """
+    """Evaluate word, typed, named, and block args for a proc."""
     cmd_val.typed_args = node.typed_args
 
     # We only got here if the call looks like
     #    p (x)
     #    p { echo hi }
     #    p () { echo hi }
-    # So allocate this
+    # So allocate this unconditionally
     cmd_val.pos_args = []
 
     ty = node.typed_args
@@ -167,26 +169,30 @@ def EvalTypedArgsToProc(expr_ev, node, cmd_val):
 
             for exp in ty.pos_args:
                 cmd_val.pos_args.append(value.Expr(exp))
+            # TODO: ...spread is illegal
 
-            tmp = NewDict()  # type: Dict[str, value_t]
-            cmd_val.named_args = tmp
-
-            for named_arg in node.typed_args.named_args:
-                name = lexer.TokenVal(named_arg.name)
-                cmd_val.named_args[name] = value.Expr(named_arg.value)
+            n1 = ty.named_args
+            if n1 is not None:
+                cmd_val.named_args = NewDict()
+                for named_arg in n1:
+                    name = lexer.TokenVal(named_arg.name)
+                    cmd_val.named_args[name] = value.Expr(named_arg.value)
+                # TODO: ...spread is illegal
 
         else:  # json write (x)
             for i, pos_arg in enumerate(ty.pos_args):
                 val = expr_ev.EvalExpr(pos_arg, loc.Missing)
                 cmd_val.pos_args.append(val)
+            # TODO: ...spread
 
-            tmp2 = NewDict()  # type: Dict[str, value_t]
-            cmd_val.named_args = tmp2
-
-            for named_arg in ty.named_args:
-                val = expr_ev.EvalExpr(named_arg.value, named_arg.name)
-                name = lexer.TokenVal(named_arg.name)
-                cmd_val.named_args[name] = val
+            n2 = ty.named_args
+            if n2 is not None:
+                cmd_val.named_args = NewDict()
+                for named_arg in n2:
+                    val = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+                    name = lexer.TokenVal(named_arg.name)
+                    cmd_val.named_args[name] = val
+                # TODO: ...spread
 
     # Pass the unevaluated block.
     if node.block:
@@ -309,6 +315,8 @@ def _BindWords(
                      scope_e.LocalOnly,
                      flags=flags)
 
+    # ...rest
+
     num_params = len(sig.word_params)
     rest = sig.rest_of_words
     if rest:
@@ -336,10 +344,13 @@ def _BindTyped(
         proc_name,  # type: str
         sig,  # type: proc_sig.Closed
         defaults,  # type: List[value_t]
-        pos_args,  # type: List[value_t]
+        pos_args,  # type: Optional[List[value_t]]
         mem,  # type: state.Mem
 ):
     # type: (...) -> None
+
+    if pos_args is None:
+        pos_args = []
 
     num_args = len(pos_args)
 
@@ -399,11 +410,15 @@ def _BindNamed(
         proc_name,  # type: str
         sig,  # type: proc_sig.Closed
         defaults,  # type: Dict[str, value_t]
-        named_args,  # type: Dict[str, value_t]
+        named_args,  # type: Optional[Dict[str, value_t]]
         mem,  # type: state.Mem
 ):
     # type: (...) -> None
-    pass
+
+    if named_args is None:
+        named_args = NewDict()
+
+    # TODO: bind
 
 
 def BindProcArgs(proc, cmd_val, mem):
@@ -418,11 +433,9 @@ def BindProcArgs(proc, cmd_val, mem):
     _BindWords(proc.name, sig, proc.defaults.for_word, cmd_val, mem)
 
     # This includes the block arg
-    pos_args = cmd_val.pos_args if cmd_val.pos_args is not None else []
-    _BindTyped(proc.name, sig, proc.defaults.for_typed, pos_args, mem)
+    _BindTyped(proc.name, sig, proc.defaults.for_typed, cmd_val.pos_args, mem)
 
-    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
-    _BindNamed(proc.name, sig, proc.defaults.for_named, named_args, mem)
+    _BindNamed(proc.name, sig, proc.defaults.for_named, cmd_val.named_args, mem)
 
 
 def CallUserFunc(func, rd, mem, cmd_ev):
