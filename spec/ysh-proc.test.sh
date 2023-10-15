@@ -158,24 +158,39 @@ x y z
 ## END
 
 #### Proc with block arg
-shopt --set parse_proc
+shopt --set ysh:upgrade
 
 # TODO: Test more of this
-proc f(x, y; block) {
-  echo F
+proc f(x, y ; ; ; block) {
+  echo f word $x $y
+
+  if (block) {
+    eval (block)
+  }
 }
-f a b
+f a b { echo FFF }
 
 # With varargs and block
 shopt --set parse_proc
 
-proc g(x, y, ...rest; block) {
-  echo G
+proc g(x, y, ...rest ; ; ; block) {
+  echo g word $x $y
+  echo g rest @rest
+
+  if (block) {
+    eval (block)
+  }
 }
-g a b c d
+g a b c d {
+  echo GGG
+}
+
 ## STDOUT:
-F
-G
+f word a b
+FFF
+g word a b
+g rest c d
+GGG
 ## END
 
 #### proc returning wrong type

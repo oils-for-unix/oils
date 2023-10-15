@@ -147,35 +147,40 @@ def _EvalArgList(
 def EvalTypedArgsToProc(expr_ev, node, cmd_val):
     # type: (expr_eval.ExprEvaluator, command.Simple, cmd_value.Argv) -> None
     """
-    TODO: Synchronize with _EvalArgList() in ysh/expr_eval.py
+    Similar to _EvalArgList()
     """
     cmd_val.typed_args = node.typed_args
+
+    # We only got here if the call looks like
+    #    p (x)
+    #    p { echo hi }
+    #    p () { echo hi }
+    # So allocate this
+    cmd_val.pos_args = []
 
     ty = node.typed_args
     if ty:
         if ty.left.id == Id.Op_LBracket:  # assert [42 === x]
             # Defer evaluation by wrapping in value.Expr
 
-            # TODO: save allocs
-            cmd_val.pos_args = []
             for exp in ty.pos_args:
                 cmd_val.pos_args.append(value.Expr(exp))
 
-            # TODO: save allocs
-            cmd_val.named_args = {}
+            tmp = NewDict()  # type: Dict[str, value_t]
+            cmd_val.named_args = tmp
+
             for named_arg in node.typed_args.named_args:
                 name = lexer.TokenVal(named_arg.name)
                 cmd_val.named_args[name] = value.Expr(named_arg.value)
 
         else:  # json write (x)
-            # TODO: save on allocations if no pos args
-            cmd_val.pos_args = []
             for i, pos_arg in enumerate(ty.pos_args):
                 val = expr_ev.EvalExpr(pos_arg, loc.Missing)
                 cmd_val.pos_args.append(val)
 
-            # TODO: save on allocations if no named args
-            cmd_val.named_args = {}
+            tmp2 = NewDict()  # type: Dict[str, value_t]
+            cmd_val.named_args = tmp2
+
             for named_arg in ty.named_args:
                 val = expr_ev.EvalExpr(named_arg.value, named_arg.name)
                 name = lexer.TokenVal(named_arg.name)
@@ -183,8 +188,6 @@ def EvalTypedArgsToProc(expr_ev, node, cmd_val):
 
     # Pass the unevaluated block.
     if node.block:
-        if cmd_val.pos_args is None:  # TODO: remove
-            cmd_val.pos_args = []
         cmd_val.pos_args.append(value.Block(node.block))
 
         # Important invariant: cmd_val look the same for
@@ -305,9 +308,9 @@ def _BindWords(
                      flags=flags)
 
     num_params = len(sig.word_params)
-    if sig.rest_of_words:
-        r = sig.rest_of_words
-        lval = lvalue.Named(r.name, r.blame_tok)
+    rest = sig.rest_of_words
+    if rest:
+        lval = lvalue.Named(rest.name, rest.blame_tok)
 
         items = [value.Str(s)
                  for s in argv[num_params:]]  # type: List[value_t]
@@ -335,7 +338,58 @@ def _BindTyped(
         mem,  # type: state.Mem
 ):
     # type: (...) -> None
-    pass
+
+    num_args = len(pos_args)
+
+    i = 0
+    for p in sig.pos_params:
+        if i < num_args:
+            val = pos_args[i]
+        else:
+            val = defaults[i]
+            if val is None:
+                # TODO: better location
+                e_die("No value provided for param %r" % p.name, loc.Missing)
+
+        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
+                     val,
+                     scope_e.LocalOnly)
+        i += 1
+
+    # Special case: treat block param like the next positional arg
+    if sig.block_param:
+        if i < num_args:
+            val = pos_args[i]
+        else:
+            val = defaults[i]
+            if val is None:
+                # TODO: better location
+                e_die("No value provided for param %r" % p.name, loc.Missing)
+
+        p = sig.block_param
+        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
+                     val,
+                     scope_e.LocalOnly)
+
+    num_params = len(sig.pos_params)
+    if sig.block_param:
+        num_params += 1
+
+    # ...rest
+
+    rest = sig.rest_of_pos
+    if rest:
+        lval = lvalue.Named(rest.name, rest.blame_tok)
+
+        rest_val = value.List(pos_args[num_params:])
+        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
+    else:
+        if num_args > num_params:
+            # Too many arguments.
+            # TODO: better location
+            e_die_status(2,
+                "proc %r expected %d arguments, but got %d" %
+                (proc_name, num_params, num_args), loc.Missing)
 
 
 def _BindNamed(

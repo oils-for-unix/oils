@@ -462,14 +462,28 @@ test-proc-defaults() {
 }
 
 test-proc-passing() {
+  # Too few words
   _error-case-X 1 '
   proc p(a, b) { echo }
   p a
   '
 
+  # Too many words
   _error-case-X 2 '
   proc p(a, b) { echo }
   p AA b c DD
+  '
+
+  # Too few typed
+  _error-case-X 1 '
+  proc p( ; a, b) { echo }
+  p (42)
+  '
+
+  # Too many words
+  _error-case-X 2 '
+  proc p( ; a, b) { echo }
+  p (42, 43, 44, 45)
   '
 }
 
