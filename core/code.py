@@ -5,8 +5,9 @@ code.py: User-defined funcs and procs
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (value, value_t, scope_e, lvalue,
-                                        cmd_value, FuncValue, ProcDefaults)
+from _devbuild.gen.runtime_asdl import (value, value_e, value_t, scope_e,
+                                        lvalue, cmd_value, FuncValue,
+                                        ProcDefaults)
 from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Func, loc,
                                        ArgList, expr, expr_e)
 
@@ -16,13 +17,12 @@ from core import state
 from core import vm
 from frontend import lexer
 from frontend import typed_args
-from mycpp.mylib import log
+from mycpp.mylib import log, NewDict
 
 from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
     from _devbuild.gen.runtime_asdl import ProcValue
-    from core import ui
     from osh import cmd_eval
     from ysh import expr_eval
 
@@ -35,11 +35,15 @@ def EvalProcDefaults(expr_ev, sig):
 
     no_val = None  # type: value_t
 
-    # TODO: ensure these are STRINGS
     word_defaults = [no_val] * len(sig.word_params)
     for i, p in enumerate(sig.word_params):
         if p.default_val:
             val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            if val.tag() != value_e.Str:
+                raise error.TypeErr(
+                        val, 'Default val for word param must be Str',
+                        p.blame_tok)
+
             word_defaults[i] = val
 
     # TODO: remove the mutable default issue that Python has: f(x=[])
@@ -61,7 +65,7 @@ def EvalProcDefaults(expr_ev, sig):
             val = None  # no default, different than value.Null
         pos_defaults.append(val)
 
-    named_defaults = {}  # Dict[str, value_t]
+    named_defaults = NewDict()  # type: Dict[str, value_t]
     for i, p in enumerate(sig.named_params):
         if p.default_val:
             val = expr_ev.EvalExpr(p.default_val, loc.Missing)
@@ -87,7 +91,7 @@ def EvalFuncDefaults(
             val = expr_ev.EvalExpr(p.default_val, loc.Missing)
             pos_defaults[i] = val
 
-    named_defaults = {}  # Dict[str, value_t]
+    named_defaults = NewDict()  # type: Dict[str, value_t]
     for i, p in enumerate(func.named_params):
         if p.default_val:
             val = expr_ev.EvalExpr(p.default_val, loc.Missing)
@@ -126,7 +130,7 @@ def _EvalArgList(
         else:
             pos_args.append(expr_ev._EvalExpr(arg))
 
-    kwargs = {}  # type: Dict[str, value_t]
+    kwargs = NewDict()  # type: Dict[str, value_t]
 
     # NOTE: Keyword args aren't tested
     if 0:
@@ -242,15 +246,14 @@ def _BindFuncArgs(func_name, node, rd, mem):
             (func_name, num_params, num_args), blame_loc)
 
 
-
-def BindProcArgs(proc, cmd_val, mem, errfmt):
-    # type: (ProcValue, cmd_value.Argv, state.Mem, ui.ErrorFormatter) -> None
-
-    UP_sig = proc.sig
-    if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
-        return
-
-    sig = cast(proc_sig.Closed, UP_sig)
+def _BindWords(
+        proc_name,  # type: str
+        sig,  # type: proc_sig.Closed
+        defaults,  # type: List[value_t]
+        cmd_val,  # type: cmd_value.Argv
+        mem,  # type: state.Mem
+):
+    # type: (...) -> None
 
     argv = cmd_val.argv[1:]
     num_args = len(argv)
@@ -286,7 +289,7 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
         else:
             # default args were evaluated on definition
 
-            val = proc.defaults.for_word[i]
+            val = defaults[i]
             if val is None:
                 e_die("No value provided for param %r" % p.name, p.blame_tok)
 
@@ -313,14 +316,56 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
     else:
         if num_args > num_params:
             if len(cmd_val.arg_locs):
-                arg0_loc = cmd_val.arg_locs[num_args]  # type: loc_t
+                # point to the first extra one
+                extra_loc = cmd_val.arg_locs[num_params + 1]  # type: loc_t
             else:
-                arg0_loc = loc.Missing
+                extra_loc = loc.Missing
 
             # Too many arguments.
             e_die_status(2,
                 "proc %r expected %d arguments, but got %d" %
-                (proc.name, num_params, num_args), arg0_loc)
+                (proc_name, num_params, num_args), extra_loc)
+
+
+def _BindTyped(
+        proc_name,  # type: str
+        sig,  # type: proc_sig.Closed
+        defaults,  # type: List[value_t]
+        pos_args,  # type: List[value_t]
+        mem,  # type: state.Mem
+):
+    # type: (...) -> None
+    pass
+
+
+def _BindNamed(
+        proc_name,  # type: str
+        sig,  # type: proc_sig.Closed
+        defaults,  # type: Dict[str, value_t]
+        named_args,  # type: Dict[str, value_t]
+        mem,  # type: state.Mem
+):
+    # type: (...) -> None
+    pass
+
+
+def BindProcArgs(proc, cmd_val, mem):
+    # type: (ProcValue, cmd_value.Argv, state.Mem) -> None
+
+    UP_sig = proc.sig
+    if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
+        return
+
+    sig = cast(proc_sig.Closed, UP_sig)
+
+    _BindWords(proc.name, sig, proc.defaults.for_word, cmd_val, mem)
+
+    # This includes the block arg
+    pos_args = cmd_val.pos_args if cmd_val.pos_args is not None else []
+    _BindTyped(proc.name, sig, proc.defaults.for_typed, pos_args, mem)
+
+    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
+    _BindNamed(proc.name, sig, proc.defaults.for_named, named_args, mem)
 
 
 def CallUserFunc(func, rd, mem, cmd_ev):

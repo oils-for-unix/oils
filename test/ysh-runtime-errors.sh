@@ -448,7 +448,8 @@ test-var-decl() {
 test-proc-defaults() {
   
   # should be string
-  #_expr-error-case 'proc p(word=42) { echo }'
+  _expr-error-case 'proc p(word=42) { echo }'
+  _expr-error-case 'proc p(word=null) { echo }'
 
   # divide by zero
   _expr-error-case 'proc p(word; t=42/0) { echo }'
@@ -468,7 +469,7 @@ test-proc-passing() {
 
   _error-case-X 2 '
   proc p(a, b) { echo }
-  p a b c
+  p AA b c DD
   '
 }
 
