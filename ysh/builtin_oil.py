@@ -11,8 +11,7 @@ It's sort of like xargs too.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, ProcValue,
-                                        cmd_value)
+from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value)
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from core import error
 from core.error import e_usage
@@ -48,7 +47,7 @@ class Pp(_Builtin):
     """
 
     def __init__(self, mem, errfmt, procs, arena):
-        # type: (state.Mem, ErrorFormatter, Dict[str, ProcValue], Arena) -> None
+        # type: (state.Mem, ErrorFormatter, Dict[str, value.Proc], Arena) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.procs = procs
         self.arena = arena

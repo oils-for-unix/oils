@@ -6,8 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, scope_e,
-                                        lvalue, cmd_value, FuncValue,
-                                        ProcDefaults)
+                                        lvalue, cmd_value, ProcDefaults)
 from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Func, loc,
                                        ArgList, expr, expr_e)
 
@@ -22,7 +21,6 @@ from mycpp.mylib import log, NewDict
 from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command, loc_t
-    from _devbuild.gen.runtime_asdl import ProcValue
     from osh import cmd_eval
     from ysh import expr_eval
 
@@ -422,7 +420,7 @@ def _BindNamed(
 
 
 def BindProcArgs(proc, cmd_val, mem):
-    # type: (ProcValue, cmd_value.Argv, state.Mem) -> None
+    # type: (value.Proc, cmd_value.Argv, state.Mem) -> None
 
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
@@ -439,7 +437,7 @@ def BindProcArgs(proc, cmd_val, mem):
 
 
 def CallUserFunc(func, rd, mem, cmd_ev):
-    # type: (FuncValue, typed_args.Reader, state.Mem, cmd_eval.CommandEvaluator) -> value_t
+    # type: (value.Func, typed_args.Reader, state.Mem, cmd_eval.CommandEvaluator) -> value_t
 
     # Push a new stack frame
     with state.ctx_FuncCall(mem, func):

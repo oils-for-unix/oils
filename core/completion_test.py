@@ -13,7 +13,7 @@ import unittest
 import sys
 
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import value_e, ProcValue, comp_action_e
+from _devbuild.gen.runtime_asdl import value_e, value, comp_action_e
 from _devbuild.gen.syntax_asdl import proc_sig
 from core import completion  # module under test
 from core import comp_ui
@@ -199,7 +199,7 @@ class CompletionTest(unittest.TestCase):
     """,
                                               arena=arena)
         node = c_parser.ParseLogicalLine()
-        proc = ProcValue(node.name, node.name_tok, proc_sig.Open, node.body,
+        proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
                          [], True)
 
         cmd_ev = test_lib.InitCommandEvaluator(arena=arena)

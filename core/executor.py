@@ -5,7 +5,7 @@ from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.runtime_asdl import RedirValue, trace
+from _devbuild.gen.runtime_asdl import RedirValue, trace, value
 from _devbuild.gen.syntax_asdl import (
     command,
     command_e,
@@ -30,7 +30,7 @@ import posix_ as posix
 from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
-                                            StatusArray, ProcValue)
+                                            StatusArray)
     from _devbuild.gen.syntax_asdl import command_t
     from core import optview
     from core import state
@@ -94,7 +94,7 @@ class ShellExecutor(vm._Executor):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
-            procs,  # type: Dict[str, ProcValue]
+            procs,  # type: Dict[str, value.Proc]
             hay_state,  # type: state.Hay
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath

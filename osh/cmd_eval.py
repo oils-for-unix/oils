@@ -65,8 +65,6 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
     CommandStatus,
     StatusArray,
-    ProcValue,
-    FuncValue,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -282,7 +280,7 @@ class CommandEvaluator(object):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
-            procs,  # type: Dict[str, ProcValue]
+            procs,  # type: Dict[str, value.Proc]
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -1386,8 +1384,9 @@ class CommandEvaluator(object):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
-        self.procs[node.name] = ProcValue(node.name, node.name_tok,
-                                          proc_sig.Open, node.body, None, True)
+        self.procs[node.name] = value.Proc(node.name, node.name_tok,
+                                           proc_sig.Open, node.body, None,
+                                           True)
 
     def _DoProc(self, node):
         # type: (Proc) -> None
@@ -1404,8 +1403,8 @@ class CommandEvaluator(object):
             proc_defaults = None
 
         # no dynamic scope
-        self.procs[proc_name] = ProcValue(proc_name, node.name, node.sig,
-                                          node.body, proc_defaults, False)
+        self.procs[proc_name] = value.Proc(proc_name, node.name, node.sig,
+                                           node.body, proc_defaults, False)
 
     def _DoFunc(self, node):
         # type: (Func) -> None
@@ -1414,7 +1413,7 @@ class CommandEvaluator(object):
 
         # Check that we haven't already defined a function
         cell = self.mem.GetCell(name, scope_e.LocalOnly)
-        if cell and cell.val.tag() == value_e.UserFunc:
+        if cell and cell.val.tag() == value_e.Func:
             if self.exec_opts.redefine_proc_func():
                 cell.readonly = False  # Ensure we can unset the value
                 did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
@@ -1426,7 +1425,7 @@ class CommandEvaluator(object):
 
         pos_defaults, named_defaults = code.EvalFuncDefaults(
             self.expr_ev, node)
-        func_val = FuncValue(name, node, pos_defaults, named_defaults)
+        func_val = value.Func(name, node, pos_defaults, named_defaults)
 
         self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
@@ -2088,7 +2087,7 @@ class CommandEvaluator(object):
                     self._Execute(node)
 
     def RunProc(self, proc, cmd_val):
-        # type: (ProcValue, cmd_value.Argv) -> int
+        # type: (value.Proc, cmd_value.Argv) -> int
         """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
@@ -2124,7 +2123,7 @@ class CommandEvaluator(object):
         return status
 
     def RunFuncForCompletion(self, proc, argv):
-        # type: (ProcValue, List[str]) -> int
+        # type: (value.Proc, List[str]) -> int
         """
         Args:
           argv: $1 $2 $3 ... not including $0

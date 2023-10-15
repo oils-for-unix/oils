@@ -77,7 +77,6 @@ import posix_ as posix
 from typing import List, Dict, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import ProcValue
     from core import optview
     from frontend.py_readline import Readline
 
@@ -190,7 +189,7 @@ def _SetGlobalFunc(mem, name, func):
 
 
 def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
-    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.ExprEvaluator, ui.ErrorFormatter, Dict[str, ProcValue], alloc.Arena) -> None
+    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.ExprEvaluator, ui.ErrorFormatter, Dict[str, value.Proc], alloc.Arena) -> None
 
     b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
     b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
@@ -205,7 +204,7 @@ def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
 
 def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path,
             errfmt):
-    # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, ProcValue], Dict[str, bool], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+    # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, value.Proc], Dict[str, bool], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
     b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
 
     b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
@@ -276,7 +275,7 @@ def AddProcess(
 
 def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
             errfmt):
-    # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, ProcValue], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+    # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, value.Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
     """Builtins that run more code."""
 
     builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
@@ -318,7 +317,7 @@ def AddMethods(methods):
 
 
 def InitAssignmentBuiltins(mem, procs, errfmt):
-    # type: (state.Mem, Dict[str, ProcValue], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
+    # type: (state.Mem, Dict[str, value.Proc], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
@@ -458,7 +457,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     version_str = pyutil.GetVersion(loader)
     state.InitMem(mem, environ, version_str)
 
-    procs = {}  # type: Dict[str, ProcValue]
+    procs = {}  # type: Dict[str, value.Proc]
     # NOTE: funcs are defined in the common variable namespace
 
     # e.g. s->startswith()

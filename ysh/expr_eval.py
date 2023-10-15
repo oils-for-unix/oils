@@ -48,7 +48,6 @@ from _devbuild.gen.runtime_asdl import (
     value_e,
     value_t,
     IntBox,
-    FuncValue,
 )
 from core import code
 from core import error
@@ -685,8 +684,8 @@ class ExprEvaluator(object):
         UP_func = func
 
         with tagswitch(func) as case:
-            if case(value_e.UserFunc):
-                func = cast(FuncValue, UP_func)
+            if case(value_e.Func):
+                func = cast(value.Func, UP_func)
 
                 pos_args, named_args = code._EvalArgList(self, node.args)
                 rd = typed_args.Reader(pos_args, named_args, node.args)

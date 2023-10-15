@@ -535,7 +535,7 @@ Float
 List
 Dict
 Null
-UserFunc
+Func
 BuiltinFunc
 BuiltinMethod
 Range

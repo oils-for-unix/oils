@@ -29,7 +29,6 @@ from data_lang import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import ProcValue
     from core.state import Mem
     from core.ui import ErrorFormatter
     from frontend.args import _Attributes
@@ -364,7 +363,7 @@ class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
     def __init__(self, mem, procs, errfmt):
-        # type: (Mem, Dict[str, ProcValue], ErrorFormatter) -> None
+        # type: (Mem, Dict[str, value.Proc], ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.errfmt = errfmt
@@ -482,7 +481,7 @@ class NewVar(vm._AssignBuiltin):
 class Unset(vm._Builtin):
 
     def __init__(self, mem, procs, unsafe_arith, errfmt):
-        # type: (Mem, Dict[str, ProcValue], sh_expr_eval.UnsafeArith, ErrorFormatter) -> None
+        # type: (Mem, Dict[str, value.Proc], sh_expr_eval.UnsafeArith, ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.unsafe_arith = unsafe_arith

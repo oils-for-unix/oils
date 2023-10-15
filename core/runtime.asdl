@@ -34,18 +34,6 @@ module runtime
     Dict[str, value] for_named,
   )
 
-  # command.ShFunction and command.Proc evaluate to ProcValue.
-  # Procs have default args to evaluate, and no dynamic scope.
-  ProcValue = (
-    str name, Token name_tok, proc_sig sig, command body,
-    ProcDefaults? defaults, bool dynamic_scope
-  )
-
-  FuncValue = (
-    str name, Func parsed,
-    List[value] pos_defaults, Dict[str, value] named_defaults,
-  )
-
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
   part_value = 
@@ -110,9 +98,13 @@ module runtime
   | BuiltinFunc(any callable)
   | BuiltinMethod(value me, any callable)
 
-    # User-defined values.  We can reflect onthese too
-  | UserProc %ProcValue
-  | UserFunc %FuncValue
+    # command.ShFunction and command.Proc evaluate to ProcValue.
+    # Procs have default args to evaluate, and no dynamic scope.
+  | Proc(str name, Token name_tok, proc_sig sig, command body,
+         ProcDefaults? defaults, bool dynamic_scope)
+
+  | Func(str name, Func parsed,
+         List[value] pos_defaults, Dict[str, value] named_defaults)
 
   #
   # Internal details
