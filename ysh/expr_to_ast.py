@@ -1099,7 +1099,7 @@ class Transformer(object):
             if rest:
                 p_die("Rest param isn't allowed for blocks", rest.blame_tok)
 
-            if len(params) > 0:
+            if len(params) == 1:
                 if params[0].type:
                     if params[0].type.name != 'Command':
                         p_die('Block param must have type Command',
@@ -1107,7 +1107,8 @@ class Transformer(object):
                     if params[0].type.params is not None:
                         p_die('Unexpected type parameters', params[0].type.tok)
 
-                sig.block_param = RestParam(params[0].blame_tok, params[0].name)
+                sig.block_param = params[0]
+
 
         return sig
 

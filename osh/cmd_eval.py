@@ -2102,9 +2102,7 @@ class CommandEvaluator(object):
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            status = code.BindProcArgs(proc, cmd_val, self.mem, self.errfmt)
-            if status != 0:
-                return status
+            code.BindProcArgs(proc, cmd_val, self.mem, self.errfmt)
 
             # Redirects still valid for functions.
             # Here doc causes a pipe and Process(SubProgramThunk).

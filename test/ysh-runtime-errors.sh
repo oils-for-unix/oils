@@ -445,6 +445,38 @@ test-var-decl() {
   _expr-error-case 'setvar x, y = 1, 2, 3'
 }
 
+test-proc-defaults() {
+  
+  # should be string
+  #_expr-error-case 'proc p(word=42) { echo }'
+
+  # divide by zero
+  _expr-error-case 'proc p(word; t=42/0) { echo }'
+
+  _error-case-X 1 'proc p(word; t=f()) { echo }'
+
+  _error-case-X 1 'proc p(word; t=42; named=undef) { echo }'
+
+  _error-case-X 1 'proc p(word; t=42; named=43; block=ZZ) { echo }'
+}
+
+test-proc-passing() {
+  _error-case-X 1 '
+  proc p(a, b) { echo }
+  p a
+  '
+
+  _error-case-X 2 '
+  proc p(a, b) { echo }
+  p a b c
+  '
+}
+
+test-func-defaults() {
+  _error-case-X 1 'func f(a=ZZ) { echo }'
+  _error-case-X 1 'func f(a; named=YY) { echo }'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

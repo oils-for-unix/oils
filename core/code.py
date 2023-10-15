@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Func, loc,
                                        ArgList, expr, expr_e)
 
 from core import error
-from core.error import e_die
+from core.error import e_die, e_die_status
 from core import state
 from core import vm
 from frontend import lexer
@@ -33,18 +33,41 @@ def EvalProcDefaults(expr_ev, sig):
     # type: (expr_eval.ExprEvaluator, proc_sig.Closed) -> ProcDefaults
     """Evaluated at time of proc DEFINITION, not time of call."""
 
-    # TODO: remove the mutable default issue that Python has: f(x=[])
-    # Whitelist Bool, Int, Float, Str.
-
     no_val = None  # type: value_t
 
+    # TODO: ensure these are STRINGS
     word_defaults = [no_val] * len(sig.word_params)
     for i, p in enumerate(sig.word_params):
         if p.default_val:
             val = expr_ev.EvalExpr(p.default_val, loc.Missing)
             word_defaults[i] = val
 
-    return ProcDefaults(word_defaults, None, None)
+    # TODO: remove the mutable default issue that Python has: f(x=[])
+    # Whitelist Bool, Int, Float, Str.
+    pos_defaults = [no_val] * len(sig.pos_params)
+    for i, p in enumerate(sig.pos_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            pos_defaults[i] = val
+
+    # Block param is treated like another positional param, so you can also
+    # pass it
+    #    cd /tmp (myblock)
+    if sig.block_param:
+        exp = sig.block_param.default_val
+        if exp:
+            val = expr_ev.EvalExpr(exp, loc.Missing)
+        else:
+            val = None  # no default, different than value.Null
+        pos_defaults.append(val)
+
+    named_defaults = {}  # Dict[str, value_t]
+    for i, p in enumerate(sig.named_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            named_defaults[p.name] = val
+
+    return ProcDefaults(word_defaults, pos_defaults, named_defaults)
 
 
 def EvalFuncDefaults(
@@ -52,7 +75,25 @@ def EvalFuncDefaults(
         func,  # type: Func
 ):
     # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
-    return [], {}
+
+    no_val = None  # type: value_t
+
+    # TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
+    # Bool, Int, Float, Str.
+
+    pos_defaults = [no_val] * len(func.pos_params)
+    for i, p in enumerate(func.pos_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            pos_defaults[i] = val
+
+    named_defaults = {}  # Dict[str, value_t]
+    for i, p in enumerate(func.named_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            named_defaults[p.name] = val
+
+    return pos_defaults, named_defaults
 
 
 def _EvalArgList(
@@ -203,11 +244,11 @@ def _BindFuncArgs(func_name, node, rd, mem):
 
 
 def BindProcArgs(proc, cmd_val, mem, errfmt):
-    # type: (ProcValue, cmd_value.Argv, state.Mem, ui.ErrorFormatter) -> int
+    # type: (ProcValue, cmd_value.Argv, state.Mem, ui.ErrorFormatter) -> None
 
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
-        return 0
+        return
 
     sig = cast(proc_sig.Closed, UP_sig)
 
@@ -272,18 +313,14 @@ def BindProcArgs(proc, cmd_val, mem, errfmt):
     else:
         if num_args > num_params:
             if len(cmd_val.arg_locs):
-                arg0_loc = cmd_val.arg_locs[0]  # type: loc_t
+                arg0_loc = cmd_val.arg_locs[num_args]  # type: loc_t
             else:
                 arg0_loc = loc.Missing
 
-            # TODO: Raise an exception?
-            errfmt.Print_(
+            # Too many arguments.
+            e_die_status(2,
                 "proc %r expected %d arguments, but got %d" %
                 (proc.name, num_params, num_args), arg0_loc)
-            # This should be status 2 because it's like a usage error.
-            return 2
-
-    return 0
 
 
 def CallUserFunc(func, rd, mem, cmd_ev):

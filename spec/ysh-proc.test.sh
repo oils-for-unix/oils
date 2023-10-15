@@ -23,12 +23,11 @@ proc f() {
 f
 echo status=$?
 
-f a b
-echo status=$?  # status 2 because it's a usage error
+f a b  # status 2
 
+## status: 2
 ## STDOUT:
 status=42
-status=2
 ## END
 
 #### Open proc has "$@"

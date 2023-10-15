@@ -322,7 +322,7 @@ module syntax
   | Closed(List[Param] word_params, RestParam? rest_of_words,
            List[Param] pos_params, RestParam? rest_of_pos,
            List[Param] named_params, RestParam? rest_of_named,
-           RestParam? block_param)
+           Param? block_param)
 
   Proc = (Token keyword, Token name, proc_sig sig, command body)
 
