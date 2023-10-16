@@ -889,7 +889,8 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
-                code.EvalTypedArgsToProc(self.expr_ev, node, cmd_val)
+                code.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts, node,
+                                         cmd_val)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",

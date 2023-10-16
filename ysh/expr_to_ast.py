@@ -858,12 +858,12 @@ class Transformer(object):
             # concatenated as in lists and dicts.
             tok0 = p_node.GetChild(0).tok
             if tok0.id == Id.Expr_Ellipsis:
-                spread_expr = self.Expr(p_node.GetChild(1))
+                spread_expr = expr.Spread(tok0, self.Expr(p_node.GetChild(1)))
                 if do_named:
                     # Implicit spread with name = None
                     named_args.append(NamedArg(None, spread_expr))
                 else:
-                    pos_args.append(expr.Spread(tok0, spread_expr))
+                    pos_args.append(spread_expr)
                 return
 
             if p_node.GetChild(1).typ == grammar_nt.comp_for:

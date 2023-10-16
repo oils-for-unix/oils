@@ -7,8 +7,9 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, scope_e,
                                         lvalue, cmd_value, ProcDefaults)
-from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Func, loc,
-                                       ArgList, expr, expr_e)
+from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, NamedArg,
+                                       Func, loc, ArgList, expr, expr_e,
+                                       expr_t)
 
 from core import error
 from core.error import e_die, e_die_status
@@ -27,6 +28,34 @@ if TYPE_CHECKING:
 _ = log
 
 
+# TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
+# Bool, Int, Float, Str.
+
+def _EvalPosDefaults(expr_ev, pos_params):
+    # type: (expr_eval.ExprEvaluator, List[Param]) -> List[value_t]
+    """Shared between func and proc: Eval defaults for positional params"""
+
+    no_val = None  # type: value_t
+    pos_defaults = [no_val] * len(pos_params)
+    for i, p in enumerate(pos_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            pos_defaults[i] = val
+    return pos_defaults
+
+
+def _EvalNamedDefaults(expr_ev, named_params):
+    # type: (expr_eval.ExprEvaluator, List[Param]) -> Dict[str, value_t]
+    """Shared between func and proc: Eval defaults for named params"""
+
+    named_defaults = NewDict()  # type: Dict[str, value_t]
+    for i, p in enumerate(named_params):
+        if p.default_val:
+            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            named_defaults[p.name] = val
+    return named_defaults
+
+
 def EvalFuncDefaults(
         expr_ev,  # type: expr_eval.ExprEvaluator
         func,  # type: Func
@@ -34,22 +63,8 @@ def EvalFuncDefaults(
     # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
     """Evaluate default args for funcs, at time of DEFINITION, not call."""
 
-    no_val = None  # type: value_t
-
-    # TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
-    # Bool, Int, Float, Str.
-
-    pos_defaults = [no_val] * len(func.pos_params)
-    for i, p in enumerate(func.pos_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            pos_defaults[i] = val
-
-    named_defaults = NewDict()  # type: Dict[str, value_t]
-    for i, p in enumerate(func.named_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            named_defaults[p.name] = val
+    pos_defaults = _EvalPosDefaults(expr_ev, func.pos_params)
+    named_defaults = _EvalNamedDefaults(expr_ev, func.named_params)
 
     return pos_defaults, named_defaults
 
@@ -71,13 +86,7 @@ def EvalProcDefaults(expr_ev, sig):
 
             word_defaults[i] = val
 
-    # TODO: remove the mutable default issue that Python has: f(x=[])
-    # Whitelist Bool, Int, Float, Str.
-    pos_defaults = [no_val] * len(sig.pos_params)
-    for i, p in enumerate(sig.pos_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            pos_defaults[i] = val
+    pos_defaults = _EvalPosDefaults(expr_ev, sig.pos_params)
 
     # Block param is treated like another positional param, so you can also
     # pass it
@@ -91,15 +100,47 @@ def EvalProcDefaults(expr_ev, sig):
             val = None  # no default, different than value.Null
         pos_defaults.append(val)
 
-    #log('pos_defaults %s', pos_defaults)
-
-    named_defaults = NewDict()  # type: Dict[str, value_t]
-    for i, p in enumerate(sig.named_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            named_defaults[p.name] = val
+    named_defaults = _EvalNamedDefaults(expr_ev, sig.named_params)
 
     return ProcDefaults(word_defaults, pos_defaults, named_defaults)
+
+
+def _EvalPosArgs(expr_ev, exprs, pos_args):
+    # type: (expr_eval.ExprEvaluator, List[expr_t], List[value_t]) -> None
+    """Shared between func and proc: evaluate positional args."""
+
+    for e in exprs:
+        UP_e = e 
+        if e.tag() == expr_e.Spread:
+            e = cast(expr.Spread, UP_e)
+            val = expr_ev._EvalExpr(e.child)
+            if val.tag() != value_e.List:
+                raise error.TypeErr(val, 'Spread expected a List', e.left)
+            pos_args.extend(cast(value.List, val).items)
+        else:
+            pos_args.append(expr_ev._EvalExpr(e))
+
+
+def _EvalNamedArgs(expr_ev, named_exprs):
+    # type: (expr_eval.ExprEvaluator, List[NamedArg]) -> Dict[str, value_t]
+    """Shared between func and proc: evaluate named args."""
+
+    named_args = NewDict()  # type: Dict[str, value_t]
+    for n in named_exprs:
+        val_expr = n.value
+        UP_val_expr = val_expr
+        if val_expr.tag() == expr_e.Spread:
+            val_expr = cast(expr.Spread, UP_val_expr)
+            val = expr_ev._EvalExpr(val_expr.child)
+            if val.tag() != value_e.Dict:
+                raise error.TypeErr(val, 'Spread expected a dict', val_expr.left)
+            named_args.update(cast(value.Dict, val).d)
+        else:
+            val = expr_ev.EvalExpr(n.value, n.name)
+            name = lexer.TokenVal(n.name)
+            named_args[name] = val
+
+    return named_args
 
 
 def _EvalArgList(
@@ -107,7 +148,7 @@ def _EvalArgList(
         args,  # type: ArgList
         me=None  # type: Optional[value_t]
 ):
-    # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
+    # type: (...) -> Tuple[List[value_t], Optional[Dict[str, value_t]]]
     """Evaluate arg list for funcs.
 
     This is a PRIVATE METHOD on ExprEvaluator, but it's in THIS FILE, because I
@@ -123,33 +164,22 @@ def _EvalArgList(
     if me:  # self/this argument
         pos_args.append(me)
 
-    for arg in args.pos_args:
-        UP_arg = arg
-        if arg.tag() == expr_e.Spread:
-            arg = cast(expr.Spread, UP_arg)
-            val = expr_ev._EvalExpr(arg.child)
-            if val.tag() != value_e.List:
-                raise error.TypeErr(val, 'Spread expected a list', arg.left)
-            pos_args.extend(cast(value.List, val).items)
-        else:
-            pos_args.append(expr_ev._EvalExpr(arg))
+    _EvalPosArgs(expr_ev, args.pos_args, pos_args)
 
-    kwargs = NewDict()  # type: Dict[str, value_t]
+    named_args = None  # type: Dict[str, value_t]
+    if args.named_args is not None:
+        named_args = _EvalNamedArgs(expr_ev, args.named_args)
 
-    # NOTE: Keyword args aren't tested
-    if 0:
-        for named in args.named:
-            if named.name:
-                kwargs[named.name.tval] = expr_ev._EvalExpr(named.value)
-            else:
-                # ...named
-                kwargs.update(expr_ev._EvalExpr(named.value))
-
-    return pos_args, kwargs
+    return pos_args, named_args
 
 
-def EvalTypedArgsToProc(expr_ev, node, cmd_val):
-    # type: (expr_eval.ExprEvaluator, command.Simple, cmd_value.Argv) -> None
+def EvalTypedArgsToProc(
+        expr_ev, # type: expr_eval.ExprEvaluator
+        mutable_opts, # type: state.MutableOpts
+        node, # type: command.Simple
+        cmd_val,  # type: cmd_value.Argv
+):
+    # type: (...) -> None
     """Evaluate word, typed, named, and block args for a proc."""
     cmd_val.typed_args = node.typed_args
 
@@ -178,26 +208,12 @@ def EvalTypedArgsToProc(expr_ev, node, cmd_val):
                 # TODO: ...spread is illegal
 
         else:  # json write (x)
-            for i, arg in enumerate(ty.pos_args):
-                UP_arg = arg
-                if arg.tag() == expr_e.Spread:
-                    arg = cast(expr.Spread, UP_arg)
-                    val = expr_ev.EvalExpr(arg.child, loc.Missing)
-                    if val.tag() != value_e.List:
-                        raise error.TypeErr(val, 'Spread expected a list', arg.left)
-                    cmd_val.pos_args.extend(cast(value.List, val).items)
-                else:
-                    val = expr_ev.EvalExpr(arg, loc.Missing)
-                    cmd_val.pos_args.append(val)
+            with state.ctx_YshExpr(mutable_opts):  # What EvalExpr() does
+                _EvalPosArgs(expr_ev, ty.pos_args, cmd_val.pos_args)
 
-            n2 = ty.named_args
-            if n2 is not None:
-                cmd_val.named_args = NewDict()
-                for named_arg in n2:
-                    val = expr_ev.EvalExpr(named_arg.value, named_arg.name)
-                    name = lexer.TokenVal(named_arg.name)
-                    cmd_val.named_args[name] = val
-                # TODO: ...spread
+                n2 = ty.named_args
+                if n2 is not None:
+                    cmd_val.named_args = _EvalNamedArgs(expr_ev, ty.named_args)
 
     # Pass the unevaluated block.
     if node.block:
@@ -423,7 +439,21 @@ def _BindNamed(
     if named_args is None:
         named_args = NewDict()
 
-    # TODO: bind
+    for p in sig.named_params:
+        val = named_args.get(p.name)
+        if val is None:
+            val = defaults.get(p.name)
+        if val is None:
+            # TODO: better location
+            e_die("No value provided for named param %r" % p.name, loc.Missing)
+
+        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
+                     val,
+                     scope_e.LocalOnly)
+
+    # TODO:
+    # ...rest
+
 
 
 def BindProcArgs(proc, cmd_val, mem):

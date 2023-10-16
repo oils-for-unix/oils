@@ -459,6 +459,14 @@ test-proc-defaults() {
   _error-case-X 1 'proc p(word; t=42; named=undef) { echo }'
 
   _error-case-X 1 'proc p(word; t=42; named=43; block=ZZ) { echo }'
+
+  _should-run '
+  proc p(word="yo"; t=42; named=43; block=null) {
+    #echo $word $t $named $block
+    echo $word $t $block
+  }
+  p
+  '
 }
 
 test-proc-passing() {
@@ -504,6 +512,15 @@ test-proc-passing() {
   var x = [4, 5, 6]
   p (...x)
   '
+
+  # Named splat
+  _should-run '
+  proc myproc (; p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  var kwargs = {a: 42, b: 43}
+  myproc (99; ...kwargs)
+  '
 }
 
 test-func-defaults() {
@@ -512,6 +529,7 @@ test-func-defaults() {
 }
 
 test-func-passing() {
+  # rest can't have default
   _parse-error '
   func f(...rest=3) {
     return (42)
@@ -535,6 +553,15 @@ test-func-passing() {
 
   var x = [4, 5, 6]
   = f(...x)
+  '
+
+  # Named splat
+  _should-run '
+  func f(p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  var kwargs = {a: 42, b: 43}
+  = f(42; ...kwargs)
   '
 }
 
