@@ -36,6 +36,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_t,
     Param,
     RestParam,
+    ParamGroup,
     NamedArg,
     ArgList,
     Variant,
@@ -1210,7 +1211,8 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            out.pos_params, out.rest_of_pos = self._ParamGroup(child)
+            params, rest_of = self._ParamGroup(child)
+            out.positional = ParamGroup(params, rest_of)
             i += 2  # skip past ;
         else:
             i += 1
@@ -1220,7 +1222,8 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            out.named_params, out.rest_of_named = self._ParamGroup(child)
+            params, rest_of = self._ParamGroup(child)
+            out.named = ParamGroup(params, rest_of)
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.TeaFunc) -> None

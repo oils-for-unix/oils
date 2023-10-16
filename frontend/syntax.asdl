@@ -316,6 +316,8 @@ module syntax
   Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
   RestParam = (Token blame_tok, str name)
 
+  ParamGroup = (List[Param] params, RestParam? rest_of)
+
   # 'open' is for proc p { }; closed is for proc p () { }
   proc_sig =
     Open
@@ -328,8 +330,7 @@ module syntax
 
   Func = (
       Token keyword, Token name,
-      List[Param] pos_params, RestParam? rest_of_pos,
-      List[Param] named_params, RestParam? rest_of_named,
+      ParamGroup? positional, ParamGroup? named,
       command body
   )
 

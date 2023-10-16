@@ -2090,12 +2090,14 @@ class CommandParser(object):
         with ctx_VarChecker(self.var_checker, keyword_tok):
             self.parse_ctx.ParseFunc(self.lexer, node)
 
-            for param in node.pos_params:
-                name_tok = param.blame_tok
-                self.var_checker.Check(Id.KW_Var, name_tok)
-            if node.rest_of_pos:
-                name_tok = node.rest_of_pos.blame_tok
-                self.var_checker.Check(Id.KW_Var, name_tok)
+            posit = node.positional
+            if posit:
+                for param in posit.params:
+                    name_tok = param.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
+                if posit.rest_of:
+                    name_tok = posit.rest_of.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):

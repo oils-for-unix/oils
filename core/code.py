@@ -28,9 +28,16 @@ if TYPE_CHECKING:
 
 _ = log
 
-# TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
-# Bool, Int, Float, Str.
-
+# TODO:
+# - Bind func params
+# - validate defaults
+#   - remove mutable defaults that Python has: f(x=[]) Whitelist Bool,
+#     Int, Float, Str, and I suppose cmd, eggex, etc.
+#   - validate Block arg default
+# - e_die{,_status} -> error.Expr uniformly
+# - fix locations -- test-proc-missing, test-func-missing
+# - use _EvalExpr consistently, I think
+#   - a single with state.ctx_YshExpr -- I guess that's faster
 
 def _EvalPosDefaults(expr_ev, pos_params):
     # type: (expr_eval.ExprEvaluator, List[Param]) -> List[value_t]
@@ -64,8 +71,15 @@ def EvalFuncDefaults(
     # type: (...) -> Tuple[List[value_t], Dict[str, value_t]]
     """Evaluate default args for funcs, at time of DEFINITION, not call."""
 
-    pos_defaults = _EvalPosDefaults(expr_ev, func.pos_params)
-    named_defaults = _EvalNamedDefaults(expr_ev, func.named_params)
+    if func.positional:
+        pos_defaults = _EvalPosDefaults(expr_ev, func.positional.params)
+    else:
+        pos_defaults = None
+
+    if func.named:
+        named_defaults = _EvalNamedDefaults(expr_ev, func.named.params)
+    else:
+        named_defaults = None
 
     return pos_defaults, named_defaults
 
@@ -424,13 +438,17 @@ def _BindFuncArgs(func_name, node, rd, mem):
     # - Handle default args.  Evaluate them here or elsewhere?
     # - pass named args
 
-    num_pos_params = len(node.pos_params)
+    posit = node.positional
+    if not posit:
+        return
+
+    num_pos_params = len(posit.params)
 
     pos_args = rd.pos_args
     num_args = len(pos_args)
 
     blame_loc = rd.LeftParenToken()
-    if node.rest_of_pos:
+    if posit.rest_of:
         if num_args < num_pos_params:
             raise error.TypeErrVerbose(
                 "%s() expects at least %d arguments, but got %d" %
@@ -440,29 +458,30 @@ def _BindFuncArgs(func_name, node, rd, mem):
             "%s() expects %d arguments, but got %d" %
             (func_name, num_pos_params, num_args), blame_loc)
 
-    num_args = len(node.pos_params)
+    num_args = len(posit.params)
     for i in xrange(0, num_args):
-        pos_param = node.pos_params[i]
+        pos_param = posit.params[i]
         lval = lvalue.Named(pos_param.name, pos_param.blame_tok)
 
         pos_arg = pos_args[i]
         mem.SetValue(lval, pos_arg, scope_e.LocalOnly)
 
-    if node.rest_of_pos:
-        p = node.rest_of_pos
-        lval = lvalue.Named(p.name, p.blame_tok)
+    if posit.rest_of:
+        r = posit.rest_of
+        lval = lvalue.Named(r.name, r.blame_tok)
 
         rest_val = value.List(pos_args[num_args:])
         mem.SetValue(lval, rest_val, scope_e.LocalOnly)
 
-    num_params = len(node.named_params)
-    named_args = rd.named_args
-    num_args = len(named_args)
+    if node.named:
+        num_params = len(node.named.params)
+        named_args = rd.named_args
+        num_args = len(named_args)
 
-    if num_args != num_params:
-        raise error.TypeErrVerbose(
-            "%s() expects %d named arguments, but got %d" %
-            (func_name, num_params, num_args), blame_loc)
+        if num_args != num_params:
+            raise error.TypeErrVerbose(
+                "%s() expects %d named arguments, but got %d" %
+                (func_name, num_params, num_args), blame_loc)
 
 
 def BindProcArgs(proc, cmd_val, mem):
