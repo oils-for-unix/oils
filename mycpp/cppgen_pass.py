@@ -1336,13 +1336,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     isinstance(lval_type.items[1], NoneTyp)):
                     lval_type = lval_type.items[0]
 
-                key_type, val_type = lval_type.args
+                c_type = GetCType(lval_type)
+                if self.decl:
+                    self.local_var_list.append((lval.name, c_type))
 
-                key_c_type = GetCType(key_type)
-                val_c_type = GetCType(val_type)
+                assert c_type.endswith('*')
 
-                self.write_ind('auto* %s = Alloc<Dict<%s, %s>>();\n',
-                               lval.name, key_c_type, val_c_type)
+                # Hack for declaration vs. definition.  TODO: clean this up
+                prefix = '' if self.current_func_node else 'auto* '
+
+                self.write_ind('%s%s = Alloc<%s>();\n',
+                               prefix, lval.name, c_type[:-1])
                 return
 
             #    src = cast(source__SourcedFile, src)
