@@ -437,10 +437,14 @@ test-parse-at() {
   _parse-error 'echo @"foo"'
 }
 
-test-ysh-nested-proc() {
+test-ysh-nested-proc-func() {
   set +o errexit
 
   _parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
+  _parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
+  _parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
+
   _parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
   # ksh function

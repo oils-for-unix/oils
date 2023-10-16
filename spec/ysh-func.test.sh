@@ -1,7 +1,6 @@
-# spec/ysh-funcs
+# spec/ysh-func
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 #### Identity function
 func id(x) {
@@ -44,7 +43,7 @@ x=3
 x=4
 ## END
 
-#### named args with ...
+#### Named args with ...rest
 func f(; x=3, ...named) {
   echo x=$x
   json write --pretty=F (named)
@@ -118,32 +117,6 @@ func f() { return (1) }
 const f = 0
 ## status: 1
 ## STDOUT:
-## END
-
-#### Functions do not lift their inner definitions out of scope
-func f() {
-  func g() { return (1) }
-  echo "g()=$[g()]"
-}
-
-echo "g()=$[g()]"  # Undefined variable 'g'
-## status: 1
-## STDOUT:
-## END
-
-#### Calling functions still does not lift their inner definitions out of scope
-func f() {
-  func g() { return (1) }
-  echo "g()=$[g()]"
-}
-
-# If we set scope_e.GlobalOnly, then this would define g so that is may be used below
-_ f()
-
-echo "g()=$[g()]"  # Undefined variable 'g'
-## status: 1
-## STDOUT:
-g()=1
 ## END
 
 #### Multiple func calls
@@ -449,7 +422,7 @@ Meow
 ## END
 
 #### Functions cannot be nested
-func build(y) {
+proc build {
   func f(x) {
     return (x)
   }

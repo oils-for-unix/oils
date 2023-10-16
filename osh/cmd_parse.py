@@ -374,7 +374,9 @@ class VarChecker(object):
 
     def Push(self, blame_tok):
         # type: (Token) -> None
-        """Bash allows this, but it's confusing because it's the same as two
+        """Called when we enter a shell function, proc, or func.
+
+        Bash allows this, but it's confusing because it's the same as two
         functions at the top level.
 
         f() {
@@ -383,11 +385,16 @@ class VarChecker(object):
           }
         }
 
-        YSH disallows nested procs.
+        YSH disallows nested procs and funcs.
         """
         if len(self.tokens) != 0:
-            if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
-                p_die("procs and shell functions can't be nested", blame_tok)
+            if blame_tok.id == Id.KW_Proc:
+                p_die("procs must be defined at the top level", blame_tok)
+            if blame_tok.id == Id.KW_Func:
+                p_die("funcs must be defined at the top level", blame_tok)
+            if self.tokens[0].id in (Id.KW_Proc, Id.KW_Func):
+                p_die("shell functions can't be defined inside proc or func",
+                      blame_tok)
 
         self.tokens.append(blame_tok)
         entry = {}  # type: Dict[str, Id_t]

@@ -57,7 +57,7 @@ def ReaderForProc(cmd_val):
 
 class Reader(object):
     """
-    func f(a Str) {
+    func f(a Str) { echo hi }
 
         is equivalent to
 
@@ -65,7 +65,9 @@ class Reader(object):
         a = t.PosStr()
         t.Done()  # checks for no more args
 
-    func f(a Str, b Int, ...args; c=0, d='foo', ...named) {
+    func f(a Str, b Int, ...args; c=0, d='foo', ...named) { echo hi }
+      echo hi
+    }
 
         is equivalent to
 
@@ -82,22 +84,13 @@ class Reader(object):
 
     procs have more options:
 
-    proc p(a, b; a Str, b Int; c=0; block) {
+    proc p(a, b; a Str, b Int; c=0; block) { echo hi }
 
-        is equivalent to
+    Builtin procs use:
 
-        t = typed_args.Reader(argv, pos_args, named_args)
-
-        a = t.Word()
-        b = t.Word()
-
-        t.NamedInt('c', 0)
-
-        block = t.Block()
-
-        t.Done()
+    - args.Reader() and generated flag_def.py APIs for the words
+    - typed_args.Reader() for the positional/named typed args.
     """
-
     def __init__(self, pos_args, named_args, arg_list, is_bound=False):
         # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
         self.pos_args = pos_args
@@ -126,16 +119,6 @@ class Reader(object):
             return self.arg_list.left
 
         return loc.Missing
-
-    ### Words: untyped args for procs
-
-    def Word(self):
-        # type: () -> str
-        return None  # TODO
-
-    def RestWords(self):
-        # type: () -> List[str]
-        return None  # TODO
 
     ### Typed positional args
 
