@@ -82,3 +82,28 @@ echo "failed with status $_status"
 "1, 2, 3"
 failed with status 3
 ## END
+
+#### List->reverse()
+
+var empty = []
+
+var a = [0]
+var b = [2, 1, 3]
+var c = :| hello world |
+
+_ empty->reverse()
+_ a->reverse()
+_ b->reverse()
+_ c->reverse()
+
+json write --pretty=F (empty)
+json write --pretty=F (a)
+json write --pretty=F (b)
+json write --pretty=F (c)
+
+## STDOUT:
+[]
+[0]
+[3,1,2]
+["world","hello"]
+## END

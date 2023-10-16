@@ -1,5 +1,4 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 #### join()
 var x = :|a b 'c d'|
@@ -53,15 +52,14 @@ true
 false
 ## END
 
-#### sum() - TODO: need default args
+#### sum()
 source --builtin list.ysh
 
 var start = 42
 
-
 write $[sum( 0 .. 3 )]
-write $[sum( 0 .. 3, start)]
-#write $[sum( 0 .. 0, start)]
+write $[sum( 0 .. 3; start=42)]
+write $[sum( 0 .. 0, start=42)]
 
 ## STDOUT:
 3

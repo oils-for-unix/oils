@@ -24,12 +24,12 @@ func all(list) {
   return (true)
 }
 
-func sum(list) {
+func sum(list; start=0) {
   ## Computes the sum of all elements in the list.
   ##
   ## Returns 0 for an empty list.
 
-  var sum = 0
+  var sum = start
   for item in (list) {
     setvar sum += item
   }
