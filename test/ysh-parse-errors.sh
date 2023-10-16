@@ -106,15 +106,15 @@ test-proc-sig() {
 
   _should-parse 'func p (p, ...rest) { echo hi }'
 
-  _should-parse 'func p (p, ...rest; n, ...rest) { echo hi }'
-  _should-parse 'func p (p, ...rest; n, ...rest,) { echo hi }'
+  _should-parse 'func p (p, ...rest; n, ...named) { echo hi }'
+  _should-parse 'func p (p, ...rest; n, ...named,) { echo hi }'
 
-  _parse-error 'func p (p, ...rest; n, ...rest, z) { echo hi }'
-  _parse-error 'func p (p, ...rest; n, ...rest; ) { echo hi }'
+  _parse-error 'func p (p, ...rest; n, ...named, z) { echo hi }'
+  _parse-error 'func p (p, ...rest; n, ...named; ) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; pos, ...rest) { echo hi }'
+  _should-parse 'proc p (w, ...rest; pos, ...named) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; pos, ...rest; named=3, ...rest) { echo hi }'
+  _should-parse 'proc p (w, ...rest; pos, ...args; named=3, ...named) { echo hi }'
 
   _should-parse 'proc p (w=1, v=2; p=3, q=4; n=5, m=6) { echo hi }'
 
@@ -122,7 +122,7 @@ test-proc-sig() {
 
   _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; block) { echo hi }'
+  _should-parse 'proc p (w, ...rest; t, ...args; n, ...named; block) { echo hi }'
 
   _parse-error 'proc p ( ; ; ; b1, b2) { echo hi }'
   _parse-error 'proc p ( ; ; ; b1, ...rest) { echo hi }'
@@ -151,8 +151,8 @@ test-func-sig() {
 
   _should-parse 'func f (a List[Int] = [3,4]) { echo hi }'
   _should-parse 'func f (a, b, ...rest; c) { echo hi }'
-  _should-parse 'func f (a, b, ...rest; c, ...rest) { echo hi }'
-  _parse-error 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
+  _should-parse 'func f (a, b, ...rest; c, ...named) { echo hi }'
+  _parse-error 'func f (a, b, ...rest; c, ...named;) { echo hi }'
 }
 
 test-func-def() {
