@@ -125,12 +125,12 @@ def _EvalArgList(
 
     for arg in args.pos_args:
         UP_arg = arg
-
         if arg.tag() == expr_e.Spread:
             arg = cast(expr.Spread, UP_arg)
-            # assume it returns a list
-            #pos_args.extend(self._EvalExpr(arg.child))
-            pass
+            val = expr_ev._EvalExpr(arg.child)
+            if val.tag() != value_e.List:
+                raise error.TypeErr(val, 'Spread expected a list', arg.left)
+            pos_args.extend(cast(value.List, val).items)
         else:
             pos_args.append(expr_ev._EvalExpr(arg))
 
@@ -178,10 +178,17 @@ def EvalTypedArgsToProc(expr_ev, node, cmd_val):
                 # TODO: ...spread is illegal
 
         else:  # json write (x)
-            for i, pos_arg in enumerate(ty.pos_args):
-                val = expr_ev.EvalExpr(pos_arg, loc.Missing)
-                cmd_val.pos_args.append(val)
-            # TODO: ...spread
+            for i, arg in enumerate(ty.pos_args):
+                UP_arg = arg
+                if arg.tag() == expr_e.Spread:
+                    arg = cast(expr.Spread, UP_arg)
+                    val = expr_ev.EvalExpr(arg.child, loc.Missing)
+                    if val.tag() != value_e.List:
+                        raise error.TypeErr(val, 'Spread expected a list', arg.left)
+                    cmd_val.pos_args.extend(cast(value.List, val).items)
+                else:
+                    val = expr_ev.EvalExpr(arg, loc.Missing)
+                    cmd_val.pos_args.append(val)
 
             n2 = ty.named_args
             if n2 is not None:

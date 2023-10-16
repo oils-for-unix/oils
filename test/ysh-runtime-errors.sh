@@ -485,11 +485,57 @@ test-proc-passing() {
   proc p( ; a, b) { echo }
   p (42, 43, 44, 45)
   '
+
+  _expr-error-case '
+  proc p(; a, b) {
+    echo $a - $b -
+  }
+  p (...[1, 2])
+  p (...3)
+  '
+
+  # rest args and splat
+  _should-run '
+  proc p(; a, ...b) {
+    echo $a - @b -
+  }
+  p (1, 2, 3)
+
+  var x = [4, 5, 6]
+  p (...x)
+  '
 }
 
 test-func-defaults() {
   _error-case-X 1 'func f(a=ZZ) { echo }'
   _error-case-X 1 'func f(a; named=YY) { echo }'
+}
+
+test-func-passing() {
+  _parse-error '
+  func f(...rest=3) {
+    return (42)
+  }
+  '
+
+  _expr-error-case '
+  func f(a, b) {
+    echo $a - $b -
+  }
+  = f(...[1, 2])
+  = f(...3)
+  '
+
+  # rest args and splat
+  _should-run '
+  func f(a, ...b) {
+    echo $a - @b -
+  }
+  = f(1, 2, 3)
+
+  var x = [4, 5, 6]
+  = f(...x)
+  '
 }
 
 soil-run() {

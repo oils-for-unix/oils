@@ -553,7 +553,7 @@ module syntax
     # attribute.)
 
     # I think we can use { **pairs } like Python
-  | Spread(expr child, expr_context ctx)
+  | Spread(Token left, expr child)
 
   #
   # Regex Language (Eggex)

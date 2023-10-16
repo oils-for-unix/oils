@@ -856,14 +856,14 @@ class Transformer(object):
         if n == 2:
             # Note: We allow multiple spreads, just like Julia.  They are
             # concatenated as in lists and dicts.
-            if p_node.GetChild(0).tok.id == Id.Expr_Ellipsis:
+            tok0 = p_node.GetChild(0).tok
+            if tok0.id == Id.Expr_Ellipsis:
                 spread_expr = self.Expr(p_node.GetChild(1))
                 if do_named:
                     # Implicit spread with name = None
                     named_args.append(NamedArg(None, spread_expr))
                 else:
-                    pos_args.append(
-                        expr.Spread(spread_expr, expr_context_e.Store))
+                    pos_args.append(expr.Spread(tok0, spread_expr))
                 return
 
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
