@@ -260,7 +260,7 @@ def EvalTypedArgsToProc(
 
 def _BindWords(
         proc_name,  # type: str
-        sig,  # type: proc_sig.Closed
+        group,  # type: ParamGroup
         defaults,  # type: List[value_t]
         cmd_val,  # type: cmd_value.Argv
         mem,  # type: state.Mem
@@ -269,7 +269,7 @@ def _BindWords(
 
     argv = cmd_val.argv[1:]
     num_args = len(argv)
-    for i, p in enumerate(sig.word.params):
+    for i, p in enumerate(group.params):
 
         # proc p(out Ref)
         is_out_param = (p.type is not None and p.type.name == 'Ref')
@@ -320,8 +320,8 @@ def _BindWords(
 
     # ...rest
 
-    num_params = len(sig.word.params)
-    rest = sig.word.rest_of
+    num_params = len(group.params)
+    rest = group.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
 
@@ -345,7 +345,8 @@ def _BindWords(
 
 def _BindTyped(
         code_name,  # type: str
-        sig,  # type: proc_sig.Closed
+        group,  # type: ParamGroup
+        block_param,  # type: Optional[Param]
         defaults,  # type: List[value_t]
         pos_args,  # type: Optional[List[value_t]]
         mem,  # type: state.Mem
@@ -358,7 +359,7 @@ def _BindTyped(
     num_args = len(pos_args)
 
     i = 0
-    for p in sig.positional.params:
+    for p in group.params:
         if i < num_args:
             val = pos_args[i]
         else:
@@ -372,27 +373,27 @@ def _BindTyped(
         i += 1
 
     # Special case: treat block param like the next positional arg
-    if sig.block_param:
-        p = sig.block_param
-
+    if block_param:
         if i < num_args:
             val = pos_args[i]
         else:
             val = defaults[i]
             if val is None:
                 # TODO: better location
-                e_die("%r wasn't passed block param %r" % (code_name, p.name),
+                e_die("%r wasn't passed block param %r" % (code_name,
+                                                           block_param.name),
                       loc.Missing)
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
+        mem.SetValue(lvalue.Named(block_param.name, block_param.blame_tok),
+                     val, scope_e.LocalOnly)
 
-    num_params = len(sig.positional.params)
-    if sig.block_param:
+    num_params = len(group.params)
+    if block_param:
         num_params += 1
 
     # ...rest
 
-    rest = sig.positional.rest_of
+    rest = group.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
 
@@ -409,7 +410,7 @@ def _BindTyped(
 
 def _BindNamed(
         code_name,  # type: str
-        sig,  # type: proc_sig.Closed
+        group,  # type: ParamGroup
         defaults,  # type: Dict[str, value_t]
         named_args,  # type: Optional[Dict[str, value_t]]
         mem,  # type: state.Mem
@@ -419,7 +420,7 @@ def _BindNamed(
     if named_args is None:
         named_args = NewDict()
 
-    for p in sig.named.params:
+    for p in group.params:
         val = named_args.get(p.name)
         if val is None:
             val = defaults.get(p.name)
@@ -433,13 +434,13 @@ def _BindNamed(
         mylib.dict_erase(named_args, p.name)
 
     # ...rest
-    rest = sig.named.rest_of
+    rest = group.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
         mem.SetValue(lval, value.Dict(named_args), scope_e.LocalOnly)
     else:
         num_args = len(named_args)
-        num_params = len(sig.named.params)
+        num_params = len(group.params)
         if num_args > num_params:
             # Too many arguments.
             # TODO: better location
@@ -514,18 +515,19 @@ def BindProcArgs(proc, cmd_val, mem):
 
     sig = cast(proc_sig.Closed, UP_sig)
 
-    if sig.word is None:  # Hack to simplify code
-        sig.word = ParamGroup([], None)
-    _BindWords(proc.name, sig, proc.defaults.for_word, cmd_val, mem)
+    # TODO: can we structure this without allocating empty ParamGroups?  If we
+    # don't call _Bind*, then we don't check for too many args.
 
-    if sig.positional is None:  # Hack to simplify code
-        sig.positional = ParamGroup([], None)
+    group = sig.word if sig.word else ParamGroup([], None)
+    _BindWords(proc.name, group, proc.defaults.for_word, cmd_val, mem)
+
     # This includes the block arg
-    _BindTyped(proc.name, sig, proc.defaults.for_typed, cmd_val.pos_args, mem)
+    group = sig.positional if sig.positional else ParamGroup([], None)
+    _BindTyped(proc.name, group, sig.block_param, proc.defaults.for_typed,
+               cmd_val.pos_args, mem)
 
-    if sig.named  is None:  # Hack to simplify code
-        sig.named = ParamGroup([], None)
-    _BindNamed(proc.name, sig, proc.defaults.for_named, cmd_val.named_args,
+    group = sig.named if sig.named else ParamGroup([], None)
+    _BindNamed(proc.name, group, proc.defaults.for_named, cmd_val.named_args,
                mem)
 
 
