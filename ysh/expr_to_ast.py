@@ -988,7 +988,7 @@ class Transformer(object):
         return Param(name_tok, lexer.TokenVal(name_tok), type_, default_val)
 
     def _ParamGroup(self, p_node):
-        # type: (PNode) -> Tuple[List[Param], Optional[RestParam]]
+        # type: (PNode) -> ParamGroup
         """
         param_group:
           (param ',')*
@@ -1013,7 +1013,7 @@ class Transformer(object):
             i += 2
             #log('i %d n %d', i, n)
 
-        return params, rest_of
+        return ParamGroup(params, rest_of)
 
     def Proc(self, p_node):
         # type: (PNode) -> proc_sig_t
@@ -1048,8 +1048,7 @@ class Transformer(object):
         i = 1 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest_of = self._ParamGroup(p_node.GetChild(i))
-            sig.word = ParamGroup(params, rest_of)
+            sig.word = self._ParamGroup(p_node.GetChild(i))
 
             # Validate word args
             for word in sig.word.params:
@@ -1071,8 +1070,7 @@ class Transformer(object):
         # Positional args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest_of = self._ParamGroup(p_node.GetChild(i))
-            sig.positional = ParamGroup(params, rest_of)
+            sig.positional = self._ParamGroup(p_node.GetChild(i))
             i += 2
         else:
             i += 1
@@ -1084,8 +1082,7 @@ class Transformer(object):
         # Keyword args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest_of = self._ParamGroup(p_node.GetChild(i))
-            sig.named = ParamGroup(params, rest_of)
+            sig.named = self._ParamGroup(p_node.GetChild(i))
             i += 2
         else:
             i += 1
@@ -1096,11 +1093,13 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest = self._ParamGroup(p_node.GetChild(i))
+            group = self._ParamGroup(p_node.GetChild(i))
+            params = group.params
             if len(params) > 1:
                 p_die('Only 1 block param is allowed', params[1].blame_tok)
-            if rest:
-                p_die("Rest param isn't allowed for blocks", rest.blame_tok)
+            if group.rest_of:
+                p_die("Rest param isn't allowed for blocks",
+                      group.rest_of.blame_tok)
 
             if len(params) == 1:
                 if params[0].type:
@@ -1213,8 +1212,7 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest_of = self._ParamGroup(child)
-            out.positional = ParamGroup(params, rest_of)
+            out.positional = self._ParamGroup(child)
             i += 2  # skip past ;
         else:
             i += 1
@@ -1224,8 +1222,7 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest_of = self._ParamGroup(child)
-            out.named = ParamGroup(params, rest_of)
+            out.named = self._ParamGroup(child)
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.TeaFunc) -> None
@@ -1242,19 +1239,17 @@ class Transformer(object):
         pos = 1
         typ2 = pnode.GetChild(pos).typ
         if ISNONTERMINAL(typ2):
-            assert typ2 == grammar_nt.param_group, pnode.GetChild(
-                pos)  # f(x, y)
+            # f(x, y)
+            assert typ2 == grammar_nt.param_group, pnode.GetChild(pos)
             # every other one is a comma
-            out.pos_params, out.pos_splat = self._ParamGroup(
-                pnode.GetChild(pos))
+            out.positional = self._ParamGroup(pnode.GetChild(pos))
             pos += 1
 
         id_ = pnode.GetChild(pos).tok.id
         if id_ == Id.Op_RParen:  # f()
             pos += 1
         elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._ParamGroup(
-                pnode.GetChild(pos + 1))
+            out.named = self._ParamGroup(pnode.GetChild(pos + 1))
             pos += 3
 
         if pnode.GetChild(pos).typ == grammar_nt.type_expr_list:

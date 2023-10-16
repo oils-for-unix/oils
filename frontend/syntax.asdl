@@ -407,9 +407,8 @@ module syntax
   # Tea
 
   | TeaFunc(Token name,
-         List[Param] pos_params, RestParam? pos_splat,
-         List[Param] named_params, RestParam? named_splat,
-         List[TypeExpr] return_types, command body)
+            ParamGroup? positional, ParamGroup? named,
+            List[TypeExpr] return_types, command body)
   | Data(Token name, List[Param] params)
   | Enum(Token name, List[Variant] variants)
   | Class(Token name, Token? extends, List[class_item] items)
