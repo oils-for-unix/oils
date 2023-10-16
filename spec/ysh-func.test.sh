@@ -64,6 +64,44 @@ x=4
 {"y":5}
 ## END
 
+#### Spread/splat of named args: f(...more)
+
+func f(; x, y) {
+  echo "$x $y"
+}
+
+_ f(; x=9, y=10)
+
+var args = {x: 3, y: 4}
+
+_ f(; ...args)
+
+
+## STDOUT:
+9 10
+3 4
+## END
+
+
+#### Multiple spreads
+
+func f(...pos; ...named) {
+  json write --pretty=F (pos)
+  json write --pretty=F (named)
+}
+
+var a = [1,2,3]
+var d = {m: 'spam', n: 'no'}
+var e = {p: 5, q: 6}
+
+_ f(...a, ...a; ...d, ...e)
+
+## STDOUT:
+[1,2,3,1,2,3]
+{"m":"spam","n":"no","p":5,"q":6}
+## END
+
+
 #### Proc-style return in a func
 func t() { return 0 }
 

@@ -221,7 +221,8 @@ argument: (
 
 # The grammar at call sites is less restrictive than at declaration sites.
 # ... can appear anywhere.  Keyword args can appear anywhere too.
-arglist: argument (',' argument)* [','] [';' argument (',' argument)* [',']]
+arg_group: argument (',' argument)* [',']
+arglist: [arg_group] [';' arg_group]
 
 
 # Oil patch: test_nocond -> or_test.  I believe this was trying to prevent the
@@ -310,8 +311,8 @@ place_list: expr (',' expr)*
 oil_place_mutation: place_list (augassign | '=') testlist end_stmt
 
 # For json write (x)
-ysh_eager_arglist: '(' arglist ')'
-ysh_lazy_arglist: '[' arglist ']'
+ysh_eager_arglist: '(' [arglist] ')'
+ysh_lazy_arglist: '[' [arglist] ']'
 
 #
 # Other Entry Points

@@ -1116,6 +1116,7 @@ class CommandParser(object):
             return simple
 
         # Disallow =a because it's confusing
+        # TODO: =f(x) isn't detected?
         part0 = words[0].parts[0]
         if part0.tag() == word_part_e.Literal:
             tok = cast(Token, part0)

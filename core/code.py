@@ -314,7 +314,6 @@ def _BindWords(
         else:
             flags = 0
 
-        #log('flags %s', flags)
         mem.SetValue(lvalue.Named(param_name, p.blame_tok),
                      val,
                      scope_e.LocalOnly,

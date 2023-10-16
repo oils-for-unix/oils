@@ -70,6 +70,15 @@ test-func-var-checker() {
   '
 }
 
+test-arglist() {
+  _parse-error 'json write ()'
+  _parse-error 'json write []'
+
+  #_should-parse 'p (a;)'
+  _should-parse '= f(a;)'
+}
+
+
 # Extra constraints on param groups:
 # - word arg types can only be Str or Ref
 # - no constraints on positional or keyword args?

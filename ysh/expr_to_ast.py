@@ -127,6 +127,7 @@ if mylib.PYTHON:
 
 def ISNONTERMINAL(x):
     # type: (int) -> bool
+    assert isinstance(x, int), x
     return x >= NT_OFFSET
 
 
@@ -213,7 +214,7 @@ class Transformer(object):
 
             p = p_trailer.GetChild(1)  # the X in ( X )
             assert p.typ == grammar_nt.arglist  # f(x, y)
-            self._Arglist(p, arglist)
+            self._ArgList(p, arglist)
             return expr.FuncCall(base, arglist)
 
         if op_tok.id == Id.Op_LBracket:
@@ -883,27 +884,39 @@ class Transformer(object):
 
         raise NotImplementedError()
 
-    def _Arglist(self, parent, arglist):
-        # type: (PNode, ArgList) -> None
-        """Parse tree to LST
-
-        arglist:
-               argument (',' argument)* [',']
-          [';' argument (',' argument)* [','] ]
+    def _ArgGroup(self, p_node, do_named, arglist):
+        # type: (PNode, bool, ArgList) -> None
         """
-        do_named = False
-        for i in xrange(parent.NumChildren()):
-            p_child = parent.GetChild(i)
+        arg_group: argument (',' argument)* [',']
+        """
+        for i in xrange(p_node.NumChildren()):
+            p_child = p_node.GetChild(i)
             if ISNONTERMINAL(p_child.typ):
                 self._Argument(p_child, do_named, arglist)
-            elif p_child.tok.id == Id.Op_Semi:
-                arglist.named_delim = p_child.tok
-                do_named = True
+
+    def _ArgList(self, p_node, arglist):
+        # type: (PNode, ArgList) -> None
+        """For both funcs and procs
+
+        arglist: [arg_group] [';' arg_group]
+        """
+        n = p_node.NumChildren()
+        if n == 0:
+            return
+
+        p0 = p_node.GetChild(0)
+        i = 0
+        if ISNONTERMINAL(p0.typ):
+            self._ArgGroup(p0, False, arglist)
+            i += 1
+
+        if n >= 2:
+            arglist.named_delim = p_node.GetChild(i).tok
+            self._ArgGroup(p_node.GetChild(i+1), True, arglist)
 
     def ToArgList(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
-        """Transform arg lists.
-
+        """
         ysh_eager_arglist: '(' [arglist] ')'
         ysh_lazy_arglist: '[' [arglist] ']'
         """
@@ -914,7 +927,7 @@ class Transformer(object):
         p = pnode.GetChild(1)  # the X in '( X )'
 
         assert p.typ == grammar_nt.arglist
-        self._Arglist(p, arglist)
+        self._ArgList(p, arglist)
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr
