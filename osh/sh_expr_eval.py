@@ -80,6 +80,10 @@ _ = log
 #   (( val = a[key] ))       # osh/sh_expr_eval.py:509 (Id.Arith_LBracket)
 #
 
+# flags for libc functions
+FnmCasefold = 1 << 4
+RegIcase = 1 << 1
+
 
 def OldValue(lval, mem, exec_opts):
     # type: (lvalue_t, state.Mem, Optional[optview.Exec]) -> value_t
@@ -1026,14 +1030,17 @@ class BoolEvaluator(ArithEvaluator):
                     raise AssertionError(op_id)  # should never happen
 
                 if arg_type == bool_arg_type_e.Str:
+                    eval_flags = 0
+                    if self.exec_opts.nocasematch():
+                        eval_flags |= FnmCasefold
 
                     if op_id in (Id.BoolBinary_GlobEqual,
                                  Id.BoolBinary_GlobDEqual):
                         #log('Matching %s against pattern %s', s1, s2)
-                        return libc.fnmatch(s2, s1)
+                        return libc.fnmatch(s2, s1, eval_flags)
 
                     if op_id == Id.BoolBinary_GlobNEqual:
-                        return not libc.fnmatch(s2, s1)
+                        return not libc.fnmatch(s2, s1, eval_flags)
 
                     if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
                         return s1 == s2
@@ -1044,8 +1051,12 @@ class BoolEvaluator(ArithEvaluator):
                     if op_id == Id.BoolBinary_EqualTilde:
                         # TODO: This should go to --debug-file
                         #log('Matching %r against regex %r', s1, s2)
+                        eval_flags = 0
+                        if self.exec_opts.nocasematch():
+                            eval_flags |= RegIcase
+
                         try:
-                            matches = libc.regex_match(s2, s1)
+                            matches = libc.regex_match(s2, s1, eval_flags)
                         except RuntimeError as e:
                             # Status 2 indicates a regex parse error.  This is fatal in OSH but
                             # not in bash, which treats [[ like a command with an exit code.
