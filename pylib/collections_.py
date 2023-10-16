@@ -123,11 +123,16 @@ class OrderedDict(dict):
         for k in self:
             yield (k, self[k])
 
-    # Oil patch: commented out
+    # Oils patch: commented out
     if 0:
       update = MutableMapping.update
 
       __update = update # let subclasses override update without breaking __init__
+
+    # Oils patch:
+    def update(self, other):
+        for k, v in other.iteritems():
+            self[k] = v
 
     __marker = object()
 

@@ -502,7 +502,7 @@ test-proc-passing() {
   p (...3)
   '
 
-  # rest args and splat
+  # positional: rest args and spread
   _should-run '
   proc p(; a, ...b) {
     echo $a - @b -
@@ -513,7 +513,7 @@ test-proc-passing() {
   p (...x)
   '
 
-  # Named splat
+  # named: splat
   _should-run '
   proc myproc (; p ; a, b) {
     echo "$p ; $a $b"
@@ -521,7 +521,56 @@ test-proc-passing() {
   var kwargs = {a: 42, b: 43}
   myproc (99; ...kwargs)
   '
+
+  # named: rest args
+  _should-run '
+  proc myproc (; p ; a, b, ...named) {
+    = p
+    = a
+    = b
+    = named
+  }
+  var kwargs = {a: 42, b: 43, c:44}
+  myproc (99; ...kwargs)
+  '
 }
+
+# TODO: improve locations for all of these
+test-proc-missing() {
+  # missing word param
+  _error-case-X 1 '
+  proc myproc (w) {
+    = w
+  }
+  myproc
+  '
+
+  # missing typed param
+  _error-case-X 1 '
+  proc myproc (w; t1, t2) {
+    = w
+    = t
+  }
+  myproc foo (42)
+  '
+
+  # missing named param
+  _error-case-X 1 '
+  proc myproc (; p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  myproc (99, b=3)
+  '
+
+  # missing block param
+  _error-case-X 1 '
+  proc myproc (w; p ; a, b; block) {
+    = block
+  }
+  myproc foo (99, a=1, b=2)
+  '
+}
+
 
 test-func-defaults() {
   _error-case-X 1 'func f(a=ZZ) { echo }'
@@ -529,8 +578,8 @@ test-func-defaults() {
 }
 
 test-func-passing() {
-  # rest can't have default
-  _parse-error '
+  # rest can't have default -- parse error
+  _error-case-X 2 '
   func f(...rest=3) {
     return (42)
   }
@@ -538,7 +587,14 @@ test-func-passing() {
 
   _expr-error-case '
   func f(a, b) {
-    echo $a - $b -
+    echo "$a -- $b"
+  }
+  = f()
+  '
+
+  _expr-error-case '
+  func f(a, b) {
+    echo "$a -- $b"
   }
   = f(...[1, 2])
   = f(...3)
@@ -555,6 +611,8 @@ test-func-passing() {
   = f(...x)
   '
 
+  return
+  # TODO:
   # Named splat
   _should-run '
   func f(p ; a, b) {

@@ -17,6 +17,7 @@ from core import state
 from core import vm
 from frontend import lexer
 from frontend import typed_args
+from mycpp import mylib
 from mycpp.mylib import log, NewDict
 
 from typing import List, Tuple, Dict, Optional, cast, TYPE_CHECKING
@@ -27,9 +28,9 @@ if TYPE_CHECKING:
 
 _ = log
 
-
 # TODO: remove the mutable default issue that Python has: f(x=[]) Whitelist
 # Bool, Int, Float, Str.
+
 
 def _EvalPosDefaults(expr_ev, pos_params):
     # type: (expr_eval.ExprEvaluator, List[Param]) -> List[value_t]
@@ -80,9 +81,9 @@ def EvalProcDefaults(expr_ev, sig):
         if p.default_val:
             val = expr_ev.EvalExpr(p.default_val, loc.Missing)
             if val.tag() != value_e.Str:
-                raise error.TypeErr(
-                        val, 'Default val for word param must be Str',
-                        p.blame_tok)
+                raise error.TypeErr(val,
+                                    'Default val for word param must be Str',
+                                    p.blame_tok)
 
             word_defaults[i] = val
 
@@ -110,7 +111,7 @@ def _EvalPosArgs(expr_ev, exprs, pos_args):
     """Shared between func and proc: evaluate positional args."""
 
     for e in exprs:
-        UP_e = e 
+        UP_e = e
         if e.tag() == expr_e.Spread:
             e = cast(expr.Spread, UP_e)
             val = expr_ev._EvalExpr(e.child)
@@ -133,7 +134,8 @@ def _EvalNamedArgs(expr_ev, named_exprs):
             val_expr = cast(expr.Spread, UP_val_expr)
             val = expr_ev._EvalExpr(val_expr.child)
             if val.tag() != value_e.Dict:
-                raise error.TypeErr(val, 'Spread expected a dict', val_expr.left)
+                raise error.TypeErr(val, 'Spread expected a dict',
+                                    val_expr.left)
             named_args.update(cast(value.Dict, val).d)
         else:
             val = expr_ev.EvalExpr(n.value, n.name)
@@ -174,9 +176,9 @@ def _EvalArgList(
 
 
 def EvalTypedArgsToProc(
-        expr_ev, # type: expr_eval.ExprEvaluator
-        mutable_opts, # type: state.MutableOpts
-        node, # type: command.Simple
+        expr_ev,  # type: expr_eval.ExprEvaluator
+        mutable_opts,  # type: state.MutableOpts
+        node,  # type: command.Simple
         cmd_val,  # type: cmd_value.Argv
 ):
     # type: (...) -> None
@@ -212,7 +214,7 @@ def EvalTypedArgsToProc(
                 _EvalPosArgs(expr_ev, ty.pos_args, cmd_val.pos_args)
 
                 n2 = ty.named_args
-                if n2 is not None:
+                if ty.named_args is not None:
                     cmd_val.named_args = _EvalNamedArgs(expr_ev, ty.named_args)
 
     # Pass the unevaluated block.
@@ -228,54 +230,6 @@ def EvalTypedArgsToProc(
             # Also add locations for error message: ls { echo invalid }
             cmd_val.typed_args.left = node.block.brace_group.left
             cmd_val.typed_args.right = node.block.brace_group.right
-
-
-def _BindFuncArgs(func_name, node, rd, mem):
-    # type: (str, Func, typed_args.Reader, state.Mem) -> None
-
-    # TODO:
-    # - Handle default args.  Evaluate them here or elsewhere?
-    # - pass named args
-
-    num_pos_params = len(node.pos_params)
-
-    pos_args = rd.pos_args
-    num_args = len(pos_args)
-
-    blame_loc = rd.LeftParenToken()
-    if node.rest_of_pos:
-        if num_args < num_pos_params:
-            raise error.TypeErrVerbose(
-                "%s() expects at least %d arguments, but got %d" %
-                (func_name, num_pos_params, num_args), blame_loc)
-    elif num_args != num_pos_params:
-        raise error.TypeErrVerbose(
-            "%s() expects %d arguments, but got %d" %
-            (func_name, num_pos_params, num_args), blame_loc)
-
-    num_args = len(node.pos_params)
-    for i in xrange(0, num_args):
-        pos_param = node.pos_params[i]
-        lval = lvalue.Named(pos_param.name, pos_param.blame_tok)
-
-        pos_arg = pos_args[i]
-        mem.SetValue(lval, pos_arg, scope_e.LocalOnly)
-
-    if node.rest_of_pos:
-        p = node.rest_of_pos
-        lval = lvalue.Named(p.name, p.blame_tok)
-
-        rest_val = value.List(pos_args[num_args:])
-        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
-
-    num_params = len(node.named_params)
-    named_args = rd.named_args
-    num_args = len(named_args)
-
-    if num_args != num_params:
-        raise error.TypeErrVerbose(
-            "%s() expects %d named arguments, but got %d" %
-            (func_name, num_params, num_args), blame_loc)
 
 
 def _BindWords(
@@ -323,7 +277,9 @@ def _BindWords(
 
             val = defaults[i]
             if val is None:
-                e_die("No value provided for word param %r" % p.name, p.blame_tok)
+                e_die(
+                    "proc %r wasn't passed word param %r" %
+                    (proc_name, p.name), loc.Missing)
 
         if is_out_param:
             flags = state.SetNameref
@@ -356,13 +312,13 @@ def _BindWords(
                 extra_loc = loc.Missing
 
             # Too many arguments.
-            e_die_status(2,
-                "proc %r expected %d words, but got %d" %
+            e_die_status(
+                2, "proc %r expected %d words, but got %d" %
                 (proc_name, num_params, num_args), extra_loc)
 
 
 def _BindTyped(
-        proc_name,  # type: str
+        code_name,  # type: str
         sig,  # type: proc_sig.Closed
         defaults,  # type: List[value_t]
         pos_args,  # type: Optional[List[value_t]]
@@ -383,11 +339,10 @@ def _BindTyped(
             val = defaults[i]
             if val is None:
                 # TODO: better location
-                e_die("No value provided for typed param %r" % p.name, loc.Missing)
+                e_die("%r wasn't passed typed param %r" % (code_name, p.name),
+                      loc.Missing)
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
-                     val,
-                     scope_e.LocalOnly)
+        mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
         i += 1
 
     # Special case: treat block param like the next positional arg
@@ -400,11 +355,10 @@ def _BindTyped(
             val = defaults[i]
             if val is None:
                 # TODO: better location
-                e_die("No value provided for block param %r" % p.name, loc.Missing)
+                e_die("%r wasn't passed block param %r" % (code_name, p.name),
+                      loc.Missing)
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
-                     val,
-                     scope_e.LocalOnly)
+        mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
 
     num_params = len(sig.pos_params)
     if sig.block_param:
@@ -422,13 +376,13 @@ def _BindTyped(
         if num_args > num_params:
             # Too many arguments.
             # TODO: better location
-            e_die_status(2,
-                "proc %r expected %d typed args, but got %d" %
-                (proc_name, num_params, num_args), loc.Missing)
+            e_die_status(
+                2, "%r expected %d typed args, but got %d" %
+                (code_name, num_params, num_args), loc.Missing)
 
 
 def _BindNamed(
-        proc_name,  # type: str
+        code_name,  # type: str
         sig,  # type: proc_sig.Closed
         defaults,  # type: Dict[str, value_t]
         named_args,  # type: Optional[Dict[str, value_t]]
@@ -445,15 +399,70 @@ def _BindNamed(
             val = defaults.get(p.name)
         if val is None:
             # TODO: better location
-            e_die("No value provided for named param %r" % p.name, loc.Missing)
+            e_die("%r wasn't passed named param %r" % (code_name, p.name),
+                  loc.Missing)
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok),
-                     val,
-                     scope_e.LocalOnly)
+        mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
+        # Remove bound args
+        mylib.dict_erase(named_args, p.name)
+
+    # ...rest
+    rest = sig.rest_of_named
+    if rest:
+        lval = lvalue.Named(rest.name, rest.blame_tok)
+        mem.SetValue(lval, value.Dict(named_args), scope_e.LocalOnly)
+
+
+def _BindFuncArgs(func_name, node, rd, mem):
+    # type: (str, Func, typed_args.Reader, state.Mem) -> None
+
+    #_BindTyped(func_name, sig, proc.defaults.for_typed, cmd_val.pos_args, mem)
+
+    #_BindNamed(proc.name, sig, proc.defaults.for_named, cmd_val.named_args, mem)
 
     # TODO:
-    # ...rest
+    # - Handle default args.  Evaluate them here or elsewhere?
+    # - pass named args
 
+    num_pos_params = len(node.pos_params)
+
+    pos_args = rd.pos_args
+    num_args = len(pos_args)
+
+    blame_loc = rd.LeftParenToken()
+    if node.rest_of_pos:
+        if num_args < num_pos_params:
+            raise error.TypeErrVerbose(
+                "%s() expects at least %d arguments, but got %d" %
+                (func_name, num_pos_params, num_args), blame_loc)
+    elif num_args != num_pos_params:
+        raise error.TypeErrVerbose(
+            "%s() expects %d arguments, but got %d" %
+            (func_name, num_pos_params, num_args), blame_loc)
+
+    num_args = len(node.pos_params)
+    for i in xrange(0, num_args):
+        pos_param = node.pos_params[i]
+        lval = lvalue.Named(pos_param.name, pos_param.blame_tok)
+
+        pos_arg = pos_args[i]
+        mem.SetValue(lval, pos_arg, scope_e.LocalOnly)
+
+    if node.rest_of_pos:
+        p = node.rest_of_pos
+        lval = lvalue.Named(p.name, p.blame_tok)
+
+        rest_val = value.List(pos_args[num_args:])
+        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
+
+    num_params = len(node.named_params)
+    named_args = rd.named_args
+    num_args = len(named_args)
+
+    if num_args != num_params:
+        raise error.TypeErrVerbose(
+            "%s() expects %d named arguments, but got %d" %
+            (func_name, num_params, num_args), blame_loc)
 
 
 def BindProcArgs(proc, cmd_val, mem):
@@ -470,7 +479,8 @@ def BindProcArgs(proc, cmd_val, mem):
     # This includes the block arg
     _BindTyped(proc.name, sig, proc.defaults.for_typed, cmd_val.pos_args, mem)
 
-    _BindNamed(proc.name, sig, proc.defaults.for_named, cmd_val.named_args, mem)
+    _BindNamed(proc.name, sig, proc.defaults.for_named, cmd_val.named_args,
+               mem)
 
 
 def CallUserFunc(func, rd, mem, cmd_ev):
