@@ -7,9 +7,9 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, scope_e,
                                         lvalue, cmd_value, ProcDefaults)
-from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, NamedArg,
-                                       Func, loc, ArgList, expr, expr_e,
-                                       expr_t)
+from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
+                                       NamedArg, Func, loc, ArgList, expr,
+                                       expr_e, expr_t)
 
 from core import error
 from core.error import e_die, e_die_status
@@ -90,18 +90,24 @@ def EvalProcDefaults(expr_ev, sig):
 
     no_val = None  # type: value_t
 
-    word_defaults = [no_val] * len(sig.word_params)
-    for i, p in enumerate(sig.word_params):
-        if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
-            if val.tag() != value_e.Str:
-                raise error.TypeErr(val,
-                                    'Default val for word param must be Str',
-                                    p.blame_tok)
+    if sig.word:
+        word_defaults = [no_val] * len(sig.word.params)
+        for i, p in enumerate(sig.word.params):
+            if p.default_val:
+                val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+                if val.tag() != value_e.Str:
+                    raise error.TypeErr(val,
+                                        'Default val for word param must be Str',
+                                        p.blame_tok)
 
-            word_defaults[i] = val
+                word_defaults[i] = val
+    else:
+        word_defaults = None
 
-    pos_defaults = _EvalPosDefaults(expr_ev, sig.pos_params)
+    if sig.positional:
+        pos_defaults = _EvalPosDefaults(expr_ev, sig.positional.params)
+    else:
+        pos_defaults = None  # in case there's a block param
 
     # Block param is treated like another positional param, so you can also
     # pass it
@@ -113,9 +119,15 @@ def EvalProcDefaults(expr_ev, sig):
             # TODO: it can only be ^() or null
         else:
             val = None  # no default, different than value.Null
+
+        if pos_defaults is None:
+            pos_defaults = []
         pos_defaults.append(val)
 
-    named_defaults = _EvalNamedDefaults(expr_ev, sig.named_params)
+    if sig.named:
+        named_defaults = _EvalNamedDefaults(expr_ev, sig.named.params)
+    else:
+        named_defaults = None
 
     return ProcDefaults(word_defaults, pos_defaults, named_defaults)
 
@@ -257,7 +269,7 @@ def _BindWords(
 
     argv = cmd_val.argv[1:]
     num_args = len(argv)
-    for i, p in enumerate(sig.word_params):
+    for i, p in enumerate(sig.word.params):
 
         # proc p(out Ref)
         is_out_param = (p.type is not None and p.type.name == 'Ref')
@@ -308,8 +320,8 @@ def _BindWords(
 
     # ...rest
 
-    num_params = len(sig.word_params)
-    rest = sig.rest_of_words
+    num_params = len(sig.word.params)
+    rest = sig.word.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
 
@@ -346,7 +358,7 @@ def _BindTyped(
     num_args = len(pos_args)
 
     i = 0
-    for p in sig.pos_params:
+    for p in sig.positional.params:
         if i < num_args:
             val = pos_args[i]
         else:
@@ -374,13 +386,13 @@ def _BindTyped(
 
         mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
 
-    num_params = len(sig.pos_params)
+    num_params = len(sig.positional.params)
     if sig.block_param:
         num_params += 1
 
     # ...rest
 
-    rest = sig.rest_of_pos
+    rest = sig.positional.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
 
@@ -407,7 +419,7 @@ def _BindNamed(
     if named_args is None:
         named_args = NewDict()
 
-    for p in sig.named_params:
+    for p in sig.named.params:
         val = named_args.get(p.name)
         if val is None:
             val = defaults.get(p.name)
@@ -421,10 +433,19 @@ def _BindNamed(
         mylib.dict_erase(named_args, p.name)
 
     # ...rest
-    rest = sig.rest_of_named
+    rest = sig.named.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
         mem.SetValue(lval, value.Dict(named_args), scope_e.LocalOnly)
+    else:
+        num_args = len(named_args)
+        num_params = len(sig.named.params)
+        if num_args > num_params:
+            # Too many arguments.
+            # TODO: better location
+            e_die_status(
+                2, "%r expected %d named args, but got %d" %
+                (code_name, num_params, num_args), loc.Missing)
 
 
 def _BindFuncArgs(func_name, node, rd, mem):
@@ -493,11 +514,17 @@ def BindProcArgs(proc, cmd_val, mem):
 
     sig = cast(proc_sig.Closed, UP_sig)
 
+    if sig.word is None:  # Hack to simplify code
+        sig.word = ParamGroup([], None)
     _BindWords(proc.name, sig, proc.defaults.for_word, cmd_val, mem)
 
+    if sig.positional is None:  # Hack to simplify code
+        sig.positional = ParamGroup([], None)
     # This includes the block arg
     _BindTyped(proc.name, sig, proc.defaults.for_typed, cmd_val.pos_args, mem)
 
+    if sig.named  is None:  # Hack to simplify code
+        sig.named = ParamGroup([], None)
     _BindNamed(proc.name, sig, proc.defaults.for_named, cmd_val.named_args,
                mem)
 

@@ -1048,19 +1048,21 @@ class Transformer(object):
         i = 1 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            sig.word_params, sig.rest_of_words = self._ParamGroup(p_node.GetChild(i))
+            params, rest_of = self._ParamGroup(p_node.GetChild(i))
+            sig.word = ParamGroup(params, rest_of)
+
+            # Validate word args
+            for word in sig.word.params:
+                if word.type:
+                    if word.type.name not in ('Str', 'Ref'):
+                        p_die('Word params may only have type Str or Ref',
+                              word.type.tok)
+                    if word.type.params is not None:
+                        p_die('Unexpected type parameters', word.type.tok)
+
             i += 2
         else:
             i += 1
-
-        # Validate word args
-        for word in sig.word_params:
-            if word.type:
-                if word.type.name not in ('Str', 'Ref'):
-                    p_die('Word params may only have type Str or Ref',
-                          word.type.tok)
-                if word.type.params is not None:
-                    p_die('Unexpected type parameters', word.type.tok)
 
         #log('i %d n %d', i, n)
         if i >= n:
@@ -1069,8 +1071,8 @@ class Transformer(object):
         # Positional args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            sig.pos_params, sig.rest_of_pos = (
-                    self._ParamGroup(p_node.GetChild(i)))
+            params, rest_of = self._ParamGroup(p_node.GetChild(i))
+            sig.positional = ParamGroup(params, rest_of)
             i += 2
         else:
             i += 1
@@ -1082,8 +1084,8 @@ class Transformer(object):
         # Keyword args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            sig.named_params, sig.rest_of_named = (
-                    self._ParamGroup(p_node.GetChild(i)))
+            params, rest_of = self._ParamGroup(p_node.GetChild(i))
+            sig.named = ParamGroup(params, rest_of)
             i += 2
         else:
             i += 1

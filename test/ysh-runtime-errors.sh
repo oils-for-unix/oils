@@ -571,6 +571,41 @@ test-proc-missing() {
   '
 }
 
+test-proc-extra() {
+
+  # extra word
+  _error-case-X 2 '
+  proc myproc () {
+    echo hi
+  }
+  myproc foo
+  '
+
+  # extra positional
+  _error-case-X 2 '
+  proc myproc (w) {
+    echo hi
+  }
+  myproc foo (42)
+  '
+
+  # extra named
+  _error-case-X 2 '
+  proc myproc (w; p) {
+    echo hi
+  }
+  myproc foo (42; named=1)
+  '
+
+  # extra block.  TODO: error is about typed args
+  _error-case-X 2 '
+  proc myproc (w; p; n) {
+    echo hi
+  }
+  myproc foo (42; n=1) { echo hi }
+  '
+}
+
 
 test-func-defaults() {
   _error-case-X 1 'func f(a=ZZ) { echo }'

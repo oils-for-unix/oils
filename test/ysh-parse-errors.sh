@@ -137,6 +137,13 @@ test-proc-sig() {
   _should-parse 'proc p ( ; ; ; ) { echo hi }'
 }
 
+test-proc-def() {
+  _parse-error 'proc p(w) { var w = foo }'
+  _parse-error 'proc p(w; p) { var p = foo }'
+  _parse-error 'proc p(w; p; n, n2) { var n2 = foo }'
+  _parse-error 'proc p(w; p; n, n2; b) { var b = foo }'
+}
+
 test-func-sig() {
   _parse-error 'func f { echo hi }'
 
@@ -146,6 +153,11 @@ test-func-sig() {
   _should-parse 'func f (a, b, ...rest; c) { echo hi }'
   _should-parse 'func f (a, b, ...rest; c, ...rest) { echo hi }'
   _parse-error 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
+}
+
+test-func-def() {
+  _parse-error 'func f(p) { var p = foo }'
+  _parse-error 'func f(p; n) { var n = foo }'
 }
 
 test-sh-assign() {

@@ -2057,17 +2057,41 @@ class CommandParser(object):
                 if node.sig.tag() == proc_sig_e.Closed:  # Register params
                     sig = cast(proc_sig.Closed, node.sig)
 
-                    # Treat params as variables.
-                    for param in sig.word_params:
-                        # TODO: Check() should not look at tval
-                        name_tok = param.blame_tok
+                    # Treat 3 kinds of params as variables.
+                    wp = sig.word
+                    if wp:
+                        for param in wp.params:
+                            # TODO: Check() should not look at tval
+                            name_tok = param.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                        if wp.rest_of:
+                            name_tok = wp.rest_of.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            # We COULD register __out here but it would require a different API.
+                            #if param.prefix and param.prefix.id == Id.Arith_Colon:
+                            #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
+
+                    posit = sig.positional
+                    if posit:
+                        for param in posit.params:
+                            name_tok = param.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                        if posit.rest_of:
+                            name_tok = posit.rest_of.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+
+                    named = sig.named
+                    if named:
+                        for param in named.params:
+                            name_tok = param.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                        if named.rest_of:
+                            name_tok = named.rest_of.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+
+                    if sig.block_param:
+                        name_tok = sig.block_param.blame_tok
                         self.var_checker.Check(Id.KW_Var, name_tok)
-                    if sig.rest_of_words:
-                        name_tok = sig.rest_of_words.blame_tok
-                        self.var_checker.Check(Id.KW_Var, name_tok)
-                        # We COULD register __out here but it would require a different API.
-                        #if param.prefix and param.prefix.id == Id.Arith_Colon:
-                        #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
 
                 self._SetNext()
                 node.body = self.ParseBraceGroup()
@@ -2097,6 +2121,15 @@ class CommandParser(object):
                     self.var_checker.Check(Id.KW_Var, name_tok)
                 if posit.rest_of:
                     name_tok = posit.rest_of.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
+
+            named = node.named
+            if named:
+                for param in named.params:
+                    name_tok = param.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
+                if named.rest_of:
+                    name_tok = named.rest_of.blame_tok
                     self.var_checker.Check(Id.KW_Var, name_tok)
 
             self._SetNext()

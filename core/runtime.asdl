@@ -29,9 +29,9 @@ module runtime
            List[AssignArg] pairs)
 
   ProcDefaults = (
-    List[value] for_word,  # TODO: should be List[str]
-    List[value] for_typed,  # block default is also here
-    Dict[str, value] for_named,
+    List[value]? for_word,  # all of them are value.Str
+    List[value]? for_typed,  # block default is also here
+    Dict[str, value]? for_named,
   )
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
