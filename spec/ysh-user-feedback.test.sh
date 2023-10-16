@@ -16,7 +16,7 @@ get_opt a 'lol'
 
 echo 'should not get here'
 
-## status: 1
+## status: 3
 ## STDOUT:
 ## END
 

@@ -24,7 +24,7 @@ echo status=$?
 
 f a b  # status 2
 
-## status: 2
+## status: 3
 ## STDOUT:
 status=42
 ## END

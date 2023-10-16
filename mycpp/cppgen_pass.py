@@ -2042,10 +2042,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                                'builtins.str'):
                             valid = True
 
-                        # Note: loc.Missing not allowed because the type is loc__Missing
-                        # Could we allow it?  Global reference is a little weird
-                        if t.type.fullname.endswith(
-                                '_t'):  # ASDL lex_mode_t, scope_t, ...
+                        # ASDL enums lex_mode_t, scope_t, ...
+                        if t.type.fullname.endswith('_t'):
+                            valid = True
+                        # Hack for loc__Missing.  Should detect the general case.
+                        if t.type.fullname.endswith('loc__Missing'):
+                            self.log('YO %s', t.type.fullname)
                             valid = True
 
                     if not valid:

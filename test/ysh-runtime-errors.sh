@@ -375,7 +375,7 @@ EOF
 }
 
 test-proc-ref-param() {
-  _error-case '
+  _expr-error-case '
   proc p (out Ref) {
     setref out = "yo"
   }
@@ -471,25 +471,25 @@ test-proc-defaults() {
 
 test-proc-passing() {
   # Too few words
-  _error-case-X 1 '
+  _error-case-X 3 '
   proc p(a, b) { echo }
   p a
   '
 
   # Too many words
-  _error-case-X 2 '
+  _error-case-X 3 '
   proc p(a, b) { echo }
   p AA b c DD
   '
 
   # Too few typed
-  _error-case-X 1 '
+  _error-case-X 3 '
   proc p( ; a, b) { echo }
   p (42)
   '
 
   # Too many words
-  _error-case-X 2 '
+  _error-case-X 3 '
   proc p( ; a, b) { echo }
   p (42, 43, 44, 45)
   '
@@ -538,7 +538,7 @@ test-proc-passing() {
 # TODO: improve locations for all of these
 test-proc-missing() {
   # missing word param
-  _error-case-X 1 '
+  _error-case-X 3 '
   proc myproc (w) {
     = w
   }
@@ -546,7 +546,7 @@ test-proc-missing() {
   '
 
   # missing typed param
-  _error-case-X 1 '
+  _error-case-X 3 '
   proc myproc (w; t1, t2) {
     = w
     = t
@@ -555,7 +555,7 @@ test-proc-missing() {
   '
 
   # missing named param
-  _error-case-X 1 '
+  _error-case-X 3 '
   proc myproc (; p ; a, b) {
     echo "$p ; $a $b"
   }
@@ -563,7 +563,7 @@ test-proc-missing() {
   '
 
   # missing block param
-  _error-case-X 1 '
+  _error-case-X 3 '
   proc myproc (w; p ; a, b; block) {
     = block
   }
@@ -574,7 +574,7 @@ test-proc-missing() {
 test-proc-extra() {
 
   # extra word
-  _error-case-X 2 '
+  _error-case-X 3 '
   proc myproc () {
     echo hi
   }
@@ -582,7 +582,7 @@ test-proc-extra() {
   '
 
   # extra positional
-  _error-case-X 2 '
+  _error-case-X 3 '
   proc myproc (w) {
     echo hi
   }
@@ -590,7 +590,7 @@ test-proc-extra() {
   '
 
   # extra named
-  _error-case-X 2 '
+  _error-case-X 3 '
   proc myproc (w; p) {
     echo hi
   }
@@ -598,7 +598,7 @@ test-proc-extra() {
   '
 
   # extra block.  TODO: error is about typed args
-  _error-case-X 2 '
+  _error-case-X 3 '
   proc myproc (w; p; n) {
     echo hi
   }
@@ -646,15 +646,13 @@ test-func-passing() {
   = f(...x)
   '
 
-  return
-  # TODO:
   # Named splat
   _should-run '
   func f(p ; a, b) {
     echo "$p ; $a $b"
   }
-  var kwargs = {a: 42, b: 43}
-  = f(42; ...kwargs)
+  var kwargs = {a: 42, b: 43, c: 44}
+  = f(99; ...kwargs)
   '
 }
 
