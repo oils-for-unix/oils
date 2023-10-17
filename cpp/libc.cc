@@ -36,16 +36,16 @@ Str* realpath(Str* path) {
   return result;
 }
 
-int fnmatch(Str* pat, Str* str) {
+int fnmatch(Str* pat, Str* str, int flags) {
   // TODO: We should detect this at ./configure time, and then maybe flag these
   // at parse time, not runtime
 #ifdef FNM_EXTMATCH
-  int flags = FNM_EXTMATCH;
+  int flags_todo = FNM_EXTMATCH;
 #else
-  int flags = 0;
+  int flags_todo = 0;
 #endif
 
-  int result = ::fnmatch(pat->data_, str->data_, flags);
+  int result = ::fnmatch(pat->data_, str->data_, flags_todo);
   switch (result) {
   case 0:
     return 1;
@@ -106,7 +106,7 @@ List<Str*>* glob(Str* pat) {
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<Str*>* regex_match(Str* pattern, Str* str) {
+List<Str*>* regex_match(Str* pattern, Str* str, int flags) {
   List<Str*>* results = NewList<Str*>();
 
   regex_t pat;

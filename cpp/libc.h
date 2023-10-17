@@ -20,13 +20,13 @@ Str* realpath(Str* path);
 
 Str* gethostname();
 
-int fnmatch(Str* pat, Str* str);
+int fnmatch(Str* pat, Str* str, int flags = 0);
 
 List<Str*>* glob(Str* pat);
 
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos);
 
-List<Str*>* regex_match(Str* pattern, Str* str);
+List<Str*>* regex_match(Str* pattern, Str* str, int flags = 0);
 
 int wcswidth(Str* str);
 int get_terminal_width();
