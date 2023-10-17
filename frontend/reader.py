@@ -168,9 +168,15 @@ def _readline_no_tty(prompt):
 
 class InteractiveLineReader(_Reader):
 
-    def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
-        # type: (Arena, prompt.Evaluator, history.Evaluator, Readline, PromptState) -> None
-        # TODO: Hook up PromptEvaluator and history.Evaluator when they have types.
+    def __init__(
+            self,
+            arena,  # type: Arena
+            prompt_ev,  # type: prompt.Evaluator
+            hist_ev,  # type:history.Evaluator
+            line_input,  # type: Readline
+            prompt_state,  # type:PromptState
+    ):
+        # type: (...) -> None
         """
         Args:
           prompt_state: Current prompt is PUBLISHED here.

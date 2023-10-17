@@ -289,8 +289,15 @@ class ctx_TermAttrs(object):
 
 class Read(vm._Builtin):
 
-    def __init__(self, splitter, mem, parse_ctx, cmd_ev, errfmt):
-        # type: (SplitContext, Mem, ParseContext, CommandEvaluator, ErrorFormatter) -> None
+    def __init__(
+            self,
+            splitter,  # type: SplitContext
+            mem,  # type: state.Mem
+            parse_ctx,  # type: ParseContext
+            cmd_ev,  # type: CommandEvaluator
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.splitter = splitter
         self.mem = mem
         self.parse_ctx = parse_ctx

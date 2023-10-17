@@ -189,8 +189,14 @@ class Source(vm._Builtin):
 class Command(vm._Builtin):
     """'command ls' suppresses function lookup."""
 
-    def __init__(self, shell_ex, funcs, aliases, search_path):
-        # type: (vm._Executor, Dict[str, value.Proc], Dict[str, str], state.SearchPath) -> None
+    def __init__(
+            self,
+            shell_ex,  # type: vm._Executor
+            funcs,  # type: Dict[str, value.Proc]
+            aliases,  # type: Dict[str, str]
+            search_path,  # type: state.SearchPath
+    ):
+        # type: (...) -> None
         self.shell_ex = shell_ex
         self.funcs = funcs
         self.aliases = aliases

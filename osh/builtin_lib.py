@@ -38,8 +38,14 @@ class Bind(vm._Builtin):
 class History(vm._Builtin):
     """Show interactive command history."""
 
-    def __init__(self, readline, sh_files, errfmt, f):
-        # type: (Optional[Readline], shell.ShellFiles, ErrorFormatter, mylib.Writer) -> None
+    def __init__(
+            self,
+            readline,  # type: Optional[Readline]
+            sh_files,  # type: shell.ShellFiles
+            errfmt,  # type: ErrorFormatter
+            f,  # type: mylib.Writer
+    ):
+        # type: (...) -> None
         self.readline = readline
         self.sh_files = sh_files
         self.errfmt = errfmt
