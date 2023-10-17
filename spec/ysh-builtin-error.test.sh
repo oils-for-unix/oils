@@ -114,7 +114,7 @@ error (100, status=42)
 
 #### Errors cannot take command args
 error uh-oh ('error', status=1)
-## status: 3
+## status: 2
 ## STDOUT:
 ## END
 

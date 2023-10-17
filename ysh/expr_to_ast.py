@@ -28,7 +28,6 @@ from _devbuild.gen.syntax_asdl import (
     PerlClass,
     NameType,
     place_expr,
-    place_expr_e,
     place_expr_t,
     Comprehension,
     Subscript,
@@ -50,7 +49,7 @@ from _devbuild.gen import grammar_nt
 from core.error import p_die
 from frontend import lexer
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from ysh import expr_parse
 
 from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, cast
@@ -719,25 +718,41 @@ class Transformer(object):
         # type: (PNode) -> List[place_expr_t]
         """place_list: expr (',' expr)*"""
         assert p_node.typ == grammar_nt.place_list
+
         places = []  # type: List[place_expr_t]
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):  # was children[::2]
             p = p_node.GetChild(i)
+
             e = self.Expr(p)
             UP_e = e
-            tag = e.tag()
-            if tag == expr_e.Var:  # COMPATIBILITY hack
-                e = cast(expr.Var, UP_e)
-                places.append(place_expr.Var(e.name))
-            elif tag in (place_expr_e.Var, place_expr_e.Subscript,
-                         place_expr_e.Attribute):
-                places.append(cast(place_expr_t, UP_e))
-            else:
-                # This blame mechanism seems to work.  Otherwise we don't have a method
-                # to blame an arbitrary expr_t.
-                blame = cast(loc_t,
-                             p.tok) if p.tok else loc.Missing  # type: loc_t
-                p_die("Can't assign to this expression", blame)
+            with tagswitch(e) as case:
+                if case(expr_e.Var):
+                    e = cast(expr.Var, UP_e)
+                    places.append(place_expr.Var(e.name))
+
+                elif case(expr_e.Subscript):
+                    e = cast(Subscript, UP_e)
+                    places.append(e)
+
+                elif case(expr_e.Attribute):
+                    e = cast(Attribute, UP_e)
+                    if e.op.id != Id.Expr_Dot:
+                        # e.g. setvar obj->method is not valid
+                        p_die("Can't assign to this attribute expr", e.op)
+                    places.append(e)
+
+                else:
+                    pass  # work around mycpp bug
+
+                    # TODO: could blame arbitary expr_t, bu this works most of
+                    # the time
+                    if p.tok:
+                        blame = p.tok  # type: loc_t
+                    else:
+                        blame = loc.Missing
+                    p_die("Can't assign to this expression", blame)
+
         return places
 
     def MakeVarDecl(self, p_node):
@@ -750,9 +765,8 @@ class Transformer(object):
         lhs = self._NameTypeList(p_node.GetChild(0))  # could be a tuple
         # This syntax is confusing, and different than JavaScript
         #   var x, y = 1, 2
-        if len(lhs) > 1:
-            eq_tok = p_node.GetChild(1).tok
-            p_die('Only one variable can be initialized', eq_tok)
+        # But this is useful:
+        #   var flag, i = parseArgs(spec, argv)
 
         rhs = self.Expr(p_node.GetChild(2))
 

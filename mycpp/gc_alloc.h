@@ -8,6 +8,7 @@
 #include <new>      // placement new
 #include <utility>  // std::forward
 
+#include "mycpp/gc_obj.h"   // for RawObject, ObjHeader
 #include "mycpp/gc_slab.h"  // for NewSlab()
 #include "mycpp/gc_str.h"   // for NewStr()
 
@@ -21,7 +22,48 @@ extern MarkSweepHeap gHeap;
 
 #define VALIDATE_ROOTS 0
 
+#if VALIDATE_ROOTS
+static void ValidateRoot(const RawObject* obj) {
+  if (obj == nullptr) {
+    return;
+  }
+
+  ObjHeader* header = ObjHeader::FromObject(obj);
+  log("obj %p header %p", obj, header);
+
+  switch (header->heap_tag) {
+  case HeapTag::Global:
+  case HeapTag::Opaque:
+  case HeapTag::Scanned:
+  case HeapTag::FixedSize:
+    break;
+
+  default:
+    log("root %p heap %d type %d mask %d len %d", obj, header->heap_tag,
+        header->type_tag, header->u_mask_npointers);
+    FAIL(kShouldNotGetHere);
+    break;
+  }
+}
+#endif
+
 // mycpp generates code that keeps track of the root set
+class StackRoot {
+ public:
+  StackRoot(void* root) {
+    RawObject** obj = reinterpret_cast<RawObject**>(root);
+#if VALIDATE_ROOTS
+    ValidateRoot(*obj);
+#endif
+    gHeap.PushRoot(obj);
+  }
+
+  ~StackRoot() {
+    gHeap.PopRoot();
+  }
+};
+
+// sugar for tests
 class StackRoots {
  public:
   // Note: void** seems logical, because these are pointers to pointers, but
@@ -34,31 +76,13 @@ class StackRoots {
 #endif
 
     for (auto root : roots) {  // can't use roots[i]
-
+      RawObject** obj = reinterpret_cast<RawObject**>(root);
 #if VALIDATE_ROOTS
-      RawObject* obj = *(reinterpret_cast<RawObject**>(root));
-      if (obj) {
-        RawObject* header = ObjHeader::FromObject(obj);
-        log("obj %p header %p", obj, header);
-
-        switch (header->heap_tag) {
-        case HeapTag::Global:
-        case HeapTag::Opaque:
-        case HeapTag::Scanned:
-        case HeapTag::FixedSize:
-          break;
-
-        default:
-          log("root %d heap %d type %d mask %d len %d", i, header->heap_tag,
-              header->type_tag, header->field_mask, header->obj_len);
-          FAIL(kShouldNotGetHere);
-          break;
-        }
-      }
+      ValidateRoot(*obj);
       i++;
 #endif
 
-      gHeap.PushRoot(reinterpret_cast<RawObject**>(root));
+      gHeap.PushRoot(obj);
     }
   }
 
@@ -205,7 +229,7 @@ inline Str* StrFromC(const char* data) {
 // zeroing them separately.
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
-  int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
+  int obj_len = len * sizeof(T);
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
   int obj_id;

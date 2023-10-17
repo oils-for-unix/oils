@@ -1763,9 +1763,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
             if CTypeIsManaged(c_item_type):
-                self.write_ind('  StackRoots _for({&')
+                self.write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
-                self.write_ind('});\n')
+                self.write_ind(');\n')
 
         elif isinstance(item_type, TupleType):  # for x, y in pairs
             if over_dict:
@@ -1827,9 +1827,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def _write_cases(self, if_node):
         """
-      The MyPy AST has a recursive structure for if-elif-elif rather than a
-      flat one.  It's a bit confusing.
-      """
+        The MyPy AST has a recursive structure for if-elif-elif rather than a
+        flat one.  It's a bit confusing.
+        """
         assert isinstance(if_node, IfStmt), if_node
         assert len(if_node.expr) == 1, if_node.expr
         assert len(if_node.body) == 1, if_node.body
@@ -1856,6 +1856,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if if_node.else_body:
             first_of_block = if_node.else_body.body[0]
+            # BUG: this is meant for 'elif' only.  But it also triggers for
+            #
+            # else:
+            #   if 0:
+
             if isinstance(first_of_block, IfStmt):
                 self._write_cases(first_of_block)
             else:
@@ -2575,13 +2580,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('roots %s', roots)
 
             if len(roots):
-                self.write_ind('StackRoots _roots({')
                 for i, r in enumerate(roots):
-                    if i != 0:
-                        self.write(', ')
-                    self.write('&%s' % r)
+                    self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
 
-                self.write('});\n')
                 self.write('\n')
 
             self.prepend_to_block = None

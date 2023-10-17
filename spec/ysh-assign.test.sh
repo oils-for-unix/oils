@@ -269,15 +269,46 @@ x=XX
 x=xx
 ## END
 
-#### var x, y = 1, 2 is NOT allowed
+#### var x, y = f()
 
 # The syntax consistent with JavaScript would be
 # var x = 1, y = 2;
 
 var x, y = 1, 2
+echo "x=$x y=$y"
 
-## status: 2
+func f() {
+  # this syntax would be nice, but is illegal
+  # return (3, 4)
+  return ([3, 4])
+}
+
+var a, b = f()
+echo "a=$a b=$b"
+
+
 ## STDOUT:
+x=1 y=2
+a=3 b=4
+## END
+
+#### const x, y = f()
+
+func f() {
+  # this syntax would be nice, but is illegal
+  # return (3, 4)
+  return ([3, 4])
+}
+
+
+const a, b = f()
+echo "a=$a b=$b"
+
+setvar a = 9  # error
+
+## status: 1
+## STDOUT:
+a=3 b=4
 ## END
 
 

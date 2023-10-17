@@ -109,6 +109,23 @@ The shell-like syntax accepts the same syntax that a command can:
 
     {name: 'value'}
 
+### range
+
+A range is a sequence of numbers that can be iterated over:
+
+    for i in (0 .. 3) {
+      echo $i
+    }
+    => 0
+    => 1
+    => 2
+
+As with slices, the last number isn't included.  Idiom to iterate from 1 to n:
+
+    for i in (1 .. n+1) {
+      echo $i
+    }
+
 ### block-literal
 
     var myblock = ^(echo $PWD)

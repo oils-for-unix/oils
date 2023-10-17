@@ -81,8 +81,10 @@ class Reader(object):
         t.Done()
     """
 
-    def __init__(self, pos_args, named_args, args_node, is_bound):
-        # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
+    def __init__(self, argv, pos_args, named_args, args_node, block, is_bound):
+        # type: (List[str], List[value_t], Dict[str, value_t], ArgList, command_t, bool) -> None
+        self.argv = argv
+        self.argv_consumed = 0
         self.pos_args = pos_args
         self.pos_consumed = 0
         # TODO: Add LHS of attribute expression to value.BoundFunc and pass
@@ -91,19 +93,44 @@ class Reader(object):
         self.named_args = named_args
         self.args_node = args_node
 
+        self.block = block
+
     def LeftParenToken(self):
         # type: () -> loc_t
+        if not self.args_node:
+            return loc.Missing
+
         return self.args_node.left
 
     ### Words: untyped args for procs
 
     def Word(self):
         # type: () -> str
-        return None  # TODO
+        if self.argv is None or len(self.argv) == 0:
+            # TODO: may need location info
+            raise error.TypeErrVerbose(
+                'Expected at least %d word arguments, but only got %d' %
+                (self.argv_consumed + 1, self.argv_consumed),
+                self.LeftParenToken())
+
+        self.argv_consumed += 1
+        return self.argv.pop(0)
 
     def RestWords(self):
         # type: () -> List[str]
-        return None  # TODO
+        if self.argv is None:
+            return []
+
+        rest = self.argv
+        self.argv = []
+        return rest
+
+    def NumWords(self):
+        # type: () -> int
+        if self.argv is None:
+            return 0
+
+        return len(self.argv)
 
     ### Typed positional args
 
@@ -125,12 +152,15 @@ class Reader(object):
                 return l
 
         # Fall back on call
-        return self.args_node.left
+        return self.LeftParenToken()
 
     def PosNode(self, i):
         # type: (int) -> expr_t
         """Returns the expression handle for the ith positional argument. The
         caller can use this to produce more specific error messages."""
+        if not self.args_node:
+            return None
+
         return self.args_node.pos_args[i]
 
     def _GetNextPos(self):
@@ -140,7 +170,7 @@ class Reader(object):
             raise error.TypeErrVerbose(
                 'Expected at least %d arguments, but only got %d' %
                 (self.pos_consumed + 1, self.pos_consumed),
-                self.args_node.left)
+                self.LeftParenToken())
 
         self.pos_consumed += 1
         return self.pos_args.pop(0)
@@ -255,6 +285,9 @@ class Reader(object):
         # type: (str) -> loc_t
         """Returns the location of the given named argument."""
         # TODO
+        if not self.args_node:
+            return loc.Missing
+
         return self.args_node.left
 
     def NamedNode(self, name):
@@ -263,6 +296,15 @@ class Reader(object):
         caller can use this to produce more specific error messages."""
         # TODO
         return None
+
+    def NamedValue(self, param_name, default_):
+        # type: (str, value_t) -> value_t
+        if param_name not in self.named_args:
+            return default_
+
+        val = self.named_args[param_name]
+        dict_erase(self.named_args, param_name)
+        return val
 
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
@@ -365,8 +407,13 @@ class Reader(object):
         """
         Block arg for proc
         """
-        # TODO: is this BraceGroup?
-        return None  # TODO
+        if self.block is None:
+            raise error.Usage('Expected a block argument', self.BlamePos())
+
+        block = self.block
+        self.block = None
+
+        return block
 
     def Done(self):
         # type: () -> None
@@ -379,6 +426,13 @@ class Reader(object):
         problem
         """
         # Note: Python throws TypeError on mismatch
+        if self.argv is not None and len(self.argv):
+            n = self.argv_consumed
+
+            raise error.Usage(
+                'Expected %d word arguments, but got %d' %
+                (n, n + len(self.argv)), self.BlamePos())
+
         if len(self.pos_args):
             n = self.pos_consumed
             # Excluding implicit first arg should make errors less confusing
@@ -401,9 +455,15 @@ class Reader(object):
             raise error.TypeErrVerbose(
                 'Got unexpected named args: %s' % bad_args, blame)
 
+        if self.block:
+            # TODO: use the block's location
+            blame = self.args_node.left
 
-def ReaderFromArgv(typed_args, expr_ev):
-    # type: (ArgList, ExprEvaluator) -> Reader
+            raise error.TypeErrVerbose('Got unexpected block argument', blame)
+
+
+def ReaderFromArgv(argv, typed_args, expr_ev):
+    # type: (List[str], ArgList, ExprEvaluator) -> Reader
     """
     Build a typed_args.Reader given a builtin command's cmd_val.typed_args.
 
@@ -411,23 +471,26 @@ def ReaderFromArgv(typed_args, expr_ev):
     function may fail if there are any runtime errors whilst evaluating those
     arguments.
     """
-    if typed_args is None:
-        raise error.TypeErrVerbose(
-            'Expected at least 1 typed argument, but got 0', loc.Missing)
-
+    block = None  # type: command_t
     pos_args = []  # type: List[value_t]
     named_args = {}  # type: Dict[str, value_t]
 
-    for i, pos_arg in enumerate(typed_args.pos_args):
-        result = expr_ev.EvalExpr(pos_arg, loc.Missing)
-        pos_args.append(result)
+    if typed_args:
+        for i, pos_arg in enumerate(typed_args.pos_args):
+            if pos_arg.tag() == expr_e.BlockArg:
+                assert block is None, "There should only be one block arg"
+                block = cast(BlockArg, pos_arg).brace_group
 
-    for named_arg in typed_args.named_args:
-        result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
-        name = lexer.TokenVal(named_arg.name)
-        named_args[name] = result
+            else:
+                result = expr_ev.EvalExpr(pos_arg, loc.Missing)
+                pos_args.append(result)
 
-    return Reader(pos_args, named_args, typed_args, False)
+        for named_arg in typed_args.named_args:
+            result = expr_ev.EvalExpr(named_arg.value, named_arg.name)
+            name = lexer.TokenVal(named_arg.name)
+            named_args[name] = result
+
+    return Reader(argv, pos_args, named_args, typed_args, block, False)
 
 
 def DoesNotAccept(arg_list):

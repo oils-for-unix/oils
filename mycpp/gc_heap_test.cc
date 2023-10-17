@@ -51,10 +51,6 @@ void ShowSlab(void* obj) {
   assert(header->heap_tag == HeapTag::Scanned);
 
   int n = NUM_POINTERS(*header);
-#if 0
-  int n = (slab->header_.obj_len - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", ObjHeader::FromObject(slab)->obj_len, n);
-#endif
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {
@@ -132,6 +128,83 @@ TEST roundup_test() {
   for (int i = 0; i < nsizes; ++i) {
     int n = sizes[i];
     log("%d -> %d", n, RoundUp(n));
+  }
+
+  PASS();
+}
+
+TEST list_resize_policy_test() {
+  log("");
+  log("\tList<int>");
+  log("\tkNumItems2 %d", List<int>::kNumItems2);
+
+  auto small = NewList<int>();
+
+  for (int i = 0; i < 20; ++i) {
+    small->append(i);
+    int c = small->capacity_;
+    int slab_bytes = sizeof(ObjHeader) + c * sizeof(int);
+    log("desired %3d how many %3d slab bytes %3d", i, c, slab_bytes);
+  }
+
+  log("");
+  log("\tList<Str*>");
+  log("\tNumItems2 %d", List<Str*>::kNumItems2);
+
+  // Note: on 32-bit systems, this should be the same
+
+  auto big = NewList<Str*>();
+  for (int i = 0; i < 20; ++i) {
+    big->append(kEmptyString);
+    int c = big->capacity_;
+    int slab_bytes = sizeof(ObjHeader) + c * sizeof(Str*);
+    log("desired %3d how many %3d slab bytes %3d", i, c, slab_bytes);
+  }
+
+  PASS();
+}
+
+TEST dict_resize_policy_test() {
+  log("\tDict<int, int>");
+
+  log("\tkNumItems2 %d", Dict<int, int>::kNumItems2);
+  log("\tkHeaderFudge %d", Dict<int, int>::kHeaderFudge);
+
+  auto small = Alloc<Dict<int, int>>();
+
+  for (int i = 0; i < 20; ++i) {
+    small->set(i, i);
+    int c = small->capacity_;
+    int slab_k = sizeof(ObjHeader) + c * sizeof(int);
+    int slab_v = slab_k;
+
+    int x = small->index_len_;
+    int index_bytes = sizeof(ObjHeader) + x * sizeof(int);
+
+    log("desired %3d how many %3d  k %3d v %3d  index %3d %3d", i, c, slab_k,
+        slab_v, x, index_bytes);
+  }
+
+  log("");
+  log("\tDict<Str*, int>");
+
+  log("\tkNumItems2 %d", Dict<Str*, int>::kNumItems2);
+  log("\tkHeaderFudge %d", Dict<Str*, int>::kHeaderFudge);
+
+  auto big = Alloc<Dict<Str*, int>>();
+
+  for (int i = 0; i < 20; ++i) {
+    Str* key = str_repeat(StrFromC("x"), i);
+    big->set(key, i);
+    int c = big->capacity_;
+    int slab_k = sizeof(ObjHeader) + c * sizeof(Str*);
+    int slab_v = sizeof(ObjHeader) + c * sizeof(int);
+
+    int x = big->index_len_;
+    int index_bytes = sizeof(ObjHeader) + x * sizeof(int);
+
+    log("desired %3d how many %3d  k %3d v %3d  index %3d %3d", i, c, slab_k,
+        slab_v, x, index_bytes);
   }
 
   PASS();
@@ -403,6 +476,8 @@ int main(int argc, char** argv) {
   RUN_TEST(offsets_test);
 
   RUN_TEST(roundup_test);
+  RUN_TEST(list_resize_policy_test);
+  RUN_TEST(dict_resize_policy_test);
 
   RUN_TEST(fixed_trace_test);
   RUN_TEST(slab_trace_test);

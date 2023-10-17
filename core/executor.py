@@ -262,7 +262,8 @@ class ShellExecutor(vm._Executor):
 
                 with dev.ctx_Tracer(self.tracer, 'proc', argv):
                     # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_loc)
+                    status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_loc,
+                                                 cmd_val.typed_args)
                 return status
 
         # Notes:

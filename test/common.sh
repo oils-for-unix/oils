@@ -237,3 +237,33 @@ escape-html() {
   # Annoying that & has to be escaped in substitution!
   sed -e 's|&|\&amp;|g' -e 's|<|\&lt;|g' -e 's|>|\&gt;|g' "$@"
 }
+
+export-osh-cpp() {
+  ### Export $OSH var to value in tarball root, repo root
+
+  # Also build it with shell script, or Ninja
+
+  local tar_root=${1:-}  # e.g. _tmp/native-tar-test
+  local variant=${2:-opt}
+
+  if test -n "$tar_root" && test -d "$tar_root"; then
+    log "Using binary in $tar_root"
+
+    OIL_VERSION=$(head -n 1 oil-version.txt)
+    local repo_like=$tar_root/oils-for-unix-$OIL_VERSION
+
+    pushd $repo_like
+    _build/oils.sh '' $variant SKIP_REBUILD
+    osh=$PWD/_bin/cxx-$variant-sh/osh
+    popd
+
+  else
+    osh=_bin/cxx-$variant/osh
+    ninja $osh
+  fi
+
+  # So we can find it
+  export OSH=$osh
+  log "Exported OSH=$OSH"
+}
+

@@ -249,14 +249,13 @@ class ExprEvaluator(object):
 
             elif case(place_expr_e.Attribute):
                 place = cast(Attribute, UP_place)
-                # setvar mydict.key = 42
+                assert place.op.id == Id.Expr_Dot
 
+                # setvar mydict.key = 42
                 lval = self._EvalExpr(place.obj)
-                if place.op.id == Id.Expr_Dot:
-                    attr = value.Str(place.attr.tval)
-                    return lvalue.ObjIndex(lval, attr)
-                else:
-                    raise AssertionError()
+
+                attr = value.Str(place.attr.tval)
+                return lvalue.ObjIndex(lval, attr)
 
             else:
                 raise NotImplementedError(place)
@@ -310,21 +309,21 @@ class ExprEvaluator(object):
 
         # Remove underscores from 1_000_000.  The lexer is responsible for
         # validation.  TODO: Do this at PARSE TIME / COMPILE TIME.
-
-        c = node.c.tval.replace('_', '')
+        c_under = node.c.tval.replace('_', '')
 
         id_ = node.c.id
         if id_ == Id.Expr_DecInt:
-            return value.Int(int(c))
+            return value.Int(int(c_under))
         if id_ == Id.Expr_BinInt:
-            return value.Int(int(c, 2))
+            return value.Int(int(c_under, 2))
         if id_ == Id.Expr_OctInt:
-            return value.Int(int(c, 8))
+            return value.Int(int(c_under, 8))
         if id_ == Id.Expr_HexInt:
-            return value.Int(int(c, 16))
+            return value.Int(int(c_under, 16))
 
         if id_ == Id.Expr_Float:
-            return value.Float(float(c))
+            # Note: float() in mycpp/gc_builtins.py currently uses strtod
+            return value.Float(float(c_under))
 
         if id_ == Id.Expr_Null:
             return value.Null
@@ -757,7 +756,8 @@ class ExprEvaluator(object):
                 #log('pos_args %s', pos_args)
 
                 ret = f.Call(
-                    typed_args.Reader(pos_args, named_args, node.args, False))
+                    typed_args.Reader(None, pos_args, named_args, node.args,
+                                      None, False))
 
                 #log('ret %s', ret)
                 return ret
@@ -772,7 +772,8 @@ class ExprEvaluator(object):
                 pos_args, named_args = self._EvalArgList(node.args, me=func.me)
 
                 ret = f.Call(
-                    typed_args.Reader(pos_args, named_args, node.args, True))
+                    typed_args.Reader(None, pos_args, named_args, node.args,
+                                      None, True))
 
                 return ret
 

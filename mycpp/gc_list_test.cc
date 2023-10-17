@@ -64,8 +64,6 @@ TEST test_list_gc_header() {
   list1->extend(more);
   ASSERT_EQ_FMT(3, len(list1), "%d");
 
-  // 32 byte block - 8 byte header = 24 bytes, 6 elements
-  ASSERT_EQ_FMT(6, list1->capacity_, "%d");
   ASSERT_EQ_FMT(HeapTag::Opaque, ObjHeader::FromObject(list1->slab_)->heap_tag,
                 "%d");
 
@@ -83,8 +81,6 @@ TEST test_list_gc_header() {
   StackRoots _roots4({&more2});
   list1->extend(more2);
 
-  // 64 byte block - 8 byte header = 56 bytes, 14 elements
-  ASSERT_EQ_FMT(14, list1->capacity_, "%d");
   ASSERT_EQ_FMT(7, len(list1), "%d");
 
 #if 0

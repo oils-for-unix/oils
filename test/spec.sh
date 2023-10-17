@@ -737,12 +737,16 @@ ysh-builtin-module() {
   run-file ysh-builtin-module "$@"
 }
 
-ysh-builtin-argparse() {
-  run-file ysh-builtin-argparse "$@"
+ysh-argparse() {
+  run-file ysh-argparse "$@"
 }
 
 ysh-builtin-describe() {
   run-file ysh-builtin-describe "$@"
+}
+
+ysh-builtin-eval() {
+  run-file ysh-builtin-eval "$@"
 }
 
 # Related to errexit-oil
@@ -776,6 +780,10 @@ ysh-demo() {
 
 ysh-expr() {
   run-file ysh-expr "$@"
+}
+
+ysh-int-float() {
+  run-file ysh-int-float "$@"
 }
 
 ysh-expr-bool() {

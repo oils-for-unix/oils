@@ -36,7 +36,7 @@ list-json() {
 rewrite-jobs-index() {
   ### Atomic update of travis-ci.oilshell.org/jobs/
   local prefix=$1
-  local run_id=$2   # pass GITHUB_RUN_NUMBER or commit-hash
+  local run_id=$2   # pass GITHUB_RUN_NUMBER or git-$hash
 
   local dir=~/travis-ci.oilshell.org/${prefix}jobs
 
@@ -130,8 +130,8 @@ cleanup-status-api() {
 event-job-done() {
   ### "Server side" handler
 
-  local prefix=$1  # e.g. github-
-  local run_id=$2
+  local prefix=$1  # 'github-' or 'srht-'
+  local run_id=$2  # $GITHUB_RUN_NUMBER or git-$hash
 
   rewrite-jobs-index $prefix $run_id
 

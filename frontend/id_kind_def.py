@@ -329,6 +329,7 @@ def AddKinds(spec):
             'Float',
             'Bang',  # eggex !digit, ![a-z]
             'Dot',
+            'DDot',
             'DColon',
             'RArrow',
             'RDArrow',

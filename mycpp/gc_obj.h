@@ -3,6 +3,8 @@
 
 #include <stdint.h>  // uint8_t
 
+#include "mycpp/common.h"
+
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
 const int Opaque = 1;     // e.g. List<int>, Str

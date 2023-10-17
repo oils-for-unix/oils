@@ -805,22 +805,26 @@ _EXPR_NEWLINE_COMMENT = [
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
-# TODO: unify this with LEXER_REFINEMENTS
-_SIMPLE_FLOAT_RE = r'[0-9]+(\.[0-9]*)?([eE][+\-]?[0-9]+)?'
-
 _WHITESPACE = r'[ \t\r\n]*'  # not including legacy \f \v
-
-# Used for YSH comparison operators > >= < <=
-# Optional -?
-LOOKS_LIKE_FLOAT = _WHITESPACE + '-?' + _SIMPLE_FLOAT_RE + _WHITESPACE
-
-# Ditto, used for comparison operators
 
 # Python allows 0 to be written 00 or 0_0_0, which is weird.  But let's be
 # consistent, and avoid '00' turning into a float!
 _DECIMAL_INT_RE = r'[0-9](_?[0-9])*'
 
+# Used for YSH comparison operators > >= < <=
 LOOKS_LIKE_INTEGER = _WHITESPACE + '-?' + _DECIMAL_INT_RE + _WHITESPACE
+
+_FLOAT_RE = (
+    _DECIMAL_INT_RE +
+    # Unlike Python, exponent can't be like 42e5_000.  There's no use because
+    # 1e309 is already inf.  Let's keep our code simple.
+    r'(\.' + _DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?'
+)
+
+# Ditto, used for comparison operators
+# Added optional Optional -?
+# Example: -3_000_000.000_001e12
+LOOKS_LIKE_FLOAT = _WHITESPACE + '-?' + _FLOAT_RE + _WHITESPACE
 
 # Python 3 float literals:
 
@@ -830,22 +834,6 @@ LOOKS_LIKE_INTEGER = _WHITESPACE + '-?' + _DECIMAL_INT_RE + _WHITESPACE
 # pointfloat    ::=  [digitpart] fraction | digitpart "."
 # exponentfloat ::=  (digitpart | pointfloat) exponent
 # floatnumber   ::=  pointfloat | exponentfloat
-
-# This is the same as far as I can tell?
-
-# This is a hand-written re2c rule to "refine" the _SIMPLE_FLOAT_RE token to
-# include underscores: 1_000.234_567
-
-LEXER_REFINEMENTS = {
-    (lex_mode_e.Expr, Id.Expr_Float):
-        """
-digit = [0-9]
-digitpart = digit ("_"? digit)*
-fraction = "." digitpart
-exponent = ("e" | "E") ("+" | "-")? digitpart
-float = digitpart fraction? exponent? | fraction exponent?
-"""
-}
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
@@ -871,9 +859,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
     R(r'0[oO](_?[0-7])+', Id.Expr_OctInt),
     R(r'0[xX](_?[0-9a-fA-F])+', Id.Expr_HexInt),
 
-    # !!! This is REFINED by a hand-written re2c rule !!!
-    # The dev build is slightly different than the production build.
-    R(_SIMPLE_FLOAT_RE, Id.Expr_Float),
+    R(_FLOAT_RE, Id.Expr_Float),
 
     # These can be looked up as keywords separately, so you enforce that they have
     # space around them?
@@ -951,6 +937,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
     C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
+    C('..', Id.Expr_DDot),    # range 1..5
     C('::', Id.Expr_DColon),  # static namespace access
     C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
                             # instead of d['name']['age']

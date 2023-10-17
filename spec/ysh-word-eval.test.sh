@@ -105,7 +105,7 @@ true
 
 #### Wrong sigil with $range() is runtime error
 shopt -s oil:upgrade
-echo $[10:15]
+echo $[10 .. 15]
 echo 'should not get here'
 ## status: 3
 ## STDOUT:

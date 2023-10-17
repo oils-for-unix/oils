@@ -216,7 +216,9 @@ main() {
   local out_name=oils-for-unix
   if test "$variant" = opt; then
     strip -o "$out.stripped" "$out"
-    out_name=$out_name.stripped
+
+    # Symlink to unstripped binary for benchmarking
+    # out_name=$out_name.stripped
   fi
 
   cd $out_dir

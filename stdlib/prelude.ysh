@@ -1,0 +1,15 @@
+# These were helpful while implementing args.ysh
+# Maybe we will want to export them in a prelude so that others can use them too?
+#
+# Prior art: Rust has `todo!()` which is quite nice. Other languages allow
+# users to `raise NotImplmentedError()`.
+
+proc todo () {
+  ## Raises a not implemented error when run.
+  error ("TODO: not implemented")  # TODO: is error code 1 ok?
+}
+
+proc pass () {
+  ## Use when you want to temporarily leave a block empty.
+  _ null
+}

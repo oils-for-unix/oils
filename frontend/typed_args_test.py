@@ -15,32 +15,38 @@ from typing import cast
 
 
 class TypedArgsTest(unittest.TestCase):
+
     def testReaderPosArgs(self):
         arena = test_lib.MakeArena('')
         line_id = arena.AddLine('foo(a, b, c, d, e, f, g)', 1)
         ltok = arena.NewToken(-1, 3, 1, line_id, '')
         rtok = arena.NewToken(-1, 4, 1, line_id, '')
         pos_exprs = [
-            expr.Const(arena.NewToken(-1, 4+2*i, 1, line_id, ''))
+            expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id, ''))
             for i in range(7)
         ]
         arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
 
         # Not enough args...
-        reader = typed_args.Reader([], {}, arg_list, False)
+        reader = typed_args.Reader([], [], {}, arg_list, None, False)
         self.assertRaises(error.TypeErrVerbose, reader.PosStr)
 
         pos_args = [
             value.Int(0xc0ffee),
             value.Str('foo'),
-            value.List([value.Int(1), value.Int(2), value.Int(3)]),
-            value.Dict({'a': value.Int(0xaa), 'b': value.Int(0xbb)}),
+            value.List([value.Int(1), value.Int(2),
+                        value.Int(3)]),
+            value.Dict({
+                'a': value.Int(0xaa),
+                'b': value.Int(0xbb)
+            }),
             value.Float(3.14),
             value.Int(0xdead),
             value.Int(0xbeef),
             value.Str('bar'),
         ]
-        reader = typed_args.Reader(list(pos_args), {}, arg_list, False)
+        reader = typed_args.Reader([], list(pos_args), {}, arg_list, None,
+                                   False)
 
         # Haven't all the args
         with self.assertRaises(error.TypeErrVerbose) as cm:
@@ -61,7 +67,7 @@ class TypedArgsTest(unittest.TestCase):
         self.assertEqual(pos_exprs[3].c, e.location)
 
         # Normal operation from here on
-        reader = typed_args.Reader(pos_args, {}, arg_list, False)
+        reader = typed_args.Reader([], pos_args, {}, arg_list, None, False)
         arg = reader.PosInt()
         self.assertEqual(0xc0ffee, arg)
 
@@ -102,14 +108,19 @@ class TypedArgsTest(unittest.TestCase):
         kwargs = {
             'hot': value.Int(0xc0ffee),
             'name': value.Str('foo'),
-            'numbers': value.List([value.Int(1), value.Int(2), value.Int(3)]),
-            'blah': value.Dict({'a': value.Int(0xaa), 'b': value.Int(0xbb)}),
+            'numbers': value.List([value.Int(1),
+                                   value.Int(2),
+                                   value.Int(3)]),
+            'blah': value.Dict({
+                'a': value.Int(0xaa),
+                'b': value.Int(0xbb)
+            }),
             'pi': value.Float(3.14),
             'a': value.Int(0xdead),
             'b': value.Int(0xbeef),
             'c': value.Str('bar'),
         }
-        reader = typed_args.Reader([], kwargs, arg_list, False)
+        reader = typed_args.Reader([], [], kwargs, arg_list, None, False)
 
         # Haven't processed any args yet...
         self.assertRaises(error.TypeErrVerbose, reader.Done)

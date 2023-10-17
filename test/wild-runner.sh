@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-source test/common.sh
+source test/common.sh  # $OSH, log
 
 dump-html-and-translate-file() {
   local rel_path=$1
@@ -22,6 +22,8 @@ dump-html-and-translate-file() {
 
   # Count the number of lines.  This creates a tiny file, but we're doing
   # everything involving $abs_path at once so it's in the FS cache.
+  #
+  # TODO: Could replace with a single invocation of micro-syntax, then join it
   wc $abs_path > ${raw_base}__wc.txt
 
   # Make a literal copy with .txt extension, so we can browse it
@@ -30,19 +32,21 @@ dump-html-and-translate-file() {
   # Parse the file.
   local task_file=${raw_base}__parse.task.txt
   local stderr_file=${raw_base}__parse.stderr.txt
-  local out_file=${www_base}__ast.html
 
+  # Note: abbrev-html is SLOW, much slower than 'none'
+  # e.g. 175 ms vs. 7 ms on 'configure'
   run-task-with-status $task_file \
-    bin/osh --ast-format abbrev-html -n $abs_path \
-    > $out_file 2> $stderr_file
+    $OSH --ast-format none -n $abs_path \
+    2> $stderr_file
 
   # Convert the file.
-  task_file=${raw_base}__osh2oil.task.txt
-  stderr_file=${raw_base}__osh2oil.stderr.txt
-  out_file=${www_base}__oil.txt
+  task_file=${raw_base}__ysh-ify.task.txt
+  stderr_file=${raw_base}__ysh-ify.stderr.txt
+  out_file=${www_base}__ysh.txt
 
+  # ysh-ify is fast
   run-task-with-status $task_file \
-    bin/oshc translate $abs_path \
+    $OSH --tool ysh-ify $abs_path \
     > $out_file 2> $stderr_file
 }
 
@@ -66,7 +70,7 @@ dump-text-for-file() {
   local out_file=${py_base}.ast.txt
 
   run-task-with-status $task_file \
-    bin/osh --ast-format text -n $abs_path \
+    $OSH --ast-format text -n $abs_path \
     > $out_file #2> $stderr_file
 
   # Parse the file with C++
@@ -75,7 +79,7 @@ dump-text-for-file() {
   local out_file=${cpp_base}.ast.txt
 
   run-task-with-status $task_file \
-    _bin/osh_parse.asan $abs_path \
+    $OSH -n $abs_path \
     > $out_file #2> $stderr_file
 }
 

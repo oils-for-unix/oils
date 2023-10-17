@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -140,10 +140,27 @@ proc p (a; mylist, mydict; a Int = 3) {
 
 p WORD ([1,2,3], {name: 'bob'})
 
+var bob = "bob"
 p a (:| a b |, {bob}, a = 5)
 
 ## STDOUT:
-[1, 2, 3]
+[
+  1,
+  2,
+  3
+]
+{
+  "name": "bob"
+}
+3
+[
+  "a",
+  "b"
+]
+{
+  "bob": "bob"
+}
+5
 ## END
 
 
@@ -159,21 +176,21 @@ x y z
 ## END
 
 #### Proc with block arg
-shopt --set parse_proc
+shopt --set ysh:upgrade
 
 # TODO: Test more of this
-proc f(x, y; block) {
+proc f(x, y;;; block) {
   echo F
 }
-f a b
+f a b {
+  echo in a block;
+}
 
 # With varargs and block
-shopt --set parse_proc
-
-proc g(x, y, ...rest; block) {
+proc g(x, y, ...rest;;; block) {
   echo G
 }
-g a b c d
+g a b c d { echo also in a block }
 ## STDOUT:
 F
 G

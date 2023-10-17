@@ -5,7 +5,7 @@ code.py: User-defined funcs and procs
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_t, scope_e, lvalue
-from _devbuild.gen.syntax_asdl import proc_sig, proc_sig_e
+from _devbuild.gen.syntax_asdl import ArgList, proc_sig, proc_sig_e
 
 from core import error
 from core.error import e_die
@@ -13,6 +13,7 @@ from core import state
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log
+from ysh import expr_eval
 
 from typing import List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -98,77 +99,136 @@ class UserFunc(vm._Callable):
         raise AssertionError('unreachable')
 
 
-def BindProcArgs(proc, argv, arg0_loc, mem, errfmt):
-    # type: (Proc, List[str], loc_t, state.Mem, ui.ErrorFormatter) -> int
-
+def BindProcArgs(
+        proc,  # type: Proc
+        argv,  # type: List[str]
+        arg0_loc,  # type: loc_t
+        args,  # type: ArgList
+        mem,  # type: state.Mem
+        errfmt,  # type: ui.ErrorFormatter
+        expr_ev,  # type: expr_eval.ExprEvaluator
+):
+    # type: (...) -> int
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
         return 0
 
     sig = cast(proc_sig.Closed, UP_sig)
 
-    num_args = len(argv)
-    for i, p in enumerate(sig.word_params):
+    try:
+        t = typed_args.ReaderFromArgv(argv, args, expr_ev)
 
-        # proc p(out Ref)
-        is_out_param = (p.type is not None and p.type.name == 'Ref')
-        #log('is_out %s', is_out_param)
+        nwords = t.NumWords()
+        for i, p in enumerate(sig.word_params):
+            val = None  # type: value_t
 
-        param_name = p.name  # may get hidden __
-        if i < num_args:
-            arg_str = argv[i]
+            # proc p(out Ref)
+            is_out_param = (p.type is not None and p.type.name == 'Ref')
+            #log('is_out %s', is_out_param)
+            param_name = p.name  # may get hidden __
 
-            # If we have myproc(p), and call it with myproc :arg, then bind
-            # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
-            # has a prefix REMOVED.
-            #
-            # This helps eliminate "nameref cycles".
+            if i >= nwords:
+                if not p.default_val:
+                    t.Word()  # Should raise
+                    assert False, "unreachable"
+
+                # Not sure how this will behave... disallowing it for now
+                assert not is_out_param, "Out params cannot have default values"
+
+                val = proc.defaults[i]
+
+            else:
+                # TODO: can we pass a default to t.Word()? Would simplify everything
+                arg_str = t.Word()
+
+                # If we have myproc(p), and call it with myproc :arg, then bind
+                # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
+                # has a prefix REMOVED.
+                #
+                # This helps eliminate "nameref cycles".
+                if is_out_param:
+                    # TODO: should we move this into typed_args.Reader? t.WordRef()?
+                    param_name = '__' + param_name
+
+                    if not arg_str.startswith(':'):
+                        # TODO: Point to the exact argument.  We got argv but not
+                        # locations.
+                        e_die(
+                            'Ref param %r expected arg starting with colon : but got %r'
+                            % (p.name, arg_str))
+
+                    arg_str = arg_str[1:]
+
+                val = value.Str(arg_str)
+
             if is_out_param:
-                param_name = '__' + param_name
+                flags = state.SetNameref
+            else:
+                flags = 0
 
-                if not arg_str.startswith(':'):
-                    # TODO: Point to the exact argument.  We got argv but not
-                    # locations.
-                    e_die('Ref param %r expected arg starting with colon : but got %r' %
-                          (p.name, arg_str))
+            mem.SetValue(lvalue.Named(param_name, p.blame_tok),
+                         val,
+                         scope_e.LocalOnly,
+                         flags=flags)
 
-                arg_str = arg_str[1:]
+        if sig.rest_of_words:
+            rw = sig.rest_of_words
+            items = [value.Str(x)
+                     for x in t.RestWords()]  # type: List[value_t]
+            val = value.List(items)
 
-            val = value.Str(arg_str)  # type: value_t
-            #log('%s -> %s', param_name, val)
-        else:
-            # default args were evaluated on definition
+            mem.SetValue(lvalue.Named(rw.name, rw.blame_tok), val,
+                         scope_e.LocalOnly)
 
-            val = proc.defaults[i]
-            if val is None:
-                e_die("No value provided for param %r" % p.name, p.blame_tok)
+        npos = t.NumPos()
+        for i, p in enumerate(sig.pos_params):
+            if i >= npos and p.default_val:
+                # TODO: can we cache this? would require dependency checking...
+                val = expr_ev.EvalExpr(p.default_val, p.blame_tok)
+            else:
+                val = t.PosValue()
 
-        if is_out_param:
-            flags = state.SetNameref
-        else:
-            flags = 0
+            mem.SetValue(lvalue.Named(p.name, p.blame_tok), val,
+                         scope_e.LocalOnly)
 
-        #log('flags %s', flags)
-        mem.SetValue(lvalue.Named(param_name, p.blame_tok),
-                     val,
-                     scope_e.LocalOnly,
-                     flags=flags)
+        if sig.rest_of_pos:
+            rp = sig.rest_of_pos
+            rest_pos = t.RestPos()
+            val = value.List(rest_pos)
 
-    num_params = len(sig.word_params)
-    if sig.rest_of_words:
-        r = sig.rest_of_words
-        lval = lvalue.Named(r.name, r.blame_tok)
+            mem.SetValue(lvalue.Named(rp.name, rp.blame_tok), val,
+                         scope_e.LocalOnly)
 
-        items = [value.Str(s) for s in argv[num_params:]]  # type: List[value_t]
-        rest_val = value.List(items)
-        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
-    else:
-        if num_args > num_params:
-            # TODO: Raise an exception?
-            errfmt.Print_(
-                "proc %r expected %d arguments, but got %d" %
-                (proc.name, num_params, num_args), arg0_loc)
-            # This should be status 2 because it's like a usage error.
-            return 2
+        for n in sig.named_params:
+            default_ = None  # type: value_t
+            if n.default_val:
+                default_ = expr_ev.EvalExpr(n.default_val, n.blame_tok)
+
+            val = t.NamedValue(n.name, default_)
+
+            mem.SetValue(lvalue.Named(n.name, n.blame_tok), val,
+                         scope_e.LocalOnly)
+
+        if sig.rest_of_named:
+            rn = sig.rest_of_named
+            rest_named = t.RestNamed()
+            val = value.Dict(rest_named)
+
+            mem.SetValue(lvalue.Named(rn.name, rn.blame_tok), val,
+                         scope_e.LocalOnly)
+
+        if sig.block_param:
+            b = t.Block()
+            val = value.Command(b)
+
+            mem.SetValue(
+                lvalue.Named(sig.block_param.name, sig.block_param.blame_tok),
+                val, scope_e.LocalOnly)
+
+        t.Done()
+    except error._ErrorWithLocation as err:
+        err.location = arg0_loc  # TEMP: We should be passing locs to Reader
+        errfmt.PrettyPrintError(err)
+        return 2
 
     return 0

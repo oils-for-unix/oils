@@ -58,6 +58,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   X multi-str   """  r'''  j"""
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
+                  range         1 .. n+1
                   block-literal ^(echo $PWD)
                   X expr-lit    ^[1 + 2*3]
                   X template    ^"$a and $b" for Str::replace()
