@@ -69,7 +69,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from _devbuild.gen.syntax_asdl import command_t
     from core import optview
-    from core.state import Mem
     from core.ui import ErrorFormatter
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator

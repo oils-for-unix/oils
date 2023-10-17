@@ -42,7 +42,6 @@ from typing import Dict, List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from core import ui
-    from core.state import Mem
     from frontend import parse_lib
 
 _ = log
