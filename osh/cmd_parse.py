@@ -140,15 +140,16 @@ def _MakeLiteralHereLines(
         here_lines,  # type: List[Tuple[SourceLine, int]]
         arena,  # type: Arena
 ):
-    # type: (...) -> List[word_part_t]  # less precise because List is invariant type
+    # type: (...) -> List[word_part_t]
     """Create a line_span and a token for each line."""
-    tokens = []  # type: List[Token]
+
+    # less precise type, because List[T] is an invariant type
+    tokens = []  # type: List[word_part_t]
     for src_line, start_offset in here_lines:
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line, src_line.content[start_offset:])
         tokens.append(t)
-    parts = [cast(word_part_t, t) for t in tokens]
-    return parts
+    return tokens
 
 
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
