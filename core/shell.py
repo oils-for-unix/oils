@@ -194,24 +194,6 @@ def _SetGlobalFunc(mem, name, func):
                  scope_e.GlobalOnly)
 
 
-def AddMethods(methods):
-    # type: (Dict[int, Dict[str, vm._Callable]]) -> None
-    """Initialize methods table."""
-    methods[value_e.Str] = {
-        'startswith': func_misc.StartsWith(),
-        'strip': func_misc.Strip(),
-        'upper': func_misc.Upper(),
-    }
-    methods[value_e.Dict] = {'keys': func_misc.Keys()}
-    methods[value_e.List] = {
-        'reverse': func_misc.Reverse(),
-        'append': func_misc.Append(),
-        'extend': func_misc.Extend(),
-        'pop': func_misc.Pop(),
-        'join': func_misc.Join(),  # NOTE: This is both a method and a func
-    }
-
-
 def InitAssignmentBuiltins(
         mem,  # type: state.Mem
         procs,  # type: Dict[str, value.Proc]
@@ -372,14 +354,6 @@ def Main(
     version_str = pyutil.GetVersion(loader)
     state.InitMem(mem, environ, version_str)
 
-    # Global proc namespace.  Funcs are defined in the common variable
-    # namespace.
-    procs = {}  # type: Dict[str, value.Proc]
-
-    # e.g. s->startswith()
-    methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
-    AddMethods(methods)
-
     if attrs.show_options:  # special case: sh -o
         mutable_opts.ShowOptions([])
         return 0
@@ -532,7 +506,15 @@ def Main(
     # Executor and Evaluators (are circularly dependent)
     #
 
+    # Global proc namespace.  Funcs are defined in the common variable
+    # namespace.
+    procs = {}  # type: Dict[str, value.Proc]
+
     builtins = {}  # type: Dict[int, vm._Builtin]
+
+    # e.g. s->startswith()
+    methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
+
     hay_state = state.Hay()
 
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
@@ -716,6 +698,24 @@ def Main(
     b[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
 
     #
+    # Initialize Builtin-in Methods
+    #
+
+    methods[value_e.Str] = {
+        'startswith': func_misc.StartsWith(),
+        'strip': func_misc.Strip(),
+        'upper': func_misc.Upper(),
+    }
+    methods[value_e.Dict] = {'keys': func_misc.Keys()}
+    methods[value_e.List] = {
+        'reverse': func_misc.Reverse(),
+        'append': func_misc.Append(),
+        'extend': func_misc.Extend(),
+        'pop': func_misc.Pop(),
+        'join': func_misc.Join(),  # both a method and a func
+    }
+
+    #
     # Initialize Built-in Funcs
     #
 
@@ -728,6 +728,7 @@ def Main(
     _SetGlobalFunc(mem, 'eval_hay', eval_hay)
     _SetGlobalFunc(mem, 'block_as_str', block_as_str)
     _SetGlobalFunc(mem, '_hay', hay_func)
+
     _SetGlobalFunc(mem, 'len', func_misc.Len())
     _SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
     _SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
@@ -749,6 +750,10 @@ def Main(
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     _SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
+
+    #
+    # Is the shell interactive?
+    #
 
     # History evaluation is a no-op if readline is None.
     hist_ev = history.Evaluator(readline, hist_ctx, debug_f)

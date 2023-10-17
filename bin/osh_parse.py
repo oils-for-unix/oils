@@ -61,12 +61,12 @@ def main(argv):
     aliases = {}  # type: Dict[str, str]
     # parse `` and a[x+1]=bar differently
 
-    oil_grammar = None  # type: Grammar
+    ysh_grammar = None  # type: Grammar
     if mylib.PYTHON:
         loader = pyutil.GetResourceLoader()
-        oil_grammar = pyutil.LoadOilGrammar(loader)
+        ysh_grammar = pyutil.LoadYshGrammar(loader)
 
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, ysh_grammar)
 
     pretty_print = True
 
