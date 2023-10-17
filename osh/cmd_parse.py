@@ -834,14 +834,26 @@ class CommandParser(object):
                         break
 
                 w = cast(CompoundWord, self.cur_word)  # Kind.Word ensures this
-                words.append(w)
+
                 if i == 0:
+                    # Disallow leading =a because it's confusing
+                    part0 = w.parts[0]
+                    if part0.tag() == word_part_e.Literal:
+                        tok = cast(Token, part0)
+                        if tok.id == Id.Lit_Equals:
+                            p_die(
+                                "=word isn't allowed.  Hint: add a space after =, or quote it",
+                                tok)
+
+                    # Is the first word a Hay Attr word?
                     ok, word_str, quoted = word_.StaticEval(w)
                     # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
                     if (ok and len(word_str) and word_str[0].isupper() and
                             not word_str.isupper()):
                         first_word_caps = True
                         #log('W %s', word_str)
+
+                words.append(w)
 
             elif self.c_id == Id.Op_LParen:
                 # 1. Check that there's a preceding space
@@ -870,14 +882,10 @@ class CommandParser(object):
 
                 typed_args = self.w_parser.ParseProcCallArgs(
                     grammar_nt.ysh_eager_arglist)
-                #self._SetNext()
-                #break
 
             elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
                 typed_args = self.w_parser.ParseProcCallArgs(
                     grammar_nt.ysh_lazy_arglist)
-                #self._SetNext()
-                #break
 
             else:
                 break
@@ -1114,16 +1122,6 @@ class CommandParser(object):
             simple.words = []
             simple.redirects = redirects
             return simple
-
-        # Disallow =a because it's confusing
-        # TODO: =f(x) isn't detected?
-        part0 = words[0].parts[0]
-        if part0.tag() == word_part_e.Literal:
-            tok = cast(Token, part0)
-            if tok.id == Id.Lit_Equals:
-                p_die(
-                    "=word isn't allowed.  Hint: either quote it or add a space after =\n"
-                    "to pretty print an expression", tok)
 
         preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
         if len(preparsed_list):

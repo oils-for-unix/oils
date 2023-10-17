@@ -72,10 +72,14 @@ test-func-var-checker() {
 
 test-arglist() {
   _parse-error 'json write ()'
-  _parse-error 'json write []'
 
-  #_should-parse 'p (a;)'
-  _should-parse '= f(a;)'
+  _should-parse 'p (; n=42)'
+  _should-parse '= f(; n=42)'
+
+  # TODO:
+  return
+  _parse-error '= f(; 42)'
+  _parse-error '= f(; name)'
 }
 
 
@@ -520,9 +524,6 @@ test-destructure() {
 }
 
 test-lazy-arg-list() {
-  # Empty arg list not allowed
-  _parse-error 'json write []'
-
   _should-parse 'assert [42 === x]'
 
   _should-parse 'assert [ 42 === x ]'

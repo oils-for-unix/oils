@@ -460,6 +460,13 @@ simple-command() {
   #_error-case 'echo foo FOO=(1 2)'
 
   _error-case 'PYTHONPATH+=1 python'
+
+  # Space sensitivity: disallow =
+  _error-case '=var'
+  _error-case '=f(x)'
+
+  _ysh-parse-error '=var'
+  _ysh-parse-error '=f(x)'
 }
 
 assign() {

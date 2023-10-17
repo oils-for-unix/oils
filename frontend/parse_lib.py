@@ -332,7 +332,7 @@ class ParseContext(object):
 
     def ParseYshArgList(self, lx, out, start_symbol):
         # type: (Lexer, ArgList, int) -> None
-        """ json write (x, foo=1) """
+        """ json write (x, foo=1) and assert [42 === x] """
 
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
