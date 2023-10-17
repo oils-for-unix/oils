@@ -230,8 +230,11 @@ asdl-create() {
 }
 
 long-sigs() {
-   # 53 of these
-   #egrep --no-filename '^[ ]*# type' */*.py | awk 'length($0) >= 80 { print }' 
+   # 32 of these
+   egrep --no-filename '^[ ]*# type' */*.py | awk 'length($0) >= 80 { print length($0) $0 }' 
+}
+
+long-sigs-where() {
 
    # jump to the file
    egrep -n '^[ ]*# type' */*.py | awk 'length($0) >= 110 { print }' | tee _tmp/long
