@@ -91,6 +91,7 @@ class Reader(object):
     - args.Reader() and generated flag_def.py APIs for the words
     - typed_args.Reader() for the positional/named typed args.
     """
+
     def __init__(self, pos_args, named_args, arg_list, is_bound=False):
         # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
         self.pos_args = pos_args

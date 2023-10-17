@@ -28,16 +28,19 @@ if TYPE_CHECKING:
 _ = log
 
 # TODO:
-# - validate defaults
-#   - remove mutable defaults that Python has: f(x=[]) Whitelist Bool,
-#     Int, Float, Str, and I suppose cmd, eggex, etc.
-#   - validate Block arg default
-# - fix locations -- test-proc-missing, test-func-missing
+# - improve locations -- test-proc-missing, test-func-missing
 # - use _EvalExpr consistently, I think
 #   - a single with state.ctx_YshExpr -- I guess that's faster
+#   - although EvalExpr() can take param.blame_tok
 
-# - Fix f(;named=1) at call site
 # - Probably introduce value.Ref
+#   - or maybe it needs to be in a string
+
+
+def _DisallowMutableDefault(val, blame_loc):
+    # type: (value_t, loc_t) -> None
+    if val.tag() in (value_e.List, value_e.Dict):
+        raise error.TypeErr(val, "Default values can't be mutable", blame_loc)
 
 
 def _EvalPosDefaults(expr_ev, pos_params):
@@ -48,7 +51,8 @@ def _EvalPosDefaults(expr_ev, pos_params):
     pos_defaults = [no_val] * len(pos_params)
     for i, p in enumerate(pos_params):
         if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            val = expr_ev.EvalExpr(p.default_val, p.blame_tok)
+            _DisallowMutableDefault(val, p.blame_tok)
             pos_defaults[i] = val
     return pos_defaults
 
@@ -60,7 +64,8 @@ def _EvalNamedDefaults(expr_ev, named_params):
     named_defaults = NewDict()  # type: Dict[str, value_t]
     for i, p in enumerate(named_params):
         if p.default_val:
-            val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+            val = expr_ev.EvalExpr(p.default_val, p.blame_tok)
+            _DisallowMutableDefault(val, p.blame_tok)
             named_defaults[p.name] = val
     return named_defaults
 
@@ -95,7 +100,7 @@ def EvalProcDefaults(expr_ev, sig):
         word_defaults = [no_val] * len(sig.word.params)
         for i, p in enumerate(sig.word.params):
             if p.default_val:
-                val = expr_ev.EvalExpr(p.default_val, loc.Missing)
+                val = expr_ev.EvalExpr(p.default_val, p.blame_tok)
                 if val.tag() != value_e.Str:
                     raise error.TypeErr(
                         val, 'Default val for word param must be Str',
@@ -116,8 +121,12 @@ def EvalProcDefaults(expr_ev, sig):
     if sig.block_param:
         exp = sig.block_param.default_val
         if exp:
-            val = expr_ev.EvalExpr(exp, loc.Missing)
+            val = expr_ev.EvalExpr(exp, sig.block_param.blame_tok)
             # TODO: it can only be ^() or null
+            if val.tag() not in (value_e.Null, value_e.Command):
+                raise error.TypeErr(
+                    val, "Default value for block should be Command or Null",
+                    sig.block_param.blame_tok)
         else:
             val = None  # no default, different than value.Null
 

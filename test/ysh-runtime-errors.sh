@@ -421,6 +421,26 @@ test-dict-convert() {
   _expr-error-case '= dict([["too", "many", "parts"]])'
 }
 
+test-proc-error-locs() {
+
+  # positional
+  _expr-error-case '
+  var d = [1]
+
+  func f(a=1, x=d[2]) {
+    echo hi
+  }
+  '
+
+  _expr-error-case '
+  var d = [1]
+
+  func f(; n=1, m=d[2]) {
+    echo hi
+  }
+  '
+}
+
 test-func-error-locs() {
   # free funcs
   _expr-error-case '= join(["foo", "bar"], " ", 99)' # too many args
@@ -450,6 +470,13 @@ test-proc-defaults() {
   # should be string
   _expr-error-case 'proc p(word=42) { echo }'
   _expr-error-case 'proc p(word=null) { echo }'
+
+  # should be ^() or null
+  _expr-error-case 'proc p( ; ; ; block="str") { echo }'
+  _expr-error-case 'proc p( ; ; ; block=[]) { echo }'
+
+  _should-run 'proc p( ; ; ; block=^(echo hi)) { true }'
+  _should-run 'proc p( ; ; ; block=null) { true }'
 
   # divide by zero
   _expr-error-case 'proc p(word; t=42/0) { echo }'
@@ -610,6 +637,9 @@ test-proc-extra() {
 test-func-defaults() {
   _error-case-X 1 'func f(a=ZZ) { echo }'
   _error-case-X 1 'func f(a; named=YY) { echo }'
+
+  _expr-error-case 'func f(a=[]) { echo }'
+  _expr-error-case 'func f(; d={a:3}) { echo }'
 }
 
 test-func-passing() {
