@@ -650,6 +650,39 @@ test-func-defaults() {
   _expr-error-case 'func f(; d={a:3}) { echo }'
 }
 
+test-func-missing() {
+  _expr-error-case '
+  func f(x, y) {
+    echo "$x $y"
+  }
+  _ f(1)
+  '
+
+  _expr-error-case '
+  func f(x, y; z) {
+    echo "$x $y"
+  }
+  _ f(3, 4)
+  '
+
+}
+
+test-func-extra() {
+  _expr-error-case '
+  func f() {
+    echo "$x $y"
+  }
+  _ f(42)  # extra pos
+  '
+
+  _expr-error-case '
+  func f() {
+    echo "$x $y"
+  }
+  _ f(; x=32)  # extra named
+  '
+}
+
 test-func-passing() {
   # rest can't have default -- parse error
   _error-case-X 2 '
