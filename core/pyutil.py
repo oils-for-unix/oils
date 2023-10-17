@@ -67,12 +67,12 @@ def strerror(e):
     return posix.strerror(e.errno)
 
 
-def LoadOilGrammar(loader):
+def LoadYshGrammar(loader):
     # type: (_ResourceLoader) -> grammar.Grammar
-    oil_grammar = grammar.Grammar()
+    g = grammar.Grammar()
     contents = loader.Get('_devbuild/gen/grammar.marshal')
-    oil_grammar.loads(contents)
-    return oil_grammar
+    g.loads(contents)
+    return g
 
 
 class _ResourceLoader(object):

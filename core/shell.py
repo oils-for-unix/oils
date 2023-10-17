@@ -288,15 +288,23 @@ def Main(
         readline,  # type: Optional[Readline]
 ):
     # type: (...) -> int
-    """The full shell lifecycle.  Used by bin/osh and bin/oil.
+    """The full shell lifecycle.  Used by bin/osh and bin/ysh.
 
     Args:
       lang: 'osh' or 'ysh'
-      argv0, arg_r: command line arguments
-      environ: environment
       login_shell: Was - on the front?
       loader: to get help, version, grammar, etc.
       readline: optional GNU readline
+
+    Notes: Does it make sense to create a "pure" shell here?
+
+    - Different vm._Executor - no redirects, fd_state, etc.
+    - Abandon legacy like shell aliases
+    - Only pure builtins
+    - source builtin has abstract I/O?
+
+    Or perhaps we have a separate PureMain() function, along with some kind of
+    main_loop.Headless().
     """
     # Differences between osh and ysh:
     # - oshrc vs yshrc
@@ -372,8 +380,6 @@ def Main(
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
     AddMethods(methods)
 
-    hay_state = state.Hay()
-
     if attrs.show_options:  # special case: sh -o
         mutable_opts.ShowOptions([])
         return 0
@@ -388,7 +394,7 @@ def Main(
     # feedback between runtime and parser
     aliases = {}  # type: Dict[str, str]
 
-    oil_grammar = pyutil.LoadOilGrammar(loader)
+    ysh_grammar = pyutil.LoadYshGrammar(loader)
 
     if flag.one_pass_parse and not exec_opts.noexec():
         raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
@@ -400,7 +406,7 @@ def Main(
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
                                        aliases,
-                                       oil_grammar,
+                                       ysh_grammar,
                                        one_pass_parse=one_pass_parse)
 
     # Three ParseContext instances SHARE aliases.
@@ -413,7 +419,7 @@ def Main(
     comp_ctx = parse_lib.ParseContext(comp_arena,
                                       parse_opts,
                                       aliases,
-                                      oil_grammar,
+                                      ysh_grammar,
                                       one_pass_parse=True)
     comp_ctx.Init_Trail(trail1)
 
@@ -421,7 +427,7 @@ def Main(
     hist_arena.PushSource(source.Unused('history'))
     trail2 = parse_lib.Trail()
     hist_ctx = parse_lib.ParseContext(hist_arena, parse_opts, aliases,
-                                      oil_grammar)
+                                      ysh_grammar)
     hist_ctx.Init_Trail(trail2)
 
     # Deps helps manages dependencies.  These dependencies are circular:
@@ -527,6 +533,8 @@ def Main(
     #
 
     builtins = {}  # type: Dict[int, vm._Builtin]
+    hay_state = state.Hay()
+
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
                                       hay_state, builtins, search_path,
                                       ext_prog, waiter, tracer, job_control,
@@ -642,7 +650,7 @@ def Main(
     b[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, unsafe_arith,
                                                 errfmt)
     b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
-    # Not a stable output format
+    # (pp output format isn't stable)
     b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
 
     # Input
