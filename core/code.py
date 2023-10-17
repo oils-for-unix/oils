@@ -472,7 +472,7 @@ def _BindFuncArgs(func, rd, mem):
         _BindTyped(func.name, node.positional, None, func.pos_defaults,
                    rd.pos_args, mem, blame_loc)
     else:
-        if rd.pos_args:
+        if rd.pos_args is not None:
             num_pos = len(rd.pos_args)
             if num_pos != 0:
                 raise error.Expr(
@@ -489,7 +489,7 @@ def _BindFuncArgs(func, rd, mem):
         _BindNamed(func.name, node.named, func.named_defaults, rd.named_args,
                    mem, blame_loc)
     else:
-        if rd.named_args:
+        if rd.named_args is not None:
             num_named = len(rd.named_args)
             if num_named != 0:
                 raise error.Expr(
@@ -536,7 +536,7 @@ def BindProcArgs(proc, cmd_val, mem):
         _BindTyped(proc.name, sig.positional, sig.block_param,
                    proc.defaults.for_typed, cmd_val.pos_args, mem, blame_loc)
     else:
-        if cmd_val.pos_args:
+        if cmd_val.pos_args is not None:
             num_pos = len(cmd_val.pos_args)
             if num_pos != 0:
                 raise error.Expr(
@@ -554,7 +554,7 @@ def BindProcArgs(proc, cmd_val, mem):
         _BindNamed(proc.name, sig.named, proc.defaults.for_named,
                    cmd_val.named_args, mem, blame_loc)
     else:
-        if cmd_val.named_args:
+        if cmd_val.named_args is not None:
             num_named = len(cmd_val.named_args)
             if num_named != 0:
                 raise error.Expr(
