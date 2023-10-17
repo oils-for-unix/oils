@@ -466,13 +466,35 @@ def _BindFuncArgs(func, rd, mem):
     node = func.parsed
     blame_loc = rd.LeftParenToken()
 
-    group = node.positional if node.positional else ParamGroup([], None)
-    _BindTyped(func.name, group, None, func.pos_defaults, rd.pos_args, mem,
-               blame_loc)
+    ### Handle positional args
 
-    group = node.named if node.named else ParamGroup([], None)
-    _BindNamed(func.name, group, func.named_defaults, rd.named_args, mem,
-               blame_loc)
+    if node.positional:
+        _BindTyped(func.name, node.positional, None, func.pos_defaults,
+                   rd.pos_args, mem, blame_loc)
+    else:
+        if rd.pos_args:
+            num_pos = len(rd.pos_args)
+            if num_pos != 0:
+                raise error.Expr(
+                    "Func %r takes no positional args, but got %d" %
+                    (func.name, num_pos), blame_loc)
+
+    semi = rd.arg_list.semi_tok
+    if semi is not None:
+        blame_loc = semi
+
+    ### Handle named args
+
+    if node.named:
+        _BindNamed(func.name, node.named, func.named_defaults, rd.named_args,
+                   mem, blame_loc)
+    else:
+        if rd.named_args:
+            num_named = len(rd.named_args)
+            if num_named != 0:
+                raise error.Expr(
+                    "Func %r takes no named args, but got %d" %
+                    (func.name, num_named), blame_loc)
 
 
 def BindProcArgs(proc, cmd_val, mem):
