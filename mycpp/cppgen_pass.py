@@ -147,10 +147,16 @@ def _EqualsFunc(left_type):
     return None
 
 
+_EXPLICIT = ('builtins.str', 'builtins.list', 'builtins.dict')
+
 def _CheckCondition(node, types):
     """
-    strings, lists, and dicts shouldn't be used in boolean contexts, because that
-    doesn't translate to C++.
+    Ban
+        if (mystr)
+        if (mylist)
+        if (mydict)
+
+    They mean non-empty in Python.
     """
     #log('NODE %s', node)
 
@@ -168,19 +174,14 @@ def _CheckCondition(node, types):
 
     if isinstance(t, Instance):
         type_name = t.type.fullname
-        if type_name == 'builtins.str':
-            return False
-
-        elif type_name == 'builtins.list':
-            return False
-
-        elif type_name == 'builtins.dict':
+        if type_name in _EXPLICIT:
             return False
 
     elif isinstance(t, UnionType):
-        if (len(t.items) == 2 and IsStr(t.items[0]) and
-                isinstance(t.items[1], NoneTyp)):
-            return False  # Optional[str]
+        if len(t.items) == 2 and isinstance(t.items[1], NoneTyp):
+            t2 = t.items[0]
+            if t2.type.fullname in _EXPLICIT:
+                return False
 
     return True
 
@@ -2035,8 +2036,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     if isinstance(t, NoneType):
                         valid = True
                     if isinstance(t, Instance):
-                        # Allowing strings since they're immutable, e.g. prefix='' seems
-                        # OK
+                        # Allowing strings since they're immutable, e.g.
+                        # prefix='' seems OK
                         if t.type.fullname in ('builtins.bool', 'builtins.int',
                                                'builtins.float',
                                                'builtins.str'):
@@ -2045,9 +2046,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         # ASDL enums lex_mode_t, scope_t, ...
                         if t.type.fullname.endswith('_t'):
                             valid = True
+
                         # Hack for loc__Missing.  Should detect the general case.
                         if t.type.fullname.endswith('loc__Missing'):
-                            self.log('YO %s', t.type.fullname)
                             valid = True
 
                     if not valid:

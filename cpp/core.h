@@ -266,7 +266,7 @@ Str* strerror(IOError_OSError* e);
 
 Str* BackslashEscape(Str* s, Str* meta_chars);
 
-grammar::Grammar* LoadOilGrammar(_ResourceLoader*);
+grammar::Grammar* LoadYshGrammar(_ResourceLoader*);
 
 }  // namespace pyutil
 

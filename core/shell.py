@@ -77,7 +77,6 @@ import posix_ as posix
 from typing import List, Dict, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from core import optview
     from frontend.py_readline import Readline
 
 if mylib.PYTHON:
@@ -113,8 +112,15 @@ def _CompletionDemo(comp_lookup):
     comp_lookup.RegisterName('slowc', {}, C1)
 
 
-def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
-    # type: (process.FdState, str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator, ui.ErrorFormatter) -> None
+def SourceStartupFile(
+        fd_state,  # type: process.FdState
+        rc_path,  # type: str
+        lang,  # type: str
+        parse_ctx,  # type: parse_lib.ParseContext
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        errfmt,  # type: ui.ErrorFormatter
+):
+    # type: (...) -> None
 
     # Right now this is called when the shell is interactive.  (Maybe it should
     # be called on login_shel too.)
@@ -188,136 +194,12 @@ def _SetGlobalFunc(mem, name, func):
                  scope_e.GlobalOnly)
 
 
-def AddOil(b, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena):
-    # type: (Dict[int, vm._Builtin], state.Mem, state.SearchPath, cmd_eval.CommandEvaluator, expr_eval.ExprEvaluator, ui.ErrorFormatter, Dict[str, value.Proc], alloc.Arena) -> None
-
-    b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
-    b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
-    b[builtin_i.fopen] = builtin_pure.Fopen(mem, cmd_ev)
-    b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
-
-    b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
-    b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
-    b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
-    b[builtin_i.error] = builtin_meta.Error()
-
-
-def AddPure(b, mem, procs, modules, mutable_opts, aliases, search_path,
-            errfmt):
-    # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, value.Proc], Dict[str, bool], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
-    b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-
-    b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
-    b[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
-
-    b[builtin_i.hash] = builtin_pure.Hash(search_path)
-    b[builtin_i.getopts] = builtin_pure.GetOpts(mem, errfmt)
-
-    true_ = builtin_pure.Boolean(0)
-    b[builtin_i.colon] = true_  # a "special" builtin
-    b[builtin_i.true_] = true_
-    b[builtin_i.false_] = builtin_pure.Boolean(1)
-
-    b[builtin_i.shift] = builtin_assign.Shift(mem)
-
-    b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
-    b[builtin_i.module] = builtin_pure.Module(modules, mem.exec_opts, errfmt)
-    b[builtin_i.is_main] = builtin_pure.IsMain(mem)
-
-
-def AddIO(b, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt):
-    # type: (Dict[int, vm._Builtin], state.Mem, state.DirStack, optview.Exec, split.SplitContext, parse_lib.ParseContext, ui.ErrorFormatter) -> None
-    b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
-
-    b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
-
-    # test / [ differ by need_right_bracket
-    b[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
-    b[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
-
-    b[builtin_i.pushd] = builtin_misc.Pushd(mem, dir_stack, errfmt)
-    b[builtin_i.popd] = builtin_misc.Popd(mem, dir_stack, errfmt)
-    b[builtin_i.dirs] = builtin_misc.Dirs(mem, dir_stack, errfmt)
-    b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
-
-    b[builtin_i.times] = builtin_misc.Times()
-
-
-def AddProcess(
-        b,  # type: Dict[int, vm._Builtin]
+def InitAssignmentBuiltins(
         mem,  # type: state.Mem
-        shell_ex,  # type: vm._Executor
-        ext_prog,  # type: process.ExternalProgram
-        fd_state,  # type: process.FdState
-        job_control,  # type: process.JobControl
-        job_list,  # type: process.JobList
-        waiter,  # type: process.Waiter
-        tracer,  # type: dev.Tracer
-        search_path,  # type: state.SearchPath
-        errfmt  # type: ui.ErrorFormatter
+        procs,  # type: Dict[str, value.Proc]
+        errfmt,  # type: ui.ErrorFormatter
 ):
-    # type: (...) -> None
-
-    # Process
-    b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
-                                              search_path, errfmt)
-    b[builtin_i.umask] = builtin_process.Umask()
-    b[builtin_i.wait] = builtin_process.Wait(waiter, job_list, mem, tracer,
-                                             errfmt)
-
-    b[builtin_i.jobs] = builtin_process.Jobs(job_list)
-    b[builtin_i.fg] = builtin_process.Fg(job_control, job_list, waiter)
-    b[builtin_i.bg] = builtin_process.Bg(job_list)
-
-    b[builtin_i.fork] = builtin_process.Fork(shell_ex)
-    b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
-
-
-def AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
-            errfmt):
-    # type: (Dict[int, vm._Builtin], vm._Executor, state.MutableOpts, state.Mem, Dict[str, value.Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
-    """Builtins that run more code."""
-
-    builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
-    builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs,
-                                                       aliases, search_path)
-    builtins[builtin_i.runproc] = builtin_meta.RunProc(shell_ex, procs, errfmt)
-    builtins[builtin_i.boolstatus] = builtin_meta.BoolStatus(shell_ex, errfmt)
-
-
-def AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex,
-             hay_state, errfmt):
-    # type: (Dict[int, vm._Builtin], state.Mem, state.MutableOpts, state.DirStack, cmd_eval.CommandEvaluator, vm._Executor, state.Hay, ui.ErrorFormatter) -> None
-    # These builtins take blocks, and thus need cmd_ev.
-    builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
-    builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
-    builtins[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev,
-                                                shell_ex, errfmt)
-    builtins[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem,
-                                               cmd_ev)
-    builtins[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
-
-
-def AddMethods(methods):
-    # type: (Dict[int, Dict[str, vm._Callable]]) -> None
-    """Initialize methods table."""
-    methods[value_e.Str] = {
-        'startswith': func_misc.StartsWith(),
-        'strip': func_misc.Strip(),
-        'upper': func_misc.Upper(),
-    }
-    methods[value_e.Dict] = {'keys': func_misc.Keys()}
-    methods[value_e.List] = {
-        'reverse': func_misc.Reverse(),
-        'append': func_misc.Append(),
-        'extend': func_misc.Extend(),
-        'pop': func_misc.Pop(),
-        'join': func_misc.Join(),  # NOTE: This is both a method and a func
-    }
-
-
-def InitAssignmentBuiltins(mem, procs, errfmt):
-    # type: (state.Mem, Dict[str, value.Proc], ui.ErrorFormatter) -> Dict[int, vm._AssignBuiltin]
+    # type: (...) -> Dict[int, vm._AssignBuiltin]
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
@@ -379,17 +261,33 @@ class ShellFiles(object):
             #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
 
-def Main(lang, arg_r, environ, login_shell, loader, readline):
-    # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
-    """The full shell lifecycle.  Used by bin/osh and bin/oil.
+def Main(
+        lang,  # type: str
+        arg_r,  # type: args.Reader
+        environ,  # type: Dict[str, str]
+        login_shell,  # type: bool
+        loader,  # type: pyutil._ResourceLoader
+        readline,  # type: Optional[Readline]
+):
+    # type: (...) -> int
+    """The full shell lifecycle.  Used by bin/osh and bin/ysh.
 
     Args:
       lang: 'osh' or 'ysh'
-      argv0, arg_r: command line arguments
-      environ: environment
       login_shell: Was - on the front?
       loader: to get help, version, grammar, etc.
       readline: optional GNU readline
+
+    Notes: Does it make sense to create a "pure" shell here?
+
+    - Different vm._Executor - no redirects, fd_state, etc.
+      - tilde evaluator, globs?
+    - Only pure builtins
+    - source builtin has abstract I/O?
+    - Abandon legacy like shell aliases
+
+    Or perhaps we have a separate PureMain() function, along with some kind of
+    main_loop.Headless().
     """
     # Differences between osh and ysh:
     # - oshrc vs yshrc
@@ -457,15 +355,6 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     version_str = pyutil.GetVersion(loader)
     state.InitMem(mem, environ, version_str)
 
-    procs = {}  # type: Dict[str, value.Proc]
-    # NOTE: funcs are defined in the common variable namespace
-
-    # e.g. s->startswith()
-    methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
-    AddMethods(methods)
-
-    hay_state = state.Hay()
-
     if attrs.show_options:  # special case: sh -o
         mutable_opts.ShowOptions([])
         return 0
@@ -480,7 +369,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     # feedback between runtime and parser
     aliases = {}  # type: Dict[str, str]
 
-    oil_grammar = pyutil.LoadOilGrammar(loader)
+    ysh_grammar = pyutil.LoadYshGrammar(loader)
 
     if flag.one_pass_parse and not exec_opts.noexec():
         raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
@@ -492,7 +381,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
                                        aliases,
-                                       oil_grammar,
+                                       ysh_grammar,
                                        one_pass_parse=one_pass_parse)
 
     # Three ParseContext instances SHARE aliases.
@@ -505,7 +394,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     comp_ctx = parse_lib.ParseContext(comp_arena,
                                       parse_opts,
                                       aliases,
-                                      oil_grammar,
+                                      ysh_grammar,
                                       one_pass_parse=True)
     comp_ctx.Init_Trail(trail1)
 
@@ -513,7 +402,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     hist_arena.PushSource(source.Unused('history'))
     trail2 = parse_lib.Trail()
     hist_ctx = parse_lib.ParseContext(hist_arena, parse_opts, aliases,
-                                      oil_grammar)
+                                      ysh_grammar)
     hist_ctx.Init_Trail(trail2)
 
     # Deps helps manages dependencies.  These dependencies are circular:
@@ -615,41 +504,24 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     sh_files.InitAfterLoadingEnv()
 
     #
-    # Initialize builtins that don't depend on evaluators
+    # Executor and Evaluators (are circularly dependent)
     #
 
+    # Global proc namespace.  Funcs are defined in the common variable
+    # namespace.
+    procs = {}  # type: Dict[str, value.Proc]
+
     builtins = {}  # type: Dict[int, vm._Builtin]
-    modules = {}  # type: Dict[str, bool]
+
+    # e.g. s->startswith()
+    methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
+
+    hay_state = state.Hay()
 
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
                                       hay_state, builtins, search_path,
                                       ext_prog, waiter, tracer, job_control,
                                       job_list, fd_state, trap_state, errfmt)
-
-    AddPure(builtins, mem, procs, modules, mutable_opts, aliases, search_path,
-            errfmt)
-    AddIO(builtins, mem, dir_stack, exec_opts, splitter, parse_ctx, errfmt)
-    AddProcess(builtins, mem, shell_ex, ext_prog, fd_state, job_control,
-               job_list, waiter, tracer, search_path, errfmt)
-
-    if mylib.PYTHON:
-        if help_meta:
-            help_data = help_meta.TopicMetadata()
-        else:
-            help_data = {}  # minimal build
-    else:
-        help_data = help_meta.TopicMetadata()
-    builtins[builtin_i.help] = builtin_misc.Help(lang, loader, help_data,
-                                                 errfmt)
-
-    # Interactive, depend on readline
-    builtins[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
-    builtins[builtin_i.history] = builtin_lib.History(readline, sh_files,
-                                                      errfmt, mylib.Stdout())
-
-    #
-    # Initialize Evaluators
-    #
 
     arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
                                            parse_ctx, errfmt)
@@ -665,7 +537,188 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
                                        arena, cmd_deps, trap_state,
                                        signal_safe)
 
-    AddOil(builtins, mem, search_path, cmd_ev, expr_ev, errfmt, procs, arena)
+    # PromptEvaluator rendering is needed in non-interactive shells for @P.
+    prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
+
+    # Wire up circular dependencies.
+    vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
+                        prompt_ev, tracer)
+
+    unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
+                                            parse_ctx, arith_ev, errfmt)
+    vm.InitUnsafeArith(mem, word_ev, unsafe_arith)
+
+    #
+    # Initialize Built-in Procs
+    #
+
+    b = builtins  # short alias for initialization
+
+    if mylib.PYTHON:
+        if help_meta:
+            help_data = help_meta.TopicMetadata()
+        else:
+            help_data = {}  # minimal build
+    else:
+        help_data = help_meta.TopicMetadata()
+    b[builtin_i.help] = builtin_misc.Help(lang, loader, help_data, errfmt)
+
+    # Interpreter state
+    b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
+    b[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
+
+    b[builtin_i.hash] = builtin_pure.Hash(search_path)
+
+    b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
+    b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
+
+    b[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer,
+                                          errfmt)
+
+    # Hay
+    b[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem, cmd_ev)
+    b[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
+
+    # Interpreter introspection
+    b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
+    b[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
+    b[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
+                                                search_path)
+    b[builtin_i.runproc] = builtin_meta.RunProc(shell_ex, procs, errfmt)
+
+    # Meta builtins
+    source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
+                                         fd_state, tracer, errfmt, loader)
+    b[builtin_i.source] = source_builtin
+    b[builtin_i.dot] = source_builtin
+
+    b[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
+                                          errfmt)
+    b[builtin_i.fopen] = builtin_pure.Fopen(mem, cmd_ev)
+
+    # Module builtins
+    modules = {}  # type: Dict[str, bool]
+    b[builtin_i.module] = builtin_pure.Module(modules, exec_opts, errfmt)
+    b[builtin_i.is_main] = builtin_pure.IsMain(mem)
+    b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
+
+    # Errors
+    b[builtin_i.error] = builtin_meta.Error()
+    b[builtin_i.boolstatus] = builtin_meta.BoolStatus(shell_ex, errfmt)
+    b[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev, shell_ex,
+                                         errfmt)
+
+    # Pure builtins
+    true_ = builtin_pure.Boolean(0)
+    b[builtin_i.colon] = true_  # a "special" builtin
+    b[builtin_i.true_] = true_
+    b[builtin_i.false_] = builtin_pure.Boolean(1)
+
+    b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
+    b[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
+
+    b[builtin_i.getopts] = builtin_pure.GetOpts(mem, errfmt)
+
+    b[builtin_i.shift] = builtin_assign.Shift(mem)
+    b[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith, errfmt)
+
+    b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
+
+    # test / [ differ by need_right_bracket
+    b[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
+    b[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
+
+    # Output
+    b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
+    b[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, unsafe_arith,
+                                                errfmt)
+    b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
+    # (pp output format isn't stable)
+    b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
+
+    # Input
+    b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
+    b[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx, cmd_ev,
+                                          errfmt)
+    mapfile = builtin_misc.MapFile(mem, errfmt, cmd_ev)
+    b[builtin_i.mapfile] = mapfile
+    b[builtin_i.readarray] = mapfile
+
+    # Dirs
+    b[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
+    b[builtin_i.pushd] = builtin_misc.Pushd(mem, dir_stack, errfmt)
+    b[builtin_i.popd] = builtin_misc.Popd(mem, dir_stack, errfmt)
+    b[builtin_i.dirs] = builtin_misc.Dirs(mem, dir_stack, errfmt)
+    b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
+
+    b[builtin_i.times] = builtin_misc.Times()
+
+    b[builtin_i.json] = builtin_json.Json(mem, errfmt, False)
+    b[builtin_i.j8] = builtin_json.Json(mem, errfmt, True)
+
+    ### Process builtins
+    b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
+                                              search_path, errfmt)
+    b[builtin_i.umask] = builtin_process.Umask()
+    b[builtin_i.wait] = builtin_process.Wait(waiter, job_list, mem, tracer,
+                                             errfmt)
+
+    b[builtin_i.jobs] = builtin_process.Jobs(job_list)
+    b[builtin_i.fg] = builtin_process.Fg(job_control, job_list, waiter)
+    b[builtin_i.bg] = builtin_process.Bg(job_list)
+
+    b[builtin_i.fork] = builtin_process.Fork(shell_ex)
+    b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
+
+    # Interactive builtins depend on readline
+    b[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
+    b[builtin_i.history] = builtin_lib.History(readline, sh_files, errfmt,
+                                               mylib.Stdout())
+
+    # Completion
+    spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
+                                            splitter, comp_lookup, help_data,
+                                            errfmt)
+    complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
+    b[builtin_i.complete] = complete_builtin
+    b[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
+    b[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
+    b[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
+
+    comp_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
+                                                tilde_ev, splitter, errfmt)
+
+    comp_ev.arith_ev = arith_ev
+    comp_ev.expr_ev = expr_ev
+    comp_ev.prompt_ev = prompt_ev
+    comp_ev.CheckCircularDeps()
+
+    root_comp = completion.RootCompleter(comp_ev, mem, comp_lookup,
+                                         compopt_state, comp_ui_state,
+                                         comp_ctx, debug_f)
+    b[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
+
+    #
+    # Initialize Builtin-in Methods
+    #
+
+    methods[value_e.Str] = {
+        'startswith': func_misc.StartsWith(),
+        'strip': func_misc.Strip(),
+        'upper': func_misc.Upper(),
+    }
+    methods[value_e.Dict] = {'keys': func_misc.Keys()}
+    methods[value_e.List] = {
+        'reverse': func_misc.Reverse(),
+        'append': func_misc.Append(),
+        'extend': func_misc.Extend(),
+        'pop': func_misc.Pop(),
+        'join': func_misc.Join(),  # both a method and a func
+    }
+
+    #
+    # Initialize Built-in Funcs
+    #
 
     parse_hay = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
@@ -676,6 +729,7 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     _SetGlobalFunc(mem, 'eval_hay', eval_hay)
     _SetGlobalFunc(mem, 'block_as_str', block_as_str)
     _SetGlobalFunc(mem, '_hay', hay_func)
+
     _SetGlobalFunc(mem, 'len', func_misc.Len())
     _SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
     _SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
@@ -698,70 +752,9 @@ def Main(lang, arg_r, environ, login_shell, loader, readline):
     _SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
-    # PromptEvaluator rendering is needed in non-interactive shells for @P.
-    prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
-
-    # Wire up circular dependencies.
-    vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, tracer)
-
     #
-    # Initialize builtins that depend on evaluators
+    # Is the shell interactive?
     #
-
-    unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
-                                            parse_ctx, arith_ev, errfmt)
-    vm.InitUnsafeArith(mem, word_ev, unsafe_arith)
-
-    builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx,
-                                                       unsafe_arith, errfmt)
-    builtins[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith,
-                                                     errfmt)
-    builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev,
-                                                 tracer, errfmt)
-    builtins[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx,
-                                                 cmd_ev, errfmt)
-    mapfile = builtin_misc.MapFile(mem, errfmt, cmd_ev)
-    builtins[builtin_i.mapfile] = mapfile
-    builtins[builtin_i.readarray] = mapfile
-
-    source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
-                                         fd_state, tracer, errfmt, loader)
-    builtins[builtin_i.source] = source_builtin
-    builtins[builtin_i.dot] = source_builtin
-
-    AddMeta(builtins, shell_ex, mutable_opts, mem, procs, aliases, search_path,
-            errfmt)
-    AddBlock(builtins, mem, mutable_opts, dir_stack, cmd_ev, shell_ex,
-             hay_state, errfmt)
-
-    spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup, help_data,
-                                            errfmt)
-    complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
-    builtins[builtin_i.complete] = complete_builtin
-    builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
-    builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
-    builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
-
-    # NOTE: We're using a different WordEvaluator here.
-    ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
-                                           tilde_ev, splitter, errfmt)
-
-    ev.arith_ev = arith_ev
-    ev.expr_ev = expr_ev
-    ev.prompt_ev = prompt_ev
-    ev.CheckCircularDeps()
-
-    root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
-                                         comp_ui_state, comp_ctx, debug_f)
-    builtins[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
-
-    builtins[builtin_i.json] = builtin_json.Json(mem, errfmt, False)
-    builtins[builtin_i.j8] = builtin_json.Json(mem, errfmt, True)
-
-    builtins[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer,
-                                                 errfmt)
 
     # History evaluation is a no-op if readline is None.
     hist_ev = history.Evaluator(readline, hist_ctx, debug_f)

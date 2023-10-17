@@ -42,7 +42,6 @@ from typing import Dict, List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from core import ui
-    from core.state import Mem
     from frontend import parse_lib
 
 _ = log
@@ -158,8 +157,14 @@ class _FormatStringParser(object):
 
 class Printf(vm._Builtin):
 
-    def __init__(self, mem, parse_ctx, unsafe_arith, errfmt):
-        # type: (Mem, parse_lib.ParseContext, sh_expr_eval.UnsafeArith, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            parse_ctx,  # type: parse_lib.ParseContext
+            unsafe_arith,  # type: sh_expr_eval.UnsafeArith
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.parse_ctx = parse_ctx
         self.unsafe_arith = unsafe_arith

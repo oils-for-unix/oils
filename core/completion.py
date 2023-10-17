@@ -200,9 +200,8 @@ class Lookup(object):
         # type: () -> None
 
         # Pseudo-commands __first and __fallback are for -E and -D.
-        do_nothing = (_DEFAULT_OPTS,
-                      UserSpec([], [], [], DefaultPredicate(), '', '')
-                     )  # type: Tuple[Dict[str, bool], UserSpec]
+        empty_spec = UserSpec([], [], [], DefaultPredicate(), '', '')
+        do_nothing = (_DEFAULT_OPTS, empty_spec)
         self.lookup = {
             '__fallback': do_nothing,
             '__first': do_nothing,
@@ -310,6 +309,7 @@ class Lookup(object):
 
 
 class Api(object):
+
     def __init__(self, line, begin, end):
         # type: (str, int, int) -> None
         """
@@ -393,6 +393,7 @@ class UsersAction(CompletionAction):
 
 
 class TestAction(CompletionAction):
+
     def __init__(self, words, delay=0.0):
         # type: (List[str], Optional[float]) -> None
         self.words = words
@@ -742,6 +743,7 @@ class ExternalCommandAction(CompletionAction):
 
 
 class _Predicate(object):
+
     def __init__(self):
         # type: () -> None
         pass
@@ -757,6 +759,7 @@ class _Predicate(object):
 
 
 class DefaultPredicate(_Predicate):
+
     def __init__(self):
         # type: () -> None
         pass
@@ -1160,8 +1163,8 @@ class RootCompleter(object):
                 # etc.  Now try partial_argv, which may involve invoking PLUGINS.
 
                 # needed to complete paths with ~
-                trail_words = [cast(word_t, w) for w in trail.words
-                              ]  # mycpp: workaround list cast
+                # mycpp: workaround list cast
+                trail_words = [cast(word_t, w) for w in trail.words]
                 words2 = word_.TildeDetectAll(trail_words)
                 if 0:
                     debug_f.writeln('After tilde detection')
@@ -1299,7 +1302,8 @@ class RootCompleter(object):
         NOTE: This post-processing MUST go here, and not in UserSpec, because
         it's in READLINE in bash.  compgen doesn't see it.
         """
-        self.debug_f.writeln('Completing %r ... (Ctrl-C to cancel)' % comp.line)
+        self.debug_f.writeln('Completing %r ... (Ctrl-C to cancel)' %
+                             comp.line)
         start_time = time_.time()
 
         # TODO: dedupe candidates?  You can get two 'echo' in bash, which is dumb.
@@ -1458,7 +1462,8 @@ class ReadlineCallback(object):
                 import traceback
                 traceback.print_exc()
             print_stderr('osh: Unhandled exception while completing: %s' % e)
-            self.debug_f.writeln('Unhandled exception while completing: %s' % e)
+            self.debug_f.writeln('Unhandled exception while completing: %s' %
+                                 e)
         except SystemExit as e:
             # I think this should no longer be called, because we don't use
             # sys.exit()?

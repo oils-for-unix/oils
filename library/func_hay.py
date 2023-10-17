@@ -77,8 +77,14 @@ class ParseHay(vm._Callable):
 class EvalHay(vm._Callable):
     """evalHay()"""
 
-    def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
-        # type: (state.Hay, state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator) -> None
+    def __init__(
+            self,
+            hay_state,  #type: state.Hay
+            mutable_opts,  # type: state.MutableOpts
+            mem,  # type: state.Mem
+            cmd_ev,  #type: cmd_eval.CommandEvaluator
+    ):
+        # type: (...) -> None
         self.hay_state = hay_state
         self.mutable_opts = mutable_opts
         self.mem = mem

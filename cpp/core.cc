@@ -376,7 +376,7 @@ Str* strerror(IOError_OSError* e) {
   return s;
 }
 
-grammar::Grammar* LoadOilGrammar(_ResourceLoader*) {
+grammar::Grammar* LoadYshGrammar(_ResourceLoader*) {
   if (gOilGrammar != nullptr) {
     return gOilGrammar;
   }

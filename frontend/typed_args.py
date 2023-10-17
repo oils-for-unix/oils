@@ -91,6 +91,7 @@ class Reader(object):
     - args.Reader() and generated flag_def.py APIs for the words
     - typed_args.Reader() for the positional/named typed args.
     """
+
     def __init__(self, pos_args, named_args, arg_list, is_bound=False):
         # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
         self.pos_args = pos_args
@@ -461,7 +462,7 @@ class Reader(object):
         if len(self.named_args):
             bad_args = ', '.join(self.named_args.keys())
 
-            blame = self.arg_list.named_delim  # type: loc_t
+            blame = self.arg_list.semi_tok  # type: loc_t
             if blame is None:
                 blame = self.LeastSpecificLocation()
 

@@ -9,6 +9,7 @@ from core import alloc  # module under test
 
 
 class AllocTest(unittest.TestCase):
+
     def setUp(self):
         self.arena = alloc.Arena()
 

@@ -392,8 +392,13 @@ class GetOptsState(object):
         state.BuiltinSetString(self.mem, 'OPTARG', '')
 
 
-def _GetOpts(spec, argv, my_state, errfmt):
-    # type: (Dict[str, bool], List[str], GetOptsState, ui.ErrorFormatter) -> Tuple[int, str]
+def _GetOpts(
+        spec,  # type: Dict[str, bool]
+        argv,  # type: List[str]
+        my_state,  # type: GetOptsState
+        errfmt,  # type: ui.ErrorFormatter
+):
+    # type: (...) -> Tuple[int, str]
     current = my_state.GetArg(argv)
     #log('current %s', current)
 

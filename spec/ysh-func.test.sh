@@ -29,6 +29,24 @@ func f(x) { return (x + 1) }
 ## STDOUT:
 ## END
 
+#### Positional args
+
+func f(x, y, ...rest) {
+  echo "pos $x $y"
+  echo rest @rest
+}
+
+_ f(1, 2, 3, 4)
+
+# This is an error
+#_ f(1, 2, m=2, n=3)
+
+## STDOUT:
+pos 1 2
+rest 3 4
+## END
+
+
 #### named args
 func f(; x=3) {
   echo x=$x
@@ -64,7 +82,45 @@ x=4
 {"y":5}
 ## END
 
-#### Proc-style return in a func
+#### Spread/splat of named args: f(...more)
+
+func f(; x, y) {
+  echo "$x $y"
+}
+
+_ f(; x=9, y=10)
+
+var args = {x: 3, y: 4}
+
+_ f(; ...args)
+
+
+## STDOUT:
+9 10
+3 4
+## END
+
+
+#### Multiple spreads
+
+func f(...pos; ...named) {
+  json write --pretty=F (pos)
+  json write --pretty=F (named)
+}
+
+var a = [1,2,3]
+var d = {m: 'spam', n: 'no'}
+var e = {p: 5, q: 6}
+
+_ f(...a, ...a; ...d, ...e)
+
+## STDOUT:
+[1,2,3,1,2,3]
+{"m":"spam","n":"no","p":5,"q":6}
+## END
+
+
+#### Proc-style return in a func is error
 func t() { return 0 }
 
 = t()
@@ -72,7 +128,7 @@ func t() { return 0 }
 ## STDOUT:
 ## END
 
-#### Typed return in a proc
+#### Typed return in a proc is error
 proc t() { return (0) }
 
 = t()

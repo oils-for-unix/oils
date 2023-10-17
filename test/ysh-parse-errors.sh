@@ -70,6 +70,18 @@ test-func-var-checker() {
   '
 }
 
+test-arglist() {
+  _parse-error 'json write ()'
+
+  _should-parse 'p (; n=42)'
+  _should-parse '= f(; n=42)'
+
+  _parse-error '= f(; 42)'
+  _parse-error '= f(; name)'
+  _parse-error '= f(; x for x in y)'
+}
+
+
 # Extra constraints on param groups:
 # - word arg types can only be Str or Ref
 # - no constraints on positional or keyword args?
@@ -511,9 +523,6 @@ test-destructure() {
 }
 
 test-lazy-arg-list() {
-  # Empty arg list not allowed
-  _parse-error 'json write []'
-
   _should-parse 'assert [42 === x]'
 
   _should-parse 'assert [ 42 === x ]'

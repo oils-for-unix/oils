@@ -30,7 +30,7 @@ from data_lang import qsn
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
-    from core.ui import ErrorFormatter
+    from core import ui
     from frontend.args import _Attributes
 
 _ = log
@@ -249,7 +249,7 @@ def _ExportReadonly(mem, pair, flags):
 class Export(vm._AssignBuiltin):
 
     def __init__(self, mem, errfmt):
-        # type: (Mem, ErrorFormatter) -> None
+        # type: (Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -320,7 +320,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 class Readonly(vm._AssignBuiltin):
 
     def __init__(self, mem, errfmt):
-        # type: (Mem, ErrorFormatter) -> None
+        # type: (Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -363,7 +363,7 @@ class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
     def __init__(self, mem, procs, errfmt):
-        # type: (Mem, Dict[str, value.Proc], ErrorFormatter) -> None
+        # type: (Mem, Dict[str, value.Proc], ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.errfmt = errfmt
@@ -480,8 +480,14 @@ class NewVar(vm._AssignBuiltin):
 
 class Unset(vm._Builtin):
 
-    def __init__(self, mem, procs, unsafe_arith, errfmt):
-        # type: (Mem, Dict[str, value.Proc], sh_expr_eval.UnsafeArith, ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            procs,  # type: Dict[str, value.Proc]
+            unsafe_arith,  # type: sh_expr_eval.UnsafeArith
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.procs = procs
         self.unsafe_arith = unsafe_arith

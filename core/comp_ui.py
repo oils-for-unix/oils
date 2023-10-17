@@ -485,8 +485,8 @@ class NiceDisplay(_IDisplay):
         # We avoid drawing problems if we print it on its own line:
         # - inserting text doesn't push it to the right
         # - you can't overwrite it
-        self.f.write(spaces + ansi.REVERSE + ' ' + rendered + ' ' + ansi.RESET +
-                     '\r\n')
+        self.f.write(spaces + ansi.REVERSE + ' ' + rendered + ' ' +
+                     ansi.RESET + '\r\n')
 
     def EraseLines(self):
         # type: () -> None

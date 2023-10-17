@@ -68,7 +68,6 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
-from core import code
 from core import dev
 from core import error
 from core.error import e_die, e_die_status
@@ -88,6 +87,7 @@ from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch
 from ysh import cpython
 from ysh import expr_eval
+from ysh import func_proc
 from ysh import val_ops
 
 import posix_ as posix
@@ -892,8 +892,8 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
-                code.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts, node,
-                                         cmd_val)
+                func_proc.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts,
+                                              node, cmd_val)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",
@@ -1402,7 +1402,7 @@ class CommandEvaluator(object):
 
         if node.sig.tag() == proc_sig_e.Closed:
             sig = cast(proc_sig.Closed, node.sig)
-            proc_defaults = code.EvalProcDefaults(self.expr_ev, sig)
+            proc_defaults = func_proc.EvalProcDefaults(self.expr_ev, sig)
         else:
             proc_defaults = None
 
@@ -1427,7 +1427,7 @@ class CommandEvaluator(object):
                     "Func %s was already defined (redefine_proc_func)" % name,
                     node.name)
 
-        pos_defaults, named_defaults = code.EvalFuncDefaults(
+        pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
         func_val = value.Func(name, node, pos_defaults, named_defaults)
 
@@ -2108,7 +2108,7 @@ class CommandEvaluator(object):
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            code.BindProcArgs(proc, cmd_val, self.mem)
+            func_proc.BindProcArgs(proc, cmd_val, self.mem)
 
             # Redirects still valid for functions.
             # Here doc causes a pipe and Process(SubProgramThunk).

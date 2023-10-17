@@ -210,14 +210,14 @@ class Reader(object):
 
     def _FirstLocation(self):
         # type: () -> loc_t
-        if self.locs and self.locs[0] is not None:
+        if self.locs is not None and self.locs[0] is not None:
             return self.locs[0]
         else:
             return loc.Missing
 
     def Location(self):
         # type: () -> loc_t
-        if self.locs:
+        if self.locs is not None:
             if self.i == self.n:
                 i = self.n - 1  # if the last arg is missing, point at the one before
             else:

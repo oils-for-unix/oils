@@ -93,7 +93,7 @@ NT_OFFSET = 256
 
 if mylib.PYTHON:
 
-    def MakeGrammarNames(oil_grammar):
+    def MakeGrammarNames(ysh_grammar):
         # type: (Grammar) -> Dict[int, str]
 
         # TODO: Break this dependency
@@ -117,7 +117,7 @@ if mylib.PYTHON:
             if k < 256:
                 names[k] = id_name
 
-        for k, v in oil_grammar.number2symbol.items():
+        for k, v in ysh_grammar.number2symbol.items():
             # eval_input == 256.  Remove?
             assert k >= 256, (k, v)
             names[k] = v
@@ -127,6 +127,7 @@ if mylib.PYTHON:
 
 def ISNONTERMINAL(x):
     # type: (int) -> bool
+    assert isinstance(x, int), x
     return x >= NT_OFFSET
 
 
@@ -213,7 +214,7 @@ class Transformer(object):
 
             p = p_trailer.GetChild(1)  # the X in ( X )
             assert p.typ == grammar_nt.arglist  # f(x, y)
-            self._Arglist(p, arglist)
+            self._ArgList(p, arglist)
             return expr.FuncCall(base, arglist)
 
         if op_tok.id == Id.Op_LBracket:
@@ -834,7 +835,7 @@ class Transformer(object):
 
         raise NotImplementedError()
 
-    def _Argument(self, p_node, do_named, arglist):
+    def _Argument(self, p_node, after_semi, arglist):
         # type: (PNode, bool, ArgList) -> None
         """Parse tree to LST
 
@@ -850,7 +851,10 @@ class Transformer(object):
         assert p_node.typ == grammar_nt.argument, p_node
         n = p_node.NumChildren()
         if n == 1:
-            arg = self.Expr(p_node.GetChild(0))
+            child = p_node.GetChild(0)
+            if after_semi:
+                p_die('Positional args must come before the semi-colon', child.tok)
+            arg = self.Expr(child)
             pos_args.append(arg)
             return
 
@@ -860,15 +864,18 @@ class Transformer(object):
             tok0 = p_node.GetChild(0).tok
             if tok0.id == Id.Expr_Ellipsis:
                 spread_expr = expr.Spread(tok0, self.Expr(p_node.GetChild(1)))
-                if do_named:
-                    # Implicit spread with name = None
+                if after_semi:  # f(; ... named)
                     named_args.append(NamedArg(None, spread_expr))
-                else:
+                else:  # f(...named)
                     pos_args.append(spread_expr)
                 return
 
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
-                elt = self.Expr(p_node.GetChild(0))
+                child = p_node.GetChild(0)
+                if after_semi:
+                    p_die('Positional args must come before the semi-colon', child.tok)
+
+                elt = self.Expr(child)
                 comp = self._CompFor(p_node.GetChild(1))
                 arg = expr.GeneratorExp(elt, [comp])
                 pos_args.append(arg)
@@ -876,34 +883,46 @@ class Transformer(object):
 
             raise AssertionError()
 
-        if n == 3:
+        if n == 3:  # named args can come before or after the semicolon
             n1 = NamedArg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
             named_args.append(n1)
             return
 
-        raise NotImplementedError()
+        raise AssertionError()
 
-    def _Arglist(self, parent, arglist):
-        # type: (PNode, ArgList) -> None
-        """Parse tree to LST
-
-        arglist:
-               argument (',' argument)* [',']
-          [';' argument (',' argument)* [','] ]
+    def _ArgGroup(self, p_node, after_semi, arglist):
+        # type: (PNode, bool, ArgList) -> None
         """
-        do_named = False
-        for i in xrange(parent.NumChildren()):
-            p_child = parent.GetChild(i)
+        arg_group: argument (',' argument)* [',']
+        """
+        for i in xrange(p_node.NumChildren()):
+            p_child = p_node.GetChild(i)
             if ISNONTERMINAL(p_child.typ):
-                self._Argument(p_child, do_named, arglist)
-            elif p_child.tok.id == Id.Op_Semi:
-                arglist.named_delim = p_child.tok
-                do_named = True
+                self._Argument(p_child, after_semi, arglist)
+
+    def _ArgList(self, p_node, arglist):
+        # type: (PNode, ArgList) -> None
+        """For both funcs and procs
+
+        arglist: [arg_group] [';' arg_group]
+        """
+        n = p_node.NumChildren()
+        if n == 0:
+            return
+
+        p0 = p_node.GetChild(0)
+        i = 0
+        if ISNONTERMINAL(p0.typ):
+            self._ArgGroup(p0, False, arglist)
+            i += 1
+
+        if n >= 2:
+            arglist.semi_tok = p_node.GetChild(i).tok
+            self._ArgGroup(p_node.GetChild(i+1), True, arglist)
 
     def ToArgList(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
-        """Transform arg lists.
-
+        """
         ysh_eager_arglist: '(' [arglist] ')'
         ysh_lazy_arglist: '[' [arglist] ']'
         """
@@ -914,7 +933,7 @@ class Transformer(object):
         p = pnode.GetChild(1)  # the X in '( X )'
 
         assert p.typ == grammar_nt.arglist
-        self._Arglist(p, arglist)
+        self._ArgList(p, arglist)
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr
