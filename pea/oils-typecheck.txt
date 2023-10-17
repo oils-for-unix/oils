@@ -12,7 +12,6 @@ asdl/runtime.py
 bin/oils_for_unix.py
 core/alloc.py
 core/ansi.py
-core/code.py
 core/comp_ui.py
 core/completion.py
 core/dev.py
@@ -92,5 +91,6 @@ ysh/cpython.py
 ysh/expr_eval.py
 ysh/expr_parse.py
 ysh/expr_to_ast.py
+ysh/func_proc.py
 ysh/regex_translate.py
 ysh/val_ops.py

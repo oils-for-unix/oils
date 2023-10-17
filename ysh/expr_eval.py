@@ -49,7 +49,6 @@ from _devbuild.gen.runtime_asdl import (
     value_t,
     IntBox,
 )
-from core import code
 from core import error
 from core.error import e_die, e_die_status
 from core import state
@@ -62,6 +61,7 @@ from frontend import typed_args
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, switch, tagswitch
+from ysh import func_proc
 from ysh import val_ops
 
 import libc
@@ -687,15 +687,15 @@ class ExprEvaluator(object):
             if case(value_e.Func):
                 func = cast(value.Func, UP_func)
 
-                pos_args, named_args = code._EvalArgList(self, node.args)
+                pos_args, named_args = func_proc._EvalArgList(self, node.args)
                 rd = typed_args.Reader(pos_args, named_args, node.args)
-                return code.CallUserFunc(func, rd, self.mem, self.cmd_ev)
+                return func_proc.CallUserFunc(func, rd, self.mem, self.cmd_ev)
 
             elif case(value_e.BuiltinFunc):
                 func = cast(value.BuiltinFunc, UP_func)
                 # C++ cast to work around ASDL 'any'
                 f = cast(vm._Callable, func.callable)
-                pos_args, named_args = code._EvalArgList(self, node.args)
+                pos_args, named_args = func_proc._EvalArgList(self, node.args)
                 #log('pos_args %s', pos_args)
 
                 rd = typed_args.Reader(pos_args, named_args, node.args)
@@ -708,9 +708,9 @@ class ExprEvaluator(object):
                 # Cast to work around ASDL limitation for now
                 f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = code._EvalArgList(self,
-                                                         node.args,
-                                                         me=func.me)
+                pos_args, named_args = func_proc._EvalArgList(self,
+                                                              node.args,
+                                                              me=func.me)
 
                 rd = typed_args.Reader(pos_args,
                                        named_args,
