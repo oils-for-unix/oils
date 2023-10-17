@@ -50,15 +50,49 @@ eval (my_block)
 1
 ## END
 
-#### Eval should not have dynamic scope
-proc leaky (;;; block) {
-  var this = 42
+#### eval (block) can read variables like eval ''
+
+proc p2(code_str) {
+  var mylocal = 42
+  eval $code_str
+}
+
+p2 'echo mylocal=$mylocal'
+
+proc p (;;; block) {
+  var mylocal = 99
   eval (block)
 }
 
-leaky {
+p {
+  echo mylocal=$mylocal
+}
+
+
+## STDOUT:
+mylocal=42
+mylocal=99
+## END
+
+#### eval should have a sandboxed mode
+
+proc p (;;; block) {
+  var this = 42
+
+  # like push-registers?  Not sure
+  # We could use state.ctx_Temp ?  There's also ctx_FuncCall etc.
+  #
+  # I think we want to provide full control over the stack.
+  push-frame {
+    eval (block)
+  }
+}
+
+p {
   echo $this
 }
+
 ## status: 1
 ## STDOUT:
+TODO
 ## END
