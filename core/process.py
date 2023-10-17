@@ -177,13 +177,21 @@ class FdState(object):
     processes inherit our state.
     """
 
-    def __init__(self, errfmt, job_control, job_list, mem, tracer, waiter):
-        # type: (ErrorFormatter, JobControl, JobList, Mem, Optional[dev.Tracer], Optional[Waiter]) -> None
+    def __init__(
+            self,
+            errfmt,  # type: ui.ErrorFormatter
+            job_control,  # type: JobControl
+            job_list,  # type: JobList
+            mem,  #type: state.Mem
+            tracer,  # type: Optional[dev.Tracer]
+            waiter,  # type: Optional[Waiter]
+    ):
+        # type: (...) -> None
         """
-    Args:
-      errfmt: for errors
-      job_list: For keeping track of _HereDocWriterThunk
-    """
+        Args:
+          errfmt: for errors
+          job_list: For keeping track of _HereDocWriterThunk
+        """
         self.errfmt = errfmt
         self.job_control = job_control
         self.job_list = job_list

@@ -38,8 +38,15 @@ if TYPE_CHECKING:
 
 class Eval(vm._Builtin):
 
-    def __init__(self, parse_ctx, exec_opts, cmd_ev, tracer, errfmt):
-        # type: (ParseContext, optview.Exec, CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            parse_ctx,  # type: ParseContext
+            exec_opts,  # type: optview.Exec
+            cmd_ev,  # type: CommandEvaluator
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.exec_opts = exec_opts
@@ -82,9 +89,17 @@ class Eval(vm._Builtin):
 
 class Source(vm._Builtin):
 
-    def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, tracer,
-                 errfmt, loader):
-        # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, dev.Tracer, ui.ErrorFormatter, pyutil._ResourceLoader) -> None
+    def __init__(
+            self,
+            parse_ctx,  # type: ParseContext
+            search_path,  # type: state.SearchPath
+            cmd_ev,  # type: CommandEvaluator
+            fd_state,  # type: process.FdState
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
+            loader,  # type: pyutil._ResourceLoader
+    ):
+        # type: (...) -> None
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.search_path = search_path
@@ -315,8 +330,15 @@ class Try(vm._Builtin):
     }
     """
 
-    def __init__(self, mutable_opts, mem, cmd_ev, shell_ex, errfmt):
-        # type: (state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator, vm._Executor, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mutable_opts,  # type: state.MutableOpts
+            mem,  # type: state.Mem
+            cmd_ev,  # type: cmd_eval.CommandEvaluator
+            shell_ex,  # type: vm._Executor
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mutable_opts = mutable_opts
         self.mem = mem
         self.shell_ex = shell_ex
@@ -430,8 +452,13 @@ class BoolStatus(vm._Builtin):
         return status
 
 
-def _ResolveNames(names, funcs, aliases, search_path):
-    # type: (List[str], Dict[str, value.Proc], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
+def _ResolveNames(
+        names,  # type: List[str]
+        funcs,  # type: Dict[str, value.Proc]
+        aliases,  # type: Dict[str, str]
+        search_path,  # type: state.SearchPath
+):
+    # type: (...) -> List[Tuple[str, str]]
     results = []  # type: List[Tuple[str, str]]
     for name in names:
         if name in funcs:
@@ -465,8 +492,14 @@ def _ResolveNames(names, funcs, aliases, search_path):
 
 class Type(vm._Builtin):
 
-    def __init__(self, funcs, aliases, search_path, errfmt):
-        # type: (Dict[str, value.Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            funcs,  # type: Dict[str, value.Proc]
+            aliases,  # type: Dict[str, str]
+            search_path,  # type: state.SearchPath
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.funcs = funcs
         self.aliases = aliases
         self.search_path = search_path

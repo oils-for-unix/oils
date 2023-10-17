@@ -1698,8 +1698,14 @@ class Mem(object):
 
         raise AssertionError()
 
-    def _ResolveNameOrRef(self, name, which_scopes, is_setref, ref_trail=None):
-        # type: (str, scope_t, bool, Optional[List[str]]) -> Tuple[Optional[Cell], Dict[str, Cell], str]
+    def _ResolveNameOrRef(
+            self,
+            name,  # type: str
+            which_scopes,  # type: scope_t
+            is_setref,  # type: bool 
+            ref_trail=None,  # type: Optional[List[str]]
+    ):
+        # type: (...) -> Tuple[Optional[Cell], Dict[str, Cell], str]
         """Look up a cell and namespace, but respect the nameref flag.
 
         Resolving namerefs does RECURSIVE calls.

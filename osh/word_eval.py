@@ -489,9 +489,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
         EvalWordSequence   EvalWordSequence2
     """
 
-    def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter,
-                 errfmt):
-        # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            tilde_ev,  # type: TildeEvaluator
+            splitter,  # type: SplitContext
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
         self.expr_ev = None  # type: expr_eval.ExprEvaluator
         self.prompt_ev = None  # type: prompt.Evaluator
@@ -2247,9 +2254,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
 class NormalWordEvaluator(AbstractWordEvaluator):
 
-    def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter,
-                 errfmt):
-        # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            tilde_ev,  # type: TildeEvaluator
+            splitter,  # type: SplitContext
+            errfmt,  # type: ErrorFormatter
+    ):
+        # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
                                        tilde_ev, splitter, errfmt)
         self.shell_ex = None  # type: _Executor
@@ -2290,9 +2304,16 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
     line.
     """
 
-    def __init__(self, mem, exec_opts, mutable_opts, tilde_ev, splitter,
-                 errfmt):
-        # type: (Mem, optview.Exec, state.MutableOpts, TildeEvaluator, SplitContext, ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            tilde_ev,  # type: TildeEvaluator
+            splitter,  # type: SplitContext
+            errfmt,  # type: ErrorFormatter
+    ):
+        # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
                                        tilde_ev, splitter, errfmt)
 

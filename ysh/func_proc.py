@@ -562,8 +562,13 @@ def BindProcArgs(proc, cmd_val, mem):
                     (proc.name, num_named), blame_loc)
 
 
-def CallUserFunc(func, rd, mem, cmd_ev):
-    # type: (value.Func, typed_args.Reader, state.Mem, cmd_eval.CommandEvaluator) -> value_t
+def CallUserFunc(
+        func,# type: value.Func
+        rd, # type: typed_args.Reader
+        mem,# type: state.Mem
+        cmd_ev,# type: cmd_eval.CommandEvaluator
+):
+    # type: (...) -> value_t
 
     # Push a new stack frame
     with state.ctx_FuncCall(mem, func):

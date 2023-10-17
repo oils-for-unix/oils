@@ -172,9 +172,9 @@ class InteractiveLineReader(_Reader):
         # type: (Arena, prompt.Evaluator, history.Evaluator, Readline, PromptState) -> None
         # TODO: Hook up PromptEvaluator and history.Evaluator when they have types.
         """
-    Args:
-      prompt_state: Current prompt is PUBLISHED here.
-    """
+        Args:
+          prompt_state: Current prompt is PUBLISHED here.
+        """
         _Reader.__init__(self, arena)
         self.prompt_ev = prompt_ev
         self.hist_ev = hist_ev

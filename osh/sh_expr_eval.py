@@ -189,9 +189,16 @@ if mylib.PYTHON:
 class UnsafeArith(object):
     """For parsing a[i] at RUNTIME."""
 
-    def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, arith_ev,
-                 errfmt):
-        # type: (state.Mem, optview.Exec, state.MutableOpts, parse_lib.ParseContext, ArithEvaluator, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            parse_ctx,  # type: parse_lib.ParseContext
+            arith_ev,  # type: ArithEvaluator
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
@@ -286,8 +293,15 @@ class ArithEvaluator(object):
     2. Look up variables and evaluate words.
     """
 
-    def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt):
-        # type: (state.Mem, optview.Exec, state.MutableOpts, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            parse_ctx,  # type: Optional[parse_lib.ParseContext]
+            errfmt,  # type: ErrorFormatter
+    ):
+        # type: (...) -> None
         self.word_ev = None  # type: word_eval.StringWordEvaluator
         self.mem = mem
         self.exec_opts = exec_opts
@@ -876,14 +890,16 @@ class BoolEvaluator(ArithEvaluator):
     where x='1+2'
     """
 
-    def __init__(self,
-                 mem,
-                 exec_opts,
-                 mutable_opts,
-                 parse_ctx,
-                 errfmt,
-                 always_strict=False):
-        # type: (state.Mem, optview.Exec, Optional[state.MutableOpts], Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: Optional[state.MutableOpts]
+            parse_ctx,  # type: Optional[parse_lib.ParseContext]
+            errfmt,  # type: ErrorFormatter
+            always_strict=False  # type: bool
+    ):
+        # type: (...) -> None
         ArithEvaluator.__init__(self, mem, exec_opts, mutable_opts, parse_ctx,
                                 errfmt)
         self.always_strict = always_strict

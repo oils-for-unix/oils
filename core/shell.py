@@ -113,8 +113,15 @@ def _CompletionDemo(comp_lookup):
     comp_lookup.RegisterName('slowc', {}, C1)
 
 
-def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev, errfmt):
-    # type: (process.FdState, str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator, ui.ErrorFormatter) -> None
+def SourceStartupFile(
+        fd_state,  # type: process.FdState
+        rc_path,  # type: str
+        lang,  # type: str
+        parse_ctx,  # type: parse_lib.ParseContext
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        errfmt,  # type: ui.ErrorFormatter
+):
+    # type: (...) -> None
 
     # Right now this is called when the shell is interactive.  (Maybe it should
     # be called on login_shel too.)
@@ -379,8 +386,15 @@ class ShellFiles(object):
             #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
 
-def Main(lang, arg_r, environ, login_shell, loader, readline):
-    # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Optional[Readline]) -> int
+def Main(
+        lang,  # type: str
+        arg_r,  # type: args.Reader
+        environ,  # type: Dict[str, str]
+        login_shell,  # type: bool
+        loader,  # type: pyutil._ResourceLoader
+        readline,  # type: Optional[Readline]
+):
+    # type: (...) -> int
     """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
     Args:

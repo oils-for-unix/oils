@@ -234,7 +234,7 @@ long-sigs() {
    #egrep --no-filename '^[ ]*# type' */*.py | awk 'length($0) >= 80 { print }' 
 
    # jump to the file
-   egrep -n '^[ ]*# type' */*.py | awk 'length($0) >= 130 { print }' | tee _tmp/long
+   egrep -n '^[ ]*# type' */*.py | awk 'length($0) >= 110 { print }' | tee _tmp/long
 }
 
 run-task "$@"

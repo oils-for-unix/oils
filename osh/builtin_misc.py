@@ -80,8 +80,14 @@ class Times(vm._Builtin):
 #   the next character read and for line continuation.
 
 
-def _AppendParts(s, spans, max_results, join_next, parts):
-    # type: (str, List[Tuple[span_t, int]], int, bool, List[mylib.BufWriter]) -> Tuple[bool, bool]
+def _AppendParts(
+        s,  # type: str
+        spans,  # type: List[Tuple[span_t, int]]
+        max_results,  # type: int
+        join_next,  # type: bool
+        parts,  # type: List[mylib.BufWriter]
+):
+    # type: (...) -> Tuple[bool, bool]
     """Append to 'parts', for the 'read' builtin.
 
     Similar to _SpansToParts in osh/split.py
