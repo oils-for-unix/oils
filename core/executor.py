@@ -172,7 +172,8 @@ class ShellExecutor(vm._Executor):
                                         node,
                                         self.trap_state,
                                         inherit_errexit=inherit_errexit)
-        p = process.Process(thunk, self.job_control, self.job_list, self.tracer)
+        p = process.Process(thunk, self.job_control, self.job_list,
+                            self.tracer)
         return p
 
     def RunBuiltin(self, builtin_id, cmd_val):
@@ -474,7 +475,8 @@ class ShellExecutor(vm._Executor):
                 else:
                     # Like the top level IOError handler
                     e_die_status(
-                        2, 'osh I/O error (read): %s' % posix.strerror(err_num))
+                        2,
+                        'osh I/O error (read): %s' % posix.strerror(err_num))
 
             elif n == 0:  # EOF
                 break
@@ -567,7 +569,8 @@ class ShellExecutor(vm._Executor):
             # Example: cat < <(head foo.txt)
             #
             # The head process should write its stdout to a pipe.
-            redir = process.StdoutToPipe(r, w)  # type: process.ChildStateChange
+            redir = process.StdoutToPipe(r,
+                                         w)  # type: process.ChildStateChange
 
         elif op_id == Id.Left_ProcSubOut:
             # Example: head foo.txt > >(tac)

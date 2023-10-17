@@ -229,4 +229,12 @@ asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
 
+long-sigs() {
+   # 53 of these
+   #egrep --no-filename '^[ ]*# type' */*.py | awk 'length($0) >= 80 { print }' 
+
+   # jump to the file
+   egrep -n '^[ ]*# type' */*.py | awk 'length($0) >= 130 { print }' | tee _tmp/long
+}
+
 run-task "$@"

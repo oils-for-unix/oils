@@ -36,7 +36,8 @@ U1 = completion.UserSpec([A1], [], [], completion.DefaultPredicate(), '', '')
 BASE_OPTS = {}
 
 FIRST = completion.TestAction(['grep', 'sed', 'test'])
-U2 = completion.UserSpec([FIRST], [], [], completion.DefaultPredicate(), '', '')
+U2 = completion.UserSpec([FIRST], [], [], completion.DefaultPredicate(), '',
+                         '')
 
 OPT_ARRAY = [False] * option_i.ARRAY_SIZE
 
@@ -74,6 +75,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
 
 
 class FunctionsTest(unittest.TestCase):
+
     def testAdjustArg(self):
         AdjustArg = completion.AdjustArg
         out = []
@@ -95,6 +97,7 @@ class FunctionsTest(unittest.TestCase):
 
 
 class CompletionTest(unittest.TestCase):
+
     def _CompApi(self, partial_argv, index, to_complete):
         comp = completion.Api('', 0, 0)
         comp.Update('', to_complete, '', index, partial_argv)
@@ -200,7 +203,7 @@ class CompletionTest(unittest.TestCase):
                                               arena=arena)
         node = c_parser.ParseLogicalLine()
         proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
-                         [], True)
+                          [], True)
 
         cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
 
@@ -213,9 +216,8 @@ class CompletionTest(unittest.TestCase):
     def testUserSpec(self):
         comp = self._CompApi(['f'], 0, 'f')
         matches = list(U1.AllMatches(comp))
-        self.assertEqual(
-                [('foo.py', comp_action_e.Other), ('foo', comp_action_e.Other)],
-                matches)
+        self.assertEqual([('foo.py', comp_action_e.Other),
+                          ('foo', comp_action_e.Other)], matches)
 
         predicate = completion.GlobPredicate(False, '*.py')
         c2 = completion.UserSpec([A1], [], [], predicate, '', '')
@@ -225,6 +227,7 @@ class CompletionTest(unittest.TestCase):
 
 
 class RootCompleterTest(unittest.TestCase):
+
     def testCompletesWords(self):
         comp_lookup = completion.Lookup()
 
@@ -434,7 +437,9 @@ class RootCompleterTest(unittest.TestCase):
         parse_ctx.Init_Trail(parse_lib.Trail())
 
         comp_lookup = completion.Lookup()
-        cmd_ev = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+        cmd_ev = test_lib.EvalCode(code_str,
+                                   parse_ctx,
+                                   comp_lookup=comp_lookup)
 
         r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
@@ -519,8 +524,8 @@ class RootCompleterTest(unittest.TestCase):
 
         # It should NOT clobber completio registered for aliases
         m = list(r.Matches(MockApi('ll_own_completion ')))
-        self.assertEqual(['ll_own_completion own ', 'll_own_completion words '],
-                         sorted(m))
+        self.assertEqual(
+            ['ll_own_completion own ', 'll_own_completion words '], sorted(m))
 
     def testNoInfiniteLoop(self):
         # This was ONE place where we got an infinite loop.
@@ -531,7 +536,9 @@ class RootCompleterTest(unittest.TestCase):
         parse_ctx.Init_Trail(parse_lib.Trail())
 
         comp_lookup = completion.Lookup()
-        cmd_ev = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+        cmd_ev = test_lib.EvalCode(code_str,
+                                   parse_ctx,
+                                   comp_lookup=comp_lookup)
 
         r = _MakeRootCompleter(parse_ctx=parse_ctx, comp_lookup=comp_lookup)
 
@@ -684,6 +691,7 @@ complete -F my_complete %(command)s
 
 
 class InitCompletionTest(unittest.TestCase):
+
     def testMatchesOracle(self):
         for i, case in enumerate(bash_oracle.CASES):  # generated data
             flags = case.get('_init_completion_flags')
@@ -717,7 +725,8 @@ class InitCompletionTest(unittest.TestCase):
 
             self.assertEqual(code_str[:-1], oracle_comp_line)
             # weird invariant that always holds.  So isn't COMP_CWORD useless?
-            self.assertEqual(int(oracle_comp_cword), len(oracle_comp_words) - 1)
+            self.assertEqual(int(oracle_comp_cword),
+                             len(oracle_comp_words) - 1)
             # Another weird invariant.  Note this is from the bash ORACLE, not from
             # our mocks.
             self.assertEqual(int(oracle_comp_point), len(code_str) - 1)

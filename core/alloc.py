@@ -77,6 +77,7 @@ def SnipCodeBlock(left, right, lines):
 
 
 class ctx_SourceCode(object):
+
     def __init__(self, arena, src):
         # type: (Arena, source_t) -> None
         arena.PushSource(src)

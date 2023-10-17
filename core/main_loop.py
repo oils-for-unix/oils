@@ -190,9 +190,16 @@ class Headless(object):
         return 0
 
 
-def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, waiter, errfmt):
-    # type: (arg_types.main, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, process.Waiter, ErrorFormatter) -> int
-
+def Interactive(
+        flag,  # type: arg_types.main
+        cmd_ev,  # type: CommandEvaluator 
+        c_parser,  # type: CommandParser
+        display,  # type: _IDisplay
+        prompt_plugin,  # type: UserPlugin
+        waiter,  # type: process.Waiter
+        errfmt,  # type: ErrorFormatter
+):
+    # type: (...) -> int
     status = 0
     done = False
     while not done:

@@ -14,6 +14,7 @@ import line_input
 
 
 class VisualTest(unittest.TestCase):
+
     def testPrintPacked(self):
         matches = ['foo', 'bar', 'spam', 'eggs', 'python', 'perl']
         longest_match_len = max(len(m) for m in matches)
@@ -93,8 +94,8 @@ class VisualTest(unittest.TestCase):
         max_lines = 10
         for width in (1, 10, 20, 30, 40, 50, 60):
             f = cStringIO.StringIO()
-            n = comp_ui._PrintLong(matches, longest_match_len, width, max_lines,
-                                   descriptions, f)
+            n = comp_ui._PrintLong(matches, longest_match_len, width,
+                                   max_lines, descriptions, f)
 
             out = f.getvalue()
             lines = out.splitlines()
@@ -111,6 +112,7 @@ class VisualTest(unittest.TestCase):
 
 
 class UiTest(unittest.TestCase):
+
     def testDisplays(self):
         comp_ui_state = comp_ui.State()
         prompt_state = comp_ui.PromptState()
@@ -147,6 +149,7 @@ class UiTest(unittest.TestCase):
 
 
 class PromptTest(unittest.TestCase):
+
     def testNoEscapes(self):
         for prompt in ["> ", "osh>", "[[]][[]][][]]][["]:
             self.assertEqual(comp_ui._PromptLen(prompt), len(prompt))

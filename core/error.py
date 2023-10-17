@@ -195,9 +195,9 @@ class TypeErr(TypeErrVerbose):
 
     def __init__(self, actual_val, msg, location):
         # type: (value_t, str, loc_t) -> None
-        TypeErrVerbose.__init__(
-            self, "%s, got %s" %
-            (msg, _ValType(actual_val)), location)
+        TypeErrVerbose.__init__(self,
+                                "%s, got %s" % (msg, _ValType(actual_val)),
+                                location)
 
 
 def e_usage(msg, location):

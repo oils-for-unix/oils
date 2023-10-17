@@ -35,6 +35,7 @@ def _CommandNode(code_str, arena):
 
 
 class ProcessTest(unittest.TestCase):
+
     def setUp(self):
         self.arena = test_lib.MakeArena('process_test.py')
 
@@ -55,8 +56,8 @@ class ProcessTest(unittest.TestCase):
         self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
                                      self.tracer)
         errfmt = ui.ErrorFormatter()
-        self.fd_state = process.FdState(errfmt, self.job_control, self.job_list,
-                                        None, self.tracer, None)
+        self.fd_state = process.FdState(errfmt, self.job_control,
+                                        self.job_list, None, self.tracer, None)
         self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
                                                 util.NullDebugFile())
 
@@ -86,6 +87,7 @@ class ProcessTest(unittest.TestCase):
                        redirect_arg.Path(PATH))
 
         class CommandEvaluator(object):
+
             def RunPendingTraps(self):
                 pass
 

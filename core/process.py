@@ -16,8 +16,9 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
                     SIGTTOU, SIGTTIN, SIGWINCH)
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t, job_state_str,
-                                        wait_status, wait_status_t, RedirValue,
+from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
+                                        job_state_str, wait_status,
+                                        wait_status_t, RedirValue,
                                         redirect_arg, redirect_arg_e, value,
                                         value_e, trace, trace_t)
 from _devbuild.gen.syntax_asdl import (
@@ -92,7 +93,9 @@ STYLE_PID_ONLY = 2
 # To save on allocations in JobList::GetJobWithSpec()
 CURRENT_JOB_SPECS = ['', '%', '%%', '%+']
 
+
 class ctx_FileCloser(object):
+
     def __init__(self, f):
         # type: (mylib.LineReader) -> None
         self.f = f
@@ -137,6 +140,7 @@ def SaveFd(fd):
 
 
 class _RedirFrame(object):
+
     def __init__(self, saved_fd, orig_fd, forget):
         # type: (int, int, bool) -> None
         self.saved_fd = saved_fd
@@ -145,6 +149,7 @@ class _RedirFrame(object):
 
 
 class _FdFrame(object):
+
     def __init__(self):
         # type: () -> None
         self.saved = []  # type: List[_RedirFrame]
@@ -545,6 +550,7 @@ class FdState(object):
 
 
 class ChildStateChange(object):
+
     def __init__(self):
         # type: () -> None
         """Empty constructor for mycpp."""
@@ -561,6 +567,7 @@ class ChildStateChange(object):
 
 
 class StdinFromPipe(ChildStateChange):
+
     def __init__(self, pipe_read_fd, w):
         # type: (int, int) -> None
         self.r = pipe_read_fd
@@ -580,6 +587,7 @@ class StdinFromPipe(ChildStateChange):
 
 
 class StdoutToPipe(ChildStateChange):
+
     def __init__(self, r, pipe_write_fd):
         # type: (int, int) -> None
         self.r = r
@@ -604,6 +612,7 @@ OWN_LEADER = 0
 
 
 class SetPgid(ChildStateChange):
+
     def __init__(self, pgid):
         # type: (int) -> None
         self.pgid = pgid
@@ -623,8 +632,8 @@ class SetPgid(ChildStateChange):
             posix.setpgid(proc.pid, self.pgid)
         except (IOError, OSError) as e:
             print_stderr(
-                'osh: parent failed to set process group for PID %d to %d: %s' %
-                (proc.pid, self.pgid, pyutil.strerror(e)))
+                'osh: parent failed to set process group for PID %d to %d: %s'
+                % (proc.pid, self.pgid, pyutil.strerror(e)))
 
 
 class ExternalProgram(object):
@@ -654,7 +663,8 @@ class ExternalProgram(object):
 
         Called by:   ls /   exec ls /   ( ls / )
         """
-        self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_locs[0], environ, True)
+        self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_locs[0], environ,
+                   True)
         assert False, "This line should never execute"  # NO RETURN
 
     def _Exec(self, argv0_path, argv, argv0_loc, environ, should_retry):
@@ -1135,6 +1145,7 @@ class Process(Job):
 
 
 class ctx_Pipe(object):
+
     def __init__(self, fd_state, fd):
         # type: (FdState, int) -> None
         fd_state.PushStdinFromPipe(fd)
@@ -1180,7 +1191,7 @@ class Pipeline(Job):
         """Returns the group ID of this pipeline."""
         # This should only ever be called AFTER the pipeline has started
         assert len(self.pids) > 0
-        return self.pids[0] # First process is the group leader
+        return self.pids[0]  # First process is the group leader
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1374,7 +1385,8 @@ class Pipeline(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    print_stderr('[%d] Done PGID %d' % (self.job_id, self.pids[0]))
+                    print_stderr('[%d] Done PGID %d' %
+                                 (self.job_id, self.pids[0]))
 
                 self.job_list.RemoveJob(self.job_id)
 
@@ -1400,6 +1412,7 @@ def _GetTtyFd():
 
 
 class ctx_TerminalControl(object):
+
     def __init__(self, job_control, errfmt):
         # type: (JobControl, ui.ErrorFormatter) -> None
         job_control.InitJobControl()
@@ -1572,6 +1585,7 @@ class JobList(object):
         mylib.dict_erase(self.child_procs, pid)
 
     if mylib.PYTHON:
+
         def AddPipeline(self, pi):
             # type: (Pipeline) -> None
             """For debugging only."""
@@ -1604,8 +1618,8 @@ class JobList(object):
         """
         # Split all active jobs by state and sort each group by decreasing job
         # ID to approximate newness.
-        stopped_jobs = [] # type: List[Job]
-        running_jobs = [] # type: List[Job]
+        stopped_jobs = []  # type: List[Job]
+        running_jobs = []  # type: List[Job]
         for i in xrange(0, self.job_id):
             job = self.jobs.get(i, None)
             if not job:
@@ -1617,8 +1631,8 @@ class JobList(object):
             elif job.state == job_state_e.Running:
                 running_jobs.append(job)
 
-        current = None # type: Optional[Job]
-        previous = None # type: Optional[Job]
+        current = None  # type: Optional[Job]
+        previous = None  # type: Optional[Job]
         # POSIX says: If there is any suspended job, then the current job shall
         # be a suspended job. If there are at least two suspended jobs, then the
         # previous job also shall be a suspended job.
@@ -1641,7 +1655,6 @@ class JobList(object):
             previous = current
 
         return current, previous
-
 
     def GetJobWithSpec(self, job_spec):
         # type: (str) -> Optional[Job]
@@ -1747,7 +1760,7 @@ class JobList(object):
 # Some WaitForOne() return values
 W1_OK = -2  # waitpid(-1) returned
 W1_ECHILD = -3  # no processes to wait for
-W1_AGAIN = -4 # WNOHANG was passed and there were no state changes
+W1_AGAIN = -4  # WNOHANG was passed and there were no state changes
 
 
 class Waiter(object):

@@ -259,6 +259,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
 
 
 class ctx_Location(object):
+
     def __init__(self, errfmt, location):
         # type: (ErrorFormatter, loc_t) -> None
         errfmt.loc_stack.append(location)
@@ -319,7 +320,9 @@ class ErrorFormatter(object):
     def PrefixPrint(self, msg, prefix, blame_loc):
         # type: (str, str, loc_t) -> None
         """Print a hard-coded message with a prefix, and quote code."""
-        _PrintWithLocation(prefix, msg, self._FallbackLocation(blame_loc),
+        _PrintWithLocation(prefix,
+                           msg,
+                           self._FallbackLocation(blame_loc),
                            show_code=True)
 
     def Print_(self, msg, blame_loc=None):

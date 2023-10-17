@@ -71,7 +71,7 @@ yapf-known() {
     {frontend,library}/*.py \
     osh/*_eval.py osh/*_parse.py \
     ysh/*_eval.py ysh/*_parse.py \
-    core/code.py core/state.py core/shell.py \
+    core/*.py \
     */builtin_*.py \
     */NINJA_subgraph.py
 }
