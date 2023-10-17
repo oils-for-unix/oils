@@ -24,140 +24,159 @@
 #
 # echo "Verbose $[opt.verbose]"
 
+# TODO: See list
+# - It would be nice to keep `flag` and `arg` private, injecting them into the
+#   proc namespace only within `Args`
+# - need :: because vars start with _
+# - We need a mechanism to share state between Args and `flag`/`arg` that is
+#   run in the block passed to it
+#   - It would be nice if _this was a magic param?
+#     - it would be nice if 'flag' was a "method" on something?
+#     - that's what it's doing, it's mutating "self"
+#     - _this is the thing we're currently creating
 
-# TODO: how to register these as Args ?
-#
-# var proc_bindings = {}
-# var var_bindings = {}
-# eval ()
+proc Args (spec Ref;;; block) {
+  ## Create an args spec which can be passed to parseArgs.
+  ##
+  ## Example:
+  ##
+  ##   # NOTE: :spec will create a variable named spec
+  ##   Args :spec {
+  ##     flag -v --verbose ('bool')
+  ##   }
+  ##
+  ##   :: parseArgs(spec, ARGV)
 
-
-# How to make this private to a file?  Or is redefine_func_proc enough?
-#
-# Also it would be nice if we can setref a variable?
-
-proc __flag (...strs ; type ; default Any = null) {
-
-  var short = ''
-  var long = ''
-  if (strs[0].startsWith('-')) {
-    setvar short = strs[0]
+  setref spec = {
+    flags: [],
+    args: [],
+    rest: null,
   }
 
-  case (len(strs)) {
-    (1) {
-      echo
+  eval (block) | while read line {
+    json read parsed <<< $line
+    var spec_frag = dict(parsed)
+
+    case (spec_frag.tag) {
+      flag {
+        _ spec.flags->append(spec_frag.node)
+      }
+      arg {
+        _ spec.args->append(spec_frag.node)
+      }
+      rest {
+        setvar spec.rest = spec_frag.node
+      }
     }
-    (2) {
-      echo
-    }
+  }
+}
+
+proc flag (short, long; type='bool', default=null) {
+  ## Declare a flag within an `Args`.
+  ##
+  ## Examples:
+  ##
+  ##   Args :spec {
+  ##     flag -v --verbose
+  ##     flag -n --count ('int', default=1)
+  ##     flag -f --file ('str')
+  ##   }
+
+  # TODO: help, make type take in a type object (ie. Bool, Int, Str)
+  json write --pretty=F ({ tag: 'flag', node: { short, long, type, default, help: null } })
+}
+
+proc arg (name) {
+  ## Declare a positional argument within an `Args`.
+  ##
+  ## Examples:
+  ##
+  ##   Args :spec {
+  ##     arg file
+  ##   }
+
+  # TODO: type, default and help
+  json write --pretty=F ({ tag: 'arg', node: { name, type: 'str', default: null, help: null } })
+}
+
+proc rest (name) {
+  ## Take the remaining positional arguments within an `Args`.
+  ##
+  ## Examples:
+  ##
+  ##   Args :grep {
+  ##     arg query
+  ##     rest files
+  ##   }
+
+  json write --pretty=F ({ tag: 'rest', node: name })
+}
+
+func __args_getFlagName(flag) {
+  if (flag.long) {
+    return (flag.long[2:])
+  } elif (flag.short) {
+    return (flag.short[1:])
   }
 
-  var result = {short, long, type, default}
-
-  # TODO:
-  # - need :: because vars start with _
-  # - It would be nice if _this was a magic param?
-  #   - it would be nice if 'flag' was a "method" on something?
-  #   - that's what it's doing, it's mutating "self"
-  #   - _this is the thing we're currently creating
-
-  _ _this.flags->append(result)
-
-  var this = getvar('_this', scope='dynamic')
-  _ this.flags->append(result)
-}
-
-proc __arg (name, desc ; type ; default Any = null) {
-  # Type is always string?  Or support conversion?
-  # I guess there's no reason not to
-  #
-  # Int or Float
-
-  echo 'arg'
-}
-
-# TODO: create a builtin?
-func getProc(x) {
-  return (x)
-}
-# TODO: builtin?
-# Is this different than shvar?  How?
-# Is it a global or a local?
-
-# Maybe we can rename shvar IFS=: (foo={}) { }
-#
-# - shvar does LocalOnly
-# - but 'proc arg' will push a new stack frame?
-#   - so we need something like setref?
-#
-
-proc bind-vars (; ; ...bindings; block) {
-  echo
-}
-
-hay define Documented
-
-Documented {  # Do we inherit the name of the proc?  Or $path/$procName?
-
-  # Do we want a longer way of documenting APIs?
-  # Document every argument?
-  # I like Go's docs
-  desc = '''
-  These are my docs
-  '''
-
-  proc p {
-    echo
-  }
-
-}
-
-proc Args(spec Ref ; ; ; block) {
-
-  var more_procs = {
-    flag: getProc('__flag'),
-    arg: getProc('__arg'),
-  }
-
-  var this = {}
-
-  # _this is part of this frame -- it's a duplicate that callers can look up I
-  # guess
-  # Well then all you need is getvar() ?  You don't even need bind-vars?
-  bind-vars (_this=this) {
-    # So now 'arg' and 'flag' can see _this?
-
-    # TODO: more_procs vs. replace procs?
-    eval (block, procs=more_procs)
-  }
-  = this
-
-  # You have to put 'flag' and 'arg' in scope
-
-  # Flags have these fields
-  # default type is Bool
-  var flag = {short: '', long: '', type: null, default: '', help: ''}
-
-  # Args have these fields
-  #
-  # I think all args are required -- you can ARGV[i:] if you want something else
-  #
-  # Default type is string
-  var arg = {name: '', type: null, help: ''}
-
-  # May also have program name, etc.
-  var result = {flags: [], args: []}
-
-  #= spec
-  #= block
-
-  setref spec = result
+  error ('No flag.long or flag.short')
 }
 
 func parseArgs(spec, argv) {
-  var i = 0
-  var arg = {}
+  ## Given a spec created by `Args`. Parse an array of strings `argv` per that
+  ## spec.
+  ##
+  ## See `Args` for examples of use.
 
-  return ([arg, i])
+  var i = 0
+  var positionalPos = 0
+  var argc = len(argv)
+  var args = {}
+  var rest = []
+
+  # Would like to have: var value
+  var value = null
+  while (i < argc) {
+    var arg = argv[i]
+    if (arg->startswith('-')) {
+      for flag in (spec.flags) {
+        if ( (flag.short and flag.short === arg) or
+             (flag.long and flag.long === arg) ) {
+          case (flag.type) {
+            ('bool') | (null) { setvar value = true }
+            int {
+              setvar i += 1
+              setvar value = int(argv[i])
+            }
+          }
+
+          var name = __args_getFlagName(flag)
+          setvar args[name] = value
+        }
+      }
+    } elif (positionalPos >= len(spec.args)) {
+      if (not spec.rest) {
+        error ("Too many arguments, unexpected '$arg'")
+      }
+
+      _ rest->append(arg)
+    } else {
+      var pos = spec.args[positionalPos]
+      setvar positionalPos += 1
+
+      case (pos.type) {
+        str { setvar value = arg }
+      }
+
+      setvar args[pos.name] = value
+    }
+
+    setvar i += 1
+  }
+
+  if (spec.rest) {
+    setvar args[spec.rest] = rest
+  }
+
+  return ([args, i])
 }
