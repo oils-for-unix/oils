@@ -274,7 +274,7 @@ def _BindWords(
         defaults,  # type: List[value_t]
         cmd_val,  # type: cmd_value.Argv
         mem,  # type: state.Mem
-        blame_loc=loc.Missing,  # type: loc_t
+        blame_loc,  # type: loc_t
 ):
     # type: (...) -> None
 
@@ -360,7 +360,7 @@ def _BindTyped(
         defaults,  # type: List[value_t]
         pos_args,  # type: Optional[List[value_t]]
         mem,  # type: state.Mem
-        blame_loc=loc.Missing,  # type: loc_t
+        blame_loc,  # type: loc_t
 ):
     # type: (...) -> None
 
@@ -423,7 +423,7 @@ def _BindNamed(
         defaults,  # type: Dict[str, value_t]
         named_args,  # type: Optional[Dict[str, value_t]]
         mem,  # type: state.Mem
-        blame_loc=loc.Missing,  # type: loc_t
+        blame_loc,  # type: loc_t
 ):
     # type: (...) -> None
 
@@ -465,21 +465,12 @@ def _BindFuncArgs(func, rd, mem):
     blame_loc = rd.LeftParenToken()
 
     group = node.positional if node.positional else ParamGroup([], None)
-    _BindTyped(func.name,
-               group,
-               None,
-               func.pos_defaults,
-               rd.pos_args,
-               mem,
-               blame_loc=blame_loc)
+    _BindTyped(func.name, group, None, func.pos_defaults, rd.pos_args, mem,
+               blame_loc)
 
     group = node.named if node.named else ParamGroup([], None)
-    _BindNamed(func.name,
-               group,
-               func.named_defaults,
-               rd.named_args,
-               mem,
-               blame_loc=blame_loc)
+    _BindNamed(func.name, group, func.named_defaults, rd.named_args, mem,
+               blame_loc)
 
 
 def BindProcArgs(proc, cmd_val, mem):
@@ -494,17 +485,31 @@ def BindProcArgs(proc, cmd_val, mem):
     # TODO: can we structure this without allocating empty ParamGroups?  If we
     # don't call _Bind*, then we don't check for too many args.
 
+    blame_loc = loc.Missing  # type: loc_t
+
     group = sig.word if sig.word else ParamGroup([], None)
-    _BindWords(proc.name, group, proc.defaults.for_word, cmd_val, mem)
+    if len(cmd_val.arg_locs) > 0:
+        blame_loc = cmd_val.arg_locs[0]
+
+    _BindWords(proc.name, group, proc.defaults.for_word, cmd_val, mem,
+               blame_loc)
 
     # This includes the block arg
     group = sig.positional if sig.positional else ParamGroup([], None)
+    if cmd_val.typed_args:
+        blame_loc = cmd_val.typed_args.left
+
     _BindTyped(proc.name, group, sig.block_param, proc.defaults.for_typed,
-               cmd_val.pos_args, mem)
+               cmd_val.pos_args, mem, blame_loc)
 
     group = sig.named if sig.named else ParamGroup([], None)
+    if cmd_val.typed_args:
+        semi = cmd_val.typed_args.semi_tok
+        if semi is not None:
+            blame_loc = semi
+
     _BindNamed(proc.name, group, proc.defaults.for_named, cmd_val.named_args,
-               mem)
+               mem, blame_loc)
 
 
 def CallUserFunc(func, rd, mem, cmd_ev):

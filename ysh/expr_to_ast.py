@@ -917,7 +917,7 @@ class Transformer(object):
             i += 1
 
         if n >= 2:
-            arglist.named_delim = p_node.GetChild(i).tok
+            arglist.semi_tok = p_node.GetChild(i).tok
             self._ArgGroup(p_node.GetChild(i+1), True, arglist)
 
     def ToArgList(self, pnode, arglist):

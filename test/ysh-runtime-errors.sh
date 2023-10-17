@@ -589,6 +589,14 @@ test-proc-missing() {
   myproc (99, b=3)
   '
 
+  # missing named param with semicolon
+  _error-case-X 3 '
+  proc myproc (; p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  myproc (99; b=3)
+  '
+
   # missing block param
   _error-case-X 3 '
   proc myproc (w; p ; a, b; block) {

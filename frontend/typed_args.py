@@ -462,7 +462,7 @@ class Reader(object):
         if len(self.named_args):
             bad_args = ', '.join(self.named_args.keys())
 
-            blame = self.arg_list.named_delim  # type: loc_t
+            blame = self.arg_list.semi_tok  # type: loc_t
             if blame is None:
                 blame = self.LeastSpecificLocation()
 
