@@ -29,6 +29,24 @@ func f(x) { return (x + 1) }
 ## STDOUT:
 ## END
 
+#### Positional args
+
+func f(x, y, ...rest) {
+  echo "pos $x $y"
+  echo rest @rest
+}
+
+_ f(1, 2, 3, 4)
+
+# This is an error
+#_ f(1, 2, m=2, n=3)
+
+## STDOUT:
+pos 1 2
+rest 3 4
+## END
+
+
 #### named args
 func f(; x=3) {
   echo x=$x
@@ -102,7 +120,7 @@ _ f(...a, ...a; ...d, ...e)
 ## END
 
 
-#### Proc-style return in a func
+#### Proc-style return in a func is error
 func t() { return 0 }
 
 = t()
@@ -110,7 +128,7 @@ func t() { return 0 }
 ## STDOUT:
 ## END
 
-#### Typed return in a proc
+#### Typed return in a proc is error
 proc t() { return (0) }
 
 = t()

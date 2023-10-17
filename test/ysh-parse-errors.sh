@@ -76,10 +76,9 @@ test-arglist() {
   _should-parse 'p (; n=42)'
   _should-parse '= f(; n=42)'
 
-  # TODO:
-  return
   _parse-error '= f(; 42)'
   _parse-error '= f(; name)'
+  _parse-error '= f(; x for x in y)'
 }
 
 
