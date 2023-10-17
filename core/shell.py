@@ -281,9 +281,10 @@ def Main(
     Notes: Does it make sense to create a "pure" shell here?
 
     - Different vm._Executor - no redirects, fd_state, etc.
-    - Abandon legacy like shell aliases
+      - tilde evaluator, globs?
     - Only pure builtins
     - source builtin has abstract I/O?
+    - Abandon legacy like shell aliases
 
     Or perhaps we have a separate PureMain() function, along with some kind of
     main_loop.Headless().

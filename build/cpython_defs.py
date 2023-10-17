@@ -311,7 +311,7 @@ class OilMethodFilter(object):
     if method_name == '__getitem__':
       return True
 
-    # NOTE: LoadOilGrammar needs marshal.loads().
+    # NOTE: LoadYshGrammar needs marshal.loads().
     # False positive for yajl.dumps() and load()
     if basename == 'marshal.c' and method_name in ('dump', 'dumps', 'load'):
       return False

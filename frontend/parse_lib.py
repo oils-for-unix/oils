@@ -195,18 +195,18 @@ class ParseContext(object):
                  arena,
                  parse_opts,
                  aliases,
-                 oil_grammar,
+                 ysh_grammar,
                  one_pass_parse=False):
         # type: (Arena, optview.Parse, Dict[str, str], Grammar, bool) -> None
         self.arena = arena
         self.parse_opts = parse_opts
         self.aliases = aliases
-        self.oil_grammar = oil_grammar
+        self.ysh_grammar = ysh_grammar
         self.one_pass_parse = one_pass_parse
 
         # NOTE: The transformer is really a pure function.
-        if oil_grammar:
-            self.tr = expr_to_ast.Transformer(oil_grammar)
+        if ysh_grammar:
+            self.tr = expr_to_ast.Transformer(ysh_grammar)
         else:  # hack for unit tests, which pass None
             self.tr = None
 
@@ -295,11 +295,11 @@ class ParseContext(object):
 
     def _YshParser(self):
         # type: () -> expr_parse.ExprParser
-        return expr_parse.ExprParser(self, self.oil_grammar, False)
+        return expr_parse.ExprParser(self, self.ysh_grammar, False)
 
     def _TeaParser(self):
         # type: () -> expr_parse.ExprParser
-        return expr_parse.ExprParser(self, self.oil_grammar, True)
+        return expr_parse.ExprParser(self, self.ysh_grammar, True)
 
     def ParseVarDecl(self, kw_token, lexer):
         # type: (Token, Lexer) -> Tuple[command.VarDecl, Token]

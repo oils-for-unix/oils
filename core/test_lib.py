@@ -314,7 +314,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
 
 
 def InitParseContext(arena=None,
-                     oil_grammar=None,
+                     ysh_grammar=None,
                      aliases=None,
                      parse_opts=None,
                      one_pass_parse=False):
@@ -330,7 +330,7 @@ def InitParseContext(arena=None,
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
                                        aliases,
-                                       oil_grammar,
+                                       ysh_grammar,
                                        one_pass_parse=one_pass_parse)
 
     return parse_ctx
@@ -346,8 +346,8 @@ def InitWordParser(word_str, oil_at=False, arena=None):
     mutable_opts.opt0_array[option_i.parse_at] = oil_at
 
     loader = pyutil.GetResourceLoader()
-    oil_grammar = pyutil.LoadOilGrammar(loader)
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
+    ysh_grammar = pyutil.LoadYshGrammar(loader)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, ysh_grammar)
     line_reader, _ = InitLexer(word_str, arena)
     c_parser = parse_ctx.MakeOshParser(line_reader)
     # Hack
@@ -358,9 +358,9 @@ def InitCommandParser(code_str, arena=None):
     arena = arena or MakeArena('<test_lib>')
 
     loader = pyutil.GetResourceLoader()
-    oil_grammar = pyutil.LoadOilGrammar(loader)
+    ysh_grammar = pyutil.LoadYshGrammar(loader)
 
-    parse_ctx = InitParseContext(arena=arena, oil_grammar=oil_grammar)
+    parse_ctx = InitParseContext(arena=arena, ysh_grammar=ysh_grammar)
     line_reader, _ = InitLexer(code_str, arena)
     c_parser = parse_ctx.MakeOshParser(line_reader)
     return c_parser

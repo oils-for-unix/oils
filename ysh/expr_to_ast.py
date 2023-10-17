@@ -93,7 +93,7 @@ NT_OFFSET = 256
 
 if mylib.PYTHON:
 
-    def MakeGrammarNames(oil_grammar):
+    def MakeGrammarNames(ysh_grammar):
         # type: (Grammar) -> Dict[int, str]
 
         # TODO: Break this dependency
@@ -117,7 +117,7 @@ if mylib.PYTHON:
             if k < 256:
                 names[k] = id_name
 
-        for k, v in oil_grammar.number2symbol.items():
+        for k, v in ysh_grammar.number2symbol.items():
             # eval_input == 256.  Remove?
             assert k >= 256, (k, v)
             names[k] = v
