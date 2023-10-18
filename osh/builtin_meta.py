@@ -51,7 +51,6 @@ class Eval(vm._Builtin):
         self.arena = parse_ctx.arena
         self.exec_opts = exec_opts
         self.cmd_ev = cmd_ev
-        self.expr_ev = expr_ev
         self.tracer = tracer
         self.errfmt = errfmt
 

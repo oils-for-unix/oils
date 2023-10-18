@@ -102,8 +102,6 @@ class Reader(object):
         self.named_args = named_args
         self.arg_list = arg_list
 
-        self.block = block
-
     def LeftParenToken(self):
         # type: () -> loc_t
         """
@@ -342,15 +340,6 @@ class Reader(object):
         # TODO
         return None
 
-    def NamedValue(self, param_name, default_):
-        # type: (str, value_t) -> value_t
-        if param_name not in self.named_args:
-            return default_
-
-        val = self.named_args[param_name]
-        dict_erase(self.named_args, param_name)
-        return val
-
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str
         if param_name not in self.named_args:
@@ -458,13 +447,6 @@ class Reader(object):
         problem
         """
         # Note: Python throws TypeError on mismatch
-        if self.argv is not None and len(self.argv):
-            n = self.argv_consumed
-
-            raise error.Usage(
-                'Expected %d word arguments, but got %d' %
-                (n, n + len(self.argv)), self.BlamePos())
-
         if len(self.pos_args):
             n = self.pos_consumed
             # Excluding implicit first arg should make errors less confusing

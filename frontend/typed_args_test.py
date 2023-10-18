@@ -28,7 +28,7 @@ class TypedArgsTest(unittest.TestCase):
         arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
 
         # Not enough args...
-        reader = typed_args.Reader([], [], {}, arg_list, None, False)
+        reader = typed_args.Reader([], {}, arg_list, False)
         self.assertRaises(error.TypeErrVerbose, reader.PosStr)
 
         pos_args = [
@@ -45,8 +45,7 @@ class TypedArgsTest(unittest.TestCase):
             value.Int(0xbeef),
             value.Str('bar'),
         ]
-        reader = typed_args.Reader([], list(pos_args), {}, arg_list, None,
-                                   False)
+        reader = typed_args.Reader(list(pos_args), {}, arg_list, False)
 
         # Haven't all the args
         with self.assertRaises(error.TypeErrVerbose) as cm:
@@ -67,7 +66,7 @@ class TypedArgsTest(unittest.TestCase):
         self.assertEqual(pos_exprs[3].c, e.location)
 
         # Normal operation from here on
-        reader = typed_args.Reader([], pos_args, {}, arg_list, None, False)
+        reader = typed_args.Reader(pos_args, {}, arg_list, False)
         arg = reader.PosInt()
         self.assertEqual(0xc0ffee, arg)
 
@@ -120,7 +119,7 @@ class TypedArgsTest(unittest.TestCase):
             'b': value.Int(0xbeef),
             'c': value.Str('bar'),
         }
-        reader = typed_args.Reader([], [], kwargs, arg_list, None, False)
+        reader = typed_args.Reader([], kwargs, arg_list, False)
 
         # Haven't processed any args yet...
         self.assertRaises(error.TypeErrVerbose, reader.Done)
