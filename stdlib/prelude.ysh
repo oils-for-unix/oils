@@ -8,6 +8,10 @@
 # - 'pass' can be : or true in shell.  It's a little obscure / confusing, but
 #   there is an argument for minimalism.  Although I prefer words like 'true',
 #   and that already means something.
+#   - UPDATE: we once took 'pass' as a keyword, but users complained because
+#     there is a command 'pass'.  So we probably can't have this by default.
+#     Need to discuss source --builtin.
+
 # - todo could be more static?  Rust presumably does it at compile time
 
 proc todo () {
